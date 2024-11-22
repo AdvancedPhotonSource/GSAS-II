@@ -737,6 +737,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
 
         ####====== start of OnPickPwd
+        inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
+        try:
+            inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
+        except:
+            pass
         global Page
         try:
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
@@ -796,7 +801,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1],useFit=True)
-                if XtraPeakMode:
+                if inXtraPeakMode:
                     data['xtraPeaks'] = data.get('xtraPeaks',[])
                     data['xtraPeaks'].append(XY)
                     data['sigDict'] = {}    #now invalid
@@ -1142,7 +1147,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif lineNo > 1+nxcl:
                 PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 peaks = G2frame.GPXtree.GetItemPyData(PeakId)
-                if XtraPeakMode:
+                inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
+                try:
+                    inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
+                except:
+                    pass
+                if inXtraPeakMode:
                     tbl = peaks['xtraPeaks']
                 else:
                     tbl = peaks['peaks']
@@ -1465,9 +1475,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     global savedX
     plottype = plotType
-    XtraPeakMode = False   # Ignore if peak list menubar is not yet created
+    inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
     try:
-        XtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
+        inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
     except:
         pass
 
@@ -2279,7 +2289,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         l = []
                         PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                         peaks = G2frame.GPXtree.GetItemPyData(PeakId)
-                        if XtraPeakMode:
+                        if inXtraPeakMode:
                             tbl = peaks['xtraPeaks']
                         else:
                             tbl = peaks['peaks']
@@ -2316,7 +2326,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                         Page.SetToolTipString(tip)
                         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
-                        if XtraPeakMode:
+                        if inXtraPeakMode:
                             peaks['xtraPeaks'] = peaks.get('xtraPeaks',[])
                             tbl = peaks['xtraPeaks']
                             color = 'r'
@@ -2396,7 +2406,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists'
           or 
         'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
-        or (XtraPeakMode and
+        or (inXtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 )
     for ph,markerlist in data[0].get('HKLmarkers',{}).items():
@@ -2484,7 +2494,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             pass # skip reflection markers
         elif (G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits'] or 
                   'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
-                  or (XtraPeakMode and
+                  or (inXtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 ):
             #Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))

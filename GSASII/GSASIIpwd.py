@@ -2720,12 +2720,17 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         if 'LF' in Inst['Type'][0] and Peaks:
             if Peaks[-1].get('clat-ref'): varyList += ['clat']
     fullvaryList = varyList[:]
+    remVary = []
     if not peakInstPrmMode:
         for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1','A','B','C',
             'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',):
             if v in varyList:
-                raise Exception('Instrumental profile terms cannot be varied '+
-                                    'after setPeakInstPrmMode(False) is used')
+                remVary.append(v)
+        if remVary:
+            print('Instrumental profile terms cannot be varied '+
+                          'after setPeakInstPrmMode(False) is used'+
+                          f'\nremoving vars: {" ,".join(remVary)}')
+            varyList = [v for v in varyList if v not in remVary]
     if 'LF' in Inst['Type'][0]:
         warn = []
         for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1',

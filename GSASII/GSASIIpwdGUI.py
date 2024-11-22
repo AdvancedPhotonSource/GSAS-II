@@ -1148,7 +1148,16 @@ def UpdatePeakGrid(G2frame, data):
         if data['peaks']:
             OnPeakFit(noFit=True)
 
+    def ToggleXtraMode(event):
+        '''Switch "Extra Peak" mode in response to button'''
+        G2frame.dataWindow.XtraPeakMode.Check(
+            not G2frame.dataWindow.XtraPeakMode.IsChecked())
+        OnXtraMode(event)
+        
     def OnXtraMode(event):
+        '''Respond to change in "Extra Peak" mode from menu command
+        or button via :func:`ToggleXtraMode`.
+        '''
         data['xtraMode'] = G2frame.dataWindow.XtraPeakMode.IsChecked()
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
         wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
@@ -1224,11 +1233,15 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.dataWindow.ClearData()
         topSizer = G2frame.dataWindow.topBox
         parent = G2frame.dataWindow.topPanel
+        blbl = ''
         if 'N' in Inst['Type'][0]:
             lbl = 'List of k-vector/impurity or subgroup defining peaks'
         else:
             lbl = 'List of impurity or subgroup peaks'
         topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        btn = wx.Button(parent, wx.ID_ANY, 'Switch to Normal peak mode')
+        topSizer.Add(btn,0,wx.LEFT,8)
+        btn.Bind(wx.EVT_BUTTON,ToggleXtraMode)
         topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer = G2frame.dataWindow.GetSizer()
@@ -1337,6 +1350,9 @@ def UpdatePeakGrid(G2frame, data):
     topSizer = G2frame.dataWindow.topBox
     parent = G2frame.dataWindow.topPanel
     topSizer.Add(wx.StaticText(parent,label='List of peaks to fit individually'),0,WACV)
+    btn = wx.Button(parent, wx.ID_ANY, 'Switch to Extra Peak mode')
+    topSizer.Add(btn,0,wx.LEFT,8)
+    btn.Bind(wx.EVT_BUTTON,ToggleXtraMode)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer = G2frame.dataWindow.GetSizer()

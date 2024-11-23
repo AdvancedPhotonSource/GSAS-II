@@ -6487,6 +6487,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         UCdisableList.append(selMG)
         selMG.Bind(wx.EVT_COMBOBOX, OnSelMG)
         ssSizer.Add(selMG,0,WACV)
+        mainSizer.Add(ssSizer,0)
+        ssSizer = wx.BoxSizer(wx.HORIZONTAL)
         ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mod. vector: '),0,WACV)
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
         ssopt['ModVec'],ifShow = G2spc.SSGModCheck(ssopt['ModVec'],modS)
@@ -6494,7 +6496,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 modVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,ssopt['ModVec'],i,
-                    xmin=-.98,xmax=.98,nDig=(10,4),typeHint=float,OnLeave=OnModVal)
+                    xmin=-.98,xmax=.98,nDig=(10,4),typeHint=float,
+                    OnLeave=OnModVal,size=wx.Size(50,-1))
                 UCdisableList.append(modVal)
                 valSizer.Add(modVal,0,WACV)
                 modSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
@@ -6512,6 +6515,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 UCdisableList.append(modVal)
                 modVal.SetBackgroundColour(VERY_LIGHT_GREY)
                 ssSizer.Add(modVal,0,WACV)
+        mainSizer.Add(ssSizer,0)
+        ssSizer = wx.BoxSizer(wx.HORIZONTAL)
         ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max. M: '),0,WACV)
         maxMH = wx.ComboBox(G2frame.dataWindow,value=str(ssopt['maxH']),
             choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)

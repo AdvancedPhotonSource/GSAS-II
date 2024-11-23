@@ -3215,7 +3215,6 @@ def UpdateInstrumentGrid(G2frame,data):
             
         mainSizer.Add(fgs)
         G2frame.dataWindow.SetDataSize()
-        G2frame.dataWindow.SendSizeEvent()
         wx.EndBusyCursor()
         # end of MakeMultiParameterWindow
                 
@@ -3295,7 +3294,7 @@ def UpdateInstrumentGrid(G2frame,data):
         MakeParameterWindow()
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)
-    G2frame.dataWindow.SendSizeEvent()        
+    G2frame.dataWindow.SetDataSize()
     
 ################################################################################
 #####  Sample parameters
@@ -4038,10 +4037,10 @@ def UpdateIndexPeaksGrid(G2frame, data):
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add(G2frame.indxPeaks,1,wx.EXPAND,1)
     G2frame.dataWindow.SetDataSize()
+
 ################################################################################
 #####  Unit cells
 ################################################################################
-
 cellDisplayOpts = {'showExtinct':False}
 def UpdateUnitCellsGrid(G2frame, data):
     '''respond to selection of PWDR Unit Cells data tree item.
@@ -4092,10 +4091,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
         ssopt['ModVec'] = G2spc.SSGModCheck(Vec,modS)[0]
         print (' Selecting: '+controls[13]+ssopt['ssSymb']+ 'maxH:'+str(ssopt['maxH']))
+        clearTryAll()
         OnHklShow(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnModVal(invalid,value,tc):
+        clearTryAll()
         OnHklShow(tc.event)
         
     def OnMoveMod(event):
@@ -4107,11 +4108,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         value = min(0.98,max(-0.98,float(valObj.GetValue())+move))
         valObj.SetValue('%.4f'%(value)) 
         ssopt['ModVec'][Id] = value
+        clearTryAll()
         OnHklShow(event)
         
     def OnMaxMH(event):
         ssopt['maxH'] = int(maxMH.GetValue())
         print (' Selecting: '+controls[13]+ssopt['ssSymb']+'maxH:'+str(ssopt['maxH']))
+        clearTryAll()
         OnHklShow(event)
         
     def OnButton(xpos,ypos):
@@ -4127,6 +4130,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['ModVec'][1] = ypos
         vec = ssopt['ModVec']
         print(' Trying: %s %s modulation vector = %.3f %.3f %.3f'%(controls[13],ssopt['ssSymb'],vec[0],vec[1],vec[2]))
+        clearTryAll()
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -4142,6 +4146,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     newPlot=True,Title='Modulation vector search',buttonHandler=OnButton)
         finally:
             dlg.Destroy()
+        clearTryAll()
         OnHklShow(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -4154,6 +4159,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['ModVec'] = G2spc.SSGModCheck(ssopt['ModVec'],G2spc.splitSSsym(ssSym)[0],True)[0]
             print (' Trying: '+controls[13]+ssSym+' maxH: 1')
             ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
+            clearTryAll()
             OnHklShow(event)
             if result[1] < best:
                 bestSS = ssSym
@@ -4172,10 +4178,21 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[5] = brav
         controls[13] = SPGlist[brav][0]       
         ssopt['Use'] = False
+        clearTryAll()
         OnHklShow(event)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
     def OnMakePks(event):
+        msg = ('This will replace the current contents of the Peaks List'+
+               ' with peak positions generated from the current cell.'+
+               ' Are you sure you want to delete the previous Peak List'+
+               ' contents?')
+        dlg = wx.MessageDialog(G2frame, msg,'Replace peaks?',wx.YES_NO|wx.ICON_QUESTION)
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result != wx.ID_YES: return
         hkl = G2frame.HKL
         PatternId = G2frame.PatternId
         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
@@ -4216,42 +4233,58 @@ def UpdateUnitCellsGrid(G2frame, data):
         ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
         ssopt['Use'] = False
         G2frame.dataWindow.RefineCell.Enable(True)
+        clearTryAll()
         OnHklShow(event)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
     def OnTryAll(event):
+        '''Computes extinctions for all possible space groups
+        creates data for a table that is displayed in the subsequent 
+        UpdateUnitCellsGrid call. 
+        '''
         ssopt['SgResults'] = []
+        ssopt['SgSettings'] = ''
         for controls[13] in SPGlist[controls[5]]:
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             ssopt['Use'] = False
             G2frame.dataWindow.RefineCell.Enable(True)
-            res = OnHklShow(event,True)
+            res = OnHklShow(event,False,False)
             if res: 
                 ssopt['SgResults'].append(res)
         if ssopt['SgResults']:
             ssopt['SgResults'] = G2mth.sortArray(ssopt['SgResults'],2,reverse=True)
-            ssopt['SgResults'][0][1] = True
             controls[13] = ssopt['SgResults'][0][0]
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             G2frame.dataWindow.RefineCell.Enable(True)
-            OnHklShow(event,True)
+            ssopt['SgResults'][0][1] = True  # select the first entry
+            ssopt['SgSettings'] = 'Brav. Lat.: {}, cell: {:.3f} {:.3f} {:.3f} {:.2f} {:.2f} {:.2f}'.format(*controls[5:12])
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
 
     def OnSelectSgrp(event):
         'Called when the Space Group Search Results show column is checked'
-        r,c = event.GetRow(),event.GetCol()
-        if c == 1:
+        show = False
+        if event is not None:
+            r,c = event.GetRow(),event.GetCol()
             for i in range(len(ssopt['SgResults'])):
                 ssopt['SgResults'][i][1] = False
                 SgTable.SetValue(i,1,False)
+            clearShowFlags()
             SgTable.SetValue(r,1,True)
-            SgDisplay.ForceRefresh()
-            ssopt['SgResults'][r][1] = True
             controls[13] = ssopt['SgResults'][r][0]
+            show = True
+        else:
+            for r in range(len(ssopt['SgResults'])):
+                if ssopt['SgResults'][r][1]:
+                    controls[13] = ssopt['SgResults'][r][0]
+                    show = True
+                    break
+        if show:
+            SgDisplay.ForceRefresh()
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             G2frame.dataWindow.RefineCell.Enable(True)
+            disableCellCtrls()
             OnHklShow(event,False)
-            wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)            
+            #wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)            
         
     def SetCellValue(Obj,ObjId,value):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
@@ -4298,6 +4331,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj.SetValue(0)
         value = float(valObj.GetValue()) * (1. + move*inc/100.)
         SetCellValue(valObj,ObjId//2,value)
+        clearTryAll()
         OnHklShow(event)
         
     def OnExportCells(event):
@@ -4333,13 +4367,22 @@ def UpdateUnitCellsGrid(G2frame, data):
             SetCellValue(tc,Info[tc.GetId()],value)
         except:
             pass
+        clearTryAll()
         OnHklShow(tc.event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def OnHklShow(event=None,Print=True):
+    def OnHklShow(event=None,Print=True,Plot=True):
         '''Compute the location of powder diffraction peaks from the 
-        contents of the 
+        cell in controls[6:12] and the space group in ssopt['SGData'] if 
+        defined, or controls[13], if not.
+
+        Reflections are placed in G2frame.HKL
+
+        If cellDisplayOpts['showExtinct'] is True, all reflections are computed 
+        and reflections that are not present in the G2frame.HKL array are 
+        placed in G2frame.Extinct
         
+        :params Print: if True, the M20 value, etc. is printed on the console
         :returns: None or [Symb,False,M20,X20,Nhkl,frfnd] where 
          * Symb: Space group symbol
          * M20: line position fit metric
@@ -4347,11 +4390,11 @@ def UpdateUnitCellsGrid(G2frame, data):
          * Nhkl: number of generated reflections below dmin
          * frfnd: fraction of lines indexed
         '''
-#        print('called OnHklShow')
         result = None
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
+        #print('called OnHklShow cell= {:.3f} {:.3f} {:.3f} {:.2f} {:.2f} {:.2f}'.format(*controls[6:12]))
         # recompute dmin in case limits were changed
         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
         Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
@@ -4402,6 +4445,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             if Print:
                 print (' new M20,X20: %.2f %d, fraction found: %.3f for %s'%(M20,X20,frfnd,Symb))
             result = [Symb,False,M20,X20,Nhkl,frfnd]
+        if not Plot: return result
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId): # histogram of just peaks? Not implemented(?)
             G2plt.PlotPowderLines(G2frame)
         else:
@@ -4453,6 +4497,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         data = [controls,bravais,cells,dminx,ssopt,magcells]
         G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
+        clearTryAll()
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
@@ -4530,6 +4575,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         G2frame.dataWindow.RefineCell.Enable(True)
+        clearTryAll()
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -4555,6 +4601,7 @@ def UpdateUnitCellsGrid(G2frame, data):
 #        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
 #        G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
+        clearTryAll()
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
@@ -4580,7 +4627,6 @@ def UpdateUnitCellsGrid(G2frame, data):
              
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
-        print (' Refine cell')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
@@ -4709,6 +4755,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         cells,dminx = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
+        clearShowFlags()
         if cells:
             Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                     G2frame,G2frame.PatternId,'Instrument Parameters'))[0]
@@ -4822,6 +4869,8 @@ def UpdateUnitCellsGrid(G2frame, data):
 
                     G2pwpl.PlotPatterns(G2frame)
             if event.GetEventObject().GetColLabelValue(c) == 'show':
+                disableCellCtrls()
+                clearTryAll()
                 for i in range(len(cells)):
                     cells[i][-2] = False
                     UnitCellsTable.SetValue(i,c,False)
@@ -5074,6 +5123,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         else:
             del SGData['MagSpGrp']
         ssopt['SGData'] = SGData
+        clearTryAll()
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
             
@@ -5089,6 +5139,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         OprNames,SpnFlp = G2spc.GenMagOps(SGData)
         SGData['SpnFlp'] = SpnFlp
         SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+        clearTryAll()
         OnHklShow()
         
     def OnBNSlatt(event):
@@ -5107,6 +5158,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
         OprNames,SpnFlp = G2spc.GenMagOps(SGData)
         SGData['SpnFlp'] = SpnFlp
+        clearTryAll()
         OnHklShow()
             
     def OnShowSpins(event):
@@ -5139,6 +5191,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 return
         finally:
             dlg.Destroy()
+        clearTryAll()
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -5962,18 +6015,13 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2G.G2MessageBox(G2frame, err_msg, err_title)
 
     def _setupResultsGrid(grid):
-        '''Use to ensure that Search Results tables scroll nicely
+        '''Turn on scrolling for grid and  register the grid in resizeGrids so that it will be 
+        adjusted when the window is resized (also when first created).
+
+        This ensure that Search Results tables display nicely
         with scrollbars internal to the table (plays nicely with table 
-        headers). This is done by making the table slightly narrower 
-        than the available space (leaving room for a inner scroll bar) 
-        and give each table less than half the vertical size of the 
-        window so that a single table does not "take over" the 
-        dataWindow real estate. 
-        Also, register the grid in resizeGrids so that it will be 
-        adjusted if the window is resized.
+        headers). See _onResize for more. 
         '''
-        wid,hgt = G2frame.dataWindow.GetSize()
-        grid.SetMaxSize((wid-15,int(hgt/2.5)))
         grid.SetScrollRate(10,10)
         resizeGrids.append(grid)
 
@@ -5981,18 +6029,67 @@ def UpdateUnitCellsGrid(G2frame, data):
         '''This is called to adjust the sizes of objects in 
         the dataWindow display if that window is resized.
 
-        The only task at present is to match the width of the 
-        GSGrid tables (search results) to the new width of the 
-        window and make sure that each results table takes 
-        less than 1/2 of the available vertical space
+        The only task at present is to adjust the size of the 
+        GSGrid tables (search results) to be at most the new 
+        width of the window (less 15 pt to leave room for a 
+        scrollbar) but if the grid is smaller than that width
+        add 15 pt for the scroll bar (might not be needed). For 
+        the table height, make sure that each results table takes 
+        less than 1/2 of the available vertical space. 
         '''
         G2frame.dataWindow.Layout()
         wid,hgt = G2frame.dataWindow.GetSize()
-        wid,hgt = G2frame.dataWindow.GetSize()
-        for grid in resizeGrids:
-            grid.SetMaxSize((wid-15,int(hgt/2.5)))
+        for i,grid in enumerate(resizeGrids):
+            # save the initial value for BestSize, as it increases as SetMinSize
+            # gets changed
+            try:
+                gwid,ghgt = grid.initialGetBestSize
+            except:
+                grid.initialGetBestSize = grid.GetBestSize()
+                gwid,ghgt = grid.initialGetBestSize
+            grid.SetMaxSize((wid-15,int(hgt/2.5))) # leave inside on right room for scrollbar
+            # add a bit to the minimum width for the scroll bar (if there is room)
+            grid.SetMinSize((min(wid-15,gwid+15),min(int(hgt/2.5),ghgt)))
         event.Skip()
-            
+
+    def enableCellCtrls(event):
+        '''Enable the various Cell controls
+        '''
+        ssopt['SgResults'] = []  # clear try-all table
+        clearShowFlags() # clear flags in all tables
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+
+    def disableCellCtrls():
+        '''Disable the various Cell controls, when a cell is selected
+        from a search table
+        '''
+        # switching off the unit cell controls
+        for w in UCdisableList:
+            w.Enable(False)
+
+    def clearTryAll():
+        '''clear out the try-all table. Do this when showing a cell from 
+        any other search table or when any change is made to any cell 
+        parameters
+        '''
+        if SgDisplay:
+            SgDisplay.Destroy()
+            ssopt['SgResults'] = []  # clear try-all table
+            G2frame.dataWindow.Layout()
+
+    def clearShowFlags():
+        '''resets all the "Use" flags in all search tables
+        '''
+        for i,grid in enumerate(resizeGrids):
+            try:
+                for c in range(grid.GetNumberCols()):
+                    if grid.GetColLabelValue(c) == 'show':
+                        for r in range(grid.GetNumberRows()):
+                            grid.GetTable().SetValue(r,c,False)
+                            grid.ForceRefresh()
+                            break
+            except:
+                pass
     #### UpdateUnitCellsGrid code starts here
     # create all menubars accessed here
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)   # Needed below
@@ -6229,15 +6326,18 @@ def UpdateUnitCellsGrid(G2frame, data):
     cellList = []
     valDict = {}
     Info = {}
-        
+
+    UCdisableList = []
     bravSizer = wx.BoxSizer(wx.HORIZONTAL)
     bravSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Bravais  \n lattice ",style=wx.ALIGN_CENTER),0,WACV,5)
     bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb,size=(75,-1))
+    UCdisableList.append(bravSel)
     bravSel.SetSelection(bravaisSymb.index(controls[5]))
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     bravSizer.Add(bravSel,0,WACV)
     bravSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space  \n group  ",style=wx.ALIGN_CENTER),0,WACV,5)
     spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(100,-1))
+    UCdisableList.append(spcSel)
     try:
         spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
     except ValueError:
@@ -6246,10 +6346,12 @@ def UpdateUnitCellsGrid(G2frame, data):
     bravSizer.Add(spcSel,0,WACV)
     bravSizer.Add((5,-1))
     tryAll = wx.Button(G2frame.dataWindow,label='Try all?')
+    UCdisableList.append(tryAll)
     tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
     bravSizer.Add(tryAll,0,WACV)
     if 'E' not in Inst['Type'][0]:
         SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
+        UCdisableList.append(SSopt)
         SSopt.SetValue(ssopt.get('Use',False))
         SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
         bravSizer.Add(SSopt,0,WACV)
@@ -6263,10 +6365,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         cellSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT)
         if ifEdit:          #a,b,c,etc.
             cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange,size=(65,-1))
+            UCdisableList.append(cellVal)
             Info[cellVal.GetId()] = Id
             valSizer = wx.BoxSizer(wx.HORIZONTAL)
             valSizer.Add(cellVal,0,WACV)
             cellSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+            UCdisableList.append(cellSpin)
             cellSpin.SetValue(0)
             cellSpin.SetRange(-1,1)
             cellSpin.Bind(wx.EVT_SPIN, OnMoveCell)
@@ -6285,6 +6389,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                                  style=wx.ALIGN_CENTER),0,WACV)
     shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
     shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
+    UCdisableList.append(shiftSel)
     shiftSel.SetSelection(3)
     hSizer.Add(shiftSel,0,WACV)
     if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
@@ -6293,8 +6398,10 @@ def UpdateUnitCellsGrid(G2frame, data):
                                      style=wx.ALIGN_CENTER),0,WACV)
         zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
                 xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
+        UCdisableList.append(zero)
         hSizer.Add(zero,0,WACV)
         zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
+        UCdisableList.append(zeroVar)
         zeroVar.SetValue(controls[0])
         zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
         hSizer.Add(zeroVar,0,WACV)
@@ -6312,6 +6419,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Supersymmetry space group: '+SpSg+' '),0,WACV)
         selMG = wx.ComboBox(G2frame.dataWindow,value=ssopt['ssSymb'],
                 choices=ssChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        UCdisableList.append(selMG)
         selMG.Bind(wx.EVT_COMBOBOX, OnSelMG)
         ssSizer.Add(selMG,0,WACV)
         ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mod. vector: '),0,WACV)
@@ -6322,8 +6430,10 @@ def UpdateUnitCellsGrid(G2frame, data):
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 modVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,ssopt['ModVec'],i,
                     xmin=-.98,xmax=.98,nDig=(10,4),typeHint=float,OnLeave=OnModVal)
+                UCdisableList.append(modVal)
                 valSizer.Add(modVal,0,WACV)
                 modSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+                UCdisableList.append(modSpin)
                 modSpin.SetValue(0)
                 modSpin.SetRange(-1,1)
                 modSpin.Bind(wx.EVT_SPIN, OnMoveMod)
@@ -6334,18 +6444,22 @@ def UpdateUnitCellsGrid(G2frame, data):
             else:
                 modVal = wx.TextCtrl(G2frame.dataWindow,value=('%.3f'%(val)),
                     size=wx.Size(50,20),style=wx.TE_READONLY)
+                UCdisableList.append(modVal)
                 modVal.SetBackgroundColour(VERY_LIGHT_GREY)
                 ssSizer.Add(modVal,0,WACV)
         ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max. M: '),0,WACV)
         maxMH = wx.ComboBox(G2frame.dataWindow,value=str(ssopt['maxH']),
             choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        UCdisableList.append(maxMH)
         maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
         ssSizer.Add(maxMH,0,WACV)
         if len(peaks[0]):
             findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
+            UCdisableList.append(findMV)
             findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
             ssSizer.Add(findMV,0,WACV)
             findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
+            UCdisableList.append(findallMV)
             findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
             ssSizer.Add(findallMV,0,WACV)
         mainSizer.Add(ssSizer,0)
@@ -6353,32 +6467,35 @@ def UpdateUnitCellsGrid(G2frame, data):
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     littleSizer.Add((5,-1),0)
     hklShow = wx.Button(G2frame.dataWindow,label="Recalc hkl positions")
-    hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
+    hklShow.Bind(wx.EVT_BUTTON,enableCellCtrls)
     littleSizer.Add(hklShow,0,WACV)
     littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',style=wx.ALIGN_RIGHT),0,WACV)
     G2frame.PlotOpts['hklHighlight'] = G2frame.PlotOpts.get('hklHighlight',0)
     Sel = G2G.G2ChoiceButton(G2frame.dataWindow,[ 'None',] + [c+notEq0 for c in ('h','k','l')],
         indLoc=G2frame.PlotOpts,indKey='hklHighlight',onChoice=OnHklShow)
+    UCdisableList.append(Sel)
     littleSizer.Add(Sel,0,WACV)
 
     if 'E' not in Inst['Type'][0]:
         littleSizer.Add((5,-1))
         if not ssopt.get('Use',False):  # Show Extinct not available for super lattice
-            littleSizer.Add(G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',
-                cellDisplayOpts,'showExtinct',OnChange=OnHklShow),
-                                0,WACV)
+            showExt = G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',
+                cellDisplayOpts,'showExtinct',OnChange=OnHklShow)
+            UCdisableList.append(showExt)
+            littleSizer.Add(showExt,0,WACV)
         if 'N' in Inst['Type'][0]:
             MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
+            UCdisableList.append(MagSel)
             MagSel.SetValue('MagSpGrp' in SGData)
             MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
             littleSizer.Add(MagSel,0,WACV)
         if len(G2frame.HKL):
-            makePks = wx.Button(G2frame.dataWindow,label='Make Peak list')
+            makePks = wx.Button(G2frame.dataWindow,label='Copy refs to Peak list')
+            UCdisableList.append(makePks)
             makePks.Bind(wx.EVT_BUTTON,OnMakePks)
             # makePks.Enable(False) # TODO: this button causes problems
             # (peaklist should be a dict; what does it do?)
             littleSizer.Add(makePks,0,WACV)
-
     mainSizer.Add(littleSizer,0)
 
     # magnetic cell options
@@ -6397,6 +6514,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             pass
         BNS = wx.ComboBox(G2frame.dataWindow,value=SGData['BNSlattsym'][0],
             choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        UCdisableList.append(BNS)
         BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
         neutSizer.Add(BNS,0,WACV)
         spinColor = ['black','red']
@@ -6405,12 +6523,14 @@ def UpdateUnitCellsGrid(G2frame, data):
             neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' %s: '%(sym.strip())),0,WACV)                
             spinOp = wx.ComboBox(G2frame.dataWindow,value=spCode[SGData['SGSpin'][isym+1]],choices=spinColor,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)                
+            UCdisableList.append(spinOp)
             Indx[spinOp.GetId()] = isym
             spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
             neutSizer.Add(spinOp,0,WACV)
         OprNames,SpnFlp = G2spc.GenMagOps(SGData)
         SGData['SpnFlp'] = SpnFlp
         showSpins = wx.Button(G2frame.dataWindow,label=' Show spins?')
+        UCdisableList.append(showSpins)
         showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
         neutSizer.Add(showSpins,0,WACV)
         mainSizer.Add(neutSizer,0)
@@ -6424,8 +6544,11 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.dataWindow.currentGrids = []
     
     # space group search results
+    SgDisplay = None
     if len(ssopt.get('SgResults',[])):
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Space Group Search Results:'))
+        lbl = (' Space group search results from "Try all"'+
+                   '\n  '+ssopt.get('SgSettings',''))
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=lbl))
         colLabels = ['Sp Grp','show','M20','X20','Nhkl','fr. found']
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
             wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
@@ -6449,6 +6572,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     SgDisplay.SetReadOnly(r,c,isReadOnly=True)
         mainSizer.Add(SgDisplay)
         _setupResultsGrid(SgDisplay)
+        OnSelectSgrp(None)
         
     # cell search results
     if cells:
@@ -6539,8 +6663,9 @@ def UpdateUnitCellsGrid(G2frame, data):
 
             mainSizer.Add(hSizer)
         else:
-            mainSizer.Add(gridDisplay,1,wx.EXPAND,1)
-            _setupResultsGrid(gridDisplay)
+            #mainSizer.Add(gridDisplay,1,wx.EXPAND,1)
+            mainSizer.Add(gridDisplay)
+        _setupResultsGrid(gridDisplay)
             
     # Subgroup/magnetic s.g. search results
     if magcells and len(controls) > 16:
@@ -6601,7 +6726,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         _setupResultsGrid(magDisplay)
 
     # GUI creation done -- finally
-    G2frame.dataWindow.SetDataSize()
 #    if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
 #        G2plt.PlotPowderLines(G2frame)
 #    else:
@@ -6617,6 +6741,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     # setup for resizing
     G2frame.dataWindow.Unbind(wx.EVT_SIZE)
     G2frame.dataWindow.Bind(wx.EVT_SIZE,_onResize)
+    G2frame.dataWindow.SetDataSize()
 
 ################################################################################
 #####  Reflection list

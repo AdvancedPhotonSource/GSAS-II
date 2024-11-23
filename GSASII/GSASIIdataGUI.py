@@ -6733,7 +6733,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PeakMenu = _makemenu
 
         # PWDR / Index Peak List
-        G2G.Define_wxId('wxID_INDXRELOAD','wxID_INDEXSAVE','wxID_INDEXEXPORTDICVOL')
+        G2G.Define_wxId('wxID_INDXRELOAD','wxID_INDEXSAVE','wxID_INDEXEXPORTDICVOL','wxID_REFINECELL2')
         def _makemenu():     # routine to create menu when first used
             self.IndPeaksMenu = wx.MenuBar()
             self.PrefillDataMenu(self.IndPeaksMenu)
@@ -6742,7 +6742,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.IndPeaksEdit.Append(G2G.wxID_INDXRELOAD,'Load/Reload','Load/Reload index peaks from peak list')
             self.IndPeaksEdit.Append(G2G.wxID_INDEXSAVE,'Save','Save index peaks to CSV file')
             self.IndPeaksEdit.Append(G2G.wxID_INDEXEXPORTDICVOL,'Export to PreDICT','Export index peaks to PreDICT (.csv)')
+            self.RefineCell2 = self.IndPeaksEdit.Append(G2G.wxID_REFINECELL2,'Refine Cell',
+                'Refine unit cell parameters from indexed peaks')
             self.PostfillDataMenu()
+            #self.RefineCell2.Enable(False)
             SetDataMenuBar(G2frame,self.IndPeaksMenu)
         self.IndPeaksMenu = _makemenu
         

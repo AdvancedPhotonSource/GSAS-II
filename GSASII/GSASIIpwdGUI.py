@@ -70,7 +70,41 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 npsind = lambda x: np.sin(x*np.pi/180.)
 npasind = lambda x: 180.*np.arcsin(x)/math.pi
 npcosd = lambda x: np.cos(x*math.pi/180.)
-    
+
+cellDisplayOpts = {'showExtinct':False}
+cellGUIlist = [
+    [[0,1,2],4,([" a = "," Vol = "],[(10,5),"%.3f"],[True,False],[0,0])],
+    [[3,4,5,6],6,([" a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
+    [[7,8,9,10,11,12],8,([" a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
+        [True,True,True,False],[0,1,2,0])],
+    [[13,14,15,16],10,([" a = "," b = "," c = ",u'\u03B2 = '," Vol = "],
+        [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
+    [[17,18],8,([" a = "," b = "," c = ",u'\u03B1 = ',u'\u03B2 = ',u'\u03B3 = '," Vol = "],
+        [(10,5),(10,5),(10,5),(10,3),(10,3),(10,3),"%.3f"],
+        [True,True,True,True,True,True,False],[0,1,2,3,4,5,0])]]
+bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
+        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','A2/m','C2/m',
+        'P2/m','P1','C1']
+def SetLattice(controls):
+    '''impose constraints on lattice constaints and determine the 
+    Bravias lattice index (ibrav) as used in cellGUIlist
+    '''
+    ibrav = bravaisSymb.index(controls[5])
+    if controls[5] in ['Fm3m','Im3m','Pm3m']:
+        controls[7] = controls[8] = controls[6]
+        controls[9] = controls[10] = controls[11] = 90.
+    elif controls[5] in ['R3m','P6/mmm','I4/mmm','P4/mmm']:
+        controls[7] = controls[6]
+        controls[9] = controls[10] = controls[11] = 90.
+        if controls[5] in ['R3-H','P6/mmm']:
+            controls[11] = 120.
+    elif controls[5] in ['Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm']:
+        controls[9] = controls[10] = controls[11] = 90.
+    elif controls[5] in ['A2/m','C2/m','P2/m','I2/m']:
+        controls[9] = controls[11] = 90.  # b unique
+    controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
+    return ibrav
+
 ################################################################################
 ###### class definitions
 ################################################################################
@@ -648,10 +682,107 @@ def TestAtoms(phase,magAtms,SGData,Uvec,Trans,maxequiv=100,maximal=False):
         phase['Keep'] = False
     return uAtms
 
+def RefineCell(G2frame):
+    '''Refine a unit cell, called by OnRefine'''
+    def cellPrint(ibrav,A):
+        cell = G2lat.A2cell(A)
+        Vol = G2lat.calc_V(A)
+        if ibrav in ['Fm3m','Im3m','Pm3m']:
+            print (" %s%10.6f" % ('a =',cell[0]))
+        elif ibrav in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
+            print (" %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],' c =',cell[2],' volume =',Vol))
+        elif ibrav in ['P4/mmm','Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm']:
+            print (" %s%10.6f %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],' volume =',Vol))
+        elif ibrav in ['I2/m','A2/m','C2/m','P2/m']:
+            print (" %s%10.6f %s%10.6f %s%10.6f %s%8.3f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],'beta =',cell[4],' volume =',Vol))
+        else:
+            print (" %s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2]))
+            print (" %s%8.3f %s%8.3f %s%8.3f %s%12.3f" % ('alpha =',cell[3],'beta =',cell[4],'gamma =',cell[5],' volume =',Vol))
+            
+    def vecPrint(Vec):
+        print (' %s %10.5f %10.5f %10.5f'%('Modulation vector:',Vec[0],Vec[1],Vec[2]))
+         
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
+    if 'T' in Inst['Type'][0]:
+        difC = Inst['difC'][1]
+        dmin = G2lat.Pos2dsp(Inst,Limits[0])
+    elif 'E' in Inst['Type'][0]:
+        TTh = Inst['2-theta'][1]
+        dmin = G2lat.Pos2dsp(Inst,Limits[1])
+    else:   #'C', 'B', or 'PKS'
+        wave = G2mth.getWave(Inst)
+        dmin = G2lat.Pos2dsp(Inst,Limits[1])
+    PatternId = G2frame.PatternId
+    peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
+    controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
+    cell = controls[6:12]
+    A = G2lat.cell2A(cell)
+    ibrav = bravaisSymb.index(controls[5])
+    SGData = G2spc.SpcGroup(controls[13])[1]
+    if 'T' in Inst['Type'][0]:
+        if ssopt.get('Use',False):
+            vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
+            SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
+            G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
+            peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+            Lhkl,M20,X20,Aref,Vec,Zero = \
+                G2indx.refinePeaksTSS(peaks[0],difC,Inst,SGData,SSGData,ssopt['maxH'],ibrav,A,ssopt['ModVec'],vecFlags,controls[1],controls[0])
+        else:
+            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+            peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+            Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])
+    elif 'E' in Inst['Type'][0]:        #no super lattice stuff for EDX data - resolution too low
+        G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+        peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+        Lhkl,M20,X20,Aref = G2indx.refinePeaksE(peaks[0],TTh,ibrav,A)
+        Zero = 0.0
+    else:   
+        if ssopt.get('Use',False):
+            vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
+            SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
+            G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
+            peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+            Lhkl,M20,X20,Aref,Vec,Zero = \
+                G2indx.refinePeaksZSS(peaks[0],wave,Inst,SGData,SSGData,ssopt['maxH'],ibrav,A,ssopt['ModVec'],vecFlags,controls[1],controls[0])
+        else:
+            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+            peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+            Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
+    controls[1] = Zero
+    controls[6:12] = G2lat.A2cell(Aref)
+    controls[12] = G2lat.calc_V(Aref)
+    # why do this? if needed should be in OnRefine
+    #cells = G2frame.GPXtree.GetItemPyData(UnitCellsId)[2]
+    #for cell in cells:
+    #    cell[-2] = False
+    #cells.insert(0,[M20,X20,ibrav]+controls[6:13]+[True,False])
+    if ssopt.get('Use',False):
+        ssopt['ModVec'] = Vec
+        G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
+    else:
+        G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+    G2frame.HKL = np.array(G2frame.HKL)
+    data = [controls,bravais,cells,dmin,ssopt,magcells]
+    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
+    print (" %s%10.3f" % ('refinement M20 = ',M20))
+    print (' unindexed lines = %d'%X20)
+    cellPrint(controls[5],Aref)
+    ip = 4
+    if ssopt.get('Use',False):
+        vecPrint(Vec)
+        ip = 5
+    for hkl in G2frame.HKL:
+        hkl[ip] = G2lat.Dsp2pos(Inst,hkl[ip-1])+controls[1]
+    if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
+        G2plt.PlotPowderLines(G2frame)
+    else:
+        G2pwpl.PlotPatterns(G2frame)
+    return data
+
 ################################################################################
 #####  Powder Peaks
 ################################################################################
-
 def UpdatePeakGrid(G2frame, data):
     '''respond to selection of PWDR powder peaks data tree item.
     '''
@@ -1233,7 +1364,6 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.dataWindow.ClearData()
         topSizer = G2frame.dataWindow.topBox
         parent = G2frame.dataWindow.topPanel
-        blbl = ''
         if 'N' in Inst['Type'][0]:
             lbl = 'List of k-vector/impurity or subgroup defining peaks'
         else:
@@ -3846,8 +3976,6 @@ def UpdateIndexPeaksGrid(G2frame, data):
     '''respond to selection of PWDR Index Peak List data
     tree item.
     '''
-    bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
-        'P4/mmm','Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','C2/m','P2/m','C1','P1']
     IndexId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     limitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
@@ -3943,6 +4071,10 @@ def UpdateIndexPeaksGrid(G2frame, data):
                     elif key == 83: # 'S'
                         for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col] = not data[0][row][col]
 
+    def onRefineCell(event):
+        RefineCell(G2frame)
+        UpdateIndexPeaksGrid(G2frame,data)
+        
     # start of UpdateIndexPeaksGrid
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu) # needed below
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu) # needed below
@@ -3951,6 +4083,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
         G2frame.Bind(wx.EVT_MENU, OnReload, id=G2G.wxID_INDXRELOAD)
         G2frame.Bind(wx.EVT_MENU, OnSave, id=G2G.wxID_INDEXSAVE)
         G2frame.Bind(wx.EVT_MENU, OnExportPreDICT, id=G2G.wxID_INDEXEXPORTDICVOL)
+        G2frame.Bind(wx.EVT_MENU, onRefineCell, id=G2G.wxID_REFINECELL2)
     G2frame.dataWindow.IndexPeaks.Enable(False)
     G2frame.IndexPeaksTable = []
     if len(data[0]):
@@ -3971,7 +4104,6 @@ def UpdateIndexPeaksGrid(G2frame, data):
             if ssopt.get('Use',False):
                 cell = controls[6:12]
                 A = G2lat.cell2A(cell)
-                ibrav = bravaisSymb.index(controls[5])
                 spc = controls[13]
                 SGData = G2spc.SpcGroup(spc)[1]
                 SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
@@ -4036,31 +4168,50 @@ def UpdateIndexPeaksGrid(G2frame, data):
     mainSizer = G2frame.dataWindow.GetSizer()
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add(G2frame.indxPeaks,1,wx.EXPAND,1)
+    botSizer = G2frame.dataWindow.bottomBox
+    parent = G2frame.dataWindow.bottomPanel
+    ibrav = SetLattice(controls)
+    for cellGUI in cellGUIlist:
+        if ibrav in cellGUI[0]:
+            useGUI = cellGUI
+    botSizer.Add(wx.StaticText(parent,label='Cell: ',style=wx.ALIGN_RIGHT),0,WACV)
+    cellSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),3,3)
+    botSizer.Add(cellSizer,0,WACV)
+    for txt,fmt,ifEdit,Id in zip(*useGUI[2]):
+        if 'Vol' in txt:
+            val = fmt % controls[12]
+            botSizer.Add(wx.StaticText(parent,label=txt,style=wx.ALIGN_RIGHT),0,WACV)
+            volVal = wx.TextCtrl(parent,value=val,style=wx.TE_READONLY,size=(65,-1))
+            botSizer.Add(volVal,0,WACV)
+        else:
+            val = f'%.{fmt[1]}f' % controls[6+Id]
+            cellSizer.Add(wx.StaticText(parent,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT|WACV)
+            volVal = wx.TextCtrl(parent,value=val,style=wx.TE_READONLY,size=(65,-1))
+            cellSizer.Add(volVal,0,WACV)
+        volVal.SetBackgroundColour(VERY_LIGHT_GREY)
+    if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
+        botSizer.Add((15,-1))
+        vcSizer =  wx.BoxSizer(wx.VERTICAL)
+        vcSizer.Add(wx.StaticText(parent,label="Zero offset",
+                                     style=wx.ALIGN_CENTER),0,wx.EXPAND)
+        hcSizer = wx.BoxSizer(wx.HORIZONTAL)
+        zero = G2G.ValidatedTxtCtrl(parent,controls,1,nDig=(10,4),typeHint=float,
+                xmin=-5.,xmax=5.,size=(50,-1))
+        hcSizer.Add(zero,0,WACV)
+        zeroVar = G2G.G2CheckBox(parent,'Ref?',controls,0)
+        hcSizer.Add(zeroVar,0,WACV|wx.LEFT,3)
+        vcSizer.Add(hcSizer)
+        botSizer.Add(vcSizer,0,WACV)
+# TODO: get SUs from cell refinement
+# TODO: implement Enable on G2frame.dataWindow.RefineCell2 to match G2frame.dataWindow.RefineCell
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################
 #####  Unit cells
 ################################################################################
-cellDisplayOpts = {'showExtinct':False}
 def UpdateUnitCellsGrid(G2frame, data):
     '''respond to selection of PWDR Unit Cells data tree item.
     '''    
-    def SetLattice(controls):
-        ibrav = bravaisSymb.index(controls[5])
-        if controls[5] in ['Fm3m','Im3m','Pm3m']:
-            controls[7] = controls[8] = controls[6]
-            controls[9] = controls[10] = controls[11] = 90.
-        elif controls[5] in ['R3m','P6/mmm','I4/mmm','P4/mmm']:
-            controls[7] = controls[6]
-            controls[9] = controls[10] = controls[11] = 90.
-            if controls[5] in ['R3-H','P6/mmm']:
-                controls[11] = 120.
-        elif controls[5] in ['Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm']:
-            controls[9] = controls[10] = controls[11] = 90.
-        elif controls[5] in ['A2/m','C2/m','P2/m','I2/m']:
-            controls[9] = controls[11] = 90.  # b unique
-        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
-        return ibrav
         
     def OnNcNo(event):
         controls[2] = NcNo.GetValue()
@@ -4072,9 +4223,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj = event.GetEventObject()
         bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
                 
-    def OnZeroVar(event):
-        controls[0] = zeroVar.GetValue()
-        
     def OnSSopt(event):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
             SSopt.SetValue(False)
@@ -4264,7 +4412,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         'Called when the Space Group Search Results show column is checked'
         show = False
         if event is not None:
-            r,c = event.GetRow(),event.GetCol()
+            r,_ = event.GetRow(),event.GetCol()
             for i in range(len(ssopt['SgResults'])):
                 ssopt['SgResults'][i][1] = False
                 SgTable.SetValue(i,1,False)
@@ -4605,92 +4753,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
-    def RefineCell(event):
-        
-        def cellPrint(ibrav,A):
-            cell = G2lat.A2cell(A)
-            Vol = G2lat.calc_V(A)
-            if ibrav in ['Fm3m','Im3m','Pm3m']:
-                print (" %s%10.6f" % ('a =',cell[0]))
-            elif ibrav in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
-                print (" %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],' c =',cell[2],' volume =',Vol))
-            elif ibrav in ['P4/mmm','Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm']:
-                print (" %s%10.6f %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],' volume =',Vol))
-            elif ibrav in ['I2/m','A2/m','C2/m','P2/m']:
-                print (" %s%10.6f %s%10.6f %s%10.6f %s%8.3f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],'beta =',cell[4],' volume =',Vol))
-            else:
-                print (" %s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2]))
-                print (" %s%8.3f %s%8.3f %s%8.3f %s%12.3f" % ('alpha =',cell[3],'beta =',cell[4],'gamma =',cell[5],' volume =',Vol))
-                
-        def vecPrint(Vec):
-            print (' %s %10.5f %10.5f %10.5f'%('Modulation vector:',Vec[0],Vec[1],Vec[2]))
-             
-        PatternId = G2frame.PatternId
-        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
-        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
-        cell = controls[6:12]
-        A = G2lat.cell2A(cell)
-        ibrav = bravaisSymb.index(controls[5])
-        SGData = G2spc.SpcGroup(controls[13])[1]
-        if 'T' in Inst['Type'][0]:
-            if ssopt.get('Use',False):
-                vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
-                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
-                G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
-                peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-                Lhkl,M20,X20,Aref,Vec,Zero = \
-                    G2indx.refinePeaksTSS(peaks[0],difC,Inst,SGData,SSGData,ssopt['maxH'],ibrav,A,ssopt['ModVec'],vecFlags,controls[1],controls[0])
-            else:
-                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
-                peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-                Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])
-        elif 'E' in Inst['Type'][0]:        #no super lattice stuff for EDX data - resolution too low
-            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
-            peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-            Lhkl,M20,X20,Aref = G2indx.refinePeaksE(peaks[0],TTh,ibrav,A)
-            Zero = 0.0
-        else:   
-            if ssopt.get('Use',False):
-                vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
-                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
-                G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
-                peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-                Lhkl,M20,X20,Aref,Vec,Zero = \
-                    G2indx.refinePeaksZSS(peaks[0],wave,Inst,SGData,SSGData,ssopt['maxH'],ibrav,A,ssopt['ModVec'],vecFlags,controls[1],controls[0])
-            else:
-                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
-                peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-                Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
-        controls[1] = Zero
-        controls[6:12] = G2lat.A2cell(Aref)
-        controls[12] = G2lat.calc_V(Aref)
-        cells = G2frame.GPXtree.GetItemPyData(UnitCellsId)[2]
-        for cell in cells:
-            cell[-2] = False
-        cells.insert(0,[M20,X20,ibrav]+controls[6:13]+[True,False])
-        if ssopt.get('Use',False):
-            ssopt['ModVec'] = Vec
-            G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
-        else:
-            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
-        G2frame.HKL = np.array(G2frame.HKL)
-        data = [controls,bravais,cells,dmin,ssopt,magcells]
-        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
-        print (" %s%10.3f" % ('refinement M20 = ',M20))
-        print (' unindexed lines = %d'%X20)
-        cellPrint(controls[5],Aref)
-        ip = 4
-        if ssopt.get('Use',False):
-            vecPrint(Vec)
-            ip = 5
-        for hkl in G2frame.HKL:
-            hkl[ip] = G2lat.Dsp2pos(Inst,hkl[ip-1])+controls[1]
-        if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-            G2plt.PlotPowderLines(G2frame)
-        else:
-            G2pwpl.PlotPatterns(G2frame)
+    def onRefineCell(event):
+        data = RefineCell(G2frame)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-        
+
     def OnIndexPeaks(event):
         PatternId = G2frame.PatternId    
         #print ('Peak Indexing')
@@ -6101,8 +6167,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.CancelSetLimitsMode.Enable(False)
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
-    bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
-        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','A2/m','C2/m','P2/m','P1','C1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
         'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','I 2/m','A 2/m','C 2/m','P 2/m','P -1','C -1']
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
@@ -6126,7 +6190,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
     G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
     G2frame.Bind(wx.EVT_MENU, TransformUnitCell, id=G2G.wxID_TRANSFORMCELL)
-    G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2G.wxID_REFINECELL)
+    G2frame.Bind(wx.EVT_MENU, onRefineCell, id=G2G.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)
     G2frame.Bind(wx.EVT_MENU, OnShowGenRefls, id=G2G.wxID_SHOWGENHKLS)
@@ -6148,15 +6212,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-A',
         'Orthorhombic-B','Orthorhombic-C','Orthorhombic-P',
         'Monoclinic-I','Monoclinic-A','Monoclinic-C','Monoclinic-P','Triclinic','Triclinic',]
-    cellGUIlist = [[[0,1,2],4,zip([" a = "," Vol = "],[(10,5),"%.3f"],[True,False],[0,0])],
-    [[3,4,5,6],6,zip([" a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
-    [[7,8,9,10,11,12],8,zip([" a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
-        [True,True,True,False],[0,1,2,0])],
-    [[13,14,15,16],10,zip([" a = "," b = "," c = ",u'\u03B2 = '," Vol = "],
-        [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-    [[17,18],8,zip([" a = "," b = "," c = ",u'\u03B1 = ',u'\u03B2 = ',u'\u03B3 = '," Vol = "],
-        [(10,5),(10,5),(10,5),(10,3),(10,3),(10,3),"%.3f"],
-        [True,True,True,True,True,True,False],[0,1,2,3,4,5,0])]]
     
     G2frame.dataWindow.IndexPeaks.Enable(False)
     peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
@@ -6361,8 +6416,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     
     hSizer = wx.BoxSizer(wx.HORIZONTAL)
     cellSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),3,3)
-    for txt,fmt,ifEdit,Id in useGUI[2]:
-        cellSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT)
+    for txt,fmt,ifEdit,Id in zip(*useGUI[2]):
+        cellSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT|WACV)
         if ifEdit:          #a,b,c,etc.
             cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange,size=(65,-1))
             UCdisableList.append(cellVal)
@@ -6383,28 +6438,32 @@ def UpdateUnitCellsGrid(G2frame, data):
             volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY,size=(65,-1))
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             cellSizer.Add(volVal,0,WACV)
-    hSizer.Add(cellSizer,0)
-    hSizer.Add((3,-1))
-    hSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell\nstep',
-                                 style=wx.ALIGN_CENTER),0,WACV)
+    hSizer.Add(cellSizer,0,WACV)
+    hSizer.Add((10,-1))
+    vcSizer =  wx.BoxSizer(wx.VERTICAL)
+    vcSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell step',
+                                 style=wx.ALIGN_CENTER),0,wx.EXPAND)
     shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
     shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
     UCdisableList.append(shiftSel)
     shiftSel.SetSelection(3)
-    hSizer.Add(shiftSel,0,WACV)
+    vcSizer.Add(shiftSel)
+    hSizer.Add(vcSizer,0,WACV)
     if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
-        hSizer.Add((3,-1))
-        hSizer.Add(wx.StaticText(G2frame.dataWindow,label="Zero\noffset",
-                                     style=wx.ALIGN_CENTER),0,WACV)
+        hSizer.Add((15,-1))
+        vcSizer =  wx.BoxSizer(wx.VERTICAL)
+        vcSizer.Add(wx.StaticText(G2frame.dataWindow,label="Zero offset",
+                                     style=wx.ALIGN_CENTER),0,wx.EXPAND)
+        hcSizer = wx.BoxSizer(wx.HORIZONTAL)
         zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
                 xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
         UCdisableList.append(zero)
-        hSizer.Add(zero,0,WACV)
-        zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
+        hcSizer.Add(zero,0,WACV)
+        zeroVar = G2G.G2CheckBox(G2frame.dataWindow,'Ref?',controls,0)
         UCdisableList.append(zeroVar)
-        zeroVar.SetValue(controls[0])
-        zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
-        hSizer.Add(zeroVar,0,WACV)
+        hcSizer.Add(zeroVar,0,WACV|wx.LEFT,3)
+        vcSizer.Add(hcSizer)
+        hSizer.Add(vcSizer,0,WACV)
     mainSizer.Add(hSizer,0)
     if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]

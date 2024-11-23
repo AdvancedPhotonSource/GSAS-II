@@ -194,11 +194,11 @@ class SubCellsDialog(wx.Dialog):
         self.panel = wx.Panel(self)
         rowLabels = [str(i+1) for i in range(len(self.items))]
         if self.ifPick:
-            colLabels = ['Space Gp','Pick','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
+            colLabels = ['Space Gp','Pick','Uniq','nConj','nSup','Trans','Vec','a','b','c','\u03B1','\u03B2','\u03B3','Volume']
             Types = [wg.GRID_VALUE_STRING,]+[wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
                 3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
         else:
-            colLabels = ['Space Gp','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
+            colLabels = ['Space Gp','Uniq','nConj','nSup','Trans','Vec','a','b','c','\u03B1','\u03B2','\u03B3','Volume']
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
                 3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
         table = []
@@ -4223,12 +4223,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj = event.GetEventObject()
         bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
                 
-    def OnSSopt(event):
+    def OnSSselect(event):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
-            SSopt.SetValue(False)
+            SSselect.SetValue(False)
             G2frame.ErrorDialog('Cubic lattice','Incommensurate superlattice not possible with a cubic lattice')
             return
-        ssopt['Use'] = SSopt.GetValue()
+        ssopt['Use'] = SSselect.GetValue()
         if 'ssSymb' not in ssopt:
             ssopt.update({'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -4553,7 +4553,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         spc = controls[13]
-        SGData = ssopt.get('SGData',G2spc.SpcGroup(spc)[1])
+        # I'm not sure when to use spc and when to use ssopt, but I am seeing
+        # them in conflict. I'll assume the Use flag dictates this.
+        # TODO: Bob, please review.
+        if ssopt.get('Use',False):
+            SGData = ssopt.get('SGData',G2spc.SpcGroup(spc)[1])
+        else:
+            SGData = G2spc.SpcGroup(spc)[1]
         Symb = SGData['SpGrp']
         M20 = X20 = 0.
         if ssopt.get('Use',False) and ssopt.get('ssSymb',''):
@@ -6172,13 +6178,13 @@ def UpdateUnitCellsGrid(G2frame, data):
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'T' in Inst['Type'][0]:
-        difC = Inst['difC'][1]
+        #difC = Inst['difC'][1]
         dmin = G2lat.Pos2dsp(Inst,Limits[0])
     elif 'E' in Inst['Type'][0]:
-        TTh = Inst['2-theta'][1]
+        #TTh = Inst['2-theta'][1]
         dmin = G2lat.Pos2dsp(Inst,Limits[1])
     else:   #'C', 'B', or 'PKS'
-        wave = G2mth.getWave(Inst)
+        #wave = G2mth.getWave(Inst)
         dmin = G2lat.Pos2dsp(Inst,Limits[1])
     G2frame.GetStatusBar().SetStatusText('')
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
@@ -6405,11 +6411,11 @@ def UpdateUnitCellsGrid(G2frame, data):
     tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
     bravSizer.Add(tryAll,0,WACV)
     if 'E' not in Inst['Type'][0]:
-        SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
-        UCdisableList.append(SSopt)
-        SSopt.SetValue(ssopt.get('Use',False))
-        SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
-        bravSizer.Add(SSopt,0,WACV)
+        SSselect = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
+        UCdisableList.append(SSselect)
+        SSselect.SetValue(ssopt.get('Use',False))
+        SSselect.Bind(wx.EVT_CHECKBOX,OnSSselect)
+        bravSizer.Add(SSselect,0,WACV)
         if ssopt.get('Use',False):        #zero for super lattice doesn't work!
             controls[0] = False
     mainSizer.Add(bravSizer,0)
@@ -6660,7 +6666,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Cell symmetry search:'))
             colLabels = ['show']
             Types = [wg.GRID_VALUE_BOOL]
-            colLabels += ['a','b','c','alpha','beta','gamma','Volume','Keep']
+            colLabels += ['a','b','c','\u03B1','\u03B2','\u03B3','Volume','Keep']
             Types += (3*[wg.GRID_VALUE_FLOAT+':10,5',]+
                   3*[wg.GRID_VALUE_FLOAT+':10,3',]+
                   [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL])
@@ -6670,7 +6676,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             colLabels = ['M20','X20','show','Bravais']
             Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
                          wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING]
-            colLabels += ['a','b','c','alpha','beta','gamma','Volume','Keep']
+            colLabels += ['a','b','c','\u03B1','\u03B2','\u03B3','Volume','Keep']
             Types += (3*[wg.GRID_VALUE_FLOAT+':10,5',]+
                     3*[wg.GRID_VALUE_FLOAT+':10,3',]+
                     [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL])
@@ -6748,7 +6754,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         Label += ':'
         mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label))
         rowLabels = [str(i+1) for i in range(len(baseList))]
-        colLabels = ['Space Gp','Try','Keep','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
+        colLabels = ['Space Gp','Try','Keep','Uniq','nConj','nSup','Trans','Vec','a','b','c','\u03B1','\u03B2','\u03B3','Volume']
         Types = [wg.GRID_VALUE_STRING,]+2*[wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
         table = []
@@ -7023,16 +7029,16 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 colLabels.insert(3,'M')
         else:
             if 'C' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig\u00b2','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig\u00b2','gam','Fo\u00b2','Fc\u00b2','phase','Icorr','Prfo','Trans','ExtP','I100','\u03bcstrain','Size']
                 Types += 6*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif 'T' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig\u00b2','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig\u00b2','gam','Fo\u00b2','Fc\u00b2','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100','\u03bcstrain','Size']
                 Types += 9*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif Inst['Type'][0][2] in ['A','B']:
-                colLabels = ['H','K','L','mul','d','pos','sig\u00b2','gam','Fosq','Fcsq','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','mustrain','Size']
+                colLabels = ['H','K','L','mul','d','pos','sig\u00b2','gam','Fo\u00b2','Fc\u00b2','phase','Icorr','alp','bet','Prfo','Abs','Ext','I100','\u03bcstrain','Size']
                 Types += 8*[wg.GRID_VALUE_FLOAT+':10,3',]
             elif 'E' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','pos','sig\u00b2','gam','Fosq','Fcsq','phase','Icorr','I100']
+                colLabels = ['H','K','L','mul','d','pos','sig\u00b2','gam','Fo\u00b2','Fc\u00b2','phase','Icorr','I100']
                 Types += [wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')

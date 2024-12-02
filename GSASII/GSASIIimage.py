@@ -665,11 +665,12 @@ def GetTthAzmG2(x,y,data):
     tth = npatan2d(np.sqrt(xyZ),dist-dz+dzp) 
     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
 # G-calculation - use Law of sines
+    distm = data['distance']/1000.0
     sinB2 = np.minimum(np.ones_like(tth),
                     (data['distance']*npsind(tth))**2/(dx**2+dy**2))
     #sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
-    G = data['distance']**2*sinB2/npsind(C)**2
+    G = distm**2*sinB2/npsind(C)**2
     return tth,azm,G
 
 def GetTthAzmG(x,y,data):
@@ -707,11 +708,12 @@ def GetTthAzmG(x,y,data):
     tth = npacosd(ctth)
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
 # G-calculation - use Law of sines
+    distm = data['distance']/1000.0
     sinB2 = np.minimum(np.ones_like(tth),
                     (data['distance']*npsind(tth))**2/(dx**2+dy**2))
     #sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
-    G = data['distance']**2*sinB2/npsind(C)**2
+    G = distm**2*sinB2/npsind(C)**2
     return tth,azm,G
 
 def meanAzm(a,b):

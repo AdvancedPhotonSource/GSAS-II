@@ -1634,7 +1634,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
-    H0 *= (data['distance']/1000.)**2    #remove r^2 effect
+    # H0 *= (data['distance']/1000.)**2    #remove r^2 effect - done earlier
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:

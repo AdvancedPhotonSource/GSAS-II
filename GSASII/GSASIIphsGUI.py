@@ -1903,13 +1903,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 modulated.SetValue(generalData['Modulated'])
                 modulated.Bind(wx.EVT_CHECKBOX,OnModulated)
                 nameSizer.Add(modulated,0,WACV)           
-            # add help button to bring up help web page - at right sede of window
-            nameSizer.Add((-1,-1),1,WACV)
-            nameSizer.Add(G2G.HelpButton(General,helpIndex=G2frame.dataWindow.helpKey),0,WACV)
             return nameSizer
             
         def CellSizer():
-            
             cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
             [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,3,0])],
             [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "," Vol = "],["%.5f","%.5f","%.3f"],[True,True,False],[0,2,0])],
@@ -2854,6 +2850,15 @@ def UpdatePhaseData(G2frame,Item,data):
 #end patches
         if General.GetSizer():
             General.GetSizer().Clear(True)
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Overall params for {generalData['Name']!r} (type={data['General']['Type']})"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(NameSizer(),0,wx.EXPAND)
@@ -4664,11 +4669,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 oldSizer.Clear(True)
             Atoms.AutoSizeColumns(False)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(AtomList,label='Atom parameters list for %s:'%generalData['Name']),0,WACV)
-            topSizer.Add((-1,-1),1,wx.EXPAND)
-            topSizer.Add(G2G.HelpButton(AtomList,helpIndex=G2frame.dataWindow.helpKey))
-            mainSizer.Add(topSizer,0,wx.EXPAND)
             mainSizer.Add(Atoms)
             SetPhaseWindow(AtomList,mainSizer,Scroll=Atoms.GetScrollPos(wx.VERTICAL))
 
@@ -4676,6 +4676,14 @@ def UpdatePhaseData(G2frame,Item,data):
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         generalData = data['General']
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Atom parameters list for {generalData['Name']}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
         cell = generalData['Cell'][1:7]
         Amat = G2lat.cell2AB(cell)[0]
         GS = G2lat.cell2GS(cell)
@@ -5708,11 +5716,15 @@ def UpdatePhaseData(G2frame,Item,data):
         if 'clear' not in DysData:
             DysData['clear'] = True
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(MEMData,label=' Maximum Entropy Method (Dysnomia) controls:'))
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl = f"Maximum Entropy Method (Dysnomia) controls for {data['General']['Name']!r}"
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(MEMData,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(topSizer,0,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+        
         mainSizer.Add(wx.StaticText(MEMData,label=cite))
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
         lineSizer.Add(wx.StaticText(MEMData,label=' MEM Optimization method: '),0,WACV)
@@ -7492,7 +7504,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 G2frame.FRMC.GetSizer().Clear(True)
         except: #wxAssertionError from C++
             pass
-        bigSizer = wx.BoxSizer(wx.HORIZONTAL)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not len(data['Atoms']):
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label='No atoms found - PDF fitting not possible'))
@@ -7524,9 +7535,15 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             else:       #PDFfit
                 mainSizer.Add(PDFfitSizer(data))
 
-        bigSizer.Add(mainSizer,1,wx.EXPAND)
-        bigSizer.Add(G2G.HelpButton(G2frame.FRMC,helpIndex=G2frame.dataWindow.helpKey))
-        SetPhaseWindow(G2frame.FRMC,bigSizer)
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"PDF fitting options {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+        SetPhaseWindow(G2frame.FRMC,mainSizer)
 
         if G2frame.RMCchoice == 'PDFfit' and not checkPDFfit(G2frame):
             RMCmisc['RMCnote'].SetLabel('PDFfit may not be installed or operational')
@@ -8750,11 +8767,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             ConstrData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Constraints'))
             pId = data['ranId']
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(ISODIST,label=' ISODISTORT distortion modes for phase %s'%data['General']['Name']),0,wx.BOTTOM,5)
-            topSizer.Add((-1,-1),1,wx.EXPAND,1)
-            topSizer.Add(G2G.HelpButton(ISODIST,helpIndex=G2frame.dataWindow.helpKey),0,wx.ALIGN_TOP)
-            mainSizer.Add(topSizer,0,wx.EXPAND)
             if SGLaue not in ['mmm','2/m','-1']:
                 mainSizer.Add(wx.StaticText(ISODIST,label=' NB: ISODISTORT distortion mode symmetry is too high to be used in PDFfit'))
             mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite))
@@ -8820,7 +8832,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             SetPhaseWindow(ISODIST,mainSizer,Scroll=Scroll)                
         
         #### UpdateISODISTORT code starts here
-        Indx = {}      
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"ISODISTORT distortion modes for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+        Indx = {}
         ISOdata = data['ISODISTORT']
         SGLaue = data['General']['SGData']['SGLaue']
         G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_ISODNEWPHASE,'rundata' in ISOdata)
@@ -10321,6 +10341,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             G2plt.PlotStructure(G2frame,data)
 
 #### UpdateDrawAtoms executable code starts here
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Draw Atom list for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
         G2frame.GetStatusBar().SetStatusText('',1)
         oldSizer = drawAtomsList.GetSizer()
         if oldSizer: # 2nd+ use, clear out old entries
@@ -10413,11 +10441,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 drawAtoms.SetColAttr(c,attr)
                 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(drawAtomsList,label='Draw Atom list for %s:'%generalData['Name']),0,WACV)
-        topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(drawAtomsList,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(topSizer,0,wx.EXPAND)
         mainSizer.Add(drawAtoms)
         SetPhaseWindow(drawAtomsList,mainSizer)
 
@@ -11792,9 +11815,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 OnLeave=onLeave))
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
             return mapSizer
-            
 
         # UpdateDrawOptions exectable code starts here
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Drawing controls for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SetupDrawingData()
@@ -11805,12 +11835,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         if drawOptions.GetSizer():
             drawOptions.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(drawOptions,label=' Drawing controls:'),0,WACV)
-        # add help button to bring up help web page - at right side of window
-        topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(drawOptions,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(topSizer,0,wx.EXPAND)
         mainSizer.Add(SlopSizer(),0)
         G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(ShowSizer(),0,)
@@ -11986,7 +12010,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             dId = atomList[atSel.GetValue()]
             wx.CallAfter(UpdateDeformation,dId)
         
-        # UpdateDeformation exectable code starts here
+        # UpdateDeformation executable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -12009,15 +12033,21 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         elif len(atomList):
             AtChoice = list(atomList.keys())[0]
             dId = atomList[AtChoice]
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Atomic deformation data for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+            
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(deformation,label=' Atomic deformation data: Select atom '),0,WACV)
+        topSizer.Add(wx.StaticText(deformation,label=' Select an atom '),0,WACV)
         atSel = wx.ComboBox(deformation,value=AtChoice,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
         atSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
         topSizer.Add(atSel,0,WACV)
-        # add help button to bring up help web page - at right side of window
-        topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(deformation,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer.Add(topSizer,0,wx.EXPAND)
         if dId is not None:
             Indx = {}
@@ -12455,14 +12485,17 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             mainSizer.Add(wx.StaticText(Texture,wx.ID_ANY,
             '\n *** To remove this texture: Turn off refinement and set Harmonic order to zero below.\n'))
         G2G.HorizontalLine(mainSizer,Texture)
-        
-        titleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        titleSizer.Add(wx.StaticText(Texture,label=' Spherical harmonics texture data for '+PhaseName+':'),0,WACV)
-        titleSizer.Add(wx.StaticText(Texture,label=' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),0,WACV)
-        # add help button to bring up help web page - at right side of window
-        titleSizer.Add((-1,-1),1,wx.EXPAND)
-        titleSizer.Add(G2G.HelpButton(Texture,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(titleSizer,0,wx.EXPAND)
+
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Spherical harmonics texture data for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+
+        mainSizer.Add(wx.StaticText(Texture,label=' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))))
         mainSizer.Add((0,5),0)
         shSizer = wx.FlexGridSizer(0,6,5,5)
         shSizer.Add(wx.StaticText(Texture,-1,' Texture model: '),0,WACV)
@@ -13632,11 +13665,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             atomStyle = 'sticks'
         G2frame.GetStatusBar().SetStatusText('',1)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(RigidBodies,label='Select rigid body to view:'),0,WACV)
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Select rigid body to view for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(RigidBodies,helpIndex=G2frame.dataWindow.helpKey),0,WACV)
-        mainSizer.Add(topSizer,0,wx.EXPAND,0)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
         nobody = True
         resSelect = None
         vecSelect = None
@@ -15198,6 +15234,14 @@ of the crystal structure.
 #        if 'macro' in general['Type']:
 #            atomStyle = 'sticks'
         G2frame.GetStatusBar().SetStatusText('',1)
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Monte Carlo/Simulated Annealing for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not data['MCSA']['Models']:
             mainSizer.Add((5,5),0)
@@ -15205,12 +15249,7 @@ of the crystal structure.
             mainSizer.Add((5,5),0)
         else:
             mainSizer.Add((5,5),0)
-            topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(G2frame.MCSA,label='MC/SA models:'),0,WACV)
-            # add help button to bring up help web page - at right sede of window
-            topSizer.Add((-1,-1),1,wx.EXPAND)
-            topSizer.Add(G2G.HelpButton(G2frame.MCSA,helpIndex=G2frame.dataWindow.helpKey))
-            mainSizer.Add(topSizer,0,wx.EXPAND)
+            mainSizer.Add(wx.StaticText(G2frame.MCSA,label='MC/SA models:'))
             mainSizer.Add((5,5),0)
             rbNames = []
             rbids = []
@@ -15487,14 +15526,19 @@ of the crystal structure.
         PawleyPeaks = data['Pawley ref']
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
         if len(PawleyPeaks) and generalData['doPawley']:            
-            topSizer.Add(wx.StaticText(PawleyRefList,label='Pawley reflections for %s:'%generalData['Name']),0,WACV)
+            lbl= f"Pawley reflections for {data['General']['Name']!r}"[:60]
         else:
-            topSizer.Add(wx.StaticText(PawleyRefList,label='There are no Pawley reflections for %s:'%generalData['Name']),0,WACV)
+            lbl= f"There are no Pawley reflections for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(PawleyRefList,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(topSizer,0,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+        
         rowLabels = []
         if len(PawleyPeaks) and generalData['doPawley']:
             for i in range(len(PawleyPeaks)): rowLabels.append(str(i))
@@ -15883,12 +15927,17 @@ of the crystal structure.
                 if type(i.GetWindow()) is G2G.GSGrid:
                     oldSizer.Detach(i.GetWindow())  # don't delete them
             oldSizer.Clear(True)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(MapPeakList,label='Fourier map peak positions for %s:'%data['General']['Name']),0,WACV)
+            
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= f"Fourier map peak positions for {data['General']['Name']!r}"[:60]
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(MapPeakList,helpIndex=G2frame.dataWindow.helpKey))
-        mainSizer.Add(topSizer,0,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+        
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
         if 'Map Peaks' in data:
             G2frame.GetStatusBar().SetStatusText('Double click any column heading to sort',1)
             mapPeaks = data['Map Peaks']                        
@@ -15897,6 +15946,7 @@ of the crystal structure.
             colLabels = ['mag','x','y','z','dzero','dcent']
             Types = 6*[wg.GRID_VALUE_FLOAT+':10,4',]
             G2frame.MapPeaksTable = G2G.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            G2frame.MapPeaks.Show(True)
             G2frame.MapPeaks.SetTable(G2frame.MapPeaksTable, True)
             G2frame.MapPeaks.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
             G2frame.MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
@@ -15907,7 +15957,8 @@ of the crystal structure.
             G2frame.MapPeaks.AutoSizeColumns(False)
             mainSizer.Add(G2frame.MapPeaks)
         else:
-            mainSizer.Add(wx.StaticText(MapPeakList,label=' Map peak list is empty'))
+            mainSizer.Add(wx.StaticText(MapPeakList,label=' Map peak list is empty'),0,wx.ALL,10)
+            G2frame.MapPeaks.Show(False)
         SetPhaseWindow(MapPeakList,mainSizer)
                     
     def OnPeaksMove(event):

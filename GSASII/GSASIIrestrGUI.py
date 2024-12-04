@@ -2302,6 +2302,14 @@ def UpdateRestraints(G2frame,data,phaseName):
             print ("Warning: tab "+tabname+" was not found")
 
     #### UpdateRestraints execution starts here
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= f"Create/edit restraints for {phaseName!r}"[:60]
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
     covdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
     Nvars = 0

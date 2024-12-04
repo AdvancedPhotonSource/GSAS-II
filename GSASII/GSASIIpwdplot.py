@@ -864,7 +864,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
         elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
-            if len(event.artist.get_data()[0]) != 2: return  # don't select a tickmark to drag
+            if len(event.artist.get_data()[0]) != 2 and not G2frame.ifSetLimitsMode: 
+                return  # don't select a tickmark to drag. But in Limits/Excluded mode
+                        # could select a point from the pattern here
             # Limits: add excluded region or move limits by use of menu command
             # and then pick a point
             # Or, drag line for limits/excluded region

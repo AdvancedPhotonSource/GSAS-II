@@ -7428,17 +7428,25 @@ other than being included in the Notebook section of the project file.''')
         controls = G2frame.GPXtree.GetItemPyData(cId)
     controls['Notebook'] = controls.get('Notebook',{}) # filter & order settings get saved here, plot settings do not
     G2frame.dataWindow.ClearData()
-    bigSizer = wx.BoxSizer(wx.VERTICAL)
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'Project notes'),0,WACV)
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,-1,'Notes/results for current project'),0,WACV)
     topSizer.Add((20,-1))
-    addBtn = wx.Button(G2frame.dataWindow,label='Add comment')
+    addBtn = wx.Button(parent,label='Add comment')
     topSizer.Add(addBtn,0,WACV)
     addBtn.Bind(wx.EVT_BUTTON,OnAddNotebook)
-    topSizer.Add((20,-1))
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
+
+    botSizer = G2frame.dataWindow.bottomBox
+    botSizer.Clear(True)
+    parent = G2frame.dataWindow.bottomPanel    
+    botSizer.Add((20,-1))
     controls['Notebook']['order'] = controls['Notebook'].get('order',False)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'  order: '),0,WACV)
-    topSizer.Add(G2G.EnumSelector(G2frame.dataWindow,controls['Notebook'],
+    botSizer.Add(wx.StaticText(parent,wx.ID_ANY,'  order: '),0,WACV)
+    botSizer.Add(G2G.EnumSelector(parent,controls['Notebook'],
                          'order',['oldest-1st','newest-1st'],[False,True],
                          OnChange=onUpdateWindow))
     controls['Notebook']['filterSel'] = controls['Notebook'].get(
@@ -7446,22 +7454,19 @@ other than being included in the Notebook section of the project file.''')
     NBinfo['plotLbl'] = NBinfo.get('plotLbl',{'none':True,'Rw':False,'GOF':False})
     for i in range(len(filterPrefix)-len(controls['Notebook']['filterSel'])):
         controls['Notebook']['filterSel'] += [True]    # pad list if needed    
-    topSizer.Add((20,-1))
-    fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Set filters',
+    botSizer.Add((20,-1))
+    fBtn = G2G.popupSelectorButton(parent,'Set filters',
                         filterLbls,controls['Notebook']['filterSel'],
                         OnChange=onUpdateWindow)
-    topSizer.Add(fBtn,0,WACV)
-    fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Plot',
-            choiceDict=NBinfo['plotLbl'],
+    botSizer.Add(fBtn,0,WACV)
+    fBtn = G2G.popupSelectorButton(parent,'Plot',choiceDict=NBinfo['plotLbl'],
                         OnChange=onPlotNotebook)
-    topSizer.Add((20,-1))
-    topSizer.Add(fBtn,0,WACV)
-    topSizer.Add((20,-1))
-    topSizer.Add((20,-1),1,wx.EXPAND,1)
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Notebook'))
-    bigSizer.Add(topSizer,0,wx.EXPAND)
-    text = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,
-            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP)
+    botSizer.Add((20,-1))
+    botSizer.Add(fBtn,0,WACV)
+    botSizer.Add((20,-1),1,wx.EXPAND,1)
+    import wx.stc as stc
+    text = stc.StyledTextCtrl(G2frame.dataWindow,wx.ID_ANY)
+    text.SetScrollWidthTracking(True)    # does not seem to do anything
     if controls['Notebook']['order']:
         # reverse entries in blocks, so that lines stay after their timestamp
         order = []
@@ -7481,6 +7486,7 @@ other than being included in the Notebook section of the project file.''')
     # get prefixes to be shown
     selLbl = [l for i,l in enumerate(filterPrefix)
                   if controls['Notebook']['filterSel'][i]]
+    first = True
     for i in order:
         line = data[i]
         if not line.strip(): continue # empty line
@@ -7494,21 +7500,28 @@ other than being included in the Notebook section of the project file.''')
             show = True
         if show:
             if prefix == 'TS':
-                text.AppendText(line.strip()+"\n")
+                if not first: text.AppendText("\n")
+                text.AppendText(line.strip())
             elif prefix and (controls['Notebook']['filterSel'][0]
                                 or controls['Notebook']['filterSel'][1]):
                 # indent all but timestamps
                 for l in line.strip().split('\n'):
-                    text.AppendText('    '+l.strip()+"\n")
+                    if not first: text.AppendText("\n")
+                    text.AppendText('    '+l.strip())
+                    first = False
             else:
-                text.AppendText(line.strip()+"\n")
-    bigSizer.Add(text,1,wx.ALL|wx.EXPAND)
+                if not first: text.AppendText("\n")
+                text.AppendText(line.strip())
+        first = False
+    bigSizer = wx.BoxSizer(wx.VERTICAL)
+    bigSizer.Add(text,1,wx.EXPAND)
+    text.SetReadOnly(True)
     bigSizer.Layout()
     bigSizer.FitInside(G2frame.dataWindow)
     G2frame.dataWindow.SetSizer(bigSizer)
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
-
+    
 ####  Comments ###############################################################
 def UpdateComments(G2frame,data):
     '''Place comments into the data window

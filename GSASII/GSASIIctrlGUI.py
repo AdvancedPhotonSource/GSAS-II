@@ -605,7 +605,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         wx.CallAfter(self._SaveStringValue)
         
     def _SaveStringValue(self):
-        val = self.GetValue().strip()
+        try:
+            val = self.GetValue().strip()
+        except RuntimeError:  # ignore if control has been deleted
+            return
         # always store the result
         if self.CIFinput and '2' in platform.python_version_tuple()[0]: # Py2/CIF make results ASCII
             self.result[self.key] = val.encode('ascii','replace') 
@@ -5788,7 +5791,8 @@ class HelpButton(wx.Button):
         if sys.platform == "darwin": 
             wx.Button.__init__(self,parent,wx.ID_HELP)
         else:
-            wx.Button.__init__(self,parent,wx.ID_ANY,'?',style=wx.BU_EXACTFIT)
+            wx.Button.__init__(self,parent,wx.ID_ANY,' ? ',style=wx.BU_EXACTFIT)
+            self.SetBackgroundColour('yellow')
         self.Bind(wx.EVT_BUTTON,self._onPress)
         if wrap:
             self.msg=StripIndents(msg,True)

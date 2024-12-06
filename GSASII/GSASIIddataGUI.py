@@ -1467,7 +1467,9 @@ def MakeHistPhaseWin(G2frame):
     # binds the menu items and shows the Data Window info
     G2frame.dataWindow.ClearData()
     HAPBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(HAPBook,1,wx.ALL|wx.EXPAND,1)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
+    mainSizer.Add(HAPBook,1,wx.ALL|wx.EXPAND,1)
     phaseList = []
     phaseIds = []
     DData = []

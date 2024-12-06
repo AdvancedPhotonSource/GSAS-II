@@ -1698,7 +1698,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
 
     #G2frame.constr = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize())
     G2frame.constr = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(G2frame.constr,1,wx.ALL|wx.EXPAND)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
+    mainSizer.Add(G2frame.constr,1,wx.ALL|wx.EXPAND)
     # note that order of pages is hard-coded in RaisePage
     PhaseConstr = wx.ScrolledWindow(G2frame.constr)
     G2frame.constr.AddPage(PhaseConstr,'Phase')
@@ -3914,14 +3916,6 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
             wx.CallLater(100,UpdateResidueRB)
             
         #----- beginning of UpdateResidueRB -----------------------------------------------
-        topSizer = G2frame.dataWindow.topBox
-        topSizer.Clear(True)
-        parent = G2frame.dataWindow.topPanel
-        lbl= "Define/edit rigid bodies here before adding them to phase(s)"
-        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
-        topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
-        wx.CallAfter(G2frame.dataWindow.SetDataSize)
         AtInfo = data['Residue']['AtInfo']
         refChoice = {}
         RefObjs = []
@@ -3999,8 +3993,18 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
     Indx = {}
     resList = []
     plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= "Define/edit rigid bodies here before adding them to phase(s)"
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.rbBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(G2frame.rbBook,1,wx.ALL|wx.EXPAND)
+    mainSizer.Add(G2frame.rbBook,1,wx.ALL|wx.EXPAND)
     VectorRB = wx.ScrolledWindow(G2frame.rbBook)
     VectorRBDisplay = wx.Panel(VectorRB)
     G2frame.rbBook.AddPage(VectorRB,'Vector rigid bodies')

@@ -6087,22 +6087,12 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2frame.dataWindow.ClearData()
 
     This deletes the contents of the three main sizers used in the 
-    panels. Do not delete them. The 
-    sizers for the unscrolled regions at the top and bottom of
-    the outer panel cannot be [easily] regenerated if deleted. 
-    The sizer for the scrolled panel should be reused.
-    Find the “master” vertical BoxSizer for the scrolled region using::
+    panels. Do not delete the sizers for the unscrolled regions at the 
+    top and bottom of the outer panel, as they cannot be [easily?] 
+    regenerated if deleted. 
 
-        G2frame.dataWindow.GetSizer() 
-
-    A call to::
-
-        G2frame.dataWindow.SetSizer()
-
-    should not be needed. There are likely some calls in 
-    the code that replace the sizer associated with the scrolled 
-    panel, but is not ideal becuase it risks that an unexpected sizer
-    type might be created. 
+    The sizer for the scrolled panel should be not be reused, 
+    though some earlier code may do that. 
 
     After the contents of the data window have been created, 
     a call is made to::
@@ -6125,7 +6115,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     e.g. :class:`GSASIIctrlGUI.GSNoteBook` (anything else?) that 
     one widget should be placed in the scrolledpanel sizer using::
 
-         G2frame.dataWindow.GetSizer().Add(G2frame.<obj>,1,wx.EXPAND)
+         mainSizer =  wx.BoxSizer(wx.VERTICAL)
+         G2frame.dataWindow.SetSizer(mainSizer)
+         mainSizer.Add(G2frame.<obj>,1,wx.EXPAND)
 
     so that it consumes the full size of the panel and so that 
     the NoteBook widget does the scrolling.
@@ -6198,8 +6190,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         wx.ScrolledWindow.__init__(self,self.outer,wx.ID_ANY,size=parent.GetSize(),
                                        name="inner scrolled data window")
         mainSizer.Add(self,1,wx.EXPAND,0)
-        scrollSizer = wx.BoxSizer(wx.VERTICAL)  # get access to this sizer using self.GetSizer()
-        # it gets deleted and replaced sometimes (though it might be better if it did not)
+        scrollSizer = wx.BoxSizer(wx.VERTICAL)  # this should be replaced when panel is used
         self.SetSizer(scrollSizer)
 
         # bottomBox
@@ -6210,7 +6201,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self._initMenus()
         self.currentGrids = []
         self.helpKey = ''  # defines help entry for current item selected in data tree
-        
+
     def ClearData(self):
         '''Initializes the contents of the dataWindow panel
         '''
@@ -7783,7 +7774,8 @@ def UpdateControls(G2frame,data):
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex='Controls'))
     
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((5,5),0)
     LSSizer,ShklSizer = LSSizer()
@@ -8140,7 +8132,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     
-    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -8416,8 +8409,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     if item == G2frame.root:
         G2frame.dataWindow.ClearData()
         G2frame.helpKey = "Data tree"
-        G2frame.dataWindow.GetSizer().Add(
-            wx.StaticText(G2frame.dataWindow, wx.ID_ANY,
+        mainSizer =  wx.BoxSizer(wx.VERTICAL)
+        G2frame.dataWindow.SetSizer(mainSizer)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow, wx.ID_ANY,
                     'Select an item from the tree to see/edit parameters'))
         G2frame.dataWindow.SetDataSize()
         return
@@ -8483,7 +8477,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             topSizer.Add((-1,-1),1,wx.EXPAND)
             topSizer.Add(G2G.HelpButton(parent,helpIndex='Covariance'))
                 
-            mainSizer = G2frame.dataWindow.GetSizer()
+            mainSizer =  wx.BoxSizer(wx.VERTICAL)
+            G2frame.dataWindow.SetSizer(mainSizer)
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
@@ -8582,13 +8577,20 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if len(data['G(R)']):
                 G2plt.PlotISFG(G2frame,data,plotType='G(R)')
         elif G2frame.GPXtree.GetItemText(item) == 'Phases':
-            if len(G2frame.GetPhaseNames()) == 1: # if there is only one phase, select it
+            if len(G2frame.GetPhaseNames()) == 0:
+                mainSizer =  wx.BoxSizer(wx.VERTICAL)
+                G2frame.dataWindow.SetSizer(mainSizer)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,
+                    wx.ID_ANY,'Create phases first'))
+            elif len(G2frame.GetPhaseNames()) == 1: # if there is only one phase, select it
                 item, cookie = G2frame.GPXtree.GetFirstChild(item)
                 data = G2frame.GPXtree.GetItemPyData(item)
                 G2phG.UpdatePhaseData(G2frame,item,data)
                 wx.CallAfter(G2frame.GPXtree.SelectItem,item)
             else:
-                G2frame.dataWindow.GetSizer().Add(wx.StaticText(G2frame.dataWindow,
+                mainSizer =  wx.BoxSizer(wx.VERTICAL)
+                G2frame.dataWindow.SetSizer(mainSizer)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,
                     wx.ID_ANY,'Select one phase to see its parameters'))
         elif G2frame.GPXtree.GetItemText(item) == 'Cluster Analysis':
             data = G2frame.GPXtree.GetItemPyData(item)
@@ -8604,7 +8606,12 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 if name not in data:
                     data[name] = {}
 #end patch
-            if len(G2frame.GetPhaseNames()) == 1: # why force choice of a phase if there is only one?
+            if len(G2frame.GetPhaseNames()) == 0:
+                mainSizer =  wx.BoxSizer(wx.VERTICAL)
+                G2frame.dataWindow.SetSizer(mainSizer)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,
+                    wx.ID_ANY,'Create phases first'))
+            elif len(G2frame.GetPhaseNames()) == 1: # why force choice of a phase if there is only one?
                 item, cookie = G2frame.GPXtree.GetFirstChild(item)
                 phaseName = G2frame.GPXtree.GetItemText(item)
                 if phaseName not in data:
@@ -8612,7 +8619,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 G2restG.UpdateRestraints(G2frame,data,phaseName)
             else:
                 G2frame.GPXtree.Expand(item)
-                G2frame.dataWindow.GetSizer().Add(
+                mainSizer =  wx.BoxSizer(wx.VERTICAL)
+                G2frame.dataWindow.SetSizer(mainSizer)
+                mainSizer.Add(
                     wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its restraints'))
         elif G2frame.GPXtree.GetItemText(item).startswith('Hist/Phase'):
             #import imp

@@ -1521,7 +1521,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     wx.CallAfter(G2frame.dataWindow.SetDataSize)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(G2frame.dataDisplay,1,wx.EXPAND,1)
-    G2frame.dataWindow.GetSizer().Add(mainSizer,1,wx.EXPAND,1)
+    G2frame.dataWindow.SetSizer(mainSizer)
     if histNames[0].startswith('PWDR'):
         #rowLabels = [str(i)+': '+l[5:30] for i,l in enumerate(histNames)]
         rowLabels = [l[5:] for i,l in enumerate(histNames)]

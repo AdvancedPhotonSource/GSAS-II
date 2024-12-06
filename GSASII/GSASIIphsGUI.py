@@ -16773,7 +16773,9 @@ of the crystal structure.
     PhaseName = G2frame.GPXtree.GetItemText(Item)
     G2gd.SetDataMenuBar(G2frame)
     G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(G2frame.phaseDisplay,1,wx.ALL|wx.EXPAND,1)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
+    mainSizer.Add(G2frame.phaseDisplay,1,wx.ALL|wx.EXPAND,1)
     G2frame.phaseDisplay.gridList = [] # list of all grids in notebook
     Pages = []    
     General = wx.ScrolledWindow(G2frame.phaseDisplay)

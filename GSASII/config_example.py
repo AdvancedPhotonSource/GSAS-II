@@ -311,3 +311,11 @@ G2RefinementWindow = False
 progress of refinements. When False a generic wxpython supplied progress
 dialog is used. 
 '''
+
+FontSize_incr = 0
+'''Specifies a point size to increase (or decrease if negative) the default 
+font size for the GSAS-II windows. Default is 0. An increment much larger than 
+~4 will likely cause some places where text no longer fits, but might be useful on high resolution monitors.
+%%
+Restart GSAS-II for this setting to take effect.
+'''

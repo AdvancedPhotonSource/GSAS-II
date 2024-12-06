@@ -2803,6 +2803,12 @@ If you continue from this point, it is quite likely that all intensity computati
             size = wx.Size(700,450)
         wx.Frame.__init__(self, name='GSASII', parent=parent,
             size=size,style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II main window')
+        fontIncr = GSASIIpath.GetConfigValue('FontSize_incr')
+        if fontIncr is not None and fontIncr != 0:
+            f = wx.Font(self.GetFont())
+            f.SetPointSize(f.PointSize+fontIncr)
+            self.SetFont(f)
+        
         self._init_Imports()
         #initialize Menu item objects (these contain lists of menu items that are enabled or disabled)
         self.MakePDF = []

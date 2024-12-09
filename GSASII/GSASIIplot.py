@@ -6191,6 +6191,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         once, even if multiple mouse up/down actions are made.
         '''
         if rbObj and rbObj.get('needsFill') and 'FillUnitCell' in G2frame.testRBObjSizers:
+            if not G2frame.testRBObjSizers.get('fillMode',False): return
             if rbObj.get('FillInProgress'): return
             rbObj['needsFill'] = False
             rbObj['FillInProgress'] = True

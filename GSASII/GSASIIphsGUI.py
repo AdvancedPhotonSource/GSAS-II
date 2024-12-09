@@ -13467,10 +13467,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             dragSizer = wx.BoxSizer(wx.HORIZONTAL)
             dragSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Draw mode after dragging the rigid body: '),0,WACV)
             RBObj['drawMode'] = RBObj.get('drawMode',DrawStyleChoice[4])
-            dragSizer.Add(G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
-                                                 strLoc=RBObj, strKey='drawMode'))
-            RBObj['fillMode'] = RBObj.get('fillMode',True)
-            dragSizer.Add(G2G.G2CheckBoxFrontLbl(RigidBodies, ' Fill cell on mouse up?', RBObj, 'fillMode'))
+            modeOpt = G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
+                                             strLoc=RBObj, strKey='drawMode')
+            dragSizer.Add(modeOpt)
+            modeOpt.Enable(False) # not implemented yet
+            G2frame.testRBObjSizers['fillMode'] = G2frame.testRBObjSizers.get('fillMode',False)
+            dragSizer.Add(G2G.G2CheckBoxFrontLbl(RigidBodies, ' Fill cell on mouse up?', G2frame.testRBObjSizers, 'fillMode'))
             resrbSizer.Add((-1,5))
             resrbSizer.Add(dragSizer)
             return resrbSizer
@@ -13559,7 +13561,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             # define the parameters needed to drag the RB with the mouse
             data['testRBObj'] = {}
             rbType = 'Residue'
-            data['testRBObj']['rbObj'] = data['RBModels'][rbType][prevResId]
+            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
             rbId = data['RBModels'][rbType][prevResId]['RBId']
             RBdata = G2frame.GPXtree.GetItemPyData(   
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
@@ -13586,9 +13588,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         atNames[i][atom[ct-1]] = iatm
             data['testRBObj']['atNames'] = atNames
             data['testRBObj']['AtNames'] = AtNames
-            data['testRBObj']['torAtms'] = []                
+            data['testRBObj']['torAtms'] = []
+            # unclear why these torsion entries are being added to rbObj.
             for item in RBData[rbType][rbId].get('rbSeq',[]):
-                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
+                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
                 data['testRBObj']['torAtms'].append([-1,-1,-1])
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
             
@@ -13633,7 +13636,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             G2frame.dataWindow.SendSizeEvent()
             G2plt.PlotStructure(G2frame,data)
             if oldFocus: wx.CallAfter(oldFocus.SetFocus)
-        
+
         # FillRigidBodyGrid executable code starts here
         if refresh:
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
@@ -14668,7 +14671,7 @@ of the crystal structure.
                     'numChain':'','RBname':RBData[rbType][rbId]['RBname']}
         # if rbType == 'Spin':
         #     data['testRBObj']['rbObj']['Radius'] = [1.0,False]
-        data['testRBObj']['torAtms'] = []                
+        data['testRBObj']['torAtms'] = []
         for item in RBData[rbType][rbId].get('rbSeq',[]):
             data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
             data['testRBObj']['torAtms'].append([-1,-1,-1])        

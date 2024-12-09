@@ -3442,7 +3442,10 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         valueList = []
         tickpos = {}
         lblList.append('used')
-        valueList.append([0 if i else 1 for i in savedX.mask])
+        try:
+            valueList.append([0 if i else 1 for i in savedX.mask])
+        except:
+            pass
         if 'TOF' in Plot.xaxis.get_label_text():
             lblList.append('x, TOF (msec)')
         elif 'Q,' in Plot.xaxis.get_label_text():

@@ -5471,7 +5471,7 @@ def UpdatePhaseData(G2frame,Item,data):
         DisAglCtls = {}
         # add RB stuff to DisAglData
         DisAglData['RBlist'] = []          # list of atom numbers used in the RB
-        for d in data['RBModels']['Residue']:
+        for d in data['RBModels'].get('Residue',{}):
             for rId in d['Ids']:
                 num = int(G2obj.LookupAtomId(ranId=rId,pId=data['pId']))
                 DisAglData['RBlist'].append(num)

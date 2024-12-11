@@ -3075,7 +3075,8 @@ def PlotPowderLines(G2frame):
                 if len(G2frame.HKL):
                     xlim = Plot.get_xlim()
                     wid = xlim[1]-xlim[0]
-                    found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[-1]-xpos) < 0.002*wid)]
+                    findx = np.where(np.fabs(G2frame.HKL.T[-2]-xpos) < 0.002*wid)
+                    found = G2frame.HKL[findx]
                 if len(found):
                     h,k,l = found[0][:3] 
                     Page.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))

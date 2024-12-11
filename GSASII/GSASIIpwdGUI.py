@@ -783,6 +783,7 @@ def RefineCell(G2frame):
 ################################################################################
 #####  Powder Peaks
 ################################################################################
+
 def UpdatePeakGrid(G2frame, data):
     '''respond to selection of PWDR powder peaks data tree item.
     '''
@@ -4124,7 +4125,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
                     if cell[-2]:
                         ibrav = cell[2]
                         A = G2lat.cell2A(cell[3:9])
-                        G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+                        G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A,ifList=True)
                         for hkl in G2frame.HKL:
                             hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3]))
                         G2frame.HKL = np.array(G2frame.HKL)
@@ -4818,7 +4819,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
             bestCell = cells[0]
             if bestCell[0] > 10.:
-                G2frame.HKL = G2lat.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]))
+                G2frame.HKL = G2lat.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]),ifList=True)
                 for hkl in G2frame.HKL:
                     hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                 G2frame.HKL = np.array(G2frame.HKL)
@@ -4962,7 +4963,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 ibrav = cells[r][2]
                 try:
                     A = G2lat.cell2A(cells[r][3:9])
-                    G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
+                    G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A,ifList=True)
                     for hkl in G2frame.HKL:
                         hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                     G2frame.HKL = np.array(G2frame.HKL)

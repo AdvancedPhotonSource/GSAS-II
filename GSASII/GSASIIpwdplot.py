@@ -555,12 +555,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if pickIdText in ['Index Peak List','Unit Cells List',]:
                     indx = -2
                 # finds reflections within 1% of plot range in units of plot
-                found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < dT/2.)]
+                findx = np.where(np.fabs(np.array(G2frame.HKL).T[indx]-xpos) < dT/2.)
                 if len(G2frame.Extinct):
                     G2frame.Extinct = np.array(G2frame.Extinct)
                     f2 = G2frame.Extinct[np.where(np.fabs(G2frame.Extinct.T[indx]-xpos) < dT/2.)] 
                     found = np.concatenate((found,f2))
-                if len(found):
+                if np.any(findx):
+                    found = G2frame.HKL[findx]
                     if len(found[0]) > 6:   #SS reflections
                         fmt = "{:.0f},{:.0f},{:.0f},{:.0f}"
                         n = 4

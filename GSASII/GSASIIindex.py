@@ -459,6 +459,7 @@ def FitHKL(ibrav,peaks,A,Pwr):
         return (Qo-Qc)*d**Pwr
         
     def dervFit(values,ibrav,d,H,Pwr):
+        h,k,l = H
         if ibrav in [0,1,2]:
             derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
         elif ibrav in [3,4,]:
@@ -466,11 +467,11 @@ def FitHKL(ibrav,peaks,A,Pwr):
         elif ibrav in [5,6]:
             derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
         elif ibrav in [7,8,9,10,11,12]:
-            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
+           derv = [h*h,k*k,l*l]
         elif ibrav in [13,14,15,16]:
-            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
+            derv = [h*h,k*k,l*l,h*l]
         else:
-            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
+            derv = [h*h,k*k,l*l,h*k,h*l,k*l]
         derv = -np.array(derv)
         return (derv*d**Pwr).T
     
@@ -823,7 +824,7 @@ def refinePeaks(peaks,ibrav,A,ifX20=True,cctbx_args=None):
     dmin = getDmin(peaks)
     smin = 1.0e10
     pwr = 8
-    maxTries = 10
+    maxTries = 3
     OK = False
     tries = 0
     HKL = G2lat.GenHBravais(dmin,ibrav,A,cctbx_args)
@@ -993,8 +994,11 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
             timeout=None,M20_min=2.0,X20_max=None,return_Nc=False,
             cctbx_args=None):
     'needs a doc string'
-    
-    delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
+    timingOn = False
+    if timingOn:
+        import cProfile,pstats
+        import io as StringIO
+    delt = 0.005                                     #lowest d-spacing cushion
     amin = 2.5
     amax = 5.0*getDmax(peaks)
     dmin = getDmin(peaks)-delt
@@ -1018,6 +1022,9 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
     cells = []
     lastcell = np.zeros(7)
     for ibrav in range(len(bravaisNames)):
+        if timingOn:
+            pr = cProfile.Profile()
+            pr.enable()
         begin = time.time()
         if bravais[ibrav]:
             print ('cell search for ',bravaisNames[ibrav])
@@ -1069,10 +1076,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
                                     peaks = IndexPeaks(peaks,HKL)[1]
                                     a,b,c,alp,bet,gam = G2lat.A2cell(A)
                                     V = G2lat.calc_V(A)
-                                    if (
-                                        (M20 >= M20_min) and
-                                        (X20_max is None or X20 <= X20_max)
-                                    ):
+                                    if ( (M20 >= M20_min) and (X20_max is None or X20 <= X20_max) ):
                                         cell = [M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False]
                                         if return_Nc: cell.append(Nc)
                                         newcell = np.array(cell[3:10])
@@ -1109,6 +1113,14 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
 #                dlg.Destroy()
             print ('%s%s%s%s'%('finished cell search for ',bravaisNames[ibrav], \
                 ', elapsed time = ',G2lat.sec2HMS(time.time()-begin)))
+        if timingOn:
+            pr.disable()
+            s = StringIO.StringIO()
+            sortby = 'tottime'
+            ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
+            print('Profiler of function calculation; top 50% of routines:')
+            ps.print_stats("GSASII",.5)
+            print(s.getvalue())
             
     if cells:
         return True,dmin,cells

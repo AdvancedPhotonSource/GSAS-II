@@ -3115,6 +3115,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 dspLst.append([10,6])
                 instSizer.Add(waveVal,0,WACV)
                 refFlgElem.append([key,2])                   
+                instSizer.Add((5,5),0)                        
                 for item in ['Zero',]:
                     if item in insDef:
                         labelLst.append(item)
@@ -3126,6 +3127,7 @@ def UpdateInstrumentGrid(G2frame,data):
                         itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
                         instSizer.Add(itemVal,0,WACV)
                         refFlgElem.append([item,2])
+                        instSizer.Add((5,5),0)                        
                 
         elif 'S' in insVal['Type']:                       #single crystal data
             Reference = ''

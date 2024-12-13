@@ -6168,14 +6168,14 @@ class MultipleChoicesDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((10,10),1)
         topLabl = wx.StaticText(panel,wx.ID_ANY,title)
-        mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.CENTER,10)
+        mainSizer.Add(topLabl,0,wx.CENTER,10)
         self.ChItems = []
         for choice,lbl in zip(choicelist,headinglist):
             mainSizer.Add((10,10),1)
             self.chosen.append(0)
             topLabl = wx.StaticText(panel,wx.ID_ANY,' '+lbl)
             mainSizer.Add(topLabl,0,wx.ALIGN_LEFT,10)
-            self.ChItems.append(wx.Choice(self, wx.ID_ANY, (100, 50), choices = choice))
+            self.ChItems.append(wx.Choice(panel, wx.ID_ANY, (100, 50), choices = choice))
             mainSizer.Add(self.ChItems[-1],0,wx.ALIGN_CENTER,10)
 
         OkBtn = wx.Button(panel,-1,"Ok")

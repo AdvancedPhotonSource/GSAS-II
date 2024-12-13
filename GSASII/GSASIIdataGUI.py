@@ -1020,6 +1020,10 @@ class GSASII(wx.Frame):
                         if load2Tree:   #images only
                             if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
                                 rd.Data['ImageTag'] = None
+                            elif 'imagemap' in rdbuffer:
+                                # if there is an image map, save the entry there rather than
+                                # a simple number (HDF5 only at present)
+                                rd.Data['ImageTag'] = rdbuffer['imagemap'][rd.imageEntry]
                             else:
                                 rd.Data['ImageTag'] = rd.repeatcount
                             rd.Data['formatName'] = rd.formatName

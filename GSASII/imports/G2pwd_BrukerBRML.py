@@ -28,7 +28,6 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                 msg += ' To fix this press "Install packages" button below'
             G2fil.ImportErrorMsg(msg,{'Bruker .brml Importer':['xmltodict']})
         self.scriptable = True
-        data = None
 
     def ContentsValidator(self, filename):
         '''Validate by testing if the file can be opened by zip
@@ -77,6 +76,8 @@ class brml_ReaderClass(G2obj.ImportPowderData):
 
             # Extract 2-theta angle and counts from the XML document
             i=0
+            Tsum8 = 0
+            isum8 = 0
             while i < nSteps :
                 if datano:
                     entry = data['RawData']['DataRoutes']['DataRoute'][datano]['Datum'][i].split(',')
@@ -85,7 +86,15 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                 x[i] = float(entry[2])
                 y[i] = float(entry[4])*float(entry[0])/effTime
                 i = i + 1
-
+                # both entry 6 & 8 seem to have a temperature in the multi-scan file
+                # these columns are not present in the single-scan file. Using 8 (at random)
+                try:
+                    Tsum8 += float(entry[6])
+                    isum8 += 1
+                except:
+                    pass
+            if isum8 > 0:
+                self.Sample['Temperature'] = 273. + Tsum8/isum8
             w = np.where(y>0,1/y,0.)
             self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
             return True
@@ -160,6 +169,13 @@ class brml_ReaderClass(G2obj.ImportPowderData):
         finally:
             if os.path.exists(os.path.dirname(fil)):
                 shutil.rmtree(os.path.dirname(fil))
+        # add some comments
+        for key in 'TimeStampStarted','TimeStampFinished':
+            self.comments.append(f'{key}: {data["RawData"].get(key,"?")}\n')
+        for key in data['RawData'].get('Identifier',{}):
+            val = data['RawData']['Identifier'][key]
+            if type(val) is str:
+                self.comments.append(f'{key}: {val}\n')
         # file read was successful, are there more files to read?
         self.repeatcount = filNum
         while filNum <= self.buffer['maxNum']:
@@ -173,6 +189,4 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             break
         else:
             self.repeat = False
-        return True
-        
         return True

@@ -54,6 +54,7 @@ import numpy.linalg as nl
 import numpy.ma as ma
 import atmdata
 import ISODISTORT as ISO
+import platform
 
 try:
     wx.NewIdRef
@@ -7988,13 +7989,20 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
         rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
-        if rmcfile is None:
-            wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
-      Obtain the zip file distribution from www.rmcprofile.org, 
-      unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
-          caption='RMCProfile',style=wx.ICON_INFORMATION)
-            return
-        rmcexe = os.path.split(rmcfile)[0]
+        os_name = platform.system()
+        if os_name == "Darwin":
+            rmcexe = os.path.join(
+                "/Applications/RMCProfile.app/Contents/MacOS/exe/",
+                "rmcprofile.x"
+            )
+        else:
+            if rmcfile is None:
+                wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
+        Obtain the zip file distribution from www.rmcprofile.org, 
+        unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
+            caption='RMCProfile',style=wx.ICON_INFORMATION)
+                return
+            rmcexe = os.path.split(rmcfile)[0]
         print(rmcexe)
         wx.MessageBox(''' For use of RMCProfile, please cite:
       RMCProfile: Reverse Monte Carlo for polycrystalline materials,
@@ -8031,13 +8039,30 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         G2frame.OnFileSave(event)
         print (' GSAS-II project saved')
         pName = generalData['Name'].replace(' ','_')
-        exstr = rmcexe+'\\rmcprofile.exe '+pName
-        batch = open('runrmc.bat','w')
-        batch.write('Title RMCProfile\n')
-        batch.write(exstr+'\n')
-        batch.write('pause\n')
-        batch.close()
-        subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+
+        if os_name == "Darwin":
+            with open('runrmc.sh', 'w') as f:
+                f.write("#!/bin/bash\n")
+                f.write("cd " + os.getcwd() + "\n")
+                f.write(rmcexe + " " + pName + "\n")
+            os.system("chmod +x runrmc.sh")
+            script_file = os.path.join(os.getcwd(), "runrmc.sh")
+            applescript_command = 'tell app "Terminal"\n'
+            applescript_command += "if not (exists window 1) then\n"
+            applescript_command += f'do script "source {script_file}"\n'
+            applescript_command += "else\n"
+            applescript_command += f'do script "source {script_file}"'
+            applescript_command += " in window 1\n"
+            applescript_command += "end if\nactivate\nend tell"
+            subp.Popen(['osascript', '-e', applescript_command])
+        else:
+            exstr = rmcexe+'\\rmcprofile.exe '+pName
+            batch = open('runrmc.bat','w')
+            batch.write('Title RMCProfile\n')
+            batch.write(exstr+'\n')
+            batch.write('pause\n')
+            batch.close()
+            subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
 #        Proc.wait()     #for it to finish before continuing on
         UpdateRMC()
         
@@ -13476,10 +13501,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             dragSizer = wx.BoxSizer(wx.HORIZONTAL)
             dragSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Draw mode after dragging the rigid body: '),0,WACV)
             RBObj['drawMode'] = RBObj.get('drawMode',DrawStyleChoice[4])
-            dragSizer.Add(G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
-                                                 strLoc=RBObj, strKey='drawMode'))
-            RBObj['fillMode'] = RBObj.get('fillMode',True)
-            dragSizer.Add(G2G.G2CheckBoxFrontLbl(RigidBodies, ' Fill cell on mouse up?', RBObj, 'fillMode'))
+            modeOpt = G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
+                                             strLoc=RBObj, strKey='drawMode')
+            dragSizer.Add(modeOpt)
+            modeOpt.Enable(False) # not implemented yet
+            G2frame.testRBObjSizers['fillMode'] = G2frame.testRBObjSizers.get('fillMode',False)
+            dragSizer.Add(G2G.G2CheckBoxFrontLbl(RigidBodies, ' Fill cell on mouse up?', G2frame.testRBObjSizers, 'fillMode'))
             resrbSizer.Add((-1,5))
             resrbSizer.Add(dragSizer)
             return resrbSizer
@@ -13568,7 +13595,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             # define the parameters needed to drag the RB with the mouse
             data['testRBObj'] = {}
             rbType = 'Residue'
-            data['testRBObj']['rbObj'] = data['RBModels'][rbType][prevResId]
+            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
             rbId = data['RBModels'][rbType][prevResId]['RBId']
             RBdata = G2frame.GPXtree.GetItemPyData(   
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
@@ -13595,9 +13622,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         atNames[i][atom[ct-1]] = iatm
             data['testRBObj']['atNames'] = atNames
             data['testRBObj']['AtNames'] = AtNames
-            data['testRBObj']['torAtms'] = []                
+            data['testRBObj']['torAtms'] = []
+            # unclear why these torsion entries are being added to rbObj.
             for item in RBData[rbType][rbId].get('rbSeq',[]):
-                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
+                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
                 data['testRBObj']['torAtms'].append([-1,-1,-1])
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
             
@@ -13642,7 +13670,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             G2frame.dataWindow.SendSizeEvent()
             G2plt.PlotStructure(G2frame,data)
             if oldFocus: wx.CallAfter(oldFocus.SetFocus)
-        
+
         # FillRigidBodyGrid executable code starts here
         if refresh:
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
@@ -14680,7 +14708,7 @@ of the crystal structure.
                     'numChain':'','RBname':RBData[rbType][rbId]['RBname']}
         # if rbType == 'Spin':
         #     data['testRBObj']['rbObj']['Radius'] = [1.0,False]
-        data['testRBObj']['torAtms'] = []                
+        data['testRBObj']['torAtms'] = []
         for item in RBData[rbType][rbId].get('rbSeq',[]):
             data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
             data['testRBObj']['torAtms'].append([-1,-1,-1])        

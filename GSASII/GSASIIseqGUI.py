@@ -1097,6 +1097,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         for i in uniqCellIndx[pId]:
             initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[pId][i]
 
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PWDRMenu)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SequentialMenu)
     G2frame.Bind(wx.EVT_MENU, OnSelectUse, id=G2G.wxID_SELECTUSE)
     G2frame.Bind(wx.EVT_MENU, OnRenameSelSeq, id=G2G.wxID_RENAMESEQSEL)

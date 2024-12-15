@@ -36,7 +36,7 @@ import wx
 import GSASIIpath
 import GSASIIdataGUI as G2gd
 import GSASIIobj as G2obj
-import GSASIIpwdGUI as G2pdG
+#import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIElem as G2el
 import GSASIIfiles as G2fil
@@ -254,9 +254,12 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     ImageTag = Data.get('ImageTag')
     ImageSection = Data.get('ImageSection','')  #used only in HDF5 at present
     if ImageTag:
-        if ImageSection:
+        if ImageSection and ImageTag[1] is None:
             TreeLbl += f" {ImageSection}"
-        TreeLbl += f' #{ImageTag:04d}'
+        elif ImageSection:
+            TreeLbl += f" {ImageSection} #{ImageTag[1]:04d}"
+        else:
+            TreeLbl += f' #{ImageTag:04d}'
         imageInfo = (imagefile,ImageTag)
     else:
         imageInfo = imagefile
@@ -1372,9 +1375,9 @@ if __name__ == '__main__':
     #     parent=frm)
     # if dlg.ShowModal() == wx.ID_OK:
     #     print 'Got OK'
-    imagefile = '/tmp/NDC5_00237_3.ge3'
-    Comments, Data, Npix, Image = G2fil.GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None)
+    #imagefile = '/tmp/NDC5_00237_3.ge3'
+    #Comments, Data, Npix, Image = G2fil.GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None)
 
-    print("\n\nResults loaded to Comments, Data, Npix and Image\n\n")
+    #print("\n\nResults loaded to Comments, Data, Npix and Image\n\n")
 
-    GSASIIpath.IPyBreak_base()
+    #GSASIIpath.IPyBreak_base()

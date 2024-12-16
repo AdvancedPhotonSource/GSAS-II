@@ -6122,19 +6122,22 @@ def UpdateUnitCellsGrid(G2frame, data):
         the table height, make sure that each results table takes 
         less than 1/2 of the available vertical space. 
         '''
-        G2frame.dataWindow.Layout()
-        wid,hgt = G2frame.dataWindow.GetSize()
-        for i,grid in enumerate(resizeGrids):
-            # save the initial value for BestSize, as it increases as SetMinSize
-            # gets changed
-            try:
-                gwid,ghgt = grid.initialGetBestSize
-            except:
-                grid.initialGetBestSize = grid.GetBestSize()
-                gwid,ghgt = grid.initialGetBestSize
-            grid.SetMaxSize((wid-15,int(hgt/2.5))) # leave inside on right room for scrollbar
-            # add a bit to the minimum width for the scroll bar (if there is room)
-            grid.SetMinSize((min(wid-15,gwid+15),min(int(hgt/2.5),ghgt)))
+        try:
+            G2frame.dataWindow.Layout()
+            wid,hgt = G2frame.dataWindow.GetSize()
+            for i,grid in enumerate(resizeGrids):
+                # save the initial value for BestSize, as it increases as SetMinSize
+                # gets changed
+                try:
+                    gwid,ghgt = grid.initialGetBestSize
+                except:
+                    grid.initialGetBestSize = grid.GetBestSize()
+                    gwid,ghgt = grid.initialGetBestSize
+                grid.SetMaxSize((wid-15,int(hgt/2.5))) # leave inside on right room for scrollbar
+                # add a bit to the minimum width for the scroll bar (if there is room)
+                grid.SetMinSize((min(wid-15,gwid+15),min(int(hgt/2.5),ghgt)))
+        except: # can fail after window is destroyed
+            pass
         event.Skip()
 
     def enableCellCtrls(event):

@@ -6232,20 +6232,30 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             if GSASIIpath.GetConfigValue('debug'): raise Exception
         Sizer.Add((-1,3)) # small space on top of scrolled window
 
-    # def OnResize(self,event):
-    #     'Used for grids to match ScrolledWindow size'
-    #     event.Skip()
-    #     Sizer = self.GetSizer()
-    #     if not Sizer: return
-    #     #if Sizer.GetItemCount() == 1: # not wx 2.8
-    #     if len(Sizer.GetChildren()) == 1: # if there is a single grid, resize it
-    #         if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSGrid): 
-    #             Sizer.GetItem(0).GetWindow().SetSize(self.GetSize())
-                    
+    def SetStatusWidth(self):
+        'Make the left-side of the status bar track the size of the data tree'
+        G2frame = self.GetTopLevelParent()
+        wid,hgt = G2frame.GPXtree.GetSize()
+        G2frame.GetStatusBar().SetStatusWidths([wid+10, -1])
     def SetDataSize(self):
         '''Sizes the contents of the dataWindow panel and sets up
         for response to change in size of window.
         '''
+        def _onResizeGd(event):
+            '''Called when a Window containing only 1 grid is resized'''
+            self.Layout()
+            self.SetVirtualSize(self.GetSize())
+            self.SetStatusWidth()
+            event.Skip()
+        def _onResizeNB(event):
+            '''Called when a Window containing only a notebook is resized'''
+            self.Layout()
+            self.SetVirtualSize(self.GetSize())
+            self.SetStatusWidth()
+            event.Skip()
+        def _onResize(event):
+            '''Called when any other type of window is resized'''
+            self.SetStatusWidth()
         Sizer = self.GetSizer()
         if not Sizer:
             print ('No sizer in dataWindow')
@@ -6253,35 +6263,40 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             return
         # find out more about what is in the scrolled window
         numChild = len(self.GetChildren())
-        haveGrid = None # grid or notebook, if only one in panel
+        haveGrid = None # is there a single grid in this panel?
+        haveNotebook = None # is there a single notebook in this panel?
         for child in self.GetChildren():
             if isinstance(child,G2G.GSGrid) or isinstance(child,G2G.GSNoteBook):
-                if haveGrid:
+                if haveGrid or haveNotebook:
                     haveGrid = None
+                    haveNotebook = None
                     break
+            if isinstance(child,G2G.GSGrid):
                 haveGrid = child
+            elif isinstance(child,G2G.GSNoteBook):
+                haveNotebook = child
         extra = 0
         if sys.platform == "darwin": extra = 3 # N.B. 3 extra items in MacOS (Linux?)
         # for simple windows with only a GSNotebook or GSGrid, turn off
         # scrolling in the scrolled window and let the notebook or grid
         # handle the scaling
         if numChild <= 2+extra and haveGrid:
-            def _onResize(event):
-                self.Layout()
-                self.SetVirtualSize(self.GetSize())
-                event.Skip()
-            self.Bind(wx.EVT_SIZE,_onResize)
+            self.Bind(wx.EVT_SIZE,_onResizeGd)
             self.SetVirtualSize(self.GetSize())
             self.SetAutoLayout(False)
             self.SetScrollRate(0,0)
             if isinstance(haveGrid,G2G.GSGrid):
                 haveGrid.SetScrollRate(10,10)
-            self.outer.SendSizeEvent()
-            return
-        # otherwise turn on autolayout and scrolling for the scrolled window
-        #self.Bind(wx.EVT_SIZE,self.OnResize)
-        self.SetAutoLayout(True)
-        self.SetScrollRate(10,10)
+        elif numChild <= 2+extra and haveNotebook:
+            self.Bind(wx.EVT_SIZE,_onResizeNB)
+            self.SetVirtualSize(self.GetSize())
+            self.SetAutoLayout(False)
+            self.SetScrollRate(0,0)
+        else:
+            # otherwise turn on autolayout and scrolling for the scrolled window
+            self.Bind(wx.EVT_SIZE,_onResize)
+            self.SetAutoLayout(True)
+            self.SetScrollRate(10,10)
         self.outer.SendSizeEvent()
 
     def PrefillDataMenu(self,menu,empty=False):

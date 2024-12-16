@@ -1229,12 +1229,27 @@ def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False,ask=True):
     return indx
 
 def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
+    '''Finish off processing for all items going into a phase notebook page
+    This connects the sizer to the Panel/ScrolledWindow that is assigned 
+    as the notebook's page for a tab. 
+
+    Note that a wx.ScrolledWindow is used for most tab pages, with the 
+    exception of Atoms, drawAtoms, G2frame.MapPeaks and G2frame.PawleyRefl,
+    where a wx.Panel is used with a single Grid inside. This allows the grid
+    to handle scrolling. 
+
+    When a wx.ScrolledWindows is used, scrolling is turned on here. The 
+    optional Scroll parameter is used to restore the scroll position to 
+    the previous position so that the window can be redrawn without 
+    disruption.
+    '''
     if mainSizer is not None:
         phasePage.SetSizer(mainSizer)
-    phasePage.SetAutoLayout(True)
-    phasePage.SetScrollRate(10,10)
-    phasePage.SendSizeEvent()
-    phasePage.Scroll(0,Scroll)
+    if isinstance(phasePage,wx.ScrolledWindow):
+        phasePage.SetAutoLayout(True)
+        phasePage.SetScrollRate(10,10)
+        phasePage.SendSizeEvent()
+        phasePage.Scroll(0,Scroll)
     
 def GetSpGrpfromUser(parent,SpGrp):
     helptext = '''\t\t\tGSAS-II space group information
@@ -4670,7 +4685,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 oldSizer.Clear(True)
             Atoms.AutoSizeColumns(False)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            mainSizer.Add(Atoms)
+            mainSizer.Add(Atoms,1,wx.EXPAND)
+            Atoms.SetScrollRate(10,10) # allow grid to scroll
             SetPhaseWindow(AtomList,mainSizer,Scroll=Atoms.GetScrollPos(wx.VERTICAL))
 
 #### FillAtomsGrid main code 
@@ -4756,7 +4772,7 @@ def UpdatePhaseData(G2frame,Item,data):
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
-        
+        Atoms.SetRowLabelSize(45)
         lblList = ('Set refine flags','Modify selected parameters',
                        'Insert new before selected','Transform selected',
                        'Set selected xyz to view point','Select all',
@@ -10418,6 +10434,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         drawAtoms.AutoSizeColumns(True)
         drawAtoms.SetColSize(colLabels.index('Style'),80)
         drawAtoms.SetColSize(colLabels.index('Color'),50)
+        drawAtoms.SetRowLabelSize(45)
         if 'phoenix' in wx.version():
             drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
             drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshDrawAtomGrid)
@@ -10466,7 +10483,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 drawAtoms.SetColAttr(c,attr)
                 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(drawAtoms)
+        mainSizer.Add(drawAtoms,1,wx.EXPAND)
+        drawAtoms.SetScrollRate(10,10) # allow grid to scroll
         SetPhaseWindow(drawAtomsList,mainSizer)
 
         FindBondsDraw(data)
@@ -13363,7 +13381,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             atName = data['Atoms'][AtLookUp[atId]][ct-1]
             RBObj['atType'][0] = RBData['Spin'][rbId]['atType']
             sprbSizer = wx.BoxSizer(wx.VERTICAL)
-            sprbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
+            G2G.HorizontalLine(sprbSizer,RigidBodies)
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,label='Shell 0: Name: %s Atom name: %s Atom type: %s RB sym: %s '%
                 (RBObj['RBname'][0],atName,RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
@@ -13428,7 +13446,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 wx.CallAfter(FillRigidBodyGrid,True,resId=resIndx)
                 
             resrbSizer = wx.BoxSizer(wx.VERTICAL)
-            resrbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
+            G2G.HorizontalLine(resrbSizer,RigidBodies)
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,-1,'Name: '+RBObj['RBname']+RBObj['numChain']+'   '),0,WACV)
             rbId = RBObj['RBId']
@@ -13530,7 +13548,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 wx.CallAfter(FillRigidBodyGrid,True,vecId=resIndx)
              
             vecrbSizer = wx.BoxSizer(wx.VERTICAL)
-            vecrbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
+            G2G.HorizontalLine(vecrbSizer,RigidBodies)
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,-1,
                 'Name: '+RBObj['RBname']+'   '),0,WACV)
@@ -15595,7 +15613,9 @@ of the crystal structure.
                         G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             G2frame.PawleyRefl.SetMargins(0,0)
             G2frame.PawleyRefl.AutoSizeColumns(False)
-            mainSizer.Add(G2frame.PawleyRefl)
+            G2frame.PawleyRefl.SetRowLabelSize(50)
+            G2frame.PawleyRefl.SetScrollRate(10,10) # allow grid to scroll
+            mainSizer.Add(G2frame.PawleyRefl,1,wx.EXPAND)
             for r in range(G2frame.PawleyRefl.GetNumberRows()):
                 try:
                     if float(G2frame.PawleyRefl.GetCellValue(r,6)) < 0:
@@ -15603,12 +15623,14 @@ of the crystal structure.
                 except:
                     pass
         else:
-            msg = ('\tPawley refinement has not yet been set up. Use the Operations->"Pawley setup"'+
-                       ' menu command to change this.\n\t'+
-                       '(If Pawley settings have already been set on the General tab, use Operations->"Pawley create").')
-            mainSizer.Add(wx.StaticText(PawleyRefList,label=msg))
+            msg = (
+'''Pawley refinement has not yet been setup. Use the 
+Operations->"Pawley setttings" menu command to change this.
+(Or, if Pawley settings have already been set on the General 
+tab, use Operations->"Pawley create")''')
+            mainSizer.Add(wx.StaticText(PawleyRefList,label=msg),0,wx.ALIGN_CENTER)
         SetPhaseWindow(PawleyRefList,mainSizer)
-                    
+
     def OnPawleySet(event):
         '''Open dialog to set Pawley parameters and optionally recompute reflections. 
         This is called from the Phase/Pawley Reflections "Pawley Settings" 
@@ -15983,7 +16005,9 @@ of the crystal structure.
                     G2frame.MapPeaks.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             G2frame.MapPeaks.SetMargins(0,0)
             G2frame.MapPeaks.AutoSizeColumns(False)
-            mainSizer.Add(G2frame.MapPeaks)
+            G2frame.MapPeaks.SetRowLabelSize(40)
+            mainSizer.Add(G2frame.MapPeaks,1,wx.EXPAND)
+            G2frame.MapPeaks.SetScrollRate(10,10) # allow grid to scroll
         else:
             mainSizer.Add(wx.StaticText(MapPeakList,label=' Map peak list is empty'),0,wx.ALL,10)
             G2frame.MapPeaks.Show(False)
@@ -16813,7 +16837,7 @@ of the crystal structure.
         DData = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(DData,'Data')
         Pages.append('Data')
-    AtomList = wx.ScrolledWindow(G2frame.phaseDisplay)   
+    AtomList = wx.Panel(G2frame.phaseDisplay)   
     Atoms = G2G.GSGrid(AtomList)
     G2frame.phaseDisplay.gridList.append(Atoms)
     G2frame.phaseDisplay.AddPage(AtomList,'Atoms')
@@ -16829,7 +16853,7 @@ of the crystal structure.
     drawOptions = wx.ScrolledWindow(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(drawOptions,'Draw Options')
     Pages.append('Draw Options')
-    drawAtomsList = wx.ScrolledWindow(G2frame.phaseDisplay)
+    drawAtomsList = wx.Panel(G2frame.phaseDisplay)
     drawAtoms = G2G.GSGrid(drawAtomsList)
     G2frame.phaseDisplay.gridList.append(drawAtoms)
     G2frame.phaseDisplay.AddPage(drawAtomsList,'Draw Atoms')
@@ -16849,7 +16873,7 @@ of the crystal structure.
         RigidBodies.Bind(wx.EVT_CHAR,rbKeyPress)
         Pages.append('RB Models')
         
-    MapPeakList = wx.ScrolledWindow(G2frame.phaseDisplay)   
+    MapPeakList = wx.Panel(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
     # create the grid once; N.B. need to reference at this scope
     G2frame.MapPeaks = G2G.GSGrid(MapPeakList)
@@ -16877,7 +16901,7 @@ of the crystal structure.
     Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')
-    PawleyRefList = wx.ScrolledWindow(G2frame.phaseDisplay)
+    PawleyRefList = wx.Panel(G2frame.phaseDisplay)
     G2frame.PawleyRefl = None  # grid now created when needed
 #    G2frame.PawleyRefl = G2G.GSGrid(PawleyRefList)  
 #    G2frame.PawleyRefl.SetScrollRate(0,0)

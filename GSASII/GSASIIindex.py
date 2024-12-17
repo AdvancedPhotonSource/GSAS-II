@@ -912,12 +912,6 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True,cctbx_args=None):
                     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
                     peaks = IndexPeaks(peaks,HKL)[1]
                     Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
-            # elif ibrav == 15:                      #C-centered monoclinic
-            #     Abeg = swapMonoA(Abeg[:])
-            #     Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20,cctbx_args=cctbx_args)
-            #     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
-            #     peaks = IndexPeaks(peaks,HKL)[1]
-            #     Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
         else:
             break
         Nc = len(HKL)
@@ -1115,12 +1109,13 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
                 ', elapsed time = ',G2lat.sec2HMS(time.time()-begin)))
         if timingOn:
             pr.disable()
-            s = StringIO.StringIO()
-            sortby = 'tottime'
-            ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
-            print('Profiler of function calculation; top 50% of routines:')
-            ps.print_stats("GSASII",.5)
-            print(s.getvalue())
+            if cells:
+                s = StringIO.StringIO()
+                sortby = 'tottime'
+                ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
+                print('Profiler of function calculation; top 50% of routines:')
+                ps.print_stats("GSASII",.5)
+                print(s.getvalue())
             
     if cells:
         return True,dmin,cells

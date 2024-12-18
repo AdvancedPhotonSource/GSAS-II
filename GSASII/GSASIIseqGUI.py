@@ -1048,7 +1048,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             
 #---- UpdateSeqResults: start processing sequential results here ########## 
     # lookup table for unique cell parameters by symmetry
-
     if not data:
         print ('No sequential refinement results')
         return
@@ -1514,14 +1513,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataWindow.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataWindow)
     G2frame.dataDisplay.SetScrollRate(10,10)
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,label='Sequential results:'),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sequential results:'),0,WACV)
-    topSizer.Add((100,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer)
-    mainSizer.Add(G2frame.dataDisplay)
-    G2frame.dataWindow.GetSizer().Add(mainSizer)
+    mainSizer.Add(G2frame.dataDisplay,1,wx.EXPAND,1)
+    G2frame.dataWindow.SetSizer(mainSizer)
     if histNames[0].startswith('PWDR'):
         #rowLabels = [str(i)+': '+l[5:30] for i,l in enumerate(histNames)]
         rowLabels = [l[5:] for i,l in enumerate(histNames)]
@@ -2013,14 +2014,15 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     #end patch
     
     G2frame.dataWindow.ClearData()
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,label='Scipy Cluster Analysis:'),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add((5,5),0)
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Scipy Cluster Analysis: '),0,WACV)    
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add((5,5),0)
     
     mainSizer.Add(FileSizer())
@@ -2102,8 +2104,6 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='No outlier data found'))
                 
     bigSizer.Add(mainSizer)
-        
-    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     bigSizer.Layout()
     bigSizer.FitInside(G2frame.dataWindow)
     G2frame.dataWindow.SetSizer(bigSizer)

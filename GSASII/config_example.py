@@ -317,3 +317,11 @@ HDF5selection = 20
 window is offered to determine which images will be read. If negative, 
 the selection window will never be used. If zero, it will always be used.
 '''
+
+FontSize_incr = 0
+'''Specifies a point size to increase (or decrease if negative) the default 
+font size for the GSAS-II windows. Default is 0. An increment much larger than 
+~4 will likely cause some places where text no longer fits, but might be useful on high resolution monitors.
+%%
+Restart GSAS-II for this setting to take effect.
+'''

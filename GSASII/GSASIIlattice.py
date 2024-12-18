@@ -1602,9 +1602,16 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None,ifList=False):
     if ifList:  #structure needed for plotting
        HKL = np.vstack((H.T,rdsq)).T
        HKL = [[int(h[0]),int(h[1]),int(h[2]),h[3],-1] for h in HKL if h[3] >= dmin]
+       return sortHKLd(HKL,True,False)
     else:   #fast for indexing
-        HKL = np.vstack((H.T,rdsq,[-1]*len(H))).T[rdsq >= dmin]                     
-    return sortHKLd(HKL,True,False)
+        HKL = np.vstack((H.T,rdsq,[-1]*len(H))).T[rdsq >= dmin]
+        if HKL.shape[0] > 1:
+            D = HKL[:,3]
+            Indx = np.argsort(D)
+            return np.flipud(HKL[Indx])
+        else:
+            return HKL
+                    
     
 def getHKLmax(dmin,SGData,A):
     'finds maximum allowed hkl for given A within dmin'

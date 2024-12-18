@@ -4222,10 +4222,14 @@ def UpdateIndexPeaksGrid(G2frame, data):
 ################################################################################
 #####  Unit cells
 ################################################################################
-def UpdateUnitCellsGrid(G2frame, data):
+def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
     '''respond to selection of PWDR Unit Cells data tree item.
-    '''    
-        
+
+    :param wx.Frame G2frame: Main GSAS-II window
+    :param dict data: contents of "Unit Cells List" data tree item
+    :param bool callSeaResSelected: when True, selects first entry in 
+      UnitCellsTable search results table 
+    '''
     def OnNcNo(event):
         controls[2] = NcNo.GetValue()
         
@@ -4551,6 +4555,10 @@ def UpdateUnitCellsGrid(G2frame, data):
          * Nhkl: number of generated reflections below dmin
          * frfnd: fraction of lines indexed
         '''
+        if not cellDisplayOpts['Show']:  # will be false when "Show Cell" is not checked
+            G2frame.HKL = np.array([])
+            G2pwpl.PlotPatterns(G2frame)
+            return
         result = None
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
@@ -4835,17 +4843,26 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.ifX20 = True
             wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
-    def RefreshUnitCellsGrid(event):
-        'responds when "use" is pressed in index table; generates/plots reflections'
+    def SeaResSelected(event=None):
+        '''Responds when "use" is pressed in the UnitCellsTable (search results table)
+        or at end of UpdateUnitCellsGrid (When callSeaResSelected==True; event==None).
+
+        Generates & plots reflections
+        '''
         data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         cells,dminx = data[2:4]
-        r,c =  event.GetRow(),event.GetCol()
+        if event is None:
+            r,c = 0,0
+            colLabel = 'show'
+        else:
+            r,c =  event.GetRow(),event.GetCol()
+            colLabel = event.GetEventObject().GetColLabelValue(c)
         clearShowFlags()
         if cells:
             Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                     G2frame,G2frame.PatternId,'Instrument Parameters'))[0]
             if cells[0][0] == '?':  # k-vector table
-                # uncheck all rowes then check only the one used row
+                # uncheck all rows then check only the one used row
                 for i in range(len(cells)):
                     UnitCellsTable.SetValue(i,c,False)
                 UnitCellsTable.SetValue(r,c,True)
@@ -4953,7 +4970,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     G2frame.HKL = np.array(G2frame.HKL)
 
                     G2pwpl.PlotPatterns(G2frame)
-            if event.GetEventObject().GetColLabelValue(c) == 'show':
+            if colLabel == 'show':
                 disableCellCtrls()
                 clearTryAll()
                 for i in range(len(cells)):
@@ -4975,7 +4992,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                         G2pwpl.PlotPatterns(G2frame)
                 except:
                     pass
-            elif event.GetEventObject().GetColLabelValue(c) == 'Keep':
+            elif colLabel == 'Keep':
                 if UnitCellsTable.GetValue(r,c):
                     UnitCellsTable.SetValue(r,c,False)
                     cells[r][c] = False
@@ -6074,7 +6091,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         cells.clear()
 
         # display the result
+        select = False
         for i, k_v in enumerate(k_opt):
+            select = True
             cells.append([])
             laue = 'P1'
             cells[-1] += ['?', 0, laue]
@@ -6082,7 +6101,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             cells[-1] += c
             cells[-1] += [0, False, False]
             # G2frame.OnFileSave(event) # forces save of project
-        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
+        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data, select)  # refresh & select 1st result
 
     def OnClearCells(event):
         'remove previous search results'
@@ -6141,11 +6160,15 @@ def UpdateUnitCellsGrid(G2frame, data):
         event.Skip()
 
     def enableCellCtrls(event):
-        '''Enable the various Cell controls
+        '''Enable or Disable the various Cell controls depending on 
+        setting of "Show Cell" check button
         '''
-        ssopt['SgResults'] = []  # clear try-all table
-        clearShowFlags() # clear flags in all tables
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        if cellDisplayOpts['Show']:
+            ssopt['SgResults'] = []  # clear try-all table
+            clearShowFlags() # clear flags in all tables
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        else:
+            disableCellCtrls()
 
     def disableCellCtrls():
         '''Disable the various Cell controls, when a cell is selected
@@ -6154,7 +6177,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         # switching off the unit cell controls
         for w in UCdisableList:
             w.Enable(False)
-
+        cellDisplayOpts['Show'] = False
+        showCellCheck.SetValue(False) # turn off cell display
+        
     def clearTryAll():
         '''clear out the try-all table. Do this when showing a cell from 
         any other search table or when any change is made to any cell 
@@ -6376,18 +6401,17 @@ def UpdateUnitCellsGrid(G2frame, data):
         search_opts = ["HighSymPts", "HighSymPts & HighSymPaths", "General"]
         ch1 = G2G.EnumSelector(G2frame.dataWindow,G2frame.kvecSearch,'soption',search_opts)
         littleSizer2.Add(ch1, 10, WACV | wx.RIGHT, 0)
-        littleSizer2.Add((15, -1))  # add space
-
-        btn = wx.Button(G2frame.dataWindow,wx.ID_ANY,'Start Search')
-        littleSizer2.Add(btn, 5, WACV | wx.RIGHT, 0)
-        btn.Bind(wx.EVT_BUTTON,OnKvecSearch)
 
         mainSizer.Add(littleSizer, 0)
-        mainSizer.Add((-1, 10), 0)
+        mainSizer.Add((-1, 5), 0)
         mainSizer.Add(littleSizer1x, 0)
-        mainSizer.Add((-1, 10), 0)
+        mainSizer.Add((-1, 5), 0)
         mainSizer.Add(littleSizer2, 0)
-        
+        mainSizer.Add((-1, 5), 0)
+        btn = wx.Button(G2frame.dataWindow,wx.ID_ANY,'Start Search')
+        btn.Bind(wx.EVT_BUTTON,OnKvecSearch)
+        mainSizer.Add(btn)
+
     # 2nd "box": unit cell/sym info
     mainSizer.Add((-1,3),0)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
@@ -6552,9 +6576,18 @@ def UpdateUnitCellsGrid(G2frame, data):
     # cell display options
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     littleSizer.Add((5,-1),0)
-    hklShow = wx.Button(G2frame.dataWindow,label="Recalc hkl positions")
-    hklShow.Bind(wx.EVT_BUTTON,enableCellCtrls)
-    littleSizer.Add(hklShow,0,WACV)
+    cellDisplayOpts['Show'] = cellDisplayOpts.get('Show',False)
+    showCellCheck = G2G.G2CheckBox(G2frame.dataWindow,'Show Cell',
+                cellDisplayOpts,'Show',OnChange=enableCellCtrls)
+    littleSizer.Add(showCellCheck,0,WACV)
+    littleSizer.Add((5,-1),0)
+    if 'E' not in Inst['Type'][0]:
+        littleSizer.Add((5,-1))
+        if not ssopt.get('Use',False):  # Show Extinct not available for super lattice
+            showExt = G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',
+                cellDisplayOpts,'showExtinct',OnChange=OnHklShow)
+            UCdisableList.append(showExt)
+            littleSizer.Add(showExt,0,WACV)
     littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',style=wx.ALIGN_RIGHT),0,WACV)
     G2frame.PlotOpts['hklHighlight'] = G2frame.PlotOpts.get('hklHighlight',0)
     Sel = G2G.G2ChoiceButton(G2frame.dataWindow,[ 'None',] + [c+notEq0 for c in ('h','k','l')],
@@ -6563,19 +6596,15 @@ def UpdateUnitCellsGrid(G2frame, data):
     littleSizer.Add(Sel,0,WACV)
 
     if 'E' not in Inst['Type'][0]:
-        littleSizer.Add((5,-1))
-        if not ssopt.get('Use',False):  # Show Extinct not available for super lattice
-            showExt = G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',
-                cellDisplayOpts,'showExtinct',OnChange=OnHklShow)
-            UCdisableList.append(showExt)
-            littleSizer.Add(showExt,0,WACV)
         if 'N' in Inst['Type'][0]:
+            littleSizer.Add((5,-1))
             MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
             UCdisableList.append(MagSel)
             MagSel.SetValue('MagSpGrp' in SGData)
             MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
             littleSizer.Add(MagSel,0,WACV)
         if len(G2frame.HKL):
+            littleSizer.Add((5,-1))
             makePks = wx.Button(G2frame.dataWindow,label='Copy refs to Peak list')
             UCdisableList.append(makePks)
             makePks.Bind(wx.EVT_BUTTON,OnMakePks)
@@ -6726,7 +6755,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         gridDisplay = G2G.GSGrid(G2frame.dataWindow)
         gridDisplay.SetTable(UnitCellsTable, True)
         G2frame.dataWindow.CopyCell.Enable(True)
-        gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)
+        gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,SeaResSelected)
         gridDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnSortCells)
         gridDisplay.SetRowLabelSize(0)
         gridDisplay.AutoSizeColumns(False)
@@ -6828,6 +6857,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.dataWindow.Unbind(wx.EVT_SIZE)
     G2frame.dataWindow.Bind(wx.EVT_SIZE,_onResize)
     G2frame.dataWindow.SetDataSize()
+    if callSeaResSelected:
+        SeaResSelected(None)  # select 1st item in table
 
 ################################################################################
 #####  Reflection list

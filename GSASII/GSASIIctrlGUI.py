@@ -5741,8 +5741,8 @@ See web page GSASII.github.io for information on how to install.
             svnCheckUpdates(self.frame)
         else:
             dlg = wx.MessageDialog(self.frame,
-                                   'No VCS','Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
-                                   wx.OK)
+                                   'Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
+                                   'No VCS',wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
             return
@@ -5756,8 +5756,8 @@ See web page GSASII.github.io for information on how to install.
             svnSelectVersion(self.frame)
         else:
             dlg = wx.MessageDialog(self.frame,
-                                   'No VCS','Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
-                                   wx.OK)
+                                   'Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
+                                   'No VCS',wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
             return

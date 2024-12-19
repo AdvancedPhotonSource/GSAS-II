@@ -975,7 +975,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
             timeout=None,M20_min=2.0,X20_max=None,return_Nc=False,
             cctbx_args=None):
     'needs a doc string'
-    timingOn = True
+    timingOn = False
     if timingOn:
         import cProfile,pstats
         import io as StringIO

@@ -1616,7 +1616,6 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None,ifList=False):
         else:
             return HKL
                     
-   
 def getHKLmax(dmin,SGData,A):
     'finds maximum allowed hkl for given A within dmin'
     SGLaue = SGData['SGLaue']

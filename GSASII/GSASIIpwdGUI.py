@@ -4448,7 +4448,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             G2frame.dataWindow.RefineCell.Enable(True)
             disableCellCtrls()
-            OnHklShow(event,False)
+            OnHklShow(event,True)
             #wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)            
         
     def SetCellValue(Obj,ObjId,value):
@@ -4557,7 +4557,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         '''
         if not cellDisplayOpts['Show']:  # will be false when "Show Cell" is not checked
             G2frame.HKL = np.array([])
-            G2pwpl.PlotPatterns(G2frame)
+            if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
+                G2plt.PlotPowderLines(G2frame)
+            else:
+                G2pwpl.PlotPatterns(G2frame)
             return
         result = None
         PatternId = G2frame.PatternId

@@ -315,21 +315,20 @@ def IndexPeaks(peaks,HKL):
     if N == 0: return False,peaks
     hklds = list(np.array(HKL).T[3])+[1000.0,0.0,]
     hklds.sort()                                        # ascending sort - upper bound at end
-    hklmax = [0,0,0]
     for ipk,peak in enumerate(peaks):
         peak[4:7] = [0,0,0]                           #clear old indexing
         peak[8] = 0.
         if peak[2]:
             i = bisect.bisect_right(hklds,peak[7])          # find peak position in hkl list
-            dm = peak[-2]-hklds[i-1]                         # peak to neighbor hkls in list
+            dm = peak[-2]-hklds[i-1]                        # peak to neighbor hkls in list
             dp = hklds[i]-peak[-2]
             pos = N-i                                       # reverse the order
             if dp > dm: pos += 1                            # closer to upper than lower
             if pos >= N:
                 break
-            hkl = HKL[pos]                                 # put in hkl
-            if hkl[-1] >= 0:                                 # peak already assigned - test if this one better
-                opeak = peaks[int(hkl[-1])]                 #hkl[-1] needs to be int here
+            hkl = HKL[pos]                                  # put in hkl
+            if hkl[-1] >= 0:                                # peak already assigned - test if this one better
+                opeak = peaks[int(hkl[-1])]                 # hkl[-1] needs to be int here
                 dold = abs(opeak[-2]-hkl[3])
                 dnew = min(dm,dp)
                 if dold > dnew:                             # new better - zero out old
@@ -344,10 +343,8 @@ def IndexPeaks(peaks,HKL):
         peak[3] = False
         if peak[2]:
             if peak[-1] > 0.:
-                for j in range(3):
-                    if abs(peak[j+4]) > hklmax[j]: hklmax[j] = abs(peak[j+4])
                 peak[3] = True
-    if hklmax[0]*hklmax[1]*hklmax[2] > 0:
+    if np.any(peaks[4])*np.any(peaks[5])*np.any(peaks[6]):
         return True,peaks
     else:
         return False,peaks  #nothing indexed!
@@ -455,7 +452,7 @@ def FitHKL(ibrav,peaks,A,Pwr):
     def errFit(values,ibrav,d,H,Pwr):
         A = Values2A(ibrav,values)
         Qo = 1./d**2
-        Qc = G2lat.calc_rDsq(H,A)
+        Qc = G2lat.calc_rDsqA(H,A)
         return (Qo-Qc)*d**Pwr
         
     def dervFit(values,ibrav,d,H,Pwr):
@@ -482,43 +479,40 @@ def FitHKL(ibrav,peaks,A,Pwr):
     A = Values2A(ibrav,result[0])
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A,result
            
-def errFitZ(values,ibrav,d,H,tth,wave,Z,Zref):
-    Zero = Z
-    if Zref:    
-        Zero = values[-1]
-    A = Values2A(ibrav,values)
-    Qo = 1./d**2
-    Qc = G2lat.calc_rDsqZ(H,A,Zero,tth,wave)
-    return (Qo-Qc)
-    
-def dervFitZ(values,ibrav,d,H,tth,wave,Z,Zref):
-    if ibrav in [0,1,2]:
-        derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
-    elif ibrav in [3,4,]:
-        derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
-    elif ibrav in [5,6]:
-        derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
-    elif ibrav in [7,8,9,10,11,12]:
-        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
-    elif ibrav in [13,14,15,16]:
-        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
-    else:
-        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
-    if Zref:
-        derv.append(npsind(tth)*2.0*rpd/wave**2)
-    derv = -np.array(derv)
-    return derv.T
-    
 def FitHKLZ(wave,ibrav,peaks,A,Z,Zref):
     'needs a doc string'
+    
+    def errFitZ(values,ibrav,d,H,tth,wave,Z,Zref):
+        Zero = Z
+        if Zref:    
+            Zero = values[-1]
+        A = Values2A(ibrav,values)
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsqZ(H,A,Zero,tth,wave)
+        return (Qo-Qc)
+        
+    def dervFitZ(values,ibrav,d,H,tth,wave,Z,Zref):
+        if ibrav in [0,1,2]:
+            derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
+        elif ibrav in [3,4,]:
+            derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
+        elif ibrav in [5,6]:
+            derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
+        elif ibrav in [7,8,9,10,11,12]:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
+        elif ibrav in [13,14,15,16]:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
+        else:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
+        if Zref:
+            derv.append(npsind(tth)*2.0*rpd/wave**2)
+        derv = -np.array(derv)
+        return derv.T
     
     Peaks = np.array(peaks).T   
     values = A2values(ibrav,A)
     if Zref:
         values.append(Z)
-#TODO: try Hessian refinement here - might improve things
-#    result = G2mth.HessianLSQ(errFitZ,values,Hess=peakHess,        #would need "peakHess" routine; returns vec & Hess
-#        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref]),ftol=.01,maxcyc=10)
     result = so.leastsq(errFitZ,values,Dfun=dervFitZ,full_output=True,ftol=0.0001,
         args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref))
     A = Values2A(ibrav,result[0][:6])
@@ -527,43 +521,43 @@ def FitHKLZ(wave,ibrav,peaks,A,Z,Zref):
     chisq = np.sum(errFitZ(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref)**2)
     return True,chisq,A,Z,result
     
-def errFitZSS(values,ibrav,d,H,tth,wave,vec,Vref,Z,Zref):
-    Zero = Z
-    if Zref:    
-        Zero = values[-1]
-    A = Values2A(ibrav,values)
-    Vec = Values2Vec(ibrav,vec,Vref,values)
-    Qo = 1./d**2
-    Qc = G2lat.calc_rDsqZSS(H,A,Vec,Zero,tth,wave)
-    return (Qo-Qc)
-    
-def dervFitZSS(values,ibrav,d,H,tth,wave,vec,Vref,Z,Zref):
-    A = Values2A(ibrav,values)
-    Vec = Values2Vec(ibrav,vec,Vref,values)
-    HM = H[:3]+(H[3][:,np.newaxis]*Vec).T
-    if ibrav in [3,4,]:
-        derv = [HM[0]*HM[0]+HM[1]*HM[1]+HM[0]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [5,6]:
-        derv = [HM[0]*HM[0]+HM[1]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [7,8,9,10,11,12]:
-        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [13,14,15,16]:
-        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[2]]
-    else:
-        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[1],HM[0]*HM[2],HM[1]*HM[2]]
-    if Vref[0]:
-        derv.append(2.*A[0]*HM[0]*H[3]+A[3]*HM[1]*H[3]+A[4]*HM[2]*H[3])
-    if Vref[1]:
-        derv.append(2.*A[1]*HM[1]*H[3]+A[3]*HM[0]*H[3]+A[5]*HM[2]*H[3])
-    if Vref[2]:
-        derv.append(2.*A[2]*HM[2]*H[3]+A[4]*HM[1]*H[3]+A[5]*HM[0]*H[3])    
-    if Zref:
-        derv.append(npsind(tth)*2.0*rpd/wave**2)
-    derv = -np.array(derv)
-    return derv.T
-    
 def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref):
     'needs a doc string'
+    
+    def errFitZSS(values,ibrav,d,H,tth,wave,vec,Vref,Z,Zref):
+        Zero = Z
+        if Zref:    
+            Zero = values[-1]
+        A = Values2A(ibrav,values)
+        Vec = Values2Vec(ibrav,vec,Vref,values)
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsqZSS(H,A,Vec,Zero,tth,wave)
+        return (Qo-Qc)
+        
+    def dervFitZSS(values,ibrav,d,H,tth,wave,vec,Vref,Z,Zref):
+        A = Values2A(ibrav,values)
+        Vec = Values2Vec(ibrav,vec,Vref,values)
+        HM = H[:3]+(H[3][:,np.newaxis]*Vec).T
+        if ibrav in [3,4,]:
+            derv = [HM[0]*HM[0]+HM[1]*HM[1]+HM[0]*HM[1],HM[2]*HM[2]]
+        elif ibrav in [5,6]:
+            derv = [HM[0]*HM[0]+HM[1]*HM[1],HM[2]*HM[2]]
+        elif ibrav in [7,8,9,10,11,12]:
+            derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2]]
+        elif ibrav in [13,14,15,16]:
+            derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[2]]
+        else:
+            derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[1],HM[0]*HM[2],HM[1]*HM[2]]
+        if Vref[0]:
+            derv.append(2.*A[0]*HM[0]*H[3]+A[3]*HM[1]*H[3]+A[4]*HM[2]*H[3])
+        if Vref[1]:
+            derv.append(2.*A[1]*HM[1]*H[3]+A[3]*HM[0]*H[3]+A[5]*HM[2]*H[3])
+        if Vref[2]:
+            derv.append(2.*A[2]*HM[2]*H[3]+A[4]*HM[1]*H[3]+A[5]*HM[0]*H[3])    
+        if Zref:
+            derv.append(npsind(tth)*2.0*rpd/wave**2)
+        derv = -np.array(derv)
+        return derv.T
     
     Peaks = np.array(peaks).T    
     values = A2values(ibrav,A)
@@ -581,36 +575,36 @@ def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref):
     chisq = np.sum(errFitZSS(result[0],ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,Vec,Vref,Z,Zref)**2) 
     return True,chisq,A,Vec,Z,result
     
-def errFitT(values,ibrav,d,H,tof,difC,Z,Zref):
-    Zero = Z
-    if Zref:    
-        Zero = values[-1]
-    A = Values2A(ibrav,values)
-    Qo = 1./d**2
-    Qc = G2lat.calc_rDsqT(H,A,Zero,tof,difC)
-    return (Qo-Qc)
-    
-def dervFitT(values,ibrav,d,H,tof,difC,Z,Zref):
-    if ibrav in [0,1,2]:
-        derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
-    elif ibrav in [3,4,]:
-        derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
-    elif ibrav in [5,6]:
-        derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
-    elif ibrav in [7,8,9,10,11,12]:
-        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
-    elif ibrav in [13,14,15,16]:
-        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
-    else:
-        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
-    if Zref:
-        derv.append(np.ones_like(d)/difC)
-    derv = np.array(derv)
-    return derv.T
-    
 def FitHKLT(difC,ibrav,peaks,A,Z,Zref):
     'needs a doc string'
     
+    def errFitT(values,ibrav,d,H,tof,difC,Z,Zref):
+        Zero = Z
+        if Zref:    
+            Zero = values[-1]
+        A = Values2A(ibrav,values)
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsqT(H,A,Zero,tof,difC)
+        return (Qo-Qc)
+        
+    def dervFitT(values,ibrav,d,H,tof,difC,Z,Zref):
+        if ibrav in [0,1,2]:
+            derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
+        elif ibrav in [3,4,]:
+            derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
+        elif ibrav in [5,6]:
+            derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
+        elif ibrav in [7,8,9,10,11,12]:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
+        elif ibrav in [13,14,15,16]:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
+        else:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
+        if Zref:
+            derv.append(np.ones_like(d)/difC)
+        derv = np.array(derv)
+        return derv.T
+        
     Peaks = np.array(peaks).T    
     values = A2values(ibrav,A)
     if Zref:
@@ -656,43 +650,43 @@ def FitHKLE(tth,ibrav,peaks,A):
     chisq = np.sum(errFitE(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],tth)**2)
     return True,chisq,A,result
     
-def errFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
-    Zero = Z
-    if Zref:    
-        Zero = values[-1]
-    A = Values2A(ibrav,values)
-    Vec = Values2Vec(ibrav,vec,Vref,values)
-    Qo = 1./d**2
-    Qc = G2lat.calc_rDsqTSS(H,A,Vec,Zero,tof,difC)
-    return (Qo-Qc)
-    
-def dervFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
-    A = Values2A(ibrav,values)
-    Vec = Values2Vec(ibrav,vec,Vref,values)
-    HM = H[:3]+(H[3][:,np.newaxis]*Vec).T
-    if ibrav in [3,4,]:
-        derv = [HM[0]*HM[0]+HM[1]*HM[1]+HM[0]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [5,6]:
-        derv = [HM[0]*HM[0]+HM[1]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [7,8,9,10,11,12]:
-        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [13,14,15,16]:
-        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[2]]
-    else:
-        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[1],HM[0]*HM[2],HM[1]*HM[2]]
-    if Vref[0]:
-        derv.append(2.*A[0]*HM[0]*H[3]+A[3]*HM[1]*H[3]+A[4]*HM[2]*H[3])
-    if Vref[1]:
-        derv.append(2.*A[1]*HM[1]*H[3]+A[3]*HM[0]*H[3]+A[5]*HM[2]*H[3])
-    if Vref[2]:
-        derv.append(2.*A[2]*HM[2]*H[3]+A[4]*HM[1]*H[3]+A[5]*HM[0]*H[3])    
-    if Zref:
-        derv.append(np.ones_like(d)/difC)
-    derv = np.array(derv)
-    return derv.T
-    
 def FitHKLTSS(difC,ibrav,peaks,A,V,Vref,Z,Zref):
     'needs a doc string'
+    
+    def errFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
+        Zero = Z
+        if Zref:    
+            Zero = values[-1]
+        A = Values2A(ibrav,values)
+        Vec = Values2Vec(ibrav,vec,Vref,values)
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsqTSS(H,A,Vec,Zero,tof,difC)
+        return (Qo-Qc)
+        
+    def dervFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
+        A = Values2A(ibrav,values)
+        Vec = Values2Vec(ibrav,vec,Vref,values)
+        HM = H[:3]+(H[3][:,np.newaxis]*Vec).T
+        if ibrav in [3,4,]:
+            derv = [HM[0]*HM[0]+HM[1]*HM[1]+HM[0]*HM[1],HM[2]*HM[2]]
+        elif ibrav in [5,6]:
+            derv = [HM[0]*HM[0]+HM[1]*HM[1],HM[2]*HM[2]]
+        elif ibrav in [7,8,9,10,11,12]:
+            derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2]]
+        elif ibrav in [13,14,15,16]:
+            derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[2]]
+        else:
+            derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[1],HM[0]*HM[2],HM[1]*HM[2]]
+        if Vref[0]:
+            derv.append(2.*A[0]*HM[0]*H[3]+A[3]*HM[1]*H[3]+A[4]*HM[2]*H[3])
+        if Vref[1]:
+            derv.append(2.*A[1]*HM[1]*H[3]+A[3]*HM[0]*H[3]+A[5]*HM[2]*H[3])
+        if Vref[2]:
+            derv.append(2.*A[2]*HM[2]*H[3]+A[4]*HM[1]*H[3]+A[5]*HM[0]*H[3])    
+        if Zref:
+            derv.append(np.ones_like(d)/difC)
+        derv = np.array(derv)
+        return derv.T
     
     Peaks = np.array(peaks).T    
     values = A2values(ibrav,A)
@@ -856,7 +850,7 @@ def refinePeaks(peaks,ibrav,A,ifX20=True,cctbx_args=None):
         Peaks = np.array(peaks).T
         H = Peaks[4:7]
         try:
-            Peaks[8] = 1./np.sqrt(G2lat.calc_rDsq(H,A))
+            Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqA(H,A))
             peaks = Peaks.T
         except FloatingPointError:
             A = oldA
@@ -905,13 +899,6 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True,cctbx_args=None):
         if IndexPeaks(peaks,HKL)[0] and len(HKL) > mHKL[ibrav]:
             Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20,cctbx_args=cctbx_args)
             Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
-            if ibrav in [9,10,11]:                          #A,B,or C-centered orthorhombic
-                for i in range(2):
-                    Abeg = rotOrthoA(Abeg[:])
-                    Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20,cctbx_args=cctbx_args)
-                    HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
-                    peaks = IndexPeaks(peaks,HKL)[1]
-                    Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
         else:
             break
         Nc = len(HKL)
@@ -988,7 +975,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
             timeout=None,M20_min=2.0,X20_max=None,return_Nc=False,
             cctbx_args=None):
     'needs a doc string'
-    timingOn = False
+    timingOn = True
     if timingOn:
         import cProfile,pstats
         import io as StringIO

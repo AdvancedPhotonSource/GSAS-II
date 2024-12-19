@@ -1173,12 +1173,16 @@ def getPeakPos(dataType,parmdict,dsp):
     return pos
                    
 def calc_rDsq(H,A):
-    'needs doc string'
+    'calc 1/d^2 from individual hkl and A-terms'
+    B = np.array([H[0]**2,H[1]**2,H[2]**2,H[0]*H[1],H[0]*H[2],H[1]*H[2]])
+    return np.sum(A*B)
+
+def calc_rDsqA(H,A):
+    'calc array of 1/d^2 from array of hkl & A-terms'
+    # B = np.array([H[0]**2,H[1]**2,H[2]**2,H[0]*H[1],H[0]*H[2],H[1]*H[2]])
+    # return np.sum(np.array(A)[:,nxs]*B,axis=0)
     h,k,l = H
-    a,b,c,d,e,f = A
-    # rdsq = H[0]**2*A[0]+H[1]**2*A[1]+H[2]**2*A[2]+H[0]*H[1]*A[3]+H[0]*H[2]*A[4]+H[1]*H[2]*A[5]
-    rdsq = h**2*a+k**2*b+l**2*c+h*k*d+h*l*e+k*l*f #quicker
-    return rdsq
+    return A[0]*h*h+A[1]*k*k+A[2]*l*l+A[3]*h*k+A[4]*h*l+A[5]*k*l #quicker
     
 def calc_rDsq2(H,G):
     'computes 1/d^2 from hkl & reciprocal metric tensor G'
@@ -1191,17 +1195,17 @@ def calc_rDsqSS(H,A,vec):
        
 def calc_rDsqZ(H,A,Z,tth,lam):
     'computes 1/d^2 from hkl & reciprocal metric tensor A with CW ZERO shift'
-    rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
+    rdsq = calc_rDsqA(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def calc_rDsqZSS(H,A,vec,Z,tth,lam):
     'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with CW Z shift'
-    rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
+    rdsq = calc_rDsqA(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def calc_rDsqT(H,A,Z,tof,difC):
     'computes 1/d^2 from hkl & reciprocal metric tensor A with TOF ZERO shift'
-    rdsq = calc_rDsq(H,A)+Z/difC
+    rdsq = calc_rDsqA(H,A)+Z/difC
     return rdsq
        
 def calc_rDsqTSS(H,A,vec,Z,tof,difC):
@@ -1598,7 +1602,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None,ifList=False):
     #then enforce centering rules & d >= dmin limit; make array or list as needed
 
     H = newCentCheck(Cent,H)
-    rdsq = nprdsq2d(calc_rDsq(H.T,A),6)
+    rdsq = nprdsq2d(calc_rDsqA(H.T,A),6)
     if ifList:  #structure needed for plotting
        HKL = np.vstack((H.T,rdsq)).T
        HKL = [[int(h[0]),int(h[1]),int(h[2]),h[3],-1] for h in HKL if h[3] >= dmin]
@@ -1612,7 +1616,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None,ifList=False):
         else:
             return HKL
                     
-    
+   
 def getHKLmax(dmin,SGData,A):
     'finds maximum allowed hkl for given A within dmin'
     SGLaue = SGData['SGLaue']

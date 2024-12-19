@@ -4621,7 +4621,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                 print (' new M20,X20: %.2f %d, fraction found: %.3f for %s'%(M20,X20,frfnd,Symb))
             result = [Symb,False,M20,X20,Nhkl,frfnd]
         if not Plot: return result
-        if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId): # histogram of just peaks? Not implemented(?)
+        if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
             G2pwpl.PlotPatterns(G2frame)

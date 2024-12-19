@@ -121,7 +121,8 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     PlotPatterns(G2frame,plotType=plotType)
 
 def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
-    '''shortcut to plot vertical lines for limits, etc.'''
+    '''shortcut to plot vertical lines for limits & Laue satellites.
+    Was used for extrapeaks'''
     if Page.plotStyle['qPlot']:
         Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
             picker=pick,pickradius=2.,linestyle='dotted'))
@@ -139,11 +140,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     as "waterfall plots" or contour plots. Log I plotting available.
 
     Note that information needed for plotting will be found in:
-       G2frame.PatternId (contains the tree item for the current histogram)
-       
-       G2frame.PickId (contains the actual selected tree item (can be child of histogram)
 
-       G2frame.HKL (used for tool tip display of hkl for selected phase reflection list). Not used for HKL markers.
+      * G2frame.PatternId: contains the tree item for the current histogram       
+      * G2frame.PickId: contains the actual selected tree item (can be child 
+        of histogram)
+      * G2frame.HKL: used for tooltip display of hkl for a selected/generated 
+        phase's reflections when mouse is moved to a reflection location; 
+        HKL locations shown (usually as an orange line) in "Index Peak List"
+        & "Unit Cells List" plots. 
+        N.B. reflection tick markers are generated from each phase's 
+        reflection list.
+      * G2frame.Extinct: used for display of extinct reflections (in blue) 
+        for generated reflections when "show extinct" is selected.
     '''
     global PlotList
     def PublishPlot(event):
@@ -547,12 +555,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if pickIdText in ['Index Peak List','Unit Cells List',]:
                     indx = -2
                 # finds reflections within 1% of plot range in units of plot
-                found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < dT/2.)]
+                findx = np.where(np.fabs(np.array(G2frame.HKL).T[indx]-xpos) < dT/2.)
                 if len(G2frame.Extinct):
                     G2frame.Extinct = np.array(G2frame.Extinct)
                     f2 = G2frame.Extinct[np.where(np.fabs(G2frame.Extinct.T[indx]-xpos) < dT/2.)] 
                     found = np.concatenate((found,f2))
-                if len(found):
+                if np.any(findx):
+                    found = G2frame.HKL[findx]
                     if len(found[0]) > 6:   #SS reflections
                         fmt = "{:.0f},{:.0f},{:.0f},{:.0f}"
                         n = 4
@@ -729,6 +738,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
 
         ####====== start of OnPickPwd
+        inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
+        try:
+            inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
+        except:
+            pass
         global Page
         try:
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
@@ -784,11 +798,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 #                xy[1] = xy[1]**2
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
             # Peak List: add peaks by clicking on points,
-            # Or, by dragging lines: move peaks; move limits
-            if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
+            # Or, by dragging: move peaks, limits, diff curve or (XtraPeaks only) tickmarks
+            phname = ''
+            try: 
+                phname = str(pick).split('(',1)[1][:-1]
+            except:
+                pass
+            if ind.all() != [0] and ObsLine[0].get_label() in str(pick):
+                #picked a data point, add a new peak
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1],useFit=True)
-                if XtraPeakMode:
+                if inXtraPeakMode:
                     data['xtraPeaks'] = data.get('xtraPeaks',[])
                     data['xtraPeaks'].append(XY)
                     data['sigDict'] = {}    #now invalid
@@ -797,9 +817,42 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     data['sigDict'] = {}    #now invalid
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
-            else:                                                   #picked a peak list line
-                if DifLine[0] is pick: return   # don't drag the difference during peak lists
-                # prepare to animate move of line
+            elif inXtraPeakMode and phname in Page.phaseList:
+                #picked a tick mark
+                Page.pickTicknum = Page.phaseList.index(phname)
+                resetlist = []
+                for pId,phase in enumerate(Page.phaseList): # set the tickmarks to a lighter color
+                    col = Page.tickDict[phase].get_color()
+                    rgb = mpcls.ColorConverter().to_rgb(col)
+                    rgb_light = [(2 + i)/3. for i in rgb]
+                    resetlist.append((Page.tickDict[phase],rgb))
+                    Page.tickDict[phase].set_color(rgb_light)
+                    Page.tickDict[phase].set_zorder(99) # put on top
+                Page.canvas.draw() # refresh with dimmed tickmarks 
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
+                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                for f,v in resetlist:  # reset colors back
+                    f.set_zorder(0)
+                    f.set_color(v) # reset colors back to original values
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragTickmarks)
+                G2frame.itemPicked = pick
+                return
+            elif DifLine[0] is pick:
+                # drag the difference curve
+                G2frame.itemPicked = pick
+                if G2frame.Weight:
+                    axis = Page.figure.axes[1]
+                else:
+                    axis = Page.figure.gca()
+                Page.canvas.draw() # save bitmap
+                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                Page.diffOffset = Page.plotStyle['delOffset']
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragDiffCurve)
+            else:
+                #picked a peak list line, prepare to animate move of line
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
                 Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -884,8 +937,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
-        elif G2frame.PickId and (G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists' or
-                'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId)
+        elif G2frame.PickId and (
+                G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists'
+                or 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId)
                 ):
             G2frame.itemPicked = pick
             Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -1107,7 +1161,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         xpos = event.xdata
-        if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Peak List','Limits','Unit Cells List'] and xpos:
+        phNum = None
+        try:
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists')
+            pickPhase = str(G2frame.itemPicked).split('(',1)[1][:-1]
+            phNum = Page.phaseList.index(pickPhase)
+        except:
+            pass
+        if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List'  and xpos and phNum is not None:
+            # dragging tickmarks
+            if phNum:
+                Page.plotStyle['refDelt'] = -(event.ydata-Page.plotStyle['refOffset'])/phNum
+            else:       #1st row of refl ticks
+                Page.plotStyle['refOffset'] = event.ydata
+        elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Peak List','Limits','Unit Cells List'] and xpos:
             lines = []
             for line in G2frame.Lines: 
                 lines.append(line.get_xdata()[0])
@@ -1136,7 +1203,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif lineNo > 1+nxcl:
                 PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 peaks = G2frame.GPXtree.GetItemPyData(PeakId)
-                if XtraPeakMode:
+                inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
+                try:
+                    inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
+                except:
+                    pass
+                if inXtraPeakMode:
                     tbl = peaks['xtraPeaks']
                 else:
                     tbl = peaks['peaks']
@@ -1165,8 +1237,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 data[1][lineNo] = xpos
                 data[1][0] = min(max(data[0][0],data[1][0]),data[1][1])
                 data[1][1] = max(min(data[0][1],data[1][1]),data[1][0])
-        elif (G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists' or
-            'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId)) and xpos:
+        elif (G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists'
+                or 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId)) and xpos:
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists')
             if Id:
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
@@ -1459,9 +1531,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     global savedX
     plottype = plotType
-    XtraPeakMode = False   # Ignore if peak list menubar is not yet created
+    inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
     try:
-        XtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
+        inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
     except:
         pass
 
@@ -1622,6 +1694,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
         G2frame.Bind(wx.EVT_MENU, onMovePeak, id=G2frame.dataWindow.movePeak.GetId())
         Page.phaseList = Phases = []
+        if inXtraPeakMode:
+            Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
+            Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
     else:
         Page.phaseList = Phases = []
     # assemble a list of validated colors for tickmarks
@@ -2016,6 +2091,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         continue
                     if x > xmax:
                         continue
+                # magnification region marker
                 magMarkers.append(Plot.axvline(x,color='0.5',dashes=(1,1),
                                 picker=True,pickradius=2.,label='_magline'))
                 lbl = Plot.annotate("x{}".format(ml), xy=(x, tpos), xycoords=("data", "axes fraction"),
@@ -2272,7 +2348,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         l = []
                         PeakId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                         peaks = G2frame.GPXtree.GetItemPyData(PeakId)
-                        if XtraPeakMode:
+                        if inXtraPeakMode:
                             tbl = peaks['xtraPeaks']
                         else:
                             tbl = peaks['peaks']
@@ -2309,7 +2385,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                         Page.SetToolTipString(tip)
                         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
-                        if XtraPeakMode:
+                        if inXtraPeakMode:
                             peaks['xtraPeaks'] = peaks.get('xtraPeaks',[])
                             tbl = peaks['xtraPeaks']
                             color = 'r'
@@ -2389,7 +2465,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists'
           or 
         'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
-        or (XtraPeakMode and
+        or (inXtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 )
     for ph,markerlist in data[0].get('HKLmarkers',{}).items():
@@ -2440,15 +2516,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plot.plot(X,CY,'k',picker=False,label='cum('+Gkchisq+')')
         if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
             peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
-            if not len(peaks): return # are there any peaks?
-            for peak in peaks[0]:
-                if peak[2]:
-                    if Page.plotStyle['qPlot']:
-                        Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                    elif Page.plotStyle['dPlot']:
-                        Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                    else:
-                        Plot.axvline(peak[0],color='b')
+            if len(peaks):  # are there any peaks?
+                for peak in peaks[0]:
+                    if peak[2]:
+                        if Page.plotStyle['qPlot']:
+                            Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
+                        elif Page.plotStyle['dPlot']:
+                            Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
+                        else:
+                            Plot.axvline(peak[0],color='b')
             for hkl in G2frame.HKL:
                 clr = orange
                 dash = (3,3)
@@ -2475,12 +2551,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=3)
         elif Page.plotStyle.get('WgtDiagnostic',False):
             pass # skip reflection markers
-        elif (G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits'] or 
-                  'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
-                  or (XtraPeakMode and
+        elif (G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits']
+                  or 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId)
+                  or refineMode
+                  or (inXtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 ):
-            #Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)
             for pId,phase in enumerate(Page.phaseList):

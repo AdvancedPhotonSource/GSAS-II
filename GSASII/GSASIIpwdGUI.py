@@ -4577,12 +4577,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         spc = controls[13]
-        # I'm not sure when to use spc and when to use ssopt, but I am seeing
-        # them in conflict. I'll assume the Use flag dictates this.
-        # TODO: Bob, please review.
-        if ssopt.get('Use',False):
+        if ssopt.get('Use',False):  #modulated
             SGData = ssopt.get('SGData',G2spc.SpcGroup(spc)[1])
-        else:
+        else:                       #not modulated
             SGData = G2spc.SpcGroup(spc)[1]
         Symb = SGData['SpGrp']
         M20 = X20 = 0.

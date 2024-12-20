@@ -1408,6 +1408,18 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         notebook tab. Called in :func:`OnPageChanged`
         '''
         if panel.GetSizer(): panel.GetSizer().Clear(True)
+        topSizer = G2frame.dataWindow.topBox
+        topSizer.Clear(True)
+        parent = G2frame.dataWindow.topPanel
+        lbl= "Define/edit constraints on refined parameters"
+        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        if G2frame.testSeqRefineMode():
+            topSizer.Add(G2G.HelpButton(parent,helpIndex='Constraints-SeqRef'))
+        else:
+            topSizer.Add(G2G.HelpButton(parent,helpIndex='Constraints'))
+        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+        
         Siz = wx.BoxSizer(wx.VERTICAL)
         Siz.Add((5,5),0)
         if typ != 'Sym-Generated':
@@ -1432,7 +1444,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             panel.delBtn.Bind(wx.EVT_BUTTON,OnConstDel)
             panel.delBtn.checkboxList = []
             butSizer.Add((-1,-1),1,wx.EXPAND,1)
-            butSizer.Add(G2G.HelpButton(panel,helpIndex='Constraints'))
+            
             Siz.Add(butSizer,0,wx.EXPAND)
             if G2frame.testSeqRefineMode():
                 butSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1442,7 +1454,6 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         ['auto-wildcard',   'wildcards-only',       'use-all'],
                         lambda x: wx.CallAfter(UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True))
                 butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
-                butSizer.Add(G2G.HelpButton(panel,helpIndex='Constraints-SeqRef'))
                 butSizer.Add(wx.StaticText(panel,wx.ID_ANY,'  Selected histogram: '),0,WACV)
                 btn = G2G.EnumSelector(panel, data, '_seqhist',
                         list(seqHistList),list(range(len(seqHistList))),
@@ -1687,7 +1698,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
 
     #G2frame.constr = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize())
     G2frame.constr = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(G2frame.constr,1,wx.ALL|wx.EXPAND)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
+    mainSizer.Add(G2frame.constr,1,wx.ALL|wx.EXPAND)
     # note that order of pages is hard-coded in RaisePage
     PhaseConstr = wx.ScrolledWindow(G2frame.constr)
     G2frame.constr.AddPage(PhaseConstr,'Phase')
@@ -3128,7 +3141,6 @@ create a Vector or Residue rigid body.
             rbData['rbSeq'].append([Orig,Piv,0.0,Riding])            
         dlg.Destroy()
         UpdateResidueRB()
-        
 
     def UpdateVectorRB(Scroll=0):
         '''Display & edit a selected Vector RB
@@ -3180,7 +3192,6 @@ create a Vector or Residue rigid body.
                 Indx[delRB.GetId()] = rbid
                 nameSizer.Add(delRB,0,WACV)
             nameSizer.Add((-1,-1),1,wx.EXPAND,1)
-            nameSizer.Add(G2G.HelpButton(VectorRBDisplay,helpIndex=G2frame.dataWindow.helpKey))
             return nameSizer
             
         def rbRefAtmSizer(rbid,rbData):
@@ -3590,7 +3601,6 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'  body type #'+
                                         str(data['RBIds']['Residue'].index(rbid))),0,WACV)
             nameSizer.Add((-1,-1),1,wx.EXPAND,1)
-            nameSizer.Add(G2G.HelpButton(ResidueRBDisplay,helpIndex=G2frame.dataWindow.helpKey))
             return nameSizer
             
         def rbResidues(rbid,rbData):
@@ -3751,13 +3761,11 @@ XYZ --> ZXY. Repeat if needed.
 %%* The "Center RB?" button will shift the origin of the 
 rigid body to be the midpoint of all atoms in the body (not mass weighted).
 '''
-            hlp = G2G.HelpButton(ResidueRBDisplay,refHelpInfo,wrap=400)
-            refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
             refAtmSizer2 = None
             if rbData['rbRef'][3] or rbData['useCount']:
                 refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
                     'Orientation reference non-H atoms A-B-C: %s, %s, %s'%(atNames[rbRef[0]], \
-                     atNames[rbRef[1]],atNames[rbRef[2]])),0)
+                     atNames[rbRef[1]],atNames[rbRef[2]])),0,WACV)
             else:
                 refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
                     'Orientation reference non-H atoms A-B-C: '),0,WACV)
@@ -3787,6 +3795,8 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
                 HDbut.Bind(wx.EVT_BUTTON,OnHDswitch)
                 Indx[HDbut.GetId()] = resGrid
                 refAtmSizer2.Add(HDbut,0,WACV)
+            hlp = G2G.HelpButton(ResidueRBDisplay,refHelpInfo,wrap=400)
+            refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
 
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add(refAtmSizer,0,wx.EXPAND)
@@ -3983,8 +3993,18 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
     Indx = {}
     resList = []
     plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= "Define/edit rigid bodies here before adding them to phase(s)"
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
     G2frame.rbBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(G2frame.rbBook,1,wx.ALL|wx.EXPAND)
+    mainSizer.Add(G2frame.rbBook,1,wx.ALL|wx.EXPAND)
     VectorRB = wx.ScrolledWindow(G2frame.rbBook)
     VectorRBDisplay = wx.Panel(VectorRB)
     G2frame.rbBook.AddPage(VectorRB,'Vector rigid bodies')

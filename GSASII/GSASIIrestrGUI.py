@@ -2302,6 +2302,14 @@ def UpdateRestraints(G2frame,data,phaseName):
             print ("Warning: tab "+tabname+" was not found")
 
     #### UpdateRestraints execution starts here
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= f"Create/edit restraints for {phaseName!r}"[:60]
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
     covdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
     Nvars = 0
@@ -2318,7 +2326,9 @@ def UpdateRestraints(G2frame,data,phaseName):
         #pId = G2gd.GetGPXtreeItemId(G2frame,rId,phaseName)
         #G2frame.GPXtree.Delete(pId)
         print('Unknown phase '+phaseName+' is deleted from Restraints')
-        G2frame.dataWindow.GetSizer().Add(
+        mainSizer =  wx.BoxSizer(wx.VERTICAL)
+        G2frame.dataWindow.SetSizer(mainSizer)
+        mainSizer.Add(
             wx.StaticText(G2frame.dataWindow,-1,' Phase does not exist'),0)
         return
     restrData = data[phaseName]
@@ -2378,7 +2388,9 @@ def UpdateRestraints(G2frame,data,phaseName):
     
     # GUI defined here
     G2frame.restrBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(G2frame.restrBook,1,wx.ALL|wx.EXPAND,1)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
+    mainSizer.Add(G2frame.restrBook,1,wx.ALL|wx.EXPAND,1)
     # clear menu and menu pointers
     Pages = []    
 

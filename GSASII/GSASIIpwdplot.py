@@ -134,7 +134,7 @@ def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
             picker=pick,pickradius=2.,linestyle='dotted'))
         
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
-                     extraKeys=[],refineMode=False):
+                     extraKeys=[],refineMode=False,indexFrom=''):
     '''Powder pattern plotting package - displays single or multiple powder 
     patterns as intensity vs 2-theta, q or TOF. Can display multiple patterns 
     as "waterfall plots" or contour plots. Log I plotting available.
@@ -153,7 +153,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
       * G2frame.Extinct: used for display of extinct reflections (in blue) 
         for generated reflections when "show extinct" is selected.
     '''
-    global PlotList
+    global PlotList,IndxFrom
+    IndxFrom = indexFrom
     def PublishPlot(event):
         msg = ""
         if 'PWDR' not in plottype:
@@ -541,7 +542,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             zoomstat = Page.toolbar.get_zoompan()
             if zoomstat:
                 statLine = "[" + zoomstat + "] " + statLine
-            G2frame.G2plotNB.status.SetStatusText(statLine,1)
+            G2frame.G2plotNB.status.SetStatusText(statLine + IndxFrom,1)
             s = ''
             if G2frame.PickId:
                 pickIdText = G2frame.GPXtree.GetItemText(G2frame.PickId)

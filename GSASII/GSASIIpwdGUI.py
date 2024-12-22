@@ -85,6 +85,7 @@ cellGUIlist = [
 bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
         'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','A2/m','C2/m',
         'P2/m','P1','C1']
+
 def SetLattice(controls):
     '''impose constraints on lattice constaints and determine the 
     Bravias lattice index (ibrav) as used in cellGUIlist
@@ -923,7 +924,7 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.dataWindow.UnDo.Enable(True)
         
     def OnLSQPeakFit(event):
-        'Do a sequential peak fit across multiple histograms - peaks must be present in all'
+        'Do a peak fit'
         if reflGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
             reflGrid.HideCellEditControl()
             reflGrid.DisableCellEditControl()
@@ -932,14 +933,14 @@ def UpdatePeakGrid(G2frame, data):
         wx.CallAfter(OnPeakFit)
         
     def OnOneCycle(event):
-        'Do a single cycle of peak fit refinement'
+        'Do a single cycle of peak fit'
         if reflGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
             reflGrid.HideCellEditControl()
             reflGrid.DisableCellEditControl()
         wx.CallAfter(OnPeakFit,oneCycle=True)
         
     def OnSeqPeakFit(event):
-        ''''Do a sequential peak fit across multiple histograms - peaks must be present in all.
+        '''Do a sequential peak fit across multiple histograms - peaks must be present in all.
         results saved in Sequential peak fit results'''
         histList = G2gd.GetGPXtreeDataNames(G2frame,['PWDR',])
         od = {'label_1':'Copy to next','value_1':False,'label_2':'Reverse order','value_2':False}
@@ -4230,274 +4231,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
     :param bool callSeaResSelected: when True, selects first entry in 
       UnitCellsTable search results table 
     '''
-    def OnNcNo(event):
-        controls[2] = NcNo.GetValue()
-        
-    def OnIfX20(event):
-        G2frame.ifX20 = x20.GetValue()
-        
-    def OnBravais(event):
-        Obj = event.GetEventObject()
-        bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
-                
-    def OnSSselect(event):
-        if controls[5] in ['Fm3m','Im3m','Pm3m']:
-            SSselect.SetValue(False)
-            G2frame.ErrorDialog('Cubic lattice','Incommensurate superlattice not possible with a cubic lattice')
-            return
-        ssopt['Use'] = SSselect.GetValue()
-        if 'ssSymb' not in ssopt:
-            ssopt.update({'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-        
-    def OnSelMG(event):
-        ssopt['ssSymb'] = selMG.GetValue()
-        Vec = ssopt['ModVec']
-        modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
-        ssopt['ModVec'] = G2spc.SSGModCheck(Vec,modS)[0]
-        print (' Selecting: '+controls[13]+ssopt['ssSymb']+ 'maxH:'+str(ssopt['maxH']))
-        clearTryAll()
-        OnHklShow(event)
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-        
-    def OnModVal(invalid,value,tc):
-        clearTryAll()
-        OnHklShow(tc.event)
-        
-    def OnMoveMod(event):
-        Obj = event.GetEventObject()
-        ObjId = Obj.GetId()
-        Id,valObj = Indx[ObjId]
-        move = Obj.GetValue()*0.01
-        Obj.SetValue(0)
-        value = min(0.98,max(-0.98,float(valObj.GetValue())+move))
-        valObj.SetValue('%.4f'%(value)) 
-        ssopt['ModVec'][Id] = value
-        clearTryAll()
-        OnHklShow(event)
-        
-    def OnMaxMH(event):
-        ssopt['maxH'] = int(maxMH.GetValue())
-        print (' Selecting: '+controls[13]+ssopt['ssSymb']+'maxH:'+str(ssopt['maxH']))
-        clearTryAll()
-        OnHklShow(event)
-        
-    def OnButton(xpos,ypos):
-        modSym = ssopt['ssSymb'].split(')')[0]+')'
-        if modSym in ['(a0g)','(a1/2g)']:
-            ssopt['ModVec'][0] = xpos
-            ssopt['ModVec'][2] = ypos
-        elif modSym in ['(0bg)','(1/2bg)']:
-            ssopt['ModVec'][1] = xpos
-            ssopt['ModVec'][2] = ypos
-        elif modSym in ['(ab0)','(ab1/2)']:
-            ssopt['ModVec'][0] = xpos
-            ssopt['ModVec'][1] = ypos
-        vec = ssopt['ModVec']
-        print(' Trying: %s %s modulation vector = %.3f %.3f %.3f'%(controls[13],ssopt['ssSymb'],vec[0],vec[1],vec[2]))
-        clearTryAll()
-        OnHklShow()
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-        
-    def OnFindOneMV(event):
-        Peaks = np.copy(peaks[0])
-        print (' Trying: '+controls[13],ssopt['ssSymb']+' maxH: 1')
-        dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-        try:
-            ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
-            if len(result[0]) == 2:
-                G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
-                    newPlot=True,Title='Modulation vector search',buttonHandler=OnButton)
-        finally:
-            dlg.Destroy()
-        clearTryAll()
-        OnHklShow(event)
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-        
-    def OnFindMV(event):
-        best = 1.
-        bestSS = ''
-        for ssSym in ssChoice:
-            ssopt['ssSymb'] = ssSym            
-            Peaks = np.copy(peaks[0])
-            ssopt['ModVec'] = G2spc.SSGModCheck(ssopt['ModVec'],G2spc.splitSSsym(ssSym)[0],True)[0]
-            print (' Trying: '+controls[13]+ssSym+' maxH: 1')
-            ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
-            clearTryAll()
-            OnHklShow(event)
-            if result[1] < best:
-                bestSS = ssSym
-                best = result[1]
-        if bestSS != '':
-            ssopt['ssSymb'] = bestSS
-            ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
-            if len(result[0]) == 2:
-                G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
-                    newPlot=True,Title='Modulation vector search')
-        
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-        
-    def OnBravSel(event):
-        brav = bravSel.GetString(bravSel.GetSelection())
-        controls[5] = brav
-        controls[13] = SPGlist[brav][0]       
-        ssopt['Use'] = False
-        clearTryAll()
-        OnHklShow(event)
-        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
-        
-    def OnMakePks(event):
-        msg = ('This will replace the current contents of the Peaks List'+
-               ' with peak positions generated from the current cell.'+
-               ' Are you sure you want to delete the previous Peak List'+
-               ' contents?')
-        dlg = wx.MessageDialog(G2frame, msg,'Replace peaks?',wx.YES_NO|wx.ICON_QUESTION)
-        try:
-            result = dlg.ShowModal()
-        finally:
-            dlg.Destroy()
-        if result != wx.ID_YES: return
-        hkl = G2frame.HKL
-        PatternId = G2frame.PatternId
-        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
-        background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
-        inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
-        Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
-        peaks = []
-        profile = Pattern[1]
-        bxye = GetFileBackground(G2frame,profile,background)
-        x0 = profile[0]
-        iBeg = np.searchsorted(x0,limits[0])
-        iFin = np.searchsorted(x0,limits[1])
-        x = x0[iBeg:iFin]
-        y = (profile[1]-bxye)[iBeg:iFin]
-#        ysig = 1.0*np.std(y0)
-        poss = [p for p in hkl[:,4] if (x[0] <= p <= x[-1])]
-        mags = y[np.searchsorted(x,poss)]
-        refs = list(zip(poss,mags))
-        if 'T' in Inst['Type'][0]:    
-            refs = G2mth.sortArray(refs,0,reverse=True)     #big TOFs first
-        else:   #'C', 'E' or 'B'
-            refs = G2mth.sortArray(refs,0,reverse=False)    #small 2-Thetas or energies first
-        for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
-            for ref2 in refs[i+1:]:
-                if abs(ref2[0]-ref1[0]) < 2.*G2pwd.getFWHM(ref1[0],inst):
-                    del(refs[i])
-        if 'T' in Inst['Type'][0]:    
-            refs = G2mth.sortArray(refs,1,reverse=False)
-        else:   #'C', 'E' or 'B'
-            refs = G2mth.sortArray(refs,1,reverse=True)
-        for pos,mag in refs:
-            peaks.append(G2mth.setPeakparms(inst,inst2,pos,mag))
-        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),peaks)
-        
-    def OnSpcSel(event):
-        controls[13] = spcSel.GetString(spcSel.GetSelection())
-        ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
-        ssopt['Use'] = False
-        G2frame.dataWindow.RefineCell.Enable(True)
-        clearTryAll()
-        OnHklShow(event)
-        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
-        
-    def OnTryAll(event):
-        '''Computes extinctions for all possible space groups
-        creates data for a table that is displayed in the subsequent 
-        UpdateUnitCellsGrid call. 
-        '''
-        ssopt['SgResults'] = []
-        ssopt['SgSettings'] = ''
-        for controls[13] in SPGlist[controls[5]]:
-            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
-            ssopt['Use'] = False
-            G2frame.dataWindow.RefineCell.Enable(True)
-            res = OnHklShow(event,False,False)
-            if res: 
-                ssopt['SgResults'].append(res)
-        if ssopt['SgResults']:
-            ssopt['SgResults'] = G2mth.sortArray(ssopt['SgResults'],2,reverse=True)
-            controls[13] = ssopt['SgResults'][0][0]
-            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
-            G2frame.dataWindow.RefineCell.Enable(True)
-            ssopt['SgResults'][0][1] = True  # select the first entry
-            ssopt['SgSettings'] = 'Brav. Lat.: {}, cell: {:.3f} {:.3f} {:.3f} {:.2f} {:.2f} {:.2f}'.format(*controls[5:12])
-        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
-
-    def OnSelectSgrp(event):
-        'Called when the Space Group Search Results show column is checked'
-        show = False
-        if event is not None:
-            r,_ = event.GetRow(),event.GetCol()
-            for i in range(len(ssopt['SgResults'])):
-                ssopt['SgResults'][i][1] = False
-                SgTable.SetValue(i,1,False)
-            clearShowFlags()
-            SgTable.SetValue(r,1,True)
-            controls[13] = ssopt['SgResults'][r][0]
-            show = True
-        else:
-            for r in range(len(ssopt['SgResults'])):
-                if ssopt['SgResults'][r][1]:
-                    controls[13] = ssopt['SgResults'][r][0]
-                    show = True
-                    break
-        if show:
-            SgDisplay.ForceRefresh()
-            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
-            G2frame.dataWindow.RefineCell.Enable(True)
-            disableCellCtrls()
-            OnHklShow(event,True)
-            #wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)            
-        
-    def SetCellValue(Obj,ObjId,value):
-        if controls[5] in ['Fm3m','Im3m','Pm3m']:
-            controls[6] = controls[7] = controls[8] = value
-            controls[9] = controls[10] = controls[11] = 90.0
-            Obj.SetValue(controls[6])
-        elif controls[5] in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
-            if ObjId == 0:
-                controls[6] = controls[7] = value
-                Obj.SetValue(controls[6])
-            else:
-                controls[8] = value
-                Obj.SetValue(controls[8])
-            controls[9] = controls[10] = controls[11] = 90.0
-            if controls[5] in ['R3-H','P6/mmm']:
-                controls[11] = 120.
-        elif controls[5] in ['Fmmm','Immm','Cmmm','Pmmm']:
-            controls[6+ObjId] = value
-            Obj.SetValue(controls[6+ObjId])
-            controls[9] = controls[10] = controls[11] = 90.0
-        elif controls[5] in ['I2/m','A2/m','C2/m','P2/m']:
-            controls[9] = controls[11] = 90.0
-            if ObjId != 3:
-                controls[6+ObjId] = value
-                Obj.SetValue(controls[6+ObjId])
-            else:
-                controls[10] = value
-                Obj.SetValue(controls[10])
-        else:
-            controls[6+ObjId] = value
-            if ObjId < 3:
-                Obj.SetValue(controls[6+ObjId])
-            else:
-                Obj.SetValue(controls[6+ObjId])
-        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
-        volVal.SetValue("%.3f"%(controls[12]))
-        
-    def OnMoveCell(event):
-        Obj = event.GetEventObject()
-        ObjId = cellList.index(Obj.GetId())
-        valObj = valDict[Obj.GetId()]
-        inc = float(shiftChoices[shiftSel.GetSelection()][:-1])
-        move = Obj.GetValue()  # +1 or -1 
-        Obj.SetValue(0)
-        value = float(valObj.GetValue()) * (1. + move*inc/100.)
-        SetCellValue(valObj,ObjId//2,value)
-        clearTryAll()
-        OnHklShow(event)
+    global KeyList            
+    KeyList = []
+    
         
     def OnExportCells(event):
         pth = G2G.GetExportPath(G2frame)
@@ -4521,22 +4257,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         '''Generate the reflections from the unit cell and 
         display them in the console window
         '''
-        OnHklShow(None)
+        OnHklShow(None,indexFrom=' Indexing from unit cell & symmetry settings')
         for r in G2frame.HKL:
             print("{0:.0f},{1:.0f},{2:.0f}   2\u03B8={4:7.3f} d={3:8.4f}".format(*r))
     
-    def OnCellChange(invalid,value,tc):
-        if invalid:
-            return
-        try: # fails when zero is updated
-            SetCellValue(tc,Info[tc.GetId()],value)
-        except:
-            pass
-        clearTryAll()
-        OnHklShow(tc.event)
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-
-    def OnHklShow(event=None,Print=True,Plot=True):
+    def OnHklShow(event=None,Print=True,Plot=True,indexFrom=''):
         '''Compute the location of powder diffraction peaks from the 
         cell in controls[6:12] and the space group in ssopt['SGData'] if 
         defined, or controls[13], if not.
@@ -4555,19 +4280,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
          * Nhkl: number of generated reflections below dmin
          * frfnd: fraction of lines indexed
         '''
-        if not cellDisplayOpts['Show']:  # will be false when "Show Cell" is not checked
-            G2frame.HKL = np.array([])
-            if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-                G2plt.PlotPowderLines(G2frame)
-            else:
-                G2pwpl.PlotPatterns(G2frame)
-            return
         result = None
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
-        #print('called OnHklShow cell= {:.3f} {:.3f} {:.3f} {:.2f} {:.2f} {:.2f}'.format(*controls[6:12]))
-        # recompute dmin in case limits were changed
         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
         Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
         if 'T' in Inst['Type'][0]:
@@ -4624,7 +4340,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
-            G2pwpl.PlotPatterns(G2frame)
+            G2pwpl.PlotPatterns(G2frame,indexFrom=indexFrom)
         return result
             
     def OnSortCells(event):
@@ -4672,8 +4388,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         data = [controls,bravais,cells,dminx,ssopt,magcells]
         G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
-        clearTryAll()
-        OnHklShow()
+        OnHklShow(None,indexFrom=' Indexing from new unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def LoadUnitCell(event):
@@ -4750,8 +4465,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         G2frame.dataWindow.RefineCell.Enable(True)
-        clearTryAll()
-        OnHklShow()
+        OnHklShow(None,indexFrom=' Indexing from loaded unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def ImportUnitCell(event):
@@ -4773,11 +4487,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
-#        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
-#        G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
-        clearTryAll()
-        OnHklShow()
+        OnHklShow(None,indexFrom=' Indexing from imported unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def onRefineCell(event):
@@ -4806,6 +4517,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         if True not in bravais:
             G2frame.ErrorDialog('Error','No Bravais lattices selected')
             return
+        else:
+            ibrav = bravais.index(True)
         if not len(peaks[0]):
             G2frame.ErrorDialog('Error','Index Peak List is empty')
             return
@@ -4815,8 +4528,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         G2frame.dataWindow.CopyCell.Enable(False)
         G2frame.dataWindow.RefineCell.Enable(False)
         dlg = wx.ProgressDialog("Generated reflections",'0 '+" cell search for "+bravaisNames[ibrav],101, 
-#            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_SKIP|wx.PD_CAN_ABORT) #desn't work in 32 bit versions
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_SKIP|wx.PD_CAN_ABORT) #desn't work in 32 bit versions
+#            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         try:
             OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,dlg,G2frame.ifX20)
         finally:
@@ -4857,8 +4570,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         else:
             r,c =  event.GetRow(),event.GetCol()
             colLabel = event.GetEventObject().GetColLabelValue(c)
-        clearShowFlags()
         if cells:
+            clearShowFlags()
             Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                     G2frame,G2frame.PatternId,'Instrument Parameters'))[0]
             if cells[0][0] == '?':  # k-vector table
@@ -4886,10 +4599,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                     newPhase = copy.deepcopy(Phase)
                     newPhase['ranId'] = ran.randint(0, sys.maxsize)
                     newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-                    newPhase, _ = G2lat.TransformPhase(
-                        Phase, newPhase, Trans,
-                        Uvec, Vvec, False
-                    )
+                    newPhase, _ = G2lat.TransformPhase(Phase, newPhase, Trans,
+                        Uvec, Vvec, False)
                     atoms_pointer = newPhase['General']['AtomPtrs']
 
                     atom_coords = list()
@@ -4914,17 +4625,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                             for k in range(6):
                                 hkl_refls.append([i, j, k])
 
-                    k_search = kvs.kVector(
-                        brav_sym, lat_vectors,
-                        atom_coords, atom_ids,
-                        hkl_refls, [0.], 0.
-                    )
+                    k_search = kvs.kVector(brav_sym, lat_vectors,
+                        atom_coords, atom_ids,hkl_refls, [0.], 0.)
                     kpoint = cells[r][3:6]
                     kpoint = k_search.hklConvToPrim(kpoint)
 
-                    rep_prim_latt = k_search.kpathFinder()[
-                        "reciprocal_primitive_lattice"
-                    ]
+                    rep_prim_latt = k_search.kpathFinder()["reciprocal_primitive_lattice"]
 
                     satellite_peaks = list()
                     for nucp in k_search.nucPeaks:
@@ -4935,25 +4641,16 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
 
                         hkl_prim = np.array(nucp)
                         hkl_p_k = hkl_prim + kpoint
-                        k_cart = np.matmul(
-                            hkl_p_k,
-                            rep_prim_latt
-                        )
+                        k_cart = np.matmul(hkl_p_k,rep_prim_latt)
                         d_hkl_p_k = 2. * np.pi / np.linalg.norm(k_cart)
                         satellite_peaks.append(d_hkl_p_k)
 
                         hkl_m_k = hkl_prim - kpoint
-                        k_cart = np.matmul(
-                            hkl_m_k,
-                            rep_prim_latt
-                        )
+                        k_cart = np.matmul(hkl_m_k,rep_prim_latt)
                         d_hkl_m_k = 2. * np.pi / np.linalg.norm(k_cart)
                         satellite_peaks.append(d_hkl_m_k)
 
-                    satellite_peaks = sorted(
-                        list(set(satellite_peaks)),
-                        reverse=True
-                    )
+                    satellite_peaks = sorted(list(set(satellite_peaks)),reverse=True)
 
 
                     # Here we are generating a dummy HKL list to host the
@@ -4961,18 +4658,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                     # set (hkl) for all the peaks to (000).
                     G2frame.HKL = list()
                     for d in satellite_peaks:
-                        list_tmp = [
-                            0, 0, 0,
-                            d, G2lat.Dsp2pos(Inst, d),
-                            -1
-                        ]
+                        list_tmp = [0, 0, 0,d, G2lat.Dsp2pos(Inst, d),-1]
                         G2frame.HKL.append(list_tmp)
                     G2frame.HKL = np.array(G2frame.HKL)
 
                     G2pwpl.PlotPatterns(G2frame)
             if colLabel == 'show':
-                disableCellCtrls()
-                clearTryAll()
                 for i in range(len(cells)):
                     cells[i][-2] = False
                     UnitCellsTable.SetValue(i,c,False)
@@ -4989,7 +4680,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                     if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                         G2plt.PlotPowderLines(G2frame)
                     else:
-                        G2pwpl.PlotPatterns(G2frame)
+                        G2pwpl.PlotPatterns(G2frame,indexFrom=' Indexing selection #%d'%r)
                 except:
                     pass
             elif colLabel == 'Keep':
@@ -5002,194 +4693,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                 gridDisplay.ForceRefresh()
 
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
-        
-    KeyList = []
-    
-    def ClearCurrentShowNext():
-        KeepShowNext(False)
-        
-    KeyList += [['j',ClearCurrentShowNext,'Show next Mag. Spc. Group, clear keep flag on current']]        
-    
-    def KeepCurrentShowNext():
-        KeepShowNext(True)
-        
-    KeyList += [['k',KeepCurrentShowNext,'Show next Mag. Spc. Group, keep current']]
-        
-    def KeepShowNext(KeepCurrent=True):
-        '''Show next "keep" item in Magnetic Space Group list, possibly resetting the 
-        keep flag for the current displayed cell
-        '''
-        for i in range(len(magcells)): # find plotted setting
-            if magcells[i]['Use']: break
-        else:
-            return # no Try is set
-        if not KeepCurrent:  # clear current
-            magcells[i]['Keep'] = False
-            MagCellsTable.SetValue(i,2,False)
-        keeps = [j for j in range(i+1,len(magcells)) if magcells[j]['Keep']]
-        if not keeps:
-            if not KeepCurrent: magDisplay.ForceRefresh()
-            return # no remaining Keep-flagged entries
-        next = keeps[0]
-        # update table
-        magcells[i]['Use'] = False
-        MagCellsTable.SetValue(i,1,False)
-        magcells[next]['Use'] = True
-        MagCellsTable.SetValue(next,1,True)
-        # get SG info and plot
-        SGData = magcells[next]['SGData']
-        A = G2lat.cell2A(magcells[next]['Cell'][:6])  
-        G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
-        G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
-        magDisplay.ForceRefresh()
-        # change Scroll to display new setting
-        xscroll = G2frame.dataWindow.GetScrollPos(wx.HORIZONTAL)
-        yscroll = magDisplay.CellToRect(next,1)[1]/G2frame.dataWindow.GetScrollPixelsPerUnit()[1]
-        G2frame.dataWindow.Scroll(xscroll,yscroll)
-        
-    def RefreshMagCellsGrid(event):
-        'Display results from k-SUBGROUPSMAG in the Unit Cells tab & allow inspection of results'
-        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
-        r,c =  event.GetRow(),event.GetCol()
-        rLab = magDisplay.GetRowLabelValue(r)
-        br = baseList[r]
-        phase = phaseDict[br]
-        pname = '(%s) %s'%(rLab,phase['Name'])
-        if magcells:
-            if c == 0:
-                mSGData = phase['SGData']
-                text,table = G2spc.SGPrint(mSGData,AddInv=True)
-                if 'magAtms' in phase:
-                    msg = 'Magnetic space group information'
-                    text[0] = ' Magnetic Space Group: '+mSGData['MagSpGrp']
-                    text[3] = ' The magnetic lattice point group is '+mSGData['MagPtGp']
-                    OprNames,SpnFlp = G2spc.GenMagOps(mSGData)
-                    G2G.SGMagSpinBox(G2frame.dataWindow,msg,text,table,mSGData['SGCen'],OprNames,
-                        mSGData['SpnFlp'],False).Show()
-                else:
-                    msg = 'Space Group Information'
-                    G2G.SGMessageBox(G2frame.dataWindow,msg,text,table).Show()
-            elif c == 1:
-                for i in range(len(magcells)):
-                    magcells[i]['Use'] = False
-                for i in range(len(baseList)):
-                    MagCellsTable.SetValue(i,c,False)
-                MagCellsTable.SetValue(r,c,True)
-                magDisplay.ForceRefresh()
-                phase['Use'] = True
-                mSGData = phase['SGData']
-                A = G2lat.cell2A(phase['Cell'][:6])  
-                G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,mSGData,A,Inst))
-                G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
-            elif c == 2:
-                if MagCellsTable.GetValue(r,c):
-                    MagCellsTable.SetValue(r,c,False)
-                    phase['Keep'] = False
-                else:
-                    phase['Keep'] = True
-                    MagCellsTable.SetValue(r,c,True)
-                magDisplay.ForceRefresh()
-            elif c ==3:
-                maxequiv = magcells[0].get('maxequiv',100)
-                mSGData = phase['SGData']
-                Uvec = phase['Uvec']
-                Trans = phase['Trans']
-                ifMag = False
-                if 'magAtms' in phase:
-                    ifMag = True
-                    allmom = phase.get('allmom',False)
-                    magAtms = phase.get('magAtms','')
-                    mAtoms = TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv)
-                else:
-                    mAtoms = TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv)
-                Atms = []
-                AtCods = []
-                atMxyz = []
-                for ia,atom in enumerate(mAtoms):
-                    atom[0] += '_%d'%ia
-                    SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[2:5],mSGData)
-                    Atms.append(atom[:2]+['',]+atom[2:5])
-                    AtCods.append('1')
-                    if 'magAtms' in phase:
-                        MagSytSym = G2spc.MagSytSym(SytSym,dupDir,mSGData)
-                        CSI = G2spc.GetCSpqinel(mSGData['SpnFlp'],dupDir)
-                        atMxyz.append([MagSytSym,CSI[0]])
-                    else:
-                        CSI = G2spc.GetCSxinel(SytSym)
-                        atMxyz.append([SytSym,CSI[0]])
-                G2phsG.UseMagAtomDialog(G2frame,pname,Atms,AtCods,atMxyz,ifMag=ifMag,ifOK=True).ShowModal()
-            elif c in [4,5]:
-                if 'altList' not in phase: return
-                if c == 4:
-                    title = 'Conjugacy list for '+pname
-                    items = phase['altList']
-                    ifPick = True
-                elif c == 5:
-                    title = 'Super groups list for '+pname
-                    items = phase['supList']
-                    if not items[0]:
-                        wx.MessageBox(pname+' is a maximal subgroup',caption='Super group is parent',style=wx.ICON_INFORMATION)
-                        return
-                    ifPick = False
-                Pick = -1
-                dlg = SubCellsDialog(G2frame,title,controls,SGData,items,phaseDict,ifPick)
-                try:
-                    if dlg.ShowModal() == wx.ID_OK:
-                        altList = copy.copy(phase['altList'])
-                        Pick = dlg.GetSelection()
-                        pickPhase = phaseDict[altList[Pick]]
-                        pickPhase['altList'] = altList
-                        pickPhase['Use'] = phase['Use']
-                        baseList[r] = altList[Pick]
-                finally:
-                    dlg.Destroy()
-                if Pick >= 0:
-                    data = [controls,bravais,cells,dminx,ssopt,magcells]
-                    G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
-                    wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-            
-    def OnRefreshKeep(event):
-        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
-        c =  event.GetCol()
-        E,SGData = G2spc.SpcGroup(controls[13])
-        if c == 2:
-            testAtoms = ['',]+list(set([atom[1] for atom in controls[15]]))
-            ifMag = False
-            maxequiv = magcells[0]['maxequiv']
-            maximal = False
-            if 'magAtms' in magcells[0]:
-                ifMag = True
-                allmom = magcells[0]['allmom']
-                magAtms = magcells[0]['magAtms']
-                dlg = G2G.MultiDataDialog(G2frame,title='Keep options',
-                    prompts=['max unique','test for mag. atoms','all have moment','only maximal subgroups',],
-                    values=[maxequiv,'',allmom,False],limits=[[1,100],testAtoms,[True,False],[True,False]],
-                    formats=['%d','choice','bool','bool'])
-            else:
-                dlg = G2G.MultiDataDialog(G2frame,title='Keep options',
-                    prompts=['max unique','only maximal subgroups',],
-                    values=[maxequiv,False],limits=[[1,100],[True,False],],
-                    formats=['%d','bool',])
-            if dlg.ShowModal() == wx.ID_OK:
-                if ifMag:
-                    maxequiv,atype,allmom,maximal = dlg.GetValues()
-                    magAtms = [atom for atom in controls[15] if atom[1] == atype]
-                else:
-                    maxequiv,maximal = dlg.GetValues()
-            dlg = wx.ProgressDialog('Setting Keep flags','Processing '+magcells[0]['Name'],len(magcells), 
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
-            for ip,phase in enumerate(magcells):
-                dlg.Update(ip,newmsg='Processing '+phase['Name'])
-                Uvec = phase['Uvec']
-                Trans = phase['Trans']
-                if ifMag:
-                    phase['nAtoms'] = len(TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv,maximal))
-                else:
-                    phase['nAtoms'] = len(TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv,maximal))
-            dlg.Destroy()
-            data = controls,bravais,cells,dminx,ssopt,magcells
-            G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
-            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def MakeNewPhase(event):
         PhaseName = ''
@@ -5212,65 +4715,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         finally:
             dlg.Destroy()
             
-    def OnMagSel(event):
-        Obj = event.GetEventObject()
-        if Obj.GetValue():
-            SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
-            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
-            SGData['GenSym'] = GenSym
-            SGData['GenFlg'] = GenFlg
-            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
-            SGData['SpnFlp'] = SpnFlp
-            SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
-        else:
-            del SGData['MagSpGrp']
-        ssopt['SGData'] = SGData
-        clearTryAll()
-        OnHklShow()
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-            
-    def OnSpinOp(event):
-        Obj = event.GetEventObject()
-        isym = Indx[Obj.GetId()]+1
-        spCode = {'red':-1,'black':1}                    
-        SGData['SGSpin'][isym] = spCode[Obj.GetValue()]
-        G2spc.CheckSpin(isym,SGData)
-        GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
-        SGData['GenSym'] = GenSym
-        SGData['GenFlg'] = GenFlg
-        OprNames,SpnFlp = G2spc.GenMagOps(SGData)
-        SGData['SpnFlp'] = SpnFlp
-        SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
-        clearTryAll()
-        OnHklShow()
-        
-    def OnBNSlatt(event):
-        Obj = event.GetEventObject()
-        SGData.update(G2spc.SpcGroup(SGData['SpGrp'])[1])
-        BNSlatt = Obj.GetValue()
-        if '_' in BNSlatt:
-            SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
-        else:
-            SGData['BNSlattsym'] = [SGData['SGLatt'],[0.,0.,0.]]
-        SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
-        GenSym,GenFlg = G2spc.GetGenSym(SGData)[:2]
-        SGData['GenSym'] = GenSym
-        SGData['GenFlg'] = GenFlg
-        SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
-        G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
-        OprNames,SpnFlp = G2spc.GenMagOps(SGData)
-        SGData['SpnFlp'] = SpnFlp
-        clearTryAll()
-        OnHklShow()
-            
-    def OnShowSpins(event):
-        msg = 'Magnetic space group information'
-        text,table = G2spc.SGPrint(SGData,AddInv=True)
-        text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
-        text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
-        G2G.SGMagSpinBox(G2frame.dataWindow,msg,text,table,SGData['SGCen'],OprNames,
-            SGData['SpnFlp'],False).Show()
-        
     def TransformUnitCell(event):
         Trans = np.eye(3)
         Uvec = np.zeros(3)
@@ -5293,8 +4737,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                 return
         finally:
             dlg.Destroy()
-        clearTryAll()
-        OnHklShow()
+        OnHklShow(None,indexFrom=' Indexing from transformed unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnLatSym(event):
@@ -5377,8 +4820,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         tableSizer.Add(wx.StaticText(dlg,label='Search mode: Generate '),
             0,WACV|wx.ALIGN_LEFT)
         tableSizer.Add(G2G.EnumSelector(dlg,nistInput,3,
-                    ['supercells', 'subcells', 'sub- and supercells'],
-                    [1,2,3]))
+            ['supercells', 'subcells', 'sub- and supercells'],[1,2,3]))
         sizer.Add(tableSizer,1,wx.EXPAND)
         btnsizer = wx.StdDialogButtonSizer()
         btn = wx.Button(dlg, wx.ID_OK)
@@ -5405,8 +4847,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         mode = nistInput[3]
         wx.BeginBusyCursor()
         import nistlat
-        out = nistlat.CellSymSearch(cell, center, tolerance=tol, mode=mode,
-                      deltaV=delta)
+        out = nistlat.CellSymSearch(cell, center, tolerance=tol, mode=mode,deltaV=delta)
         wx.EndBusyCursor()
     
         if not out: return
@@ -5844,264 +5285,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         'called when k-vec mode is selected'
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def OnKvecSearch(event):
-        'Run the k-vector search'
-
-        try:
-            import seekpath
-            seekpath
-        except:
-            msg = 'Performing a k-vector search requires installation of the Python seekpath package. Press Yes to install this. \n\nGSAS-II will restart after the installation.'
-            dlg = wx.MessageDialog(G2frame, msg,'Install package?',wx.YES_NO|wx.ICON_QUESTION)
-            result = wx.ID_NO
-            try:
-                result = dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-                wx.GetApp().Yield()
-            if result != wx.ID_YES: return
-            wx.BeginBusyCursor()
-            try:             # can we install via conda?
-                import conda.cli.python_api
-                conda.cli.python_api
-                print('Starting conda install of seekpath...')
-                GSASIIpath.condaInstall(['seekpath'])
-                print('conda install of seekpath completed')
-            except Exception as msg:
-                print(msg)
-                try:
-                    print('Starting pip install of seekpath...')
-                    GSASIIpath.pipInstall(['seekpath'])
-                    print('pip install of seekpath completed')
-                except Exception as msg:
-                    print('install of seekpath failed, sorry\n',msg)
-                    return
-            finally:
-                wx.EndBusyCursor()
-            ans = G2frame.OnFileSave(None)
-            if not ans: return
-            project = os.path.abspath(G2frame.GSASprojectfile)
-            print(f"Restarting GSAS-II with project file {project!r}")
-            G2fil.openInNewTerm(project)
-            print ('exiting GSAS-II')
-            sys.exit()
-
-        # msg = G2G.NISTlatUse(True)
-        _, _, cells, _, _, _ = data
-        wx.BeginBusyCursor()
-
-        # grab the satellite peaks. here, gsas-ii will only grab the data
-        # for the histogram under selection.
-        hist_name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
-        Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist_name)
-        peakId = G2gd.GetGPXtreeItemId(G2frame, Id, 'Peak List')
-        peakdata = G2frame.GPXtree.GetItemPyData(peakId)
-        if len(peakdata["xtraPeaks"]) == 0:
-            err_title = "Empty satellite peak list"
-            err_msg = "The satellite peak list is empty. Please select the "
-            err_msg += "extra peak positions before executing the k vector "
-            err_msg += "search."
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        # we need to grab the instrument parameter and call gsas ii routine
-        # to convert the satellite peaks into d-spacing.
-        Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, 'Instrument Parameters')
-        Parms, _ = G2frame.GPXtree.GetItemPyData(Id)
-        xtra_peaks_d = list()
-        for extra_peak in peakdata["xtraPeaks"]:
-            dsp_tmp = G2lat.Pos2dsp(Parms, extra_peak[0])
-            xtra_peaks_d.append(dsp_tmp)
-
-        # select a parent phase. error message will be presented in a pop-up
-        # window if an invalid selection is made.
-        phase_sel = G2frame.kvecSearch['phase']
-        if len(phase_sel.strip()) == 0:
-            err_title = "Missing parent phase"
-            err_msg = "Please select the parent phase from the dropdown."
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        # again, gsas ii will only grab the reflection lists for the
-        # histogram under selection. also, only those phases that are being
-        # used for the selected histogram will be included in the
-        # `refDict` variable.
-        refDict = G2frame.GPXtree.GetItemPyData(
-            G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, 'Reflection Lists'))
-        if phase_sel not in refDict.keys():
-            err_title = "Phase selection error"
-            err_msg = "The parent phase selected is not used in "
-            err_msg += "current histogram. "
-            err_msg += "Please select from one of the followings, "
-            err_msg += f"{list(refDict.keys())}"
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        # grab the search option. By default, we would search over those
-        # high symmetry points only.
-        kvs_option_map = {
-            "HighSymPts": 0,
-            "HighSymPts & HighSymPaths": 1,
-            "General": 2
-        }
-        kvs_option = G2frame.kvecSearch['soption']
-        kvs_option = kvs_option_map[kvs_option]
-        if kvs_option == 2:
-            # grab the search range, which will be used for the option of
-            # 'General' only -- see the part below for user selection of the
-            # search option.
-            try:
-                kx_s = float(G2frame.kvecSearch['kx_step'])
-                ky_s = float(G2frame.kvecSearch['ky_step'])
-                kz_s = float(G2frame.kvecSearch['kz_step'])
-                num_procs = int(G2frame.kvecSearch['num_procs'])
-            except ValueError:
-                err_title = "Invalid k grid input"
-                err_msg = "The k gird values should all be float numbers"
-                G2G.G2MessageBox(G2frame, err_msg, err_title)
-                wx.EndBusyCursor()
-                return
-
-            if kx_s <= 0 or ky_s <= 0 or kz_s <= 0:
-                err_title = "Invalid k grid input"
-                err_msg = "The k step is less than or equal to 0. "
-                err_msg += "Please check the input values."
-                G2G.G2MessageBox(G2frame, err_msg, err_title)
-                wx.EndBusyCursor()
-                return
-            else:
-                warn_title = "Long execution time expected"
-                warn_msg = "Searching over general k points may take a while, "
-                warn_msg += "usually on the level of serveral hours. "
-                warn_msg += "Do you want to proceed?"
-                dialog = wx.MessageDialog(G2frame,warn_msg,warn_title,
-                    wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
-                result = dialog.ShowModal()
-
-                if result == wx.ID_OK:
-                    pass
-                else:
-                    dialog.Destroy()
-                    wx.EndBusyCursor()
-                    return
-
-            kstep = [kx_s, ky_s, kz_s]
-        else:
-            num_procs = None
-            kstep = None
-
-        # grab the user defined tolerance for determining the optimal k vector.
-        # refer to the following link for more detailed explanation about this,
-        #
-        # https://yr.iris-home.net/kvectordoc
-        #
-        try:
-            tol_val = float(G2frame.kvecSearch['tolerance'])
-        except ValueError:
-            err_title = "Invalid tolerance input"
-            err_msg = "The tolerance value should be a float number, "
-            err_msg += "representing the instrument resolution "
-            err_msg += ("level " + u"\u03B4" + "d/d.")
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        Phase = Phases[phase_sel]
-
-        # grab the Bravais lattice type
-        #
-        # given the lattice type and lattice system, the Bravais lattice type
-        # can be determined. see the comparison table in the Wikipedia link
-        # below for the correspondence,
-        #
-        # https://en.wikipedia.org/wiki/Crystal_system
-        #
-        # here, we need to assign the Bravais lattice with specific names as
-        # inputs for the `seekpath` routine.
-        lat_type = Phase["General"]["SGData"]["SGLatt"]
-        lat_sym = Phase["General"]["SGData"]["SGSys"]
-        if lat_sym == "trigonal":
-            brav_sym = "hR"
-        else:
-            brav_sym = lat_sym[0] + lat_type
-
-        # grab all atomic coordinates in the P1 symmetry
-        #
-        # define some matrix as necessary inputs for generating the P1
-        # structure.
-        Trans = np.eye(3)
-        Uvec = np.zeros(3)
-        Vvec = np.zeros(3)
-
-        # expand the structure to P1 symmetry
-        newPhase = copy.deepcopy(Phase)
-        newPhase['ranId'] = ran.randint(0, sys.maxsize)
-        newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-        newPhase, _ = G2lat.TransformPhase(Phase,newPhase,Trans,Uvec,Vvec,False)
-        atoms_pointer = newPhase['General']['AtomPtrs']
-
-        atom_coords = list()
-        atom_types = list()
-        for atom in newPhase["Atoms"]:
-            coord_tmp = atom[atoms_pointer[0]:atoms_pointer[0] + 3]
-            atom_coords.append(coord_tmp)
-            type_tmp = atom[atoms_pointer[1]]
-            atom_types.append(type_tmp)
-
-        # this will turn each of the atom types into a unique integer number,
-        # which is required by the `seekpath` routine
-        atom_ids = kvs.unique_id_gen(atom_types)
-
-        # grab the parent unit cell and construct the lattice vectors
-        cell_params = newPhase["General"]["Cell"][1:7]
-        lat_vectors = kvs.lat_params_to_vec(cell_params)
-
-        hkl_refls = list()
-        for i in range(6):
-            for j in range(6):
-                for k in range(6):
-                    hkl_refls.append([i, j, k])
-
-        try:
-            # if we choose option-2, we need to use the `kvec_general` module
-            # Otherwise, the computation time would be unacceptably long.
-            k_search = kvs.kVector(brav_sym,lat_vectors,atom_coords,atom_ids,
-                hkl_refls,xtra_peaks_d,tol_val,option=kvs_option,
-                kstep=kstep,processes=num_procs)
-        except ModuleNotFoundError:
-            err_title = "Module not found"
-            err_msg = "The `kvec_general` module is not found. Please install "
-            err_msg += "the module before running the k-vector search with "
-            err_msg += "option-2."
-            G2G.G2MessageBox(G2frame, err_msg, err_title)
-            wx.EndBusyCursor()
-            return
-
-        k_opt = k_search.kOptFinder()
-        k_opt_dist = k_opt[1]
-        ave_dd = k_opt[2]
-        max_dd = k_opt[3]
-        k_opt = [list(k_search.kVecPrimToConv(k)) for k in k_opt[0]]
-
-        wx.EndBusyCursor()
-        cells.clear()
-
-        # display the result
-        select = False
-        for i, k_v in enumerate(k_opt):
-            select = True
-            cells.append([])
-            laue = 'P1'
-            cells[-1] += ['?', 0, laue]
-            c = k_v + [k_opt_dist[i], ave_dd[i], max_dd[i]]
-            cells[-1] += c
-            cells[-1] += [0, False, False]
-            # G2frame.OnFileSave(event) # forces save of project
-        wx.CallAfter(UpdateUnitCellsGrid, G2frame, data, select)  # refresh & select 1st result
 
     def OnClearCells(event):
         'remove previous search results'
@@ -6128,6 +5311,19 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         '''
         grid.SetScrollRate(10,10)
         resizeGrids.append(grid)
+
+    def clearShowFlags():
+        '''resets all the "Use" flags in all search tables
+        '''
+        for i,grid in enumerate(resizeGrids):
+            try:
+                for c in range(grid.GetNumberCols()):
+                    if grid.GetColLabelValue(c) == 'show':
+                        for r in range(grid.GetNumberRows()):
+                            grid.GetTable().SetValue(r,c,False)
+                grid.ForceRefresh()
+            except:
+                pass
 
     def _onResize(event):
         '''This is called to adjust the sizes of objects in 
@@ -6158,51 +5354,1192 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         except: # can fail after window is destroyed
             pass
         event.Skip()
-
-    def enableCellCtrls(event):
-        '''Enable or Disable the various Cell controls depending on 
-        setting of "Show Cell" check button
-        '''
-        if cellDisplayOpts['Show']:
-            ssopt['SgResults'] = []  # clear try-all table
-            clearShowFlags() # clear flags in all tables
-            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-        else:
-            disableCellCtrls()
-
-    def disableCellCtrls():
-        '''Disable the various Cell controls, when a cell is selected
-        from a search table
-        '''
-        # switching off the unit cell controls
-        for w in UCdisableList:
-            w.Enable(False)
-        cellDisplayOpts['Show'] = False
-        showCellCheck.SetValue(False) # turn off cell display
+# Display of Autoindexing controls           
+    def firstSizer():
         
-    def clearTryAll():
-        '''clear out the try-all table. Do this when showing a cell from 
-        any other search table or when any change is made to any cell 
-        parameters
-        '''
-        if SgDisplay:
-            SgDisplay.Destroy()
-            ssopt['SgResults'] = []  # clear try-all table
-            G2frame.dataWindow.Layout()
+        def OnNcNo(event):
+            controls[2] = NcNo.GetValue()
+            
+        def OnIfX20(event):
+            G2frame.ifX20 = x20.GetValue()
+            
+        def OnBravais(event):
+            Obj = event.GetEventObject()
+            bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
+            
+        firstSizer = wx.BoxSizer(wx.VERTICAL)
+        firstSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
+            label='Autoindexing of "Index Peak List" contents',style=wx.ALIGN_CENTER),0,wx.EXPAND)
+        firstSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bravais Lattice(s) for autoindexing trials:'),0)
+        firstSizer.Add((5,5),0)
+        indentSizer = wx.BoxSizer(wx.HORIZONTAL)
+        indentSizer.Add((20,-1))
+        littleSizer = wx.FlexGridSizer(0,4,5,5)
+        bravList = []
+        bravs = zip(bravais,bravaisNames)
+        for brav,bravName in bravs:
+            bravCk = wx.CheckBox(G2frame.dataWindow,label=bravName)
+            bravList.append(bravCk.GetId())
+            bravCk.SetValue(brav)
+            bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
+            littleSizer.Add(bravCk,0,WACV)
 
-    def clearShowFlags():
-        '''resets all the "Use" flags in all search tables
-        '''
-        for i,grid in enumerate(resizeGrids):
+        indentSizer.Add(littleSizer,0)
+        firstSizer.Add(indentSizer,0)
+        littleSizer = wx.FlexGridSizer(0,5,5,5)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max Nc/Nobs '),0,WACV)
+        NcNo = wx.SpinCtrl(G2frame.dataWindow)
+        NcNo.SetRange(2,8)
+        NcNo.SetValue(controls[2])
+        NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
+        littleSizer.Add(NcNo,0,WACV)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Start Volume '),0,WACV)
+        startVol = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,3,typeHint=int,xmin=25)
+        littleSizer.Add(startVol,0,WACV)
+        x20 = wx.CheckBox(G2frame.dataWindow,label='Use M20/(X20+1)?')
+        x20.SetValue(G2frame.ifX20)
+        x20.Bind(wx.EVT_CHECKBOX,OnIfX20)
+        littleSizer.Add(x20,0,WACV)
+        firstSizer.Add(littleSizer,0)
+        firstSizer.Add((5,5),0)
+        return firstSizer
+
+# Display of k-vector search controls    
+    def kvecSizer():
+        
+        def OnKvecSearch(event):
+            'Run the k-vector search'
+    
             try:
-                for c in range(grid.GetNumberCols()):
-                    if grid.GetColLabelValue(c) == 'show':
-                        for r in range(grid.GetNumberRows()):
-                            grid.GetTable().SetValue(r,c,False)
-                            grid.ForceRefresh()
-                            break
+                import seekpath
+                seekpath
+            except:
+                msg = 'Performing a k-vector search requires installation of the Python seekpath package. Press Yes to install this. \n\nGSAS-II will restart after the installation.'
+                dlg = wx.MessageDialog(G2frame, msg,'Install package?',wx.YES_NO|wx.ICON_QUESTION)
+                result = wx.ID_NO
+                try:
+                    result = dlg.ShowModal()
+                finally:
+                    dlg.Destroy()
+                    wx.GetApp().Yield()
+                if result != wx.ID_YES: return
+                wx.BeginBusyCursor()
+                try:             # can we install via conda?
+                    import conda.cli.python_api
+                    conda.cli.python_api
+                    print('Starting conda install of seekpath...')
+                    GSASIIpath.condaInstall(['seekpath'])
+                    print('conda install of seekpath completed')
+                except Exception as msg:
+                    print(msg)
+                    try:
+                        print('Starting pip install of seekpath...')
+                        GSASIIpath.pipInstall(['seekpath'])
+                        print('pip install of seekpath completed')
+                    except Exception as msg:
+                        print('install of seekpath failed, sorry\n',msg)
+                        return
+                finally:
+                    wx.EndBusyCursor()
+                ans = G2frame.OnFileSave(None)
+                if not ans: return
+                project = os.path.abspath(G2frame.GSASprojectfile)
+                print(f"Restarting GSAS-II with project file {project!r}")
+                G2fil.openInNewTerm(project)
+                print ('exiting GSAS-II')
+                sys.exit()
+    
+            # msg = G2G.NISTlatUse(True)
+            _, _, cells, _, _, _ = data
+            wx.BeginBusyCursor()
+    
+            # grab the satellite peaks. here, gsas-ii will only grab the data
+            # for the histogram under selection.
+            hist_name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+            Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist_name)
+            peakId = G2gd.GetGPXtreeItemId(G2frame, Id, 'Peak List')
+            peakdata = G2frame.GPXtree.GetItemPyData(peakId)
+            if len(peakdata["xtraPeaks"]) == 0:
+                err_title = "Empty satellite peak list"
+                err_msg = "The satellite peak list is empty. Please select the "
+                err_msg += "extra peak positions before executing the k vector "
+                err_msg += "search."
+                G2G.G2MessageBox(G2frame, err_msg, err_title)
+                wx.EndBusyCursor()
+                return
+    
+            # we need to grab the instrument parameter and call gsas ii routine
+            # to convert the satellite peaks into d-spacing.
+            Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, 'Instrument Parameters')
+            Parms, _ = G2frame.GPXtree.GetItemPyData(Id)
+            xtra_peaks_d = list()
+            for extra_peak in peakdata["xtraPeaks"]:
+                dsp_tmp = G2lat.Pos2dsp(Parms, extra_peak[0])
+                xtra_peaks_d.append(dsp_tmp)
+    
+            # select a parent phase. error message will be presented in a pop-up
+            # window if an invalid selection is made.
+            phase_sel = G2frame.kvecSearch['phase']
+            if len(phase_sel.strip()) == 0:
+                err_title = "Missing parent phase"
+                err_msg = "Please select the parent phase from the dropdown."
+                G2G.G2MessageBox(G2frame, err_msg, err_title)
+                wx.EndBusyCursor()
+                return
+    
+            # again, gsas ii will only grab the reflection lists for the
+            # histogram under selection. also, only those phases that are being
+            # used for the selected histogram will be included in the
+            # `refDict` variable.
+            refDict = G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, 'Reflection Lists'))
+            if phase_sel not in refDict.keys():
+                err_title = "Phase selection error"
+                err_msg = "The parent phase selected is not used in "
+                err_msg += "current histogram. "
+                err_msg += "Please select from one of the followings, "
+                err_msg += f"{list(refDict.keys())}"
+                G2G.G2MessageBox(G2frame, err_msg, err_title)
+                wx.EndBusyCursor()
+                return
+    
+            # grab the search option. By default, we would search over those
+            # high symmetry points only.
+            kvs_option_map = {"HighSymPts": 0,"HighSymPts & HighSymPaths": 1,"General": 2}
+            kvs_option = G2frame.kvecSearch['soption']
+            kvs_option = kvs_option_map[kvs_option]
+            if kvs_option == 2:
+                # grab the search range, which will be used for the option of
+                # 'General' only -- see the part below for user selection of the
+                # search option.
+                try:
+                    kx_s = float(G2frame.kvecSearch['kx_step'])
+                    ky_s = float(G2frame.kvecSearch['ky_step'])
+                    kz_s = float(G2frame.kvecSearch['kz_step'])
+                    num_procs = int(G2frame.kvecSearch['num_procs'])
+                except ValueError:
+                    err_title = "Invalid k grid input"
+                    err_msg = "The k gird values should all be float numbers"
+                    G2G.G2MessageBox(G2frame, err_msg, err_title)
+                    wx.EndBusyCursor()
+                    return
+    
+                if kx_s <= 0 or ky_s <= 0 or kz_s <= 0:
+                    err_title = "Invalid k grid input"
+                    err_msg = "The k step is less than or equal to 0. "
+                    err_msg += "Please check the input values."
+                    G2G.G2MessageBox(G2frame, err_msg, err_title)
+                    wx.EndBusyCursor()
+                    return
+                else:
+                    warn_title = "Long execution time expected"
+                    warn_msg = "Searching over general k points may take a while, "
+                    warn_msg += "usually on the level of serveral hours. "
+                    warn_msg += "Do you want to proceed?"
+                    dialog = wx.MessageDialog(G2frame,warn_msg,warn_title,
+                        wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
+                    result = dialog.ShowModal()
+    
+                    if result == wx.ID_OK:
+                        pass
+                    else:
+                        dialog.Destroy()
+                        wx.EndBusyCursor()
+                        return
+    
+                kstep = [kx_s, ky_s, kz_s]
+            else:
+                num_procs = None
+                kstep = None
+    
+            # grab the user defined tolerance for determining the optimal k vector.
+            # refer to the following link for more detailed explanation about this,
+            #
+            # https://yr.iris-home.net/kvectordoc
+            #
+            try:
+                tol_val = float(G2frame.kvecSearch['tolerance'])
+            except ValueError:
+                err_title = "Invalid tolerance input"
+                err_msg = "The tolerance value should be a float number, "
+                err_msg += "representing the instrument resolution "
+                err_msg += ("level " + u"\u03B4" + "d/d.")
+                G2G.G2MessageBox(G2frame, err_msg, err_title)
+                wx.EndBusyCursor()
+                return
+    
+            _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+            Phase = Phases[phase_sel]
+    
+            # grab the Bravais lattice type
+            #
+            # given the lattice type and lattice system, the Bravais lattice type
+            # can be determined. see the comparison table in the Wikipedia link
+            # below for the correspondence,
+            #
+            # https://en.wikipedia.org/wiki/Crystal_system
+            #
+            # here, we need to assign the Bravais lattice with specific names as
+            # inputs for the `seekpath` routine.
+            lat_type = Phase["General"]["SGData"]["SGLatt"]
+            lat_sym = Phase["General"]["SGData"]["SGSys"]
+            if lat_sym == "trigonal":
+                brav_sym = "hR"
+            else:
+                brav_sym = lat_sym[0] + lat_type
+    
+            # grab all atomic coordinates in the P1 symmetry
+            #
+            # define some matrix as necessary inputs for generating the P1
+            # structure.
+            Trans = np.eye(3)
+            Uvec = np.zeros(3)
+            Vvec = np.zeros(3)
+    
+            # expand the structure to P1 symmetry
+            newPhase = copy.deepcopy(Phase)
+            newPhase['ranId'] = ran.randint(0, sys.maxsize)
+            newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+            newPhase, _ = G2lat.TransformPhase(Phase,newPhase,Trans,Uvec,Vvec,False)
+            atoms_pointer = newPhase['General']['AtomPtrs']
+    
+            atom_coords = list()
+            atom_types = list()
+            for atom in newPhase["Atoms"]:
+                coord_tmp = atom[atoms_pointer[0]:atoms_pointer[0] + 3]
+                atom_coords.append(coord_tmp)
+                type_tmp = atom[atoms_pointer[1]]
+                atom_types.append(type_tmp)
+    
+            # this will turn each of the atom types into a unique integer number,
+            # which is required by the `seekpath` routine
+            atom_ids = kvs.unique_id_gen(atom_types)
+    
+            # grab the parent unit cell and construct the lattice vectors
+            cell_params = newPhase["General"]["Cell"][1:7]
+            lat_vectors = kvs.lat_params_to_vec(cell_params)
+    
+            hkl_refls = list()
+            for i in range(6):
+                for j in range(6):
+                    for k in range(6):
+                        hkl_refls.append([i, j, k])
+    
+            try:
+                # if we choose option-2, we need to use the `kvec_general` module
+                # Otherwise, the computation time would be unacceptably long.
+                k_search = kvs.kVector(brav_sym,lat_vectors,atom_coords,atom_ids,
+                    hkl_refls,xtra_peaks_d,tol_val,option=kvs_option,
+                    kstep=kstep,processes=num_procs)
+            except ModuleNotFoundError:
+                err_title = "Module not found"
+                err_msg = "The `kvec_general` module is not found. Please install "
+                err_msg += "the module before running the k-vector search with "
+                err_msg += "option-2."
+                G2G.G2MessageBox(G2frame, err_msg, err_title)
+                wx.EndBusyCursor()
+                return
+    
+            k_opt = k_search.kOptFinder()
+            k_opt_dist = k_opt[1]
+            ave_dd = k_opt[2]
+            max_dd = k_opt[3]
+            k_opt = [list(k_search.kVecPrimToConv(k)) for k in k_opt[0]]
+    
+            wx.EndBusyCursor()
+            cells.clear()
+    
+            # display the result
+            select = False
+            for i, k_v in enumerate(k_opt):
+                select = True
+                cells.append([])
+                laue = 'P1'
+                cells[-1] += ['?', 0, laue]
+                c = k_v + [k_opt_dist[i], ave_dd[i], max_dd[i]]
+                cells[-1] += c
+                cells[-1] += [0, False, False]
+                # G2frame.OnFileSave(event) # forces save of project
+            wx.CallAfter(UpdateUnitCellsGrid, G2frame, data, select)  # refresh & select 1st result
+            
+        kvecSizer = wx.BoxSizer(wx.VERTICAL)
+        kvecSizer.Add(wx.StaticText(
+            parent=G2frame.dataWindow,label='k-Vector Search Mode',style=wx.ALIGN_CENTER),0,wx.EXPAND)
+        Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+        littleSizer1x = wx.BoxSizer(wx.HORIZONTAL)
+        littleSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        G2frame.kvecSearch['phase'] = G2frame.kvecSearch.get('phase', '')
+        G2frame.kvecSearch['tolerance'] = G2frame.kvecSearch.get('tolerance', 0.0)
+        G2frame.kvecSearch['kx_step'] = G2frame.kvecSearch.get('kx_step', 0.01)
+        G2frame.kvecSearch['ky_step'] = G2frame.kvecSearch.get('ky_step', 0.01)
+        G2frame.kvecSearch['kz_step'] = G2frame.kvecSearch.get('k_step', 0.01)
+        G2frame.kvecSearch['num_procs'] = G2frame.kvecSearch.get('num_procs', 8)
+        G2frame.kvecSearch['soption'] = G2frame.kvecSearch.get('soption', "HighSymPts")
+        if len(Phases) == 0:
+            littleSizer.Add(wx.StaticText(G2frame.dataWindow,
+                label='    You need to define a phase to use k-vector searching'),0,WACV)
+        elif len(Phases) == 1:
+            G2frame.kvecSearch['phase'] = list(Phases.keys())[0]
+        else:
+            littleSizer.Add(wx.StaticText(G2frame.dataWindow, label='Select phase'), 0, WACV)
+            ch = G2G.EnumSelector(G2frame.dataWindow, G2frame.kvecSearch, 'phase',
+                [''] + list(Phases.keys()))
+            littleSizer.Add(ch, 10, WACV | wx.RIGHT, 0)
+
+        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='kx step'),0,WACV)
+        kx_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'kx_step',
+            nDig=[6, 3],typeHint=float,size=(50, -1))
+        littleSizer1x.Add(kx_s, 0, WACV | wx.RIGHT, 10)
+        littleSizer1x.Add((10, -1))
+
+        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='ky step'),0,WACV)
+        ky_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'ky_step',
+            nDig=[6, 3],typeHint=float,size=(50, -1))
+        littleSizer1x.Add(ky_s, 0, WACV | wx.RIGHT, 10)
+        littleSizer1x.Add((10, -1))
+
+        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='kz step'),0,WACV)
+        kz_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'kz_step',
+            nDig=[6, 3],typeHint=float,size=(50, -1))
+        littleSizer1x.Add(kz_s, 0, WACV | wx.RIGHT, 10)
+        littleSizer1x.Add((10, -1))
+
+        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='Number of processors'),0,WACV)
+        num_procs = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'num_procs',
+            nDig=[6, 2],typeHint=int,size=(50, -1))
+        littleSizer1x.Add(num_procs, 0, WACV | wx.RIGHT, 10)
+
+        littleSizer2.Add(wx.StaticText(G2frame.dataWindow, label='Search tolerance'),0,WACV)
+        tolVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'tolerance',
+            nDig=[10, 6],typeHint=float,size=(70, -1))
+        littleSizer2.Add(tolVal, 0, WACV | wx.RIGHT, 20)
+
+        littleSizer2.Add(wx.StaticText(G2frame.dataWindow, label='Search option'), 0, WACV)
+        search_opts = ["HighSymPts", "HighSymPts & HighSymPaths", "General"]
+        ch1 = G2G.EnumSelector(G2frame.dataWindow,G2frame.kvecSearch,'soption',search_opts)
+        littleSizer2.Add(ch1, 10, WACV | wx.RIGHT, 0)
+
+        kvecSizer.Add(littleSizer, 0)
+        kvecSizer.Add((-1, 5), 0)
+        kvecSizer.Add(littleSizer1x, 0)
+        kvecSizer.Add((-1, 5), 0)
+        kvecSizer.Add(littleSizer2, 0)
+        kvecSizer.Add((-1, 5), 0)
+        btn = wx.Button(G2frame.dataWindow,wx.ID_ANY,'Start Search')
+        btn.Bind(wx.EVT_BUTTON,OnKvecSearch)
+        kvecSizer.Add(btn)
+        return kvecSizer
+
+# Unit cell display controls    
+    def unitSizer():
+        
+        def OnSSselect(event):
+            if controls[5] in ['Fm3m','Im3m','Pm3m']:
+                SSselect.SetValue(False)
+                G2frame.ErrorDialog('Cubic lattice','Incommensurate superlattice not possible with a cubic lattice')
+                return
+            ssopt['Use'] = SSselect.GetValue()
+            if 'ssSymb' not in ssopt:
+                ssopt.update({'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+            
+        def OnSelMG(event):
+            ssopt['ssSymb'] = selMG.GetValue()
+            Vec = ssopt['ModVec']
+            modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
+            ssopt['ModVec'] = G2spc.SSGModCheck(Vec,modS)[0]
+            print (' Selecting: '+controls[13]+ssopt['ssSymb']+ 'maxH:'+str(ssopt['maxH']))
+            OnHklShow(event,indexFrom=' Indexing from new super group')
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+            
+        def OnModVal(invalid,value,tc):
+            OnHklShow(tc.event,indexFrom=' Indexing from new modulation vector')
+            
+        def OnMoveMod(event):
+            Obj = event.GetEventObject()
+            ObjId = Obj.GetId()
+            Id,valObj = Indx[ObjId]
+            move = Obj.GetValue()*0.01
+            Obj.SetValue(0)
+            value = min(0.98,max(-0.98,float(valObj.GetValue())+move))
+            valObj.SetValue('%.4f'%(value)) 
+            ssopt['ModVec'][Id] = value
+            OnHklShow(event,indexFrom=' Indexing from changed modulation vector')
+            
+        def OnMaxMH(event):
+            ssopt['maxH'] = int(maxMH.GetValue())
+            print (' Selecting: '+controls[13]+ssopt['ssSymb']+'maxH:'+str(ssopt['maxH']))
+            OnHklShow(event,indexFrom=' Indexing from new max. M')
+            
+        def OnButton(xpos,ypos):
+            modSym = ssopt['ssSymb'].split(')')[0]+')'
+            if modSym in ['(a0g)','(a1/2g)']:
+                ssopt['ModVec'][0] = xpos
+                ssopt['ModVec'][2] = ypos
+            elif modSym in ['(0bg)','(1/2bg)']:
+                ssopt['ModVec'][1] = xpos
+                ssopt['ModVec'][2] = ypos
+            elif modSym in ['(ab0)','(ab1/2)']:
+                ssopt['ModVec'][0] = xpos
+                ssopt['ModVec'][1] = ypos
+            vec = ssopt['ModVec']
+            print(' Trying: %s %s modulation vector = %.3f %.3f %.3f'%(controls[13],ssopt['ssSymb'],vec[0],vec[1],vec[2]))
+            OnHklShow(None,indexFrom=' Indexing from selected modulation vector')
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+            
+        def OnFindOneMV(event):
+            Peaks = np.copy(peaks[0])
+            print (' Trying: '+controls[13],ssopt['ssSymb']+' maxH: 1')
+            dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+            try:
+                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
+                if len(result[0]) == 2:
+                    G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
+                        newPlot=True,Title='Modulation vector search',buttonHandler=OnButton)
+            finally:
+                dlg.Destroy()
+            OnHklShow(event,indexFrom=' Indexing from best modulation vector')
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+            
+        def OnFindMV(event):
+            best = 1.
+            bestSS = ''
+            for ssSym in ssChoice:
+                ssopt['ssSymb'] = ssSym            
+                Peaks = np.copy(peaks[0])
+                ssopt['ModVec'] = G2spc.SSGModCheck(ssopt['ModVec'],G2spc.splitSSsym(ssSym)[0],True)[0]
+                print (' Trying: '+controls[13]+ssSym+' maxH: 1')
+                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
+                OnHklShow(event,indexFrom='  Indexing from best modulation vector')
+                if result[1] < best:
+                    bestSS = ssSym
+                    best = result[1]
+            if bestSS != '':
+                ssopt['ssSymb'] = bestSS
+                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
+                if len(result[0]) == 2:
+                    G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
+                        newPlot=True,Title='Modulation vector search')
+            
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+            
+        def OnBravSel(event):
+            brav = bravSel.GetString(bravSel.GetSelection())
+            controls[5] = brav
+            controls[13] = SPGlist[brav][0]       
+            ssopt['Use'] = False
+            OnHklShow(event,indexFrom=' Indexing from Bravais lattice %s'%brav)
+            wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
+        
+        def OnSpcSel(event):
+            controls[13] = spcSel.GetString(spcSel.GetSelection())
+            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+            ssopt['Use'] = False
+            G2frame.dataWindow.RefineCell.Enable(True)
+            OnHklShow(event,indexFrom=' Indexing from space group %s'%controls[13])
+            wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
+        
+        def OnTryAll(event):
+            '''Computes extinctions for all possible space groups
+            creates data for a table that is displayed in the subsequent 
+            UpdateUnitCellsGrid call. 
+            '''
+            ssopt['SgResults'] = []
+            ssopt['SgSettings'] = ''
+            for controls[13] in SPGlist[controls[5]]:
+                ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+                ssopt['Use'] = False
+                G2frame.dataWindow.RefineCell.Enable(True)
+                res = OnHklShow(event,False,False,indexFrom=' ')
+                if res: 
+                    ssopt['SgResults'].append(res)
+            if ssopt['SgResults']:
+                ssopt['SgResults'] = G2mth.sortArray(ssopt['SgResults'],2,reverse=True)
+                controls[13] = ssopt['SgResults'][0][0]
+                ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+                G2frame.dataWindow.RefineCell.Enable(True)
+                ssopt['SgResults'][0][1] = True  # select the first entry
+                ssopt['SgSettings'] = 'Brav. Lat.: {}, cell: {:.3f} {:.3f} {:.3f} {:.2f} {:.2f} {:.2f}'.format(*controls[5:12])
+                OnHklShow(event,False,False,indexFrom=' Indexing from space group %s'%controls[13])
+            wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
+
+        def SetCellValue(Obj,ObjId,value):
+            if controls[5] in ['Fm3m','Im3m','Pm3m']:
+                controls[6] = controls[7] = controls[8] = value
+                controls[9] = controls[10] = controls[11] = 90.0
+                Obj.SetValue(controls[6])
+            elif controls[5] in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
+                if ObjId == 0:
+                    controls[6] = controls[7] = value
+                    Obj.SetValue(controls[6])
+                else:
+                    controls[8] = value
+                    Obj.SetValue(controls[8])
+                controls[9] = controls[10] = controls[11] = 90.0
+                if controls[5] in ['R3-H','P6/mmm']:
+                    controls[11] = 120.
+            elif controls[5] in ['Fmmm','Immm','Cmmm','Pmmm']:
+                controls[6+ObjId] = value
+                Obj.SetValue(controls[6+ObjId])
+                controls[9] = controls[10] = controls[11] = 90.0
+            elif controls[5] in ['I2/m','A2/m','C2/m','P2/m']:
+                controls[9] = controls[11] = 90.0
+                if ObjId != 3:
+                    controls[6+ObjId] = value
+                    Obj.SetValue(controls[6+ObjId])
+                else:
+                    controls[10] = value
+                    Obj.SetValue(controls[10])
+            else:
+                controls[6+ObjId] = value
+                if ObjId < 3:
+                    Obj.SetValue(controls[6+ObjId])
+                else:
+                    Obj.SetValue(controls[6+ObjId])
+            controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
+            volVal.SetValue("%.3f"%(controls[12]))
+            
+        def OnMoveCell(event):
+            Obj = event.GetEventObject()
+            ObjId = cellList.index(Obj.GetId())
+            valObj = valDict[Obj.GetId()]
+            inc = float(shiftChoices[shiftSel.GetSelection()][:-1])
+            move = Obj.GetValue()  # +1 or -1 
+            Obj.SetValue(0)
+            value = float(valObj.GetValue()) * (1. + move*inc/100.)
+            SetCellValue(valObj,ObjId//2,value)
+            OnHklShow(event,indexFrom=' Indexing from new cell')
+        
+        def OnCellChange(invalid,value,tc):
+            if invalid:
+                return
+            try: # fails when zero is updated
+                SetCellValue(tc,Info[tc.GetId()],value)
             except:
                 pass
+            OnHklShow(tc.event,indexFrom=' Indexing from new cell ')
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+
+        def OnMagSel(event):
+            Obj = event.GetEventObject()
+            if Obj.GetValue():
+                SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
+                GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+                SGData['GenSym'] = GenSym
+                SGData['GenFlg'] = GenFlg
+                OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+                SGData['SpnFlp'] = SpnFlp
+                SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+            else:
+                del SGData['MagSpGrp']
+            ssopt['SGData'] = SGData
+            OnHklShow(event,indexFrom=' Indexing from new spin selection')
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+                
+        def OnSpinOp(event):
+            Obj = event.GetEventObject()
+            isym = Indx[Obj.GetId()]+1
+            spCode = {'red':-1,'black':1}                    
+            SGData['SGSpin'][isym] = spCode[Obj.GetValue()]
+            G2spc.CheckSpin(isym,SGData)
+            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+            SGData['GenSym'] = GenSym
+            SGData['GenFlg'] = GenFlg
+            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+            SGData['SpnFlp'] = SpnFlp
+            SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+            OnHklShow(event,indexFrom=' Indexing from new spin operators')
+            
+        def OnBNSlatt(event):
+            Obj = event.GetEventObject()
+            SGData.update(G2spc.SpcGroup(SGData['SpGrp'])[1])
+            BNSlatt = Obj.GetValue()
+            if '_' in BNSlatt:
+                SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+            else:
+                SGData['BNSlattsym'] = [SGData['SGLatt'],[0.,0.,0.]]
+            SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
+            GenSym,GenFlg = G2spc.GetGenSym(SGData)[:2]
+            SGData['GenSym'] = GenSym
+            SGData['GenFlg'] = GenFlg
+            SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+            G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
+            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+            SGData['SpnFlp'] = SpnFlp
+            OnHklShow(event,indexFrom=' Indexing from new BNS centering')
+                
+        def OnShowSpins(event):
+            msg = 'Magnetic space group information'
+            text,table = G2spc.SGPrint(SGData,AddInv=True)
+            text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
+            text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
+            G2G.SGMagSpinBox(G2frame.dataWindow,msg,text,table,SGData['SGCen'],OprNames,
+                SGData['SpnFlp'],False).Show()
+
+        def OnMakePks(event):
+            msg = ('This will replace the current contents of the Peaks List'+
+                   ' with peak positions generated from the current cell.'+
+                   ' Are you sure you want to delete the previous Peak List'+
+                   ' contents?')
+            dlg = wx.MessageDialog(G2frame, msg,'Replace peaks?',wx.YES_NO|wx.ICON_QUESTION)
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            if result != wx.ID_YES: return
+            hkl = G2frame.HKL
+            PatternId = G2frame.PatternId
+            limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+            background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
+            inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+            peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
+            Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
+            peaks = []
+            profile = Pattern[1]
+            bxye = GetFileBackground(G2frame,profile,background)
+            x0 = profile[0]
+            iBeg = np.searchsorted(x0,limits[0])
+            iFin = np.searchsorted(x0,limits[1])
+            x = x0[iBeg:iFin]
+            y = (profile[1]-bxye)[iBeg:iFin]
+    #        ysig = 1.0*np.std(y0)
+            poss = [p for p in hkl[:,4] if (x[0] <= p <= x[-1])]
+            mags = y[np.searchsorted(x,poss)]
+            refs = list(zip(poss,mags))
+            if 'T' in Inst['Type'][0]:    
+                refs = G2mth.sortArray(refs,0,reverse=True)     #big TOFs first
+            else:   #'C', 'E' or 'B'
+                refs = G2mth.sortArray(refs,0,reverse=False)    #small 2-Thetas or energies first
+            for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
+                for ref2 in refs[i+1:]:
+                    if abs(ref2[0]-ref1[0]) < 2.*G2pwd.getFWHM(ref1[0],inst):
+                        del(refs[i])
+            if 'T' in Inst['Type'][0]:    
+                refs = G2mth.sortArray(refs,1,reverse=False)
+            else:   #'C', 'E' or 'B'
+                refs = G2mth.sortArray(refs,1,reverse=True)
+            for pos,mag in refs:
+                peaks.append(G2mth.setPeakparms(inst,inst2,pos,mag))
+            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),peaks)
+
+        def OnNewHklShow(event):
+            OnHklShow(event,indexFrom=' Indexing from unit cell & symmetry settings')
+            
+        def OnExtHklShow(event):
+            OnHklShow(event,indexFrom=' Indexing including extinct hkls')
+            
+        def OnAxHklShow(event):
+            OnHklShow(event,indexFrom=' Indexing excluding special hkls')
+            
+        unitSizer = wx.BoxSizer(wx.VERTICAL)
+        unitSizer.Add(wx.StaticText(parent=G2frame.dataWindow,style=wx.ALIGN_CENTER,
+            label='Unit Cell && Symmetry Settings for Reflection Display'),0,wx.EXPAND)
+        ibrav = SetLattice(controls)
+        for cellGUI in cellGUIlist:
+            if ibrav in cellGUI[0]:
+                useGUI = cellGUI
+        cellList = []
+        valDict = {}
+        Info = {}
+    
+        bravSizer = wx.BoxSizer(wx.HORIZONTAL)
+        bravSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Bravais  \n lattice ",style=wx.ALIGN_CENTER),0,WACV,5)
+        bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb,size=(75,-1))
+        bravSel.SetSelection(bravaisSymb.index(controls[5]))
+        bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
+        bravSizer.Add(bravSel,0,WACV)
+        bravSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space  \n group  ",style=wx.ALIGN_CENTER),0,WACV,5)
+        spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(100,-1))
+        try:
+            spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
+        except ValueError:
+            pass
+        spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
+        bravSizer.Add(spcSel,0,WACV)
+        bravSizer.Add((5,-1))
+        tryAll = wx.Button(G2frame.dataWindow,label='Try all?')
+        tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
+        bravSizer.Add(tryAll,0,WACV)
+        if 'E' not in Inst['Type'][0]:
+            SSselect = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
+            SSselect.SetValue(ssopt.get('Use',False))
+            SSselect.Bind(wx.EVT_CHECKBOX,OnSSselect)
+            bravSizer.Add(SSselect,0,WACV)
+            if ssopt.get('Use',False):        #zero for super lattice doesn't work!
+                controls[0] = False
+        unitSizer.Add(bravSizer,0)
+        
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        cellSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),3,3)
+        for txt,fmt,ifEdit,Id in zip(*useGUI[2]):
+            cellSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT|WACV)
+            if ifEdit:          #a,b,c,etc.
+                cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange,size=(65,-1))
+                Info[cellVal.GetId()] = Id
+                valSizer = wx.BoxSizer(wx.HORIZONTAL)
+                valSizer.Add(cellVal,0,WACV)
+                cellSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+                cellSpin.SetValue(0)
+                cellSpin.SetRange(-1,1)
+                cellSpin.Bind(wx.EVT_SPIN, OnMoveCell)
+                valSizer.Add(cellSpin,0,WACV)
+                cellSizer.Add(valSizer,0,WACV)
+                cellList.append(cellVal.GetId())
+                cellList.append(cellSpin.GetId())
+                valDict[cellSpin.GetId()] = cellVal
+            else:               #volume
+                volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY,size=(65,-1))
+                volVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                cellSizer.Add(volVal,0,WACV)
+        hSizer.Add(cellSizer,0,WACV)
+        hSizer.Add((10,-1))
+        vcSizer =  wx.BoxSizer(wx.VERTICAL)
+        vcSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell step',
+            style=wx.ALIGN_CENTER),0,wx.EXPAND)
+        shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
+        shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
+        shiftSel.SetSelection(3)
+        vcSizer.Add(shiftSel)
+        hSizer.Add(vcSizer,0,WACV)
+        if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
+            hSizer.Add((15,-1))
+            vcSizer =  wx.BoxSizer(wx.VERTICAL)
+            vcSizer.Add(wx.StaticText(G2frame.dataWindow,label="Zero offset",
+                style=wx.ALIGN_CENTER),0,wx.EXPAND)
+            hcSizer = wx.BoxSizer(wx.HORIZONTAL)
+            zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
+                xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
+            hcSizer.Add(zero,0,WACV)
+            zeroVar = G2G.G2CheckBox(G2frame.dataWindow,'Ref?',controls,0)
+            hcSizer.Add(zeroVar,0,WACV|wx.LEFT,3)
+            vcSizer.Add(hcSizer)
+            hSizer.Add(vcSizer,0,WACV)
+        unitSizer.Add(hSizer,0)
+        if ssopt.get('Use',False):        #super lattice display
+            indChoice = ['1','2','3','4',]
+            SpSg = SGData['SpGrp']
+            if 'MagSpGrp' in SGData:    #limit to one for magnetic SS for now
+                indChoice = ['1',]
+                SpSg = SGData['MagSpGrp']
+            ssChoice = G2spc.SSChoice(SGData)
+            if ssopt['ssSymb'] not in ssChoice:
+                ssopt['ssSymb'] = ssopt['ssSymb'][:-1]
+            ssSizer = wx.BoxSizer(wx.HORIZONTAL)
+            ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Supersymmetry space group: '+SpSg+' '),0,WACV)
+            selMG = wx.ComboBox(G2frame.dataWindow,value=ssopt['ssSymb'],
+                choices=ssChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            selMG.Bind(wx.EVT_COMBOBOX, OnSelMG)
+            ssSizer.Add(selMG,0,WACV)
+            unitSizer.Add(ssSizer,0)
+            ssSizer = wx.BoxSizer(wx.HORIZONTAL)
+            ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mod. vector: '),0,WACV)
+            modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
+            ssopt['ModVec'],ifShow = G2spc.SSGModCheck(ssopt['ModVec'],modS)
+            for i,[val,show] in enumerate(zip(ssopt['ModVec'],ifShow)):
+                if show:
+                    valSizer = wx.BoxSizer(wx.HORIZONTAL)
+                    modVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,ssopt['ModVec'],i,
+                        xmin=-.98,xmax=.98,nDig=(10,4),typeHint=float,
+                        OnLeave=OnModVal,size=wx.Size(50,-1))
+                    valSizer.Add(modVal,0,WACV)
+                    modSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+                    modSpin.SetValue(0)
+                    modSpin.SetRange(-1,1)
+                    modSpin.Bind(wx.EVT_SPIN, OnMoveMod)
+                    valSizer.Add(modSpin,0,WACV)
+                    ssSizer.Add(valSizer,0,WACV)
+                    Indx[modVal.GetId()] = i
+                    Indx[modSpin.GetId()] = [i,modVal]
+                else:
+                    modVal = wx.TextCtrl(G2frame.dataWindow,value=('%.3f'%(val)),
+                        size=wx.Size(50,20),style=wx.TE_READONLY)
+                    modVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                    ssSizer.Add(modVal,0,WACV)
+            unitSizer.Add(ssSizer,0)
+            ssSizer = wx.BoxSizer(wx.HORIZONTAL)
+            ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max. M: '),0,WACV)
+            maxMH = wx.ComboBox(G2frame.dataWindow,value=str(ssopt['maxH']),
+                choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
+            ssSizer.Add(maxMH,0,WACV)
+            if len(peaks[0]):
+                findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
+                findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
+                ssSizer.Add(findMV,0,WACV)
+                findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
+                findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
+                ssSizer.Add(findallMV,0,WACV)
+            unitSizer.Add(ssSizer,0)
+        # cell display options
+        littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+        cellDisplayOpts['Show'] = True
+        hklShow = wx.Button(G2frame.dataWindow,label="Update indexing")
+        hklShow.Bind(wx.EVT_BUTTON,OnNewHklShow)
+        littleSizer.Add(hklShow,0,WACV)    
+        if 'E' not in Inst['Type'][0]:
+            littleSizer.Add((5,-1))
+            if not ssopt.get('Use',False):  # Show Extinct not available for super lattice
+                showExt = G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',
+                    cellDisplayOpts,'showExtinct',OnChange=OnExtHklShow)
+                littleSizer.Add(showExt,0,WACV)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',style=wx.ALIGN_RIGHT),0,WACV)
+        G2frame.PlotOpts['hklHighlight'] = G2frame.PlotOpts.get('hklHighlight',0)
+        Sel = G2G.G2ChoiceButton(G2frame.dataWindow,[ 'None',] + [c+notEq0 for c in ('h','k','l')],
+            indLoc=G2frame.PlotOpts,indKey='hklHighlight',onChoice=OnAxHklShow)
+        littleSizer.Add(Sel,0,WACV)
+    
+        if 'E' not in Inst['Type'][0]:
+            if 'N' in Inst['Type'][0]:
+                littleSizer.Add((5,-1))
+                MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
+                MagSel.SetValue('MagSpGrp' in SGData)
+                MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
+                littleSizer.Add(MagSel,0,WACV)
+            if len(G2frame.HKL):
+                littleSizer.Add((5,-1))
+                makePks = wx.Button(G2frame.dataWindow,label='Copy refs to Peak list')
+                makePks.Bind(wx.EVT_BUTTON,OnMakePks)
+                littleSizer.Add(makePks,0,WACV)
+        unitSizer.Add(littleSizer,0)
+    
+        # magnetic cell options
+        if 'N' in Inst['Type'][0] and 'MagSpGrp' in SGData:
+            neutSizer = wx.BoxSizer(wx.HORIZONTAL)
+            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+            SGData['GenSym'] = GenSym
+            SGData['SGGray'] = False
+            neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' BNS lattice: '),0,WACV)
+            BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
+            BNSkeys.sort()
+            try:        #this is an ugly kluge - bug in wx.ComboBox
+                if SGData['BNSlattsym'][0][2] in ['a','b','c']:
+                    BNSkeys.reverse()
+            except:
+                pass
+            BNS = wx.ComboBox(G2frame.dataWindow,value=SGData['BNSlattsym'][0],
+                choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
+            neutSizer.Add(BNS,0,WACV)
+            spinColor = ['black','red']
+            spCode = {-1:'red',1:'black'}
+            for isym,sym in enumerate(GenSym[1:]):
+                neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' %s: '%(sym.strip())),0,WACV)                
+                spinOp = wx.ComboBox(G2frame.dataWindow,value=spCode[SGData['SGSpin'][isym+1]],choices=spinColor,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)                
+                Indx[spinOp.GetId()] = isym
+                spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
+                neutSizer.Add(spinOp,0,WACV)
+            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+            SGData['SpnFlp'] = SpnFlp
+            showSpins = wx.Button(G2frame.dataWindow,label=' Show spins?')
+            showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
+            neutSizer.Add(showSpins,0,WACV)
+            unitSizer.Add(neutSizer,0)
+            unitSizer.Add((5,5),0)
+        return unitSizer
+    
+# Space group grid
+    def SpGrpGrid():
+        
+        def OnSelectSgrp(event):
+            'Called when the Space Group Search Results show column is checked'
+            if event is not None:
+                clearShowFlags()
+                r = event.GetRow()
+                for i in range(len(ssopt['SgResults'])):
+                    ssopt['SgResults'][i][1] = False
+                    SgTable.SetValue(i,1,False)
+                SgTable.SetValue(r,1,True)
+                controls[13] = ssopt['SgResults'][r][0]
+            else:
+                for r in range(len(ssopt['SgResults'])):
+                    if ssopt['SgResults'][r][1]:
+                        controls[13] = ssopt['SgResults'][r][0]
+                        break
+            SgDisplay.ForceRefresh()
+            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+            G2frame.dataWindow.RefineCell.Enable(True)
+            OnHklShow(event,True,indexFrom=' Space group selection #%d'%r)
+        
+        SpGrpGrid = wx.BoxSizer(wx.VERTICAL)
+        lbl = (' Space group search results from "Try all"'+
+                   '\n  '+ssopt.get('SgSettings',''))
+        SpGrpGrid.Add(wx.StaticText(parent=G2frame.dataWindow,label=lbl))
+        colLabels = ['Sp Grp','show','M20','X20','Nhkl','fr. found']
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
+            wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
+        rowLabels = []
+        table = []
+        for result in ssopt['SgResults']:
+            rowLabels.append('')
+            row = result
+            table.append(row)
+        SgTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        SgDisplay = G2G.GSGrid(G2frame.dataWindow)
+        SgDisplay.SetTable(SgTable, True)
+        SgDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,OnSelectSgrp)
+        SgDisplay.SetRowLabelSize(0)
+        SgDisplay.AutoSizeColumns(False)
+        for r in range(SgDisplay.GetNumberRows()):
+            for c in range(SgDisplay.GetNumberCols()):
+                if c == 1:
+                    SgDisplay.SetReadOnly(r,c,isReadOnly=False)
+                else:
+                    SgDisplay.SetReadOnly(r,c,isReadOnly=True)
+        SpGrpGrid.Add(SgDisplay)
+        _setupResultsGrid(SgDisplay)
+        OnSelectSgrp(None)
+        return SpGrpGrid
+    
+    def MagSubGrid():
+         
+        global KeyList
+        def ClearCurrentShowNext():
+            KeepShowNext(False)
+            
+        KeyList += [['j',ClearCurrentShowNext,'Show next Mag. Spc. Group, clear keep flag on current']]        
+        
+        def KeepCurrentShowNext():
+            KeepShowNext(True)
+            
+        KeyList += [['k',KeepCurrentShowNext,'Show next Mag. Spc. Group, keep current']]
+            
+        def KeepShowNext(KeepCurrent=True):
+            '''Show next "keep" item in Magnetic Space Group list, possibly resetting the 
+            keep flag for the current displayed cell
+            '''
+            for i in range(len(magcells)): # find plotted setting
+                if magcells[i]['Use']: break
+            else:
+                return # no Try is set
+            if not KeepCurrent:  # clear current
+                magcells[i]['Keep'] = False
+                MagCellsTable.SetValue(i,2,False)
+            keeps = [j for j in range(i+1,len(magcells)) if magcells[j]['Keep']]
+            if not keeps:
+                if not KeepCurrent: magDisplay.ForceRefresh()
+                return # no remaining Keep-flagged entries
+            next = keeps[0]
+            # update table
+            magcells[i]['Use'] = False
+            MagCellsTable.SetValue(i,1,False)
+            magcells[next]['Use'] = True
+            MagCellsTable.SetValue(next,1,True)
+            # get SG info and plot
+            SGData = magcells[next]['SGData']
+            A = G2lat.cell2A(magcells[next]['Cell'][:6])  
+            G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
+            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
+            magDisplay.ForceRefresh()
+            # change Scroll to display new setting
+            xscroll = G2frame.dataWindow.GetScrollPos(wx.HORIZONTAL)
+            yscroll = magDisplay.CellToRect(next,1)[1]/G2frame.dataWindow.GetScrollPixelsPerUnit()[1]
+            G2frame.dataWindow.Scroll(xscroll,yscroll)
+            
+        def RefreshMagCellsGrid(event):
+            'Display results from k-SUBGROUPSMAG in the Unit Cells tab & allow inspection of results'
+            controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+            r,c =  event.GetRow(),event.GetCol()
+            rLab = magDisplay.GetRowLabelValue(r)
+            br = baseList[r]
+            phase = phaseDict[br]
+            pname = '(%s) %s'%(rLab,phase['Name'])
+            if magcells:
+                if c == 0:
+                    mSGData = phase['SGData']
+                    text,table = G2spc.SGPrint(mSGData,AddInv=True)
+                    if 'magAtms' in phase:
+                        msg = 'Magnetic space group information'
+                        text[0] = ' Magnetic Space Group: '+mSGData['MagSpGrp']
+                        text[3] = ' The magnetic lattice point group is '+mSGData['MagPtGp']
+                        OprNames,SpnFlp = G2spc.GenMagOps(mSGData)
+                        G2G.SGMagSpinBox(G2frame.dataWindow,msg,text,table,mSGData['SGCen'],OprNames,
+                            mSGData['SpnFlp'],False).Show()
+                    else:
+                        msg = 'Space Group Information'
+                        G2G.SGMessageBox(G2frame.dataWindow,msg,text,table).Show()
+                elif c == 1:
+                    for i in range(len(magcells)):
+                        magcells[i]['Use'] = False
+                    for i in range(len(baseList)):
+                        MagCellsTable.SetValue(i,c,False)
+                    MagCellsTable.SetValue(r,c,True)
+                    magDisplay.ForceRefresh()
+                    phase['Use'] = True
+                    mSGData = phase['SGData']
+                    A = G2lat.cell2A(phase['Cell'][:6])  
+                    G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,mSGData,A,Inst))
+                    G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
+                elif c == 2:
+                    if MagCellsTable.GetValue(r,c):
+                        MagCellsTable.SetValue(r,c,False)
+                        phase['Keep'] = False
+                    else:
+                        phase['Keep'] = True
+                        MagCellsTable.SetValue(r,c,True)
+                    magDisplay.ForceRefresh()
+                elif c ==3:
+                    maxequiv = magcells[0].get('maxequiv',100)
+                    mSGData = phase['SGData']
+                    Uvec = phase['Uvec']
+                    Trans = phase['Trans']
+                    ifMag = False
+                    if 'magAtms' in phase:
+                        ifMag = True
+                        allmom = phase.get('allmom',False)
+                        magAtms = phase.get('magAtms','')
+                        mAtoms = TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv)
+                    else:
+                        mAtoms = TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv)
+                    Atms = []
+                    AtCods = []
+                    atMxyz = []
+                    for ia,atom in enumerate(mAtoms):
+                        atom[0] += '_%d'%ia
+                        SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[2:5],mSGData)
+                        Atms.append(atom[:2]+['',]+atom[2:5])
+                        AtCods.append('1')
+                        if 'magAtms' in phase:
+                            MagSytSym = G2spc.MagSytSym(SytSym,dupDir,mSGData)
+                            CSI = G2spc.GetCSpqinel(mSGData['SpnFlp'],dupDir)
+                            atMxyz.append([MagSytSym,CSI[0]])
+                        else:
+                            CSI = G2spc.GetCSxinel(SytSym)
+                            atMxyz.append([SytSym,CSI[0]])
+                    G2phsG.UseMagAtomDialog(G2frame,pname,Atms,AtCods,atMxyz,ifMag=ifMag,ifOK=True).ShowModal()
+                elif c in [4,5]:
+                    if 'altList' not in phase: return
+                    if c == 4:
+                        title = 'Conjugacy list for '+pname
+                        items = phase['altList']
+                        ifPick = True
+                    elif c == 5:
+                        title = 'Super groups list for '+pname
+                        items = phase['supList']
+                        if not items[0]:
+                            wx.MessageBox(pname+' is a maximal subgroup',caption='Super group is parent',style=wx.ICON_INFORMATION)
+                            return
+                        ifPick = False
+                    Pick = -1
+                    dlg = SubCellsDialog(G2frame,title,controls,SGData,items,phaseDict,ifPick)
+                    try:
+                        if dlg.ShowModal() == wx.ID_OK:
+                            altList = copy.copy(phase['altList'])
+                            Pick = dlg.GetSelection()
+                            pickPhase = phaseDict[altList[Pick]]
+                            pickPhase['altList'] = altList
+                            pickPhase['Use'] = phase['Use']
+                            baseList[r] = altList[Pick]
+                    finally:
+                        dlg.Destroy()
+                    if Pick >= 0:
+                        data = [controls,bravais,cells,dminx,ssopt,magcells]
+                        G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
+                        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+            
+        def OnRefreshKeep(event):
+            controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+            c =  event.GetCol()
+            E,SGData = G2spc.SpcGroup(controls[13])
+            if c == 2:
+                testAtoms = ['',]+list(set([atom[1] for atom in controls[15]]))
+                ifMag = False
+                maxequiv = magcells[0]['maxequiv']
+                maximal = False
+                if 'magAtms' in magcells[0]:
+                    ifMag = True
+                    allmom = magcells[0]['allmom']
+                    magAtms = magcells[0]['magAtms']
+                    dlg = G2G.MultiDataDialog(G2frame,title='Keep options',
+                        prompts=['max unique','test for mag. atoms','all have moment','only maximal subgroups',],
+                        values=[maxequiv,'',allmom,False],limits=[[1,100],testAtoms,[True,False],[True,False]],
+                        formats=['%d','choice','bool','bool'])
+                else:
+                    dlg = G2G.MultiDataDialog(G2frame,title='Keep options',
+                        prompts=['max unique','only maximal subgroups',],
+                        values=[maxequiv,False],limits=[[1,100],[True,False],],
+                        formats=['%d','bool',])
+                if dlg.ShowModal() == wx.ID_OK:
+                    if ifMag:
+                        maxequiv,atype,allmom,maximal = dlg.GetValues()
+                        magAtms = [atom for atom in controls[15] if atom[1] == atype]
+                    else:
+                        maxequiv,maximal = dlg.GetValues()
+                dlg = wx.ProgressDialog('Setting Keep flags','Processing '+magcells[0]['Name'],len(magcells), 
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
+                for ip,phase in enumerate(magcells):
+                    dlg.Update(ip,newmsg='Processing '+phase['Name'])
+                    Uvec = phase['Uvec']
+                    Trans = phase['Trans']
+                    if ifMag:
+                        phase['nAtoms'] = len(TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv,maximal))
+                    else:
+                        phase['nAtoms'] = len(TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv,maximal))
+                dlg.Destroy()
+                data = controls,bravais,cells,dminx,ssopt,magcells
+                G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
+                wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
+        MagSubGrid = wx.BoxSizer(wx.VERTICAL)
+        itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(magcells)]
+        phaseDict = dict(zip(itemList,magcells))
+        G2frame.dataWindow.CopyCell.Enable(False)
+        kvec1 = ','.join(controls[14][:3])
+        kvec2 = ','.join(controls[14][3:6])
+        kvec3 = ','.join(controls[14][6:])
+        baseList = controls[16]
+        if 'magAtms' in magcells[0]:
+            G2frame.dataWindow.RunSubGroupsMag.Enable(True)
+            Label = '\n Magnetic subgroup cells from Bilbao k-SUBGROUPSMAG for %s; kvec1=(%s)'%(controls[13],kvec1)
+        else:
+            G2frame.dataWindow.RunSubGroups.Enable(True)
+            Label = '\n Subgroup cells from Bilbao SUBGROUPS for %s; kvec1=(%s)'%(controls[13],kvec1)
+        if ' ' not in kvec2:
+            Label += ', kvec2=(%s)' % kvec2
+        if ' ' not in kvec3:
+            Label += ', kvec3=(%s)' % kvec3
+        Label += ':'
+        MagSubGrid.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label))
+        rowLabels = [str(i+1) for i in range(len(baseList))]
+        colLabels = ['Space Gp','Try','Keep','Uniq','nConj','nSup','Trans','Vec','a','b','c','\u03B1','\u03B2','\u03B3','Volume']
+        Types = [wg.GRID_VALUE_STRING,]+2*[wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
+            3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
+        table = []
+        for ip in baseList:
+            phase = phaseDict[ip]
+            natms = phase.get('nAtoms',1)
+            try:
+                nConj = len(phase['altList'])
+                nSup = len(phase['supList'])
+            except KeyError:
+                nConj = 0
+                nSup = 0
+            cell  = list(phase['Cell'])
+            trans = G2spc.Trans2Text(phase['Trans'])
+            vec = G2spc.Latt2text([phase['Uvec'],])
+            row = [phase['Name'],phase['Use'],phase['Keep'],natms,nConj,nSup,trans,vec]+cell
+            table.append(row)
+        MagCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        G2frame.GetStatusBar().SetStatusText(
+                'Double click Keep to refresh Keep flags; click Space Gp to see sym. ops., Uniq to see unique atoms list; Try to trigger K & J keys on plot',1)
+        magDisplay = G2G.GSGrid(G2frame.dataWindow)
+        magDisplay.SetRowLabelSize(45)
+        magDisplay.SetTable(MagCellsTable, True)
+        magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)
+        magDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnRefreshKeep)
+        magDisplay.AutoSizeColumns(False)
+        for r in range(magDisplay.GetNumberRows()):
+            for c in range(magDisplay.GetNumberCols()):
+                if c in [1,2]:
+                    magDisplay.SetReadOnly(r,c,isReadOnly=False)
+                else:
+                    magDisplay.SetReadOnly(r,c,isReadOnly=True)
+        MagSubGrid.Add(magDisplay)
+        _setupResultsGrid(magDisplay)        
+        return MagSubGrid
+        
     #### UpdateUnitCellsGrid code starts here
     # create all menubars accessed here
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)   # Needed below
@@ -6308,349 +6645,16 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
     mainSizer.Add((-1,3),0)
     if not G2frame.kvecSearch['mode']:
         # autoindexing GUI
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
-                        label='Autoindexing of "Index Peak List" contents',
-                        style=wx.ALIGN_CENTER),0,wx.EXPAND)
-        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bravais Lattice(s) for autoindexing trials:'),0)
-        mainSizer.Add((5,5),0)
-        indentSizer = wx.BoxSizer(wx.HORIZONTAL)
-        indentSizer.Add((20,-1))
-        littleSizer = wx.FlexGridSizer(0,4,5,5)
-        bravList = []
-        bravs = zip(bravais,bravaisNames)
-        for brav,bravName in bravs:
-            bravCk = wx.CheckBox(G2frame.dataWindow,label=bravName)
-            bravList.append(bravCk.GetId())
-            bravCk.SetValue(brav)
-            bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
-            littleSizer.Add(bravCk,0,WACV)
-
-        indentSizer.Add(littleSizer,0)
-        mainSizer.Add(indentSizer,0)
-        littleSizer = wx.FlexGridSizer(0,5,5,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max Nc/Nobs '),0,WACV)
-        NcNo = wx.SpinCtrl(G2frame.dataWindow)
-        NcNo.SetRange(2,8)
-        NcNo.SetValue(controls[2])
-        NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
-        littleSizer.Add(NcNo,0,WACV)
-        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Start Volume '),0,WACV)
-        startVol = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,3,typeHint=int,xmin=25)
-        littleSizer.Add(startVol,0,WACV)
-        x20 = wx.CheckBox(G2frame.dataWindow,label='Use M20/(X20+1)?')
-        x20.SetValue(G2frame.ifX20)
-        x20.Bind(wx.EVT_CHECKBOX,OnIfX20)
-        littleSizer.Add(x20,0,WACV)
-        mainSizer.Add(littleSizer,0)
-        mainSizer.Add((5,5),0)
+        mainSizer.Add(firstSizer())
     else:
         # k-vector GUI
-        mainSizer.Add(wx.StaticText(
-            parent=G2frame.dataWindow,label='k-Vector Search Mode',style=wx.ALIGN_CENTER),0,wx.EXPAND)
-        Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        littleSizer1x = wx.BoxSizer(wx.HORIZONTAL)
-        littleSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        G2frame.kvecSearch['phase'] = G2frame.kvecSearch.get('phase', '')
-        G2frame.kvecSearch['tolerance'] = G2frame.kvecSearch.get('tolerance', 0.0)
-        G2frame.kvecSearch['kx_step'] = G2frame.kvecSearch.get('kx_step', 0.01)
-        G2frame.kvecSearch['ky_step'] = G2frame.kvecSearch.get('ky_step', 0.01)
-        G2frame.kvecSearch['kz_step'] = G2frame.kvecSearch.get('k_step', 0.01)
-        G2frame.kvecSearch['num_procs'] = G2frame.kvecSearch.get('num_procs', 8)
-        G2frame.kvecSearch['soption'] = G2frame.kvecSearch.get('soption', "HighSymPts")
-        if len(Phases) == 0:
-            littleSizer.Add(wx.StaticText(G2frame.dataWindow,
-                label='    You need to define a phase to use k-vector searching'),0,WACV)
-        elif len(Phases) == 1:
-            G2frame.kvecSearch['phase'] = list(Phases.keys())[0]
-        else:
-            littleSizer.Add(wx.StaticText(G2frame.dataWindow, label='Select phase'), 0, WACV)
-            ch = G2G.EnumSelector(G2frame.dataWindow, G2frame.kvecSearch, 'phase',
-                [''] + list(Phases.keys()))
-            littleSizer.Add(ch, 10, WACV | wx.RIGHT, 0)
-
-        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='kx step'),0,WACV)
-        kx_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'kx_step',
-            nDig=[6, 3],typeHint=float,size=(50, -1))
-        littleSizer1x.Add(kx_s, 0, WACV | wx.RIGHT, 10)
-        littleSizer1x.Add((10, -1))
-
-        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='ky step'),0,WACV)
-        ky_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'ky_step',
-            nDig=[6, 3],typeHint=float,size=(50, -1))
-        littleSizer1x.Add(ky_s, 0, WACV | wx.RIGHT, 10)
-        littleSizer1x.Add((10, -1))
-
-        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='kz step'),0,WACV)
-        kz_s = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'kz_step',
-            nDig=[6, 3],typeHint=float,size=(50, -1))
-        littleSizer1x.Add(kz_s, 0, WACV | wx.RIGHT, 10)
-        littleSizer1x.Add((10, -1))
-
-        littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='Number of processors'),0,WACV)
-        num_procs = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'num_procs',
-            nDig=[6, 2],typeHint=int,size=(50, -1))
-        littleSizer1x.Add(num_procs, 0, WACV | wx.RIGHT, 10)
-
-        littleSizer2.Add(wx.StaticText(G2frame.dataWindow, label='Search tolerance'),0,WACV)
-        tolVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,G2frame.kvecSearch,'tolerance',
-            nDig=[10, 6],typeHint=float,size=(70, -1))
-        littleSizer2.Add(tolVal, 0, WACV | wx.RIGHT, 20)
-
-        littleSizer2.Add(wx.StaticText(G2frame.dataWindow, label='Search option'), 0, WACV)
-        search_opts = ["HighSymPts", "HighSymPts & HighSymPaths", "General"]
-        ch1 = G2G.EnumSelector(G2frame.dataWindow,G2frame.kvecSearch,'soption',search_opts)
-        littleSizer2.Add(ch1, 10, WACV | wx.RIGHT, 0)
-
-        mainSizer.Add(littleSizer, 0)
-        mainSizer.Add((-1, 5), 0)
-        mainSizer.Add(littleSizer1x, 0)
-        mainSizer.Add((-1, 5), 0)
-        mainSizer.Add(littleSizer2, 0)
-        mainSizer.Add((-1, 5), 0)
-        btn = wx.Button(G2frame.dataWindow,wx.ID_ANY,'Start Search')
-        btn.Bind(wx.EVT_BUTTON,OnKvecSearch)
-        mainSizer.Add(btn)
+        mainSizer.Add(kvecSizer())
 
     # 2nd "box": unit cell/sym info
     mainSizer.Add((-1,3),0)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((-1, 3), 0)
-    mainSizer.Add(wx.StaticText(
-        parent=G2frame.dataWindow,
-        label='Unit Cell && Symmetry Settings for Reflection Display',
-        style=wx.ALIGN_CENTER),0,wx.EXPAND)
-    ibrav = SetLattice(controls)
-    for cellGUI in cellGUIlist:
-        if ibrav in cellGUI[0]:
-            useGUI = cellGUI
-    cellList = []
-    valDict = {}
-    Info = {}
-
-    UCdisableList = []
-    bravSizer = wx.BoxSizer(wx.HORIZONTAL)
-    bravSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Bravais  \n lattice ",style=wx.ALIGN_CENTER),0,WACV,5)
-    bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb,size=(75,-1))
-    UCdisableList.append(bravSel)
-    bravSel.SetSelection(bravaisSymb.index(controls[5]))
-    bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
-    bravSizer.Add(bravSel,0,WACV)
-    bravSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space  \n group  ",style=wx.ALIGN_CENTER),0,WACV,5)
-    spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(100,-1))
-    UCdisableList.append(spcSel)
-    try:
-        spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
-    except ValueError:
-        pass
-    spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
-    bravSizer.Add(spcSel,0,WACV)
-    bravSizer.Add((5,-1))
-    tryAll = wx.Button(G2frame.dataWindow,label='Try all?')
-    UCdisableList.append(tryAll)
-    tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
-    bravSizer.Add(tryAll,0,WACV)
-    if 'E' not in Inst['Type'][0]:
-        SSselect = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
-        UCdisableList.append(SSselect)
-        SSselect.SetValue(ssopt.get('Use',False))
-        SSselect.Bind(wx.EVT_CHECKBOX,OnSSselect)
-        bravSizer.Add(SSselect,0,WACV)
-        if ssopt.get('Use',False):        #zero for super lattice doesn't work!
-            controls[0] = False
-    mainSizer.Add(bravSizer,0)
-    
-    hSizer = wx.BoxSizer(wx.HORIZONTAL)
-    cellSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),3,3)
-    for txt,fmt,ifEdit,Id in zip(*useGUI[2]):
-        cellSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,wx.ALIGN_RIGHT|WACV)
-        if ifEdit:          #a,b,c,etc.
-            cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange,size=(65,-1))
-            UCdisableList.append(cellVal)
-            Info[cellVal.GetId()] = Id
-            valSizer = wx.BoxSizer(wx.HORIZONTAL)
-            valSizer.Add(cellVal,0,WACV)
-            cellSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
-            UCdisableList.append(cellSpin)
-            cellSpin.SetValue(0)
-            cellSpin.SetRange(-1,1)
-            cellSpin.Bind(wx.EVT_SPIN, OnMoveCell)
-            valSizer.Add(cellSpin,0,WACV)
-            cellSizer.Add(valSizer,0,WACV)
-            cellList.append(cellVal.GetId())
-            cellList.append(cellSpin.GetId())
-            valDict[cellSpin.GetId()] = cellVal
-        else:               #volume
-            volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY,size=(65,-1))
-            volVal.SetBackgroundColour(VERY_LIGHT_GREY)
-            cellSizer.Add(volVal,0,WACV)
-    hSizer.Add(cellSizer,0,WACV)
-    hSizer.Add((10,-1))
-    vcSizer =  wx.BoxSizer(wx.VERTICAL)
-    vcSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell step',
-                                 style=wx.ALIGN_CENTER),0,wx.EXPAND)
-    shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
-    shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
-    UCdisableList.append(shiftSel)
-    shiftSel.SetSelection(3)
-    vcSizer.Add(shiftSel)
-    hSizer.Add(vcSizer,0,WACV)
-    if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
-        hSizer.Add((15,-1))
-        vcSizer =  wx.BoxSizer(wx.VERTICAL)
-        vcSizer.Add(wx.StaticText(G2frame.dataWindow,label="Zero offset",
-                                     style=wx.ALIGN_CENTER),0,wx.EXPAND)
-        hcSizer = wx.BoxSizer(wx.HORIZONTAL)
-        zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
-                xmin=-5.,xmax=5.,size=(50,-1),OnLeave=OnCellChange)
-        UCdisableList.append(zero)
-        hcSizer.Add(zero,0,WACV)
-        zeroVar = G2G.G2CheckBox(G2frame.dataWindow,'Ref?',controls,0)
-        UCdisableList.append(zeroVar)
-        hcSizer.Add(zeroVar,0,WACV|wx.LEFT,3)
-        vcSizer.Add(hcSizer)
-        hSizer.Add(vcSizer,0,WACV)
-    mainSizer.Add(hSizer,0)
-    if ssopt.get('Use',False):        #super lattice display
-        indChoice = ['1','2','3','4',]
-        SpSg = SGData['SpGrp']
-        if 'MagSpGrp' in SGData:    #limit to one for magnetic SS for now
-            indChoice = ['1',]
-            SpSg = SGData['MagSpGrp']
-        ssChoice = G2spc.SSChoice(SGData)
-        if ssopt['ssSymb'] not in ssChoice:
-            ssopt['ssSymb'] = ssopt['ssSymb'][:-1]
-        ssSizer = wx.BoxSizer(wx.HORIZONTAL)
-        ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Supersymmetry space group: '+SpSg+' '),0,WACV)
-        selMG = wx.ComboBox(G2frame.dataWindow,value=ssopt['ssSymb'],
-                choices=ssChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        UCdisableList.append(selMG)
-        selMG.Bind(wx.EVT_COMBOBOX, OnSelMG)
-        ssSizer.Add(selMG,0,WACV)
-        mainSizer.Add(ssSizer,0)
-        ssSizer = wx.BoxSizer(wx.HORIZONTAL)
-        ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mod. vector: '),0,WACV)
-        modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
-        ssopt['ModVec'],ifShow = G2spc.SSGModCheck(ssopt['ModVec'],modS)
-        for i,[val,show] in enumerate(zip(ssopt['ModVec'],ifShow)):
-            if show:
-                valSizer = wx.BoxSizer(wx.HORIZONTAL)
-                modVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,ssopt['ModVec'],i,
-                    xmin=-.98,xmax=.98,nDig=(10,4),typeHint=float,
-                    OnLeave=OnModVal,size=wx.Size(50,-1))
-                UCdisableList.append(modVal)
-                valSizer.Add(modVal,0,WACV)
-                modSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
-                UCdisableList.append(modSpin)
-                modSpin.SetValue(0)
-                modSpin.SetRange(-1,1)
-                modSpin.Bind(wx.EVT_SPIN, OnMoveMod)
-                valSizer.Add(modSpin,0,WACV)
-                ssSizer.Add(valSizer,0,WACV)
-                Indx[modVal.GetId()] = i
-                Indx[modSpin.GetId()] = [i,modVal]
-            else:
-                modVal = wx.TextCtrl(G2frame.dataWindow,value=('%.3f'%(val)),
-                    size=wx.Size(50,20),style=wx.TE_READONLY)
-                UCdisableList.append(modVal)
-                modVal.SetBackgroundColour(VERY_LIGHT_GREY)
-                ssSizer.Add(modVal,0,WACV)
-        mainSizer.Add(ssSizer,0)
-        ssSizer = wx.BoxSizer(wx.HORIZONTAL)
-        ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max. M: '),0,WACV)
-        maxMH = wx.ComboBox(G2frame.dataWindow,value=str(ssopt['maxH']),
-            choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        UCdisableList.append(maxMH)
-        maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
-        ssSizer.Add(maxMH,0,WACV)
-        if len(peaks[0]):
-            findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
-            UCdisableList.append(findMV)
-            findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
-            ssSizer.Add(findMV,0,WACV)
-            findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
-            UCdisableList.append(findallMV)
-            findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
-            ssSizer.Add(findallMV,0,WACV)
-        mainSizer.Add(ssSizer,0)
-    # cell display options
-    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    littleSizer.Add((5,-1),0)
-    cellDisplayOpts['Show'] = cellDisplayOpts.get('Show',False)
-    showCellCheck = G2G.G2CheckBox(G2frame.dataWindow,'Show Cell',
-                cellDisplayOpts,'Show',OnChange=enableCellCtrls)
-    littleSizer.Add(showCellCheck,0,WACV)
-    littleSizer.Add((5,-1),0)
-    if 'E' not in Inst['Type'][0]:
-        littleSizer.Add((5,-1))
-        if not ssopt.get('Use',False):  # Show Extinct not available for super lattice
-            showExt = G2G.G2CheckBox(G2frame.dataWindow,'Show Extinct',
-                cellDisplayOpts,'showExtinct',OnChange=OnHklShow)
-            UCdisableList.append(showExt)
-            littleSizer.Add(showExt,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' highlight ',style=wx.ALIGN_RIGHT),0,WACV)
-    G2frame.PlotOpts['hklHighlight'] = G2frame.PlotOpts.get('hklHighlight',0)
-    Sel = G2G.G2ChoiceButton(G2frame.dataWindow,[ 'None',] + [c+notEq0 for c in ('h','k','l')],
-        indLoc=G2frame.PlotOpts,indKey='hklHighlight',onChoice=OnHklShow)
-    UCdisableList.append(Sel)
-    littleSizer.Add(Sel,0,WACV)
-
-    if 'E' not in Inst['Type'][0]:
-        if 'N' in Inst['Type'][0]:
-            littleSizer.Add((5,-1))
-            MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
-            UCdisableList.append(MagSel)
-            MagSel.SetValue('MagSpGrp' in SGData)
-            MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
-            littleSizer.Add(MagSel,0,WACV)
-        if len(G2frame.HKL):
-            littleSizer.Add((5,-1))
-            makePks = wx.Button(G2frame.dataWindow,label='Copy refs to Peak list')
-            UCdisableList.append(makePks)
-            makePks.Bind(wx.EVT_BUTTON,OnMakePks)
-            # makePks.Enable(False) # TODO: this button causes problems
-            # (peaklist should be a dict; what does it do?)
-            littleSizer.Add(makePks,0,WACV)
-    mainSizer.Add(littleSizer,0)
-
-    # magnetic cell options
-    if 'N' in Inst['Type'][0] and 'MagSpGrp' in SGData:
-        neutSizer = wx.BoxSizer(wx.HORIZONTAL)
-        GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
-        SGData['GenSym'] = GenSym
-        SGData['SGGray'] = False
-        neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' BNS lattice: '),0,WACV)
-        BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
-        BNSkeys.sort()
-        try:        #this is an ugly kluge - bug in wx.ComboBox
-            if SGData['BNSlattsym'][0][2] in ['a','b','c']:
-                BNSkeys.reverse()
-        except:
-            pass
-        BNS = wx.ComboBox(G2frame.dataWindow,value=SGData['BNSlattsym'][0],
-            choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        UCdisableList.append(BNS)
-        BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
-        neutSizer.Add(BNS,0,WACV)
-        spinColor = ['black','red']
-        spCode = {-1:'red',1:'black'}
-        for isym,sym in enumerate(GenSym[1:]):
-            neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' %s: '%(sym.strip())),0,WACV)                
-            spinOp = wx.ComboBox(G2frame.dataWindow,value=spCode[SGData['SGSpin'][isym+1]],choices=spinColor,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)                
-            UCdisableList.append(spinOp)
-            Indx[spinOp.GetId()] = isym
-            spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
-            neutSizer.Add(spinOp,0,WACV)
-        OprNames,SpnFlp = G2spc.GenMagOps(SGData)
-        SGData['SpnFlp'] = SpnFlp
-        showSpins = wx.Button(G2frame.dataWindow,label=' Show spins?')
-        UCdisableList.append(showSpins)
-        showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
-        neutSizer.Add(showSpins,0,WACV)
-        mainSizer.Add(neutSizer,0)
-        mainSizer.Add((5,5),0)
-
+    mainSizer.Add(unitSizer())
     # 3rd "box" search results
     mainSizer.Add((-1,3),0)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
@@ -6659,36 +6663,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
     G2frame.dataWindow.currentGrids = []
     
     # space group search results
-    SgDisplay = None
     if len(ssopt.get('SgResults',[])):
-        lbl = (' Space group search results from "Try all"'+
-                   '\n  '+ssopt.get('SgSettings',''))
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=lbl))
-        colLabels = ['Sp Grp','show','M20','X20','Nhkl','fr. found']
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
-            wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
-        rowLabels = []
-        table = []
-        for result in ssopt['SgResults']:
-            rowLabels.append('')
-            row = result
-            table.append(row)
-        SgTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        SgDisplay = G2G.GSGrid(G2frame.dataWindow)
-        SgDisplay.SetTable(SgTable, True)
-        SgDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,OnSelectSgrp)
-        SgDisplay.SetRowLabelSize(0)
-        SgDisplay.AutoSizeColumns(False)
-        for r in range(SgDisplay.GetNumberRows()):
-            for c in range(SgDisplay.GetNumberCols()):
-                if c == 1:
-                    SgDisplay.SetReadOnly(r,c,isReadOnly=False)
-                else:
-                    SgDisplay.SetReadOnly(r,c,isReadOnly=True)
-        mainSizer.Add(SgDisplay)
-        _setupResultsGrid(SgDisplay)
-        OnSelectSgrp(None)
-        
+         mainSizer.Add(SpGrpGrid())
+      
     # cell search results
     if cells:
         mode = 0
@@ -6784,62 +6761,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
             
     # Subgroup/magnetic s.g. search results
     if magcells and len(controls) > 16:
-        itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(magcells)]
-        phaseDict = dict(zip(itemList,magcells))
-        G2frame.dataWindow.CopyCell.Enable(False)
-        kvec1 = ','.join(controls[14][:3])
-        kvec2 = ','.join(controls[14][3:6])
-        kvec3 = ','.join(controls[14][6:])
-        baseList = controls[16]
-        if 'magAtms' in magcells[0]:
-            G2frame.dataWindow.RunSubGroupsMag.Enable(True)
-            Label = '\n Magnetic subgroup cells from Bilbao k-SUBGROUPSMAG for %s; kvec1=(%s)'%(controls[13],kvec1)
-        else:
-            G2frame.dataWindow.RunSubGroups.Enable(True)
-            Label = '\n Subgroup cells from Bilbao SUBGROUPS for %s; kvec1=(%s)'%(controls[13],kvec1)
-        if ' ' not in kvec2:
-            Label += ', kvec2=(%s)' % kvec2
-        if ' ' not in kvec3:
-            Label += ', kvec3=(%s)' % kvec3
-        Label += ':'
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label))
-        rowLabels = [str(i+1) for i in range(len(baseList))]
-        colLabels = ['Space Gp','Try','Keep','Uniq','nConj','nSup','Trans','Vec','a','b','c','\u03B1','\u03B2','\u03B3','Volume']
-        Types = [wg.GRID_VALUE_STRING,]+2*[wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
-            3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
-        table = []
-        for ip in baseList:
-            phase = phaseDict[ip]
-            natms = phase.get('nAtoms',1)
-            try:
-                nConj = len(phase['altList'])
-                nSup = len(phase['supList'])
-            except KeyError:
-                nConj = 0
-                nSup = 0
-            cell  = list(phase['Cell'])
-            trans = G2spc.Trans2Text(phase['Trans'])
-            vec = G2spc.Latt2text([phase['Uvec'],])
-            row = [phase['Name'],phase['Use'],phase['Keep'],natms,nConj,nSup,trans,vec]+cell
-            table.append(row)
-        MagCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        G2frame.GetStatusBar().SetStatusText(
-                'Double click Keep to refresh Keep flags; click Space Gp to see sym. ops., Uniq to see unique atoms list; Try to trigger K & J keys on plot',1)
-        magDisplay = G2G.GSGrid(G2frame.dataWindow)
-        magDisplay.SetRowLabelSize(45)
-        magDisplay.SetTable(MagCellsTable, True)
-        magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)
-        magDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnRefreshKeep)
-        magDisplay.AutoSizeColumns(False)
-        for r in range(magDisplay.GetNumberRows()):
-            for c in range(magDisplay.GetNumberCols()):
-                if c in [1,2]:
-                    magDisplay.SetReadOnly(r,c,isReadOnly=False)
-                else:
-                    magDisplay.SetReadOnly(r,c,isReadOnly=True)
-        mainSizer.Add(magDisplay)
-        _setupResultsGrid(magDisplay)
-
+        mainSizer.Add(MagSubGrid())
+        
     # GUI creation done -- finally
 #    if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
 #        G2plt.PlotPowderLines(G2frame)
@@ -6852,7 +6775,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
 #        G2pwpl.PlotPatterns(G2frame,newPlot)
 #        G2pwpl.PlotPatterns(G2frame)
     G2frame.Contour = False
-    OnHklShow()
+    OnHklShow(None,indexFrom=' Indexing from unit cell & symmetry settings')
     # setup for resizing
     G2frame.dataWindow.Unbind(wx.EVT_SIZE)
     G2frame.dataWindow.Bind(wx.EVT_SIZE,_onResize)

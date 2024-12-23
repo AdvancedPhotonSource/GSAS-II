@@ -313,7 +313,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 Page.savedplot = None
                 wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
-                                 plotType=plottype,extraKeys=extraKeys)
+                    plotType=plottype,extraKeys=extraKeys)
                 if abs(Page.startExclReg - event.xdata) < 0.1: return
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 data = G2frame.GPXtree.GetItemPyData(LimitId)
@@ -2462,13 +2462,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     angle = int(90 * data[0]['HKLconfig'].get('Orientation',0))
     props = dict(boxstyle='round,pad=0.15', facecolor='#ccc',
                      alpha=(4 - alpha)/4., ec='#ccc')
-    markHKLs = (
-        G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists'
-          or 
+    markHKLs = (G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Reflection Lists' or 
         'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId) or refineMode
-        or (inXtraPeakMode and
-                    G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
-                )
+        or (inXtraPeakMode and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List'))
     for ph,markerlist in data[0].get('HKLmarkers',{}).items():
         if Page.plotStyle['logPlot'] or not markHKLs: continue
         if ph not in Page.phaseColors: continue

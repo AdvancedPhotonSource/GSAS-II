@@ -1400,7 +1400,7 @@ def UpdatePeakGrid(G2frame, data):
         data['xtraPeaks'] = X
         G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
         kPeakTable = G2G.Table(data['xtraPeaks'],rowLabels=krowLabels,
-                                          colLabels=kcolLabels,types=Types)
+            colLabels=kcolLabels,types=Types)
         G2frame.dataWindow.currentGrids = []
         reflGrid = G2G.GSGrid(parent=G2frame.dataWindow)
         reflGrid.SetRowLabelSize(45)
@@ -4557,7 +4557,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
             wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def SeaResSelected(event=None):
-        '''Responds when "use" is pressed in the UnitCellsTable (search results table)
+        '''Responds when "show" is pressed in the UnitCellsTable (search results table)
         or at end of UpdateUnitCellsGrid (When callSeaResSelected==True; event==None).
 
         Generates & plots reflections
@@ -6025,6 +6025,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),peaks)
 
         def OnNewHklShow(event):
+            clearShowFlags()
             OnHklShow(event,indexFrom=' Indexing from unit cell & symmetry settings')
             
         def OnExtHklShow(event):

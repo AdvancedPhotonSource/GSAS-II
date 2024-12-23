@@ -3588,9 +3588,12 @@ class G2PwdrData(G2ObjectWrapper):
     def getdata(self,datatype):
         '''Provides access to the histogram data of the selected data type
 
-        :param str datatype: must be one of the following values (case is ignored)
+        :param str datatype: must be one of the following values 
+          (case is ignored):
         
            * 'X': the 2theta or TOF values for the pattern
+           * 'Q': the 2theta or TOF values for the pattern transformed to Q
+           * 'd': the 2theta or TOF values for the pattern transformed to d-space
            * 'Yobs': the observed intensity values 
            * 'Yweight': the weights for each data point (1/sigma**2)
            * 'Ycalc': the computed intensity values 
@@ -3600,11 +3603,18 @@ class G2PwdrData(G2ObjectWrapper):
         :returns: an numpy MaskedArray with data values of the requested type
         
         '''
-        enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual']
+        enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual', 'q', 'd']
         if datatype.lower() not in enums:
             raise G2ScriptException("Invalid datatype = "+datatype+" must be one of "+str(enums))
-        return self.data['data'][1][enums.index(datatype.lower())]
-        
+        if datatype.lower() == 'q':
+            Inst,Inst2 = self.data['Instrument Parameters']
+            return  2 * np.pi / G2lat.Pos2dsp(Inst,self.data['data'][1][0])
+        elif datatype.lower() == 'd':
+            Inst,Inst2 = self.data['Instrument Parameters']
+            return G2lat.Pos2dsp(Inst,self.data['data'][1][0])
+        else:
+            return self.data['data'][1][enums.index(datatype.lower())]
+
     def y_calc(self):
         '''Returns the calculated intensity values; better to 
         use :meth:`getdata`

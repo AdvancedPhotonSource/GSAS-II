@@ -283,9 +283,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     came from. The type of the initial value must be int,
     float or str or None (see :obj:`key` and :obj:`typeHint`);
     this type (or the one in :obj:`typeHint`) is preserved.
+    Values are processed and saved when Enter is pressed, when the 
+    mouse is moved to another control (leave window or focus is lost) 
+    or after a change and a delay of two seconds.
 
     Float values can be entered in the TextCtrl as numbers or also
-    as algebraic expressions using operators + - / \\* () and \\*\\*,
+    as algebraic expressions using operators (+ - / \\* () and \\*\\*),
     in addition pi, sind(), cosd(), tand(), and sqrt() can be used,
     as well as appreviations s, sin, c, cos, t, tan and sq. 
 
@@ -376,7 +379,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     def __init__(self,parent,loc,key,nDig=None,notBlank=True,xmin=None,xmax=None,
         OKcontrol=None,OnLeave=None,typeHint=None,CIFinput=False,exclLim=[False,False],
         OnLeaveArgs={}, ASCIIonly=False,
-                     min=None, max=None, # patch: remove this eventually
                      **kw):
         # save passed values needed outside __init__
         self.result = loc
@@ -388,25 +390,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.CIFinput = CIFinput
         self.notBlank = notBlank
         self.ASCIIonly = ASCIIonly
-        
-        # patch: remove this when min & max are no longer used to call this
-        if min is not None:
-            xmin=min
-            if GSASIIpath.GetConfigValue('debug'):
-                print('Call to ValidatedTxtCtrl using min (change to xmin) here:')
-                G2obj.HowDidIgetHere(True)
-        if max is not None:
-            xmax=max
-            if GSASIIpath.GetConfigValue('debug'):
-                print('Call to ValidatedTxtCtrl using max (change to xmax) here:')
-                G2obj.HowDidIgetHere(True)
-        # end patch
-        
+
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
         self.evaluated = False # set to True when the validator recognizes an expression
         self.timer = None      # tracks pending updates for expressions in float textctrls
-        self.delay = 5000      # delay for timer update (5 sec)
+        self.delay = 2000      # delay for timer update (2 sec)
         self.type = str
         
         val = loc[key]
@@ -459,7 +448,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 wx.TextCtrl.__init__(self,parent,wx.ID_ANY,**kw)
             if val is not None:
-                self.SetValue(val)
+                self.ChangeValue(val)
             if notBlank:
                 self.Bind(wx.EVT_CHAR,self._onStringKey)
                 self.ShowStringValidity() # test if valid input
@@ -472,15 +461,43 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
         self.Bind(wx.EVT_TEXT_ENTER, self._onLoseFocus)
-        # patch for wx 2.9 on Mac
-        i,j= wx.__version__.split('.')[0:2]
-        if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
-            self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
-    def SetValue(self,val):
-        if self.result is not None: # note that this bypasses formatting
+    def SetValue(self,val,warn=True):
+        '''Place a value into the text widget and save it into the 
+        associated array element. Note that, unlike the stock wx.TextCtrl,
+        val is expected to be in the form expected by the widget 
+        (float/int/str) rather than only str's. 
+        For float val values, the value is formatted when placed in the
+        TextCtrl, but the supplied value is what is actually saved.
+
+        This routine triggers a wx.EVT_TEXT event
+        '''
+        # GSAS-II callback routines should call ChangeValue not SetValue
+        # for debugging flag calls. Set warn to False for calls that are not in callbacks
+        # and thus are OK
+        if GSASIIpath.GetConfigValue('debug') and warn:
+            print('ValidatedTxtCtrl.SetValue using in callback?')
+            G2obj.HowDidIgetHere(True)
+        if self.result is not None:
             self.result[self.key] = val
         self._setValue(val)
+        # Direct calls to SetValue should trigger an event
+        wx.TextCtrl.SetValue(self,wx.TextCtrl.GetValue(self))
+
+    def ChangeValue(self,val):
+        '''Place a value into the text widget and save it into the 
+        associated array element. Note that, unlike the stock wx.TextCtrl,
+        val is expected to be in the form expected by the widget 
+        (float/int/str) rather than only str's. 
+        For float val values, the value is formatted when placed in the
+        TextCtrl, but the supplied value is what is actually saved.
+
+        This routine does not trigger a wx.EVT_TEXT event. This is what
+        should be used inside event callbacks, not :meth:`SetValue`.
+        '''
+        if self.result is not None:
+            self.result[self.key] = val
+        self._setValue(val)        
 
     def _setValue(self,val,show=True):
         '''Check the validity of an int or float value and convert to a str.
@@ -499,7 +516,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     pass
                 else:
                     self.invalid = True
-            if show and not self.invalid: wx.TextCtrl.SetValue(self,str(val))
+            if show and not self.invalid: wx.TextCtrl.ChangeValue(self,str(val))
         elif self.type is float:
             try:
                 if type(val) is str: val = val.replace(',','.')
@@ -510,10 +527,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 else:
                     self.invalid = True
             if self.nDig and show and not self.invalid:
-                wx.TextCtrl.SetValue(self,str(G2fil.FormatValue(val,self.nDig)))
+                wx.TextCtrl.ChangeValue(self,str(G2fil.FormatValue(val,self.nDig)))
                 self.evaluated = False # expression has been recast as value, reset flag
             elif show and not self.invalid:
-                wx.TextCtrl.SetValue(self,str(G2fil.FormatSigFigs(val)).rstrip('0'))
+                wx.TextCtrl.ChangeValue(self,str(G2fil.FormatSigFigs(val)).rstrip('0'))
                 self.evaluated = False # expression has been recast as value, reset flag
         else:
             if self.ASCIIonly:
@@ -528,9 +545,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     show = True
             if show:
                 try:
-                    wx.TextCtrl.SetValue(self,str(val))
+                    wx.TextCtrl.ChangeValue(self,str(val))
                 except:
-                    wx.TextCtrl.SetValue(self,val)
+                    wx.TextCtrl.ChangeValue(self,val)
             self.ShowStringValidity() # test if valid input
             return
         
@@ -562,7 +579,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             ins = self.GetInsertionPoint()
             self.SetForegroundColour("red")
             self.SetBackgroundColour("yellow")
-            self.SetFocus()
+            if not sys.platform.startswith("linux"):
+                self.SetFocus()
             self.Refresh() # this selects text on some Linuxes
             self.SetSelection(0,0)   # unselect
             self.SetInsertionPoint(ins) # put insertion point back 
@@ -570,7 +588,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             self.Refresh()
-            self.SetFocus() # seems needed, at least on MacOS to get color change
+            if not sys.platform.startswith("linux"):
+                self.SetFocus() # seems needed, at least on MacOS to get color change
 
     def _GetNumValue(self):
         'Get and where needed convert string from GetValue into int or float'
@@ -5756,8 +5775,8 @@ See web page GSASII.github.io for information on how to install.
             svnCheckUpdates(self.frame)
         else:
             dlg = wx.MessageDialog(self.frame,
-                                   'No VCS','Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
-                                   wx.OK)
+                                   'Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
+                                   'No VCS',wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
             return
@@ -5771,8 +5790,8 @@ See web page GSASII.github.io for information on how to install.
             svnSelectVersion(self.frame)
         else:
             dlg = wx.MessageDialog(self.frame,
-                                   'No VCS','Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
-                                   wx.OK)
+                                   'Cannot update GSAS-II because it was not installed with a version control system or the VCS system could not be accessed.',
+                                   'No VCS',wx.OK)
             dlg.ShowModal()
             dlg.Destroy()
             return

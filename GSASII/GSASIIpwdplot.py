@@ -1199,7 +1199,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 dbox[i].invalid = False
                 dbox[i]._IndicateValidity()
             else: # reset validation
-                dbox[i].SetValue(dbox[i].GetValue())
+                dbox[i].ChangeValue(dbox[i].GetValue())
             dbox[i].Enable(checked)
         def applyLims(event):
             Page.toolbar.push_current()

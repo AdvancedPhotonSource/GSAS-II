@@ -370,7 +370,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.SinglePlot = not G2frame.SinglePlot                
             G2frame.Contour = False
             newPlot = True
-        elif event.key == 'f' and not G2frame.SinglePlot:
+        elif event.key == 'F' and not G2frame.SinglePlot:
             choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
             dlg = G2G.G2MultiChoiceDialog(G2frame,
                 'Select dataset(s) to plot\n(select all or none to reset)', 
@@ -1785,7 +1785,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if not G2frame.SinglePlot:
                 Page.Choice = Page.Choice+ \
                     ['u/U: offset up/10x','d/D: offset down/10x','l: offset left','r: offset right',
-                     'o: reset offset','f: select data',
+                     'o: reset offset','F: select data',
                      '/: normalize']
             else:
                 Page.Choice = Page.Choice+ ['p: toggle partials (if available)',]

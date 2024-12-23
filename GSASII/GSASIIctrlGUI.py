@@ -463,8 +463,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # GSAS-II callback routines should call ChangeValue not SetValue
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
-        #if GSASIIpath.GetConfigValue('debug') and warn:
-        #    G2obj.HowDidIgetHere(True)
+        if GSASIIpath.GetConfigValue('debug') and warn:
+            print('ValidatedTxtCtrl.SetValue using in callback?')
+            G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val
         self._setValue(val)

@@ -1034,10 +1034,13 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2plt.PlotExposedImage(G2frame,event=None)
             
         def OnMoveAzm(event):
-            data['linescan'][1] += float(azmSpin.GetValue())
+            incr = azmSpin.GetValue()
+            if incr == 0: return # ignore SetValue(0) event
+            data['linescan'][1] += float(incr)
             data['linescan'][1] = data['linescan'][1]%360.
-            G2frame.scanazm.SetValue(data['linescan'][1])
-            G2plt.PlotExposedImage(G2frame,event=event)
+            G2frame.scanazm.ChangeValue(data['linescan'][1])
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            azmSpin.SetValue(0) # causes an event, at least on Linux
 
         mplv = mpl.__version__.split('.')
         mplOld = mplv[0] == '1' and int(mplv[1]) < 4 # use draw_idle for newer matplotlib versions
@@ -1096,10 +1099,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2frame.scanazm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['linescan'],1,xmin=0.,
             xmax=360.,OnLeave=OnNewLineScan)
             autoSizer.Add(G2frame.scanazm,0,WACV)
-            azmSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+            azmSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL)# ,size=wx.Size(20,25)) # size fails in Linux
             azmSpin.SetValue(0)
             azmSpin.SetRange(-1,1)
             azmSpin.Bind(wx.EVT_SPIN, OnMoveAzm)
+            autoSizer.Add((5,-1))
             autoSizer.Add(azmSpin,0,WACV)
 
         maxSizer.Add(autoSizer)
@@ -1285,7 +1289,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         outChan = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outChannels',typeHint=int,xmin=10,OnLeave=OnNumOutBins)
         littleSizer.Add(outChan,0,WACV)
-        outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',nDig=(10,4),xmin=1,typeHint=int,OnLeave=OnNumOutAzms)
+        outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',xmin=1,typeHint=int,OnLeave=OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)
         dataSizer.Add(littleSizer)
         showLines = wx.CheckBox(parent=G2frame.dataWindow,label='Show integration limits?')
@@ -1446,9 +1450,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 limits = calFile.Calibrants[data['calibrant']][4]
                 data['calibdmin'],data['pixLimit'],data['cutoff'] = limits
                 pixLimit.SetValue(str(limits[1]))
-                cutOff.SetValue(limits[2])
+                cutOff.ChangeValue(limits[2])
                 calibSkip.SetValue(str(data['calibskip']))
-                G2frame.calibDmin.SetValue(limits[0])
+                G2frame.calibDmin.ChangeValue(limits[0])
             else:
                 G2frame.dataWindow.ImageEdit.Enable(id=G2G.wxID_IMRECALIBRATE,enable=False)
                 G2frame.dataWindow.ImageEdit.Enable(id=G2G.wxID_IMCALIBRATE,enable=False)

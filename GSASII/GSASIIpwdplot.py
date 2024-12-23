@@ -1732,6 +1732,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         pass
     # now start plotting
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
+    G2frame.G2plotNB.status.SetStatusText(IndxFrom,1)
     # TODO: figure out why the SetHelpButton creates a second tab line (BHT, Mac, wx4.1)
     #G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)
     Page.tickDict = {}
@@ -1785,8 +1786,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if not G2frame.SinglePlot:
                 Page.Choice = Page.Choice+ \
                     ['u/U: offset up/10x','d/D: offset down/10x','l: offset left','r: offset right',
-                     'o: reset offset','F: select data',
-                     '/: normalize']
+                     'o: reset offset','F: select data','/: normalize']
             else:
                 Page.Choice = Page.Choice+ ['p: toggle partials (if available)',]
             if G2frame.SinglePlot:

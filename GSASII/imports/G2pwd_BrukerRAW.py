@@ -2,7 +2,7 @@
 '''
 '''
 import os
-import os.path as ospath
+import struct as st
 import numpy as np
 import GSASIIobj as G2obj
 class raw_ReaderClass(G2obj.ImportPowderData):
@@ -75,7 +75,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             pos = 256
             fp.seek(pos)
             blockNum = kwarg.get('blocknum',0)
-            self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
+            self.idstring = os.path.basename(filename) + ' Scan '+str(blockNum)
             if blockNum <= nBlock:
                 for iBlock in range(blockNum):
                     headLen = int(st.unpack('<H',fp.read(2))[0])
@@ -121,7 +121,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             pos = 712
             fp.seek(pos)      #position at 1st block header
             blockNum = kwarg.get('blocknum',0)
-            self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
+            self.idstring = os.path.basename(filename) + ' Scan '+str(blockNum)
             if blockNum <= nBlock:
                 for iBlock in range(blockNum):
                     headLen = int(st.unpack('<i',fp.read(4))[0])
@@ -180,7 +180,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             self.comments.append('Kb=%.5f'%(st.unpack('<d',fp.read(8))[0]))
             self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
             fp.seek(pos)  #deliberate fail here - pos not known from file contents
-            self.idstring = ospath.basename(filename) + ' Scan '+str(1)
+            self.idstring = os.path.basename(filename) + ' Scan '+str(1)
             nSteps = int(st.unpack('<i',fp.read(4))[0])
             st.unpack('<d',fp.read(8))[0]
             start2Th = st.unpack('<d',fp.read(8))[0]

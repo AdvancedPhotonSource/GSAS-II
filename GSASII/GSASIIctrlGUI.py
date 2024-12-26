@@ -10279,6 +10279,21 @@ def ImportMsg(parent,msgs):
                     buttonlist=[('Install packages',SelectPkgInstall), wx.ID_CLOSE]
                          )
 
+def patch_condarc():
+    '''Comment out any references to "file:" locations in the .condarc
+    file. These should not be there and cause problems. 
+    '''
+    rc = os.path.normpath(os.path.join(GSASIIpath.path2GSAS2,'..','..','.condarc'))
+
+    if os.path.exists(rc):
+        txt = open(rc,'r').read()
+    else:
+        return
+    if '\n  - /' in txt:
+        print(f'Patching file {rc}')
+        with open(rc,'w') as fp:
+            fp.write(txt.replace('\n  - /','\n#  - /'))
+    
 def SelectPkgInstall(event):
     '''Offer the user a chance to install Python packages needed by one or 
     more importers. There might be times where something like this will be 
@@ -10302,6 +10317,7 @@ def SelectPkgInstall(event):
     if not any(sel): return
     pkgs = [choices[i][0] for i,f in enumerate(sel) if f]
     if GSASIIpath.condaTest():
+        patch_condarc()
         if not GSASIIpath.condaTest(True):
             GSASIIpath.addCondaPkg()
         err = GSASIIpath.condaInstall(pkgs)

@@ -8824,12 +8824,6 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             data.append({'Use':False,'ModVec':[0,0,0.1],'maxH':1,'ssSymb':''})                                 #empty superlattice stuff
             G2frame.GPXtree.SetItemPyData(item,data)  
 #end patch
-        # debug stuff
-        # if GSASIIpath.GetConfigValue('debug'):
-        #     import imp
-        #     imp.reload(G2pdG)  # for testing changes
-        #     print('debug: reloaded',G2pdG)
-        # end debug stuff
         G2pdG.UpdateUnitCellsGrid(G2frame,data)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection Lists':   #powder reflections
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)

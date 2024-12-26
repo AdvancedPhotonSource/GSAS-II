@@ -776,9 +776,9 @@ def RefineCell(G2frame):
     for hkl in G2frame.HKL:
         hkl[ip] = G2lat.Dsp2pos(Inst,hkl[ip-1])+controls[1]
     if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-        G2plt.PlotPowderLines(G2frame)
+        G2plt.PlotPowderLines(G2frame,indexFrom='Indexing from refine cell, M20=%.3f'%M20)
     else:
-        G2pwpl.PlotPatterns(G2frame)
+        G2pwpl.PlotPatterns(G2frame,indexFrom='Indexing from refine cell, M20=%.3f'%M20)
     return data
 
 ################################################################################
@@ -4338,7 +4338,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
             result = [Symb,False,M20,X20,Nhkl,frfnd]
         if not Plot: return result
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-            G2plt.PlotPowderLines(G2frame)
+            G2plt.PlotPowderLines(G2frame,indexFrom=indexFrom)
         else:
             G2pwpl.PlotPatterns(G2frame,indexFrom=indexFrom)
         return result
@@ -4430,7 +4430,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         if Phase['General']['Type'] == 'nuclear' and 'MagSpGrp' in SGData:
             SGData.update(G2spc.SpcGroup(SGData['SpGrp'])[1])
         G2frame.dataWindow.RunSubGroups.Enable(True)
-        ssopt.update({'Use':False,'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
+        ssopt.update({'Use':False,'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1,'SgResults':[],})
         if 'SuperSg' in Phase['General'] or SGData.get('SGGray',False):
             ssopt.update({'SGData':SGData,'ssSymb':Phase['General']['SuperSg'],'ModVec':Phase['General']['SuperVec'][0],'Use':True,'maxH':1})
             ssopt['ssSymb'] = ssopt['ssSymb'].replace(',','')
@@ -4487,6 +4487,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
+        ssopt['SgResults'] = []
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None,indexFrom=' Indexing from imported unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -4547,9 +4548,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                     hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                 G2frame.HKL = np.array(G2frame.HKL)
                 if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-                    G2plt.PlotPowderLines(G2frame)
+                    G2plt.PlotPowderLines(G2frame,indexFrom=' Indexing from result #0, M20= %.3f'%cells[0][0])
                 else:
-                    G2pwpl.PlotPatterns(G2frame)
+                    G2pwpl.PlotPatterns(G2frame,indexFrom=' Indexing from result #0, M20= %.3f'%cells[0][0])
             G2frame.dataWindow.CopyCell.Enable(True)
             G2frame.dataWindow.IndexPeaks.Enable(True)
             G2frame.dataWindow.MakeNewPhase.Enable(True)
@@ -4678,7 +4679,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                         hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                     G2frame.HKL = np.array(G2frame.HKL)
                     if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-                        G2plt.PlotPowderLines(G2frame)
+                        G2plt.PlotPowderLines(G2frame,indexFrom=' Indexing selection #%d'%r)
                     else:
                         G2pwpl.PlotPatterns(G2frame,indexFrom=' Indexing selection #%d'%r)
                 except:
@@ -6176,7 +6177,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         # cell display options
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         cellDisplayOpts['Show'] = True
-        hklShow = wx.Button(G2frame.dataWindow,label="Update indexing")
+        hklShow = wx.Button(G2frame.dataWindow,label="show HKL")
         hklShow.Bind(wx.EVT_BUTTON,OnNewHklShow)
         littleSizer.Add(hklShow,0,WACV)    
         if 'E' not in Inst['Type'][0]:
@@ -6198,7 +6199,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                 MagSel.SetValue('MagSpGrp' in SGData)
                 MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
                 littleSizer.Add(MagSel,0,WACV)
-            if len(G2frame.HKL):
+            if len(G2frame.HKL) and 'PKS' not in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                 littleSizer.Add((5,-1))
                 makePks = wx.Button(G2frame.dataWindow,label='Copy refs to Peak list')
                 makePks.Bind(wx.EVT_BUTTON,OnMakePks)

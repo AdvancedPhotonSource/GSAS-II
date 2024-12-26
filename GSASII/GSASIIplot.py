@@ -3061,15 +3061,16 @@ def PlotSASDPairDist(G2frame):
         Page.canvas.draw()
 
 #### PlotPowderLines ################################################################################
-def PlotPowderLines(G2frame):
+def PlotPowderLines(G2frame,indexFrom=''):
     ''' plotting of powder lines (i.e. no powder pattern) as sticks
     '''
-    global Plot
+    global Plot,IndxFrom
+    IndxFrom = indexFrom
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             SetCursor(Page)
-            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f '%(xpos,),1)
+            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f %s'%(xpos,indexFrom),1)
             if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
                 found = []
                 if len(G2frame.HKL):
@@ -3086,6 +3087,8 @@ def PlotPowderLines(G2frame):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Powder Lines','mpl')
     if new:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    G2frame.G2plotNB.status.DestroyChildren() #get rid of old stuff on status bar
+    G2frame.G2plotNB.status.SetStatusText(IndxFrom,1)
     Page.Choice = None
     Plot.set_title('Powder Pattern Lines')
     Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)

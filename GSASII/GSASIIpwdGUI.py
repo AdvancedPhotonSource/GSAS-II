@@ -1243,14 +1243,14 @@ def UpdatePeakGrid(G2frame, data):
         SelectVars(range(reflGrid.GetNumberRows()))
 
     def onCellListDClick(event):
-        '''Called after a double-click on a cell label'''
+        '''Called after a double-click on a row/column label'''
         r,c =  event.GetRow(),event.GetCol()
         if r < 0 and c < 0:
             for row in range(reflGrid.GetNumberRows()):
                 reflGrid.SelectRow(row,True)                    
             for col in range(reflGrid.GetNumberCols()):
                 reflGrid.SelectCol(col,True)                    
-        elif r > 0:     #row label: select it and replot!
+        elif r >= 0 and c < 0:     #row label: select it and replot!
             reflGrid.ClearSelection()
             reflGrid.SelectRow(r,True)
             wx.CallAfter(G2frame.reflGrid.ForceRefresh)

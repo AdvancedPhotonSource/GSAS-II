@@ -120,18 +120,18 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     G2frame.Extinct = [] # array of extinct reflections
     PlotPatterns(G2frame,plotType=plotType)
 
-def plotVline(Page,Plot,Lines,Parms,pos,color,pick):
+def plotVline(Page,Plot,Lines,Parms,pos,color,pick,style='dotted'):
     '''shortcut to plot vertical lines for limits & Laue satellites.
     Was used for extrapeaks'''
     if Page.plotStyle['qPlot']:
         Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pick,pickradius=2.,linestyle='dotted'))
+            picker=pick,pickradius=2.,linestyle=style))
     elif Page.plotStyle['dPlot']:
         Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pick,pickradius=2.,linestyle='dotted'))
+            picker=pick,pickradius=2.,linestyle=style))
     else:
         Lines.append(Plot.axvline(pos,color=color,
-            picker=pick,pickradius=2.,linestyle='dotted'))
+            picker=pick,pickradius=2.,linestyle=style))
         
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      extraKeys=[],refineMode=False,indexFrom=''):
@@ -2394,6 +2394,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             tbl = peaks['peaks']
                             color = 'b'
                         try:
+                            # find any peak rows that are selected
                             selectedPeaks = list(set(
                                 [row for row,col in G2frame.reflGrid.GetSelectedCells()] +
                                 G2frame.reflGrid.GetSelectedRows()))
@@ -2402,11 +2403,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 if type(item) is dict: continue
                                 if i in selectedPeaks:
                                     Ni = N+1
+                                    plotVline(Page,Plot,Lines,Parms,item[0],'yellow',False,'-')
+                                    Lines[-1].set_lw(Lines[-1].get_lw()+1)
+                                    plotVline(Page,Plot,Lines,Parms,item[0],color,True)
+                                    Lines[-1].set_lw(Lines[-1].get_lw()+1)
                                 else:
                                     Ni = N
-                                plotVline(Page,Plot,Lines,Parms,item[0],color,True)
-                                if Ni == N+1:
-                                    Lines[-1].set_lw(Lines[-1].get_lw()+1)
+                                    plotVline(Page,Plot,Lines,Parms,item[0],color,True)
                         except:
                             pass
                         peaks['LaueFringe'] = peaks.get('LaueFringe',{})

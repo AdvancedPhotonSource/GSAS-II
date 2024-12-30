@@ -4223,7 +4223,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
 ################################################################################
 #####  Unit cells
 ################################################################################
-def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
+def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False):
     '''respond to selection of PWDR Unit Cells data tree item.
 
     :param wx.Frame G2frame: Main GSAS-II window
@@ -4679,9 +4679,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
                         hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                     G2frame.HKL = np.array(G2frame.HKL)
                     if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-                        G2plt.PlotPowderLines(G2frame,indexFrom=' Indexing selection #%d'%r)
+                        G2plt.PlotPowderLines(G2frame,indexFrom=' Indexing selection #%d M20= %.3f'%(r,cells[r][0]))
                     else:
-                        G2pwpl.PlotPatterns(G2frame,indexFrom=' Indexing selection #%d'%r)
+                        G2pwpl.PlotPatterns(G2frame,indexFrom=' Indexing selection #%d M20= %.3f'%(r,cells[r][0]))
                 except:
                     pass
             elif colLabel == 'Keep':
@@ -6263,7 +6263,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
             SgDisplay.ForceRefresh()
             ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
             G2frame.dataWindow.RefineCell.Enable(True)
-            OnHklShow(event,True,indexFrom=' Space group selection #%d'%r)
+            OnHklShow(event,True,indexFrom=' Space group selection %s #%d'%(controls[13],r))
         
         SpGrpGrid = wx.BoxSizer(wx.VERTICAL)
         lbl = (' Space group search results from "Try all"'+
@@ -6757,7 +6757,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
 
             mainSizer.Add(hSizer)
         else:
-            #mainSizer.Add(gridDisplay,1,wx.EXPAND,1)
             mainSizer.Add(gridDisplay)
         _setupResultsGrid(gridDisplay)
             
@@ -6766,18 +6765,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False):
         mainSizer.Add(MagSubGrid())
         
     # GUI creation done -- finally
-#    if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-#        G2plt.PlotPowderLines(G2frame)
-#    else:
-#        newPlot = False
-#        if hasattr(G2frame,'Contour'):
-#            if G2frame.Contour:
-#                G2frame.Contour = False
-#                newPlot = True
-#        G2pwpl.PlotPatterns(G2frame,newPlot)
-#        G2pwpl.PlotPatterns(G2frame)
     G2frame.Contour = False
-    OnHklShow(None,indexFrom=' Indexing from unit cell & symmetry settings')
+    if New:
+       OnHklShow(None,indexFrom=' Indexing from unit cell & symmetry settings')
     # setup for resizing
     G2frame.dataWindow.Unbind(wx.EVT_SIZE)
     G2frame.dataWindow.Bind(wx.EVT_SIZE,_onResize)

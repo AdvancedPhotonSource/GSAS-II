@@ -3067,10 +3067,11 @@ def PlotPowderLines(G2frame,indexFrom=''):
     global Plot,IndxFrom
     IndxFrom = indexFrom
     def OnMotion(event):
+        global IndexFrom
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             SetCursor(Page)
-            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f %s'%(xpos,indexFrom),1)
+            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f %s'%(xpos,IndxFrom),1)
             if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
                 found = []
                 if len(G2frame.HKL):

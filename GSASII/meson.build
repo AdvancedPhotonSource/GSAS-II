@@ -32,6 +32,7 @@ py.install_sources([
     'GSASIIplot.py',
     'GSASIIpwd.py',
     'GSASIIpwdGUI.py',
+    'GSASIIpwdplot.py',
     'GSASIIrestrGUI.py',
     'GSASIIsasd.py',
     'GSASIIscriptable.py',

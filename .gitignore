@@ -29,3 +29,6 @@ GSASII/bindist
 
 # Local dev env files
 .vscode
+
+
+dist

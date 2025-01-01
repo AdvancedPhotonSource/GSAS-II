@@ -311,3 +311,9 @@ G2RefinementWindow = False
 progress of refinements. When False a generic wxpython supplied progress
 dialog is used. 
 '''
+
+HDF5selection = 20
+'''When an HDF5 file contains more than this number of images, a selection
+window is offered to determine which images will be read. If negative, 
+the selection window will never be used. If zero, it will always be used.
+'''

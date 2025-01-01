@@ -36,7 +36,7 @@ import wx
 import GSASIIpath
 import GSASIIdataGUI as G2gd
 import GSASIIobj as G2obj
-import GSASIIpwdGUI as G2pdG
+#import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIElem as G2el
 import GSASIIfiles as G2fil
@@ -45,6 +45,7 @@ import GSASIImath as G2mth
 import GSASIIElem as G2elem
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
+import GSASIIpwd as G2pwd
 
 DEBUG = False       #=True for various prints
 TRANSP = False      #=true to transpose images for testing
@@ -253,9 +254,12 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     ImageTag = Data.get('ImageTag')
     ImageSection = Data.get('ImageSection','')  #used only in HDF5 at present
     if ImageTag:
-        if ImageSection:
+        if ImageSection and ImageTag[1] is None:
             TreeLbl += f" {ImageSection}"
-        TreeLbl += f' #{ImageTag:04d}'
+        elif ImageSection:
+            TreeLbl += f" {ImageSection} #{ImageTag[1]:04d}"
+        else:
+            TreeLbl += f' #{ImageTag:04d}'
         imageInfo = (imagefile,ImageTag)
     else:
         imageInfo = imagefile
@@ -840,9 +844,9 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Unit Cells List'),[])
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Reflection Lists'),{})
         elif 'SASD' in Aname:             
-            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Substances'),G2pwd.SetDefaultSubstances())
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Sample Parameters'),Sample)
-            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Models'),G2pwd.SetDefaultSASDModel())
         valuesdict = {
             'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
             'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}
@@ -1263,6 +1267,94 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
     msgs[phlbl] += f". Asymmetric unit {G2mth.fmtPhaseContents(nacomp)} ({len(phData['Atoms'])} atoms)."
     return G2frame.GSASprojectfile
 
+def mkParmDictfromTree(G2frame,sigDict=None):
+    '''Load the GSAS-II refinable parameters from the tree into dict parmDict
+    Updating refined values to those from the last cycle. Optionally 
+    compute the s.u. values for the parameters and place them in sigDict.
+
+    The actions in the routine are used in a number of places around 
+    the GSAS-II code where it would be "cleaner" to use this instead. 
+    Perhaps that will happen as code revisions are made. One example 
+    of this, :meth:`GSASIIfiles.ExportBaseclass.loadParmDict`.
+
+    :param wx.Frame G2frame: a reference to the main GSAS-II window
+    :param dict sigDict: a Python dict with sigma (s.u.) values for 
+      each parameter
+
+    :returns: parmDict, a dict with the value for all refined and most 
+      unrefined GSAS-II parameters used in the diffraction computations.
+      This parmDict version has only values, as opposed to the version
+      used in some parts of the code that has refinement flags and initial
+      values as well. 
+    '''
+    import GSASIIstrIO as G2stIO
+    import GSASIIstrMath as G2stMth
+    import GSASIImapvars as G2mv
+    G2frame.CheckNotebook()
+    parmDict = {}
+    rigidbodyDict = {}
+    covDict = {}
+    consDict = {}
+    
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    if G2frame.GPXtree.IsEmpty(): return # nothing to do
+    rigidbodyDict = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+    covDict = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
+    consDict = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints'))
+    
+    rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+    parmDict.update(rbDict)
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave =  \
+        G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
+    parmDict.update(phaseDict)
+    hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
+    parmDict.update(hapDict)
+    histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
+    parmDict.update(histDict)
+    parmDict.update(zip(
+            covDict.get('varyList',[]),
+            covDict.get('variables',[])))
+    if sigDict is not None:
+        sigDict.update(dict(zip(
+            covDict.get('varyList',[]),
+            covDict.get('sig',[])
+            )))
+
+    # expand to include constraints: first compile a list of constraints
+    constList = []
+    for item in consDict:
+        if item.startswith('_'): continue
+        constList += consDict[item]
+    G2mv.InitVars()     # process constraints
+    constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList)
+    varyList = list(covDict.get('varyListStart'))
+    if varyList is None and len(constrDict) == 0:
+        # no constraints can use varyList
+        varyList = covDict.get('varyList')
+    elif varyList is None:
+        varyList = []
+        # # old GPX file from before pre-constraint varyList is saved
+        print (' *** Old refinement: Please use Calculate/Refine to redo  ***')
+        return None
+    varyList = list(varyList)
+    # add constraint generated parameters to parmDict
+    G2mv.EvaluateMultipliers(constrDict,parmDict)
+    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
+    # enforce constraints on values (should have been done; no effect)
+    G2mv.Map2Dict(parmDict,varyList)   # N.B. changes varyList
+    G2mv.Dict2Map(parmDict)
+    # add uncertainties for constrained & RB parameters
+    if sigDict is not None:
+        sigDict.update(G2mv.ComputeDepESD(
+            covDict['covMatrix'],covDict['varyList']))
+        sigDict.update(G2stMth.computeRBsu(parmDict,Phases,rigidbodyDict,
+            covDict['covMatrix'],covDict['varyList'],covDict['sig']))
+    return parmDict
+
 if __name__ == '__main__':
     import GSASIIdataGUI
     application = GSASIIdataGUI.GSASIImain(0)
@@ -1283,9 +1375,9 @@ if __name__ == '__main__':
     #     parent=frm)
     # if dlg.ShowModal() == wx.ID_OK:
     #     print 'Got OK'
-    imagefile = '/tmp/NDC5_00237_3.ge3'
-    Comments, Data, Npix, Image = G2fil.GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None)
+    #imagefile = '/tmp/NDC5_00237_3.ge3'
+    #Comments, Data, Npix, Image = G2fil.GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None)
 
-    print("\n\nResults loaded to Comments, Data, Npix and Image\n\n")
+    #print("\n\nResults loaded to Comments, Data, Npix and Image\n\n")
 
-    GSASIIpath.IPyBreak_base()
+    #GSASIIpath.IPyBreak_base()

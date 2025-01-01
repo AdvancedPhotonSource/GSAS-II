@@ -214,11 +214,16 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         #self.powderentry[2] = 1 # xye file only has one bank
         self.idstring = ospath.basename(filename)
         # scan comments for temperature
-        Temperature = 300
+        Temperature = 300.
         for S in self.comments:
             if 'temp' in S.lower().split('=')[0]:
                 try:
                     Temperature = float(S.split('=')[1])
+                except:
+                    pass
+            if 'pressure' in S.lower().split('=')[0]:
+                try:
+                    self.Sample['Pressure'] = float(S.split('=')[1])
                 except:
                     pass
         self.Sample['Temperature'] = Temperature

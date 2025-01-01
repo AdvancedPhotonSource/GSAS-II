@@ -933,11 +933,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             r11 = min(max(Range[1][1],Range[1][0]+1),Range[0][1]) # keep values in range
             if r11 != Range[1][1]:
                 Range[1][1] = r11
-                maxVal.SetValue(int(Range[1][1]))
+                maxVal.ChangeValue(int(Range[1][1]))
             r10 = max(min(Range[1][0],Range[1][1]-1),Range[0][0])
             if r10 != Range[1][0]:
                 Range[1][0] = r10
-                minVal.SetValue(int(Range[1][0]))
+                minVal.ChangeValue(int(Range[1][0]))
             sqrtDeltZero = math.sqrt(max(1.0,Range[0][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax0-Imin-1)
             sqrtDeltOne  = math.sqrt(max(1.0,Range[1][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax-Imin-1)
             sv1 = min(100,max(0,int(0.5+100.*sqrtDeltOne/sqrtDeltZero)))
@@ -960,7 +960,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2frame.prevMaxValue = val
             sqrtDeltZero = math.sqrt(max(1.0,Range[0][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax0-Imin-1)
             Range[1][1] = int(0.5 + (val * sqrtDeltZero / 100.)**2 + Range[1][0] + 1)
-            maxVal.SetValue(int(0.5+Range[1][1]))
+            maxVal.ChangeValue(int(0.5+Range[1][1]))
             DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1)
             minSel.SetValue(int(0.5 + 100*(Range[1][0]/DeltOne)))
             sv0 = min(100,max(0,int(0.5+100.*(Range[1][0]-Range[0][0])/DeltOne)))
@@ -980,7 +980,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2frame.prevMinValue = val
             DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1) # Imax-Imin0-1
             Range[1][0] = max(0,int(0.5 + val * DeltOne / 100 + Range[0][0]))
-            minVal.SetValue(int(Range[1][0]))
+            minVal.ChangeValue(int(Range[1][0]))
             sqrtDeltZero = math.sqrt(max(1.0,Range[0][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax0-Imin-1)
             sqrtDeltOne  = math.sqrt(max(1.0,Range[1][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax-Imin-1)
             sv1 = min(100,max(0,int(0.5+100.*sqrtDeltOne/sqrtDeltZero)))
@@ -1016,8 +1016,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1)
             sv0 = min(100,max(0,int(0.5+100.*(Range[1][0]-Range[0][0])/DeltOne)))
             minSel.SetValue(sv0)
-            minVal.SetValue(int(Range[1][0]))
-            maxVal.SetValue(int(Range[1][1]))
+            minVal.ChangeValue(int(Range[1][0]))
+            maxVal.ChangeValue(int(Range[1][1]))
             new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
             Page.ImgObj.set_clim([Range[1][0],Range[1][1]])
             if mplOld:
@@ -1034,10 +1034,13 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2plt.PlotExposedImage(G2frame,event=None)
             
         def OnMoveAzm(event):
-            data['linescan'][1] += float(azmSpin.GetValue())
+            incr = azmSpin.GetValue()
+            if incr == 0: return # ignore SetValue(0) event
+            data['linescan'][1] += float(incr)
             data['linescan'][1] = data['linescan'][1]%360.
-            G2frame.scanazm.SetValue(data['linescan'][1])
-            G2plt.PlotExposedImage(G2frame,event=event)
+            G2frame.scanazm.ChangeValue(data['linescan'][1])
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            azmSpin.SetValue(0) # causes an event, at least on Linux
 
         mplv = mpl.__version__.split('.')
         mplOld = mplv[0] == '1' and int(mplv[1]) < 4 # use draw_idle for newer matplotlib versions
@@ -1096,10 +1099,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2frame.scanazm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['linescan'],1,xmin=0.,
             xmax=360.,OnLeave=OnNewLineScan)
             autoSizer.Add(G2frame.scanazm,0,WACV)
-            azmSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+            azmSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL)# ,size=wx.Size(20,25)) # size fails in Linux
             azmSpin.SetValue(0)
             azmSpin.SetRange(-1,1)
             azmSpin.Bind(wx.EVT_SPIN, OnMoveAzm)
+            autoSizer.Add((5,-1))
             autoSizer.Add(azmSpin,0,WACV)
 
         maxSizer.Add(autoSizer)
@@ -1148,36 +1152,41 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         
         def OnIOtth(invalid,value,tc):
-            Ltth = float(G2frame.InnerTth.GetValue())
-            Utth = float(G2frame.OuterTth.GetValue())
+            '''Respond to a change in integration 2theta range
+            '''
+            Ltth,Utth = IOtth
             if Ltth > Utth:
                 Ltth,Utth = Utth,Ltth
+                G2frame.InnerTth.ChangeValue(Ltth)
+                G2frame.OuterTth.ChangeValue(Utth)
             if 'q' in data['binType'].lower():
                 data['IOtth'] = [2.*asind(Ltth*wave/(4.*math.pi)),2.*asind(Utth*wave/(4.*math.pi))]
             else:
                 data['IOtth'] = [Ltth,Utth]
-            G2frame.InnerTth.SetValue(Ltth)
-            G2frame.OuterTth.SetValue(Utth)
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
         
         def OnLRazim(invalid,value,tc):
-            Lazm = float(G2frame.Lazim.GetValue())%360.
-            Razm = float(G2frame.Razim.GetValue())%360.
+            '''Respond to a change in integration azimuth range
+            '''
+            Lazm = data['LRazimuth'][0] % 360.
+            Razm = data['LRazimuth'][1] % 360.
             if Lazm > Razm:
                 Razm += 360.
             if data['fullIntegrate']:
                 Razm = Lazm+360.
-            G2frame.Lazim.SetValue(Lazm)
-            G2frame.Razim.SetValue(Razm)
-            data['LRazimuth'] = [Lazm,Razm]
+            if data['LRazimuth'][0] != Lazm or data['LRazimuth'][1] != Razm:
+                G2frame.Lazim.ChangeValue(Lazm)
+                G2frame.Razim.ChangeValue(Razm)
+                data['LRazimuth'] = [Lazm,Razm]
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
                 
         def OnNumOutAzms(invalid,value,tc):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
             
         def OnNumOutBins(invalid,value,tc):
+            # make sure # channels is divisible by 4
             data['outChannels'] = (data['outChannels']//4)*4
-            outChan.SetValue(data['outChannels'])
+            outChan.ChangeValue(data['outChannels'])
         
         def OnOblique(event):
             data['Oblique'][1] = not data['Oblique'][1]
@@ -1199,7 +1208,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnFullIntegrate(event):
-            Lazm = float(G2frame.Lazim.GetValue())
+            Lazm = data['LRazimuth'][0]
             if data['fullIntegrate']:
                 data['fullIntegrate'] = False
                 data['LRazimuth'] = [Lazm,Lazm+20.]
@@ -1271,16 +1280,16 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         littleSizer.Add(G2frame.Lazim,0,WACV)
         G2frame.Razim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,LRazim,1,nDig=(6,1,'f'),typeHint=float,OnLeave=OnLRazim)
         if data['fullIntegrate']:
+            G2frame.Razim.ChangeValue(LRazim[0]+360.)
             G2frame.Razim.Enable(False)
-            G2frame.Razim.SetBackgroundColour(VERY_LIGHT_GREY)
-            G2frame.Razim.SetValue(LRazim[0]+360.)
+            #G2frame.Razim.SetBackgroundColour(VERY_LIGHT_GREY)
         littleSizer.Add(G2frame.Razim,0,WACV)
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' No. 2-theta/azimuth bins'),0,WACV)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         outChan = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outChannels',typeHint=int,xmin=10,OnLeave=OnNumOutBins)
         littleSizer.Add(outChan,0,WACV)
-        outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',nDig=(10,4),xmin=1,typeHint=int,OnLeave=OnNumOutAzms)
+        outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',xmin=1,typeHint=int,OnLeave=OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)
         dataSizer.Add(littleSizer)
         showLines = wx.CheckBox(parent=G2frame.dataWindow,label='Show integration limits?')
@@ -1441,9 +1450,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 limits = calFile.Calibrants[data['calibrant']][4]
                 data['calibdmin'],data['pixLimit'],data['cutoff'] = limits
                 pixLimit.SetValue(str(limits[1]))
-                cutOff.SetValue(limits[2])
+                cutOff.ChangeValue(limits[2])
                 calibSkip.SetValue(str(data['calibskip']))
-                G2frame.calibDmin.SetValue(limits[0])
+                G2frame.calibDmin.ChangeValue(limits[0])
             else:
                 G2frame.dataWindow.ImageEdit.Enable(id=G2G.wxID_IMRECALIBRATE,enable=False)
                 G2frame.dataWindow.ImageEdit.Enable(id=G2G.wxID_IMCALIBRATE,enable=False)
@@ -2028,11 +2037,11 @@ def UpdateMasks(G2frame,data):
             r11 = min(max(Range[1][1],Range[1][0]+1),Range[0][1]) # keep values in range
             if r11 != Range[1][1]:
                 Range[1][1] = r11
-                maxVal.SetValue(int(Range[1][1]))
+                maxVal.ChangeValue(int(Range[1][1]))
             r10 = max(min(Range[1][0],Range[1][1]-1),Range[0][0])
             if r10 != Range[1][0]:
                 Range[1][0] = r10
-                minVal.SetValue(int(Range[1][0]))
+                minVal.ChangeValue(int(Range[1][0]))
             sqrtDeltZero = math.sqrt(max(1.0,Range[0][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax0-Imin-1)
             sqrtDeltOne  = math.sqrt(max(1.0,Range[1][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax-Imin-1)
             sv1 = min(100,max(0,int(0.5+100.*sqrtDeltOne/sqrtDeltZero)))
@@ -2055,7 +2064,7 @@ def UpdateMasks(G2frame,data):
             G2frame.prevMaxValue = val
             sqrtDeltZero = math.sqrt(max(1.0,Range[0][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax0-Imin-1)
             Range[1][1] = int(0.5 + (val * sqrtDeltZero / 100.)**2 + Range[1][0] + 1)
-            maxVal.SetValue(int(0.5+Range[1][1]))
+            maxVal.ChangeValue(int(0.5+Range[1][1]))
             DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1)
             minSel.SetValue(int(0.5 + 100*(Range[1][0]/DeltOne)))
             sv0 = min(100,max(0,int(0.5+100.*(Range[1][0]-Range[0][0])/DeltOne)))
@@ -2075,7 +2084,7 @@ def UpdateMasks(G2frame,data):
             G2frame.prevMinValue = val
             DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1) # Imax-Imin0-1
             Range[1][0] = max(0,int(0.5 + val * DeltOne / 100 + Range[0][0]))
-            minVal.SetValue(int(Range[1][0]))
+            minVal.ChangeValue(int(Range[1][0]))
             sqrtDeltZero = math.sqrt(max(1.0,Range[0][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax0-Imin-1)
             sqrtDeltOne  = math.sqrt(max(1.0,Range[1][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax-Imin-1)
             sv1 = min(100,max(0,int(0.5+100.*sqrtDeltOne/sqrtDeltZero)))
@@ -2111,8 +2120,8 @@ def UpdateMasks(G2frame,data):
             DeltOne  = max(1.0,Range[1][1]-max(0.0,Range[0][0])-1)
             sv0 = min(100,max(0,int(0.5+100.*(Range[1][0]-Range[0][0])/DeltOne)))
             minSel.SetValue(sv0)
-            minVal.SetValue(int(Range[1][0]))
-            maxVal.SetValue(int(Range[1][1]))
+            minVal.ChangeValue(int(Range[1][0]))
+            maxVal.ChangeValue(int(Range[1][1]))
             new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
             Page.ImgObj.set_clim([Range[1][0],Range[1][1]])
             if mplOld:

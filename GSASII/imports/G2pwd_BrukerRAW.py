@@ -1,19 +1,10 @@
 # -*- coding: utf-8 -*-
 '''
 '''
-
-from __future__ import division, print_function
 import os
-import os.path as ospath
 import struct as st
 import numpy as np
-try:
-    import xmltodict as xml
-except:
-    xml = None
 import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
-import GSASIIpath
 class raw_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a binary Bruker .RAW file'
     def __init__(self):
@@ -84,7 +75,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             pos = 256
             fp.seek(pos)
             blockNum = kwarg.get('blocknum',0)
-            self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
+            self.idstring = os.path.basename(filename) + ' Scan '+str(blockNum)
             if blockNum <= nBlock:
                 for iBlock in range(blockNum):
                     headLen = int(st.unpack('<H',fp.read(2))[0])
@@ -130,7 +121,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             pos = 712
             fp.seek(pos)      #position at 1st block header
             blockNum = kwarg.get('blocknum',0)
-            self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
+            self.idstring = os.path.basename(filename) + ' Scan '+str(blockNum)
             if blockNum <= nBlock:
                 for iBlock in range(blockNum):
                     headLen = int(st.unpack('<i',fp.read(4))[0])
@@ -189,7 +180,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             self.comments.append('Kb=%.5f'%(st.unpack('<d',fp.read(8))[0]))
             self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
             fp.seek(pos)  #deliberate fail here - pos not known from file contents
-            self.idstring = ospath.basename(filename) + ' Scan '+str(1)
+            self.idstring = os.path.basename(filename) + ' Scan '+str(1)
             nSteps = int(st.unpack('<i',fp.read(4))[0])
             st.unpack('<d',fp.read(8))[0]
             start2Th = st.unpack('<d',fp.read(8))[0]
@@ -207,89 +198,3 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             
         return True
 
-class brml_ReaderClass(G2obj.ImportPowderData):
-    'Routines to import powder data from a zip Bruker .brml file'
-    def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.brml',),
-            strictExtension=True,
-            formatName = 'Bruker brml',
-            longFormatName = 'Bruker .brml powder data file'
-            )
-        if xml is None:
-            self.UseReader = False
-            msg = 'Bruker .brml Reader skipped because xmltodict module is not installed.'
-            if GSASIIpath.condaTest():
-                msg += ' To fix this press "Install packages" button below'
-            G2fil.ImportErrorMsg(msg,{'Bruker .brml Importer':['xmltodict']})
-        self.scriptable = True
-        self.data = None
-
-    # TODO: refactor this: 
-    #   Should not count on ContentsValidator being called before Reader
-    def ContentsValidator(self, filename):
-        if xml is None:
-            return False
-        # try:
-        #     import xmltodict as xml
-        # except:
-        #     print('Attempting to conda install xmltodict - please wait')
-        #     res = GSASIIpath.condaInstall('xmltodict')
-        #     if res:
-        #         msg = 'Installation of the xmltodict package failed with error:\n' + str(res)
-        #         G2G.G2MessageBox(self,msg,'Install xmltodict Error')
-        #         return False
-        #     try:
-        #         import xmltodict as xml
-        #     except:
-        #         return False
-        try:
-            import zipfile as ZF
-            with ZF.ZipFile(filename, 'r') as zipObj:
-                zipObj.extract('Experiment0/RawData0.xml')
-            with open('Experiment0/RawData0.xml') as fd:
-                self.data = dict(xml.parse(fd.read()))
-                self.formatName = 'Bruker .brml file'
-            os.remove('Experiment0/RawData0.xml')
-            os.rmdir('Experiment0')
-            self.idstring = ospath.basename(filename) + ' Bank 1'
-            self.powderentry[0] = filename
-            self.comments = []
-            return True
-        except:
-            return False
-            
-    def Reader(self,filename, ParentFrame=None, **kwarg):
-        'Read a Bruker brml file'
-        if xml is None:
-            return False
-        datano = 1
-        try:
-            nSteps = int(self.data['RawData']['DataRoutes']['DataRoute'][datano]['ScanInformation']['MeasurementPoints'])
-        except KeyError:
-            datano = 0
-            nSteps = int(self.data['RawData']['DataRoutes']['DataRoute']['ScanInformation']['MeasurementPoints'])
-        
-        x = np.zeros(nSteps, dtype=float)
-        y = np.zeros(nSteps, dtype=float)
-        w = np.zeros(nSteps, dtype=float) 
-        
-        if datano:
-            effTime = float(self.data['RawData']['DataRoutes']['DataRoute'][datano]['ScanInformation']['TimePerStepEffective'])
-        else:
-            effTime = float(self.data['RawData']['DataRoutes']['DataRoute']['ScanInformation']['TimePerStepEffective'])
-        
-        # Extract 2-theta angle and counts from the XML document
-        i=0
-        while i < nSteps :
-            if datano:
-                entry = self.data['RawData']['DataRoutes']['DataRoute'][datano]['Datum'][i].split(',')
-            else:
-                entry = self.data['RawData']['DataRoutes']['DataRoute']['Datum'][i].split(',')
-            x[i] = float(entry[2])
-            y[i] = float(entry[4])*float(entry[0])/effTime
-            i = i + 1
-            
-        w = np.where(y>0,1/y,0.)
-        self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
-        return True

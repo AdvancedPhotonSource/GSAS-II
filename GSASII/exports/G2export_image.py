@@ -35,7 +35,7 @@ class ExportImagePNG(G2fil.ExportBaseclass):
                 os.path.splitext(self.filename)[0] + self.extension
                 )
             imgFile = self.Histograms[i].get('Data',(None,None))
-            Comments,Data,Npix,Image = G2fil.GetImageData(self.G2frame,imgFile)
+            Image = G2fil.GetImageData(self.G2frame,imgFile,imageOnly=True)
             scipy.misc.imsave(filename,Image)
             print('Image '+imgFile+' written to file '+filename)
             

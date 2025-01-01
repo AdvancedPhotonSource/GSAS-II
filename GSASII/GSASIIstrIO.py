@@ -8,7 +8,6 @@ This file should not contain any wxpython references as this
 must be used in non-GUI settings. 
 '''
 from __future__ import division, print_function
-import platform
 import re
 import os
 import os.path as ospath
@@ -16,10 +15,7 @@ import time
 import math
 import random as rand
 import copy
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    import pickle as cPickle
+import pickle as cPickle
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
@@ -45,10 +41,7 @@ ateln2 = 8.0*math.log(2.0)
 # Support for GPX file reading
 #===============================================================================
 def cPickleLoad(fp):
-    if '2' in platform.python_version_tuple()[0]:
-        return cPickle.load(fp)
-    else:
-       return cPickle.load(fp,encoding='latin-1')
+    return cPickle.load(fp,encoding='latin-1')
 
 gpxIndex = {}; gpxNamelist = []; gpxSize = -1
 '''Global variables used in :func:`IndexGPX` to see if file has changed 
@@ -3831,7 +3824,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 insVary.append(insName)
         if dataType[2] in ['A','C']:
             instDict[pfx+'SH/L'] = max(instDict[pfx+'SH/L'],0.0005)
-        elif 'T' in dataType:   #trap zero alp, bet coeff.
+        if 'T' in dataType:   #trap zero alp, bet coeff.
             if not instDict[pfx+'alpha']:
                 instDict[pfx+'alpha'] = 1.0
             if not instDict[pfx+'beta-0'] and not instDict[pfx+'beta-1']:

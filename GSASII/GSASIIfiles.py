@@ -902,15 +902,15 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object.
     :param str imagefile: name of image file
-    :param bool imageOnly: If True return only the image,
-      otherwise  (default) return more (see below)
+    :param bool imageOnly: If True return only the image. Formerly, if False
+      return more information (see below). Now must be True
     :param int/str ImageTag: specifies a particular image to be read from a file.
       First image is read if None (default).
     :param str formatName: the image reader formatName
 
-    :returns: an image as a numpy array or a list of four items:
-      Comments, Data, Npix and the Image, as selected by imageOnly
-
+    :returns: an image as a numpy array. 
+      Formerly if imageOnly=False this would return a list of four items: Comments, Data, Npix and the Image,
+      but now an exception occurs when imageOnly=False.
     '''
     # determine which formats are compatible with this file
     primaryReaders = []
@@ -964,7 +964,8 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
             if imageOnly:
                 return rd.Image
             else:
-                return rd.Comments,rd.Data,rd.Npix,rd.Image
+                raise Exception('GetImageData must be called with imageOnly=True')
+                #return rd.Comments,rd.Data,rd.Npix,rd.Image
     else:
         print('Error reading file '+imagefile)
         print('Error messages(s)\n'+errorReport)
@@ -2183,7 +2184,7 @@ class ExportBaseclass(object):
         '''
         if self.fp is None and self.DelayOpen:
             if GSASIIpath.GetConfigValue('debug'): 
-                print('Delayed open: close before file not created')
+                print('Delayed open: close before uncreated file')
             return
         if self.fp is None:
             if GSASIIpath.GetConfigValue('debug'): 

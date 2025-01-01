@@ -58,9 +58,13 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
             scans += data.findall(tag+'scan')
         data = self.root.find(tag+'xrdMeasurement')        
         wave = data.find(tag+'usedWavelength')
-        incident = data.find(tag+'incidentBeamPath')
-        radius = float(incident.find(tag+'radius').text)
-        tube = incident.find(tag+'xRayTube')
+        radius = 300.
+        try:
+            incident = data.find(tag+'incidentBeamPath')
+            radius = float(incident.find(tag+'radius').text)
+            tube = incident.find(tag+'xRayTube')
+        except:
+            pass
         if len(scans) > 1:
             self.repeat = True
         if blockNum-1 == len(scans):
@@ -77,14 +81,14 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
             self.comments.append('Date/TimeStart='+header.find(tag+'startTimeStamp').text)
             self.comments.append('Date/TimeEnd='+header.find(tag+'endTimeStamp').text)
             self.comments.append('xray tube='+tube.attrib['name'])
-        except AttributeError:
+            self.comments.append('Ka1=%s'%(wave.find(tag+'kAlpha1').text))
+            self.comments.append('Ka2=%s'%(wave.find(tag+'kAlpha2').text))
+            self.comments.append('Ka2/Ka1=%s'%(wave.find(tag+'ratioKAlpha2KAlpha1').text))
+            self.comments.append('Kb=%s'%(wave.find(tag+'kBeta').text))
+            self.comments.append('Voltage='+tube.find(tag+'tension').text)
+            self.comments.append('Current='+tube.find(tag+'current').text)
+        except:
             pass
-        self.comments.append('Ka1=%s'%(wave.find(tag+'kAlpha1').text))
-        self.comments.append('Ka2=%s'%(wave.find(tag+'kAlpha2').text))
-        self.comments.append('Ka2/Ka1=%s'%(wave.find(tag+'ratioKAlpha2KAlpha1').text))
-        self.comments.append('Kb=%s'%(wave.find(tag+'kBeta').text))
-        self.comments.append('Voltage='+tube.find(tag+'tension').text)
-        self.comments.append('Current='+tube.find(tag+'current').text)
         limits = dataPoints.find(tag+'positions')
         startPos = float(limits.find(tag+'startPosition').text)
         endPos= float(limits.find(tag+'endPosition').text)

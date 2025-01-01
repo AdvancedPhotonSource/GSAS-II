@@ -4634,7 +4634,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         Page.SetToolTipString('%8.3f deg'%(tth))
                     elif 'linescan' in str(item):
                         Data['linescan'][1] = azm
-                        G2frame.scanazm.SetValue(azm)
+                        G2frame.scanazm.ChangeValue(azm)
                         Page.SetToolTipString('%6.1f deg'%(azm))
             else:
                 xcent,ycent = Data['center']
@@ -4748,7 +4748,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xpos = event.xdata
                 ypos = event.ydata
                 tth,azm,dsp = G2img.GetTthAzmDsp2(xpos,ypos,Data)
-                G2frame.calibDmin.SetValue(dsp)
+                G2frame.calibDmin.ChangeValue(dsp)
             elif event.key in ['x',]:
                 Data['invert_x'] = not Data['invert_x']
             elif event.key in ['y',]:
@@ -5280,13 +5280,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if Data['binType'] == 'Q':
                     wave = Data['wavelength']
                     IOtth = [4.*math.pi*sind(Data['IOtth'][0]/2.)/wave,4.*math.pi*sind(Data['IOtth'][1]/2.)/wave]
-                    G2frame.InnerTth.SetValue(IOtth[0])
-                    G2frame.OuterTth.SetValue(IOtth[1])
+                    G2frame.InnerTth.ChangeValue(IOtth[0])
+                    G2frame.OuterTth.ChangeValue(IOtth[1])
                 else:
-                    G2frame.InnerTth.SetValue(Data['IOtth'][0])
-                    G2frame.OuterTth.SetValue(Data['IOtth'][1])
-                G2frame.Lazim.SetValue(Data['LRazimuth'][0])
-                G2frame.Razim.SetValue(Data['LRazimuth'][1])
+                    G2frame.InnerTth.ChangeValue(Data['IOtth'][0])
+                    G2frame.OuterTth.ChangeValue(Data['IOtth'][1])
+                G2frame.Lazim.ChangeValue(Data['LRazimuth'][0])
+                G2frame.Razim.ChangeValue(Data['LRazimuth'][1])
             elif pickType == "Spot" and treeItem == 'Masks':
                 spotnum = G2frame.itemPicked.itemNumber
                 if event.button == 1:
@@ -6191,6 +6191,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         once, even if multiple mouse up/down actions are made.
         '''
         if rbObj and rbObj.get('needsFill') and 'FillUnitCell' in G2frame.testRBObjSizers:
+            if not G2frame.testRBObjSizers.get('fillMode',False): return
             if rbObj.get('FillInProgress'): return
             rbObj['needsFill'] = False
             rbObj['FillInProgress'] = True
@@ -6258,12 +6259,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
                 G2frame.phaseDisplay.Zclip.SetScaledValue(drawingData['Zclip'])
-                G2frame.phaseDisplay.Zval.SetValue(drawingData['Zclip'])
+                G2frame.phaseDisplay.Zval.ChangeValue(drawingData['Zclip'])
                 xmin=1.0    #.01*drawingData['Zclip']*drawingData['cameraPos']/100.
                 xmax=2.0*drawingData['cameraPos']
                 G2frame.phaseDisplay.Zclip.SetScaledRange(xmin,xmax)
                 G2frame.phaseDisplay.Zclip.SetMax(xmax)
-                G2frame.phaseDisplay.cameraPosTxt.SetValue(drawingData['cameraPos'])
+                G2frame.phaseDisplay.cameraPosTxt.ChangeValue(drawingData['cameraPos'])
                 G2frame.phaseDisplay.cameraSlider.SetScaledValue(drawingData['cameraPos'])
         Draw('wheel')
         
@@ -6278,7 +6279,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
-                G2frame.phaseDisplay.viewPoint.SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
+                G2frame.phaseDisplay.viewPoint.ChangeValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
                 
     def SetShowCS(CS):
         page = getSelection()
@@ -6304,7 +6305,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
-                G2frame.phaseDisplay.viewDir.SetValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
+                G2frame.phaseDisplay.viewDir.ChangeValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
                 
     def SetMapPeaksText(mapPeaks):
         data['Map Peaks'] = mapPeaks

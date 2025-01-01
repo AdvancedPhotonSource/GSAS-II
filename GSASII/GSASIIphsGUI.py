@@ -54,6 +54,7 @@ import numpy.linalg as nl
 import numpy.ma as ma
 import atmdata
 import ISODISTORT as ISO
+import platform
 
 try:
     wx.NewIdRef
@@ -2072,7 +2073,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     for atom in data['Drawing']['Atoms']:
                         if atom[ct] != El: continue
                         atom[cs+2] = RGB
-                    breakpoint()
                     wx.CallAfter(UpdateGeneral)
                 dlg.Destroy()
                     
@@ -5442,75 +5442,101 @@ def UpdatePhaseData(G2frame,Item,data):
         OnDistAngle(event,hist=True)
         
     def OnDistAngle(event,fp=None,hist=False):
-        'Compute distances and angles'    
-        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
+        '''Compute distances and angles in response to a menu command
+        or may be called by :func:`OnDistAnglePrt` or :func:`OnDistAngleHist`.
+
+        This calls :func:`GSASIIstrMain.PrintDistAngle` to compute
+        bond distances & angles (computed in 
+        :func:`GSASIIstrMain.RetDistAngle`) and 
+        then format the results in a convenient way or plot them
+        using G2plt.PlotBarGraph.
+        '''
+
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms,ct-1)
+        if not indx:
+            print ("select one or more rows of atoms")
+            G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+            return
         Oxyz = []
         xyz = []
         DisAglData = {}
         DisAglCtls = {}
-        if indx:
-            generalData = data['General']
-            DisAglData['OrigIndx'] = indx
-            if 'DisAglCtls' in generalData:
-                DisAglCtls = generalData['DisAglCtls']
-            dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData)
-            if dlg.ShowModal() == wx.ID_OK:
-                DisAglCtls = dlg.GetData()
-            else:
-                dlg.Destroy()
-                return
+        # add RB stuff to DisAglData
+        DisAglData['RBlist'] = []          # list of atom numbers used in the RB
+        for d in data['RBModels'].get('Residue',{}):
+            for rId in d['Ids']:
+                num = int(G2obj.LookupAtomId(ranId=rId,pId=data['pId']))
+                DisAglData['RBlist'].append(num)
+        DisAglData['rigidbodyDict'] = G2frame.GPXtree.GetItemPyData(
+             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        _,DisAglData['Phases'] = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        DisAglData['parmDict'] = G2IO.mkParmDictfromTree(G2frame)
+        # other setup prep
+        generalData = data['General']
+        DisAglData['OrigIndx'] = indx
+        if 'DisAglCtls' in generalData:
+            DisAglCtls = generalData['DisAglCtls']
+        # get atomic radii
+        dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData)
+        if dlg.ShowModal() == wx.ID_OK:
+            DisAglCtls = dlg.GetData()
             dlg.Destroy()
-            generalData['DisAglCtls'] = DisAglCtls
-            atomData = data['Atoms']
-            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
-            cx = colLabels.index('x')
-            cn = colLabels.index('Name')
-            ct = colLabels.index('Type')
-            Atypes = []
-            for i,atom in enumerate(atomData):
-                xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
-                if i in indx:
-                    Oxyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
-                    Atypes.append(atom[ct])
-            Atypes = set(Atypes)
-            Atypes = ', '.join(Atypes)
-            DisAglData['OrigAtoms'] = Oxyz
-            DisAglData['TargAtoms'] = xyz
-            generalData = data['General']
-            DisAglData['SGData'] = generalData['SGData']
-            DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
-            if 'pId' in data:
-                DisAglData['pId'] = data['pId']
-                DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
-            try:
-                if hist:
-                    pgbar = wx.ProgressDialog('Distance Angle calculation','Atoms done=',len(Oxyz)+1, 
-                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-                    AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData,pgbar)
-                    pgbar.Destroy()
-                    Bonds = []
-                    for dists in DistArray:
-                        Bonds += [item[3] for item in DistArray[dists]]
-                    G2plt.PlotBarGraph(G2frame,Bonds,Xname=r'$\mathsf{Bonds,\AA}$',
-                        Title='Bond distances for %s'%Atypes,PlotName='%s Bonds'%Atypes)
-                    print('Total number of bonds to %s is %d'%(Atypes,len(Bonds)))
-                    Angles = []
-                    for angles in AngArray:
-                        Angles += [item[2][0] for item in AngArray[angles]]
-                    G2plt.PlotBarGraph(G2frame,Angles,Xname=r'$\mathsf{Angles,{^o}}$',
-                        Title='Bond angles about %s'%Atypes,PlotName='%s Angles'%Atypes)
-                    print('Total number of angles about %s is %d'%(Atypes,len(Angles)))
-                    
-                elif fp:
-                    G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
-                else:    
-                    G2stMn.PrintDistAngle(DisAglCtls,DisAglData)
-            except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
-                G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
         else:
-            print ("select one or more rows of atoms")
-            G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+            dlg.Destroy()
+            return
+        generalData['DisAglCtls'] = DisAglCtls
+        atomData = data['Atoms']
+        colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+        cx = colLabels.index('x')
+        cn = colLabels.index('Name')
+        ct = colLabels.index('Type')
+        Atypes = []
+        DisAglData['TargIndx'] = list(range(len(atomData)))
+        for i,atom in enumerate(atomData):
+            xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
+            if i in indx:
+                Oxyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+3])
+                Atypes.append(atom[ct])
+        Atypes = set(Atypes)
+        Atypes = ', '.join(Atypes)
+        DisAglData['OrigAtoms'] = Oxyz
+        DisAglData['TargAtoms'] = xyz
+        generalData = data['General']
+        DisAglData['SGData'] = generalData['SGData']
+        DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
+        if 'pId' in data:
+            DisAglData['pId'] = data['pId']
+            DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
+        try:
+            if hist:
+                pgbar = wx.ProgressDialog('Distance Angle calculation','Atoms done=',len(Oxyz)+1, 
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+                AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData,pgbar)
+                pgbar.Destroy()
+                Bonds = []
+                for dists in DistArray:
+                    Bonds += [item[3] for item in DistArray[dists]]
+                G2plt.PlotBarGraph(G2frame,Bonds,Xname=r'$\mathsf{Bonds,\AA}$',
+                    Title='Bond distances for %s'%Atypes,PlotName='%s Bonds'%Atypes)
+                print('Total number of bonds to %s is %d'%(Atypes,len(Bonds)))
+                Angles = []
+                for angles in AngArray:
+                    Angles += [item[2][0] for item in AngArray[angles]]
+                G2plt.PlotBarGraph(G2frame,Angles,Xname=r'$\mathsf{Angles,{^o}}$',
+                    Title='Bond angles about %s'%Atypes,PlotName='%s Angles'%Atypes)
+                print('Total number of angles about %s is %d'%(Atypes,len(Angles)))
+
+            elif fp:
+                #from importlib import reload
+                #reload(G2stMn)
+                #reload(G2mth)
+                #print('reloading G2stMn & G2mth')
+                G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
+            else:    
+                G2stMn.PrintDistAngle(DisAglCtls,DisAglData)
+        except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
+            G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
             
     def OnFracSplit(event):
         'Split atom frac accordintg to atom type & refined site fraction'    
@@ -7946,13 +7972,20 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
         rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
-        if rmcfile is None:
-            wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
-      Obtain the zip file distribution from www.rmcprofile.org, 
-      unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
-          caption='RMCProfile',style=wx.ICON_INFORMATION)
-            return
-        rmcexe = os.path.split(rmcfile)[0]
+        os_name = platform.system()
+        if os_name == "Darwin":
+            rmcexe = os.path.join(
+                "/Applications/RMCProfile.app/Contents/MacOS/exe/",
+                "rmcprofile.x"
+            )
+        else:
+            if rmcfile is None:
+                wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
+        Obtain the zip file distribution from www.rmcprofile.org, 
+        unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
+            caption='RMCProfile',style=wx.ICON_INFORMATION)
+                return
+            rmcexe = os.path.split(rmcfile)[0]
         print(rmcexe)
         wx.MessageBox(''' For use of RMCProfile, please cite:
       RMCProfile: Reverse Monte Carlo for polycrystalline materials,
@@ -7989,13 +8022,30 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
         G2frame.OnFileSave(event)
         print (' GSAS-II project saved')
         pName = generalData['Name'].replace(' ','_')
-        exstr = rmcexe+'\\rmcprofile.exe '+pName
-        batch = open('runrmc.bat','w')
-        batch.write('Title RMCProfile\n')
-        batch.write(exstr+'\n')
-        batch.write('pause\n')
-        batch.close()
-        subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+
+        if os_name == "Darwin":
+            with open('runrmc.sh', 'w') as f:
+                f.write("#!/bin/bash\n")
+                f.write("cd " + os.getcwd() + "\n")
+                f.write(rmcexe + " " + pName + "\n")
+            os.system("chmod +x runrmc.sh")
+            script_file = os.path.join(os.getcwd(), "runrmc.sh")
+            applescript_command = 'tell app "Terminal"\n'
+            applescript_command += "if not (exists window 1) then\n"
+            applescript_command += f'do script "source {script_file}"\n'
+            applescript_command += "else\n"
+            applescript_command += f'do script "source {script_file}"'
+            applescript_command += " in window 1\n"
+            applescript_command += "end if\nactivate\nend tell"
+            subp.Popen(['osascript', '-e', applescript_command])
+        else:
+            exstr = rmcexe+'\\rmcprofile.exe '+pName
+            batch = open('runrmc.bat','w')
+            batch.write('Title RMCProfile\n')
+            batch.write(exstr+'\n')
+            batch.write('pause\n')
+            batch.close()
+            subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
 #        Proc.wait()     #for it to finish before continuing on
         UpdateRMC()
         
@@ -13417,10 +13467,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             dragSizer = wx.BoxSizer(wx.HORIZONTAL)
             dragSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Draw mode after dragging the rigid body: '),0,WACV)
             RBObj['drawMode'] = RBObj.get('drawMode',DrawStyleChoice[4])
-            dragSizer.Add(G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
-                                                 strLoc=RBObj, strKey='drawMode'))
-            RBObj['fillMode'] = RBObj.get('fillMode',True)
-            dragSizer.Add(G2G.G2CheckBoxFrontLbl(RigidBodies, ' Fill cell on mouse up?', RBObj, 'fillMode'))
+            modeOpt = G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
+                                             strLoc=RBObj, strKey='drawMode')
+            dragSizer.Add(modeOpt)
+            modeOpt.Enable(False) # not implemented yet
+            G2frame.testRBObjSizers['fillMode'] = G2frame.testRBObjSizers.get('fillMode',False)
+            dragSizer.Add(G2G.G2CheckBoxFrontLbl(RigidBodies, ' Fill cell on mouse up?', G2frame.testRBObjSizers, 'fillMode'))
             resrbSizer.Add((-1,5))
             resrbSizer.Add(dragSizer)
             return resrbSizer
@@ -13509,7 +13561,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             # define the parameters needed to drag the RB with the mouse
             data['testRBObj'] = {}
             rbType = 'Residue'
-            data['testRBObj']['rbObj'] = data['RBModels'][rbType][prevResId]
+            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
             rbId = data['RBModels'][rbType][prevResId]['RBId']
             RBdata = G2frame.GPXtree.GetItemPyData(   
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
@@ -13536,9 +13588,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         atNames[i][atom[ct-1]] = iatm
             data['testRBObj']['atNames'] = atNames
             data['testRBObj']['AtNames'] = AtNames
-            data['testRBObj']['torAtms'] = []                
+            data['testRBObj']['torAtms'] = []
+            # unclear why these torsion entries are being added to rbObj.
             for item in RBData[rbType][rbId].get('rbSeq',[]):
-                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
+                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
                 data['testRBObj']['torAtms'].append([-1,-1,-1])
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
             
@@ -13583,7 +13636,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             G2frame.dataWindow.SendSizeEvent()
             G2plt.PlotStructure(G2frame,data)
             if oldFocus: wx.CallAfter(oldFocus.SetFocus)
-        
+
         # FillRigidBodyGrid executable code starts here
         if refresh:
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
@@ -14618,7 +14671,7 @@ of the crystal structure.
                     'numChain':'','RBname':RBData[rbType][rbId]['RBname']}
         # if rbType == 'Spin':
         #     data['testRBObj']['rbObj']['Radius'] = [1.0,False]
-        data['testRBObj']['torAtms'] = []                
+        data['testRBObj']['torAtms'] = []
         for item in RBData[rbType][rbId].get('rbSeq',[]):
             data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
             data['testRBObj']['torAtms'].append([-1,-1,-1])        

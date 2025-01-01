@@ -812,7 +812,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
         elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
-            if len(event.artist.get_data()[0]) != 2: return  # don't select a tickmark to drag
+            if len(event.artist.get_data()[0]) != 2 and not G2frame.ifSetLimitsMode: 
+                return  # don't select a tickmark to drag. But in Limits/Excluded mode
+                        # could select a point from the pattern here
             # Limits: add excluded region or move limits by use of menu command
             # and then pick a point
             # Or, drag line for limits/excluded region
@@ -1197,7 +1199,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 dbox[i].invalid = False
                 dbox[i]._IndicateValidity()
             else: # reset validation
-                dbox[i].SetValue(dbox[i].GetValue())
+                dbox[i].ChangeValue(dbox[i].GetValue())
             dbox[i].Enable(checked)
         def applyLims(event):
             Page.toolbar.push_current()
@@ -1610,6 +1612,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.dataWindow.moveDiffCurve.Enable(False)
         G2frame.dataWindow.moveTickLoc.Enable(False)
         G2frame.dataWindow.moveTickSpc.Enable(False)
+    elif 'SAS' in plottype:
+        Page.phaseList = Phases = []
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits']:
         # get reflection positions for other places where they are displayed
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
@@ -3438,7 +3442,10 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         valueList = []
         tickpos = {}
         lblList.append('used')
-        valueList.append([0 if i else 1 for i in savedX.mask])
+        try:
+            valueList.append([0 if i else 1 for i in savedX.mask])
+        except:
+            pass
         if 'TOF' in Plot.xaxis.get_label_text():
             lblList.append('x, TOF (msec)')
         elif 'Q,' in Plot.xaxis.get_label_text():

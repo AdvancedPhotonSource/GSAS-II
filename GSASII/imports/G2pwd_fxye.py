@@ -396,6 +396,11 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     Temperature = float(S.split('=')[1])
                 except:
                     pass
+            if 'pressure' in S.lower().split('=')[0]:
+                try:
+                    self.Sample['Pressure'] = float(S.split('=')[1])
+                except:
+                    pass
             elif 'Gonio' in S.split('=')[0]:
                 try:
                     self.Sample['Gonio. radius'] = float(S.split('=')[1])

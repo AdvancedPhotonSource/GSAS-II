@@ -24,6 +24,7 @@ try:
     import wx.lib.mixins.listctrl  as  listmix
     import wx.richtext as wxrt
     import wx.lib.filebrowsebutton as wxfilebrowse
+    wg,wx.aui,wxscroll,listmix,wxrt,wxfilebrowse,scipy.optimize # avoid unused warning
 except ImportError:
     pass
 

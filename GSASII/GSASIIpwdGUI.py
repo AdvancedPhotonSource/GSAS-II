@@ -6030,10 +6030,18 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False):
             OnHklShow(event,indexFrom=' Indexing from unit cell & symmetry settings')
             
         def OnExtHklShow(event):
-            OnHklShow(event,indexFrom=' Indexing including extinct hkls')
+            Obj = event.GetEventObject()
+            if Obj.GetValue():
+                OnHklShow(event,indexFrom=' Indexing including extinct hkls')
+            else:
+                OnHklShow(event,indexFrom=' Indexing from unit cell & symmetry settings')
             
-        def OnAxHklShow(event):
-            OnHklShow(event,indexFrom=' Indexing excluding special hkls')
+        def OnAxHklShow():
+            mode = Sel.GetStringSelection()
+            if 'None' not in mode:
+                OnHklShow(None,indexFrom=' Indexing showing only %s hkls'%mode)
+            else:
+                OnHklShow(None,indexFrom=' Indexing from unit cell & symmetry settings')
             
         unitSizer = wx.BoxSizer(wx.VERTICAL)
         unitSizer.Add(wx.StaticText(parent=G2frame.dataWindow,style=wx.ALIGN_CENTER,

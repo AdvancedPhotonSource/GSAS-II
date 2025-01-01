@@ -548,8 +548,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 pickIdText = G2frame.GPXtree.GetItemText(G2frame.PickId)
             else:
                 pickIdText = '?' # unexpected
-            tickMarkList = ['Index Peak List','Unit Cells List',
-                                'Reflection Lists']
+            tickMarkList = ['Index Peak List','Unit Cells List','Reflection Lists']
             if pickIdText in tickMarkList and len(G2frame.HKL):
                 found = []
                 indx = -1
@@ -557,12 +556,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     indx = -2
                 # finds reflections within 1% of plot range in units of plot
                 findx = np.where(np.fabs(np.array(G2frame.HKL).T[indx]-xpos) < dT/2.)
+                found = G2frame.HKL[findx]
                 if len(G2frame.Extinct):
                     G2frame.Extinct = np.array(G2frame.Extinct)
                     f2 = G2frame.Extinct[np.where(np.fabs(G2frame.Extinct.T[indx]-xpos) < dT/2.)] 
                     found = np.concatenate((found,f2))
-                if np.any(findx):
-                    found = G2frame.HKL[findx]
+                if found.shape[0]:
                     if len(found[0]) > 6:   #SS reflections
                         fmt = "{:.0f},{:.0f},{:.0f},{:.0f}"
                         n = 4
@@ -2544,11 +2543,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             for hkl in G2frame.Extinct: # plot extinct reflections
                 clr = 'b'
                 if Page.plotStyle['qPlot']:
-                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=3)
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=2)
                 elif Page.plotStyle['dPlot']:
-                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=3)
+                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=2)
                 else:
-                    Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=3)
+                    Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=2)
         elif Page.plotStyle.get('WgtDiagnostic',False):
             pass # skip reflection markers
         elif (G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits']

@@ -1152,7 +1152,7 @@ def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
     '''
     if 'T' in Inst['Type'][0]:
-        pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp-Inst['Zero'][1]
+        pos = Inst['difC'][1]*dsp+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp+Inst['Zero'][1]
     elif 'E' in Inst['Type'][0]:
         return 12.398/(2.0*dsp*sind(Inst['2-theta'][1]/2.0))+Inst['ZE'][1]+Inst['YE'][1]*dsp+Inst['XE'][1]*dsp**2
     else:   #'A', 'B', 'C' or 'PKS'

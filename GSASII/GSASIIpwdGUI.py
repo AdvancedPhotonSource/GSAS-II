@@ -753,11 +753,6 @@ def RefineCell(G2frame):
     controls[1] = Zero
     controls[6:12] = G2lat.A2cell(Aref)
     controls[12] = G2lat.calc_V(Aref)
-    # why do this? if needed should be in OnRefine
-    #cells = G2frame.GPXtree.GetItemPyData(UnitCellsId)[2]
-    #for cell in cells:
-    #    cell[-2] = False
-    #cells.insert(0,[M20,X20,ibrav]+controls[6:13]+[True,False])
     if ssopt.get('Use',False):
         ssopt['ModVec'] = Vec
         G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
@@ -6040,10 +6035,18 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False):
             OnHklShow(event,indexFrom=' Indexing from unit cell & symmetry settings')
             
         def OnExtHklShow(event):
-            OnHklShow(event,indexFrom=' Indexing including extinct hkls')
+            Obj = event.GetEventObject()
+            if Obj.GetValue():
+                OnHklShow(event,indexFrom=' Indexing including extinct hkls')
+            else:
+                OnHklShow(event,indexFrom=' Indexing from unit cell & symmetry settings')
             
-        def OnAxHklShow(event):
-            OnHklShow(event,indexFrom=' Indexing excluding special hkls')
+        def OnAxHklShow():
+            mode = Sel.GetStringSelection()
+            if 'None' not in mode:
+                OnHklShow(None,indexFrom=' Indexing showing only %s hkls'%mode)
+            else:
+                OnHklShow(None,indexFrom=' Indexing from unit cell & symmetry settings')
             
         unitSizer = wx.BoxSizer(wx.VERTICAL)
         unitSizer.Add(wx.StaticText(parent=G2frame.dataWindow,style=wx.ALIGN_CENTER,

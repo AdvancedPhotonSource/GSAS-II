@@ -1,4 +1,5 @@
 py.install_sources([
+     '__init__.py',
     'Absorb.py',
     'ElementTable.py',
     'FormFactors.py',

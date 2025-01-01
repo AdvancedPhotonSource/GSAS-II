@@ -4003,7 +4003,16 @@ def UpdateIndexPeaksGrid(G2frame, data):
                 G2plt.PlotPowderLines(G2frame)
             else:
                 G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
-            
+
+    def onCellListDClick(event):
+        '''Called after a double-click on a row/column label'''
+        r,c =  event.GetRow(),event.GetCol()
+        if r >= 0 and c < 0:     #row label: select it and replot!
+            G2frame.indxPeaks.ClearSelection()
+            G2frame.indxPeaks.SelectRow(r,True)
+            wx.CallAfter(G2frame.indxPeaks.ForceRefresh)
+            wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
+
     def OnReload(event):
         peaks = []
         sigs = []
@@ -4165,6 +4174,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
                 sig = 0.
             Sigs.append(sig)
     G2frame.indxPeaks.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
+    G2frame.indxPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
     G2frame.indxPeaks.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
     G2frame.indxPeaks.AutoSizeColumns(False)
     if len(XY):

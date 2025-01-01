@@ -1,11 +1,11 @@
 [build-system]
 build-backend = "mesonpy"
 requires = ["meson-python",
-#     "pybind11",
+    'pybind11',
     'ninja',
     'wheel',
     'Cython',
-    "numpy",
+    'numpy',
     'pyproject-metadata>=0.5.0',
     'tomli>=1.0.0',
 ]

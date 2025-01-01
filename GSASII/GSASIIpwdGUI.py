@@ -753,11 +753,6 @@ def RefineCell(G2frame):
     controls[1] = Zero
     controls[6:12] = G2lat.A2cell(Aref)
     controls[12] = G2lat.calc_V(Aref)
-    # why do this? if needed should be in OnRefine
-    #cells = G2frame.GPXtree.GetItemPyData(UnitCellsId)[2]
-    #for cell in cells:
-    #    cell[-2] = False
-    #cells.insert(0,[M20,X20,ibrav]+controls[6:13]+[True,False])
     if ssopt.get('Use',False):
         ssopt['ModVec'] = Vec
         G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)

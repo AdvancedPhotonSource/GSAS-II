@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 # Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 """
-Routines used to define element settings follow. 
+Routines used to define element settings follow.
 """
 
 import math
 import sys
 import os.path
-import GSASIIpath
+from . import GSASIIpath
 import copy
 import numpy as np
-import atmdata
-import GSASIImath as G2mth
-import ElementTable as ET
+from . import atmdata
+from . import GSASIImath as G2mth
+from . import ElementTable as ET
 #import GSASIIElem as G2elem   # but this module is GSASIIElem. Why are we doing this?
 nxs = np.newaxis
 Bohr = 0.529177
@@ -32,46 +32,46 @@ def GetFormFactorCoeff(El):
 
     :param str El: element 1-2 character symbol, case irrevelant
     :return: `FormFactors`: list of form factor dictionaries
-    
+
     Each X-ray form factor dictionary is:
-    
+
     * `Symbol`: 4 character element symbol with valence (e.g. 'NI+2')
     * `Z`: atomic number
     * `fa`: 4 A coefficients
     * `fb`: 4 B coefficients
     * `fc`: C coefficient
-    
+
     """
-    
+
     Els = El.capitalize().strip()
     valences = [ky for ky in atmdata.XrayFF.keys() if Els == getElSym(ky)]
     FormFactors = [atmdata.XrayFF[val] for val in valences]
     for Sy,FF in zip(valences,FormFactors):
         FF.update({'Symbol':Sy.upper()})
     return FormFactors
-    
+
 def GetEFormFactorCoeff(El):
     """Read electron form factor coefficients from `atomdata.py` file
 
     :param str El: element 1-2 character symbol, case irrevelant
     :return: `FormFactors`: list of form factor dictionaries
-    
+
     Each electrn form factor dictionary is:
-    
+
     * `Symbol`: 4 character element symbol (no valence)
     * `Z`: atomic number
     * `fa`: 5 A coefficients
     * `fb`: 5 B coefficients
-    
+
     """
-    
+
     Els = El.capitalize().strip()
     valences = [ky for ky in atmdata.ElecFF.keys() if Els == getElSym(ky)] #will only be one
     FormFactors = [atmdata.ElecFF[val] for val in valences]
     for Sy,FF in zip(valences,FormFactors):
         FF.update({'Symbol':Sy.upper()})
     return FormFactors
-    
+
 def GetFFtable(atomTypes):
     ''' returns a dictionary of form factor data for atom types found in atomTypes
 
@@ -86,7 +86,7 @@ def GetFFtable(atomTypes):
             if item['Symbol'] == El.upper():
                 FFtable[El] = item
     return FFtable
-    
+
 def GetEFFtable(atomTypes):
     ''' returns a dictionary of electron form factor data for atom types found in atomTypes
     might not be needed?
@@ -102,7 +102,7 @@ def GetEFFtable(atomTypes):
             if item['Symbol'] == El.upper():
                 FFtable[El] = item
     return FFtable
-    
+
 def GetORBtable(atomTypes):
     ''' returns a dictionary of orbital form factor data for atom types found in atomTypes
 
@@ -114,7 +114,7 @@ def GetORBtable(atomTypes):
     for El in atomTypes:
         ORBtable[El] = copy.deepcopy(atmdata.OrbFF[El])
     return ORBtable
-    
+
 def GetMFtable(atomTypes,Landeg):
     ''' returns a dictionary of magnetic form factor data for atom types found in atomTypes
 
@@ -131,7 +131,7 @@ def GetMFtable(atomTypes,Landeg):
                 item['gfac'] = gfac
                 MFtable[El] = item
     return MFtable
-    
+
 def GetBLtable(General):
     ''' returns a dictionary of neutron scattering length data for atom types & isotopes found in General
 
@@ -148,7 +148,7 @@ def GetBLtable(General):
         else:
             BLtable[El] = [isotope[El],atmdata.AtmBlens[ElS+'_'+isotope[El]]]
     return BLtable
-        
+
 def getFFvalues(FFtables,SQ,ifList=False):
     'Needs a doc string'
     if ifList:
@@ -160,7 +160,7 @@ def getFFvalues(FFtables,SQ,ifList=False):
         for El in FFtables:
             FFvals[El] = ScatFac(FFtables[El],SQ)[0]
     return FFvals
-    
+
 def getBLvalues(BLtables,ifList=False):
     'Needs a doc string'
     if ifList:
@@ -178,7 +178,7 @@ def getBLvalues(BLtables,ifList=False):
             else:
                 BLvals[El] = BLtables[El][1]['SL'][0]
     return BLvals
-        
+
 def getMFvalues(MFtables,SQ,ifList=False):
     'Needs a doc string'
     if ifList:
@@ -190,7 +190,7 @@ def getMFvalues(MFtables,SQ,ifList=False):
         for El in MFtables:
             MFvals[El] = MagScatFac(MFtables[El],SQ)[0]
     return MFvals
-    
+
 def GetFFC5(ElSym):
     '''Get 5 term form factor and Compton scattering data
 
@@ -227,7 +227,7 @@ def GetBVS(Pair,atSeq,Valences):
             return 0.0
     else:
         return 0.0
-    
+
 def CheckElement(El):
     '''Check if element El is in the periodic table
 
@@ -241,7 +241,7 @@ def CheckElement(El):
     if El.capitalize() in Elements:
         return True
     else:
-        return False 
+        return False
 
 def FixValence(El):
     'Returns the element symbol, even when a valence is present'
@@ -265,7 +265,7 @@ def SetAtomColor(El,RGB):
     ElS = getElSym(El)
     ET.ElTable[Elements.index(ElS)] = ET.ElTable[Elements.index(ElS)][0:6] + (
         tuple(RGB),)
-    
+
 def GetAtomInfo(El,ifMag=False):
     'reads element information from atmdata.py'
     Elem = ET.ElTable
@@ -299,11 +299,11 @@ def GetAtomInfo(El,ifMag=False):
             AtomInfo['Isotopes'][isotope.split('_')[1]] = data
     AtomInfo['Lande g'] = 2.0
     return AtomInfo
-    
+
 def GetElInfo(El,inst):
     ElemSym = El.strip().capitalize()
-    if 'X' in inst['Type'][0]: 
-        keV = 12.397639/G2mth.getWave(inst)               
+    if 'X' in inst['Type'][0]:
+        keV = 12.397639/G2mth.getWave(inst)
         FpMu = FPcalc(GetXsectionCoeff(ElemSym), keV)
         ElData = GetFormFactorCoeff(ElemSym)[0]
         ElData['FormulaNo'] = 0.0
@@ -316,7 +316,7 @@ def GetElInfo(El,inst):
         ElData['FormulaNo'] = 0.0
         ElData.update({'mu':0.0,'fp':0.0,'fpp':0.0})
     return ElData
-        
+
 def GetXsectionCoeff(El):
     """Read atom orbital scattering cross sections for fprime calculations via Cromer-Lieberman algorithm
 
@@ -400,7 +400,7 @@ def GetXsectionCoeff(El):
             Orbs.append(Orb)
     xsec.close()
     return Orbs
-    
+
 def GetMagFormFacCoeff(El):
     """Read magnetic form factor data from atmdata.py
 
@@ -417,7 +417,7 @@ def GetMagFormFacCoeff(El):
     * 'nfb': 4 NB coefficients
     * 'mfc': MC coefficient
     * 'nfc': NC coefficient
-    
+
     """
     Els = El.capitalize().strip()
     MagFormFactors = []
@@ -439,7 +439,7 @@ def GetMagFormFacCoeff(El):
 def ScatFac(El, SQ):
     """compute value of form factor
 
-    :param El: element dictionary defined in GetFormFactorCoeff 
+    :param El: element dictionary defined in GetFormFactorCoeff
     :param SQ: (sin-theta/lambda)**2
     :return: real part of form factor
     """
@@ -451,7 +451,7 @@ def ScatFac(El, SQ):
 def ScatFacDer(El, SQ):
     """compute derivative of form factor wrt SQ
 
-    :param El: element dictionary defined in GetFormFactorCoeff 
+    :param El: element dictionary defined in GetFormFactorCoeff
     :param SQ: (sin-theta/lambda)**2
     :return: real part of form factor
     """
@@ -459,11 +459,11 @@ def ScatFacDer(El, SQ):
     fb = np.array(El['fb'])
     t = -fb[:,np.newaxis]*SQ
     return -np.sum(fa[:,np.newaxis]*fb[:,np.newaxis]*np.exp(t)[:],axis=0)
-        
+
 def MagScatFac(El, SQ):
     """compute value of form factor
 
-    :param El: element dictionary defined in GetFormFactorCoeff 
+    :param El: element dictionary defined in GetFormFactorCoeff
     :param SQ: (sin-theta/lambda)**2
     :param gfac: Lande g factor (normally = 2.0)
     :return: real part of form factor
@@ -482,7 +482,7 @@ def MagScatFac(El, SQ):
     return (MMF+(2.0/El['gfac']-1.0)*NMF)/MF0
 
 #def SlaterFF(El,SQ,k,N):
-    
+
 def scaleCoef(terms):
     ''' rescale J2K6 form factor coeff - now correct?
     '''
@@ -494,7 +494,7 @@ def scaleCoef(terms):
     return terms
 
 def J2Kff(sq,terms):
-    
+
     def Transo(nn,z,s):
         d = s**2+z**2
         a = np.zeros((12,len(list(s))))
@@ -503,7 +503,7 @@ def J2Kff(sq,terms):
         for nx in list(range(nn-1)):
             a[nx+2,:] = (tz*(nx+1)*a[nx+1,:]-(nx+2)*(nx)*a[nx,:])/d[nxs,:]
         return a[nn]
-    
+
     fjc = np.zeros_like(sq)
     for term1 in terms:
         for term2 in terms:
@@ -512,16 +512,16 @@ def J2Kff(sq,terms):
             ff = term1[0]*term2[0]*Transo(nn,zz,sq)
             fjc += ff
     return fjc
-    
+
 def ClosedFormFF(Z,SQ,k,N):
     """Closed form expressions for FT Slater fxns. IT B Table 1.2.7.4
     (not used at present - doesn't make sense yet)
-    
-    :param Z: element zeta factor 
+
+    :param Z: element zeta factor
     :param SQ: (sin-theta/lambda)**2
     :param k: int principal Bessel fxn order as in <jk>
     :param N: int power
-    
+
     return: form factor
     """
     Z2 = Z**2
@@ -608,7 +608,7 @@ def ClosedFormFF(Z,SQ,k,N):
     elif k == 7:
         if N == 8:
             return 645120.0*K**7/K2pZ2**8
-    
+
 def BlenResCW(Els,BLtables,wave):
     ''' Computes resonant scattering lengths - single wavelength version (CW)
     returns bo+b' and b"'
@@ -631,7 +631,7 @@ def BlenResCW(Els,BLtables,wave):
         else:
             FPP[i] = BL['SL'][1]    #for Li, B, etc.
     return FP,FPP
-    
+
 def BlenResTOF(Els,BLtables,wave):
     ''' Computes resonant scattering lengths - multiple wavelength version (TOF)
     returns bo+b' and b"'
@@ -654,19 +654,19 @@ def BlenResTOF(Els,BLtables,wave):
         else:
             FPP[i] = np.ones(len(wave))*BL[i]['SL'][1]    #for Li, B, etc.
     return FP,FPP
-    
+
 def ComptonFac(El,SQ):
     """compute Compton scattering factor
 
-    :param El: element dictionary 
+    :param El: element dictionary
     :param SQ: (sin-theta/lambda)**2
     :return: compton scattering factor
-    """    
+    """
     ca = np.array(El['cmpa'])
     cb = np.array(El['cmpb'])
-    t = -cb[:,np.newaxis]*SQ       
-    return El['cmpz']-np.sum(ca[:,np.newaxis]*np.exp(t),axis=0) 
-            
+    t = -cb[:,np.newaxis]*SQ
+    return El['cmpz']-np.sum(ca[:,np.newaxis]*np.exp(t),axis=0)
+
 def FPcalc(Orbs, KEv):
     """Compute real & imaginary resonant X-ray scattering factors
 
@@ -691,13 +691,13 @@ def FPcalc(Orbs, KEv):
         T[2] = (T[1]*T[5]-T[2]*T[4])/(LEner[j+2]-LEner[j+1])
         C = T[2]
         return C
-    
+
     def DGauss(Orb,CX,RX,ISig):
         ALG = (0.11846344252810,0.23931433524968,0.284444444444,
         0.23931433524968,0.11846344252810)
         XLG = (0.04691007703067,0.23076534494716,0.5,
         0.76923465505284,0.95308992296933)
-        
+
         D = 0.0
         B2 = Orb['BB']**2
         R2 = RX**2
@@ -717,8 +717,8 @@ def FPcalc(Orbs, KEv):
                 S = BB*B2*(XS-Orb['SEdge']*X2)/(R2*X2**2-X2*B2)
             A = ALG[i]
             D += A*S
-        return D 
-    
+        return D
+
     AU = 2.80022e+7
     C1 = 0.02721
     C = 137.0367
@@ -750,9 +750,9 @@ def FPcalc(Orbs, KEv):
             FP += FPI
             FPP += FPPI
         FP -= ElEterm
-    
+
     return (FP, FPP, Mu)
-    
+
 mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 
@@ -760,7 +760,7 @@ def SetupGeneral(data, dirname):
     '''Initialize the General sections of the Phase tree contents. Should
     be done after changes to the Atoms array.
 
-    Called by routine SetupGeneral (in :func:`GSASIIphsGUI.UpdatePhaseData`), 
+    Called by routine SetupGeneral (in :func:`GSASIIphsGUI.UpdatePhaseData`),
     :func:`GSASIIphsGUI.makeIsoNewPhase`, :func:`GSASIImiscGUI.saveNewPhase`,
     and in :func:`GSASIIscriptable.SetupGeneral`.
     '''
@@ -933,7 +933,7 @@ def SetupGeneral(data, dirname):
                         generalData['Color'].append(Info['Color'])
                     else:
                         generalData['NoAtoms'][Info['Symbol']] += atom[cx+3]*atom[cs+1]*Srb['Natoms'][iSh]
-            
+
     if generalData['Type'] == 'magnetic':
         generalData['Lande g'] = landeg[:len(generalData['AtomTypes'])]
 
@@ -946,7 +946,7 @@ def SetupGeneral(data, dirname):
     generalData['F000X'] = F000X
     generalData['F000N'] = F000N
     generalData['Mass'] = G2mth.getMass(generalData)
- 
+
     if badList:
         msg = 'Warning: element symbol(s) not found:'
         for key in badList:
@@ -954,4 +954,4 @@ def SetupGeneral(data, dirname):
             if badList[key] > 1:
                 msg += ' (' + str(badList[key]) + ' times)'
         #wx.MessageBox(msg,caption='Element symbol error')
-        raise ValueError("Phase error:\n" + msg)        
+        raise ValueError("Phase error:\n" + msg)

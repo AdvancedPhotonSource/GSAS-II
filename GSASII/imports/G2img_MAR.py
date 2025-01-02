@@ -5,8 +5,8 @@
 from __future__ import division, print_function
 import platform
 import time
-import GSASIIobj as G2obj
-import GSASIIpath
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
 import numpy as np
 class MAR_ReaderClass(G2obj.ImportImage):
     '''Routine to read several MAR formats, .mar3450,.mar2300,.mar2560

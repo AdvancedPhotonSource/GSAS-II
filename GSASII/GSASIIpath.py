@@ -9,6 +9,7 @@ import os
 import sys
 import platform
 import glob
+import pathlib
 import subprocess
 import datetime as dt
 try:
@@ -27,7 +28,7 @@ G2binURL = "https://api.github.com/repos/AdvancedPhotonSource/GSAS-II-buildtools
 g2URL = "https://github.com/AdvancedPhotonSource/GSAS-II.git"
 # tutorial repo owner & Repo name
 gitTutorialOwn,gitTutorialRepo = 'AdvancedPhotonSource', 'GSAS-II-Tutorials'
-    
+
 path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # location of this file; save before any changes in pwd
 
 # convert version numbers as '1.2.3' to integers (1002) and back (to 1.2)
@@ -36,7 +37,7 @@ intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
 
 def GetConfigValue(key,default=None,getDefault=False):
     '''Return the configuration file value for key or a default value if not present
-    
+
     :param str key: a value to be found in the configuration (config.py) file
     :param default: a value to be supplied if none is in the config file or
       the config file is not found. Defaults to None
@@ -69,7 +70,7 @@ def SetConfigValue(parmdict):
 
 def GetConfigDefault(key):
     '''Return the default value for a config value
-    
+
     :param str key: a value to be found in the configuration (config_example.py) file
     :returns: the default value or None
     '''
@@ -80,15 +81,15 @@ def GetConfigDefault(key):
     return config_example.__dict__.get(key)
 
 def addPrevGPX(fil,cDict):
-    '''Add a GPX file to the list of previous files. 
+    '''Add a GPX file to the list of previous files.
     Move previous names to start of list. Keep most recent five files
     '''
     global configDict
     fil = os.path.abspath(os.path.expanduser(fil))
-    if 'previous_GPX_files' not in cDict: 
+    if 'previous_GPX_files' not in cDict:
         cDict['previous_GPX_files'] = [[],[],[],'Previous .gpx files'] # unexpected
     try:
-        pos = cDict['previous_GPX_files'][1].index(fil) 
+        pos = cDict['previous_GPX_files'][1].index(fil)
         if pos == 0: return
         cDict['previous_GPX_files'][1].pop(pos) # if present, remove if not 1st
     except ValueError:
@@ -117,11 +118,11 @@ def SetVersionNumber(RevString):
         version = max(version,RevVersion)
     except:
         pass
-        
+
 def LoadConfigFile(filename):
     '''Read a GSAS-II configuration file.
     Comments (starting with "%") are removed, as are empty lines
-    
+
     :param str filename: base file name (such as 'file.dat'). Files with this name
       are located from the path and the contents of each are concatenated.
     :returns: a list containing each non-empty (after removal of comments) line
@@ -148,10 +149,10 @@ def LoadConfigFile(filename):
 
 def GetBinaryPrefix(pyver=None):
     '''Creates the first part of the binary directory name
-    such as linux_64_p3.9 (where the full name will be 
-    linux_64_p3.9_n1.21). 
+    such as linux_64_p3.9 (where the full name will be
+    linux_64_p3.9_n1.21).
 
-    Note that any change made here is also needed in GetBinaryDir in 
+    Note that any change made here is also needed in GetBinaryDir in
     fsource/SConstruct
     '''
     if sys.platform == "win32":
@@ -190,9 +191,9 @@ def HowIsG2Installed():
     '''Determines if GSAS-II was installed with git, svn or none of the above.
     Result is cached to avoid time needed for multiple calls of this.
 
-    :returns: 
-      * a string starting with 'git' from git, 
-        if installed from the GSAS-II GitHub repository (defined in g2URL), 
+    :returns:
+      * a string starting with 'git' from git,
+        if installed from the GSAS-II GitHub repository (defined in g2URL),
         the string is 'github', if the post-3/2024 directory structure is
         in use '-rev' is appended.
       * or 'svn' is installed from an svn repository (assumed as defined in g2home)
@@ -220,23 +221,23 @@ def HowIsG2Installed():
         return G2_installed_result
     G2_installed_result = 'noVCS'
     return G2_installed_result
-        
-def GetVersionNumber():
-    '''Obtain a version number for GSAS-II from git, svn or from the 
-    files themselves, if no other choice. 
 
-    This routine was used to get the GSAS-II version from strings 
-    placed in files by svn with the version number being the latest 
+def GetVersionNumber():
+    '''Obtain a version number for GSAS-II from git, svn or from the
+    files themselves, if no other choice.
+
+    This routine was used to get the GSAS-II version from strings
+    placed in files by svn with the version number being the latest
     number found, gathered by :func:`SetVersionNumber` (not 100% accurate
     as the latest version might have files changed that are not tagged
     by svn or with a call to SetVersionNumber. Post-svn this info
     will not be reliable, and this mechanism is replaced by a something
     created with a git hook, file git_verinfo.py (see the git_filters.py file).
 
-    Before resorting to the approaches above, try to ask git or svn 
+    Before resorting to the approaches above, try to ask git or svn
     directly.
 
-    :returns: an int value usually, but a value of 'unknown' might occur 
+    :returns: an int value usually, but a value of 'unknown' might occur
     '''
     if HowIsG2Installed().startswith('git'):
         # look for a recorded tag -- this is quick
@@ -262,7 +263,7 @@ def GetVersionNumber():
         except:
             pass
         return "unknown"
-    
+
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
         if rev is not None: return rev
@@ -282,13 +283,13 @@ def GetVersionNumber():
             pass
     except:
         pass
-        
+
     # all else failed, use the svn SetVersionNumber value (global version)
     if version > 5000:  # a small number must be wrong
         return version
     else:
         return "unknown"
-    
+
 def getG2VersionInfo():
     if HowIsG2Installed().startswith('git'):
         g2repo = openGitRepo(path2GSAS2)
@@ -322,7 +323,7 @@ def getG2VersionInfo():
         return f"  GSAS-II:    {commit.hexsha[:6]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
     elif HowIsG2Installed() == 'svn':
         rev = svnGetRev()
-        if rev is None: 
+        if rev is None:
             "no SVN"
         else:
             rev = f"SVN version {rev}"
@@ -331,13 +332,13 @@ def getG2VersionInfo():
         # For unknown reasons on Mac with gsas2full, there have been checksum
         # errors in the .so files that prevented svn from completing updates.
         # If GSASIIpath.svnChecksumPatch is not present, then the fix for that
-        # has not been retrieved, so warn. Keep for a year or so. 
+        # has not been retrieved, so warn. Keep for a year or so.
         try:
             svnChecksumPatch
         except:
             print('Warning GSAS-II incompletely updated. Please contact toby@anl.gov')
         # end patch
-            
+
         return f"Latest GSAS-II revision: {GetVersionNumber()} (svn {rev})"
     else:
         try:
@@ -365,34 +366,34 @@ def openGitRepo(repo_path):
     try:
         import git
     except:
-        return None        
+        return None
     try:  # patch 3/2024 for svn dir organization
         return git.Repo(path2GSAS2)
     except git.InvalidGitRepositoryError:
         pass
     return git.Repo(os.path.dirname(path2GSAS2))
-        
+
 def gitLookup(repo_path,gittag=None,githash=None):
     '''Return information on a particular checked-in version
-    of GSAS-II. 
+    of GSAS-II.
 
     :param str repo_path: location where GSAS-II has been installed
-    :param str gittag: a tag value. 
-    :param str githash: hex hash code (abbreviated to as few characters as 
+    :param str gittag: a tag value.
+    :param str githash: hex hash code (abbreviated to as few characters as
        needed to keep it unique). If None (default), a tag must be supplied.
-    :returns: either None if the tag/hash is not found or a tuple with 
-       four values (hash, tag-list, message,date_time) where 
+    :returns: either None if the tag/hash is not found or a tuple with
+       four values (hash, tag-list, message,date_time) where
 
-        * hash (str) is the git checking hash code; 
-        * tag-list is a list of tags (typically there will 
-          be one or two); 
+        * hash (str) is the git checking hash code;
+        * tag-list is a list of tags (typically there will
+          be one or two);
         * message is the check-in message (str)
         * date_time is the check-in date as a datetime object
     '''
     try:
         import git
     except:
-        return None        
+        return None
     g2repo = openGitRepo(repo_path)
     if gittag is not None and githash is not None:
         raise ValueError("Cannot specify a hash and a tag")
@@ -410,16 +411,16 @@ def gitLookup(repo_path,gittag=None,githash=None):
         raise ValueError("Must specify either a hash or a tag")
     tags = [i.name for i in g2repo.tags if i.commit == commit]
     return (commit.hexsha, tags, commit.message,commit.committed_datetime)
-    
-def gitHash2Tags(githash=None,g2repo=None):
-    '''Find tags associated with a particular git commit. 
-    Note that if `githash` cannot be located because it does not 
-    exist or is not unique, a `git.BadName` exception is raised. 
 
-    :param str githash: hex hash code (abbreviated to as few characters as 
+def gitHash2Tags(githash=None,g2repo=None):
+    '''Find tags associated with a particular git commit.
+    Note that if `githash` cannot be located because it does not
+    exist or is not unique, a `git.BadName` exception is raised.
+
+    :param str githash: hex hash code (abbreviated to as few characters as
        needed to keep it unique). If None (default), the HEAD is used.
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
     :returns: a list of tags (each a string)
     '''
     if g2repo is None:
@@ -430,17 +431,17 @@ def gitHash2Tags(githash=None,g2repo=None):
         commit = g2repo.commit(githash)
     #return [i.name for i in g2repo.tags if i.commit == commit] # slow with a big repo
     return g2repo.git.tag('--points-at',commit).split('\n')
-    
+
 def gitTag2Hash(gittag,g2repo=None):
     '''Provides the hash number for a git tag.
-    Note that if `gittag` cannot be located because it does not 
-    exist or is too old and is beyond the `depth` of the local 
-    repository, a `ValueError` exception is raised. 
+    Note that if `gittag` cannot be located because it does not
+    exist or is too old and is beyond the `depth` of the local
+    repository, a `ValueError` exception is raised.
 
     :param str repo_path: location where GSAS-II has been installed.
     :param str gittag: a tag value.
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
     :returns: a str value with the hex hash for the commit.
     '''
     if g2repo is None:
@@ -451,9 +452,9 @@ def gitTestGSASII(verbose=True,g2repo=None):
     '''Test a the status of a GSAS-II installation
 
     :param bool verbose: if True (default), status messages are printed
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
-    :returns: istat, with the status of the repository, with one of the 
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
+    :returns: istat, with the status of the repository, with one of the
       following values:
 
        * -1: path is not found
@@ -468,7 +469,7 @@ def gitTestGSASII(verbose=True,g2repo=None):
        * value==0:   no problems noted
     '''
     if g2repo is None:
-        if not os.path.exists(path2GSAS2): 
+        if not os.path.exists(path2GSAS2):
             if verbose: print(f'Warning: Directory {path2GSAS2} not found')
             return -1
         if os.path.exists(os.path.join(path2GSAS2,'..','.git')):
@@ -498,24 +499,24 @@ def gitTestGSASII(verbose=True,g2repo=None):
     return code
 
 def gitCheckForUpdates(fetch=True,g2repo=None):
-    '''Provides a list of the commits made locally and those in the 
-    local copy of the repo that have not been applied. Does not 
-    provide useful information in the case of a detached Head (see 
+    '''Provides a list of the commits made locally and those in the
+    local copy of the repo that have not been applied. Does not
+    provide useful information in the case of a detached Head (see
     :func:`countDetachedCommits` for that.)
 
     :param bool fetch: if True (default), updates are copied over from
       the remote repository (git fetch), before checking for changes.
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
-    :returns: a list containing (remotecommits, localcommits, fetched) where 
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
+    :returns: a list containing (remotecommits, localcommits, fetched) where
 
-       * remotecommits is a list of hex hash numbers of remote commits and 
+       * remotecommits is a list of hex hash numbers of remote commits and
        * localcommits is a list of hex hash numbers of local commits and
        * fetched is a bool that will be True if the update (fetch)
          step ran successfully
 
-       Note that if the head is detached (GSAS-II has been reverted to an 
-       older version) or the branch has been changed, the values for each 
+       Note that if the head is detached (GSAS-II has been reverted to an
+       older version) or the branch has been changed, the values for each
        of the three items above will be None.
     '''
     try:
@@ -542,12 +543,12 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
         return remotecommits,localcommits,fetched
     except:
         return (None,None,None)
-    
+
 def countDetachedCommits(g2repo=None):
     '''Count the number of commits that have been made since
     a commit that is containined in the master branch
 
-    returns the count and the commit object for the 
+    returns the count and the commit object for the
     parent commit that connects the current stranded
     branch to the master branch.
 
@@ -571,16 +572,16 @@ def countDetachedCommits(g2repo=None):
 def gitCountRegressions(g2repo=None):
     '''Count the number of new check ins on the master branch since
     the head was detached as well as any checkins made on the detached
-    head. 
+    head.
 
-    :returns: mastercount,detachedcount, where 
+    :returns: mastercount,detachedcount, where
 
-      * mastercount is the number of check ins made on the master branch 
-        remote repository since the reverted check in was first made. 
-      * detachedcount is the number of check ins made locally 
+      * mastercount is the number of check ins made on the master branch
+        remote repository since the reverted check in was first made.
+      * detachedcount is the number of check ins made locally
         starting from the detached head (hopefully 0)
 
-      If the connection between the current head and the master branch 
+      If the connection between the current head and the master branch
       cannot be established, None is returned for both.
       If the connection from the reverted check in to the newest version
       (I don't see how this could happen) then only mastercount will be None.
@@ -598,19 +599,19 @@ def gitCountRegressions(g2repo=None):
     return None,detachedcount
 
 def gitGetUpdate(mode='Background'):
-    '''Download the latest updates into the local copy of the GSAS-II 
-    repository from the remote master, but don't actually update the 
-    GSAS-II files being used. This can be done immediately or in background. 
+    '''Download the latest updates into the local copy of the GSAS-II
+    repository from the remote master, but don't actually update the
+    GSAS-II files being used. This can be done immediately or in background.
 
-    In 'Background' mode, a background process is launched. The results 
-    from the process are recorded in file in ~/GSASII_bkgUpdate.log 
-    (located in %HOME% on Windows). A pointer to the created process is 
+    In 'Background' mode, a background process is launched. The results
+    from the process are recorded in file in ~/GSASII_bkgUpdate.log
+    (located in %HOME% on Windows). A pointer to the created process is
     returned.
 
-    In 'immediate' mode, the update is performed immediately. The 
+    In 'immediate' mode, the update is performed immediately. The
     function does not return until after the update is downloaded.
 
-    :returns: In 'Background' mode, returns a Popen object (see subprocess). 
+    :returns: In 'Background' mode, returns a Popen object (see subprocess).
       In 'immediate' mode nothing is returned.
     '''
     if mode == 'Background':
@@ -621,20 +622,20 @@ def gitGetUpdate(mode='Background'):
         if GetConfigValue('debug'): print('Updates fetched')
 
 def gitHistory(values='tag',g2repo=None,maxdepth=100):
-    '''Provides the history of commits to the master, either as tags 
+    '''Provides the history of commits to the master, either as tags
     or hash values
 
-    :param str values: specifies what type of values are returned. 
-      If values=='hash', then hash values or for values=='tag', a 
-      list of list of tag(s). 
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
-    :returns: a list of str values where each value is a hash for 
-      a commit (values=='hash'), 
+    :param str values: specifies what type of values are returned.
+      If values=='hash', then hash values or for values=='tag', a
+      list of list of tag(s).
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
+    :returns: a list of str values where each value is a hash for
+      a commit (values=='hash'),
       for values=='tag', a list of lists, where a list of tags is provided
-      for each commit. When tags are provided, for any commit that does 
+      for each commit. When tags are provided, for any commit that does
       not have any associated tag(s), that entry is omitted from the list.
-      for values=='both', a list of lists, where a hash is followed by a 
+      for values=='both', a list of lists, where a hash is followed by a
       list of tags (if any) is provided
     '''
     if g2repo is None:
@@ -653,7 +654,7 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
         # for t in g2repo.tags:
         #     tagmap.setdefault(t.commit.hexsha, []).append(t.name)
         # return [[i.hexsha]+tagmap.get(i.hexsha,[]) for i in history]
-        
+
         # potentially faster code
         r1 = [[i.hexsha]+g2repo.git.tag('--points-at',i).split('\n')
                     for i in history[:maxdepth]]
@@ -664,23 +665,23 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
 def getGitBinaryReleases(cache=False):
     '''Retrieves the binaries and download urls of the latest release
 
-    :param bool cache: when cache is True and the binaries file names 
-       are retrieved (does not always succeed when done via GitHub 
-       Actions), the results are saved in a file for reuse should the 
-       retrieval fail. Default is False so the file is not changed. 
+    :param bool cache: when cache is True and the binaries file names
+       are retrieved (does not always succeed when done via GitHub
+       Actions), the results are saved in a file for reuse should the
+       retrieval fail. Default is False so the file is not changed.
 
-    :returns: a URL dict for GSAS-II binary distributions found in the newest 
-      release in a GitHub repository. The repo location is defined in global 
+    :returns: a URL dict for GSAS-II binary distributions found in the newest
+      release in a GitHub repository. The repo location is defined in global
       `G2binURL`.
 
-      The dict keys are references to binary distributions, which are named 
-      as f"{platform}_p{pver}_n{npver}" where platform is determined 
+      The dict keys are references to binary distributions, which are named
+      as f"{platform}_p{pver}_n{npver}" where platform is determined
       in :func:`GSASIIpath.GetBinaryPrefix` (linux_64, mac_arm, win_64,...)
-      and where `pver` is the Python version (such as "3.10") and `npver` is 
+      and where `pver` is the Python version (such as "3.10") and `npver` is
       the numpy version (such as "1.26").
 
-      The value associated with each key contains the full URL to 
-      download a tar containing that binary distribution. 
+      The value associated with each key contains the full URL to
+      download a tar containing that binary distribution.
     '''
     # Get first page of releases
     try:
@@ -693,10 +694,10 @@ def getGitBinaryReleases(cache=False):
     while tries < 5: # this has been known to fail, so retry
         tries += 1
         releases = requests.get(
-            url=f"{G2binURL}/releases", 
+            url=f"{G2binURL}/releases",
             headers=BASE_HEADER
         ).json()
-        try:        
+        try:
             # Get assets of latest release
             assets = requests.get(
                 url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",
@@ -711,7 +712,7 @@ def getGitBinaryReleases(cache=False):
                     versions.append(asset['name'][:-4]) # Remove .tgz tail
                     URLs.append(asset['browser_download_url'])
                     count += 1
-            # Cache the binary releases for later use in case GitHub 
+            # Cache the binary releases for later use in case GitHub
             # prevents us from using a query to get them
             if cache and count > 4:
                 fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
@@ -736,20 +737,20 @@ def getGitBinaryReleases(cache=False):
         return res
     except:
         raise IOError('Cache read of releases failed too.')
-    
+
 def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
-    '''Identify the best GSAS-II binary download location from the 
-    distributions in the latest release section of the github repository 
+    '''Identify the best GSAS-II binary download location from the
+    distributions in the latest release section of the github repository
     on the CPU platform, and Python & numpy versions. The CPU & Python
     versions must match, but the numpy version may only be close.
-    
+
     :param str npver: Version number to use for numpy, if None (default)
       the version is taken from numpy in the current Python interpreter.
     :param str pyver: Version number to use for Python, if None (default)
       the version is taken from the current Python interpreter.
     :param bool verbose: if True (default), status messages are printed
     :returns: a URL for the tar file (success) or None (failure)
-    '''    
+    '''
     bindir = GetBinaryPrefix(pyver)
     if npver:
         inpver = intver(npver)
@@ -797,15 +798,15 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
 
 def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
     '''Install the GSAS-II binary files into the location
-    specified. 
-    
+    specified.
+
     :param str tarURL: a URL for the tar file.
     :param str instDir: location directory to install files. This directory
         may not exist and will be created if needed.
     :param bool nameByVersion: if True, files are put into a subdirectory
-        of `instDir`, named to match the tar file (with plaform, Python & 
-        numpy versions). 
-        Default is False, where the binary files are put directly into 
+        of `instDir`, named to match the tar file (with plaform, Python &
+        numpy versions).
+        Default is False, where the binary files are put directly into
         `instDir`.
     :param bool verbose: if True (default), status messages are printed.
     :returns: None
@@ -853,17 +854,17 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
         os.unlink(tar.name)
 
 def GetRepoUpdatesInBackground():
-    '''Wrapper to make sure that :func:`gitGetUpdate` is called only 
+    '''Wrapper to make sure that :func:`gitGetUpdate` is called only
     if git has been used to install GSAS-II.
-    
+
     :returns: returns a Popen object (see subprocess)
     '''
     if HowIsG2Installed().startswith('git'):
         return gitGetUpdate(mode='Background')
 
 def gitStartUpdate(cmdopts):
-    '''Update GSAS-II in a separate process, by running this script with the 
-    options supplied in the call to this function and then exiting GSAS-II. 
+    '''Update GSAS-II in a separate process, by running this script with the
+    options supplied in the call to this function and then exiting GSAS-II.
     '''
     cmd = [sys.executable, __file__] + cmdopts
     if GetConfigValue('debug'): print('Starting updates with command\n\t'+
@@ -876,14 +877,14 @@ def gitStartUpdate(cmdopts):
     sys.exit()
 
 def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
-    '''Obtain a the contents of a GitHub repository directory using 
+    '''Obtain a the contents of a GitHub repository directory using
     the GitHub REST API.
 
-    :param str dirlist: a list of sub-directories `['parent','child',sub']` 
-      for `parent/child/sub` or `[]` for a file in the top-level directory.     
+    :param str dirlist: a list of sub-directories `['parent','child',sub']`
+      for `parent/child/sub` or `[]` for a file in the top-level directory.
     :param str orgName: the name of the GitHub organization
     :param str repoName: the name of the GitHub repository
-    :returns: a list of file names or None if the dirlist info does not 
+    :returns: a list of file names or None if the dirlist info does not
       reference a directory
 
     examples::
@@ -891,11 +892,11 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
         dirGitHub([], 'GSASII', 'TutorialTest')
         dirGitHub(['TOF Sequential Single Peak Fit', 'data'])
 
-    The first example will get the contents of the top-level 
-    directory for the specified repository 
+    The first example will get the contents of the top-level
+    directory for the specified repository
 
-    The second example will provide the contents of the 
-    "TOF Sequential Single Peak Fit"/data directory. 
+    The second example will provide the contents of the
+    "TOF Sequential Single Peak Fit"/data directory.
     '''
     try:
         import requests
@@ -914,15 +915,15 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
 
 def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRepo,
                  branchname="master"):
-    '''Create a URL that can be used to view/downlaod the raw version of 
-    file in a GitHub repository. 
+    '''Create a URL that can be used to view/downlaod the raw version of
+    file in a GitHub repository.
 
-    :param str dirlist: a list of sub-directories `['parent','child',sub']` 
-      for `parent/child/sub` or `[]` for a file in the top-level directory.     
+    :param str dirlist: a list of sub-directories `['parent','child',sub']`
+      for `parent/child/sub` or `[]` for a file in the top-level directory.
     :param str filename: the name of the file
     :param str orgName: the name of the GitHub organization
     :param str repoName: the name of the GitHub repository
-    :param str branchname: the name of the GitHub branch. Defaults 
+    :param str branchname: the name of the GitHub branch. Defaults
        to "master".
 
     :returns: a URL-encoded URL
@@ -936,7 +937,7 @@ def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRe
     return f"https://raw.githubusercontent.com/{orgName}/{repoName}/{branchname}/{dirname}{filename}"
 
 def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
-    '''Download the entire contents of a directory from a repository 
+    '''Download the entire contents of a directory from a repository
     on GitHub. Used to download data for a tutorial.
     '''
     try:
@@ -971,7 +972,7 @@ svnLocCache = None  # 'Cached location of svn to avoid multiple searches for it'
 
 def MakeByte2str(arg):
     '''Convert output from subprocess pipes (bytes) to str (unicode) in Python 3.
-    In Python 2: Leaves output alone (already str). 
+    In Python 2: Leaves output alone (already str).
     Leaves stuff of other types alone (including unicode in Py2)
     Works recursively for string-like stuff in nested loops and tuples.
 
@@ -982,7 +983,7 @@ def MakeByte2str(arg):
     or::
 
         out,err = MakeByte2str(s.communicate())
-    
+
     '''
     if isinstance(arg,str): return arg
     if isinstance(arg,bytes):
@@ -996,13 +997,13 @@ def MakeByte2str(arg):
     if isinstance(arg,tuple):
         return tuple([MakeByte2str(i) for i in arg])
     return arg
-                
+
 def getsvnProxy():
-    '''Loads a proxy for subversion from the proxyinfo.txt file created 
-    by bootstrap.py or File => Edit Proxy...; If not found, then the 
+    '''Loads a proxy for subversion from the proxyinfo.txt file created
+    by bootstrap.py or File => Edit Proxy...; If not found, then the
     standard http_proxy and https_proxy environment variables are scanned
-    (see https://docs.python.org/3/library/urllib.request.html#urllib.request.getproxies) 
-    with case ignored and that is used. 
+    (see https://docs.python.org/3/library/urllib.request.html#urllib.request.getproxies)
+    with case ignored and that is used.
     '''
     global proxycmds
     proxycmds = []
@@ -1046,7 +1047,7 @@ def setsvnProxy(host,port,etc=[]):
     proxycmds = []
     host = host.strip()
     port = port.strip()
-    if host: 
+    if host:
         proxycmds.append('--config-option')
         proxycmds.append('servers:global:http-proxy-host='+host)
         if port:
@@ -1054,11 +1055,11 @@ def setsvnProxy(host,port,etc=[]):
             proxycmds.append('servers:global:http-proxy-port='+port)
     for item in etc:
         proxycmds.append(item)
-        
+
 def whichsvn():
     '''Returns a path to the subversion exe file, if any is found.
     Searches the current path after adding likely places where GSAS-II
-    might install svn. 
+    might install svn.
 
     :returns: None if svn is not found or an absolute path to the subversion
       executable file.
@@ -1093,7 +1094,7 @@ def whichsvn():
     for rpt in ('..','bin'),('..','Library','bin'),('svn','bin'),('svn',),('.'):
         pt = os.path.normpath(os.path.join(path2GSAS2,*rpt))
         if os.path.exists(pt):
-            pathlist.insert(0,pt)    
+            pathlist.insert(0,pt)
     # search path for svn or svn.exe
     for path in pathlist:
         exe_file = os.path.join(path, svnprog)
@@ -1106,13 +1107,13 @@ def whichsvn():
                 svnLocCache = os.path.abspath(exe_file)
                 return svnLocCache
             except:
-                pass        
+                pass
     svnLocCache = None
 
 svn_version = None
 def svnVersion(svn=None):
     '''Get the version number of the current subversion executable.
-    The result is cached, as this takes a bit of time to run and 
+    The result is cached, as this takes a bit of time to run and
     is done a fair number of times.
 
     :returns: a string with a version number such as "1.6.6" or None if
@@ -1147,7 +1148,7 @@ def svnVersionNumber(svn=None):
 
     '''
     ver = svnVersion(svn)
-    if not ver: return 
+    if not ver: return
     M,m = ver.split('.')[:2]
     return int(M)+int(m)/10.
 
@@ -1199,10 +1200,10 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True,verbose=True):
     :param str fpath: path to repository dictionary, defaults to directory where
        the current file is located
     :param bool local: determines the type of version number, where
-       True (default): returns the latest installed update 
+       True (default): returns the latest installed update
        False: returns the version number of Head on the server
 
-    :Returns: the version number as an str or 
+    :Returns: the version number as an str or
        None if there is a subversion error (likely because the path is
        not a repository or svn is not found). The error message is placed in
        global variable svnLastError
@@ -1260,12 +1261,12 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
     x = ET.fromstring(out)
     changed = []
     for i in x.iter('entry'):
-        if i.find('wc-status').attrib.get('item') == 'modified': 
+        if i.find('wc-status').attrib.get('item') == 'modified':
             changed.append(i.attrib.get('path'))
     return changed
 
 def svnCleanup(fpath=os.path.split(__file__)[0],verbose=True):
-    '''This runs svn cleanup on a selected local directory. 
+    '''This runs svn cleanup on a selected local directory.
 
     :param str fpath: path to repository dictionary, defaults to directory where
        the current file is located
@@ -1274,7 +1275,7 @@ def svnCleanup(fpath=os.path.split(__file__)[0],verbose=True):
     if not svn: return
     if verbose: print(u"Performing svn cleanup at "+fpath)
     cmd = [svn,'cleanup',fpath]
-    if verbose: showsvncmd(cmd)        
+    if verbose: showsvncmd(cmd)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     if err:
@@ -1290,9 +1291,9 @@ def svnCleanup(fpath=os.path.split(__file__)[0],verbose=True):
     elif verbose:
         print(out)
     return True
-        
+
 def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
-    '''This performs an update of the files in a local directory from a server. 
+    '''This performs an update of the files in a local directory from a server.
 
     :param str fpath: path to repository dictionary, defaults to directory where
        the current file is located
@@ -1356,14 +1357,14 @@ def showsvncmd(cmd):
 
 def svnChecksumPatch(svn,fpath,verstr):
     '''This performs a fix when svn cannot finish an update because of
-    a Checksum mismatch error. This seems to be happening on OS X for 
-    unclear reasons. 
+    a Checksum mismatch error. This seems to be happening on OS X for
+    unclear reasons.
     '''
     print('\nAttempting patch for svn Checksum mismatch error\n')
     svnCleanup(fpath)
     cmd = [svn,'update','--set-depth','empty',
                os.path.join(fpath,'bindist')]
-    showsvncmd(cmd)        
+    showsvncmd(cmd)
     if svnVersionNumber() >= 1.6:
         cmd += ['--non-interactive', '--trust-server-cert']
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -1373,7 +1374,7 @@ def svnChecksumPatch(svn,fpath,verstr):
                os.path.join(fpath,'bindist'),
                '--non-interactive', '--trust-server-cert', '--accept',
                'theirs-conflict', '--force', '-rHEAD', '--ignore-ancestry']
-    showsvncmd(cmd)        
+    showsvncmd(cmd)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     DownloadG2Binaries(g2home,verbose=True)
@@ -1381,7 +1382,7 @@ def svnChecksumPatch(svn,fpath,verstr):
                os.path.join(fpath,'bindist')]
     if svnVersionNumber() >= 1.6:
         cmd += ['--non-interactive', '--trust-server-cert']
-    showsvncmd(cmd)        
+    showsvncmd(cmd)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     #if err: print('error=',err)
@@ -1391,15 +1392,15 @@ def svnChecksumPatch(svn,fpath,verstr):
     if svnVersionNumber() >= 1.6:
         cmd += ['--trust-server-cert']
     if proxycmds: cmd += proxycmds
-    showsvncmd(cmd)        
+    showsvncmd(cmd)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     #if err: print('error=',err)
     return err
-        
+
 def svnUpgrade(fpath=os.path.split(__file__)[0]):
     '''This reformats subversion files, which may be needed if an upgrade of subversion is
-    done. 
+    done.
 
     :param str fpath: path to repository dictionary, defaults to directory where
        the current file is located
@@ -1441,9 +1442,9 @@ def svnUpdateProcess(version=None,projectfile=None,branch=None):
 
 def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
     '''This performs a switch command to move files between subversion trees.
-    Note that if the files were previously downloaded, 
+    Note that if the files were previously downloaded,
     the switch command will update the files to the newest version.
-    
+
     :param str rpath: path to locate files, relative to the GSAS-II
       installation path (defaults to path2GSAS2)
     :param str URL: the repository URL
@@ -1478,7 +1479,7 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
         out,err = MakeByte2str(s.communicate())
         if out: print(out)
         if err: print(err)
-        
+
     cmd = [svn,'switch',URL,fpath,
            '--non-interactive','--trust-server-cert',
            '--accept','theirs-conflict','--force','-rHEAD']
@@ -1557,9 +1558,9 @@ def svnInstallDir(URL,loadpath):
 def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
     '''Compare file status to repository (svn status -u)
 
-    :returns: updatecount,modcount,locked where 
-       updatecount is the number of files waiting to be updated from 
-       repository 
+    :returns: updatecount,modcount,locked where
+       updatecount is the number of files waiting to be updated from
+       repository
        modcount is the number of files that have been modified locally
        locked  is the number of files tagged as locked
     '''
@@ -1615,7 +1616,7 @@ def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
 
 def svnList(URL,verbose=True):
     '''Get a list of subdirectories from and svn repository
-    '''    
+    '''
     svn = whichsvn()
     if not svn:
         print('**** unable to load files: svn not found ****')
@@ -1635,7 +1636,7 @@ def DownloadG2Binaries(g2home,verbose=True):
     '''Download GSAS-II binaries from appropriate section of the
     GSAS-II svn repository based on the platform, numpy and Python
     version
-    '''    
+    '''
     bindir = GetBinaryPrefix()
     #npver = 'n{}.{}'.format(*np.__version__.split('.')[0:2])
     inpver = intver(np.__version__)
@@ -1705,7 +1706,7 @@ def DownloadG2Binaries(g2home,verbose=True):
 #         return l[l.find("/branch/")+8:].strip()
 #     else:
 #         return None
-    
+
 def svnSwitch2branch(branch=None,loc=None,svnHome=None):
     '''Switch to a subversion branch if specified. Switches to trunk otherwise.
     '''
@@ -1723,17 +1724,17 @@ def svnSwitch2branch(branch=None,loc=None,svnHome=None):
     svnSwitchDir('','',svnURL,loadpath=loc)
 #==============================================================================
 #==============================================================================
-    
+
 def runScript(cmds=[], wait=False, G2frame=None):
     '''run a shell script of commands in an external process
-    
+
     :param list cmds: a list of str's, each ietm containing a shell (cmd.exe
       or bash) command
-    :param bool wait: if True indicates the commands should be run and then 
-      the script should return. If False, then the currently running Python 
+    :param bool wait: if True indicates the commands should be run and then
+      the script should return. If False, then the currently running Python
       will exit. Default is False
     :param wx.Frame G2frame: provides the location of the current .gpx file
-      to be used to restart GSAS-II after running the commands, if wait 
+      to be used to restart GSAS-II after running the commands, if wait
       is False. Default is None which prevents restarting GSAS-II regardless of
       the value of wait.
     '''
@@ -1745,7 +1746,7 @@ def runScript(cmds=[], wait=False, G2frame=None):
         suffix = '.sh'
     else:
         suffix = '.bat'
-        
+
     fp = tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False)
     shellname = fp.name
     for line in cmds:
@@ -1782,7 +1783,7 @@ def IPyBreak_base(userMsg=None):
     This routine is only used when debug=True is set in config.py
     '''
     savehook = sys.excepthook # save the exception hook
-    try: 
+    try:
         from IPython.terminal.embed import InteractiveShellEmbed
     except ImportError:
         try:
@@ -1811,15 +1812,15 @@ def exceptHook(*args):
     '''A routine to be called when an exception occurs. It prints the traceback
     with fancy formatting and then calls an IPython shell with the environment
     of the exception location.
-    
-    This routine is only used when debug=True is set in config.py    
+
+    This routine is only used when debug=True is set in config.py
     '''
     try:
         from IPython.core import ultratb
     except:
         pass
 
-    try: 
+    try:
         from IPython.terminal.embed import InteractiveShellEmbed
         import IPython.core
         if sys.platform.startswith('win'):
@@ -1855,7 +1856,7 @@ def DoNothing():
     '''A routine that does nothing. This is called in place of IPyBreak and pdbBreak
     except when the debug option is set True in config.py
     '''
-    pass 
+    pass
 
 def InvokeDebugOpts():
     'Called in GSASII.py to set up debug options'
@@ -1918,19 +1919,19 @@ def TestSPG(fpth):
         return False
     sys.path = savpath
     return True
-    
+
 def SetBinaryPath(printInfo=False, loadBinary=False):
     '''
-    Add location of GSAS-II shared libraries (binaries: .so or 
+    Add location of GSAS-II shared libraries (binaries: .so or
     .pyd files) to path
-    
-    This routine must be executed after GSASIIpath is imported 
-    and before any other GSAS-II imports are done, since 
+
+    This routine must be executed after GSASIIpath is imported
+    and before any other GSAS-II imports are done, since
     they assume binary files are in path
 
     :param bool printInfo: When True, information is printed to show
       has happened (default is False)
-    :param bool loadBinary: no longer in use. This is now done in 
+    :param bool loadBinary: no longer in use. This is now done in
       :func:`GSASIIdataGUI.ShowVersions`.
     '''
     # run this routine only once no matter how many times it is called
@@ -1941,6 +1942,18 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
         inpver = intver(np.__version__)
     except (AttributeError,TypeError): # happens on building docs
         return
+    try:
+        from GSASII import pypowder
+        binaryPath = str(pathlib.Path(pypowder.__file__).parent)
+        BinaryPathLoaded = True
+    except ImportError:
+        _old_path_discovery(printInfo, loadbinary)
+
+    if binaryPath:
+        LoadConfig(printInfo)
+
+def _old_path_discovery(printInfo=False, loadBinary=False):
+    global BinaryPathLoaded,binaryPath,BinaryPathFailed
     if path2GSAS2 not in sys.path:
         sys.path.insert(0,path2GSAS2)  # make sure current path is used
     binpath = None
@@ -2007,7 +2020,7 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
     if newpath not in sys.path: sys.path.append(newpath)
     newpath = os.path.join(path2GSAS2,'exports')
     if newpath not in sys.path: sys.path.append(newpath)
-    LoadConfig(printInfo)
+
 
 def LoadConfig(printInfo=True):
     # setup read of config.py, if present
@@ -2042,10 +2055,10 @@ def LoadConfig(printInfo=True):
 #         return
 #     if project and not os.path.exists(project):
 #         print(f'file {project} cannot be found.')
-#         return 
+#         return
 #     elif project:
 #         project = os.path.abspath(project)
-#         if not os.path.exists(project): 
+#         if not os.path.exists(project):
 #             print(f'lost project {project} with abspath')
 #             raise Exception(f'lost project {project} with abspath')
 #     g2script = os.path.abspath(g2script)
@@ -2087,7 +2100,7 @@ end tell
 # conda/pip routines
 def findConda():
     '''Determines if GSAS-II has been installed as g2conda or gsas2full
-    with conda located relative to this file. 
+    with conda located relative to this file.
     We could also look for conda relative to the python (sys.executable)
     image, but I don't want to muck around with python that someone else
     installed.
@@ -2103,14 +2116,14 @@ def findConda():
         return conda,activate
     else:
         return None
-        
+
 def condaTest(requireAPI=False):
-    '''Returns True if it appears that Python is being run under Anaconda 
-    Python with conda present. Tests for conda environment vars and that 
+    '''Returns True if it appears that Python is being run under Anaconda
+    Python with conda present. Tests for conda environment vars and that
     the conda package is installed in the current environment.
 
     :returns: True, if running under Conda
-    '''    
+    '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]): return False
     if requireAPI:
         # is the conda package available?
@@ -2123,7 +2136,7 @@ def condaTest(requireAPI=False):
 
     # There is no foolproof way to check if someone activates conda
     # but then calls a different Python using its path...
-    # ...If we are in the base environment then the conda Python 
+    # ...If we are in the base environment then the conda Python
     # should be the same path as the one currently being run:
     if os.environ['CONDA_DEFAULT_ENV'] == 'base':
         try:
@@ -2139,17 +2152,17 @@ def condaTest(requireAPI=False):
     dir2 = os.path.dirname(sys.executable)
     if sys.platform != "win32": # python in .../bin/..
         dir1 = os.path.dirname(dir1)
-        dir2 = os.path.dirname(dir2)    
+        dir2 = os.path.dirname(dir2)
     return commonPath(dir1,dir2)
 
 def condaInstall(packageList):
     '''Installs one or more packages using the anaconda conda package
-    manager. Can be used to install multiple packages and optionally 
+    manager. Can be used to install multiple packages and optionally
     use channels.
 
     :param list packageList: a list of strings with name(s) of packages
-      and optionally conda options. 
-      Examples:: 
+      and optionally conda options.
+      Examples::
 
        packageList=['gsl']
        packageList=['-c','conda-forge','wxpython']
@@ -2179,7 +2192,7 @@ def condaInstall(packageList):
         print(f"\nConda error occurred, see below\n{msg}")
         return "error occurred"
     return None
-    
+
 def fullsplit(fil,prev=None):
     '''recursive routine to split all levels of directory names
     '''
@@ -2195,8 +2208,8 @@ def fullsplit(fil,prev=None):
     return out
 
 def commonPath(dir1,dir2):
-    '''Check if two directories share a path. Note that paths 
-    are considered the same if either directory is a subdirectory 
+    '''Check if two directories share a path. Note that paths
+    are considered the same if either directory is a subdirectory
     of the other, but not if they are in different subdirectories
     /a/b/c shares a path with /a/b/c/d but /a/b/c/d and /a/b/c/e do not.
 
@@ -2210,11 +2223,11 @@ def commonPath(dir1,dir2):
 def pipInstall(packageList):
     '''Installs one or more packages using the pip package installer.
     Use of this should be avoided if conda can be used (see :func:`condaTest`
-    to test for conda). Can be used to install multiple packages together. 
-    One can use pip options, but this is probably not needed. 
+    to test for conda). Can be used to install multiple packages together.
+    One can use pip options, but this is probably not needed.
 
     :param list packageList: a list of strings with name(s) of packages
-      Examples:: 
+      Examples::
 
        packageList=['gsl']
        packageList=['wxpython','matplotlib','scipy']
@@ -2229,29 +2242,29 @@ def pipInstall(packageList):
     except Exception as msg:
         return msg
     return None
-    
+
 def condaEnvCreate(envname, packageList, force=False):
     '''Create a Python interpreter in a new conda environment. Use this
-    when there is a potential conflict between packages and it would 
+    when there is a potential conflict between packages and it would
     be better to keep the packages separate (which is one of the reasons
-    conda supports environments). Note that conda should be run from the 
-    base environment; this attempts to deal with issues if it is not. 
+    conda supports environments). Note that conda should be run from the
+    base environment; this attempts to deal with issues if it is not.
 
     Currently, this is used only to install diffpy.PDFfit2.
 
-    :param str envname: the name of the environment to be created. 
+    :param str envname: the name of the environment to be created.
       If the environment exists, it will be overwritten only if force is True.
-    :param list packageList: a list of conda install create command 
+    :param list packageList: a list of conda install create command
       options, such as::
 
             ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
                 '-c', 'conda-forge', '-c', 'diffpy']
 
-    :param bool force: if False (default) an error will be generated 
+    :param bool force: if False (default) an error will be generated
       if an environment exists
 
     :returns: (status,msg) where status is True if an error occurs and
-      msg is a string with error information if status is True or the 
+      msg is a string with error information if status is True or the
       location of the newly-created Python interpreter.
     '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV',
@@ -2295,13 +2308,13 @@ def condaEnvCreate(envname, packageList, force=False):
     except Exception as msg:
         print("Error occurred, see below\n",msg)
         return True,'Error: '+str(msg)
-    
+
 def addCondaPkg():
-    '''Install the conda API into the current conda environment using the 
+    '''Install the conda API into the current conda environment using the
     command line, so that the API can be used in the current Python interpreter
 
     Attempts to do this without a shell failed on the Mac because it seems that
-    the environment was inherited; seems to work w/o shell on Windows. 
+    the environment was inherited; seems to work w/o shell on Windows.
     '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
                         'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
@@ -2332,7 +2345,7 @@ def addCondaPkg():
 #==============================================================================
 # routines for reorg of GSAS-II directory layout
 def getIconFile(imgfile):
-    '''Looks in either the main GSAS-II install location (old) or subdirectory 
+    '''Looks in either the main GSAS-II install location (old) or subdirectory
     icons (after reorg) for an icon
 
     :returns: the full path for the icon file
@@ -2354,7 +2367,7 @@ def makeScriptShortcut():
     The new shortcut is then tested.
 
     :returns: returns the name of the created file if successful. None
-      indicates an error. 
+      indicates an error.
     '''
     import datetime as dt
     for p in sys.path:
@@ -2416,28 +2429,28 @@ pdbBreak = DoNothing
 
 def postURL(URL,postdict,getcookie=None,usecookie=None,
                 timeout=None,retry=2,mode='get'):
-    '''Posts a set of values as from a web form using the "get" or "post" 
-    protocols. 
+    '''Posts a set of values as from a web form using the "get" or "post"
+    protocols.
     If access fails to an https site, the access is retried with http.
 
-    :param str URL: the URL to post; typically something 
+    :param str URL: the URL to post; typically something
        like 'http://www.../dir/page?'
     :param dict postdict: contains keywords and values, such
        as {'centrosymmetry': '0', 'crystalsystem': '0', ...}
     :param dict getcookie: dict to save cookies created in call, or None
-       (default) if not needed. 
-    :param dict usecookie: dict containing cookies to be used in call, 
+       (default) if not needed.
+    :param dict usecookie: dict containing cookies to be used in call,
        or None (default) if not needed.
-    :param int timeout: specifies a timeout period for the get or post (default 
-      is None, which means the timeout period is set by the server). The value 
-      when specified is the time in seconds to wait before giving up on the 
+    :param int timeout: specifies a timeout period for the get or post (default
+      is None, which means the timeout period is set by the server). The value
+      when specified is the time in seconds to wait before giving up on the
       request.
     :param int retry: the number of times to retry the request, if it times out.
       This is only used if timeout is specified. The default is 2. Note that
       if retry is left at the default value (2), The timeout is increased by
       25% for the second try.
     :param str mode: either 'get' (default) or 'post'. Determines how
-       the request will be submitted. 
+       the request will be submitted.
     :returns: a string with the response from the web server or None
        if access fails.
     '''
@@ -2453,7 +2466,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
         reqopt = requests.get
     else:
         reqopt = requests.post
-    
+
     repeat = True
     count = 0
     while repeat:
@@ -2475,7 +2488,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
             else:
                 print('request to {} failed. Reason={}'.format(URL,r.reason))
         except requests.exceptions.ConnectionError as msg:
-            if 'time' in str(msg) and 'out' in str(msg): 
+            if 'time' in str(msg) and 'out' in str(msg):
                 print(f'server timeout accessing {URL}')
                 if GetConfigValue('debug'): print('full error=',msg)
                 if timeout is not None and count < retry:
@@ -2517,8 +2530,8 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
         return None
 
 if __name__ == '__main__':
-    '''What follows is called to update (or downdate) GSAS-II in a 
-    separate process. 
+    '''What follows is called to update (or downdate) GSAS-II in a
+    separate process.
     '''
     # check what type of update is being called for
     import git
@@ -2529,7 +2542,7 @@ if __name__ == '__main__':
     help = False
     project = None
     version = None
-    
+
     for arg in sys.argv[1:]:
         if '--git-fetch' in arg:   # pulls latest updates from server but does not apply them
             if preupdateType or updateType:
@@ -2601,7 +2614,7 @@ if __name__ == '__main__':
             project = arg
             pass
         else:   # for old-style svn update
-            if arg.isdecimal() or not arg: 
+            if arg.isdecimal() or not arg:
                 #version = arg
                 pass
             else:
@@ -2617,7 +2630,7 @@ if __name__ == '__main__':
 to update/regress repository from svn repository:
    python GSASIIpath.py <project> <version>
             where <project> is an optional path reference to a .gpx file
-            and <version> is a specific GSAS-II version to install 
+            and <version> is a specific GSAS-II version to install
                 (default is latest)
 
 to update/regress repository from git repository:
@@ -2626,9 +2639,9 @@ to update/regress repository from git repository:
             --git-fetch            downloads lastest changes from repo
                                    any other options will be ignored
 
-            --git-stash="message"  saves local changes 
+            --git-stash="message"  saves local changes
 
-            --git-reset            discards local changes 
+            --git-reset            discards local changes
 
             --git-update
 
@@ -2638,7 +2651,7 @@ to update/regress repository from git repository:
 
        Note: --git-reset and --git-stash cannot be used together. Likewise
              --git-update and --git-regress cannot be used together.
-             However either --git-reset or --git-stash can be used 
+             However either --git-reset or --git-stash can be used
              with either --git-update or --git-regress.
              --git-fetch cannot be used with any other options.
 ''')
@@ -2691,7 +2704,7 @@ to update/regress repository from git repository:
                                       " at %Y-%m-%dT%H:%M\n\n"))
         fp.close()
         sys.exit()
-        
+
     if gitUpdate:
         import time
         time.sleep(1) # delay to give the main process a chance to exit
@@ -2708,13 +2721,13 @@ to update/regress repository from git repository:
             print(f'Update failed with message {msg}\n')
             sys.exit()
         print('git repo opened')
-                  
+
     if preupdateType == 'reset':
         # --git-reset   (preupdateType = 'reset')
         print('Restoring locally-updated GSAS-II files to original status')
         openGitRepo(path2GSAS2).git.reset('--hard','origin/master')
         try:
-            if g2repo.active_branch.name != 'master': 
+            if g2repo.active_branch.name != 'master':
                 g2repo.git.switch('master')
         except TypeError:   # fails on detached head
             pass
@@ -2726,7 +2739,7 @@ to update/regress repository from git repository:
             g2repo.git.stash(f'-m"{message}"')
         else:
             g2repo.git.stash()
-            
+
     # Update to the latest GSAS-II version. This assumes that a fetch has
     # been done prior, or this will only update to the last time that
     # it was done.
@@ -2764,7 +2777,7 @@ to update/regress repository from git repository:
         GSASIIfiles.openInNewTerm(project)
         print ('exiting update process')
         sys.exit()
-        
+
     else:
         # this is the old svn update process
         LoadConfig()

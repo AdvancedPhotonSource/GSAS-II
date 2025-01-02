@@ -21,9 +21,9 @@ import os.path
 import subprocess
 import re
 import numpy as np
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
-import GSASIIlattice as G2lat
+from . import GSASIIlattice as G2lat
 
 nistlattice = os.path.join(GSASIIpath.binaryPath,"LATTIC")
 convcell = os.path.join(GSASIIpath.binaryPath,"convcell")

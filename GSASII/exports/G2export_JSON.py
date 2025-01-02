@@ -7,7 +7,7 @@ inside a .gpx file.
 from __future__ import division, print_function
 import json
 import numpy as np
-import GSASIIfiles as G2fil
+from . import GSASIIfiles as G2fil
 
 class JsonEncoder(json.JSONEncoder):
     '''This provides the ability to turn np arrays and masked arrays

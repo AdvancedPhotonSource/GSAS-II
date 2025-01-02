@@ -9,8 +9,8 @@ Adaptation of G2img_1ID_32bit_TIFsum.py revision 4902 for use with the 1ID SAXS 
 
 from __future__ import division, print_function
 import struct as st
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
+from . import GSASIIobj as G2obj
+from . import GSASIIfiles as G2fil
 import numpy as np
 import time
 DEBUG = False

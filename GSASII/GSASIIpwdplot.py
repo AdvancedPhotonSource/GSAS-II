@@ -10,7 +10,7 @@ import sys
 import os.path
 import numpy as np
 import numpy.ma as ma
-import GSASIIpath
+from . import GSASIIpath
 # Don't depend on wx/matplotlib/scipy for scriptable; or for Sphinx docs
 try:
     import wx
@@ -26,13 +26,13 @@ try:
 except (ImportError, ValueError) as err:
     print('GSASIIpwdplot: matplotlib not imported')
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
-import GSASIIdataGUI as G2gd
-import GSASIIpwdGUI as G2pdG
-import GSASIIlattice as G2lat
-import GSASIImath as G2mth
-import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIpwdGUI as G2pdG
+from . import GSASIIlattice as G2lat
+from . import GSASIImath as G2mth
+from . import GSASIIctrlGUI as G2G
 #import GSASIIobj as G2obj
-import GSASIIplot as G2plt
+from . import GSASIIplot as G2plt
 import matplotlib.colors as mpcls
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas

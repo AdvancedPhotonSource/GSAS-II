@@ -10,9 +10,9 @@ try:
 except ImportError:
     zarr = None
 import numpy as np
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
-import GSASIIpath
+from . import GSASIIobj as G2obj
+from . import GSASIIfiles as G2fil
+from . import GSASIIpath
 
 instprmList = [('Bank',1.0), ('Lam',0.413263), ('Polariz.',0.99), 
             ('SH/L',0.002), ('Type','PXC'), ('U',1.163), ('V',-0.126), 

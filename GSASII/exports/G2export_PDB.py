@@ -4,8 +4,8 @@
 from __future__ import division, print_function
 import numpy as np
 import os.path
-import GSASIIfiles as G2fil
-import GSASIIlattice as G2lat
+from . import GSASIIfiles as G2fil
+from . import GSASIIlattice as G2lat
 
 class ExportPhasePDB(G2fil.ExportBaseclass):
     '''Used to create a PDB file for a phase

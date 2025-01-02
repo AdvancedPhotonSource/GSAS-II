@@ -11,10 +11,10 @@ import random as ran
 import numpy as np
 import numpy.linalg as nl
 import scipy.special as spsp
-import GSASIIpath
-import GSASIImath as G2mth
-import GSASIIspc as G2spc
-import GSASIIElem as G2elem
+from . import GSASIIpath
+from . import GSASIImath as G2mth
+from . import GSASIIspc as G2spc
+from . import GSASIIElem as G2elem
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
@@ -37,16 +37,16 @@ nxs = np.newaxis
 
 def sec2HMS(sec):
     """Convert time in sec to H:M:S string
-    
+
     :param sec: time in seconds
     :return: H:M:S string (to nearest 100th second)
-    
+
     """
     H = int(sec//3600)
     M = int(sec//60-H*60)
     S = sec-3600*H-60*M
     return '%d:%2d:%.2f'%(H,M,S)
-    
+
 def rotdMat(angle,axis=0):
     """Prepare rotation matrix for angle in degrees about axis(=0,1,2)
 
@@ -61,9 +61,9 @@ def rotdMat(angle,axis=0):
         return np.array([[cosd(angle),0,-sind(angle)],[0,1,0],[sind(angle),0,cosd(angle)]])
     else:
         return np.array([[1,0,0],[0,cosd(angle),-sind(angle)],[0,sind(angle),cosd(angle)]])
-        
+
 def rotdMat4(angle,axis=0):
-    """Prepare rotation matrix for angle in degrees about axis(=0,1,2) with scaling for OpenGL 
+    """Prepare rotation matrix for angle in degrees about axis(=0,1,2) with scaling for OpenGL
 
     :param angle: angle in degrees
     :param axis:  axis (0,1,2 = x,y,z) about which for the rotation
@@ -72,7 +72,7 @@ def rotdMat4(angle,axis=0):
     """
     Mat = rotdMat(angle,axis)
     return np.concatenate((np.concatenate((Mat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-    
+
 def fillgmat(cell):
     """Compute lattice metric tensor from unit cell constants
 
@@ -86,7 +86,7 @@ def fillgmat(cell):
         [a*b*cosd(gam),  b*b,  b*c*cosd(alp)],
         [a*c*cosd(bet) ,b*c*cosd(alp),   c*c]])
     return g
-           
+
 def cell2Gmat(cell):
     """Compute real and reciprocal lattice metric tensor from unit cell constants
 
@@ -95,7 +95,7 @@ def cell2Gmat(cell):
 
     """
     g = fillgmat(cell)
-    G = nl.inv(g)        
+    G = nl.inv(g)
     return G,g
 
 def A2Gmat(A,inverse=True):
@@ -107,8 +107,8 @@ def A2Gmat(A,inverse=True):
 
     """
     G = np.array([
-        [A[0],  A[3]/2.,  A[4]/2.], 
-        [A[3]/2.,A[1],    A[5]/2.], 
+        [A[0],  A[3]/2.,  A[4]/2.],
+        [A[3]/2.,A[1],    A[5]/2.],
         [A[4]/2.,A[5]/2.,    A[2]]])
     if inverse:
         g = nl.inv(G)
@@ -124,7 +124,7 @@ def Gmat2A(G):
 
     """
     return [G[0][0],G[1][1],G[2][2],2.*G[0][1],2.*G[0][2],2.*G[1][2]]
-    
+
 def cell2A(cell):
     """Obtain A = [G11,G22,G33,2*G12,2*G13,2*G23] from lattice parameters
 
@@ -164,9 +164,9 @@ def Gmat2cell(g):
     return a,b,c,alp,bet,gam
 
 def invcell2Gmat(invcell):
-    """Compute real and reciprocal lattice metric tensor from reciprocal 
+    """Compute real and reciprocal lattice metric tensor from reciprocal
        unit cell constants
-       
+
     :param invcell: [a*,b*,c*,alpha*, beta*, gamma*] (degrees)
     :return: reciprocal (G) & real (g) metric tensors (list of two 3x3 arrays)
 
@@ -175,15 +175,15 @@ def invcell2Gmat(invcell):
     g = nl.inv(G)
     return G,g
 
-def cellDijFill(pfx,phfx,SGData,parmDict): 
-    '''Returns the filled-out reciprocal cell (A) terms 
+def cellDijFill(pfx,phfx,SGData,parmDict):
+    '''Returns the filled-out reciprocal cell (A) terms
     from the parameter dictionaries corrected for Dij.
 
     :param str pfx: parameter prefix ("n::", where n is a phase number)
     :param dict SGdata: a symmetry object
     :param dict parmDict: a dictionary of parameters
 
-    :returns: A,sigA where each is a list of six terms with the A terms 
+    :returns: A,sigA where each is a list of six terms with the A terms
     '''
     if pfx+'D11' not in parmDict:
         return None
@@ -222,14 +222,14 @@ def cellDijFill(pfx,phfx,SGData,parmDict):
     return A
 
 def CellDijCorr(Cell,SGData,Data,hist):
-    '''Returns the cell corrected for Dij values. 
+    '''Returns the cell corrected for Dij values.
 
     :param list Cell: lattice parameters
     :param dict SGdata: a symmetry object
     :param dict Data: phase data structure; contains set of Dij values
     :param str hist: histogram name
 
-    :returns: cell corrected for Dij values 
+    :returns: cell corrected for Dij values
     '''
     A = cell2A(Cell)
     Dij = Data[hist]['HStrain'][0]
@@ -238,11 +238,11 @@ def CellDijCorr(Cell,SGData,Data,hist):
 
 def AplusDij(A,Dij,SGData):
     ''' returns the A corrected by Dij
-    
+
     :param list A: reciprocal metric terms A0-A5
     :param array Dij: unique Dij values as stored in Hstrain
     :param dict SGdata: a symmetry object
-    
+
     :returns list newA: A corrected by Dij
     '''
     if SGData['SGLaue'] in ['-1',]:
@@ -264,29 +264,29 @@ def AplusDij(A,Dij,SGData):
         newA = [A[0]+Dij[0],A[0]+Dij[0],A[0]+Dij[0],A[3]+Dij[1],A[3]+Dij[1],A[3]+Dij[1]]
     elif SGData['SGLaue'] in ['m3m','m3']:
         newA = [A[0]+Dij[0],A[0]+Dij[0],A[0]+Dij[0],0,0,0]
-        
+
     return newA
-    
+
 def prodMGMT(G,Mat):
     '''Transform metric tensor by matrix
-    
+
     :param G: array metric tensor
     :param Mat: array transformation matrix
     :return: array new metric tensor
-    
+
     '''
     return np.inner(np.inner(Mat,G),Mat)        #right
 #    return np.inner(Mat,np.inner(Mat,G))       #right
 #    return np.inner(np.inner(G,Mat).T,Mat)      #right
 #    return np.inner(Mat,np.inner(G,Mat).T)     #right
-    
+
 def TransformCell(cell,Trans):
     '''Transform lattice parameters by matrix
-    
+
     :param cell: list a,b,c,alpha,beta,gamma,(volume)
     :param Trans: array transformation matrix
     :return: array transformed a,b,c,alpha,beta,gamma,volume
-    
+
     '''
     newCell = np.zeros(7)
     g = cell2Gmat(cell)[1]
@@ -302,10 +302,10 @@ def symInner(M1,M2):
     '''Compute inner product of two square matrices with symbolic processing
     Use dot product because sympy does not define an inner product primitive
 
-    This requires that M1 & M2 be two sympy objects, as created in 
-    GenerateCellConstraints(). 
+    This requires that M1 & M2 be two sympy objects, as created in
+    GenerateCellConstraints().
 
-    Note that this is only used to do the symbolic math needed to generate 
+    Note that this is only used to do the symbolic math needed to generate
     cell relationships. It is not used normally in GSAS-II.
     '''
     import sympy as sym
@@ -321,20 +321,20 @@ def GenerateCellConstraints():
     '''Generate unit cell constraints for transforming one set of A tensor
     values to another using symbolic math (requires the sympy package)
 
-    Note that this is only used to do the symbolic math needed to generate 
+    Note that this is only used to do the symbolic math needed to generate
     cell relationships. It is not used normally in GSAS-II.
     '''
     import sympy as sym
     # define A tensor for starting cell
-    A0, A1, A2, A3, A4, A5 = sym.symbols('A0, A1, A2, A3, A4, A5') 
+    A0, A1, A2, A3, A4, A5 = sym.symbols('A0, A1, A2, A3, A4, A5')
     G = sym.Matrix([ [A0,    A3/2.,  A4/2.],
                      [A3/2.,  A1,    A5/2.],
                      [A4/2.,  A5/2.,   A2 ]] )
     # define transformation matrix
     T00, T10, T20, T01, T11, T21, T02, T12, T22 = sym.symbols(
-        'T00, T10, T20, T01, T11, T21, T02, T12, T22') 
+        'T00, T10, T20, T01, T11, T21, T02, T12, T22')
     Tr = sym.Matrix([ [T00, T10, T20], [T01, T11, T21], [T02, T12, T22],])
-    # apply transform 
+    # apply transform
     newG = symInner(symInner(Tr,G),Tr).expand()
     # define A tensor for converted cell
     return [newG[0,0],newG[1,1],newG[2,2],2.*newG[0,1],2.*newG[0,2],2.*newG[1,2]]
@@ -342,7 +342,7 @@ def GenerateCellConstraints():
 def subVals(expr,A,T):
     '''Evaluate the symbolic expressions by substituting for A0-A5 & Tij
 
-    This can be used on the cell relationships created in 
+    This can be used on the cell relationships created in
     :func:`GenerateCellConstraints` like this::
 
        Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
@@ -350,20 +350,20 @@ def subVals(expr,A,T):
        print([subVals(i,Aold,T) for i in GenerateCellConstraints()])
 
     :param list expr: a list of sympy expressions.
-    :param list A: This is the A* tensor as defined above. 
+    :param list A: This is the A* tensor as defined above.
     :param np.array T: a 3x3 transformation matrix where,
        Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
        (for a' = 2/3a + 4/3b + 1/3c; b' = -a; c' = -1/3, -2/3, 1/3)
        then T = np.linalg.inv(Trans).T
 
-    Note that this is only used to do the symbolic math needed to generate 
+    Note that this is only used to do the symbolic math needed to generate
     cell relationships. It is not used normally in GSAS-II.
     '''
     import sympy as sym
-    A0, A1, A2, A3, A4, A5 = sym.symbols('A0, A1, A2, A3, A4, A5') 
+    A0, A1, A2, A3, A4, A5 = sym.symbols('A0, A1, A2, A3, A4, A5')
     # transformation matrix
     T00, T10, T20, T01, T11, T21, T02, T12, T22 = sym.symbols(
-        'T00, T10, T20, T01, T11, T21, T02, T12, T22') 
+        'T00, T10, T20, T01, T11, T21, T02, T12, T22')
     vals = dict(zip([T00, T10, T20, T01, T11, T21, T02, T12, T22],T.ravel()))
     vals.update(dict(zip([A0, A1, A2, A3, A4, A5],A)))
     return float(expr.subs(vals))
@@ -386,13 +386,13 @@ def subVals(expr,A,T):
 
 def fmtCellConstraints(cellConstr):
     '''Format the cell relationships created in :func:`GenerateCellConstraints`
-    in a format that can be used to generate constraints. 
+    in a format that can be used to generate constraints.
 
     Use::
 
       cXforms = G2lat.fmtCellConstraints(G2lat.GenerateCellConstraints())
 
-    Note that this is only used to do the symbolic math needed to generate 
+    Note that this is only used to do the symbolic math needed to generate
     cell relationships. It is not used normally in GSAS-II.
     '''
     import re
@@ -449,7 +449,7 @@ cellXformRelations = {0: ['1.0*A0*T[0,0]**2',
                             '1.0*A4*(T[1,0]*T[2,2] + T[2,0]*T[1,2])',
                             '1.0*A5*(T[1,1]*T[2,2] + T[2,1]*T[1,2])']}
 
-'''cellXformRelations provide the constraints on newA[i] values for a new 
+'''cellXformRelations provide the constraints on newA[i] values for a new
 cell generated from oldA[i] values.
 '''
 # cellXformRelations values were generated using::
@@ -457,19 +457,19 @@ cell generated from oldA[i] values.
 #   cellXformRelations = fmtCellConstraints(GenerateCellConstraints())
 
 def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=False):
-    '''Generate the constraints between two unit cells constants for a phase transformed 
-    by matrix Trans. 
+    '''Generate the constraints between two unit cells constants for a phase transformed
+    by matrix Trans.
 
     :param np.array Trans: a 3x3 direct cell transformation matrix where,
        Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
        (for a' = 2/3a + 4/3b + 1/3c; b' = -a; c' = -1/3, -2/3, 1/3)
     :param int origPhase: phase id (pId) for original phase
-    :param int newPhase: phase id for the transformed phase to be constrained from 
+    :param int newPhase: phase id for the transformed phase to be constrained from
       original phase
     :param list origA: reciprocal cell ("A*") tensor (used for debug only)
     :param dict oSGLaue: space group info for original phase
     :param dict nSGLaue: space group info for transformed phase
-    :param bool debug: If true, the constraint input is used to compute and print A* 
+    :param bool debug: If true, the constraint input is used to compute and print A*
       and from that the direct cell for the transformed phase.
     '''
     import GSASIIobj as G2obj
@@ -495,14 +495,14 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=Fals
             constr.append([const,G2obj.G2VarObj('{}::{}'.format(origPhase,aTerm))])
         if i in uniqueAnew:
             constrList.append(constr + [0.0,None,'c'])
-        if debug: Anew.append(np.dot(origA,mult))           
+        if debug: Anew.append(np.dot(origA,mult))
     if debug:
         print('xformed A*  ',Anew)
         print('xformed cell',A2cell(Anew))
     return constrList
 
 def cellUnique(SGData):
-    '''Returns the indices for the unique A tensor terms 
+    '''Returns the indices for the unique A tensor terms
     based on the Laue class.
     Any terms that are determined from others or are zero are not included.
 
@@ -529,11 +529,11 @@ def cellUnique(SGData):
     elif SGData['SGLaue'] in ['m3m','m3']:
         return [0,]
 
-def cellZeros(SGData): 
+def cellZeros(SGData):
     '''Returns a list with the A terms required to be zero based on Laue symmetry
 
     :param dict SGdata: a symmetry object
-    :returns: A list of six terms where the values are True if the 
+    :returns: A list of six terms where the values are True if the
       A term must be zero, False otherwise.
     '''
     if SGData['SGLaue'] in ['-1',]:
@@ -558,7 +558,7 @@ def cellZeros(SGData):
 
 def TransformXYZ(XYZ,Trans,Vec):
     return np.inner(XYZ,Trans)+Vec
-    
+
 def TransformU6(U6,Trans):
     Uij = np.inner(Trans,np.inner(U6toUij(U6),Trans).T)/nl.det(Trans)
     return UijtoU6(Uij)
@@ -579,25 +579,25 @@ def ExpandCell(Atoms,atCodes,cx,Trans):
         moreCodes = [code+'+%d,%d,%d'%(unit[0],unit[1],unit[2]) for code in codes]
         Codes += moreCodes
     return newAtoms,Codes
-    
+
 def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag,Force=True):
     '''Transform atoms from oldPhase to newPhase
     M' is inv(M)
     does X' = M(X-U)+V transformation for coordinates and U' = MUM/det(M)
     for anisotropic thermal parameters
-    
+
     :param oldPhase: dict G2 phase info for old phase
     :param newPhase: dict G2 phase info for new phase; with new cell & space group
             atoms are from oldPhase & will be transformed
     :param Trans: lattice transformation matrix M
     :param Uvec: array parent coordinates transformation vector U
     :param Vvec: array child coordinate transformation vector V
-    :param ifMag: bool True if convert to magnetic phase; 
+    :param ifMag: bool True if convert to magnetic phase;
         if True all nonmagnetic atoms will be removed
-        
+
     :return: newPhase dict modified G2 phase info
     :return: atCodes list atom transformation codes
-        
+
     '''
     cx,ct,cs,cia = oldPhase['General']['AtomPtrs']
     cm = 0
@@ -647,22 +647,22 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag,Force=True):
     newPhase['Drawing'] = []
     newPhase['ranId'] = ran.randint(0,sys.maxsize)
     return newPhase,atCodes
-    
+
 def FindNonstandard(controls,Phase):
     '''
     Find nonstandard setting of magnetic cell that aligns with parent nuclear cell
-    
+
     :param controls: list unit cell indexing controls
     :param Phase: dict new magnetic phase data (NB:not G2 phase construction); modified here
     :return: None
-        
+
     '''
     abc = np.eye(3)
     cba = np.rot90(np.eye(3))
     cba[1,1] *= -1      #makes c-ba
     Mats = {'abc':abc,'cab':np.roll(abc,2,1),'bca':np.roll(abc,1,1),
             'acb':np.roll(cba,1,1),'bac':np.roll(cba,2,1),'cba':cba}        #ok
-    BNS = {'A':{'abc':'A','cab':'C','bca':'B','acb':'A','bac':'B','cba':'C'},   
+    BNS = {'A':{'abc':'A','cab':'C','bca':'B','acb':'A','bac':'B','cba':'C'},
            'B':{'abc':'B','cab':'A','bca':'C','acb':'C','bac':'A','cba':'B'},
            'C':{'abc':'C','cab':'B','bca':'A','acb':'B','bac':'C','cba':'A'},
            'a':{'abc':'a','cab':'c','bca':'b','acb':'a','bac':'b','cba':'c'},   #Ok
@@ -686,7 +686,7 @@ def FindNonstandard(controls,Phase):
         NTrans = np.inner(Mats[lattSym].T,Trans.T)        #ok
         if len(spn): spn[1:4] = np.inner(np.abs(nl.inv(Mats[lattSym])),spn[1:4])         #ok
         SGsym = G2spc.getlattSym(nl.inv(Mats[lattSym]))
-        
+
         if lattSym != 'abc':
             NSG = G2spc.altSettingOrtho[SpGrp][SGsym].replace("'",'').split(' ')
             if ' '.join(NSG) in ['P 2 21 2',]:
@@ -810,11 +810,11 @@ def FillUnitCell(Phase,Force=True):
                     atom[cm:cm+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                 atCodes.append('%d:%s'%(iat,str(item[1])))
                 atomData.append(atom[:cia+9])  #not SS stuff
-            
+
     return atomData,atCodes
-       
+
 def GetUnique(Phase,atCodes):
-    
+
     def noDuplicate(xyzA,XYZ):
         if True in [np.allclose(xyzA%1.,xyzB%1.,atol=0.0002) for xyzB in XYZ]:
             return False
@@ -836,7 +836,7 @@ def GetUnique(Phase,atCodes):
             xyz = XYZ[ind]
             for jnd in range(Ind):
                 if Atoms[ind][ct-1] == Atoms[jnd][ct-1]:
-                    if ind != jnd and Indx[jnd]:                        
+                    if ind != jnd and Indx[jnd]:
                         Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
                         xyzs = np.array([equiv[0] for equiv in Equiv])
                         Indx[jnd] = noDuplicate(xyz,xyzs)
@@ -846,7 +846,7 @@ def GetUnique(Phase,atCodes):
             newAtoms.append(Atoms[ind])
             newAtCodes.append(atCodes[ind])
     return newAtoms,newAtCodes
-            
+
 def calc_rVsq(A):
     """Compute the square of the reciprocal lattice volume (1/V**2) from A'
 
@@ -856,12 +856,12 @@ def calc_rVsq(A):
     if rVsq < 0:
         return 1
     return rVsq
-    
+
 def calc_rV(A):
     """Compute the reciprocal lattice volume (V*) from A
     """
     return np.sqrt(calc_rVsq(A))
-    
+
 def calc_V(A):
     """Compute the real lattice volume (V) from A
     """
@@ -873,7 +873,7 @@ def A2invcell(A):
     """
     G,g = A2Gmat(A)
     return Gmat2cell(G)
-    
+
 def Gmat2AB(G):
     """Computes orthogonalization matrix from reciprocal metric tensor G
 
@@ -897,17 +897,17 @@ def Gmat2AB(G):
 #    A[2][2] = 1./cellstar[2]         # 1/c*
 #    B = nl.inv(A)
 #    return A,B
-    
+
 def cell2AB(cell,alt=False):
     """Computes orthogonalization matrix from unit cell constants
 
     :param tuple cell: a,b,c, alpha, beta, gamma (degrees)
     :returns: tuple of two 3x3 numpy arrays (A,B)
-       A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
+       A for crystal to Cartesian transformations A*x = np.inner(A,x) = X
        B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) = x
        both rounded to 12 places (typically zero terms = +/-10e-6 otherwise)
     """
-    G,g = cell2Gmat(cell) 
+    G,g = cell2Gmat(cell)
     cellstar = Gmat2cell(G)
     A = np.zeros(shape=(3,3))
     if alt: #as used in RMCProfile!!
@@ -930,14 +930,14 @@ def cell2AB(cell,alt=False):
     A = np.around(A,12)
     B = nl.inv(A)
     return A,B
-    
+
 def HKL2SpAng(H,cell,SGData):
     """Computes spherical coords for hkls; view along 001
 
     :param array H: arrays of hkl
     :param tuple cell: a,b,c, alpha, beta, gamma (degrees)
     :param dict SGData: space group dictionary
-    :returns: arrays of r,phi,psi (radius,inclination,azimuth) about 001 
+    :returns: arrays of r,phi,psi (radius,inclination,azimuth) about 001
     """
     A,B = cell2AB(cell)
     xH = np.inner(B.T,H)
@@ -946,7 +946,7 @@ def HKL2SpAng(H,cell,SGData):
     psi = atan2d(xH[1],xH[0])
     phi = np.where(phi>90.,180.-phi,phi)
     return r,phi,psi
-    
+
 def U6toUij(U6):
     """Fill matrix (Uij) from U6 = [U11,U22,U33,U12,U13,U23]
     NB: there is a non numpy version in GSASIIspc: U2Uij
@@ -956,13 +956,13 @@ def U6toUij(U6):
         Uij - numpy [3][3] array of uij
     """
     U = np.array([
-        [U6[0],  U6[3],  U6[4]], 
-        [U6[3],  U6[1],  U6[5]], 
+        [U6[0],  U6[3],  U6[4]],
+        [U6[3],  U6[1],  U6[5]],
         [U6[4],  U6[5],  U6[2]]])
     return U
 
 def UijtoU6(U):
-    """Fill vector [U11,U22,U33,U12,U13,U23] from Uij 
+    """Fill vector [U11,U22,U33,U12,U13,U23] from Uij
     NB: there is a non numpy version in GSASIIspc: Uij2U
     """
     U6 = np.array([U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]])
@@ -971,25 +971,25 @@ def UijtoU6(U):
 def betaij2Uij(betaij,G):
     """
     Convert beta-ij to Uij tensors
-    
+
     :param beta-ij - numpy array [beta-ij]
     :param G: reciprocal metric tensor
     :returns: Uij: numpy array [Uij]
     """
     ast = np.sqrt(np.diag(G))   #a*, b*, c*
-    Mast = np.multiply.outer(ast,ast)    
+    Mast = np.multiply.outer(ast,ast)
     return R2pisq*UijtoU6(U6toUij(betaij)/Mast)
-    
+
 def Uij2betaij(Uij,G):
     """
     Convert Uij to beta-ij tensors -- stub for eventual completion
-    
+
     :param Uij: numpy array [Uij]
     :param G: reciprocal metric tensor
     :returns: beta-ij - numpy array [beta-ij]
     """
     pass
-    
+
 def cell2GS(cell):
     ''' returns Uij to betaij conversion matrix'''
     G,g = cell2Gmat(cell)
@@ -997,8 +997,8 @@ def cell2GS(cell):
     GS[0][1] = GS[1][0] = math.sqrt(GS[0][0]*GS[1][1])
     GS[0][2] = GS[2][0] = math.sqrt(GS[0][0]*GS[2][2])
     GS[1][2] = GS[2][1] = math.sqrt(GS[1][1]*GS[2][2])
-    return GS    
-    
+    return GS
+
 def Uij2Ueqv(Uij,GS,Amat):
     ''' returns 1/3 trace of diagonalized U matrix
     :param Uij: numpy array [Uij]
@@ -1011,9 +1011,9 @@ def Uij2Ueqv(Uij,GS,Amat):
     U = np.inner(Amat,np.inner(U,Amat).T)
     E,R = nl.eigh(U)
     return np.sum(E)/3.,E[0] < 0.
-        
+
 def CosAngle(U,V,G):
-    """ calculate cos of angle between U & V in generalized coordinates 
+    """ calculate cos of angle between U & V in generalized coordinates
     defined by metric tensor G
 
     :param U: 3-vectors assume numpy arrays, can be multiple reflections as (N,3) array
@@ -1028,7 +1028,7 @@ def CosAngle(U,V,G):
     return cosP
 
 def CosSinAngle(U,V,G):
-    """ calculate sin & cos of angle between U & V in generalized coordinates 
+    """ calculate sin & cos of angle between U & V in generalized coordinates
     defined by metric tensor G
 
     :param U: 3-vectors assume numpy arrays
@@ -1042,18 +1042,18 @@ def CosSinAngle(U,V,G):
     cosP = np.inner(u,np.inner(G,v))
     sinP = np.sqrt(max(0.0,1.0-cosP**2))
     return cosP,sinP
-    
+
 def criticalEllipse(prob):
     """
     Calculate critical values for probability ellipsoids from probability
     """
     if not ( 0.01 <= prob < 1.0):
-        return 1.54 
+        return 1.54
     coeff = np.array([6.44988E-09,4.16479E-07,1.11172E-05,1.58767E-04,0.00130554,
         0.00604091,0.0114921,-0.040301,-0.6337203,1.311582])
     llpr = math.log(-math.log(prob))
     return np.polyval(coeff,llpr)
-    
+
 def CellBlock(nCells):
     """
     Generate block of unit cells n*n*n on a side; [0,0,0] centered, n = 2*nCells+1
@@ -1071,7 +1071,7 @@ def CellBlock(nCells):
         return cellArray
     else:
         return [0,0,0]
-        
+
 def CellAbsorption(ElList,Volume):
     '''Compute unit cell absorption
 
@@ -1084,11 +1084,11 @@ def CellAbsorption(ElList,Volume):
     for El in ElList:
         muT += ElList[El]['mu']*ElList[El]['FormulaNo']
     return muT/Volume
-    
+
 #Permutations and Combinations
 # Four routines: combinations,uniqueCombinations, selections & permutations
 #These taken from Python Cookbook, 2nd Edition. 19.15 p724-726
-#    
+#
 def _combinators(_handle, items, n):
     """ factored-out common structure of all following combinators """
     if n==0:
@@ -1118,9 +1118,9 @@ def permutations(items):
     return combinations(items, len(items))
 
 #reflection generation routines
-#for these: H = [h,k,l]; A is as used in calc_rDsq; G - inv metric tensor, g - metric tensor; 
+#for these: H = [h,k,l]; A is as used in calc_rDsq; G - inv metric tensor, g - metric tensor;
 #           cell - a,b,c,alp,bet,gam in A & deg
-   
+
 def Pos2dsp(Inst,pos):
     ''' convert powder pattern position (2-theta or TOF, musec) to d-spacing
     is currently only approximate for EDX data; accurate for others.
@@ -1132,12 +1132,12 @@ def Pos2dsp(Inst,pos):
     else:   #'PKS', 'C' or 'B'
         wave = G2mth.getWave(Inst)
         return wave/(2.0*sind((pos-Inst.get('Zero',[0,0])[1])/2.0))
-        
+
 def TOF2dsp(Inst,Pos):
     ''' convert powder pattern TOF, musec to d-spacing by successive approximation
     Pos can be numpy array
     '''
-    def func(d,pos,Inst):        
+    def func(d,pos,Inst):
         return (pos-Inst['difA'][1]*d**2-Inst['Zero'][1]-Inst['difB'][1]/d)/Inst['difC'][1]
     dsp0 = Pos/Inst['difC'][1]
     N = 0
@@ -1149,7 +1149,7 @@ def TOF2dsp(Inst,Pos):
         N += 1
         if N > 10:
             return dsp
-    
+
 def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
     '''
@@ -1160,9 +1160,9 @@ def Dsp2pos(Inst,dsp):
     else:   #'A', 'B' or 'C'
         wave = G2mth.getWave(Inst)
         val = min(0.995,wave/(2.*dsp))  #set max at 168deg
-        pos = 2.0*asind(val)+Inst.get('Zero',[0,0])[1]             
+        pos = 2.0*asind(val)+Inst.get('Zero',[0,0])[1]
     return pos
-    
+
 def getPeakPos(dataType,parmdict,dsp):
     ''' convert d-spacing to powder pattern position (2-theta, E or TOF, musec)
     '''
@@ -1173,41 +1173,41 @@ def getPeakPos(dataType,parmdict,dsp):
     else:   #'A', 'B' or 'C'
         pos = 2.0*asind(parmdict['Lam']/(2.*dsp))+parmdict['Zero']
     return pos
-                   
+
 def calc_rDsq(H,A):
     'needs doc string'
     rdsq = H[0]*H[0]*A[0]+H[1]*H[1]*A[1]+H[2]*H[2]*A[2]+H[0]*H[1]*A[3]+H[0]*H[2]*A[4]+H[1]*H[2]*A[5]
     return rdsq
-    
+
 def calc_rDsq2(H,G):
     'computes 1/d^2 from hkl & reciprocal metric tensor G'
     return np.inner(H,np.inner(G,H))
-    
+
 def calc_rDsqSS(H,A,vec):
     'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector'
     rdsq = calc_rDsq(H[:3]+(H[3]*vec).T,A)
     return rdsq
-       
+
 def calc_rDsqZ(H,A,Z,tth,lam):
     'computes 1/d^2 from hkl & reciprocal metric tensor A with CW ZERO shift'
     rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
-       
+
 def calc_rDsqZSS(H,A,vec,Z,tth,lam):
     'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with CW Z shift'
     rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
-       
+
 def calc_rDsqT(H,A,Z,tof,difC):
     'computes 1/d^2 from hkl & reciprocal metric tensor A with TOF ZERO shift'
     rdsq = calc_rDsq(H,A)+Z/difC
     return rdsq
-       
+
 def calc_rDsqTSS(H,A,vec,Z,tof,difC):
     'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with TOF Z shift'
     rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z/difC
     return rdsq
-    
+
 def PlaneIntercepts(Amat,H,phase,stack):
     ''' find unit cell intercepts for a stack of hkl planes
     '''
@@ -1224,7 +1224,7 @@ def PlaneIntercepts(Amat,H,phase,stack):
                for j in [0,1,2,3]:
                     hx = [0,0,0]
                     intcpt = ((phase)/360.+step-H[h]*Ux[j,0]-H[k]*Ux[j,1])/H[l]
-                    if 0. <= intcpt <= 1.:                        
+                    if 0. <= intcpt <= 1.:
                         hx[h] = Ux[j,0]
                         hx[k] = Ux[j,1]
                         hx[l] = intcpt
@@ -1243,7 +1243,7 @@ def PlaneIntercepts(Amat,H,phase,stack):
             HX = HX[np.argsort(A)]
             Stack.append(HX)
     return Stack
-       
+
 def MaxIndex(dmin,A):
     'needs doc string'
     Hmax = [0,0,0]
@@ -1254,7 +1254,7 @@ def MaxIndex(dmin,A):
     for i in range(3):
         Hmax[i] = int(np.round(cell[i]/dmin))
     return Hmax
-    
+
 def transposeHKLF(transMat,Super,refList):
     ''' Apply transformation matrix to hkl(m)
     param: transmat: 3x3 or 4x4 array
@@ -1271,7 +1271,7 @@ def transposeHKLF(transMat,Super,refList):
         if not np.allclose(newH,H[:3+Super],atol=0.01):
             badRefs.append(newH)
     return newRefs,badRefs
-    
+
 def sortHKLd(HKLd,ifreverse,ifdup,ifSS=False):
     '''sort reflection list on d-spacing; can sort in either order
 
@@ -1288,18 +1288,18 @@ def sortHKLd(HKLd,ifreverse,ifdup,ifSS=False):
         if ifdup:
             T.append((H[N],i))
         else:
-            T.append(H[N])            
+            T.append(H[N])
     D = dict(zip(T,HKLd))
     T.sort()
     if ifreverse:
         T.reverse()
     X = []
     okey = ''
-    for key in T: 
+    for key in T:
         if key != okey: X.append(D[key])    #remove duplicate d-spacings
         okey = key
     return X
-    
+
 def SwapIndx(Axis,H):
     'needs doc string'
     if Axis in [1,-1]:
@@ -1308,7 +1308,7 @@ def SwapIndx(Axis,H):
         return [H[1],H[2],H[0]]
     else:
         return [H[2],H[0],H[1]]
-    
+
 def SwapItems(Alist,pos1,pos2):
     'exchange 2 items in a list'
     try:
@@ -1317,7 +1317,7 @@ def SwapItems(Alist,pos1,pos2):
     except IndexError:
         pass
     return Alist
-        
+
 def Rh2Hx(Rh):
     'needs doc string'
     Hx = [0,0,0]
@@ -1325,7 +1325,7 @@ def Rh2Hx(Rh):
     Hx[1] = Rh[1]-Rh[2]
     Hx[2] = np.sum(Rh)
     return Hx
-    
+
 def Hx2Rh(Hx):
     'needs doc string'
     Rh = [0,0,0]
@@ -1340,7 +1340,7 @@ def Hx2Rh(Hx):
             for i in range(3):
                 Rh[i] = -Rh[i]
         return Rh
-        
+
 def CentCheck(Cent,H):
     'needs doc string'
     h,k,l = H
@@ -1358,7 +1358,7 @@ def CentCheck(Cent,H):
         return False
     else:
         return True
-    
+
 def RBsymCheck(Atoms,ct,cx,cs,AtLookUp,Amat,RBObjIds,SGData):
     """ Checks members of a rigid body to see if one is a symmetry equivalent of another.
     If so the atom site frac is set to zero.
@@ -1371,7 +1371,7 @@ def RBsymCheck(Atoms,ct,cx,cs,AtLookUp,Amat,RBObjIds,SGData):
     :param list RBObjIds: atom Id belonging to rigid body being tested
     :param dict SGData: GSAS-II space group info.
     :returns: Atoms with modified atom frac entries
-    
+
     """
     for i,Id in enumerate(RBObjIds):
         XYZo = np.array(Atoms[AtLookUp[Id]][cx:cx+3])%1.
@@ -1385,16 +1385,16 @@ def RBsymCheck(Atoms,ct,cx,cs,AtLookUp,Amat,RBObjIds,SGData):
                     Atoms[AtLookUp[Jd]][cx+3] = 0.0
         Sytsym,Mult = G2spc.SytSym(Atoms[AtLookUp[Id]][cx:cx+3],SGData)[:2]
         Atoms[AtLookUp[Id]][cs] = Sytsym
-        Atoms[AtLookUp[Id]][cs+1] = Mult            
+        Atoms[AtLookUp[Id]][cs+1] = Mult
     return Atoms
-                                    
+
 def GetBraviasNum(center,system):
     """Determine the Bravais lattice number, as used in GenHBravais
-    
+
     :param center: one of: 'P', 'C', 'I', 'F', 'R' (see SGLatt from GSASIIspc.SpcGroup)
     :param system: one of 'cubic', 'hexagonal', 'tetragonal', 'orthorhombic', 'trigonal' (for R)
       'monoclinic', 'triclinic' (see SGSys from GSASIIspc.SpcGroup)
-    :return: a number between 0 and 13 
+    :return: a number between 0 and 13
       or throws a ValueError exception if the combination of center, system is not found (i.e. non-standard)
 
     """
@@ -1436,7 +1436,7 @@ def _GenHBravais_cctbx(dmin, Bravais, A, sg_type, uctbx_unit_cell, miller_index_
     '''Alternate form of :func:`GenHBravais` that uses CCTBX internals
     '''
     g_inv = np.array([[A[0],   A[3]/2, A[4]/2],
-                      [A[3]/2, A[1],   A[5]/2], 
+                      [A[3]/2, A[1],   A[5]/2],
                       [A[4]/2, A[5]/2, A[2]]])
     g = np.linalg.inv(g_inv)
     g_elems = (g[0][0], g[1][1], g[2][2], g[0][1], g[0][2], g[1][2])
@@ -1457,10 +1457,10 @@ def _GenHBravais_cctbx(dmin, Bravais, A, sg_type, uctbx_unit_cell, miller_index_
 
 def GenHBravais(dmin, Bravais, A, cctbx_args=None):
     """Generate the positionally unique powder diffraction reflections
-     
+
     :param dmin: minimum d-spacing in A
     :param Bravais: lattice type (see GetBraviasNum). Bravais is one of:
-    
+
             * 0 F cubic
             * 1 I cubic
             * 2 P cubic
@@ -1479,21 +1479,21 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
             * 15 C monoclinic
             * 16 P monoclinic
             * 17 P triclinic
-            
+
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
-    :param dict cctbx_args: items defined in CCTBX: 
+    :param dict cctbx_args: items defined in CCTBX:
 
          * 'sg_type': value from cctbx.sgtbx.space_group_type(symmorphic_sgs[ibrav])
          * 'uctbx_unit_cell': pointer to :meth:`cctbx.uctbx.unit_cell`
          * 'miller_index_generator':  pointer to :meth:`cctbx.miller.index_generator`
 
     :returns: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
-            
+
     """
     if cctbx_args:
         return _GenHBravais_cctbx(dmin, Bravais, A,
                     cctbx_args['sg_type'], cctbx_args['uctbx_unit_cell'], cctbx_args['miller_index_generator'])
-    
+
     if Bravais in [9,14]:
         Cent = 'A'
     elif Bravais in [10,]:
@@ -1583,7 +1583,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
     return sortHKLd(HKL,True,False)
-    
+
 def getHKLmax(dmin,SGData,A):
     'finds maximum allowed hkl for given A within dmin'
     SGLaue = SGData['SGLaue']
@@ -1598,22 +1598,22 @@ def getHKLmax(dmin,SGData,A):
     else:                           # all others
         Hmax = MaxIndex(dmin,A)
     return Hmax
-    
+
 def GenHLaue(dmin,SGData,A):
     """Generate the crystallographically unique powder diffraction reflections
     for a lattice and Bravais type
-    
+
     :param dmin: minimum d-spacing
     :param SGData: space group dictionary with at least
-    
+
         * 'SGLaue': Laue group symbol: one of '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm', '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
         * 'SGLatt': lattice centering: one of 'P','A','B','C','I','F'
         * 'SGUniq': code for unique monoclinic axis one of 'a','b','c' (only if 'SGLaue' is '2/m') otherwise an empty string
-        
+
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
-    :return: HKL = list of [h,k,l,d] sorted with largest d first and is unique 
+    :return: HKL = list of [h,k,l,d] sorted with largest d first and is unique
             part of reciprocal space ignoring anomalous dispersion
-            
+
     """
     import math
     SGLaue = SGData['SGLaue']
@@ -1621,7 +1621,7 @@ def GenHLaue(dmin,SGData,A):
     SGUniq = SGData['SGUniq']
     #finds maximum allowed hkl for given A within dmin
     Hmax = getHKLmax(dmin,SGData,A)
-        
+
     dminsq = 1./(dmin**2)
     HKL = []
     if SGLaue == '-1':                       #triclinic
@@ -1712,25 +1712,25 @@ def GenHLaue(dmin,SGData,A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1./math.sqrt(rdsq)])
     return sortHKLd(HKL,True,True)
-    
-def GenPfHKLs(nMax,SGData,A):    
-    """Generate the unique pole figure reflections for a lattice and Bravais type. 
+
+def GenPfHKLs(nMax,SGData,A):
+    """Generate the unique pole figure reflections for a lattice and Bravais type.
     Min d-spacing=1.0A & no more than nMax returned
-    
+
     :param nMax: maximum number of hkls returned
     :param SGData: space group dictionary with at least
-    
+
         * 'SGLaue': Laue group symbol: one of '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm', '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
         * 'SGLatt': lattice centering: one of 'P','A','B','C','I','F'
         * 'SGUniq': code for unique monoclinic axis one of 'a','b','c' (only if 'SGLaue' is '2/m') otherwise an empty string
-        
+
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
     :return: HKL = list of 'h k l' strings sorted with largest d first; no duplicate zones
-            
+
     """
     HKL = np.array(GenHLaue(1.0,SGData,A)).T[:3].T     #strip d-spacings
     N = min(nMax,len(HKL))
-    return ['%d %d %d'%(h[0],h[1],h[2]) for h in HKL[:N]]        
+    return ['%d %d %d'%(h[0],h[1],h[2]) for h in HKL[:N]]
 
 def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
     'needs a doc string'
@@ -1741,7 +1741,7 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
     vec = np.array(Vec)
     vstar = np.sqrt(calc_rDsq(vec,A))     #find extra needed for -n SS reflections
     dvec = 1./(maxH*vstar+1./dmin)
-    HKL = GenHLaue(dvec,SGData,A)        
+    HKL = GenHLaue(dvec,SGData,A)
     SSdH = [vec*h for h in range(-maxH,maxH+1)]
     SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
     for h,k,l,d in HKL:
@@ -1756,15 +1756,15 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
                     if (G2spc.checkSSLaue([h,k,l,dH],SGData,SSGData) and G2spc.checkSSextc(HKLM,SSGData)) or ifMag:
-                        HKLs.append([h,k,l,dH,d])    
+                        HKLs.append([h,k,l,dH,d])
     return HKLs
-    
+
 def LaueUnique2(SGData,refList):
     ''' Impose Laue symmetry on hkl
-    
+
     :param SGData: space group data from 'P '+Laue
     :param HKLF: np.array([[h,k,l,...]]) reflection set to be converted
-    
+
     :return: HKLF new reflection array with imposed Laue symmetry
     '''
     for ref in refList:
@@ -1773,28 +1773,28 @@ def LaueUnique2(SGData,refList):
         Uniq = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Uniq,2),1),0)
         ref[:3] = Uniq[-1]
     return refList
-    
+
 def LaueUnique(Laue,HKLF):
     ''' Impose Laue symmetry on hkl
-    
+
     :param str Laue: Laue symbol, as below
-    
+
       centrosymmetric Laue groups::
-       
+
             ['-1','2/m','112/m','2/m11','mmm','-42m','-4m2','4/mmm','-3','-3m',
             '-31m','-3m1','6/m','6/mmm','m3','m3m']
-     
+
       noncentrosymmetric Laue groups::
-     
+
            ['1','2','211','112','m','m11','11m','222','mm2','m2m','2mm',
            '4','-4','422','4mm','3','312','321','3m','31m','3m1','6','-6',
            '622','6mm','-62m','-6m2','23','432','-43m']
-     
+
     :param HKLF: np.array([[h,k,l,...]]) reflection set to be converted
-    
+
     :returns: HKLF new reflection array with imposed Laue symmetry
     '''
-    
+
     HKLFT = HKLF.T
     mat41 = np.array([[0,1,0],[-1,0,0],[0,0,1]])    #hkl -> k,-h,l
     mat43 = np.array([[0,-1,0],[1,0,0],[0,0,1]])    #hkl -> -k,h,l
@@ -1821,13 +1821,13 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[2]<0),HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
     #monoclinic
     #noncentrosymmetric - all ok
-    elif Laue == '2':  
+    elif Laue == '2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[2]<0),HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
     elif Laue == '1 1 2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[1]<0),HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
-    elif Laue == '2 1 1':    
+    elif Laue == '2 1 1':
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[1]==0)&(HKLFT[2]<0),HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
     elif Laue == 'm':
@@ -1837,7 +1837,7 @@ def LaueUnique(Laue,HKLF):
     elif Laue == '1 1 m':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
     #centrosymmetric - all ok
-    elif Laue == '2/m 1 1':       
+    elif Laue == '2/m 1 1':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]*HKLFT[0]==0)&(HKLFT[1]<0),HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
@@ -1859,7 +1859,7 @@ def LaueUnique(Laue,HKLF):
     elif Laue == 'm m 2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
-    elif Laue == '2 m m':  
+    elif Laue == '2 m m':
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
     elif Laue == 'm 2 m':
@@ -1870,16 +1870,16 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
-    #tetragonal 
+    #tetragonal
     #noncentrosymmetric - all ok
     elif Laue == '4':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[1]>0),np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-4': 
-        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])      
+    elif Laue == '-4':
+        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<=0,np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])      
+        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<=0,np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[1]==0)&(HKLFT[2]<0),HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
     elif Laue == '4 2 2':
@@ -1894,20 +1894,20 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<HKLFT[1],np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
     elif Laue == '-4 2 m':
-        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])      
+        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<=0,np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])      
+        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<=0,np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[1]==0)&(HKLFT[2]<0),HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[2]<0),HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
     elif Laue == '-4 m 2':
         HKLFT[:3] = np.where(HKLFT[2]<0,np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])      
+        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]==0)&(HKLFT[1]<=0),np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[1]<0),HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])      
+        HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[1]<0),HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]==0)&(HKLFT[1]==0),np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3]) 
+        HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]==0)&(HKLFT[0]>HKLFT[1]),np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
     #centrosymmetric - all ok
     elif Laue == '4/m':
@@ -1918,7 +1918,7 @@ def LaueUnique(Laue,HKLF):
     elif Laue == '4/m m m':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])       
+        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
     #trigonal - all hex cell
@@ -1956,7 +1956,7 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where((HKLFT[0]+HKLFT[1])<0,np.squeeze(np.inner(HKLF[:,:3],mat32[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]==0,np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]==0)&(HKLFT[0]<0),-np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[0]<0,np.squeeze(np.inner(HKLF[:,:3],-mat31[nxs,:,:])).T,HKLFT[:3])    
+        HKLFT[:3] = np.where(HKLFT[0]<0,np.squeeze(np.inner(HKLF[:,:3],-mat31[nxs,:,:])).T,HKLFT[:3])
     elif (Laue == '-3 m 1' or Laue == '-3 m'):  #ok
         HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat32[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[1]+HKLFT[0])<0,np.squeeze(np.inner(HKLF[:,:3],mat32[nxs,:,:])).T,HKLFT[:3])
@@ -1968,7 +1968,7 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat32[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]+HKLFT[1])<0,np.squeeze(np.inner(HKLF[:,:3],mat32[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]==0,np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[0]<=0,np.squeeze(np.inner(HKLF[:,:3],-mat31[nxs,:,:])).T,HKLFT[:3])    
+        HKLFT[:3] = np.where(HKLFT[0]<=0,np.squeeze(np.inner(HKLF[:,:3],-mat31[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
     #hexagonal
     #noncentrosymmetric
@@ -2025,8 +2025,8 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where(HKLFT[0]<0,np.squeeze(np.inner(HKLF[:,:3],mat6[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]>HKLFT[1],np.squeeze(np.inner(HKLF[:,:3],matdm.T[nxs,:,:])).T,HKLFT[:3])
     #cubic - all ok
-    #noncentrosymmetric - 
-    elif Laue == '2 3': 
+    #noncentrosymmetric -
+    elif Laue == '2 3':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[2]<0),HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
@@ -2035,8 +2035,8 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where((HKLFT[2]>=0)&((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]<0)&((HKLFT[0]>-HKLFT[2])|(HKLFT[1]>-HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3t[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]<0)&((HKLFT[0]>-HKLFT[2])|(HKLFT[1]>=-HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3t[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])        
-    elif Laue == '4 3 2':   
+        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
+    elif Laue == '4 3 2':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
@@ -2045,10 +2045,10 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2]),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2]),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]==0,np.squeeze(np.inner(HKLF[:,:3],mat2d43[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-4 3 m':  
-        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])      
+    elif Laue == '-4 3 m':
+        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<=0,np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])      
+        HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<=0,np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]==0)&(HKLFT[1]==0)&(HKLFT[2]<0),HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
@@ -2056,20 +2056,20 @@ def LaueUnique(Laue,HKLF):
         HKLFT[:3] = np.where((HKLFT[2]>=0)&((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]>=0)&((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]>=0)&(HKLFT[1]<HKLFT[0]),np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3]) 
+        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]<0)&(HKLFT[2]<-HKLFT[0])&(HKLFT[1]>HKLFT[2]),np.squeeze(np.inner(HKLF[:,:3],matd3q[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[0]<0)&(HKLFT[2]>=-HKLFT[0])&(HKLFT[1]>HKLFT[2]),np.squeeze(np.inner(HKLF[:,:3],matdm3[nxs,:,:])).T,HKLFT[:3])
-    #centrosymmetric 
+    #centrosymmetric
     elif Laue == 'm 3':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])            
+        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]>=0)&((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]>=0)&((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
     elif Laue == 'm 3 m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])            
+        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]>=0)&((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where((HKLFT[2]>=0)&((HKLFT[0]>=HKLFT[2])|(HKLFT[1]>HKLFT[2])),np.squeeze(np.inner(HKLF[:,:3],matd3[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]>HKLFT[1],np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
@@ -2092,8 +2092,8 @@ def RBChk(sytsym,L,M):
                     if L%12 == 2:
                         if M <= L//12: return True,1.0
                     else:
-                        if M <= L//12+1: return True,1.0            
-        elif sytsym == '23':   #cubics use different Fourier expansion than those below        
+                        if M <= L//12+1: return True,1.0
+        elif sytsym == '23':   #cubics use different Fourier expansion than those below
             if 2 < L < 11 and [L,M] in [[3,1],[4,1],[6,1],[6,2],[7,1],[8,1],[9,1],[9,2],[10,1],[10,2]]:
                 return True,1.0
         elif  sytsym == 'm3':
@@ -2110,7 +2110,7 @@ def RBChk(sytsym,L,M):
                 if L%12 == 2:
                     if M <= L//12: return True,1.0
                 else:
-                    if M <= L//12+1: return True,1.0            
+                    if M <= L//12+1: return True,1.0
         elif sytsym == '6':
             if not M%6: return True,1.0     #P?
         elif sytsym == '-6':    #L=M+2J
@@ -2204,7 +2204,7 @@ def RBChk(sytsym,L,M):
         elif sytsym == '-1':    #P?
             if not L%2: return True,1.0
     return False,0.
-    
+
 def RBsymChk(RBsym,cubic,coefNames,L=18):
     '''imposes rigid body symmetry on spherical harmonics terms
     Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
@@ -2264,7 +2264,7 @@ def RBsymChk(RBsym,cubic,coefNames,L=18):
                     newNames.append(name)
                     newSgns.append(sgn)
     return newNames,newSgns
-        
+
 def GenRBCoeff(sytsym,RBsym,L):
     '''imposes rigid body symmetry on spherical harmonics terms
     Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
@@ -2318,8 +2318,8 @@ def GenShCoeff(sytsym,L):
     return newNames,newSgns
 
 def OdfChk(SGLaue,L,M):
-    '''finds symmetry rules for spherical harmonic coefficients for Laue groups 
-    :param str SGLaue: Laue symbol 
+    '''finds symmetry rules for spherical harmonic coefficients for Laue groups
+    :param str SGLaue: Laue symbol
     :param int L: principal harmonic term; only evens are used
     :param int M: second harmonic term; can be -L <= M <= L
     :returns True if allowed
@@ -2378,7 +2378,7 @@ def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
                         else:
                             coeffNames.append('C(%d,%d)'%(iord,n))
     return coeffNames
-    
+
 def CrsAng(H,cell,SGData):
     '''Convert HKL to polar coordinates with proper orientation WRT space group point group
     :param array H: hkls
@@ -2444,19 +2444,19 @@ def CrsAng(H,cell,SGData):
         BB = SQ3*H.T[0]
     beta = atan2d(BA,BB)
     return phi,beta
-    
+
 def SamAng(Tth,Gangls,Sangl,IFCoup):
     """Compute sample orientation angles vs laboratory coord. system
 
-    :param Tth:        Signed theta                                   
-    :param Gangls:     Sample goniometer angles phi,chi,omega,azmuth  
-    :param Sangl:      Sample angle zeros om-0, chi-0, phi-0          
+    :param Tth:        Signed theta
+    :param Gangls:     Sample goniometer angles phi,chi,omega,azmuth
+    :param Sangl:      Sample angle zeros om-0, chi-0, phi-0
     :param IFCoup:     True if omega & 2-theta coupled in CW scan
-    :returns:  
-        psi,gam:    Sample odf angles                              
+    :returns:
+        psi,gam:    Sample odf angles
         dPSdA,dGMdA:    Angle zero derivatives
-    """                         
-    
+    """
+
     if IFCoup:
         GSomeg = sind(Gangls[2]+Tth)
         GComeg = cosd(Gangls[2]+Tth)
@@ -2464,7 +2464,7 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
         GSomeg = sind(Gangls[2])
         GComeg = cosd(Gangls[2])
     GSTth = sind(Tth)
-    GCTth = cosd(Tth)      
+    GCTth = cosd(Tth)
     GSazm = sind(Gangls[3])
     GCazm = cosd(Gangls[3])
     GSchi = sind(Gangls[1])
@@ -2479,20 +2479,20 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
     BT = GSTth*GSomeg+GCTth*GCazm*GComeg
     CT = -GCTth*GSazm*GSchi
     DT = -GCTth*GSazm*GCchi
-    
+
     BC1 = -AT*GSphi+(CT+BT*GCchi)*GCphi
     BC2 = DT-BT*GSchi
     BC3 = AT*GCphi+(CT+BT*GCchi)*GSphi
-      
-    BC = BC1*SComeg*SCchi+BC2*SComeg*SSchi-BC3*SSomeg      
+
+    BC = BC1*SComeg*SCchi+BC2*SComeg*SSchi-BC3*SSomeg
     psi = acosd(BC)
-    
+
     BD = 1.0-BC**2
     C = np.where(BD>1.e-6,rpd/np.sqrt(BD),0.)
     dPSdA = [-C*(-BC1*SSomeg*SCchi-BC2*SSomeg*SSchi-BC3*SComeg),
         -C*(-BC1*SComeg*SSchi+BC2*SComeg*SCchi),
         -C*(-BC1*SSomeg-BC3*SComeg*SCchi)]
-      
+
     BA = -BC1*SSchi+BC2*SCchi
     BB = BC1*SSomeg*SCchi+BC2*SSomeg*SSchi+BC3*SComeg
     gam = atan2d(BB,BA)
@@ -2502,14 +2502,14 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
     dBAdO = 0
     dBAdC = -BC1*SCchi-BC2*SSchi
     dBAdF = BC3*SSchi
-    
+
     dBBdO = BC1*SComeg*SCchi+BC2*SComeg*SSchi-BC3*SSomeg
     dBBdC = -BC1*SSomeg*SSchi+BC2*SSomeg*SCchi
     dBBdF = BC1*SComeg-BC3*SSomeg*SCchi
-    
+
     dGMdA = np.where(BD > 1.e-6,[(BA*dBBdO-BB*dBAdO)/BD,(BA*dBBdC-BB*dBAdC)/BD, \
         (BA*dBBdF-BB*dBAdF)/BD],[np.zeros_like(BD),np.zeros_like(BD),np.zeros_like(BD)])
-        
+
     return psi,gam,dPSdA,dGMdA
 
 BOH = {
@@ -2564,7 +2564,7 @@ def GetKcl(L,N,SGLaue,phi,beta):
                 pcrs = ptx.pyplmpsi(L,j,len(phi),phi)[0]
             else:
                 pcrs = ptx.pyplmpsi(L,j,1,phi)[0]
-            Kcl += BOH['L=%d'%(L)][N-1][im]*pcrs*cosd(j*beta)        
+            Kcl += BOH['L=%d'%(L)][N-1][im]*pcrs*cosd(j*beta)
     else:
         if 'array' in str(type(phi)) and np.any(phi.shape):
             pcrs = ptx.pyplmpsi(L,N,len(phi),phi)[0]
@@ -2574,7 +2574,7 @@ def GetKcl(L,N,SGLaue,phi,beta):
         if N:
             pcrs *= SQ2
         if SGLaue in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
-            if SGLaue in ['3mR','3m1','31m']: 
+            if SGLaue in ['3mR','3m1','31m']:
                 if N%6 == 3:
                     Kcl = pcrs*sind(N*beta)
                 else:
@@ -2584,7 +2584,7 @@ def GetKcl(L,N,SGLaue,phi,beta):
         else:
             Kcl = pcrs*(cosd(N*beta)+sind(N*beta))
     return Kcl
-    
+
 def GetKsl(L,M,SamSym,psi,gam):
     'needs doc string'
     import pytexture as ptx
@@ -2607,8 +2607,8 @@ def GetKsl(L,M,SamSym,psi,gam):
         Ksl = psrs*dum
         dKsdp = dpdps*dum
         dKsdg = psrs*M*(-sind(M*gam)+cosd(M*gam))
-    return Ksl,dKsdp,dKsdg 
-   
+    return Ksl,dKsdp,dKsdg
+
 def GetKclKsl(L,N,SGLaue,psi,phi,beta):
     """
     This is used for spherical harmonics description of preferred orientation;
@@ -2622,14 +2622,14 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
         for j in range(0,L+1,4):
             im = j//4
             pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
-            Kcl += BOH['L=%d'%(L)][N-1][im]*pcrs*cosd(j*beta)        
+            Kcl += BOH['L=%d'%(L)][N-1][im]*pcrs*cosd(j*beta)
     else:
         pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
         pcrs *= RSQ2PI
         if N:
             pcrs *= SQ2
         if SGLaue in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
-            if SGLaue in ['3mR','3m1','31m']: 
+            if SGLaue in ['3mR','3m1','31m']:
                 if N%6 == 3:
                     Kcl = pcrs*sind(N*beta)
                 else:
@@ -2642,7 +2642,7 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
 
 def H2ThPh(H,Bmat,Q):
     '''Convert HKL to spherical polar & azimuth angles
-    
+
     :param array H: array of hkl as [n,3]
     :param [3,3] array Bmat: inv crystal to Cartesian transformation
     :param array Q: quaternion for rotation of HKL to new polar axis
@@ -2673,12 +2673,12 @@ def SHarmcal(SytSym,SHFln,psi,gam):
     '''Perform a surface spherical harmonics computation.
     Presently only used for plotting
     Note that the the number of gam values must either be 1 or must match psi
-    
+
     :param str SytSym: sit symmetry - only looking for cubics - remove this
     :param dict SHFln: spherical harmonics coefficients; key has L & M
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180
-    
+
     :returns array SHVal: spherical harmonics array for psi,gam values
     '''
     SHVal = np.ones_like(psi)/(4.*np.pi)
@@ -2699,47 +2699,47 @@ def KslCalc(trm,psi,gam):
     :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180
-    
+
     :returns array Ksl: spherical harmonics angular part for psi,gam pairs
     '''
     l,m = eval(trm.strip('C').strip('c'))
     if 'c' in trm:
         return CubicSHarm(l,m,psi,gam)
     else:
-        return SphHarmAng(l,m,1.0,psi,gam)        
-    
+        return SphHarmAng(l,m,1.0,psi,gam)
+
 def SphHarmAng(L,M,P,Th,Ph):
     ''' Compute spherical harmonics values using scipy.special.sph_harm
-    
+
     :param int L: degree of the harmonic (L >= 0)
     :param int M: order number (\\|M\\| <= L)
     :param int P: sign flag = -1 or 1
     :param float/array Th: Azimuthal coordinate 0 <= Th <= 360
     :param float/array Ph: Polar coordinate 0<= Ph <= 180
-    
+
     :returns ylmp value/array: as reals
     '''
     ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
-    
+
     if M > 0:
         return (-1)**M*P*np.real(ylmp)*SQ2
     elif M == 0:
-        return P*np.real(ylmp)        
+        return P*np.real(ylmp)
     else:
         return (-1)**M*P*np.imag(ylmp)*SQ2
-    
+
 def CubicSHarm(L,M,Th,Ph):
-    '''Calculation of the cubic harmonics given in Table 3 in M.Kara & K. Kurki-Suonio, 
-    Acta Cryt. A37, 201 (1981). For L = 14,20 only for m3m from F.M. Mueller and M.G. Priestley, 
+    '''Calculation of the cubic harmonics given in Table 3 in M.Kara & K. Kurki-Suonio,
+    Acta Cryt. A37, 201 (1981). For L = 14,20 only for m3m from F.M. Mueller and M.G. Priestley,
     Phys Rev 148, 638 (1966)
-     
+
     :param int L: degree of the harmonic (L >= 0)
     :param int M: order number [\\|M\\| <= L]
     :param float/array Th: Azimuthal coordinate 0 <= Th <= 360
     :param float/array Ph: Polar coordinate 0<= Ph <= 180
-    
+
     :returns klm value/array: cubic harmonics
-    
+
     '''
     if L == 0:
         return SphHarmAng(L,M,1,Th,Ph)
@@ -2835,7 +2835,7 @@ def CubicSHarm(L,M,Th,Ph):
     else:   #shouldn't happen
         return 0.0
     return klm
-    
+
 def Glnh(SHCoef,psi,gam,SamSym):
     'needs doc string'
     import pytexture as ptx
@@ -2858,7 +2858,7 @@ def Glnh(SHCoef,psi,gam,SamSym):
 def Flnh(SHCoef,phi,beta,SGData):
     'needs doc string'
     import pytexture as ptx
-    
+
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
         l,m,n = eval(term.strip('C'))
@@ -2867,14 +2867,14 @@ def Flnh(SHCoef,phi,beta,SGData):
             for j in range(0,l+1,4):
                 im = j//4
                 pcrs,dum = ptx.pyplmpsi(l,j,1,phi)
-                Kcl += BOH['L='+str(l)][n-1][im]*pcrs*cosd(j*beta)        
+                Kcl += BOH['L='+str(l)][n-1][im]*pcrs*cosd(j*beta)
         else:                #all but cubic
             pcrs,dum = ptx.pyplmpsi(l,n,1,phi)
             pcrs *= RSQPI
             if n == 0:
                 pcrs /= SQ2
             if SGData['SGLaue'] in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
-               if SGData['SGLaue'] in ['3mR','3m1','31m']: 
+               if SGData['SGLaue'] in ['3mR','3m1','31m']:
                    if n%6 == 3:
                        Kcl = pcrs*sind(n*beta)
                    else:
@@ -2886,7 +2886,7 @@ def Flnh(SHCoef,phi,beta,SGData):
         Fln[i] = SHCoef[term]*Kcl*Lnorm(l)
     ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
     return ODFln
-    
+
 def polfcal(ODFln,SamSym,psi,gam):
     '''Perform a pole figure computation.
     Note that the the number of gam values must either be 1 or must
@@ -2914,7 +2914,7 @@ def polfcal(ODFln,SamSym,psi,gam):
 def invpolfcal(ODFln,SGData,phi,beta):
     'needs doc string'
     import pytexture as ptx
-    
+
     invPolVal = np.ones_like(beta)
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.e-3:
@@ -2924,14 +2924,14 @@ def invpolfcal(ODFln,SGData,phi,beta):
                 for j in range(0,l+1,4):
                     im = j//4
                     pcrs,dum = ptx.pyplmpsi(l,j,len(beta),phi)
-                    Kcl += BOH['L=%d'%(l)][n-1][im]*pcrs*cosd(j*beta)        
+                    Kcl += BOH['L=%d'%(l)][n-1][im]*pcrs*cosd(j*beta)
             else:                #all but cubic
                 pcrs,dum = ptx.pyplmpsi(l,n,len(beta),phi)
                 pcrs *= RSQPI
                 if n == 0:
                     pcrs /= SQ2
                 if SGData['SGLaue'] in ['mmm','4/mmm','6/mmm','R3mR','3m1','31m']:
-                   if SGData['SGLaue'] in ['3mR','3m1','31m']: 
+                   if SGData['SGLaue'] in ['3mR','3m1','31m']:
                        if n%6 == 3:
                            Kcl = pcrs*sind(n*beta)
                        else:
@@ -2940,10 +2940,10 @@ def invpolfcal(ODFln,SGData,phi,beta):
                        Kcl = pcrs*cosd(n*beta)
                 else:
                     Kcl = pcrs*(cosd(n*beta)+sind(n*beta))
-            invPolVal += ODFln[term][1]*Kcl 
+            invPolVal += ODFln[term][1]*Kcl
     return invPolVal
-    
-    
+
+
 def textureIndex(SHCoef):
     'needs doc string'
     Tindx = 1.0
@@ -2969,8 +2969,8 @@ cellAlbl = ('a','b','c', 'alpha', 'beta', 'gamma')
 
 cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3')
 'unicode labels for a, b, c, alpha, beta, gamma'
-  
-# self-test materials follow. 
+
+# self-test materials follow.
 selftestlist = []
 '''Defines a list of self-tests'''
 selftestquiet = True
@@ -2993,21 +2993,21 @@ def TestData():
     # output from uctbx computed on platform darwin on 2010-05-28
     CellTestData = [
 # cell, g, G, cell*, V, V*
-  [(4, 4, 4, 90, 90, 90), 
+  [(4, 4, 4, 90, 90, 90),
    array([[  1.60000000e+01,   9.79717439e-16,   9.79717439e-16],
        [  9.79717439e-16,   1.60000000e+01,   9.79717439e-16],
        [  9.79717439e-16,   9.79717439e-16,   1.60000000e+01]]), array([[  6.25000000e-02,   3.82702125e-18,   3.82702125e-18],
        [  3.82702125e-18,   6.25000000e-02,   3.82702125e-18],
        [  3.82702125e-18,   3.82702125e-18,   6.25000000e-02]]), (0.25, 0.25, 0.25, 90.0, 90.0, 90.0), 64.0, 0.015625],
 # cell, g, G, cell*, V, V*
-  [(4.0999999999999996, 5.2000000000000002, 6.2999999999999998, 100, 80, 130), 
+  [(4.0999999999999996, 5.2000000000000002, 6.2999999999999998, 100, 80, 130),
    array([[ 16.81      , -13.70423184,   4.48533243],
        [-13.70423184,  27.04      ,  -5.6887143 ],
        [  4.48533243,  -5.6887143 ,  39.69      ]]), array([[ 0.10206349,  0.05083339, -0.00424823],
        [ 0.05083339,  0.06344997,  0.00334956],
        [-0.00424823,  0.00334956,  0.02615544]]), (0.31947376387537696, 0.25189277536327803, 0.16172643497798223, 85.283666420376008, 94.716333579624006, 50.825714168082683), 100.98576357983838, 0.0099023858863968445],
 # cell, g, G, cell*, V, V*
-  [(3.5, 3.5, 6, 90, 90, 120), 
+  [(3.5, 3.5, 6, 90, 90, 120),
    array([[  1.22500000e+01,  -6.12500000e+00,   1.28587914e-15],
        [ -6.12500000e+00,   1.22500000e+01,   1.28587914e-15],
        [  1.28587914e-15,   1.28587914e-15,   3.60000000e+01]]), array([[  1.08843537e-01,   5.44217687e-02,   3.36690552e-18],
@@ -3083,7 +3083,7 @@ def TestData():
         (2,2,-1,6),(2,2,1,6),(2,1,4,12),(3,1,0,12),(1,0,6,12),(2,2,2,6),(3,1,-1,12),(2,2,-2,6),(3,1,1,12),
         (3,1,-2,12),(3,0,4,12),(3,1,2,12),(1,1,-6,6),(2,2,3,6),(2,2,-3,6),(1,1,6,6))],
     }
-    
+
     global FLnhTestData
     FLnhTestData = [{
     'C(4,0,0)': (0.965, 0.42760447),
@@ -3193,7 +3193,7 @@ def test7():
     def indexmatch(hklin, hkllist, system):
         for hklref in hkllist:
             hklref = list(hklref)
-            # these permutations are far from complete, but are sufficient to 
+            # these permutations are far from complete, but are sufficient to
             # allow the test to complete
             if system == 'cubic':
                 permlist = [(1,2,3),(1,3,2),(2,1,3),(2,3,1),(3,1,2),(3,2,1),]
@@ -3221,7 +3221,7 @@ def test7():
 
         assert len(sgtbxlattinp.sgtbx7[key][1]) == len(g2list), 'Reflection lists differ for %s' % key
         for h,k,l,d,num in g2list:
-            for hkllist,dref in sgtbxlattinp.sgtbx7[key][1]: 
+            for hkllist,dref in sgtbxlattinp.sgtbx7[key][1]:
                 if abs(d-dref) < derror:
                     if indexmatch((h,k,l,), hkllist, system):
                         break
@@ -3238,7 +3238,7 @@ def test8():
     dmin = sgtbxlattinp.dmin
 
     def indexmatch(hklin, hklref, system, axis):
-        # these permutations are far from complete, but are sufficient to 
+        # these permutations are far from complete, but are sufficient to
         # allow the test to complete
         if system == 'cubic':
             permlist = [(1,2,3),(1,3,2),(2,1,3),(2,3,1),(3,1,2),(3,2,1),]
@@ -3280,17 +3280,17 @@ def test8():
             )
         #match = True
         for h,k,l,d in g2list:
-            for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: 
+            for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]:
                 if abs(d-dref) < derror:
                     if indexmatch((h,k,l,), hkllist, system, Axis): break
             else:
                 assert 0,'No match for %s at %s (%s)' % ((h,k,l),d,key)
                 #match = False
-        #if not match: 
+        #if not match:
             #for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref
             #print center, Laue, Axis, system
 if __name__ == '__main__': selftestlist.append(test8)
-            
+
 def test9():
     'test GenHLaue'
     _ReportTest()
@@ -3315,9 +3315,9 @@ def test9():
                 err = False
         assert(err)
 if __name__ == '__main__': selftestlist.append(test9)
-        
-        
-    
+
+
+
 
 if __name__ == '__main__':
     # run self-tests

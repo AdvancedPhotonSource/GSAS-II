@@ -25,15 +25,15 @@ import scipy.stats as st
 import scipy.special as sp
 import multiprocessing as mp
 import pickle
-import GSASIIpath
-import GSASIIElem as G2el
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIIpwd as G2pwd
-import GSASIImapvars as G2mv
-import GSASIImath as G2mth
-import GSASIIobj as G2obj
-import GSASIImpsubs as G2mp
+from . import GSASIIpath
+from . import GSASIIElem as G2el
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIIpwd as G2pwd
+from . import GSASIImapvars as G2mv
+from . import GSASIImath as G2mth
+from . import GSASIIobj as G2obj
+from . import GSASIImpsubs as G2mp
 #G2mp.InitMP(False)  # This disables multiprocessing 
 
 sind = lambda x: np.sin(x*np.pi/180.)

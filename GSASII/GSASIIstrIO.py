@@ -18,15 +18,15 @@ import copy
 import pickle as cPickle
 import numpy as np
 import numpy.ma as ma
-import GSASIIpath
-import GSASIIElem as G2el
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIIobj as G2obj
-import GSASIImapvars as G2mv
-import GSASIImath as G2mth
-import GSASIIstrMath as G2stMth
-import GSASIIfiles as G2fil
+from . import GSASIIpath
+from . import GSASIIElem as G2el
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIIobj as G2obj
+from . import GSASIImapvars as G2mv
+from . import GSASIImath as G2mth
+from . import GSASIIstrMath as G2stMth
+from . import GSASIIfiles as G2fil
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)

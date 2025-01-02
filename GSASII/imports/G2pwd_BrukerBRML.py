@@ -4,14 +4,14 @@
 import os
 import shutil
 import numpy as np
-import GSASIIpath
+from . import GSASIIpath
 try:
     import xmltodict as xml
 except Exception as msg:
     if GSASIIpath.GetConfigValue('debug'): print(f'Debug: xmltodict error = {msg}')
     xml = None
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
+from . import GSASIIobj as G2obj
+from . import GSASIIfiles as G2fil
 class brml_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a zip Bruker .brml file'
     def __init__(self):

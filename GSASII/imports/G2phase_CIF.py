@@ -9,12 +9,12 @@ import numpy as np
 import re
 import copy
 import os.path
-import GSASIIobj as G2obj
-import GSASIIspc as G2spc
-import GSASIIElem as G2elem
-import GSASIIlattice as G2lat
-import GSASIIpath
-import GSASIIfiles as G2fil
+from . import GSASIIobj as G2obj
+from . import GSASIIspc as G2spc
+from . import GSASIIElem as G2elem
+from . import GSASIIlattice as G2lat
+from . import GSASIIpath
+from . import GSASIIfiles as G2fil
 import CifFile as cif # PyCifRW from James Hester
 debug = GSASIIpath.GetConfigValue('debug')
 #debug = False

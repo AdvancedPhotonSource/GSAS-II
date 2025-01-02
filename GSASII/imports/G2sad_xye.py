@@ -5,8 +5,8 @@
 from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
-import GSASIIobj as G2obj
-import GSASIIpath
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 
 class txt_XRayReaderClass(G2obj.ImportSmallAngleData):

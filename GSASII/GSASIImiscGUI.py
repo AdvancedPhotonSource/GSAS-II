@@ -33,19 +33,19 @@ import numpy as np
 import numpy.ma as ma
 import wx
 
-import GSASIIpath
-import GSASIIdataGUI as G2gd
-import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIobj as G2obj
 #import GSASIIpwdGUI as G2pdG
-import GSASIIimgGUI as G2imG
-import GSASIIElem as G2el
-import GSASIIfiles as G2fil
-import GSASIIctrlGUI as G2G
-import GSASIImath as G2mth
-import GSASIIElem as G2elem
-import GSASIIspc as G2spc
-import GSASIIlattice as G2lat
-import GSASIIpwd as G2pwd
+from . import GSASIIimgGUI as G2imG
+from . import GSASIIElem as G2el
+from . import GSASIIfiles as G2fil
+from . import GSASIIctrlGUI as G2G
+from . import GSASIImath as G2mth
+from . import GSASIIElem as G2elem
+from . import GSASIIspc as G2spc
+from . import GSASIIlattice as G2lat
+from . import GSASIIpwd as G2pwd
 
 DEBUG = False       #=True for various prints
 TRANSP = False      #=true to transpose images for testing

@@ -9,13 +9,13 @@ import sys
 import copy
 import os.path as ospath
 
-import GSASIIpath
+from . import GSASIIpath
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
 nxs = np.newaxis
 DEBUG = False
-    
+
 ################################################################################
 #### Space group codes
 ################################################################################
@@ -26,10 +26,10 @@ def SpcGroup(SGSymbol):
 
     :param SGSymbol: space group symbol (string) with spaces between axial fields
     :returns: (SGError,SGData)
-    
+
        * SGError = 0 for no errors; >0 for errors (see :func:`SGErrors` for details)
        * SGData - is a dict (see :ref:`Space Group object<SGData_table>`) with entries:
-       
+
              * 'SpGrp': space group symbol, slightly cleaned up
              * 'SGFixed': True if space group data can not be changed, e.g. from magnetic cif; otherwise False
              * 'SGGray': True if 1' in symbol - gray group for mag. incommensurate phases
@@ -46,7 +46,7 @@ def SpcGroup(SGSymbol):
                'xyz', '111' for arbitrary axes
              * 'SGPtGrp': one of 32 point group symbols (with some permutations), which
                is filled by SGPtGroup, is external (KE) part of supersymmetry point group
-             * 'SSGKl': default internal (Kl) part of supersymmetry point group; modified 
+             * 'SSGKl': default internal (Kl) part of supersymmetry point group; modified
                in supersymmetry stuff depending on chosen modulation vector for Mono & Ortho
              * 'BNSlattsym': BNS lattice symbol & cenering op - used for magnetic structures
 
@@ -161,7 +161,7 @@ def SpcGroup(SGSymbol):
             if not SGData['SGInv']:
                 gen1 = 31
             else:
-                gen1 ^= Ibarx 
+                gen1 ^= Ibarx
             SGData['SGGen'][i] = gen1
         if SGData['SGInv']:
             if gen1 < 128:
@@ -195,7 +195,7 @@ def SpcGroup(SGSymbol):
             SGData['SGSpin'] = 4*[1,]
         elif SGData['SGPtGrp'] in  ['-3m',]:
             SGData['SGSpin'] = 5*[1,]
-        
+
     else:
         if SGData['SGPtGrp'] in ['1','3','23',]:
             SGData['SGSpin'] = lattSpin+[1,]
@@ -211,7 +211,7 @@ def SpcGroup(SGSymbol):
 def SGErrors(IErr):
     '''
     Interprets the error message code from SpcGroup. Used in SpaceGroup.
-    
+
     :param IErr: see SGError in :func:`SpcGroup`
     :returns:
         ErrString - a string with the error message or "Unknown error"
@@ -263,12 +263,12 @@ def SGpolar(SGData):
         if M[1][2] > 0: NPZ[1] = 0
     NPol = (NP[0]+NP[1]+NP[2]+NPZ[0]*NPZ[1])*(1-int(SGData['SGInv']))
     return POL[NPol]
-    
+
 def SGPtGroup(SGData):
     '''
     Determine point group of the space group - done after space group symbol has
     been evaluated by SpcGroup. Only short symbols are allowed
-    
+
     :param SGData: from :func:`SpcGroup`
     :returns: SSGPtGrp & SSGKl (only defaults for Mono & Ortho)
     '''
@@ -313,7 +313,7 @@ def SGPtGroup(SGData):
             if '2' in Flds[2]:
                 return '-42m',[-1,-1,1]
             else:
-                return '-4m2',[-1,1,-1]              
+                return '-4m2',[-1,1,-1]
         elif '2' in Flds[2:]:
             return '422',[1,-1,-1]
         else:
@@ -358,15 +358,15 @@ def SGPtGroup(SGData):
             if '2' in Flds[2]:
                 return '-62m',[-1,-1,1]
             else:
-                return '-6m2',[-1,1,-1]                 
+                return '-6m2',[-1,1,-1]
         elif '2' in Flds[2:]:
             return '622',[1,-1,-1]
         else:
-            return '6mm',[1,1,1]   
+            return '6mm',[1,1,1]
     elif SGData['SGLaue'] == 'm3':      #cubic - no (3+1) supersymmetry
         if '2' in Flds[1]:
             return '23',[]
-        else:  
+        else:
             return 'm3',[]
     elif SGData['SGLaue'] == 'm3m':
         if '4' in Flds[1]:
@@ -376,7 +376,7 @@ def SGPtGroup(SGData):
                 return '432',[]
         else:
             return 'm3m',[]
-    
+
 def SGPrint(SGData,AddInv=False):
     '''
     Print the output of SpcGroup in a nicely formatted way. Used in SpaceGroup
@@ -395,7 +395,7 @@ def SGPrint(SGData,AddInv=False):
     SGCen = list(SGData['SGCen'])
     if SGData.get('SGGray',False):
         SGText[-1] += " 1'"
-        if SGData.get('SGFixed',False): 
+        if SGData.get('SGFixed',False):
             Mult //= 2
         else:
             SGCen += list(SGData['SGCen']+[0,0,0])
@@ -406,7 +406,7 @@ def SGPrint(SGData,AddInv=False):
     if SGData['SGLatt'] in 'ABCIFR':
         SGText.append(' The lattice is '+CentStr+' '+SGData['SGLatt']+'-centered '+SGData['SGSys'].lower())
     else:
-        SGText.append(' The lattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower()) 
+        SGText.append(' The lattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())
     SGText.append(' The Laue symmetry is '+SGData['SGLaue'])
     if 'SGPtGrp' in SGData:         #patch
         SGText.append(' The lattice point group is '+SGData['SGPtGrp'])
@@ -420,7 +420,7 @@ def SGPrint(SGData,AddInv=False):
     SGText.append(' ')
     if len(SGData['SGCen']) == 1:
         SGText.append(' The equivalent positions are:\n')
-    else:    
+    else:
         SGText.append(' The equivalent positions are:\n')
         SGText.append(' ('+Latt2text(SGCen)+')+\n')
     SGTable = []
@@ -429,14 +429,14 @@ def SGPrint(SGData,AddInv=False):
     if AddInv and SGData['SGInv']:
         for i,Opr in enumerate(SGData['SGOps']):
             IOpr = [-Opr[0],-Opr[1]]
-            SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
+            SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))
     return SGText,SGTable
 
 def AllOps(SGData):
     '''
     Returns a list of all operators for a space group, including those for
     centering and a center of symmetry
-    
+
     :param SGData: from :func:`SpcGroup`
     :returns: (SGTextList,offsetList,symOpList,G2oprList) where
 
@@ -446,7 +446,7 @@ def AllOps(SGData):
         symmetry operation to the operator in SGTextList and symOpList.
         these dx (etc.) values are added to the GSAS-II generated
         positions to provide the positions that are generated
-        by the normalized symmetry operators.        
+        by the normalized symmetry operators.
       * symOpList: a list of tuples with the normalized symmetry
         operations as (M,T) values
         (see ``SGOps`` in the :ref:`Space Group object<SGData_table>`)
@@ -455,7 +455,7 @@ def AllOps(SGData):
         (0.5,0.5,0.5),...; where mult is 1 or -1 for the center of symmetry
         where opnum is the number for the symmetry operation, in ``SGOps``
         (starting with 0) and opcode is mult*(100*icen+j+1).
-      * G2opcodes: a list with the name that GSAS-II uses for each symmetry 
+      * G2opcodes: a list with the name that GSAS-II uses for each symmetry
         operation (same as opcode, above)
     '''
     SGTextList = []
@@ -551,7 +551,7 @@ def GetOprNames(SGData):
     if SGData['SGInv']:
         OprNames += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
     return OprNames
-    
+
 def MT2text(Opr,reverse=False):
     "From space group matrix/translation operator returns text version"
     XYZ = ('-Z','-Y','-X','X-Y','ERR','Y-X','X','Y','Z')
@@ -576,7 +576,7 @@ def MT2text(Opr,reverse=False):
             Fld += XYZ[IJ].rjust(5)
         if j != 2: Fld += ', '
     return Fld
-    
+
 def Latt2text(Cen):
     "From lattice centering vectors returns ';' delimited cell centering vectors"
     lattTxt = ''
@@ -611,7 +611,7 @@ def Latt2text(Cen):
 
 def SpaceGroup(SGSymbol):
     '''
-    Print the output of SpcGroup in a nicely formatted way. 
+    Print the output of SpcGroup in a nicely formatted way.
 
     :param SGSymbol: space group symbol (string) with spaces between axial fields
     :returns: nothing
@@ -660,7 +660,7 @@ def SplitMagSpSG(MSpSg):
         Ib = If
     MSpcGp = Psym+' '+' '.join(Axf)
     return MSpcGp
-        
+
 def SetMagnetic(SGData):
     GenSym,GenFlg,BNSsym = GetGenSym(SGData)
     SGData['GenSym'] = GenSym
@@ -675,18 +675,18 @@ def GetGenSym(SGData):
     :param SGData: from :func:`SpcGroup`
     LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
     LattSym = ('P','A','B','C','I','F','R')
-    
+
     '''
     BNSsym = {}
     OprNames = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
     if SGData['SGInv']:
         OprNames += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
-    # for oprname in OprNames: 
+    # for oprname in OprNames:
     #     print(oprname)
     Nsyms = len(SGData['SGOps'])
     if SGData['SGInv'] and not SGData['SGFixed']: Nsyms *= 2
     UsymOp = ['1',]
-    OprFlg = [0,]  
+    OprFlg = [0,]
     if Nsyms == 2:                    #Centric triclinic or acentric monoclinic
         UsymOp.append(OprNames[1])
         OprFlg.append(SGData['SGGen'][1])
@@ -805,10 +805,10 @@ def GetGenSym(SGData):
             OprFlg.append(4)
             UsymOp.append(' m110 ')
             OprFlg.append(24)
-            
+
     if 'P' in SGData['SGLatt']:
         if SGData['SGSys'] == 'triclinic':
-            BNSsym = {'P_a':[.5,0,0],'P_b':[0,.5,0],'P_c':[0,0,.5]}            
+            BNSsym = {'P_a':[.5,0,0],'P_b':[0,.5,0],'P_c':[0,0,.5]}
         elif SGData['SGSys'] == 'monoclinic':
             BNSsym = {'P_a':[.5,0,0],'P_b':[0,.5,0],'P_c':[0,0,.5],'P_I':[.5,.5,.5]}
             if SGData['SGUniq'] == 'a':
@@ -821,12 +821,12 @@ def GetGenSym(SGData):
             BNSsym = {'P_a':[.5,0,0],'P_b':[0,.5,0],'P_c':[0,0,.5],
                 'P_A':[0,.5,.5],'P_B':[.5,0,.5],'P_C':[.5,.5,0],'P_I':[.5,.5,.5]}
         elif SGData['SGSys'] == 'tetragonal':
-            BNSsym = {'P_c':[0,0,.5],'P_C':[.5,.5,0],'P_I':[.5,.5,.5]}            
+            BNSsym = {'P_c':[0,0,.5],'P_C':[.5,.5,0],'P_I':[.5,.5,.5]}
         elif SGData['SGSys'] in ['trigonal','hexagonal']:
-            BNSsym = {'P_c':[0,0,.5]}            
+            BNSsym = {'P_c':[0,0,.5]}
         elif SGData['SGSys'] == 'cubic':
-            BNSsym = {'P_I':[.5,.5,.5]}            
-            
+            BNSsym = {'P_I':[.5,.5,.5]}
+
     elif 'A' in SGData['SGLatt']:
         if SGData['SGSys'] == 'monoclinic':
             BNSsym = {}
@@ -836,10 +836,10 @@ def GetGenSym(SGData):
                 BNSsym.update({'A_a':[.5,0,0],'A_b':[0,.5,0]})
         elif SGData['SGSys'] == 'orthorhombic':
             BNSsym = {'A_a':[.5,0,0],'A_b':[0,.5,0],'A_c':[0,0,.5],
-               'A_B':[.5,0,.5],'A_C':[.5,.5,0]}   
+               'A_B':[.5,0,.5],'A_C':[.5,.5,0]}
         elif SGData['SGSys'] == 'triclinic':
-            BNSsym = {'A_a':[.5,0,0],'A_b':[0,.5,0],'A_c':[0,0,.5]}   
-            
+            BNSsym = {'A_a':[.5,0,0],'A_b':[0,.5,0],'A_c':[0,0,.5]}
+
     elif 'B' in SGData['SGLatt']:
         if SGData['SGSys'] == 'monoclinic':
             BNSsym = {}
@@ -849,10 +849,10 @@ def GetGenSym(SGData):
                 BNSsym.update({'B_a':[.5,0,0],'B_b':[0,.5,0]})
         elif SGData['SGSys'] == 'orthorhombic':
             BNSsym = {'B_a':[.5,0,0],'B_b':[0,.5,0],'B_c':[0,0,.5],
-                'B_A':[0,.5,.5],'B_C':[.5,.5,0]}     
+                'B_A':[0,.5,.5],'B_C':[.5,.5,0]}
         elif SGData['SGSys'] == 'triclinic':
-            BNSsym = {'B_a':[.5,0,0],'B_b':[0,.5,0],'B_c':[0,0,.5]}     
-            
+            BNSsym = {'B_a':[.5,0,0],'B_b':[0,.5,0],'B_c':[0,0,.5]}
+
     elif 'C' in SGData['SGLatt']:
         if SGData['SGSys'] == 'monoclinic':
             BNSsym = {}
@@ -862,29 +862,29 @@ def GetGenSym(SGData):
                 BNSsym.update({'C_a':[.5,0,0],'C_c':[0,0,.5],'C_B':[.5,0.,.5]})
         elif SGData['SGSys'] == 'orthorhombic':
             BNSsym = {'C_a':[.5,0,0],'C_b':[0,.5,0],'C_c':[0,0,.5],
-                'C_A':[0,.5,.5],'C_B':[.5,0,.5]}      
+                'C_A':[0,.5,.5],'C_B':[.5,0,.5]}
         elif SGData['SGSys'] == 'triclinic':
-            BNSsym = {'C_a':[.5,0,0],'C_b':[0,.5,0],'C_c':[0,0,.5]}      
-            
+            BNSsym = {'C_a':[.5,0,0],'C_b':[0,.5,0],'C_c':[0,0,.5]}
+
     elif 'I' in SGData['SGLatt']:
         if SGData['SGSys'] in ['monoclinic','orthorhombic','triclinic']:
             BNSsym = {'I_a':[.5,0,0],'I_b':[0,.5,0],'I_c':[0,0,.5]}
         elif SGData['SGSys'] == 'tetragonal':
             BNSsym = {'I_c':[0,0,.5]}
         elif SGData['SGSys'] == 'cubic':
-            BNSsym = {} 
-            
+            BNSsym = {}
+
     elif 'F' in SGData['SGLatt']:
         if SGData['SGSys'] in ['monoclinic','orthorhombic','cubic','triclinic']:
             BNSsym = {'F_S':[.5,.5,.5]}
-            
+
     elif 'R' in SGData['SGLatt']:
         BNSsym = {'R_I':[0,0,.5]}
-        
+
     if SGData['SGGray']:
         for bns in BNSsym:
             BNSsym[bns].append(0.5)
-            
+
     return UsymOp,OprFlg,BNSsym
 
 def ApplyBNSlatt(SGData,BNSlatt):
@@ -924,7 +924,7 @@ def ApplyBNSlatt(SGData,BNSlatt):
     C = SGCen+A[:3]
     SGData['SGCen'] = np.vstack((SGCen,C))%1.
     return Tmat
-        
+
 def CheckSpin(isym,SGData):
     ''' Check for exceptions in spin rules
     '''
@@ -971,7 +971,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                     Ptsym[i] += "'"
         else:
             for i in range(len(GenSym)):
-                if SpnFlp[i+1] < 0:                      
+                if SpnFlp[i+1] < 0:
                     sym[i] += "'"
                     Ptsym[i] += "'"
         SGData['MagPtGp'] = '/'.join(Ptsym)
@@ -1010,8 +1010,8 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                         sym[1] += "'"
                         Ptsym[0] += "'"
             if SpnFlp[2]*SpnFlp[3] < 0:
-                sym[0] += "'"                    
-                Ptsym[0] += "'"                    
+                sym[0] += "'"
+                Ptsym[0] += "'"
             magSym[1] = '/'.join(sym)
             magPtGp[0] = '/'.join(Ptsym)
         SGData['MagPtGp'] = ''.join(magPtGp)
@@ -1043,8 +1043,8 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                             sym[1] += "'"
                             Ptsym[1] += "'"
                 if SpnFlp[2]*SpnFlp[3] < 0:
-                    sym[0] += "'"                    
-                    Ptsym[0] += "'"                    
+                    sym[0] += "'"
+                    Ptsym[0] += "'"
                 magSym[1] = '/'.join(sym)
                 magPtGp[0] = '/'.join(Ptsym)
             else:
@@ -1054,7 +1054,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                 if SpnFlp[1]*SpnFlp[2] < 0:
                     magSym[1] += "'"
         SGData['MagPtGp'] = ''.join(magPtGp)
-    elif SGLaue in ['3','3m1','31m']:   #ok 
+    elif SGLaue in ['3','3m1','31m']:   #ok
         if '-' in SGPtGrp:
             Ptsym = list(SGPtGrp[1:])
             Ptsym[0] = '-'+Ptsym[0]
@@ -1222,7 +1222,7 @@ def Text2MT(mcifOpr,CIF=True):
             T.append(0.)
         M.append(XYZ[opMT[0].lower()])
     return np.array(M),np.array(T)
-            
+
 def MagText2MTS(mcifOpr,CIF=True):
     "From magnetic space group cif text returns matrix/translation + spin flip"
     XYZ = {'x':[1,0,0],'+x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'+y':[0,1,0],'-y':[0,-1,0],
@@ -1252,7 +1252,7 @@ def MagText2MTS(mcifOpr,CIF=True):
     if '-1' in ops[3]:
         spnflp = -1
     return np.array(M),np.array(T),spnflp
-            
+
 def MagSSText2MTS(Opr,G2=False):
     "From magnetic super space group cif text returns matrix/translation + spin flip"
     XYZ = {'x1':[1,0,0,0],'-x1':[-1,0,0,0],
@@ -1272,7 +1272,7 @@ def MagSSText2MTS(Opr,G2=False):
                'x-t':[1,0,0,-1],'+x-t':[1,0,0,-1],'-x+t':[-1,0,0,1],
                'y-t':[0,1,0,-1],'+y-t':[0,1,0,-1],'-y+t':[0,-1,0,1],
                'x+y-t':[1,1,0,-1],'+x+y-t':[1,1,0,-1],'-x-y+t':[-1,-1,0,1]}
-       
+
     ops = Opr.split(",")
     M = []
     T = []
@@ -1281,7 +1281,7 @@ def MagSSText2MTS(Opr,G2=False):
         if '/' in op:
             ip = op.index('/')
             if G2:
-                T.append(eval(op[:ip+2]))                
+                T.append(eval(op[:ip+2]))
                 M.append(XYZ[op[ip+2:]])
             else:
                 T.append(eval(op[ip-2:]))
@@ -1334,7 +1334,7 @@ def GetSGSpin(SGData,MSgSym):
             for i in [1,2]:
                 if "'" in mFlds[i+1]:
                     mSpn[i+1] = -1
-    elif SGLaue in ['3','3m1','31m']:   #ok 
+    elif SGLaue in ['3','3m1','31m']:   #ok
         if len(GenSym) == 1:    #all ok
             Id = 2
             if (len(mFlds) == 4) and (mFlds[2] == '1'):
@@ -1352,7 +1352,7 @@ def GetSGSpin(SGData,MSgSym):
                 if mFlds[2] == '1':
                     i,j = [1,3]
                 if "'" in mFlds[i]:
-                    mSpn[1:3] = [1,-1] 
+                    mSpn[1:3] = [1,-1]
                 elif "'" in mFlds[i]:
                     mSpn[1:3] = [-1,-1]
                 elif "'" in mFlds[i] and "'" in mFlds[i]:
@@ -1361,7 +1361,7 @@ def GetSGSpin(SGData,MSgSym):
             if 'c' not in mFlds[2]:
                 i,j = [1,2]
                 if "'" in mFlds[i]:
-                    mSpn[1:3] = [1,-1] 
+                    mSpn[1:3] = [1,-1]
                 elif "'" in mFlds[i]:
                     mSpn[1:3] = [-1,-1]
                 elif "'" in mFlds[i] and "'" in mFlds[i]:
@@ -1418,7 +1418,7 @@ def GenMagOps(SGData):
                         print('index error: ',Nsym,ieqv,Nfl,iunq)
                         FlpSpn = FlpSpn+[1,]
                         SpnFlp[ieqv] *= FlpSpn[iunq]
-        if SGData['SGLaue'] == '6/m': # treat special as algorithm above fails 
+        if SGData['SGLaue'] == '6/m': # treat special as algorithm above fails
             if SGData['SGSpin'] == [1,-1,1]:
                 SpnFlp = [1,-1,1,-1,1,-1,1,-1,1,-1,1,-1]
             elif SGData['SGSpin'] == [1,1,-1]:
@@ -1434,11 +1434,11 @@ def GenMagOps(SGData):
                     SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
         if SGData['SGGray']:
            SpnFlp = np.concatenate((SpnFlp,-SpnFlp))
-           detMs = 2*detMs                   
+           detMs = 2*detMs
     MagMom = SpnFlp*np.array(detMs)      #duplicate for no. centerings
     SGData['MagMom'] = MagMom
     return OprNames,SpnFlp
-    
+
 def GetOpNum(Opr,SGData):
     Nops = len(SGData['SGOps'])
     opNum = abs(Opr)%100
@@ -1449,11 +1449,11 @@ def GetOpNum(Opr,SGData):
         Nops *= 2
     opNum += cent*Nops
     return opNum
-        
+
 ################################################################################
 #### Superspace group codes
 ################################################################################
-        
+
 def SSpcGroup(SGData,SSymbol):
     """
     Determines supersymmetry information from superspace group name; currently only for (3+1) superlattices
@@ -1461,16 +1461,16 @@ def SSpcGroup(SGData,SSymbol):
     :param SGData: space group data structure as defined in SpcGroup above (see :ref:`SGData<SGData_table>`).
     :param SSymbol: superspace group symbol extension (string) defining modulation direction & generator info.
     :returns: (SSGError,SSGData)
-    
+
        * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
        * SSGData - is a dict (see :ref:`Superspace Group object<SSGData_table>`) with entries:
-       
+
              * 'SSpGrp': full superspace group symbol, accidental spaces removed; for display only
              * 'SSGCen': 4D cell centering vectors [0,0,0,0] at least
              * 'SSGOps': 4D symmetry operations as [M,T] so that M*x+T = x'
 
     """
-            
+
     def fixMonoOrtho():
         mod = ''.join(modsym).replace('1/2','0').replace('1','0')
         if SGData['SGPtGrp'] in ['2','m']:  #OK
@@ -1496,7 +1496,7 @@ def SSpcGroup(SGData,SSymbol):
                 return [-SSGKl[i] if mod[i] in ['a','b','g'] else SSGKl[i] for i in range(3)]
             else:
                 return [SSGKl[i] for i in range(3)]
-        
+
     def extendSSGOps(SSGOps):
         for OpA in SSGOps:
             OpAtxt = SSMT2text(OpA)
@@ -1513,7 +1513,7 @@ def SSpcGroup(SGData,SSymbol):
                 for k,OpD in enumerate(SSGOps):
                     OpDtxt = SSMT2text(OpD)
                     OpDtxt2 = ''
-                    if SGData['SGGray']:                        
+                    if SGData['SGGray']:
                         OpDtxt2 = SSMT2text([OpD[0],OpD[1]+np.array([0.,0.,0.,.5])])
 #                    print '    ('+OpCtxt.replace(' ','')+' = ? '+OpDtxt.replace(' ','')+')'
                     if OpCtxt == OpDtxt:
@@ -1532,12 +1532,12 @@ def SSpcGroup(SGData,SSymbol):
 #                            print (Txt)
                             return False,Txt
         return True,SSGOps
-        
+
     def findMod(modSym):
         for a in ['a','b','g']:
             if a in modSym:
                 return a
-                
+
     def genSSGOps():
         SSGOps = SSGData['SSGOps'][:]
         iFrac = {}
@@ -1563,7 +1563,7 @@ def SSpcGroup(SGData,SSymbol):
                 SSGOps[1][1][3] = 0.5
             for i in iFrac:
                 SSGOps[1][0][3,i] = SSGKl[0]
-            
+
 # orthorhombic - all OK not fully checked
         elif SGData['SGPtGrp'] in ['222','mm2','m2m','2mm']:    #OK
             if SGData['SGPtGrp'] == '222':
@@ -1586,7 +1586,7 @@ def SSpcGroup(SGData,SSymbol):
                 if not E:
                     return E,SSGOps
         elif SGData['SGPtGrp'] == 'mmm':    #OK
-            OrOps = {'g':{0:[1,3],1:[2,3]},'a':{1:[2,1],2:[3,1]},'b':{0:[1,2],2:[3,2]}} 
+            OrOps = {'g':{0:[1,3],1:[2,3]},'a':{1:[2,1],2:[3,1]},'b':{0:[1,2],2:[3,2]}}
             a = findMod(SSGData['modSymb'])
             if a == 'g':
                 SSkl = [1,1,1]
@@ -1603,7 +1603,7 @@ def SSpcGroup(SGData,SSymbol):
                 SSGOps[i+1][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
                 if not E:
-                    return E,SSGOps                
+                    return E,SSGOps
 # tetragonal - all done & checked
         elif SGData['SGPtGrp'] == '4':  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
@@ -1654,7 +1654,7 @@ def SSpcGroup(SGData,SSymbol):
                     return E,Result
                 else:
                     SSGOps = Result
-                
+
 # trigonal - all done & checked
         elif SGData['SGPtGrp'] == '3':  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
@@ -1672,7 +1672,7 @@ def SSpcGroup(SGData,SSymbol):
             for i,j in enumerate([1,5]):
                 if SGData['SGPtGrp'] in ['3m','-3m']:
                     SSGOps[j][0][3,3] = 1
-                else:                    
+                else:
                     SSGOps[j][0][3,3] = SSGKl[i+1]
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
@@ -1691,7 +1691,7 @@ def SSpcGroup(SGData,SSymbol):
                 SSGOps[j][0][3,3] = 1
                 if genQ[i+1]:
                     SSGOps[j][1][3] = genQ[i+1]
-                     
+
 # hexagonal all done & checked
         elif SGData['SGPtGrp'] == '6':  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
@@ -1708,7 +1708,7 @@ def SSpcGroup(SGData,SSymbol):
                 if genQ[i]:
                     SSGOps[j][1][3] = -genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
-            
+
         elif SGData['SGPtGrp'] in ['6mm','-62m','-6m2',]: #OK
             for i,j in enumerate([1,6,7]):
                 SSGOps[j][0][3,3] = SSGKl[i]
@@ -1725,7 +1725,7 @@ def SSpcGroup(SGData,SSymbol):
             return True,SSGOps
         E,SSGOps = extendSSGOps(SSGOps)
         return E,SSGOps
-        
+
     def specialGen(gensym,modsym):
         sym = ''.join(gensym)
         if SGData['SGPtGrp'] in ['2/m',] and 'n' in SGData['SpGrp']:
@@ -1757,7 +1757,7 @@ def SSpcGroup(SGData,SSymbol):
                 elif sym == 's00':
                     gensym = 'ss0'
         return gensym
-                            
+
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':-1./6,'a':0.,'b':0.,'g':0.}
     if SGData['SGLaue'] in ['m3','m3m']:
         return '(3+1) superlattices not defined for cubic space groups',None
@@ -1806,24 +1806,24 @@ def SSpcGroup(SGData,SSymbol):
             print ('Super spacegroup operators for '+SSGData['SSpGrp'])
             for Op in Result:
                 print (SSMT2text(Op).replace(' ',''))
-            if SGData['SGInv']:                                 
+            if SGData['SGInv']:
                 for Op in Result:
                     Op = [-Op[0],-Op[1]%1.]
-                    print (SSMT2text(Op).replace(' ',''))                                 
+                    print (SSMT2text(Op).replace(' ',''))
         return None,SSGData
     else:
         return Result+'\nOperator conflict - incorrect superspace symbol',None
-    
+
 def SSChoice(SGData):
     '''
     Gets the unique set of possible super space groups for a given space group
     '''
     ptgpSS = {'1':['(abg)',],'-1':['(abg)',],
-                   
+
         '2':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
         'm':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
         '2/m':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
-        
+
         '222':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
                '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
                '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
@@ -1839,50 +1839,50 @@ def SSChoice(SGData):
         'mmm':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
                '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
                '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
-               
+
         '4':['(00g)','(1/21/2g)'],'4mm':['(00g)','(1/21/2g)'],
         '4/m':['(00g)','(1/21/2g)'],
         '422':['(00g)','(1/21/2g)'],'-4m2':['(00g)','(1/21/2g)'],'-42m':['(00g)','(1/21/2g)'],
         '4/mmm':['(00g)','(1/21/2g)'],
-        
+
         '3':['(00g)','(1/31/3g)'],'-3':['(00g)','(1/31/3g)'],
         '32':['(00g)'],'3m':['(00g)'],'-3m':['(00g)'],
         '321':['(00g)'],'3m1':['(00g)'],'-3m1':['(00g)'],
         '312':['(00g)','(1/31/3g)'],'31m':['(00g)','(1/31/3g)'],'-31m':['(00g)','(1/31/3g)'],
-        
+
         '6':['(00g)',],'6/m':['(00g)',],'-62m':['(00g)',],'-6m2':['(00g)',],
         '622':['(00g)',],'6/mmm':['(00g)',],'6mm':['(00g)',],
-        
+
         '23':['',],'m3':['',],'432':['',],'-43m':['',],'m3m':['',]}
-            
+
     ptgpTS = {'1':['0',],'-1':['0',],
-              
+
         '2':['0','s'],'m':['0','s'],
         '2/m':['00','0s','ss','s0'],
-        
+
         '222':['000','s00','0s0','00s',],
         'mm2':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
         'm2m':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
         '2mm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
         'mmm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
-        
+
         '4':['0','q','s'],'4mm':['000','q00','s00','s0s','ss0','0ss','qq0','qqs'],
         '4/m':['00','s0'],'-4m2':['000','0s0','0q0'],'-42m':['000','00s'],
         '422':['000','q00','s00','s0s','ss0','0ss','qq0','qqs','0q0'],
         '4/mmm':['0000','s0s0','00ss','s00s','ss00','0ss0','0s0s'],
-        
+
         '3':['0','t'],'-3':['0','t'],
         '32':['00','t0'],'3m':['00','0s'],'-3m':['00','0s'],
         '321':['000','t00'],'3m1':['000','0s0'],'-3m1':['000','0s0'],
         '312':['000','t00'],'31m':['000','00s'],'-31m':['000','00s'],
-        
+
         '6':['0','h','t','s'],
         '6/m':['00','s0'],'-62m':['000','00s'],'-6m2':['000','0s0'],
         '622':['000','h00','t00','s00',],'6mm':['000','ss0','s0s','0ss',],
         '6/mmm':['0000','s0s0','00ss','s00s','ss00','0ss0','0s0s'],
-        
+
         '23':['',],'m3':['',],'432':['',],'-43m':['',],'m3m':['',]}
-    
+
     ptgp = SGData['SGPtGrp']
     SSChoice = []
     for ax in ptgpSS[ptgp]:
@@ -1899,7 +1899,7 @@ def SSChoice(SGData):
                 ssHash.append(sshash)
                 ssChoice.append(item)
     return ssChoice
-           
+
 def splitSSsym(SSymbol):
     '''
     Splits supersymmetry symbol into two lists of strings
@@ -1939,7 +1939,7 @@ def splitSSsym(SSymbol):
             modsym = [modsym[0],modsym[1:4],modsym[4:]]
     gensym = list(gensym)
     return modsym,gensym
-        
+
 def SSGPrint(SGData,SSGData,AddInv=False):
     '''
     Print the output of SSpcGroup in a nicely formatted way. Used in SSpaceGroup
@@ -1959,7 +1959,7 @@ def SSGPrint(SGData,SSGData,AddInv=False):
         SSsymb = SGData['BNSlattsym'][0]+SSsymb[1:]
     SSGCen = list(SSGData['SSGCen'])
     if SGData.get('SGGray',False):
-        if SGData.get('SGFixed',False): 
+        if SGData.get('SGFixed',False):
             Mult //= 2
         else:
             SSGCen += list(SSGData['SSGCen']+[0,0,0,0.5])
@@ -2003,11 +2003,11 @@ def SSGPrint(SGData,SSGData,AddInv=False):
     if AddInv and SGData['SGInv']:
         for i,Opr in enumerate(SSGData['SSGOps']):
             IOpr = [-Opr[0],-Opr[1]]
-            SSGTable.append('(%2d) %s'%(i+1+len(SSGData['SSGOps']),SSMT2text(IOpr)))        
+            SSGTable.append('(%2d) %s'%(i+1+len(SSGData['SSGOps']),SSMT2text(IOpr)))
     return SSGText,SSGTable
-    
+
 def SSGModCheck(Vec,modSymb,newMod=True):
-    ''' Checks modulation vector compatibility with supersymmetry space group symbol. 
+    ''' Checks modulation vector compatibility with supersymmetry space group symbol.
     if newMod: Superspace group symbol takes precidence & the vector will be modified accordingly
     '''
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'a':0.,'b':0.,'g':0.}
@@ -2050,7 +2050,7 @@ def SSMT2text(Opr):
             Fld += IJ.rjust(8)
         if j != 3: Fld += ', '
     return Fld
-    
+
 def SSLatt2text(SSGCen):
     "Lattice centering vectors to text"
     lattTxt = ''
@@ -2063,10 +2063,10 @@ def SSLatt2text(SSGCen):
         lattTxt += ';'
     lattTxt = lattTxt.rstrip(';').lstrip(' ')
     return lattTxt
-        
+
 def SSpaceGroup(SGSymbol,SSymbol):
     '''
-    Print the output of SSpcGroup in a nicely formatted way. 
+    Print the output of SSpcGroup in a nicely formatted way.
 
     :param SGSymbol: space group symbol with spaces between axial fields.
     :param SSymbol: superspace group symbol extension (string).
@@ -2077,16 +2077,16 @@ def SSpaceGroup(SGSymbol,SSymbol):
     if E > 0:
         print (SGErrors(E))
         return
-    E,B = SSpcGroup(A,SSymbol)    
+    E,B = SSpcGroup(A,SSymbol)
     if E > 0:
         print (E)
         return
     for l in SSGPrint(B):
         print (l)
-        
+
 def SGProd(OpA,OpB):
     '''
-    Form space group operator product. OpA & OpB are [M,V] pairs; 
+    Form space group operator product. OpA & OpB are [M,V] pairs;
         both must be of same dimension (3 or 4). Returns [M,V] pair
     '''
     A,U = OpA
@@ -2094,10 +2094,10 @@ def SGProd(OpA,OpB):
     M = np.inner(B,A.T)
     W = np.inner(B,U)+V
     return M,W
-        
+
 def GetLittleGrpOps(SGData,vec):
     ''' Find rotation part of operators that leave vec unchanged
-    
+
     :param SGData: space group data structure as defined in SpcGroup above.
     :param vec: a numpy array of fractional vector coordinates
     :returns: Little - list of operators [M,T] that form the little gropu
@@ -2111,10 +2111,10 @@ def GetLittleGrpOps(SGData,vec):
         if np.allclose(tvec,vec%1.):
             Little.append([M,T])
     return Little
-        
+
 def MoveToUnitCell(xyz):
     '''
-    Translates a set of coordinates so that all values are >=0 and < 1 
+    Translates a set of coordinates so that all values are >=0 and < 1
 
     :param xyz: a list or numpy array of fractional coordinates
     :returns: XYZ - numpy array of new coordinates now 0 or greater and less than 1
@@ -2122,11 +2122,11 @@ def MoveToUnitCell(xyz):
     XYZ = np.array(xyz)%1.
     cell = np.asarray(np.rint(XYZ-xyz),dtype=np.int32)
     return XYZ,cell
-        
+
 def Opposite(XYZ,toler=0.0002):
     '''
-    Gives opposite corner, edge or face of unit cell for position within tolerance. 
-        Result may be just outside the cell within tolerance 
+    Gives opposite corner, edge or face of unit cell for position within tolerance.
+        Result may be just outside the cell within tolerance
 
     :param XYZ: 0 >= np.array[x,y,z] > 1 as by MoveToUnitCell
     :param toler: unit cell fraction tolerance making opposite
@@ -2142,7 +2142,7 @@ def Opposite(XYZ,toler=0.0002):
     for key in D:
         new[key] = np.array(D[key])+np.array(XYZ)
     return new
-        
+
 def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     '''
     Generates the equivalent positions for a specified coordinate and space group
@@ -2153,7 +2153,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
       False return only unique positions
     :param Uij: [U11,U22,U33,U12,U13,U23] or [] if no Uij
     :param Move: True move generated atom positions to be inside cell
-      False do not move atoms       
+      False do not move atoms
     :return: [[XYZEquiv],Idup,[UijEquiv],spnflp]
 
       *  [XYZEquiv] is list of equivalent positions (XYZ is first entry)
@@ -2162,7 +2162,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
         Cell = unit cell translations needed to put new positions inside cell
         [UijEquiv] - equivalent Uij; absent if no Uij given
       * +1/-1 for spin inversion of operator - empty if not magnetic
-        
+
     '''
     XYZEquiv = []
     UijEquiv = []
@@ -2215,14 +2215,14 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
         return zip(XYZEquiv,UijEquiv,Idup,Cell,spnflp)
     else:
         return zip(XYZEquiv,Idup,Cell,spnflp)
-        
+
 def GenHKL(HKL,SGData):
     ''' Generates all equivlent reflections including Friedel pairs
     :param HKL:  [h,k,l] must be integral values
     :param SGData: space group data obtained from SpcGroup
     :returns: array Uniq: equivalent reflections
     '''
-    
+
     Ops = SGData['SGOps']
     OpM = np.array([op[0] for op in Ops])
     Uniq = np.inner(OpM,HKL)
@@ -2248,14 +2248,14 @@ def GenHKLf(HKL,SGData):
     OpM = np.array([op[0] for op in Ops],order='F')
     OpT = np.array([op[1] for op in Ops])
     Cen = np.array([cen for cen in SGData['SGCen']],order='F')
-    
+
     import pyspg
     Nuniq,Uniq,iabsnt,mulp = pyspg.genhklpy(hklf,len(Ops),OpM,OpT,SGData['SGInv'],len(Cen),Cen)
     h,k,l,f = Uniq
     Uniq=np.array(list(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq])))
     phi = f[:Nuniq]
     return iabsnt,mulp,Uniq,phi
-    
+
 def checkSSLaue(HKL,SGData,SSGData):
     #Laue check here - Toss HKL if outside unique Laue part
     h,k,l,m = HKL
@@ -2302,12 +2302,12 @@ def checkSSLaue(HKL,SGData,SSGData):
             return False
         else:
             return True
-        
+
 def checkHKLextc(HKL,SGData):
     '''
     Checks if reflection extinct - does not check centering
 
-    :param HKL:  [h,k,l] 
+    :param HKL:  [h,k,l]
     :param SGData: space group data obtained from SpcGroup
     :returns: True if extinct; False if allowed
 
@@ -2331,7 +2331,7 @@ def checkMagextc(HKL,SGData):
     Checks if reflection magnetically extinct; does fullcheck (centering, too)
     uses algorthm from Gallego, et al., J. Appl. Cryst. 45, 1236-1247 (2012)
 
-    :param HKL:  [h,k,l] 
+    :param HKL:  [h,k,l]
     :param SGData: space group data obtained from SpcGroup; must have magnetic symmetry SpnFlp data
     :returns: True if magnetically extinct; False if allowed (to match GenHKLf)
 
@@ -2369,7 +2369,7 @@ def checkMagextc(HKL,SGData):
         if np.abs(np.inner(HKL,Psum)) > 1.e-3:
             return True
         return False
-    
+
 def checkSSextc(HKL,SSGData):
     Ops = SSGData['SSGOps']
     OpM = np.array([op[0] for op in Ops])
@@ -2384,11 +2384,11 @@ def checkSSextc(HKL,SSGData):
             if phkl%1.:
                 return False
     return True
-    
+
 ################################################################################
 #### Site symmetry tables
 ################################################################################
-      
+
 OprName = {
     '-6643':       ['-1',1],'6479' :    ['2(z)',2],'-6479':     ['m(z)',3],
     '6481' :     ['m(y)',4],'-6481':    ['2(y)',5],'6641' :     ['m(x)',6],
@@ -2412,7 +2412,7 @@ OprName = {
     '-6666':  ['-6(z)5',55],'-6538': ['-6(z)1',56],'-2223':['-3(+++)2',57],
     '-975' :['-3(+++)1',58],'-6456': ['-3(z)1',59],'-483' :['-3(-+-)1',60],
     '969'  :['-3(--+)1',61],'-6584': ['-3(z)2',62],'2169' :['-3(--+)2',63],
-    '-2151':['-3(+--)2',64],   }                               
+    '-2151':['-3(+--)2',64],   }
 
 KNsym = {
     '0'         :'    1   ','1'         :'   -1   ','64'        :'    2(x)','32'        :'    m(x)',
@@ -2495,7 +2495,7 @@ NXUPQsym = {
     '2(100)'   :(12,25,12,26),'2(010)'   :(13,28,13,27),'2(110)'   :( 6,19, 6,18),'2(120)'   :(15,27,15,24),
     '2(210)'   :(16,26,16,25),'2(+-0)'   :( 7,20, 7,17),'-1'       :( 1,29,28, 0)
     }
-        
+
 CSxinel = [[],      # 0th empty - indices are Fortran style
     [[0,0,0],[ 0.0, 0.0, 0.0],[0,0,0]],      #1  0  0  0
     [[1,1,1],[ 1.0, 1.0, 1.0],[1,1,1]],      #2  X  X  X
@@ -2558,11 +2558,11 @@ CSuinel = [[],      # 0th empty - indices are Fortran style
     [[1,2,3,1,4,4],[ 1.0, 1.0, 1.0, 0.5, 1.0, 0.5],[1,1,1,0,1,0],[1.0,1.0,1.0,0.5,0.0,0.0]],    #28  A  B  C A/2  E E/2
     [[1,2,3,4,5,6],[ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],[1,1,1,1,1,1],[1.0,1.0,1.0,0.0,0.0,0.0]],    #29  A  B  C  D  E   F
     ]
-    
+
 ################################################################################
 #### Site symmetry routines
 ################################################################################
-    
+
 def GetOprPtrName(key):
     'Needs a doc string'
     try:
@@ -2590,22 +2590,22 @@ def GetKNsym(key):
         return 'sp'
 
 def GetNXUPQsym(siteSym):
-    '''        
-    The codes XUPQ are for lookup of symmetry constraints for position(X), thermal parm(U) & magnetic moments (P & Q) 
+    '''
+    The codes XUPQ are for lookup of symmetry constraints for position(X), thermal parm(U) & magnetic moments (P & Q)
     '''
     return NXUPQsym[siteSym]
 
-def GetCSxinel(siteSym):  
+def GetCSxinel(siteSym):
     "returns Xyz terms, multipliers, GUI flags"
     indx = GetNXUPQsym(siteSym.strip())
     return CSxinel[indx[0]]
-    
+
 def GetCSuinel(siteSym):
     "returns Uij terms, multipliers, GUI flags & Uiso2Uij multipliers"
     indx = GetNXUPQsym(siteSym.strip())
     return CSuinel[indx[1]]
-    
-def GetCSpqinel(SpnFlp,dupDir):  
+
+def GetCSpqinel(SpnFlp,dupDir):
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
     for sopr in dupDir:
@@ -2637,7 +2637,7 @@ def GetCSpqinel(SpnFlp,dupDir):
                         CSI[1][kcs] = csi[1][kcs]
 #        print(CSI)
     return CSI
-    
+
 def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):
     phase = np.sum(XYZ*wave)
     ssopinv = nl.inv(ssop[0])
@@ -2654,7 +2654,7 @@ def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):
             dT = np.tan(np.pi*sumdtau)
     tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3]+phase)
     return sdet,ssdet,dtau,dT,tauT
-    
+
 def OpsfromStringOps(A,SGData,SSGData):
     SGOps = SGData['SGOps']
     SSGOps = SSGData['SSGOps']
@@ -2670,9 +2670,9 @@ def OpsfromStringOps(A,SGData,SSGData):
     if len(Ax) > 1:
         unit = eval('['+Ax[1]+']')
     return SGOps[nA],SSGOps[nA],iC,SGData['SGCen'][nC],unit
-    
+
 def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
-    
+
     def orderParms(CSI):
         parms = [0,]
         for csi in CSI:
@@ -2683,25 +2683,25 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             for i in [0,1,2]:
                 csi[i] = parms.index(csi[i])
         return CSI
-        
+
     def fracCrenel(tau,Toff,Twid):
         Tau = (tau-Toff[:,nxs])%1.
         A = np.where(Tau<Twid[:,nxs],1.,0.)
         return A
-        
+
     def fracFourier(tau,nH,fsin,fcos):
         SA = np.sin(2.*nH*np.pi*tau)
         CB = np.cos(2.*nH*np.pi*tau)
         A = SA[nxs,nxs,:]*fsin[:,:,nxs]
         B = CB[nxs,nxs,:]*fcos[:,:,nxs]
         return A+B
-        
+
     def posFourier(tau,nH,psin,pcos):
         SA = np.sin(2*nH*np.pi*tau)
         CB = np.cos(2*nH*np.pi*tau)
         A = SA[nxs,nxs,:]*psin[:,:,nxs]
         B = CB[nxs,nxs,:]*pcos[:,:,nxs]
-        return A+B    
+        return A+B
 
     def posZigZag(tau,Tmm,XYZmax):
         DT = Tmm[1]-Tmm[0]
@@ -2713,7 +2713,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
     def posBlock(tau,Tmm,XYZmax):
         A = np.array([np.where(Tmm[0] < t <= Tmm[1],XYZmax,-XYZmax) for t in tau])
         return A
-        
+
     def DoFrac():
         delt2 = np.eye(2)*0.001
         dF = fracFourier(tau,nH,delt2[:1],delt2[1:]).squeeze()
@@ -2733,7 +2733,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             dFTP = []
             for i in SdIndx:
                 sop = Sop[i]
-                ssop = SSop[i]            
+                ssop = SSop[i]
                 sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
                 fsc = np.ones(2,dtype='i')
                 if 'Crenel' in waveType:
@@ -2746,7 +2746,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                     dFT[0] *= ssdet
                     dFT[1] *= sdet
                     dFTP.append(dFT)
-                
+
                     if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
                         fsc = [1,1]
                         if dT:
@@ -2769,9 +2769,9 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                     n += 1
                     CSI[0][i] = n+1
                     CSI[1][i] = 1.0
-            
+
         return CSI,dF,dFTP
-        
+
     def DoXYZ():
         delt5 = np.ones(5)*0.001
         delt6 = np.eye(6)*0.001
@@ -2870,15 +2870,15 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                         n += 1
                         CSI[0][i][0] = n+1
                         CSI[1][i][0] = 1.0
-            
+
         return list(CSI),dX,dXTP
-        
+
     def DoUij():
         delt12 = np.eye(12)*0.0001
         dU = posFourier(tau,nH,delt12[:6],delt12[6:])                  #Uij modulations - 6x12x12 array
         dUTP = []
         if siteSym == '1':
-            CSI = [[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
+            CSI = [[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0],
                 [7,0,0],[8,0,0],[9,0,0],[10,0,0],[11,0,0],[12,0,0]],12*[[1.,0.,0.],]
         elif siteSym == '-1':
             CSI = 6*[[0,0,0],]+[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],   \
@@ -2894,7 +2894,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
                 usc = np.ones(12,dtype='i')
                 dUT = posFourier(tauT,nH,delt12[:6],delt12[6:])                  #Uij modulations - 6x12x49 array
-                dUijT = np.rollaxis(np.rollaxis(np.array(Uij2U(dUT)),3),3)    #convert dUT to 12x49x3x3 
+                dUijT = np.rollaxis(np.rollaxis(np.array(Uij2U(dUT)),3),3)    #convert dUT to 12x49x3x3
                 dUijT = np.rollaxis(np.inner(np.inner(sop[0],dUijT),sop[0].T),3) #transform by sop - 3x3x12x49
                 dUT = np.array(U2Uij(dUijT))    #convert to 6x12x49
                 dUT = dUT[:,:,np.argsort(tauT)]
@@ -2902,12 +2902,12 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 dUTP.append(dUT)
                 if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
                     if dT:
-                        CSI = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
+                        CSI = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0],
                         [1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],
                         [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.],
                         [1./dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
                     else:
-                        CSI = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
+                        CSI = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0],
                         [1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],
                         [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.],
                         [0.,0.,0.],[0.,0.,0.],[0.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
@@ -2918,7 +2918,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                         CSI[0] = [[1,0,0],[1,0,0],[2,0,0],[3,0,0],[4,0,0],[4,0,0],
                             [1,0,0],[1,0,0],[2,0,0],[3,0,0],[4,0,0],[4,0,0]]
                         CSI[1][9:] = [[1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]]
-                        USC = [1,1,1,1,1,1,1,1,1,1,1,1]                              
+                        USC = [1,1,1,1,1,1,1,1,1,1,1,1]
                     elif '(x)' in siteSym and dT:
                         CSI[1][9:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
                     elif '(y)' in siteSym and dT:
@@ -2931,7 +2931,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                             CSI[1][i] = [0.,0.,0.]
                             CSI[0][i+6] = [0,0,0]
                             CSI[1][i+6] = [0.,0.,0.]
-                else:                        
+                else:
                     for i in range(6):
                         if not np.allclose(dU[i,i,:],dUT[i,i,:]):  #sin part
                             usc[i] = 0
@@ -2961,7 +2961,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                                 CSI[1][6:8] = [[1.,0.,0.],[1.,0.,0.]]
                                 usc[2] = 1
                                 usc[8] = 1
-                                usc[3] = 0                
+                                usc[3] = 0
                                 usc[9] = 0
                         elif 'xy' in siteSym or '+-0' in siteSym:
                             if np.allclose(dU[0,0,:],dUT[0,1,:]*sdet):
@@ -2971,7 +2971,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                                 CSI[1][6:8] = [[1.,0.,0.],[sdet,0.,0.]]
                                 usc[4:6] = 0
                                 usc[6:8] = 0
-                            
+
                     if debug: print (SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,usc)
                 USC &= usc
             if debug: print (USC)
@@ -2982,9 +2982,9 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                         n += 1
                         CSI[0][i][0] = n+1
                         CSI[1][i][0] = 1.0
-    
+
         return list(CSI),dU,dUTP
-    
+
     def DoMag():
         delt6 = np.eye(6)*0.001
         dM = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(Mxyz)[:,nxs,nxs]
@@ -3086,7 +3086,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                     CSI[1][i][0] = 1.0
 
         return list(CSI),dM,dMTP
-        
+
     if debug: print ('super space group: '+SSGData['SSpGrp'])
     xyz = np.array(XYZ)%1.
     SGOps = copy.deepcopy(SGData['SGOps'])
@@ -3099,11 +3099,11 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         for op,sop in zip(SGData['SGOps'],SSGData['SSGOps']):
             SGOps.append([-op[0],-op[1]%1.])
             SSGOps.append([-sop[0],-sop[1]%1.])
-    #build set of sym ops around special position        
+    #build set of sym ops around special position
     SSop = []
     Sop = []
     Sdtau = []
-    for iop,Op in enumerate(SGOps):         
+    for iop,Op in enumerate(SGOps):
         nxyz = (np.inner(Op[0],xyz)+Op[1])%1.
         if np.allclose(xyz,nxyz,1.e-4) and iop and MT2text(Op).replace(' ','') != '-X,-Y,-Z':
             SSop.append(SSGOps[iop])
@@ -3124,7 +3124,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         CSI[0] = orderParms(CSI[0])
     elif Stype == 'Sadp':
         CSI,dF,dFTP = DoUij()
-        CSI[0] = orderParms(CSI[0]) 
+        CSI[0] = orderParms(CSI[0])
     elif Stype == 'Smag':
         CSI,dF,dFTP = DoMag()
 
@@ -3132,7 +3132,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return CSI,dF,dFTP
     else:
         return CSI,[],[]
-    
+
 def MustrainNames(SGData):
     'Needs a doc string'
     laue = SGData['SGLaue']
@@ -3163,7 +3163,7 @@ def MustrainNames(SGData):
         SHKL += ['S310','S103','S031','S130','S301','S013']
         SHKL += ['S211','S121','S112']
         return SHKL
-        
+
 def HStrainVals(HSvals,SGData):
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
@@ -3216,7 +3216,7 @@ def HStrainNames(SGData):
     else:
         Dij = ['D11','D22','D33','D12','D13','D23']
         return Dij
-    
+
 def MustrainCoeff(HKL,SGData):
     'Needs a doc string'
     #NB: order of terms is the same as returned by MustrainNames
@@ -3291,7 +3291,7 @@ def MustrainCoeff(HKL,SGData):
     return Strm
 
 def MuShklMean(SGData,Amat,Shkl):
-    
+
     def genMustrain(xyz,Shkl):
         uvw = np.inner(Amat.T,xyz)
         Strm = np.array(MustrainCoeff(uvw,SGData))
@@ -3299,7 +3299,7 @@ def MuShklMean(SGData,Amat,Shkl):
         Sum = np.where(Sum > 0.01,Sum,0.01)
         Sum = np.sqrt(Sum)
         return Sum*xyz
-        
+
     PHI = np.linspace(0.,360.,30,True)
     PSI = np.linspace(0.,180.,30,True)
     X = np.outer(npcosd(PHI),npsind(PSI))
@@ -3308,12 +3308,12 @@ def MuShklMean(SGData,Amat,Shkl):
     XYZ = np.dstack((X,Y,Z))
     XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,Shkl))
     return np.sqrt(np.sum(XYZ**2)/900.)
-    
+
 def Muiso2Shkl(muiso,SGData,cell):
     "this is to convert isotropic mustrain to generalized Shkls"
     import GSASIIlattice as G2lat
     A = G2lat.cell2AB(cell)[0]
-    
+
     def minMus(Shkl,muiso,H,SGData,A):
         U = np.inner(A.T,H)
         S = np.array(MustrainCoeff(U,SGData))
@@ -3321,7 +3321,7 @@ def Muiso2Shkl(muiso,SGData,cell):
         Sum = np.sqrt(np.sum(np.multiply(S,Shkl[:nS,nxs]),axis=0))
         rad = np.sqrt(np.sum((Sum[:,nxs]*H)**2,axis=1))
         return (muiso-rad)**2
-        
+
     laue = SGData['SGLaue']
     PHI = np.linspace(0.,360.,60,True)
     PSI = np.linspace(0.,180.,60,True)
@@ -3344,13 +3344,13 @@ def Muiso2Shkl(muiso,SGData,cell):
     elif laue in ['2/m']:
         S0 = [1000.,1000.,1000.,0.,0.,0.,0.,0.,0.]
     else:
-        S0 = [1000.,1000.,1000.,1000.,1000., 1000.,1000.,1000.,1000.,1000., 
+        S0 = [1000.,1000.,1000.,1000.,1000., 1000.,1000.,1000.,1000.,1000.,
             1000.,1000.,0.,0.,0.]
     S0 = np.array(S0)
     HKL = np.reshape(HKL,(-1,3))
     result = so.leastsq(minMus,S0,(np.ones(HKL.shape[0])*muiso,HKL,SGData,A))
     return result[0]
-       
+
 def PackRot(SGOps):
     IRT = []
     for ops in SGOps:
@@ -3361,8 +3361,8 @@ def PackRot(SGOps):
                 irt *= 3
                 irt += M[k][j]
         IRT.append(int(irt))
-    return IRT 
-        
+    return IRT
+
 def SytSym(XYZ,SGData):
     '''
     Generates the number of equivalent positions and a site symmetry code for a specified coordinate and space group
@@ -3412,7 +3412,7 @@ def SytSym(XYZ,SGData):
                                 px = px.split('(')
                                 px[0] += "'"
                                 px = '('.join(px)
-                            else:    
+                            else:
                                 px += "'"
                         dupDir[px] = L
                         Isym += 2**(jx-1)
@@ -3421,17 +3421,17 @@ def SytSym(XYZ,SGData):
         Mult = len(SGData['SGOps'])*Ncen*inv//Jdup
     except: # patch because Jdup is not getting incremented for most atoms!
         Mult = 0
-        
+
     return GetKNsym(str(Isym)),Mult,Ndup,dupDir
 
 def AtomDxSymFix(Dx,SytSym,CSIX):
-    ''' Applies site symmetry restrictions to atom position shifts. 1st parameter value 
+    ''' Applies site symmetry restrictions to atom position shifts. 1st parameter value
     of each kind encountered is assumed to be the independent one. Needed for ISODISTORT mode shifts.
-    
+
 
     '''
     if SytSym == '1':
-        return Dx    
+        return Dx
     newDx = []
     for ix in [0,1,2]:
         cx = CSIX[2][ix]
@@ -3440,9 +3440,9 @@ def AtomDxSymFix(Dx,SytSym,CSIX):
         else:
             newDx.append(0.0)
     return np.array(newDx)
-    
-    
-   
+
+
+
 def MagSytSym(SytSym,dupDir,SGData):
     '''
     site sym operations: 1,-1,2,3,-3,4,-4,6,-6,m need to be marked if spin inversion
@@ -3465,14 +3465,14 @@ def MagSytSym(SytSym,dupDir,SGData):
         return MagSytSym
     if len(dupDir) == 1:
         return list(dupDir.keys())[0]
-    
-    
+
+
     if '2/m' in SytSym:         #done I think; last 2wo might be not needed
         ops = {'(x)':['2(x)','m(x)'],'(y)':['2(y)','m(y)'],'(z)':['2(z)','m(z)'],
                '(100)':['2(100)','m(100)'],'(010)':['2(010)','m(010)'],'(001)':['2(001)','m(001)'],
                '(120)':['2(120)','m(120)'],'(210)':['2(210)','m(210)'],'(+-0)':['2(+-0)','m(+-0)'],
                '(110)':['2(110)','m(110)']}
-    
+
     elif '4/mmm' in SytSym:
         ops = {'(x)':['4(x)','m(x)','m(y)','m(0+-)'],   #m(0+-) for cubic m3m?
                '(y)':['4(y)','m(y)','m(z)','m(+0-)'],   #m(+0-)
@@ -3510,7 +3510,7 @@ def MagSytSym(SytSym,dupDir,SGData):
                    '(100)':['m(z)','m(100)','m(120)',],'(010)':['m(z)','m(010)','m(210)',],
                    '(110)':['m(z)','m(110)','m(+-0)',],
                    '(x)':['m(x)','m(y)','m(z)'],'(y)':['m(x)','m(y)','m(z)'],'(z)':['m(x)','m(y)','m(z)'],}
-        
+
     elif '32' in SytSym:
         ops = {'(120)':['3','2(120)',],'(100)':['3','2(100)'],'(111)':['3(111)','2(x)']}
     elif '23' in SytSym:
@@ -3521,7 +3521,7 @@ def MagSytSym(SytSym,dupDir,SGData):
         ops = {'(111)':['3(111)','m(+-0)',],'(+--)':['3(+--)','m(0+-)',],
                '(-+-)':['3(-+-)','m(+0-)',],'(--+)':['3(--+)','m(+-0)',],
                '(100)':['3','m(100)'],'(120)':['3','m(210)',]}
-    
+
     if SytSym.split('(')[0] in ['6/m','6mm','-6m2','622','-6','-3','-3m','-43m',]:     #not simple cases
         MagSytSym = SytSym
         if "-1'" in dupDir:
@@ -3558,12 +3558,12 @@ def MagSytSym(SytSym,dupDir,SGData):
             MagSytSym += '/'
         if '-3/m' in SytSym:
             MagSytSym = '-'+MagSytSym
-        
+
     MagSytSym += axis
-# some exceptions & special rules          
+# some exceptions & special rules
     if MagSytSym == "4'/m'm'm'": MagSytSym = "4/m'm'm'"
     return MagSytSym
-    
+
 #    if len(GenSym) == 3:
 #        if SGSpin[1] < 0:
 #            if 'mm2' in SytSym:
@@ -3580,7 +3580,7 @@ def MagSytSym(SytSym,dupDir,SGData):
 #            if "-6'"+'('+SplitSytSym[1] in dupDir:
 #                MagSytSym = MagSytSym.replace('-6',"-6'")
 #        return MagSytSym
-#            
+#
     return SytSym
 
 def UpdateSytSym(Phase):
@@ -3600,9 +3600,9 @@ def UpdateSytSym(Phase):
             atom[cs] = magSytSym
         atom[cs+1] = Mult
     return
-    
+
 def ElemPosition(SGData):
-    ''' Under development. 
+    ''' Under development.
     Object here is to return a list of symmetry element types and locations suitable
     for say drawing them.
     So far I have the element type... getting all possible locations without lookup may be impossible!
@@ -3648,9 +3648,9 @@ def ElemPosition(SGData):
             print ('rotation',Es)
             X = [-1,-1,-1]
         SymElements.append([Es,X])
-        
+
     return SymElements
-    
+
 def ApplyStringOps(A,SGData,X,Uij=[]):
     'Needs a doc string'
     SGOps = SGData['SGOps']
@@ -3678,7 +3678,7 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
         return [newX,newUij]
     else:
         return newX
-        
+
 def ApplyStringOpsMom(A,SGData,SSGData,Mom):
     '''Applies string operations to modulated magnetic moment components used in drawing
     Drawing matches Bilbao MVISUALIZE
@@ -3701,11 +3701,11 @@ def ApplyStringOpsMom(A,SGData,SSGData,Mom):
         if SSGData['SSGCen'][iAx//100][3]:     #flip spin for BNS centered atoms
             newMom *= -1.
     return newMom
-        
+
 def StringOpsProd(A,B,SGData):
     """
     Find A*B where A & B are in strings '-' + '100*c+n' + '+ijk'
-    where '-' indicates inversion, c(>0) is the cell centering operator, 
+    where '-' indicates inversion, c(>0) is the cell centering operator,
     n is operator number from SgOps and ijk are unit cell translations (each may be <0).
     Should return resultant string - C. SGData - dictionary using entries:
 
@@ -3748,11 +3748,11 @@ def StringOpsProd(A,B,SGData):
     C = str(((nC+1)+(100*cC))*(1-2*iC))+'+'+ \
         str(int(cellC[0]))+','+str(int(cellC[1]))+','+str(int(cellC[2]))
     return C
-            
+
 def U2Uij(U):
     #returns the UIJ vector U11,U22,U33,U12,U13,U23 from tensor U
     return [U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]]
-    
+
 def Uij2U(Uij):
     #returns the thermal motion tensor U from Uij as numpy array
     return np.array([[Uij[0],Uij[3],Uij[4]],[Uij[3],Uij[1],Uij[5]],[Uij[4],Uij[5],Uij[2]]])
@@ -3794,9 +3794,9 @@ def StandardizeSpcName(spcgroup):
     else:
     # not found
         return ''
-    
+
 def fullHM2shortHM(SpcGp):
-    ''' Accepts a full H-M space group symbol and returns a short H-M symbol that the space group 
+    ''' Accepts a full H-M space group symbol and returns a short H-M symbol that the space group
     interpreter can translate
     '''
     fields = SpcGp.split()
@@ -3828,29 +3828,29 @@ def fullHM2shortHM(SpcGp):
         fields[3] = fields[3].split('/')[1]
         return ' '.join(fields)
     return SpcGp
-    
+
 def offsetNorm(x):
-    '''Translate a coordinate (or vector of symmetry offsets) into 
+    '''Translate a coordinate (or vector of symmetry offsets) into
     the range -1/6 < x <= 5/6, matching GSAS-II use.
     '''
     negoff = 1/6  # negative offset
     return np.round(((x + negoff - 1e-9) % 1) - negoff + 1e-9, 8)
-        
+
 def ParseXYZ(sym):
-    '''Parse a set of space group operations, such as '-x,-y,-z' 
-    or 'x-y,z,-x' etc. into an algebraic form returning a 
-    3x3 matrix, M, and a length 3 vector, O, where the symmetry 
-    operation can be applied as 
+    '''Parse a set of space group operations, such as '-x,-y,-z'
+    or 'x-y,z,-x' etc. into an algebraic form returning a
+    3x3 matrix, M, and a length 3 vector, O, where the symmetry
+    operation can be applied as
 
-       M . (x,y,z) + O 
+       M . (x,y,z) + O
 
-    where M is a 3x3 matrix and O is a displacement vector. 
-    This is the same form generated by :func:`SpcGroup`. 
+    where M is a 3x3 matrix and O is a displacement vector.
+    This is the same form generated by :func:`SpcGroup`.
 
-    Note that this code will process offsets either before the coordinate 
+    Note that this code will process offsets either before the coordinate
     multipliers or after, so that either of these
 
-       1/2-y,1/2+x,z or 
+       1/2-y,1/2+x,z or
        -y+1/2,x-0.5,z
 
     will both be parsed properly. Returns None if a symbol cannot be parsed.
@@ -3887,11 +3887,11 @@ def CompareSym(symList,sgName=None,SGData=None):
     with a list of operators from some other source.
 
     :param list symList: a list of symmetry operations (such as 'x,y,z'
-      or '-Y,X,Z'). The code is fairly forgiving in that 1/2-X or X-1/2 or 
-      even -X+0.5 can all be accepted. This is typically read from a CIF. 
-    :param str sgName: a space group name. Need not follow GSAS-II 
+      or '-Y,X,Z'). The code is fairly forgiving in that 1/2-X or X-1/2 or
+      even -X+0.5 can all be accepted. This is typically read from a CIF.
+    :param str sgName: a space group name. Need not follow GSAS-II
       convention for spaces, etc (see :func:`GSASIIspc.StandardizeSpcName`)
-    :param SGData: a GSAS-II symmetry objectspace group name. Need not follow GSAS-II 
+    :param SGData: a GSAS-II symmetry objectspace group name. Need not follow GSAS-II
       convention for spaces, etc (see :func:`GSASIIspc.StandardizeSpcName`)
     '''
     if sgName:
@@ -3917,7 +3917,7 @@ def CompareSym(symList,sgName=None,SGData=None):
 
 def SpaceGroupNumber(spcgroup):
     '''Determine the space group number for a space group from H-M name.
-    Will work for non-standard groups insofar as we can normalize -- far 
+    Will work for non-standard groups insofar as we can normalize -- far
     from perfect.
     '''
     SGNo = -1
@@ -3931,8 +3931,8 @@ def SpaceGroupNumber(spcgroup):
     return SGNo
 
 def GetHallSpaceGroup(SGData):
-    '''Determine the Hall space group symbol for a GSAS-II space group object, 
-    if it exists (it will not if non-standard centering is used, perhaps also 
+    '''Determine the Hall space group symbol for a GSAS-II space group object,
+    if it exists (it will not if non-standard centering is used, perhaps also
     for other cases). Will return None if not found.
     '''
     try:
@@ -3954,7 +3954,7 @@ def GetHallSpaceGroup(SGData):
 
 spgbyNum = []
 '''Space groups indexed by number'''
-if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
     spgbyNum = [None,
         'P 1','P -1',                                                   #1-2
         'P 2','P 21','C 2','P m','P c','C m','C c','P 2/m','P 21/m',
@@ -4013,7 +4013,7 @@ if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
 altSettingOrtho = {}
 ''' A dictionary of alternate settings for orthorhombic unit cells
 '''
-if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
     altSettingOrtho = {
         'P 2 2 2' :{'abc':'P 2 2 2','cab':'P 2 2 2','bca':'P 2 2 2','acb':'P 2 2 2','bac':'P 2 2 2','cba':'P 2 2 2'},
         'P 2 2 21' :{'abc':'P 2 2 21','cab':'P 21 2 2','bca':'P 2 21 2','acb':'P 2 21 2','bac':'P 2 2 21','cba':'P 21 2 2'},
@@ -4076,10 +4076,10 @@ if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
         'I m m a':{'abc':'I m m a','cab':'I b m m','bca':'I m c m','acb':'I m a m','bac':'I m m  b','cba':'I c m m'},
         }
 spg2origins = {}
-''' A dictionary of all spacegroups that have 2nd settings; the value is the 
+''' A dictionary of all spacegroups that have 2nd settings; the value is the
 1st --> 2nd setting transformation vector as X(2nd) = X(1st)-V, nonstandard ones are included.
 '''
-if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
     spg2origins = {
         'P n n n':[-.25,-.25,-.25],
         'P b a n':[-.25,-.25,0],'P n c b':[0,-.25,-.25],'P c n a':[-.25,0,-.25],
@@ -4096,13 +4096,13 @@ if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
         'p n 3':[-.25,-.25,-.25],'F d 3':[-.125,-.125,-.125],'P n 3 n':[-.25,-.25,-.25],
         'P n 3 m':[-.25,-.25,-.25],'F d 3 m':[-.125,-.125,-.125],'F d - c':[-.375,-.375,-.375]}
 spglist = {}
-'''A dictionary of space groups as ordered and named in the pre-2002 International 
-Tables Volume A, except that spaces are used following the GSAS convention to 
+'''A dictionary of space groups as ordered and named in the pre-2002 International
+Tables Volume A, except that spaces are used following the GSAS convention to
 separate the different crystallographic directions.
-Note that the symmetry codes here will recognize many non-standard space group 
+Note that the symmetry codes here will recognize many non-standard space group
 symbols with different settings. They are ordered by Laue group
 '''
-if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
     spglist = {
     'P1' : ('P 1','P -1',), # 1-2
     'C1' : ('C 1','C -1',),
@@ -4205,7 +4205,7 @@ sgequiv_2002_orthorhombic = {}
 ''' A dictionary of orthorhombic space groups that were renamed in the 2002 Volume A,
  along with the pre-2002 name. The e designates a double glide-plane
 '''
-if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
     sgequiv_2002_orthorhombic = {
         'AEM2':'A b m 2','B2EM':'B 2 c m','CM2E':'C m 2 a',
         'AE2M':'A c 2 m','BME2':'B m a 2','C2ME':'C 2 m b',
@@ -4217,18 +4217,18 @@ if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
         'CCCE':'C c c a','AEAA':'A b a a','BBEB':'B b c b'}
 
 spgHall = []
-'''Hall space group symbols indexed by GSAS-II space group name. This is indexed 
-by a key which is generated from the name used in GSAS-II with spaces removed 
-and all letters in lowercase. The value associated with the key consists of a 
+'''Hall space group symbols indexed by GSAS-II space group name. This is indexed
+by a key which is generated from the name used in GSAS-II with spaces removed
+and all letters in lowercase. The value associated with the key consists of a
 list of two values: the first is the Hall name and the second is a
-Hermann-Mauguin name. Note that there may be several names used by 
+Hermann-Mauguin name. Note that there may be several names used by
 GSAS-II that map to the same symmetry operators and the same Hall symbol
 (for example "P 21" and "P 1 21 1" and "P 63/m" and "P 63/m H"). There
 are also space group names that GSAS-II will accept that do not have Hall
-symbols (such as "I -1" or "F 21 21 21"). 
+symbols (such as "I -1" or "F 21 21 21").
 '''
 # generated from https://cci.lbl.gov/sginfo/hall_symbols.html by Sydney R. Hall & Ralf W. Grosse-Kunstleve
-if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter 
+if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
     spgHall = {
         'p1':('P 1', 'P 1', 1),   # P 1
         'p-1':('-P 1', 'P -1', 2),   # P -1
@@ -4770,15 +4770,15 @@ if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
         'im-3m':('-I 4 2 3', 'I m -3 m', 229),   # I m -3 m
         'ia-3d':('-I 4bd 2c 3', 'I a -3 d', 230),   # I a -3 d
         }
-        
+
 #'A few non-standard space groups for test use'
-nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h', 
+nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h',
                       'R -3 r', 'R 3 2 r','R 3 m h', 'R 3 m r',
                       'R 3 c r','R -3 c r','R -3 m r',),
 
-#Use the space groups types in this order to list the symbols in the 
+#Use the space groups types in this order to list the symbols in the
 #order they are listed in the International Tables, vol. A'''
-symtypelist = ('triclinic', 'monoclinic', 'orthorhombic', 'tetragonal', 
+symtypelist = ('triclinic', 'monoclinic', 'orthorhombic', 'tetragonal',
                'trigonal', 'hexagonal', 'cubic')
 
 # self-test materials follow. Requires files in directory testinp
@@ -4813,7 +4813,7 @@ def test1():
     if ospath.exists(testdir):
         if testdir not in sys.path: sys.path.insert(0,testdir)
     import spctestinp
-    def CompareSpcGroup(spc, referr, refdict, reflist): 
+    def CompareSpcGroup(spc, referr, refdict, reflist):
         'Compare output from GSASIIspc.SpcGroup with results from a previous run'
         # if an error is reported, the dictionary can be ignored
         msg0 = "CompareSpcGroup failed on space group %s" % spc
@@ -4886,7 +4886,7 @@ def test2():
         CompareWcctbx(key, sgtbxtestinp.sgtbx[key])
 selftestlist.append(test2)
 
-def test3(): 
+def test3():
     '''self-test #3: exercise SytSym (includes GetOprPtrName, GenAtom, GetKNsym)
      for selected space groups against info in IT Volume A '''
     _ReportTest()

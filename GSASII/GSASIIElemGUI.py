@@ -2,7 +2,7 @@
 '''Routines for Periodic table wx.Frame follow. 
 '''
 from __future__ import division, print_function
-import GSASIIpath
+from . import GSASIIpath
 import wx
 import os
 import wx.lib.colourselect as wscs

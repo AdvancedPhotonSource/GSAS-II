@@ -5,7 +5,7 @@ from __future__ import division, print_function
 import platform
 import os
 import numpy as np
-import GSASIIfiles as G2fil
+from . import GSASIIfiles as G2fil
 
 class ExportMapASCII(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase

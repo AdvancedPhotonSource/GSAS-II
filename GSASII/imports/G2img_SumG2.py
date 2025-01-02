@@ -4,7 +4,7 @@
 
 from __future__ import division, print_function
 import pickle as cPickle
-import GSASIIobj as G2obj
+from . import GSASIIobj as G2obj
 class G2_ReaderClass(G2obj.ImportImage):
     '''Routine to read an image that has been pickled in Python. Images
     in this format are created by the "Sum image data" command. At least for

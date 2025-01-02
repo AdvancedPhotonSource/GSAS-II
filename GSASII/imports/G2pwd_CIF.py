@@ -4,9 +4,9 @@
 from __future__ import division, print_function
 import numpy as np
 import os.path
-import GSASIIobj as G2obj
+from . import GSASIIobj as G2obj
 import CifFile as cif # PyCifRW from James Hester
-import GSASIIpath
+from . import GSASIIpath
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 
 class CIFpwdReader(G2obj.ImportPowderData):

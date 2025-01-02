@@ -18,10 +18,10 @@ import re
 
 import numpy as np
 
-import GSASIIpath
-import GSASIIlattice as G2lat
-import GSASIIstrIO as G2stIO
-import GSASIImapvars as G2mv
+from . import GSASIIpath
+from . import GSASIIlattice as G2lat
+from . import GSASIIstrIO as G2stIO
+from . import GSASIImapvars as G2mv
 
 #if not sys.platform.startswith('win'):
 #    try:

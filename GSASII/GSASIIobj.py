@@ -16,9 +16,9 @@ if '2' in platform.python_version_tuple()[0]:
     import cPickle
 else:
     import pickle as cPickle
-import GSASIIpath
-import GSASIImath as G2mth
-import GSASIIspc as G2spc
+from . import GSASIIpath
+from . import GSASIImath as G2mth
+from . import GSASIIspc as G2spc
 import numpy as np
 
 DefaultControls = {

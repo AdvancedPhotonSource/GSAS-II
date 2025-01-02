@@ -14,12 +14,12 @@ import wx
 # appears unneaded from wx 4.2.1 on
 if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: True
 import numpy as np
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
-import GSASIItestplot as plot
-import GSASIIElem as G2el
-import GSASIIElemGUI as G2elG
-import atmdata
+from . import GSASIItestplot as plot
+from . import GSASIIElem as G2el
+from . import GSASIIElemGUI as G2elG
+from . import atmdata
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 try:

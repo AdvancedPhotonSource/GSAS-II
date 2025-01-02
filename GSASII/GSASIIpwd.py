@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Classes and routines defined in :mod:`GSASIIpwd` follow. 
+Classes and routines defined in :mod:`GSASIIpwd` follow.
 '''
 
 from __future__ import division, print_function
@@ -24,28 +24,28 @@ import scipy.optimize as so
 import scipy.special as sp
 import scipy.signal as signal
 
-import GSASIIpath
+from . import GSASIIpath
 
-filversion = "?" 
+filversion = "?"
 try:
     import git_verinfo
     filversion = git_verinfo.git_tags[0]
 except:
     pass
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIIElem as G2elem
-import GSASIImath as G2mth
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIIElem as G2elem
+from . import GSASIImath as G2mth
 try:
-    import pypowder as pyd
+    from . import pypowder as pyd
 except ImportError:
     print ('pypowder is not available - profile calcs. not allowed')
 try:
-    import pydiffax as pyx
+    from . import pydiffax as pyx
 except ImportError:
     print ('pydiffax is not available for this platform')
-import GSASIIfiles as G2fil
-    
+from . import GSASIIfiles as G2fil
+
 # trig functions in degrees
 tand = lambda x: math.tan(x*math.pi/180.)
 atand = lambda x: 180.*math.atan(x)/math.pi
@@ -73,7 +73,7 @@ is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 def PhaseWtSum(G2frame,histo):
     '''
     Calculate sum of phase mass*phase fraction for PWDR data (exclude magnetic phases)
-    
+
     :param G2frame: GSASII main frame structure
     :param str histo: histogram name
     :returns: sum(scale*mass) for phases in histo
@@ -88,7 +88,7 @@ def PhaseWtSum(G2frame,histo):
                 phFr = Phases[phase]['Histograms'][histo]['Scale'][0]
                 wtSum += mass*phFr
     return wtSum
-    
+
 #### GSASII pwdr & pdf calculation routines ################################################################################
 def Transmission(Geometry,Abs,Diam):
     '''
@@ -122,19 +122,19 @@ def Transmission(Geometry,Abs,Diam):
         return math.exp(-MuR)
     elif 'Bragg' in Geometry:
         return 0.0
-        
+
 def SurfaceRough(SRA,SRB,Tth):
     ''' Suortti (J. Appl. Cryst, 5,325-331, 1972) surface roughness correction
     :param float SRA: Suortti surface roughness parameter
     :param float SRB: Suortti surface roughness parameter
     :param float Tth: 2-theta(deg) - can be numpy array
-    
+
     '''
     sth = npsind(Tth/2.)
     T1 = np.exp(-SRB/sth)
     T2 = SRA+(1.-SRA)*np.exp(-SRB)
     return (SRA+(1.-SRA)*T1)/T2
-    
+
 def SurfaceRoughDerv(SRA,SRB,Tth):
     ''' Suortti surface roughness correction derivatives
     :param float SRA: Suortti surface roughness parameter (dimensionless)
@@ -158,7 +158,7 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
     :param float Phi: flat plate tilt angle - future
     :param float Psi: flat plate tilt axis - future
     '''
-    
+
     def muRunder3(MuR,Sth2):
         T0 = 16.0/(3.*np.pi)
         T1 = (25.99978-0.01911*Sth2**0.25)*np.exp(-0.024551*Sth2)+ \
@@ -168,7 +168,7 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
         T3 = 0.003045+0.018167*Sth2-0.03305*Sth2**2
         Trns = -T0*MuR-T1*MuR**2-T2*MuR**3-T3*MuR**4
         return np.exp(Trns)
-    
+
     def muRover3(MuR,Sth2):
         T1 = 1.433902+11.07504*Sth2-8.77629*Sth2*Sth2+ \
             10.02088*Sth2**3-3.36778*Sth2**4
@@ -179,7 +179,7 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
         T4 = 0.044365-0.04259/(1.0+0.41051*Sth2)**148.4202
         Trns = (T1-T4)/(1.0+T2*(MuR-3.0))**T3+T4
         return Trns/100.
-        
+
     Sth2 = npsind(Tth/2.0)**2
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
         if 'array' in str(type(MuR)):
@@ -204,7 +204,7 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
         MuT = 2.*MuR
         cth = npcosd(Tth/2.0)
         return np.exp(-MuT/cth)/cth
-        
+
 def AbsorbDerv(Geometry,MuR,Tth,Phi=0,Psi=0):
     'needs a doc string'
     dA = 0.001
@@ -214,7 +214,7 @@ def AbsorbDerv(Geometry,MuR,Tth,Phi=0,Psi=0):
         return (AbsP-AbsM)/(2.0*dA)
     else:
         return (AbsP-1.)/dA
-        
+
 def Polarization(Pola,Tth,Azm=0.0):
     """   Calculate angle dependent x-ray polarization correction (not scaled correctly!)
 
@@ -233,7 +233,7 @@ def Polarization(Pola,Tth,Azm=0.0):
     pola = ((1.0-Pola)*cazm+Pola*sazm)*npcosd(Tth)**2+(1.0-Pola)*sazm+Pola*cazm
     dpdPola = -npsind(Tth)**2*(sazm-cazm)
     return pola,dpdPola
-    
+
 def Oblique(ObCoeff,Tth):
     'currently assumes detector is normal to beam'
     if ObCoeff:
@@ -241,7 +241,7 @@ def Oblique(ObCoeff,Tth):
         return K
     else:
         return 1.0
-                
+
 def Ruland(RulCoff,wave,Q,Compton):
     'needs a doc string'
     C = 2.9978e8
@@ -258,11 +258,11 @@ def KleinNishina(wave,Q):
     P = 1./(1.+(1.-npcosd(TTh)*(hmc/wave)))
     KN = (P**3-(P*npsind(TTh))**2+P)/(1.+npcosd(TTh)**2)
     return KN
-    
+
 def LorchWeight(Q):
     'needs a doc string'
     return np.sin(np.pi*(Q[-1]-Q)/(2.0*Q[-1]))
-            
+
 def GetAsfMean(ElList,Sthl2):
     '''Calculate various scattering factor terms for PDF calcs
 
@@ -284,14 +284,14 @@ def GetAsfMean(ElList,Sthl2):
         FF2 += ff2*el['FormulaNo']/sumNoAtoms
         CF += cf*el['FormulaNo']/sumNoAtoms
     return FF2,FF**2,CF
-    
+
 def GetNumDensity(ElList,Vol):
     'needs a doc string'
     sumNoAtoms = 0.0
     for El in ElList:
         sumNoAtoms += ElList[El]['FormulaNo']
     return sumNoAtoms/Vol
-           
+
 def CalcPDF(data,inst,limits,xydata):
     '''Computes I(Q), S(Q) & G(r) from Sample, Bkg, etc. diffraction patterns loaded into
     dict xydata; results are placed in xydata.
@@ -330,7 +330,7 @@ def CalcPDF(data,inst,limits,xydata):
             print("Interpolating Container background since points don't match")
             interpF = si.interp1d(xydata['Container'][1][0],xycontainer,fill_value='extrapolate')
             IofQ[1][1] += interpF(IofQ[1][0])
-        
+
     data['IofQmin'] = IofQ[1][1][-1]
     IofQ[1][1] -= data.get('Flat Bkg',0.)
     #get element data & absorption coeff.
@@ -358,17 +358,17 @@ def CalcPDF(data,inst,limits,xydata):
             SA *= ElList[El]['FormulaNo']/data['Form Vol']
             Abs += SA
         MuR = Abs*data['Diam']/2.
-        IofQ[1][1] /= Absorb(data['Geometry'],MuR,inst['2-theta'][1]*np.ones(len(wave))) 
+        IofQ[1][1] /= Absorb(data['Geometry'],MuR,inst['2-theta'][1]*np.ones(len(wave)))
     # improves look of F(Q) but no impact on G(R)
     # bBut,aBut = signal.butter(8,.5,"lowpass")
     # IofQ[1][1] = signal.filtfilt(bBut,aBut,IofQ[1][1])
-    XY = IofQ[1]    
+    XY = IofQ[1]
     #convert to Q
     nQpoints = 5000
     if 'C' in inst['Type'][0]:
         wave = G2mth.getWave(inst)
         minQ = npT2q(Tth[0],wave)
-        maxQ = npT2q(Tth[-1],wave)    
+        maxQ = npT2q(Tth[-1],wave)
         Qpoints = np.linspace(0.,maxQ,nQpoints,endpoint=True)
         dq = Qpoints[1]-Qpoints[0]
         XY[0] = npT2q(XY[0],wave)
@@ -382,7 +382,7 @@ def CalcPDF(data,inst,limits,xydata):
         XY[0] = 2.*np.pi*difC/XY[0]
         Qdata = si.griddata(XY[0],XY[1],Qpoints,method='linear',fill_value=XY[1][-1])    #interpolate I(Q)
     Qdata -= np.min(Qdata)*data['BackRatio']
-    
+
     qLimits = data['QScaleLim']
     maxQ = np.searchsorted(Qpoints,min(Qpoints[-1],qLimits[1]))+1
     minQ = np.searchsorted(Qpoints,min(qLimits[0],0.90*Qpoints[-1]))
@@ -395,7 +395,7 @@ def CalcPDF(data,inst,limits,xydata):
     for item in xydata['IofQ'][1]:
         newdata.append(item[:maxQ])
     xydata['IofQ'][1] = newdata
-    
+
     xydata['SofQ'] = copy.deepcopy(xydata['IofQ'])
     if 'XC' in inst['Type'][0]:
         FFSq,SqFF,CF = GetAsfMean(ElList,(xydata['SofQ'][1][0]/(4.0*np.pi))**2)  #these are <f^2>,<f>^2,Cf
@@ -408,7 +408,7 @@ def CalcPDF(data,inst,limits,xydata):
     if 'XC' in inst['Type'][0]:
 #        CF *= KleinNishina(wave,Q)
         ruland = Ruland(data['Ruland'],wave,Q,CF)
-#        auxPlot.append([Q,ruland,'Ruland'])      
+#        auxPlot.append([Q,ruland,'Ruland'])
         CF *= ruland
 #    auxPlot.append([Q,CF,'CF-Corr'])
     scale = np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
@@ -421,7 +421,7 @@ def CalcPDF(data,inst,limits,xydata):
     xydata['FofQ'] = copy.deepcopy(xydata['SofQ'])
     xydata['FofQ'][1][1] = xydata['FofQ'][1][0]*(xydata['SofQ'][1][1]-1.0)
     if data['Lorch']:
-        xydata['FofQ'][1][1] *= LorchWeight(Q)    
+        xydata['FofQ'][1][1] *= LorchWeight(Q)
     xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
     xydata['gofr'] = copy.deepcopy(xydata['FofQ'])
     nR = len(xydata['GofR'][1][1])
@@ -445,10 +445,10 @@ def CalcPDF(data,inst,limits,xydata):
         xydata['gofr'][1][1] = np.where(R<Rmin,-4.*numbDen,xydata['gofr'][1][1])
         xydata['GofR'][1][1] = np.where(R<Rmin,-4.*R*np.pi*numbDen,xydata['GofR'][1][1])
     return auxPlot
-    
+
 def PDFPeakFit(peaks,data):
     rs2pi = 1./np.sqrt(2*np.pi)
-    
+
     def MakeParms(peaks):
         varyList = []
         parmDict = {'slope':peaks['Background'][1][1]}
@@ -465,7 +465,7 @@ def PDFPeakFit(peaks,data):
             if 'S' in peak[3]:
                 varyList.append('PDFsig;'+str(i))
         return parmDict,varyList
-        
+
     def SetParms(peaks,parmDict,varyList):
         if 'slope' in varyList:
             peaks['Background'][1][1] = parmDict['slope']
@@ -476,8 +476,8 @@ def PDFPeakFit(peaks,data):
                 peak[1] = parmDict['PDFmag;'+str(i)]
             if 'PDFsig;'+str(i) in varyList:
                 peak[2] = parmDict['PDFsig;'+str(i)]
-        
-    
+
+
     def CalcPDFpeaks(parmdict,Xdata):
         Z = parmDict['slope']*Xdata
         ipeak = 0
@@ -491,12 +491,12 @@ def PDFPeakFit(peaks,data):
                 ipeak += 1
             except KeyError:        #no more peaks to process
                 return Z
-                
-    def errPDFProfile(values,xdata,ydata,parmdict,varylist):        
+
+    def errPDFProfile(values,xdata,ydata,parmdict,varylist):
         parmdict.update(zip(varylist,values))
         M = CalcPDFpeaks(parmdict,xdata)-ydata
         return M
-            
+
     newpeaks = copy.copy(peaks)
     iBeg = np.searchsorted(data[1][0],newpeaks['Limits'][0])
     iFin = np.searchsorted(data[1][0],newpeaks['Limits'][1])+1
@@ -506,7 +506,7 @@ def PDFPeakFit(peaks,data):
     if not len(varyList):
         G2fil.G2Print (' Nothing varied')
         return newpeaks,None,None,None,None,None
-    
+
     Rvals = {}
     values =  np.array(Dict2Values(parmDict, varyList))
     result = so.leastsq(errPDFProfile,values,full_output=True,ftol=0.0001,
@@ -516,11 +516,11 @@ def PDFPeakFit(peaks,data):
     SetParms(peaks,parmDict,varyList)
     Rvals['Rwp'] = np.sqrt(chisq/np.sum(Y**2))*100.      #to %
     chisq = np.sum(result[2]['fvec']**2)/(len(X)-len(values))   #reduced chi^2 = M/(Nobs-Nvar)
-    sigList = list(np.sqrt(chisq*np.diag(result[1])))    
+    sigList = list(np.sqrt(chisq*np.diag(result[1])))
     Z = CalcPDFpeaks(parmDict,X)
     newpeaks['calc'] = [X,Z]
-    return newpeaks,result[0],varyList,sigList,parmDict,Rvals    
-    
+    return newpeaks,result[0],varyList,sigList,parmDict,Rvals
+
 def MakeRDF(RDFcontrols,background,inst,pwddata):
     auxPlot = []
     if 'C' in inst['Type'][0] or 'B' in inst['Type'][0]:
@@ -528,7 +528,7 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
         wave = G2mth.getWave(inst)
         minQ = npT2q(Tth[0],wave)
         maxQ = npT2q(Tth[-1],wave)
-        powQ = npT2q(Tth,wave)  
+        powQ = npT2q(Tth,wave)
     elif 'T' in inst['Type'][0]:
         TOF = pwddata[0]
         difC = inst['difC'][1]
@@ -557,7 +557,7 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
 #    auxPlot.append([Qpoints,Qdata,'interpolate:'+RDFcontrols['Smooth']])
 #    auxPlot.append([Qpoints,Qsmooth,'interpolate:'+RDFcontrols['Smooth']])
     DofR = dq*np.imag(fft.fft(Qsmooth,16*nR)[:nR])
-    auxPlot.append([R[:iFin],DofR[:iFin],'D(R) for '+RDFcontrols['UseObsCalc']])    
+    auxPlot.append([R[:iFin],DofR[:iFin],'D(R) for '+RDFcontrols['UseObsCalc']])
     return auxPlot
 
 # PDF optimization =============================================================
@@ -604,7 +604,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
         '''Objective routine -- evaluates the RMS deviations in G(r)
         from -4(pi)*#density*r for for r<Rmin
         arguments are ['Flat Bkg','BackRatio','Ruland'] scaled so that
-        the min & max values are between 0 and 1. 
+        the min & max values are between 0 and 1.
         '''
         if Data['Sample Bkg.'].get('Refine',False):
             R,S = arg
@@ -633,7 +633,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
         return [F,data['BackRatio'],max(data['Ruland'],.05)]
     def SetFinalVals(arg):
         '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
-        scaled, refined values and plot corrected region of G(r) 
+        scaled, refined values and plot corrected region of G(r)
         '''
         if data['Sample Bkg.'].get('Refine',False):
             R,S = arg
@@ -648,7 +648,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
     BkgMax = max(xydata['IofQ'][1][1])/50.
     return EvalLowPDF,GetCurrentVals,SetFinalVals
 
-#### GSASII convolution peak fitting routines: Finger, Cox & Jephcoat model  
+#### GSASII convolution peak fitting routines: Finger, Cox & Jephcoat model
 def factorize(num):
     ''' Provide prime number factors for integer num
     :returns: dictionary of prime factors (keys) & power for each (data)
@@ -673,7 +673,7 @@ def factorize(num):
         return factors
     else:
         return {num:1}          #a prime number!
-            
+
 def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
     ''' Provide list of optimal data sizes for FFT calculations
 
@@ -681,7 +681,7 @@ def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
     :param int nmax: maximum data size > nmin
     :param int thresh: maximum prime factor allowed
     :Returns: list of data sizes where the maximum prime factor is < thresh
-    ''' 
+    '''
     plist = []
     nmin = max(1,nmin)
     nmax = max(nmin+1,nmax)
@@ -707,12 +707,12 @@ The scale (scale) keyword specifies the standard deviation.
 normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
 
     '''
-      
+
     def pdf(self,x,*args,**kwds):
         loc,scale=kwds['loc'],kwds['scale']
         x = (x-loc)/scale
         return np.exp(-x**2/2.0) * _norm_pdf_C / scale
-        
+
 norm = norm_gen(name='norm')
 
 ## Cauchy
@@ -732,9 +732,9 @@ This is the t distribution with one degree of freedom.
         loc,scale=kwds['loc'],kwds['scale']
         x = (x-loc)/scale
         return 1.0/np.pi/(1.0+x*x) / scale
-        
+
 cauchy = cauchy_gen(name='cauchy')
-    
+
 
 class fcjde_gen(st.rv_continuous):
     """
@@ -743,7 +743,7 @@ class fcjde_gen(st.rv_continuous):
 
     :param x: array -1 to 1
     :param t: 2-theta position of peak
-    :param s: sum(S/L,H/L); S: sample height, H: detector opening, 
+    :param s: sum(S/L,H/L); S: sample height, H: detector opening,
       L: sample to detector opening distance
     :param dx: 2-theta step size in deg
 
@@ -753,10 +753,10 @@ class fcjde_gen(st.rv_continuous):
      * s = S/L+H/L
      * if x < 0::
 
-        fcj.pdf = [1/sqrt({cos(T)**2/cos(t)**2}-1) - 1/s]/|cos(T)| 
+        fcj.pdf = [1/sqrt({cos(T)**2/cos(t)**2}-1) - 1/s]/|cos(T)|
 
-     * if x >= 0: fcj.pdf = 0   
-     
+     * if x >= 0: fcj.pdf = 0
+
     """
     def _pdf(self,x,t,s,dx):
         T = dx*x+t
@@ -767,14 +767,14 @@ class fcjde_gen(st.rv_continuous):
         fx = np.where(ax>bx,(np.sqrt(bx/(ax-bx))-1./s)/ax2,0.0)
         fx = np.where(fx > 0.,fx,0.0)
         return fx
-             
+
     def pdf(self,x,*args,**kwds):
         loc=kwds['loc']
         return self._pdf(x-loc,*args)
-        
+
 fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
-                
-def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
+
+def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     '''Compute the Finger-Cox-Jepcoat modified Voigt function for a
     CW powder peak by direct convolution. This version is not used.
     '''
@@ -797,21 +797,21 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     Df /= np.sum(Df)
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
     return intens*Df(xdata)*DX/dx
-    
-#### GSASII peak fitting routine: Finger, Cox & Jephcoat model        
+
+#### GSASII peak fitting routine: Finger, Cox & Jephcoat model
 
 def getWidthsCW(pos,sig,gam,shl):
     '''Compute the peak widths used for computing the range of a peak
-    for constant wavelength data. On low-angle side, 50 FWHM are used, 
+    for constant wavelength data. On low-angle side, 50 FWHM are used,
     on high-angle side 75 are used, low angle side extended for axial divergence
     (for peaks above 90 deg, these are reversed.)
-    
+
     :param pos: peak position; 2-theta in degrees
     :param sig: Gaussian peak variance in centideg^2
     :param gam: Lorentzian peak width in centidegrees
     :param shl: axial divergence parameter (S+H)/L
-    
-    :returns: widths; [Gaussian sigma, Lorentzian gamma] in degrees, and 
+
+    :returns: widths; [Gaussian sigma, Lorentzian gamma] in degrees, and
         low angle, high angle ends of peak; 50 FWHM & 75 FWHM from position
         reversed for 2-theta > 90 deg.
     '''
@@ -820,19 +820,19 @@ def getWidthsCW(pos,sig,gam,shl):
     fmin = 50.*(fwhm+shl*abs(npcosd(pos)))
     fmax = 75.0*fwhm
     if pos > 90.:
-        fmin,fmax = [fmax,fmin]          
+        fmin,fmax = [fmax,fmin]
     return widths,fmin,fmax
-    
+
 def getWidthsED(pos,sig,gam):
     '''Compute the peak widths used for computing the range of a peak
-    for energy dispersive data. On low-energy side, 20 FWHM are used, 
+    for energy dispersive data. On low-energy side, 20 FWHM are used,
     on high-energy side 20 are used
-    
+
     :param pos: peak position; energy in keV (not used)
     :param sig: Gaussian peak variance in keV^2
     :param gam: Lorentzian peak width in keV
-    
-    :returns: widths; [Gaussian sigma, Lorentzian gamma] in keV, and 
+
+    :returns: widths; [Gaussian sigma, Lorentzian gamma] in keV, and
         low angle, high angle ends of peak; 5 FWHM & 5 FWHM from position
     '''
     widths = [np.sqrt(sig),gam]
@@ -840,38 +840,38 @@ def getWidthsED(pos,sig,gam):
     fmin = 5.*fwhm
     fmax = 5.*fwhm
     return widths,fmin,fmax
-    
+
 def getWidthsTOF(pos,alp,bet,sig,gam):
     '''Compute the peak widths used for computing the range of a peak
-    for TOF data. 50 FWHM are used on both sides each 
+    for TOF data. 50 FWHM are used on both sides each
     extended by exponential coeff.
-    
+
     param pos: peak position; TOF in musec (not used)
     param alp,bet: TOF peak exponential rise & decay parameters
     param sig: Gaussian peak variance in musec^2
     param gam: Lorentzian peak width in musec
-    
+
     returns: widths; [Gaussian sigma, Lornetzian gamma] in musec
     returns: low TOF, high TOF ends of peak; 50FWHM from position
     '''
     widths = [np.sqrt(sig),gam]
     fwhm = 2.355*widths[0]+2.*widths[1]
-    fmin = 50.*fwhm*(1.+1./alp)    
+    fmin = 50.*fwhm*(1.+1./alp)
     fmax = 50.*fwhm*(1.+1./bet)
     return widths,fmin,fmax
-    
+
 def getWidthsCWA(pos,alp,bet,sig,gam,shl):
     '''Compute the peak widths used for computing the range of a peak
-    for constant wavelength data with axial divergence. 50 & 75 FWHM are used on 
+    for constant wavelength data with axial divergence. 50 & 75 FWHM are used on
     each side each extended by exponential coeff.
-    
+
     :param pos: peak position; 2-theta in degrees
     :param alp,bet: TOF peak exponential rise & decay parameters
     :param sig: Gaussian peak variance in centideg^2
     :param gam: Lorentzian peak width in centidegrees
     :param shl: axial divergence parameter (S+H)/L
-    
-    :returns: widths; [Gaussian sigma, Lorentzian gamma] in degrees, and 
+
+    :returns: widths; [Gaussian sigma, Lorentzian gamma] in degrees, and
         low angle, high angle ends of peak; 50 FWHM & 75 FWHM from position
         reversed for 2-theta > 90 deg.
     '''
@@ -884,37 +884,37 @@ def getWidthsCWA(pos,alp,bet,sig,gam,shl):
         fmin = 75.0*fwhm*(1.+1./alp)
         fmax = 50.0*(fwhm*(1.+1./bet)+shl*abs(npcosd(pos)))
     return widths,fmin,fmax
-    
+
 def getWidthsCWB(pos,alp,bet,sig,gam):
     '''Compute the peak widths used for computing the range of a peak
-    for constant wavelength data without axial divergence. 50 FWHM are used on 
+    for constant wavelength data without axial divergence. 50 FWHM are used on
     both sides each extended by exponential coeff.
-    
+
     :param pos: peak position; 2-theta in degrees
     :param alp,bet: TOF peak exponential rise & decay parameters
     :param sig: Gaussian peak variance in centideg^2
     :param gam: Lorentzian peak width in centidegrees
-    
+
     returns: widths; [Gaussian sigma, Lornetzian gamma] in degrees
     returns: low angle, high angle ends of peak; 50FWHM from position
     '''
     widths = [np.sqrt(sig)/100.,gam/100.]
     fwhm = 2.355*widths[0]+2.*widths[1]
-    fmin = 50.*fwhm*(1.+1./alp)    
+    fmin = 50.*fwhm*(1.+1./alp)
     fmax = 50.*fwhm*(1.+1./bet)
     return widths,fmin,fmax
-    
+
 def getFWHM(pos,Inst,N=1):
     '''Compute total FWHM from Thompson, Cox & Hastings (1987) , J. Appl. Cryst. 20, 79-83
     via getgamFW(g,s).
-    
+
     :param pos: float peak position in deg 2-theta or tof in musec
     :param Inst: dict instrument parameters
     :param N: int Inst index (0 for input, 1 for fitted)
-    
+
     :returns float: total FWHM of pseudoVoigt in deg or musec
-    ''' 
-    
+    '''
+
     sig = lambda Th,U,V,W: np.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))
     sigED = lambda E,A,B,C: np.sqrt(max(0.001,A*E**2+B*E+C))
     sigTOF = lambda dsp,S0,S1,S2,Sq: np.sqrt(S0+S1*dsp**2+S2*dsp**4+Sq*dsp)
@@ -954,38 +954,38 @@ def getFWHM(pos,Inst,N=1):
         s = sig(pos/2.,Inst['U'][N],Inst['V'][N],Inst['W'][N])
         g = gam(pos/2.,Inst['X'][N],Inst['Y'][N],Inst['Z'][N])
         return getgamFW(g,s)/100.+np.log(2.0)*(alp+bet)/(alp*bet)  #returns FWHM in deg
-    
+
 def getgamFW(g,s):
     '''Compute total FWHM from Thompson, Cox & Hastings (1987), J. Appl. Cryst. 20, 79-83
     lambda fxn needs FWHM for both Gaussian & Lorentzian components
-    
+
     :param g: float Lorentzian gamma = FWHM(L)
     :param s: float Gaussian sig
-    
+
     :returns float: total FWHM of pseudoVoigt
-    ''' 
+    '''
     gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
     return gamFW(2.35482*s,g)   #sqrt(8ln2)*sig = FWHM(G)
-                
+
 def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
-    '''Computes the background based on parameters that may be taken from 
+    '''Computes the background based on parameters that may be taken from
     a gpx file or the data tree.
 
     :param str pfx: histogram prefix (:h:)
     :param dict parmDict: Refinement parameter values
     :param str bakType: defines background function to be used. Should be
-      one of these: 'chebyschev', 'cosine', 'chebyschev-1', 
-      'Q^2 power series', 'Q^-2 power series', 'lin interpolate', 
+      one of these: 'chebyschev', 'cosine', 'chebyschev-1',
+      'Q^2 power series', 'Q^-2 power series', 'lin interpolate',
       'inv interpolate', 'log interpolate'
     :param str dataType: Code to indicate histogram type (PXC, PNC, PNT,...)
-    :param MaskedArray xdata: independent variable, 2theta (deg*100) or 
+    :param MaskedArray xdata: independent variable, 2theta (deg*100) or
       TOF (microsec?)
-    :param numpy.array fixback: Array of fixed background points (length 
+    :param numpy.array fixback: Array of fixed background points (length
       matching xdata) or None
 
-    :returns: yb,sumBK where yp is an array of background values (length 
+    :returns: yb,sumBK where yp is an array of background values (length
       matching xdata) and sumBK is a list with three values. The sumBK[0] is
-      the sum of all yb values, sumBK[1] is the sum of Debye background terms 
+      the sum of all yb values, sumBK[1] is the sum of Debye background terms
       and sumBK[2] is the sum of background peaks.
     '''
     if 'T' in dataType:
@@ -1007,7 +1007,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             break
 #empirical functions
     if bakType in ['chebyschev','cosine','chebyschev-1']:
-        dt = xdata[-1]-xdata[0]    
+        dt = xdata[-1]-xdata[0]
         for iBak in range(nBak):
             key = pfx+'Back;'+str(iBak)
             if bakType == 'chebyschev':
@@ -1058,7 +1058,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
 #Debye function
     if pfx+'difC' in parmDict or 'E' in dataType:
         ff = 1.
-    else:        
+    else:
         try:
             wave = parmDict[pfx+'Lam']
         except KeyError:
@@ -1066,7 +1066,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
         SQ = (q/(4.*np.pi))**2
         FF = G2elem.GetFormFactorCoeff('Si')[0]
         ff = np.array(G2elem.ScatFac(FF,SQ)[0])**2
-    iD = 0        
+    iD = 0
     while True:
         try:
             dbA = parmDict[pfx+'DebyeA;'+str(iD)]
@@ -1075,7 +1075,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             ybi = ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
             yb += ybi
             sumBk[1] += np.sum(ybi)
-            iD += 1       
+            iD += 1
         except KeyError:
             break
 #peaks
@@ -1094,7 +1094,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
                 alp = max(0.1,parmDict[pfx+'alpha-0']+parmDict[pfx+'alpha-1']*sinPos)
                 bet = max(0.001,parmDict[pfx+'beta-0']+parmDict[pfx+'beta-1']*sinPos)
                 Wd,fmin,fmax = getWidthsCWB(pkP,alp,bet,pkS,pkG)
-            elif 'A'' in dataType':    
+            elif 'A'' in dataType':
                 shl = parmDict[pfx+'SH/L']
                 sinPos = npsind(pkP/2.0)
                 alp = max(0.1,parmDict[pfx+'alpha-0']+parmDict[pfx+'alpha-1']*sinPos)
@@ -1127,26 +1127,26 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
                 raise Exception('dataType of {:} should not happen!'.format(dataType))
             yb[iBeg:iFin] += ybi
             sumBk[2] += np.sum(ybi)
-            iD += 1       
+            iD += 1
         except KeyError:
             break
         except ValueError:
             G2fil.G2Print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
             break
-    if fixback is not None:   
+    if fixback is not None:
         yb += parmDict[pfx+'BF mult']*fixback
         sumBk[0] = sum(yb)
     return yb,sumBk
-    
+
 def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
-    '''Computes the derivatives of the background 
+    '''Computes the derivatives of the background
     Parameters passed to this may be pulled from gpx file or data tree.
     See :func:`getBackground` for parameter definitions.
 
-    :returns: dydb,dyddb,dydpk,dydfb where the first three are 2-D arrays 
-      of derivatives with respect to the background terms, the Debye terms and 
-      the background peak terms vs. the points in the diffracton pattern. The 
-      final 1D array is the derivative with respect to the fixed-background 
+    :returns: dydb,dyddb,dydpk,dydfb where the first three are 2-D arrays
+      of derivatives with respect to the background terms, the Debye terms and
+      the background peak terms vs. the points in the diffracton pattern. The
+      final 1D array is the derivative with respect to the fixed-background
       multiplier (= the fixed background values).
     '''
     if 'T' in dataType:
@@ -1170,8 +1170,8 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
     dydfb = []
 
     if bakType in ['chebyschev','cosine','chebyschev-1']:
-        dt = xdata[-1]-xdata[0]    
-        for iBak in range(nBak):    
+        dt = xdata[-1]-xdata[0]
+        for iBak in range(nBak):
             if bakType == 'chebyschev':
                 dydb[iBak] = (-1.+2.*(xdata-xdata[0])/dt)**iBak
             elif bakType == 'chebyschev-1':
@@ -1224,7 +1224,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
         SQ = (q/(4*np.pi))**2
         FF = G2elem.GetFormFactorCoeff('Si')[0]
         ff = np.array(G2elem.ScatFac(FF,SQ)[0])*np.pi**2    #needs pi^2~10. for cw data (why?)
-    iD = 0        
+    iD = 0
     while True:
         try:
             if hfx+'difC' in parmDict:
@@ -1256,7 +1256,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
                 alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
                 bet = max(0.001,parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']*sinPos)
                 Wd,fmin,fmax = getWidthsCWB(pkP,alp,bet,pkS,pkG)
-            elif 'A'' in dataType':    
+            elif 'A'' in dataType':
                 shl = parmDict[hfx+'SH/L']
                 sinPos = npsind(pkP/2.0)
                 alp = max(0.1,parmDict[hfx+'alpha-0']+parmDict[hfx+'alpha-1']*sinPos)
@@ -1293,12 +1293,12 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
             dydpk[4*iD+1][iBeg:iFin] += Df
             dydpk[4*iD+2][iBeg:iFin] += pkI*dFds
             dydpk[4*iD+3][iBeg:iFin] += pkI*dFdg
-            iD += 1       
+            iD += 1
         except KeyError:
             break
         except ValueError:
             G2fil.G2Print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
-            break        
+            break
     # fixed background from file
     if  fixback is not None:
         dydfb = fixback
@@ -1308,13 +1308,13 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
     '''Compute the Finger-Cox-Jepcoat modified Pseudo-Voigt function for a
     CW powder peak in external Fortran routine
-    
+
     param pos: peak position in degrees
     param sig: Gaussian variance in centideg^2
     param gam: Lorentzian width in centideg
     param shl: axial divergence parameter (S+H)/L
     param xdata: array; profile points for peak to be calculated; bounded by 20FWHM to 50FWHM (or vv)
-    
+
     returns: array: calculated peak function at each xdata
     returns: integral of peak; nominally = 1.0
     '''
@@ -1329,22 +1329,22 @@ def getFCJVoigt3(pos,sig,gam,shl,xdata):
 def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     '''Compute analytic derivatives the Finger-Cox-Jepcoat modified Pseudo-Voigt
     function for a CW powder peak
-    
+
     param pos: peak position in degrees
     param sig: Gaussian variance in centideg^2
     param gam: Lorentzian width in centideg
     param shl: axial divergence parameter (S+H)/L
     param xdata: array; profile points for peak to be calculated; bounded by 20FWHM to 50FWHM (or vv)
-    
+
     returns: arrays: function and derivatives of pos, sig, gam, & shl
     '''
     Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     return Df,dFdp,dFds,dFdg,dFdsh
 
 def getExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
-    '''Compute the Finger-Cox-Jepcoat modified double exponential Pseudo-Voigt 
+    '''Compute the Finger-Cox-Jepcoat modified double exponential Pseudo-Voigt
     convolution function for a CW powder peak in external Fortran routine
-    
+
     param pos: peak position in degrees
     param sig: Gaussian variance in centideg^2
     param alp: Rise exponential coefficient
@@ -1352,7 +1352,7 @@ def getExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
     param gam: Lorentzian width in centideg
     param shl: axial divergence parameter (S+H)/L
     param xdata: array; profile points for peak to be calculated; bounded by 20FWHM to 50FWHM (or vv)
-    
+
     returns: array: calculated peak function at each xdata
     returns: integral of peak; nominally = 1.0
     '''
@@ -1365,9 +1365,9 @@ def getExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
         return 0.,1.
 
 def getdExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
-    '''Compute analytic derivatives the Finger-Cox-Jepcoat modified double 
+    '''Compute analytic derivatives the Finger-Cox-Jepcoat modified double
     exponential Pseudo-Voigt convolution function for a CW powder peak
-    
+
     param pos: peak position in degrees
     param alp: Rise exponential coefficient
     param bet: Decay exponential coefficient
@@ -1375,7 +1375,7 @@ def getdExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
     param gam: Lorentzian width in centideg
     param shl: axial divergence parameter (S+H)/L
     param xdata: array; profile points for peak to be calculated; bounded by 20FWHM to 50FWHM (or vv)
-    
+
     returns: arrays: function and derivatives of pos, alp, bet, sig, gam, & shl
     '''
     Df,dFdp,dFda,dFdb,dFds,dFdg,dFdsh = pyd.pydpsvfcjexpo(len(xdata),xdata-pos,pos,alp,bet,sig,gam,shl)
@@ -1384,16 +1384,16 @@ def getdExpFCJVoigt3(pos,alp,bet,sig,gam,shl,xdata):
 def getPsVoigt(pos,sig,gam,xdata):
     '''Compute the simple Pseudo-Voigt function for a
     small angle Bragg peak in external Fortran routine
-    
+
     param pos: peak position in degrees
     param sig: Gaussian variance in centideg^2
     param gam: Lorentzian width in centideg
     param xdata: array; profile points for peak to be calculated
-    
+
     returns: array: calculated peak function at each xdata
     returns: integral of peak; nominally = 1.0
     '''
-    
+
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
     Df = pyd.pypsvoigt(len(xdata),xdata-pos,sig,gam)
@@ -1402,16 +1402,16 @@ def getPsVoigt(pos,sig,gam,xdata):
 def getdPsVoigt(pos,sig,gam,xdata):
     '''Compute the simple Pseudo-Voigt function derivatives for a
     small angle Bragg peak peak in external Fortran routine
-    
+
     param pos: peak position in degrees
     param sig: Gaussian variance in centideg^2
     param gam: Lorentzian width in centideg
     param xdata: array; profile points for peak to be calculated
 
     returns: arrays: function and derivatives of pos, sig & gam
-    NB: the pos derivative has the opposite sign compared to that in other profile functions 
+    NB: the pos derivative has the opposite sign compared to that in other profile functions
     '''
-    
+
     Df,dFdp,dFds,dFdg = pyd.pydpsvoigt(len(xdata),xdata-pos,sig,gam)
     return Df,dFdp,dFds,dFdg
 
@@ -1419,27 +1419,27 @@ def getEpsVoigt(pos,alp,bet,sig,gam,xdata):
     '''Compute the double exponential Pseudo-Voigt convolution function for a
     neutron TOF & CW pink peak in external Fortran routine
     '''
-    
+
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
     Df = pyd.pyepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
-    return Df,np.sum(Df*cw)  
-    
+    return Df,np.sum(Df*cw)
+
 def getdEpsVoigt(pos,alp,bet,sig,gam,xdata):
     '''Compute the double exponential Pseudo-Voigt convolution function derivatives for a
     neutron TOF & CW pink peak in external Fortran routine
     '''
-    
+
     Df,dFdp,dFda,dFdb,dFds,dFdg = pyd.pydepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
-    return Df,dFdp,dFda,dFdb,dFds,dFdg   
+    return Df,dFdp,dFda,dFdb,dFds,dFdg
 
 def ellipseSize(H,Sij,GB):
     '''Implements r=1/sqrt(sum((1/S)*(q.v)^2) per note from Alexander Brady
     '''
-    
+
     HX = np.inner(H.T,GB)
     lenHX = np.sqrt(np.sum(HX**2))
-    Esize,Rsize = nl.eigh(G2lat.U6toUij(Sij))            
+    Esize,Rsize = nl.eigh(G2lat.U6toUij(Sij))
     R = np.inner(HX/lenHX,Rsize)**2*Esize         #want column length for hkl in crystal
     lenR = 1./np.sqrt(np.sum(R))
     return lenR
@@ -1447,7 +1447,7 @@ def ellipseSize(H,Sij,GB):
 def ellipseSizeDerv(H,Sij,GB):
     '''Implements r=1/sqrt(sum((1/S)*(q.v)^2) derivative per note from Alexander Brady
     '''
-    
+
     lenR = ellipseSize(H,Sij,GB)
     delt = 0.001
     dRdS = np.zeros(6)
@@ -1476,7 +1476,7 @@ def getMustrain(HKL,G,SGData,muStrData):
         Strms = np.array(G2spc.MustrainCoeff(H,SGData))
         Sum = np.sum(np.array(muStrData[4])[:,nxs]*Strms,axis=0)
         return np.sqrt(Sum)/rdsq
-    
+
 def getCrSize(HKL,G,GB,sizeData):
     if sizeData[0] == 'isotropic':
         return np.ones(HKL.shape[1])*sizeData[1][0]
@@ -1497,14 +1497,14 @@ def getHKLpeak(dmin,SGData,A,Inst=None,nodup=False):
     Generates allowed by symmetry reflections with d >= dmin
     NB: GenHKLf & checkMagextc return True for extinct reflections
 
-    :param dmin:  minimum d-spacing 
+    :param dmin:  minimum d-spacing
     :param SGData: space group data obtained from SpcGroup
     :param A: lattice parameter terms A1-A6
     :param Inst: instrument parameter info
     :returns: HKLs: np.array hkl, etc for allowed reflections
 
     '''
-    HKL = G2lat.GenHLaue(dmin,SGData,A)        
+    HKL = G2lat.GenHLaue(dmin,SGData,A)
     HKLs = []
     ds = []
     for h,k,l,d in HKL:
@@ -1527,7 +1527,7 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
     vec = np.array(Vec)
     vstar = np.sqrt(G2lat.calc_rDsq(vec,A))     #find extra needed for -n SS reflections
     dvec = 1./(maxH*vstar+1./dmin)
-    HKL = G2lat.GenHLaue(dvec,SGData,A)        
+    HKL = G2lat.GenHLaue(dvec,SGData,A)
     SSdH = [vec*h for h in range(-maxH,maxH+1)]
     SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
     ifMag = False
@@ -1545,16 +1545,16 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
                     if G2spc.checkSSextc(HKLM,SSGData) or ifMag:
-                        HKLs.append([h,k,l,dH,d,G2lat.Dsp2pos(Inst,d),-1])    
+                        HKLs.append([h,k,l,dH,d,G2lat.Dsp2pos(Inst,d),-1])
     return G2lat.sortHKLd(HKLs,True,True,True)
 
 peakInstPrmMode = True
-'''Determines the mode used for peak fitting. When peakInstPrmMode=True peak 
-width parameters are computed from the instrument parameters (UVW,... or 
-alpha,... etc) unless the individual parameter is refined. This allows the 
+'''Determines the mode used for peak fitting. When peakInstPrmMode=True peak
+width parameters are computed from the instrument parameters (UVW,... or
+alpha,... etc) unless the individual parameter is refined. This allows the
 instrument parameters to be refined. When peakInstPrmMode=False, the instrument
-parameters are not used and cannot be refined. 
-The default is peakFitMode=True. This is changed only in 
+parameters are not used and cannot be refined.
+The default is peakFitMode=True. This is changed only in
 :func:`setPeakInstPrmMode`, which is called from :mod:`GSASIIscriptable`
 or GSASIIphsGUI.OnSetPeakWidMode ('Gen unvaried widths' menu item).
 '''
@@ -1562,13 +1562,13 @@ or GSASIIphsGUI.OnSetPeakWidMode ('Gen unvaried widths' menu item).
 def setPeakInstPrmMode(normal=True):
     '''Determines the mode used for peak fitting. If normal=True (default)
     peak width parameters are computed from the instrument parameters
-    unless the individual parameter is refined. If normal=False, 
-    peak widths are used as supplied for each peak. 
+    unless the individual parameter is refined. If normal=False,
+    peak widths are used as supplied for each peak.
 
-    Note that normal=True unless this routine is called. Also, 
-    instrument parameters can only be refined with normal=True. 
+    Note that normal=True unless this routine is called. Also,
+    instrument parameters can only be refined with normal=True.
 
-    :param bool normal: setting to apply to global variable 
+    :param bool normal: setting to apply to global variable
       :data:`peakInstPrmMode`
     '''
     global peakInstPrmMode
@@ -1576,7 +1576,7 @@ def setPeakInstPrmMode(normal=True):
 
 def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
     '''Computes the profiles from multiple peaks for individual peak fitting
-    for powder patterns. 
+    for powder patterns.
     NB: not used for Rietveld refinement
     '''
     yb = getBackground('',parmDict,bakType,dataType,xdata,fixback)[0]
@@ -1675,7 +1675,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                     Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
                 elif 'B' in dataType:
                     Wd,fmin,fmax = getWidthsCWB(pos,alp,bet,sig,gam)
-                else: #'A'    
+                else: #'A'
                     Wd,fmin,fmax = getWidthsCWA(pos,alp,bet,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
                 iFin = np.searchsorted(xdata,pos+fmin)
@@ -1736,14 +1736,14 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 yc[iBeg:iFin] += intens*getPsVoigt(pos,sig*10.**4,gam*100.,xdata[iBeg:iFin])[0]
                 iPeak += 1
             except KeyError:        #no more peaks to process
-                return yb+yc        
+                return yb+yc
     else:
         Pdabc = parmDict['Pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
             try:
-                pos = parmDict['pos'+str(iPeak)]                
+                pos = parmDict['pos'+str(iPeak)]
                 tof = pos-parmDict['Zero']
                 dsp = tof/difC
                 intens = parmDict['int'+str(iPeak)]
@@ -1795,12 +1795,12 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc
-            
+
 def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
     '''Computes the profile derivatives for a powder pattern for single peak fitting
-    
+
     return: np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
-    
+
     NB: not used for Rietveld refinement
     '''
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
@@ -1882,7 +1882,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
                 elif 'B' in dataType:
                     Wd,fmin,fmax = getWidthsCWB(pos,alp,bet,sig,gam)
-                else: #'A'    
+                else: #'A'
                     Wd,fmin,fmax = getWidthsCWA(pos,alp,bet,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
                 iFin = max(iBeg+3,np.searchsorted(xdata,pos+fmin))
@@ -2027,15 +2027,15 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                     dMdv[varyList.index('Z')] += dgdZ*dervDict['gam']
                 iPeak += 1
             except KeyError:        #no more peaks to process
-                break        
-        
+                break
+
     else:
         Pdabc = parmDict['Pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
             try:
-                pos = parmDict['pos'+str(iPeak)]                
+                pos = parmDict['pos'+str(iPeak)]
                 tof = pos-parmDict['Zero']
                 dsp = tof/difC
                 intens = parmDict['int'+str(iPeak)]
@@ -2127,19 +2127,19 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 break
     if 'BF mult' in varyList:
         dMdv[varyList.index('BF mult')] = fixback
-        
+
     return dMdv
-        
+
 def Dict2Values(parmdict, varylist):
-    '''Use before call to leastsq to setup list of values for the parameters 
+    '''Use before call to leastsq to setup list of values for the parameters
     in parmdict, as selected by key in varylist'''
-    return [parmdict[key] for key in varylist] 
-    
+    return [parmdict[key] for key in varylist]
+
 def Values2Dict(parmdict, varylist, values):
-    ''' Use after call to leastsq to update the parameter dictionary with 
+    ''' Use after call to leastsq to update the parameter dictionary with
     values corresponding to keys in varylist'''
     parmdict.update(zip(varylist,values))
-    
+
 def SetBackgroundParms(Background):
     'Loads background parameters into dicts/lists to create varylist & parmdict'
     if len(Background) == 1:            # fix up old backgrounds
@@ -2165,7 +2165,7 @@ def SetBackgroundParms(Background):
         if item[1]:
             debyeVary.append(item[0])
     backDict.update(debyeDict)
-    backVary += debyeVary 
+    backVary += debyeVary
 
     backDict['nPeaks'] = Debye['nPeaks']
     peaksDict = {}
@@ -2190,7 +2190,7 @@ def SetBackgroundParms(Background):
 
 def autoBkgCalc(bkgdict,ydata):
     '''Compute the autobackground using the selected pybaselines function
-    
+
     :param dict bkgdict: background parameters
     :param np.array ydata: array of Y values
     :returns: points for background intensity at each Y position
@@ -2202,9 +2202,9 @@ def autoBkgCalc(bkgdict,ydata):
     else:
         func = pybaselines.whittaker.iarpls
     return func(ydata, lam=lamb, max_iter=10)[0]
-    
+
 def DoCalibInst(IndexPeaks,Inst,Sample):
-    
+
     def SetInstParms():
         dataType = Inst['Type'][0]
         insVary = []
@@ -2229,7 +2229,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
                 insVary.append('DisplaceY')
         instDict = dict(zip(insNames,insVals))
         return dataType,instDict,insVary
-        
+
     def GetInstParms(parmDict,varyList):
         for name in Inst:
             Inst[name][1] = parmDict[name]
@@ -2238,8 +2238,8 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
                 try:
                     Sample[name][0] = parmDict[name]
                 except:
-                    pass            
-        
+                    pass
+
     def InstPrint(sigDict):
         print ('Instrument/Sample Parameters:')
         if 'C' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
@@ -2268,7 +2268,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
         print (ptlbls)
         print (ptstr)
         print (sigstr)
-        
+
     def errPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
         parmDict.update(zip(varyList,values))
         calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
@@ -2306,7 +2306,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
         result = so.leastsq(errPeakPos,values,full_output=True,ftol=0.000001,
             args=(peakDsp,peakPos,peakWt,dataType,parmDict,varyList))
         ncyc = int(result[2]['nfev']/2)
-        runtime = time.time()-begin    
+        runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         GOF = chisq/(len(peakPos)-len(varyList))       #reduced chi^2
@@ -2321,14 +2321,14 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
         except ValueError:          #result[1] is None on singular matrix
             G2fil.G2Print ('**** Refinement failed - singular matrix ****')
             return False
-        
+
     sigDict = dict(zip(varyList,sig))
     GetInstParms(parmDict,varyList)
     InstPrint(sigDict)
     return True
 
 def getHeaderInfo(dataType):
-    '''Provide parameter name, label name and formatting information for the 
+    '''Provide parameter name, label name and formatting information for the
     contents of the Peak Table and where used in DoPeakFit
     '''
     names = ['pos','int']
@@ -2366,12 +2366,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
 
     :param str FitPgm: type of fit to perform. At present this is ignored.
     :param list Peaks: a list of peaks. Each peak entry is a list with paired values:
-      The number of pairs depends on the data type (see :func:`getHeaderInfo`). 
-      For CW data there are  
+      The number of pairs depends on the data type (see :func:`getHeaderInfo`).
+      For CW data there are
       four values each followed by a refine flag where the values are: position, intensity,
       sigma (Gaussian width) and gamma (Lorentzian width). From the Histogram/"Peak List"
       tree entry, dict item "peaks". For some types of fits, overall parameters are placed
-      in a dict entry. 
+      in a dict entry.
     :param list Background: describes the background. List with two items.
       Item 0 specifies a background model and coefficients. Item 1 is a dict.
       From the Histogram/Background tree entry.
@@ -2380,13 +2380,13 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     :param dict Inst2: more Instrument parameters
     :param numpy.array data: a 5xn array. data[0] is the x-values,
       data[1] is the y-values, data[2] are weight values, data[3], [4] and [5] are
-      calc, background and difference intensities, respectively. 
+      calc, background and difference intensities, respectively.
     :param array fixback: fixed background array; same size as data[0-5]
     :param list prevVaryList: Used in sequential refinements to override the
       variable list. Defaults as an empty list.
     :param bool oneCycle: True if only one cycle of fitting should be performed
     :param dict controls: a dict specifying two values, Ftol = controls['min dM/M']
-      and derivType = controls['deriv type']. If None default values are used. 
+      and derivType = controls['deriv type']. If None default values are used.
     :param float wtFactor: weight multiplier; = 1.0 by default
     :param wx.Dialog dlg: A dialog box that is updated with progress from the fit.
       Defaults to None, which means no updates are done.
@@ -2425,7 +2425,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 break
         if 'BF mult' in parmList:
             Background[1]['background PWDR'][1] = parmList['BF mult']
-                
+
     def BackgroundPrint(Background,sigDict):
         print ('Background coefficients for '+Background[0][0]+' function')
         ptfmt = "%12.5f"
@@ -2483,7 +2483,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 print (sigstr)
         if 'BF mult' in sigDict:
             print('Background file mult: %.3f(%d)'%(Background[1]['background PWDR'][1],int(1000*sigDict['BF mult'])))
-                            
+
     def SetInstParms(Inst):
         dataType = Inst['Type'][0]
         insVary = []
@@ -2499,7 +2499,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         if 'SH/L' in instDict:
             instDict['SH/L'] = max(instDict['SH/L'],0.002)
         return dataType,instDict,insVary
-        
+
     def GetPkInstParms(parmDict,Inst,varyList):
         for name in Inst:
             Inst[name][1] = parmDict[name]
@@ -2528,7 +2528,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 iPeak += 1
             except KeyError:
                 break
-        
+
     def InstPrint(Inst,sigDict):
         print ('Instrument Parameters:')
         ptfmt = "%12.6f"
@@ -2570,19 +2570,19 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 if peak[off+2*j+1]:
                     peakVary.append(parName)
         return peakDict,peakVary
-                
+
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
         '''Put values into the Peaks list from the refinement results from inside
         the parmDict array
         '''
         names,_,_ = getHeaderInfo(Inst['Type'][0])
         off = 0
-        if 'LF' in Inst['Type'][0]: 
+        if 'LF' in Inst['Type'][0]:
             off = 2
             if 'clat' in varyList:
                 Peaks[-1]['clat'] = parmDict['clat']
             names = names[:-1] # drop 2nd 2theta value
-            for i,peak in enumerate(Peaks): 
+            for i,peak in enumerate(Peaks):
                 if type(peak) is dict: continue
                 parmDict['ttheta'+str(i)] = peak[-1]
         for i,peak in enumerate(Peaks):
@@ -2626,7 +2626,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                         peak[2*j+off] = G2mth.getEDgam(parmDict,pos)
                     else:   #'C' & 'B'
                         peak[2*j+off] = G2mth.getCWgam(parmDict,pos)
-                        
+
     def PeaksPrint(dataType,parmDict,sigDict,varyList,ptsperFW):
         if 'clat' in varyList:
             print('c = {:.6f} esd {:.6f}'.format(parmDict['clat'],sigDict['clat']))
@@ -2665,17 +2665,17 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                         ptstr += 10*' '
             ptstr += '%8.1f'%(ptsperFW[i])
             print ('%s'%(('Peak'+str(i+1)).center(8)),ptstr)
-                
+
     def devPeakProfile(values,xdata,ydata,fixback, weights,dataType,parmdict,varylist,bakType,dlg):
-        '''Computes a matrix where each row is the derivative of the calc-obs 
+        '''Computes a matrix where each row is the derivative of the calc-obs
         values (see :func:`errPeakProfile`) with respect to each parameter
         in backVary,insVary,peakVary. Used for peak fitting.
         '''
         parmdict.update(zip(varylist,values))
         return np.sqrt(weights)*getPeakProfileDerv(dataType,parmdict,xdata,fixback,varylist,bakType)
-            
+
     def errPeakProfile(values,xdata,ydata,fixback,weights,dataType,parmdict,varylist,bakType,dlg):
-        '''Computes a vector with the weighted calc-obs values differences 
+        '''Computes a vector with the weighted calc-obs values differences
         for peak fitting
         '''
         parmdict.update(zip(varylist,values))
@@ -2754,7 +2754,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 print('peak fit failure')
             return
         ncyc = int(result[2]['nfev']/2)
-        runtime = time.time()-begin    
+        runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         Rvals['Rwp'] = np.sqrt(chisq/np.sum(wtFactor*w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
@@ -2817,7 +2817,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             G2fil.G2Print ('*** Warning: data binning yields too few data points across peak FWHM for reliable Rietveld refinement ***')
             G2fil.G2Print ('*** recommended is 6-10; you have %.2f ***'%(min(binsperFWHM)))
     return sigDict,result,sig,Rvals,varyList,parmDict,fullvaryList,badVary
-    
+
 def calcIncident(Iparm,xdata):
     'needs a doc string'
 
@@ -2826,14 +2826,14 @@ def calcIncident(Iparm,xdata):
         Icoef = Iparm['Icoeff']
         DYI = np.ones((12,xdata.shape[0]))
         YI = np.ones_like(xdata)*Icoef[0]
-        
+
         x = xdata/1000.                 #expressions are in ms
         if Itype == 'Exponential':
             for i in [1,3,5,7,9]:
                 Eterm = np.exp(-Icoef[i+1]*x**((i+1)/2))
                 YI += Icoef[i]*Eterm
                 DYI[i] *= Eterm
-                DYI[i+1] *= -Icoef[i]*Eterm*x**((i+1)/2)            
+                DYI[i+1] *= -Icoef[i]*Eterm*x**((i+1)/2)
         elif 'Maxwell'in Itype:
             Eterm = np.exp(-Icoef[2]/x**2)
             DYI[1] = Eterm/x**5
@@ -2855,7 +2855,7 @@ def calcIncident(Iparm,xdata):
                     YI += Ccof[i]*Icoef[i+2]
                     DYI[i+2] =Ccof[i]
         return YI,DYI
-        
+
     Iesd = np.array(Iparm['Iesd'])
     Icovar = Iparm['Icovar']
     YI,DYI = IfunAdv(Iparm,xdata)
@@ -2898,7 +2898,7 @@ def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
         fl.write('%d\n'%int(inst[prms[0]][1]))
         fl.write('%19.11f%19.11f%19.11f%19.11f%19.11f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1],inst[prms[5]][1],))
         fl.write('%12.6e%14.6e%14.6e%14.6e\n'%(inst[prms[6]][1],inst[prms[7]][1],inst[prms[8]][1],inst[prms[9]][1]))
-        fl.write('%12.6e%14.6e%14.6e%14.6e\n'%(inst[prms[10]][1],inst[prms[11]][1],inst[prms[12]][1],inst[prms[13]][1]))    
+        fl.write('%12.6e%14.6e%14.6e%14.6e\n'%(inst[prms[10]][1],inst[prms[11]][1],inst[prms[12]][1],inst[prms[13]][1]))
         fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[14]][1],inst[prms[15]][1]+Ysb,inst[prms[16]][1]+Xsb,0.0,0.0))
         fl.write('%12.6e\n\n\n'%(sample['Absorption'][0]))
         fl.close()
@@ -2920,12 +2920,12 @@ def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
         fl.write('%d\n'%int(inst[prms[0]][1]))
         fl.write('%10.5f%10.5f%10.4f%10d\n'%(inst[prms[1]][1],100.*inst[prms[2]][1],inst[prms[3]][1],0))
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[4]][1],inst[prms[5]][1],inst[prms[6]][1]))
-        fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[7]][1]+Xsb,inst[prms[8]][1]+Ysb,0.0))    
+        fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[7]][1]+Xsb,inst[prms[8]][1]+Ysb,0.0))
         fl.write('%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0))
         fl.write('%12.6e\n\n\n'%(sample['Absorption'][0]))
         fl.close()
     return fname
-    
+
 def MakeBack(PWDdata,Name):
     Back = PWDdata['Background'][0]
     inst = PWDdata['Instrument Parameters'][0]
@@ -2959,8 +2959,8 @@ def findDup(Atoms):
                 Fracs[-1]+= [at2[6],]
     return Dup,Fracs
 
-def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):    
-    
+def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):
+
     Meta = RMCPdict['metadata']
     Atseq = RMCPdict['atSeq']
     Supercell =  RMCPdict['SuperCell']
@@ -2983,7 +2983,7 @@ def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):
     Natm = np.count_nonzero(Natm-1)
     Atoms = newPhase['Atoms']
     reset = False
-    
+
     if ifSfracs:
         Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
         Natm = np.count_nonzero(Natm-1)
@@ -3016,7 +3016,7 @@ def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):
                        i += 1
     else:
         Natoms = Atoms
-    
+
     NAtype = np.zeros(len(Atseq))
     for atom in Natoms:
         NAtype[Atseq.index(atom[1])] += 1
@@ -3038,7 +3038,7 @@ def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):
     fl.write('Cell (Ang/deg): %12.6f%12.6f%12.6f%12.6f%12.6f%12.6f\n'%(
             Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
     A,B = G2lat.cell2AB(Cell,True)
-    fl.write('Lattice vectors (Ang):\n')   
+    fl.write('Lattice vectors (Ang):\n')
     for i in [0,1,2]:
         fl.write('%12.6f%12.6f%12.6f\n'%(A[i,0],A[i,1],A[i,2]))
     fl.write('Atoms (fractional coordinates):\n')
@@ -3051,7 +3051,7 @@ def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):
                 cell = [0,0,0]
                 if '+' in atcode[1]:
                     cell = eval(atcode[1].split('+')[1])
-                fl.write('%6d%4s  [%s]%19.15f%19.15f%19.15f%6d%4d%4d%4d\n'%(       
+                fl.write('%6d%4s  [%s]%19.15f%19.15f%19.15f%6d%4d%4d%4d\n'%(
                         nat,atom[1].strip(),atcode[0],atom[3],atom[4],atom[5],(iat)%Natm+1,cell[0],cell[1],cell[2]))
     fl.close()
     return fname,reset
@@ -3077,7 +3077,7 @@ def MakeBragg(PWDdata,Name,Phase):
     else:
         fl.write('%12s%12s\n'%('   2-theta, deg','  I(obs)'))
         for i in range(Ibeg,Ifin-1):
-            fl.write('%11.6f%15.2f\n'%(Data[0][i],Data[1][i]))        
+            fl.write('%11.6f%15.2f\n'%(Data[0][i],Data[1][i]))
     fl.close()
     return fname
 
@@ -3180,7 +3180,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
         if len(RMCPdict['Potentials']['Stretch']):
             fl.write('  > STRETCH_SEARCH :: %.1f%%\n'%RMCPdict['Potentials']['Stretch search'])
             for bond in RMCPdict['Potentials']['Stretch']:
-                fl.write('  > STRETCH :: %s %s %.2f eV %.2f Ang\n'%(bond[0],bond[1],bond[3],bond[2]))        
+                fl.write('  > STRETCH :: %s %s %.2f eV %.2f Ang\n'%(bond[0],bond[1],bond[3],bond[2]))
         if len(RMCPdict['Potentials']['Angles']):
             fl.write('  > ANGLE_SEARCH :: %.1f%%\n'%RMCPdict['Potentials']['Angle search'])
             for angle in RMCPdict['Potentials']['Angles']:
@@ -3199,7 +3199,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
         fl.write('  > OXID :: %s\n'%' '.join(oxid))
         fl.write('  > RIJ :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][0] for bvs in RMCPdict['BVS']]))
         fl.write('  > BVAL :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][1] for bvs in RMCPdict['BVS']]))
-        fl.write('  > CUTOFF :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][2] for bvs in RMCPdict['BVS']]))        
+        fl.write('  > CUTOFF :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][2] for bvs in RMCPdict['BVS']]))
         fl.write('  > SAVE :: 100000\n')
         fl.write('  > UPDATE :: 100000\n')
     if len(RMCPdict['Swaps']):
@@ -3212,9 +3212,9 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
             except ValueError:
                 break
             fl.write('  > SWAP_ATOMS :: %d %d %.2f\n'%(at1,at2,swap[2]))
-        
+
     if len(RMCPdict['FxCN']):
-        fl.write('FIXED_COORDINATION_CONSTRAINTS ::  %d\n'%len(RMCPdict['FxCN']))        
+        fl.write('FIXED_COORDINATION_CONSTRAINTS ::  %d\n'%len(RMCPdict['FxCN']))
         for ifx,fxcn in enumerate(RMCPdict['FxCN']):
             try:
                 at1 = Atseq.index(fxcn[0])
@@ -3353,7 +3353,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
 #     q = XY[0]
 #     dq[1:] = np.diff(q)
 #     dq[0] = dq[1]
-    
+
 #     for j in range(n):
 #         for i in range(n):
 #             b = abs(q[i]-q[j])
@@ -3363,7 +3363,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
 #             else:
 #                 snew[j] += q[i]*sold[i]*(np.sin(b*d)/b-np.sin(t*d)/t)*dq[i]
 #         snew[j] /= np.pi*q[j]
-    
+
 #     snew[0] = snew[1]
 #     return snew
 
@@ -3386,13 +3386,13 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
 
 def findfullrmc():
     '''Find where fullrmc is installed. Tries the following:
-    
+
          1. Returns the Config var 'fullrmc_exec', if defined. If an executable
             is found at that location it is assumed to run and supply
             fullrmc 5.0+
          2. The path is checked for a fullrmc image as named by Bachir
 
-    :returns: the full path to a python executable that is assumed to 
+    :returns: the full path to a python executable that is assumed to
       have fullrmc installed or None, if it was not found.
     '''
     fullrmc_exe = GSASIIpath.GetConfigValue('fullrmc_exec')
@@ -3416,10 +3416,10 @@ def findfullrmc():
             return fullrmc_exe
 
 def fullrmcDownload():
-    '''Downloads the fullrmc executable from Bachir's site to the current 
-    GSAS-II binary directory. 
+    '''Downloads the fullrmc executable from Bachir's site to the current
+    GSAS-II binary directory.
 
-    Does some error checking. 
+    Does some error checking.
     '''
     import os
     import requests
@@ -3436,7 +3436,7 @@ def fullrmcDownload():
         if 'aarch' in platform.machine() or 'arm' in platform.machine():
             return "Sorry, fullrmc is only available for Intel-compatible machines."
         URL = "https://github.com/bachiraoun/fullrmc/raw/master/standalones/fullrmc500_3p8p5_Linux-4p19p121-linuxkit-x86_64-with-glibc2p29"
-    
+
     GSASIIpath.SetBinaryPath()
     fil = os.path.join(GSASIIpath.binaryPath,os.path.split(URL)[1])
     print('Starting installation of fullrmc\nDownloading from',
@@ -3445,7 +3445,7 @@ def fullrmcDownload():
               '\nThis may take a while...')
     open(fil, "wb").write(requests.get(URL).content)
     print('...Download completed')
-    if setXbit: 
+    if setXbit:
         import stat
         os.chmod(fil, os.stat(fil).st_mode | stat.S_IEXEC)
     return ''
@@ -3464,7 +3464,7 @@ def findPDFfit():
     except Exception as msg:
         print('Error importing PDFfit2:\n',msg)
         return None
-    
+
 def GetPDFfitAtomVar(Phase,RMCPdict):
     ''' Find dict of independent "@n" variables for PDFfit in atom constraints
     '''
@@ -3492,7 +3492,7 @@ def GetPDFfitAtomVar(Phase,RMCPdict):
     for name in list(AtomVar.keys()):       #clear out unused parameters
         if name not in varnames:
             del AtomVar[name]
-    
+
 def MakePDFfitAtomsFile(Phase,RMCPdict):
     '''Make the PDFfit atoms file
     '''
@@ -3520,7 +3520,7 @@ def MakePDFfitAtomsFile(Phase,RMCPdict):
     cell = General['Cell'][1:7]
     fatm.write('cell  %10.6f,%10.6f,%10.6f,%10.6f,%10.6f,%10.6f\n'%(
         cell[0],cell[1],cell[2],cell[3],cell[4],cell[5]))
-    fatm.write('dcell '+5*'  0.000000,'+'  0.000000\n') 
+    fatm.write('dcell '+5*'  0.000000,'+'  0.000000\n')
     Atoms = Phase['Atoms']
     fatm.write('ncell %8d,%8d,%8d,%10d\n'%(1,1,1,len(Atoms)))
     fatm.write('atoms\n')
@@ -3533,11 +3533,11 @@ def MakePDFfitAtomsFile(Phase,RMCPdict):
         fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(atom[cia+5],atom[cia+6],atom[cia+7]))
         fatm.write('    '+'%18.8f%18.8f%18.8f\n'%(0.,0.,0.))
     fatm.close()
-    
+
 def MakePDFfitRunFile(Phase,RMCPdict):
     '''Make the PDFfit python run file
     '''
-    
+
     def GetCellConstr(SGData):
         if SGData['SGLaue'] in ['m3', 'm3m']:
             return [1,1,1,0,0,0]
@@ -3556,7 +3556,7 @@ def MakePDFfitRunFile(Phase,RMCPdict):
                 return [1,2,3,0,0,4]
         else:
             return [1,2,3,4,5,6]
-        
+
     General = Phase['General']
     Cell = General['Cell'][1:7]
     rundata = '''#!/usr/bin/env python
@@ -3614,7 +3614,7 @@ pathWrap = lambda f: os.path.join(datadir,f)
         rundata += 'pf.constrain(pf.spdiameter,"@%d")\n'%Np
         parms[Np] = RMCPdict['spdiameter'][0]
         parmNames[Np] = 'spdiameter'
-    
+
     if RMCPdict['cellref']:
         cellconst = GetCellConstr(RMCPdict['SGData'])
         used = []
@@ -3626,7 +3626,7 @@ pathWrap = lambda f: os.path.join(datadir,f)
                     parms[Np+cellconst[ic]] = Cell[ic]
                     parmNames[Np+cellconst[ic]] = cellNames[ic]
                 used.append(cellconst[ic])
-#Atom constraints here ------------------------------------------------------- 
+#Atom constraints here -------------------------------------------------------
     AtomVar = RMCPdict['AtomVar']
     used = []
     for iat,atom in enumerate(RMCPdict['AtomConstr']):
@@ -3650,24 +3650,24 @@ pathWrap = lambda f: os.path.join(datadir,f)
                             parmNames[itnum] = names[it-2].split('.')[1]
                             used.append(itnum)
                     else:
-                        uijs = ['pf.u11(%d)'%(iat+1),'pf.u22(%d)'%(iat+1),'pf.u33(%d)'%(iat+1)]      
+                        uijs = ['pf.u11(%d)'%(iat+1),'pf.u22(%d)'%(iat+1),'pf.u33(%d)'%(iat+1)]
                         for i in range(3):
                             rundata += 'pf.constrain(%s,"%s")\n'%(uijs[i],item)
                             if itnum not in used:
                                 parms[itnum] = AtomVar['@%d'%itnum]
                                 parmNames[itnum] = uijs[i].split('.')[1]
                                 used.append(itnum)
-                            
+
     if 'sequential' in RMCPdict['refinement']:
         rundata += '#parameters here\n'
         RMCPdict['Parms'] = parms           #{'n':val,...}
         RMCPdict['ParmNames'] = parmNames   #{'n':name,...}
-    else:        
+    else:
 # set parameter values
         for iprm in parms:
             rundata += 'pf.setpar(%d,%.6f)\n'%(iprm,parms[iprm])
-                        
-# Save results ---------------------------------------------------------------    
+
+# Save results ---------------------------------------------------------------
     rundata += 'pf.refine()\n'
     if 'sequential' in RMCPdict['refinement']:
         fName = 'Sequential_PDFfit'
@@ -3676,19 +3676,19 @@ pathWrap = lambda f: os.path.join(datadir,f)
     else:
         fName = General['Name'].replace(' ','_')+'-PDFfit'
         rfile = open(fName+'.py','w')
-        Nd = 0    
+        Nd = 0
         for file in RMCPdict['files']:
             if 'Select' in RMCPdict['files'][file][0]:      #skip unselected
                 continue
             Nd += 1
             rundata += 'pf.save_pdf(%d, pathWrap("%s"))\n'%(Nd,fName+file[0]+'.fgr')
-        
+
     rundata += 'pf.save_struct(1, pathWrap("%s"))\n'%(fName+'.rstr')
     rundata += 'pf.save_res(pathWrap("%s"))\n'%(fName+'.res')
- 
+
     rfile.writelines(rundata)
     rfile.close()
-    
+
     return fName+'.py'
 
 def GetSeqCell(SGData,parmDict):
@@ -3717,11 +3717,11 @@ def GetSeqCell(SGData,parmDict):
         return G2lat.cell2A(cell)
     except KeyError:
          return None
-    
+
 def UpdatePDFfit(Phase,RMCPdict):
     ''' Updates various PDFfit parameters held in GSAS-II
     '''
-    
+
     General = Phase['General']
     if RMCPdict['refinement'] == 'normal':
         fName = General['Name']+'-PDFfit.rstr'
@@ -3743,7 +3743,7 @@ def UpdatePDFfit(Phase,RMCPdict):
                 RMCPdict['spdiameter'][0] = float(resdict['shape'].split()[-1])
             else:
                 RMCPdict['stepcut'][0] = float(resdict['shape'][-1])
-        cx,ct,cs,ci = G2mth.getAtomPtrs(Phase)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(Phase)
         Atoms = Phase['Atoms']
         atmBeg = 0
         for line in lines:
@@ -3760,7 +3760,7 @@ def UpdatePDFfit(Phase,RMCPdict):
             atom[ci+5:ci+8] = [float(Uijstr[0]),float(Uijstr[1]),float(Uijstr[2])]
             atmBeg += 6
         fName = General['Name']+'-PDFfit.res'
-    else:                    
+    else:
         fName = 'Sequential_PDFfit.res'
     try:
         res = open(fName.replace(' ','_'),'r')
@@ -3782,7 +3782,7 @@ def UpdatePDFfit(Phase,RMCPdict):
             XNdata[dkey]['qbroad'][0] = float(line.split()[4])
         if 'Scale' in line and '(' in line:
             XNdata[dkey]['dscale'][0] = float(line.split()[3])
-        
+
     for iline,line in enumerate(lines):
         if 'Refinement parameters' in line:
             Ibeg = True
@@ -3829,13 +3829,13 @@ def MakefullrmcSupercell(Phase,RMCPdict):
 
     :param dict Phase: phase information from data tree
     :param dict RMCPdict: fullrmc parameters from GUI
-    :param list grpDict: a list of lists where the inner list 
-      contains the atom numbers contained in each group. e.g. 
-      [[0,1,2,3,4],[5,6],[4,6]] creates three groups with 
+    :param list grpDict: a list of lists where the inner list
+      contains the atom numbers contained in each group. e.g.
+      [[0,1,2,3,4],[5,6],[4,6]] creates three groups with
       atoms 0-4 in the first
       atoms 5 & 6 in the second and
-      atoms 4 & 6 in the third. Note that it is fine that 
-      atom 4 appears in two groups. 
+      atoms 4 & 6 in the third. Note that it is fine that
+      atom 4 appears in two groups.
     '''
     #for i in (0,1): grpDict[i].append(1)    # debug: 1st & 2nd atoms in 2nd group
     cell = Phase['General']['Cell'][1:7]
@@ -3863,8 +3863,8 @@ def MakefullrmcSupercell(Phase,RMCPdict):
     return atomlist,coordlist
 
 def MakefullrmcRun(pName,Phase,RMCPdict):
-    '''Creates a script to run fullrmc. Returns the name of the file that was 
-    created. 
+    '''Creates a script to run fullrmc. Returns the name of the file that was
+    created.
     '''
     BondList = {}
     for k in RMCPdict['Pairs']:
@@ -3929,7 +3929,7 @@ def writeHeader(ENGINE,statFP):
         statFP.write(', ')
     statFP.write('\\n')
     statFP.flush()
-    
+
 def writeCurrentStatus(ENGINE,statFP,plotF):
     """line in stats file & current constraint plots"""
     statFP.write(str(ENGINE.generated))
@@ -4013,7 +4013,7 @@ prefix = "{:}"
 project = prefix + "-fullrmc"
 time0 = time.time()
 '''.format(RMCPdict['ReStart'][0],projDir,projName)
-    
+
     rundata += '# setup structure\n'
     rundata += 'cell = ' + str(cell) + '\n'
     rundata += 'supercell = ' + str(RMCPdict['SuperCell']) + '\n'
@@ -4051,7 +4051,7 @@ projectStats = os.path.join(dirName, project + '.stats')
 projectPlots = os.path.join(dirName, project + '.plots')
 projectXYZ = os.path.join(dirName, project + '.atoms')
 pdbFile = os.path.join(dirName, project + '_restart.pdb')
-# check Engine exists if so (and not FRESH_START) load it otherwise build it 
+# check Engine exists if so (and not FRESH_START) load it otherwise build it
 ENGINE = Engine(path=None)
 if not ENGINE.is_engine(engineFileName) or FRESH_START:
     ENGINE = Engine(path=engineFileName, freshStart=True)
@@ -4093,7 +4093,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                                  unitcellBC = cell,
                                  supercell  = supercell)
     ENGINE.set_groups_as_atoms()
-'''    
+'''
     rundata += '    rho0 = len(ENGINE.allNames)/ENGINE.volume\n'
     rundata += '\n    # "Constraints" (includes experimental data) setup\n'
     # settings that require a new Engine
@@ -4171,7 +4171,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
     if minDists:
         rundata += "    D_CONSTRAINT.set_pairs_definition( {'inter':[" + minDists + "]})\n"
     rundata += '    ENGINE.add_constraints(D_CONSTRAINT)\n'
-    
+
     if AngleList:
         rundata += '''    A_CONSTRAINT   = BondsAngleConstraint()
     ENGINE.add_constraints(A_CONSTRAINT)
@@ -4275,7 +4275,7 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
     #     rundata += '        c.create_angles_by_definition(anglesDefinition={"%s":[\n'%Res
     #     for torsion in RMCPdict['Torsions']:
     #         rundata += '    %s\n'%str(tuple(torsion))
-    #     rundata += '        ]})\n'            
+    #     rundata += '        ]})\n'
     rundata += '''
 if FRESH_START:
     # initialize engine with one step to get starting config energetics
@@ -4291,7 +4291,7 @@ else:
     rundata += 'steps = {}\n'.format(RMCPdict['Steps/cycle'])
     rundata += 'for _ in range({}):\n'.format(RMCPdict['Cycles'])
     rundata += '    expected = ENGINE.generated+steps\n'
-    
+
     rundata += '    ENGINE.run(restartPdb=pdbFile,numberOfSteps=steps, saveFrequency=steps)\n'
     rundata += '    writeCurrentStatus(ENGINE,statFP,projectPlots)\n'
     rundata += '    if ENGINE.generated != expected: break # run was stopped'
@@ -4312,7 +4312,7 @@ print("ENGINE run time %.2f s"%(time.time()-time0))
     rfile.writelines(rundata)
     rfile.close()
     return scrname
-    
+
 def GetRMCBonds(general,RMCPdict,Atoms,bondList):
     bondDist = []
     Cell = general['Cell'][1:7]
@@ -4324,13 +4324,13 @@ def GetRMCBonds(general,RMCPdict,Atoms,bondList):
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     for bonds in bondList:
         Oxyz = np.array(Atoms[bonds[0]][1:])
-        Txyz = np.array([Atoms[tgt-1][1:] for tgt in bonds[1]])        
+        Txyz = np.array([Atoms[tgt-1][1:] for tgt in bonds[1]])
         Dx = np.array([Txyz-Oxyz+unit for unit in Units])
         Dx = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=2))
         for dx in Dx.T:
             bondDist.append(np.min(dx))
     return np.array(bondDist)
-    
+
 def GetRMCAngles(general,RMCPdict,Atoms,angleList):
     bondAngles = []
     Cell = general['Cell'][1:7]
@@ -4342,7 +4342,7 @@ def GetRMCAngles(general,RMCPdict,Atoms,angleList):
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     for angle in angleList:
         Oxyz = np.array(Atoms[angle[0]][1:])
-        TAxyz = np.array([Atoms[tgt-1][1:] for tgt in angle[1].T[0]])        
+        TAxyz = np.array([Atoms[tgt-1][1:] for tgt in angle[1].T[0]])
         TBxyz = np.array([Atoms[tgt-1][1:] for tgt in angle[1].T[1]])
         DAxV = np.inner(np.array([TAxyz-Oxyz+unit for unit in Units]),Amat)
         DAx = np.sqrt(np.sum(DAxV**2,axis=2))
@@ -4358,14 +4358,14 @@ def GetRMCAngles(general,RMCPdict,Atoms,angleList):
 
 def ISO2PDFfit(Phase):
     ''' Creates new phase structure to be used for PDFfit from an ISODISTORT mode displacement phase.
-    It builds the distortion mode parameters to be used as PDFfit variables for atom displacements from 
+    It builds the distortion mode parameters to be used as PDFfit variables for atom displacements from
     the original parent positions as transformed to the child cell wiht symmetry defined from ISODISTORT.
-    
+
     :param Phase: dict GSAS-II Phase structure; must contain ISODISTORT dict. NB: not accessed otherwise
-    
+
     :returns: dict: GSAS-II Phase structure; will contain ['RMC']['PDFfit'] dict
     '''
-    
+
     Trans = np.eye(3)
     Uvec = np.zeros(3)
     Vvec = np.zeros(3)
@@ -4403,7 +4403,7 @@ def ISO2PDFfit(Phase):
                 pid = ISOdict['IsoVarList'].index(pname)
                 consVec = ModeMatrix[pid]
                 for ic,citm in enumerate(consVec):      #NB: this assumes orthorhombic or lower symmetry
-                    if opid < 0:                        
+                    if opid < 0:
                         citm *= -SGOps[100-opid%100-1][0][ip][ip]   #remove centering, if any
                     else:
                         citm *= SGOps[opid%100-1][0][ip][ip]
@@ -4433,14 +4433,14 @@ def GetAtmDispList(ISOdata):
 #### Reflectometry calculations ################################################################################
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     G2fil.G2Print ('fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0]))
-    
+
     class RandomDisplacementBounds(object):
         """random displacement with bounds"""
         def __init__(self, xmin, xmax, stepsize=0.5):
             self.xmin = xmin
             self.xmax = xmax
             self.stepsize = stepsize
-    
+
         def __call__(self, x):
             """take a random step but ensure the new position is within the bounds"""
             while True:
@@ -4450,7 +4450,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                 if np.all(xnew < self.xmax) and np.all(xnew > self.xmin):
                     break
             return xnew
-    
+
     def GetModelParms():
         parmDict = {}
         varyList = []
@@ -4485,12 +4485,12 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                 parmDict[cid+'rho'] = Substances[name]['Scatt density']
                 parmDict[cid+'irho'] = Substances[name].get('XImag density',0.)
         return parmDict,varyList,values,bounds
-    
+
     def SetModelParms():
         line = ' Refined parameters: Histogram scale: %.4g'%(parmDict['Scale'])
         if 'Scale' in varyList:
             data['Scale'][0] = parmDict['Scale']
-            line += ' esd: %.4g'%(sigDict['Scale'])                                                             
+            line += ' esd: %.4g'%(sigDict['Scale'])
         G2fil.G2Print (line)
         line = ' Flat background: %15.4g'%(parmDict['FltBack'])
         if 'FltBack' in varyList:
@@ -4515,17 +4515,17 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                         line += ' esd: %.3g'%(sigDict[cid+parm])
             G2fil.G2Print (line)
             G2fil.G2Print (line2)
-    
+
     def calcREFD(values,Q,Io,wt,Qsig,parmDict,varyList):
         parmDict.update(zip(varyList,values))
         M = np.sqrt(wt)*(getREFD(Q,Qsig,parmDict)-Io)
         return M
-    
+
     def sumREFD(values,Q,Io,wt,Qsig,parmDict,varyList):
         parmDict.update(zip(varyList,values))
         M = np.sqrt(wt)*(getREFD(Q,Qsig,parmDict)-Io)
         return np.sum(M**2)
-    
+
     def getREFD(Q,Qsig,parmDict):
         Ic = np.ones_like(Q)*parmDict['FltBack']
         Scale = parmDict['Scale']
@@ -4555,7 +4555,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             AB = SmearAbeles(0.5*Q,Qsig,depth,rho,irho,sigma[1:])
         Ic += AB*Scale
         return Ic
-        
+
     def estimateT0(takestep):
         Mmax = -1.e-10
         Mmin = 1.e10
@@ -4581,7 +4581,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     parmDict,varyList,values,bounds = GetModelParms()
     Msg = 'Failed to converge'
     if varyList:
-        if data['Minimizer'] == 'LMLS': 
+        if data['Minimizer'] == 'LMLS':
             result = so.leastsq(calcREFD,values,full_output=True,epsfcn=1.e-8,ftol=1.e-6,
                 args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList))
             parmDict.update(zip(varyList,result[0]))
@@ -4603,7 +4603,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             covM = []
         elif data['Minimizer'] == 'MC/SA Anneal':
             xyrng = np.array(bounds).T
-            result = G2mth.anneal(sumREFD, values, 
+            result = G2mth.anneal(sumREFD, values,
                 args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList),
                 schedule='log', full_output=True,maxeval=None, maxaccept=None, maxiter=10,dwell=1000,
                 boltzmann=10.0, feps=1e-6,lower=xyrng[0], upper=xyrng[1], slope=0.9,ranStart=True,
@@ -4666,9 +4666,9 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
         G2fil.G2Print (Msg)
         return False,0,0,0,0,0,0,Msg
-        
+
 def makeSLDprofile(data,Substances):
-    
+
     sq2 = np.sqrt(2.)
     laySeq = ['0',]+data['Layer Seq'].split()+[str(len(data['Layers'])-1),]
     Nlayers = len(laySeq)
@@ -4706,10 +4706,10 @@ def makeSLDprofile(data,Substances):
         iPos = np.searchsorted(x,interfaces[ilayer])
         y[iBeg:] += (delt/2.)*sp.erfc((interfaces[ilayer]-x[iBeg:])/(sq2*sigma[ilayer+1]))
         iBeg = iPos
-    return x,xr,y    
+    return x,xr,y
 
 def REFDModelFxn(Profile,Inst,Limits,Substances,data):
-    
+
     Q,Io,wt,Ic,Ib,Qsig = Profile[:6]
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
@@ -4754,11 +4754,11 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
     """
     Optical matrix form of the reflectivity calculation.
     O.S. Heavens, Optical Properties of Thin Solid Films
-    
+
     Reflectometry as a function of kz for a set of slabs.
 
     :param kz: float[n] (1/Ang). Scattering vector, :math:`2\\pi\\sin(\\theta)/\\lambda`.
-        This is :math:`\\tfrac12 Q_z`.        
+        This is :math:`\\tfrac12 Q_z`.
     :param depth:  float[m] (Ang).
         thickness of each layer.  The thickness of the incident medium
         and substrate are ignored.
@@ -4776,13 +4776,13 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
     """
     def calc(kz, depth, rho, irho, sigma):
         if len(kz) == 0: return kz
-    
+
         # Complex index of refraction is relative to the incident medium.
         # We can get the same effect using kz_rel^2 = kz^2 + 4*pi*rho_o
         # in place of kz^2, and ignoring rho_o
         kz_sq = kz**2 + 4e-6*np.pi*rho[:,0]
         k = kz
-    
+
         # According to Heavens, the initial matrix should be [ 1 F; F 1],
         # which we do by setting B=I and M0 to [1 F; F 1].  An extra matrix
         # multiply versus some coding convenience.
@@ -4815,7 +4815,7 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
             B12 = C1
             B22 = C2
             k = k_next
-    
+
         r = B12/B11
         return np.absolute(r)**2
 
@@ -4835,19 +4835,19 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
         irho = irho[None,:]
 
     return calc(kz, depth, rho, irho, sigma)
-    
+
 def SmearAbeles(kz,dq, depth, rho, irho=0, sigma=0):
     y = abeles(kz, depth, rho, irho, sigma)
     s = dq/2.
     y += 0.1354*(abeles(kz+2*s, depth, rho, irho, sigma)+abeles(kz-2*s, depth, rho, irho, sigma))
-    y += 0.24935*(abeles(kz-5*s/3., depth, rho, irho, sigma)+abeles(kz+5*s/3., depth, rho, irho, sigma)) 
-    y += 0.4111*(abeles(kz-4*s/3., depth, rho, irho, sigma)+abeles(kz+4*s/3., depth, rho, irho, sigma)) 
+    y += 0.24935*(abeles(kz-5*s/3., depth, rho, irho, sigma)+abeles(kz+5*s/3., depth, rho, irho, sigma))
+    y += 0.4111*(abeles(kz-4*s/3., depth, rho, irho, sigma)+abeles(kz+4*s/3., depth, rho, irho, sigma))
     y += 0.60653*(abeles(kz-s, depth, rho, irho, sigma) +abeles(kz+s, depth, rho, irho, sigma))
     y += 0.80074*(abeles(kz-2*s/3., depth, rho, irho, sigma)+abeles(kz-2*s/3., depth, rho, irho, sigma))
     y += 0.94596*(abeles(kz-s/3., depth, rho, irho, sigma)+abeles(kz-s/3., depth, rho, irho, sigma))
     y *= 0.137023
     return y
-        
+
 def makeRefdFFT(Limits,Profile):
     G2fil.G2Print ('make fft')
     Q,Io = Profile[:2]
@@ -4862,10 +4862,10 @@ def makeRefdFFT(Limits,Profile):
     F = fft.rfft(If)
     return R,F
 
-    
+
 #### Stacking fault simulation codes ################################################################################
 def GetStackParms(Layers):
-    
+
     Parms = []
 #cell parms
     if Layers['Laue'] in ['-3','-3m','4/m','4/mmm','6/m','6/mmm']:
@@ -4888,7 +4888,7 @@ def GetStackParms(Layers):
 
 def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     '''Simulate powder or selected area diffraction pattern from stacking faults using DIFFaX
-    
+
     :param dict Layers: dict with following items
 
       ::
@@ -4896,15 +4896,15 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
        {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
        'Width':[[10.,10.],[False,False]],'Toler':0.01,'AtInfo':{},
        'Layers':[],'Stacking':[],'Transitions':[]}
-        
+
     :param str ctrls: controls string to be written on DIFFaX controls.dif file
     :param float scale: scale factor
     :param dict background: background parameters
     :param list limits: min/max 2-theta to be calculated
     :param dict inst: instrument parameters dictionary
     :param list profile: powder pattern data
-    
-    Note that parameters all updated in place    
+
+    Note that parameters all updated in place
     '''
     import atmdata
     path = sys.path
@@ -4920,7 +4920,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     if 'H' not in atTypes:
         atTypes.insert(0,'H')
     for atType in atTypes:
-        if atType == 'H': 
+        if atType == 'H':
             blen = -.3741
         else:
             blen = Layers['AtInfo'][atType]['Isotopes']['Nat. Abund.']['SL'][0]
@@ -4934,7 +4934,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     sf.close()
     #make DIFFaX control.dif file - future use GUI to set some of these flags
     cf = open('control.dif','w')
-    if ctrls == '0\n0\n3\n' or ctrls == '0\n1\n3\n': 
+    if ctrls == '0\n0\n3\n' or ctrls == '0\n1\n3\n':
         x0 = profile[0]
         iBeg = np.searchsorted(x0,limits[0])
         iFin = np.searchsorted(x0,limits[1])+1
@@ -4954,7 +4954,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
         df.write('X-RAY\n')
     elif 'N' in inst['Type'][0]:
         df.write('NEUTRON\n')
-    if ctrls == '0\n0\n3\n' or ctrls == '0\n1\n3\n': 
+    if ctrls == '0\n0\n3\n' or ctrls == '0\n1\n3\n':
         df.write('%.4f\n'%(G2mth.getMeanWave(inst)))
         U = ateln2*inst['U'][1]/10000.
         V = ateln2*inst['V'][1]/10000.
@@ -4981,7 +4981,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
         laue = '2/m(2)'
     if 'unknown' in Layers['Laue']:
         df.write('%s %.3f\n'%(laue,Layers['Toler']))
-    else:    
+    else:
         df.write('%s\n'%(laue))
     df.write('%d\n'%(len(Layers['Layers'])))
     if Layers['Width'][0][0] < 1. or Layers['Width'][0][1] < 1.:
@@ -5020,7 +5020,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
                 df.write('%s\n'%(Layers['Stacking'][2][iB:iF]))
                 iB = iF
         else:
-            df.write('%s\n'%Layers['Stacking'][1])    
+            df.write('%s\n'%Layers['Stacking'][1])
     df.write('TRANSITIONS\n')
     for iY in range(len(Layers['Layers'])):
         sumPx = 0.
@@ -5035,8 +5035,8 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
             os.remove('data.sfc')
             os.remove('control.dif')
             os.remove('GSASII-DIFFaX.dat')
-            return       
-    df.close()    
+            return
+    df.close()
     time0 = time.time()
     try:
         subp.call(DIFFaX)
@@ -5048,7 +5048,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
         iFin = iBeg+Xpat.shape[1]
         bakType,backDict,backVary = SetBackgroundParms(background)
         backDict['Lam1'] = G2mth.getWave(inst)
-        profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
+        profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]
         profile[3][iBeg:iFin] = Xpat[-1]*scale+profile[4][iBeg:iFin]
         if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
             rv = st.poisson(profile[3][iBeg:iFin])
@@ -5068,9 +5068,9 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     os.remove('data.sfc')
     os.remove('control.dif')
     os.remove('GSASII-DIFFaX.dat')
-    
+
 def SetPWDRscan(inst,limits,profile):
-    
+
     wave = G2mth.getMeanWave(inst)
     x0 = profile[0]
     iBeg = np.searchsorted(x0,limits[0])
@@ -5080,7 +5080,7 @@ def SetPWDRscan(inst,limits,profile):
     Dx = (x0[iFin]-x0[iBeg])/(iFin-iBeg)
     pyx.pygetinst(wave,x0[iBeg],x0[iFin],Dx)
     return iFin-iBeg
-       
+
 def SetStackingSF(Layers,debug):
 # Load scattering factors into DIFFaX arrays
     import atmdata
@@ -5098,12 +5098,12 @@ def SetStackingSF(Layers,debug):
         SFdat.append(SF)
     SFdat = np.array(SFdat)
     pyx.pyloadscf(len(atTypes),aTypes,SFdat.T,debug)
-    
+
 def SetStackingClay(Layers,Type):
 # Controls
     rand.seed()
     ranSeed = rand.randint(1,2**16-1)
-    try:    
+    try:
         laueId = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
             '6/m','6/mmm'].index(Layers['Laue'])+1
     except ValueError:  #for 'unknown'
@@ -5134,7 +5134,7 @@ def SetStackingClay(Layers,Type):
     LaueSym = Layers['Laue'].ljust(12)
     pyx.pygetclay(controls,LaueSym,Wdth,Nstk,StkSeq)
     return laueId,controls
-    
+
 def SetCellAtoms(Layers):
     Cell = Layers['Cell'][1:4]+Layers['Cell'][6:7]
 # atoms in layers
@@ -5169,7 +5169,7 @@ def SetCellAtoms(Layers):
     Nlayers = len(layerNames)
     pyx.pycellayer(Cell,Natm,AtomTp,AtomXOU.T,Nuniq,LayerSymm,Nlayers,LayerNum)
     return Nlayers
-    
+
 def SetStackingTrans(Layers,Nlayers):
 # Transitions
     TransX = []
@@ -5181,7 +5181,7 @@ def SetStackingTrans(Layers,Nlayers):
     TransX = np.array(TransX,dtype='float')
 #    GSASIIpath.IPyBreak()
     pyx.pygettrans(Nlayers,TransP,TransX)
-    
+
 def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
 # Scattering factors
     SetStackingSF(Layers,debug)
@@ -5189,7 +5189,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
     laueId,controls = SetStackingClay(Layers,'PWDR')
 # cell & atoms
     Nlayers = SetCellAtoms(Layers)
-    Volume = Layers['Cell'][7]    
+    Volume = Layers['Cell'][7]
 # Transitions
     SetStackingTrans(Layers,Nlayers)
 # PWDR scan
@@ -5203,8 +5203,8 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
     iFin = np.searchsorted(x0,limits[1])+1
     if iFin-iBeg > 20000:
         iFin = iBeg+20000
-    Nspec = 20001       
-    spec = np.zeros(Nspec,dtype='double')    
+    Nspec = 20001
+    spec = np.zeros(Nspec,dtype='double')
     time0 = time.time()
     pyx.pygetspc(controls,Nspec,spec)
     G2fil.G2Print (' GETSPC time = %.2fs'%(time.time()-time0))
@@ -5225,7 +5225,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
     iFin = iBeg+Nsteps
     bakType,backDict,backVary = SetBackgroundParms(background)
     backDict['Lam1'] = G2mth.getWave(inst)
-    profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
+    profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]
     profile[3][iBeg:iFin] = BrdSpec*scale+profile[4][iBeg:iFin]
     if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
         try:
@@ -5239,20 +5239,20 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
         profile[2][iBeg:iFin] = np.where(profile[1][iBeg:iFin]>0.,1./profile[1][iBeg:iFin],1.0)
     profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
     G2fil.G2Print (' Broadening time = %.2fs'%(time.time()-time0))
-    
+
 def CalcStackingSADP(Layers,debug):
-    
+
 # Scattering factors
     SetStackingSF(Layers,debug)
 # Controls & sequences
     laueId,controls = SetStackingClay(Layers,'SADP')
 # cell & atoms
-    Nlayers = SetCellAtoms(Layers)    
+    Nlayers = SetCellAtoms(Layers)
 # Transitions
     SetStackingTrans(Layers,Nlayers)
 # result as Sadp
-    Nspec = 20001       
-    spec = np.zeros(Nspec,dtype='double')    
+    Nspec = 20001
+    spec = np.zeros(Nspec,dtype='double')
     time0 = time.time()
     hkLim,Incr,Nblk = pyx.pygetsadp(controls,Nspec,spec)
     Sapd = np.zeros((256,256))
@@ -5274,11 +5274,11 @@ def CalcStackingSADP(Layers,debug):
         iB += Nblk
     Layers['Sadp']['Img'] = Sapd
     G2fil.G2Print (' GETSAD time = %.2fs'%(time.time()-time0))
-    
+
 #### Maximum Entropy Method - Dysnomia ###############################################################################
 def makePRFfile(data,MEMtype):
     ''' makes Dysnomia .prf control file from Dysnomia GUI controls
-    
+
     :param dict data: GSAS-II phase data
     :param int MEMtype: 1 for neutron data with negative scattering lengths
                         0 otherwise
@@ -5334,7 +5334,7 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
                         0 otherwise
     :param str DYSNOMIA: path to dysnomia.exe
     '''
-    
+
     DysData = data['Dysnomia']
     generalData = data['General']
     cell = generalData['Cell'][1:7]
@@ -5379,12 +5379,12 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
         mem.write('%10.3f%10.3f 0.001\n'%(sumpos,sumneg))
     else:
         mem.write('%10.3f 0.001\n'%sumpos)
-        
+
     dmin = DysData['MEMdmin']
     TOFlam = 2.0*dmin*npsind(80.0)
     refSet = G2lat.GenHLaue(dmin,SGData,A)      #list of h,k,l,d
     refDict = {'%d %d %d'%(ref[0],ref[1],ref[2]):ref for ref in refSet}
-        
+
     refs = []
     prevpos = 0.
     for ref in reflData:
@@ -5407,7 +5407,7 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
         delt = pos-prevpos
         refs.append([h,k,l,mult,pos,FWHM,Fobs,phase,delt])
         prevpos = pos
-            
+
     ovlp = DysData['overlap']
     refs1 = []
     refs2 = []
@@ -5435,7 +5435,7 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
         refs2[nref2].append(refs[iref])
     else:
         refs1.append(refs[iref])
-    
+
     mem.write('%5d\n'%len(refs1))
     for ref in refs1:
         h,k,l = ref[:3]
@@ -5486,7 +5486,7 @@ def MEMupdateReflData(prfName,data,reflData):
     :param str prfName: phase.mem file name
     :param list reflData: GSAS-II reflection data
     '''
-    
+
     generalData = data['General']
     Map = generalData['Map']
     Type = Map['Type']
@@ -5531,14 +5531,14 @@ def MEMupdateReflData(prfName,data,reflData):
     return True,newRefs
 
 #===Laue Fringe code ===================================================================
-import NIST_profile as FP
+from . import NIST_profile as FP
 
 class profileObj(FP.FP_profile):
     def conv_Lauefringe(self):
         """Compute the FT of the Laue Fringe function"""
-            
+
         me=self.get_function_name() #the name of this convolver,as a string
-        wave = self.param_dicts['conv_global']['dominant_wavelength']*1.e10 # in A       
+        wave = self.param_dicts['conv_global']['dominant_wavelength']*1.e10 # in A
         pos = np.rad2deg(self.param_dicts["conv_global"]["twotheta0"])  # peak position as 2theta in deg
         posQ = np.pi * 4 * np.sin(self.param_dicts["conv_global"]["twotheta0"]/2) / wave # peak position as Q
         ttwid = self.twotheta_window_fullwidth_deg
@@ -5546,8 +5546,8 @@ class profileObj(FP.FP_profile):
         co2 = self.param_dicts[me]['clat'] / 2.
         dampM =  self.param_dicts[me]['dampM']
         dampP =  self.param_dicts[me]['dampP']
-        fpowM =  self.param_dicts[me]['fitPowerM']        
-        fpowP =  self.param_dicts[me]['fitPowerP']        
+        fpowM =  self.param_dicts[me]['fitPowerM']
+        fpowP =  self.param_dicts[me]['fitPowerP']
         ttlist = np.linspace(pos-ttwid/2,pos+ttwid/2,len(self._epsb2))
         Qs = np.pi * 4 * np.sin(np.deg2rad(ttlist/2)) / wave
         w =  np.exp(-1*10**((dampM) * np.abs(Qs - posQ)**fpowM))
@@ -5559,7 +5559,7 @@ class profileObj(FP.FP_profile):
         conv = FP.best_rfft(weqdiv)
         conv[1::2] *= -1 #flip center
         return conv
-        
+
     def conv_Lorentzian(self):
         """Compute the FT of a Lorentz function where gamma is the FWHM"""
         ttwid = self.twotheta_window_fullwidth_deg
@@ -5577,15 +5577,15 @@ class profileObj(FP.FP_profile):
         ttwid = self.twotheta_window_fullwidth_deg
         me=self.get_function_name() #the name of this convolver,as a string
         g2sig2 = self.param_dicts[me]['g2sig2'] # gsas-ii sigma**2 in centidegr**2
-        sigma = math.sqrt(g2sig2)/100.        
+        sigma = math.sqrt(g2sig2)/100.
         ttlist = np.linspace(-ttwid/2,ttwid/2,len(self._epsb2))
         eqdiv = np.exp(-0.5*ttlist**2/sigma**2) / math.sqrt(2*np.pi*sigma**2)
         conv = FP.best_rfft(eqdiv)
         conv[1::2] *= -1 #flip center
         return conv
-    
+
 def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,clat,dampM,dampP,calcwid,fitPowerM=2,fitPowerP=2,plot=False):
-    '''Compute the peakshape for a Laue Fringe peak convoluted with a Gaussian, Lorentzian & 
+    '''Compute the peakshape for a Laue Fringe peak convoluted with a Gaussian, Lorentzian &
     an axial divergence asymmetry correction.
 
     :param np.array ttArr: Array of two-theta values (in degrees)
@@ -5600,7 +5600,7 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
     :param float clat: c lattice parameter **
     :param float dampM:
     :param float dampP:
-    :param float calcwid: two-theta (deg.) width for cutoff of peak computation. 
+    :param float calcwid: two-theta (deg.) width for cutoff of peak computation.
        Defaults to 5
     :param float fitPowerM: exponent used for damping fall-off on minus side of peak
     :param float fitPowerP: exponent used for damping fall-off on plus side of peak
@@ -5657,9 +5657,9 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
             },
         "axial": {
             'axDiv':"full",
-            'slit_length_source' : 1e-3 * diffRadius * shol * axial_factor, 
+            'slit_length_source' : 1e-3 * diffRadius * shol * axial_factor,
             'slit_length_target' : 1e-3 * diffRadius * shol * 1.00001 * axial_factor, # != 'slit_length_source'
-            'length_sample' : 1e-3 * diffRadius * shol * axial_factor, 
+            'length_sample' : 1e-3 * diffRadius * shol * axial_factor,
             'n_integral_points' : 10,
             'angI_deg' : 2.5,
             'angD_deg': 2.5,
@@ -5672,7 +5672,7 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
     NISTpk=profileObj(anglemode="twotheta",
                     output_gaussian_smoother_bins_sigma=1.0,
                     oversampling=NISTparms.get('oversampling',10))
-    NISTpk.debug_cache=False    
+    NISTpk.debug_cache=False
     for key in NISTparms: #set parameters for each convolver
         if key:
             NISTpk.set_parameters(convolver=key,**NISTparms[key])
@@ -5698,7 +5698,7 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
     # else:
     #     peakObj = NISTpk.compute_line_profile(convolver_names=convList)
     peakObj = NISTpk.compute_line_profile(convolver_names=convList)
-    
+
     pkPts = len(peakObj.peak)
     pkMax = peakObj.peak.max()
     startInd = center_bin_idx-(pkPts//2)
@@ -5725,14 +5725,14 @@ def LaueFringePeakCalc(ttArr,intArr,lam,peakpos,intens,sigma2,gamma,shol,ncells,
     intArr[istart:iend] += intens * peakObj.peak[pstart:pend]/pkMax
 #    if plot:
 #        LaueFringePeakPlot(ttArr[istart:iend], (intens * peakObj.peak[pstart:pend]/pkMax))
-        
+
 def LaueSatellite(peakpos,wave,c,ncell,j=[-4,-3,-2,-1,0,1,2,3,4]):
     '''Returns the locations of the Laue satellite positions relative
     to the peak position
-    
+
     :param float peakpos: the peak position in degrees 2theta
-    :param float ncell:   Laue fringe parameter, number of unit cells in layer 
-    :param list j: the satellite order, where j=-1 is the first satellite 
+    :param float ncell:   Laue fringe parameter, number of unit cells in layer
+    :param list j: the satellite order, where j=-1 is the first satellite
       on the lower 2theta side and j=1 is the first satellite on the high
       2theta side. j=0 gives the peak position
     '''
@@ -5746,7 +5746,7 @@ def SetDefaultSubstances():
         'unit scatter':{'Elements':None,'Volume':None,'Density':None,'Scatt density':1.0,'XImag density':1.0}}}
 
 def SetDefaultSASDModel():
-    'Fills in default items for the SASD Models dictionary'    
+    'Fills in default items for the SASD Models dictionary'
     return {'Back':[0.0,False],
         'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,'logBins':True,'Method':'MaxEnt',
                 'Distribution':[],'Shape':['Spheroid',1.0],
@@ -5754,25 +5754,25 @@ def SetDefaultSASDModel():
                 'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},
         'Pair':{'Method':'Moore','MaxRadius':100.,'NBins':100,'Errors':'User',
                 'Percent error':2.5,'Background':[0,False],'Distribution':[],
-                'Moore':10,'Dist G':100.,'Result':[],},            
+                'Moore':10,'Dist G':100.,'Result':[],},
         'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
         'Shapes':{'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
                  'inflateV':1.0,'AAglue':0.0,'pdbOut':False,'boxStep':4.0},
         'Current':'Size dist.','BackFile':'',
         }
-        
+
 def SetDefaultREFDModel():
-    '''Fills in default items for the REFD Models dictionary which are 
+    '''Fills in default items for the REFD Models dictionary which are
     defined as follows for each layer:
-    
+
     * Name: name of substance
     * Thick: thickness of layer in Angstroms (not present for top & bottom layers)
     * Rough: upper surface roughness for layer (not present for toplayer)
     * Penetration: mixing of layer substance into layer above-is this needed?
     * DenMul: multiplier for layer scattering density (default = 1.0)
-        
+
     Top layer defaults to vacuum (or air/any gas); can be substituted for some other substance.
-    
+
     Bottom layer default: infinitely thisck Silicon; can be substituted for some other substance.
     '''
     return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},                                  #top layer
@@ -5824,19 +5824,19 @@ def TestData():
 def test0():
     if NeedTestData: TestData()
     gplot = plotter.add('FCJ-Voigt, 11BM').gca()
-    gplot.plot(xdata,getBackground('',parmDict0,bakType,'PXC',xdata)[0])   
+    gplot.plot(xdata,getBackground('',parmDict0,bakType,'PXC',xdata)[0])
     gplot.plot(xdata,getPeakProfile(parmDict0,xdata,np.zeros_like(xdata),varyList,bakType))
     fplot = plotter.add('FCJ-Voigt, Ka1+2').gca()
-    fplot.plot(xdata,getBackground('',parmDict1,bakType,'PXC',xdata)[0])   
+    fplot.plot(xdata,getBackground('',parmDict1,bakType,'PXC',xdata)[0])
     fplot.plot(xdata,getPeakProfile(parmDict1,xdata,np.zeros_like(xdata),varyList,bakType))
-   
+
 def test1():
     if NeedTestData: TestData()
     time0 = time.time()
     for i in range(100):
         getPeakProfile(parmDict1,xdata,np.zeros_like(xdata),varyList,bakType)
     G2fil.G2Print ('100+6*Ka1-2 peaks=1200 peaks %.2f'%time.time()-time0)
-    
+
 def test2(name,delt):
     if NeedTestData: TestData()
     varyList = [name,]
@@ -5847,7 +5847,7 @@ def test2(name,delt):
     parmDict2[name] += delt
     y1 = getPeakProfile(parmDict2,xdata,np.zeros_like(xdata),varyList,bakType)
     hplot.plot(xdata,(y1-y0)/delt,'r+')
-    
+
 def test3(name,delt):
     if NeedTestData: TestData()
     names = ['pos','sig','gam','shl']
@@ -5875,6 +5875,6 @@ if __name__ == '__main__':
         test3(name,shft)
     G2fil.G2Print ("OK")
     plotter.StartEventLoop()
-    
+
 #    GSASIIpath.SetBinaryPath(True,False)
 #    print('found',findfullrmc())

@@ -4,7 +4,7 @@
 # This module initially written by Conrad Gillard. For any enquiries please contact conrad.gillard@gmail.com
 # Export3col exporter adapted from Exportbracket by BHT
 from __future__ import division, print_function
-import GSASIIfiles as G2fil
+from . import GSASIIfiles as G2fil
 from collections import OrderedDict
 from GSASIImath import ValEsd
 

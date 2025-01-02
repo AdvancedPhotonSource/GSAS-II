@@ -4,7 +4,7 @@
 
 from __future__ import division, print_function
 import os
-import GSASIIobj as G2obj
+from . import GSASIIobj as G2obj
 import numpy as np
 class Rigaku_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Rigaku R-Axis IV image file.

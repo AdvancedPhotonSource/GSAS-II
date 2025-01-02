@@ -7,9 +7,9 @@ sort to the top of the image formats and thus show up first in the menu.
 
 from __future__ import division, print_function
 import struct as st
-import GSASIIobj as G2obj
-import GSASIIpath
-import GSASIIfiles as G2fil
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIfiles as G2fil
 import numpy as np
 import time
 DEBUG = False

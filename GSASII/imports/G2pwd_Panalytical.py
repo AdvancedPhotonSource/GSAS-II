@@ -4,7 +4,7 @@ from __future__ import division, print_function
 import os.path as ospath
 import xml.etree.ElementTree as ET
 import numpy as np
-import GSASIIobj as G2obj
+from . import GSASIIobj as G2obj
 class Panalytical_ReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Pananalytical.xrdm (xml) file. 
     

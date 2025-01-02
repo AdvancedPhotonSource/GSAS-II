@@ -6,16 +6,16 @@ from __future__ import division, print_function
 import copy
 import numpy as np
 import numpy.linalg as nl
-import GSASIIpath
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIIplot as G2plt
-import GSASIIpwd as G2pwd
-import GSASIIphsGUI as G2phG
-import GSASIIctrlGUI as G2G
-import GSASIIdataGUI as G2gd
-import GSASIIfiles as G2fil
-import GSASIImath as G2mth
+from . import GSASIIpath
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIIplot as G2plt
+from . import GSASIIpwd as G2pwd
+from . import GSASIIphsGUI as G2phG
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIfiles as G2fil
+from . import GSASIImath as G2mth
 
 try:
     import wx

@@ -32,8 +32,8 @@ CenterPixelY                     Location of beam center as a pixel number (in X
 '''
 
 from __future__ import division, print_function
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
+from . import GSASIIobj as G2obj
+from . import GSASIIfiles as G2fil
 import G2img_1TIF
 DEBUG = False
 

@@ -29,16 +29,16 @@ except ImportError:
             self.ScrolledPanel = object
     wx = Placeholder()
     wxscroll = Placeholder()
-import GSASIIpath
-import GSASIIobj as G2obj
-import GSASIImath as G2mth
-import GSASIIspc as G2spc
-import GSASIIlattice as G2lat
-import GSASIIstrMain as G2stMn
-import GSASIIstrIO as G2stIO        
-import GSASIImapvars as G2mv
-import GSASIIElem as G2el
-import GSASIIfiles as G2fil
+from . import GSASIIpath
+from . import GSASIIobj as G2obj
+from . import GSASIImath as G2mth
+from . import GSASIIspc as G2spc
+from . import GSASIIlattice as G2lat
+from . import GSASIIstrMain as G2stMn
+from . import GSASIIstrIO as G2stIO        
+from . import GSASIImapvars as G2mv
+from . import GSASIIElem as G2el
+from . import GSASIIfiles as G2fil
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 

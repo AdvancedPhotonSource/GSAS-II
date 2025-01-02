@@ -264,6 +264,25 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.Cmin -= (G2frame.Cmax - G2frame.Cmin)/5.
             elif Page.plotStyle['Offset'][0] > -100.:
                 Page.plotStyle['Offset'][0] -= 10.
+        elif event.key == 'h':
+            # select the next peak and highlight it
+            if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Index Peak List':                
+                grid = G2frame.indxPeaks
+            elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
+                grid = G2frame.reflGrid
+            else:
+                return                
+            selected = grid.GetSelectedRows()
+            grid.ClearSelection()
+            if selected:
+                r = selected[0]+1
+                if r >= grid.NumberRows: r = None
+            else:
+                r = 0
+            if r is not None:
+                grid.SelectRow(r,True)
+                grid.MakeCellVisible(r,0)
+            wx.CallAfter(grid.ForceRefresh)
         elif event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         elif event.key == 'l' and not G2frame.SinglePlot:
@@ -1760,8 +1779,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
                 'c: contour on','x: toggle excluded regions','T: toggle plot title',
-                'f: toggle full-length ticks',
-                'g: toggle grid','X: toggle cumulative chi^2',
+                'f: toggle full-length ticks','g: toggle grid',]
+            if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Peak List','Index Peak List']:
+                Page.Choice += ['h: highlight next peak',]
+            Page.Choice += ['X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
             if obsInCaption:
                 Page.Choice += ['o: remove obs, calc,... from legend',]
@@ -2513,17 +2534,30 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             scale = np.max(CY)/np.max(Y)
             CY /= scale
             Plot.plot(X,CY,'k',picker=False,label='cum('+Gkchisq+')')
+        selectedPeaks = []
+        if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List']:
+            # find any peak rows that are selected
+            selectedPeaks = list(set(
+                [row for row,col in G2frame.indxPeaks.GetSelectedCells()] +
+                    G2frame.indxPeaks.GetSelectedRows()))
         if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
             peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
             if len(peaks):  # are there any peaks?
-                for peak in peaks[0]:
+                for i,peak in enumerate(peaks[0]):
+                    if Page.plotStyle['qPlot']:
+                        x = 2.*np.pi/G2lat.Pos2dsp(Parms,peak[0])
+                    elif Page.plotStyle['dPlot']:
+                        x = G2lat.Pos2dsp(Parms,peak[0])
+                    else:
+                        x = peak[0]
+                    if i in selectedPeaks:
+                        Plot.axvline(x,color='yellow',lw=2)
                     if peak[2]:
-                        if Page.plotStyle['qPlot']:
-                            Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                        elif Page.plotStyle['dPlot']:
-                            Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
+                        if i in selectedPeaks:
+                            Plot.axvline(x,color='yellow',lw=2)
+                            Plot.axvline(x,color='b',lw=2,ls='dotted')
                         else:
-                            Plot.axvline(peak[0],color='b')
+                            Plot.axvline(x,color='b')
             for hkl in G2frame.HKL:
                 clr = orange
                 dash = (3,3)

@@ -1879,6 +1879,13 @@ def InvokeDebugOpts():
         os.environ['PYTHONBREAKPOINT'] = '0'
 
 def TestSPG(fpth):
+    try:
+        from . import pyspg
+        return True
+    except ImportError:
+        return _old_TestSPG(fpth)
+
+def _old_TestSPG(fpth):
     '''Test if pyspg.[so,.pyd] can be run from a location in the path
     '''
     try:

@@ -3727,7 +3727,7 @@ def validProtein(Phase,old):
 ################################################################################
 
 def FitTexture(General,Gangls,refData,keyList,pgbar):
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     def printSpHarm(textureData,SHtextureSig):

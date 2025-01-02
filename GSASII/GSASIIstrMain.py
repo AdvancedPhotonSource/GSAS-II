@@ -444,7 +444,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     if allDerivs:
@@ -696,7 +696,7 @@ def DoNoFit(GPXfile,key):
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     parmDict = {}
@@ -758,7 +758,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     #varyList = []
@@ -862,7 +862,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     msgs = {}
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')

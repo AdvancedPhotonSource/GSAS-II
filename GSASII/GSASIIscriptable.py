@@ -5439,7 +5439,7 @@ class G2SeqRefRes(G2ObjectWrapper):
         import os,sys
         sys.path.insert(0,'/Users/toby/software/G2/GSASII')
         PathWrap = lambda fil: os.path.join('/Users/toby/Scratch/SeqTut2019Mar',fil)
-        import GSASIIscriptable as G2sc
+        from . import GSASIIscriptable as G2sc
         gpx = G2sc.G2Project(PathWrap('scr4.gpx'))
         seq = gpx.seqref()
         lbl = ('a','b','c','alpha','beta','gamma','Volume')

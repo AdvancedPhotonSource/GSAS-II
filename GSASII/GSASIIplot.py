@@ -47,7 +47,7 @@ from . import GSASIIctrlGUI as G2G
 from . import GSASIIobj as G2obj
 from . import GSASIIpwdplot as G2pwpl
 try:
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()
 except ImportError:
     print('binary load error: pytexture not found')

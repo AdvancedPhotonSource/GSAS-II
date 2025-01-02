@@ -6396,7 +6396,7 @@ def GetConfigValsDocs():
          * item 3: the "docstring" that follows variable definition
 
     '''
-    import config_example
+    from . import config_example
     import ast
     fname = os.path.splitext(config_example.__file__)[0]+'.py' # convert .pyc to .py
     with open(fname, 'r',encoding='utf-8') as f:
@@ -8227,7 +8227,7 @@ class OpenGitTutorial(wx.Dialog):
 AutoLoadWindow = None
 
 def AutoLoadFiles(G2frame,FileTyp='pwd'):
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     def OnBrowse(event):
         '''Responds when the Browse button is pressed to load a file.
         The routine determines which button was pressed and gets the

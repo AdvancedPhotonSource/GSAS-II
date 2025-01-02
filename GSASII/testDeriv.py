@@ -28,7 +28,7 @@ from . import GSASIIstrMath as G2stMth
 from . import GSASIItestplot as plot
 from . import GSASIImapvars as G2mv
 try:  # fails on doc build
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 except ImportError:
     pass

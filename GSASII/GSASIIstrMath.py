@@ -4078,7 +4078,7 @@ def getPowderProfileDerv(args):
     refined parameters.
     Used for single processor & Multiprocessor versions
     '''
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics for each processor
     parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars = args[:9]
     prc,tprc,histogram = 0,1,None

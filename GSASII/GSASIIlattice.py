@@ -1185,32 +1185,32 @@ def calc_rDsqA(H,A):
     return A[0]*h*h+A[1]*k*k+A[2]*l*l+A[3]*h*k+A[4]*h*l+A[5]*k*l #quicker
     
 def calc_rDsq2(H,G):
-    'computes 1/d^2 from hkl & reciprocal metric tensor G'
+    'computes 1/d^2 from one hkl & reciprocal metric tensor G'
     return np.inner(H,np.inner(G,H))
     
 def calc_rDsqSS(H,A,vec):
-    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector'
+    'computes 1/d^2 from one hklm, reciprocal metric tensor A & k-vector'
     rdsq = calc_rDsq(H[:3]+(H[3]*vec).T,A)
     return rdsq
        
 def calc_rDsqZ(H,A,Z,tth,lam):
-    'computes 1/d^2 from hkl & reciprocal metric tensor A with CW ZERO shift'
+    'computes 1/d^2 from hkl array & reciprocal metric tensor A with CW ZERO shift'
     rdsq = calc_rDsqA(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def calc_rDsqZSS(H,A,vec,Z,tth,lam):
-    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with CW Z shift'
+    'computes 1/d^2 from hklm array, reciprocal metric tensor A & k-vector with CW Z shift'
     rdsq = calc_rDsqA(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def calc_rDsqT(H,A,Z,tof,difC):
-    'computes 1/d^2 from hkl & reciprocal metric tensor A with TOF ZERO shift'
+    'computes 1/d^2 from hkl array & reciprocal metric tensor A with TOF ZERO shift'
     rdsq = calc_rDsqA(H,A)+Z/difC
     return rdsq
        
 def calc_rDsqTSS(H,A,vec,Z,tof,difC):
-    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with TOF Z shift'
-    rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z/difC
+    'computes 1/d^2 from hklm array, reciprocal metric tensor A & k-vector with TOF Z shift'
+    rdsq = calc_rDsqA(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z/difC
     return rdsq
     
 def PlaneIntercepts(Amat,H,phase,stack):

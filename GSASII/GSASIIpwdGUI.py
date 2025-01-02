@@ -5766,7 +5766,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False):
             Obj = event.GetEventObject()
             ObjId = Obj.GetId()
             Id,valObj = Indx[ObjId]
-            move = Obj.GetValue()*0.01
+            inc = float(shiftChoices[shiftSel.GetSelection()][:-1])
+            move = Obj.GetValue()*inc/100.
             Obj.SetValue(0)
             value = min(0.98,max(-0.98,float(valObj.GetValue())+move))
             valObj.SetValue('%.4f'%(value)) 
@@ -5817,8 +5818,13 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False):
                 Peaks = np.copy(peaks[0])
                 ssopt['ModVec'] = G2spc.SSGModCheck(ssopt['ModVec'],G2spc.splitSSsym(ssSym)[0],True)[0]
                 print (' Trying: '+controls[13]+ssSym+' maxH: 1')
-                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
-                OnHklShow(event,indexFrom='  Indexing from best modulation vector')
+                dlg = wx.ProgressDialog('Elapsed time','Modulation vector search with %s'%ssSym,
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+                try:
+                    ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
+                    OnHklShow(event,indexFrom='  Indexing from best modulation vector')
+                finally:
+                    dlg.Destroy()
                 if result[1] < best:
                     bestSS = ssSym
                     best = result[1]
@@ -5847,7 +5853,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False):
             OnHklShow(event,indexFrom=' Indexing from space group %s'%controls[13])
             wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
-        def OnTryAll(event):
+        def OnTryAllSG(event):
             '''Computes extinctions for all possible space groups
             creates data for a table that is displayed in the subsequent 
             UpdateUnitCellsGrid call. 
@@ -6075,7 +6081,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False):
         bravSizer.Add(spcSel,0,WACV)
         bravSizer.Add((5,-1))
         tryAll = wx.Button(G2frame.dataWindow,label='Try all?')
-        tryAll.Bind(wx.EVT_BUTTON,OnTryAll)
+        tryAll.Bind(wx.EVT_BUTTON,OnTryAllSG)
         bravSizer.Add(tryAll,0,WACV)
         if 'E' not in Inst['Type'][0]:
             SSselect = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
@@ -6172,6 +6178,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False):
                         size=wx.Size(50,20),style=wx.TE_READONLY)
                     modVal.SetBackgroundColour(VERY_LIGHT_GREY)
                     ssSizer.Add(modVal,0,WACV)
+            ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' in steps of cell step above'),0,WACV)
             unitSizer.Add(ssSizer,0)
             ssSizer = wx.BoxSizer(wx.HORIZONTAL)
             ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max. M: '),0,WACV)

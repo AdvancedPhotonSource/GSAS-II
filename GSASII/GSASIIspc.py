@@ -9,8 +9,6 @@ import sys
 import copy
 import os.path as ospath
 
-from . import GSASIIpath
-
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
 nxs = np.newaxis
@@ -69,7 +67,7 @@ def SpcGroup(SGSymbol):
         SGSymbol = SGSymbol.replace('-2','m')
     if SGSymbol.split()[1] =='3/m':
         SGSymbol = SGSymbol.replace('3/m','-6')
-    import pyspg
+    from . import pyspg
     SGInfo = pyspg.sgforpy(SGSymbol)
     SGData['SpGrp'] = SGSymbol.strip().lower().capitalize()
     SGData['SGLaue'] = LaueSym[SGInfo[0]-1]
@@ -2249,7 +2247,7 @@ def GenHKLf(HKL,SGData):
     OpT = np.array([op[1] for op in Ops])
     Cen = np.array([cen for cen in SGData['SGCen']],order='F')
 
-    import pyspg
+    from . import pyspg
     Nuniq,Uniq,iabsnt,mulp = pyspg.genhklpy(hklf,len(Ops),OpM,OpT,SGData['SGInv'],len(Cen),Cen)
     h,k,l,f = Uniq
     Uniq=np.array(list(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq])))

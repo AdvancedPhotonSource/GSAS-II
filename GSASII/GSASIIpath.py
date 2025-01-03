@@ -75,7 +75,7 @@ def GetConfigDefault(key):
     :returns: the default value or None
     '''
     try:
-        import config_example
+        from . import config_example
     except:
         return None
     return config_example.__dict__.get(key)

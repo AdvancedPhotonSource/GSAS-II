@@ -4,7 +4,7 @@
 from __future__ import division, print_function
 import os.path
 import scipy.misc
-from . import GSASIIfiles as G2fil
+from .. import GSASIIfiles as G2fil
 
 class ExportImagePNG(G2fil.ExportBaseclass):
     '''Used to create a PNG file for a GSAS-II image

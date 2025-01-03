@@ -503,7 +503,9 @@ def _old_LoadImportRoutines(prefix, errprefix=None, traceback=False):
 def LoadImportRoutines(prefix, errprefix=None, traceback=False):
     from . import imports
     readerlist = []
-
+    # how to import directly from a file for extra search magic if we need
+    # https://stackoverflow.com/questions/67631/how-can-i-import-a-module-dynamically-given-the-full-path
+    # TODO handle non-bundled readers
     for mod_name in (_ for _ in dir(imports) if _.startswith(f'G2{prefix}')):
         mod = getattr(imports, mod_name)
         for member_name in dir(mod):
@@ -543,7 +545,7 @@ def ImportErrorMsg(errormsg=None,pkg={}):
     ImportErrors.append(errormsg)
     if pkg: condaRequestList.update(pkg)
 
-def LoadExportRoutines(parent, traceback=False):
+def _LoadExportRoutines(parent, traceback=False):
     '''Routine to locate GSASII exporters. Warns if more than one file
     with the same name is in the path or if a file is found that is not
     in the main directory tree.
@@ -598,6 +600,38 @@ def LoadExportRoutines(parent, traceback=False):
             if traceback:
                 traceback.print_exc(file=sys.stdout)
     return exporterlist
+
+def LoadExportRoutines(parent, traceback=False):
+    from . import exports
+    exporterlist = []
+    # how to import directly from a file for extra search magic if we need
+    # https://stackoverflow.com/questions/67631/how-can-i-import-a-module-dynamically-given-the-full-path
+    # TODO handle non-bundled readers
+    for mod_name in (_ for _ in dir(exports) if _.startswith('G2export')):
+        mod = getattr(exports, mod_name)
+        for member_name in dir(mod):
+            if member_name.startswith('_'):
+                continue
+            member = getattr(mod, member_name)
+            if not hasattr(member, 'Exporter'):
+                continue
+            if parent is None:
+                if not hasattr(member, 'Writer'):
+                    continue
+            else:
+                if not hasattr(member, 'loadParmDict'):
+                    continue
+            try:
+                exporter = member(parent)
+                exporterlist.append(exporter)
+            except Exception as exc:
+                G2Print ('\nExport init: Error substantiating class ' + member_name)
+                G2Print ('Error message: {}\n'.format(exc))
+                if traceback:
+                    traceback.print_exc(file=sys.stdout)
+                continue
+    return exporterlist
+
 
 def readColMetadata(imagefile):
     '''Reads image metadata from a column-oriented metadata table

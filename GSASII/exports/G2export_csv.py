@@ -6,11 +6,11 @@
 from __future__ import division, print_function
 import os.path
 import numpy as np
-from . import GSASIIobj as G2obj
-from . import GSASIImath as G2mth
-from . import GSASIIpwd as G2pwd
-from . import GSASIIlattice as G2lat
-from . import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+from .. import GSASIImath as G2mth
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIlattice as G2lat
+from .. import GSASIIfiles as G2fil
 
 def WriteList(obj,headerItems):
     '''Write a CSV header

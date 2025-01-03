@@ -6,10 +6,10 @@
 from __future__ import division, print_function
 import os
 import numpy as np
-from . import GSASIIobj as G2obj
-from . import GSASIImath as G2mth
-from . import GSASIIpwd as G2pwd
-from . import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+from .. import GSASIImath as G2mth
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIfiles as G2fil
 
 class ExportPhaseText(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase

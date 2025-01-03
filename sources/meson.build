@@ -205,5 +205,6 @@ py.extension_module('histosigma2d',
   link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
 )
 
+executable('convcell', files('convcell.f'), install:true)
 
 subdir('k_vec_cython')

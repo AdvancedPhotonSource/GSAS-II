@@ -11,6 +11,7 @@ import math
 import random as ran
 import copy
 import sys
+import shutil
 import os
 import inspect
 import re
@@ -504,8 +505,9 @@ def ShowVersions():
         versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
     else:
         prog = 'convcell'
-        if sys.platform.startswith('win'): prog += '.exe'
-        if not os.path.exists(os.path.join(GSASIIpath.binaryPath,prog)):
+        if sys.platform.startswith('win'):
+            prog += '.exe'
+        if not shutil.which(prog):
             versionDict['errors'] += 'Installed binary files need an update. If you built them, rerun scons'
     if warn:
         print(70*'=')

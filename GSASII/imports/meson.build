@@ -1,4 +1,5 @@
 py.install_sources([
+    '__init__.py',
     'G2img_1TIF.py',
     'G2img_ADSC.py',
     'G2img_CBF.py',
@@ -19,6 +20,7 @@ py.install_sources([
     'G2phase_INS.py',
     'G2phase_rmc6f.py',
     'G2phase_xyz.py',
+    'G2pwd_BrukerBRML.py',
     'G2pwd_BrukerRAW.py',
     'G2pwd_CIF.py',
     'G2pwd_FP.py',
@@ -30,6 +32,7 @@ py.install_sources([
     'G2pwd_rigaku.py',
     'G2pwd_xye.py',
     'G2rfd_Panalytical.py',
+    'G2rfd_rigaku.py',
     'G2rfd_xye.py',
     'G2sad_xye.py',
     'G2sfact.py',
@@ -38,4 +41,3 @@ py.install_sources([
   pure: false,    # Will be installed next to binaries
   subdir: 'GSASII/imports'  # Folder relative to site-packages to install to
 )
-

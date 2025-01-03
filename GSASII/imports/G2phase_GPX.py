@@ -6,8 +6,8 @@ import platform
 import sys
 import pickle
 import random as ran
-from . import GSASIIobj as G2obj
-from . import GSASIIstrIO as G2stIO
+from .. import GSASIIobj as G2obj
+from .. import GSASIIstrIO as G2stIO
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .GPX file and pulls out a selected phase'

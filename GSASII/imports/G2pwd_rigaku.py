@@ -5,7 +5,7 @@ import os
 import os.path as ospath
 import platform
 import numpy as np
-from . import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 class Rigaku_txtReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
     then 1 or 11(!) intensity values on the line. The example file is proceeded

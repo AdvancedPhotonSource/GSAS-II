@@ -6,9 +6,9 @@ try:
     import h5py
 except ImportError:
     h5py = None
-from . import GSASIIobj as G2obj
-from . import GSASIIfiles as G2fil
-from . import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIpath
 
 class HDF5_Reader(G2obj.ImportImage):
     '''Routine to read a HDF-5 image, typically from APS Sector 1 or 6.

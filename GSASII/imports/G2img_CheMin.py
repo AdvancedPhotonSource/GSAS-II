@@ -3,7 +3,7 @@
 '''
 
 from __future__ import division, print_function
-from . import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 class png_ReaderClass(G2obj.ImportImage):
     '''Reads standard PNG images; parameters are set to those of the
     Mars Rover (CheMin) diffractometer.

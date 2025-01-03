@@ -5,7 +5,7 @@ Shelx, Jana, REMOS, TOPAS (SNS), HB-3A (HIFR)
 from __future__ import division, print_function
 import sys
 import numpy as np
-from . import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 
 def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'

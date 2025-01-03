@@ -5,8 +5,8 @@
 from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
-from . import GSASIIobj as G2obj
-from . import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
 class fp_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a FullProf 1-10 column .dat file'
     def __init__(self):

@@ -5,7 +5,7 @@ from __future__ import division, print_function
 import os.path as ospath
 import platform
 import numpy as np
-from . import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 
 class GSAS_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a GSAS files'

@@ -4,7 +4,7 @@ from __future__ import division, print_function
 import os.path as ospath
 import xml.etree.ElementTree as ET
 import numpy as np
-from . import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 sind = lambda x: np.sin(x*np.pi/180.)
 class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
     '''Routines to import reflectivity data from a Panalytical.xrdm (xml) file. 

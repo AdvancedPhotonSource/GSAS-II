@@ -13,9 +13,9 @@ try:
     import wx
 except ImportError:
     wx = None
-from . import GSASIIobj as G2obj
-from . import GSASIIspc as G2spc
-from . import GSASIIlattice as G2lat
+from .. import GSASIIobj as G2obj
+from .. import GSASIIspc as G2spc
+from .. import GSASIIlattice as G2lat
 try:  # fails on doc build
     R2pisq = 1./(2.*np.pi**2)
 except TypeError:

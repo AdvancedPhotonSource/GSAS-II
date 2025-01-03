@@ -5,7 +5,7 @@
 from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
-from . import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npsind = lambda x: np.sin(np.pi*x/180.)
 try:  # fails on doc build

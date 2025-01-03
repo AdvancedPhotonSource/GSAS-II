@@ -5,9 +5,9 @@ from __future__ import division, print_function
 import sys
 import numpy as np
 import random as ran
-from . import GSASIIobj as G2obj
-from . import GSASIIspc as G2spc
-from . import GSASIIlattice as G2lat
+from .. import GSASIIobj as G2obj
+from .. import GSASIIspc as G2spc
+from .. import GSASIIlattice as G2lat
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .INS file and pulls out a selected phase'

@@ -5,7 +5,7 @@
 from __future__ import division, print_function
 import os
 import numpy as np
-from . import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 class EDF_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read European detector data .edf file.
     This is a particularly nice standard. 

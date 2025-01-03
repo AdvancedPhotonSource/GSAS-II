@@ -5,7 +5,7 @@ from __future__ import division, print_function
 import platform
 import pickle as cPickle
 import numpy as np
-from . import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 
 def cPickleLoad(fp):
     if '2' in platform.python_version_tuple()[0]:

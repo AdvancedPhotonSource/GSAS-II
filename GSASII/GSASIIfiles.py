@@ -499,9 +499,29 @@ def _old_LoadImportRoutines(prefix, errprefix=None, traceback=False):
                 traceback.print_exc(file=sys.stdout)
     return readerlist
 
-def LoadImportRoutines(prefix, errprefix=None, traceback=False):
 
-    ...
+def LoadImportRoutines(prefix, errprefix=None, traceback=False):
+    from . import imports
+    readerlist = []
+
+    for mod_name in (_ for _ in dir(imports) if _.startswith(f'G2{prefix}')):
+        mod = getattr(imports, mod_name)
+        for member_name in dir(mod):
+            if member_name.startswith('_'):
+                continue
+            member = getattr(mod, member_name)
+            if all(
+                hasattr(member, meth)
+                for meth in ('Reader', 'ExtensionValidator', 'ContentsValidator')
+            ):
+                reader = member()
+                if reader.UseReader:
+                    readerlist.append(reader)
+
+
+    return readerlist
+
+
 
 ImportErrors = []
 condaRequestList = {}

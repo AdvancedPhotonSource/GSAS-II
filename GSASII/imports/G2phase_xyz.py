@@ -7,8 +7,8 @@ from __future__ import division, print_function
 import sys
 import os.path
 import random as ran
-from . import GSASIIobj as G2obj
-from . import GSASIIlattice as G2lat
+from .. import GSASIIobj as G2obj
+from .. import GSASIIlattice as G2lat
 
 class XYZ_ReaderClass(G2obj.ImportPhase):
     'Routine to import Phase information from a XYZ file'

@@ -1684,7 +1684,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 extOrd = [0,1]
                 if GSASIIpath.GetConfigValue('Instprm_default',False):
                     extOrd = [1,0]
-                extList = ['GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|','GSAS-II iparm file (*.instprm)|*.instprm|']
+                extList = ['GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins;*.PRM|','GSAS-II iparm file (*.instprm)|*.instprm|']
                 dlg = wx.FileDialog(self,
                     u'Choose inst. param file for "'+rd.idstring+u'" (or Cancel for default)',
                     pth, '',extList[extOrd[0]]+extList[extOrd[1]]+'All files (*.*)|*.*', wx.FD_OPEN)

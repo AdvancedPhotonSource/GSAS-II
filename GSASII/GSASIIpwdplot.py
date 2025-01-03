@@ -1797,10 +1797,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         'q: toggle Q plot','t: toggle d-spacing plot',
                         's: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
                         '+: toggle obs line plot']
-            if G2frame.GPXtree.GetItemText(G2frame.PickId) in [
-                    'Peak List','Index Peak List']:
-                Page.Choice += ['d: highlight next peak']
-                Page.Choice += ['u: highlight previous peak']
+            if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Peak List','Index Peak List']:
+                Page.Choice += ['d: highlight next peak in list']
+                Page.Choice += ['u: highlight previous peak in list']
             if Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']:
                 del Page.Choice[1]
                 del Page.Choice[1]

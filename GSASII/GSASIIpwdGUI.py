@@ -4005,8 +4005,8 @@ def UpdateIndexPeaksGrid(G2frame, data):
         if r >= 0 and c < 0:     #row label: select it and replot!
             G2frame.indxPeaks.ClearSelection()
             G2frame.indxPeaks.SelectRow(r,True)
+            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             wx.CallAfter(G2frame.indxPeaks.ForceRefresh)
-            wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
 
     def OnReload(event):
         peaks = []

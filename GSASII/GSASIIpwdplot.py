@@ -254,6 +254,27 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
             elif Page.plotStyle['Offset'][0] > -100.:
                 Page.plotStyle['Offset'][0] -= 1.
+        elif (event.key == 'u' or event.key == 'd'
+                  ) and G2frame.GPXtree.GetItemText(G2frame.PickId) in [
+                'Index Peak List','Peak List']:
+            # select the next or previous peak and highlight it
+            if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Index Peak List':                grid = G2frame.indxPeaks
+            elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
+                grid = G2frame.reflGrid
+            selected = grid.GetSelectedRows()
+            grid.ClearSelection()
+            if event.key == 'd':
+                if not selected: selected = [-1,]
+                r = selected[0]+1
+                if r >= grid.NumberRows: r = None
+            else:
+                if not selected: selected = [grid.NumberRows]
+                r = selected[0]-1
+                if r < 0: r = None
+            if r is not None:
+                grid.SelectRow(r,True)
+                grid.MakeCellVisible(r,0)
+            wx.CallAfter(grid.ForceRefresh)
         elif event.key == 'U':
             if G2frame.Contour:
                 G2frame.Cmin += (G2frame.Cmax - G2frame.Cmin)/5.
@@ -264,25 +285,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.Cmin -= (G2frame.Cmax - G2frame.Cmin)/5.
             elif Page.plotStyle['Offset'][0] > -100.:
                 Page.plotStyle['Offset'][0] -= 10.
-        elif event.key == 'h':
-            # select the next peak and highlight it
-            if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Index Peak List':                
-                grid = G2frame.indxPeaks
-            elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
-                grid = G2frame.reflGrid
-            else:
-                return                
-            selected = grid.GetSelectedRows()
-            grid.ClearSelection()
-            if selected:
-                r = selected[0]+1
-                if r >= grid.NumberRows: r = None
-            else:
-                r = 0
-            if r is not None:
-                grid.SelectRow(r,True)
-                grid.MakeCellVisible(r,0)
-            wx.CallAfter(grid.ForceRefresh)
         elif event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         elif event.key == 'l' and not G2frame.SinglePlot:
@@ -1779,10 +1781,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
                 'c: contour on','x: toggle excluded regions','T: toggle plot title',
-                'f: toggle full-length ticks','g: toggle grid',]
-            if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Peak List','Index Peak List']:
-                Page.Choice += ['h: highlight next peak',]
-            Page.Choice += ['X: toggle cumulative chi^2',
+                'f: toggle full-length ticks','g: toggle grid',
+                'X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
             if obsInCaption:
                 Page.Choice += ['o: remove obs, calc,... from legend',]
@@ -1797,6 +1797,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         'q: toggle Q plot','t: toggle d-spacing plot',
                         's: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
                         '+: toggle obs line plot']
+            if G2frame.GPXtree.GetItemText(G2frame.PickId) in [
+                    'Peak List','Index Peak List']:
+                Page.Choice += ['d: highlight next peak']
+                Page.Choice += ['u: highlight previous peak']
             if Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']:
                 del Page.Choice[1]
                 del Page.Choice[1]

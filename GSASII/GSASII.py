@@ -27,7 +27,8 @@ try:
     wg,wx.aui,wxscroll,listmix,wxrt,wxfilebrowse,scipy.optimize # avoid unused warning
 except ImportError:
     pass
-import GSASIIpath
+
+from . import GSASIIpath
 
 __version__ = '2.0.0'
 try:
@@ -49,13 +50,13 @@ class G2App(wx.App):
     def MacOpenFiles(self, filenames):
         if self.startupMode:
             return
-        import GSASIIfiles
+        from . import GSASIIfiles
         for project in filenames:
             #print("Start GSAS-II with project file "+str(project))
             #GSASIIpath.MacStartGSASII(__file__,project)
             GSASIIfiles.openInNewTerm(project)
 
-if __name__ == '__main__':
+def main():
     if sys.platform == "darwin": 
         application = G2App(0) # create the GUI framework
     else:
@@ -89,9 +90,12 @@ if __name__ == '__main__':
         # elif GSASIIpath.HowIsG2Installed().startswith('svn'):
         #     svnCheckUpdates(None)
         # else:
-    import GSASIIdataGUI as G2gd
+    from . import GSASIIdataGUI as G2gd
     G2gd.GSASIImain(application) # start the GUI
     if sys.platform == "darwin": 
         wx.CallLater(50,application.ClearStartup)
     GSASIIpath.InvokeDebugOpts()
     application.MainLoop()
+
+if __name__ == '__main__':
+    main()

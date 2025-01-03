@@ -196,13 +196,17 @@ def UpdateImageData(G2frame,data):
     G2frame.PhaseRing2Th = [] # list of known phase rings to superimpose
     # listing 2theta, color, width, line-style for each ring
     G2frame.dataWindow.ClearData()
-    G2frame.ImageZ = GetImageZ(G2frame,data)
-    mainSizer = G2frame.dataWindow.GetSizer()
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Do not change anything here unless you are absolutely sure!'),0)
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= "Image settings: Don't change anything here unless you are absolutely sure!"
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
+    G2frame.ImageZ = GetImageZ(G2frame,data)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Image size: %d by %d'%(data['size'][0],data['size'][1])),0)
     pixSize = wx.FlexGridSizer(0,4,5,5)
     pixLabels = [u' Pixel X-dimension (\xb5m)',u' Pixel Y-dimension (\xb5m)']
@@ -1720,12 +1724,16 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         subprocess.Popen([ex,os.path.join(GSASIIpath.path2GSAS2,'GSASIIIntPDFtool.py'),project])
     G2frame.Bind(wx.EVT_MENU, OnIntPDFtool, id=G2G.wxID_IMINTEGPDFTOOL)
 
-    mainSizer = G2frame.dataWindow.GetSizer()  
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Image Controls:'))
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= "Image Controls:"
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add((5,10),0)    
     mainSizer.Add(ComboSizer(),0,wx.ALIGN_LEFT)
     mainSizer.Add((5,5),0)
@@ -2229,12 +2237,16 @@ def UpdateMasks(G2frame,data):
         G2frame.GetStatusBar().SetStatusText('Y-line mask active - LB pick y line of pixels',1)
     else:
         G2frame.GetStatusBar().SetStatusText("To add mask: press a,r,s,x,y,p or f on 2D image for arc/ring/spot/xline/yline/polygon/frame",1)
-    mainSizer = G2frame.dataWindow.GetSizer()
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mask Controls:'))
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= "Mask Controls:"
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add((5,10),0)
 
     thresh = data['Thresholds']         #min/max intensity range
@@ -2878,12 +2890,16 @@ def UpdateStressStrain(G2frame,data):
     else:
         G2frame.GetStatusBar().SetStatusText("To add strain data: On 2D Powder Image, key a:add ring",1)
         
-    mainSizer = G2frame.dataWindow.GetSizer()
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Stress/Strain Controls:'))
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= "Stress/Strain Controls:"
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add((5,10),0)
     mainSizer.Add(SamSizer())
     mainSizer.Add((5,10),0)

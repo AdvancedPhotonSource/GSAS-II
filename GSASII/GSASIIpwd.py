@@ -816,7 +816,7 @@ def getWidthsCW(pos,sig,gam,shl):
         reversed for 2-theta > 90 deg.
     '''
     widths = [np.sqrt(sig)/100.,gam/100.]
-    fwhm = 2.355*widths[0]+widths[1]
+    fwhm = max(2.355*widths[0]+widths[1],0.0001)
     fmin = 50.*(fwhm+shl*abs(npcosd(pos)))
     fmax = 75.0*fwhm
     if pos > 90.:
@@ -1684,6 +1684,9 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                     continue
                 elif not iBeg-iFin:     #peak above high limit
                     return yb+yc
+                elif iFin-iBeg < 2:
+                    iPeak += 1
+                    continue
                 if 'C' in dataType:
                     fp = getFCJVoigt3(pos,sig,gam,shl,xdata[iBeg:iFin])[0]
                 elif 'B' in dataType:
@@ -2720,12 +2723,17 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         if 'LF' in Inst['Type'][0] and Peaks:
             if Peaks[-1].get('clat-ref'): varyList += ['clat']
     fullvaryList = varyList[:]
+    remVary = []
     if not peakInstPrmMode:
         for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1','A','B','C',
             'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',):
             if v in varyList:
-                raise Exception('Instrumental profile terms cannot be varied '+
-                                    'after setPeakInstPrmMode(False) is used')
+                remVary.append(v)
+        if remVary:
+            print('Instrumental profile terms cannot be varied '+
+                          'after setPeakInstPrmMode(False) is used'+
+                          f'\nremoving vars: {" ,".join(remVary)}')
+            varyList = [v for v in varyList if v not in remVary]
     if 'LF' in Inst['Type'][0]:
         warn = []
         for v in ('U','V','W','X','Y','Z','alpha','alpha-0','alpha-1',
@@ -2809,6 +2817,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     if len(binsperFWHM):
         if min(binsperFWHM) < 1.:
             G2fil.G2Print ('*** Warning: calculated peak widths are too narrow to refine profile coefficients ***')
+            G2fil.G2Print (' Manually make individually refined sigma/gamma terms positive')
             if 'T' in Inst['Type'][0]:
                 G2fil.G2Print (' Manually increase sig-0, 1, or 2 in Instrument Parameters')
             else:

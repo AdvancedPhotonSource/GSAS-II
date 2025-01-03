@@ -1104,12 +1104,14 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             pass
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for Phase '+PhaseName+':'),0,wx.LEFT,5)
-    # add help button to bring up help web page - at right sede of window
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    lbl= f"Histogram data for Phase {data['General']['Name']!r}"[:60]
+    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(DData,helpIndex=G2frame.dataWindow.helpKey))
-    mainSizer.Add(topSizer,0,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
     LeBailMsg = None
     if G2frame.hist:
         topSizer = wx.FlexGridSizer(1,2,5,5)
@@ -1465,7 +1467,9 @@ def MakeHistPhaseWin(G2frame):
     # binds the menu items and shows the Data Window info
     G2frame.dataWindow.ClearData()
     HAPBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
-    G2frame.dataWindow.GetSizer().Add(HAPBook,1,wx.ALL|wx.EXPAND,1)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
+    mainSizer.Add(HAPBook,1,wx.ALL|wx.EXPAND,1)
     phaseList = []
     phaseIds = []
     DData = []

@@ -95,10 +95,22 @@ class G2TreeCtrl(wx.TreeCtrl):
     '''
     def __init__(self,parent=None,*args,**kwargs):
         super(self.__class__,self).__init__(parent=parent,*args,**kwargs)
+        fontIncr = GSASIIpath.GetConfigValue('FontSize_incr')
+        self.font = None
         self.G2frame = parent.GetTopLevelParent()
         self.root = self.AddRoot('Loaded Data: ')
+        if fontIncr is not None and fontIncr != 0:
+            self.font = wx.Font(self.GetFont())
+            self.font.SetPointSize(self.font.PointSize+fontIncr)
+            self.SetItemFont(self.root, self.font)
         self.SelectionChanged = None
         self.textlist = None
+
+    def AppendItem(self, parent, text, image=-1, selImage=-1, data=None):
+        'override the standard method so font size can be set'
+        item = super(self.__class__,self).AppendItem(parent, text, image, selImage, data)
+        if self.font: self.SetItemFont(item, self.font)
+        return item
 
     def _getTreeItemsList(self,item):
         '''Get the full tree hierarchy from a reference to a tree item.
@@ -5809,14 +5821,7 @@ class HelpButton(wx.Button):
     def __init__(self,parent,msg='',helpIndex='',wrap=None):
         if sys.platform == "darwin": 
             wx.Button.__init__(self,parent,wx.ID_HELP)
-        elif sys.platform.startswith("linux"):
-            wx.Button.__init__(self,parent,wx.ID_ANY,'?',style=wx.BU_EXACTFIT)
-            self.SetBackgroundColour('yellow')
-            self.SetForegroundColour('black')
-            f = wx.Font(self.GetFont()).Bold()
-            f.SetPointSize(f.PointSize+1)
-            self.SetFont(f)
-        else:  # button needs to be exaggerated in Windows
+        else:
             wx.Button.__init__(self,parent,wx.ID_ANY,' ? ',style=wx.BU_EXACTFIT)
             self.SetBackgroundColour('yellow')
             self.SetForegroundColour('black')

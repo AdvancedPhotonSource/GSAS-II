@@ -18,20 +18,17 @@ endif
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
 cy = meson.get_compiler('cython')
-fc = meson.get_compiler('fortran')
+
 
 m_dep = cc.find_library('m', required : false)
 if m_dep.found()
   add_project_link_arguments('-lm', language : 'c')
 endif
 
-
+fc = meson.get_compiler('fortran')
 if fc.get_id() == 'gcc'
   add_global_arguments('-fbounds-check', language : 'fortran')
 endif
-
-args = fc.first_supported_argument(['-ffree-form', '-free', '/free'])
-assert(args != [], 'No arguments found?')
 
 
 py = import('python').find_installation(pure: false)

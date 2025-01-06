@@ -4,14 +4,12 @@
 '''
 from __future__ import division, print_function
 import math
-import time
 import copy
 import sys
 import random as ran
 import numpy as np
 import numpy.linalg as nl
 import scipy.special as spsp
-from . import GSASIIpath
 from . import GSASIImath as G2mth
 from . import GSASIIspc as G2spc
 from . import GSASIIElem as G2elem
@@ -23,7 +21,8 @@ atand = lambda x: 180.*np.arctan(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 cosd = lambda x: np.cos(x*np.pi/180.)
 acosd = lambda x: 180.*np.arccos(x)/np.pi
-rdsq2d = lambda x,p: round(1.0/np.sqrt(x),p)
+rdsq2d = lambda x,p: round(1.0/math.sqrt(x),p)
+nprdsq2d = lambda x,p: np.round(1.0/np.sqrt(x),p)
 try:  # fails on doc build
     rpd = np.pi/180.
     RSQ2PI = 1./np.sqrt(2.*np.pi)
@@ -473,7 +472,6 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=Fals
       and from that the direct cell for the transformed phase.
     '''
     import GSASIIobj as G2obj
-    T = Mat = np.linalg.inv(Trans).T
     Anew = []
     constrList = []
     uniqueAnew = cellUnique(nSGLaue)
@@ -1154,10 +1152,10 @@ def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
     '''
     if 'T' in Inst['Type'][0]:
-        pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp-Inst['Zero'][1]
+        pos = Inst['difC'][1]*dsp+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp+Inst['Zero'][1]
     elif 'E' in Inst['Type'][0]:
         return 12.398/(2.0*dsp*sind(Inst['2-theta'][1]/2.0))+Inst['ZE'][1]+Inst['YE'][1]*dsp+Inst['XE'][1]*dsp**2
-    else:   #'A', 'B' or 'C'
+    else:   #'A', 'B', 'C' or 'PKS'
         wave = G2mth.getWave(Inst)
         val = min(0.995,wave/(2.*dsp))  #set max at 168deg
         pos = 2.0*asind(val)+Inst.get('Zero',[0,0])[1]
@@ -1175,37 +1173,44 @@ def getPeakPos(dataType,parmdict,dsp):
     return pos
 
 def calc_rDsq(H,A):
-    'needs doc string'
-    rdsq = H[0]*H[0]*A[0]+H[1]*H[1]*A[1]+H[2]*H[2]*A[2]+H[0]*H[1]*A[3]+H[0]*H[2]*A[4]+H[1]*H[2]*A[5]
-    return rdsq
+    'calc 1/d^2 from individual hkl and A-terms'
+    B = np.array([H[0]**2,H[1]**2,H[2]**2,H[0]*H[1],H[0]*H[2],H[1]*H[2]])
+    return np.sum(A*B)
+
+def calc_rDsqA(H,A):
+    'calc array of 1/d^2 from array of hkl & A-terms'
+    # B = np.array([H[0]**2,H[1]**2,H[2]**2,H[0]*H[1],H[0]*H[2],H[1]*H[2]])
+    # return np.sum(np.array(A)[:,nxs]*B,axis=0)
+    h,k,l = H
+    return A[0]*h*h+A[1]*k*k+A[2]*l*l+A[3]*h*k+A[4]*h*l+A[5]*k*l #quicker
 
 def calc_rDsq2(H,G):
-    'computes 1/d^2 from hkl & reciprocal metric tensor G'
+    'computes 1/d^2 from one hkl & reciprocal metric tensor G'
     return np.inner(H,np.inner(G,H))
 
 def calc_rDsqSS(H,A,vec):
-    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector'
+    'computes 1/d^2 from one hklm, reciprocal metric tensor A & k-vector'
     rdsq = calc_rDsq(H[:3]+(H[3]*vec).T,A)
     return rdsq
 
 def calc_rDsqZ(H,A,Z,tth,lam):
-    'computes 1/d^2 from hkl & reciprocal metric tensor A with CW ZERO shift'
-    rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
+    'computes 1/d^2 from hkl array & reciprocal metric tensor A with CW ZERO shift'
+    rdsq = calc_rDsqA(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
 
 def calc_rDsqZSS(H,A,vec,Z,tth,lam):
-    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with CW Z shift'
-    rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
+    'computes 1/d^2 from hklm array, reciprocal metric tensor A & k-vector with CW Z shift'
+    rdsq = calc_rDsqA(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
 
 def calc_rDsqT(H,A,Z,tof,difC):
-    'computes 1/d^2 from hkl & reciprocal metric tensor A with TOF ZERO shift'
-    rdsq = calc_rDsq(H,A)+Z/difC
+    'computes 1/d^2 from hkl array & reciprocal metric tensor A with TOF ZERO shift'
+    rdsq = calc_rDsqA(H,A)+Z/difC
     return rdsq
 
 def calc_rDsqTSS(H,A,vec,Z,tof,difC):
-    'computes 1/d^2 from hklm, reciprocal metric tensor A & k-vector with TOF Z shift'
-    rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z/difC
+    'computes 1/d^2 from hklm array, reciprocal metric tensor A & k-vector with TOF Z shift'
+    rdsq = calc_rDsqA(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z/difC
     return rdsq
 
 def PlaneIntercepts(Amat,H,phase,stack):
@@ -1342,7 +1347,7 @@ def Hx2Rh(Hx):
         return Rh
 
 def CentCheck(Cent,H):
-    'needs doc string'
+    'checks individual hkl for centering extinction; returns True for allowed, False otherwise - slow'
     h,k,l = H
     if Cent == 'A' and (k+l)%2:
         return False
@@ -1358,6 +1363,28 @@ def CentCheck(Cent,H):
         return False
     else:
         return True
+
+def newCentCheck(Cent,H):
+    'checks np.array of HKls for centering extinction; returns allowed HKLs - fast'
+    K = H.T
+    if Cent == 'A':
+        return H[np.where((K[1]+K[2])%2 == 0)]
+    elif Cent == 'B':
+        return H[np.where((K[0]+K[2])%2 == 0)]
+    elif Cent == 'C':
+        return H[np.where((K[0]+K[1])%2 == 0)]
+    elif Cent == 'I':
+        return H[np.where((K[0]+K[1]+K[2])%2 == 0)]
+    elif Cent == 'F':
+        H = H[np.where((K[0]+K[1])%2 == 0)]
+        K = H.T
+        H = H[np.where((K[0]+K[2])%2 == 0)]
+        K = H.T
+        return H[np.where((K[1]+K[2])%2 == 0)]
+    elif Cent == 'R':
+        return H[np.where((-K[0]+K[1]+K[2])%3 == 0)]
+    else:
+        return H
 
 def RBsymCheck(Atoms,ct,cx,cs,AtLookUp,Amat,RBObjIds,SGData):
     """ Checks members of a rigid body to see if one is a symmetry equivalent of another.
@@ -1455,7 +1482,7 @@ def _GenHBravais_cctbx(dmin, Bravais, A, sg_type, uctbx_unit_cell, miller_index_
     result.sort(key=lambda l: l[3], reverse=True)
     return result
 
-def GenHBravais(dmin, Bravais, A, cctbx_args=None):
+def GenHBravais(dmin, Bravais, A, cctbx_args=None,ifList=False):
     """Generate the positionally unique powder diffraction reflections
 
     :param dmin: minimum d-spacing in A
@@ -1486,6 +1513,9 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
          * 'sg_type': value from cctbx.sgtbx.space_group_type(symmorphic_sgs[ibrav])
          * 'uctbx_unit_cell': pointer to :meth:`cctbx.uctbx.unit_cell`
          * 'miller_index_generator':  pointer to :meth:`cctbx.miller.index_generator`
+    :param ifList: if True output is 2D list of HKL; if False (default) output is 2D nd.array of HKLs
+         * ifList=False is fast & suitable for indexing routines; ifList=True is needed for graphics.
+         * Currently applies only to Triclinic, Monoclinic & Orthorhombic; otherwise output is 2D list.
 
     :returns: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
 
@@ -1493,7 +1523,6 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
     if cctbx_args:
         return _GenHBravais_cctbx(dmin, Bravais, A,
                     cctbx_args['sg_type'], cctbx_args['uctbx_unit_cell'], cctbx_args['miller_index_generator'])
-
     if Bravais in [9,14]:
         Cent = 'A'
     elif Bravais in [10,]:
@@ -1509,80 +1538,83 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None):
     else:
         Cent = 'P'
     Hmax = MaxIndex(dmin,A)
-    dminsq = 1./(dmin**2)
     HKL = []
+    #generate HKL block first - no extinction conditions; obey Laue symmetry
+
     if Bravais == 17:                       #triclinic
-        for l in range(-Hmax[2],Hmax[2]+1):
-            for k in range(-Hmax[1],Hmax[1]+1):
-                hmin = 0
-                if (k < 0): hmin = 1
-                if (k ==0 and l < 0): hmin = 1
-                for h in range(hmin,Hmax[0]+1):
-                    H=[h,k,l]
-                    rdsq = calc_rDsq(H,A)
-                    if 0 < rdsq <= dminsq:
-                        HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    elif Bravais in [13,14,15,16]:                #monoclinic - b unique
-        Hmax = SwapIndx(2,Hmax)
-        for h in range(Hmax[0]+1):
-            for k in range(-Hmax[1],Hmax[1]+1):
-                lmin = 0
-                if k < 0:lmin = 1
-                for l in range(lmin,Hmax[2]+1):
-                    [h,k,l] = SwapIndx(-2,[h,k,l])
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-                    [h,k,l] = SwapIndx(2,[h,k,l])
-    elif Bravais in [7,8,9,10,11,12]:            #orthorhombic
-        for h in range(Hmax[0]+1):
-            for k in range(Hmax[1]+1):
-                for l in range(Hmax[2]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
+
+        H0 = np.reshape(np.mgrid[0:1,1:Hmax[1]+1,0:1],(3,-1)).T     #0k0, k>0
+        H1 = np.reshape(np.mgrid[0:1,1:Hmax[1]+1,-Hmax[2]:0],(3,-1)).T     #0kl, k>=0,l>0
+        H2 = np.reshape(np.mgrid[0:1,0:Hmax[1]+1,1:Hmax[2]+1],(3,-1)).T     #0kl, k>=0,l>0
+        H = np.reshape(np.mgrid[1:Hmax[0]+1,-Hmax[1]:Hmax[1]+1,-Hmax[2]:Hmax[2]+1],(3,-1)).T
+        H = np.vstack((H0,H1,H2,H))
+
+    elif Bravais in [13,14,15,16]:          #monoclinic - b unique
+
+        H0 = np.reshape(np.mgrid[0:1,1:Hmax[1]+1,0:1],(3,-1)).T     #0k0, k>0
+        H1 = np.reshape(np.mgrid[0:1,0:Hmax[1]+1,1:Hmax[2]+1],(3,-1)).T     #0kl, k>=0,l>0
+        H = np.reshape(np.mgrid[1:Hmax[0]+1,0:Hmax[1]+1,-Hmax[2]:Hmax[2]+1],(3,-1)).T
+        H = np.vstack((H0,H1,H))
+
+    elif Bravais in [7,8,9,10,11,12]:       #orthorhombic
+
+        H0 = np.reshape(np.mgrid[0:1,1:Hmax[1]+1,0:1],(3,-1)).T     #0k0, k>0
+        H1 = np.reshape(np.mgrid[0:1,0:Hmax[1]+1,1:Hmax[2]+1],(3,-1)).T     #0kl, k>=0,l>0
+        H = np.reshape(np.mgrid[1:Hmax[0]+1,0:Hmax[1]+1,0:Hmax[2]+1],(3,-1)).T
+        H = np.vstack((H0,H1,H))
+
     elif Bravais in [5,6]:                  #tetragonal
+        H = []
         for l in range(Hmax[2]+1):
             for k in range(Hmax[1]+1):
                 for h in range(k,Hmax[0]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    elif Bravais in [3,4]:
+                    if [h,k,l] == [0,0,0]:
+                        continue
+                    H.append([h,k,l])
+        H = np.array(H)
+
+
+    elif Bravais in [3,4]:                  #hexagonal/trigonal
+        H = []
         lmin = 0
-        if Bravais == 3: lmin = -Hmax[2]                  #hexagonal/trigonal
+        if Bravais == 3: lmin = -Hmax[2]
         for l in range(lmin,Hmax[2]+1):
             for k in range(Hmax[1]+1):
                 hmin = k
                 if l < 0: hmin += 1
                 for h in range(hmin,Hmax[0]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
+                    if [h,k,l] == [0,0,0]:
+                        continue
+                    H.append([h,k,l])
+        H = np.array(H)
+
 
     else:                                   #cubic
+        H = []
         for l in range(Hmax[2]+1):
             for k in range(l,Hmax[1]+1):
                 for h in range(k,Hmax[0]+1):
-                    H = []
-                    if CentCheck(Cent,[h,k,l]): H=[h,k,l]
-                    if H:
-                        rdsq = calc_rDsq(H,A)
-                        if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    return sortHKLd(HKL,True,False)
+                    if [h,k,l] == [0,0,0]:
+                        continue
+                    H.append([h,k,l])
+        H = np.array(H)
+
+    #then enforce centering rules & d >= dmin limit; make array or list as needed
+
+    H = newCentCheck(Cent,H)
+    rdsq = nprdsq2d(calc_rDsqA(H.T,A),6)
+    if ifList:  #structure needed for plotting
+       HKL = np.vstack((H.T,rdsq)).T
+       HKL = [[int(h[0]),int(h[1]),int(h[2]),h[3],-1] for h in HKL if h[3] >= dmin]
+       return sortHKLd(HKL,True,False)
+    else:   #fast for indexing
+        HKL = np.vstack((H.T,rdsq,[-1]*len(H))).T[rdsq >= dmin]
+        if HKL.shape[0] > 1:
+            D = HKL[:,3]
+            Indx = np.argsort(D)
+            return np.flipud(HKL[Indx])
+        else:
+            return HKL
 
 def getHKLmax(dmin,SGData,A):
     'finds maximum allowed hkl for given A within dmin'

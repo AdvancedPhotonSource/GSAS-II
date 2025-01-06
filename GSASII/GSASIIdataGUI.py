@@ -362,7 +362,7 @@ versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
 'versions of modules that are known to have bugs'
 versionDict['tooNewWarn'] = {}
 'module versions newer than what we have tested & where problems are suspected'
-versionDict['tooNewUntested'] = {'Python':'3.12','wx': '4.2.2'}
+versionDict['tooNewUntested'] = {'Python':'3.12','wx': '4.2.3'}
 'module versions newer than what we have tested but no problems are suspected'
 
 def ShowVersions():
@@ -2808,6 +2808,12 @@ If you continue from this point, it is quite likely that all intensity computati
             size = wx.Size(700,450)
         wx.Frame.__init__(self, name='GSASII', parent=parent,
             size=size,style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II main window')
+        fontIncr = GSASIIpath.GetConfigValue('FontSize_incr')
+        if fontIncr is not None and fontIncr != 0:
+            f = wx.Font(self.GetFont())
+            f.SetPointSize(f.PointSize+fontIncr)
+            self.SetFont(f)
+
         self._init_Imports()
         #initialize Menu item objects (these contain lists of menu items that are enabled or disabled)
         self.MakePDF = []
@@ -2837,7 +2843,8 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        self.mainPanel.SplitVertically(self.treePanel, self.dataWindow, 400)
+        self.mainPanel.SplitVertically(self.treePanel,
+                                           self.dataWindow.outer, 400)
         self.Status.SetStatusWidths([200,-1])   # make these match?
 
         G2G.wxID_GPXTREE = wx.NewId()
@@ -2909,7 +2916,7 @@ If you continue from this point, it is quite likely that all intensity computati
         self.PeakTable = []
         self.LimitsTable = []
         self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
-        self.HKL = []
+        self.HKL = np.array([])
         self.Extinct = []
         self.PlotOpts = {}  # new place to put plotting options
         self.Lines = []     # lines used for data limits & excluded regions
@@ -3180,7 +3187,7 @@ If you continue from this point, it is quite likely that all intensity computati
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 for file_ajk in dlg.GetPaths():
-                    self.HKL = []
+                    self.HKL = np.array([])
                     self.Extinct = []
                     self.powderfile = file_ajk
                     comments,peaks,limits,wave = G2IO.GetPowderPeaks(self.powderfile)
@@ -4147,7 +4154,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     return False
         self.GPXtree.DeleteChildren(self.root)
         self.GSASprojectfile = ''
-        self.HKL = []
+        self.HKL = np.array([])
         self.Extinct = []
         if self.G2plotNB.plotList:
             self.G2plotNB.clear()
@@ -4242,7 +4249,7 @@ If you continue from this point, it is quite likely that all intensity computati
         G2IO.ProjFileOpen(self)
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
         self.GPXtree.Expand(self.root)
-        self.HKL = []
+        self.HKL = np.array([])
         self.Extinct = []
         item, cookie = self.GPXtree.GetFirstChild(self.root)
         while item:
@@ -4317,7 +4324,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.GPXtree.DeleteChildren(self.root)
                 self.dataWindow.ClearData()
                 if len(self.HKL):
-                    self.HKL = []
+                    self.HKL = np.array([])
                     self.Extinct = []
                 if self.G2plotNB.plotList:
                     self.G2plotNB.clear()
@@ -5764,7 +5771,7 @@ If you continue from this point, it is quite likely that all intensity computati
         :param rtext str: string info from caller to be put in Notebook after reload
         '''
         self.GPXtree.DeleteChildren(self.root)
-        self.HKL = []
+        self.HKL = np.array([])
         self.Extinct = []
         G2IO.ProjFileOpen(self,False)
         self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
@@ -6000,7 +6007,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
                     self.PickIdText = None  #force reload of PickId contents
                     self.GPXtree.DeleteChildren(self.root)
                     if len(self.HKL):
-                        self.HKL = []
+                        self.HKL = np.array([])
                         self.Extinct = []
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
@@ -6073,30 +6080,58 @@ Do you want to transfer the cell refinement flag to the Dij terms?
 
 #### Data window side of main GUI; menu definitions here #########################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
-    '''Create the data item window as well as the menu. Note that
-    the same core menu items are used in all menus, but different items may be
-    added depending on what data tree item (and for phases, the phase tab).
+    '''Create the GSAS-II data window as well as sets up the menus for each
+    window. There will be one instance of this in the GSAS-II app named as
+    ``G2frame.dataWindow``.
 
-    Note that while the menus are created here, or a routine is defined
-    here that will create the menu later (see :func:`SetDataMenuBar`),
-    the bindings for the entries
-    within the menus is done later in various GSASII*GUI modules,
-    where the functions to be called are defined.
+    This creates two panels, where the inner one is the data object in
+    this class, which is scrolled. The outer one
+    (:data:`G2frame.dataWindow.outer`) uses all space in
+    the appropriate part of the window, but defines a sizer at the
+    top and bottom of the window that can be used to place information
+    that will not be scrolled. The inner one is the ``G2frame.dataWindow``
+    object.
 
-    Use of the dataWindow scrolled panel:
+    Note that before any items are to be placed in either of these panels,
+    one should call::
 
-    dataWindow has a “master” vertical BoxSizer: find it with
-    G2frame.dataWindow.GetSizer() and always use it. A call to
-    dataWindow.SetSizer() should not be needed.
+        G2frame.dataWindow.ClearData()
+
+    This deletes the contents of the three main sizers used in the
+    panels. Do not delete the sizers for the unscrolled regions at the
+    top and bottom of the outer panel, as they cannot be [easily?]
+    regenerated if deleted.
+
+    The sizer for the scrolled panel should be not be reused,
+    though some earlier code may do that.
+
+    After the contents of the data window have been created,
+    a call is made to::
+
+        G2frame.dataWindow.SetDataSize()
+
+    this ensures that the window's scroll bars are placed properly.
+    Initial GUI creation for the contents of dataWindow is done in
+    :func:`SelectDataTreeItem`(), which is invoked when a selection
+    is made in the data tree selection. This may places items into
+    the dataWindow, but more commonly calls other routeins tht call
+    that.
+
+    Routines that are called multiple times to redraw the contents
+    of the data window should call :meth:`ClearData()` and
+    :meth:`SetDataSize` at the beginning and end of the GUI code,
+    respectively, to clear contents and complete the layout.
 
     When placing a widget in the sizer that has its own scrolling
-    (e.g. G2G.GSNoteBook, anything else?) that one widget should be placed
-    in the sizer as
+    e.g. :class:`GSASIIctrlGUI.GSNoteBook` (anything else?) that
+    one widget should be placed in the scrolledpanel sizer using::
 
-         G2frame.dataWindow.GetSizer().Add(G2frame.<obj>,1,wx.ALL|wx.EXPAND)
+         mainSizer =  wx.BoxSizer(wx.VERTICAL)
+         G2frame.dataWindow.SetSizer(mainSizer)
+         mainSizer.Add(G2frame.<obj>,1,wx.EXPAND)
 
-    [is wx.ALL superfluous here?] so that it consumes the full size of the
-    panel and so that the NoteBook widget does the scrolling.
+    so that it consumes the full size of the panel and so that
+    the NoteBook widget does the scrolling.
 
     For other uses, one will likely place a bunch of widgets and (other
     [sub-]sizers) into the master sizer. In this case, DO NOT use wx.EXPAND,
@@ -6106,41 +6141,74 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     Sizer.Fit(dataWindow) will do bad things, though a call to
     SubSizer.Fit(dataWindow.subpanel) could make sense.
 
-    Initial GUI draws to dataWindow will go through
-    GSASIIdataGUI.SelectDataTreeItem(), which is called after any changes to
-    data tree selection. SelectDataTreeItem places items in dataWindow or
-    calls that do that. Before it calls those routines, it calls
+    Use of the unscrolled top sizer:
+    :data:`G2DataWindow.topBox` provides access to a Horizontal
+    wx.BoxSizer, where GUI objects can be placed. The parent for these
+    objects should be :data:`G2DataWindow.topPanel`. For the unscrolled
+    bottom region of the window, use :data:`G2DataWindow.bottomBox`
+    and :data:`G2DataWindow.bottomPanel` as parent.
+    Sample code::
 
-        G2frame.dataWindow.ClearData()
+        topSizer = G2frame.dataWindow.topBox
+        parent = G2frame.dataWindow.topPanel
+        topSizer.Add(wx.StaticText(parent,label='Indexing tools'),0,WACV)
+        topSizer.Add((-1,-1),1,wx.EXPAND)
+        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
 
-    which deletes the contents of the master sizer. After the contents are
-    posted a call is made to
+    Menus: The same core menu items are used in all menu bars (defined in
+    :meth:`PrefillDataMenu` and :meth:`PostfillDataMenu, but
+    different items may be added, depending on what data tree item and
+    in some cases (phases +?) window tab. Menu definitions are
+    performed in :meth:`_initMenus`. Menus that are needed at all
+    times in GSAS-II are created there with a call sich as::
 
-        G2frame.dataWindow.SetDataSize()
+        self.ConstraintMenu = wx.MenuBar()
 
-    which repaints the window. For routines [such as GSASIIpwdGUI.UpdatePeakGrid()]
-    that are called repeatedly to update the entire contents of dataWindow
-    themselves, it is important to add calls to
+    but to reduce the time needed to start GSAS-II initially, most menus
+    are created "on demand". This is done by defining a routine (named
+    here as :func:`_makemenu`) and the above definition is replaced with::
 
-        G2frame.dataWindow.ClearData()
+        self.ConstraintMenu = _makemenu
 
-    and
+    The code that causes a menubar to be displayed (:func:`SetDataMenuBar`)
+    checks to see if the menubar has been already been created, if so it
+    is displayed, if not the function (the appropriate one of many
+    :func:`_makemenu` routines) is called. This creates and displays the
+    menu.
 
-    	 G2frame.dataWindow.SetDataSize()
-
-    at the beginning and end respectively to clear and refresh. This is not
-    needed for GSNoteBook repaints, which seem to be working mostly
-    automatically. If there is a problem, a call like
+    Note, if there is a problem, a call like
 
          wx.CallAfter(G2frame.phaseDisplay.SendSizeEvent)
 
     might be needed. There are some calls to G2frame.dataWindow.SendSizeEvent()
+    or G2frame.dataWindow.outer.SendSizeEvent()
     that may be doing the same thing.
     '''
 
     def __init__(self,parent):
-        wx.ScrolledWindow.__init__(self,parent,wx.ID_ANY,size=parent.GetSize())
         self.parent = parent
+        # create an outer unscrolled panel
+        self.outer = wx.Panel(parent,size=parent.GetSize(),name='Outer data window')
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.outer.SetSizer(mainSizer)
+        # three things in unscrolled panel, topBox, self (ScrolledWindow) and bottomBox
+        # topBox
+        self.topBox = wx.BoxSizer(wx.HORIZONTAL)
+        self.topPanel = self.outer
+        mainSizer.Add(self.topBox,0,wx.EXPAND)
+
+        # scrolled area
+        wx.ScrolledWindow.__init__(self,self.outer,wx.ID_ANY,size=parent.GetSize(),
+                                       name="inner scrolled data window")
+        mainSizer.Add(self,1,wx.EXPAND,0)
+        scrollSizer = wx.BoxSizer(wx.VERTICAL)  # this should be replaced when panel is used
+        self.SetSizer(scrollSizer)
+
+        # bottomBox
+        self.bottomBox = wx.BoxSizer(wx.HORIZONTAL)
+        self.bottomPanel = self.outer
+        mainSizer.Add(self.bottomBox)
+
         self._initMenus()
         self.currentGrids = []
         self.helpKey = ''  # defines help entry for current item selected in data tree
@@ -6149,6 +6217,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         '''Initializes the contents of the dataWindow panel
         '''
         self.Unbind(wx.EVT_SIZE)
+        self.topBox.Clear(True)
+        self.bottomBox.Clear(True)
         #self.SetBackgroundColour(wx.WHITE)   # this screws up dark mode
         #self.SetBackgroundColour(VERY_LIGHT_GREY)  # BHT: I prefer a gray background. Makes TextCtrls stand out, but
         # a bit lighter than the splitter bar
@@ -6161,55 +6231,74 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         else:
             print ('No sizer in dataWindow')
             if GSASIIpath.GetConfigValue('debug'): raise Exception
+        Sizer.Add((-1,3)) # small space on top of scrolled window
 
-    def OnResize(self,event):
-        'Used for grids to match ScrolledWindow size'
-        event.Skip()
-        Sizer = self.GetSizer()
-        if not Sizer: return
-        #if Sizer.GetItemCount() == 1: # not wx 2.8
-        if len(Sizer.GetChildren()) == 1: # if there is a single grid, resize it
-            if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSGrid):
-                Sizer.GetItem(0).GetWindow().SetSize(self.GetSize())
-
+    def SetStatusWidth(self):
+        'Make the left-side of the status bar track the size of the data tree'
+        G2frame = self.GetTopLevelParent()
+        wid,hgt = G2frame.GPXtree.GetSize()
+        G2frame.GetStatusBar().SetStatusWidths([wid+10, -1])
     def SetDataSize(self):
-        '''Sizes the contents of the dataWindow panel
+        '''Sizes the contents of the dataWindow panel and sets up
+        for response to change in size of window.
         '''
+        def _onResizeGd(event):
+            '''Called when a Window containing only 1 grid is resized'''
+            self.Layout()
+            self.SetVirtualSize(self.GetSize())
+            self.SetStatusWidth()
+            event.Skip()
+        def _onResizeNB(event):
+            '''Called when a Window containing only a notebook is resized'''
+            self.Layout()
+            self.SetVirtualSize(self.GetSize())
+            self.SetStatusWidth()
+            event.Skip()
+        def _onResize(event):
+            '''Called when any other type of window is resized'''
+            self.SetStatusWidth()
         Sizer = self.GetSizer()
         if not Sizer:
             print ('No sizer in dataWindow')
             if GSASIIpath.GetConfigValue('debug'): raise Exception
             return
-        #if Sizer.GetItemCount() == 1: # not wx 2.8
-        if len(Sizer.GetChildren()) == 1: # handle cases with a single grid in DataWindow differently
-            # note that Grid's scroll bars must be turned on with .SetScrollRate(10,10)
-            # just after the call to .GSGrid()
-            if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSGrid):
-                self.Bind(wx.EVT_SIZE,self.OnResize)
-                Sizer.GetItem(0).GetWindow().SetSize(self.GetSize())
-                self.SetAutoLayout(False)
-                self.SetScrollRate(0,0)
-                self.SendSizeEvent()
-                return
-        elif len(Sizer.GetChildren()) == 2: # case where there is a NoteBook & help button
-            if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSNoteBook):
-                # with wx4.2 (& 4.1?) AutoLayout causes all inner windows
-                # to be made large and scrolling is done at outer window
-                # this messes things up for grids inside notebooks (Reflection lists)
-                # for this case turn off AutoLayout on dataWindow, but
-                # use a Bind to redo Layout. This works for expansion but not
-                # contraction of the window.
-                def _onResize(event):
-                    self.Layout()
-                    event.Skip()
-                self.Bind(wx.EVT_SIZE,_onResize)
-                self.SetScrollRate(0,0)
-                self.Layout()
-                self.SetAutoLayout(False)
-                return
-        self.SetAutoLayout(True)
-        self.SetScrollRate(10,10)
-        self.SendSizeEvent()
+        # find out more about what is in the scrolled window
+        numChild = len(self.GetChildren())
+        haveGrid = None # is there a single grid in this panel?
+        haveNotebook = None # is there a single notebook in this panel?
+        for child in self.GetChildren():
+            if isinstance(child,G2G.GSGrid) or isinstance(child,G2G.GSNoteBook):
+                if haveGrid or haveNotebook:
+                    haveGrid = None
+                    haveNotebook = None
+                    break
+            if isinstance(child,G2G.GSGrid):
+                haveGrid = child
+            elif isinstance(child,G2G.GSNoteBook):
+                haveNotebook = child
+        extra = 0
+        if sys.platform == "darwin": extra = 3 # N.B. 3 extra items in MacOS (Linux?)
+        # for simple windows with only a GSNotebook or GSGrid, turn off
+        # scrolling in the scrolled window and let the notebook or grid
+        # handle the scaling
+        if numChild <= 2+extra and haveGrid:
+            self.Bind(wx.EVT_SIZE,_onResizeGd)
+            self.SetVirtualSize(self.GetSize())
+            self.SetAutoLayout(False)
+            self.SetScrollRate(0,0)
+            if isinstance(haveGrid,G2G.GSGrid):
+                haveGrid.SetScrollRate(10,10)
+        elif numChild <= 2+extra and haveNotebook:
+            self.Bind(wx.EVT_SIZE,_onResizeNB)
+            self.SetVirtualSize(self.GetSize())
+            self.SetAutoLayout(False)
+            self.SetScrollRate(0,0)
+        else:
+            # otherwise turn on autolayout and scrolling for the scrolled window
+            self.Bind(wx.EVT_SIZE,_onResize)
+            self.SetAutoLayout(True)
+            self.SetScrollRate(10,10)
+        self.outer.SendSizeEvent()
 
     def PrefillDataMenu(self,menu,empty=False):
         '''Create the "standard" part of data frame menus & add the dataWindow menu headings
@@ -6661,7 +6750,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PeakMenu = _makemenu
 
         # PWDR / Index Peak List
-        G2G.Define_wxId('wxID_INDXRELOAD','wxID_INDEXSAVE','wxID_INDEXEXPORTDICVOL')
+        G2G.Define_wxId('wxID_INDXRELOAD','wxID_INDEXSAVE','wxID_INDEXEXPORTDICVOL','wxID_REFINECELL2')
         def _makemenu():     # routine to create menu when first used
             self.IndPeaksMenu = wx.MenuBar()
             self.PrefillDataMenu(self.IndPeaksMenu)
@@ -6670,7 +6759,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.IndPeaksEdit.Append(G2G.wxID_INDXRELOAD,'Load/Reload','Load/Reload index peaks from peak list')
             self.IndPeaksEdit.Append(G2G.wxID_INDEXSAVE,'Save','Save index peaks to CSV file')
             self.IndPeaksEdit.Append(G2G.wxID_INDEXEXPORTDICVOL,'Export to PreDICT','Export index peaks to PreDICT (.csv)')
+            self.RefineCell2 = self.IndPeaksEdit.Append(G2G.wxID_REFINECELL2,'Refine Cell',
+                'Refine unit cell parameters from indexed peaks')
             self.PostfillDataMenu()
+            #self.RefineCell2.Enable(False)
             SetDataMenuBar(G2frame,self.IndPeaksMenu)
         self.IndPeaksMenu = _makemenu
 
@@ -7353,17 +7445,25 @@ other than being included in the Notebook section of the project file.''')
         controls = G2frame.GPXtree.GetItemPyData(cId)
     controls['Notebook'] = controls.get('Notebook',{}) # filter & order settings get saved here, plot settings do not
     G2frame.dataWindow.ClearData()
-    bigSizer = wx.BoxSizer(wx.VERTICAL)
-    topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'Project notes'),0,WACV)
+    topSizer = G2frame.dataWindow.topBox
+    topSizer.Clear(True)
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,-1,'Notes/results for current project'),0,WACV)
     topSizer.Add((20,-1))
-    addBtn = wx.Button(G2frame.dataWindow,label='Add comment')
+    addBtn = wx.Button(parent,label='Add comment')
     topSizer.Add(addBtn,0,WACV)
     addBtn.Bind(wx.EVT_BUTTON,OnAddNotebook)
-    topSizer.Add((20,-1))
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    wx.CallAfter(G2frame.dataWindow.SetDataSize)
+
+    botSizer = G2frame.dataWindow.bottomBox
+    botSizer.Clear(True)
+    parent = G2frame.dataWindow.bottomPanel
+    botSizer.Add((20,-1))
     controls['Notebook']['order'] = controls['Notebook'].get('order',False)
-    topSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'  order: '),0,WACV)
-    topSizer.Add(G2G.EnumSelector(G2frame.dataWindow,controls['Notebook'],
+    botSizer.Add(wx.StaticText(parent,wx.ID_ANY,'  order: '),0,WACV)
+    botSizer.Add(G2G.EnumSelector(parent,controls['Notebook'],
                          'order',['oldest-1st','newest-1st'],[False,True],
                          OnChange=onUpdateWindow))
     controls['Notebook']['filterSel'] = controls['Notebook'].get(
@@ -7371,22 +7471,19 @@ other than being included in the Notebook section of the project file.''')
     NBinfo['plotLbl'] = NBinfo.get('plotLbl',{'none':True,'Rw':False,'GOF':False})
     for i in range(len(filterPrefix)-len(controls['Notebook']['filterSel'])):
         controls['Notebook']['filterSel'] += [True]    # pad list if needed
-    topSizer.Add((20,-1))
-    fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Set filters',
+    botSizer.Add((20,-1))
+    fBtn = G2G.popupSelectorButton(parent,'Set filters',
                         filterLbls,controls['Notebook']['filterSel'],
                         OnChange=onUpdateWindow)
-    topSizer.Add(fBtn,0,WACV)
-    fBtn = G2G.popupSelectorButton(G2frame.dataWindow,'Plot',
-            choiceDict=NBinfo['plotLbl'],
+    botSizer.Add(fBtn,0,WACV)
+    fBtn = G2G.popupSelectorButton(parent,'Plot',choiceDict=NBinfo['plotLbl'],
                         OnChange=onPlotNotebook)
-    topSizer.Add((20,-1))
-    topSizer.Add(fBtn,0,WACV)
-    topSizer.Add((20,-1))
-    topSizer.Add((20,-1),1,wx.EXPAND,1)
-    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Notebook'))
-    bigSizer.Add(topSizer,0,wx.EXPAND)
-    text = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,
-            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP)
+    botSizer.Add((20,-1))
+    botSizer.Add(fBtn,0,WACV)
+    botSizer.Add((20,-1),1,wx.EXPAND,1)
+    import wx.stc as stc
+    text = stc.StyledTextCtrl(G2frame.dataWindow,wx.ID_ANY)
+    text.SetScrollWidthTracking(True)    # does not seem to do anything
     if controls['Notebook']['order']:
         # reverse entries in blocks, so that lines stay after their timestamp
         order = []
@@ -7406,6 +7503,7 @@ other than being included in the Notebook section of the project file.''')
     # get prefixes to be shown
     selLbl = [l for i,l in enumerate(filterPrefix)
                   if controls['Notebook']['filterSel'][i]]
+    first = True
     for i in order:
         line = data[i]
         if not line.strip(): continue # empty line
@@ -7419,15 +7517,22 @@ other than being included in the Notebook section of the project file.''')
             show = True
         if show:
             if prefix == 'TS':
-                text.AppendText(line.strip()+"\n")
+                if not first: text.AppendText("\n")
+                text.AppendText(line.strip())
             elif prefix and (controls['Notebook']['filterSel'][0]
                                 or controls['Notebook']['filterSel'][1]):
                 # indent all but timestamps
                 for l in line.strip().split('\n'):
-                    text.AppendText('    '+l.strip()+"\n")
+                    if not first: text.AppendText("\n")
+                    text.AppendText('    '+l.strip())
+                    first = False
             else:
-                text.AppendText(line.strip()+"\n")
-    bigSizer.Add(text,1,wx.ALL|wx.EXPAND)
+                if not first: text.AppendText("\n")
+                text.AppendText(line.strip())
+        first = False
+    bigSizer = wx.BoxSizer(wx.VERTICAL)
+    bigSizer.Add(text,1,wx.EXPAND)
+    text.SetReadOnly(True)
     bigSizer.Layout()
     bigSizer.FitInside(G2frame.dataWindow)
     G2frame.dataWindow.SetSizer(bigSizer)
@@ -7439,18 +7544,20 @@ def UpdateComments(G2frame,data):
     '''Place comments into the data window
     '''
     lines = ""
+    topSizer = G2frame.dataWindow.topBox
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,label=' Information from data file'),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     for line in data:
-        if 'phoenix' in wx.version() and hasattr(line,'decode'):
-            lines += line.decode('latin-1').rstrip()+'\n'
-        else:
-            lines += line.rstrip()+'\n'
+        lines += line.rstrip()+'\n'
     try:
         text = wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lines)
     except:
         text = wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
                                  G2obj.StripUnicode(lines))
+    G2G.HorizontalLine(G2frame.dataWindow.GetSizer(),G2frame.dataWindow)
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
-
 
 ####  Controls Tree Item editor ##############################################
 def UpdateControls(G2frame,data):
@@ -7687,14 +7794,15 @@ def UpdateControls(G2frame,data):
         G2frame.GetStatusBar().SetStatusText('',1)
     G2frame.dataWindow.ClearData()
     SetDataMenuBar(G2frame,G2frame.dataWindow.ControlsMenu)
-    bigSizer = wx.BoxSizer(wx.HORIZONTAL)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add((5,5),0)
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Refinement Controls'),0,WACV)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    mainSizer.Add(subSizer,0,wx.EXPAND)
+    topSizer = G2frame.dataWindow.topBox
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,wx.ID_ANY,'Refinement Controls'),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex='Controls'))
+
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((5,5),0)
     LSSizer,ShklSizer = LSSizer()
     mainSizer.Add(LSSizer)
@@ -7749,14 +7857,8 @@ def UpdateControls(G2frame,data):
         btn.Bind(wx.EVT_BUTTON,ClearFrozen)
         subSizer.Add(btn)
         mainSizer.Add(subSizer)
-    bigSizer.Add(mainSizer)
-
-    bigSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Controls'))
-    bigSizer.Layout()
-    bigSizer.FitInside(G2frame.dataWindow)
-    G2frame.dataWindow.SetSizer(bigSizer)
     G2frame.dataWindow.SetDataSize()
-    G2frame.SendSizeEvent()
+#    G2frame.SendSizeEvent()
 
 ####  Main PWDR panel ########################################################
 def UpdatePWHKPlot(G2frame,kind,item):
@@ -8038,10 +8140,27 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
+    if kind == 'PWDR':
+        lbl = 'Powder'
+    elif kind == 'SASD':
+        lbl = 'Small-angle'
+    elif kind == 'REFD':
+        lbl = 'Reflectometry'
+    elif kind == 'HKLF':
+        lbl = 'Single crystal'
+    else:
+        lbl = '?'
+    lbl += ' histogram: ' + G2frame.GPXtree.GetItemText(item)[:60]
+    G2frame.dataWindow.ClearData()
+    topSizer = G2frame.dataWindow.topBox
+    parent = G2frame.dataWindow.topPanel
+    topSizer.Add(wx.StaticText(parent,wx.ID_ANY,lbl),0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
 
-    if G2frame.dataWindow:
-        G2frame.dataWindow.ClearData()
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer =  wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.SetSizer(mainSizer)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Weight factor: '),0,WACV)
@@ -8057,8 +8176,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
 
     if kind == 'PWDR':
         wtSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data "Surprise" factor: %.3f'%S))
-    wtSizer.Add((-1,-1),1,wx.EXPAND)
-    wtSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=G2frame.dataWindow.helpKey))
     mainSizer.Add(wtSizer,0,wx.EXPAND)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Histogram label: '),0,WACV)
@@ -8166,8 +8283,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
         addmag.Bind(wx.EVT_BUTTON,OnAddMag)
         mSizer.Add(addmag,1,wx.ALIGN_CENTER,1)
         mainSizer.Add(mSizer)
-
-    G2frame.dataWindow.SetSizer(mainSizer)
 
     G2frame.GPXtree.SetItemPyData(item,data)
     G2frame.PatternId = item
@@ -8311,6 +8426,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 #        if G2frame.dataDisplay:
 #            oldPage = G2frame.dataDisplay.GetSelection()
 
+    G2frame.GetStatusBar().SetStatusText('',1)
     SetDataMenuBar(G2frame)
     G2frame.SetTitleByGPX()
     G2frame.PickId = item
@@ -8319,8 +8435,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     if item == G2frame.root:
         G2frame.dataWindow.ClearData()
         G2frame.helpKey = "Data tree"
-        G2frame.dataWindow.GetSizer().Add(
-            wx.StaticText(G2frame.dataWindow, wx.ID_ANY,
+        mainSizer =  wx.BoxSizer(wx.VERTICAL)
+        G2frame.dataWindow.SetSizer(mainSizer)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow, wx.ID_ANY,
                     'Select an item from the tree to see/edit parameters'))
         G2frame.dataWindow.SetDataSize()
         return
@@ -8376,13 +8493,19 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         elif G2frame.GPXtree.GetItemText(item) == 'Covariance':
             data = G2frame.GPXtree.GetItemPyData(item)
             text = ''
-            mainSizer = wx.BoxSizer(wx.HORIZONTAL)
-            subSizer = wx.BoxSizer(wx.VERTICAL)
             if 'Rvals' in data:
                 lbl = 'Refinement results'
             else:
-                lbl = 'No refinement results' + 50*' '
-            subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
+                lbl = '*** No refinement results ***'
+            topSizer = G2frame.dataWindow.topBox
+            parent = G2frame.dataWindow.topPanel
+            topSizer.Add(wx.StaticText(parent,wx.ID_ANY,lbl),0,WACV)
+            topSizer.Add((-1,-1),1,wx.EXPAND)
+            topSizer.Add(G2G.HelpButton(parent,helpIndex='Covariance'))
+
+            mainSizer =  wx.BoxSizer(wx.VERTICAL)
+            G2frame.dataWindow.SetSizer(mainSizer)
+            G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
@@ -8397,13 +8520,13 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     text += '\n\tlog10 MaxLambda = {:.1f}'.format(np.log10(Rvals['lamMax']))
                 if '2' not in platform.python_version_tuple()[0]: # greek OK in Py2?
                     text += '\n\tReduced χ**2 = {:.2f}'.format(Rvals['GOF']**2)
-                subSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text))
                 if Rvals.get('RestraintSum',0) > 0:
                     chisq_data = (Rvals['chisq']-Rvals['RestraintSum'])/(Rvals['Nobs']-Rvals['Nvars'])
                     lbl = '\nData-only residuals (without restraints)'
                     lbl += f'\n\tGOF = {np.sqrt(chisq_data):.2f}'
                     lbl += f'\n\tReduced χ**2 = {chisq_data:.2f}'
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
+                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
                 plotSizer = wx.BoxSizer(wx.HORIZONTAL)
 
                 if 'Lastshft' in data and not data['Lastshft'] is None:
@@ -8415,11 +8538,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     showShift.Bind(wx.EVT_BUTTON,OnShowShift)
                     plotSizer.Add((10,-1))
                     plotSizer.Add(showShift)
-                subSizer.Add((-1,10))
-                subSizer.Add(plotSizer)
-            mainSizer.Add(subSizer)
-            mainSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex='Covariance'))
-            G2frame.dataWindow.GetSizer().Add(mainSizer)
+                mainSizer.Add((-1,10))
+                mainSizer.Add(plotSizer)
+            G2frame.dataWindow.SetDataSize()
             G2plt.PlotCovariance(G2frame,data)
             #try:
             # if True:
@@ -8482,13 +8603,20 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if len(data['G(R)']):
                 G2plt.PlotISFG(G2frame,data,plotType='G(R)')
         elif G2frame.GPXtree.GetItemText(item) == 'Phases':
-            if len(G2frame.GetPhaseNames()) == 1: # if there is only one phase, select it
+            if len(G2frame.GetPhaseNames()) == 0:
+                mainSizer =  wx.BoxSizer(wx.VERTICAL)
+                G2frame.dataWindow.SetSizer(mainSizer)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,
+                    wx.ID_ANY,'Create phases first'))
+            elif len(G2frame.GetPhaseNames()) == 1: # if there is only one phase, select it
                 item, cookie = G2frame.GPXtree.GetFirstChild(item)
                 data = G2frame.GPXtree.GetItemPyData(item)
                 G2phG.UpdatePhaseData(G2frame,item,data)
                 wx.CallAfter(G2frame.GPXtree.SelectItem,item)
             else:
-                G2frame.dataWindow.GetSizer().Add(wx.StaticText(G2frame.dataWindow,
+                mainSizer =  wx.BoxSizer(wx.VERTICAL)
+                G2frame.dataWindow.SetSizer(mainSizer)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,
                     wx.ID_ANY,'Select one phase to see its parameters'))
         elif G2frame.GPXtree.GetItemText(item) == 'Cluster Analysis':
             data = G2frame.GPXtree.GetItemPyData(item)
@@ -8504,7 +8632,12 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 if name not in data:
                     data[name] = {}
 #end patch
-            if len(G2frame.GetPhaseNames()) == 1: # why force choice of a phase if there is only one?
+            if len(G2frame.GetPhaseNames()) == 0:
+                mainSizer =  wx.BoxSizer(wx.VERTICAL)
+                G2frame.dataWindow.SetSizer(mainSizer)
+                mainSizer.Add(wx.StaticText(G2frame.dataWindow,
+                    wx.ID_ANY,'Create phases first'))
+            elif len(G2frame.GetPhaseNames()) == 1: # why force choice of a phase if there is only one?
                 item, cookie = G2frame.GPXtree.GetFirstChild(item)
                 phaseName = G2frame.GPXtree.GetItemText(item)
                 if phaseName not in data:
@@ -8512,7 +8645,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 G2restG.UpdateRestraints(G2frame,data,phaseName)
             else:
                 G2frame.GPXtree.Expand(item)
-                G2frame.dataWindow.GetSizer().Add(
+                mainSizer =  wx.BoxSizer(wx.VERTICAL)
+                G2frame.dataWindow.SetSizer(mainSizer)
+                mainSizer.Add(
                     wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its restraints'))
         elif G2frame.GPXtree.GetItemText(item).startswith('Hist/Phase'):
             #import imp
@@ -8690,23 +8825,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             data.append({'Use':False,'ModVec':[0,0,0.1],'maxH':1,'ssSymb':''})                                 #empty superlattice stuff
             G2frame.GPXtree.SetItemPyData(item,data)
 #end patch
-        # debug stuff
-        #if GSASIIpath.GetConfigValue('debug'):
-        #    import imp
-        #    imp.reload(G2pdG)  # for testing changes
-        #    print('debug: reloaded',G2pdG)
-        # end debug stuff
-        G2pdG.UpdateUnitCellsGrid(G2frame,data)
-        if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
-            G2plt.PlotPowderLines(G2frame)
-        else:
-            newPlot = False
-            if hasattr(G2frame,'Contour'):
-                if G2frame.Contour:
-                    G2frame.Contour = False
-                    newPlot = True
-            G2pwpl.PlotPatterns(G2frame,newPlot)
-            G2pwpl.PlotPatterns(G2frame)
+        G2pdG.UpdateUnitCellsGrid(G2frame,data,New=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection Lists':   #powder reflections
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)

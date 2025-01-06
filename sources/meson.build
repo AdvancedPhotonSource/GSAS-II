@@ -120,7 +120,7 @@ py.extension_module('pypowder',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
+  link_with: powsubs_lib
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'polymask.for', '-m', 'polymask', '--lower', check:true)
@@ -130,7 +130,6 @@ py.extension_module(
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'pydiffax.for', '-m', 'pydiffax', '--lower', check:true)
@@ -139,7 +138,7 @@ py.extension_module('pydiffax',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
+  link_with: DIFFaXsubs_lib
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'histogram2d.for', '-m', 'histogram2d', '--lower', check:true)
@@ -148,7 +147,6 @@ py.extension_module('histogram2d',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'pack_f.for', '-m', 'pack_f', '--lower', check:true)
@@ -157,7 +155,6 @@ py.extension_module('pack_f',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'pytexture.for', '-m', 'pytexture', '--lower', check:true)
@@ -166,7 +163,7 @@ py.extension_module('pytexture',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
+  link_with: texturesubs_lib
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'spotmask.for', '-m', 'spotmask', '--lower', check:true)
@@ -175,7 +172,6 @@ py.extension_module('spotmask',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'pyspg.for', '-m', 'pyspg', '--lower', check:true)
@@ -184,7 +180,7 @@ py.extension_module('pyspg',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
+  link_with: spsubs_lib
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'unpack_cbf.for', '-m', 'unpack_cbf', '--lower', check:true)
@@ -193,7 +189,6 @@ py.extension_module('unpack_cbf',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
 )
 
 r = run_command(py, '-m', 'numpy.f2py', 'histosigma2d.for', '-m', 'histosigma2d', '--lower', check:true)
@@ -202,9 +197,9 @@ py.extension_module('histosigma2d',
   dependencies : [py_dep, numpy_dep, fortranobject_dep],
   install : true,
   subdir: 'GSASII',
-  link_with: [DIFFaXsubs_lib, NISTlatsubs_lib, powsubs_lib, spsubs_lib, texturesubs_lib]
 )
 
 executable('convcell', files('convcell.f'), install:true)
+executable('LATTIC', files('LATTIC.f'), link_with:NISTlatsubs_lib, install:true)
 
 subdir('k_vec_cython')

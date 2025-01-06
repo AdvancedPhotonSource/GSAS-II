@@ -1,12 +1,9 @@
 project(
     'gsas_ii',
-    'c', 'cpp', 'cython', 'fortran',
+    'c', 'cython', 'fortran',
     version: '2.0.0',
     license: 'BSD',
     meson_version: '>= 1.1.0',
-    default_options: [
-        'cpp_std=c++11',
-    ],
 )
 
 # Seek the backend
@@ -16,7 +13,6 @@ endif
 
 # define some compilers
 cc = meson.get_compiler('c')
-cpp = meson.get_compiler('cpp')
 cy = meson.get_compiler('cython')
 
 

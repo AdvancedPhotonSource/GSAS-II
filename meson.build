@@ -36,7 +36,6 @@ endif
 
 py = import('python').find_installation(pure: false)
 py_dep = py.dependency()
-pybind11_dep = dependency('pybind11')
 
 # This is adopted from scipy's meson.build
 #

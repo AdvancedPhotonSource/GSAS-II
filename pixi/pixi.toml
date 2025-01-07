@@ -14,8 +14,8 @@ platforms = ["linux-64", "win-64", "osx-arm64"]
 
 [tasks]
 ui= "python -m GSASII.GSASII"
-build =  { cmd = "(rm dist/*whl || true) && python -m build -wnx -vvvv -Cbuild-dir='oro' && pip install dist/*whl --force-reinstall --no-deps", cwd='../'}
-build-win = { cmd = "(rm dist/*whl || true) && python -m build -wnx -vvvv -Cbuild-dir='oro' && pip install dist/*whl --force-reinstall --no-deps", cwd='../', env={CC = 'clang-cl', CXX ='clang-cl'}}
+build =  { cmd = "(rm dist/*whl || true) && (rm -r build || true) && python -m build -wnx -vvvv -Cbuild-dir='build' && pip install dist/*whl --force-reinstall --no-deps", cwd='../'}
+build-win = { cmd = "(rm dist/*whl || true) && (rm -r build || true) && python -m build -wnx -vvvv -Cbuild-dir='build' && pip install dist/*whl --force-reinstall --no-deps", cwd='../', env={CC = 'clang-cl', CXX ='clang-cl'}}
 
 
 [dependencies]

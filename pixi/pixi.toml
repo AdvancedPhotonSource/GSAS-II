@@ -26,12 +26,12 @@ matplotlib = ">=3.10.0,<4"
 meson-python = ">=0.17.1,<0.18"
 ninja = ">=1.12.1,<2"
 numpy = ">=2.2.1,<3"
-pillow = ">=11.0.0,<12"
+pillow = ">=11.1.0,<12"
 pkg-config = ">=0.29.2,<0.30"
 pyopengl = ">=3.1.6,<4"
 pyproject-metadata = ">=0.9.0,<0.10"
 requests = ">=2.32.3,<3"
-scipy = ">=1.14.1,<2"
+scipy = ">=1.15.0,<2"
 setuptools = ">=75.6.0,<76"
 setuptools_scm = ">=8.1.0,<9"
 tomli = ">=2.2.1,<3"
@@ -39,8 +39,25 @@ wheel = ">=0.45.1,<0.46"
 wxpython = ">=4.2.2,<5"
 pip = ">=24.3.1,<25"
 python-build = ">=1.2.2.post1,<2"
-zarr = ">=2.18.4,<3"
+zarr = "*"
 xmltodict = ">=0.14.2,<0.15"
 compilers = ">=1.8.0,<2"
-python = "<3.13"
 clang = ">=17.0.6,<20"
+
+[feature.py311.dependencies]
+python = "<3.12,>=3.11"
+
+[feature.py312.dependencies]
+python = "<3.13,>=3.12"
+
+[feature.py313.dependencies]
+python = "<3.14,>=3.13"
+
+[feature.py310.dependencies]
+python = "<3.11,>=3.10"
+
+[environments]
+py310 = ['py310']
+py311 = ['py311']
+py312 = ['py312']
+py313 = ['py313']

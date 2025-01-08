@@ -13,10 +13,16 @@ platforms = ["linux-64", "win-64", "osx-arm64"]
 
 
 [tasks]
-ui= "python -m GSASII.GSASII"
-build =  { cmd = "(rm dist/*whl || true) && (rm -r build || true) && python -m build -wnx -vvvv -Cbuild-dir='build' && pip install dist/*whl --force-reinstall --no-deps", cwd='../'}
-build-win = { cmd = "(rm dist/*whl || true) && (rm -r build || true) && python -m build -wnx -vvvv -Cbuild-dir='build' && pip install dist/*whl --force-reinstall --no-deps", cwd='../', env={CC = 'clang-cl', CXX ='clang-cl'}}
 
+clean-build = { cmd = "(rm dist/*whl || true) && (rm -r build || true) ", cwd='../' }
+
+build =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends_on = ['clean-build']}
+install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends_on=['build']}
+
+build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends_on = ['clean-build'], env={CC = 'clang-cl', CXX ='clang-cl'}}
+install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends_on=['build-win']}
+
+ui = "python -m GSASII.GSASII"
 
 [dependencies]
 cython = ">=3.0.11,<4"

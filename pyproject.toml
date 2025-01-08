@@ -153,9 +153,25 @@ extend-select = [
   "PD",       # pandas-vet
 ]
 extend-ignore = [
+  "C408",     # using dict() is fine
+  "EM101",    # string literals in error messages are fine, stop power tripping
+  "ISC001",   # Conflicts with formatter
+  "NPY002",   # allow the old numpy random generator
+  "PIE804",   # creating dict to ** it is fine
   "PLR09",    # Too many <...>
   "PLR2004",  # Magic value used in comparison
-  "ISC001",   # Conflicts with formatter
+  "PTH100",   # Do not force code-thrash
+  "PTH101",   # Do not force code-thrash
+  "PTH110",   # Do not force code-thrash
+  "PTH113",   # Do not force code-thrash
+  "PTH116",   # Do not force code-thrash
+  "PTH121",   # Do not force code-thrash
+  "PTH123",   # Path.open vs open (using the builtin is fine)
+  "RET504",   # do not complain about extra locals
+  "RET505",   # return in else (clearer with the `else`)
+  "SIM102",   # multi-term if clauses are not always clearer
+  "SIM105",   # contextlib.suppress rather than try...except (just use language)
+  "SIM108",   # ternaries are not actually clearer (just fewer lines)
 ]
 unfixable = [
   "T20",  # Removes print statements

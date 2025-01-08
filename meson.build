@@ -119,3 +119,4 @@ fortranobject_dep = declare_dependency(
 
 subdir('GSASII')
 subdir('sources')
+subdir('backcompat')

@@ -34,3 +34,9 @@ GSASII/bindist
 
 dist
 build
+
+#
+*.gpx
+*.lst
+
+*~

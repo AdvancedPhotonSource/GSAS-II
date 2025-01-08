@@ -22,7 +22,7 @@ class PickElement(wx.Dialog):
               parent=prnt, pos=wx.DefaultPosition,
               style=wx.DEFAULT_DIALOG_STYLE, title='Pick Element')
         from . import ElementTable as ET
-        self.butWid = 60
+        self.butWid = 90
         if 'nt' in os.name:
             self.butWid = 50
         self.SetClientSize(wx.Size(50+18*self.butWid, 250))

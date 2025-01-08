@@ -21,7 +21,7 @@ class PickElement(wx.Dialog):
         wx.Dialog.__init__(self, id=-1, name='PickElement',
               parent=prnt, pos=wx.DefaultPosition, 
               style=wx.DEFAULT_DIALOG_STYLE, title='Pick Element')
-        import ElementTable as ET
+        from . import ElementTable as ET
         self.butWid = 60
         if 'nt' in os.name:
             self.butWid = 50

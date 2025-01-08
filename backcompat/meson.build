@@ -34,6 +34,7 @@ py.install_sources([
     'GSASIIstrMain.py',
     'GSASIIstrMath.py',
     'GSASIItestplot.py',
+    'ElementTable.py'
 ],
   pure: false,    # Will be installed next to binaries
   subdir: ''  # Folder relative to site-packages to install to

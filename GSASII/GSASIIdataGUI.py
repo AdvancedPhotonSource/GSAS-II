@@ -6215,6 +6215,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     def ClearData(self):
         '''Initializes the contents of the dataWindow panel
         '''
+        self.customResize = None  # allows a dataWindow to define a routine used for a resize
         self.Unbind(wx.EVT_SIZE)
         self.topBox.Clear(True)
         self.bottomBox.Clear(True)
@@ -6277,10 +6278,15 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 haveNotebook = child
         extra = 0
         if sys.platform == "darwin": extra = 3 # N.B. 3 extra items in MacOS (Linux?)
+        if self.customResize:
+            # use resize routine defined specific for current data tree item
+            self.Bind(wx.EVT_SIZE,self.customResize)
+            self.SetAutoLayout(True)
+            self.SetScrollRate(10,10)
         # for simple windows with only a GSNotebook or GSGrid, turn off
         # scrolling in the scrolled window and let the notebook or grid
         # handle the scaling
-        if numChild <= 2+extra and haveGrid:
+        elif numChild <= 2+extra and haveGrid:
             self.Bind(wx.EVT_SIZE,_onResizeGd)
             self.SetVirtualSize(self.GetSize())
             self.SetAutoLayout(False)

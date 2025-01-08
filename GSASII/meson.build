@@ -64,6 +64,7 @@ py.install_sources([
     'testSytSym.py',
     'testXNFF.py',
     'tutorialIndex.py',
+    '_utils.py'
 ],
   pure: false,    # Will be installed next to binaries
   subdir: 'GSASII'  # Folder relative to site-packages to install to

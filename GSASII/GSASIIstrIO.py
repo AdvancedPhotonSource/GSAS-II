@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 '''
-:mod:`GSASIIstrIO` routines, used for refinement to 
-read from GPX files and print to the .LST file. 
-Used for refinements and in G2scriptable. 
+:mod:`GSASIIstrIO` routines, used for refinement to
+read from GPX files and print to the .LST file.
+Used for refinements and in G2scriptable.
 
-This file should not contain any wxpython references as this 
-must be used in non-GUI settings. 
+This file should not contain any wxpython references as this
+must be used in non-GUI settings.
 '''
 from __future__ import division, print_function
 import re
@@ -27,6 +27,7 @@ from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
 from . import GSASIIstrMath as G2stMth
 from . import GSASIIfiles as G2fil
+from ._utils import _copy_file
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -34,7 +35,7 @@ tand = lambda x: np.tan(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
-    
+
 ateln2 = 8.0*math.log(2.0)
 
 #===============================================================================
@@ -44,37 +45,37 @@ def cPickleLoad(fp):
     return cPickle.load(fp,encoding='latin-1')
 
 gpxIndex = {}; gpxNamelist = []; gpxSize = -1
-'''Global variables used in :func:`IndexGPX` to see if file has changed 
+'''Global variables used in :func:`IndexGPX` to see if file has changed
 (gpxSize) and to index where to find each 1st-level tree item in the file.
 '''
 
 def GetFullGPX(GPXfile):
-    ''' Returns complete contents of GSASII gpx file. 
+    ''' Returns complete contents of GSASII gpx file.
     Used in :func:`GSASIIscriptable.LoadDictFromProjFile`.
 
     :param str GPXfile: full .gpx file name
     :returns: Project,nameList, where
 
-      * Project (dict) is a representation of gpx file following the GSAS-II 
-        tree structure for each item: key = tree name (e.g. 'Controls', 
-        'Restraints', etc.), data is dict 
+      * Project (dict) is a representation of gpx file following the GSAS-II
+        tree structure for each item: key = tree name (e.g. 'Controls',
+        'Restraints', etc.), data is dict
       * nameList (list) has names of main tree entries & subentries used to reconstruct project file
     '''
     return IndexGPX(GPXfile,read=True)
 
 def IndexGPX(GPXfile,read=False):
     '''Create an index to a GPX file, optionally the file into memory.
-    The byte size of the GPX file is saved. If this routine is called 
+    The byte size of the GPX file is saved. If this routine is called
     again, and if this size does not change, indexing is not repeated
     since it is assumed the file has not changed (this can be overriden
-    by setting read=True). 
+    by setting read=True).
 
     :param str GPXfile: full .gpx file name
     :returns: Project,nameList if read=, where
 
-      * Project (dict) is a representation of gpx file following the GSAS-II 
-        tree structure for each item: key = tree name (e.g. 'Controls', 
-        'Restraints', etc.), data is dict 
+      * Project (dict) is a representation of gpx file following the GSAS-II
+        tree structure for each item: key = tree name (e.g. 'Controls',
+        'Restraints', etc.), data is dict
       * nameList (list) has names of main tree entries & subentries used to reconstruct project file
     '''
     global gpxSize
@@ -107,8 +108,8 @@ def IndexGPX(GPXfile,read=False):
         raise Exception("Error reading file "+str(GPXfile)+". This is not a GSAS-II .gpx file")
     finally:
         fp.close()
-    if read: return Project,gpxNamelist   
-    
+    if read: return Project,gpxNamelist
+
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
 
@@ -132,7 +133,7 @@ def ReadConstraints(GPXfile, seqHist=None):
     '''Read the constraints from the GPX file and interpret them
 
     called in :func:`ReadCheckConstraints`, :func:`GSASIIstrMain.Refine`
-    and :func:`GSASIIstrMain.SeqRefine`. 
+    and :func:`GSASIIstrMain.SeqRefine`.
     '''
     IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
@@ -153,17 +154,17 @@ def ReadConstraints(GPXfile, seqHist=None):
     #if ignored:
     #    G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
     return constrDict,fixedList
-    
+
 def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     '''Load constraints and related info and return any error or warning messages
     This is done from the GPX file rather than the tree.
 
     :param str GPXfile: specifies the path to a .gpx file.
-    :param str seqHist: specifies a histogram to be loaded for 
+    :param str seqHist: specifies a histogram to be loaded for
       a sequential refinement. If None (default) all are loaded.
     :param dict Histograms: output from :func:`GetUsedHistogramsAndPhases`,
       can optionally be supplied to save time for sequential refinements
-    :param dict Phases: output from :func:`GetUsedHistogramsAndPhases`, can 
+    :param dict Phases: output from :func:`GetUsedHistogramsAndPhases`, can
       optionally be supplied to save time for sequential refinements
     '''
     G2mv.InitVars()    # init constraints
@@ -200,7 +201,7 @@ def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,seqHistNum=hId)
     G2mv.Map2Dict(parmDict,varyList)   # changes varyList
     return errmsg, warnmsg
-    
+
 def makeTwinFrConstr(Phases,Histograms,hapVary):
     TwConstr = []
     TwFixed = []
@@ -216,8 +217,8 @@ def makeTwinFrConstr(Phases,Histograms,hapVary):
                     TwConstr.append({phfx+'TwinFr:'+str(i):'1.0' for i in range(nTwin)})
             except KeyError:    #unused histograms?
                 pass
-    return TwConstr,TwFixed   
-    
+    return TwConstr,TwFixed
+
 def GetRestraints(GPXfile):
     '''Read the restraints from the GPX file.
     Throws an exception if not found in the .GPX file
@@ -231,7 +232,7 @@ def GetRestraints(GPXfile):
     datum = cPickleLoad(fl)[0]
     fl.close()
     return datum[1]
-    
+
 def GetRigidBodies(GPXfile):
     '''Read the rigid body models from the GPX file
     '''
@@ -244,7 +245,7 @@ def GetRigidBodies(GPXfile):
     datum = cPickleLoad(fl)[0]
     fl.close()
     return datum[1]
-        
+
 def GetFprime(controlDict,Histograms):
     'Needs a doc string'
     FFtables = controlDict['FFtables']
@@ -268,7 +269,7 @@ def GetFprime(controlDict,Histograms):
                     FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
                     FFtables[El][hfx+'FP'] = FP
                     FFtables[El][hfx+'FPP'] = FPP
-                    
+
 def PrintFprime(FFtables,pfx,pFile):
     pFile.write('\n Resonant form factors:(ref: D.T. Cromer & D.A. Liberman (1981), Acta Cryst. A37, 267-268.)\n')
     Elstr = ' Element:'
@@ -282,7 +283,7 @@ def PrintFprime(FFtables,pfx,pFile):
     pFile.write(Elstr+'\n')
     pFile.write(FPstr+'\n')
     pFile.write(FPPstr+'\n')
-    
+
 def PrintBlength(BLtables,wave,pFile):
     pFile.write('\n Resonant neutron scattering lengths:\n')
     Elstr = ' Element:'
@@ -307,7 +308,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
         data = Phases[phase]
         ISO = data['ISODISTORT']
         atNames = [atom[0] for atom in data['Atoms']]
-                       
+
         if 'G2VarList' in ISO:
             deltaList = []
             notfound = []
@@ -337,7 +338,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                     print('     ',i,'({})'.format(j))
                 continue
             modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
-            
+
             pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(data['General'].get('Name','')))
             l = str(max([len(i) for i in ISO['IsoModeList']])+3)
             fmt = '  {:'+l+'}{}'
@@ -352,7 +353,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 except TypeError:
                     value = '?'
                 pFile.write(fmt.format(var,value)+'\n')
-                
+
         if 'G2OccVarList' in ISO:       #untested - probably wrong
             deltaOccList = []
             notfound = []
@@ -380,7 +381,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                     print('     ',i,'({})'.format(j))
                 continue
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
-            
+
             pFile.write('\n ISODISTORT Occupancy Modes for phase {}\n'.format(data['General'].get('Name','')))
             l = str(max([len(i) for i in ISO['OccModeList']])+3)
             fmt = '  {:'+l+'}{}'
@@ -393,7 +394,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                 except TypeError:
                     value = '?'
                 pFile.write(fmt.format(var,value)+'\n')
-    
+
 def PrintIndependentVars(parmDict,varyList,sigDict,PrintAll=False,pFile=None):
     '''Print the values and uncertainties on the independent parameters'''
     printlist = []
@@ -428,7 +429,7 @@ def PrintIndependentVars(parmDict,varyList,sigDict,PrintAll=False,pFile=None):
             s3 += ('%15s' % ('n/a')).center(wdt)
         else:
             s3 += fmtESD(name,sigDict,'f',15,5).center(wdt)
-            
+
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
 
@@ -451,7 +452,7 @@ def GetAllPhaseData(GPXfile,PhaseName):
     :param str GPXfile: full .gpx file name
     :param str PhaseName: phase name
     :return: phase dictionary or None if PhaseName is not present
-    '''        
+    '''
     IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
     pos = gpxIndex.get('Phases')
@@ -464,7 +465,7 @@ def GetAllPhaseData(GPXfile,PhaseName):
     for datus in data[1:]:
         if datus[0] == PhaseName:
             return datus[1]
-    
+
 def GetHistograms(GPXfile,hNames):
     """ Returns a dictionary of histograms found in GSASII gpx file
 
@@ -514,13 +515,13 @@ def GetHistograms(GPXfile,hNames):
             HKLFdata['Instrument Parameters'] = dict(data)['Instrument Parameters']
             HKLFdata['Reflection Lists'] = None
             HKLFdata['Residuals'] = {}
-            Histograms[hist] = HKLFdata           
+            Histograms[hist] = HKLFdata
     fl.close()
     return Histograms
-    
+
 def GetHistogramNames(GPXfile,hTypes):
     """ Returns a list of histogram names found in a GSAS-II .gpx file that
-    match specifed histogram types. Names are returned in the order they 
+    match specifed histogram types. Names are returned in the order they
     appear in the file.
 
     :param str GPXfile: full .gpx file name
@@ -530,12 +531,12 @@ def GetHistogramNames(GPXfile,hTypes):
     """
     IndexGPX(GPXfile)
     return [n[0] for n in gpxNamelist if n[0][:4] in hTypes]
-    
+
 def GetUsedHistogramsAndPhases(GPXfile):
     ''' Returns all histograms that are found in any phase
     and any phase that uses a histogram. This also
     assigns numbers to used phases and histograms by the
-    order they appear in the file. 
+    order they appear in the file.
 
     :param str GPXfile: full .gpx file name
     :returns: (Histograms,Phases)
@@ -548,7 +549,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
     histoList = GetHistogramNames(GPXfile,['PWDR','HKLF'])
     allHistograms = GetHistograms(GPXfile,histoList)
     phaseData = {}
-    for name in phaseNames: 
+    for name in phaseNames:
         phaseData[name] =  GetAllPhaseData(GPXfile,name)
     Histograms = {}
     Phases = {}
@@ -592,16 +593,16 @@ def GetUsedHistogramsAndPhases(GPXfile):
                           .format(hist,fixedBkg[0]))
     G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     return Histograms,Phases
-    
+
 def getBackupName(GPXfile,makeBack):
     '''
     Get the name for the backup .gpx file name
-    
+
     :param str GPXfile: full .gpx file name
     :param bool makeBack: if True the name of a new file is returned, if
       False the name of the last file that exists is returned
     :returns: the name of a backup file
-    
+
     '''
     GPXpath,GPXname = ospath.split(GPXfile)
     if GPXpath == '': GPXpath = '.'
@@ -616,29 +617,28 @@ def getBackupName(GPXfile,makeBack):
             else:
                 last = max(last,int(name[1].strip('bak')))
     GPXback = ospath.join(GPXpath,ospath.splitext(GPXname)[0]+'.bak'+str(last)+'.gpx')
-    return GPXback    
-        
+    return GPXback
+
 def GPXBackup(GPXfile,makeBack=True):
     '''
     makes a backup of the specified .gpx file
-    
+
     :param str GPXfile: full .gpx file name
     :param bool makeBack: if True (default), the backup is written to
       a new file; if False, the last backup is overwritten
     :returns: the name of the backup file that was written
     '''
-    import distutils.file_util as dfu
     GPXback = getBackupName(GPXfile,makeBack)
     tries = 0
     while True:
         try:
-            dfu.copy_file(GPXfile,GPXback)
+            _copy_file(GPXfile,GPXback)
             break
         except:
             tries += 1
             if tries > 10:
                 return GPXfile  #failed!
-            time.sleep(1)           #just wait a second!         
+            time.sleep(1)           #just wait a second!
     return GPXback
 
 def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,parmFrozenList,makeBack=True):
@@ -651,13 +651,12 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
     :param dict Phases: dictionary of phases that use histograms
     :param dict RigidBodies: dictionary of rigid bodies
     :param dict CovData: dictionary of refined variables, varyList, & covariance matrix
-    :param list parmFrozenList: list of parameters (as str) that are frozen 
+    :param list parmFrozenList: list of parameters (as str) that are frozen
       due to limits; converted to :class:`GSASIIobj.G2VarObj` objects.
-    :param bool makeBack: True if new backup of .gpx file is to be made; else 
+    :param bool makeBack: True if new backup of .gpx file is to be made; else
       use the last one made
     '''
-                        
-    import distutils.file_util as dfu
+
     GPXback = GPXBackup(GPXfile,makeBack)
     G2fil.G2Print ('Read from file:'+GPXback)
     G2fil.G2Print ('Save to file  :'+GPXfile)
@@ -697,31 +696,31 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
                 if datus[0] == 'Background': # remove fixed background from file
                     d1 = {key:histogram['Background'][1][key]
                               for key in histogram['Background'][1]
-                              if not key.startswith('_fixed')}                
+                              if not key.startswith('_fixed')}
                     datus[1] = copy.deepcopy(histogram['Background'])
                     datus[1][1] = d1
         except KeyError:
             pass
-        try:                        
+        try:
             cPickle.dump(data,outfile,1)
         except AttributeError:
             G2fil.G2Print ('ERROR - bad data in least squares result')
             infile.close()
             outfile.close()
-            dfu.copy_file(GPXback,GPXfile)
+            _copy_file(GPXback,GPXfile)
             G2fil.G2Print ('GPX file save failed - old version retained',mode='error')
             return
-        
+
     infile.close()
     outfile.close()
-            
+
     G2fil.G2Print ('GPX file save successful')
-    
+
 def GetSeqResult(GPXfile):
     '''
     Returns the sequential results table information from a GPX file.
     Called at the beginning of :meth:`GSASIIstrMain.SeqRefine`
-    
+
     :param str GPXfile: full .gpx file name
     :returns: a dict containing the sequential results table
     '''
@@ -734,9 +733,9 @@ def GetSeqResult(GPXfile):
     datum = cPickleLoad(fl)[0]
     fl.close()
     return datum[1]
-    
+
 def SetupSeqSavePhases(GPXfile):
-    '''Initialize the files used to save intermediate results from 
+    '''Initialize the files used to save intermediate results from
     sequential fits.
     '''
     IndexGPX(GPXfile)
@@ -761,7 +760,7 @@ def SetupSeqSavePhases(GPXfile):
 def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,parmFrozen):
     '''
     Save phase and histogram information into "pseudo-gpx" files. The phase
-    information is overwritten each time this is called, but histogram information is 
+    information is overwritten each time this is called, but histogram information is
     appended after each sequential step.
 
     :param str GPXfile: full .gpx file name
@@ -772,7 +771,7 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     :param dict parmFrozen: dict with frozen parameters for all phases
       and histograms (specified as str values)
     '''
-                           
+
     GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
     fp = open(GPXphase,'rb')
     data = cPickleLoad(fp) # first block in file should be Phases
@@ -781,7 +780,7 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
                             .format(GPXphase))
     fp.close()
     # update previous phase info
-    for datum in data[1:]: 
+    for datum in data[1:]:
         if datum[0] in Phases:
             datum[1].update(Phases[datum[0]])
     # save latest Phase/refinement info
@@ -812,11 +811,11 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
         if key == 'Background':  # remove fixed background from file
             xfer_dict['Background'][1] = {k:hist['Background'][1][k]
                       for k in hist['Background'][1]
-                      if not k.startswith('_fixed')}                
+                      if not k.startswith('_fixed')}
         del hist[key]
     # xform into a gpx-type entry
     data = []
-    data.append([histname,[hist,histData,histname]])        
+    data.append([histname,[hist,histData,histname]])
     for key in ['Comments','Limits','Background','Instrument Parameters',
              'Sample Parameters','Peak List','Index Peak List',
              'Unit Cells List','Reflection Lists']:
@@ -827,11 +826,11 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     cPickle.dump(data,fp,1)
     fp.close()
     return
-    
+
 def SetSeqResult(GPXfile,Histograms,SeqResult):
     '''
     Places the sequential results information into a GPX file
-    after a refinement has been completed. 
+    after a refinement has been completed.
     Called at the end of :meth:`GSASIIstrMain.SeqRefine`
 
     :param str GPXfile: full .gpx file name
@@ -846,7 +845,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         raise Exception('Unexpected block in {} file. How did this happen?'.format(GPXphase))
     Phases = {}
     for name,vals in data[1:]:
-        Phases[name] = vals        
+        Phases[name] = vals
     name,CovData = cPickleLoad(fp)[0] # 2nd block in file should be Covariance
     name,RigidBodies = cPickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
     name,parmFrozenDict = cPickleLoad(fp)[0] # 4th block in file should be frozen parameters
@@ -947,7 +946,7 @@ def ShowControls(Controls,pFile=None,SeqRef=False,preFrozenCount=0):
         pFile.write(' Process histograms in reverse order: %s\n'%(Controls['Reverse Seq']))
     if preFrozenCount:
         pFile.write('\n Starting refinement with {} Frozen variables\n\n'.format(preFrozenCount))
-    
+
 def GetPawleyConstr(SGLaue,PawleyRef,im,pawleyVary):
     'needs a doc string'
 #    if SGLaue in ['-1','2/m','mmm']:
@@ -966,34 +965,34 @@ def GetPawleyConstr(SGLaue,PawleyRef,im,pawleyVary):
                 isum = ih**2+ik**2
                 jsum = jh**2+jk**2
                 if abs(il) == abs(jl) and isum == jsum:
-                    eqvDict[varyI].append(varyJ) 
+                    eqvDict[varyI].append(varyJ)
             elif SGLaue in ['3R','3mR']:
                 isum = ih**2+ik**2+il**2
                 jsum = jh**2+jk**2+jl**2
                 isum2 = ih*ik+ih*il+ik*il
                 jsum2 = jh*jk+jh*jl+jk*jl
                 if isum == jsum and isum2 == jsum2:
-                    eqvDict[varyI].append(varyJ) 
+                    eqvDict[varyI].append(varyJ)
             elif SGLaue in ['3','3m1','31m','6/m','6/mmm']:
                 isum = ih**2+ik**2+ih*ik
                 jsum = jh**2+jk**2+jh*jk
                 if abs(il) == abs(jl) and isum == jsum:
-                    eqvDict[varyI].append(varyJ) 
+                    eqvDict[varyI].append(varyJ)
             elif SGLaue in ['m3','m3m']:
                 isum = ih**2+ik**2+il**2
                 jsum = jh**2+jk**2+jl**2
                 if isum == jsum:
                     eqvDict[varyI].append(varyJ)
             elif abs(dspI-dspJ)/dspI < 1.e-4:
-                eqvDict[varyI].append(varyJ) 
+                eqvDict[varyI].append(varyJ)
     for item in pawleyVary:
         if eqvDict[item]:
             for item2 in pawleyVary:
                 if item2 in eqvDict[item]:
                     eqvDict[item2] = []
             G2mv.StoreEquivalence(item,eqvDict[item])
-                    
-def cellVary(pfx,SGData): 
+
+def cellVary(pfx,SGData):
     '''Creates equivalences for a phase based on the Laue class.
     Returns a list of A tensor terms that are non-zero.
     '''
@@ -1017,25 +1016,25 @@ def cellVary(pfx,SGData):
     elif SGData['SGLaue'] in ['3R', '3mR']:
         G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',pfx+'A2',))
         G2mv.StoreEquivalence(pfx+'A3',(pfx+'A4',pfx+'A5',))
-        return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']                       
+        return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
     elif SGData['SGLaue'] in ['m3m','m3']:
         G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',pfx+'A2',))
         return [pfx+'A0',pfx+'A1',pfx+'A2']
-    
+
 def modVary(pfx,SSGData):
     vary = []
     for i,item in enumerate(SSGData['modSymb']):
         if item in ['a','b','g']:
             vary.append(pfx+'mV%d'%(i))
     return vary
-        
+
 ################################################################################
 ##### Rigid Body Models and not General.get('doPawley')
 ################################################################################
-        
+
 def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
     '''Get Rigid body info from tree entry and print it to .LST file
-    Adds variables and dict items for vector RBs, but for Residue bodies 
+    Adds variables and dict items for vector RBs, but for Residue bodies
     this is done in :func:`GetPhaseData`.
     '''
     def PrintSpnRBModel(RBModel):
@@ -1047,7 +1046,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
             (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
         for i in WriteResRBModel(RBModel):
             pFile.write(i)
-        
+
     def PrintVecRBModel(RBModel):
         pFile.write('Vector RB name: %s no.atoms: %d, No. times used: %d\n'%
             (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
@@ -1055,7 +1054,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
             pFile.write(i)
         pFile.write('Orientation defined by: atom %s -> atom %s & atom %s -> atom %s\n'%
             (RBModel['rbRef'][0],RBModel['rbRef'][1],RBModel['rbRef'][0],RBModel['rbRef'][2]))
-            
+
     if Print and pFile is None: raise Exception("specify pFile or Print=False")
     rbVary = []
     rbDict = {}
@@ -1066,7 +1065,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
                 if Print:
                     pFile.write('\nSpinning rigid body model:\n')
                     PrintSpnRBModel(rigidbodyDict['Spin'][item])
-                    
+
     if len(rbIds['Vector']):
         for irb,item in enumerate(rbIds['Vector']):
             if rigidbodyDict['Vector'][item]['useCount']:
@@ -1087,10 +1086,10 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
                     pFile.write('\nResidue rigid body model:\n')
                     PrintResRBModel(rigidbodyDict['Residue'][item])
     return rbVary,rbDict
-    
+
 def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
     'needs a doc string'
-    
+
     def PrintRBVectandSig(VectRB,VectSig):
         pFile.write('\n Rigid body vector magnitudes for %s:\n'%VectRB['RBname'])
         namstr = '  names :'
@@ -1118,19 +1117,19 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
                 name = '::RBV;'+str(i)+':'+str(irb)
                 if name in sigDict:
                     VectSig.append(sigDict[name])
-            PrintRBVectandSig(rigidbodyDict['Vector'][item],VectSig)    
-        
+            PrintRBVectandSig(rigidbodyDict['Vector'][item],VectSig)
+
 ################################################################################
 ##### Phase data
-################################################################################                    
+################################################################################
 def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                  seqHistName=None,symHold=None):
-    '''Setup the phase information for a structural refinement, used for 
-    regular and sequential refinements, optionally printing information 
-    to the .lst file (if Print is True). Used as part of refinements but also 
-    to generate information on refinement settings. Can be used with dicts from 
-    data tree or read from the GPX file. 
-    Note that this routine shares a name with routine G2frame.GetPhaseData() 
+    '''Setup the phase information for a structural refinement, used for
+    regular and sequential refinements, optionally printing information
+    to the .lst file (if Print is True). Used as part of refinements but also
+    to generate information on refinement settings. Can be used with dicts from
+    data tree or read from the GPX file.
+    Note that this routine shares a name with routine G2frame.GetPhaseData()
     (:meth:`GSASIIdata.GSASII.GetPhaseData`) that instead returns the phase
     dict(s) from the tree.
 
@@ -1138,7 +1137,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
       .gpx file) with information on all phases
     :param dict RestraintDict: an optional dict with restraint information
     :param dict rbIds: an optional dict with rigid body information
-    :param bool Print: a flag that determines if information will be formatted and 
+    :param bool Print: a flag that determines if information will be formatted and
       printed to the .lst file
     :param file pFile: a file object (created by open) where print information is sent
       when Print is True
@@ -1147,12 +1146,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
       name is supplied, only the phases used in the current histogram are loaded.
       If 'All' is specified, all phases are loaded (used for error checking).
     :param list symHold: if not None (None is the default) the names of parameters
-       held due to symmetry are placed in this list even if not varied. (Used 
+       held due to symmetry are placed in this list even if not varied. (Used
        in G2constrGUI and for parameter impact estimates in AllPrmDerivs).
     :returns: lots of stuff: Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
-        FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave (see code for details). 
+        FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave (see code for details).
     '''
-            
+
     def PrintFFtable(FFtable):
         pFile.write('\n X-ray scattering factors:\n')
         pFile.write('   Symbol     fa                                      fb                                      fc\n')
@@ -1164,7 +1163,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 fb = ffdata['fb']
                 pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
                     (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc']))
-                
+
     def PrintEFtable(EFtable):
         pFile.write('\n Electron scattering factors:\n')
         pFile.write('   Symbol     fa                                                fb\n')
@@ -1176,7 +1175,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 fb = efdata['fb']
                 pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
                     (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fa[4],fb[0],fb[1],fb[2],fb[3],fb[4]))
-                
+
     def PrintORBtable(ORBtable):
         if not len(ORBtable):
             return
@@ -1190,13 +1189,13 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     continue
                 fa = orbdata[item]['fa']
                 fb = orbdata[item]['fb']
-                if 'core' in item:                    
+                if 'core' in item:
                     name = ('%s %s'%(Ename,item)).ljust(13)
                 else:
                     name = '   '+item.ljust(10)
                 pFile.write(' %13s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
                     (name,fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],orbdata[item]['fc']))
-                
+
     def PrintMFtable(MFtable):
         pFile.write('\n <j0> Magnetic scattering factors:\n')
         pFile.write('   Symbol     mfa                                    mfb                                     mfc\n')
@@ -1216,7 +1215,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             fb = mfdata['nfb']
             pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
                 (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],mfdata['nfc']))
-                
+
     def PrintBLtable(BLtable):
         pFile.write('\n Neutron scattering factors:\n')
         pFile.write('   Symbol   isotope       mass       b       resonant terms\n')
@@ -1236,9 +1235,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 for item in bres:
                     line += '%10.5g'%(item)
                 pFile.write(line+'\n')
-            
+
     def PrintRBObjects(resRBData,vecRBData,spnRBData):
-                
+
         def PrintRBThermals():
             tlstr = ['11','22','33','12','13','23']
             sstr = ['12','13','21','23','31','32','AA','BB']
@@ -1250,7 +1249,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 for i in range(6):
                     text += 'T'+tlstr[i]+' %8.4f %s '%(TLS[i],str(TLSvar[i])[0])
                 pFile.write(text+'\n')
-                if 'L' in RB['ThermalMotion'][0]: 
+                if 'L' in RB['ThermalMotion'][0]:
                     text = ''
                     for i in range(6,12):
                         text += 'L'+tlstr[i-6]+' %8.2f %s '%(TLS[i],str(TLSvar[i])[0])
@@ -1262,9 +1261,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     pFile.write(text+'\n')
             if 'U' in RB['ThermalMotion'][0]:
                 pFile.write('Uiso data\n')
-                text = 'Uiso'+' %10.3f %s'%(TLS[0],str(TLSvar[0])[0])           
+                text = 'Uiso'+' %10.3f %s'%(TLS[0],str(TLSvar[0])[0])
                 pFile.write(text+'\n')
-            
+
         if len(resRBData):
             for RB in resRBData:
                 Oxyz = RB['Orig'][0]
@@ -1282,7 +1281,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         text += '%10.4f Refine? %s'%(torsion[0],torsion[1])
                     pFile.write(text+'\n')
                 PrintRBThermals()
-                
+
         if len(vecRBData):
             for RB in vecRBData:
                 Oxyz = RB['Orig'][0]
@@ -1294,7 +1293,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     (Angle,Qrijk[1],Qrijk[2],Qrijk[3],RB['Orient'][1]))
                 pFile.write('Atom site frac: %10.3f Refine? %s\n'%(RB['AtomFrac'][0],RB['AtomFrac'][1]))
                 PrintRBThermals()
-                
+
         if len(spnRBData):
             for RB in spnRBData:
                 atId = RB['Ids'][0]
@@ -1319,7 +1318,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             if not block and 'Q' not in RB['atType']:
                                 ptlbls = ' names :%12s'%'Radius'
                                 ptstr =  ' values:%12.4f'%RB['Radius'][ish][0]
-                                ptref =  ' refine:%12s'%RB['Radius'][ish][1]                               
+                                ptref =  ' refine:%12s'%RB['Radius'][ish][1]
                             else:
                                 ptlbls = ' names :'
                                 ptstr =  ' values:'
@@ -1333,7 +1332,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             pFile.write(ptref+'\n')
                             iBeg += 6
                             iFin = min(iBeg+6,nCoeff)
-                
+
     def PrintAtoms(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         pFile.write('\n Atoms:\n')
@@ -1355,7 +1354,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         line += '%8.5f'%(at[cia+2+j])
                 pFile.write(line+'\n')
         elif General['Type'] == 'macromolecular':
-            pFile.write(135*'-'+'\n')            
+            pFile.write(135*'-'+'\n')
             for i,at in enumerate(Atoms):
                 line = '%7s'%(at[0])+'%7s'%(at[1])+'%7s'%(at[2])+'%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
                     '%10.5f'%(at[cx+2])+'%8.3f'%(at[cx+3])+'%7s'%(at[cs])+'%5d'%(at[cs+1])+'%5s'%(at[cia])
@@ -1366,7 +1365,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     for j in range(6):
                         line += '%8.4f'%(at[cia+2+j])
                 pFile.write(line+'\n')
-                
+
     def PrintMoments(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         cmx = cx+4
@@ -1380,7 +1379,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cmx])+'%10.5f'%(at[cmx+1])+ \
                     '%10.5f'%(at[cmx+2])
                 pFile.write(line+'\n')
-                
+
     def PrintDeformations(General,Atoms,Deformations):
         cx,ct,cs,cia = General['AtomPtrs']
         pFile.write('\n Atomic deformation parameters:\n')
@@ -1408,7 +1407,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 pFile.write(names+'\n')
                 pFile.write(values+'\n')
                 pFile.write(refine+'\n')
-                
+
     def PrintWaves(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         pFile.write('\n Modulation waves\n')
@@ -1425,11 +1424,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         (at[ct-1],at[cs],Stype,Waves[0]))
                 else:
                     continue
-                for iw,wave in enumerate(Waves[1:]):                    
+                for iw,wave in enumerate(Waves[1:]):
                     line = ''
                     if Waves[0] in ['Block','ZigZag'] and Stype == 'Spos' and not iw:
                         for item in names[Stype][6:]:
-                            line += '%8s '%(item)                        
+                            line += '%8s '%(item)
                     else:
                         if Stype == 'Spos':
                             for item in names[Stype][:6]:
@@ -1443,7 +1442,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         line += '%8.4f '%(item)
                     line += ' Refine? '+str(wave[1])
                     pFile.write(line+'\n')
-        
+
     def PrintTexture(textureData):
         topstr = '\n Spherical harmonics texture: Order:' + \
             str(textureData['Order'])
@@ -1469,12 +1468,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             ptstr =  ' values:'
             for item in SHkeys[iBeg:iFin]:
                 ptlbls += '%12s'%(item)
-                ptstr += '%12.4f'%(SHcoeff[item]) 
+                ptstr += '%12.4f'%(SHcoeff[item])
             pFile.write(ptlbls+'\n')
             pFile.write(ptstr+'\n')
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
-        
+
     def MakeRBParms(rbKey,phaseVary,phaseDict):
         # patch 2/24/21 BHT: new param, AtomFrac in RB
         if 'AtomFrac' not in RB and rbKey != 'S': raise Exception('out of date RB: edit in RB Models')
@@ -1492,14 +1491,14 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         if rbKey != 'S':
             XYZ = RB['Orig'][0]
             Sytsym = G2spc.SytSym(XYZ,SGData)[0]
-            xId,xCoef = G2spc.GetCSxinel(Sytsym)[:2] # gen origin site sym 
+            xId,xCoef = G2spc.GetCSxinel(Sytsym)[:2] # gen origin site sym
             equivs = {1:[],2:[],3:[]}
             if 'S' not in rbKey:
                 for i in range(3):
                     name = pfxRB+pstr[i]+':'+sfx
                     phaseDict[name] = RB['Orig'][0][i]
                     if RB['Orig'][1]:
-                        if xId[i] > 0:                               
+                        if xId[i] > 0:
                             phaseVary += [name,]
                             equivs[xId[i]].append([name,xCoef[i]])
                         else:
@@ -1517,7 +1516,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             atId = RB['Ids'][0]
             Atom = Atoms[atomIndx[atId][1]]
             XYZ = Atom[cx:cx+3]
-        pfxRB = pfx+'RB'+rbKey+'O'        
+        pfxRB = pfx+'RB'+rbKey+'O'
         A,V = G2mth.Q2AV(RB['Orient'][0])
 #        fixAxis = [0, np.abs(V).argmax()+1]
         for i in range(4):
@@ -1550,7 +1549,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 phaseDict[name] = RB['Natoms'][ish]
                 name = '%sRBSShR;%d:%s'%(pfx,ish,sfx)
                 phaseDict[name] = rbid
-                                
+
     def MakeRBThermals(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
         tlstr = ['11','22','33','12','13','23']
@@ -1581,7 +1580,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             phaseDict[name] = RB['ThermalMotion'][1][0]
             if RB['ThermalMotion'][2][0]:
                 phaseVary += [name,]
-                
+
     def MakeRBTorsions(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
         pfxRB = pfx+'RB'+rbKey+'Tr;'
@@ -1590,7 +1589,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             phaseDict[name] = torsion[0]
             if torsion[1]:
                 phaseVary += [name,]
-                
+
     def MakeRBSphHarm(rbKey,phaseVary,phaseDict):
         iAt = str(atomIndx[RB['Ids'][0]][1])  #for spin RBs
         for ish,Shcof in enumerate(RB['SHC']):
@@ -1609,7 +1608,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 phaseDict[name] = SHcof[0]*SHcof[1]         #apply sign p
                 if SHcof[2]:
                     phaseVary += [name,]
-                    
+
     if Print and pFile is None: raise Exception("specify pFile or Print=False")
     if Print:
         pFile.write('\n Phases:\n')
@@ -1676,7 +1675,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],
             pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5],pfx+'Vol':G2lat.calc_V(A)})
         if cell[0]:
-            phaseVary += cellVary(pfx,SGData)       #also fills in symmetry required constraints 
+            phaseVary += cellVary(pfx,SGData)       #also fills in symmetry required constraints
         SSGtext = []    #no superstructure
         im = 0
         if General.get('Modulated',False):
@@ -1686,7 +1685,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             SSGData = General['SSGData']
             SSGtext,SSGtable = G2spc.SSGPrint(SGData,SSGData)
             if vRef:
-                phaseVary += modVary(pfx,SSGData)        
+                phaseVary += modVary(pfx,SSGData)
         if Atoms and not General.get('doPawley'):
             cia = General['AtomPtrs'][3]
             for i,at in enumerate(Atoms):
@@ -1698,21 +1697,21 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     MakeRBParms('R',phaseVary,phaseDict)
                     MakeRBThermals('R',phaseVary,phaseDict)
                     MakeRBTorsions('R',phaseVary,phaseDict)
-            
+
             vecRBData = PhaseData[name]['RBModels'].get('Vector',[])
             if vecRBData:
                 rbids = rbIds['Vector']    #NB: used in the MakeRB routines
                 for iRB,RB in enumerate(vecRBData):
                     MakeRBParms('V',phaseVary,phaseDict)
                     MakeRBThermals('V',phaseVary,phaseDict)
-                    
+
             spnRBData = PhaseData[name]['RBModels'].get('Spin',[])
             if spnRBData:
                 rbids = rbIds['Spin']    #NB: used in the MakeRB routines
                 for iRB,RB in enumerate(spnRBData):
                     MakeRBParms('S',phaseVary,phaseDict)
                     MakeRBSphHarm('S',phaseVary,phaseDict)
-                    
+
         Natoms[pfx] = 0
         maxSSwave[pfx] = {'Sfrac':0,'Spos':0,'Sadp':0,'Smag':0}
         if Atoms and not General.get('doPawley'):
@@ -1743,7 +1742,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
                     equivs = {1:[],2:[],3:[]}
                     for j in range(3):
-                        if xId[j] > 0:                               
+                        if xId[j] > 0:
                             phaseVary.append(names[j])
                             equivs[xId[j]].append([names[j],xCoef[j]])
                         else:
@@ -1771,7 +1770,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
                         equivs = {1:[],2:[],3:[],4:[],5:[],6:[]}
                         for j in range(6):
-                            if uId[j] > 0:                               
+                            if uId[j] > 0:
                                 phaseVary.append(names[j])
                                 equivs[uId[j]].append([names[j],uCoef[j]])
                         for equiv in equivs:
@@ -1843,7 +1842,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             phaseDict.update(dict(zip(names,wave[0])))
                             if wave[1]: #what do we do here for multiple terms in modulation constraints?
                                 for j in range(len(equivs)):
-                                    if uId[j][0] > 0:                               
+                                    if uId[j][0] > 0:
                                         phaseVary.append(names[j])
                                         equivs[uId[j][0]].append([names[j],uCoef[j][0]])
                                 for equiv in equivs:
@@ -1854,7 +1853,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                             eqv[1] /= coef
                                             G2mv.StoreEquivalence(name,(eqv,))
                             maxSSwave[pfx][Stype] = max(maxSSwave[pfx][Stype],iw+1)
-                            
+
             if len(Deformations) and not General.get('doPawley'):
                 for iAt in Deformations:
                     if iAt < 0:
@@ -1869,7 +1868,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                             phaseDict[name] = orb[1][parm][0]
                             if orb[1][parm][1]:
                                 phaseVary.append(name)
-                    
+
             textureData = General['SH Texture']
             if textureData['Order']:    # and seqHistName is not None:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
@@ -1882,7 +1881,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     phaseDict[pfx+item] = textureData['SH Coeff'][1][item]
                     if textureData['SH Coeff'][0]:
                         phaseVary.append(pfx+item)
-                
+
             if Print:
                 pFile.write('\n Phase name: %s\n'%General['Name'])
                 pFile.write(135*'='+'\n')
@@ -1899,7 +1898,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     if len(SSGtable):
                         for item in SSGtable:
                             line = ' %s '%(item)
-                            pFile.write(line+'\n') 
+                            pFile.write(line+'\n')
                     else:
                         pFile.write(' ( 1)    %s\n'%(SSGtable[0]))
                 else:
@@ -1907,14 +1906,14 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     if len(SGtable):
                         for item in SGtable:
                             line = ' %s '%(item)
-                            pFile.write(line+'\n') 
+                            pFile.write(line+'\n')
                     else:
                         pFile.write(' ( 1)    %s\n'%(SGtable[0]))
                 PrintRBObjects(resRBData,vecRBData,spnRBData)
                 PrintAtoms(General,Atoms)
                 if len(Deformations):
                     PrintDeformations(General,Atoms,Deformations)
-                    
+
                 if General['Type'] == 'magnetic':
                     PrintMoments(General,Atoms)
                 if General.get('Modulated',False):
@@ -1929,7 +1928,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                 if name in RestraintDict:
                     PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
                         textureData,RestraintDict[name],pFile)
-                    
+
         elif PawleyRef:
             if Print:
                 pFile.write('\n Phase name: %s\n'%General['Name'])
@@ -1940,7 +1939,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     if len(SSGtable):
                         for item in SSGtable:
                             line = ' %s '%(item)
-                            pFile.write(line+'\n')  
+                            pFile.write(line+'\n')
                     else:
                         pFile.write(' ( 1)    %s\n'%SSGtable[0])
                 else:
@@ -1967,10 +1966,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     pawleyVary.append(pfx+'PWLref:'+str(i))
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,im,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
-                
+
     return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,EFtables,ORBtables,BLtables,MFtables,maxSSwave
-    
-def cellFill(pfx,SGData,parmDict,sigDict): 
+
+def cellFill(pfx,SGData,parmDict,sigDict):
     '''Returns the filled-out reciprocal cell (A) terms and their uncertainties
     from the parameter and sig dictionaries.
 
@@ -1979,7 +1978,7 @@ def cellFill(pfx,SGData,parmDict,sigDict):
     :param dict parmDict: a dictionary of parameters
     :param dict sigDict:  a dictionary of uncertainties on parameters
 
-    :returns: A,sigA where each is a list of six terms with the A terms 
+    :returns: A,sigA where each is a list of six terms with the A terms
     '''
     if SGData['SGLaue'] in ['-1',]:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
@@ -2034,7 +2033,7 @@ def cellFill(pfx,SGData,parmDict,sigDict):
     except KeyError:
         sigA = [0,0,0,0,0,0]
     return A,sigA
-        
+
 def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):
     '''Documents Restraint settings in .lst file
 
@@ -2046,7 +2045,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
         names = G2obj.restraintNames
         for name,rest in names:
             if name not in phaseRest:
-                continue                           
+                continue
             itemRest = phaseRest[name]
             if rest in itemRest and itemRest[rest] and itemRest['Use']:
                 pFile.write('\n %s restraint weight factor %10.3f Use: %s\n'%(name,itemRest['wtFactor'],str(itemRest['Use'])))
@@ -2091,7 +2090,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                             pFile.write(' %8.3f %8.3f %.3f %8.3f %8.3f %s\n'%(calc,obs,esd,(obs-calc)/esd,tor,AtName[:-1]))
                         else:
                             phi,psi = G2mth.getRestRama(XYZ,Amat)
-                            restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
+                            restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])
                             pFile.write(' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s\n'%(calc,obs,esd,(obs-calc)/esd,phi,psi,AtName[:-1]))
                 elif name == 'ChemComp':
                     pFile.write('     atoms   mul*frac  factor     prod\n')
@@ -2175,13 +2174,13 @@ def SummRestraints(restraintDict):
 
 def getCellEsd(pfx,SGData,A,covData,unique=False):
     '''Compute the standard uncertainty on cell parameters
-    
+
     :param str pfx: prefix of form p\\:\\:
     :param SGdata: space group information
     :param list A: Reciprocal cell Ai terms
-    :param dict covData: covariance tree item 
+    :param dict covData: covariance tree item
     :param bool unique: when True, only directly refined parameters
-      (a in cubic, a & alpha in rhombohedral cells) are assigned 
+      (a in cubic, a & alpha in rhombohedral cells) are assigned
       positive s.u. values. Used for CIF generation.
     '''
     rVsq = G2lat.calc_rVsq(A)
@@ -2216,11 +2215,11 @@ def getCellEsd(pfx,SGData,A,covData,unique=False):
         A[i] -= 2*delt
         drVdA[i] -= G2lat.calc_rVsq(A)
         A[i] += delt
-    drVdA /= 2.*delt    
+    drVdA /= 2.*delt
     srcvlsq = np.inner(drVdA,np.inner(drVdA,vcov))
     Vol = 1/np.sqrt(rVsq)
     sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
-    
+
     dcdA = np.zeros((6,6))
     for i in range(6):
         pdcdA =np.zeros(6)
@@ -2230,7 +2229,7 @@ def getCellEsd(pfx,SGData,A,covData,unique=False):
         pdcdA -= G2lat.A2cell(A)
         A[i] += delt
         dcdA[i] = pdcdA/(2.*delt)
-    
+
     sigMat = np.inner(dcdA,np.inner(dcdA,vcov))
     var = np.diag(sigMat)
     CS = np.where(var>0.,np.sqrt(var),0.)
@@ -2253,20 +2252,20 @@ def getCellEsd(pfx,SGData,A,covData,unique=False):
 
 def getCellSU(pId,hId,SGData,parmDict,covData):
     '''Compute the unit cell parameters and standard uncertainties
-    where lattice parameters and Hstrain (Dij) may be refined. This is 
-    called only for generation of CIFs. 
-    
+    where lattice parameters and Hstrain (Dij) may be refined. This is
+    called only for generation of CIFs.
+
     :param pId: phase index
     :param hId: histogram index
     :param SGdata: space group information
     :param dict parmDict: parameter dict, must have all non-zero Dij and Ai terms
-    :param dict covData: covariance tree item 
+    :param dict covData: covariance tree item
     '''
 
     Dnames = ['{}:{}:D{}'.format(pId,hId,i) for i in ['11','22','33','12','13','23']]
     Anames = ['{}::A{}'.format(pId,i) for i in range(6)]
     Ai = [parmDict[i] for i in Anames]
-    Dij = [parmDict.get(i,0.) for i in Dnames]   
+    Dij = [parmDict.get(i,0.) for i in Dnames]
     A = np.array(Ai) + np.array(Dij)
     cell = list(G2lat.A2cell(A)) + [G2lat.calc_V(A)]
     rVsq = G2lat.calc_rVsq(A)
@@ -2306,7 +2305,7 @@ def getCellSU(pId,hId,SGData,parmDict,covData):
     srcvlsq = np.inner(drVdA,np.inner(drVdA,vcov))
     Vol = 1/np.sqrt(rVsq)
     sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
-    
+
     dcdA = np.zeros((12,12))
     for i in range(12):
         pdcdA =np.zeros(12)
@@ -2338,7 +2337,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     '''Called after a refinement to transfer parameters from the parameter dict to
     the phase(s) information read from a GPX file. Also prints values to the .lst file
     '''
-    
+
     def PrintAtomsAndSig(General,Atoms,sigDict,sigKey):
         pFile.write('\n Atoms:\n')
         line = '   name      x         y         z      frac   Uiso     U11     U22     U33     U12     U13     U23'
@@ -2364,7 +2363,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 sigstr = ' sig   : '
             for ind in range(cx,cx+4):
                 sigind = str(i)+':'+str(ind)
-                valstr += fmt[ind]%(at[ind])                    
+                valstr += fmt[ind]%(at[ind])
                 # if sigind in atomsSig:
                 #    sigstr += fmt[ind]%(atomsSig[sigind])
                 # else:
@@ -2383,7 +2382,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 for ind in range(cia+2,cia+8):
                     sigind = str(i)+':'+str(ind)
                     valstr += fmt[ind]%(at[ind])
-                    # if sigind in atomsSig:                        
+                    # if sigind in atomsSig:
                     #     sigstr += fmt[ind]%(atomsSig[sigind])
                     # else:
                     #     sigstr += 8*' '
@@ -2391,7 +2390,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             pFile.write(name+'\n')
             pFile.write(valstr+'\n')
             pFile.write(sigstr+'\n')
-            
+
     def PrintMomentsAndSig(General,Atoms,atomsSig):
         cell = General['Cell'][1:7]
         G = G2lat.fillgmat(cell)
@@ -2413,7 +2412,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 sigstr = ' sig   :'
                 for ind in range(cmx,cmx+3):
                     sigind = str(i)+':'+str(ind)
-                    valstr += fmt[ind]%(at[ind])                    
+                    valstr += fmt[ind]%(at[ind])
                     if sigind in atomsSig:
                         sigstr += fmt[ind]%(atomsSig[sigind])
                     else:
@@ -2425,7 +2424,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 pFile.write(name+'\n')
                 pFile.write(valstr+'\n')
                 pFile.write(sigstr+'\n')
-                
+
     def PrintDeformationsAndSig(General,Atoms,Deformations,deformSig):
         pFile.write('\n Atom deformations:\n')
         cx,ct,cs,cia = General['AtomPtrs']
@@ -2459,7 +2458,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 pFile.write(names+'\n')
                 pFile.write(values+'\n')
                 pFile.write(sigstr+'\n')
-            
+
     def PrintWavesAndSig(General,Atoms,wavesSig):
         cx,ct,cs,cia = General['AtomPtrs']
         pFile.write('\n Modulation waves\n')
@@ -2527,30 +2526,30 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                     sigstr += '%12.4f'%(wavesSig[name+stiw])
                                 else:
                                     sigstr += 12*' '
-                                
+
                     pFile.write(namstr+'\n')
                     pFile.write(valstr+'\n')
                     pFile.write(sigstr+'\n')
-        
-                
+
+
     def PrintRBObjPOAndSig(rbfx,rbsx):
         for i in WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
             pFile.write(i+'\n')
-        
+
     def PrintRBObjTLSAndSig(rbfx,rbsx,TLS):
         for i in WriteRBObjTLSAndSig(pfx,rbfx,rbsx,TLS,parmDict,sigDict):
             pFile.write(i)
-            
+
     def PrintRBObjSHCAndSig(rbfx,SHC,rbsx):
         for i in WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
             pFile.write(i)
-        
+
     def PrintRBObjTorAndSig(rbsx):
         nTors = len(RBObj['Torsions'])
         if nTors:
             for i in WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,nTors):
                 pFile.write(i)
-                
+
     def PrintSHtextureAndSig(textureData,SHtextureSig):
         Tindx = 1.0
         Tvar = 0.0
@@ -2596,7 +2595,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
         pFile.write(' Texture index J = %.3f(%d)'%(Tindx,int(1000*np.sqrt(Tvar))))
-            
+
     ##########################################################################
     # SetPhaseData starts here
     if pFile: pFile.write('\n Phases:\n')
@@ -2671,7 +2670,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 if pFile: pFile.write(namstr+'\n')
                 if pFile: pFile.write(ptstr+'\n')
                 if pFile: pFile.write(sigstr+'\n')
-            
+
         General['Mass'] = 0.
         if Phase['General'].get('doPawley'):
             pawleyRef = Phase['Pawley ref']
@@ -2782,7 +2781,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                 AtomSS[Stype][iw+1][0][iname] = parmDict[pfx+name]
                                 if pfx+name in sigDict:
                                     wavesSig[name] = sigDict[pfx+name]
-                                    
+
             Deformations = Phase.get('Deformations',{})
             for iAt in Deformations:
                 if iAt < 0:
@@ -2803,12 +2802,12 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 PrintMomentsAndSig(General,Atoms,atomsSig)
             if pFile and General.get('Modulated',False):
                 PrintWavesAndSig(General,Atoms,wavesSig)
-                
+
             density = G2mth.getDensity(General)[0]
             if pFile: pFile.write('\n Density: {:.4f} g/cm**3\n'.format(density))
-            
-        
-        textureData = General['SH Texture']    
+
+
+        textureData = General['SH Texture']
         if textureData['Order']:
             SHtextureSig = {}
             for name in ['omega','chi','phi']:
@@ -2825,11 +2824,11 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         if phase in RestraintDict and not Phase['General'].get('doPawley'):
             PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
                 textureData,RestraintDict[phase],pFile)
-                    
+
 def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
-    '''After a refinement, sets the values for the ISODISTORT modes into 
-    the parameter and s.u. dicts. 
-    Also, in the case of a non-sequential refinement, prints them into 
+    '''After a refinement, sets the values for the ISODISTORT modes into
+    the parameter and s.u. dicts.
+    Also, in the case of a non-sequential refinement, prints them into
     the project's .lst file.
 
     :param dict parmDict: parameter dict
@@ -2842,7 +2841,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
         data = Phases[phase]
         ISO = data['ISODISTORT']
         atNames = [atom[0] for atom in data['Atoms']]
-                       
+
         if 'G2VarList' in ISO:
             deltaList = []
             notfound = []
@@ -2858,7 +2857,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                     notfound.append(var)
                     continue
                 deltaList.append(cval-pval)
-                
+
             if notfound and pFile:
                 msg = 'SetISOmodes warning: Atom parameters '
                 for i,v in enumerate(notfound):
@@ -2875,11 +2874,11 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
             elif notfound:
                 continue
             modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
-            
+
             if pFile:
                 pFile.write('\n ISODISTORT Displacive Modes for phase {}\n'.format(
                     data['General'].get('Name','')))
-                
+
             l = str(max([len(i) for i in ISO['IsoModeList']])+3)
             fmt = '  {:'+l+'}{}'
             for varid,[var,val,norm,G2mode] in enumerate(zip(
@@ -2896,7 +2895,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                     value = '?'
                 if pFile:
                     pFile.write(fmt.format(var,value)+'\n')
-                
+
         if 'G2OccVarList' in ISO:       #untested - probably wrong
             deltaOccList = []
             notfound = []
@@ -2910,7 +2909,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                     notfound.append(var)
                     continue
                 deltaOccList.append(cval-pval)
-            
+
             if notfound and pFile:
                 msg = 'SetISOmodes warning: Atom parameters '
                 for i,v in enumerate(notfound):
@@ -2927,7 +2926,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
             elif notfound:
                 continue
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
-            
+
             if pFile:
                 pFile.write('\n ISODISTORT Occupancy Modes for phase {}\n'.format(data['General'].get('Name','')))
             l = str(max([len(i) for i in ISO['OccModeList']])+3)
@@ -2942,11 +2941,11 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                     value = '?'
                 if pFile:
                     pFile.write(fmt.format(var,value)+'\n')
-    
+
 ################################################################################
 ##### Histogram & Phase data
-################################################################################        
-                    
+################################################################################
+
 def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,resetRefList=True):
     '''Loads the HAP histogram/phase information into dicts
 
@@ -2962,7 +2961,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
       * hapDict: dict with refined variables and their values
       * controlDict: dict with fixed parameters
     '''
-    
+
     def PrintSize(hapData):
         if hapData[0] in ['isotropic','uniaxial']:
             line = '\n Size model    : %9s'%(hapData[0])
@@ -2985,7 +2984,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
             pFile.write(ptlbls+'\n')
             pFile.write(ptstr+'\n')
             pFile.write(varstr+'\n')
-        
+
     def PrintMuStrain(hapData,SGData):
         if hapData[0] in ['isotropic','uniaxial']:
             line = '\n Mustrain model: %9s'%(hapData[0])
@@ -3029,10 +3028,10 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
         ptstr =  ' values:'
         for item in hapData[5]:
             ptlbls += '%12s'%(item)
-            ptstr += '%12.3f'%(hapData[5][item]) 
+            ptstr += '%12.3f'%(hapData[5][item])
         pFile.write(ptlbls+'\n')
         pFile.write(ptstr+'\n')
-    
+
     def PrintBabinet(hapData):
         pFile.write('\n Babinet form factor modification:\n')
         ptlbls = ' names :'
@@ -3045,11 +3044,11 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
         pFile.write(ptlbls+'\n')
         pFile.write(ptstr+'\n')
         pFile.write(varstr+'\n')
-        
+
     hapDict = {}
     hapVary = []
     controlDict = {}
-    
+
     for phase in Phases:
         HistoPhase = Phases[phase]['Histograms']
         SGData = Phases[phase]['General']['SGData']
@@ -3070,7 +3069,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
         for histogram in histoList:
             try:
                 Histogram = Histograms[histogram]
-            except KeyError:                        
+            except KeyError:
                 #skip if histogram not included e.g. in a sequential refinement
                 continue
             try:
@@ -3185,12 +3184,12 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                             hapDict[pfx+bab] = hapData['Babinet'][bab][0]
                             if hapData['Babinet'][bab][1]:      # and not hapDict[pfx+'LeBail']:
                                 hapVary.append(pfx+bab)
-                                
-                if Print: 
+
+                if Print:
                     pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
                     pFile.write(135*'='+'\n')
                     if hapDict.get(pfx+'LeBail'):
-                        pFile.write(' Perform LeBail extraction\n')                     
+                        pFile.write(' Perform LeBail extraction\n')
                     elif 'E' not in inst['Type'][0]:
                         pFile.write(' Phase fraction  : %10.4g Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
                         pFile.write(' Extinction coeff: %10.4f Refine? %s\n'%(hapData['Extinction'][0],hapData['Extinction'][1]))
@@ -3288,7 +3287,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                 hapDict[pfx+'Scale'] = hapData['Scale'][0]
                 if hapData['Scale'][1]:
                     hapVary.append(pfx+'Scale')
-                                
+
                 extApprox,extType,extParms = hapData['Extinction']
                 controlDict[pfx+'EType'] = extType
                 controlDict[pfx+'EApprox'] = extApprox
@@ -3322,7 +3321,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                 sumTwFr = 0.
                 controlDict[pfx+'TwinLaw'] = []
                 controlDict[pfx+'TwinInv'] = []
-                NTL = 0            
+                NTL = 0
                 for it,twin in enumerate(Twins):
                     if 'bool' in str(type(twin[0])):
                         controlDict[pfx+'TwinInv'].append(twin[0])
@@ -3344,7 +3343,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                 controlDict[pfx+'TwinLaw'] = np.array(controlDict[pfx+'TwinLaw'])
                 if len(Twins) > 1:    #force sum to unity
                     hapDict[pfx+'TwinFr:0'] = 1.-sumTwFr
-                if Print: 
+                if Print:
                     pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
                     pFile.write(135*'='+'\n')
                     pFile.write(' Scale factor     : %10.4g Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
@@ -3367,16 +3366,16 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                             else:
                                 pFile.write(' Twin law: %s Twin fr.: %5.3f Refine? %s\n'%
                                     (str(twin[0]).replace('\n',','),hapDict[pfx+'TwinFr:'+str(it)],str(Twins[0][1][1])))
-                        
-                Histogram['Reflection Lists'] = phase       
-                
+
+                Histogram['Reflection Lists'] = phase
+
     return hapVary,hapDict,controlDict
-    
+
 def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=True,pFile=None,
                               covMatrix=[],varyList=[]):
     '''Updates parmDict with HAP results from refinement and prints a summary if Print is True
     '''
-    
+
     def PrintSizeAndSig(hapData,sizeSig):
         line = '\n Size model:     %9s'%(hapData[0])
         refine = False
@@ -3418,7 +3417,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                 pFile.write(ptlbls+'\n')
                 pFile.write(ptstr+'\n')
                 pFile.write(sigstr+'\n')
-        
+
     def PrintMuStrainAndSig(hapData,mustrainSig,SGData):
         line = '\n Mustrain model: %9s\n'%(hapData[0])
         refine = False
@@ -3459,7 +3458,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                 pFile.write(ptlbls+'\n')
                 pFile.write(ptstr+'\n')
                 pFile.write(sigstr+'\n')
-            
+
     def PrintHStrainAndSig(hapData,strainSig,SGData):
         Hsnames = G2spc.HStrainNames(SGData)
         ptlbls = ' name  :'
@@ -3479,7 +3478,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
             pFile.write(ptlbls+'\n')
             pFile.write(ptstr+'\n')
             pFile.write(sigstr+'\n')
-        
+
     def PrintSHPOAndSig(pfx,hapData,POsig):
         Tindx = 1.0
         Tvar = 0.0
@@ -3496,12 +3495,12 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                 Tvar += (2.*hapData[5][item]*POsig[pfx+item]/l)**2
                 sigstr += '%12.3f'%(POsig[pfx+item])
             else:
-                sigstr += 12*' ' 
+                sigstr += 12*' '
         pFile.write(ptlbls+'\n')
         pFile.write(ptstr+'\n')
         pFile.write(sigstr+'\n')
         pFile.write('\n Texture index J = %.3f(%d)\n'%(Tindx,int(1000*np.sqrt(Tvar))))
-        
+
     def PrintExtAndSig(pfx,hapData,ScalExtSig):
         pFile.write('\n Single crystal extinction: Type: %s Approx: %s\n'%(hapData[0],hapData[1]))
         text = ''
@@ -3511,8 +3510,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                 text += '%12.2e'%(hapData[2][item][0])
                 if pfx+item in ScalExtSig:
                     text += ' sig: %12.2e'%(ScalExtSig[pfx+item])
-        pFile.write(text+'\n')    
-        
+        pFile.write(text+'\n')
+
     def PrintBabinetAndSig(pfx,hapData,BabSig):
         pFile.write('\n Babinet form factor modification:\n')
         ptlbls = ' names :'
@@ -3524,11 +3523,11 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
             if pfx+item in BabSig:
                 sigstr += '%12.3f'%(BabSig[pfx+item])
             else:
-                sigstr += 12*' ' 
+                sigstr += 12*' '
         pFile.write(ptlbls+'\n')
         pFile.write(ptstr+'\n')
         pFile.write(sigstr+'\n')
-        
+
     def PrintTwinsAndSig(pfx,twinData,TwinSig):
         pFile.write('\n Twin Law fractions :\n')
         ptlbls = ' names :'
@@ -3543,11 +3542,11 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
             if pfx+'TwinFr:'+str(it) in TwinSig:
                 sigstr += '%12.3f'%(TwinSig[pfx+'TwinFr:'+str(it)])
             else:
-                sigstr += 12*' ' 
+                sigstr += 12*' '
         pFile.write(ptlbls+'\n')
         pFile.write(ptstr+'\n')
         pFile.write(sigstr+'\n')
-        
+
     # global PhFrExtPOSig # this is not used externally anymore. Remove?
     PhFrExtPOSig = {}
     SizeMuStrSig = {}
@@ -3565,7 +3564,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
         for histogram in histoList:
             try:
                 Histogram = Histograms[histogram]
-            except KeyError:                        
+            except KeyError:
                 #skip if histogram not included e.g. in a sequential refinement
                 continue
             if not Phases[phase]['Histograms'][histogram]['Use']:
@@ -3594,22 +3593,22 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                             if pfx+item in sigDict and not parmDict.get(pfx+'LeBail'):
                                 PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
                 SizeMuStrSig.update({pfx+'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
-                    pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],pfx+'HStrain':{}})                  
+                    pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],pfx+'HStrain':{}})
                 for item in ['Mustrain','Size']:
                     hapData[item][1][2] = parmDict[pfx+item+';mx']
 #                    hapData[item][1][2] = min(1.,max(0.,hapData[item][1][2]))
                     if pfx+item+';mx' in sigDict:
                         SizeMuStrSig[pfx+item][0][2] = sigDict[pfx+item+';mx']
-                    if hapData[item][0] in ['isotropic','uniaxial']:                    
+                    if hapData[item][0] in ['isotropic','uniaxial']:
                         hapData[item][1][0] = parmDict[pfx+item+';i']
                         if item == 'Size':
                             hapData[item][1][0] = min(10.,max(0.001,hapData[item][1][0]))
-                        if pfx+item+';i' in sigDict: 
+                        if pfx+item+';i' in sigDict:
                             SizeMuStrSig[pfx+item][0][0] = sigDict[pfx+item+';i']
                         if hapData[item][0] == 'uniaxial':
                             hapData[item][1][1] = parmDict[pfx+item+';a']
                             if item == 'Size':
-                                hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))                        
+                                hapData[item][1][1] = min(10.,max(0.001,hapData[item][1][1]))
                             if pfx+item+';a' in sigDict:
                                 SizeMuStrSig[pfx+item][0][1] = sigDict[pfx+item+';a']
                     else:       #generalized for mustrain or ellipsoidal for size
@@ -3619,7 +3618,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                             hapData[item][4][i] = parmDict[pfx+item+sfx]
                             if pfx+item+sfx in sigDict:
                                 SizeMuStrSig[pfx+item][1][i] = sigDict[pfx+item+sfx]
-                SizeMuStrSig.update({pfx+'HStrain':{}})                  
+                SizeMuStrSig.update({pfx+'HStrain':{}})
                 names = G2spc.HStrainNames(SGData)
                 for i,name in enumerate(names):
                     hapData['HStrain'][0][i] = parmDict[pfx+name]
@@ -3633,8 +3632,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                     for name in ['BabA','BabU']:
                         hapData['Babinet'][name][0] = parmDict[pfx+name]
                         if pfx+name in sigDict and not parmDict.get(pfx+'LeBail'):
-                            BabSig[pfx+name] = sigDict[pfx+name]                
-                
+                            BabSig[pfx+name] = sigDict[pfx+name]
+
             elif 'HKLF' in histogram:
                 for item in ['Scale','Flack']:
                     if parmDict.get(pfx+item):
@@ -3686,7 +3685,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
             for histogram in histoList:
                 try:
                     Histogram = Histograms[histogram]
-                except KeyError:                        
+                except KeyError:
                     #skip if histogram not included e.g. in a sequential refinement
                     continue
                 hapData = HistoPhase[histogram]
@@ -3704,7 +3703,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                         (Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref']))
                     pFile.write(' Durbin-Watson statistic = %.3f\n'%(Histogram['Residuals']['Durbin-Watson']))
                     pFile.write(' Bragg intensity sum = %.3g\n'%(Histogram['Residuals'][pfx+'sumInt']))
-                    
+
                     if parmDict.get(pfx+'LeBail') or 'E' in Inst['Type'][0]:
                         pFile.write(' Performed LeBail extraction for phase %s in histogram %s\n'%(phase,histogram))
                     elif 'E' not in Inst['Type'][0]:
@@ -3725,11 +3724,11 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                     PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
                     PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
                     if pfx+'LayerDisp' in SizeMuStrSig:
-                        pFile.write(' Layer displacement : %10.3f, sig %10.3f\n'%(hapData['Layer Disp'][0],SizeMuStrSig[pfx+'LayerDisp']))            
+                        pFile.write(' Layer displacement : %10.3f, sig %10.3f\n'%(hapData['Layer Disp'][0],SizeMuStrSig[pfx+'LayerDisp']))
                     if Phases[phase]['General']['Type'] != 'magnetic' and not parmDict.get(pfx+'LeBail') and 'E' not in Inst['Type'][0]:
                         if len(BabSig):
                             PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
-                    
+
                 elif 'HKLF' in histogram:
                     pFile.write(' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections (%d user rejected, %d sp.gp.extinct)\n'%
                         (Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'],
@@ -3753,11 +3752,11 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
 
 ################################################################################
 ##### Histogram data
-################################################################################        
-                    
+################################################################################
+
 def GetHistogramData(Histograms,Print=True,pFile=None):
     'needs a doc string'
-    
+
     def GetBackgroundParms(hId,Background):
         Back = Background[0]
         DebyePeaks = Background[1]
@@ -3803,8 +3802,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                     backVary.append(':'+str(hId)+':BF mult')
             except IndexError:  # old version without refine flag
                 pass
-        return bakType,backDict,backVary            
-        
+        return bakType,backDict,backVary
+
     def GetInstParms(hId,Inst):
         #patch
         dataType = Inst['Type'][0]
@@ -3837,10 +3836,10 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         elif 'E' in dataType:
             pass
         return dataType,instDict,insVary
-        
+
     def GetSampleParms(hId,Sample):
         sampVary = []
-        hfx = ':'+str(hId)+':'        
+        hfx = ':'+str(hId)+':'
         sampDict = {hfx+'Gonio. radius':Sample['Gonio. radius'],hfx+'Omega':Sample['Omega'],
             hfx+'Chi':Sample['Chi'],hfx+'Phi':Sample['Phi'],hfx+'Azimuth':Sample['Azimuth']}
         for key in ('Temperature','Pressure','FreePrm1','FreePrm2','FreePrm3'):
@@ -3858,7 +3857,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 if Sample[item][1]:
                     sampVary.append(hfx+item)
         return Type,sampDict,sampVary
-        
+
     def PrintBackground(Background):
         Back = Background[0]
         DebyePeaks = Background[1]
@@ -3879,7 +3878,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             for j,term in enumerate(DebyePeaks['debyeTerms']):
                 line = ' term'+'%2d'%(j)+':'
                 for i in range(3):
-                    line += '%10.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
+                    line += '%10.3f %5s'%(term[2*i],bool(term[2*i+1]))
                 pFile.write(line+'\n')
         if DebyePeaks['nPeaks']:
             pFile.write('\n Single peak coefficients\n')
@@ -3891,7 +3890,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             for j,term in enumerate(DebyePeaks['peaksList']):
                 line = ' peak'+'%2d'%(j)+':'
                 for i in range(4):
-                    line += '%12.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
+                    line += '%12.3f %5s'%(term[2*i],bool(term[2*i+1]))
                 pFile.write(line+'\n')
         if 'background PWDR' in DebyePeaks:
             try:
@@ -3899,7 +3898,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                     DebyePeaks['background PWDR'][1],DebyePeaks['background PWDR'][2]))
             except IndexError:  #old version without refine flag
                 pass
-        
+
     def PrintInstParms(Inst):
         pFile.write('\n Instrument Parameters:\n')
         insKeys = [item for item in Inst.keys() if item not in ['Type','Source','Bank']]
@@ -3926,7 +3925,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 Ok = False
             else:
                 pFile.write('\n')
-        
+
     def PrintSampleParms(Sample):
         pFile.write('\n Sample Parameters:\n')
         pFile.write(' Goniometer omega = %.2f, chi = %.2f, phi = %.2f\n'%
@@ -3939,7 +3938,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 ptlbls += '%14s'%(item)
                 ptstr += '%14.4f'%(Sample[item][0])
                 varstr += '%14s'%(str(bool(Sample[item][1])))
-            
+
         elif 'Debye' in Type:        #Debye-Scherrer
             for item in ['Scale','Absorption','DisplaceX','DisplaceY']:
                 ptlbls += '%14s'%(item)
@@ -3949,7 +3948,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         pFile.write(ptlbls+'\n')
         pFile.write(ptstr+'\n')
         pFile.write(varstr+'\n')
-        
+
     histDict = {}
     histVary = []
     controlDict = {}
@@ -3972,7 +3971,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             controlDict[pfx+'bakType'] = Type
             histDict.update(bakDict)
             histVary += bakVary
-            
+
             Inst = Histogram['Instrument Parameters']        #TODO ? ignores tabulated alp,bet & delt for TOF
             if 'T' in Type and len(Inst[1]):    #patch -  back-to-back exponential contribution to TOF line shape is removed
                 G2fil.G2Print ('Warning: tabulated profile coefficients are ignored')
@@ -3982,18 +3981,18 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 if pfx+'Lam1' in instDict:
                     controlDict[pfx+'keV'] = G2mth.wavekE(instDict[pfx+'Lam1'])
                 else:
-                    controlDict[pfx+'keV'] = G2mth.wavekE(instDict[pfx+'Lam'])            
+                    controlDict[pfx+'keV'] = G2mth.wavekE(instDict[pfx+'Lam'])
             histDict.update(instDict)
             histVary += insVary
-            
+
             Sample = Histogram['Sample Parameters']
             Type,sampDict,sampVary = GetSampleParms(hId,Sample)
             controlDict[pfx+'instType'] = Type
             histDict.update(sampDict)
             histVary += sampVary
-            
-    
-            if Print: 
+
+
+            if Print:
                 pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
                 pFile.write(135*'='+'\n')
                 Units = {'C':' deg','T':' msec','B':' deg','E':'keV','A':' deg'}
@@ -4004,7 +4003,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 if len(controlDict[pfx+'Exclude']):
                     excls = controlDict[pfx+'Exclude']
                     for excl in excls:
-                        pFile.write(' Excluded region:  %8.2f%s to %8.2f%s\n'%(excl[0],units,excl[1],units)) 
+                        pFile.write(' Excluded region:  %8.2f%s to %8.2f%s\n'%(excl[0],units,excl[1],units))
                 PrintSampleParms(Sample)
                 PrintInstParms(Inst[0])
                 PrintBackground(Background)
@@ -4020,13 +4019,13 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 controlDict[pfx+'keV'] = G2mth.wavekE(histDict[pfx+'Lam'])
             elif 'SEC' in Inst['Type'][1]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
-            elif 'NC' in Inst['Type'][1] or 'NB' in Inst['Type'][1]:                   
+            elif 'NC' in Inst['Type'][1] or 'NB' in Inst['Type'][1]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
     return histVary,histDict,controlDict
-    
+
 def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=None,seq=False):
     'Shows histogram data after a refinement'
-    
+
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
         Back = Background[0]
         DebyePeaks = Background[1]
@@ -4042,7 +4041,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
                 for j,name in enumerate(names):
                     DebyePeaks['debyeTerms'][i][2*j] = parmDict[name]
                     if name in sigDict:
-                        backSig[lenBack+3*i+j] = sigDict[name]            
+                        backSig[lenBack+3*i+j] = sigDict[name]
         if DebyePeaks['nPeaks']:
             for i in range(DebyePeaks['nPeaks']):
                 names = [pfx+'BkPkpos;'+str(i),pfx+'BkPkint;'+str(i),
@@ -4054,9 +4053,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
         if pfx+'BF mult' in sigDict:
             DebyePeaks['background PWDR'][1] = parmDict[pfx+'BF mult']
             backSig.append(sigDict[pfx+'BF mult'])
-                
+
         return backSig
-        
+
     def SetInstParms(pfx,Inst,parmDict,sigDict):
         instSig = {}
         insKeys = list(Inst.keys())
@@ -4069,7 +4068,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             else:
                 instSig[item] = 0
         return instSig
-        
+
     def SetSampleParms(pfx,Sample,parmDict,sigDict):
         if 'Bragg' in Sample['Type']:             #Bragg-Brentano
             sampSig = [0 for i in range(5)]
@@ -4084,7 +4083,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
                 if pfx+item in sigDict:
                     sampSig[i] = sigDict[pfx+item]
         return sampSig
-        
+
     def PrintBackgroundSig(Background,backSig):
         Back = Background[0]
         DebyePeaks = Background[1]
@@ -4148,7 +4147,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
         sumBk = np.array(Histogram['sumBk'])
         pFile.write(' Background sums: empirical %.3g, Debye %.3g, peaks %.3g, Total %.3g\n'%
             (sumBk[0],sumBk[1],sumBk[2],np.sum(sumBk)))
-        
+
     def PrintInstParmsSig(Inst,instSig):
         refine = False
         insKeys = [item for item in instSig.keys() if item not in ['Type','Lam1','Lam2','Azimuth','Source','fltPath','Bank']]
@@ -4176,7 +4175,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             iBeg = iFin
             if iBeg == len(insKeys):
                 Ok = False
-        
+
     def PrintSampleParmsSig(Sample,sampleSig):
         ptlbls = ' names :'
         ptstr =  ' values:'
@@ -4191,7 +4190,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
                     sigstr += '%14.4f'%(sampleSig[i])
                 else:
                     sigstr += 14*' '
-            
+
         elif 'Debye' in Sample['Type']:        #Debye-Scherrer
             for i,item in enumerate(['Scale','Absorption','DisplaceX','DisplaceY']):
                 ptlbls += '%14s'%(item)
@@ -4207,7 +4206,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             pFile.write(ptlbls+'\n')
             pFile.write(ptstr+'\n')
             pFile.write(sigstr+'\n')
-        
+
     histoList = list(Histograms.keys())
     histoList.sort()
     for histogram in histoList:
@@ -4217,10 +4216,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
             pfx = ':'+str(hId)+':'
             Background = Histogram['Background']
             backSig = SetBackgroundParms(pfx,Background,parmDict,sigDict)
-            
+
             Inst = Histogram['Instrument Parameters'][0]
             instSig = SetInstParms(pfx,Inst,parmDict,sigDict)
-        
+
             Sample = Histogram['Sample Parameters']
             parmDict[pfx+'Scale'] = max(1.e-12,parmDict[pfx+'Scale'])                        #put floor on phase fraction scale
             sampSig = SetSampleParms(pfx,Sample,parmDict,sigDict)
@@ -4243,9 +4242,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=N
                 PrintSampleParmsSig(Sample,sampSig)
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)
-                
+
 def WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
-    '''Cribbed version of PrintRBObjPOAndSig but returns lists of strings. 
+    '''Cribbed version of PrintRBObjPOAndSig but returns lists of strings.
     Moved so it can be used in ExportCIF
     '''
     namstr = '  names :'
@@ -4280,7 +4279,7 @@ def WriteRBObjPOAndSig(pfx,rbfx,rbsx,parmDict,sigDict):
     return (namstr,valstr,sigstr)
 
 def WriteRBObjTLSAndSig(pfx,rbfx,rbsx,TLS,parmDict,sigDict):
-    '''Cribbed version of PrintRBObjTLSAndSig but returns lists of strings. 
+    '''Cribbed version of PrintRBObjTLSAndSig but returns lists of strings.
     Moved so it can be used in ExportCIF
     '''
     out = []
@@ -4345,7 +4344,7 @@ def WriteRBObjTLSAndSig(pfx,rbfx,rbsx,TLS,parmDict,sigDict):
     return out
 
 def WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,nTors):
-    '''Cribbed version of PrintRBObjTorAndSig but returns lists of strings. 
+    '''Cribbed version of PrintRBObjTorAndSig but returns lists of strings.
     Moved so it can be used in ExportCIF
     '''
     out = []
@@ -4367,7 +4366,7 @@ def WriteRBObjTorAndSig(pfx,rbsx,parmDict,sigDict,nTors):
     return out
 
 def WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
-    '''Cribbed version of PrintRBObjTorAndSig but returns lists of strings. 
+    '''Cribbed version of PrintRBObjTorAndSig but returns lists of strings.
     Moved so it can be used in ExportCIF
     '''
     out = []
@@ -4399,7 +4398,7 @@ def WriteRBObjSHCAndSig(pfx,rbfx,rbsx,parmDict,sigDict,SHC):
     return out
 
 def WriteResRBModel(RBModel):
-    '''Write description of a residue rigid body. Code shifted from 
+    '''Write description of a residue rigid body. Code shifted from
     PrintResRBModel to make usable from G2export_CIF
     '''
     out = []
@@ -4418,7 +4417,7 @@ def WriteResRBModel(RBModel):
     return out
 
 def WriteVecRBModel(RBModel,sigDict={},irb=None):
-    '''Write description of a vector rigid body. Code shifted from 
+    '''Write description of a vector rigid body. Code shifted from
     PrintVecRBModel to make usable from G2export_CIF
     '''
     out = []
@@ -4443,8 +4442,8 @@ def WriteVecRBModel(RBModel,sigDict={},irb=None):
 atmPattrn = re.compile("::A[xyz]:")
 fmtSplit =  re.compile('%([0-9]+)\\.([0-9]+)(.*)')
 def fmtESD(varname,SigDict,fmtcode,ndig=None,ndec=None):
-    '''Format an uncertainty value as requested, but surround the 
-    number by () if the parameter is set by an equivalence 
+    '''Format an uncertainty value as requested, but surround the
+    number by () if the parameter is set by an equivalence
     or by [] if the parameter is set by an constraint
 
     :param str fmtcode: can be a single letter such as 'g' or 'f',

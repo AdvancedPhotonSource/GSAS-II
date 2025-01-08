@@ -474,7 +474,7 @@ def FitHKL(ibrav,peaks,A,Pwr):
     
     Peaks = np.array(peaks).T
     values = A2values(ibrav,A)
-    result = so.leastsq(errFit,values,Dfun=dervFit,full_output=True,ftol=0.000001,
+    result = so.leastsq(errFit,values,Dfun=dervFit,full_output=True,maxfev=2,
         args=(ibrav,Peaks[7],Peaks[4:7],Pwr))
     A = Values2A(ibrav,result[0])
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A,result

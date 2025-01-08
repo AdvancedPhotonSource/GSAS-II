@@ -7680,10 +7680,13 @@ G2TutURL = "https://advancedphotonsource.github.io/GSAS-II-tutorials/"
 tutorialCatalog = [l for l in tutorialIndex if len(l) >= 3]
 # A catalog of GSAS-II tutorials generated from the table in :data:`tutorialIndex`
 def OpenTutorial(parent):
-    if GSASIIpath.HowIsG2Installed().startswith('git'):
+    how_install = GSASIIpath.HowIsG2Installed()
+    if how_install.startswith('git'):
         return OpenGitTutorial(parent)
-    else:
+    elif how_install == 'svn':
         return OpenSvnTutorial(parent)
+    else:
+        return OpenGitTutorial(parent)
 
 class OpenSvnTutorial(wx.Dialog):
     '''Open a tutorial web page, optionally copying the web page, screen images and

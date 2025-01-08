@@ -18,7 +18,7 @@ try:
     import wx.lib.scrolledpanel as wxscroll
     import wx.lib.resizewidget as rw
     interactive = True
-    import GSASIIctrlGUI as G2G
+    from . import GSASIIctrlGUI as G2G
 except ImportError:
     # Avoid wx dependency for Scriptable
     class Placeholder(object):

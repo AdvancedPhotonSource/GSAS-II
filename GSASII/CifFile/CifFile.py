@@ -13,7 +13,7 @@ except ImportError:
 try:
     from urllib import urlopen         # for arbitrary opening
     from urlparse import urlparse, urlunparse,urljoin
-except:
+except ImportError:
     from urllib.request import urlopen
     from urllib.parse import urlparse,urlunparse,urljoin
 
@@ -23,7 +23,7 @@ except:
 
 if isinstance(u"abc",str):   #Python3
     unicode = str
-    
+
 __copyright = """
 PYCIFRW License Agreement (Python License, Version 2)
 -----------------------------------------------------
@@ -306,10 +306,10 @@ class CifDic(StarFile.StarFile):
         self.install_validation_functions()
 
     def dic_determine(self):
-        if "on_this_dictionary" in self: 
+        if "on_this_dictionary" in self:
             self.master_block = super(CifDic,self).__getitem__("on_this_dictionary")
             self.def_id_spec = "_name"
-            self.cat_id_spec = "_category.id"   #we add this ourselves 
+            self.cat_id_spec = "_category.id"   #we add this ourselves
             self.type_spec = "_type"
             self.enum_spec = "_enumeration"
             self.cat_spec = "_category"
@@ -330,7 +330,7 @@ class CifDic(StarFile.StarFile):
             version = super(CifDic,self).__getitem__("on_this_dictionary")["_dictionary_version"]
             return (name+version,"DDL1")
         elif len(self.get_roots()) == 1:              # DDL2/DDLm
-            self.master_block = super(CifDic,self).__getitem__(self.get_roots()[0][0])      
+            self.master_block = super(CifDic,self).__getitem__(self.get_roots()[0][0])
             # now change to dictionary scoping
             self.scoping = 'dictionary'
             name = self.master_block["_dictionary.title"]
@@ -343,7 +343,7 @@ class CifDic(StarFile.StarFile):
                 self.primitive_type = '_type.contents'
                 self.cat_id_spec = "_definition.id"
                 self.def_id_spec = "_definition.id"
-                return(name+version,"DDLm") 
+                return(name+version,"DDLm")
             else:   #DDL2
                 self.cat_id_spec = "_category.id"
                 self.def_id_spec = "_item.name"
@@ -375,7 +375,7 @@ class CifDic(StarFile.StarFile):
         base_types = ["char","numb","null"]
         prim_types = base_types[:]
         base_constructs = [".*",
-            '(-?(([0-9]*[.][0-9]+)|([0-9]+)[.]?)([(][0-9]+[)])?([eEdD][+-]?[0-9]+)?)|\?|\.',
+            r'(-?(([0-9]*[.][0-9]+)|([0-9]+)[.]?)([(][0-9]+[)])?([eEdD][+-]?[0-9]+)?)|\?|\.',
             "\"\" "]
         for key,value in self.items():
            newnames = [key]  #keep by default
@@ -613,7 +613,7 @@ class CifDic(StarFile.StarFile):
           for alias in my_aliases:
               self[alias] = self[aliased].copy()   #we are going to delete stuff...
               del self[alias]["_item_aliases.alias_name"]
- 
+
     def ddlm_parse_valid(self):
         if "_dictionary_valid.application" not in self.master_block:
             return
@@ -624,7 +624,7 @@ class CifDic(StarFile.StarFile):
                 self.scopes_mandatory[scope[0]] = self.expand_category_opt(valid_info)
             elif scope[1] == "Prohibited":
                 self.scopes_naughty[scope[0]] = self.expand_category_opt(valid_info)
-                
+
     def ddlm_import(self,import_mode='All'):
         import_frames = list([(a,self[a]['_import.get']) for a in self.keys() if '_import.get' in self[a]])
         print ('Import mode %s applied to following frames' % import_mode)
@@ -734,7 +734,7 @@ class CifDic(StarFile.StarFile):
             dodgy = [a for a in def_names if def_names.count(a)>1]
             raise CifError('Duplicate definitions in dictionary:' + repr(dodgy))
         self.block_id_table = dict([(a[0].lower(),a[1].lower()) for a in proto_table if a[1].lower() not in top_blocks])
-        
+
     def __getitem__(self,key):
         """Access a datablock by definition id, after the lookup has been created"""
         try:
@@ -763,7 +763,7 @@ class CifDic(StarFile.StarFile):
             return
         # fix other datastructures
         # cat_obj table
-        
+
     def keys(self):
         """Return all definitions"""
         try:
@@ -779,7 +779,7 @@ class CifDic(StarFile.StarFile):
             return key.lower() in self.block_id_table
         except AttributeError:
             return super(CifDic,self).__contains__(key)
-            
+
     def items(self):
         """Return (key,value) pairs"""
         return list([(a,self[a]) for a in self.keys()])
@@ -798,7 +798,7 @@ class CifDic(StarFile.StarFile):
         """Change a _definition.id from oldname to newname, and if `blockname_as_well` is True,
         change the underlying blockname too."""
         if blockname_as_well:
-            super(CifDic,self).rename(self.block_id_table[oldname.lower()],newname)        
+            super(CifDic,self).rename(self.block_id_table[oldname.lower()],newname)
             self.block_id_table[newname.lower()]=newname
             if oldname.lower() in self.block_id_table: #not removed
                del self.block_id_table[oldname.lower()]
@@ -806,7 +806,7 @@ class CifDic(StarFile.StarFile):
             self.block_id_table[newname.lower()]=self.block_id_table[oldname.lower()]
             del self.block_id_table[oldname.lower()]
             return
-                                                 
+
     def get_root_category(self):
         """Get the single 'Head' category of this dictionary"""
         root_cats = [r for r in self.keys() if self[r].get('_definition.class','Datum')=='Head']
@@ -818,7 +818,7 @@ class CifDic(StarFile.StarFile):
         """Return a list of datanames for the immediate children of catname.  These are
         semantic children (i.e. based on _name.category_id), not structural children as
         in the case of StarFile.get_immediate_children"""
-                                                 
+
         straight_children = [a for a in self.keys() if self[a].get('_name.category_id','').lower() == catname.lower()]
         return list(straight_children)
 
@@ -875,7 +875,7 @@ class CifDic(StarFile.StarFile):
         else:
             return list([self[a]["_name.object_id"] for a in names])
 
-                           
+
 
     def create_alias_table(self):
         """Populate an alias table that we can look up when searching for a dataname"""
@@ -886,7 +886,7 @@ class CifDic(StarFile.StarFile):
         """Populate a table indexed by (cat,obj) and returning the correct dataname"""
         base_table = dict([((self[a].get('_name.category_id','').lower(),self[a].get('_name.object_id','').lower()),[self[a].get('_definition.id','')]) \
                            for a in self.keys() if self[a].get('_definition.scope','Item')=='Item'])
-        loopable = self.get_loopable_cats() 
+        loopable = self.get_loopable_cats()
         loopers = [self.ddlm_immediate_children(a) for a in loopable]
         print('Loopable cats:' + repr(loopable))
         loop_children = [[b for b in a if b.lower() in loopable ] for a in loopers]
@@ -1140,7 +1140,7 @@ class CifDic(StarFile.StarFile):
         self[fullname]['_name.category_id']=catparent
         self[fullname]['_definition.class']='Datum'
         self[fullname]['_description.text']=def_text
-        
+
     def remove_definition(self,defname):
         """Remove a definition from the dictionary."""
         if defname not in self:
@@ -1236,7 +1236,7 @@ class CifDic(StarFile.StarFile):
 
     def get_number_with_esd(numstring):
         import string
-        numb_re = '((-?(([0-9]*[.]([0-9]+))|([0-9]+)[.]?))([(][0-9]+[)])?([eEdD][+-]?[0-9]+)?)|(\?)|(\.)'
+        numb_re = r'((-?(([0-9]*[.]([0-9]+))|([0-9]+)[.]?))([(][0-9]+[)])?([eEdD][+-]?[0-9]+)?)|(\?)|(\.)'
         our_match = re.match(numb_re,numstring)
         if our_match:
             a,base_num,b,c,dad,dbd,esd,exp,q,dot = our_match.groups()
@@ -1932,7 +1932,7 @@ class CifDic(StarFile.StarFile):
 
     def validate_loop_key(self,loop_names):
         category = self[loop_names[0]][self.cat_spec]
-        # find any unique values which must be present 
+        # find any unique values which must be present
         key_spec = self[category].get(self.key_spec,[])
         for names_to_check in key_spec:
             if isinstance(names_to_check,unicode):   #only one
@@ -2755,7 +2755,7 @@ def run_data_checks(check_block,fulldic,block_scope='Item'):
 
 def get_number_with_esd(numstring):
     import string
-    numb_re = '((-?(([0-9]*[.]([0-9]+))|([0-9]+)[.]?))([(][0-9]+[)])?([eEdD][+-]?[0-9]+)?)|(\?)|(\.)'
+    numb_re = r'((-?(([0-9]*[.]([0-9]+))|([0-9]+)[.]?))([(][0-9]+[)])?([eEdD][+-]?[0-9]+)?)|(\?)|(\.)'
     our_match = re.match(numb_re,numstring)
     if our_match:
         a,base_num,b,c,dad,dbd,esd,exp,q,dot = our_match.groups()
@@ -2992,4 +2992,3 @@ class CifLoopBlock(StarFile.LoopBlock):
         super(CifLoopBlock,self).__init__(data,**kwargs)
 
 #No documentation flags
-

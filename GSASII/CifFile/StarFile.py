@@ -73,7 +73,7 @@ except ImportError:
 
 if isinstance(u"abc",str):   #Python 3
     unicode = str
-    
+
 try:
     import numpy
     have_numpy = True
@@ -406,12 +406,12 @@ class StarBlock(object):
         import sys
         self.characterset = characterset
         if characterset == 'ascii':
-            self.char_check = re.compile("[][ \n\r\t!%&\(\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\|~\"#$';_-]+",re.M)
+            self.char_check = re.compile("[][ \n\r\t!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~\"#$';_-]+",re.M)
         elif characterset == 'unicode':
             if sys.maxunicode < 1114111:
-               self.char_check = re.compile(u"[][ \n\r\t!%&\(\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\|~\"#$';_\u00A0-\uD7FF\uE000-\uFDCF\uFDF0-\uFFFD-]+",re.M)
+               self.char_check = re.compile("[][ \n\r\t!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~\"#$';_\u00A0-\uD7FF\uE000-\uFDCF\uFDF0-\uFFFD-]+",re.M)
             else:
-               self.char_check = re.compile(u"[][ \n\r\t!%&\(\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\|~\"#$';_\u00A0-\uD7FF\uE000-\uFDCF\uFDF0-\uFFFD\U00010000-\U0010FFFD-]+",re.M)
+               self.char_check = re.compile("[][ \n\r\t!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~\"#$';_\u00A0-\uD7FF\uE000-\uFDCF\uFDF0-\uFFFD\U00010000-\U0010FFFD-]+",re.M)
 
     def __str__(self):
         return self.printsection()
@@ -519,7 +519,7 @@ class StarBlock(object):
             if len(aliases)>0:
                return True
         return False
-        
+
     def get(self,key,default=None):
         if key in self:
             retval = self.__getitem__(key)
@@ -1196,7 +1196,7 @@ class StarBlock(object):
         delimiter = hints.get('delimiter',None)
         startcol = hints.get('column',-1)
         if isinstance(itemvalue,str) and not isinstance(itemvalue,unicode): #not allowed
-            raise StarError("Non-unicode value {0} found in block".format(itemvalue)) 
+            raise StarError("Non-unicode value {0} found in block".format(itemvalue))
         if isinstance(itemvalue,unicode):  #need to sanitize
             stringsink.write(self._formatstring(itemvalue,delimiter=delimiter,hints=hints),canbreak = True,startcol=startcol)
         elif isinstance(itemvalue,(list)) or (hasattr(itemvalue,'dtype') and hasattr(itemvalue,'__iter__')): #numpy
@@ -1249,7 +1249,7 @@ class StarBlock(object):
         if start_from != '':
             if start_from in requested_order:
                 sfi = requested_order.index(start_from)
-                loop_order = [self.FindLoop(k) for k in requested_order[sfi:] if self.FindLoop(k)>0] 
+                loop_order = [self.FindLoop(k) for k in requested_order[sfi:] if self.FindLoop(k)>0]
                 candidates = list([k for k in self.output_order if k in requested_order[sfi:]])
                 cand_pos = len(new_order)
                 if len(candidates)>0:
@@ -1269,7 +1269,7 @@ class StarBlock(object):
         if finish_at != '':
             if finish_at in requested_order:
                 fai = requested_order.index(finish_at)
-                loop_order = list([self.FindLoop(k) for k in requested_order[fai:] if self.FindLoop(k)>0]) 
+                loop_order = list([self.FindLoop(k) for k in requested_order[fai:] if self.FindLoop(k)>0])
                 candidates = list([k for k in self.output_order if k in requested_order[fai:]])
                 cand_pos = len(new_order)
                 if len(candidates)>0:
@@ -1347,7 +1347,7 @@ class StarBlock(object):
                new_value = new_block[attribute]
                #non-looped items
                if new_block.FindLoop(attribute)<0:     #not looped
-                  self[attribute] = new_value 
+                  self[attribute] = new_value
            my_loops = self.loops.values()
            perfect_overlaps = [a for a in new_block.loops if a in my_loops]
            for po in perfect_overlaps:
@@ -1355,7 +1355,7 @@ class StarBlock(object):
               try:
                   newkeypos = map(lambda a:newkeys.index(a),loop_keys)
                   newkeypos = newkeypos[0]      #one key per loop for now
-                  loop_keys = loop_keys[0] 
+                  loop_keys = loop_keys[0]
               except (ValueError,IndexError):
                   newkeypos = []
                   overlap_data = map(lambda a:listify(self[a]),overlaps) #old packet data
@@ -1387,7 +1387,7 @@ class StarBlock(object):
                         for i in range(len(overlaps)):
                             #don't do this at home; we are appending
                             #to something in place
-                            self[overlaps[i]].append(pd[i]) 
+                            self[overlaps[i]].append(pd[i])
            self.overwrite = save_overwrite
 
     def assign_dictionary(self,dic):
@@ -2223,7 +2223,7 @@ def ReadStar(filename,prepared = None, maxlength=-1,
             pos = split.index(toolong[0])
             raise StarError( 'Line %d contains more than %d characters' % (pos+1,maxlength))
     # honour the header string
-    if text[:10] != "#\#CIF_2.0" and ('2.0',Y20) in try_list:
+    if text[:10] != r"#\#CIF_2.0" and ('2.0',Y20) in try_list:
         try_list.remove(('2.0',Y20),)
         if not try_list:
             raise StarError('File %s missing CIF2.0 header' % (filename))
@@ -2372,7 +2372,7 @@ def not_none(itemlist):
     if not isinstance(itemlist,(tuple,list)):
         return True
     for x in itemlist:
-       if not not_none(x): return False 
+       if not not_none(x): return False
     return True
 
 
@@ -2416,7 +2416,7 @@ def process_template(template_file):
         if not isinstance(item,int):    #not nested
             hint_dict = {"dataname":item}
             # find the line in the file
-            start_pos = re.search("(^[ \t]*(?P<name>" + item + ")[ \t\n]+)(?P<spec>([\S]+)|(^;))",template_string,re.I|re.M)
+            start_pos = re.search("(^[ \t]*(?P<name>" + item + ")[ \t\n]+)(?P<spec>([\\S]+)|(^;))",template_string,re.I|re.M)
             if start_pos.group("spec") != None:
                 spec_pos = start_pos.start("spec")-start_pos.start(0)
                 spec_char = template_string[start_pos.start("spec"):start_pos.start("spec")+3]
@@ -2445,13 +2445,13 @@ def process_template(template_file):
             total_items = len(template_as_cif.loops[item])
             testname = testnames[0]
             #find the loop spec line in the file
-            loop_regex = "(^[ \t]*(?P<loop>loop_)[ \t\n\r]+(?P<name>" + testname + ")([ \t\n\r]+_[\S]+){%d}[ \t]*$(?P<packet>(.(?!_loop|_[\S]+))*))" % (total_items - 1)
+            loop_regex = "(^[ \t]*(?P<loop>loop_)[ \t\n\r]+(?P<name>" + testname + ")([ \t\n\r]+_[\\S]+){%d}[ \t]*$(?P<packet>(.(?!_loop|_[\\S]+))*))" % (total_items - 1)
             loop_line = re.search(loop_regex,template_string,re.I|re.M|re.S)
             loop_so_far = loop_line.end()
             packet_text = loop_line.group('packet')
             loop_indent = loop_line.start('loop') - loop_line.start(0)
             form_hints.append({"dataname":'loop','name_pos':loop_indent})
-            packet_regex = "[ \t]*(?P<all>(?P<sqqq>'''([^\n\r\f']*)''')|(?P<sq>'([^\n\r\f']*)'+)|(?P<dq>\"([^\n\r\"]*)\"+)|(?P<none>[^\s]+))"
+            packet_regex = "[ \t]*(?P<all>(?P<sqqq>'''([^\n\r\f']*)''')|(?P<sq>'([^\n\r\f']*)'+)|(?P<dq>\"([^\n\r\"]*)\"+)|(?P<none>[^\\s]+))"
             packet_pos = re.finditer(packet_regex,packet_text)
             line_end_pos = re.finditer("^",packet_text,re.M)
             next_end = next(line_end_pos).end()
@@ -2485,4 +2485,3 @@ def process_template(template_file):
 
 
 #No documentation flags
-

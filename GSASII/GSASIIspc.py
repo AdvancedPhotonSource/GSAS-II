@@ -4790,9 +4790,9 @@ def _ReportTest():
         caller = inspect.stack()[1][3]
         doc = eval(caller).__doc__
         if doc is not None:
-            print('testing '+__file__+' with '+caller+' ('+doc+')')
+            print(f'testing {__file__} with {caller} ({doc})')
         else:
-            print('testing '+__file__()+" with "+caller)
+            print(f'testing {__file__} with {caller}')
 def test0():
     '''self-test #0: exercise MoveToUnitCell'''
     _ReportTest()
@@ -4813,30 +4813,32 @@ def test1():
     import spctestinp
     def CompareSpcGroup(spc, referr, refdict, reflist):
         'Compare output from GSASIIspc.SpcGroup with results from a previous run'
-        # if an error is reported, the dictionary can be ignored
         msg0 = "CompareSpcGroup failed on space group %s" % spc
         result = SpcGroup(spc)
         if result[0] == referr and referr > 0: return True
-#        #print result[1]['SpGrp']
-        #msg = msg0 + " in list lengths"
-        #assert len(keys) == len(refdict.keys()), msg
-        for key in refdict.keys():
-            if key == 'SGOps' or  key == 'SGCen':
-                msg = msg0 + (" in key %s length" % key)
-                assert len(refdict[key]) == len(result[1][key]), msg
-                for i in range(len(refdict[key])):
-                    msg = msg0 + (" in key %s level 0" % key)
-                    assert np.allclose(result[1][key][i][0],refdict[key][i][0]), msg
-                    msg = msg0 + (" in key %s level 1" % key)
-                    assert np.allclose(result[1][key][i][1],refdict[key][i][1]), msg
+        for key in refdict:
+            if key == 'SGCen' or key == 'SGOps':
+                assert len(refdict[key])==len(result[1][key]),f'{msg0}, {key} length'
             else:
-                msg = msg0 + (" in key %s" % key)
-                assert result[1][key] == refdict[key], msg
-        msg = msg0 + (" in key %s reflist" % key)
-        #for (l1,l2) in zip(reflist, SGPrint(result[1])):
-        #    assert l2.replace('\t','').replace(' ','') == l1.replace(' ',''), 'SGPrint ' +msg
-        # for now disable SGPrint testing, output has changed
-        #assert reflist == SGPrint(result[1]), 'SGPrint ' +msg
+                assert refdict[key]==result[1][key],f'{msg0}, key={key}'
+        key = 'SGCen'
+        indices = list(range(len(result[1][key])))
+        for item in refdict[key]: 
+            for i,j in enumerate(indices):
+                if np.allclose(result[1][key][j],item):
+                    indices.pop(i)
+                    break
+            else:
+                assert False,f'{msg0} no {key} matches center {item}'
+        key = 'SGOps'
+        indices = list(range(len(result[1][key])))
+        for k,item in enumerate(refdict[key]): 
+            for i,j in enumerate(indices):
+                if np.allclose(result[1][key][j][0],item[0]) and np.allclose(result[1][key][j][1],item[1]):
+                    indices.pop(i)
+                    break
+            else:
+                assert False,f'{msg0} no {key} matches sym op #{k}'
     for spc in spctestinp.SGdat:
         CompareSpcGroup(spc, 0, spctestinp.SGdat[spc], spctestinp.SGlist[spc] )
 selftestlist.append(test1)
@@ -4890,14 +4892,15 @@ def test3():
     _ReportTest()
     def ExerciseSiteSym (spc, crdlist):
         'compare site symmetries and multiplicities for a specified space group'
-        msg = "failed on site sym test for %s" % spc
+        msg = f"failed on site sym test for {spc}"
         (E,S) = SpcGroup(spc)
         assert not E, msg
         for t in crdlist:
             symb, m, n, od = SytSym(t[0],S)
-            if symb.strip() != t[2].strip() or m != t[1]:
-                print (spc,t[0],m,n,symb,t[2],od)
-            assert m == t[1]
+            if symb.strip() != t[2].strip():
+                #GSASIIpath.IPyBreak_base()
+                print(f'for {spc} @ {t[0]}, site sym mismatch {symb} != {t[2]} (warning)')
+            assert m == t[1],f'{msg}: multiplicity @ {t[0]}'
             #assert symb.strip() == t[2].strip()
 
     ExerciseSiteSym('p 1',[
@@ -4926,9 +4929,9 @@ def test3():
             ((0.25,0.75,.31),4,'2(z)'),
             ((0.5,0.5,0.5),4,'-1'),
             ((0,0.5,0),4,'-1'),
-            ((0.25,0.25,.31),2,'4(001)'),
-            ((0.25,.75,0.5),2,'-4(001)'),
-            ((0.25,.75,0.0),2,'-4(001)'),
+            ((0.25,0.25,.31),2,'4(z)'),
+            ((0.25,.75,0.5),2,'-4(z)'),
+            ((0.25,.75,0.0),2,'-4(z)'),
             ])
     ExerciseSiteSym('p 31 2 1',[
             ((0.13,0.22,0.31),6,'1'),
@@ -4958,6 +4961,8 @@ def test3():
 selftestlist.append(test3)
 
 if __name__ == '__main__':
+    import GSASIIpath
+    GSASIIpath.SetBinaryPath()
     # run self-tests
     selftestquiet = False
     for test in selftestlist:

@@ -22,7 +22,7 @@ install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../
 build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends_on = ['clean-build'], env={CC = 'clang-cl', CXX ='clang-cl'}}
 install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends_on=['build-win']}
 
-ui = "python -m GSASII.GSASII"
+ui = "python -m GSASII"
 
 [dependencies]
 cython = ">=3.0.11,<4"

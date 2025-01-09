@@ -1414,7 +1414,7 @@ def RBsymCheck(Atoms,ct,cx,cs,AtLookUp,Amat,RBObjIds,SGData):
         Atoms[AtLookUp[Id]][cs] = Sytsym
         Atoms[AtLookUp[Id]][cs+1] = Mult            
     return Atoms
-                                    
+
 def GetBraviasNum(center,system):
     """Determine the Bravais lattice number, as used in GenHBravais
     
@@ -1451,12 +1451,16 @@ def GetBraviasNum(center,system):
         return 11
     elif center.upper() == 'P' and system.lower() == 'orthorhombic':
         return 12
-    elif center.upper() == 'C' and system.lower() == 'monoclinic':
+    elif center.upper() == 'I' and system.lower() == 'monoclinic':
         return 13
-    elif center.upper() == 'P' and system.lower() == 'monoclinic':
+    elif center.upper() == 'A' and system.lower() == 'monoclinic':
         return 14
-    elif center.upper() == 'P' and system.lower() == 'triclinic':
+    elif center.upper() == 'C' and system.lower() == 'monoclinic':
         return 15
+    elif center.upper() == 'P' and system.lower() == 'monoclinic':
+        return 16
+    elif center.upper() == 'P' and system.lower() == 'triclinic':
+        return 17
     raise ValueError('non-standard Bravais lattice center=%s, cell=%s' % (center,system))
 
 def _GenHBravais_cctbx(dmin, Bravais, A, sg_type, uctbx_unit_cell, miller_index_generator):
@@ -3138,7 +3142,7 @@ def test0():
         assert np.allclose(cell,tcell),msg
         tcell = Gmat2cell(G)
         assert np.allclose(tcell,trcell),msg
-if __name__ == '__main__': selftestlist.append(test0)
+selftestlist.append(test0)
 
 def test1():
     'test cell2A and A2Gmat'
@@ -3149,7 +3153,7 @@ def test1():
         G, g = A2Gmat(cell2A(cell))
         assert np.allclose(G,tG),msg
         assert np.allclose(g,tg),msg
-if __name__ == '__main__': selftestlist.append(test1)
+selftestlist.append(test1)
 
 def test2():
     'test Gmat2A, A2cell, A2Gmat, Gmat2cell'
@@ -3160,7 +3164,7 @@ def test2():
         G, g = cell2Gmat(cell)
         tcell = A2cell(Gmat2A(G))
         assert np.allclose(cell,tcell),msg
-if __name__ == '__main__': selftestlist.append(test2)
+selftestlist.append(test2)
 
 def test3():
     'test invcell2Gmat'
@@ -3171,7 +3175,7 @@ def test3():
         G, g = invcell2Gmat(trcell)
         assert np.allclose(G,tG),msg
         assert np.allclose(g,tg),msg
-if __name__ == '__main__': selftestlist.append(test3)
+selftestlist.append(test3)
 
 def test4():
     'test calc_rVsq, calc_rV, calc_V'
@@ -3181,7 +3185,7 @@ def test4():
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         assert np.allclose(calc_rV(cell2A(cell)),trV), msg
         assert np.allclose(calc_V(cell2A(cell)),tV), msg
-if __name__ == '__main__': selftestlist.append(test4)
+selftestlist.append(test4)
 
 def test5():
     'test A2invcell'
@@ -3191,7 +3195,7 @@ def test5():
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         rcell = A2invcell(cell2A(cell))
         assert np.allclose(rcell,trcell),msg
-if __name__ == '__main__': selftestlist.append(test5)
+selftestlist.append(test5)
 
 def test6():
     'test cell2AB'
@@ -3209,10 +3213,10 @@ def test6():
             tf = np.sum(B*to,axis=1)
             assert np.allclose(ortho,to), msg
             assert np.allclose(frac,tf), msg
-if __name__ == '__main__': selftestlist.append(test6)
+selftestlist.append(test6)
 
 def test7():
-    'test GetBraviasNum(...) and GenHBravais(...)'
+    'test GetBraviasNum() and GenHBravais()'
     _ReportTest()
     import os.path
     import sys
@@ -3259,7 +3263,7 @@ def test7():
                         break
             else:
                 assert 0,'No match for %s at %s (%s)' % ((h,k,l),d,key)
-if __name__ == '__main__': selftestlist.append(test7)
+selftestlist.append(test7)
 
 def test8():
     'test GenHLaue'
@@ -3321,7 +3325,7 @@ def test8():
         #if not match: 
             #for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref
             #print center, Laue, Axis, system
-if __name__ == '__main__': selftestlist.append(test8)
+selftestlist.append(test8)
             
 def test9():
     'test GenHLaue'
@@ -3346,12 +3350,14 @@ def test9():
                 print ('%d %s'%(H,' missing from hkl from GSASII'))
                 err = False
         assert(err)
-if __name__ == '__main__': selftestlist.append(test9)
+selftestlist.append(test9)
         
         
     
 
 if __name__ == '__main__':
+    import GSASIIpath
+    GSASIIpath.SetBinaryPath()
     # run self-tests
     selftestquiet = False
     for test in selftestlist:

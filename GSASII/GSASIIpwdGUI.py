@@ -3001,7 +3001,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     if 'X' in data['Type']:
                         Reference = "Reference: Von Dreele, R.B., Clarke, S.M. & Walsh, J.P.S. (2021). J. Appl. Cryst., 54, 3-6."
                     else:
-                        Reference = "Reference: R.B. Von Dreele (2024). J. Appl. Cryst. 57, X-X"
+                        Reference = "Reference: R.B. Von Dreele (2024). J. Appl. Cryst. 57, 1588-1597."
                 else: #'A'
                     itemList = ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','SH/L']                
                     Reference = """References:

@@ -758,6 +758,9 @@ def RefineCell(G2frame):
         G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
     else:
         G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+        newcell = [M20,X20,ibrav]+controls[6:13]+[False,False]
+        cells.append(newcell)
+        cells = G2indx.sortM20(cells)
     G2frame.HKL = np.array(G2frame.HKL)
     data = [controls,bravais,cells,dmin,ssopt,magcells]
     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
@@ -6262,7 +6265,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 littleSizer.Add(MagSel,0,WACV)
             if len(G2frame.HKL) and 'PKS' not in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                 littleSizer.Add((5,-1))
-                makePks = wx.Button(G2frame.dataWindow,label='Copy refs to Peak list')
+                makePks = wx.Button(G2frame.dataWindow,label='Make new Peak list')
                 unitSizerWidgetList.append(makePks)
                 makePks.Bind(wx.EVT_BUTTON,OnMakePks)
                 littleSizer.Add(makePks,0,WACV)

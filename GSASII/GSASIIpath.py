@@ -2362,7 +2362,6 @@ def makeScriptShortcut():
     else:
         print('No site-packages directory found in Python path')
         return
-    sanitizedpath2GSAS2 = path2GSAS2.replace("\\", "\\\\")
     newfil = os.path.join(p,'G2script.py')
     fp = open(newfil,'w')
     fp.write(f'#Created in makeScriptShortcut from {__file__}')
@@ -2370,7 +2369,7 @@ def makeScriptShortcut():
                                       " at %Y-%m-%dT%H:%M\n"))
 
     fp.write(f"""import sys,os
-Path2GSASII='{sanitizedpath2GSAS2}'
+Path2GSASII=r'{path2GSAS2}'
 if os.path.exists(os.path.join(Path2GSASII,'GSASIIscriptable.py')):
     print('setting up GSASIIscriptable from',Path2GSASII)
     if Path2GSASII not in sys.path:

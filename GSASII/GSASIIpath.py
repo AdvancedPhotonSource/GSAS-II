@@ -2369,7 +2369,7 @@ def makeScriptShortcut():
                                       " at %Y-%m-%dT%H:%M\n"))
 
     fp.write(f"""import sys,os
-Path2GSASII='{path2GSAS2}'
+Path2GSASII=r'{path2GSAS2}'
 if os.path.exists(os.path.join(Path2GSASII,'GSASIIscriptable.py')):
     print('setting up GSASIIscriptable from',Path2GSASII)
     if Path2GSASII not in sys.path:

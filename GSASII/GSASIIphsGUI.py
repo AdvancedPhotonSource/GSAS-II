@@ -5894,7 +5894,7 @@ def UpdatePhaseData(G2frame,Item,data):
         global runFile
         def OnRMCselect(event):
             G2frame.RMCchoice = RMCsel.GetStringSelection()
-            wx.CallAfter(UpdateRMC)
+            wx.CallLater(100,UpdateRMC)
             
         def GetAtmChoice(pnl,RMCPdict):
             

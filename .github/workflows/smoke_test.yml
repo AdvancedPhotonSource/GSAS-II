@@ -2,8 +2,8 @@ name: smoke test
 
 on:
   # Runs on pushes targeting the default branch
-  push:
-    branches: ['develop']
+  # push:
+  #   branches: ['develop']
   pull_request:
     branches: ['develop']
 

@@ -3,8 +3,8 @@
 '''
 from __future__ import division, print_function
 import os.path
-import GSASIIfiles as G2fil
-import GSASIIspc as G2spc
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIspc as G2spc
 
 class ExportPhaseShelx(G2fil.ExportBaseclass):
     '''Used to create a SHELX .ins file for a phase

@@ -32,12 +32,12 @@ except ImportError:
     pass
 import scipy as sp
 
-import GSASIIpath
-import GSASIIfiles as G2fil
-import GSASIIplot as G2plt
-import GSASIIdataGUI as G2gd
-import GSASIIctrlGUI as G2G
-import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIfiles as G2fil
+from . import GSASIIplot as G2plt
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIobj as G2obj
 
 __version__ = '0.0.1'
 

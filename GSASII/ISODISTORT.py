@@ -8,7 +8,7 @@ try:
 except:
     print('Module requests not installed, access to ISODISTORT not possible')
 import copy
-import GSASIIscriptable as G2sc
+from . import GSASIIscriptable as G2sc
 #import tempfile
 isouploadsite = 'https://stokes.byu.edu/iso/isodistortuploadfile.php'
 isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'

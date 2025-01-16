@@ -863,7 +863,7 @@ that displays the contents of all the histogram settings:
     from __future__ import division, print_function
     import os,sys
     sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     gpx = G2sc.G2Project('/tmp/test.gpx')
     h = gpx.histograms()[0]
     for h in h.getHistEntryList():
@@ -953,7 +953,7 @@ specified in the GSAS-II script using commands such as
 
     import sys
     sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
 
 An alternative to this is to "install" the current GSAS-II installation into the current
 Python interpreter. Once this has been done a single time, this single command can be used to replace
@@ -972,7 +972,7 @@ using these commands:
 
     import sys
     sys.path.insert(0,'/Users/toby/software/G2/GSASII') # update this for your installation
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     G2sc.installScriptingShortcut()
 
 An even simpler way to do this is from the command-line, from the GSAS-II directory.
@@ -1044,7 +1044,7 @@ peak refinement script, where the data files are taken from the
     from __future__ import division, print_function
     import os,sys
     sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     datadir = os.path.expanduser("~/Scratch/peakfit")
     PathWrap = lambda fil: os.path.join(datadir,fil)
     gpx = G2sc.G2Project(newgpx=PathWrap('pkfit.gpx'))
@@ -1087,7 +1087,7 @@ Data files are found in the
 
     import os,sys
     sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     datadir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
     PathWrap = lambda fil: os.path.join(datadir,fil)
     gpx = G2sc.G2Project(newgpx='PbSO4sim.gpx') # create a project    
@@ -1114,7 +1114,7 @@ tutorial.
 
     import os,sys
     sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     cifdir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
     datadir = "/Users/toby/software/G2/Tutorials/TOF-CW Joint Refinement/data"
     gpx = G2sc.G2Project(newgpx='/tmp/PbSO4simT.gpx') # create a project
@@ -1138,7 +1138,7 @@ peak, changes some refinement flags and performs a refinement.
     from __future__ import division, print_function
     import os,sys
     sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     datadir = "/Users/Scratch/"
     gpx = G2sc.G2Project(os.path.join(datadir,'test2.gpx'))
     gpx.histogram(0).add_back_peak(4.5,30000,5000,0)
@@ -1159,7 +1159,7 @@ and turn on and off refinement flags, add histograms and setup the sequential fi
 
     import os,sys,glob
     sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     datadir = os.path.expanduser("~/Scratch/SeqTut2019Mar")
     PathWrap = lambda fil: os.path.join(datadir,fil)
     # load and rename project
@@ -1204,7 +1204,7 @@ The data files are found in the
 
     import os,sys
     sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     datadir = "/tmp"
     PathWrap = lambda fil: os.path.join(datadir,fil)
 
@@ -1221,7 +1221,7 @@ This example shows a computation similar to what is done in tutorial
 
     import os,sys,glob
     sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     PathWrap = lambda fil: os.path.join(
         "/Users/toby/wp/Active/MultidistanceCalibration/multimg",
         fil)
@@ -1274,7 +1274,7 @@ The files used for this exercise are found in the
 
     import os,sys,glob
     sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
     PathWrap = lambda fil: os.path.join(
         "/Users/toby/wp/Active/MultidistanceCalibration/multimg",
         fil)
@@ -1565,7 +1565,7 @@ be specified.
 
     import os,sys,glob
     sys.path.insert(0,'/Users/toby/software/G2/GSASII')  # change this
-    import GSASIIscriptable as G2sc
+    from . import GSASIIscriptable as G2sc
 
     dataloc = "/Users/toby/Scratch/"                 # where to find data 
     PathWrap = lambda fil: os.path.join(dataloc,fil) # EZ way 2 add dir to filename

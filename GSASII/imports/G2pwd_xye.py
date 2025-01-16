@@ -7,8 +7,8 @@ or Q vs intensity with an optional 3rd column for s.u.(I)
 from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
-import GSASIIobj as G2obj
-import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
 
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 

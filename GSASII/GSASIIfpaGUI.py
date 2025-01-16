@@ -9,15 +9,15 @@ import copy
 import wx
 import wx.lib.scrolledpanel as wxscroll
 
-import NIST_profile as FP
+from . import NIST_profile as FP
 
-import GSASIIpath
-import GSASIIctrlGUI as G2G
-import GSASIIdataGUI as G2gd
-import GSASIIplot as G2plt
-import GSASIImath as G2mth
-import GSASIIpwd as G2pwd
-import GSASIIfiles as G2fil
+from . import GSASIIpath
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIplot as G2plt
+from . import GSASIImath as G2mth
+from . import GSASIIpwd as G2pwd
+from . import GSASIIfiles as G2fil
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 simParms = {}
@@ -25,13 +25,13 @@ simParms = {}
 '''
 
 parmDict = {}
-'''Parameter dict used for reading Topas-style values. These are 
+'''Parameter dict used for reading Topas-style values. These are
 converted to SI units and placed into :data:`NISTparms`
 '''
 
 NISTparms = {}
-'''Parameters in a nested dict, with an entry for each concolutor. Entries in 
-those dicts have values in SI units (of course). NISTparms can be 
+'''Parameters in a nested dict, with an entry for each concolutor. Entries in
+those dicts have values in SI units (of course). NISTparms can be
 can be input directly or can be from created from :data:`parmDict`
 by :func:`XferFPAsettings`
 '''
@@ -47,7 +47,7 @@ BraggBrentanoParms = [
     ('sample_thickness', 1., 'Depth of sample (mm)'),
     ('convolution_steps', 8, 'Number of Fourier-space bins per two-theta step'),
     ('source_width', 0.04,'Tube filament width, in projection at takeoff angle (mm)'),
-    ('tube-tails_L-tail', -1.,'Left-side tube tails width, in projection (mm)'),    
+    ('tube-tails_L-tail', -1.,'Left-side tube tails width, in projection (mm)'),
     ('tube-tails_R-tail', 1.,'Right-side tube tails width, in projection (mm)'),
     ('tube-tails_rel-I', 0.001,'Tube tails fractional intensity (no units)'),
     ]
@@ -58,13 +58,13 @@ needed for all Bragg Brentano instruments
 
 BBPointDetector = [
     ('receiving_slit_width', 0.2, 'Width of receiving slit (mm)'),]
-'''Additional FPA dict entries used in :func:`FillParmSizer` 
+'''Additional FPA dict entries used in :func:`FillParmSizer`
 needed for Bragg Brentano instruments with point detectors.
 '''
 
 BBPSDDetector = [
     ('SiPSD_th2_angular_range', 3.0, 'Angular range observed by PSD (degrees 2Theta)'),]
-'''Additional FPA dict entries used in :func:`FillParmSizer` 
+'''Additional FPA dict entries used in :func:`FillParmSizer`
 needed for Bragg Brentano instruments with linear (1-D) Si PSD detectors.
 '''
 
@@ -79,7 +79,7 @@ IBmonoParms = [
     ]
 '''Additional FPA dict entries used in :func:`FillParmSizer`, needed for Incident Beam Monochromator
 '''
-   
+
 Citation = '''MH Mendenhall, K Mullen && JP Cline (2015), J. Res. of NIST, 120, p223. DOI: 10.6028/jres.120.014
 
 For Incident Beam Mono model, also cite: MH Mendenhall, D Black && JP Cline (2019), J. Appl. Cryst., 52, p1087. DOI: 10.1107/S1600576719010951
@@ -89,7 +89,7 @@ IBmono = False
 '''set to True if an incident beam monochromator is in use
 '''
 DetMode = 'BBpoint'
-'''The type of detector, either 'BBpoint' for Bragg-Brentano point detector or 
+'''The type of detector, either 'BBpoint' for Bragg-Brentano point detector or
       or 'BBPSD' (linear) position sensitive detector
 '''
 
@@ -109,7 +109,7 @@ def SetCu6wave():
     parmDict['lwidth'] = {i:v for i,v in enumerate((0.436, 0.487, 0.63, 0.558, 2.93, 2.93,))}
 
 def SetMonoWave():
-    '''Eliminates the short-wavelength line from the six-line Cu K 
+    '''Eliminates the short-wavelength line from the six-line Cu K
     alpha spectrum when incident beam mono; resets it to 6 if no mono
     '''
     if IBmono and len(parmDict['wave']) == 6:
@@ -122,9 +122,9 @@ def SetMonoWave():
 def writeNIST(filename):
     '''Write the NIST FPA terms into a JSON-like file that can be reloaded
     in _onReadFPA
-    ''' 
+    '''
     if not filename: return
-    
+
     fp = open(filename,'w')
     fp.write('# parameters to be used in the NIST XRD Fundamental Parameters program\n')
     fp.write('{\n')
@@ -134,7 +134,7 @@ def writeNIST(filename):
         fp.write('\n')
     fp.write('}\n')
     fp.close()
-        
+
 #SetCu2Wave() # use these as default
 SetCu6wave() # use these as default
 SetMonoWave()
@@ -157,7 +157,7 @@ def FillParmSizer():
     else:
         raise Exception('Unknown DetMode in FillParmSizer: '+DetMode)
     if IBmono:
-        itemList += IBmonoParms    
+        itemList += IBmonoParms
     text = wx.StaticText(prmPnl,wx.ID_ANY,'label',style=wx.ALIGN_CENTER,
                 size=(170,-1)) # make just a bit bigger than largest item in column
     text.SetBackgroundColour(wx.WHITE)
@@ -186,14 +186,14 @@ def FillParmSizer():
     prmSizer.Layout()
     FPdlg = prmPnl.GetParent()
     FPdlg.SendSizeEvent()
-        
+
 def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
-    '''Create a GUI with parameters for the NIST XRD Fundamental Parameters Code. 
+    '''Create a GUI with parameters for the NIST XRD Fundamental Parameters Code.
     Parameter input is modeled after Topas input parameters.
 
     :param wx.Frame G2frame: main GSAS-II window
     :param wx.Window FPdlg: Frame or Dialog where GUI will appear
-    :param SetButtonStatus: a callback function to call to see what buttons in 
+    :param SetButtonStatus: a callback function to call to see what buttons in
       this windows can be enabled. Called with done=True to trigger closing
       the parent window as well.
     :returns: a sizer with the GUI controls
@@ -319,10 +319,10 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     btn.Bind(wx.EVT_BUTTON,_onSetCu6wave)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
     MainSizer.Add((-1,5))
-    
+
     btnsizer = wx.GridBagSizer( 2, 5)
     btnsizer.Add( wx.StaticText(FPdlg, wx.ID_ANY, 'Detector type'),
-                 (0,0), (2,1), wx.ALIGN_CENTER | wx.ALL, 5)    
+                 (0,0), (2,1), wx.ALIGN_CENTER | wx.ALL, 5)
     detBtn1 = wx.RadioButton(FPdlg,wx.ID_ANY,'Point',style=wx.RB_GROUP)
     detBtn1.SetValue(DetMode == 'BBpoint')
     btnsizer.Add(detBtn1, (0,1))
@@ -331,9 +331,9 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     detBtn2.SetValue(not DetMode == 'BBpoint')
     btnsizer.Add(detBtn2, (1,1))
     detBtn2.Bind(wx.EVT_RADIOBUTTON,_onSetDetBtn)
-    btnsizer.Add( (40,-1), (0,2), (1,1), wx.ALIGN_CENTER | wx.ALL, 5)    
+    btnsizer.Add( (40,-1), (0,2), (1,1), wx.ALIGN_CENTER | wx.ALL, 5)
     btnsizer.Add( wx.StaticText(FPdlg, wx.ID_ANY, 'Incident Beam Mono'),
-                 (0,3), (2,1), wx.ALIGN_CENTER | wx.ALL, 5)    
+                 (0,3), (2,1), wx.ALIGN_CENTER | wx.ALL, 5)
     monoBtn1 = wx.RadioButton(FPdlg,wx.ID_ANY,'No',style=wx.RB_GROUP)
     monoBtn1.SetValue(not IBmono)
     btnsizer.Add(monoBtn1, (0,4))
@@ -349,11 +349,11 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
         style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
     prmSizer = wx.FlexGridSizer(cols=3,hgap=3,vgap=5)
     prmPnl.SetSizer(prmSizer)
-    FillParmSizer()    
+    FillParmSizer()
     MainSizer.Add(prmPnl,1,wx.EXPAND,1)
     prmPnl.SetAutoLayout(1)
     prmPnl.SetupScrolling()
-    
+
     MainSizer.Add((-1,4))
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
     btn = wx.Button(FPdlg, wx.ID_ANY, 'Plot peak')
@@ -363,7 +363,7 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     if 'plotpos' not in simParms: simParms['plotpos'] =  simParms['minTT']
     ctrl = G2G.ValidatedTxtCtrl(FPdlg,simParms,'plotpos',size=(70,-1))
     btnsizer.Add(ctrl)
-    btnsizer.Add(wx.StaticText(FPdlg,wx.ID_ANY,' deg.  '))    
+    btnsizer.Add(wx.StaticText(FPdlg,wx.ID_ANY,' deg.  '))
     saveBtn = wx.Button(FPdlg, wx.ID_ANY,'Save FPA dict')
     btnsizer.Add(saveBtn)
     saveBtn.Bind(wx.EVT_BUTTON,_onSaveFPA)
@@ -373,7 +373,7 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     OKbtn = wx.Button(FPdlg, wx.ID_OK)
     OKbtn.SetDefault()
     btnsizer.Add(OKbtn)
-    Cbtn = wx.Button(FPdlg, wx.ID_CLOSE,"Cancel") 
+    Cbtn = wx.Button(FPdlg, wx.ID_CLOSE,"Cancel")
     btnsizer.Add(Cbtn)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
     MainSizer.Add((-1,4))
@@ -387,16 +387,16 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     px,py = prmSizer.GetSize()
     dx,dy = FPdlg.GetSize()
     FPdlg.SetMinSize((-1,-1))
-    FPdlg.SetMaxSize((-1,-1)) 
+    FPdlg.SetMaxSize((-1,-1))
     FPdlg.SetMinSize((dx,dy+200)) # leave a min of 200 points for scroll panel
-    FPdlg.SetMaxSize((max(dx,700),850)) 
+    FPdlg.SetMaxSize((max(dx,700),850))
     FPdlg.SetSize((max(dx,px+20),min(750,dy+py+30))) # 20 for scroll bar, 30 for a bit of room at bottom
-    
+
 def XferFPAsettings(InpParms):
     '''convert Topas-type parameters to SI units for NIST and place in a dict sorted
     according to use in each convoluter
 
-    :param dict InpParms: a dict with Topas-like parameters, as set in 
+    :param dict InpParms: a dict with Topas-like parameters, as set in
       :func:`MakeTopasFPASizer`
     :returns: a nested dict with global parameters and those for each convolution
     '''
@@ -404,11 +404,11 @@ def XferFPAsettings(InpParms):
     for key in "tube_tails","absorption","si_psd","displacement","receiver_slit":
         if key in NISTparms:
             del NISTparms[key]
-    
+
     keys = list(InpParms['wave'].keys())
     source_wavelengths_m = 1.e-10 * np.array([InpParms['wave'][i] for i in keys])
     la = [InpParms['int'][i] for i in keys]
- 
+
     if IBmono:  # kludge: apply mono_slit_attenuation since it is not part of NIST FPA code
         norm = [InpParms['mono_slit_attenuation'] if
                     (1.5443 < InpParms['wave'][i] < 1.5447) else 1.
@@ -418,7 +418,7 @@ def XferFPAsettings(InpParms):
         source_intensities = np.array(la)/max(la)
     source_lor_widths_m = 1.e-10 * 1.e-3 * np.array([InpParms['lwidth'][i] for i in keys])
     source_gauss_widths_m = 1.e-10 * 1.e-3 * np.array([0.001 for i in keys])
-    
+
     NISTparms["emission"] = {'emiss_wavelengths' : source_wavelengths_m,
                 'emiss_intensities' : source_intensities,
                 'emiss_gauss_widths' : source_gauss_widths_m,
@@ -438,13 +438,13 @@ def XferFPAsettings(InpParms):
             'tail_left' : -1e-3 * InpParms.get('tube-tails_L-tail',0.),
             'tail_right' : 1e-3 * InpParms.get('tube-tails_R-tail',0.),
             'tail_intens' : InpParms.get('tube-tails_rel-I',0.),}
-    
-    if InpParms['filament_length'] == InpParms['receiving_slit_length']: # workaround: 
+
+    if InpParms['filament_length'] == InpParms['receiving_slit_length']: # workaround:
         InpParms['receiving_slit_length'] *= 1.00001 # avoid bug when slit lengths are identical
     NISTparms["axial"]  = {
             'axDiv':"full", 'slit_length_source' : 1e-3*InpParms['filament_length'],
             'slit_length_target' : 1e-3*InpParms['receiving_slit_length'],
-            'length_sample' : 1e-3 * InpParms['sample_length'], 
+            'length_sample' : 1e-3 * InpParms['sample_length'],
             'n_integral_points' : 10,
             'angI_deg' : InpParms['soller_angle'],
             'angD_deg': InpParms['soller_angle']
@@ -478,11 +478,11 @@ def XferFPAsettings(InpParms):
         }
 
 def setupFPAcalc():
-    '''Create a peak profile object using the NIST XRD Fundamental 
-    Parameters Code. 
-    
-    :returns: a profile object that can provide information on 
-      each convolution or compute the composite peak shape. 
+    '''Create a peak profile object using the NIST XRD Fundamental
+    Parameters Code.
+
+    :returns: a profile object that can provide information on
+      each convolution or compute the composite peak shape.
     '''
     if IBmono:
         p=FP.FP_windowed(anglemode="twotheta",
@@ -492,7 +492,7 @@ def setupFPAcalc():
         p=FP.FP_profile(anglemode="twotheta",
                     output_gaussian_smoother_bins_sigma=1.0,
                     oversampling=NISTparms.get('oversampling',10))
-        
+
     p.debug_cache=False
     #set parameters for each convolver
     for key in NISTparms:
@@ -501,11 +501,11 @@ def setupFPAcalc():
         else:
             p.set_parameters(**NISTparms[key])
     return p
-        
+
 def doFPAcalc(NISTpk,ttArr,twotheta,calcwid,step):
     '''Compute a single peak using a NIST profile object
 
-    :param object NISTpk: a peak profile computational object from the 
+    :param object NISTpk: a peak profile computational object from the
       NIST XRD Fundamental Parameters Code, typically established from
       a call to :func:`SetupFPAcalc`
     :param np.Array ttArr: an evenly-spaced grid of two-theta points (degrees)
@@ -523,13 +523,13 @@ def doFPAcalc(NISTpk,ttArr,twotheta,calcwid,step):
     return center_bin_idx,NISTpk.compute_line_profile()
 
 def MakeSimSizer(G2frame, dlg):
-    '''Create a GUI to get simulation with parameters for Fundamental 
-    Parameters fitting. 
+    '''Create a GUI to get simulation with parameters for Fundamental
+    Parameters fitting.
 
     :param wx.Window dlg: Frame or Dialog where GUI will appear
 
-    :returns: a sizer with the GUI controls 
- 
+    :returns: a sizer with the GUI controls
+
     '''
     def _onOK(event):
         msg = ''
@@ -682,7 +682,7 @@ def MakeSimSizer(G2frame, dlg):
         wx.EndBusyCursor()
         # save Iparms
         pth = G2G.GetExportPath(G2frame)
-        fldlg = wx.FileDialog(G2frame, 'Set name to save GSAS-II instrument parameters file', pth, '', 
+        fldlg = wx.FileDialog(G2frame, 'Set name to save GSAS-II instrument parameters file', pth, '',
             'instrument parameter files (*.instprm)|*.instprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if fldlg.ShowModal() == wx.ID_OK:
@@ -696,7 +696,7 @@ def MakeSimSizer(G2frame, dlg):
         finally:
             fldlg.Destroy()
         #GSASIIpath.IPyBreak()
-        
+
     def _onClose(event):
         dlg.Destroy()
     def SetButtonStatus(done=False):
@@ -710,12 +710,12 @@ def MakeSimSizer(G2frame, dlg):
         MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus)
         FPdlg.CenterOnParent()
         FPdlg.Raise()
-        FPdlg.Show() 
+        FPdlg.Show()
     def _onSaveFPA(event):
         filename = G2G.askSaveFile(G2frame,'','.NISTfpa',
                                        'dict of NIST FPA values',dlg)
         writeNIST(filename)
-        
+
     def _onReadFPA(event):
         filename = G2G.GetImportFile(G2frame,
                 message='Read file with dict of values for NIST Fundamental Parameters',
@@ -745,7 +745,7 @@ def MakeSimSizer(G2frame, dlg):
     topSizer.Add(G2G.HelpButton(dlg,helpIndex='FPA'))
     MainSizer.Add(topSizer,0,wx.EXPAND)
     G2G.HorizontalLine(MainSizer,dlg)
-    MainSizer.Add((5,5),0)    
+    MainSizer.Add((5,5),0)
     prmSizer = wx.FlexGridSizer(cols=2,hgap=3,vgap=5)
     text = wx.StaticText(dlg,wx.ID_ANY,'value',style=wx.ALIGN_CENTER)
     text.SetBackgroundColour(wx.WHITE)
@@ -789,7 +789,7 @@ def MakeSimSizer(G2frame, dlg):
     OKbtn = wx.Button(dlg, wx.ID_OK)
     OKbtn.SetDefault()
     btnsizer.Add(OKbtn)
-    Cbtn = wx.Button(dlg, wx.ID_CLOSE,"Cancel") 
+    Cbtn = wx.Button(dlg, wx.ID_CLOSE,"Cancel")
     btnsizer.Add(Cbtn)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
     MainSizer.Add((-1,4),1,wx.EXPAND,1)
@@ -803,7 +803,7 @@ def MakeSimSizer(G2frame, dlg):
     dlg.SetMinSize(dlg.GetSize())
     dlg.SendSizeEvent()
     dlg.Raise()
-    
+
 def GetFPAInput(G2frame):
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'FPA input',
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -811,19 +811,19 @@ def GetFPAInput(G2frame):
     dlg.CenterOnParent()
     dlg.Show()
     return
-        
+
 if __name__ == "__main__":
     app = wx.PySimpleApp()
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame
     frm.Show(True)
     frm.TutorialImportDir = '/tmp'
-    size = wx.Size(700,600)                
+    size = wx.Size(700,600)
     frm.plotFrame = wx.Frame(None,-1,'GSASII Plots',size=size,
                     style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
     frm.G2plotNB = G2plt.G2PlotNoteBook(frm.plotFrame,G2frame=frm)
     frm.plotFrame.Show()
 
     GetFPAInput(frm)
-    
+
     app.MainLoop()

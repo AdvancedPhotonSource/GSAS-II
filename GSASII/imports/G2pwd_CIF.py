@@ -4,9 +4,9 @@
 from __future__ import division, print_function
 import numpy as np
 import os.path
-import GSASIIobj as G2obj
-import CifFile as cif # PyCifRW from James Hester
-import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import CifFile as cif # PyCifRW from James Hester
+from .. import GSASIIpath
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 
 class CIFpwdReader(G2obj.ImportPowderData):
@@ -64,7 +64,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             '_pd_proc_ls_weight',
             '_pd_meas_counts_total'
             )
-        
+
         ModDataItems = ( # items that modify the use of the data
             '_pd_meas_step_count_time',
             '_pd_meas_counts_monitor',
@@ -236,7 +236,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 else:
                     w,e = cif.get_number_with_esd(val)
                     if w: wl.append(w)
-                if wl: 
+                if wl:
                     if len(wl) > 1:
                         self.instdict['wave'] = wl
                     else:
@@ -244,7 +244,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             if cf[blk].get('_diffrn_ambient_temperature'):
                 val = cf[blk]['_diffrn_ambient_temperature']
                 w,e = cif.get_number_with_esd(val)
-                if w: 
+                if w:
                     self.Sample['Temperature'] = w
         xcf = xch[xi]
         if type(xcf) is tuple:
@@ -301,7 +301,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                     elif v <= 0:
                         vl.append(1.)
                     else:
-                        vl.append(1./v)                
+                        vl.append(1./v)
             elif sucf ==  '_pd_meas_counts_total':
                 for val in cf[blk].get(sucf,'?'):
                     v,e = cif.get_number_with_esd(val)

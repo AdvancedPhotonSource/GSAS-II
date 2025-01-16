@@ -17,21 +17,21 @@ import random as ran
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
-import GSASIIpath
-import GSASIIElem as G2elem
-import GSASIIElemGUI as G2elemGUI
-import GSASIIstrIO as G2stIO
-import GSASIImapvars as G2mv
-import GSASIImath as G2mth
-import GSASIIlattice as G2lat
-import GSASIIdataGUI as G2gd
-import GSASIIctrlGUI as G2G
-import GSASIIfiles as G2fl
-import GSASIIplot as G2plt
-import GSASIIobj as G2obj
-import GSASIIspc as G2spc
-import GSASIIphsGUI as G2phG
-import GSASIIscriptable as G2sc
+from . import GSASIIpath
+from . import GSASIIElem as G2elem
+from . import GSASIIElemGUI as G2elemGUI
+from . import GSASIIstrIO as G2stIO
+from . import GSASIImapvars as G2mv
+from . import GSASIImath as G2mth
+from . import GSASIIlattice as G2lat
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIfiles as G2fl
+from . import GSASIIplot as G2plt
+from . import GSASIIobj as G2obj
+from . import GSASIIspc as G2spc
+from . import GSASIIphsGUI as G2phG
+from . import GSASIIscriptable as G2sc
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 

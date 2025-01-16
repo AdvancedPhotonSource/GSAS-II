@@ -1,10 +1,10 @@
 #test
 import sys
 import wx
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
-import GSASIIspc as G2spc
-import GSASIIctrlGUI as G2G
+from . import GSASIIspc as G2spc
+from . import GSASIIctrlGUI as G2G
 
 try:
     wx.NewIdRef

@@ -7,10 +7,10 @@ import sys
 import os
 import numpy as np
 import numpy.linalg as nl
-import GSASIIspc as G2spc
-import GSASIIlattice as G2lat
-import GSASIIElem as G2elem
-import GSASIIpath
+from . import GSASIIspc as G2spc
+from . import GSASIIlattice as G2lat
+from . import GSASIIElem as G2elem
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
 bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
 submagSite = bilbaoSite + 'subgrmag1_general_GSAS.pl?'

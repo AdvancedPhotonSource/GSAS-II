@@ -4,7 +4,7 @@ from __future__ import division, print_function
 import os
 import os.path as ospath
 import numpy as np
-import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 npsind = lambda x: np.sin(np.pi*x/180.)
 class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and

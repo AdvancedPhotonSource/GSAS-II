@@ -4,8 +4,8 @@
 from __future__ import division, print_function
 import os.path
 import numpy as np
-import GSASIIfiles as G2fil
-import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
 
 class ExportPowderCHI(G2fil.ExportBaseclass):
     '''Used to create a CHI file for a powder data set

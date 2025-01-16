@@ -13,10 +13,10 @@ if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: Tru
 import numpy as np
 import sys
 import matplotlib as mpl
-import GSASIIpath
-import GSASIIElem as G2elem
-import GSASIIElemGUI as G2elemGUI
-import GSASIIctrlGUI as G2G
+from . import GSASIIpath
+from . import GSASIIElem as G2elem
+from . import GSASIIElemGUI as G2elemGUI
+from . import GSASIIctrlGUI as G2G
 
 try:
     wx.NewIdRef

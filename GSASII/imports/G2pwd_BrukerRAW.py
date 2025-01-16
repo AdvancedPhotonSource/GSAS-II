@@ -4,7 +4,7 @@
 import os
 import struct as st
 import numpy as np
-import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 class raw_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a binary Bruker .RAW file'
     def __init__(self):

@@ -11,11 +11,11 @@ import numpy.linalg as nl
 import numpy.ma as ma
 import wx
 import matplotlib as mpl
-import GSASIIpath
-import GSASIImiscGUI as G2IO
-import GSASIIimage as G2img
-import GSASIIplot as G2plt
-import GSASIIfiles as G2fil
+from . import GSASIIpath
+from . import GSASIImiscGUI as G2IO
+from . import GSASIIimage as G2img
+from . import GSASIIplot as G2plt
+from . import GSASIIfiles as G2fil
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)

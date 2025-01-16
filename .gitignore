@@ -30,3 +30,13 @@ GSASII/bindist
 
 # Local dev env files
 .vscode
+
+
+dist
+build
+
+#
+*.gpx
+*.lst
+
+*~

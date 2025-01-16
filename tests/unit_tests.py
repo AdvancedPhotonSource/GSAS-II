@@ -10,8 +10,8 @@ only modules :mod:`GSASIIspc` and :mod:`GSASIIlattice` have self-tests
 and these have not been tested or updated in many, many years. 
 '''
 
-import GSASIIspc
-import GSASIIlattice
+from . import GSASIIspc
+from . import GSASIIlattice
 def test_GSASIIspc():
     '''Test registered self-tests in ``GSASIIspc``.
     Takes no input and returns nothing. Throws an Exception if a test fails.

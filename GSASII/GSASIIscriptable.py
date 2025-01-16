@@ -39,18 +39,18 @@ import random as ran
 import numpy as np
 import numpy.ma as ma
 
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath(True)  # for now, this is needed before some of these modules can be imported
-import GSASIIobj as G2obj
-import GSASIIpwd as G2pwd
-import GSASIIstrMain as G2strMain
-import GSASIIstrIO as G2stIO
-import GSASIIspc as G2spc
-import GSASIIElem as G2elem
-import GSASIIfiles as G2fil
-import GSASIIimage as G2img
-import GSASIIlattice as G2lat
-import GSASIImapvars as G2mv
+from . import GSASIIobj as G2obj
+from . import GSASIIpwd as G2pwd
+from . import GSASIIstrMain as G2strMain
+from . import GSASIIstrIO as G2stIO
+from . import GSASIIspc as G2spc
+from . import GSASIIElem as G2elem
+from . import GSASIIfiles as G2fil
+from . import GSASIIimage as G2img
+from . import GSASIIlattice as G2lat
+from . import GSASIImapvars as G2mv
 
 # Delay imports loading to not slow down small scripts that don't need them
 Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
@@ -5439,7 +5439,7 @@ class G2SeqRefRes(G2ObjectWrapper):
         import os,sys
         sys.path.insert(0,'/Users/toby/software/G2/GSASII')
         PathWrap = lambda fil: os.path.join('/Users/toby/Scratch/SeqTut2019Mar',fil)
-        import GSASIIscriptable as G2sc
+        from . import GSASIIscriptable as G2sc
         gpx = G2sc.G2Project(PathWrap('scr4.gpx'))
         seq = gpx.seqref()
         lbl = ('a','b','c','alpha','beta','gamma','Volume')

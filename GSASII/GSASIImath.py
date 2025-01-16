@@ -12,17 +12,17 @@ import numpy.ma as ma
 import time
 import math
 import copy
-import GSASIIpath
-import GSASIIElem as G2el
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIIpwd as G2pwd
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
+from . import GSASIIpath
+from . import GSASIIElem as G2el
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIIpwd as G2pwd
+from . import GSASIIobj as G2obj
+from . import GSASIIfiles as G2fil
 import numpy.fft as fft
 import scipy.optimize as so
 try:
-    import pypowder as pwd
+    from . import pypowder as pwd
 except ImportError:
     print ('pypowder is not available - profile calcs. not allowed')
 
@@ -41,12 +41,12 @@ try:  # fails on doc build
 except TypeError:
     pass
 nxs = np.newaxis
-    
+
 ################################################################################
 #### Hessian least-squares Levenberg-Marquardt routine
 ################################################################################
 class G2NormException(Exception): pass
-    
+
 def pinv(a, rcond=1e-15 ):
     '''
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -68,7 +68,7 @@ def pinv(a, rcond=1e-15 ):
     Raises: LinAlgError
       If the SVD computation does not converge.
 
-    Notes: 
+    Notes:
       The pseudo-inverse of a matrix A, denoted :math:`A^+`, is
       defined as: "the matrix that 'solves' [the least-squares problem]
       :math:`Ax = b`," i.e., if :math:`\\bar{x}` is said solution, then
@@ -83,7 +83,7 @@ def pinv(a, rcond=1e-15 ):
     consisting of the reciprocals of A's singular values
     (again, followed by zeros). [1]
 
-    References: 
+    References:
     .. [1] G. Strang, *Linear Algebra and Its Applications*, 2nd Ed., Orlando, FL, Academic Press, Inc., 1980, pp. 139-142.
 
     '''
@@ -98,7 +98,7 @@ def dropTerms(bad, hessian, indices, *vectors):
     '''Remove the 'bad' terms from the Hessian and vector
 
     :param tuple bad: a list of variable (row/column) numbers that should be
-      removed from the hessian and vector. Example: (0,3) removes the 1st and 
+      removed from the hessian and vector. Example: (0,3) removes the 1st and
       4th column/row
     :param np.array hessian: a square matrix of length n x n
     :param np.array indices: the indices of the least-squares vector of length n
@@ -106,14 +106,14 @@ def dropTerms(bad, hessian, indices, *vectors):
        multiple times, more terms may be removed from this list
     :param additional-args: various least-squares model values, length n
 
-    :returns: hessian, indices, vector0, vector1,...  where the lengths are 
+    :returns: hessian, indices, vector0, vector1,...  where the lengths are
       now n' x n' and n', with n' = n - len(bad)
     '''
     out = [np.delete(np.delete(hessian,bad,1),bad,0),np.delete(indices,bad)]
     for v in vectors:
         out.append(np.delete(v,bad))
     return out
-        
+
 def setHcorr(info,Amat,xtol,problem=False):
     '''Find & report high correlation terms in covariance matrix
     '''
@@ -124,7 +124,7 @@ def setHcorr(info,Amat,xtol,problem=False):
     Bmat,Nzeros = pinv(Amat,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
     Bmat = Bmat/Anorm
     sig = np.sqrt(np.diag(Bmat))
-    xvar = np.outer(sig,np.ones_like(sig)) 
+    xvar = np.outer(sig,np.ones_like(sig))
     AcovUp = abs(np.triu(np.divide(np.divide(Bmat,xvar),xvar.T),1)) # elements above diagonal
     if Nzeros or problem: # something is wrong, so report what is found
         m = min(0.99,0.99*np.amax(AcovUp))
@@ -150,7 +150,7 @@ def setSVDwarn(info,Amat,Nzeros,indices):
 def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     '''
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
-    values (y): :math:`\\sum_{y=0}^{N_{obs}} f(y,{args})`    
+    values (y): :math:`\\sum_{y=0}^{N_{obs}} f(y,{args})`
     where :math:`x = arg min(\\sum_{y=0}^{N_{obs}} (func(y)^2,axis=0))`
 
     :param function func: callable method or function
@@ -163,9 +163,9 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     :param tuple args: Any extra arguments to func are placed in this tuple.
     :param float ftol: Relative error desired in the sum of squares.
     :param float xtol: Relative tolerance of zeros in the SVD solution in nl.pinv.
-    :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine 
+    :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine
         until other limits are met (ftol, xtol)
-    :param int lamda: initial Marquardt lambda=10**lamda 
+    :param int lamda: initial Marquardt lambda=10**lamda
     :param bool Print: True for printing results (residuals & times) by cycle
 
     :returns: (x,cov_x,infodict) where
@@ -175,14 +175,14 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         call).
       * cov_x : ndarray
         Uses the fjac and ipvt optional outputs to construct an
-        estimate of the jacobian around the solution. This matrix 
-        must be multiplied by the residual standard deviation to get 
+        estimate of the jacobian around the solution. This matrix
+        must be multiplied by the residual standard deviation to get
         the covariance of the parameter estimates -- see curve_fit.
-        
-        -- or ``None`` if a singular matrix encountered (indicates very 
+
+        -- or ``None`` if a singular matrix encountered (indicates very
         flat curvature in direction), or some other error is encountered.
-        
-        -- or an empty array if a refinement was not performed because 
+
+        -- or an empty array if a refinement was not performed because
         no valid variables were refined.
       * infodict : dict, a dictionary of optional outputs with the keys:
 
@@ -317,7 +317,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 if lam > 10.:
                     G2fil.G2Print('ouch #4 stuck: chisq-new %.4g > chisq0 %.4g with lambda %.1g'%
                         (chisq1,chisq0,lam), mode='warn')
-                    if GSASIIpath.GetConfigValue('debug'): 
+                    if GSASIIpath.GetConfigValue('debug'):
                         print('Cycle %d: %.2fs' % (icycle,time.time()-time0))
                     try:         # report highly correlated parameters from full Hessian, if we can
                         info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,
@@ -356,7 +356,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         if refPlotUpdate is not None: refPlotUpdate(Histograms,icycle)   # update plot
         if deltaChi2 < ftol:
             ifConverged = True
-            if Print: 
+            if Print:
                 G2fil.G2Print("converged")
             break
         icycle += 1
@@ -422,7 +422,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         G2fil.G2Print('ouch #6 linear algebra error in making final v-cov matrix', mode='error')
         psing = list(np.where(np.abs(np.diag(nl.qr(Amat)[1])) < 1.e-14)[0])
         if not len(psing): # make sure at least the worst term is flagged
-            d = np.abs(np.diag(nl.qr(Amat)[1]))        
+            d = np.abs(np.diag(nl.qr(Amat)[1]))
             psing = [np.argmin(d)]
         Amat, indices, Yvec = dropTerms(psing, Amat, indices, Yvec)
         info = {'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'SVD0':-1,'Xvec':None, 'chisq0':chisqf}
@@ -442,12 +442,12 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         info['lastShifts'] = lastShifts
     setSVDwarn(info,Amat,Nzeros,indices)
     return [x0,Bmat,info]
-    
+
 def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
-    
+
     '''
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
-    values (y): :math:`\\sum_{y=0}^{N_{obs}} f(y,{args})`    
+    values (y): :math:`\\sum_{y=0}^{N_{obs}} f(y,{args})`
     where :math:`x = arg min(\\sum_{y=0}^{N_{obs}} (func(y)^2,axis=0))`
 
     :param function func: callable method or function
@@ -460,7 +460,7 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     :param tuple args: Any extra arguments to func are placed in this tuple.
     :param float ftol: Relative error desired in the sum of squares.
     :param float xtol: Relative tolerance of zeros in the SVD solution in nl.pinv.
-    :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine 
+    :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine
         until other limits are met (ftol, xtol)
     :param bool Print: True for printing results (residuals & times) by cycle
 
@@ -485,16 +485,16 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
          * 'lamMax':0.
          * 'psing':
          * 'SVD0':
-            
+
     '''
-                
+
     ifConverged = False
     deltaChi2 = -10.
     x0 = np.array(x0, ndmin=1)      #might be redundant?
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
-        
+
     icycle = 0
     nfev = 0
     if Print:
@@ -543,7 +543,7 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     Yvec,Amat = Hess(x0,*args)
     Adiag = np.sqrt(np.diag(Amat))
     Anorm = np.outer(Adiag,Adiag)
-    Amat = Amat/Anorm        
+    Amat = Amat/Anorm
     try:
         Bmat,Nzero = pinv(Amat,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
         G2fil.G2Print('Found %d SVD zeros'%(Nzero), mode='warn')
@@ -559,19 +559,19 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
         return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1,
                              'chisq0':chisq00}]
-            
+
 def getVCov(varyNames,varyList,covMatrix):
-    '''obtain variance-covariance terms for a set of variables. NB: the varyList 
+    '''obtain variance-covariance terms for a set of variables. NB: the varyList
     and covMatrix were saved by the last least squares refinement so they must match.
-    
+
     :param list varyNames: variable names to find v-cov matric for
     :param list varyList: full list of all variables in v-cov matrix
-    :param nparray covMatrix: full variance-covariance matrix from the last 
+    :param nparray covMatrix: full variance-covariance matrix from the last
      least squares refinement
-    
+
     :returns: nparray vcov: variance-covariance matrix for the variables given
      in varyNames
-    
+
     '''
     vcov = np.zeros((len(varyNames),len(varyNames)))
     for i1,name1 in enumerate(varyNames):
@@ -582,10 +582,10 @@ def getVCov(varyNames,varyList,covMatrix):
                 vcov[i1][i2] = 0.0
 #                if i1 == i2:
 #                    vcov[i1][i2] = 1e-20
-#                else: 
+#                else:
 #                    vcov[i1][i2] = 0.0
     return vcov
-    
+
 ################################################################################
 #### Atom manipulations
 ################################################################################
@@ -593,7 +593,7 @@ def getVCov(varyNames,varyList,covMatrix):
 def getAtomPtrs(data,draw=False):
     ''' get atom data pointers cx,ct,cs,cia in Atoms or Draw Atoms lists
     NB:may not match column numbers in displayed table
-    
+
         param: dict: data phase data structure
         draw: boolean True if Draw Atoms list pointers are required
         return: cx,ct,cs,cia pointers to atom xyz, type, site sym, uiso/aniso flag
@@ -626,7 +626,7 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
         indH = atomTypes.index('H')
         radii[indH] = 0.5
     except:
-        pass            
+        pass
     nAtom = len(atomData)
     Indx = list(range(nAtom))
     UAtoms = []
@@ -684,19 +684,19 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
         if atom != None:
             newAtoms.append(atom)
     return newAtoms
-        
+
 def FindAtomIndexByIDs(atomData,loc,IDs,Draw=True):
-    '''finds the set of atom array indices for a list of atom IDs. Will search 
+    '''finds the set of atom array indices for a list of atom IDs. Will search
     either the Atom table or the drawAtom table.
-    
+
     :param list atomData: Atom or drawAtom table containting coordinates, etc.
     :param int loc: location of atom id in atomData record
     :param list IDs: atom IDs to be found
     :param bool Draw: True if drawAtom table to be searched; False if Atom table
       is searched
-    
+
     :returns: list indx: atom (or drawAtom) indices
-    
+
     '''
     indx = []
     for i,atom in enumerate(atomData):
@@ -708,12 +708,12 @@ def FindAtomIndexByIDs(atomData,loc,IDs,Draw=True):
 
 def FillAtomLookUp(atomData,indx):
     '''create a dictionary of atom indexes with atom IDs as keys
-    
+
     :param list atomData: Atom table to be used
     :param int  indx: pointer to position of atom id in atom record (typically cia+8)
-    
+
     :returns: dict atomLookUp: dictionary of atom indexes with atom IDs as keys
-    
+
     '''
     return {atom[indx]:iatm for iatm,atom in enumerate(atomData)}
 
@@ -737,7 +737,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
     if generalData['Type'] in ['nuclear','faulted',]:
         if oldatom:
             opr = oldatom[5]
-            if atom[9] == 'A':                    
+            if atom[9] == 'A':
                 X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[11:17])
                 atomInfo = [atom[:2]+list(X)+oldatom[5:9]+atom[9:11]+list(U)+oldatom[17:]][0]
             else:
@@ -756,7 +756,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
                 Mom = G2spc.ApplyStringOpsMom(opr,SGData,SSGData,mom)
             else:
                 Mom = G2spc.ApplyStringOpsMom(opr,SGData,None,mom)
-            if atom[12] == 'A':                    
+            if atom[12] == 'A':
                 X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[14:20])
                 atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:14]+list(U)+oldatom[20:]][0]
             else:
@@ -778,16 +778,16 @@ def MakeDrawAtom(data,atom,oldatom=None):
     atNum = generalData['AtomTypes'].index(atom[ct])
     atomInfo[cs] = list(generalData['Color'][atNum])
     return atomInfo
-    
+
 def GetAtomsById(atomData,atomLookUp,IdList):
     '''gets a list of atoms from Atom table that match a set of atom IDs
-    
+
     :param list atomData: Atom table to be used
     :param dict atomLookUp: dictionary of atom indexes with atom IDs as keys
     :param list IdList: atom IDs to be found
-    
+
     :returns: list atoms: list of atoms found
-    
+
     '''
     atoms = []
     for Id in IdList:
@@ -795,18 +795,18 @@ def GetAtomsById(atomData,atomLookUp,IdList):
             continue
         atoms.append(atomData[atomLookUp[Id]])
     return atoms
-    
+
 def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
     '''gets atom parameters for atoms using atom IDs
-    
+
     :param list atomData: Atom table to be used
     :param dict atomLookUp: dictionary of atom indexes with atom IDs as keys
     :param list IdList: atom IDs to be found
     :param int itemLoc: pointer to desired 1st item in an atom table entry
     :param int numItems: number of items to be retrieved
-    
+
     :returns: type name: description
-    
+
     '''
     Items = []
     if not isinstance(IdList,list):
@@ -819,14 +819,14 @@ def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
         else:
             Items.append(atomData[atomLookUp[Id]][itemLoc:itemLoc+numItems])
     return Items
-    
+
 def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     pfx = [str(pId)+'::A'+i+':' for i in ['x','y','z']]
     dpfx = [str(pId)+'::dA'+i+':' for i in ['x','y','z']]
@@ -836,14 +836,14 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         dnames = [dpfx[i]+str(AtLookup[ind]) for i in range(3)]
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
-    
+
 def GetAtomFracByID(pId,parmDict,AtLookup,indx):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     pfx = str(pId)+'::Afrac:'
     Frac = []
@@ -851,20 +851,20 @@ def GetAtomFracByID(pId,parmDict,AtLookup,indx):
         name = pfx+str(AtLookup[ind])
         Frac.append(parmDict[name])
     return Frac
-    
+
 #    for Atom in Atoms:
 #        XYZ = Atom[cx:cx+3]
 #        if 'A' in Atom[cia]:
 #            U6 = Atom[cia+2:cia+8]
-    
+
 
 def GetAtomMomsByID(pId,parmDict,AtLookup,indx):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     pfx = [str(pId)+'::A'+i+':' for i in ['Mx','My','Mz']]
     Mom = []
@@ -872,14 +872,14 @@ def GetAtomMomsByID(pId,parmDict,AtLookup,indx):
         names = [pfx[i]+str(AtLookup[ind]) for i in range(3)]
         Mom.append([parmDict[name] for name in names])
     return Mom
-    
+
 def ApplySeqData(data,seqData,PF2=False):
     '''Applies result from seq. refinement to drawing atom positions & Uijs
-    
+
     :param dict data: GSAS-II phase data structure
     :param dict seqData: GSAS-II sequential refinement results structure
     :param bool PF2: if True then seqData is from a sequential run of PDFfit2
-    
+
     :returns: list drawAtoms: revised Draw Atoms list
     '''
     cx,ct,cs,cia = getAtomPtrs(data)
@@ -929,7 +929,7 @@ def ApplySeqData(data,seqData,PF2=False):
                 drawatom = drawAtoms[ind]
                 opr = drawatom[dcs-1]
                 #how do I handle Sfrac? - fade the atoms?
-                if atom[cia] == 'A':                    
+                if atom[cia] == 'A':
                     X,U = G2spc.ApplyStringOps(opr,SGData,atxyz,atuij)
                     drawatom[dcx:dcx+3] = X
                     drawatom[dci-6:dci] = U
@@ -938,7 +938,7 @@ def ApplySeqData(data,seqData,PF2=False):
                     drawatom[dcx:dcx+3] = X
                     drawatom[dci-7] = atuiso
     return drawAtoms
-    
+
 def FindOctahedron(results):
     Octahedron = np.array([[1.,0,0],[0,1.,0],[0,0,1.],[-1.,0,0],[0,-1.,0],[0,0,-1.]])
     Polygon = np.array([result[3] for result in results])
@@ -955,7 +955,7 @@ def FindOctahedron(results):
     jAng = np.argmin(Rots)
     Qbvec = np.cross(Norms[jAng],Octahedron[1])
     QB = AVdeg2Q(Rots[jAng],Qbvec)
-    QQ = prodQQ(QA,QB)    
+    QQ = prodQQ(QA,QB)
     newNorms = prodQVQ(QQ,Norms)
     dispVecs = np.array([norm[:,nxs]-Octahedron.T for norm in newNorms])
     disp = np.sqrt(np.sum(dispVecs**2,axis=1))
@@ -966,7 +966,7 @@ def FindOctahedron(results):
     stdDisp = np.std(Disps)
     A,V = Q2AVdeg(QQ)
     return bond,std,meanDisp,stdDisp,A,V,vecDisp
-    
+
 def FindTetrahedron(results):
     Tetrahedron = np.array([[1.,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]])/np.sqrt(3.)
     Polygon = np.array([result[3] for result in results])
@@ -983,7 +983,7 @@ def FindTetrahedron(results):
     jAng = np.argmin(Rots)
     Qbvec = np.cross(Norms[jAng],Tetrahedron[1])
     QB = AVdeg2Q(Rots[jAng],Qbvec)
-    QQ = prodQQ(QA,QB)    
+    QQ = prodQQ(QA,QB)
     newNorms = prodQVQ(QQ,Norms)
     dispVecs = np.array([norm[:,nxs]-Tetrahedron.T for norm in newNorms])
     disp = np.sqrt(np.sum(dispVecs**2,axis=1))
@@ -994,7 +994,7 @@ def FindTetrahedron(results):
     stdDisp = np.std(Disps)
     A,V = Q2AVdeg(QQ)
     return bond,std,meanDisp,stdDisp,A,V,vecDisp
-    
+
 def FindNeighbors(phase,FrstName,AtNames,notName=''):
     General = phase['General']
     cx,ct,cs,cia = getAtomPtrs(phase)
@@ -1005,7 +1005,7 @@ def FindNeighbors(phase,FrstName,AtNames,notName=''):
     atTypes = General['AtomTypes']
     Radii = np.array(General['BondRadii'])
     try:
-        DisAglCtls = General['DisAglCtls']    
+        DisAglCtls = General['DisAglCtls']
         radiusFactor = DisAglCtls['Factors'][0]
     except:
         radiusFactor = 0.85
@@ -1013,7 +1013,7 @@ def FindNeighbors(phase,FrstName,AtNames,notName=''):
     Orig = atNames.index(FrstName)
     OId = Atoms[Orig][cia+8]
     OType = Atoms[Orig][ct]
-    XYZ = getAtomXYZ(Atoms,cx)        
+    XYZ = getAtomXYZ(Atoms,cx)
     Neigh = []
     Ids = []
     Dx = np.inner(Amat,XYZ-XYZ[Orig]).T
@@ -1050,7 +1050,7 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,sea
     AtTypes = General['AtomTypes']
     Radii = copy.copy(np.array(General[skey]))
     try:
-        DisAglCtls = General['DisAglCtls']    
+        DisAglCtls = General['DisAglCtls']
         radiusFactor = DisAglCtls['Factors'][sindex]
         Radii = DisAglCtls[skey]
     except:
@@ -1060,7 +1060,7 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,sea
         Orig = atNames.index(FrstName)
     OId = Atoms[Orig][cia+8]
     OType = Atoms[Orig][ct]
-    XYZ = getAtomXYZ(Atoms,cx)        
+    XYZ = getAtomXYZ(Atoms,cx)
     Oxyz = XYZ[Orig]
     Neigh = []
     Ids = []
@@ -1092,7 +1092,7 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,sea
                         Neigh.append([AtNames[iA]+Topstr,atTypes[iA],dist[iU],dx[iU]])
                     Ids.append(Atoms[iA][cia+8])
     return Neigh,[OId,Ids]
-    
+
 def calcBond(A,Ax,Bx,MTCU):
     cell = G2lat.A2cell(A)
     Amat,Bmat = G2lat.cell2AB(cell)
@@ -1101,17 +1101,17 @@ def calcBond(A,Ax,Bx,MTCU):
     Dx = Btx-Ax
     dist = np.sqrt(np.inner(Amat,Dx))
     return dist
-    
+
 def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
-    
+
     def getTransMat(RXYZ,OXYZ,TXYZ,Amat):
-        Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
+        Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T
         Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,nxs]
         Mat2 = np.cross(Vec[0],Vec[1])      #UxV
         Mat2 /= np.sqrt(np.sum(Mat2**2))
         Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
-        return nl.inv(np.array([Vec[0],Mat2,Mat3]))        
-    
+        return nl.inv(np.array([Vec[0],Mat2,Mat3]))
+
     cx,ct,cs,cia = General['AtomPtrs']
     Cell = General['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(Cell)
@@ -1156,10 +1156,10 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Hpos = np.array([[a,0.,-b],[a,-b*cosd(30.),0.5*b],[a,b*cosd(30.),0.5*b]])
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             HU = 1.5*Uiso*np.ones(3)
-            return Hpos,HU          
+            return Hpos,HU
     elif nBonds == 3:
         if AddHydId[-1] == 1:
-            Vec = np.sum(TXYZ-OXYZ,axis=0)                
+            Vec = np.sum(TXYZ-OXYZ,axis=0)
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
             Vec = -0.93*Vec/Len
             Hpos = OXYZ+Vec
@@ -1198,27 +1198,27 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             HU = 1.5*Uiso
             return [Hpos[imax],],[HU,]
     return [],[]
-        
+
 #def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
 #    '''default doc string
-#    
+#
 #    :param type name: description
-#    
+#
 #    :returns: type name: description
-#    
+#
 #    '''
 #    for atom in atomData:
 #        XYZ = np.inner(Amat,atom[cx:cx+3])
 #        if atom[cia] == 'A':
 #            UIJ = atom[cia+2:cia+8]
-                
+
 def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     TLStype,TLS = rbObj['ThermalMotion'][:2]
     Tmat = np.zeros((3,3))
@@ -1236,15 +1236,15 @@ def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
     Axyz = np.array([[ 0,XYZ[2],-XYZ[1]], [-XYZ[2],0,XYZ[0]], [XYZ[1],-XYZ[0],0]] )
     Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
     beta = np.inner(np.inner(g,Umat),g)
-    return G2lat.UijtoU6(beta)*gvec    
-        
+    return G2lat.UijtoU6(beta)*gvec
+
 def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be?
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     cx,ct,cs,cia = atPtrs
     TLStype,TLS = rbObj['ThermalMotion'][:2]
@@ -1272,23 +1272,23 @@ def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be
             atom[cia+2:cia+8] = G2spc.U2Uij(beta/gvec)
 
 def GetXYZDist(xyz,XYZ,Amat):
-    '''gets distance from position xyz to all XYZ, xyz & XYZ are np.array 
+    '''gets distance from position xyz to all XYZ, xyz & XYZ are np.array
         and are in crystal coordinates; Amat is crystal to Cart matrix
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     return np.sqrt(np.sum(np.inner(Amat,XYZ-xyz)**2,axis=0))
 
 def getAtomXYZ(atoms,cx):
     '''Create an array of fractional coordinates from the atoms list
-    
+
     :param list atoms: atoms object as found in tree
     :param int cx: offset to where coordinates are found
-    
-    :returns: np.array with shape (n,3)    
+
+    :returns: np.array with shape (n,3)
     '''
     XYZ = []
     for atom in atoms:
@@ -1297,28 +1297,28 @@ def getAtomXYZ(atoms,cx):
 
 def getRBTransMat(X,Y):
     '''Get transformation for Cartesian axes given 2 vectors
-    X will  be parallel to new X-axis; X cross Y will be new Z-axis & 
+    X will  be parallel to new X-axis; X cross Y will be new Z-axis &
     (X cross Y) cross Y will be new Y-axis
     Useful for rigid body axes definintion
-    
+
     :param array X: normalized vector
     :param array Y: normalized vector
-    
+
     :returns: array M: transformation matrix
-    
+
     use as XYZ' = np.inner(M,XYZ) where XYZ are Cartesian
-    
+
     '''
     Mat2 = np.cross(X,Y)      #UxV-->Z
     Mat2 /= np.sqrt(np.sum(Mat2**2))
     Mat3 = np.cross(Mat2,X)        #(UxV)xU-->Y
     Mat3 /= np.sqrt(np.sum(Mat3**2))
-    return np.array([X,Mat3,Mat2])        
-                
+    return np.array([X,Mat3,Mat2])
+
 def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
     '''rotate & transform cartesian coordinates to crystallographic ones
-    no translation applied. To be used for numerical derivatives 
-    
+    no translation applied. To be used for numerical derivatives
+
     :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
     :param array Cart: 2D array of coordinates
     :param array Q: quaternion as an np.array
@@ -1341,17 +1341,17 @@ def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
     return XYZ
 
 def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
-    '''returns crystal coordinates for atoms described by RBObj. 
+    '''returns crystal coordinates for atoms described by RBObj.
     Note that RBObj['symAxis'], if present, determines the symmetry
-    axis of the rigid body, which will be aligned to the 
+    axis of the rigid body, which will be aligned to the
     quaternion direction.
-    
+
     :param np.array Bmat: see :func:`GSASIIlattice.cell2AB`
     :param dict rbObj: rigid body selection/orientation information
     :param dict RBData: rigid body tree data structure
     :param str RBType: rigid body type, 'Vector' or 'Residue'
 
-    :returns: coordinates for rigid body as XYZ,Cart where XYZ is 
+    :returns: coordinates for rigid body as XYZ,Cart where XYZ is
        the location in crystal coordinates and Cart is in cartesian
     '''
     if RBType == 'Vector':
@@ -1393,11 +1393,11 @@ def GetSpnRBData(SpnRB,atId):
 
 def UpdateMCSAxyz(Bmat,MCSA):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     xyz = []
     atTypes = []
@@ -1431,14 +1431,14 @@ def UpdateMCSAxyz(Bmat,MCSA):
                 atTypes.append(atType)
                 iatm += 1
     return np.array(xyz),atTypes
-    
+
 def SetMolCent(model,RBData):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     rideList = []
     RBRes = RBData[model['Type']][model['RBId']]
@@ -1456,19 +1456,19 @@ def SetMolCent(model,RBData):
     cent = np.zeros(3)
     for i in centList:
         cent += Cart[i]
-    model['MolCent'][0] = cent/len(centList) 
-    
+    model['MolCent'][0] = cent/len(centList)
+
 ###############################################################################
 #### Various utilities
 ###############################################################################
-    
+
 def UpdateRBUIJ(Bmat,Cart,RBObj):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     ''' returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
     '''
@@ -1508,57 +1508,57 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
         else:
             Uout.append(['N',])
     return Uout
-    
+
 def GetSHCoeff(pId,parmDict,SHkeys):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     SHCoeff = {}
     for shkey in SHkeys:
         shname = str(pId)+'::'+shkey
         SHCoeff[shkey] = parmDict[shname]
     return SHCoeff
-        
+
 def getMass(generalData):
     '''Computes mass of unit cell contents
-    
+
     :param dict generalData: The General dictionary in Phase
-    
+
     :returns: float mass: Crystal unit cell mass in AMU.
-    
+
     '''
     mass = 0.
     for i,elem in enumerate(generalData['AtomTypes']):
         mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
-    return max(mass,1.0)    
+    return max(mass,1.0)
 
 def getDensity(generalData):
     '''calculate crystal structure density
-    
+
     :param dict generalData: The General dictionary in Phase
-    
+
     :returns: float density: crystal density in gm/cm^3
-    
+
     '''
     mass = getMass(generalData)
     Volume = generalData['Cell'][7]
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
-    
+
 def phaseContents(phase):
     '''Compute the unit cell and asymmetric unit contents for a phase.
 
-    This has been tested only on type='nuclear' phases and 
-    might need adaptation for phases of other types, if the 
-    phase type does not have an occupancy defined. 
+    This has been tested only on type='nuclear' phases and
+    might need adaptation for phases of other types, if the
+    phase type does not have an occupancy defined.
 
-    :param dict phase: the dict for a phase, as found in the 
-      data tree 
-    :returns: acomp,ccomp where acomp is the asymmetric unit contents and 
+    :param dict phase: the dict for a phase, as found in the
+      data tree
+    :returns: acomp,ccomp where acomp is the asymmetric unit contents and
       ccomp is the contents of the unit cell
     '''
     generalData = phase['General']
@@ -1567,8 +1567,8 @@ def phaseContents(phase):
     acomp = {} # contents of asymmetric unit
     for atom in phase['Atoms']:
         if atom[ct] not in ccomp:
-            ccomp[atom[ct]] = 0        
-            acomp[atom[ct]] = 0        
+            ccomp[atom[ct]] = 0
+            acomp[atom[ct]] = 0
         ccomp[atom[ct]] += atom[cs+1]*atom[cx+3]
         acomp[atom[ct]] += atom[cx+3]
     return acomp,ccomp
@@ -1581,33 +1581,33 @@ def fmtPhaseContents(compdict):
 
 def getWave(Parms):
     '''returns wavelength from Instrument parameters dictionary
-    
+
     :param dict Parms: Instrument parameters;
         must contain:
         Lam: single wavelength
         or
         Lam1: Ka1 radiation wavelength
-    
+
     :returns: float wave: wavelength
-    
+
     '''
     try:
         return Parms['Lam'][1]
     except KeyError:
         return Parms['Lam1'][1]
-        
+
 def getMeanWave(Parms):
     '''returns mean wavelength from Instrument parameters dictionary
-    
+
     :param dict Parms: Instrument parameters;
         must contain:
         Lam: single wavelength
         or
         Lam1,Lam2: Ka1,Ka2 radiation wavelength
         I(L2)/I(L1): Ka2/Ka1 ratio
-    
+
     :returns: float wave: mean wavelength
-    
+
     '''
     try:
         return Parms['Lam'][1]
@@ -1615,88 +1615,88 @@ def getMeanWave(Parms):
         meanLam = (Parms['Lam1'][1]+Parms['I(L2)/I(L1)'][1]*Parms['Lam2'][1])/   \
             (1.+Parms['I(L2)/I(L1)'][1])
         return meanLam
-    
-        
+
+
 def El2Mass(Elements):
-    '''compute molecular weight from Elements 
-    
-    :param dict Elements: elements in molecular formula; 
-        each must contain 
+    '''compute molecular weight from Elements
+
+    :param dict Elements: elements in molecular formula;
+        each must contain
         Num: number of atoms in formula
-        Mass: at. wt. 
-    
+        Mass: at. wt.
+
     :returns: float mass: molecular weight.
-    
+
     '''
     mass = 0
     for El in Elements:
         mass += Elements[El]['Num']*Elements[El]['Mass']
     return mass
-        
+
 def Den2Vol(Elements,density):
     '''converts density to molecular volume
-    
-    :param dict Elements: elements in molecular formula; 
-        each must contain 
+
+    :param dict Elements: elements in molecular formula;
+        each must contain
         Num: number of atoms in formula
-        Mass: at. wt. 
+        Mass: at. wt.
     :param float density: material density in gm/cm^3
-    
-    :returns: float volume: molecular volume in A^3 
-    
+
+    :returns: float volume: molecular volume in A^3
+
     '''
     return El2Mass(Elements)/(density*0.6022137)
-    
+
 def Vol2Den(Elements,volume):
     '''converts volume to density
-    
-    :param dict Elements: elements in molecular formula; 
-        each must contain 
+
+    :param dict Elements: elements in molecular formula;
+        each must contain
         Num: number of atoms in formula
-        Mass: at. wt. 
+        Mass: at. wt.
     :param float volume: molecular volume in A^3
-    
+
     :returns: float density: material density in gm/cm^3
-    
+
     '''
     return El2Mass(Elements)/(volume*0.6022137)
-    
+
 def El2EstVol(Elements):
     '''Estimate volume from molecular formula; assumes atom volume = 10A^3
-    
-    :param dict Elements: elements in molecular formula; 
-        each must contain 
+
+    :param dict Elements: elements in molecular formula;
+        each must contain
         Num: number of atoms in formula
-    
+
     :returns: float volume: estimate of molecular volume in A^3
-    
+
     '''
     vol = 0
     for El in Elements:
         vol += 10.*Elements[El]['Num']
     return vol
-    
+
 def XScattDen(Elements,vol,wave=0.):
     '''Estimate X-ray scattering density from molecular formula & volume;
     ignores valence, but includes anomalous effects
-    
-    :param dict Elements: elements in molecular formula; 
-        each element must contain 
+
+    :param dict Elements: elements in molecular formula;
+        each element must contain
         Num: number of atoms in formula
         Z: atomic number
     :param float vol: molecular volume in A^3
     :param float wave: optional wavelength in A
-    
-    :returns: float rho: scattering density in 10^10cm^-2; 
+
+    :returns: float rho: scattering density in 10^10cm^-2;
         if wave > 0 the includes f' contribution
     :returns: float mu: if wave>0 absorption coeff in cm^-1 ; otherwise 0
     :returns: float fpp: if wave>0 f" in 10^10cm^-2; otherwise 0
-    
+
     '''
     rho = 0
     mu = 0
     fpp = 0
-    if wave: 
+    if wave:
         Xanom = XAnomAbs(Elements,wave)
     for El in Elements:
         f0 = Elements[El]['Z']
@@ -1706,23 +1706,23 @@ def XScattDen(Elements,vol,wave=0.):
             mu += Xanom[El][2]*Elements[El]['Num']
         rho += Elements[El]['Num']*f0
     return 28.179*rho/vol,mu/vol,28.179*fpp/vol
-    
+
 def NCScattDen(Elements,vol,wave=0.):
     '''Estimate neutron scattering density from molecular formula & volume;
     ignores valence, but includes anomalous effects
-    
-    :param dict Elements: elements in molecular formula; 
-        each element must contain 
+
+    :param dict Elements: elements in molecular formula;
+        each element must contain
         Num: number of atoms in formula
         Z: atomic number
     :param float vol: molecular volume in A^3
     :param float wave: optional wavelength in A
-    
-    :returns: float rho: scattering density in 10^10cm^-2; 
+
+    :returns: float rho: scattering density in 10^10cm^-2;
         if wave > 0 the includes f' contribution
     :returns: float mu: if wave>0 absorption coeff in cm^-1 ; otherwise 0
     :returns: float fpp: if wave>0 f" in 10^10cm^-2; otherwise 0
-    
+
     '''
     rho = 0
     mu = 0
@@ -1747,17 +1747,17 @@ def NCScattDen(Elements,vol,wave=0.):
         rho += Elements[El]['Num']*b0
     if wave: mu *= wave
     return 100.*rho/vol,mu/vol,100.*bpp/vol
-    
+
 def wavekE(wavekE):
     '''Convert wavelength to energy & vise versa
-    
+
     :param float waveKe:wavelength in A or energy in kE
-    
+
     :returns float waveKe:the other one
-    
+
     '''
     return 12.397639/wavekE
-        
+
 def XAnomAbs(Elements,wave):
     kE = wavekE(wave)
     Xanom = {}
@@ -1765,7 +1765,7 @@ def XAnomAbs(Elements,wave):
         Orbs = G2el.GetXsectionCoeff(El)
         Xanom[El] = G2el.FPcalc(Orbs, kE)
     return Xanom        #f',f", mu
-    
+
 ################################################################################
 #### Modulation math
 ################################################################################
@@ -1777,7 +1777,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     XSSdata: array 2x3 x atoms X waves (sin,cos terms)
     USSdata: array 2x6 x atoms X waves (sin,cos terms)
     MSSdata: array 2x3 x atoms X waves (sin,cos terms)
-    
+
     Mast: array orthogonalization matrix for Uij
     '''
     ngl = 36                    #selected for integer steps for 1/6,1/4,1/3...
@@ -1790,14 +1790,14 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods as betaij
     Am = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
     Bm = np.array(MSSdata[3:]).T   #...cos pos mods
-    nWaves = [Af.shape[1],Ax.shape[1],Au.shape[1],Am.shape[1]] 
+    nWaves = [Af.shape[1],Ax.shape[1],Au.shape[1],Am.shape[1]]
     if nWaves[0]:
         tauF = np.arange(1.,nWaves[0]+1)[:,nxs]*glTau  #Fwaves x ngl
         FmodA = Af[:,:,nxs]*np.sin(twopi*tauF[nxs,:,:])   #atoms X Fwaves X ngl
         FmodB = Bf[:,:,nxs]*np.cos(twopi*tauF[nxs,:,:])
         Fmod = np.sum(1.0+FmodA+FmodB,axis=1)             #atoms X ngl; sum waves
     else:
-        Fmod = 1.0           
+        Fmod = 1.0
     XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))
     XmodA = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))
     XmodB = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))
@@ -1805,16 +1805,16 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         nx = 0
         if 'ZigZag' in waveTypes[iatm]:
             nx = 1
-            Tmm = Ax[iatm][0][:2]                        
+            Tmm = Ax[iatm][0][:2]
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
             XmodZ[iatm][0] += posZigZag(glTau,Tmm,XYZmax).T
         elif 'Block' in waveTypes[iatm]:
             nx = 1
-            Tmm = Ax[iatm][0][:2]                        
+            Tmm = Ax[iatm][0][:2]
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
             XmodZ[iatm][0] += posBlock(glTau,Tmm,XYZmax).T
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x ngl
-        if nx:    
+        if nx:
             XmodA[iatm][:-nx] = Ax[iatm,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X ngl
             XmodB[iatm][:-nx] = Bx[iatm,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
         else:
@@ -1841,7 +1841,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
 
 def MagMod(glTau,xyz,modQ,MSSdata,SGData,SSGData):
     '''
-    this needs to make magnetic moment modulations & magnitudes as 
+    this needs to make magnetic moment modulations & magnitudes as
     fxn of gTau points; NB: this allows only 1 mag. wave fxn.
     '''
     Am = np.array(MSSdata[3:]).T[:,0,:]   #atoms x cos mag mods; only 1 wave used
@@ -1862,7 +1862,7 @@ def MagMod(glTau,xyz,modQ,MSSdata,SGData,SSGData):
         SGT = np.vstack((SGT,SGT+np.array([0.,0.,0.,.5])))%1.
     XYZ = np.array([(np.inner(xyzi,SGMT)+SGT[:,:3])%1. for xyzi in xyz.T]) #Natn,Nop,xyz
     AMR = np.swapaxes(np.inner(Am,SGMT),0,1)        #Nops,Natm,Mxyz
-    BMR = np.swapaxes(np.inner(Bm,SGMT),0,1) 
+    BMR = np.swapaxes(np.inner(Bm,SGMT),0,1)
     phi =  np.inner(xyz.T,modQ)+(np.inner(SGT[:,:3],modQ)[:,nxs]-SGT[:,3,nxs])*glTau[:,nxs,nxs]
     psin = np.sin(twopi*phi)      #tau,ops,atms
     pcos = np.cos(twopi*phi)
@@ -1871,7 +1871,7 @@ def MagMod(glTau,xyz,modQ,MSSdata,SGData,SSGData):
     MmodAI = AMR[nxs,:,:,:]*psin[:,:,:,nxs]         #Im sin term
     MmodBI = BMR[nxs,:,:,:]*pcos[:,:,:,nxs]         #Im cos term
     return XYZ,MmodAR,MmodBR,MmodAI,MmodBI    #Ntau,Nops,Natm,Mxyz; Re, Im cos & sin parts
-        
+
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''
     H: array nRefBlk x ops X hklt
@@ -1882,7 +1882,7 @@ def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     Umod: array atoms x 3x3 x ngl
     glTau,glWt: arrays Gauss-Lorentzian pos & wts
     '''
-    
+
     if nWaves[2]:       #uij (adp) waves
         if len(HP.shape) > 2:
             HbH = np.exp(-np.sum(HP[:,:,nxs,nxs,:]*np.inner(HP,Umod),axis=-1)) # refBlk x ops x atoms x ngl add Overhauser corr.?
@@ -1900,7 +1900,7 @@ def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     cosHA = np.sum(Fmod*HbH*np.cos(HdotXD)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
     sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
-    
+
 def ModulationTw(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''
     H: array nRefBlk x tw x ops X hklt
@@ -1910,7 +1910,7 @@ def ModulationTw(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     Umod: array atoms x ngl x 3x3
     glTau,glWt: arrays Gauss-Lorentzian pos & wts
     '''
-    
+
     if nWaves[2]:
         if len(HP.shape) > 3:   #Blocks of reflections
             HbH = np.exp(-np.sum(HP[:,:,nxs,nxs,:]*np.inner(HP,Umod),axis=-1)) # refBlk x ops x atoms x ngl add Overhauser corr.?
@@ -1928,7 +1928,7 @@ def ModulationTw(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     cosHA = np.sum(Fmod*HbH*np.cos(HdotXD)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
     sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
-    
+
 def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
     '''
     Only for Fourier waves for fraction, position & adp (probably not used for magnetism)
@@ -1945,7 +1945,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
     Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
     Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
-    nWaves = [Af.shape[1],Ax.shape[1],Au.shape[1]] 
+    nWaves = [Af.shape[1],Ax.shape[1],Au.shape[1]]
     StauX = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))    #atoms x waves x 3 x ngl
     CtauX = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))
     ZtauXt = np.zeros((Ax.shape[0],2,3,ngl))               #atoms x Tminmax x 3 x ngl
@@ -1957,7 +1957,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
         elif 'Block' in waveTypes[iatm]:
             nx = 1
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x ngl
-        if nx:    
+        if nx:
             StauX[iatm][nx:] = np.ones_like(Ax)[iatm,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X ngl
             CtauX[iatm][nx:] = np.ones_like(Bx)[iatm,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
         else:
@@ -1985,7 +1985,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
         UmodA = 0.
         UmodB = 0.
     return waveShapes,[StauF,CtauF],[StauX,CtauX,ZtauXt,ZtauXx],[StauU,CtauU],UmodA+UmodB
-    
+
 def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCtauU,glTau,glWt):
     '''
     Compute Fourier modulation derivatives
@@ -1993,7 +1993,7 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
     HP: array ops X hklt proj to hkl
     Hij: array 2pi^2[a*^2h^2 b*^2k^2 c*^2l^2 a*b*hk a*c*hl b*c*kl] of projected hklm to hkl space
     '''
-   
+
     Mf = [H.shape[0],]+list(waveShapes[0])    #=[ops,atoms,waves,2] (sin+cos frac mods)
     dGdMfC = np.zeros(Mf)
     dGdMfS = np.zeros(Mf)
@@ -2003,12 +2003,12 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
     Mu = [H.shape[0],]+list(waveShapes[2])    #=[ops,atoms,waves,12] (sin+cos Uij mods)
     dGdMuC = np.zeros(Mu)
     dGdMuS = np.zeros(Mu)
-    
+
     D = twopi*H[:,3][:,nxs]*glTau[nxs,:]              #m*e*tau; ops X ngl
     HdotX = twopi*np.inner(HP,Xmod)        #ops x atoms X ngl
     HdotXD = HdotX+D[:,nxs,:]
     if nWaves[2]:
-        Umod = np.swapaxes((UmodAB),2,4)      #atoms x waves x ngl x 3x3 (symmetric so I can do this!) 
+        Umod = np.swapaxes((UmodAB),2,4)      #atoms x waves x ngl x 3x3 (symmetric so I can do this!)
         HuH = np.sum(HP[:,nxs,nxs,nxs]*np.inner(HP,Umod),axis=-1)    #ops x atoms x waves x ngl
         HuH = np.sum(HP[:,nxs,nxs,nxs]*np.inner(HP,Umod),axis=-1)    #ops x atoms x waves x ngl
         HbH = np.exp(-np.sum(HuH,axis=-2)) # ops x atoms x ngl; sum waves - OK vs Modulation version
@@ -2033,25 +2033,25 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
     dGdMxCb = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
 # ops x atoms x waves x 2xyz - imag part - good
-#    dGdMxSa = np.sum((Fmod[nxs,:,:]*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
-#    dGdMxSb = np.sum((Fmod[nxs,:,:]*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
-    dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
-    dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
+#    dGdMxSa = np.sum((Fmod[nxs,:,:]*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+#    dGdMxSb = np.sum((Fmod[nxs,:,:]*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+    dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+    dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
     return [dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]
-        
+
 def posFourier(tau,psin,pcos):
     A = np.array([ps[:,nxs]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])
     B = np.array([pc[:,nxs]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
-    
+
 def posZigZag(T,Tmm,Xmax):
     DT = Tmm[1]-Tmm[0]
     Su = 2.*Xmax/DT
     Sd = 2.*Xmax/(1.-DT)
     A = np.array([np.where(  0.< (t-Tmm[0])%1. <= DT, -Xmax+Su*((t-Tmm[0])%1.), Xmax-Sd*((t-Tmm[1])%1.)) for t in T])
     return A
-    
+
 #def posZigZagDerv(T,Tmm,Xmax):
 #    DT = Tmm[1]-Tmm[0]
 #    Su = 2.*Xmax/DT
@@ -2065,7 +2065,7 @@ def posZigZag(T,Tmm,Xmax):
 def posBlock(T,Tmm,Xmax):
     A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-Xmax,Xmax) for t in T])
     return A
-    
+
 #def posBlockDerv(T,Tmm,Xmax):
 #    dAdT = np.zeros((2,3,len(T)))
 #    ind = np.searchsorted(T,Tmm)
@@ -2073,12 +2073,12 @@ def posBlock(T,Tmm,Xmax):
 #    dAdT[1,:,ind[1]] = Xmax/len(T)
 #    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t <= Tmm[1],-1.,1.) for t in T])  #OK
 #    return dAdT,dAdX
-    
+
 def fracCrenel(tau,Toff,Twid):
     Tau = (tau-Toff)%1.
     A = np.where(Tau<Twid,1.,0.)
     return A
-    
+
 def fracFourier(tau,fsin,fcos):
     if len(fsin) == 1:
         A = np.array([fsin[0]*np.sin(2.*np.pi*tau)])
@@ -2135,7 +2135,7 @@ def ApplyModulation(data,tau):
                         scof.append(sfrac[0][0])
                         ccof.append(sfrac[0][1])
                     if len(scof):
-                        Fade[ind] += np.sum(fracFourier(tauT,scof,ccof))                            
+                        Fade[ind] += np.sum(fracFourier(tauT,scof,ccof))
             if len(Spos):
                 scof = []
                 ccof = []
@@ -2172,7 +2172,7 @@ def ApplyModulation(data,tau):
                 ures = posFourier(tauT,np.array(scof),np.array(ccof))
                 if np.any(ures):
                     uwave += np.sum(ures,axis=1)
-            if atom[cia] == 'A':                    
+            if atom[cia] == 'A':
                 X,U = G2spc.ApplyStringOps(opr,SGData,atxyz+wave,atuij+uwave)
                 drawatom[dcx:dcx+3] = X
                 drawatom[dci-6:dci] = U
@@ -2191,7 +2191,7 @@ def patchIsoDisp(ISO):
 Warning: The ISODISTORT modes were read before the importer
 was corrected to save displacement offsets. Will attempt to correct
 from ParentStructure (correct only if displacivemode values are all
-zero in initial CIF.) Reimporting is suggested. 
+zero in initial CIF.) Reimporting is suggested.
 ======================================================================
 ''')
     ISO['G2coordOffset'] = []
@@ -2237,7 +2237,7 @@ def CalcIsoDisp(Phase,parmDict={},covdata={}):
         dispValues.append(pos)
 
     modeValues = np.dot(ISO['Var2ModeMatrix'],dispValues) / ISO['NormList']
-        
+
     return dispValues,dispEsds,modeValues,modeEsds
 
 def CalcIsoCoords(Phase,parmDict,covdata={}):
@@ -2245,13 +2245,13 @@ def CalcIsoCoords(Phase,parmDict,covdata={}):
     Uncertainties are computed if covdata is supplied.
 
     :param dict Phase: contents of tree entry for selected phase
-    :param dict parmDict: a dict with values for the modes; note that in the 
-       parmDict from refinements the mode values are not normalized, 
+    :param dict parmDict: a dict with values for the modes; note that in the
+       parmDict from refinements the mode values are not normalized,
        but this assumes they are.
     :param dict Phase: full covariance information from tree
 
-    :returns: modeDict,posDict where modeDict contains pairs of mode values 
-      and mode s.u. values; posDict contains pairs of displacement values 
+    :returns: modeDict,posDict where modeDict contains pairs of mode values
+      and mode s.u. values; posDict contains pairs of displacement values
       and their s.u. values.
     '''
     ISO = Phase['ISODISTORT']
@@ -2276,7 +2276,7 @@ def CalcIsoCoords(Phase,parmDict,covdata={}):
         dispEsds = list(np.where(var>0.,np.sqrt(var),-0.0001))
     else:
         modeEsds = len(ISO['G2ModeList'])*[-0.0001]
-        dispEsds = len(ISO['G2VarList'])*[-0.0001]        
+        dispEsds = len(ISO['G2VarList'])*[-0.0001]
     dispValues =   np.dot(normMode2Var,modeVals)
     modeDict = {str(g2):([val,esd]) for val,g2,esd in
                         zip(modeVals,ISO['G2ModeList'],modeEsds)}
@@ -2285,11 +2285,11 @@ def CalcIsoCoords(Phase,parmDict,covdata={}):
     return modeDict,posDict
 
 def ApplyModeDisp(data):
-    ''' Applies ISODISTORT mode displacements to atom lists. 
-    This changes the contents of the Draw Atoms positions and 
+    ''' Applies ISODISTORT mode displacements to atom lists.
+    This changes the contents of the Draw Atoms positions and
     the Atoms positions.
 
-    :param dict data: the contents of the Phase data tree item for a 
+    :param dict data: the contents of the Phase data tree item for a
       particular phase
     '''
     generalData = data['General']
@@ -2324,21 +2324,21 @@ def ApplyModeDisp(data):
             indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
             for ind in indx:
                 drawatom = drawAtoms[ind]
-                opr = drawatom[dcs-1]            
+                opr = drawatom[dcs-1]
                 X = G2spc.ApplyStringOps(opr,SGData,atxyz+displ)
                 drawatom[dcx:dcx+3] = X
         return None
     else:
         return 'Draw structure first'
 
-    
-# gauleg.py Gauss Legendre numerical quadrature, x and w computation 
-# integrate from a to b using n evaluations of the function f(x)  
-# usage: from gauleg import gaulegf         
-#        x,w = gaulegf( a, b, n)                                
-#        area = 0.0                                            
-#        for i in range(1,n+1):          #  yes, 1..n                   
-#          area += w[i]*f(x[i])                                    
+
+# gauleg.py Gauss Legendre numerical quadrature, x and w computation
+# integrate from a to b using n evaluations of the function f(x)
+# usage: from gauleg import gaulegf
+#        x,w = gaulegf( a, b, n)
+#        area = 0.0
+#        for i in range(1,n+1):          #  yes, 1..n
+#          area += w[i]*f(x[i])
 
 def gaulegf(a, b, n):
     x = range(n+1) # x[0] unused
@@ -2356,7 +2356,7 @@ def gaulegf(a, b, n):
                 p3 = p2
                 p2 = p1
                 p1 = ((2.0*j-1.0)*z*p2-(j-1.0)*p3)/j
-        
+
             pp = n*(z*p1-p2)/(z*z-1.0)
             z1 = z
             z = z1 - p1/pp
@@ -2368,18 +2368,18 @@ def gaulegf(a, b, n):
         w[i] = 2.0*xl/((1.0-z*z)*pp*pp)
         w[n+1-i] = w[i]
     return np.array(x), np.array(w)
-# end gaulegf 
-    
-    
+# end gaulegf
+
+
 def BessJn(nmax,x):
     ''' compute Bessel function J(n,x) from scipy routine & recurrance relation
     returns sequence of J(n,x) for n in range [-nmax...0...nmax]
-    
+
     :param  integer nmax: maximul order for Jn(x)
     :param  float x: argument for Jn(x)
-    
+
     :returns numpy array: [J(-nmax,x)...J(0,x)...J(nmax,x)]
-    
+
     '''
     import scipy.special as sp
     bessJn = np.zeros(2*nmax+1)
@@ -2390,16 +2390,16 @@ def BessJn(nmax,x):
         bessJn[i+nmax] = 2*(i-1)*bessJn[nmax+i-1]/x-bessJn[nmax+i-2]
         bessJn[nmax-i] = bessJn[i+nmax]*(-1)**i
     return bessJn
-    
+
 def BessIn(nmax,x):
     ''' compute modified Bessel function I(n,x) from scipy routines & recurrance relation
     returns sequence of I(n,x) for n in range [-nmax...0...nmax]
-    
+
     :param  integer nmax: maximul order for In(x)
     :param  float x: argument for In(x)
-    
+
     :returns numpy array: [I(-nmax,x)...I(0,x)...I(nmax,x)]
-    
+
     '''
     import scipy.special as sp
     bessIn = np.zeros(2*nmax+1)
@@ -2410,15 +2410,15 @@ def BessIn(nmax,x):
         bessIn[i+nmax] = bessIn[nmax+i-2]-2*(i-1)*bessIn[nmax+i-1]/x
         bessIn[nmax-i] = bessIn[i+nmax]
     return bessIn
-        
-    
+
+
 ################################################################################
-#### distance, angle, planes, torsion stuff 
+#### distance, angle, planes, torsion stuff
 ################################################################################
 
 def CalcDist(distance_dict, distance_atoms, parmDict):
     '''Used in class:`GSASIIobj.ExpressionCalcObj` to compute bond distances
-    when defined in an expression. 
+    when defined in an expression.
     '''
     if not len(parmDict):
         return 0.
@@ -2440,10 +2440,10 @@ def CalcDist(distance_dict, distance_atoms, parmDict):
     Txyz = np.inner(M*inv,Txyz)+D
     dist = np.sqrt(np.sum(np.inner(Amat,(Txyz-Oxyz))**2))
 #    GSASIIpath.IPyBreak()
-    return dist    
-    
+    return dist
+
 def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
-    '''Used to compute s.u. values on distances tracked in the sequential 
+    '''Used to compute s.u. values on distances tracked in the sequential
     results table
     '''
     if not len(parmDict):
@@ -2455,13 +2455,13 @@ def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
     Txyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[1])] for x in ['x','y','z']]
     symNo = distance_dict['symNo']
     Tunit = distance_dict['cellNo']
-    SGData = distance_dict['SGData']    
+    SGData = distance_dict['SGData']
     deriv = getDistDerv(Oxyz,Txyz,Amat,Tunit,symNo,SGData)
     return deriv
-   
+
 def CalcAngle(angle_dict, angle_atoms, parmDict):
     '''Used in class:`GSASIIobj.ExpressionCalcObj` to compute bond angles
-    when defined in an expression. 
+    when defined in an expression.
     '''
     if not len(parmDict):
         return 0.
@@ -2493,7 +2493,7 @@ def CalcAngle(angle_dict, angle_atoms, parmDict):
     return angle
 
 def CalcAngleDeriv(angle_dict, angle_atoms, parmDict):
-    '''Used to compute s.u. values on angles tracked in the sequential 
+    '''Used to compute s.u. values on angles tracked in the sequential
     results table
     '''
     if not len(parmDict):
@@ -2506,17 +2506,17 @@ def CalcAngleDeriv(angle_dict, angle_atoms, parmDict):
     Bxyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[1][1])] for x in ['x','y','z']]
     symNo = angle_dict['symNo']
     Tunit = angle_dict['cellNo']
-    SGData = angle_dict['SGData']    
+    SGData = angle_dict['SGData']
     deriv = getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData)
     return deriv
 
 def getSyXYZ(XYZ,ops,SGData):
-    '''default doc 
-    
+    '''default doc
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     XYZout = np.zeros_like(XYZ)
     for i,[xyz,op] in enumerate(zip(XYZ,ops)):
@@ -2536,24 +2536,24 @@ def getSyXYZ(XYZ,ops,SGData):
             M,T = SGData['SGOps'][syop]
             XYZout[i] = (np.inner(M,xyz)+T)*inv+SGData['SGCen'][cent]+unit
     return XYZout
-    
+
 def getRestDist(XYZ,Amat):
     '''Compute interatomic distance(s) for use in restraints
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     return np.sqrt(np.sum(np.inner(Amat,(XYZ[1]-XYZ[0]))**2))
-    
+
 def getRestDeriv(Func,XYZ,Amat,ops,SGData):
     '''Compute numerical derivatives of restraints for use in minimization
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
@@ -2569,13 +2569,13 @@ def getRestDeriv(Func,XYZ,Amat,ops,SGData):
 
 def getRestAngle(XYZ,Amat):
     '''Compute interatomic angle(s) for use in restraints
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
-    
+
     def calcVec(Ox,Tx,Amat):
         return np.inner(Amat,(Tx-Ox))
 
@@ -2588,14 +2588,14 @@ def getRestAngle(XYZ,Amat):
     angle = (2.-edge)/2.
     angle = max(angle,-1.)
     return acosd(angle)
-    
+
 def getRestPlane(XYZ,Amat):
     '''Compute deviations from a best plane through atoms for use in restraints
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     sumXYZ = np.zeros(3)
     for xyz in XYZ:
@@ -2610,28 +2610,28 @@ def getRestPlane(XYZ,Amat):
     Evec = np.sqrt(Evec)/(len(XYZ)-3)
     Order = np.argsort(Evec)
     return Evec[Order[0]]
-    
-def getRestChiral(XYZ,Amat):    
+
+def getRestChiral(XYZ,Amat):
     '''compute a chiral restraint
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
-    VecA = np.empty((3,3))    
+    VecA = np.empty((3,3))
     VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
     VecA[1] = np.inner(XYZ[2]-XYZ[0],Amat)
     VecA[2] = np.inner(XYZ[3]-XYZ[0],Amat)
     return nl.det(VecA)
-    
+
 def getRestTorsion(XYZ,Amat):
     '''compute a torsion restraint
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     VecA = np.empty((3,3))
     VecA[0] = np.inner(XYZ[1]-XYZ[0],Amat)
@@ -2647,14 +2647,14 @@ def getRestTorsion(XYZ,Amat):
         Ang = (P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2))
     TOR = (acosd(Ang)*D/abs(D)+720.)%360.
     return TOR
-    
+
 def calcTorsionEnergy(TOR,Coeff=[]):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     sum = 0.
     if len(Coeff):
@@ -2671,11 +2671,11 @@ def calcTorsionEnergy(TOR,Coeff=[]):
 
 def getTorsionDeriv(XYZ,Amat,Coeff):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
@@ -2686,39 +2686,39 @@ def getTorsionDeriv(XYZ,Amat,Coeff):
             p1,d1 = calcTorsionEnergy(tor,Coeff)
             XYZ[j] += 2*x
             tor = getRestTorsion(XYZ,Amat)
-            p2,d2 = calcTorsionEnergy(tor,Coeff)            
+            p2,d2 = calcTorsionEnergy(tor,Coeff)
             XYZ[j] -= x
             deriv[j][i] = (p2-p1)/(2*dx)
     return deriv.flatten()
 
 def getRestRama(XYZ,Amat):
     '''Computes a pair of torsion angles in a 5 atom string
-    
+
     :param nparray XYZ: crystallographic coordinates of 5 atoms
     :param nparray Amat: crystal to cartesian transformation matrix
-    
+
     :returns: list (phi,psi) two torsion angles in degrees
-    
+
     '''
     phi = getRestTorsion(XYZ[:5],Amat)
     psi = getRestTorsion(XYZ[1:],Amat)
     return phi,psi
-    
+
 def calcRamaEnergy(phi,psi,Coeff=[]):
     '''Computes pseudo potential energy from a pair of torsion angles and a
-    numerical description of the potential energy surface. Used to create 
-    penalty function in LS refinement:     
+    numerical description of the potential energy surface. Used to create
+    penalty function in LS refinement:
     :math:`Eval(\\phi,\\psi) = C[0]*exp(-V/1000)`
 
     where :math:`V = -C[3] * (\\phi-C[1])^2 - C[4]*(\\psi-C[2])^2 - 2*(\\phi-C[1])*(\\psi-C[2])`
-    
+
     :param float phi: first torsion angle (:math:`\\phi`)
     :param float psi: second torsion angle (:math:`\\psi`)
     :param list Coeff: pseudo potential coefficients
-    
+
     :returns: list (sum,Eval): pseudo-potential difference from minimum & value;
       sum is used for penalty function.
-    
+
     '''
     sum = 0.
     Eval = 0.
@@ -2739,15 +2739,15 @@ def calcRamaEnergy(phi,psi,Coeff=[]):
 
 def getRamaDeriv(XYZ,Amat,Coeff):
     '''Computes numerical derivatives of torsion angle pair pseudo potential
-    with respect of crystallographic atom coordinates of the 5 atom sequence 
-    
+    with respect of crystallographic atom coordinates of the 5 atom sequence
+
     :param nparray XYZ: crystallographic coordinates of 5 atoms
     :param nparray Amat: crystal to cartesian transformation matrix
     :param list Coeff: pseudo potential coefficients
-    
+
     :returns: list (deriv) derivatives of pseudopotential with respect to 5 atom
      crystallographic xyz coordinates.
-    
+
     '''
     deriv = np.zeros((len(XYZ),3))
     dx = 0.00001
@@ -2765,11 +2765,11 @@ def getRamaDeriv(XYZ,Amat,Coeff):
 
 def getRestPolefig(ODFln,SamSym,Grid):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     X,Y = np.meshgrid(np.linspace(1.,-1.,Grid),np.linspace(-1.,1.,Grid))
     R,P = np.sqrt(X**2+Y**2).flatten(),atan2d(Y,X).flatten()
@@ -2781,19 +2781,19 @@ def getRestPolefig(ODFln,SamSym,Grid):
 
 def getRestPolefigDerv(HKL,Grid,SHCoeff):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     pass
-        
+
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     '''computes the numerical derivative of the distance between two atoms.
-    Used in :func:`CalcDistDeriv` (seq. table) and in 
+    Used in :func:`CalcDistDeriv` (seq. table) and in
     :func:`GSASIIstrMain.RetDistAngle` to compute the s.u. on the distance
-    
+
     :param list Oxyz: list of x, y, & z values for the Origin atom
     :param list Txyz: list of x, y, & z values for the Target atom
     :param np.array Amat: The reciprocal cell tensor
@@ -2806,7 +2806,7 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     def calcDist(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
         return np.sqrt(np.sum(np.inner(Amat,(TxT-Ox))**2))
-        
+
     inv = Top/abs(Top)
     cent = abs(Top)//100
     op = abs(Top)%100-1
@@ -2828,22 +2828,22 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     return deriv
 
 def setupRBDistDerv(parmDict,varyList,sigList,rigidbodyDict,Phases):
-    '''Compute a copy of the parameter dict (parmDict) with each varied 
-    parameter incremented by 1 s.u. value and with those values extended to 
+    '''Compute a copy of the parameter dict (parmDict) with each varied
+    parameter incremented by 1 s.u. value and with those values extended to
     other parameters due to rigid bodies or constraints. This gets called
     once to prepare for s.u. computations in func:`GSASIIstrMain.RetDistAngle`
-    and the values are reused in every distance and angle computation. 
+    and the values are reused in every distance and angle computation.
 
-    :returns: multiParmDict,changedParmDict where 
-      * multiParmDict[k] (k in varyList, plus None) is the copy of 
-        parmDict where parameter k has been changed; 
-      * changedParmDict[k] (k in varyList) is a list of all the parameters that have been 
+    :returns: multiParmDict,changedParmDict where
+      * multiParmDict[k] (k in varyList, plus None) is the copy of
+        parmDict where parameter k has been changed;
+      * changedParmDict[k] (k in varyList) is a list of all the parameters that have been
         changed in multiParmDict[k] after applying RB & constraints
     '''
     import GSASIImapvars as G2mv
     import GSASIIstrMath as G2stMth
     def extendChanges(prms):
-        '''Propagate changes due to constraint and rigid bodies 
+        '''Propagate changes due to constraint and rigid bodies
         from varied parameters to dependent parameters
         '''
         # apply constraints
@@ -2881,25 +2881,25 @@ def setupRBDistDerv(parmDict,varyList,sigList,rigidbodyDict,Phases):
 def getRBDistDerv(OdxyzNames,TdxyzNames,Amat,Tunit,Top,SGData,
                       multiParmDict,changedParmDict,
                       varyList,sigList):
-    '''computes the numerical derivative of the distance between two 
+    '''computes the numerical derivative of the distance between two
     atoms. Used where one or both is in a rigid body.
-    Used in :func:`GSASIIstrMain.RetDistAngle` to compute the s.u. on 
+    Used in :func:`GSASIIstrMain.RetDistAngle` to compute the s.u. on
     the distance
-    
+
     :param list OxyzNames: parameter names for x, y, & z for the Origin atom
     :param list TxyzNames: parameter names for x, y, & z for the Target atom
     :param np.array Amat: The reciprocal cell tensor
     :param Tunit: translation applied to the target atom
     :param int Top: symmetry operation applied to the target atom
     :param dict SGData: space group object
-    :param dict multiParmDict: multiParmDict[var] is the parameter 
-      dict where var has been offset by sigma (see sigList), as well 
+    :param dict multiParmDict: multiParmDict[var] is the parameter
+      dict where var has been offset by sigma (see sigList), as well
       as any parameters dependent on var
-    :param dict changedParmDict: changedParmDict[var] is a list the 
+    :param dict changedParmDict: changedParmDict[var] is a list the
       parameters changed in multiParmDict[var]
-    :param list varyList: list of varied parameters in the covariance 
+    :param list varyList: list of varied parameters in the covariance
       matrix
-    :param list sigList: list of s.u. values for each of entry in 
+    :param list sigList: list of s.u. values for each of entry in
       varyList
 
     :returns: the derivative w/r to the six coordinates, Oxyz & Txyz
@@ -2907,7 +2907,7 @@ def getRBDistDerv(OdxyzNames,TdxyzNames,Amat,Tunit,Top,SGData,
     def calcDist(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
         return np.sqrt(np.sum(np.inner(Amat,(TxT-Ox))**2))
-    
+
     inv = Top/abs(Top)
     cent = abs(Top)//100
     op = abs(Top)%100-1
@@ -2919,7 +2919,7 @@ def getRBDistDerv(OdxyzNames,TdxyzNames,Amat,Tunit,Top,SGData,
     Oxyz = [multiParmDict[None][k] for k in OxyzNames]
     Txyz = [multiParmDict[None][k] for k in TxyzNames]
     d0 = calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)
-    deriv = np.zeros(len(varyList))    
+    deriv = np.zeros(len(varyList))
     for i,(var,sig) in enumerate(zip(varyList,sigList)):
         if var not in multiParmDict or sig == 0: continue
         # are any of the coordinates changed by changing the value for var?
@@ -2953,7 +2953,7 @@ def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
                 return 0.
             vec[i] /= dist
         return acosd(np.sum(vec[0]*vec[1]))
-        
+
     dx = .00001
     deriv = np.zeros(9)
     for i in [0,1,2]:
@@ -2973,25 +2973,25 @@ def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
         deriv[i+6] = (calcAngle(Oxyz,[Axyz,Bxyz],Amat,Tunit,symNo,SGData)-a0)/(2.*dx)
         Bxyz[i] -= dx
     return deriv
-    
+
 def getAngSig(VA,VB,Amat,SGData,covData={}):
-    '''Compute an interatomic angle and its uncertainty from two vectors 
+    '''Compute an interatomic angle and its uncertainty from two vectors
     each between an orgin atom and either of a pair of nearby atoms.
-    
+
     :param np.array VA: an interatomic vector as a structure
     :param np.array VB: an interatomic vector also as a structure
     :param np.array Amat: unit cell parameters as an A vector
-    :param dict SGData: symmetry information 
-    :param dict covData: covariance information including 
-      the covariance matrix and the list of varied parameters. If not 
+    :param dict SGData: symmetry information
+    :param dict covData: covariance information including
+      the covariance matrix and the list of varied parameters. If not
       supplied, the s.u. values are returned as zeros.
-    
+
     :returns: angle, sigma(angle)
     '''
     def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
         return np.inner(Amat,(TxT-Ox))
-        
+
     def calcAngle(Ox,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat):
         VecA = calcVec(Ox,TxA,unitA,invA,CA,MA,TA,Amat)
         VecA /= np.sqrt(np.sum(VecA**2))
@@ -3002,7 +3002,7 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         angle = (2.-edge)/2.
         angle = max(angle,-1.)
         return acosd(angle)
-        
+
     OxAN,OxA,TxAN,TxA,unitA,TopA = VA
     OxBN,OxB,TxBN,TxB,unitB,TopB = VB
     invA = invB = 1
@@ -3029,19 +3029,19 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
             OxA[i] += 2*dx
             dadx[i] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/(2*dx)
             OxA[i] -= dx
-            
+
             TxA[i] -= dx
             a0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
             TxA[i] += 2*dx
             dadx[i+3] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/(2*dx)
             TxA[i] -= dx
-            
+
             TxB[i] -= dx
             a0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
             TxB[i] += 2*dx
             dadx[i+6] = (calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)-a0)/(2*dx)
             TxB[i] -= dx
-            
+
         sigAng = np.sqrt(np.inner(dadx,np.inner(AngVcov,dadx)))
         if sigAng < 0.01:
             sigAng = 0.0
@@ -3050,25 +3050,25 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
         return calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat),0.0
 
 def getRBAngSig(VA,VB,Amat,SGData,covData,multiParmDict,changedParmDict):
-    '''Compute an interatomic angle and its uncertainty from two vectors 
+    '''Compute an interatomic angle and its uncertainty from two vectors
     each between an orgin atom and either of a pair of nearby atoms.
-    Uncertainties are computed taling into account rigid bodies and 
+    Uncertainties are computed taling into account rigid bodies and
     constraints.
-    
+
     :param np.array VA: an interatomic vector as a structure
     :param np.array VB: an interatomic vector also as a structure
     :param np.array Amat: unit cell parameters as an A vector
-    :param dict SGData: symmetry information 
-    :param dict covData: covariance information including 
-      the covariance matrix and the list of varied parameters. If not 
+    :param dict SGData: symmetry information
+    :param dict covData: covariance information including
+      the covariance matrix and the list of varied parameters. If not
       supplied, the s.u. values are returned as zeros.
-    
+
     :returns: angle, sigma(angle)
     '''
     def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
         TxT = inv*(np.inner(M,Tx)+T)+C+U
         return np.inner(Amat,(TxT-Ox))
-        
+
     def calcAngle(Ox,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat):
         VecA = calcVec(Ox,TxA,unitA,invA,CA,MA,TA,Amat)
         VecA /= np.sqrt(np.sum(VecA**2))
@@ -3079,7 +3079,7 @@ def getRBAngSig(VA,VB,Amat,SGData,covData,multiParmDict,changedParmDict):
         angle = (2.-edge)/2.
         angle = max(angle,-1.)
         return acosd(angle)
-        
+
     OxAdN,OxA,TxAdN,TxA,unitA,TopA = VA
     OxBdN,OxB,TxBdN,TxB,unitB,TopB = VB
     invA = invB = 1
@@ -3100,7 +3100,7 @@ def getRBAngSig(VA,VB,Amat,SGData,covData,multiParmDict,changedParmDict):
     TxAN = [k.replace('::dA','::A') for k in TxAdN]
     TxBN = [k.replace('::dA','::A') for k in TxBdN]
     Ang0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
-    deriv = np.zeros(len(varyList))    
+    deriv = np.zeros(len(varyList))
     for i,(var,sig) in enumerate(zip(varyList,sigList)):
         if var not in multiParmDict or sig == 0: continue
         # are any of the coordinates changed by changing the var value?
@@ -3117,11 +3117,11 @@ def getRBAngSig(VA,VB,Amat,SGData,covData,multiParmDict,changedParmDict):
 
 def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
     '''not used
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     def calcDist(Atoms,SyOps,Amat):
         XYZ = []
@@ -3132,7 +3132,7 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
             XYZ[-1] = np.inner(Amat,XYZ[-1]).T
         V1 = XYZ[1]-XYZ[0]
         return np.sqrt(np.sum(V1**2))
-        
+
     SyOps = []
     names = []
     for i,atom in enumerate(Oatoms):
@@ -3143,7 +3143,7 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
         c = SGData['SGCen'][abs(Op)//100]
         SyOps.append([inv,m,t,c,unit])
     Dist = calcDist(Oatoms,SyOps,Amat)
-    
+
     sig = -0.001
     if 'covMatrix' in covData:
         dx = .00001
@@ -3161,16 +3161,16 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
         sig = np.sqrt(np.inner(dadx,np.inner(DistVcov,dadx)))
         if sig < 0.001:
             sig = -0.001
-    
+
     return Dist,sig
 
 def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
     '''Not used
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
 
     def calcAngle(Atoms,SyOps,Amat):
@@ -3198,7 +3198,7 @@ def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
         c = SGData['SGCen'][abs(Op)//100]
         SyOps.append([inv,m,t,c,unit])
     Angle = calcAngle(Oatoms,SyOps,Amat)
-    
+
     sig = -0.01
     if 'covMatrix' in covData:
         dx = .00001
@@ -3216,20 +3216,20 @@ def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
         sig = np.sqrt(np.inner(dadx,np.inner(AngVcov,dadx)))
         if sig < 0.01:
             sig = -0.01
-    
+
     return Angle,sig
 
 def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
 
     def calcTorsion(Atoms,SyOps,Amat):
-        
+
         XYZ = []
         for i,atom in enumerate(Atoms):
             Inv,M,T,C,U = SyOps[i]
@@ -3249,7 +3249,7 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
         P23 = np.dot(V2,V3)
         Tors = acosd((P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2)))*D/abs(D)
         return Tors
-            
+
     SyOps = []
     names = []
     for i,atom in enumerate(Oatoms):
@@ -3260,7 +3260,7 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
         c = SGData['SGCen'][abs(Op)//100]
         SyOps.append([inv,m,t,c,unit])
     Tors = calcTorsion(Oatoms,SyOps,Amat)
-    
+
     sig = -0.01
     if 'covMatrix' in covData:
         dx = .00001
@@ -3272,23 +3272,23 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
             a0 = calcTorsion(Oatoms,SyOps,Amat)
             Oatoms[ia][ix+1] += 2*dx
             dadx[i] = (calcTorsion(Oatoms,SyOps,Amat)-a0)/(2.*dx)
-            Oatoms[ia][ix+1] -= dx            
+            Oatoms[ia][ix+1] -= dx
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
         TorVcov = getVCov(names,varyList,covMatrix)
         sig = np.sqrt(np.inner(dadx,np.inner(TorVcov,dadx)))
         if sig < 0.01:
             sig = -0.01
-    
+
     return Tors,sig
-        
+
 def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
 
     def calcDist(Atoms,SyOps,Amat):
@@ -3300,7 +3300,7 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
             XYZ[-1] = np.inner(Amat,XYZ[-1]).T
         V1 = XYZ[1]-XYZ[0]
         return np.sqrt(np.sum(V1**2))
-        
+
     def calcAngle(Atoms,SyOps,Amat):
         XYZ = []
         for i,atom in enumerate(Atoms):
@@ -3317,7 +3317,7 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
         return acosd(cang)
 
     def calcTorsion(Atoms,SyOps,Amat):
-        
+
         XYZ = []
         for i,atom in enumerate(Atoms):
             Inv,M,T,C,U = SyOps[i]
@@ -3337,7 +3337,7 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
         P23 = np.dot(V2,V3)
         Tors = acosd((P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2)))*D/abs(D)
         return Tors
-            
+
     SyOps = []
     names = []
     for i,atom in enumerate(Oatoms):
@@ -3354,7 +3354,7 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
         Val = calcAngle(Oatoms,SyOps,Amat)
     else:
         Val = calcTorsion(Oatoms,SyOps,Amat)
-    
+
     sigVals = [-0.001,-0.01,-0.01]
     sig = sigVals[M-3]
     if 'covMatrix' in covData:
@@ -3373,9 +3373,9 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
                 a0 = calcTorsion(Oatoms,SyOps,Amat)
             Oatoms[ia][ix+1] -= 2*dx
             if M == 2:
-                dadx[i] = (calcDist(Oatoms,SyOps,Amat)-a0)/(2.*dx)                
+                dadx[i] = (calcDist(Oatoms,SyOps,Amat)-a0)/(2.*dx)
             elif M == 3:
-                dadx[i] = (calcAngle(Oatoms,SyOps,Amat)-a0)/(2.*dx)                
+                dadx[i] = (calcAngle(Oatoms,SyOps,Amat)-a0)/(2.*dx)
             else:
                 dadx[i] = (calcTorsion(Oatoms,SyOps,Amat)-a0)/(2.*dx)
         covMatrix = covData['covMatrix']
@@ -3384,7 +3384,7 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
         sig = np.sqrt(np.inner(dadx,np.inner(Vcov,dadx)))
         if sig < sigVals[M-3]:
             sig = sigVals[M-3]
-    
+
     return Val,sig
 
 def GetMag(mag,Cell):
@@ -3392,29 +3392,29 @@ def GetMag(mag,Cell):
     Compute magnetic moment magnitude.
     :param list mag: atom magnetic moment parms (must be magnetic!)
     :param list Cell: lattice parameters
-    
+
     :returns: moment magnitude as float
-    
+
     '''
     G = G2lat.fillgmat(Cell)
     ast = np.sqrt(np.diag(G))
     GS = G/np.outer(ast,ast)
     mag = np.array(mag)
     Mag = np.sqrt(np.inner(mag,np.inner(mag,GS)))
-    return Mag 
+    return Mag
 
 def GetMagDerv(mag,Cell):
     '''
     Compute magnetic moment derivatives numerically
     :param list mag: atom magnetic moment parms (must be magnetic!)
     :param list Cell: lattice parameters
-    
+
     :returns: moment derivatives as floats
-    
+
     '''
     def getMag(m):
         return np.sqrt(np.inner(m,np.inner(m,GS)))
-    
+
     derv = np.zeros(3)
     dm = 0.0001
     twodm = 2.*dm
@@ -3432,7 +3432,7 @@ def GetMagDerv(mag,Cell):
 
 def searchBondRestr(origAtoms,targAtoms,bond,Factor,GType,SGData,Amat,
                     defESD=0.01,dlg=None):
-    '''Search for bond distance restraints. 
+    '''Search for bond distance restraints.
     '''
     foundBonds = []
     indices = (-2,-1,0,1,2)
@@ -3461,7 +3461,7 @@ def searchBondRestr(origAtoms,targAtoms,bond,Factor,GType,SGData,Amat,
                                 Topstr = str(Top)
                             foundBonds.append([[Oid,Tid],['1',Topstr],bond,defESD])
     return foundBonds
-        
+
 def ValEsd(value,esd=0,nTZ=False):
     '''Format a floating point number with a given level of precision or
     with in crystallographic format with a "esd", as value(esd). If esd is
@@ -3499,7 +3499,7 @@ def ValEsd(value,esd=0,nTZ=False):
     elif esd != 0:
         # transform the esd to a one or two digit integer
         l = math.log10(abs(esd)) % 1.
-        if l < math.log10(cutoff): l+= 1.        
+        if l < math.log10(cutoff): l+= 1.
         intesd = int(round(10**l)) # esd as integer
         # determine the number of digits offset for the esd
         esdoff = int(round(math.log10(intesd*1./abs(esd))))
@@ -3524,7 +3524,7 @@ def ValEsd(value,esd=0,nTZ=False):
     elif valoff != 0: # esd = 0; exponential notation ==> esdoff decimal places
         out = ("{:."+str(esdoff)+"f}").format(value/10**valoff) # format the value
     else: # esd = 0; non-exponential notation ==> esdoff+1 significant digits
-        if abs(value) > 0:            
+        if abs(value) > 0:
             extra = -math.log10(abs(value))
         else:
             extra = 0
@@ -3538,22 +3538,22 @@ def ValEsd(value,esd=0,nTZ=False):
     if valoff != 0:
         out += ("e{:d}").format(valoff) # add an exponent, when needed
     return out
-    
+
 ###############################################################################
 #### Protein validation - "ERRATV2" analysis
 ###############################################################################
 
 def validProtein(Phase,old):
-    
+
     def sumintact(intact):
         return {'CC':intact['CC'],'NN':intact['NN'],'OO':intact['OO'],
         'CN':(intact['CN']+intact['NC']),'CO':(intact['CO']+intact['OC']),
         'NO':(intact['NO']+intact['ON'])}
-        
+
     resNames = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
         'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
 # data from errat.f
-    b1_old = np.array([ 
+    b1_old = np.array([
         [1154.343,  600.213, 1051.018, 1132.885,  960.738],
         [600.213, 1286.818, 1282.042,  957.156,  612.789],
         [1051.018, 1282.042, 3519.471,  991.974, 1226.491],
@@ -3563,10 +3563,10 @@ def validProtein(Phase,old):
     avg_old = np.array([ 0.225, 0.281, 0.071, 0.237, 0.044])    #Table 1 3.5A Obsd. Fr. p 1513
 # data taken from erratv2.ccp
     b1 = np.array([
-          [5040.279078850848200,	3408.805141583649400,	4152.904423767300600,	4236.200004171890200,	5054.781210204625500],	
-          [3408.805141583648900,	8491.906094010220800,	5958.881777877950300,	1521.387352718486200,	4304.078200827221700],	
-          [4152.904423767301500,	5958.881777877952100,	7637.167089335050100,	6620.715738223072500,	5287.691183798410700],	
-          [4236.200004171890200,	1521.387352718486200,	6620.715738223072500,	18368.343774298410000,	4050.797811118806700],	
+          [5040.279078850848200,	3408.805141583649400,	4152.904423767300600,	4236.200004171890200,	5054.781210204625500],
+          [3408.805141583648900,	8491.906094010220800,	5958.881777877950300,	1521.387352718486200,	4304.078200827221700],
+          [4152.904423767301500,	5958.881777877952100,	7637.167089335050100,	6620.715738223072500,	5287.691183798410700],
+          [4236.200004171890200,	1521.387352718486200,	6620.715738223072500,	18368.343774298410000,	4050.797811118806700],
           [5054.781210204625500,	4304.078200827220800,	5287.691183798409800,	4050.797811118806700,	6666.856740479164700]])
     avg = np.array([0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
     General = Phase['General']
@@ -3602,7 +3602,7 @@ def validProtein(Phase,old):
             continue
     #Box content checks with errat.f $ erratv2.cpp ibox1 arrays
     indices = (-1,0,1)
-    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices]) 
+    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     dsmax = 3.75**2
     if old:
         dsmax = 3.5**2
@@ -3651,7 +3651,7 @@ def validProtein(Phase,old):
         tgts = []
         for unit in Units:      #assemble list of all possible target atoms
             jbox = ibox+unit
-            if np.all(jbox>=0) and np.all((jbox-nbox[:3])<0):                
+            if np.all(jbox>=0) and np.all((jbox-nbox[:3])<0):
                 tgts += list(Boxes[jbox[0],jbox[1],jbox[2]])
         tgts = list(set(tgts))
         tgts = [tgt for tgt in tgts if atom[:3] != cartAtoms[tgt][:3]]    #exclude same residue
@@ -3721,15 +3721,15 @@ def validProtein(Phase,old):
         Probs += 4*[0.,]        #skip last 4 residues in chain
         chainProb += Probs
     return resNames,chainProb,resIDs
-    
+
 ################################################################################
 #### Texture fitting stuff
 ################################################################################
 
 def FitTexture(General,Gangls,refData,keyList,pgbar):
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
-    
+
     def printSpHarm(textureData,SHtextureSig):
         Tindx = 1.0
         Tvar = 0.0
@@ -3776,17 +3776,17 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
         print(' Texture index J = %.3f(%d)'%(Tindx,int(1000*np.sqrt(Tvar))))
-            
+
     def Dict2Values(parmdict, varylist):
-        '''Use before call to leastsq to setup list of values for the parameters 
+        '''Use before call to leastsq to setup list of values for the parameters
         in parmdict, as selected by key in varylist'''
-        return [parmdict[key] for key in varylist] 
-        
+        return [parmdict[key] for key in varylist]
+
     def Values2Dict(parmdict, varylist, values):
-        ''' Use after call to leastsq to update the parameter dictionary with 
+        ''' Use after call to leastsq to update the parameter dictionary with
         values corresponding to keys in varylist'''
         parmdict.update(list(zip(varylist,values)))
-        
+
     def errSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList,pgbar):
         parmDict.update(list(zip(varyList,values)))
         Mat = np.empty(0)
@@ -3817,7 +3817,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
         pgbar.Update(int(R),newmsg='Residual = %5.2f'%(R))
         print (' Residual: %.3f%%'%(R))
         return Mat
-        
+
     def dervSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList,pgbar):
         Mat = np.empty(0)
         Sangls = [parmDict['Sample omega'],parmDict['Sample chi'],parmDict['Sample phi']]
@@ -3870,7 +3870,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             args=(SGData,cell,Gangls,Texture['Model'],refData,parmDict,varyList,pgbar))
         ncyc = int(result[2]['nfev']//2)
         if ncyc:
-            runtime = time.time()-begin    
+            runtime = time.time()-begin
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             GOF = chisq/(len(result[2]['fvec'])-len(varyList))       #reduced chi^2
@@ -3886,29 +3886,29 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
                 return None
         else:
             break
-    
+
     if ncyc:
         for parm in parmDict:
             if 'C' in parm:
                 Texture['SH Coeff'][1][parm] = parmDict[parm]
             else:
-                Texture[parm][1] = parmDict[parm]  
+                Texture[parm][1] = parmDict[parm]
         sigDict = dict(zip(varyList,sig))
         printSpHarm(Texture,sigDict)
-        
+
     return None
-    
+
 ################################################################################
 #### Fourier & charge flip stuff
 ################################################################################
 
 def adjHKLmax(SGData,Hmax):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
         Hmax[0] = int(math.ceil(Hmax[0]/6.))*6
@@ -3921,11 +3921,11 @@ def adjHKLmax(SGData,Hmax):
 
 def OmitMap(data,reflDict,pgbar=None):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     generalData = data['General']
     if not generalData['Map']['MapType']:
@@ -3936,7 +3936,7 @@ def OmitMap(data,reflDict,pgbar=None):
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
-    cell = generalData['Cell'][1:8]        
+    cell = generalData['Cell'][1:8]
     A = G2lat.cell2A(cell[:6])
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
     adjHKLmax(SGData,Hmax)
@@ -3986,14 +3986,14 @@ def OmitMap(data,reflDict,pgbar=None):
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
     G2fil.G2Print ('Omit map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
     return mapData
-    
+
 def FourierMap(data,reflDict):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     generalData = data['General']
     mapData = generalData['Map']
@@ -4001,7 +4001,7 @@ def FourierMap(data,reflDict):
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
-    cell = generalData['Cell'][1:8]        
+    cell = generalData['Cell'][1:8]
     A = G2lat.cell2A(cell[:6])
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
     adjHKLmax(SGData,Hmax)
@@ -4055,14 +4055,14 @@ def FourierMap(data,reflDict):
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    
+
 def Fourier4DMap(data,reflDict):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     generalData = data['General']
     map4DData = generalData['4DmapData']
@@ -4072,7 +4072,7 @@ def Fourier4DMap(data,reflDict):
     SSGData = generalData['SSGData']
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
-    cell = generalData['Cell'][1:8]        
+    cell = generalData['Cell'][1:8]
     A = G2lat.cell2A(cell[:6])
     maxM = 4
     Hmax = G2lat.getHKLmax(dmin,SGData,A)+[maxM,]
@@ -4104,14 +4104,14 @@ def Fourier4DMap(data,reflDict):
                     h,k,l,m = hkl+Hmax
                     Fhkl[h,k,l,m] = F*phasep
                     h,k,l,m = -hkl+Hmax
-                    Fhkl[h,k,l,m] = F*phasem                    
+                    Fhkl[h,k,l,m] = F*phasem
                 elif 'delt-F' in mapData['MapType']:
                     dF = np.sqrt(Fosq)-np.sqrt(Fcsq)
                     h,k,l,m = hkl+Hmax
                     Fhkl[h,k,l,m] = dF*phasep
                     h,k,l,m = -hkl+Hmax
                     Fhkl[h,k,l,m] = dF*phasem
-    SSrho = fft.fftn(fft.fftshift(Fhkl))/cell[6]          #4D map 
+    SSrho = fft.fftn(fft.fftshift(Fhkl))/cell[6]          #4D map
     rho = fft.fftn(fft.fftshift(Fhkl[:,:,:,maxM+1]))/cell[6]    #3D map
     map4DData['rho'] = np.real(SSrho)
     map4DData['rhoMax'] = max(np.max(map4DData['rho']),-np.min(map4DData['rho']))
@@ -4124,13 +4124,13 @@ def Fourier4DMap(data,reflDict):
     G2fil.G2Print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
 
 # map printing for testing purposes
-def printRho(SGLaue,rho,rhoMax):                          
+def printRho(SGLaue,rho,rhoMax):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     dim = len(rho.shape)
     if dim == 2:
@@ -4156,17 +4156,17 @@ def printRho(SGLaue,rho,rhoMax):
                     line += '%4d'%(r)
                 print (line+'\n')
 ## keep this
-                
-def findOffset(SGData,A,Fhkl):    
+
+def findOffset(SGData,A,Fhkl):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     if SGData['SpGrp'] == 'P 1':
-        return [0,0,0]    
+        return [0,0,0]
     hklShape = Fhkl.shape
     hklHalf = np.array(hklShape)//2
     sortHKL = np.argsort(Fhkl.flatten())
@@ -4217,14 +4217,14 @@ def findOffset(SGData,A,Fhkl):
     ptext = ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
     G2fil.G2Print(ptext)
     return DX,ptext
-    
+
 def ChargeFlip(data,reflDict,pgbar):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     generalData = data['General']
     mapData = generalData['Map']
@@ -4240,7 +4240,7 @@ def ChargeFlip(data,reflDict,pgbar):
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
-    cell = generalData['Cell'][1:8]        
+    cell = generalData['Cell'][1:8]
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
     im = 0
@@ -4287,7 +4287,7 @@ def ChargeFlip(data,reflDict,pgbar):
     Ncyc = 0
     old = np.seterr(all='raise')
     twophases = []
-    while True:        
+    while True:
         CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
         CEsig = np.std(CErho)
         CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
@@ -4312,24 +4312,24 @@ def ChargeFlip(data,reflDict,pgbar):
     ctext = ' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape))
     G2fil.G2Print (ctext)
     roll,ptext = findOffset(SGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
-        
+
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
     mapData['Type'] = reflDict['Type']
     return mapData,twophases,ptext,ctext
-    
-def findSSOffset(SGData,SSGData,A,Fhklm):    
+
+def findSSOffset(SGData,SSGData,A,Fhklm):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     if SGData['SpGrp'] == 'P 1':
-        return [0,0,0,0]    
+        return [0,0,0,0]
     hklmShape = Fhklm.shape
     hklmHalf = np.array(hklmShape)/2
     sortHKLM = np.argsort(Fhklm.flatten())
@@ -4382,14 +4382,14 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
     ptext = ' map offset chi**2: %.3f, map offset: %d %d %d %d'%(chisq,DX[0],DX[1],DX[2],DX[3])
     G2fil.G2Print(ptext)
     return DX,ptext
-    
+
 def SSChargeFlip(data,reflDict,pgbar):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
-    
+
     '''
     generalData = data['General']
     mapData = generalData['Map']
@@ -4407,7 +4407,7 @@ def SSChargeFlip(data,reflDict,pgbar):
     SSGData = generalData['SSGData']
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
-    cell = generalData['Cell'][1:8]        
+    cell = generalData['Cell'][1:8]
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
     maxM = 4
@@ -4448,7 +4448,7 @@ def SSChargeFlip(data,reflDict,pgbar):
     sumE = np.sum(ma.array(np.absolute(CEhkl),mask=Emask))
     Ncyc = 0
     old = np.seterr(all='raise')
-    while True:        
+    while True:
         CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
         CEsig = np.std(CErho)
         CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
@@ -4486,12 +4486,12 @@ def SSChargeFlip(data,reflDict,pgbar):
     map4DData['minmax'] = [np.max(map4DData['rho']),np.min(map4DData['rho'])]
     map4DData['Type'] = reflDict['Type']
     return mapData,map4DData,ptext,ctext
-    
+
 def getRho(xyz,mapData):
     ''' get scattering density at a point by 8-point interpolation
     param xyz: coordinate to be probed
     param: mapData: dict of map data
-    
+
     :returns: density at xyz
     '''
     rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
@@ -4513,9 +4513,9 @@ def getRho(xyz,mapData):
     R = Rho[0,0,0]*(1.-np.sum(D))+Rho[1,0,0]*D[0]+Rho[0,1,0]*D[1]+Rho[0,0,1]*D[2]+  \
         Rho[1,1,1]*D123+Rho[0,1,1]*(D23-D123)+Rho[1,0,1]*(D13-D123)+Rho[1,1,0]*(D12-D123)+  \
         Rho[0,0,0]*(D12+D13+D23-D123)-Rho[0,0,1]*(D13+D23-D123)-    \
-        Rho[0,1,0]*(D23+D12-D123)-Rho[1,0,0]*(D13+D12-D123)    
+        Rho[0,1,0]*(D23+D12-D123)-Rho[1,0,0]*(D13+D12-D123)
     return R
-       
+
 def getRhos(XYZ,rho):
     ''' get scattering density at an array of point by 8-point interpolation
     this is faster than gerRho which is only used for single points. However, getRhos is
@@ -4523,7 +4523,7 @@ def getRhos(XYZ,rho):
     Thus, getRhos is unused in GSAS-II at this time.
     param xyz:  array coordinates to be probed Nx3
     param: rho: array copy of map (NB: don't use original!)
-    
+
     :returns: density at xyz
     '''
     def getBoxes(rho,I):
@@ -4535,7 +4535,7 @@ def getRhos(XYZ,rho):
                         [[rho[(Ix+1)%Mx,Iy%My,Iz%Mz],rho[(Ix+1)%Mx,Iy%My,(Iz+1)%Mz]],
                           [rho[(Ix+1)%Mx,(Iy+1)%My,Iz%Mz],rho[(Ix+1)%Mx,(Iy+1)%My,(Iz+1)%Mz]]]])
         return Rhos
-        
+
     Blk = 400     #400 doesn't seem to matter
     nBlk = len(XYZ)//Blk        #select Blk so this is an exact divide
     mapShape = np.array(rho.shape)
@@ -4555,10 +4555,10 @@ def getRhos(XYZ,rho):
         R[iBeg:iFin] = RIs[:,0]*(1.-Ds[:,2])+RIs[:,1]*Ds[:,2]
         iBeg += Blk
     return R
-       
+
 def SearchMap(generalData,drawingData,Neg=False):
     '''Does a search of a density map for peaks meeting the criterion of peak
-    height is greater than mapData['cutOff']/100 of mapData['rhoMax'] where 
+    height is greater than mapData['cutOff']/100 of mapData['rhoMax'] where
     mapData is data['General']['mapData']; the map is also in mapData.
 
     :param generalData: the phase data structure; includes the map
@@ -4576,11 +4576,11 @@ def SearchMap(generalData,drawingData,Neg=False):
         * dcent : ndarray
           the distance of the peaks from  the unit cell center
 
-    '''        
+    '''
     rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
-    
+
     norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
-    
+
     def fixSpecialPos(xyz,SGData,Amat):
         equivs = G2spc.GenAtom(xyz,SGData,Move=True)
         X = []
@@ -4592,18 +4592,18 @@ def SearchMap(generalData,drawingData,Neg=False):
             return np.average(X,axis=0)
         else:
             return xyz
-        
+
     def rhoCalc(parms,rX,rY,rZ,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
         z = -((x0-rX)**2+(y0-rY)**2+(z0-rZ)**2)/(2.*sig**2)
 #        return norm*Mag*np.exp(z)/(sig*res**3)     #not slower but some faults in LS
         return norm*Mag*(1.+z+z**2/2.)/(sig*res**3)
-        
+
     def peakFunc(parms,rX,rY,rZ,rho,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
         M = rho-rhoCalc(parms,rX,rY,rZ,res,SGLaue)
         return M
-        
+
     def peakHess(parms,rX,rY,rZ,rho,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
         dMdv = np.zeros(([5,]+list(rX.shape)))
@@ -4619,9 +4619,9 @@ def SearchMap(generalData,drawingData,Neg=False):
         Vec = np.sum(np.sum(np.sum(dMdv*(rho-rhoC),axis=3),axis=2),axis=1)
         dMdv = np.reshape(dMdv,(5,rX.size))
         Hess = np.inner(dMdv,dMdv)
-        
+
         return Vec,Hess
-        
+
     SGData = generalData['SGData']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     peaks = []
@@ -4667,14 +4667,14 @@ def SearchMap(generalData,drawingData,Neg=False):
             peak = (np.array(x1[1:4])-ind)/incre
         peak = fixSpecialPos(peak,SGData,Amat)
         rho = rollMap(rho,-ind)
-    cent = np.ones(3)*.5      
+    cent = np.ones(3)*.5
     dzeros = np.sqrt(np.sum(np.inner(Amat,peaks)**2,axis=0))
     dcent = np.sqrt(np.sum(np.inner(Amat,peaks-cent)**2,axis=0))
     if Neg:     #want negative magnitudes for negative peaks
         return np.array(peaks),-np.array([mags,]).T,np.array([dzeros,]).T,np.array([dcent,]).T
     else:
         return np.array(peaks),np.array([mags,]).T,np.array([dzeros,]).T,np.array([dcent,]).T
-    
+
 def sortArray(data,pos,reverse=False):
     '''data is a list of items
     sort by pos in list; reverse if True
@@ -4695,7 +4695,7 @@ def sortArray(data,pos,reverse=False):
     return X
 
 def PeaksEquiv(data,Ind):
-    '''Find the equivalent map peaks for those selected. Works on the 
+    '''Find the equivalent map peaks for those selected. Works on the
     contents of data['Map Peaks'].
 
     :param data: the phase data structure
@@ -4703,12 +4703,12 @@ def PeaksEquiv(data,Ind):
     :returns: augmented list of peaks including those related by symmetry to the
       ones in Ind
 
-    '''        
+    '''
     def Duplicate(xyz,peaks,Amat):
         if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
             return True
         return False
-                            
+
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     SGData = generalData['SGData']
@@ -4718,18 +4718,18 @@ def PeaksEquiv(data,Ind):
     for ind in Ind:
         xyz = np.array(mapPeaks[ind][1:4])
         xyzs = np.array([equiv[0] for equiv in G2spc.GenAtom(xyz,SGData,Move=True)])
-        for jnd,xyz in enumerate(XYZ):       
+        for jnd,xyz in enumerate(XYZ):
             Indx[jnd] = Duplicate(xyz,xyzs,Amat)
     Ind = []
     for ind in Indx:
         if Indx[ind]:
             Ind.append(ind)
     return Ind
-                
+
 def PeaksUnique(data,Ind,Sel,dlg):
     '''Finds the symmetry unique set of peaks from those selected. Selects
-    the one closest to the center of the unit cell. 
-    Works on the contents of data['Map Peaks']. Called from OnPeaksUnique in 
+    the one closest to the center of the unit cell.
+    Works on the contents of data['Map Peaks']. Called from OnPeaksUnique in
     GSASIIphsGUI.py,
 
     :param data: the phase data structure
@@ -4738,18 +4738,18 @@ def PeaksUnique(data,Ind,Sel,dlg):
     :param wx object dlg: progress bar dialog box
 
     :returns: the list of symmetry unique peaks from among those given in Ind
-    '''        
+    '''
 #    XYZE = np.array([[equiv[0] for equiv in G2spc.GenAtom(xyz[1:4],SGData,Move=True)] for xyz in mapPeaks]) #keep this!!
 
     def noDuplicate(xyz,peaks,Amat):
         if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
             return False
         return True
-                            
+
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     SGData = generalData['SGData']
-    mapPeaks = data['Map Peaks']    
+    mapPeaks = data['Map Peaks']
     XYZ = {ind:np.array(mapPeaks[ind][1:4]) for ind in Ind}
     Indx = [True for ind in Ind]
     Unique = []
@@ -4761,7 +4761,7 @@ def PeaksUnique(data,Ind,Sel,dlg):
             for jnd in Ind:
                 # only consider peaks we have not looked at before
                 # and were not already found to be equivalent
-                if jnd > ind and Indx[jnd]:                        
+                if jnd > ind and Indx[jnd]:
                     Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
                     xyzs = np.array([equiv[0] for equiv in Equiv])
                     if not noDuplicate(xyz,xyzs,Amat):
@@ -4774,12 +4774,12 @@ def PeaksUnique(data,Ind,Sel,dlg):
                     cntr = mapPeaks[jnd][Sel]
                     icntr = jnd
             Unique.append(icntr)
-        dlg.Update(int(ind),newmsg='Map peak no. %d processed'%ind)  
+        dlg.Update(int(ind),newmsg='Map peak no. %d processed'%ind)
     return Unique
 
 def AtomsCollect(data,Ind,Sel):
     '''Finds the symmetry set of atoms for those selected. Selects
-    the one closest to the selected part of the unit cell for the 
+    the one closest to the selected part of the unit cell for the
     selected atoms
 
     :param data: the phase data structure
@@ -4787,11 +4787,11 @@ def AtomsCollect(data,Ind,Sel):
     :param int Sel: an index with the selected plane or location in the
       unit cell to find atoms closest to
 
-    :returns: the list of unique atoms where selected atoms may have been 
+    :returns: the list of unique atoms where selected atoms may have been
       replaced. Anisotropic Uij's are transformed
-    '''        
-    cx,ct,cs,ci = getAtomPtrs(data) 
-    cent = np.ones(3)*.5     
+    '''
+    cx,ct,cs,ci = getAtomPtrs(data)
+    cent = np.ones(3)*.5
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     SGData = generalData['SGData']
@@ -4818,7 +4818,7 @@ def AtomsCollect(data,Ind,Sel):
 
 def DoWilsonStat(refList,Super,normEle,Inst):
     ns = 0
-    if Super: 
+    if Super:
         ns=1
     Eldata = G2el.GetElInfo(normEle,Inst)
     RefList = np.array(refList).T
@@ -4860,238 +4860,238 @@ def DoWilsonStat(refList,Super,normEle,Inst):
 
 def getCWsig(ins,pos):
     '''get CW peak profile sigma^2
-    
-    :param dict ins: instrument parameters with at least 'U', 'V', & 'W' 
+
+    :param dict ins: instrument parameters with at least 'U', 'V', & 'W'
       as values only
     :param float pos: 2-theta of peak
     :returns: float getCWsig: peak sigma^2
-    
+
     '''
     tp = tand(pos/2.0)
     return ins['U']*tp**2+ins['V']*tp+ins['W']
-    
+
 def getCWsigDeriv(pos):
     '''get derivatives of CW peak profile sigma^2 wrt U,V, & W
-    
+
     :param float pos: 2-theta of peak
-    
+
     :returns: list getCWsigDeriv: d(sig^2)/dU, d(sig)/dV & d(sig)/dW
-    
+
     '''
     tp = tand(pos/2.0)
     return tp**2,tp,1.0
-    
+
 def getCWgam(ins,pos):
     '''get CW peak profile gamma
-    
+
     :param dict ins: instrument parameters with at least 'X', 'Y' & 'Z'
       as values only
     :param float pos: 2-theta of peak
     :returns: float getCWgam: peak gamma
-    
+
     '''
     return ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)+ins.get('Z',0.0)
-    
+
 def getCWgamDeriv(pos):
     '''get derivatives of CW peak profile gamma wrt X, Y & Z
-    
+
     :param float pos: 2-theta of peak
-    
+
     :returns: list getCWgamDeriv: d(gam)/dX & d(gam)/dY
-    
+
     '''
     return 1./cosd(pos/2.0),tand(pos/2.0),1.0
 
 def getEDsig(ins,pos):
     '''get ED peak profile sig
-    
+
     :param dict ins: instrument parameters with at least 'A', 'B' & 'C'
       as values only
     :param float pos: energy of peak as keV
     :returns: float getEDsig: peak sigma^2 im keV**2
-    
+
     '''
     return ins['A']*pos**2+ins['B']*pos+ins['C']
 
 def getEDsigDeriv(ins,pos):
     '''get derivatives of ED peak profile sig wrt A, B & C
-    
+
     :param float pos: energy of peak in keV
-    
+
     :returns: list getEDsigDeriv: d(sig)/dA, d(sig)/dB & d(sig)/dC,
-    
+
     '''
     return pos**2,pos,1.0
-    
+
 def getEDgam(ins,pos):
     '''get ED peak profile gam
-    
+
     :param dict ins: instrument parameters with at least X, Y & Z
       as values only
     :param float pos: energy of peak as keV
     :returns: float getEDsig: peak gam im keV
-    
+
     '''
     return ins['X']*pos**2+ins['Y']*pos+ins['Z']
 
 def getEDgamDeriv(ins,pos):
     '''get derivatives of ED peak profile gam wrt X, Y & Z
-    
+
     :param float pos: energy of peak in keV
-    
+
     :returns: list getEDsigDeriv: d(gam)/dX, d(gam)/dY & d(gam)/dZ,
-    
+
     '''
     return pos**2,pos,1.0
-    
+
 def getTOFsig(ins,dsp):
     '''get TOF peak profile sigma^2
-    
+
     :param dict ins: instrument parameters with at least 'sig-0', 'sig-1' & 'sig-q'
       as values only
     :param float dsp: d-spacing of peak
-    
+
     :returns: float getTOFsig: peak sigma^2
-    
+
     '''
     return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-2']*dsp**4+ins['sig-q']*dsp
-    
+
 def getTOFsigDeriv(dsp):
     '''get derivatives of TOF peak profile sigma^2 wrt sig-0, sig-1, & sig-q
-    
+
     :param float dsp: d-spacing of peak
-    
+
     :returns: list getTOFsigDeriv: d(sig0/d(sig-0), d(sig)/d(sig-1) & d(sig)/d(sig-q)
-    
+
     '''
     return 1.0,dsp**2,dsp**4,dsp
-    
+
 def getTOFgamma(ins,dsp):
     '''get TOF peak profile gamma
-    
+
     :param dict ins: instrument parameters with at least 'X', 'Y' & 'Z'
       as values only
     :param float dsp: d-spacing of peak
-    
+
     :returns: float getTOFgamma: peak gamma
-    
+
     '''
     return ins['Z']+ins['X']*dsp+ins['Y']*dsp**2
-    
+
 def getTOFgammaDeriv(dsp):
     '''get derivatives of TOF peak profile gamma wrt X, Y & Z
-    
+
     :param float dsp: d-spacing of peak
-    
+
     :returns: list getTOFgammaDeriv: d(gam)/dX & d(gam)/dY
-    
+
     '''
     return dsp,dsp**2,1.0
-    
+
 def getTOFbeta(ins,dsp):
     '''get TOF peak profile beta
-    
+
     :param dict ins: instrument parameters with at least 'beat-0', 'beta-1' & 'beta-q'
       as values only
     :param float dsp: d-spacing of peak
-    
+
     :returns: float getTOFbeta: peak beat
-    
+
     '''
     return ins['beta-0']+ins['beta-1']/dsp**4+ins['beta-q']/dsp**2
-    
+
 def getTOFbetaDeriv(dsp):
     '''get derivatives of TOF peak profile beta wrt beta-0, beta-1, & beat-q
-    
+
     :param float dsp: d-spacing of peak
-    
+
     :returns: list getTOFbetaDeriv: d(beta)/d(beat-0), d(beta)/d(beta-1) & d(beta)/d(beta-q)
-    
+
     '''
     return 1.0,1./dsp**4,1./dsp**2
-    
+
 def getTOFalpha(ins,dsp):
     '''get TOF peak profile alpha
-    
+
     :param dict ins: instrument parameters with at least 'alpha'
       as values only
     :param float dsp: d-spacing of peak
-    
+
     :returns: float getTOFalpha: peak alpha
-    
+
     '''
     return ins['alpha']/dsp
-    
+
 def getTOFalphaDeriv(dsp):
     '''get alpha derivatives of TOF peak profile
-    
+
     :param float dsp: d-spacing of peak
-    
+
     :returns: float getTOFalphaDeriv: d(alp)/d(alpha)
-    
+
     '''
     return 1./dsp
-    
+
 def getPinkAlpha(ins,tth):
     '''get pink neutron peak alpha profile
-    
+
     :param dict ins: instrument parameters with at least 'alpha'
       as values only
     :param float tth: 2-theta of peak
-    
+
     :returns: float getPinkNalpha: peak alpha
-    
+
     '''
     return ins['alpha-0']+ ins['alpha-1']*sind(tth/2.)
-    
+
 def getPinkAlphaDeriv(tth):
-    '''get alpha derivatives of pink neutron peak profile 
-    
+    '''get alpha derivatives of pink neutron peak profile
+
     :param float tth: 2-theta of peak
-    
+
     :returns: float getPinkNalphaDeriv: d(alp)/d(alpha-0), d(alp)/d(alpha-1)
-    
+
     '''
     return 1.0,sind(tth/2.)
-    
+
 def getPinkBeta(ins,tth):
     '''get pink neutron peak profile beta
-    
+
     :param dict ins: instrument parameters with at least 'beta-0' & 'beta-1'
       as values only
     :param float tth: 2-theta of peak
-    
+
     :returns: float getPinkbeta: peak beta
-    
+
     '''
     return ins['beta-0']+ins['beta-1']*sind(tth/2.)
-        
+
 def getPinkBetaDeriv(tth):
     '''get beta derivatives of pink neutron peak profile
-    
+
     :param float tth: 2-theta of peak
-    
+
     :returns: list getPinkNbetaDeriv: d(beta)/d(beta-0) & d(beta)/d(beta-1)
-    
+
     '''
     return 1.0,sind(tth/2.)
-    
+
 def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     '''set starting peak parameters for single peak fits from plot selection or auto selection
-    
+
     :param dict Parms: instrument parameters dictionary
     :param dict Parms2: table lookup for TOF profile coefficients
     :param float pos: peak position in 2-theta, TOF or Q (ifQ=True)
     :param float mag: peak top magnitude from pick
     :param bool ifQ: True if pos in Q
     :param bool useFit: True if use fitted CW Parms values (not defaults)
-    
+
     :returns: list XY: peak list entry:
         for CW: [pos,0,mag,1,sig,0,gam,0]
         for TOF: [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
         for Pink: [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
         NB: mag refinement set by default, all others off
-    
+
     '''
     ind = 0
     if useFit:
@@ -5123,7 +5123,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         if ifQ:                              #qplot - convert back to 2-theta
             pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
         sig = getCWsig(ins,pos)
-        gam = getCWgam(ins,pos)           
+        gam = getCWgam(ins,pos)
         XY = [pos,0, mag,1, sig,0, gam,0]       #default refine intensity 1st
     elif Parms['Type'][0][2] in ['A','B']:
         for x in ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']:
@@ -5133,16 +5133,16 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         alp = getPinkAlpha(ins,pos)
         bet = getPinkBeta(ins,pos)
         sig = getCWsig(ins,pos)
-        gam = getCWgam(ins,pos)           
+        gam = getCWgam(ins,pos)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]       #default refine intensity 1st
     elif 'E' in Parms['Type'][0]:
         for x in ['A','B','C','X','Y','Z']:
             ins[x] = Parms.get(x,[0.0,0.0])[ind]
         sig = getEDsig(ins,pos)
-        gam = getEDgam(ins,pos)          
+        gam = getEDgam(ins,pos)
         XY = [pos,0,mag,1,sig,0,gam,0]       #default refine intensity 1st
     return XY
-    
+
 ################################################################################
 #### MC/SA stuff
 ################################################################################
@@ -5211,7 +5211,7 @@ class base_schedule(object):
 
         self.T0 = (fmax-fmin)*1.5
         return best_state.x
-        
+
     def set_range(self,x0,frac):
         delrange = frac*(self.upper-self.lower)
         self.upper = x0+delrange
@@ -5256,18 +5256,18 @@ class log_sa(base_schedule):        #OK
 
     def init(self,**options):
         self.__dict__.update(options)
-        
+
     def update_guess(self,x0):     #same as default #TODO - is this a reasonable update procedure?
         u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
         T = self.T
         xc = (sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)+1.0)/2.0
         xnew = xc*(self.upper - self.lower)+self.lower
         return xnew
-        
+
     def update_temp(self):
         self.k += 1
         self.T = self.T0*self.slope**self.k
-        
+
 class _state(object):
     def __init__(self):
         self.x = None
@@ -5292,8 +5292,8 @@ def makeTsched(data):
         sched.update_temp()
         Tsched.append(sched.T)
     return Tsched[1:]
-    
-def anneal(func, x0, args=(), schedule='fast', 
+
+def anneal(func, x0, args=(), schedule='fast',
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
            feps=1e-6, quench=1.0, c=1.0,
            lower=-100, upper=100, dwell=50, slope=0.9,ranStart=False,
@@ -5307,34 +5307,34 @@ def anneal(func, x0, args=(), schedule='fast',
         Function to be optimized.
     :param ndarray x0:
         Initial guess.
-    :param tuple args: 
+    :param tuple args:
         Extra parameters to `func`.
-    :param base_schedule schedule: 
+    :param base_schedule schedule:
         Annealing schedule to use (a class).
-    :param float T0: 
+    :param float T0:
         Initial Temperature (estimated as 1.2 times the largest
         cost-function deviation over random points in the range).
-    :param float Tf: 
+    :param float Tf:
         Final goal temperature.
-    :param int maxeval: 
+    :param int maxeval:
         Maximum function evaluations.
     :param int maxaccept:
         Maximum changes to accept.
-    :param int maxiter: 
+    :param int maxiter:
         Maximum cooling iterations.
     :param float feps:
         Stopping relative error tolerance for the function value in
         last four coolings.
     :param float quench,c:
         Parameters to alter fast_sa schedule.
-    :param float/ndarray lower,upper: 
+    :param float/ndarray lower,upper:
         Lower and upper bounds on `x`.
     :param int dwell:
         The number of times to search the space at each temperature.
-    :param float slope: 
+    :param float slope:
         Parameter for log schedule
     :param bool ranStart=False:
-        True for set 10% of ranges about x 
+        True for set 10% of ranges about x
 
     :returns: (xmin, Jmin, T, feval, iters, accept, retval) where
 
@@ -5390,17 +5390,17 @@ def anneal(func, x0, args=(), schedule='fast',
         T_new = T0 * exp(-c * k**quench)
 
     '''
-    
+
     ''' Scipy license:
         Copyright (c) 2001, 2002 Enthought, Inc.
     All rights reserved.
-    
+
     Copyright (c) 2003-2016 SciPy Developers.
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
-    
+
       a. Redistributions of source code must retain the above copyright notice,
          this list of conditions and the following disclaimer.
       b. Redistributions in binary form must reproduce the above copyright
@@ -5457,7 +5457,7 @@ def anneal(func, x0, args=(), schedule='fast',
                     best_state.cost = last_state.cost
                     bestn = n
                     if best_state.cost < 1.0 and autoRan:
-                        schedule.set_range(x0,best_state.cost/2.)                        
+                        schedule.set_range(x0,best_state.cost/2.)
         if dlg:
             GoOn = dlg.Update(int(min(100.,best_state.cost*100)),
                 newmsg='%s%8.5f, %s%d\n%s%8.4f%s'%('Temperature =',schedule.T, \
@@ -5527,7 +5527,7 @@ def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q,out_t,out_n,nprocess
 
 def MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData,nprocs):
     import multiprocessing as mp
-    
+
     out_q = mp.Queue()
     out_t = mp.Queue()
     out_n = mp.Queue()
@@ -5552,19 +5552,19 @@ def MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData,nprocs):
 
 def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     '''default doc string
-    
+
     :param type name: description
-    
+
     :returns: type name: description
     '''
-   
+
     class RandomDisplacementBounds(object):
         '''random displacement with bounds'''
         def __init__(self, xmin, xmax, stepsize=0.5):
             self.xmin = xmin
             self.xmax = xmax
             self.stepsize = stepsize
-    
+
         def __call__(self, x):
             '''take a random step but ensure the new position is within the bounds'''
             while True:
@@ -5574,11 +5574,11 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                 if np.all(xnew < self.xmax) and np.all(xnew > self.xmin):
                     break
             return xnew
-    
+
     global tsum,nsum
     tsum = 0.
     nsum = 0
-    
+
     def getMDparms(item,pfx,parmDict,varyList):
         parmDict[pfx+'MDaxis'] = item['axis']
         parmDict[pfx+'MDval'] = item['Coef'][0]
@@ -5587,10 +5587,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             limits = item['Coef'][2]
             lower.append(limits[0])
             upper.append(limits[1])
-                        
+
     def getAtomparms(item,pfx,aTypes,SGData,parmDict,varyList):
         parmDict[pfx+'Atype'] = item['atType']
-        aTypes |= set([item['atType'],]) 
+        aTypes |= set([item['atType'],])
         pstr = ['Ax','Ay','Az']
         XYZ = [0,0,0]
         for i in range(3):
@@ -5603,7 +5603,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                 lower.append(limits[0])
                 upper.append(limits[1])
         parmDict[pfx+'Amul'] = len(list(G2spc.GenAtom(XYZ,SGData)))
-            
+
     def getRBparms(item,mfx,aTypes,RBdata,SGData,atNo,parmDict,varyList):
         parmDict[mfx+'MolCent'] = item['MolCent']
         parmDict[mfx+'RBId'] = item['RBId']
@@ -5649,13 +5649,13 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
         aTypes |= set(atypes)
         atNo += len(atypes)
         return atNo
-                
+
     def GetAtomM(Xdata,SGData):
         Mdata = []
         for xyz in Xdata:
             Mdata.append(float(len(list(G2spc.GenAtom(xyz,SGData)))))
         return np.array(Mdata)
-        
+
     def GetAtomT(RBdata,parmDict):
         'Needs a doc string'
         atNo = parmDict['atNo']
@@ -5687,7 +5687,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             else:
                 continue        #skips March Dollase
         return Tdata
-        
+
     def GetAtomX(RBdata,parmDict):
         'Needs a doc string'
         Bmat = parmDict['Bmat']
@@ -5733,7 +5733,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             else:
                 continue        #skips March Dollase
         return Xdata.T
-        
+
     def getAllTX(Tdata,Mdata,Xdata,SGM,SGT):
         allX = np.inner(Xdata,SGM)+SGT
         allT = np.repeat(Tdata,allX.shape[1])
@@ -5745,7 +5745,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
         allX = np.inner(Xdata,SGM)+SGT
         allX = np.reshape(allX,(-1,3))
         return allX
-        
+
     def normQuaternions(RBdata,parmDict,varyList,values):
         for iObj in range(parmDict['nObj']):
             pfx = str(iObj)+':'
@@ -5757,7 +5757,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                         parmDict[pfx+name] = V[i-1]
                     else:
                         parmDict[pfx+name] = A
-        
+
     def mcsaCalc(values,refList,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict):
         ''' Compute structure factors for all h,k,l for phase
         input:
@@ -5766,13 +5766,13 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             ifInv:  bool True if centrosymmetric
             allFF: array[nref,natoms] each value is mult*FF(H)/max(mult)
             RBdata: [dict] rigid body dictionary
-            varyList: [list] names of varied parameters in MC/SA (not used here)           
+            varyList: [list] names of varied parameters in MC/SA (not used here)
             ParmDict: [dict] problem parameters
         puts result F^2 in each ref[5] in refList
         returns:
             delt-F*rcov*delt-F/sum(Fo^2)
-        '''   
-            
+        '''
+
         global tsum,nsum
         t0 = time.time()
         parmDict.update(dict(zip(varyList,values)))             #update parameter tables
@@ -5794,7 +5794,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
         tsum += (time.time()-t0)
         nsum += 1
         return np.sqrt(M/np.sum(refList[4]**2))
-    
+
     def MCSAcallback(x, f,accept):
         return not pgbar.Update(int(min(100,f*100)),
             newmsg='%s%8.4f%s'%('MC/SA Residual:',int(f*100),'%'))[0]
@@ -5824,7 +5824,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             name = pfx+pstr[i]
             parmDict[name] = atm[cx+i]
         atNo += 1
-    parmDict['nfixAt'] = len(fixAtoms)        
+    parmDict['nfixAt'] = len(fixAtoms)
     MCSA = generalData['MCSA controls']
     reflName = MCSA['Data source']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
@@ -5946,7 +5946,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
         results = anneal(mcsaCalc,x0,args=(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict),
             schedule=MCSA['Algorithm'], dwell=MCSA['Annealing'][2],maxiter=10000,
             T0=T0, Tf=MCSA['Annealing'][1],
-            quench=MCSA['fast parms'][0], c=MCSA['fast parms'][1], 
+            quench=MCSA['fast parms'][0], c=MCSA['fast parms'][1],
             lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',False),
             ranRange=MCSA.get('ranRange',10.)/100.,autoRan=MCSA.get('autoRan',False),dlg=pgbar)
         G2fil.G2Print (' Acceptance rate: %.2f%% MCSA residual: %.2f%%'%(100.*results[5]/results[3],100.*results[1]))
@@ -5964,7 +5964,7 @@ import scipy.spatial.distance as SSD
 import scipy.cluster.hierarchy as SCH
 
 
-        
+
 ################################################################################
 #### Quaternion & other geometry stuff
 ################################################################################
@@ -5972,12 +5972,12 @@ import scipy.cluster.hierarchy as SCH
 def Cart2Polar(X,Y,Z):
     ''' convert Cartesian to polar coordinates in deg
     '''
-    
+
     R = np.sqrt(X**2+Y**2+Z**2)
     Pl = acosd(Z/R)
     Az = atan2d(Y,X)
     return R,Az,Pl
-    
+
 def Polar2Cart(R,Az,Pl):
     '''Convert polar angles in deg to Cartesian coordinates
     '''
@@ -6013,26 +6013,26 @@ def prodQQ(QA,QB):
     D[1] = QA[0]*QB[1]+QA[1]*QB[0]+QA[2]*QB[3]-QA[3]*QB[2]
     D[2] = QA[0]*QB[2]-QA[1]*QB[3]+QA[2]*QB[0]+QA[3]*QB[1]
     D[3] = QA[0]*QB[3]+QA[1]*QB[2]-QA[2]*QB[1]+QA[3]*QB[0]
-    
+
 #    D[0] = QA[0]*QB[0]-np.dot(QA[1:],QB[1:])
 #    D[1:] = QA[0]*QB[1:]+QB[0]*QA[1:]+np.cross(QA[1:],QB[1:])
-    
+
     return D
-    
+
 def normQ(QA):
     ''' get length of quaternion & normalize it
         q=r+ai+bj+ck
     '''
     n = np.sqrt(np.sum(np.array(QA)**2))
     return QA/n
-    
+
 def invQ(Q):
     '''
         get inverse of quaternion
         q=r+ai+bj+ck; q* = r-ai-bj-ck
     '''
     return Q*np.array([1,-1,-1,-1])
-    
+
 def prodQVQ(Q,V):
     '''
     compute the quaternion vector rotation qvq-1 = v'
@@ -6049,8 +6049,8 @@ def prodQVQ(Q,V):
     T10 = -Q[3]*Q[3]
     M = np.array([[T8+T10,T6-T4,T3+T7],[T4+T6,T5+T10,T9-T2],[T7-T3,T2+T9,T5+T8]])
     VP = 2.*np.inner(V,M)
-    return VP+V 
-    
+    return VP+V
+
 def Q2Mat(Q):
     ''' make rotation matrix from quaternion
         q=r+ai+bj+ck
@@ -6070,7 +6070,7 @@ def Q2Mat(Q):
         [2*(ad+bc),   aa-bb+cc-dd,  2.*(cd-ab)],
         [2*(bd-ac),    2.*(ab+cd), aa-bb-cc+dd]]
     return np.around(np.array(M),8)
-    
+
 def AV2Q(A,V):
     ''' convert angle (radians) & vector to quaternion
         q=r+ai+bj+ck
@@ -6087,7 +6087,7 @@ def AV2Q(A,V):
     else:
         Q[3] = 1.
     return Q
-    
+
 def AVdeg2Q(A,V):
     ''' convert angle (degrees) & vector to quaternion
         q=r+ai+bj+ck
@@ -6104,7 +6104,7 @@ def AVdeg2Q(A,V):
     else:
         Q[3] = 1.
     return Q
-    
+
 def Q2AVdeg(Q):
     ''' convert quaternion to angle (degrees 0-360) & normalized vector
         q=r+ai+bj+ck
@@ -6113,7 +6113,7 @@ def Q2AVdeg(Q):
     V = np.array(Q[1:])
     V = V/sind(A/2.)
     return A,V
-    
+
 def Q2AV(Q):
     ''' convert quaternion to angle (radians 0-2pi) & normalized vector
         q=r+ai+bj+ck
@@ -6122,7 +6122,7 @@ def Q2AV(Q):
     V = np.array(Q[1:])
     V = V/np.sin(A/2.)
     return A,V
-    
+
 def randomQ(r0,r1,r2,r3):
     ''' create random quaternion from 4 random numbers in range (-1,1)
     '''
@@ -6136,12 +6136,12 @@ def randomQ(r0,r1,r2,r3):
     sum += Q[2]**2
     Q[3] = np.sqrt(1.-sum)*np.where(r3<0.,-1.,1.)
     return Q
-    
+
 def randomAVdeg(r0,r1,r2,r3):
     ''' create random angle (deg),vector from 4 random number in range (-1,1)
     '''
     return Q2AVdeg(randomQ(r0,r1,r2,r3))
-    
+
 def makeQuat(A,B,C):
     ''' Make quaternion from rotation of A vector to B vector about C axis
 
@@ -6177,7 +6177,7 @@ def makeQuat(A,B,C):
 
 def make2Quat(A,B):
     ''' Make quaternion from rotation of A vector to B vector
-    
+
         :param np.array A,B: Cartesian 3-vectors
         :returns: quaternion & rotation angle in radians q=r+ai+bj+ck
     '''

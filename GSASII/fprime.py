@@ -12,9 +12,9 @@ import wx
 if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: True
 import numpy as np
 import matplotlib as mpl
-import GSASIIpath
-import GSASIIElem as G2elem
-import GSASIIElemGUI as G2elemGUI
+from . import GSASIIpath
+from . import GSASIIElem as G2elem
+from . import GSASIIElemGUI as G2elemGUI
 
 try:
     wx.NewIdRef

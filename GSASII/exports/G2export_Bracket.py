@@ -4,9 +4,9 @@
 # This module initially written by Conrad Gillard. For any enquiries please contact conrad.gillard@gmail.com
 # Export3col exporter adapted from Exportbracket by BHT
 from __future__ import division, print_function
-import GSASIIfiles as G2fil
+from .. import GSASIIfiles as G2fil
 from collections import OrderedDict
-from GSASIImath import ValEsd
+from ..GSASIImath import ValEsd
 
 class Exportbracket(G2fil.ExportBaseclass):
     '''Enables export of parameters that are commonly needed for publications, in bracket notation
@@ -18,7 +18,7 @@ class Exportbracket(G2fil.ExportBaseclass):
         self.exporttype = ['project']
 
     def Exporter(self, event=None):
-        
+
         # Define function to extract parameter and sigma from covariances, for later use
         def GetParamSig(phase_num, hist_num, keyword, display_name):
             param_index = None
@@ -191,7 +191,7 @@ class Exportbracket(G2fil.ExportBaseclass):
             # for parameter_value in model_parameters.values():
             #     parameter_values = parameter_values + str(parameter_value) + ", "
             # self.Write(parameter_values[0:-2])
-            
+
             for name in model_parameters:
                 self.Write('%s, %s,'%(name,model_parameters[name]))
 
@@ -215,17 +215,17 @@ class Export3col(G2fil.ExportBaseclass):
         self.exporttype = ['project']
 
     def ValEsd2col(self, param, param_sig):
-        '''Return two values with the formated value as the first number and the 
+        '''Return two values with the formated value as the first number and the
         standard uncertainty (if provided) as the second value.
         '''
         col1 = ValEsd(param, -abs(param_sig))
         col2 = ''
         if param_sig > 0:
             col2 = ValEsd(param_sig, -param_sig/100)
-        return col1,col2            
-        
+        return col1,col2
+
     def Exporter(self, event=None):
-        
+
         # Define function to extract parameter and sigma from covariances, for later use
         def GetParamSig(phase_num, hist_num, keyword, display_name):
             param_index = None
@@ -271,7 +271,7 @@ class Export3col(G2fil.ExportBaseclass):
                 for i in range(0, len(cellList)):
                 # for cell in cellList:
                     if cellSig[i] > 0:
-                        # Formulate lattice parameter 
+                        # Formulate lattice parameter
                         model_parameters[phasenam + " " + lp_letter + " (Å)"] = self.ValEsd2col(cellList[i], cellSig[i])
                         # Increment lattice parameter letter
                         lp_letter = chr(ord(lp_letter[0]) + 1)
@@ -398,4 +398,3 @@ class Export3col(G2fil.ExportBaseclass):
             except:
                 pass
         self.CloseFile()
-        

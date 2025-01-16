@@ -9,13 +9,13 @@ import numpy as np
 import re
 import copy
 import os.path
-import GSASIIobj as G2obj
-import GSASIIspc as G2spc
-import GSASIIElem as G2elem
-import GSASIIlattice as G2lat
-import GSASIIpath
-import GSASIIfiles as G2fil
-import CifFile as cif # PyCifRW from James Hester
+from .. import GSASIIobj as G2obj
+from .. import GSASIIspc as G2spc
+from .. import GSASIIElem as G2elem
+from .. import GSASIIlattice as G2lat
+from .. import GSASIIpath
+from .. import GSASIIfiles as G2fil
+from .. import CifFile as cif # PyCifRW from James Hester
 debug = GSASIIpath.GetConfigValue('debug')
 #debug = False
 
@@ -28,7 +28,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             formatName = 'CIF',
             longFormatName = 'Crystallographic Information File import'
             )
-        
+
     def ContentsValidator(self, filename):
         fp = open(filename,'r')
         ok = self.CIFValidator(fp)
@@ -147,12 +147,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if not sspgrp:          #might be incommensurate magnetic
                     MSSpGrp = blk.get("_space_group.magn_ssg_name_BNS",'')
                     if not MSSpGrp:
-                        MSSpGrp = blk.get("_space_group.magn_ssg_name",'')  
+                        MSSpGrp = blk.get("_space_group.magn_ssg_name",'')
                     if not MSSpGrp:
                         msg = 'No incommensurate space group name was found in the CIF.'
                         self.errors = msg
                         self.warnings += '\n'+msg
-                        return False                                                            
+                        return False
                     if 'X' in MSSpGrp:
                         msg = 'Ad hoc incommensurate magnetic space group '+MSSpGrp+' is not allowed in GSAS-II'
                         self.warnings += '\n'+msg
@@ -231,10 +231,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
                 if SpGrpNorm:
                     E,SGData = G2spc.SpcGroup(SpGrpNorm)
-            # if E:   #try lookup from number  - found full symbol?                
+            # if E:   #try lookup from number  - found full symbol?
             #     SpGrpNorm = G2spc.spgbyNum[int(blk.get('_symmetry_Int_Tables_number'))]
             #     if SpGrpNorm:
-            #         E,SGData = G2spc.SpcGroup(SpGrpNorm) 
+            #         E,SGData = G2spc.SpcGroup(SpGrpNorm)
             # nope, try the space group "out of the Box"
             if E:
                 self.warnings += 'ERROR in space group symbol '+SpGrp
@@ -277,7 +277,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         sgoploop = blk.GetLoop('_space_group_symop_magn_ssg_operation.id')
                         sgcenloop = blk.GetLoop('_space_group_symop_magn_ssg_centering.id')
                         opid = sgoploop.GetItemPosition('_space_group_symop_magn_ssg_operation.algebraic')[1]
-                        centid = sgcenloop.GetItemPosition('_space_group_symop_magn_ssg_centering.algebraic')[1]                    
+                        centid = sgcenloop.GetItemPosition('_space_group_symop_magn_ssg_centering.algebraic')[1]
                     except KeyError:        #old mag cif names
                         sgoploop = blk.GetLoop('_space_group_symop.magn_ssg_id')
                         sgcenloop = blk.GetLoop('_space_group_symop.magn_ssg_centering_id')
@@ -305,12 +305,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
                             centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]
                         except KeyError:
                             sgcenloop = None
-                    except KeyError:                                          
+                    except KeyError:
                         try:
                             sgoploop = blk.GetLoop('_space_group_symop_magn.id')
                             sgcenloop = blk.GetLoop('_space_group_symop_magn_centering.id')
                             opid = sgoploop.GetItemPosition('_space_group_symop_magn_operation.xyz')[1]
-                            centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]                    
+                            centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]
                         except KeyError:        #old mag cif names
                             sgoploop = blk.GetLoop('_space_group_symop.magn_id')
                             sgcenloop = blk.GetLoop('_space_group_symop.magn_centering_id')
@@ -334,7 +334,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     else:
                             M,C,S = G2spc.MagText2MTS('x,y,z,+1')
                             SGData['SGCen'].append(C)
-                            censpn += list(np.array(spnflp)*S)                        
+                            censpn += list(np.array(spnflp)*S)
                 self.MPhase['General']['SGData'] = SGData
                 self.MPhase['General']['SGData']['SpnFlp'] = censpn
                 G2spc.GenMagOps(SGData)         #set magMom
@@ -355,7 +355,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             Volume = G2lat.calc_V(G2lat.cell2A(cell))
             self.Phase['General']['Cell'] = [False,]+cell+[Volume,]
             if magnetic:
-                self.MPhase['General']['Cell'] = [False,]+cell+[Volume,]                
+                self.MPhase['General']['Cell'] = [False,]+cell+[Volume,]
             if Super:
                 waveloop = blk.GetLoop('_cell_wave_vector_seq_id')
                 waveDict = dict(waveloop.items())
@@ -389,7 +389,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                  '_atom_site_moment_crystalaxis_x':7,
                                  '_atom_site_moment_crystalaxis_y':8,
                                  '_atom_site_moment_crystalaxis_z':9}
-                    
+
             if blk.get('_atom_site_aniso_label'):
                 anisoloop = blk.GetLoop('_atom_site_aniso_label')
                 anisokeys = [i.lower() for i in anisoloop.keys()]
@@ -421,7 +421,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 #position modulation
                 if blk.get('_atom_site_displace_Fourier_atom_site_label'):
                     displFloop = blk.GetLoop('_atom_site_displace_Fourier_atom_site_label')
-                    displFdict = dict(displFloop.items())                            
+                    displFdict = dict(displFloop.items())
 #                if blk.get('_atom_site_displace_special_func_atom_site_label'): #sawtooth
 #                    displSloop = blk.GetLoop('_atom_site_displace_special_func_atom_site_label')
 #                    displSdict = dict(displSloop.items())
@@ -438,7 +438,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                '_atom_site_moment_fourier_param_sin','_atom_site_moment_fourier_param_cos']
                 elif blk.get('_atom_site_moment_Fourier.atom_site_label'):
                     MagFloop = blk.GetLoop('_atom_site_moment_Fourier.atom_site_label')
-                    MagFdict = dict(MagFloop.items())                            
+                    MagFdict = dict(MagFloop.items())
                     Mnames =  ['_atom_site_moment_fourier.atom_site_label',
                                '_atom_site_moment_fourier.axis','_atom_site_moment_fourier.wave_vector_seq_id',
                                '_atom_site_moment_fourier_param.sin','_atom_site_moment_fourier_param.cos']
@@ -474,11 +474,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                             atomlist[9] = 'A'
                     elif key == '_atom_site_u_iso_or_equiv':
                         uisoval = cif.get_number_with_esd(val)[0]
-                        if uisoval is not None: 
+                        if uisoval is not None:
                             atomlist[10] = uisoval
                     elif key == '_atom_site_b_iso_or_equiv':
                         uisoval = cif.get_number_with_esd(val)[0]
-                        if uisoval is not None: 
+                        if uisoval is not None:
                             atomlist[10] = uisoval/(8*np.pi**2)
                 if not atomlist[1] and atomlist[0]:
                     typ = atomlist[0].rstrip('0123456789-+')
@@ -529,7 +529,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                 val = occCdict['_atom_site_occ_special_func_crenel_w'][i]
                                 Sfrac[0][1] = cif.get_number_with_esd(val)[0]
                                 nim = 1
-                    
+
                     if nim >= 0:
                         Sfrac = [waveType,]+[[sfrac,False] for sfrac in Sfrac[:nim]]
                     else:
@@ -538,7 +538,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     if displFdict:
                         for i,item in enumerate(displFdict['_atom_site_displace_fourier_atom_site_label']):
                             if item == atomlist[0]:
-                                waveType = 'Fourier'                                
+                                waveType = 'Fourier'
                                 ix = ['x','y','z'].index(displFdict['_atom_site_displace_fourier_axis'][i])
                                 im = int(displFdict['_atom_site_displace_fourier_wave_vector_seq_id'][i])
                                 if im != nim:
@@ -613,7 +613,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             self.Phase = copy.deepcopy(self.Phase)      #clean copy
             if magnetic:
                 self.MPhase = copy.deepcopy(self.MPhase)    #clean copy
-                self.MPhase['General']['Type'] = 'magnetic'                
+                self.MPhase['General']['Type'] = 'magnetic'
                 self.MPhase['General']['Name'] = name.strip()+' mag'
                 self.MPhase['General']['Super'] = Super
                 if Super:
@@ -659,12 +659,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
                     msg += '\nThis is likely due to the space group being set in Origin 1 rather than 2.\n'
                 msg += '''
-Do you want to use Bilbao's "CIF to Standard Setting" web service to 
+Do you want to use Bilbao's "CIF to Standard Setting" web service to
 transform this into a standard setting?
 '''
                 if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins and not centro:
                     msg += '''
-If you say "no" here, later, you will get the chance to apply a simple origin 
+If you say "no" here, later, you will get the chance to apply a simple origin
 shift later as an alternative to the above.'''
                 else:
                     msg += '\nIf you say "no" here you will need to do this yourself manually.'
@@ -679,29 +679,29 @@ shift later as an alternative to the above.'''
                     import SUBGROUPS
                     SUBGROUPS.createStdSetting(filename,self)
         return returnstat
-        
+
     def ISODISTORT_test(self,blk):
         '''Test if there is any ISODISTORT information in CIF
 
-        At present only _iso_displacivemode... and _iso_occupancymode... are 
-        tested. 
+        At present only _iso_displacivemode... and _iso_occupancymode... are
+        tested.
         '''
         for i in ('_iso_displacivemode_label',
                   '_iso_occupancymode_label'):
             if blk.get(i): return True
         return False
-        
+
     def ISODISTORT_proc(self,blk,atomlbllist,ranIdlookup,filename):
         '''Process ISODISTORT items to create constraints etc.
-        Constraints are generated from information extracted from 
-        loops beginning with _iso_ and are placed into 
-        self.Constraints, which contains a list of 
+        Constraints are generated from information extracted from
+        loops beginning with _iso_ and are placed into
+        self.Constraints, which contains a list of
         :ref:`constraints tree items <Constraint_definitions_table>`
-        and one dict. 
+        and one dict.
         The dict contains help text for each generated ISODISTORT variable
 
-        At present only _iso_displacivemode... and _iso_occupancymode... are 
-        processed. Not yet processed: _iso_magneticmode..., 
+        At present only _iso_displacivemode... and _iso_occupancymode... are
+        processed. Not yet processed: _iso_magneticmode...,
         _iso_rotationalmode... & _iso_strainmode...
         '''
         varLookup = {'dx':'dAx','dy':'dAy','dz':'dAz','do':'Afrac'}
@@ -770,7 +770,7 @@ shift later as an alternative to the above.'''
             if error:
                 print (self.warnings)
                 raise Exception("Error decoding variable labels")
-            
+
             error = False
             coordOffset = {xyz:i for i,xyz in enumerate(('dx','dy','dz'))}
             for id,lbl,val in zip(
@@ -839,7 +839,7 @@ shift later as an alternative to the above.'''
                     constraint.append([k/norm,G2varObj[j]])
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmodelist[i],None))
-                modeVarList.append(modeVar)                
+                modeVarList.append(modeVar)
                 constraint += [modeVar,False,'f']
                 self.Constraints.append(constraint)
             #----------------------------------------------------------------------
@@ -968,7 +968,7 @@ shift later as an alternative to the above.'''
                     constraint.append([k,G2varObj[j]])
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmodelist[i],None))
-                modeVarList.append(modeVar)                
+                modeVarList.append(modeVar)
                 constraint += [modeVar,False,'f']
                 self.Constraints.append(constraint)
             # normilization constants
@@ -1009,7 +1009,7 @@ shift later as an alternative to the above.'''
         #----------------------------------------------------------------------
 
         def fmtEqn(i,head,l,var,k):
-            'format a section of a row of variables and multipliers' 
+            'format a section of a row of variables and multipliers'
             if np.isclose(k,0): return head,l
             if len(head) + len(l) > 65:
                 print(head+l)
@@ -1018,7 +1018,7 @@ shift later as an alternative to the above.'''
             if k < 0 and i > 0:
                 l += ' - '
                 k = -k
-            elif i > 0: 
+            elif i > 0:
                 l += ' + '
             if k == 1:
                 l += '%s ' % str(var)
@@ -1114,7 +1114,7 @@ shift later as an alternative to the above.'''
                         l1 += ' + '
                     l += '{:} {:3g} * {:4g} * {:}'.format(
                         l1, k1, n, self.Phase['ISODISTORT']['IsoModeList'][j])
-                    
+
                     s += n * modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][j]] * k
                 print(head,l)
                 print(lbl,'=',s)
@@ -1180,7 +1180,7 @@ shift later as an alternative to the above.'''
             # transform matrices
             #occupancymodeInvmatrix = self.Phase['ISODISTORT']['Var2OccMatrix']
             #occupancymodematrix = self.Phase['ISODISTORT']['Occ2VarMatrix']
-            
+
             print( 70*'=')
             print('\nVar2OccMatrix' ,'OccVarList' )
             for i,row in enumerate(occupancymodeInvmatrix):
@@ -1243,9 +1243,9 @@ shift later as an alternative to the above.'''
                     l += str(n)+' * '+str(modeVarList[j])+' * '+str(k)
                     s += n * modeVarDelta[modelist[j]] * k
                 print( lbl,'=',str(G2varObj[i]),'=',l,'=',s,'\n')
-                j = lbl.split('_')[0] 
+                j = lbl.split('_')[0]
                 Occ[j] = ParentOcc[j]+s
-                
+
             # determine the coordinate delta values from deviations from the parent structure
             print('\nOccupancy from CIF vs computed')
             for atmline in self.Phase['Atoms']:
@@ -1270,7 +1270,7 @@ shift later as an alternative to the above.'''
                       ".Phase['ISODISTORT']['G2OccModeList']")
             for mode,G2mode in zip(modelist,modeVarList):
                 print("  ?::"+str(G2mode),' ==>', mode)
-                
+
 def ISODISTORT_shortLbl(lbl,shortmodelist):
     '''Shorten model labels and remove special characters
     '''
@@ -1289,4 +1289,3 @@ def ISODISTORT_shortLbl(lbl,shortmodelist):
     lbl = lbl.replace('+','_')
     lbl = lbl.replace('-','_')
     G2obj.MakeUniqueLabel(lbl,shortmodelist) # make unique and add to list
-                

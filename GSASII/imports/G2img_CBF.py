@@ -4,8 +4,8 @@
 
 from __future__ import division, print_function
 import time
-import GSASIIobj as G2obj
-import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
 import numpy as np
 class CBF_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read cif image data .cbf file.

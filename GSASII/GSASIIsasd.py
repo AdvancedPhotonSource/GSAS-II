@@ -11,7 +11,7 @@ import scipy.special as scsp
 import scipy.optimize as so
 #import pdb
 
-import GSASIIpwd as G2pwd
+from . import GSASIIpwd as G2pwd
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)

@@ -10,11 +10,11 @@ import copy
 import wx
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
-import GSASIIpath
-import GSASIIctrlGUI as G2G
-import GSASIIobj as G2obj
-import GSASIImath as G2mth
-import GSASIIfiles as G2fil
+from . import GSASIIpath
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIobj as G2obj
+from . import GSASIImath as G2mth
+from . import GSASIIfiles as G2fil
 
 # Define a short name for convenience
 WACV = wx.ALIGN_CENTER_VERTICAL

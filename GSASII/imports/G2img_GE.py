@@ -5,8 +5,8 @@
 from __future__ import division, print_function
 import os
 import numpy as np
-import GSASIIobj as G2obj
-import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
 class GE_ReaderClass(G2obj.ImportImage):
     '''Routine to read a GE image, typically from APS Sector 1.
         

@@ -16,18 +16,18 @@ try:
     import wx.grid as wg
 except ImportError:
     pass
-import GSASIIpath
-import GSASIImath as G2mth
-import GSASIImiscGUI as G2IO
-import GSASIIdataGUI as G2gd
-import GSASIIstrIO as G2stIO
-import GSASIIlattice as G2lat
-import GSASIIplot as G2plt
-import GSASIIpwdplot as G2pwpl
-import GSASIImapvars as G2mv
-import GSASIIobj as G2obj
-import GSASIIexprGUI as G2exG
-import GSASIIctrlGUI as G2G
+from . import GSASIIpath
+from . import GSASIImath as G2mth
+from . import GSASIImiscGUI as G2IO
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIstrIO as G2stIO
+from . import GSASIIlattice as G2lat
+from . import GSASIIplot as G2plt
+from . import GSASIIpwdplot as G2pwpl
+from . import GSASIImapvars as G2mv
+from . import GSASIIobj as G2obj
+from . import GSASIIexprGUI as G2exG
+from . import GSASIIctrlGUI as G2G
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 #####  Display of Sequential Results ##########################################

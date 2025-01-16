@@ -20,18 +20,18 @@ import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
 import scipy.optimize as so
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIImapvars as G2mv
-import GSASIImath as G2mth
-import GSASIIstrIO as G2stIO
-import GSASIIstrMath as G2stMth
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
-import GSASIIElem as G2elem
-import atmdata
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIImapvars as G2mv
+from . import GSASIImath as G2mth
+from . import GSASIIstrIO as G2stIO
+from . import GSASIIstrMath as G2stMth
+from . import GSASIIobj as G2obj
+from . import GSASIIfiles as G2fil
+from . import GSASIIElem as G2elem
+from . import atmdata
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -444,7 +444,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     if allDerivs:
@@ -696,7 +696,7 @@ def DoNoFit(GPXfile,key):
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     parmDict = {}
@@ -758,7 +758,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     #varyList = []
@@ -862,7 +862,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     '''
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     msgs = {}
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')

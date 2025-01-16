@@ -22,7 +22,7 @@ install-editable =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../'
 
 build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends_on = ['clean-build'], env={CC = 'clang-cl', CXX ='clang-cl'}}
 install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends_on=['build-win']}
-install-editable-win =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends_on=['clean-build'] , env={CC = 'clang-cl', CXX ='clang-cl'}}}
+install-editable-win =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends_on=['clean-build'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
 
 build-and-go ={ depends_on= ["install", "ui"]}
 build-and-go-win ={ depends_on= ["install-win", "ui"]}

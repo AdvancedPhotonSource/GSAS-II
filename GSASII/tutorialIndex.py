@@ -245,6 +245,10 @@ tutorialIndex = (
     ['ClusterAnalysis','Cluster and Outlier Analysis.htm', 'Cluster and Outlier Analysis',
      '''This gives an example of using Cluster and Outlier Analysis with PWDR data.'''],
     
+    ['FontSize', 'FontSize.html', 'Changing the GSAS-II Font Size',
+    '''Configuration variables allow GSAS-II to be customized. In this example the configuration variable that changes the font size 
+    used in the GUI is changed.'''],
+
     #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Exam'ple descriptive text'''],
     )
     

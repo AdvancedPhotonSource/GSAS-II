@@ -1134,7 +1134,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             G2fil.G2Print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
             break
     if fixback is not None:
-        yb += parmDict[pfx+'BF mult']*fixback
+        yb += parmDict.get(pfx+'BF mult',1.0)*fixback
         sumBk[0] = sum(yb)
     return yb,sumBk
 

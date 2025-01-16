@@ -4,7 +4,7 @@ on:
   # Runs on pushes targeting the default branch
   push:
     branches: ['develop']
-  pull_requests:
+  pull_request:
     branches: ['develop']
 
   # Allows you to run this workflow manually from the Actions tab

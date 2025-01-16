@@ -40,6 +40,7 @@ jobs:
         with:
           environments: ${{ matrix.env }}
           pixi-version: v0.39.5
+          manifest-path: pixi/pixi.toml
 
       # run install to see if it works
       - name: Build

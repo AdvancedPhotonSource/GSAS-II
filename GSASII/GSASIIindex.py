@@ -344,6 +344,8 @@ def IndexPeaks(peaks,HKL):
         if peak[2]:
             if peak[-1] > 0.:
                 peak[3] = True
+    if len(peaks) < 7:
+        return False,peaks  #nothing indexed!
     if np.any(peaks[4])*np.any(peaks[5])*np.any(peaks[6]):
         return True,peaks
     else:

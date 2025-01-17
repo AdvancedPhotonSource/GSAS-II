@@ -72,7 +72,7 @@ class HDF5_Reader(G2obj.ImportImage):
                     fp.close()
                     return False
                 nsel = GSASIIpath.GetConfigValue('HDF5selection',getDefault=True)
-                self.buffer['selectedImages'] = []
+                self.buffer['selectedImages'] = list(range(len(self.buffer['imagemap'])))
                 if ParentFrame and len(self.buffer['imagemap']) > nsel and nsel >= 0:
                     import wx
                     import GSASIIctrlGUI as G2G

@@ -9586,7 +9586,7 @@ def UpdatePDFGrid(G2frame,data):
         sqBox.Add((1,1),1,wx.EXPAND,1)
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label='Rmin: '),0,WACV)
         rmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Rmin',nDig=(5,1),
-                typeHint=float,size=wx.Size(50,20))
+                xmin=0.01,typeHint=float,size=wx.Size(50,20))
         sqBox.Add(rmin,0,WACV)
         sfgSizer.Add(sqBox,0,wx.EXPAND)
             

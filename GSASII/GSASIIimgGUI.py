@@ -122,7 +122,8 @@ def GetImageZ(G2frame,data,newRange=False):
     Imin = np.min(sumImg)
     if 'range' not in data or newRange:
         data['range'] = [(Imin,Imax),[Imin,Imax]]
-    return np.asarray(np.rint(sumImg),dtype=np.int32)
+    #return np.asarray(np.rint(sumImg),dtype=np.int32)
+    return np.array(np.array(np.rint(sumImg),dtype=int),dtype=np.int32)  # double-cast removes warning. Why?
 
 def UpdateImageData(G2frame,data):
     

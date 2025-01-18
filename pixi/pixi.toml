@@ -53,6 +53,7 @@ zarr = "*"
 xmltodict = ">=0.14.2,<0.15"
 compilers = ">=1.8.0,<2"
 clang = ">=17.0.6,<20"
+pycifrw = ">=4.4.0"
 
 [feature.py311.dependencies]
 python = "<3.12,>=3.11"

@@ -5,8 +5,11 @@ from __future__ import division, print_function
 import numpy as np
 import os.path
 from .. import GSASIIobj as G2obj
-from .. import CifFile as cif # PyCifRW from James Hester
 from .. import GSASIIpath
+try:
+    import CifFile as cif # PyCifRW from James Hester as a package
+except ImportError:
+    from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 
 class CIFpwdReader(G2obj.ImportPowderData):

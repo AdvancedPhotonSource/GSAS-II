@@ -7,7 +7,10 @@ from __future__ import division, print_function
 import numpy as np
 import os.path
 from .. import GSASIIobj as G2obj
-from .. import CifFile as cif # PyCifRW from James Hester
+try:
+    import CifFile as cif # PyCifRW from James Hester as a package
+except ImportError:
+    from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
 
 class CIFhklReader(G2obj.ImportStructFactor):
     'Routines to import Phase information from a CIF file'

@@ -5032,7 +5032,10 @@ def PickleCIFdict(fil):
       in .dic
     :returns: the dict with the definitions
     '''
-    import CifFile as cif # PyCifRW from James Hester
+    try:
+        import CifFile as cif # PyCifRW from James Hester as a package
+    except ImportError:
+        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
     cifdic = {}
     try:
         fp = open(fil,'r')             # patch: open file to avoid windows bug
@@ -5169,7 +5172,10 @@ def dict2CIF(dblk,loopstructure,blockname='Template'):
     :returns: the newly created PyCifRW CIF object
     '''
 
-    import CifFile as cif # PyCifRW from James Hester
+    try:
+        import CifFile as cif # PyCifRW from James Hester as a package
+    except ImportError:
+        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
     # compile a 'list' of items in loops
     loopnames = set()
     for i in loopstructure:

@@ -15,7 +15,10 @@ from .. import GSASIIElem as G2elem
 from .. import GSASIIlattice as G2lat
 from .. import GSASIIpath
 from .. import GSASIIfiles as G2fil
-from .. import CifFile as cif # PyCifRW from James Hester
+try:
+    import CifFile as cif # PyCifRW from James Hester as a package
+except ImportError:
+    from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
 debug = GSASIIpath.GetConfigValue('debug')
 #debug = False
 

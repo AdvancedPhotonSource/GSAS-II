@@ -2194,7 +2194,7 @@ def UpdateMasks(G2frame,data):
     def OnAzimuthPlot(event):
         GkTheta = chr(0x03f4)
         Obj = event.GetEventObject()
-        ringId = int(Obj.locationcode.split('+')[1])
+        ringId = int(Obj.locationcode.split('+')[1])-1
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
         image = GetImageZ(G2frame,Controls)
         RingInt = G2img.AzimuthIntegrate(image,Controls,data,ringId)

@@ -1790,7 +1790,8 @@ def UpdateMasks(G2frame,data):
     def onDeleteMask(event):
         Obj = event.GetEventObject()
         typ = Obj.locationcode.split('+')[0]
-        num = int(Obj.locationcode.split('+')[1])
+        num = int(Obj.locationcode.split('+')[1])-1 #off by one?
+        print(Obj.locationcode)
         del(data[typ][num])
         wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
@@ -2014,7 +2015,6 @@ def UpdateMasks(G2frame,data):
         
     def OnNewXlineMask(event):
         'Start a new x-line mask'
-        print('x')
         G2frame.MaskKey = 'x'
         G2plt.OnStartMask(G2frame)
         

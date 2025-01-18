@@ -1791,7 +1791,6 @@ def UpdateMasks(G2frame,data):
         Obj = event.GetEventObject()
         typ = Obj.locationcode.split('+')[0]
         num = int(Obj.locationcode.split('+')[1])-1 #off by one?
-        print(Obj.locationcode)
         del(data[typ][num])
         wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)

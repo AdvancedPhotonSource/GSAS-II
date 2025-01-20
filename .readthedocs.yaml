@@ -15,3 +15,7 @@ conda:
 formats:
   - epub
   - pdf
+
+sphinx:
+  # Path to Sphinx configuration file.
+  configuration: docs/source/conf.py

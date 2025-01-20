@@ -8,8 +8,13 @@ import scipy.optimize as so
 import sys
 import copy
 import os.path as ospath
-import GSASII.pyspg as pyspg
 
+from . import GSASIIpath
+if GSASIIpath.binaryPath:
+    import pyspg
+else:
+    import GSASII.pyspg as pyspg
+    
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
 nxs = np.newaxis

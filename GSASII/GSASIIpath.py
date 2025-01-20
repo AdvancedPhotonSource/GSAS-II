@@ -1927,22 +1927,20 @@ def _old_TestSPG(fpth):
     sys.path = savpath
     return True
 
-def SetBinaryPath(printInfo=False, loadBinary=False):
+def SetBinaryPath(showConfigMsg=False):
     '''
     Add location of GSAS-II shared libraries (binaries: .so or
-    .pyd files) to path
+    .pyd files) to path (when needed). When GSAS-II is installed by 
+    pixi, no change in the path is needed.
 
     This routine must be executed after GSASIIpath is imported
     and before any other GSAS-II imports are done, since
-    they assume binary files are in path
+    they may assume binary files are in path
 
-    :param bool printInfo: When True, information is printed to show
-      has happened (default is False)
-    :param bool loadBinary: no longer in use. This is now done in
-      :func:`GSASIIdataGUI.ShowVersions`.
+    :param bool showConfigMsg: When True, config info is shown (default is False)
     '''
-    # run this routine only once no matter how many times it is called
-    # using the following globals to check for repeated calls
+    # cache the results of this routine so that repeated calls
+    # only search for binary routines once
     global BinaryPathLoaded,binaryPath,BinaryPathFailed
     if BinaryPathLoaded or BinaryPathFailed: return
     try:
@@ -1951,83 +1949,24 @@ def SetBinaryPath(printInfo=False, loadBinary=False):
         return
     try:
         from GSASII import pypowder
-        binaryPath = str(pathlib.Path(pypowder.__file__).parent)
+        binaryPath = None   # special value to indicate that binaries have been installed into package
+        if showConfigMsg:
+            print(f'GSAS-II binaries co-located with GSAS-II: {os.path.dirname(__file__)}')
         BinaryPathLoaded = True
+        LoadConfig(showConfigMsg)
+        return
     except ImportError:
-        _old_path_discovery(printInfo, loadbinary)
+        pass
 
-    if binaryPath:
-        LoadConfig(printInfo)
-
-def _old_path_discovery(printInfo=False, loadBinary=False):
-    global BinaryPathLoaded,binaryPath,BinaryPathFailed
-    if path2GSAS2 not in sys.path:
-        sys.path.insert(0,path2GSAS2)  # make sure current path is used
-    binpath = None
-    binprfx = GetBinaryPrefix()
-    # places to look for the GSAS-II binary directory
-    binseapath = [os.path.abspath(sys.path[0])]  # where Python is installed
-    binseapath += [os.path.abspath(os.path.dirname(__file__))]  # directory where this file is found
-    binseapath += [os.path.dirname(binseapath[-1])]  # parent of above directory
-    binseapath += [os.path.expanduser('~/.GSASII')]       # directory in user's home
-    def appendIfExists(searchpathlist,loc,subdir):
-        newpath = os.path.join(loc,subdir)
-        if os.path.exists(newpath):
-            if newpath in searchpathlist: return
-            searchpathlist.append(newpath)
-    searched = []
-    for loc in binseapath:
-        if loc in searched: continue
-        searched.append(loc)
-        # Look at bin directory (created by a local compile) before looking for standard dist files
-        searchpathlist = []
-        appendIfExists(searchpathlist,loc,'bin')
-        appendIfExists(searchpathlist,loc,'bindist')
-        appendIfExists(searchpathlist,loc,'GSASII-bin')
-        # also look for directories named by platform etc in loc/AllBinaries or loc
-        versions = {}
-        namedpath =  glob.glob(os.path.join(loc,'AllBinaries',binprfx+'*'))
-        namedpath += glob.glob(os.path.join(loc,'GSASII-bin',binprfx+'*'))
-        for d in namedpath:
-            d = os.path.realpath(d)
-            v = intver(d.rstrip('/').split('_')[-1].lstrip('n'))
-            versions[v] = d
-        vmin = None
-        vmax = None
-        # try to order the search in a way that makes sense
-        for v in sorted(versions.keys()):
-            if v <= inpver:
-                vmin = v
-            elif v > inpver:
-                vmax = v
-                break
-        if vmin in versions and versions[vmin] not in searchpathlist:
-            searchpathlist.append(versions[vmin])
-        if vmax in versions and versions[vmax] not in searchpathlist:
-            searchpathlist.append(versions[vmax])
-        for fpth in searchpathlist:
-            if TestSPG(fpth):
-                binpath = fpth   # got one that works, look no farther!
-                break
-        else:
-            continue
-        break
-    if binpath:  # were GSAS-II binaries found?
-        binaryPath = binpath
-        BinaryPathLoaded = True
-    else:
-        print('*** ERROR: Unable to find GSAS-II binaries. Much of GSAS-II cannot function')
+    try:
+        from . import pathHacking
+    except ImportError:
+        print('Binary load failed and module pathHacking not present')
         BinaryPathFailed = True
-        return None
-
-    # add the data import and export directory to the search path
-    if binpath not in sys.path: sys.path.insert(0,binpath)
-    if printInfo: print(f'GSAS-II binary directory: {binpath}')
-    newpath = os.path.join(path2GSAS2,'imports')
-    if newpath not in sys.path: sys.path.append(newpath)
-    newpath = os.path.join(path2GSAS2,'exports')
-    if newpath not in sys.path: sys.path.append(newpath)
-
+        return
+    
+    LoadConfig(showConfigMsg)
+    BinaryPathFailed = pathHacking._path_discovery(showConfigMsg)
 
 def LoadConfig(printInfo=True):
     # setup read of config.py, if present

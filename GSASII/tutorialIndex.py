@@ -94,6 +94,14 @@ tutorialIndex = (
          
     ['Magnetic-V', 'Magnetic-V.htm',"Magnetic Structure Analysis-V",
      '''Analysis of a complex Type IV antiferromagnet with two propagation vectorse using Bilbao k-SUBGROUPSMAG from TOF neutron powder data'''],
+
+    ['k_vec_tutorial', 'k_vec_tutorial.html', 'k-vector searching in GSAS-II #1',
+    '''Search neutron diffraction data of Er2Ge2O7 for a all-zero magnetic k-vector'''],
+
+    ['k_vec_tutorial_non_zero', 'k_vec_tutorial_non_zero.html', 'k-vector searching in GSAS-II #2',
+    '''Search neutron diffraction data used in Magnetic Structure Analysis-III for a non-zero magnetic k-vector'''],
+
+    #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Example descriptive text'''],
          
 ['Parametric sequential fitting'], #######################################################
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets',
@@ -249,6 +257,6 @@ tutorialIndex = (
     '''Configuration variables allow GSAS-II to be customized. In this example the configuration variable that changes the font size 
     used in the GUI is changed.'''],
 
-    #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Exam'ple descriptive text'''],
+    #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Example descriptive text'''],
     )
     

@@ -138,7 +138,6 @@ class PlotXNFF(wx.Frame):
         self.plotNB.Show()
         
 if __name__ == "__main__":
-    import GSASIIplot as G2plt
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame

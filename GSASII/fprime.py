@@ -15,6 +15,7 @@ import matplotlib as mpl
 import GSASIIpath
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
+import GSASIIctrlGUI as G2ctrl
 
 try:
     wx.NewIdRef
@@ -209,11 +210,18 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 self.FFxaxis = 'T'
             self.UpDateFPlot(self.Wave,rePlot=False)
             
+        def OnChoice3(event):
+            self.Norm = not self.Norm
+            self.UpDateFPlot(self.Wave,rePlot=False)
+            
         self.choice2 = wx.ComboBox(id=wxID_FPRIMECHOICE2, value=' sin('+Gktheta+')/'+Gklambda,
             choices=[' sin('+Gktheta+')/'+Gklambda,' 2'+Gktheta,' Q'],
             parent=panel, style=wx.CB_READONLY|wx.CB_DROPDOWN)
         choiceSizer.Add(self.choice2,0)
         self.choice2.Bind(wx.EVT_COMBOBOX, OnChoice2, id=wxID_FPRIMECHOICE2)
+        self.choice3 = wx.CheckBox(panel,label='Normalize ff by Z')
+        self.choice3.Bind(wx.EVT_CHECKBOX,OnChoice3)
+        choiceSizer.Add(self.choice3,0)
         mainSizer.Add(choiceSizer,0)
         mainSizer.Add((10,10),0)
         panel.SetSizer(mainSizer)
@@ -224,6 +232,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Lines = []
         self.Elems = []
         self.linePicked = None
+        self.Norm = False
         
     def OnFPRIMEExitMenu(self, event):
         self.parent.G2plotNB.Delete('Fprime')
@@ -379,7 +388,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.ax.legend(loc='best')
         self.Page.figure.subplots_adjust(hspace=0.25)
         if self.ifWave:
-            self.bx.set_title('%s%s%6.4f%s'%('Form factors (',r'$\lambda=$',self.Wave,r'$\AA)$'),x=0,ha='left')
+            if self.Norm:
+                self.bx.set_title('%s%s%6.4f%s'%('Normalized form factors (',r'$\lambda=$',self.Wave,r'$\AA)$'),x=0,ha='left')
+            else:
+                self.bx.set_title('%s%s%6.4f%s'%('Form factors (',r'$\lambda=$',self.Wave,r'$\AA)$'),x=0,ha='left')
         else:
             self.bx.set_title('%s%6.2f%s'%('Form factors  (E =',self.Energy,'keV)'),x=0,ha='left')
         if self.FFxaxis == 'S':
@@ -391,7 +403,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         else:
             self.bxlabel = 'Q, '+Angstr+Pwrm1
             self.bx.set_xlabel(r'$Q, \AA$',fontsize=14)
-        self.bx.set_ylabel("f+f ', e-",fontsize=14)
+        if self.Norm:
+            self.bx.set_ylabel("(f+f ')/Z",fontsize=14)
+        else:
+            self.bx.set_ylabel("f+f ', e-",fontsize=14)
         E = self.Energy
         DE = E*self.Eres                         #smear by defined source resolution
         StlMax = min(2.0,math.sin(80.0*math.pi/180.)/Wave)
@@ -400,7 +415,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         for i,Elem in enumerate(self.Elems):
             Els = Elem[0]
             Els = Els = Els.ljust(2).lower().capitalize()
-            Ymax = max(Ymax,Elem[1])
+            if self.Norm:
+                Ymax = 0.2
+            else:
+                Ymax = max(Ymax,Elem[1])
             res1 = G2elem.FPcalc(Elem[3],E+DE)
             res2 = G2elem.FPcalc(Elem[3],E-DE)
             res = (res1[0]+res2[0])/2.0
@@ -411,7 +429,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             X = []
             ff = []
             ffo = []
-            for S in Stl: 
+            for S in Stl:
                 ff.append(G2elem.ScatFac(Elem[2],S*S)+res)
                 ffo.append(G2elem.ScatFac(Elem[2],S*S))
                 if self.FFxaxis == 'S':
@@ -420,6 +438,9 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     X.append(360.0*math.asin(S*self.Wave)/math.pi)
                 else:
                     X.append(4.0*S*math.pi)
+            if self.Norm:
+                ff = [f/Elem[1] for f in ff]
+                ffo = [f/Elem[1] for f in ffo]
             Color = colors[i%6]
             Xp = np.array(X)
             ffop = np.array(ffo)

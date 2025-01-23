@@ -4941,8 +4941,11 @@ class ExportPwdrCIF(ExportCIF):
             extension='.cif',
             longFormatName = 'Export data as CIF'
             )
-        if G2frame is None: raise AttributeError('CIF export requires data tree') # prevent use from Scriptable
-        self.exporttype = ['powder']
+        if G2frame is None: # prevent use from GSASIIscriptable
+            #raise AttributeError('CIF export requires GUI')
+            self.exporttype = ['']
+        else:
+            self.exporttype = ['powder']
         # CIF-specific items
         self.author = ''
 

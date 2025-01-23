@@ -1585,9 +1585,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 
     def computePhaseRings():
         'generate the powder reflections for the selected phase/calibrants'
-        import GSASIIlattice as G2lat
-        import GSASIIspc as G2spc
-        import GSASIIpwd as G2pwd
+        from . import GSASIIlattice as G2lat
+        from . import GSASIIspc as G2spc
+        from . import GSASIIpwd as G2pwd
         dmin = data['calibdmin']
         G2frame.PhaseRing2Th = []
         for p in phaseOpts['selList']:

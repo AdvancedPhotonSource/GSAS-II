@@ -166,13 +166,13 @@ py.extension_module('pytexture',
   link_with: texturesubs_lib
 )
 
-r = run_command(py, '-m', 'numpy.f2py', 'spotmask.for', '-m', 'spotmask', '--lower', check:true)
-py.extension_module('spotmask',
-  ['spotmask.for', 'spotmaskmodule.c', 'spotmask-f2pywrappers.f'],
-  dependencies : [py_dep, numpy_dep, fortranobject_dep],
-  install : true,
-  subdir: 'GSASII',
-)
+#r = run_command(py, '-m', 'numpy.f2py', 'spotmask.for', '-m', 'spotmask', '--lower', check:true)
+#py.extension_module('spotmask',
+#  ['spotmask.for', 'spotmaskmodule.c', 'spotmask-f2pywrappers.f'],
+#  dependencies : [py_dep, numpy_dep, fortranobject_dep],
+#  install : true,
+#  subdir: 'GSASII',
+#)
 
 r = run_command(py, '-m', 'numpy.f2py', 'pyspg.for', '-m', 'pyspg', '--lower', check:true)
 py.extension_module('pyspg',
@@ -191,13 +191,13 @@ py.extension_module('unpack_cbf',
   subdir: 'GSASII',
 )
 
-r = run_command(py, '-m', 'numpy.f2py', 'histosigma2d.for', '-m', 'histosigma2d', '--lower', check:true)
-py.extension_module('histosigma2d',
-  ['histosigma2d.for', 'histosigma2dmodule.c', 'histosigma2d-f2pywrappers.f'],
-  dependencies : [py_dep, numpy_dep, fortranobject_dep],
-  install : true,
-  subdir: 'GSASII',
-)
+#r = run_command(py, '-m', 'numpy.f2py', 'histosigma2d.for', '-m', 'histosigma2d', '--lower', check:true)
+#py.extension_module('histosigma2d',
+#  ['histosigma2d.for', 'histosigma2dmodule.c', 'histosigma2d-f2pywrappers.f'],
+#  dependencies : [py_dep, numpy_dep, fortranobject_dep],
+#  install : true,
+#  subdir: 'GSASII',
+#)
 
 executable('convcell', files('convcell.f'), install:true)
 executable('LATTIC', files('LATTIC.f'), link_with:NISTlatsubs_lib, install:true)

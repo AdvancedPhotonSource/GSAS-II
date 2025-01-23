@@ -1,4 +1,4 @@
-'''Unit tests for code in GSASIIspc.py. Also exercises the pyspg 
+'''Unit tests for code in GSASIIspc.py. Also exercises the pyspg
 Fortran routine
 '''
 import os
@@ -9,6 +9,12 @@ import numpy as np
 import testinp.spctestinp as spctestinp
 import testinp.sgtbxtestinp as sgtbxtestinp
 
+import importlib  # fixup path if GSASII not installed into Python
+if importlib.util.find_spec('GSASII') is None:
+    print('Beware: Path hacking in progress')
+    os.environ["GSASII_YOLO_PATH"] = "True"
+    home = os.path.dirname(__file__)
+    sys.path.append(os.path.dirname(home))
 from GSASII.GSASIIspc import MoveToUnitCell, SpcGroup, SytSym
 
 # self-test materials follow. Requires files in directory testinp
@@ -54,7 +60,7 @@ def test_SpcGroup1():
                 assert refdict[key]==result[1][key],f'{msg0}, key={key}'
         key = 'SGCen'
         indices = list(range(len(result[1][key])))
-        for item in refdict[key]: 
+        for item in refdict[key]:
             for i,j in enumerate(indices):
                 if np.allclose(result[1][key][j],item):
                     indices.pop(i)
@@ -63,7 +69,7 @@ def test_SpcGroup1():
                 assert False,f'{msg0} no {key} matches center {item}'
         key = 'SGOps'
         indices = list(range(len(result[1][key])))
-        for k,item in enumerate(refdict[key]): 
+        for k,item in enumerate(refdict[key]):
             for i,j in enumerate(indices):
                 if np.allclose(result[1][key][j][0],item[0]) and np.allclose(result[1][key][j][1],item[1]):
                     indices.pop(i)
@@ -191,8 +197,6 @@ def test_SytSym():
 selftestlist.append(test_SytSym)
 
 if __name__ == '__main__':
-#    import GSASII.GSASIIpath as GSASIIpath
-#    GSASIIpath.SetBinaryPath()
     # run self-tests
     selftestquiet = False
     for test in selftestlist:

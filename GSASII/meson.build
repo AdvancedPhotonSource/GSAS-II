@@ -6,7 +6,7 @@ py.install_sources([
     'FormFactors.py',
     'G2compare.py',
     'G2shapes.py',
-    'GSASII.py',
+    'GSASIIGUI.py',
     'GSASIIElem.py',
     'GSASIIElemGUI.py',
     # 'GSASIIIO.py',

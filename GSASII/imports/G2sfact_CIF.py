@@ -151,7 +151,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 self.repeatcount += 1
                 if self.repeatcount >= len(blklist): self.repeat = False
             else:
-                import GSASIIctrlGUI as G2G
+                from .. import GSASIIctrlGUI as G2G
                 selblk = G2G.BlockSelector(
                     choice,
                     ParentFrame=ParentFrame,

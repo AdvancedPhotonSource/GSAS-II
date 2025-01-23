@@ -119,7 +119,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
             try:
-                import GSASIIctrlGUI as G2G
+                from .. import GSASIIctrlGUI as G2G
                 selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
                     title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
             except: # no wxPython
@@ -672,14 +672,14 @@ shift later as an alternative to the above.'''
                 else:
                     msg += '\nIf you say "no" here you will need to do this yourself manually.'
                 try:
-                    import GSASIIctrlGUI as G2G
+                    from .. import GSASIIctrlGUI as G2G
                     ans = G2G.askQuestion(ParentFrame,msg,'xform structure?')
                 except Exception as err: # fails if non-interactive (no wxPython)
                     print(err)
                     print('\nCIF symops do not agree with GSAS-II, calling Bilbao "CIF to Standard Setting" web service.\n')
                     ans = True
                 if ans:
-                    import SUBGROUPS
+                    from .. import SUBGROUPS
                     SUBGROUPS.createStdSetting(filename,self)
         return returnstat
 

@@ -22,6 +22,8 @@ from . import GSASIIpath
 from . import GSASIIlattice as G2lat
 from . import GSASIIstrIO as G2stIO
 from . import GSASIImapvars as G2mv
+from . import GSASIImath as G2mth
+from . import GSASIIlattice as G2lat
 
 #if not sys.platform.startswith('win'):
 #    try:
@@ -447,58 +449,57 @@ def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
         if not Sample.get(item): continue
         fp.write(f"{indent}{item}:{Sample[item]}\n")
 
-def _old_LoadImportRoutines(prefix, errprefix=None, traceback=False):
-    '''Routine to locate GSASII importers matching a prefix string.
+# def _old_LoadImportRoutines(prefix, errprefix=None, traceback=False):
+#     '''Routine to locate GSASII importers matching a prefix string.
+#
+#     Warns if more than one file with the same name is in the path
+#     or if a file is found that is not in the main directory tree.
+#     '''
+#     if errprefix is None:
+#         errprefix = prefix
+#
+#     readerlist = []
+#     import_files = {}
+#     if '.' not in sys.path: sys.path.append('.')
+#     for path in sys.path:
+#         for filename in glob.iglob(os.path.join(path, 'G2'+prefix+'*.py')):
+#             pkg = os.path.splitext(os.path.split(filename)[1])[0]
+#             if pkg in import_files:
+#                 G2Print('Warning: importer {} overrides {}'.format(import_files[pkg],os.path.abspath(filename)))
+#             elif not filename.startswith(GSASIIpath.path2GSAS2):
+#                 G2Print('Note: found importer in non-standard location:'+
+#                             f'\n\t{os.path.abspath(filename)}')
+#                 import_files[pkg] = filename
+#             else:
+#                 import_files[pkg] = filename
 
-    Warns if more than one file with the same name is in the path
-    or if a file is found that is not in the main directory tree.
-    '''
-    if errprefix is None:
-        errprefix = prefix
-
-    readerlist = []
-    import_files = {}
-    if '.' not in sys.path: sys.path.append('.')
-    for path in sys.path:
-        for filename in glob.iglob(os.path.join(path, 'G2'+prefix+'*.py')):
-            pkg = os.path.splitext(os.path.split(filename)[1])[0]
-            if pkg in import_files:
-                G2Print('Warning: importer {} overrides {}'.format(import_files[pkg],os.path.abspath(filename)))
-            elif not filename.startswith(GSASIIpath.path2GSAS2):
-                G2Print('Note: found importer in non-standard location:'+
-                            f'\n\t{os.path.abspath(filename)}')
-                import_files[pkg] = filename
-            else:
-                import_files[pkg] = filename
-
-    for pkg in sorted(import_files.keys()):
-        try:
-            exec('import '+pkg)
-            #print(eval(pkg+'.__file__'))
-            for name, value in inspect.getmembers(eval(pkg)):
-                if name.startswith('_'):
-                    continue
-                if inspect.isclass(value):
-                    for method in 'Reader', 'ExtensionValidator', 'ContentsValidator':
-                        if not hasattr(value, method):
-                            break
-                        if not callable(getattr(value, method)):
-                            break
-                    else:
-                        reader = value()
-                        if reader.UseReader:
-                            readerlist.append(reader)
-        except AttributeError:
-            G2Print ('Import_' + errprefix + ': Attribute Error ' + import_files[pkg])
-            if traceback:
-                traceback.print_exc(file=sys.stdout)
-        except Exception as exc:
-            G2Print ('\nImport_' + errprefix + ': Error importing file ' + import_files[pkg])
-            G2Print (u'Error message: {}\n'.format(exc))
-            if traceback:
-                traceback.print_exc(file=sys.stdout)
-    return readerlist
-
+#     for pkg in sorted(import_files.keys()):
+#         try:
+#             exec('import '+pkg)
+#             #print(eval(pkg+'.__file__'))
+#             for name, value in inspect.getmembers(eval(pkg)):
+#                 if name.startswith('_'):
+#                     continue
+#                 if inspect.isclass(value):
+#                     for method in 'Reader', 'ExtensionValidator', 'ContentsValidator':
+#                         if not hasattr(value, method):
+#                             break
+#                         if not callable(getattr(value, method)):
+#                             break
+#                     else:
+#                         reader = value()
+#                         if reader.UseReader:
+#                             readerlist.append(reader)
+#         except AttributeError:
+#             G2Print ('Import_' + errprefix + ': Attribute Error ' + import_files[pkg])
+#             if traceback:
+#                 traceback.print_exc(file=sys.stdout)
+#         except Exception as exc:
+#             G2Print ('\nImport_' + errprefix + ': Error importing file ' + import_files[pkg])
+#             G2Print (u'Error message: {}\n'.format(exc))
+#             if traceback:
+#                 traceback.print_exc(file=sys.stdout)
+#     return readerlist
 
 def LoadImportRoutines(prefix, errprefix=None, traceback=False):
     from . import imports
@@ -519,11 +520,7 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                 reader = member()
                 if reader.UseReader:
                     readerlist.append(reader)
-
-
     return readerlist
-
-
 
 ImportErrors = []
 condaRequestList = {}
@@ -545,63 +542,66 @@ def ImportErrorMsg(errormsg=None,pkg={}):
     ImportErrors.append(errormsg)
     if pkg: condaRequestList.update(pkg)
 
-def _LoadExportRoutines(parent, traceback=False):
-    '''Routine to locate GSASII exporters. Warns if more than one file
-    with the same name is in the path or if a file is found that is not
-    in the main directory tree.
-    '''
-    exporterlist = []
-    export_files = {}
-    if '.' not in sys.path: sys.path.append('.')
-    for path in sys.path:
-        for filename in glob.iglob(os.path.join(path,"G2export*.py")):
-            pkg = os.path.splitext(os.path.split(filename)[1])[0]
-            if pkg in export_files:
-                G2Print('Warning: exporter {} overrides {}'.format(export_files[pkg],os.path.abspath(filename)))
-            elif not filename.startswith(GSASIIpath.path2GSAS2):
-                G2Print('Note, found non-standard exporter: {}'.format(os.path.abspath(filename)))
-                export_files[pkg] = filename
-            else:
-                export_files[pkg] = filename
-    # go through the routines and import them, saving objects that
-    # have export routines (method Exporter)
-    for pkg in sorted(export_files.keys()):
-        try:
-            exec('import '+pkg)
-            for clss in inspect.getmembers(eval(pkg)): # find classes defined in package
-                if clss[0].startswith('_'): continue
-                if not inspect.isclass(clss[1]): continue
-                # check if we have the required methods
-                if not hasattr(clss[1],'Exporter'): continue
-                if not callable(getattr(clss[1],'Exporter')): continue
-                if parent is None:
-                    if not hasattr(clss[1],'Writer'): continue
-                else:
-                    if not hasattr(clss[1],'loadParmDict'): continue
-                    if not callable(getattr(clss[1],'loadParmDict')): continue
-                try:
-                    exporter = clss[1](parent) # create an export instance
-                except AttributeError:
-                    pass
-                except Exception as exc:
-                    G2Print ('\nExport init: Error substantiating class ' + clss[0])
-                    G2Print (u'Error message: {}\n'.format(exc))
-                    if traceback:
-                        traceback.print_exc(file=sys.stdout)
-                    continue
-                exporterlist.append(exporter)
-        except AttributeError:
-            G2Print ('Export Attribute Error ' + export_files[pkg])
-            if traceback:
-                traceback.print_exc(file=sys.stdout)
-        except Exception as exc:
-            G2Print ('\nExport init: Error importing file ' + export_files[pkg])
-            G2Print (u'Error message: {}\n'.format(exc))
-            if traceback:
-                traceback.print_exc(file=sys.stdout)
-    return exporterlist
+# def _LoadExportRoutines(parent, usetraceback=False):
+#     '''Routine to locate GSASII exporters. Warns if more than one file
+#     with the same name is in the path or if a file is found that is not
+#     in the main directory tree.
+#     '''
+#     exporterlist = []
+#     export_files = {}
+#     if '.' not in sys.path: sys.path.append('.')
+#     for path in sys.path:
+#         for filename in glob.iglob(os.path.join(path,"G2export*.py")):
+#             pkg = os.path.splitext(os.path.split(filename)[1])[0]
+#             if pkg in export_files:
+#                 G2Print('Warning: exporter {} overrides {}'.format(export_files[pkg],os.path.abspath(filename)))
+#             elif not filename.startswith(GSASIIpath.path2GSAS2):
+#                 G2Print('Note, found non-standard exporter: {}'.format(os.path.abspath(filename)))
+#                 export_files[pkg] = filename
+#             else:
+#                 export_files[pkg] = filename
+#     # go through the routines and import them, saving objects that
+#     # have export routines (method Exporter)
+#     for pkg in sorted(export_files.keys()):
+#         try:
+#             exec('import '+pkg)
+#             for clss in inspect.getmembers(eval(pkg)): # find classes defined in package
+#                 if clss[0].startswith('_'): continue
+#                 if not inspect.isclass(clss[1]): continue
+#                 # check if we have the required methods
+#                 if not hasattr(clss[1],'Exporter'): continue
+#                 if not callable(getattr(clss[1],'Exporter')): continue
+#                 if parent is None:
+#                     if not hasattr(clss[1],'Writer'): continue
+#                 else:
+#                     if not hasattr(clss[1],'loadParmDict'): continue
+#                     if not callable(getattr(clss[1],'loadParmDict')): continue
+#                 try:
+#                     exporter = clss[1](parent) # create an export instance
+#                 except AttributeError:
+#                     pass
+#                 except Exception as exc:
+#                     G2Print ('\nExport init: Error substantiating class ' + clss[0])
+#                     G2Print (u'Error message: {}\n'.format(exc))
+#                     if usetraceback:
+#                         import traceback
+#                         traceback.print_exc(file=sys.stdout)
+#                     continue
+#                 exporterlist.append(exporter)
+#         except AttributeError:
+#             G2Print ('Export Attribute Error ' + export_files[pkg])
+#             if usetraceback:
+#                 import traceback
+#                 traceback.print_exc(file=sys.stdout)
+#         except Exception as exc:
+#             G2Print ('\nExport init: Error importing file ' + export_files[pkg])
+#             G2Print (u'Error message: {}\n'.format(exc))
+#             if usetraceback:
+#                 import traceback
+#                 traceback.print_exc(file=sys.stdout)
+#     return exporterlist
 
-def LoadExportRoutines(parent, traceback=False):
+def LoadExportRoutines(parent, usetraceback=False):
     from . import exports
     exporterlist = []
     # how to import directly from a file for extra search magic if we need
@@ -627,7 +627,8 @@ def LoadExportRoutines(parent, traceback=False):
             except Exception as exc:
                 G2Print ('\nExport init: Error substantiating class ' + member_name)
                 G2Print ('Error message: {}\n'.format(exc))
-                if traceback:
+                if usetraceback:
+                    import traceback
                     traceback.print_exc(file=sys.stdout)
                 continue
     return exporterlist
@@ -1197,8 +1198,6 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         G2Print (' G(R) saved to: '+grfilename)
 
     if PDFsaves[4]: #pdfGUI file for G(R)
-        import GSASIImath as G2mth
-        import GSASIIlattice as G2lat
         grfilename = fileroot+'.gr'
         grdata = PDFControls['G(R)'][1]
         qdata = PDFControls['I(Q)'][1][0]
@@ -1731,7 +1730,7 @@ class ExportBaseclass(object):
         '''
 
         numselected = 1
-        import GSASIIctrlGUI as G2G
+        from . import GSASIIctrlGUI as G2G
         if self.currentExportType == 'phase':
             if len(self.Phases) == 0:
                 self.G2frame.ErrorDialog(
@@ -1914,7 +1913,7 @@ class ExportBaseclass(object):
         This could be made faster for sequential fits as info for each histogram is loaded
         later when iterating over histograms.
         '''
-        import GSASIIdataGUI as G2gd
+        from . import GSASIIdataGUI as G2gd
         self.G2frame.CheckNotebook()
         self.parmDict = {}
         self.sigDict = {} # dict with s.u. values, currently used only for CIF & Bracket exports
@@ -1997,7 +1996,7 @@ class ExportBaseclass(object):
                 self.sigDict.update(
                     {i:v[1] for i,v in self.OverallParms['Covariance']['depSigDict'].items()})
             # compute the s.u.'s on rigid bodies
-            import GSASIIstrMath as G2stMth
+            from . import GSASIIstrMath as G2stMth
             self.RBsuDict = G2stMth.computeRBsu(self.parmDict,Phases,rigidbodyDict,
                             covDict['covMatrix'],covDict['varyList'],covDict['sig'])
 
@@ -2012,7 +2011,7 @@ class ExportBaseclass(object):
         * Data items are placed in self.Histogram. The key for these data items
           begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.
         '''
-        import GSASIIdataGUI as G2gd
+        from . import GSASIIdataGUI as G2gd
         self.OverallParms = {}
         self.powderDict = {}
         self.sasdDict = {}
@@ -2155,7 +2154,7 @@ class ExportBaseclass(object):
         :returns: a file name (str) or None if Cancel is pressed
 
         '''
-        import GSASIIctrlGUI as G2G
+        from . import GSASIIctrlGUI as G2G
         #pth = G2G.GetExportPath(self.G2frame)
         if self.G2frame.GSASprojectfile:
             defnam = os.path.splitext(
@@ -2174,7 +2173,7 @@ class ExportBaseclass(object):
         TODO: Can this be replaced with G2G.askSaveDirectory?
         '''
         import wx
-        import GSASIIctrlGUI as G2G
+        from . import GSASIIctrlGUI as G2G
         pth = G2G.GetExportPath(self.G2frame)
         dlg = wx.DirDialog(
             self.G2frame, 'Input directory where file(s) will be written', pth,

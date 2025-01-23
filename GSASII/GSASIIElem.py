@@ -13,7 +13,7 @@ import numpy as np
 from . import atmdata
 from . import GSASIImath as G2mth
 from . import ElementTable as ET
-#import GSASIIElem as G2elem   # but this module is GSASIIElem. Why are we doing this?
+
 nxs = np.newaxis
 Bohr = 0.529177
 
@@ -197,7 +197,7 @@ def GetFFC5(ElSym):
     :param ElSym: str(1-2 character element symbol with proper case);
     :return El: dictionary with 5 term form factor & compton coefficients
     '''
-    import FormFactors as FF
+    from . import FormFactors as FF
     El = {}
     FF5 = FF.FFac5term[ElSym]
     El['fa'] = FF5[:5]
@@ -909,7 +909,6 @@ def SetupGeneral(data, dirname):
                     continue
                 nSh = len(Srb['RBId'])
                 for iSh in range(nSh):
-#                    Info = G2elem.GetAtomInfo(Srb['atType'][iSh])
                     Info = GetAtomInfo(Srb['atType'][iSh])
                     if Info['Symbol'] not in generalData['AtomTypes']:
                         generalData['AtomTypes'].append(Info['Symbol'])

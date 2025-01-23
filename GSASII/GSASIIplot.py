@@ -47,7 +47,10 @@ from . import GSASIIctrlGUI as G2G
 from . import GSASIIobj as G2obj
 from . import GSASIIpwdplot as G2pwpl
 try:
-    from . import pytexture as ptx
+    if GSASIIpath.binaryPath:    # TODO: I think this may use a fair amount of memory; delay import?
+        import pytexture as ptx
+    else:
+        import GSASII.pytexture as ptx
     ptx.pyqlmninit()
 except ImportError:
     print('binary load error: pytexture not found')

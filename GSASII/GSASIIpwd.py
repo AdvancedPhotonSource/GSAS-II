@@ -25,6 +25,7 @@ import scipy.special as sp
 import scipy.signal as signal
 
 from . import GSASIIpath
+GSASIIpath.SetBinaryPath()
 
 filversion = "?"
 try:
@@ -37,11 +38,17 @@ from . import GSASIIspc as G2spc
 from . import GSASIIElem as G2elem
 from . import GSASIImath as G2mth
 try:
-    from . import pypowder as pyd
+    if GSASIIpath.binaryPath:
+        import  pypowder as pyd
+    else:
+        from . import pypowder as pyd
 except ImportError:
     print ('pypowder is not available - profile calcs. not allowed')
 try:
-    from . import pydiffax as pyx
+    if GSASIIpath.binaryPath:
+        import pydiffax as pyx
+    else:
+        from . import pydiffax as pyx
 except ImportError:
     print ('pydiffax is not available for this platform')
 from . import GSASIIfiles as G2fil
@@ -5872,7 +5879,7 @@ def test3(name,delt):
     hplot.plot(xdata,(y1-y0)/delt,'r+')
 
 if __name__ == '__main__':
-    import GSASIItestplot as plot
+    from . import GSASIItestplot as plot
     global plotter
     plotter = plot.PlotNotebook()
 #    test0()

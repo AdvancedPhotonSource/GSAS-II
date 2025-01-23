@@ -26,6 +26,6 @@ if not os.environ.get("GSASII_YOLO_PATH", ''):
 del sys, make_path_watcher, os
 
 
-from .GSASII import main  # noqa: E402
+from .GSASIIGUI import main  # noqa: E402
 
 __all__ = ['main']

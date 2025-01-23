@@ -975,7 +975,7 @@ def ExportSequentialFullCIF(G2frame,seqData,Controls):
     '''Handles access to CIF exporter a bit differently for sequential fits, as this is 
     not accessed via the usual export menus
     '''
-    import G2export_CIF
+    from exports import G2export_CIF
     ##################### debug code to reload exporter before each use ####
     #import importlib as imp
     #imp.reload(G2export_CIF)
@@ -1287,9 +1287,9 @@ def mkParmDictfromTree(G2frame,sigDict=None):
       used in some parts of the code that has refinement flags and initial
       values as well. 
     '''
-    import GSASIIstrIO as G2stIO
-    import GSASIIstrMath as G2stMth
-    import GSASIImapvars as G2mv
+    from . import GSASIIstrIO as G2stIO
+    from . import GSASIIstrMath as G2stMth
+    from . import GSASIImapvars as G2mv
     G2frame.CheckNotebook()
     parmDict = {}
     rigidbodyDict = {}
@@ -1356,7 +1356,7 @@ def mkParmDictfromTree(G2frame,sigDict=None):
     return parmDict
 
 if __name__ == '__main__':
-    import GSASIIdataGUI
+    from . import GSASIIdataGUI
     application = GSASIIdataGUI.GSASIImain(0)
     G2frame = application.main
     #app = wx.PySimpleApp()

@@ -1,5 +1,5 @@
-# script to start GSAS-II when not installed via pixi
+# Starts GSAS-II when GitHub repo is not installed into current Python
 import os
 os.environ["GSASII_YOLO_PATH"] = "True"
-from GSASII.GSASII import main
+from GSASII.GSASIIGUI import main
 main()

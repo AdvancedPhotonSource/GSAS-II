@@ -10,11 +10,17 @@ import copy
 import os.path as ospath
 
 from . import GSASIIpath
-if GSASIIpath.binaryPath:
-    import pyspg
-else:
-    import GSASII.pyspg as pyspg
-    
+GSASIIpath.SetBinaryPath()
+from . import GSASIIlattice as G2lat
+
+try:
+    if GSASIIpath.binaryPath:
+        import pyspg
+    else:
+        from . import pyspg
+except ImportError:
+    print('binary load error: pyspg not found')
+
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
 nxs = np.newaxis
@@ -3313,7 +3319,6 @@ def MuShklMean(SGData,Amat,Shkl):
 
 def Muiso2Shkl(muiso,SGData,cell):
     "this is to convert isotropic mustrain to generalized Shkls"
-    import GSASIIlattice as G2lat
     A = G2lat.cell2AB(cell)[0]
 
     def minMus(Shkl,muiso,H,SGData,A):
@@ -4782,4 +4787,3 @@ nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h',
 #order they are listed in the International Tables, vol. A'''
 symtypelist = ('triclinic', 'monoclinic', 'orthorhombic', 'tetragonal',
                'trigonal', 'hexagonal', 'cubic')
-

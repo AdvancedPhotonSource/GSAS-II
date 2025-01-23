@@ -1,10 +1,16 @@
-'''Unit tests for code in GSASIIlattice.py. 
+'''Unit tests for code in GSASIIlattice.py.
 '''
 
 import os
 import sys
 import numpy as np
 
+import importlib  # fixup path if GSASII not installed into Python
+if importlib.util.find_spec('GSASII') is None:
+    print('Beware: Path hacking in progress')
+    os.environ["GSASII_YOLO_PATH"] = "True"
+    home = os.path.dirname(__file__)
+    sys.path.append(os.path.dirname(home))
 import GSASII.GSASIIspc as G2spc
 from GSASII.GSASIIlattice import *
 
@@ -319,7 +325,7 @@ def test_Laue():
         #if not match:
             #for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref
             #print center, Laue, Axis, system
-            
+
     for spc in LaueTestData:
         data = LaueTestData[spc]
         cell = data[0]

@@ -9,23 +9,35 @@ import random as rn
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
+import numpy.fft as fft
+import scipy.optimize as so
 import time
 import math
 import copy
 from . import GSASIIpath
+GSASIIpath.SetBinaryPath()
 from . import GSASIIElem as G2el
 from . import GSASIIlattice as G2lat
 from . import GSASIIspc as G2spc
 from . import GSASIIpwd as G2pwd
 from . import GSASIIobj as G2obj
 from . import GSASIIfiles as G2fil
-import numpy.fft as fft
-import scipy.optimize as so
 try:
-    from . import pypowder as pwd
+    if GSASIIpath.binaryPath:
+        import pypowder as pwd
+    else:
+        from . import pypowder as pwd
 except ImportError:
     print ('pypowder is not available - profile calcs. not allowed')
 
+try:
+    if GSASIIpath.binaryPath:
+        import pytexture as ptx
+    else:
+        from . import pytexture as ptx
+        #import GSASII.pytexture as ptx
+except ImportError: # ignore; will report this as an error in GSASIIplot import
+    pass
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
 tand = lambda x: np.tan(x*np.pi/180.)
@@ -2840,8 +2852,8 @@ def setupRBDistDerv(parmDict,varyList,sigList,rigidbodyDict,Phases):
       * changedParmDict[k] (k in varyList) is a list of all the parameters that have been
         changed in multiParmDict[k] after applying RB & constraints
     '''
-    import GSASIImapvars as G2mv
-    import GSASIIstrMath as G2stMth
+    from . import GSASIImapvars as G2mv
+    from . import GSASIIstrMath as G2stMth
     def extendChanges(prms):
         '''Propagate changes due to constraint and rigid bodies
         from varied parameters to dependent parameters
@@ -3727,7 +3739,11 @@ def validProtein(Phase,old):
 ################################################################################
 
 def FitTexture(General,Gangls,refData,keyList,pgbar):
-    from . import pytexture as ptx
+#    if GSASIIpath.binaryPath:
+#        import pytexture as ptx
+#    else:
+#        from . import pytexture as ptx
+#        #import GSASII.pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     def printSpHarm(textureData,SHtextureSig):

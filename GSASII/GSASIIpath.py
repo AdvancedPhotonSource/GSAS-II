@@ -1930,7 +1930,7 @@ def _old_TestSPG(fpth):
 def SetBinaryPath(showConfigMsg=False):
     '''
     Add location of GSAS-II shared libraries (binaries: .so or
-    .pyd files) to path (when needed). When GSAS-II is installed by 
+    .pyd files) to path (when needed). When GSAS-II is installed by
     pixi, no change in the path is needed.
 
     This routine must be executed after GSASIIpath is imported
@@ -1964,7 +1964,7 @@ def SetBinaryPath(showConfigMsg=False):
         print('Binary load failed and module pathHacking not present')
         BinaryPathFailed = True
         return
-    
+
     LoadConfig(showConfigMsg)
     BinaryPathFailed = pathHacking._path_discovery(showConfigMsg)
 
@@ -2719,7 +2719,7 @@ to update/regress repository from git repository:
         else:
             print("Restart GSAS-II without a project file ")
             # subprocess.Popen([sys.executable,G2scrpt])
-        import GSASIIfiles
+        from . import GSASIIfiles
         GSASIIfiles.openInNewTerm(project)
         print ('exiting update process')
         sys.exit()

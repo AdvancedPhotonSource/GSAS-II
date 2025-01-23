@@ -32,7 +32,7 @@ except AttributeError:
 ] = [wx.NewId() for _init_coll_File_Items in range(2)]
 
 class PlotXNFF(wx.Frame):
-    
+
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='PlotXNFF', parent=parent,
             size=wx.Size(460, 250),style=wx.DEFAULT_FRAME_STYLE, title='Plot Xray, Neutron & Magnetic Form Factors')
@@ -44,16 +44,16 @@ class PlotXNFF(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFileExit, id=wxID_FILEEXIT)
         self.PlotFFMenu.Append(menu=self.File, title='File')
         self.SetMenuBar(self.PlotFFMenu)
-        self.PlotFFPanel = wx.ScrolledWindow(self)        
+        self.PlotFFPanel = wx.ScrolledWindow(self)
         self.plotNB = plot.PlotNotebook()
-        
+
     def __init__(self, parent):
         self._init_ctrls(parent)
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
 
     def ExitMain(self, event):
         sys.exit()
-        
+
     def OnFileExit(self,event):
         self.Close()
 
@@ -70,11 +70,11 @@ class PlotXNFF(wx.Frame):
         self.MakePlot()
 
     def MakePlot(self):
-        
+
         def test1():
             fplot = self.plotNB.add('Neutron scattering lengths').gca()
             lams = np.linspace(0.3,10.0,1000,True)
-            
+
             BLtable = {}
             El = self.Elem.capitalize()
             for isotope in self.atmInfo['Isotopes']:
@@ -84,14 +84,14 @@ class PlotXNFF(wx.Frame):
                     BLtable[isotope] = ['',atmdata.AtmBlens[El+'_'+isotope]]
             for isotope in BLtable:
                 if 'BW-LS' in BLtable[isotope][1]:
-                    b0 = np.ones_like(lams)*BLtable[isotope][1]['BW-LS'][0]                    
+                    b0 = np.ones_like(lams)*BLtable[isotope][1]['BW-LS'][0]
                 else:
                     b0 = np.ones_like(lams)*BLtable[isotope][1]['SL'][0]
                 bp,bpp = G2el.BlenResTOF([isotope,],BLtable,lams)
                 fplot.plot(lams,b0,label=isotope+El+' b0')
                 fplot.plot(lams,bp[0]-b0,label=isotope+El+" b'")
                 fplot.plot(lams,bpp[0],label=isotope+El+' b"')
-                
+
             fplot.legend(loc='best')
             fplot.set_xlabel('wavelength, A')
             fplot.set_ylabel('b')
@@ -105,7 +105,7 @@ class PlotXNFF(wx.Frame):
             fplot.legend(loc='best')
             fplot.set_xlabel('sin-theta/lambda')
             fplot.set_ylabel('form factor')
-            
+
         def test3():
             fplot = self.plotNB.add('Electron form factor').gca()
             sq = np.linspace(0,2.,1000,True)
@@ -115,7 +115,7 @@ class PlotXNFF(wx.Frame):
             fplot.legend(loc='best')
             fplot.set_xlabel('sin-theta/lambda')
             fplot.set_ylabel('form factor')
-            
+
         def test4():
             fplot = self.plotNB.add('magnetic form factors').gca()
             sq = np.linspace(0,1.,1000,True)
@@ -126,7 +126,7 @@ class PlotXNFF(wx.Frame):
             fplot.legend(loc='best')
             fplot.set_xlabel('sin-theta/lambda')
             fplot.set_ylabel('form factor')
-            
+
         while self.plotNB.nb.GetPageCount():
             self.plotNB.nb.DeletePage(0)
         test1()
@@ -134,11 +134,11 @@ class PlotXNFF(wx.Frame):
         test3()
         if len(self.magFFs):
             test4()
-        
+
         self.plotNB.Show()
-        
+
 if __name__ == "__main__":
-    import GSASIIplot as G2plt
+    from . import GSASIIplot as G2plt
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame

@@ -3055,7 +3055,7 @@ def UpdatePhaseData(G2frame,Item,data):
         import tempfile
         import re
         import requests
-        import G2export_CIF
+        from exports import G2export_CIF
         isosite="https://stokes.byu.edu/iso/"
         upscript='isocifuploadfile.php'
         isoscript='isocifform.php'

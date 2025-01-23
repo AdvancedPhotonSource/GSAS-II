@@ -6620,7 +6620,7 @@ class SelectConfigSetting(wx.Dialog):
         self.EndModal(wx.ID_OK)
         global inhibitSave
         if event is not None: inhibitSave = True
-        import GSASIImpsubs as G2mp
+        from . import GSASIImpsubs as G2mp
         G2mp.ResetMP()
 
     def OnSave(self,event):
@@ -6776,7 +6776,7 @@ class SelectConfigSetting(wx.Dialog):
                 self.colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
                 self.varsizer.Add(self.colSel, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
             elif var == 'Image_calibrant':
-                import ImageCalibrants as calFile
+                from . import ImageCalibrants as calFile
                 calList = sorted([m for m in calFile.Calibrants.keys()],
                                      key=lambda s: s.lower())
                 self.colSel = EnumSelector(self,self.vars[var],1,calList,
@@ -9280,7 +9280,7 @@ def Load2Cells(G2frame,phase):
         volRatW.SetValue(min(volRatW.Validator.xmax,nistInput[3]))
     def computeNISTlatCompare(event):
         'run NIST*LATTICE after the compute button is pressed'
-        import nistlat
+        from . import nistlat
         out = nistlat.CompareCell(cellLen[0], cellCntr[0],
                                   cellLen[1], cellCntr[1],
                     tolerance=3*[nistInput[0]]+3*[nistInput[1]],

@@ -1079,7 +1079,7 @@ def UpdatePeakGrid(G2frame, data):
         if G2frame.dataWindow.XtraPeakMode.IsChecked(): # adding peaks to computed pattern
             histoName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
 # do zero cycle refinement
-            import GSASIIstrMain as G2stMn
+            from . import GSASIIstrMain as G2stMn
             # recompute current pattern for current histogram, set as fixed background
             bxye = G2stMn.DoNoFit(G2frame.GSASprojectfile,histoName)
             peaksplus = peaks['xtraPeaks'] + [{}]
@@ -5176,8 +5176,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         import tempfile
         import re
         import requests
-        import G2export_CIF
-        import ISODISTORT as ISO
+        from exports import G2export_CIF
+        from . import ISODISTORT as ISO
         isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
 
         #isoscript='isocifform.php'

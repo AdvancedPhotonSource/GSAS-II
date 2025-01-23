@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 #
 """
-Classes and routines defined in :mod:`GSASIIscriptable` follow. 
-A script will create one or more :class:`G2Project` objects by reading 
+Classes and routines defined in :mod:`GSASIIscriptable` follow.
+A script will create one or more :class:`G2Project` objects by reading
 a GSAS-II project (.gpx) file or creating a new one and will then
 perform actions such as adding a histogram (method :meth:`G2Project.add_powder_histogram`),
 adding a phase (method :meth:`G2Project.add_phase`),
@@ -22,7 +22,7 @@ methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
 # 2) add the wrapper into G2Project (e.g. _pdfs, pdf, pdfs)
 # 3) add a new method to add the object into a project (G2Project.add_PDF)
 # Document: (in ../docs/source/GSASIIscriptable.rst)
-# 4) add to documentation in section :class:`G2Project` 
+# 4) add to documentation in section :class:`G2Project`
 # 5) add a new documentation section for the new class
 #============================================================================
 
@@ -51,6 +51,7 @@ from . import GSASIIfiles as G2fil
 from . import GSASIIimage as G2img
 from . import GSASIIlattice as G2lat
 from . import GSASIImapvars as G2mv
+from . import GSASIImath as G2mth
 
 # Delay imports loading to not slow down small scripts that don't need them
 Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
@@ -60,14 +61,14 @@ exportersByExtension = {}
 npsind = lambda x: np.sin(x*np.pi/180.)
 
 def SetPrintLevel(level):
-    '''Set the level of output from calls to :func:`GSASIIfiles.G2Print`, 
-    which should be used in place of print() where possible. This is a 
+    '''Set the level of output from calls to :func:`GSASIIfiles.G2Print`,
+    which should be used in place of print() where possible. This is a
     wrapper for :func:`GSASIIfiles.G2SetPrintLevel` so that this routine is
-    documented here. 
-    
-    :param str level: a string used to set the print level, which may be 
+    documented here.
+
+    :param str level: a string used to set the print level, which may be
       'all', 'warn', 'error' or 'none'.
-      Note that capitalization and extra letters in level are ignored, so 
+      Note that capitalization and extra letters in level are ignored, so
       'Warn', 'warnings', etc. will all set the mode to 'warn'
     '''
     G2fil.G2SetPrintLevel(level)
@@ -80,20 +81,20 @@ def SetPrintLevel(level):
 def installScriptingShortcut():
     '''Creates a file named G2script in the current Python site-packages directory.
     This is equivalent to the "Install GSASIIscriptable shortcut" command in the GUI's
-    File menu. Once this is done, a shortcut for calling GSASIIscriptable is created, 
+    File menu. Once this is done, a shortcut for calling GSASIIscriptable is created,
     where the command:
-    
+
     >>> import G2script as G2sc
 
     will provide access to GSASIIscriptable without changing the sys.path; also see
     :ref:`ScriptingShortcut`.
 
-    Note that this only affects the current Python installation. If more than one 
-    Python installation will be used with GSAS-II (for example because different 
-    conda environments are used), this command should be called from within each 
+    Note that this only affects the current Python installation. If more than one
+    Python installation will be used with GSAS-II (for example because different
+    conda environments are used), this command should be called from within each
     Python environment.
 
-    If more than one GSAS-II installation will be used with a Python installation, 
+    If more than one GSAS-II installation will be used with a Python installation,
     this shortcut can only be used with one of them.
     '''
     f = GSASIIpath.makeScriptShortcut()
@@ -129,18 +130,18 @@ def ShowVersions():
         out += f"  {s:12s}{pkgver}:  {msg}\n"
     out += GSASIIpath.getG2VersionInfo()
     out += "\n\n"
-    try: 
+    try:
         out += f"GSAS-II location: {GSASIIpath.path2GSAS2}\n"
     except:
         out += "GSAS-II location: not set\n"
-    try: 
+    try:
         out += f"Binary location:  {GSASIIpath.binaryPath}\n"
     except:
         out += "Binary location:  not found\n"
     return out
 
 def LoadG2fil():
-    '''Setup GSAS-II importers. 
+    '''Setup GSAS-II importers.
     Delay importing this module when possible, it is slow.
     Multiple calls are not. Only the first does anything.
     '''
@@ -172,7 +173,7 @@ def LoadG2fil():
 
 def LoadDictFromProjFile(ProjFile):
     '''Read a GSAS-II project file and load items to dictionary
-    
+
     :param str ProjFile: GSAS-II project (name.gpx) full file name
     :returns: Project,nameList, where
 
@@ -313,21 +314,21 @@ def make_empty_project(author=None, filename=None):
 
 def GenerateReflections(spcGrp,cell,Qmax=None,dmin=None,TTmax=None,wave=None):
     """Generates the crystallographically unique powder diffraction reflections
-    for a lattice and space group (see :func:`GSASIIlattice.GenHLaue`). 
+    for a lattice and space group (see :func:`GSASIIlattice.GenHLaue`).
 
-    :param str spcGrp: A GSAS-II formatted space group (with spaces between 
+    :param str spcGrp: A GSAS-II formatted space group (with spaces between
        axial fields, e.g. 'P 21 21 21' or 'P 42/m m c'). Note that non-standard
-       space groups, such as 'P 21/n' or 'F -1' are allowed (see 
-       :func:`GSASIIspc.SpcGroup`). 
-    :param list cell: A list/tuple with six unit cell constants, 
+       space groups, such as 'P 21/n' or 'F -1' are allowed (see
+       :func:`GSASIIspc.SpcGroup`).
+    :param list cell: A list/tuple with six unit cell constants,
       (a, b, c, alpha, beta, gamma) with values in Angstroms/degrees.
-      Note that the cell constants are not checked for consistency 
+      Note that the cell constants are not checked for consistency
       with the space group.
-    :param float Qmax: Reflections up to this Q value are computed 
+    :param float Qmax: Reflections up to this Q value are computed
        (do not use with dmin or TTmax)
-    :param float dmin: Reflections with d-space above this value are computed 
+    :param float dmin: Reflections with d-space above this value are computed
        (do not use with Qmax or TTmax)
-    :param float TTmax: Reflections up to this 2-theta value are computed 
+    :param float TTmax: Reflections up to this 2-theta value are computed
        (do not use with dmin or Qmax, use of wave is required.)
     :param float wave: wavelength in Angstroms for use with TTmax (ignored
        otherwise.)
@@ -345,7 +346,7 @@ def GenerateReflections(spcGrp,cell,Qmax=None,dmin=None,TTmax=None,wave=None):
     ...                     (5.,6.,7.,90.,90.,90),
     ...                     TTmax=20,wave=1)
     >>> for r in refs: print(r)
-    ... 
+    ...
     [0, 0, 1, 7.0]
     [0, 1, 0, 6.0]
     [1, 0, 0, 5.0]
@@ -470,8 +471,8 @@ def load_iprms(instfile, reader, bank=None):
         # New GSAS File, load appropriate bank
         with open(instfile) as f:
             lines = f.readlines()
-        if bank is None: 
-            bank = reader.powderentry[2] 
+        if bank is None:
+            bank = reader.powderentry[2]
         nbank,iparms = G2fil.ReadInstprm(lines, bank, reader.Sample)
 
         reader.instfile = instfile
@@ -496,11 +497,11 @@ def load_iprms(instfile, reader, bank=None):
             if key[4:6] == "  ":
                 Iparm[key] = IparmC[key]
             elif int(key[4:6].strip()) == bank:
-                Iparm[key[:4]+' 1'+key[6:]] = IparmC[key]            
+                Iparm[key[:4]+' 1'+key[6:]] = IparmC[key]
         reader.instbank = bank
     elif ibanks == 1:
         reader.instbank = 1
-    else: 
+    else:
         raise G2ImportException("Instrument parameter file has {} banks, select one with instbank param."
                                     .format(ibanks))
     reader.powderentry[2] = 1
@@ -591,11 +592,11 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     Tmin = np.min(reader.powderdata[0])
     Tmax = np.max(reader.powderdata[0])
     Tmin1 = Tmin
-    if 'NT' in Iparm1['Type'][0] and G2lat.Pos2dsp(Iparm1,Tmin) < 0.4:                
+    if 'NT' in Iparm1['Type'][0] and G2lat.Pos2dsp(Iparm1,Tmin) < 0.4:
         Tmin1 = G2lat.Dsp2pos(Iparm1,0.4)
 
     default_background = [['chebyschev-1', False, 3, 1.0, 0.0, 0.0],
-        {'nDebye': 0, 'debyeTerms': [], 'nPeaks': 0, 
+        {'nDebye': 0, 'debyeTerms': [], 'nPeaks': 0,
         'peaksList': [],'background PWDR':['',1.0,False]}]
 
     output_dict = {'Reflection Lists': {},
@@ -666,7 +667,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
 
     :param list ImageReaderlist: list of Reader objects for images
     :param object proj: references a :class:`G2Project` project
-    :param imageRef: A reference to the desired image in the project. 
+    :param imageRef: A reference to the desired image in the project.
       Either the Image tree name (str), the image's index (int) or
       a image object (:class:`G2Image`)
 
@@ -698,7 +699,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
                 raise Exception('Error reading dark image {}'.format(imagefile))
             sumImg += np.array(darkImage*darkScale,dtype='int32')
     if 'background image' in Controls:
-        backImg,backScale = Controls['background image']            
+        backImg,backScale = Controls['background image']
         if backImg:     #ignores any transmission effect in the background image
             bImgObj = proj.image(backImg)
             formatName = bImgObj.data['Image Controls'].get('formatName','')
@@ -728,7 +729,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     return np.asarray(sumImg,dtype='int32')
 
 def _constr_type(var):
-    '''returns the constraint type based on phase/histogram use 
+    '''returns the constraint type based on phase/histogram use
     in a variable
     '''
     if var.histogram and var.phase:
@@ -739,7 +740,7 @@ def _constr_type(var):
         return 'Hist'
     else:
         return 'Global'
-    
+
 class G2ObjectWrapper(object):
     """Base class for all GSAS-II object wrappers.
 
@@ -773,25 +774,25 @@ class G2ObjectWrapper(object):
         return self.data.items()
 
 
-class G2Project(G2ObjectWrapper):    
-    """Represents an entire GSAS-II project. The object contains these 
+class G2Project(G2ObjectWrapper):
+    """Represents an entire GSAS-II project. The object contains these
     class variables:
 
      * G2Project.filename: contains the .gpx filename
-     * G2Project.names: contains the contents of the project "tree" as a list 
-       of lists. Each top-level entry in the tree is an item in the list. The 
+     * G2Project.names: contains the contents of the project "tree" as a list
+       of lists. Each top-level entry in the tree is an item in the list. The
        name of the top-level item is the first item in the inner list. Children
        of that item, if any, are subsequent entries in that list.
-     * G2Project.data: contains the entire project as a dict. The keys 
+     * G2Project.data: contains the entire project as a dict. The keys
        for the dict are the top-level names in the project tree (initial items
        in the G2Project.names inner lists) and each top-level item is stored
-       as a dict. 
+       as a dict.
 
-         * The contents of Top-level entries will be found in the item 
-           named 'data', as an example, ``G2Project.data['Notebook']['data']`` 
+         * The contents of Top-level entries will be found in the item
+           named 'data', as an example, ``G2Project.data['Notebook']['data']``
 
          * The contents of child entries will be found in the item
-           using the names of the parent and child, for example 
+           using the names of the parent and child, for example
            ``G2Project.data['Phases']['NaCl']``
 
     :param str gpxfile: Existing .gpx file to be loaded. If nonexistent,
@@ -799,29 +800,29 @@ class G2Project(G2ObjectWrapper):
     :param str author: Author's name (not yet implemented)
     :param str newgpx: The filename the project should be saved to in
             the future. If both newgpx and gpxfile are present, the project is
-            loaded from the file named by gpxfile and then when saved will 
+            loaded from the file named by gpxfile and then when saved will
             be written to the file named by newgpx.
-    :param str filename: To be deprecated. Serves the same function as newgpx, 
-            which has a somewhat more clear name. 
-            (Do not specify both newgpx and filename). 
+    :param str filename: To be deprecated. Serves the same function as newgpx,
+            which has a somewhat more clear name.
+            (Do not specify both newgpx and filename).
 
     There are two ways to initialize this object:
 
     >>> # Load an existing project file
     >>> proj = G2Project('filename.gpx')
-    
+
     >>> # Create a new project
     >>> proj = G2Project(newgpx='new_file.gpx')
-    
+
     Histograms can be accessed easily.
 
     >>> # By name
     >>> hist = proj.histogram('PWDR my-histogram-name')
-    
+
     >>> # Or by index
     >>> hist = proj.histogram(0)
     >>> assert hist.id == 0
-    
+
     >>> # Or by random id
     >>> assert hist == proj.histogram(hist.ranId)
 
@@ -836,9 +837,9 @@ class G2Project(G2ObjectWrapper):
                                          'instrument_parameters.prm')
     >>> phase = proj.add_phase('my_phase.cif', histograms=[hist])
 
-    Parameters for Rietveld refinement can be turned on and off at the project level 
-    as well as described in 
-    :meth:`~G2Project.set_refinement`, :meth:`~G2Project.iter_refinements` and 
+    Parameters for Rietveld refinement can be turned on and off at the project level
+    as well as described in
+    :meth:`~G2Project.set_refinement`, :meth:`~G2Project.iter_refinements` and
     :meth:`~G2Project.do_refinements`.
     """
     def __init__(self, gpxfile=None, author=None, filename=None, newgpx=None):
@@ -862,7 +863,7 @@ class G2Project(G2ObjectWrapper):
                 if not os.path.exists(dr):
                     raise Exception("Directory {} for filename/newgpx does not exist".format(dr))
                 self.filename = filename
-            else: 
+            else:
                 self.filename = os.path.abspath(os.path.expanduser(gpxfile))
         else:
             raise ValueError("Not sure what to do with gpxfile {}. Does not exist?".format(gpxfile))
@@ -902,9 +903,9 @@ class G2Project(G2ObjectWrapper):
         try:
             modList += [sp]
         except NameError:
-            pass        
+            pass
         controls_data['PythonVersions'] = G2fil.get_python_versions(modList)
-        #    G2 version info 
+        #    G2 version info
         controls_data['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
         if GSASIIpath.HowIsG2Installed().startswith('git'):
             try:
@@ -925,44 +926,44 @@ class G2Project(G2ObjectWrapper):
     def add_powder_histogram(self, datafile, iparams=None, phases=[],
                                  fmthint=None,
                                  databank=None, instbank=None, multiple=False):
-        """Loads a powder data histogram or multiple powder histograms 
+        """Loads a powder data histogram or multiple powder histograms
         into the project.
 
-        Note that the data type (x-ray/CW neutron/TOF) for the histogram 
+        Note that the data type (x-ray/CW neutron/TOF) for the histogram
         will be set from the instrument parameter file. The instrument
-        geometry is assumed to be Debye-Scherrer except for 
-        dual-wavelength x-ray, where Bragg-Brentano is assumed. 
+        geometry is assumed to be Debye-Scherrer except for
+        dual-wavelength x-ray, where Bragg-Brentano is assumed.
 
         :param str datafile: A filename with the powder data file to read.
           Note that in unix fashion, "~" can be used to indicate the
           home directory (e.g. ~/G2data/data.fxye).
-        :param str iparams: A filenme for an instrument parameters file, 
+        :param str iparams: A filenme for an instrument parameters file,
             or a pair of instrument parameter dicts from :func:`load_iprms`.
-            This may be omitted for readers that provide the instrument 
+            This may be omitted for readers that provide the instrument
             parameters in the file. (Only a few importers do this.)
         :param list phases: A list of phases to link to the new histogram,
            phases can be references by object, name, rId or number.
-           Alternately, use 'all' to link to all phases in the project. 
+           Alternately, use 'all' to link to all phases in the project.
         :param str fmthint: If specified, only importers where the format name
           (reader.formatName, as shown in Import menu) contains the
           supplied string will be tried as importers. If not specified, all
           importers consistent with the file extension will be tried
           (equivalent to "guess format" in menu).
-        :param int databank: Specifies a dataset number to read, if file contains 
-          more than set of data. This should be 1 to read the first bank in 
+        :param int databank: Specifies a dataset number to read, if file contains
+          more than set of data. This should be 1 to read the first bank in
           the file (etc.) regardless of the number on the Bank line, etc.
-          Default is None which means the first dataset in the file is read. 
-          When multiple is True, optionally a list of dataset numbers can 
+          Default is None which means the first dataset in the file is read.
+          When multiple is True, optionally a list of dataset numbers can
           be supplied here.
-        :param int instbank: Specifies an instrument parameter set to read, if 
-          the instrument parameter file contains more than set of parameters. 
-          This will match the INS # in an GSAS type file so it will typically 
-          be 1 to read the first parameter set in the file (etc.) 
-          Default is None which means there should only be one parameter set 
+        :param int instbank: Specifies an instrument parameter set to read, if
+          the instrument parameter file contains more than set of parameters.
+          This will match the INS # in an GSAS type file so it will typically
+          be 1 to read the first parameter set in the file (etc.)
+          Default is None which means there should only be one parameter set
           in the file.
-        :param bool multiple: If False (default) only one dataset is read, but if 
+        :param bool multiple: If False (default) only one dataset is read, but if
           specified as True, all selected banks of data (see databank)
-          are read in. 
+          are read in.
         :returns: A :class:`G2PwdrData` object representing
             the histogram, or if multiple is True, a list of :class:`G2PwdrData`
             objects is returned.
@@ -1003,9 +1004,9 @@ class G2Project(G2ObjectWrapper):
     def clone_powder_histogram(self, histref, newname, Y, Yerr=None):
         '''Creates a copy of a powder diffraction histogram with new Y values.
         The X values are not changed. The number of Y values must match the
-        number of X values.         
+        number of X values.
 
-        :param histref: The histogram object, the name of the histogram (str), or ranId 
+        :param histref: The histogram object, the name of the histogram (str), or ranId
            or histogram index.
         :param str newname: The name to be assigned to the new histogram
         :param list Y: A set of intensity values
@@ -1024,15 +1025,15 @@ class G2Project(G2ObjectWrapper):
         newhist = 'PWDR '+newname
         if len(Y) != len(self[orighist]['data'][1][0]):
             raise Exception("clone error: length of Y does not match number of X values ({})"
-                                .format(len(self[orighist]['data'][1][0])))            
+                                .format(len(self[orighist]['data'][1][0])))
         if Yerr is not None and len(Yerr) != len(self[orighist]['data'][1][0]):
             raise Exception("clone error: length of Yerr does not match number of X values ({})"
                                 .format(len(self[orighist]['data'][1][0])))
-        
+
         self[newhist] = copy.deepcopy(self[orighist])
         # intensities
         yo = self[newhist]['data'][1][1] = ma.MaskedArray(Y,mask=self[orighist]['data'][1][1].mask)
-        
+
         Ymin,Ymax = yo.min(),yo.max()
         # set to zero: weights, calc, bkg, obs-calc
         for i in [2,3,4,5]:
@@ -1055,42 +1056,42 @@ class G2Project(G2ObjectWrapper):
         self.names.append([newhist]+subkeys)
         self.update_ids()
         return self.histogram(newhist)
-        
+
     def add_simulated_powder_histogram(self, histname, iparams, Tmin, Tmax, Tstep=None,
                                        wavelength=None, scale=None, phases=[], ibank=None,
                                            Npoints=None):
         """Create a simulated powder data histogram for the project.
 
-        Requires an instrument parameter file. 
+        Requires an instrument parameter file.
         Note that in unix fashion, "~" can be used to indicate the
         home directory (e.g. ~/G2data/data.prm). The instrument parameter file
         will determine if the histogram is x-ray, CW neutron, TOF, etc. as well
-        as the instrument type. 
+        as the instrument type.
 
         :param str histname: A name for the histogram to be created.
         :param str iparams: The instrument parameters file, a filename.
         :param float Tmin: Minimum 2theta or TOF (millisec) for dataset to be simulated
         :param float Tmax: Maximum 2theta or TOF (millisec) for dataset to be simulated
-        :param float Tstep: Step size in 2theta or deltaT/T (TOF) for simulated dataset. 
+        :param float Tstep: Step size in 2theta or deltaT/T (TOF) for simulated dataset.
            Default is to compute this from Npoints.
         :param float wavelength: Wavelength for CW instruments, overriding the value
-           in the instrument parameters file if specified. For single-wavelength histograms, 
-           this should be a single float value, for K alpha 1,2 histograms, this should 
-           be a list or tuple with two values. 
+           in the instrument parameters file if specified. For single-wavelength histograms,
+           this should be a single float value, for K alpha 1,2 histograms, this should
+           be a list or tuple with two values.
         :param float scale: Histogram scale factor which multiplies the pattern. Note that
            simulated noise is added to the pattern, so that if the maximum intensity is
-           small, the noise will mask the computed pattern. The scale needs to be a large 
+           small, the noise will mask the computed pattern. The scale needs to be a large
            number for neutrons.
            The default, None, provides a scale of 1 for x-rays, 10,000 for CW neutrons
            and 100,000 for TOF.
         :param list phases: Phases to link to the new histogram. Use proj.phases() to link to
            all defined phases.
-        :param int ibank: provides a bank number for the instrument parameter file. The 
+        :param int ibank: provides a bank number for the instrument parameter file. The
            default is None, corresponding to load the first bank.
-        :param int Νpoints: the number of data points to be used for computing the 
+        :param int Νpoints: the number of data points to be used for computing the
             diffraction pattern. Defaults as None, which sets this to 2500. Do not specify
             both Npoints and Tstep. Due to roundoff the actual number of points used may differ
-            by +-1 from Npoints. Must be below 25,000. 
+            by +-1 from Npoints. Must be below 25,000.
 
         :returns: A :class:`G2PwdrData` object representing the histogram
         """
@@ -1134,7 +1135,7 @@ class G2Project(G2ObjectWrapper):
             x = np.exp((np.arange(0,N))*Tstep+np.log(Tmin*1000.))
             N = len(x)
             unit = 'millisec'
-        else:            
+        else:
             if Npoints:
                 N = Npoints
             else:
@@ -1195,38 +1196,38 @@ class G2Project(G2ObjectWrapper):
         for phase in phases:
             phase = self.phase(phase)
             self.link_histogram_phase(histname, phase)
-            
+
         self.set_Controls('cycles', 0)
         self.data[histname]['data'][0]['Dummy'] = True
         return self.histogram(histname)
-    
+
     def add_phase(self, phasefile=None, phasename=None, histograms=[],
                       fmthint=None, mag=False,
                       spacegroup='P 1',cell=None):
         """Loads a phase into the project, usually from a .cif file
 
-        :param str phasefile: The CIF file (or other file type, see fmthint) 
-          that the phase will be read from. 
+        :param str phasefile: The CIF file (or other file type, see fmthint)
+          that the phase will be read from.
           May be left as None (the default) if the phase will be constructed
-          a step at a time. 
-        :param str phasename: The name of the new phase, or None for the 
-          default. A phasename must be specified when a phasefile is not. 
+          a step at a time.
+        :param str phasename: The name of the new phase, or None for the
+          default. A phasename must be specified when a phasefile is not.
         :param list histograms: The names of the histograms to associate with
             this phase. Use proj.histograms() to add to all histograms.
         :param str fmthint: If specified, only importers where the format name
           (reader.formatName, as shown in Import menu) contains the
           supplied string will be tried as importers. If not specified, all
           importers consistent with the file extension will be tried
-          (equivalent to "guess format" in menu). Specifying this 
+          (equivalent to "guess format" in menu). Specifying this
           is optional but is strongly encouraged.
         :param bool mag: Set to True to read a magCIF
-        :param str spacegroup: The space group name as a string. The  
-          space group must follow the naming rules used in 
-          :func:`GSASIIspc.SpcGroup`. Defaults to 'P 1'. Note that 
+        :param str spacegroup: The space group name as a string. The
+          space group must follow the naming rules used in
+          :func:`GSASIIspc.SpcGroup`. Defaults to 'P 1'. Note that
           this is only used when phasefile is None.
-        :param list cell: a list with six unit cell constants 
+        :param list cell: a list with six unit cell constants
             (a, b, c, alpha, beta and gamma in Angstrom/degrees).
- 
+
         :returns: A :class:`G2Phase` object representing the
             new phase.
         """
@@ -1268,19 +1269,19 @@ class G2Project(G2ObjectWrapper):
 
             self.update_ids()
             return self.phase(phasename)
-        
+
         phasefile = os.path.abspath(os.path.expanduser(phasefile))
         if not os.path.exists(phasefile):
             raise G2ImportException(f'File {phasefile} does not exist')
         # TODO: handle multiple phases in a file
         phasereaders = import_generic(phasefile, Readers['Phase'], fmthint=fmthint)
         phasereader = phasereaders[0]
-        
+
         if phasereader.MPhase and mag:
             phObj = phasereader.MPhase
         else:
             phObj = phasereader.Phase
-            
+
         phasename = phasename or phObj['General']['Name']
         phaseNameList = [p.name for p in self.phases()]
         phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
@@ -1334,10 +1335,10 @@ class G2Project(G2ObjectWrapper):
         return self.phase(phasename)
 
     def add_single_histogram(self, datafile, phase=None, fmthint=None):
-        """Loads a powder data histogram or multiple powder histograms 
+        """Loads a powder data histogram or multiple powder histograms
         into the project.
 
-        :param str datafile: A filename with the single crystal data file 
+        :param str datafile: A filename with the single crystal data file
           to read. Note that in unix fashion, "~" can be used to indicate the
           home directory (e.g. ~/G2data/data.hkl).
         :param phases: A phase to link to the new histogram. A
@@ -1345,8 +1346,8 @@ class G2Project(G2ObjectWrapper):
            If not specified, no phase will be linked.
         :param str fmthint: If specified, only importers where the format name
           (reader.formatName, as shown in Import menu) contains the
-          supplied string will be tried as importers. If not specified, 
-          an error will be generated, as the file format will not distinguish 
+          supplied string will be tried as importers. If not specified,
+          an error will be generated, as the file format will not distinguish
           well between different data types.
         :returns: A :class:`G2Single` object representing
             the histogram
@@ -1362,7 +1363,7 @@ class G2Project(G2ObjectWrapper):
         for r in readers:  # only expect 1
             histname = 'HKLF ' + G2obj.StripUnicode(
                 os.path.split(r.readfilename)[1],'_')
-            #HistName = G2obj.MakeUniqueLabel(HistName, existingnames)            
+            #HistName = G2obj.MakeUniqueLabel(HistName, existingnames)
             newnames = [histname,'Instrument Parameters','Reflection List']
             if histname in self.data:
                 G2fil.G2Print("Warning - redefining histogram", histname)
@@ -1383,7 +1384,7 @@ class G2Project(G2ObjectWrapper):
             self.update_ids()
             if phase is None: return
             self.link_histogram_phase(histname, phase)
-                
+
     def link_histogram_phase(self, histogram, phase):
         """Associates a given histogram and phase.
 
@@ -1391,7 +1392,6 @@ class G2Project(G2ObjectWrapper):
 
             :meth:`~G2Project.histogram`
             :meth:`~G2Project.phase`"""
-        import GSASIImath as G2mth
         hist = self.histogram(histogram)
         phase = self.phase(phase)
 
@@ -1427,9 +1427,9 @@ class G2Project(G2ObjectWrapper):
 
     def refine(self, newfile=None, printFile=None, makeBack=False):
         '''Invoke a refinement for the project. The project is written to
-        the currently selected gpx file and then either a single or sequential refinement 
+        the currently selected gpx file and then either a single or sequential refinement
         is performed depending on the setting of 'Seq Data' in Controls
-        (set in :meth:`get_Controls`). 
+        (set in :meth:`get_Controls`).
         '''
         seqSetting = self.data['Controls']['data'].get('Seq Data',[])
         if not seqSetting:
@@ -1474,12 +1474,12 @@ class G2Project(G2ObjectWrapper):
         OK,Msg = G2strMain.SeqRefine(self.filename,None)
 
     def histogram(self, histname):
-        """Returns the histogram object associated with histname, or None 
+        """Returns the histogram object associated with histname, or None
         if it does not exist.
 
-        :param histname: The name of the histogram (str), or ranId or 
+        :param histname: The name of the histogram (str), or ranId or
           (for powder) the histogram index.
-        :returns: A :class:`G2PwdrData` object, or :class:`G2Single` object, or 
+        :returns: A :class:`G2PwdrData` object, or :class:`G2Single` object, or
            None if the histogram does not exist
 
         .. seealso::
@@ -1511,12 +1511,12 @@ class G2Project(G2ObjectWrapper):
                     return histogram
 
     def histType(self, histname):
-        """Returns the type for histogram object associated with histname, or 
+        """Returns the type for histogram object associated with histname, or
         None if it does not exist.
 
-        :param histname: The name of the histogram (str), or ranId or 
+        :param histname: The name of the histogram (str), or ranId or
           (for powder) the histogram index.
-        :returns: 'PWDR' for a Powder histogram, 
+        :returns: 'PWDR' for a Powder histogram,
            'HKLF' for a single crystal histogram, or
            None if the histogram does not exist
 
@@ -1550,7 +1550,7 @@ class G2Project(G2ObjectWrapper):
             elif histogram.name.startswith('PWDR '):
                 if histogram.id == histname or histogram.ranId == histname:
                     return 'PWDR'
-                
+
     def histograms(self, typ=None):
         """Return a list of all histograms, as :class:`G2PwdrData` objects
 
@@ -1559,7 +1559,7 @@ class G2Project(G2ObjectWrapper):
 
         :param ste typ: The prefix (type) the histogram such as 'PWDR ' for
           powder or 'HKLF ' for single crystal. If None
-          (the default) all known histograms types are found. 
+          (the default) all known histograms types are found.
         :returns: a list of objects
 
         .. seealso::
@@ -1572,11 +1572,11 @@ class G2Project(G2ObjectWrapper):
         # list of names). then it must be a histogram, unless labeled Phases or Restraints
         if typ is None:
             for obj in self.names:
-                if obj[0].startswith('PWDR ') or obj[0].startswith('HKLF '): 
+                if obj[0].startswith('PWDR ') or obj[0].startswith('HKLF '):
                     output.append(self.histogram(obj[0]))
         else:
             for obj in self.names:
-                if len(obj) > 1 and obj[0].startswith(typ): 
+                if len(obj) > 1 and obj[0].startswith(typ):
                     output.append(self.histogram(obj[0]))
         return output
 
@@ -1584,7 +1584,7 @@ class G2Project(G2ObjectWrapper):
         """
         Gives an object representing the specified phase in this project.
 
-        :param str phasename: A reference to the desired phase. Either the phase 
+        :param str phasename: A reference to the desired phase. Either the phase
             name (str), the phase's ranId, the phase's index (both int) or
             a phase object (:class:`G2Phase`)
         :returns: A :class:`G2Phase` object
@@ -1632,12 +1632,12 @@ class G2Project(G2ObjectWrapper):
         """Returns a list of all the images in the project.
         """
         return [i[0] for i in self.names if i[0].startswith('IMG ')]
-    
+
     def image(self, imageRef):
         """
         Gives an object representing the specified image in this project.
 
-        :param str imageRef: A reference to the desired image. Either the Image 
+        :param str imageRef: A reference to the desired image. Either the Image
           tree name (str), the image's index (int) or
           a image object (:class:`G2Image`)
         :returns: A :class:`G2Image` object
@@ -1657,7 +1657,7 @@ class G2Project(G2ObjectWrapper):
         try:
             # imageRef should be an index
             num = int(imageRef)
-            imageRef = self._images()[num] 
+            imageRef = self._images()[num]
             return G2Image(self.data[imageRef], imageRef, self)
         except ValueError:
             raise Exception("imageRef {} not an object, name or image index in current selected project"
@@ -1665,7 +1665,7 @@ class G2Project(G2ObjectWrapper):
         except IndexError:
             raise Exception("imageRef {} out of range (max={}) in current selected project"
                                 .format(imageRef,len(self._images())-1))
-            
+
     def images(self):
         """
         Returns a list of all the images in the project.
@@ -1673,17 +1673,17 @@ class G2Project(G2ObjectWrapper):
         :returns: A list of :class:`G2Image` objects
         """
         return [G2Image(self.data[i],i,self) for i in self._images()]
-    
+
     def _pdfs(self):
         """Returns a list of all the PDF entries in the project.
         """
         return [i[0] for i in self.names if i[0].startswith('PDF ')]
-    
+
     def pdf(self, pdfRef):
         """
         Gives an object representing the specified PDF entry in this project.
 
-        :param pdfRef: A reference to the desired image. Either the PDF 
+        :param pdfRef: A reference to the desired image. Either the PDF
           tree name (str), the pdf's index (int) or
           a PDF object (:class:`G2PDF`)
         :returns: A :class:`G2PDF` object
@@ -1704,7 +1704,7 @@ class G2Project(G2ObjectWrapper):
         try:
             # pdfRef should be an index
             num = int(pdfRef)
-            pdfRef = self._pdfs()[num] 
+            pdfRef = self._pdfs()[num]
             return G2PDF(self.data[pdfRef], pdfRef, self)
         except ValueError:
             raise Exception(f"pdfRef {pdfRef} not an object, name or PDF index in current selected project")
@@ -1717,15 +1717,15 @@ class G2Project(G2ObjectWrapper):
         :returns: A list of :class:`G2PDF` objects
         """
         return [G2PDF(self.data[i],i,self) for i in self._pdfs()]
-        
-    def copy_PDF(self, PDFobj, histogram):
-        '''Creates a PDF entry that can be used to compute a PDF 
-        as a copy of settings in an existing PDF (:class:`G2PDF`)
-        object. 
-        This places an entry in the project but :meth:`G2PDF.calculate` 
-        must be used to actually perform the PDF computation. 
 
-        :param PDFobj: A :class:`G2PDF` object which may be 
+    def copy_PDF(self, PDFobj, histogram):
+        '''Creates a PDF entry that can be used to compute a PDF
+        as a copy of settings in an existing PDF (:class:`G2PDF`)
+        object.
+        This places an entry in the project but :meth:`G2PDF.calculate`
+        must be used to actually perform the PDF computation.
+
+        :param PDFobj: A :class:`G2PDF` object which may be
           in a separate project or the dict associated with the
           PDF object (G2PDF.data).
         :param histogram: A reference to a histogram,
@@ -1743,19 +1743,19 @@ class G2Project(G2ObjectWrapper):
             self.data[PDFname]['PDF Controls'][i] = []
         G2fil.G2Print('Adding "{}" to project'.format(PDFname))
         return G2PDF(self.data[PDFname], PDFname, self)
-        
+
     def add_PDF(self, prmfile, histogram):
-        '''Creates a PDF entry that can be used to compute a PDF. 
+        '''Creates a PDF entry that can be used to compute a PDF.
         Note that this command places an entry in the project,
         but :meth:`G2PDF.calculate` must be used to actually perform
-        the computation. 
+        the computation.
 
         :param str datafile: The powder data file to read, a filename.
         :param histogram: A reference to a histogram,
           which can be reference by object, name, or number.
         :returns: A :class:`G2PDF` object for the PDF entry
         '''
-        
+
         LoadG2fil()
         PDFname = 'PDF ' + self.histogram(histogram).name[4:]
         peaks = {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]}
@@ -1800,7 +1800,7 @@ class G2Project(G2ObjectWrapper):
         """
         if 'Sequential results' not in self.data: return
         return G2SeqRefRes(self.data['Sequential results']['data'], self)
-    
+
     def update_ids(self):
         """Makes sure all phases and histograms have proper hId and pId"""
         # Translated from GetUsedHistogramsAndPhasesfromTree,
@@ -1817,10 +1817,10 @@ class G2Project(G2ObjectWrapper):
            around :meth:`iter_refinements`
 
         :param list refinements: A list of dictionaries specifiying changes to be made to
-            parameters before refinements are conducted. 
-            See the :ref:`Refinement_recipe` section for how this is defined. 
-            If not specified, the default value is ``[{}]``, which performs a single 
-            refinement step is performed with the current refinement settings. 
+            parameters before refinements are conducted.
+            See the :ref:`Refinement_recipe` section for how this is defined.
+            If not specified, the default value is ``[{}]``, which performs a single
+            refinement step is performed with the current refinement settings.
         :param str histogram: Name of histogram for refinements to be applied
             to, or 'all'; note that this can be overridden for each refinement
             step via a "histograms" entry in the dict.
@@ -1829,19 +1829,19 @@ class G2Project(G2ObjectWrapper):
             step via a "phases" entry in the dict.
         :param list outputnames: Provides a list of project (.gpx) file names
             to use for each refinement step (specifying None skips the save step).
-            See :meth:`save`. 
+            See :meth:`save`.
             Note that this can be overridden using an "output" entry in the dict.
         :param bool makeBack: determines if a backup ).bckX.gpx) file is made
             before a refinement is performed. The default is False.
-            
+
         To perform a single refinement without changing any parameters, use this
         call:
 
         .. code-block::  python
-        
+
             my_project.do_refinements([])
         """
-        
+
         for proj in self.iter_refinements(refinements, histogram, phase,
                                           outputnames, makeBack):
             pass
@@ -1852,7 +1852,7 @@ class G2Project(G2ObjectWrapper):
         """Conducts a series of refinements, iteratively. Stops after every
         refinement and yields this project, to allow error checking or
         logging of intermediate results. Parameter use is the same as for
-        :meth:`do_refinements` (which calls this method). 
+        :meth:`do_refinements` (which calls this method).
 
         >>> def checked_refinements(proj):
         ...     for p in proj.iter_refinements(refs):
@@ -1863,7 +1863,7 @@ class G2Project(G2ObjectWrapper):
         ...         if is_something_wrong(p):
         ...             raise Exception("I need a human!")
 
-            
+
         """
         if outputnames:
             if len(refinements) != len(outputnames):
@@ -1921,20 +1921,20 @@ class G2Project(G2ObjectWrapper):
           (see :class:`G2PwdrData`), the histogram name (str) or the index number (int)
           of the histogram in the project, numbered starting from 0.
           Omitting the parameter or the string 'all' indicates that parameters in
-          all histograms should be set. 
+          all histograms should be set.
         :param phase: Specifies either 'all' (default), a single phase or
           a list of phases. Phases may be specified as phase objects
           (see :class:`G2Phase`), the phase name (str) or the index number (int)
           of the phase in the project, numbered starting from 0.
           Omitting the parameter or the string 'all' indicates that parameters in
-          all phases should be set. 
+          all phases should be set.
 
         Note that refinement parameters are categorized as one of three types:
 
         1. Histogram parameters
         2. Phase parameters
         3. Histogram-and-Phase (HAP) parameters
-        
+
         .. seealso::
             :meth:`G2PwdrData.set_refinements`
             :meth:`G2PwdrData.clear_refinements`
@@ -2039,12 +2039,12 @@ class G2Project(G2ObjectWrapper):
         """Returns a list of all the SASD entries in the project.
         """
         return [i[0] for i in self.names if i[0].startswith('SASD ')]
-    
+
     def SAS(self, sasRef):
         """
         Gives an object representing the specified SAS entry in this project.
 
-        :param sasRef: A reference to the desired SASD entry. Either the SASD 
+        :param sasRef: A reference to the desired SASD entry. Either the SASD
           tree name (str), the SASD's index (int) or
           a SASD object (:class:`G2SmallAngle`)
         :returns: A :class:`G2SmallAngle` object
@@ -2065,13 +2065,13 @@ class G2Project(G2ObjectWrapper):
         try:
             # sasRef should be an index
             num = int(sasRef)
-            sasRef = self._sasd()[num] 
+            sasRef = self._sasd()[num]
             return G2PDF(self.data[sasRef], sasRef, self)
         except ValueError:
             raise Exception(f"sasRef {sasRef} not an object, name or SAS index in current selected project")
         except IndexError:
             raise Exception(f"sasRef {sasRef} out of range (max={len(self._sasd())-1}) in current selected project")
-        
+
     def SASs(self):
         """
         Returns a list of all the Small Angle histograms in the project.
@@ -2079,9 +2079,9 @@ class G2Project(G2ObjectWrapper):
         :returns: A list of :class:`G2SmallAngle` objects
         """
         return [G2SmallAngle(self.data[i],i,self) for i in self._sasd()]
-    
+
     def add_SmallAngle(self, datafile):
-        '''Placeholder for an eventual routine that will read a small angle dataset 
+        '''Placeholder for an eventual routine that will read a small angle dataset
         from a file.
 
         :param str datafile: The SASD data file to read, a filename.
@@ -2089,12 +2089,12 @@ class G2Project(G2ObjectWrapper):
         '''
         raise G2ScriptException("Error: add_SmallAngle not yet implemented.")
         #return G2SmallAngle(self.data[PDFname], PDFname, self)
-    
+
     def get_Constraints(self,ctype):
         '''Returns a list of constraints of the type selected.
 
         :param str ctype: one of the following keywords: 'Hist', 'HAP', 'Phase', 'Global'
-        :returns: a list of constraints, see the 
+        :returns: a list of constraints, see the
           :ref:`constraint definition descriptions <Constraint_definitions_table>`. Note that
           if this list is changed (for example by deleting elements or by changing them)
           the constraints in the project are changed.
@@ -2105,29 +2105,29 @@ class G2Project(G2ObjectWrapper):
             raise Exception(("get_Constraints error: value of ctype ({})"
                     +" must be 'Hist', 'HAP', 'Phase', or 'Global'.")
                                 .format(ctype))
-        
-    def add_HoldConstr(self,varlist,reloadIdx=True,override=False):
-        '''Set a hold constraint on a list of variables. 
 
-        Note that this will cause the project to be saved if not 
+    def add_HoldConstr(self,varlist,reloadIdx=True,override=False):
+        '''Set a hold constraint on a list of variables.
+
+        Note that this will cause the project to be saved if not
         already done so. It will always save the .gpx file before
         creating constraint(s) if reloadIdx is True.
 
-        :param list varlist: A list of variables to hold. 
-          Each value in the list may be one of the following three items: 
-          (A) a :class:`GSASIIobj.G2VarObj` object, 
-          (B) a variable name (str), or 
+        :param list varlist: A list of variables to hold.
+          Each value in the list may be one of the following three items:
+          (A) a :class:`GSASIIobj.G2VarObj` object,
+          (B) a variable name (str), or
           (C) a list/tuple of arguments for :meth:`make_var_obj`.
-        :param bool reloadIdx: If True (default) the .gpx file will be 
+        :param bool reloadIdx: If True (default) the .gpx file will be
           saved and indexed prior to use. This is essential if atoms, phases
           or histograms have been added to the project.
-        :param bool override: This routine looks up variables using 
-          :func:`GSASIIobj.getDescr` (which is not comprehensive). If 
+        :param bool override: This routine looks up variables using
+          :func:`GSASIIobj.getDescr` (which is not comprehensive). If
           not found, the routine will throw an exception, unless
-          override=True is specified. 
-        
+          override=True is specified.
+
         Example::
-        
+
             gpx.add_HoldConstr(('0::A4','0:1:D12',':0:Lam'))
 
         '''
@@ -2149,34 +2149,34 @@ class G2Project(G2ObjectWrapper):
             self.add_constraint_raw(_constr_type(var), [[1.0, var], None, None, 'h'])
         if vardefwarn and not override:
             raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
-                
-    def add_EquivConstr(self,varlist,multlist=[],reloadIdx=True,override=False):
-        '''Set a equivalence on a list of variables. 
 
-        Note that this will cause the project to be saved if not 
+    def add_EquivConstr(self,varlist,multlist=[],reloadIdx=True,override=False):
+        '''Set a equivalence on a list of variables.
+
+        Note that this will cause the project to be saved if not
         already done so. It will always save the .gpx file before
         creating a constraint if reloadIdx is True.
 
-        :param list varlist: A list of variables to make equivalent to the 
-          first item in the list. 
-          Each value in the list may be one of the following three items: 
-          (A) a :class:`GSASIIobj.G2VarObj` object, 
-          (B) a variable name (str), or 
+        :param list varlist: A list of variables to make equivalent to the
+          first item in the list.
+          Each value in the list may be one of the following three items:
+          (A) a :class:`GSASIIobj.G2VarObj` object,
+          (B) a variable name (str), or
           (C) a list/tuple of arguments for :meth:`make_var_obj`.
         :param list multlist: a list of multipliers for each variable in
           varlist. If there are fewer values than supplied for varlist
           then missing values will be set to 1. The default is [] which
-          means that all multipliers are 1.          
-        :param bool reloadIdx: If True (default) the .gpx file will be 
+          means that all multipliers are 1.
+        :param bool reloadIdx: If True (default) the .gpx file will be
           saved and indexed prior to use. This is essential if atoms, phases
           or histograms have been added to the project.
-        :param bool override: This routine looks up variables using 
-          :func:`GSASIIobj.getDescr` (which is not comprehensive). If 
+        :param bool override: This routine looks up variables using
+          :func:`GSASIIobj.getDescr` (which is not comprehensive). If
           not found, the routine will throw an exception, unless
-          override=True is specified. 
+          override=True is specified.
 
         Examples::
-        
+
             gpx.add_EquivConstr(('0::AUiso:0','0::AUiso:1','0::AUiso:2'))
             gpx.add_EquivConstr(('0::dAx:0','0::dAx:1'),[1,-1])
 
@@ -2221,32 +2221,32 @@ class G2Project(G2ObjectWrapper):
         self.add_constraint_raw(typ, constr)
 
     def add_EqnConstr(self,total,varlist,multlist=[],reloadIdx=True,override=False):
-        '''Set a constraint equation on a list of variables. 
+        '''Set a constraint equation on a list of variables.
 
-        Note that this will cause the project to be saved if not 
+        Note that this will cause the project to be saved if not
         already done so. It will always save the .gpx file before
         creating a constraint if reloadIdx is True.
 
         :param float total: A value that the constraint must equal
-        :param list varlist: A list of variables to use in the equation. 
-          Each value in the list may be one of the following three items: 
-          (A) a :class:`GSASIIobj.G2VarObj` object, 
-          (B) a variable name (str), or 
+        :param list varlist: A list of variables to use in the equation.
+          Each value in the list may be one of the following three items:
+          (A) a :class:`GSASIIobj.G2VarObj` object,
+          (B) a variable name (str), or
           (C) a list/tuple of arguments for :meth:`make_var_obj`.
         :param list multlist: a list of multipliers for each variable in
           varlist. If there are fewer values than supplied for varlist
           then missing values will be set to 1. The default is [] which
-          means that all multipliers are 1.          
-        :param bool reloadIdx: If True (default) the .gpx file will be 
+          means that all multipliers are 1.
+        :param bool reloadIdx: If True (default) the .gpx file will be
           saved and indexed prior to use. This is essential if atoms, phases
           or histograms have been added to the project.
-        :param bool override: This routine looks up variables using 
-          :func:`GSASIIobj.getDescr` (which is not comprehensive). If 
+        :param bool override: This routine looks up variables using
+          :func:`GSASIIobj.getDescr` (which is not comprehensive). If
           not found, the routine will throw an exception, unless
-          override=True is specified. 
+          override=True is specified.
 
         Example::
-        
+
             gpx.add_EqnConstr(1.0,('0::Ax:0','0::Ax:1'),[1,1])
 
         '''
@@ -2289,50 +2289,50 @@ class G2Project(G2ObjectWrapper):
             typ_prev = typ
             var_prev = var
         if vardefwarn and not override:
-            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')            
+            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
         constr += [float(total), None, 'c']
         self.add_constraint_raw(typ, constr)
 
     def add_NewVarConstr(self,varlist,multlist=[],name=None,vary=False,
                              reloadIdx=True,override=False):
-        '''Set a new-variable constraint from a list of variables to 
-        create a new parameter from two or more predefined parameters. 
+        '''Set a new-variable constraint from a list of variables to
+        create a new parameter from two or more predefined parameters.
 
-        Note that this will cause the project to be saved, if not 
+        Note that this will cause the project to be saved, if not
         already done so. It will always save the .gpx file before
         creating a constraint if reloadIdx is True.
 
-        :param list varlist: A list of variables to use in the expression. 
-          Each value in the list may be one of the following three items: 
-          (A) a :class:`GSASIIobj.G2VarObj` object, 
-          (B) a variable name (str), or 
+        :param list varlist: A list of variables to use in the expression.
+          Each value in the list may be one of the following three items:
+          (A) a :class:`GSASIIobj.G2VarObj` object,
+          (B) a variable name (str), or
           (C) a list/tuple of arguments for :meth:`make_var_obj`.
         :param list multlist: a list of multipliers for each variable in
           varlist. If there are fewer values than supplied for varlist
           then missing values will be set to 1. The default is [] which
           means that all multipliers are 1.
-        :param str name: An optional string to be supplied as a name for this 
-          new parameter. 
+        :param str name: An optional string to be supplied as a name for this
+          new parameter.
         :param bool vary: Determines if the new variable should be flagged to
-          be refined.          
-        :param bool reloadIdx: If True (default) the .gpx file will be 
+          be refined.
+        :param bool reloadIdx: If True (default) the .gpx file will be
           saved and indexed prior to use. This is essential if atoms, phases
           or histograms have been added to the project.
-        :param bool override: This routine looks up variables using 
-          :func:`GSASIIobj.getDescr` (which is not comprehensive). If 
+        :param bool override: This routine looks up variables using
+          :func:`GSASIIobj.getDescr` (which is not comprehensive). If
           not found, the routine will throw an exception, unless
-          override=True is specified. 
+          override=True is specified.
 
         Examples::
-        
+
             gpx.add_NewVarConstr(('0::AFrac:0','0::AFrac:1'),[0.5,0.5],'avg',True)
             gpx.add_NewVarConstr(('0::AFrac:0','0::AFrac:1'),[1,-1],'diff',False,False)
 
-        The example above is a way to treat two variables that are closely correlated. 
-        The first variable, labeled as avg, allows the two variables to refine in tandem 
-        while the second variable (diff) tracks their difference. In the initial stages of 
+        The example above is a way to treat two variables that are closely correlated.
+        The first variable, labeled as avg, allows the two variables to refine in tandem
+        while the second variable (diff) tracks their difference. In the initial stages of
         refinement only avg would be refined, but in the final stages, it might be possible
-        to refine diff. The second False value in the second example prevents the 
+        to refine diff. The second False value in the second example prevents the
         .gpx file from being saved.
         '''
         if reloadIdx:
@@ -2375,19 +2375,19 @@ class G2Project(G2ObjectWrapper):
             raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
         constr += [name, bool(vary), 'f']
         self.add_constraint_raw(typ, constr)
-        
+
     def add_constraint_raw(self, cons_scope, constr):
         """Adds a constraint to the project.
 
         :param str cons_scope: should be one of "Hist", "Phase", "HAP", or "Global".
-        :param list constr: a constraint coded with  :class:`GSASIIobj.G2VarObj` 
-          objects as described in the 
+        :param list constr: a constraint coded with  :class:`GSASIIobj.G2VarObj`
+          objects as described in the
           :ref:`constraint definition descriptions <Constraint_definitions_table>`.
 
         WARNING this function does not check the constraint is well-constructed.
-        Please use :meth:`G2Project.add_HoldConstr` or 
-        :meth:`G2Project.add_EquivConstr` (etc.) instead, unless you are really 
-        certain you know what you are doing. 
+        Please use :meth:`G2Project.add_HoldConstr` or
+        :meth:`G2Project.add_EquivConstr` (etc.) instead, unless you are really
+        certain you know what you are doing.
         """
         constrs = self.data['Constraints']['data']
         if 'Global' not in constrs:
@@ -2398,11 +2398,11 @@ class G2Project(G2ObjectWrapper):
         """Apply holds for all the variables in vars, for constraint of a given type.
         This routine has been superceeded by :meth:`add_Hold`
 
-        :param list vars: A list of variables to hold. Each may be a 
+        :param list vars: A list of variables to hold. Each may be a
           :class:`GSASIIobj.G2VarObj` object, a variable name (str), or a
           list/tuple of arguments for :meth:`make_var_obj`.
-        :param str ctype: A string constraint type specifier, passed directly to 
-          :meth:`add_constraint_raw` as consType. Should be one of "Hist", "Phase", 
+        :param str ctype: A string constraint type specifier, passed directly to
+          :meth:`add_constraint_raw` as consType. Should be one of "Hist", "Phase",
           or "HAP" ("Global" not implemented).
         """
         G2fil.G2Print('G2Phase.hold_many Warning: replace calls to hold_many() with add_Hold()')
@@ -2421,7 +2421,7 @@ class G2Project(G2ObjectWrapper):
         Automatically converts string phase, hist, or atom names into the ID required
         by G2VarObj.
 
-        Note that this will cause the project to be saved if not 
+        Note that this will cause the project to be saved if not
         already done so.
         """
 
@@ -2473,16 +2473,16 @@ class G2Project(G2ObjectWrapper):
           supplied string will be tried as importers. If not specified, all
           importers consistent with the file extension will be tried
           (equivalent to "guess format" in menu).
-        :param str defaultImage: The name of an image to use as a default for 
-          setting parameters for the image file to read. 
-        :param list indexList: specifies the image numbers (counting from zero) 
+        :param str defaultImage: The name of an image to use as a default for
+          setting parameters for the image file to read.
+        :param list indexList: specifies the image numbers (counting from zero)
           to be used from the file when a file has multiple images. A value of
           ``[0,2,3]`` will cause the only first, third and fourth images in the file
-          to be included in the project. 
-        :param bool cacheImage: When True, the image is cached to save 
-          in rereading it later. Default is False (no caching). 
+          to be included in the project.
+        :param bool cacheImage: When True, the image is cached to save
+          in rereading it later. Default is False (no caching).
 
-        :returns: a list of :class:`G2Image` object(s) for the added image(s) 
+        :returns: a list of :class:`G2Image` object(s) for the added image(s)
         """
         LoadG2fil()
         imagefile = os.path.abspath(os.path.expanduser(imagefile))
@@ -2573,7 +2573,7 @@ class G2Project(G2ObjectWrapper):
                 Data['centerAzm'] = False
                 Data['fullIntegrate'] = GSASIIpath.GetConfigValue('fullIntegrate',True)
                 Data['setRings'] = False
-                Data['background image'] = ['',-1.0]                            
+                Data['background image'] = ['',-1.0]
                 Data['dark image'] = ['',-1.0]
                 Data['Flat Bkg'] = 0.0
                 Data['Oblique'] = [0.5,False]
@@ -2593,20 +2593,20 @@ class G2Project(G2ObjectWrapper):
                 objlist.append(G2Image(self.data[TreeName], TreeName, self))
                 del rd.Image
         return objlist
-    
+
     def imageMultiDistCalib(self,imageList=None,verbose=False):
-        '''Invokes a global calibration fit (same as Image Controls/Calibration/Multi-distance Recalibrate 
-        menu command) with images as multiple distance settings. 
-        Note that for this to work properly, the initial calibration parameters 
+        '''Invokes a global calibration fit (same as Image Controls/Calibration/Multi-distance Recalibrate
+        menu command) with images as multiple distance settings.
+        Note that for this to work properly, the initial calibration parameters
         (center, wavelength, distance & tilts) must be close enough to converge.
         This may produce a better result if run more than once.
 
         See :ref:`MultiDist_Example` for example code.
 
-        :param str imageList: the images to include in the fit, if not specified 
+        :param str imageList: the images to include in the fit, if not specified
           all images in the project will be included.
 
-        :returns: parmDict,covData where parmDict has the refined parameters 
+        :returns: parmDict,covData where parmDict has the refined parameters
           and their values and covData is a dict containing the covariance matrix ('covMatrix'),
           the number of ring picks ('obs') the reduced Chi-squared ('chisq'),
           the names of the variables ('varyList') and their values ('variables')
@@ -2678,7 +2678,7 @@ class G2Project(G2ObjectWrapper):
         #GSASIIpath.IPyBreak()
         G2fil.G2Print('\nFitting',obsArr.shape[0],'ring picks and',len(varList),'variables...')
         result = G2img.FitMultiDist(obsArr,varList,parmDict,covar=True,Print=verbose)
-        
+
         for img in imageList: # update GPX info with fit results
             name = img.name
             #print ('updating',name)
@@ -2698,32 +2698,32 @@ class G2Project(G2ObjectWrapper):
             for H in HKL[key][:N]:
                 ellipse = G2img.GetEllipse(H[3],Data)
                 Data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
-                
+
         covData = {'title':'Multi-distance recalibrate','covMatrix':result[3],
                        'obs':obsArr.shape[0],'chisq':result[0],
                        'varyList':varList,'variables':result[1]}
         return parmDict,covData
-                
+
     def set_Frozen(self, variable=None, histogram=None, mode='remove'):
         '''Removes one or more Frozen variables (or adds one)
         (See :ref:`Parameter Limits<ParameterLimits>` description.)
-        Note that use of this 
+        Note that use of this
         will cause the project to be saved if not already done so.
 
-        :param str variable: a variable name as a str or 
+        :param str variable: a variable name as a str or
           (as a :class:`GSASIIobj.G2VarObj` object). Should
-          not contain wildcards. 
+          not contain wildcards.
           If None (default), all frozen variables are deleted
-          from the project, unless a sequential fit and 
-          a histogram is specified. 
+          from the project, unless a sequential fit and
+          a histogram is specified.
         :param histogram: A reference to a histogram,
           which can be reference by object, name, or number.
-          Used for sequential fits only. 
+          Used for sequential fits only.
         :param str mode: The default mode is to remove variables
           from the appropriate Frozen list, but if the mode
-          is specified as 'add', the variable is added to the 
-          list. 
-        :returns: True if the variable was added or removed, False 
+          is specified as 'add', the variable is added to the
+          list.
+        :returns: True if the variable was added or removed, False
           otherwise. Exceptions are generated with invalid requests.
         '''
         Controls = self.data['Controls']['data']
@@ -2741,7 +2741,7 @@ class G2Project(G2ObjectWrapper):
                 raise Exception('set_Frozen error: variable must be specified')
         else:
             raise Exception('Undefined mode ({}) in set_Frozen'.format(mode))
-        
+
         if histogram is None:
             h = 'FrozenList'
         else:
@@ -2778,9 +2778,9 @@ class G2Project(G2ObjectWrapper):
             return True
 
     def get_Frozen(self, histogram=None):
-        '''Gets a list of Frozen variables. 
+        '''Gets a list of Frozen variables.
         (See :ref:`Parameter Limits<ParameterLimits>` description.)
-        Note that use of this 
+        Note that use of this
         will cause the project to be saved if not already done so.
 
         :param histogram: A reference to a histogram,
@@ -2812,13 +2812,13 @@ class G2Project(G2ObjectWrapper):
             return [str(i) for i in Controls['parmFrozen']['FrozenList']]
         else:
             return []
-        
+
     def get_Controls(self, control, variable=None):
         '''Return project controls settings
 
         :param str control: the item to be returned. See below for allowed values.
-        :param str variable: a variable name as a str or 
-          (as a :class:`GSASIIobj.G2VarObj` object). 
+        :param str variable: a variable name as a str or
+          (as a :class:`GSASIIobj.G2VarObj` object).
           Used only with control set to "parmMin" or "parmMax".
         :returns: The value for the control.
 
@@ -2829,16 +2829,16 @@ class G2Project(G2ObjectWrapper):
               of histogram names or an empty list when in non-sequential mode.
             * Reverse Seq: returns True or False. True indicates that fitting of the
               sequence of histograms proceeds in reversed order.
-            * seqCopy: returns True or False. True indicates that results from 
+            * seqCopy: returns True or False. True indicates that results from
               each sequential fit are used as the starting point for the next
               histogram.
-            * parmMin & parmMax: retrieves a maximum or minimum value for 
-              a refined parameter. Note that variable will be a GSAS-II 
-              variable name, optionally with * specified for a histogram 
+            * parmMin & parmMax: retrieves a maximum or minimum value for
+              a refined parameter. Note that variable will be a GSAS-II
+              variable name, optionally with * specified for a histogram
               or atom number. Return value will be a float.
               (See :ref:`Parameter Limits<ParameterLimits>` description.)
-            * Anything else returns the value in the Controls dict, if present. An 
-              exception is raised if the control value is not present. 
+            * Anything else returns the value in the Controls dict, if present. An
+              exception is raised if the control value is not present.
 
         .. seealso::
             :meth:`set_Controls`
@@ -2868,33 +2868,33 @@ class G2Project(G2ObjectWrapper):
         else:
             G2fil.G2Print('Defined Controls:',self.data['Controls']['data'].keys())
             raise Exception('{} is an invalid control value'.format(control))
-        
+
     def set_Controls(self, control, value, variable=None):
         '''Set project controls.
 
-        Note that use of this with control set to parmMin or parmMax 
+        Note that use of this with control set to parmMin or parmMax
         will cause the project to be saved if not already done so.
 
-        :param str control: the item to be set. See below for allowed values. 
+        :param str control: the item to be set. See below for allowed values.
         :param value: the value to be set.
         :param str variable: used only with control set to "parmMin" or "parmMax"
 
         Allowed values for *control* parameter:
 
         * ``'cycles'``: sets the maximum number of cycles (value must be int)
-        * ``'sequential'``: sets the histograms to be used for a sequential refinement. 
-          Use an empty list to turn off sequential fitting. 
-          The values in the list may be the name of the histogram (a str), or 
+        * ``'sequential'``: sets the histograms to be used for a sequential refinement.
+          Use an empty list to turn off sequential fitting.
+          The values in the list may be the name of the histogram (a str), or
           a ranId or index (int values), see :meth:`histogram`.
         * ``'seqCopy'``: when True, the results from each sequential fit are used as
-          the starting point for the next. After each fit is is set to False. 
-          Ignored for non-sequential fits. 
+          the starting point for the next. After each fit is is set to False.
+          Ignored for non-sequential fits.
         * ``'Reverse Seq'``: when True, sequential refinement is performed on the
           reversed list of histograms.
-        * ``'parmMin'`` & ``'parmMax'``: set a maximum or minimum value for a refined 
-          parameter. Note that variable will be a GSAS-II variable name, 
+        * ``'parmMin'`` & ``'parmMax'``: set a maximum or minimum value for a refined
+          parameter. Note that variable will be a GSAS-II variable name,
           optionally with * specified for a histogram or atom number and
-          value must be a float. 
+          value must be a float.
           (See :ref:`Parameter Limits<ParameterLimits>` description.)
 
         .. seealso::
@@ -2928,22 +2928,22 @@ class G2Project(G2ObjectWrapper):
             self.data['Controls']['data'][control+'Dict'][key] = float(value)
         else:
             raise Exception('{} is an invalid control value'.format(control))
-        
+
     def copyHistParms(self,sourcehist,targethistlist='all',modelist='all'):
         '''Copy histogram information from one histogram to others
 
         :param sourcehist: is a histogram object (:class:`G2PwdrData`) or
             a histogram name or the index number of the histogram
         :param list targethistlist: a list of histograms where each item in the
-            list can be a histogram object (:class:`G2PwdrData`), 
+            list can be a histogram object (:class:`G2PwdrData`),
             a histogram name or the index number of the histogram.
-            if the string 'all' (default value), then all histograms in 
-            the project are used. 
-        :param list modelist: May be a list of sections to copy, which may 
-           include 'Background', 'Instrument Parameters', 'Limits' and 
+            if the string 'all' (default value), then all histograms in
+            the project are used.
+        :param list modelist: May be a list of sections to copy, which may
+           include 'Background', 'Instrument Parameters', 'Limits' and
            'Sample Parameters' (items may be shortened to uniqueness and
            capitalization is ignored, so ['b','i','L','s'] will work.)
-           The default value, 'all' causes the listed sections to 
+           The default value, 'all' causes the listed sections to
 
         '''
         sections = ('Background','Instrument Parameters','Limits',
@@ -2965,15 +2965,15 @@ class G2Project(G2ObjectWrapper):
             hist_out = self.histogram(h)
             if not hist_out:
                 raise Exception('{} is not a valid histogram'.format(h))
-            for key in copysections: 
+            for key in copysections:
                 hist_out[key] = copy.deepcopy(hist_in[key])
 
     def get_VaryList(self):
-        '''Returns a list of the refined variables in the 
+        '''Returns a list of the refined variables in the
         last refinement cycle
 
         :returns: a list of variables or None if no refinement has been
-          performed. 
+          performed.
         '''
         try:
             return self['Covariance']['data']['varyList']
@@ -2981,11 +2981,11 @@ class G2Project(G2ObjectWrapper):
             return
 
     def get_ParmList(self):
-        '''Returns a list of all the parameters defined in the 
+        '''Returns a list of all the parameters defined in the
         last refinement cycle
 
         :returns: a list of parameters or None if no refinement has been
-          performed. 
+          performed.
         '''
         if 'parmDict' not in self['Covariance']['data']:
             raise G2ScriptException('No parameters found in project, has a refinement been run?')
@@ -2993,16 +2993,16 @@ class G2Project(G2ObjectWrapper):
             return list(self['Covariance']['data']['parmDict'].keys())
         except:
             return
-        
+
     def get_Variable(self,var):
-        '''Returns the value and standard uncertainty (esd) for a variable 
+        '''Returns the value and standard uncertainty (esd) for a variable
         parameters, as defined in the last refinement cycle
 
-        :param str var: a variable name of form '<p>:<h>:<name>', such as 
+        :param str var: a variable name of form '<p>:<h>:<name>', such as
           ':0:Scale'
-        :returns: (value,esd) if the parameter is refined or 
-          (value, None) if the variable is in a constraint or is not 
-          refined or None if the parameter is not found. 
+        :returns: (value,esd) if the parameter is refined or
+          (value, None) if the variable is in a constraint or is not
+          refined or None if the parameter is not found.
         '''
         if 'parmDict' not in self['Covariance']['data']:
             raise G2ScriptException('No parameters found in project, has a refinement been run?')
@@ -3017,17 +3017,17 @@ class G2Project(G2ObjectWrapper):
             return (val,None)
 
     def get_Covariance(self,varList):
-        '''Returns the values and covariance matrix for a series of variable 
+        '''Returns the values and covariance matrix for a series of variable
         parameters. as defined in the last refinement cycle
 
         :param tuple varList: a list of variable names of form '<p>:<h>:<name>'
         :returns: (valueList,CovMatrix) where valueList contains the (n) values
-          in the same order as varList (also length n) and CovMatrix is a 
+          in the same order as varList (also length n) and CovMatrix is a
           (n x n) matrix. If any variable name is not found in the varyList
-          then None is returned. 
+          then None is returned.
 
-        Use this code, where sig provides standard uncertainties for 
-        parameters and where covArray provides the correlation between 
+        Use this code, where sig provides standard uncertainties for
+        parameters and where covArray provides the correlation between
         off-diagonal terms::
 
             sig = np.sqrt(np.diag(covMatrix))
@@ -3042,43 +3042,42 @@ class G2Project(G2ObjectWrapper):
         if 'parmDict' not in self['Covariance']['data']:
             raise G2ScriptException('No parameters found in project, has a refinement been run?')
         vals = [self['Covariance']['data']['parmDict'][i] for i in varList]
-        import GSASIImath as G2mth
         cov = G2mth.getVCov(varList,
                             self['Covariance']['data']['varyList'],
                             self['Covariance']['data']['covMatrix'])
         return (vals,cov)
-    
-    def ComputeWorstFit(self):
-        '''Computes the worst-fit parameters in a model. 
 
-        :returns: (keys, derivCalcs, varyList) where: 
+    def ComputeWorstFit(self):
+        '''Computes the worst-fit parameters in a model.
+
+        :returns: (keys, derivCalcs, varyList) where:
 
           * keys is a list of parameter names
-            where the names are ordered such that first entry in the list 
+            where the names are ordered such that first entry in the list
             will produce the largest change in the fit if refined and the last
             entry will have the smallest change;
- 
-          * derivCalcs is a dict where the key is a variable name and the 
-            value is a list with three partial derivative values for 
-            d(Chi**2)/d(var) where the derivatives are computed 
-            for values v-d to v; v-d to v+d; v to v+d where v is 
-            the current value for the variable and d is a small delta 
+
+          * derivCalcs is a dict where the key is a variable name and the
+            value is a list with three partial derivative values for
+            d(Chi**2)/d(var) where the derivatives are computed
+            for values v-d to v; v-d to v+d; v to v+d where v is
+            the current value for the variable and d is a small delta
             value chosen for that variable type;
 
-          * varyList is a list of the parameters that are currently set to 
-            be varied. 
+          * varyList is a list of the parameters that are currently set to
+            be varied.
         '''
         self.save()
         derivCalcs,varyList = G2strMain.Refine(self.filename,None,allDerivs=True)
         keys = sorted(derivCalcs,key=lambda x:abs(derivCalcs[x][1]),reverse=True)
         return (keys,derivCalcs,varyList)
-        
+
 class G2AtomRecord(G2ObjectWrapper):
-    """Wrapper for an atom record. Allows many atom properties to be access 
-    and changed. See the :ref:`Atom Records description <Atoms_table>`  
+    """Wrapper for an atom record. Allows many atom properties to be access
+    and changed. See the :ref:`Atom Records description <Atoms_table>`
     for the details on what information is contained in an atom record.
 
-    Scripts should not try to create a :class:`G2AtomRecord` object directly as 
+    Scripts should not try to create a :class:`G2AtomRecord` object directly as
     these objects are created via access from a :class:`G2Phase` object.
 
     Example showing some uses of :class:`G2AtomRecord` methods:
@@ -3104,22 +3103,22 @@ class G2AtomRecord(G2ObjectWrapper):
         self.data = data
         self.cx, self.ct, self.cs, self.cia = indices
         self.proj = proj
-        
+
 #    @property
 #    def X(self):
-#        '''Get or set the associated atom's X. 
-#        Use as ``x = atom.X`` to obtain the value and 
+#        '''Get or set the associated atom's X.
+#        Use as ``x = atom.X`` to obtain the value and
 #        ``atom.X = x`` to set the value.
 #        '''
 #        pass
 #    @X.setter
 #    def X(self, val):
 #        pass
-        
+
     @property
     def label(self):
-        '''Get the associated atom's label. 
-        Use as ``x = atom.label`` to obtain the value and 
+        '''Get the associated atom's label.
+        Use as ``x = atom.label`` to obtain the value and
         ``atom.label = x`` to set the value.
         '''
         return self.data[self.ct-1]
@@ -3129,11 +3128,11 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def type(self):
-        '''Get or set the associated atom's type. Call as a variable 
-        (``x = atom.type``) to obtain the value or use 
-        ``atom.type = x`` to change the type. It is the user's 
-        responsibility to make sure that the atom type is valid; 
-        no checking is done here. 
+        '''Get or set the associated atom's type. Call as a variable
+        (``x = atom.type``) to obtain the value or use
+        ``atom.type = x`` to change the type. It is the user's
+        responsibility to make sure that the atom type is valid;
+        no checking is done here.
 
         .. seealso::
             :meth:`element`
@@ -3141,16 +3140,16 @@ class G2AtomRecord(G2ObjectWrapper):
         return self.data[self.ct]
     @type.setter
     def type(self, val):
-        # TODO: should check if atom type is defined 
+        # TODO: should check if atom type is defined
         self.data[self.ct] = str(val)
-    
+
     @property
     def element(self):
-        '''Parses element symbol from the atom type symbol for the atom 
+        '''Parses element symbol from the atom type symbol for the atom
         associated with the current object.
 
         .. seealso::
-            :meth:`type`        
+            :meth:`type`
         '''
         import re
         try:
@@ -3162,7 +3161,7 @@ class G2AtomRecord(G2ObjectWrapper):
     @property
     def refinement_flags(self):
         '''Get or set refinement flags for the associated atom.
-        Use as ``x = atom.refinement_flags`` to obtain the flags and 
+        Use as ``x = atom.refinement_flags`` to obtain the flags and
         ``atom.refinement_flags = "XU"`` (etc) to set the value.
         '''
         return self.data[self.ct+1]
@@ -3177,8 +3176,8 @@ class G2AtomRecord(G2ObjectWrapper):
     @property
     def coordinates(self):
         '''Get or set the associated atom's coordinates.
-        Use as ``x = atom.coordinates`` to obtain a tuple with 
-        the three (x,y,z) values and ``atom.coordinates = (x,y,z)`` 
+        Use as ``x = atom.coordinates`` to obtain a tuple with
+        the three (x,y,z) values and ``atom.coordinates = (x,y,z)``
         to set the values.
 
         Changes needed to adapt for changes in site symmetry have not yet been
@@ -3194,11 +3193,11 @@ class G2AtomRecord(G2ObjectWrapper):
         except:
             raise ValueError(f"conversion error with coordinates {val}")
         # TODO: should recompute the atom site symmetries here
-        
+
     @property
     def occupancy(self):
-        '''Get or set the associated atom's site fraction. 
-        Use as ``x = atom.occupancy`` to obtain the value and 
+        '''Get or set the associated atom's site fraction.
+        Use as ``x = atom.occupancy`` to obtain the value and
         ``atom.occupancy = x`` to set the value.
         '''
         return self.data[self.cx+3]
@@ -3208,11 +3207,11 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def mult(self):
-        '''Get the associated atom's multiplicity value. Should not be 
-        changed by user. 
+        '''Get the associated atom's multiplicity value. Should not be
+        changed by user.
         '''
         return self.data[self.cs+1]
-    
+
     @property
     def ranId(self):
         '''Get the associated atom's Random Id number. Don't change this.
@@ -3230,10 +3229,10 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def ADP(self):
-        '''Get or set the associated atom's Uiso or Uaniso value(s). 
-        Use as ``x = atom.ADP`` to obtain the value(s) and 
+        '''Get or set the associated atom's Uiso or Uaniso value(s).
+        Use as ``x = atom.ADP`` to obtain the value(s) and
         ``atom.ADP = x`` to set the value(s). For isotropic atoms
-        a single float value is returned (or used to set). For 
+        a single float value is returned (or used to set). For
         anisotropic atoms a list of six values is used.
 
         .. seealso::
@@ -3254,10 +3253,10 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def uiso(self):
-        '''A synonym for :meth:`ADP` to be used for Isotropic atoms. 
-        Get or set the associated atom's Uiso value. 
-        Use as ``x = atom.uiso`` to obtain the value and 
-        ``atom.uiso = x`` to set the value. A 
+        '''A synonym for :meth:`ADP` to be used for Isotropic atoms.
+        Get or set the associated atom's Uiso value.
+        Use as ``x = atom.uiso`` to obtain the value and
+        ``atom.uiso = x`` to set the value. A
         single float value is returned or used to set.
 
         .. seealso::
@@ -3274,18 +3273,18 @@ class G2AtomRecord(G2ObjectWrapper):
         self.ADP = value
 
 class G2PwdrData(G2ObjectWrapper):
-    """Wraps a Powder Data Histogram. 
+    """Wraps a Powder Data Histogram.
     The object contains these class variables:
 
         * G2PwdrData.proj: contains a reference to the :class:`G2Project`
-          object that contains this histogram 
+          object that contains this histogram
         * G2PwdrData.name: contains the name of the histogram
         * G2PwdrData.data: contains the histogram's associated data in a dict,
           as documented for the :ref:`Powder Diffraction Tree<Powder_table>`.
           The actual histogram values are contained in the 'data' dict item,
-          as documented for Data. 
+          as documented for Data.
 
-    Scripts should not try to create a :class:`G2PwdrData` object directly as 
+    Scripts should not try to create a :class:`G2PwdrData` object directly as
     :meth:`G2PwdrData.__init__` should be invoked from inside :class:`G2Project`.
 
     """
@@ -3344,14 +3343,14 @@ class G2PwdrData(G2ObjectWrapper):
 
     def add_back_peak(self,pos,int,sig,gam,refflags=[]):
         '''Adds a background peak to the Background parameters
-        
+
         :param float pos: position of peak, a 2theta or TOF value
         :param float int: integrated intensity of background peak, usually large
         :param float sig: Gaussian width of background peak, usually large
         :param float gam: Lorentzian width of background peak, usually unused (small)
-        :param list refflags: a list of 1 to 4 boolean refinement flags for 
-            pos,int,sig & gam, respectively (use [0,1] to refine int only). 
-            Defaults to [] which means nothing is refined. 
+        :param list refflags: a list of 1 to 4 boolean refinement flags for
+            pos,int,sig & gam, respectively (use [0,1] to refine int only).
+            Defaults to [] which means nothing is refined.
         '''
         if 'peaksList' not in self.Background[1]:
             self.Background[1]['peaksList'] = []
@@ -3367,7 +3366,7 @@ class G2PwdrData(G2ObjectWrapper):
 
     def del_back_peak(self,peaknum):
         '''Removes a background peak from the Background parameters
-        
+
         :param int peaknum: the number of the peak (starting from 0)
         '''
         npks = self.Background[1].get('nPeaks',0)
@@ -3375,15 +3374,15 @@ class G2PwdrData(G2ObjectWrapper):
             raise Exception('peak {} not found in histogram {}'.format(peaknum,self.name))
         del self.Background[1]['peaksList'][peaknum]
         self.Background[1]['nPeaks'] = len(self.Background[1]['peaksList'])
-        
+
     def ref_back_peak(self,peaknum,refflags=[]):
         '''Sets refinement flag for a background peak
-        
+
         :param int peaknum: the number of the peak (starting from 0)
-        :param list refflags: a list of 1 to 4 boolean refinement flags for 
+        :param list refflags: a list of 1 to 4 boolean refinement flags for
             pos,int,sig & gam, respectively. If a flag is not specified
-            it defaults to False (use [0,1] to refine int only). 
-            Defaults to [] which means nothing is refined. 
+            it defaults to False (use [0,1] to refine int only).
+            Defaults to [] which means nothing is refined.
         '''
         npks = self.Background[1].get('nPeaks',0)
         if peaknum >= npks:
@@ -3394,7 +3393,7 @@ class G2PwdrData(G2ObjectWrapper):
             flags[i] = bool(f)
         for i,f in enumerate(flags):
             self.Background[1]['peaksList'][peaknum][2*i+1] = f
-                    
+
     @property
     def id(self):
         self.proj.update_ids()
@@ -3405,20 +3404,20 @@ class G2PwdrData(G2ObjectWrapper):
         self.data['data'][0]['hId'] = val
 
     def Limits(self,typ,value=None):
-        '''Used to obtain or set the histogram limits. When a value is 
-        specified, the appropriate limit is set. Otherwise, the value is 
-        returned. Note that this provides an alternative to setting 
-        histogram limits with the :meth:`G2Project:do_refinements` or 
-        :meth:`G2PwdrData.set_refinements` methods. 
+        '''Used to obtain or set the histogram limits. When a value is
+        specified, the appropriate limit is set. Otherwise, the value is
+        returned. Note that this provides an alternative to setting
+        histogram limits with the :meth:`G2Project:do_refinements` or
+        :meth:`G2PwdrData.set_refinements` methods.
 
-        :param str typ: a string which must be either 'lower' 
+        :param str typ: a string which must be either 'lower'
           (for 2-theta min or TOF min) or 'upper' (for 2theta max or TOF max).
-          Anything else produces an error. 
-        :param float value: the number to set the limit (in units of degrees 
-          or TOF (microsec.). If not specified, the command returns the 
-          selected limit value rather than setting it. 
-        :returns: The current value of the requested limit 
-          (when ``value=None``). Units are 
+          Anything else produces an error.
+        :param float value: the number to set the limit (in units of degrees
+          or TOF (microsec.). If not specified, the command returns the
+          selected limit value rather than setting it.
+        :returns: The current value of the requested limit
+          (when ``value=None``). Units are
           2-theta (degrees) or TOF (microsec).
 
         Examples::
@@ -3442,14 +3441,14 @@ class G2PwdrData(G2ObjectWrapper):
                 self.data['Limits'][1][1] = float(value)
             else:
                 raise G2ScriptException('G2PwdData.Limit error: must be "lower" or "upper"')
-            
+
     def Excluded(self,value=None):
         '''Used to obtain or set the excluded regions for a histogram.
-        When a value is specified, the excluded regions are set. 
+        When a value is specified, the excluded regions are set.
         Otherwise, the list of excluded region pairs is returned.
-        Note that excluded regions may be an empty list or a list 
+        Note that excluded regions may be an empty list or a list
         of regions to be excluded, where each region is provided
-        as pair of numbers, where the lower limit comes first. 
+        as pair of numbers, where the lower limit comes first.
         Some sample excluded region lists are::
 
           [[4.5, 5.5], [8.0, 9.0]]
@@ -3459,28 +3458,28 @@ class G2PwdrData(G2ObjectWrapper):
           []
 
         The first above describes two excluded regions from 4.5-5.5 and 8-9
-        degrees 2-theta. The second is for a TOF pattern and also 
-        describes two excluded regions, for 130-140 and 160-170 milliseconds. 
-        The third line would be the case where there are no excluded 
-        regions. 
+        degrees 2-theta. The second is for a TOF pattern and also
+        describes two excluded regions, for 130-140 and 160-170 milliseconds.
+        The third line would be the case where there are no excluded
+        regions.
 
         :param list value: A list of pairs of excluded region numbers
-          (as two-element lists). Some error checking/reformatting is done, 
-          but users are expected to get this right. Use the GUI to 
-          create examples or check input. Numbers in the list 
-          are in units of degrees or TOF (microsec.). 
+          (as two-element lists). Some error checking/reformatting is done,
+          but users are expected to get this right. Use the GUI to
+          create examples or check input. Numbers in the list
+          are in units of degrees or TOF (microsec.).
 
           If a value is not specified, the command returns the list of excluded regions.
 
-        :returns: The list of excluded regions (when ``value=None``). Units are 
+        :returns: The list of excluded regions (when ``value=None``). Units are
           2-theta (degrees) or TOF (microsec).
 
-        Example 1:: 
+        Example 1::
 
           h = gpx.histogram(0)  # adds an excluded region (11-13 degrees)
           h.Excluded(h.Excluded() + [[11,13]])
 
-        Example 2:: 
+        Example 2::
 
           h = gpx.histogram(0) # changes the range of the first excluded region
           excl = h.Excluded()
@@ -3488,7 +3487,7 @@ class G2PwdrData(G2ObjectWrapper):
           h.Excluded(excl)
 
         Example 3::
- 
+
           h = gpx.histogram(0)  # deletes all excluded regions
           h.Excluded([])
         '''
@@ -3510,7 +3509,7 @@ class G2PwdrData(G2ObjectWrapper):
                     s += f'Upper limit {h} too high. '
         except:
             raise G2ScriptException(f'G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {value}')
-        if s: 
+        if s:
             raise G2ScriptException(f'G2PwdData.Excluded error(s): {s}')
         self.data['Limits'][2:] = listValues
 
@@ -3588,20 +3587,20 @@ class G2PwdrData(G2ObjectWrapper):
     def getdata(self,datatype):
         '''Provides access to the histogram data of the selected data type
 
-        :param str datatype: must be one of the following values 
+        :param str datatype: must be one of the following values
           (case is ignored):
-        
+
            * 'X': the 2theta or TOF values for the pattern
            * 'Q': the 2theta or TOF values for the pattern transformed to Q
            * 'd': the 2theta or TOF values for the pattern transformed to d-space
-           * 'Yobs': the observed intensity values 
+           * 'Yobs': the observed intensity values
            * 'Yweight': the weights for each data point (1/sigma**2)
-           * 'Ycalc': the computed intensity values 
+           * 'Ycalc': the computed intensity values
            * 'Background': the computed background values
            * 'Residual': the difference between Yobs and Ycalc (obs-calc)
 
         :returns: an numpy MaskedArray with data values of the requested type
-        
+
         '''
         enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual', 'q', 'd']
         if datatype.lower() not in enums:
@@ -3616,33 +3615,33 @@ class G2PwdrData(G2ObjectWrapper):
             return self.data['data'][1][enums.index(datatype.lower())]
 
     def y_calc(self):
-        '''Returns the calculated intensity values; better to 
+        '''Returns the calculated intensity values; better to
         use :meth:`getdata`
         '''
         return self.data['data'][1][3]
 
     def reflections(self):
-        '''Returns a dict with an entry for every phase in the 
+        '''Returns a dict with an entry for every phase in the
         current histogram. Within each entry is a dict with keys
-        'RefList' (reflection list, see 
-        :ref:`Powder Reflections <PowderRefl_table>`), 
-        'Type' (histogram type), 'FF' 
-        (form factor information), 'Super' (True if this is superspace 
-        group). 
+        'RefList' (reflection list, see
+        :ref:`Powder Reflections <PowderRefl_table>`),
+        'Type' (histogram type), 'FF'
+        (form factor information), 'Super' (True if this is superspace
+        group).
         '''
         return self.data['Reflection Lists']
-    
+
     def Export(self,fileroot,extension,fmthint=None):
         '''Write the histogram into a file. The path is specified by fileroot and
         extension.
-        
+
         :param str fileroot: name of the file, optionally with a path (extension is
            ignored)
         :param str extension: includes '.', must match an extension in global
            exportersByExtension['powder'] or a Exception is raised.
-        :param str fmthint: If specified, the first exporter where the format 
+        :param str fmthint: If specified, the first exporter where the format
            name (obj.formatName, as shown in Export menu) contains the
-           supplied string will be used. If not specified, an error 
+           supplied string will be used. If not specified, an error
            will be generated showing the possible choices.
         :returns: name of file that was written
         '''
@@ -3671,10 +3670,10 @@ class G2PwdrData(G2ObjectWrapper):
         self._SetFromArray(obj)
         obj.Writer(self.name,fil)
         return fil
-    
+
     def _SetFromArray(self,expObj):
-        '''Load a histogram into the exporter in preparation for use of 
-        the .Writer method in the object. 
+        '''Load a histogram into the exporter in preparation for use of
+        the .Writer method in the object.
 
         :param Exporter expObj: Exporter object
         '''
@@ -3682,7 +3681,7 @@ class G2PwdrData(G2ObjectWrapper):
         expObj.Histograms[self.name]['Data'] = self.data['data'][1]
         for key in 'Instrument Parameters','Sample Parameters','Reflection Lists':
             expObj.Histograms[self.name][key] = self.data[key]
-            
+
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:
             import matplotlib.pyplot as plt
@@ -3701,7 +3700,7 @@ class G2PwdrData(G2ObjectWrapper):
 
     def get_wR(self):
         """returns the overall weighted profile R factor for a histogram
-        
+
         :returns: a wR value as a percentage or None if not defined
         """
         return self['data'][0].get('wR')
@@ -3719,12 +3718,12 @@ class G2PwdrData(G2ObjectWrapper):
             return self.proj.histograms()[hist].name
         else:
             raise G2ScriptException("Invalid histogram reference: "+str(hist))
-        
-    def set_background(self, key, value):
-        '''Set background parameters (this serves a similar function as in 
-        :meth:`set_refinements`, but with a simplified interface). 
 
-        :param str key: a string that defines the background parameter that will 
+    def set_background(self, key, value):
+        '''Set background parameters (this serves a similar function as in
+        :meth:`set_refinements`, but with a simplified interface).
+
+        :param str key: a string that defines the background parameter that will
            be changed. Must appear in the table below.
 
            =================   ==============   ===========================================
@@ -3732,14 +3731,14 @@ class G2PwdrData(G2ObjectWrapper):
            =================   ==============   ===========================================
            fixedHist           int, str,         reference to a histogram in the current
                                None or           project or None to remove the reference.
-                               G2PwdrData        
-           fixedFileMult       float             multiplier applied to intensities in 
-                                                 the background histogram where a value 
-                                                 of -1.0 means full subtraction of 
+                               G2PwdrData
+           fixedFileMult       float             multiplier applied to intensities in
+                                                 the background histogram where a value
+                                                 of -1.0 means full subtraction of
                                                  the background histogram.
            =================   ==============   ===========================================
 
-        :param value: a value to set the selected background parameter. The meaning 
+        :param value: a value to set the selected background parameter. The meaning
            and type for this parameter is listed in the table above.
 
         '''
@@ -3753,11 +3752,11 @@ class G2PwdrData(G2ObjectWrapper):
             bkgDict['background PWDR'][1] = float(value)
         else:
             raise ValueError("Invalid key in set_background:", key)
-        
+
     def set_refinements(self, refs):
         """Sets the PWDR histogram refinement parameter 'key' to the specification 'value'.
 
-        :param dict refs: A dictionary of the parameters to be set. See the 
+        :param dict refs: A dictionary of the parameters to be set. See the
                           :ref:`Histogram_parameters_table` table for a description of
                           what these dictionaries should be.
 
@@ -3839,7 +3838,7 @@ class G2PwdrData(G2ObjectWrapper):
         """Clears the PWDR refinement parameter 'key' and its associated value.
 
         :param dict refs: A dictionary of parameters to clear.
-          See the :ref:`Histogram_parameters_table` table for what can be specified. 
+          See the :ref:`Histogram_parameters_table` table for what can be specified.
         """
         for key, value in refs.items():
             if key == 'Limits':
@@ -3881,7 +3880,6 @@ class G2PwdrData(G2ObjectWrapper):
         Note: only one of the parameters: dspace, Q or ttheta may be specified.
         See :ref:`PeakRefine` for an example.
         '''
-        import GSASIImath as G2mth
         if (not dspace) + (not Q) + (not ttheta) != 2:
             G2fil.G2Print('add_peak error: too many or no peak position(s) specified')
             return
@@ -3898,7 +3896,7 @@ class G2PwdrData(G2ObjectWrapper):
     def set_peakFlags(self,peaklist=None,area=None,pos=None,sig=None,gam=None,
                           alp=None,bet=None):
         '''Set refinement flags for peaks
-        
+
         :param list peaklist: a list of peaks to change flags. If None (default), changes
           are made to all peaks.
         :param bool area: Sets or clears the refinement flag for the peak area value.
@@ -3913,12 +3911,12 @@ class G2PwdrData(G2ObjectWrapper):
           If None (the default), no change is made.
         :param bool bet: Sets or clears the refinement flag for the peak beta (TOF width) value.
           If None (the default), no change is made.
-          
+
         Note that when peaks are first created the area flag is on and the other flags are
         initially off.
 
         Example::
-        
+
            set_peakFlags(sig=False,gam=True)
 
         causes the sig refinement flag to be cleared and the gam flag to be set, in both cases for
@@ -3939,22 +3937,21 @@ class G2PwdrData(G2ObjectWrapper):
 
     def refine_peaks(self,mode='useIP'):
         '''Causes a refinement of peak position, background and instrument parameters
-        
-        :param str mode: this determines how peak widths are determined. If 
-          the value is 'useIP' (the default) then the width parameter values (sigma, gamma, 
-          alpha,...) are computed from the histogram's instrument parameters. If the 
+
+        :param str mode: this determines how peak widths are determined. If
+          the value is 'useIP' (the default) then the width parameter values (sigma, gamma,
+          alpha,...) are computed from the histogram's instrument parameters. If the
           value is 'hold', then peak width parameters are not overridden. In
-          this case, it is not possible to refine the instrument parameters 
-          associated with the peak widths and an attempt to do so will result in 
+          this case, it is not possible to refine the instrument parameters
+          associated with the peak widths and an attempt to do so will result in
           an error.
 
-        :returns: a list of dicts with refinement results. Element 0 has uncertainties 
+        :returns: a list of dicts with refinement results. Element 0 has uncertainties
           on refined values (also placed in self.data['Peak List']['sigDict'])
           element 1 has the peak fit result, element 2 has the peak fit uncertainties
-          and element 3 has r-factors from the fit. 
+          and element 3 has r-factors from the fit.
           (These are generated in :meth:`GSASIIpwd.DoPeakFit`).
         '''
-        import GSASIIpwd as G2pwd
         if mode == 'useIP':
             G2pwd.setPeakInstPrmMode(True)
         elif mode == 'hold':
@@ -3975,17 +3972,17 @@ class G2PwdrData(G2ObjectWrapper):
                                            oneCycle=False,controls=controls,dlg=None)
         peaks['sigDict'] = result[0]
         return result
-        
+
     @property
     def Peaks(self):
         '''Provides a dict with the Peak List parameters
         for this histogram.
 
         :returns: dict with two elements where item
-          'peaks' is a list of peaks where each element is 
-          [pos,pos-ref,area,area-ref,sig,sig-ref,gam,gam-ref], 
+          'peaks' is a list of peaks where each element is
+          [pos,pos-ref,area,area-ref,sig,sig-ref,gam,gam-ref],
           where the -ref items are refinement flags and item
-          'sigDict' is a dict with possible items 'Back;#', 
+          'sigDict' is a dict with possible items 'Back;#',
           'pos#', 'int#', 'sig#', 'gam#'
         '''
         return self.data['Peak List']
@@ -3996,17 +3993,17 @@ class G2PwdrData(G2ObjectWrapper):
         for this histogram.
 
         :returns: a list of peaks, where each peak is a list containing
-          [pos,area,sig,gam] 
+          [pos,area,sig,gam]
           (position, peak area, Gaussian width, Lorentzian width)
-           
+
         '''
         return [i[::2] for i in self.data['Peak List']['peaks']]
-    
+
     def Export_peaks(self,filename):
         '''Write the peaks file. The path is specified by filename
         extension.
-        
-        :param str filename: name of the file, optionally with a path, 
+
+        :param str filename: name of the file, optionally with a path,
             includes an extension
         :returns: name of file that was written
         '''
@@ -4017,7 +4014,6 @@ class G2PwdrData(G2ObjectWrapper):
         Inst,Inst2 = self.data['Instrument Parameters']
         Type = Inst['Type'][0]
         if 'T' not in Type:
-            import GSASIImath as G2mth
             wave = G2mth.getWave(Inst)
         else:
             wave = None
@@ -4029,7 +4025,7 @@ class G2PwdrData(G2ObjectWrapper):
         if wave:
             fp.write('#wavelength = %10.6f\n'%(wave))
         if 'T' in Type:
-            fp.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','alp','bet','sig','gam','FWHM'))                                    
+            fp.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','alp','bet','sig','gam','FWHM'))
         else:
             fp.write('#%9s %10s %10s %12s %10s %10s %10s\n'%('pos','dsp','esd','int','sig','gam','FWHM'))
         for ip,peak in enumerate(peaks):
@@ -4071,7 +4067,7 @@ class G2PwdrData(G2ObjectWrapper):
         G2fil.G2Print ('Instrument parameters saved to: '+filename)
 
     def LoadProfile(self,filename,bank=0):
-        '''Reads a GSAS-II (new style) .instprm file and overwrites the current 
+        '''Reads a GSAS-II (new style) .instprm file and overwrites the current
         parameters
 
         :param str filename: instrument parameter file name, extension ignored if not
@@ -4106,27 +4102,27 @@ class G2PwdrData(G2ObjectWrapper):
             try:
                 newVals.append(float(val))
             except ValueError:
-                newVals.append(val)                        
-            S = File.readline()                
+                newVals.append(val)
+            S = File.readline()
         File.close()
         LoadG2fil()
         self.data['Instrument Parameters'][0] = G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,])
 
     def EditSimulated(self,Tmin, Tmax, Tstep=None, Npoints=None):
-        '''Change the parameters for an existing simulated powder histogram. 
+        '''Change the parameters for an existing simulated powder histogram.
         This will reset the previously computed "observed" pattern.
 
         :param float Tmin: Minimum 2theta or TOF (microsec) for dataset to be simulated
         :param float Tmax: Maximum 2theta or TOF (usec) for dataset to be simulated
-        :param float Tstep: Step size in 2theta or TOF (usec) for dataset to be simulated       
+        :param float Tstep: Step size in 2theta or TOF (usec) for dataset to be simulated
            Default is to compute this from Npoints.
-        :param int Νpoints: the number of data points to be used for computing the 
+        :param int Νpoints: the number of data points to be used for computing the
             diffraction pattern. Defaults as None, which sets this to 2500. Do not specify
             both Npoints and Tstep. Due to roundoff the actual nuber of points used may differ
             by +-1 from Npoints. Must be below 25,000.
          '''
         if not self.data['data'][0]['Dummy']:
-            raise G2ScriptException("Error: histogram for G2PwdrData.EditSimulated is not simulated")            
+            raise G2ScriptException("Error: histogram for G2PwdrData.EditSimulated is not simulated")
         if Tmax < Tmin:
             Tmin,Tmax = Tmax,Tmin
         if Tstep is not None and Npoints is not None:
@@ -4135,7 +4131,7 @@ class G2PwdrData(G2ObjectWrapper):
             Tstep = abs(Tstep)
         elif Npoints is None:
             Npoints = 2500
-            
+
         if 'T' in self.data['Instrument Parameters'][0]['Type'][0]:
             if Tmax > 200.:
                 raise G2ScriptException("Error: Tmax is too large")
@@ -4175,13 +4171,13 @@ class G2PwdrData(G2ObjectWrapper):
         self.data['Limits'] = limits
 
     def getHistEntryList(self, keyname=''):
-        """Returns a dict with histogram setting values. 
+        """Returns a dict with histogram setting values.
 
         :param str keyname: an optional string. When supplied only entries
           where at least one key contains the specified string are reported.
-          Case is ignored, so 'sg' will find entries where one of the keys 
-          is 'SGdata', etc. 
-        :returns: a set of histogram dict keys. 
+          Case is ignored, so 'sg' will find entries where one of the keys
+          is 'SGdata', etc.
+        :returns: a set of histogram dict keys.
 
         See :meth:`G2Phase.getHAPentryList` for a related example.
 
@@ -4193,14 +4189,14 @@ class G2PwdrData(G2ObjectWrapper):
         return [i for i in dictDive(self.data,keyname) if i[0] != ['Histograms']]
 
     def getHistEntryValue(self, keylist):
-        """Returns the histogram control value associated with a list of keys. 
-        Where the value returned is a list, it may be used as the target of 
-        an assignment (as in 
-        ``getHistEntryValue(...)[...] = val``) 
-        to set a value inside a list.        
+        """Returns the histogram control value associated with a list of keys.
+        Where the value returned is a list, it may be used as the target of
+        an assignment (as in
+        ``getHistEntryValue(...)[...] = val``)
+        to set a value inside a list.
 
-        :param list keylist: a list of dict keys, typically as returned by 
-          :meth:`getHistEntryList`. 
+        :param list keylist: a list of dict keys, typically as returned by
+          :meth:`getHistEntryList`.
 
         :returns: a histogram setting; may be a int, float, bool, list,...
 
@@ -4213,15 +4209,15 @@ class G2PwdrData(G2ObjectWrapper):
         return d
 
     def setHistEntryValue(self, keylist, newvalue):
-        """Sets a histogram control value associated with a list of keys. 
+        """Sets a histogram control value associated with a list of keys.
 
         See :meth:`G2Phase.setHAPentryValue` for a related example.
 
-       :param list keylist: a list of dict keys, typically as returned by 
-          :meth:`getHistEntryList`. 
+       :param list keylist: a list of dict keys, typically as returned by
+          :meth:`getHistEntryList`.
 
         :param newvalue: a new value for the hist setting. The type must be
-          the same as the initial value, but if the value is a container 
+          the same as the initial value, but if the value is a container
           (list, tuple, np.array,...) the elements inside are not checked.
 
         """
@@ -4233,19 +4229,19 @@ class G2PwdrData(G2ObjectWrapper):
             dlast = d
             d = d[key]
         dlast[key] = newvalue
-        
+
     def calc_autobkg(self,opt=0,logLam=None):
-        """Sets fixed background points using the pybaselines Whittaker 
+        """Sets fixed background points using the pybaselines Whittaker
         algorithm.
 
        :param int opt: 0 for 'arpls' or 1 for 'iarpls'. Default is 0.
 
-       :param float logLam: log_10 of the Lambda value used in the 
+       :param float logLam: log_10 of the Lambda value used in the
          pybaselines.whittaker.arpls/.iarpls computation. If None (default)
-         is provided, a guess is taken for an appropriate value based 
-         on the number of points. 
+         is provided, a guess is taken for an appropriate value based
+         on the number of points.
 
-       :returns: the array of computed background points  
+       :returns: the array of computed background points
        """
         bkgDict = self.data['Background'][1]
         xydata = self.data['data'][1]
@@ -4269,18 +4265,18 @@ class G2PwdrData(G2ObjectWrapper):
                 bkgdata.data[::npts//100])]
         bkgDict['autoPrms']['Mode'] = 'fixed'
         return bkgdata
-        
+
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
     The object contains these class variables:
 
         * G2Phase.proj: contains a reference to the :class:`G2Project`
-          object that contains this phase 
+          object that contains this phase
         * G2Phase.name: contains the name of the phase
         * G2Phase.data: contains the phases's associated data in a dict,
           as documented for the :ref:`Phase Tree items<Phase_table>`.
 
-    Scripts should not try to create a :class:`G2Phase` object directly as 
+    Scripts should not try to create a :class:`G2Phase` object directly as
     :meth:`G2Phase.__init__` should be invoked from inside :class:`G2Project`.
 
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
@@ -4330,14 +4326,14 @@ class G2Phase(G2ObjectWrapper):
         return [G2AtomRecord(atom, ptrs, self.proj) for atom in self.data['Atoms']]
 
     def histograms(self):
-        '''Returns a list of histogram names associated with the current phase ordered 
+        '''Returns a list of histogram names associated with the current phase ordered
         as they appear in the tree (see :meth:`G2Project.histograms`).
         '''
         return [i.name for i in self.proj.histograms() if i.name in self.data.get('Histograms', {})]
-    
+
     @property
     def composition(self):
-        '''Provides a dict where keys are atom types and values are the number of 
+        '''Provides a dict where keys are atom types and values are the number of
         atoms of that type in cell (such as {'H': 2.0, 'O': 1.0})
         '''
         out = {}
@@ -4351,10 +4347,9 @@ class G2Phase(G2ObjectWrapper):
 
     def mu(self,wave):
         '''Provides mu values for a phase at the supplied wavelength in A.
-        Uses GSASIImath.XScattDen which seems to be off by an order of 
+        Uses GSASIImath.XScattDen which seems to be off by an order of
         magnitude, which has been corrected here.
         '''
-        import GSASIImath as G2mth
         vol = self.data['General']['Cell'][7]
         out = {}
         for typ in self.data['General']['NoAtoms']:
@@ -4365,16 +4360,15 @@ class G2Phase(G2ObjectWrapper):
                 out[typ]['Num'] = self.data['General']['NoAtoms'][typ]
                 out[typ]['Z'] = 0 # wrong but not needed
         return 10*G2mth.XScattDen(out,vol,wave)[1]
-    
+
     @property
     def density(self):
-        '''Provides a scalar with the density of the phase. In case of a 
+        '''Provides a scalar with the density of the phase. In case of a
         powder this assumes a 100% packing fraction.
         '''
-        import GSASIImath as G2mth
         density,mattCoeff = G2mth.getDensity(self.data['General'])
         return density
-    
+
     @property
     def ranId(self):
         return self.data['ranId']
@@ -4406,11 +4400,11 @@ class G2Phase(G2ObjectWrapper):
         z = float(z)
         occ = float(occ)
         uiso = float(uiso)
-        
+
         generalData = self.data['General']
         atomData = self.data['Atoms']
         SGData = generalData['SGData']
-        
+
         atId = ran.randint(0,sys.maxsize)
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
 
@@ -4430,10 +4424,10 @@ class G2Phase(G2ObjectWrapper):
                 atomData.append([lbl,element,'',x,y,z,occ,0.,0.,0.,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId])
 
         SetupGeneral(self.data, None)
-        #self.proj.index_ids()  # needed? 
+        #self.proj.index_ids()  # needed?
         #self.proj.update_ids()  # needed?
         return self.atom(lbl)
-        
+
     def get_cell(self):
         """Returns a dictionary of the cell parameters, with keys:
             'length_a', 'length_b', 'length_c', 'angle_alpha', 'angle_beta', 'angle_gamma', 'volume'
@@ -4461,7 +4455,6 @@ class G2Phase(G2ObjectWrapper):
 
         """
         # translated from GSASIIfiles.ExportBaseclass.GetCell
-        import GSASIImapvars as G2mv
         try:
             pfx = str(self.id) + '::'
             sgdata = self['General']['SGData']
@@ -4496,10 +4489,8 @@ class G2Phase(G2ObjectWrapper):
         :param bool quickmode: Currently ignored. Carryover from exports.G2export_CIF"""
         # This code is all taken from exports/G2export_CIF.py
         # Functions copied have the same names
-        import GSASIImath as G2mth
-        import GSASIImapvars as G2mv
-        from exports import G2export_CIF as cif
 
+        from GSASII.exports import G2export_CIF as cif # delay as only needed here
 #        CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
         CIFname = os.path.splitext(self.proj.filename)[0]
         CIFname = os.path.split(CIFname)[1]
@@ -4604,7 +4595,7 @@ class G2Phase(G2ObjectWrapper):
         """Clears a given set of parameters.
 
         :param dict refs: The parameters to clear.
-          See the :ref:`Phase_parameters_table` table for what can be specified. 
+          See the :ref:`Phase_parameters_table` table for what can be specified.
         """
         for key, value in refs.items():
             if key == "Cell":
@@ -4631,21 +4622,21 @@ class G2Phase(G2ObjectWrapper):
                           the :ref:`HAP_parameters_table` table for a description of this
                           dictionary.
         :param histograms: Either 'all' (default) or a list of the histograms by index, name
-            or object. The index number is relative to all histograms in the tree, not to 
-            those in the phase. 
-            Histograms not associated with the current phase will be ignored. 
+            or object. The index number is relative to all histograms in the tree, not to
+            those in the phase.
+            Histograms not associated with the current phase will be ignored.
             whose HAP parameters will be set with this phase. Histogram and phase
-            must already be associated. 
+            must already be associated.
         :returns: None
         """
         if not self.data.get('Histograms',[]):
             G2fil.G2Print("Error likely: Phase {} has no linked histograms".format(self.name))
             return
-            
+
         if histograms == 'all':
             histograms = self.data['Histograms'].keys()
         else:
-            histograms = [self._decodeHist(h) for h in histograms 
+            histograms = [self._decodeHist(h) for h in histograms
                           if self._decodeHist(h) in self.data['Histograms']]
         if not histograms:
             G2fil.G2Print("Warning: Skipping HAP set for phase {}, no selected histograms".format(self.name))
@@ -4787,12 +4778,12 @@ class G2Phase(G2ObjectWrapper):
         the given histograms.
 
         :param dict refs: A dictionary of the parameters to be cleared.
-            See the the :ref:`HAP_parameters_table` table for what can be specified. 
+            See the the :ref:`HAP_parameters_table` table for what can be specified.
         :param histograms: Either 'all' (default) or a list of the histograms by index, name
-            or object. 
-            The index number is relative to all histograms in the tree, not to 
+            or object.
+            The index number is relative to all histograms in the tree, not to
             those in the phase.
-            Histograms not associated with the current phase will be ignored. 
+            Histograms not associated with the current phase will be ignored.
             whose HAP parameters will be set with this phase. Histogram and phase
             must already be associated
         :returns: None
@@ -4800,8 +4791,8 @@ class G2Phase(G2ObjectWrapper):
         if histograms == 'all':
             histograms = self.data['Histograms'].keys()
         else:
-            histograms = [self._decodeHist(h) for h in histograms 
-                          if self._decodeHist(h) in self.data['Histograms']]    
+            histograms = [self._decodeHist(h) for h in histograms
+                          if self._decodeHist(h) in self.data['Histograms']]
 
         for key, val in refs.items():
             for h in histograms:
@@ -4859,13 +4850,13 @@ class G2Phase(G2ObjectWrapper):
             return self.proj.histograms()[hist].name
         else:
             raise G2ScriptException("Invalid histogram reference: "+str(hist))
-        
+
     def getHAPvalues(self, histname):
         """Returns a dict with HAP values for the selected histogram
 
         :param histogram: is a histogram object (:class:`G2PwdrData`) or
             a histogram name or the index number of the histogram.
-            The index number is relative to all histograms in the tree, not to 
+            The index number is relative to all histograms in the tree, not to
             those in the phase.
         :returns: HAP value dict
         """
@@ -4876,23 +4867,23 @@ class G2Phase(G2ObjectWrapper):
         Use skip or use to select specific entries to be copied or not used.
 
         :param sourcehist: is a histogram object (:class:`G2PwdrData`) or
-            a histogram name or the index number of the histogram to copy 
+            a histogram name or the index number of the histogram to copy
             parameters from.
-            The index number is relative to all histograms in the tree, not to 
+            The index number is relative to all histograms in the tree, not to
             those in the phase.
         :param list targethistlist: a list of histograms where each item in the
-            list can be a histogram object (:class:`G2PwdrData`), 
+            list can be a histogram object (:class:`G2PwdrData`),
             a histogram name or the index number of the histogram.
-            If the string 'all' (default), then all histograms in the phase 
+            If the string 'all' (default), then all histograms in the phase
             are used.
-        :param list skip: items in the HAP dict that should not be 
+        :param list skip: items in the HAP dict that should not be
             copied. The default is an empty list, which causes all items
             to be copied. To see a list of items in the dict, use
             :meth:`getHAPvalues`.
             Don't use with :attr:`use`.
-        :param list use: specifies the items in the HAP dict should be 
+        :param list use: specifies the items in the HAP dict should be
             copied. The default is None, which causes all items
-            to be copied. 
+            to be copied.
             Don't use with :attr:`skip`.
 
         examples::
@@ -4900,16 +4891,16 @@ class G2Phase(G2ObjectWrapper):
             ph0.copyHAPvalues(0,[1,2,3])
             ph0.copyHAPvalues(0,use=['HStrain','Size'])
 
-        The first example copies all HAP parameters from the first histogram to 
-        the second, third and fourth histograms (as listed in the project tree). 
-        The second example copies only the 'HStrain' (Dij parameters and 
+        The first example copies all HAP parameters from the first histogram to
+        the second, third and fourth histograms (as listed in the project tree).
+        The second example copies only the 'HStrain' (Dij parameters and
         refinement flags) and the 'Size' (crystallite size settings, parameters
         and refinement flags) from the first histogram to all histograms.
         """
         sourcehist = self._decodeHist(sourcehist)
         if targethistlist == 'all':
             targethistlist = self.histograms()
-        
+
         copydict = copy.deepcopy(self.data['Histograms'][sourcehist])
         for item in skip:
             if item == 'PhaseFraction': item = 'Scale'
@@ -4935,25 +4926,25 @@ class G2Phase(G2ObjectWrapper):
                 G2fil.G2Print('Unexpected Warning: histogram {} not in phase {}'.format(h,self.name))
                 continue
             self.data['Histograms'][h].update(copy.deepcopy(copydict))
-            
+
     def setSampleProfile(self, histname, parmType, mode, val1, val2=None, axis=None, LGmix=None):
-        """Sets sample broadening parameters for a histogram associated with the 
-        current phase. This currently supports isotropic and uniaxial broadening 
-        modes only. 
+        """Sets sample broadening parameters for a histogram associated with the
+        current phase. This currently supports isotropic and uniaxial broadening
+        modes only.
 
         :param histogram: is a histogram object (:class:`G2PwdrData`) or
             a histogram name or the index number of the histogram.
-            The index number is relative to all histograms in the tree, not to 
+            The index number is relative to all histograms in the tree, not to
             those in the phase.
         :param str parmType: should be 'size' or 'microstrain' (can be abbreviated to 's' or 'm')
         :param str mode: should be 'isotropic' or 'uniaxial' (can be abbreviated to 'i' or 'u')
-        :param float val1: value for isotropic size (in :math:`\\mu m`) or  
+        :param float val1: value for isotropic size (in :math:`\\mu m`) or
            microstrain (unitless, :math:`\\Delta Q/Q \\times 10^6`) or the equatorial value in the uniaxial case
-        :param float val2: value for axial size (in :math:`\\mu m`) or  
-           axial microstrain (unitless, :math:`\\Delta Q/Q \\times 10^6`) 
-           in uniaxial case; not used for isotropic 
+        :param float val2: value for axial size (in :math:`\\mu m`) or
+           axial microstrain (unitless, :math:`\\Delta Q/Q \\times 10^6`)
+           in uniaxial case; not used for isotropic
         :param list axis: tuple or list with three values indicating the preferred direction
-          for uniaxial broadening; not used for isotropic 
+          for uniaxial broadening; not used for isotropic
         :param float LGmix: value for broadening type (1=Lorentzian, 0=Gaussian or a value
           between 0 and 1. Default value (None) is ignored.
 
@@ -4961,7 +4952,7 @@ class G2Phase(G2ObjectWrapper):
 
             phase0.setSampleProfile(0,'size','iso',1.2)
             phase0.setSampleProfile(0,'micro','isotropic',1234)
-            phase0.setSampleProfile(0,'m','u',1234,4567,[1,1,1],.5) 
+            phase0.setSampleProfile(0,'m','u',1234,4567,[1,1,1],.5)
             phase0.setSampleProfile(0,'s','uni',1.2,2.3,[0,0,1])
         """
         if parmType.lower().startswith('s'):
@@ -4986,45 +4977,45 @@ class G2Phase(G2ObjectWrapper):
             G2fil.G2Print('setSampleProfile Error: value for mode of {} is not isotropic or uniaxial'.
                               format(mode))
             raise Exception('Invalid parameter in setSampleProfile')
-        
+
         d = self.data['Histograms'][self._decodeHist(histname)][key]
         if iso:
             d[0] = 'isotropic'
             d[1][0] = float(val1)
             if LGmix is not None: d[1][2] = float(LGmix)
         else:
-            d[3] = [int(axis[0]),int(axis[1]),int(axis[2])]            
+            d[3] = [int(axis[0]),int(axis[1]),int(axis[2])]
             d[0] = 'uniaxial'
             d[1][0] = float(val1)
             d[1][1] = float(val2)
-            if LGmix is not None: d[1][2] = float(LGmix)            
+            if LGmix is not None: d[1][2] = float(LGmix)
 
     def HAPvalue(self, param=None, newValue=None, targethistlist='all'):
-        """Retrieves or sets individual HAP parameters for one histogram or 
+        """Retrieves or sets individual HAP parameters for one histogram or
         multiple histograms.
 
 
-        :param str param: is a parameter name, which can be 'Scale' or 
-          'PhaseFraction' (either can be used for phase 
-          fraction), 'Use', 'Extinction' or 'LeBail'. 
+        :param str param: is a parameter name, which can be 'Scale' or
+          'PhaseFraction' (either can be used for phase
+          fraction), 'Use', 'Extinction' or 'LeBail'.
           If not specified or invalid
           an exception is generated showing the list of valid parameters.
           At present, these HAP parameters cannot be access with this function:
           'Pref.Ori.', 'Size', 'Mustrain', 'HStrain', 'Babinet'. On request this
           might be addressed in the future. Some of these values can be set via
-          :meth:`G2Phase.set_HAP_refinements`. 
-        :param newValue: the value to use when setting the HAP parameter for the 
+          :meth:`G2Phase.set_HAP_refinements`.
+        :param newValue: the value to use when setting the HAP parameter for the
           appropriate histogram(s). Will be converted to the proper type or
-          an exception will be generated if not possible. If not specified, 
-          and only one histogram is selected, the value is retrieved and 
-          returned. 
+          an exception will be generated if not possible. If not specified,
+          and only one histogram is selected, the value is retrieved and
+          returned.
         :param list targethistlist: a list of histograms where each item in the
-            list can be a histogram object (:class:`G2PwdrData`), 
+            list can be a histogram object (:class:`G2PwdrData`),
             a histogram name or the index number of the histogram.
-            The index number is relative to all histograms in the tree, not to 
+            The index number is relative to all histograms in the tree, not to
             those in the phase.
-            If the string 'all' (default), then all histograms in the phase 
-            are used. 
+            If the string 'all' (default), then all histograms in the phase
+            are used.
 
             targethistlist must correspond to a single histogram if a value
             is to be returned (when argument newValue is not specified).
@@ -5040,10 +5031,10 @@ class G2Phase(G2ObjectWrapper):
             val = ph0.HAPvalue('PhaseFraction',targethistlist=[0])
             ph0.HAPvalue('Scale',2.5)
 
-        The first command returns the phase fraction if only one histogram 
-        is associated with the current phase, or raises an exception. 
-        The second command returns the phase fraction from the first histogram 
-        associated with the current phase. The third command sets the phase 
+        The first command returns the phase fraction if only one histogram
+        is associated with the current phase, or raises an exception.
+        The second command returns the phase fraction from the first histogram
+        associated with the current phase. The third command sets the phase
         fraction for all histograms associated with the current phase.
 
         """
@@ -5066,7 +5057,7 @@ class G2Phase(G2ObjectWrapper):
                 if s != '': s += ', '
                 s += f'"{i}"'
             raise G2ScriptException('Invalid parameter. Valid choices are: '+s)
-        if not doSet and len(targethistlist) > 1: 
+        if not doSet and len(targethistlist) > 1:
             raise G2ScriptException(f'Unable to report value from {len(targethistlist)} histograms')
         for h in targethistlist:
             h = self._decodeHist(h)
@@ -5074,7 +5065,7 @@ class G2Phase(G2ObjectWrapper):
                 G2fil.G2Print('Warning: histogram {} not in phase {}'.format(h,self.name))
                 continue
             if not doSet and useBool:
-                return self.data['Histograms'][h][param]        
+                return self.data['Histograms'][h][param]
             elif not doSet and useFloat:
                 return self.data['Histograms'][h][param][0]
             elif useBool:
@@ -5083,29 +5074,29 @@ class G2Phase(G2ObjectWrapper):
                 self.data['Histograms'][h][param][0] = float(newValue)
             else:
                 print('unexpected action')
-                
+
     def setHAPvalues(self, HAPdict, targethistlist='all', skip=[], use=None):
         """Copies HAP parameters for one histogram to a list of other histograms.
         Use skip or use to select specific entries to be copied or not used.
-        Note that ``HStrain`` and sometimes ``Mustrain`` values can be specific to 
-        a Laue class and should be copied with care between phases of different 
+        Note that ``HStrain`` and sometimes ``Mustrain`` values can be specific to
+        a Laue class and should be copied with care between phases of different
         symmetry. A "sanity check" on the number of Dij terms is made if ``HStrain``
         values are copied.
 
-        :param dict HAPdict: is a dict returned by :meth:`getHAPvalues` containing 
+        :param dict HAPdict: is a dict returned by :meth:`getHAPvalues` containing
             HAP parameters.
         :param list targethistlist: a list of histograms where each item in the
-            list can be a histogram object (:class:`G2PwdrData`), 
+            list can be a histogram object (:class:`G2PwdrData`),
             a histogram name or the index number of the histogram.
-            The index number is relative to all histograms in the tree, not to 
+            The index number is relative to all histograms in the tree, not to
             those in the phase.
-            If the string 'all' (default), then all histograms in the phase 
+            If the string 'all' (default), then all histograms in the phase
             are used.
-        :param list skip: items in the HAP dict that should not be 
+        :param list skip: items in the HAP dict that should not be
             copied. The default is an empty list, which causes all items
             to be copied. To see a list of items in the dict, use
             :meth:`getHAPvalues`. Don't use with :attr:`use`.
-        :param list use: specifies the items in the HAP dict should be 
+        :param list use: specifies the items in the HAP dict should be
             copied. The default is None, which causes all items
             to be copied. Don't use with :attr:`skip`.
 
@@ -5114,9 +5105,9 @@ class G2Phase(G2ObjectWrapper):
             HAPdict = ph0.getHAPvalues(0)
             ph1.setHAPvalues(HAPdict,use=['HStrain','Size'])
 
-        This copies the Dij (hydrostatic strain) HAP parameters and the 
-        crystallite size broadening terms from the first histogram in 
-        phase ``ph0`` to all histograms in phase ``ph1``. 
+        This copies the Dij (hydrostatic strain) HAP parameters and the
+        crystallite size broadening terms from the first histogram in
+        phase ``ph0`` to all histograms in phase ``ph1``.
         """
         if targethistlist == 'all':
             targethistlist = self.histograms()
@@ -5149,19 +5140,19 @@ class G2Phase(G2ObjectWrapper):
                                   format(len(copydict['HStrain'][0]),
                                         self.name,len(self.data['Histograms'][h]['HStrain'][0])))
                         raise Exception('HStrain has differing numbers of terms.')
-            self.data['Histograms'][h].update(copy.deepcopy(copydict))            
+            self.data['Histograms'][h].update(copy.deepcopy(copydict))
         G2fil.G2Print('Copied item(s) {} from dict'.format(list(copydict.keys())))
         G2fil.G2Print(' to histogram(s) {}'.format([self._decodeHist(h) for h in targethistlist]))
 
     def getPhaseEntryList(self, keyname=''):
-        """Returns a dict with control values. 
+        """Returns a dict with control values.
 
         :param str keyname: an optional string. When supplied only entries
           where at least one key contains the specified string are reported.
-          Case is ignored, so 'sg' will find entries where one of the keys 
-          is 'SGdata', etc. 
-        :returns: a set of phase dict keys. Note that HAP items, while 
-          technically part of the phase entries, are not included. 
+          Case is ignored, so 'sg' will find entries where one of the keys
+          is 'SGdata', etc.
+        :returns: a set of phase dict keys. Note that HAP items, while
+          technically part of the phase entries, are not included.
 
         See :meth:`getHAPentryList` for a related example.
 
@@ -5173,14 +5164,14 @@ class G2Phase(G2ObjectWrapper):
         return [i for i in dictDive(self.data,keyname) if i[0] != ['Histograms']]
 
     def getPhaseEntryValue(self, keylist):
-        """Returns the value associated with a list of keys. 
-        Where the value returned is a list, it may be used as the target of 
-        an assignment (as in 
-        ``getPhaseEntryValue(...)[...] = val``) 
-        to set a value inside a list.        
+        """Returns the value associated with a list of keys.
+        Where the value returned is a list, it may be used as the target of
+        an assignment (as in
+        ``getPhaseEntryValue(...)[...] = val``)
+        to set a value inside a list.
 
-        :param list keylist: a list of dict keys, typically as returned by 
-          :meth:`getPhaseEntryList`. 
+        :param list keylist: a list of dict keys, typically as returned by
+          :meth:`getPhaseEntryList`.
 
         :returns: a phase setting; may be a int, float, bool, list,...
 
@@ -5193,13 +5184,13 @@ class G2Phase(G2ObjectWrapper):
         return d
 
     def setPhaseEntryValue(self, keylist, newvalue):
-        """Sets a phase control value associated with a list of keys. 
+        """Sets a phase control value associated with a list of keys.
 
-        :param list keylist: a list of dict keys, typically as returned by 
-          :meth:`getPhaseEntryList`. 
+        :param list keylist: a list of dict keys, typically as returned by
+          :meth:`getPhaseEntryList`.
 
         :param newvalue: a new value for the phase setting. The type must be
-          the same as the initial value, but if the value is a container 
+          the same as the initial value, but if the value is a container
           (list, tuple, np.array,...) the elements inside are not checked.
 
         See :meth:`setHAPentryValue` for a related example.
@@ -5213,23 +5204,23 @@ class G2Phase(G2ObjectWrapper):
             dlast = d
             d = d[key]
         dlast[key] = newvalue
-        
+
     def getHAPentryList(self, histname=None, keyname=''):
-        """Returns a dict with HAP values. Optionally a histogram 
+        """Returns a dict with HAP values. Optionally a histogram
         may be selected.
 
         :param histname: is a histogram object (:class:`G2PwdrData`) or
             a histogram name or the index number of the histogram.
-            The index number is relative to all histograms in the tree, not to 
-            those in the phase. If no histogram is specified, all histograms 
-            are selected. 
+            The index number is relative to all histograms in the tree, not to
+            those in the phase. If no histogram is specified, all histograms
+            are selected.
         :param str keyname: an optional string. When supplied only entries
           where at least one key contains the specified string are reported.
-          Case is ignored, so 'sg' will find entries where one of the keys 
-          is 'SGdata', etc. 
-        :returns: a set of HAP dict keys. 
+          Case is ignored, so 'sg' will find entries where one of the keys
+          is 'SGdata', etc.
+        :returns: a set of HAP dict keys.
 
-        Example: 
+        Example:
 
         >>> p.getHAPentryList(0,'Scale')
         [(['PWDR test Bank 1', 'Scale'], list, [1.0, False])]
@@ -5247,18 +5238,18 @@ class G2Phase(G2ObjectWrapper):
 
     def getHAPentryValue(self, keylist):
         """Returns the HAP value associated with a list of keys. Where the
-        value returned is a list, it may be used as the target of 
-        an assignment (as in 
-        ``getHAPentryValue(...)[...] = val``) 
+        value returned is a list, it may be used as the target of
+        an assignment (as in
+        ``getHAPentryValue(...)[...] = val``)
         to set a value inside a list.
 
-        :param list keylist: a list of dict keys, typically as returned by 
-          :meth:`getHAPentryList`. Note the first entry is a histogram name. 
+        :param list keylist: a list of dict keys, typically as returned by
+          :meth:`getHAPentryList`. Note the first entry is a histogram name.
           Example: ``['PWDR hist1.fxye Bank 1', 'Scale']``
 
         :returns: HAP value
 
-        Example: 
+        Example:
 
         >>> sclEnt = p.getHAPentryList(0,'Scale')[0]
         >>> sclEnt
@@ -5276,17 +5267,17 @@ class G2Phase(G2ObjectWrapper):
         return d
 
     def setHAPentryValue(self, keylist, newvalue):
-        """Sets an HAP value associated with a list of keys. 
+        """Sets an HAP value associated with a list of keys.
 
-        :param list keylist: a list of dict keys, typically as returned by 
-          :meth:`getHAPentryList`. Note the first entry is a histogram name. 
+        :param list keylist: a list of dict keys, typically as returned by
+          :meth:`getHAPentryList`. Note the first entry is a histogram name.
           Example: ``['PWDR hist1.fxye Bank 1', 'Scale']``
 
         :param newvalue: a new value for the HAP setting. The type must be
-          the same as the initial value, but if the value is a container 
+          the same as the initial value, but if the value is a container
           (list, tuple, np.array,...) the elements inside are not checked.
 
-        Example: 
+        Example:
 
         >>> sclEnt = p.getHAPentryList(0,'Scale')[0]
         >>> p.getHAPentryValue(sclEnt[0])
@@ -5341,23 +5332,23 @@ class G2Phase(G2ObjectWrapper):
         '''Adds bond distance restraint(s) for the selected phase
 
         This works by search for interatomic distances between atoms in the
-        origin list and the target list (the two lists may be the same but most 
+        origin list and the target list (the two lists may be the same but most
         frequently will not) with a length between bond/factor and bond*factor.
         If a distance is found in that range, it is added to the restraints
         if it was not already found.
 
-        :param list origin: a list of atoms, each atom may be an atom 
+        :param list origin: a list of atoms, each atom may be an atom
            object, an index or an atom label
-        :param list target: a list of atoms, each atom may be an atom 
+        :param list target: a list of atoms, each atom may be an atom
            object, an index or an atom label
         :param float bond: the target bond length in A for the located atom
-        :param float factor: a tolerance factor used when searching for 
+        :param float factor: a tolerance factor used when searching for
            bonds (defaults to 1.1)
         :param float ESD: the uncertainty for the bond (defaults to 0.01)
 
         :returns: returns the number of new restraints that are found
 
-        As an example:: 
+        As an example::
 
             gpx = G2sc.G2Project('restr.gpx')
             ph = gpx.phases()[0]
@@ -5370,19 +5361,18 @@ class G2Phase(G2ObjectWrapper):
             gpx.save('restr-mod.gpx')
 
         This example locates the first phase in a project file, clears any previous
-        restraints. Then it places restraints on bonds between Si and O atoms at 
-        1.64 A. Each restraint is weighted 1000 times in comparison to 
-        (obs-calc)/sigma for a data point. To show how atom selection can 
-        work, the origin atoms are identified here 
-        by atom object while the target atoms are identified by atom index. 
+        restraints. Then it places restraints on bonds between Si and O atoms at
+        1.64 A. Each restraint is weighted 1000 times in comparison to
+        (obs-calc)/sigma for a data point. To show how atom selection can
+        work, the origin atoms are identified here
+        by atom object while the target atoms are identified by atom index.
         The methods are interchangeable. If atom labels are unique, then::
 
            origin = [a.label for a in ph.atoms() if a.element == 'Si']
-        
-        would also work identically. 
+
+        would also work identically.
 
         '''
-        import GSASIImath as G2mth
         bondRestData = self._getBondRest('addDistRestraint')
         originList = []
         for a in origin:
@@ -5414,7 +5404,7 @@ class G2Phase(G2ObjectWrapper):
                 raise G2ScriptException(
                     f'addDistRestraint error: Target atom input {a} has unknown type ({type(a)})')
             targetList.append([ao.ranId, ao.element, list(ao.coordinates)])
-                    
+
         GType = self.data['General']['Type']
         SGData = self.data['General']['SGData']
         Amat,Bmat = G2lat.cell2AB(self.data['General']['Cell'][1:7])
@@ -5425,17 +5415,16 @@ class G2Phase(G2ObjectWrapper):
                 count += 1
                 bondRestData['Bonds'].append(newBond)
         return count
-    
+
 class G2SeqRefRes(G2ObjectWrapper):
-    '''Wrapper for a Sequential Refinement Results tree entry, containing the 
+    '''Wrapper for a Sequential Refinement Results tree entry, containing the
     results for a refinement
 
-    Scripts should not try to create a :class:`G2SeqRefRes` object directly as 
-    this object will be created when a .gpx project file is read. 
+    Scripts should not try to create a :class:`G2SeqRefRes` object directly as
+    this object will be created when a .gpx project file is read.
 
-    As an example:: 
+    As an example::
 
-        from __future__ import division, print_function
         import os,sys
         sys.path.insert(0,'/Users/toby/software/G2/GSASII')
         PathWrap = lambda fil: os.path.join('/Users/toby/Scratch/SeqTut2019Mar',fil)
@@ -5481,15 +5470,15 @@ class G2SeqRefRes(G2ObjectWrapper):
         :param phase: A phase, which may be specified as a phase object
           (see :class:`G2Phase`), the phase name (str) or the index number (int)
           of the phase in the project, numbered starting from 0.
-        :param hist: Specify a histogram or using the histogram name (str) 
-          or the index number (int) of the histogram in the sequential 
+        :param hist: Specify a histogram or using the histogram name (str)
+          or the index number (int) of the histogram in the sequential
           refinement (not the project), numbered as in in the project tree
           starting from 0.
-        :returns: cell,cellESD,uniqCellIndx where cell (list) 
+        :returns: cell,cellESD,uniqCellIndx where cell (list)
           with the unit cell parameters (a,b,c,alpha,beta,gamma,Volume);
-          cellESD are the standard uncertainties on the 7 unit cell 
-          parameters; and uniqCellIndx is a tuple with indicies for the 
-          unique (non-symmetry determined) unit parameters (e.g. 
+          cellESD are the standard uncertainties on the 7 unit cell
+          parameters; and uniqCellIndx is a tuple with indicies for the
+          unique (non-symmetry determined) unit parameters (e.g.
           [0,2] for a,c in a tetragonal cell)
         '''
         def striphist(var,insChar=''):
@@ -5499,8 +5488,7 @@ class G2SeqRefRes(G2ObjectWrapper):
             if sv[1]:
                 sv[1] = insChar
             return ':'.join(sv)
-        import GSASIIstrIO as G2stIO
-        
+
         uniqCellLookup = [
         [['m3','m3m'],(0,)],
         [['3R','3mR'],(0,3)],
@@ -5557,29 +5545,29 @@ class G2SeqRefRes(G2ObjectWrapper):
                 A[i] += seqData['parmDict'][Dvar]
             # override with fit result if is Dij varied
             try:
-                A[i] = seqData['newCellDict'][esdLookUp[var]][1] # get refined value 
+                A[i] = seqData['newCellDict'][esdLookUp[var]][1] # get refined value
             except KeyError:
                 pass
         Albls = [pfx+'A'+str(i) for i in range(6)]
         cellDict = dict(zip(Albls,A))
 
-        
+
         A,zeros = G2stIO.cellFill(pfx,SGdata,cellDict,zeroDict)
         # convert to direct cell
         c = G2lat.A2cell(A)
         vol = G2lat.calc_V(A)
         cE = G2stIO.getCellEsd(pfx,SGdata,A,covData)
         return list(c)+[vol],cE,uniqCellIndx
-    
+
     def get_VaryList(self,hist):
-        '''Returns a list of the refined variables in the 
+        '''Returns a list of the refined variables in the
         last refinement cycle for the selected histogram
 
-        :param hist: Specify a histogram or using the histogram name (str) 
-          or the index number (int) of the histogram in the sequential 
+        :param hist: Specify a histogram or using the histogram name (str)
+          or the index number (int) of the histogram in the sequential
           refinement (not the project), numbered starting from 0.
         :returns: a list of variables or None if no refinement has been
-          performed. 
+          performed.
         '''
         try:
             seqData,histData = self.RefData(hist)
@@ -5588,15 +5576,15 @@ class G2SeqRefRes(G2ObjectWrapper):
             return
 
     def get_ParmList(self,hist):
-        '''Returns a list of all the parameters defined in the 
+        '''Returns a list of all the parameters defined in the
         last refinement cycle for the selected histogram
 
-        :param hist: Specify a histogram or using the histogram name (str) 
-          or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered as in the project tree 
+        :param hist: Specify a histogram or using the histogram name (str)
+          or the index number (int) of the histogram in the sequential
+          refinement (not the project), numbered as in the project tree
           starting from 0.
         :returns: a list of parameters or None if no refinement has been
-          performed. 
+          performed.
         '''
         try:
             seqData,histData = self.RefData(hist)
@@ -5605,19 +5593,19 @@ class G2SeqRefRes(G2ObjectWrapper):
             return
 
     def get_Variable(self,hist,var):
-        '''Returns the value and standard uncertainty (esd) for a variable 
-        parameters, as defined for the selected histogram 
+        '''Returns the value and standard uncertainty (esd) for a variable
+        parameters, as defined for the selected histogram
         in the last sequential refinement cycle
 
-        :param hist: Specify a histogram or using the histogram name (str) 
-          or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered as in the project tree 
+        :param hist: Specify a histogram or using the histogram name (str)
+          or the index number (int) of the histogram in the sequential
+          refinement (not the project), numbered as in the project tree
           starting from 0.
-        :param str var: a variable name of form '<p>:<h>:<name>', such as 
+        :param str var: a variable name of form '<p>:<h>:<name>', such as
           ':0:Scale'
-        :returns: (value,esd) if the parameter is refined or 
-          (value, None) if the variable is in a constraint or is not 
-          refined or None if the parameter is not found. 
+        :returns: (value,esd) if the parameter is refined or
+          (value, None) if the variable is in a constraint or is not
+          refined or None if the parameter is not found.
         '''
         try:
             seqData,histData = self.RefData(hist)
@@ -5632,22 +5620,22 @@ class G2SeqRefRes(G2ObjectWrapper):
             return (val,None)
 
     def get_Covariance(self,hist,varList):
-        '''Returns the values and covariance matrix for a series of variable 
-        parameters, as defined for the selected histogram 
+        '''Returns the values and covariance matrix for a series of variable
+        parameters, as defined for the selected histogram
         in the last sequential refinement cycle
 
-        :param hist: Specify a histogram or using the histogram name (str) 
-          or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered as in the project tree 
+        :param hist: Specify a histogram or using the histogram name (str)
+          or the index number (int) of the histogram in the sequential
+          refinement (not the project), numbered as in the project tree
           starting from 0.
         :param tuple varList: a list of variable names of form '<p>:<h>:<name>'
         :returns: (valueList,CovMatrix) where valueList contains the (n) values
-          in the same order as varList (also length n) and CovMatrix is a 
+          in the same order as varList (also length n) and CovMatrix is a
           (n x n) matrix. If any variable name is not found in the varyList
-          then None is returned. 
+          then None is returned.
 
-        Use this code, where sig provides standard uncertainties for 
-        parameters and where covArray provides the correlation between 
+        Use this code, where sig provides standard uncertainties for
+        parameters and where covArray provides the correlation between
         off-diagonal terms::
 
             sig = np.sqrt(np.diag(covMatrix))
@@ -5665,19 +5653,18 @@ class G2SeqRefRes(G2ObjectWrapper):
             G2fil.G2Print('Warning: Variable(s) {} were not found in the varyList'.format(missing))
             return None
         vals = [seqData['parmDict'][i] for i in varList]
-        import GSASIImath as G2mth
         cov = G2mth.getVCov(varList,seqData['varyList'],seqData['covMatrix'])
         return (vals,cov)
-    
+
     def RefData(self,hist):
         '''Provides access to the output from a particular histogram
 
-        :param hist: Specify a histogram or using the histogram name (str) 
-          or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered as in the project tree 
+        :param hist: Specify a histogram or using the histogram name (str)
+          or the index number (int) of the histogram in the sequential
+          refinement (not the project), numbered as in the project tree
           starting from 0.
-        :returns: a list of dicts where the first element has sequential 
-          refinement results and the second element has the contents of 
+        :returns: a list of dicts where the first element has sequential
+          refinement results and the second element has the contents of
           the histogram tree items.
         '''
         try:
@@ -5693,10 +5680,10 @@ class G2SeqRefRes(G2ObjectWrapper):
         return self.data[hist],self.proj.histogram(hist).data
 
 class G2PDF(G2ObjectWrapper):
-    """Wrapper for a PDF tree entry, containing the information needed to 
-    compute a PDF and the S(Q), G(r) etc. after the computation is done. 
-    Note that in a GSASIIscriptable script, instances of G2PDF will be created by 
-    calls to :meth:`G2Project.add_PDF` or :meth:`G2Project.pdf`. 
+    """Wrapper for a PDF tree entry, containing the information needed to
+    compute a PDF and the S(Q), G(r) etc. after the computation is done.
+    Note that in a GSASIIscriptable script, instances of G2PDF will be created by
+    calls to :meth:`G2Project.add_PDF` or :meth:`G2Project.pdf`.
     Scripts should not try to create a :class:`G2PDF` object directly.
 
     Example use of :class:`G2PDF`::
@@ -5722,18 +5709,18 @@ class G2PDF(G2ObjectWrapper):
         '''Sets a histogram to be used as the 'Sample Background',
         the 'Container' or the 'Container Background.'
 
-        :param str btype: Type of background to set, must contain 
-          the string 'samp' for Sample Background', 'cont' and 'back' 
-          for the 'Container Background' or only 'cont' for the 
-          'Container'. Note that capitalization and extra characters 
-          are ignored, so the full strings (such as 'Sample 
+        :param str btype: Type of background to set, must contain
+          the string 'samp' for Sample Background', 'cont' and 'back'
+          for the 'Container Background' or only 'cont' for the
+          'Container'. Note that capitalization and extra characters
+          are ignored, so the full strings (such as 'Sample
           Background' & 'Container Background') can be used.
-        
+
         :param histogram: A reference to a histogram,
           which can be reference by object, name, or number.
-        :param float mult: a multiplier for the histogram; defaults 
+        :param float mult: a multiplier for the histogram; defaults
           to -1.0
-        :param bool refine: a flag to enable refinement (only 
+        :param bool refine: a flag to enable refinement (only
           implemented for 'Sample Background'); defaults to False
         '''
         if 'samp' in btype.lower():
@@ -5749,7 +5736,7 @@ class G2PDF(G2ObjectWrapper):
         self.data['PDF Controls'][key]['Refine'] = refine
 
     def set_formula(self,*args):
-        '''Set the chemical formula for the PDF computation. 
+        '''Set the chemical formula for the PDF computation.
         Use pdf.set_formula(['Si',1],['O',2]) for SiO2.
 
         :param list item1: The element symbol and number of atoms in formula for first element
@@ -5768,30 +5755,30 @@ class G2PDF(G2ObjectWrapper):
             Avol = (4.*np.pi/3.)*ElList[elem]['Drad']**3
             sumVol += Avol*ElList[elem]['FormulaNo']
         self.data['PDF Controls']['Form Vol'] = max(10.0,sumVol)
-        
+
     def calculate(self,xydata=None,limits=None,inst=None):
         '''Compute the PDF using the current parameters. Results are set
-        in the PDF object arrays (self.data['PDF Controls']['G(R)'] etc.). 
+        in the PDF object arrays (self.data['PDF Controls']['G(R)'] etc.).
         Note that if ``xydata``, is specified, the background histograms(s)
-        will not be accessed from the project file associated with the current 
+        will not be accessed from the project file associated with the current
         PDF entry. If ``limits`` and ``inst`` are both specified, no histograms
         need be in the current project. However, the self.data['PDF Controls']
-        sections ('Sample', 'Sample Bkg.','Container Bkg.') must be  
+        sections ('Sample', 'Sample Bkg.','Container Bkg.') must be
         non-blank for the corresponding items to be used from``xydata``.
 
-        :param dict xydata: an array containing the Sample's I vs Q, and 
-          any or none of the Sample Background, the Container scattering and 
+        :param dict xydata: an array containing the Sample's I vs Q, and
+          any or none of the Sample Background, the Container scattering and
           the Container Background. If xydata is None (default), the values are
           taken from histograms, as named in the PDF's self.data['PDF Controls']
-          entries with keys 'Sample', 'Sample Bkg.','Container Bkg.' & 
+          entries with keys 'Sample', 'Sample Bkg.','Container Bkg.' &
           'Container'.
-        :param list limits: upper and lower Q values to be used for PDF 
+        :param list limits: upper and lower Q values to be used for PDF
           computation. If None (default), the values are
-          taken from the Sample histogram's .data['Limits'][1] values. 
+          taken from the Sample histogram's .data['Limits'][1] values.
         :param dict inst: The Sample histogram's instrument parameters
           to be used for PDF computation. If None (default), the values are
           taken from the Sample histogram's .data['Instrument Parameters'][0]
-          values. 
+          values.
         '''
         data = self.data['PDF Controls']
         if xydata is None:
@@ -5815,32 +5802,32 @@ class G2PDF(G2ObjectWrapper):
 
     def optimize(self,showFit=True,maxCycles=5,
                      xydata=None,limits=None,inst=None):
-        '''Optimize the low R portion of G(R) to minimize selected 
-        parameters. Note that this updates the parameters in the settings 
-        (self.data['PDF Controls']) but does not update the PDF object 
-        arrays (self.data['PDF Controls']['G(R)'] etc.) with the computed 
-        values, use :meth:`calculate` after a fit to do that. 
+        '''Optimize the low R portion of G(R) to minimize selected
+        parameters. Note that this updates the parameters in the settings
+        (self.data['PDF Controls']) but does not update the PDF object
+        arrays (self.data['PDF Controls']['G(R)'] etc.) with the computed
+        values, use :meth:`calculate` after a fit to do that.
 
         :param bool showFit: if True (default) the optimized parameters
-          are shown before and after the fit, as well as the RMS value 
+          are shown before and after the fit, as well as the RMS value
           in the minimized region.
         :param int maxCycles: the maximum number of least-squares cycles;
-          defaults to 5. 
-        :returns: the result from the optimizer as True or False, depending 
+          defaults to 5.
+        :returns: the result from the optimizer as True or False, depending
           on if the refinement converged.
-        :param dict xydata: an array containing the Sample's I vs Q, and 
-          any or none of the Sample Background, the Container scattering and 
+        :param dict xydata: an array containing the Sample's I vs Q, and
+          any or none of the Sample Background, the Container scattering and
           the Container Background. If xydata is None (default), the values are
           taken from histograms, as named in the PDF's self.data['PDF Controls']
-          entries with keys 'Sample', 'Sample Bkg.','Container Bkg.' & 
+          entries with keys 'Sample', 'Sample Bkg.','Container Bkg.' &
           'Container'.
-        :param list limits: upper and lower Q values to be used for PDF 
+        :param list limits: upper and lower Q values to be used for PDF
           computation. If None (default), the values are
-          taken from the Sample histogram's .data['Limits'][1] values. 
+          taken from the Sample histogram's .data['Limits'][1] values.
         :param dict inst: The Sample histogram's instrument parameters
           to be used for PDF computation. If None (default), the values are
           taken from the Sample histogram's .data['Instrument Parameters'][0]
-          values. 
+          values.
         '''
         data = self.data['PDF Controls']
         if xydata is None:
@@ -5858,17 +5845,17 @@ class G2PDF(G2ObjectWrapper):
 
         res = G2pwd.OptimizePDF(data,xydata,limits,inst,showFit,maxCycles)
         return res['success']
-        
+
     def export(self,fileroot,formats):
         '''Write out the PDF-related data (G(r), S(Q),...) into files
 
-        :param str fileroot: name of file(s) to be written. The extension 
-          will be ignored and set to .iq, .sq, .fq or .gr depending 
+        :param str fileroot: name of file(s) to be written. The extension
+          will be ignored and set to .iq, .sq, .fq or .gr depending
           on the formats selected.
         :param str formats: string specifying the file format(s) to be written,
           should contain at least one of the following keywords:
           I(Q), S(Q), F(Q), G(r) and/or PDFgui (capitalization and
-          punctuation is ignored). Note that G(r) and PDFgui should not 
+          punctuation is ignored). Note that G(r) and PDFgui should not
           be specifed together.
         '''
         PDFsaves = 5*[False]
@@ -5882,14 +5869,14 @@ class G2PDF(G2ObjectWrapper):
 
 class G2Single(G2ObjectWrapper):
     """Wrapper for a HKLF tree entry, containing a single crystal histogram
-    Note that in a GSASIIscriptable script, instances of G2Single will be 
-    created by calls to :meth:`G2Project.histogram`, 
+    Note that in a GSASIIscriptable script, instances of G2Single will be
+    created by calls to :meth:`G2Project.histogram`,
     :meth:`G2Project.histograms`, or :meth:`G2Project.add_single_histogram`.
     Scripts should not try to create a :class:`G2Single` object directly.
 
     This object contains these class variables:
         * G2Single.proj: contains a reference to the :class:`G2Project`
-          object that contains this histogram 
+          object that contains this histogram
         * G2Single.name: contains the name of the histogram
         * G2Single.data: contains the histogram's associated data in a dict,
           as documented for the :ref:`Single Crystal Tree Item<Xtal_table>`.
@@ -5901,7 +5888,7 @@ class G2Single(G2ObjectWrapper):
         gpx0.add_single_histogram('HTO_xray/xtal1/xs2555a.hkl',0,fmthint='Shelx HKLF 4')
         gpx0.save('HTO_scripted.gpx')
 
-    This opens an existing GSAS-II project file and adds a single 
+    This opens an existing GSAS-II project file and adds a single
     crystal dataset that is linked to the first phase and saves it
     under a new name.
 
@@ -5915,17 +5902,17 @@ class G2Single(G2ObjectWrapper):
         self.data = data
         self.name = name
         self.proj = proj
-        
+
     @staticmethod
     def is_valid_refinement_key(key):
         valid_keys = ["Single xtal"]
         return key in valid_keys
-    
+
     def set_refinements(self, refs):
-        """Sets the HKLF histogram refinement parameter 'key' to the 
+        """Sets the HKLF histogram refinement parameter 'key' to the
         specification 'value'.
 
-        :param dict refs: A dictionary of the parameters to be set. See the 
+        :param dict refs: A dictionary of the parameters to be set. See the
                           :ref:`Histogram_parameters_table` table for a description of
                           what these dictionaries should be.
 
@@ -5947,23 +5934,23 @@ class G2Single(G2ObjectWrapper):
             elif key in d['Babinet']:  # BabA & BabU
                 d['Babinet'][key][1] = value
             elif key in d['Extinction'][2]:  # Eg, Es, Ep
-                d['Extinction'][2][key][1] = value        
+                d['Extinction'][2][key][1] = value
             else:
                 raise ValueError(f'set_refinements: {key} is unknown')
-        
+
     def clear_refinements(self, refs):
         """Clears the HKLF refinement parameter 'key' and its associated value.
 
         :param dict refs: A dictionary of parameters to clear.
-          See the :ref:`Histogram_parameters_table` table for what can be specified. 
+          See the :ref:`Histogram_parameters_table` table for what can be specified.
 
         Example::
 
             hist.clear_refinements(['Scale','Es','Flack'])
             hist.clear_refinements({'Scale':True,'Es':False,'Flack':True})
 
-        Note that the two above commands are equivalent: the values specified 
-        in the dict in the second command are ignored. 
+        Note that the two above commands are equivalent: the values specified
+        in the dict in the second command are ignored.
         """
         # find the phase associated with this histogram (there is at most one)
         for p in self.proj.phases():
@@ -5982,18 +5969,18 @@ class G2Single(G2ObjectWrapper):
                 d['Extinction'][2][key][1] = False
             else:
                 raise ValueError(f'clear_refinements: {key} is unknown')
-            
+
     def Export(self,fileroot,extension,fmthint=None):
-        '''Write the HKLF histogram into a file. The path is specified by 
+        '''Write the HKLF histogram into a file. The path is specified by
         fileroot and extension.
-        
+
         :param str fileroot: name of the file, optionally with a path (extension is
            ignored)
         :param str extension: includes '.', must match an extension in global
            exportersByExtension['single'] or a Exception is raised.
-        :param str fmthint: If specified, the first exporter where the format 
+        :param str fmthint: If specified, the first exporter where the format
            name (obj.formatName, as shown in Export menu) contains the
-           supplied string will be used. If not specified, an error 
+           supplied string will be used. If not specified, an error
            will be generated showing the possible choices.
         :returns: name of file that was written
         '''
@@ -6024,42 +6011,42 @@ class G2Single(G2ObjectWrapper):
         return fil
 
 blkSize = 128
-'''Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses 
+'''Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses
 less memory, must be <=1024 (for polymask/histogram3d)
 '''
 
 def calcMaskMap(imgprms,mskprms):
-    '''Computes a set of blocked mask arrays for a set of image controls and mask parameters. 
+    '''Computes a set of blocked mask arrays for a set of image controls and mask parameters.
     This capability is also provided with :meth:`G2Image.IntMaskMap`.
     '''
     return G2img.MakeUseMask(imgprms,mskprms,blkSize)
 
 def calcThetaAzimMap(imgprms):
-    '''Computes the set of blocked arrays for theta-azimuth mapping from 
-    a set of image controls, which can be cached and reused for  
-    integration of multiple images with the same calibration parameters. 
+    '''Computes the set of blocked arrays for theta-azimuth mapping from
+    a set of image controls, which can be cached and reused for
+    integration of multiple images with the same calibration parameters.
     This capability is also provided with :meth:`G2Image.IntThetaAzMap`.
     '''
     return G2img.MakeUseTA(imgprms,blkSize)
 
 class G2Image(G2ObjectWrapper):
-    '''Wrapper for an IMG tree entry, containing an image and associated metadata. 
+    '''Wrapper for an IMG tree entry, containing an image and associated metadata.
 
-    Note that in a GSASIIscriptable script, instances of G2Image will be created by 
-    calls to :meth:`G2Project.add_image` or :meth:`G2Project.images`. 
-    Scripts should not try to create a :class:`G2Image` object directly as 
+    Note that in a GSASIIscriptable script, instances of G2Image will be created by
+    calls to :meth:`G2Project.add_image` or :meth:`G2Project.images`.
+    Scripts should not try to create a :class:`G2Image` object directly as
     :meth:`G2Image.__init__` should be invoked from inside :class:`G2Project`.
 
     The object contains these class variables:
 
         * G2Image.proj: contains a reference to the :class:`G2Project`
-          object that contains this image 
+          object that contains this image
         * G2Image.name: contains the name of the image
         * G2Image.data: contains the image's associated data in a dict,
           as documented for the :ref:`Image Data Structure<Image_table>`.
-        * G2Image.image: optionally contains a cached the image to 
+        * G2Image.image: optionally contains a cached the image to
           save time in reloading. This is saved only when cacheImage=True
-          is specified when :meth:`G2Project.add_image` is called. 
+          is specified when :meth:`G2Project.add_image` is called.
 
     Example use of G2Image:
 
@@ -6071,8 +6058,8 @@ class G2Image(G2ObjectWrapper):
     >>> imlst[0].Recalibrate()
     >>> imlst[0].setControl('outAzimuths',3)
     >>> pwdrList = imlst[0].Integrate()
- 
-    More detailed image processing examples are shown in the 
+
+    More detailed image processing examples are shown in the
     :ref:`ImageProc` section of this chapter.
 
     '''
@@ -6092,14 +6079,14 @@ class G2Image(G2ObjectWrapper):
                     'pixelSize', 'range', 'ring', 'rings', 'size', ],
         'dict': ['varyList'],
         }
-    '''Defines the items known to exist in the Image Controls tree section 
+    '''Defines the items known to exist in the Image Controls tree section
     and the item's data types. A few are not included here
     ('background image', 'dark image', 'Gain map', and 'calibrant') because
     these items have special set routines,
     where references to entries are checked to make sure their values are
     correct.
-    ''' 
-        
+    '''
+
     def __init__(self, data, name, proj, image=None):
         self.data = data
         self.name = name
@@ -6110,15 +6097,15 @@ class G2Image(G2ObjectWrapper):
         '''Clears a cached image, if one is present
         '''
         self.image = None
-        
+
     def setControl(self,arg,value):
         '''Set an Image Controls parameter in the current image.
         If the parameter is not found an exception is raised.
 
-        :param str arg: the name of a parameter (dict entry) in the 
+        :param str arg: the name of a parameter (dict entry) in the
           image. The parameter must be found in :data:`ControlList`
           or an exception is raised.
-        :param value: the value to set the parameter. The value is 
+        :param value: the value to set the parameter. The value is
           cast as the appropriate type from :data:`ControlList`.
         '''
         for typ in self.ControlList:
@@ -6151,8 +6138,8 @@ class G2Image(G2ObjectWrapper):
         '''Return an Image Controls parameter in the current image.
         If the parameter is not found an exception is raised.
 
-        :param str arg: the name of a parameter (dict entry) in the 
-          image. 
+        :param str arg: the name of a parameter (dict entry) in the
+          image.
         :returns: the value as a int, float, list,...
         '''
         if arg in self.data['Image Controls']:
@@ -6162,18 +6149,18 @@ class G2Image(G2ObjectWrapper):
 
     def findControl(self,arg=''):
         '''Finds the Image Controls parameter(s) in the current image
-        that match the string in arg. Default is '' which returns all 
+        that match the string in arg. Default is '' which returns all
         parameters.
 
-            Example: 
+            Example:
 
             >>> findControl('calib')
             [['calibskip', 'int'], ['calibdmin', 'float'], ['calibrant', 'str']]
 
-        :param str arg: a string containing part of the name of a 
-          parameter (dict entry) in the image's Image Controls. 
-        :returns: a list of matching entries in form 
-          [['item','type'], ['item','type'],...] where each 'item' string 
+        :param str arg: a string containing part of the name of a
+          parameter (dict entry) in the image's Image Controls.
+        :returns: a list of matching entries in form
+          [['item','type'], ['item','type'],...] where each 'item' string
           contains the sting in arg.
         '''
         matchList = []
@@ -6190,24 +6177,24 @@ class G2Image(G2ObjectWrapper):
           the entries in file ImageCalibrants.py. This is validated and
           an error provides a list of valid choices.
         '''
-        import ImageCalibrants as calFile
+        from . import ImageCalibrants as calFile
         if calib in calFile.Calibrants.keys():
             self.data['Image Controls']['calibrant'] = calib
             return
         G2fil.G2Print('Calibrant {} is not valid. Valid calibrants'.format(calib))
         for i in calFile.Calibrants.keys():
             if i: G2fil.G2Print('\t"{}"'.format(i))
-        
+
     def setControlFile(self,typ,imageRef,mult=None):
         '''Set a image to be used as a background/dark/gain map image
 
         :param str typ: specifies image type, which must be one of:
            'background image', 'dark image', 'gain map'; N.B. only the first
            four characters must be specified and case is ignored.
-        :param imageRef: A reference to the desired image. Either the Image 
+        :param imageRef: A reference to the desired image. Either the Image
           tree name (str), the image's index (int) or
           a image object (:class:`G2Image`)
-        :param float mult: a multiplier to be applied to the image (not used 
+        :param float mult: a multiplier to be applied to the image (not used
           for 'Gain map'; required for 'background image', 'dark image'
         '''
         if 'back' in typ.lower():
@@ -6232,10 +6219,10 @@ class G2Image(G2ObjectWrapper):
     def loadControls(self,filename=None,imgDict=None):
         '''load controls from a .imctrl file
 
-        :param str filename: specifies a file to be read, which should end 
-          with .imctrl (defaults to None, meaning parameters are input 
+        :param str filename: specifies a file to be read, which should end
+          with .imctrl (defaults to None, meaning parameters are input
           with imgDict.)
-        :param dict imgDict: contains a set of image parameters (defaults to 
+        :param dict imgDict: contains a set of image parameters (defaults to
           None, meaning parameters are input with filename.)
         '''
         if filename:
@@ -6253,7 +6240,7 @@ class G2Image(G2ObjectWrapper):
     def saveControls(self,filename):
         '''write current controls values to a .imctrl file
 
-        :param str filename: specifies a file to write, which should end 
+        :param str filename: specifies a file to write, which should end
           with .imctrl
         '''
         G2fil.WriteControls(filename,self.data['Image Controls'])
@@ -6274,20 +6261,20 @@ class G2Image(G2ObjectWrapper):
             for i in 'range','size','GonioAngles':
                 if i in ImageControls: del ImageControls[i]
         return ImageControls
-    
+
     def setControls(self,controlsDict):
         '''uses dict from :meth:`getControls` to set Image Controls for current image
         '''
         self.data['Image Controls'].update(copy.deepcopy(controlsDict))
-    
-    
+
+
     def loadMasks(self,filename,ignoreThreshold=False):
         '''load masks from a .immask file
 
-        :param str filename: specifies a file to be read, which should end 
+        :param str filename: specifies a file to be read, which should end
           with .immask
         :param bool ignoreThreshold: If True, masks are loaded with
-          threshold masks. Default is False which means any Thresholds 
+          threshold masks. Default is False which means any Thresholds
           in the file are ignored.
         '''
         G2fil.readMasks(filename,self.data['Masks'],ignoreThreshold)
@@ -6304,19 +6291,19 @@ class G2Image(G2ObjectWrapper):
         Imin = max(0.,np.min(ImageZ))
         Imax = np.max(ImageZ)
         self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]
-        
+
     def getMasks(self):
         '''load masks from an IMG tree entry
         '''
         return self.data['Masks']
-    
+
     def setMasks(self,maskDict,resetThresholds=False):
         '''load masks dict (from :meth:`getMasks`) into current IMG record
 
-        :param dict maskDict: specifies a dict with image parameters, 
+        :param dict maskDict: specifies a dict with image parameters,
           from :meth:`getMasks`
-        :param bool resetThresholds: If True, Threshold Masks in the 
-          dict are ignored. The default is False which means Threshold 
+        :param bool resetThresholds: If True, Threshold Masks in the
+          dict are ignored. The default is False which means Threshold
           Masks are retained.
         '''
         self.data['Masks'] = copy.deepcopy(maskDict)
@@ -6327,50 +6314,50 @@ class G2Image(G2ObjectWrapper):
                 ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
             Imin = max(0.,np.min(ImageZ))
             Imax = np.max(ImageZ)
-            self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]        
+            self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]
 
     def IntThetaAzMap(self):
-        '''Computes the set of blocked arrays for 2theta-azimuth mapping from 
+        '''Computes the set of blocked arrays for 2theta-azimuth mapping from
         the controls settings of the current image for image integration.
-        The output from this is optionally supplied as input to 
-        :meth:`~G2Image.Integrate`. Note that if not supplied, image 
-        integration will compute this information as it is needed, but this 
-        is a relatively slow computation so time can be saved by caching and 
-        reusing this computation for other images that have the 
+        The output from this is optionally supplied as input to
+        :meth:`~G2Image.Integrate`. Note that if not supplied, image
+        integration will compute this information as it is needed, but this
+        is a relatively slow computation so time can be saved by caching and
+        reusing this computation for other images that have the
         same calibration parameters as the current image.
         '''
         return G2img.MakeUseTA(self.getControls(),blkSize)
 
     def IntMaskMap(self):
-        '''Computes a series of masking arrays for the current image (based on 
-        mask input, but not calibration parameters or the image intensities). 
-        See :meth:`GSASIIimage.MakeMaskMap` for more details. The output from 
+        '''Computes a series of masking arrays for the current image (based on
+        mask input, but not calibration parameters or the image intensities).
+        See :meth:`GSASIIimage.MakeMaskMap` for more details. The output from
         this is optionally supplied as input to :meth:`~G2Image.Integrate`).
 
         Note this is not the same as pixel mask
         searching (:meth:`~G2Image.GeneratePixelMask`).
         '''
         return G2img.MakeUseMask(self.getControls(),self.getMasks(),blkSize)
-            
+
     def MaskThetaMap(self):
-        '''Computes the theta mapping matrix from the controls settings 
+        '''Computes the theta mapping matrix from the controls settings
         of the current image to be used for pixel mask computation
         in :meth:`~G2Image.GeneratePixelMask`.
         This is optional, as if not supplied, mask computation will compute
         this, but this is a relatively slow computation and the
-        results computed here can be reused for other images that have the 
+        results computed here can be reused for other images that have the
         same calibration parameters.
         '''
         ImShape = self.getControls()['size']
         return G2img.Make2ThetaAzimuthMap(self.getControls(), (0, ImShape[0]), (0, ImShape[1]))[0]
-    
+
     def MaskFrameMask(self):
-        '''Computes a Frame mask from map input for the current image to be 
-        used for a pixel mask computation in 
+        '''Computes a Frame mask from map input for the current image to be
+        used for a pixel mask computation in
         :meth:`~G2Image.GeneratePixelMask`.
         This is optional, as if not supplied, mask computation will compute
         this, but this is a relatively slow computation and the
-        results computed here can be reused for other images that have the 
+        results computed here can be reused for other images that have the
         same calibration parameters.
         '''
         Controls = self.getControls()
@@ -6384,14 +6371,14 @@ class G2Image(G2ObjectWrapper):
         if frame:
             tam = ma.mask_or(tam,G2img.MakeFrameMask(Controls,frame))
         return tam
-    
+
     def getVary(self,*args):
-        '''Return the refinement flag(s) for calibration of 
+        '''Return the refinement flag(s) for calibration of
         Image Controls parameter(s) in the current image.
         If the parameter is not found, an exception is raised.
 
-        :param str arg: the name of a refinement parameter in the 
-          varyList for the image. The name should be one of 
+        :param str arg: the name of a refinement parameter in the
+          varyList for the image. The name should be one of
           'dep', 'det-X', 'det-Y', 'dist', 'phi', 'tilt', or 'wave'
         :param str arg1: the name of a parameter (dict entry) as before,
           optional
@@ -6405,18 +6392,18 @@ class G2Image(G2ObjectWrapper):
             else:
                 raise Exception('arg {} not defined in G2Image.getVary'.format(arg))
         return res
-    
+
     def setVary(self,arg,value):
-        '''Set a refinement flag for Image Controls parameter in the 
+        '''Set a refinement flag for Image Controls parameter in the
         current image that is used for fitting calibration parameters.
         If the parameter is not '*' or found, an exception is raised.
 
-        :param str arg: the name of a refinement parameter in the 
-          varyList for the image. The name should be one of 
+        :param str arg: the name of a refinement parameter in the
+          varyList for the image. The name should be one of
           'dep', 'det-X', 'det-Y', 'dist', 'phi', 'tilt', or 'wave',
-          or it may be a list or tuple of names, 
+          or it may be a list or tuple of names,
           or it may be '*' in which all parameters are set accordingly.
-        :param value: the value to set the parameter. The value is 
+        :param value: the value to set the parameter. The value is
           cast as bool.
         '''
         if arg == '*':
@@ -6432,8 +6419,8 @@ class G2Image(G2ObjectWrapper):
                 raise Exception('arg {} not defined in G2Image.setVary'.format(a))
 
     def Recalibrate(self):
-        '''Invokes a recalibration fit (same as Image Controls/Calibration/Recalibrate 
-        menu command). Note that for this to work properly, the calibration 
+        '''Invokes a recalibration fit (same as Image Controls/Calibration/Recalibrate
+        menu command). Note that for this to work properly, the calibration
         coefficients (center, wavelength, distance & tilts) must be fairly close.
         This may produce a better result if run more than once.
         '''
@@ -6447,18 +6434,18 @@ class G2Image(G2ObjectWrapper):
     def Integrate(self,name=None,MaskMap=None,ThetaAzimMap=None):
         '''Invokes an image integration (same as Image Controls/Integration/Integrate
         menu command). All parameters will have previously been set with Image Controls
-        so no input is needed here. However, the optional parameters MaskMap 
+        so no input is needed here. However, the optional parameters MaskMap
         and ThetaAzimMap may be supplied to save computing these items more than
-        once, speeding integration of multiple images with the same 
+        once, speeding integration of multiple images with the same
         image/mask parameters.
 
-        Note that if integration is performed on an 
+        Note that if integration is performed on an
         image more than once, histogram entries may be overwritten. Use the name
-        parameter to prevent this if desired. 
+        parameter to prevent this if desired.
 
-        :param str name: base name for created histogram(s). If None (default), 
-          the histogram name is taken from the image name. 
-        :param list MaskMap: from :func:`IntMaskMap` 
+        :param str name: base name for created histogram(s). If None (default),
+          the histogram name is taken from the image name.
+        :param list MaskMap: from :func:`IntMaskMap`
         :param list ThetaAzimMap: from :meth:`G2Image.IntThetaAzMap`
         :returns: a list of created histogram (:class:`G2PwdrData` or :class:`G2SmallAngle`) objects.
         '''
@@ -6489,13 +6476,13 @@ class G2Image(G2ObjectWrapper):
             name = self.name.replace('IMG ',data['type']+' ')
         if 'PWDR' in name:
             if 'target' in data:
-                names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+                names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
                 codes = [0 for i in range(14)]
             else:
-                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
                 codes = [0 for i in range(12)]
         elif 'SASD' in name:
-            names = ['Type','Lam','Zero','Azimuth'] 
+            names = ['Type','Lam','Zero','Azimuth']
             codes = [0 for i in range(4)]
             X = 4.*np.pi*npsind(X/2.)/data['wavelength']    #convert to q
         Xminmax = [X[0],X[-1]]
@@ -6507,7 +6494,7 @@ class G2Image(G2ObjectWrapper):
             for i,azm in enumerate(azms[:-1]):
                 if azm > 360. and azms[i+1] > 360.:
                     Azms.append(G2img.meanAzm(azm%360.,azms[i+1]%360.))
-                else:    
+                else:
                     Azms.append(G2img.meanAzm(azm,azms[i+1]))
             dazm = np.min(np.abs(np.diff(azms)))/2.
         # pull out integration results and make histograms for each
@@ -6522,7 +6509,7 @@ class G2Image(G2ObjectWrapper):
             Sample['Omega'] = data['GonioAngles'][0]
             Sample['Chi'] = data['GonioAngles'][1]
             Sample['Phi'] = data['GonioAngles'][2]
-            Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center 
+            Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center
             polariz = 0.99    #set default polarization for synchrotron radiation!
             for item in Comments:
                 if 'polariz' in item:
@@ -6590,7 +6577,7 @@ class G2Image(G2ObjectWrapper):
                 section = 'Reflection Lists'
                 histItems += [section]
                 HistDict[section] = {}
-            elif 'SASD' in Aname:             
+            elif 'SASD' in Aname:
                 section = 'Substances'
                 histItems += [section]
                 HistDict[section] = G2pwd.SetDefaultSubstances()
@@ -6605,7 +6592,7 @@ class G2Image(G2ObjectWrapper):
                 'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}
             # if Aname is already in the project replace it
             for j in self.proj.names:
-                if j[0] == Aname: 
+                if j[0] == Aname:
                     G2fil.G2Print('Replacing "{}" in project'.format(Aname))
                     break
             else:
@@ -6623,66 +6610,66 @@ class G2Image(G2ObjectWrapper):
         return IntgOutList
 
     def TestFastPixelMask(self):
-        '''Tests to see if the fast (C) code for pixel masking is installed. 
+        '''Tests to see if the fast (C) code for pixel masking is installed.
 
-        :returns: A value of True is returned if fast pixel masking is 
-          available. Otherwise False is returned. 
+        :returns: A value of True is returned if fast pixel masking is
+          available. Otherwise False is returned.
         '''
         return G2img.TestFastPixelMask()
 
     def GeneratePixelMask(self,esdMul=3.0,ttmin=0.,ttmax=180.,
                               FrameMask=None,ThetaMap=None,
                               fastmode=True,combineMasks=False):
-        '''Generate a Pixel mask with True at the location of pixels that are 
-        statistical outliers (in comparison with others with the same 2theta 
-        value.) The process for this is that a median is computed for pixels 
-        within a small 2theta window and then the median difference is computed 
+        '''Generate a Pixel mask with True at the location of pixels that are
+        statistical outliers (in comparison with others with the same 2theta
+        value.) The process for this is that a median is computed for pixels
+        within a small 2theta window and then the median difference is computed
         from magnitude of the difference for those pixels from that median. The
-        medians are used for this rather than a standard deviation as the 
-        computation used here is less sensitive to outliers. 
-        (See :func:`GSASIIimage.AutoPixelMask` and 
+        medians are used for this rather than a standard deviation as the
+        computation used here is less sensitive to outliers.
+        (See :func:`GSASIIimage.AutoPixelMask` and
         :func:`scipy.stats.median_abs_deviation` for more details.)
 
-        Mask is placed into the G2image object where it will be 
-        accessed during integration. Note that this increases the .gpx file 
-        size significantly; use :meth:`~G2Image.clearPixelMask` to delete 
-        this if it need not be saved. 
+        Mask is placed into the G2image object where it will be
+        accessed during integration. Note that this increases the .gpx file
+        size significantly; use :meth:`~G2Image.clearPixelMask` to delete
+        this if it need not be saved.
 
         This code is based on :func:`GSASIIimage.FastAutoPixelMask`
-        but has been modified to recycle expensive computations 
+        but has been modified to recycle expensive computations
         where possible.
 
-        :param float esdMul: Significance threshold applied to remove 
-          outliers. Default is 3. The larger this number, the fewer 
-          "glitches" that will be removed. 
-        :param float ttmin: A lower 2theta limit to be used for pixel 
+        :param float esdMul: Significance threshold applied to remove
+          outliers. Default is 3. The larger this number, the fewer
+          "glitches" that will be removed.
+        :param float ttmin: A lower 2theta limit to be used for pixel
           searching. Pixels outside this region may be considered for
           establishing the medians, but only pixels with 2theta >= :attr:`ttmin`
           are masked. Default is 0.
-        :param float ttmax: An upper 2theta limit to be used for pixel 
+        :param float ttmax: An upper 2theta limit to be used for pixel
           searching. Pixels outside this region may be considered for
           establishing the medians, but only pixels with 2theta < :attr:`ttmax`
           are masked. Default is 180.
-        :param np.array FrameMask: An optional precomputed Frame mask 
-          (from :func:`~G2Image.MaskFrameMask`). Compute this once for 
-          a series of similar images to reduce computational time. 
-        :param np.array ThetaMap: An optional precomputed array that 
-          defines 2theta for each pixel, computed in 
-          :func:`~G2Image.MaskThetaMap`. Compute this once for 
-          a series of similar images to reduce computational time. 
-        :param bool fastmode: If True (default) fast Pixel map 
-          searching is done if the C module is available. If the 
+        :param np.array FrameMask: An optional precomputed Frame mask
+          (from :func:`~G2Image.MaskFrameMask`). Compute this once for
+          a series of similar images to reduce computational time.
+        :param np.array ThetaMap: An optional precomputed array that
+          defines 2theta for each pixel, computed in
+          :func:`~G2Image.MaskThetaMap`. Compute this once for
+          a series of similar images to reduce computational time.
+        :param bool fastmode: If True (default) fast Pixel map
+          searching is done if the C module is available. If the
           module is not available or this is False, the pure Python
-          implementatruion is used. It is not clear why False is 
-          ever needed. 
+          implementatruion is used. It is not clear why False is
+          ever needed.
         :param bool combineMasks: When True, the current Pixel mask
           will be combined with any previous Pixel map. If False (the
-          default), the Pixel map from the current search will 
-          replace any previous ones. The reason for use of this as 
-          True would be where different :attr:`esdMul` values are 
-          used for different regions of the image (by setting 
-          :attr:`ttmin` & :attr:`ttmax`) so that the outlier level 
-          can be tuned by combining different searches. 
+          default), the Pixel map from the current search will
+          replace any previous ones. The reason for use of this as
+          True would be where different :attr:`esdMul` values are
+          used for different regions of the image (by setting
+          :attr:`ttmin` & :attr:`ttmax`) so that the outlier level
+          can be tuned by combining different searches.
         '''
         import math
         sind = lambda x: math.sin(x*math.pi/180.)
@@ -6713,7 +6700,10 @@ class G2Image(G2ObjectWrapper):
             raise Exception
         numChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
         if G2img.TestFastPixelMask() and fastmode:
-            import fmask
+            if GSASIIpath.binaryPath:
+                import fmask
+            else:
+                from . import fmask
             G2fil.G2Print(f'Fast mask: Spots greater or less than {esdMul:.1f} of median abs deviation are masked')
             outMask = np.zeros_like(tam,dtype=bool).ravel()
             TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
@@ -6734,17 +6724,17 @@ class G2Image(G2ObjectWrapper):
             Masks['SpotMask']['spotMask'] = outMask
 
     def clearPixelMask(self):
-        '''Removes a pixel map from an image, to reduce the .gpx file 
+        '''Removes a pixel map from an image, to reduce the .gpx file
         size & memory use
         '''
         self.getMasks()['SpotMask']['spotMask'] = None
 
 class G2SmallAngle(G2ObjectWrapper):
-    """Wrapper for SASD histograms (and hopefully, in the future, other 
+    """Wrapper for SASD histograms (and hopefully, in the future, other
     small angle histogram types).
-     
-    Note that in a GSASIIscriptable script, instances of G2SmallAngle will be 
-    created by calls to 
+
+    Note that in a GSASIIscriptable script, instances of G2SmallAngle will be
+    created by calls to
     :meth:`~G2Project.SAS`, :meth:`~G2Project.SASs`,
     or by :meth:`G2Project.Integrate`.
     Also, someday :meth:`G2Project.add_SAS`.
@@ -6752,11 +6742,11 @@ class G2SmallAngle(G2ObjectWrapper):
 
     This object contains these class variables:
         * G2SmallAngle.proj: contains a reference to the :class:`G2Project`
-          object that contains this histogram 
+          object that contains this histogram
         * G2SmallAngle.name: contains the name of the histogram
-        * G2SmallAngle.data: contains the histogram's associated data 
-          in a dict with keys 'Comments', 'Limits', 'Instrument Parameters', 
-          'Substances', 'Sample Parameters' and 'Models'. 
+        * G2SmallAngle.data: contains the histogram's associated data
+          in a dict with keys 'Comments', 'Limits', 'Instrument Parameters',
+          'Substances', 'Sample Parameters' and 'Models'.
           Further documentation on SASD entries needs to be written.
 
     .. seealso::
@@ -6787,7 +6777,7 @@ def create(args):
                                   [-i IPARAMS [IPARAMS ...]]
                                   [-p PHASES [PHASES ...]]
                                   filename
-                                  
+
 positional arguments::
 
   filename              the project file to create. should end in .gpx
@@ -6813,7 +6803,7 @@ optional arguments::
             G2fil.G2Print("Adding histogram from",h,"with instparm ",i)
             hist_objs.append(proj.add_powder_histogram(h, i))
 
-    if args.phases: 
+    if args.phases:
         for p in args.phases:
             G2fil.G2Print("Adding phase from",p)
             proj.add_phase(p, histograms=hist_objs)
@@ -6859,7 +6849,7 @@ optional arguments::
                         list of histgram indices to associate with added
                         phases. If not specified, phases are associated with
                         all previously loaded histograms. Example: -l 2 3 4
-    
+
     """
     proj = G2Project(args.filename)
 
@@ -6868,7 +6858,7 @@ optional arguments::
             G2fil.G2Print("Adding histogram from",h,"with instparm ",i)
             proj.add_powder_histogram(h, i, fmthint=args.histogramformat)
 
-    if args.phases: 
+    if args.phases:
         if not args.histlist:
             histlist = proj.histograms()
         else:
@@ -6877,7 +6867,7 @@ optional arguments::
         for p in args.phases:
             G2fil.G2Print("Adding phase from",p)
             proj.add_phase(p, histograms=histlist, fmthint=args.phaseformat)
-            
+
         if not args.histlist:
             G2fil.G2Print('Linking phase(s) to all histogram(s)')
         else:
@@ -6903,7 +6893,7 @@ optional arguments::
   -d, --histograms  list histograms in files, overrides --raw
   -p, --phases      list phases in files, overrides --raw
   -r, --raw         dump raw file contents, default
-  
+
     """
     if not args.histograms and not args.phases:
         args.raw = True
@@ -6971,7 +6961,7 @@ positional arguments::
 optional arguments::
 
   -h, --help   show this help message and exit
-  
+
     """
     proj = G2Project(args.gpxfile)
     if args.refinements is None:
@@ -7025,7 +7015,7 @@ subcommands = {"create":
                          _args_kwargs('-d', '--histograms',
                                       nargs='+',
                                       help='list of datafiles to add as histograms'),
-                                      
+
                          _args_kwargs('-i', '--iparams',
                                       nargs='+',
                                       help='instrument parameter file, must be one'
@@ -7043,13 +7033,13 @@ subcommands = {"create":
                          _args_kwargs('-d', '--histograms',
                                       nargs='+',
                                       help='list of datafiles to add as histograms'),
-                                      
+
                          _args_kwargs('-i', '--iparams',
                                       nargs='+',
                                       help='instrument parameter file, must be one'
                                            ' for every histogram'
                                       ),
-                                      
+
                          _args_kwargs('-hf', '--histogramformat',
                                       help='format hint for histogram import. Applies to all'
                                            ' histograms'
@@ -7065,14 +7055,14 @@ subcommands = {"create":
                                       help='format hint for phase import. Applies to all'
                                            ' phases. Example: -pf CIF'
                                       ),
-                                      
+
                          _args_kwargs('-l', '--histlist',
                                       nargs='+',
                                       help='list of histgram indices to associate with added'
                                            ' phases. If not specified, phases are'
                                            ' associated with all previously loaded'
                                            ' histograms. Example: -l 2 3 4')]),
-                                           
+
                "dump": (dump, [_args_kwargs('-d', '--histograms',
                                      action='store_true',
                                      help='list histograms in files, overrides --raw'),
@@ -7146,8 +7136,8 @@ def main():
         print('Use {} -h or --help'.format(sys.argv[0]))
 
 def dictDive(d,search="",keylist=[],firstcall=True,l=None):
-    '''Recursive routine to scan a nested dict. Reports a list of keys 
-    and the associated type and value for that key. 
+    '''Recursive routine to scan a nested dict. Reports a list of keys
+    and the associated type and value for that key.
 
     :param dict d: a dict that will be scanned
     :param str search: an optional search string. If non-blank,
@@ -7160,25 +7150,25 @@ def dictDive(d,search="",keylist=[],firstcall=True,l=None):
        in form [([keylist], type, value),...] where if keylist is ['a','b','c']
        then d[['a']['b']['c'] will have the value.
 
-    This routine can be called in a number of ways, as are shown in a few 
-    examples: 
+    This routine can be called in a number of ways, as are shown in a few
+    examples:
 
     >>> for i in G2sc.dictDive(p.data['General'],'paw'): print(i)
-    ... 
+    ...
     (['Pawley dmin'], <class 'float'>, 1.0)
     (['doPawley'], <class 'bool'>, False)
     (['Pawley dmax'], <class 'float'>, 100.0)
     (['Pawley neg wt'], <class 'float'>, 0.0)
     >>>
     >>> for i in G2sc.dictDive(p.data,'paw',['General']): print(i)
-    ... 
+    ...
     (['General', 'Pawley dmin'], <class 'float'>, 1.0)
     (['General', 'doPawley'], <class 'bool'>, False)
     (['General', 'Pawley dmax'], <class 'float'>, 100.0)
     (['General', 'Pawley neg wt'], <class 'float'>, 0.0)
     >>>
     >>> for i in G2sc.dictDive(p.data,'',['General','doPawley']): print(i)
-    ... 
+    ...
     (['General', 'doPawley'], <class 'bool'>, False)
 
     '''
@@ -7199,7 +7189,7 @@ def dictDive(d,search="",keylist=[],firstcall=True,l=None):
         l.append((keylist,type(d),d))
     if firstcall:
         return l
-        
+
 if __name__ == '__main__':
     #fname='/tmp/corundum-template.gpx'
     #prj = G2Project(fname)

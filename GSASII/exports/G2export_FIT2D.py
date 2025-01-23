@@ -72,7 +72,7 @@ class ExportPowderQCHI(G2fil.ExportBaseclass):
         self.multiple = True
 
     def Writer(self,TreeName,filename=None):
-        import GSASIIlattice as G2lat
+        from .. import GSASIIlattice as G2lat
         self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
         inst = histblk['Instrument Parameters'][0]

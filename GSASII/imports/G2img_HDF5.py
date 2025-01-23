@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-'''A reader for HDF-5 files. This should be as generic as possible, but 
-at present this is pretty much customized for XSD-MPE (APS) uses. 
+'''A reader for HDF-5 files. This should be as generic as possible, but
+at present this is pretty much customized for XSD-MPE (APS) uses.
 '''
 try:
     import h5py
@@ -12,7 +12,7 @@ from .. import GSASIIpath
 
 class HDF5_Reader(G2obj.ImportImage):
     '''Routine to read a HDF-5 image, typically from APS Sector 1 or 6.
-    Initial version from B. Frosik/SDM. 
+    Initial version from B. Frosik/SDM.
     Updated to also handle images from APS 1-ID-C.
     '''
     def __init__(self):
@@ -34,18 +34,18 @@ class HDF5_Reader(G2obj.ImportImage):
             fp.close()
             return True
         except IOError:
-            return False               
+            return False
 
     def Reader(self, filename, ParentFrame=None, **kwarg):
         '''Read an image from a HDF5 file. Note that images are using :meth:`readDataset`.
 
-        When called the first time on a file, the file structure is scanned 
+        When called the first time on a file, the file structure is scanned
         using :meth:`visit` to map out locations of image(s). On subsequent calls,
         if more than one image is in the file, the map of file structure (in
         buffer arg) is reused. Depending on the Config setting for HDF5selection,
-        a window may be opened to allow selection of which images will be read. 
+        a window may be opened to allow selection of which images will be read.
 
-        When an image is reread, the blocknum will be a list item with the location 
+        When an image is reread, the blocknum will be a list item with the location
         to be read, so the file scan can be skipped.
         '''
         try:
@@ -75,7 +75,7 @@ class HDF5_Reader(G2obj.ImportImage):
                 self.buffer['selectedImages'] = []
                 if ParentFrame and len(self.buffer['imagemap']) > nsel and nsel >= 0:
                     import wx
-                    import GSASIIctrlGUI as G2G
+                    from .. import GSASIIctrlGUI as G2G
                     choices = []
                     for loc,num,siz in self.buffer['imagemap']:
                         if num is None:
@@ -142,10 +142,10 @@ class HDF5_Reader(G2obj.ImportImage):
             self.repeat = False
         fp.close()
         return True
-    
+
     def visit(self, fp):
-        '''Recursively visit every node in an HDF5 file & look at dimensions 
-        of contents. If the shape is length 2, 3, or 4 assume an image 
+        '''Recursively visit every node in an HDF5 file & look at dimensions
+        of contents. If the shape is length 2, 3, or 4 assume an image
         and index in self.buffer['imagemap']
         '''
         head = []
@@ -168,7 +168,7 @@ class HDF5_Reader(G2obj.ImportImage):
                     print('Skipping entry '+str(dset.name)+'. Shape is '+str(dims))
         fp.visititems(func)
         return head
-        
+
     def readDataset(self,fp,imagenum=1,name=None,num=None):
         '''Read a specified image number from a file
         '''
@@ -190,7 +190,7 @@ class HDF5_Reader(G2obj.ImportImage):
             raise Exception(msg)
         if quick:
             return {},None,image.T
-        sizexy = list(image.shape) 
+        sizexy = list(image.shape)
         Npix = sizexy[0]*sizexy[1]
         # default pixel size (for APS sector 6?)
         pixelsize = [74.8,74.8]
@@ -225,8 +225,8 @@ class HDF5_Reader(G2obj.ImportImage):
                 data['pixelSize'][0] = float(val)*1000.
             elif 'y_pixel_size' in name:
                 data['pixelSize'][1] = float(val)*1000.
-            elif 'beam_center_x' in name: 
+            elif 'beam_center_x' in name:
                 data['center'][0] = float(val)
-            elif 'beam_center_y' in name: 
-                data['center'][1] = float(val)                
+            elif 'beam_center_y' in name:
+                data['center'][1] = float(val)
         return data,Npix,image.T

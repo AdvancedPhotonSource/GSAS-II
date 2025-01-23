@@ -13,6 +13,16 @@ import scipy.special as spsp
 from . import GSASIImath as G2mth
 from . import GSASIIspc as G2spc
 from . import GSASIIElem as G2elem
+from . import GSASIIpath as GSASIIpath
+try:
+    if GSASIIpath.binaryPath:
+        import pytexture as ptx
+    else:
+        from . import pytexture as ptx
+        #import GSASII.pytexture as ptx
+except ImportError: # ignore; will report this as an error in GSASIIplot import
+    pass
+
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
@@ -471,7 +481,7 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=Fals
     :param bool debug: If true, the constraint input is used to compute and print A*
       and from that the direct cell for the transformed phase.
     '''
-    import GSASIIobj as G2obj
+    from . import GSASIIobj as G2obj
     Anew = []
     constrList = []
     uniqueAnew = cellUnique(nSGLaue)
@@ -2588,7 +2598,7 @@ Lnorm = lambda L: 4.*np.pi/(2.0*L+1.)
 
 def GetKcl(L,N,SGLaue,phi,beta):
     'needs doc string'
-    from . import pytexture as ptx
+#    from . import pytexture as ptx
     if SGLaue in ['m3','m3m']:
         if 'array' in str(type(phi)) and np.any(phi.shape):
             Kcl = np.zeros_like(phi)
@@ -2623,7 +2633,7 @@ def GetKcl(L,N,SGLaue,phi,beta):
 
 def GetKsl(L,M,SamSym,psi,gam):
     'needs doc string'
-    from . import pytexture as ptx
+#    from . import pytexture as ptx
     if 'array' in str(type(psi)) and np.any(psi.shape):
         psrs,dpdps = ptx.pyplmpsi(L,M,len(psi),psi)
     else:
@@ -2650,7 +2660,7 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
     This is used for spherical harmonics description of preferred orientation;
         cylindrical symmetry only (M=0) and no sample angle derivatives returned
     """
-    from . import pytexture as ptx
+#    from . import pytexture as ptx
     Ksl,x = ptx.pyplmpsi(L,0,1,psi)
     Ksl *= RSQ2PI
     if SGLaue in ['m3','m3m']:
@@ -2874,7 +2884,7 @@ def CubicSHarm(L,M,Th,Ph):
 
 def Glnh(SHCoef,psi,gam,SamSym):
     'needs doc string'
-    from . import pytexture as ptx
+#    from . import pytexture as ptx
 
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
@@ -2893,7 +2903,7 @@ def Glnh(SHCoef,psi,gam,SamSym):
 
 def Flnh(SHCoef,phi,beta,SGData):
     'needs doc string'
-    from . import pytexture as ptx
+#    from . import pytexture as ptx
 
     Fln = np.zeros(len(SHCoef))
     for i,term in enumerate(SHCoef):
@@ -2928,7 +2938,7 @@ def polfcal(ODFln,SamSym,psi,gam):
     Note that the the number of gam values must either be 1 or must
     match psi. Updated for numpy 1.8.0
     '''
-    from . import pytexture as ptx
+#    from . import pytexture as ptx
     PolVal = np.ones_like(psi)
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.e-3:
@@ -2949,7 +2959,7 @@ def polfcal(ODFln,SamSym,psi,gam):
 
 def invpolfcal(ODFln,SGData,phi,beta):
     'needs doc string'
-    from . import pytexture as ptx
+#    from . import pytexture as ptx
 
     invPolVal = np.ones_like(beta)
     for term in ODFln:

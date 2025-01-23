@@ -170,7 +170,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 choices.append(
                     'Block '+str(blk)+', '+str(l)+' points. X='+sx+' & Y='+sy
                     )
-            import GSASIIctrlGUI as G2G
+            from .. import GSASIIctrlGUI as G2G
             selections = G2G.MultipleBlockSelector(
                 choices,
                 ParentFrame=ParentFrame,
@@ -210,7 +210,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             choices.append(such)
             chlbls.append('Divide intensities by data item')
             choices.append(['none']+modch)
-            import GSASIIctrlGUI as G2G
+            from .. import GSASIIctrlGUI as G2G
             res = G2G.MultipleChoicesSelector(choices,chlbls)
             if not res:
                 self.errors = "Abort: data items not selected"

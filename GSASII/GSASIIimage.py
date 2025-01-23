@@ -16,6 +16,7 @@ from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
 from . import GSASIIpath
+GSASIIpath.SetBinaryPath()
 from . import GSASIIlattice as G2lat
 from . import GSASIIpwd as G2pwd
 from . import GSASIIspc as G2spc
@@ -799,7 +800,10 @@ def MakeFrameMask(data,frame):
     :param list frame: Frame parameters, typically taken from ``Masks['Frames']``.
     :returns: a mask array with dimensions matching the image Controls.
     '''
-    import polymask as pm
+    if GSASIIpath.binaryPath:
+        import polymask as pm
+    else:
+        from . import polymask as pm
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
@@ -987,7 +991,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
     G2fil.G2Print ('calibration time = %.3f'%(time.time()-time0))
     if G2frame:
-        import GSASIIplot as G2plt
+        from . import GSASIIplot as G2plt
         G2plt.PlotImage(G2frame,newImage=True)
     return [vals,varyList,sigList,parmDict,covar]
 
@@ -999,7 +1003,7 @@ def ImageCalibrate(G2frame,data):
     :func:`GSASIIplot.PlotImage`, thus expected to be used from GUI
     only (not scripted)
     '''
-    import GSASIIplot as G2plt
+    from . import GSASIIplot as G2plt
     G2fil.G2Print ('Image calibration:')
     time0 = time.time()
     ring = data['ring']
@@ -1257,7 +1261,10 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
     :param np.array tamp: all-zero pixel mask array used in Polymask
     :returns: array[nI,nJ] TA: 2-theta, azimuth, 2 geometric corrections
     '''
-    import polymask as pm
+    if GSASIIpath.binaryPath:
+        import polymask as pm
+    else:
+        from . import polymask as pm
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
@@ -1445,7 +1452,10 @@ def MakeGainMap(image,Ix,Iy,data,blkSize=128):
 def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
     ''' Integrate by azimuth around the ring masked region in 0.5 deg steps
     '''
-    import histogram2d as h2d
+    if GSASIIpath.binaryPath:
+        import histogram2d as h2d
+    else:
+        from . import histogram2d as h2d
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = 720
     ring = masks['Rings'][ringId]
@@ -1520,7 +1530,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
       will always be False, since a status window is no longer supported.
     '''
     #for q, log(q) bins need data['binType']
-    import histogram2d as h2d
+    if GSASIIpath.binaryPath:
+        import histogram2d as h2d
+    else:
+        from . import histogram2d as h2d
     G2fil.G2Print ('Beginning image integration; image range: %d %d'%(np.min(image),np.max(image)))
     CancelPressed = False
     LUtth = np.array(data['IOtth'])
@@ -1913,7 +1926,10 @@ def TestFastPixelMask():
     :returns: True if the airxd.mask package can be imported; False otherwise.
     '''
     try:
-        import fmask
+        if GSASIIpath.binaryPath:
+            import fmask
+        else:
+            from . import fmask
     except ModuleNotFoundError:
         if GSASIIpath.GetConfigValue('debug'): print('fmask not found')
         return False
@@ -1943,7 +1959,10 @@ def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     '''
 
     try:
-        import fmask
+        if GSASIIpath.binaryPath:
+            import fmask
+        else:
+            from . import fmask
         if GSASIIpath.GetConfigValue('debug'): print('Loaded fmask from',fmask.__file__)
     except:
         return None

@@ -647,7 +647,7 @@ class ExpressionDialog(wx.Dialog):
                 calcobj.SetupCalc(self.parmDict)
                 val = calcobj.EvalExpression()
             except Exception as msg:
-                self.setEvalResult(f'Error in evaluation: {msg}'))
+                self.setEvalResult(f'Error in evaluation: {msg}')
                 return
             if not np.isfinite(val):
                 self.setEvalResult("Expression value is infinite or out-of-bounds")

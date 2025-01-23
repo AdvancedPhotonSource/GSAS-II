@@ -504,7 +504,10 @@ def ShowVersions():
     if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
         versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
     else:
-        prog = 'convcell'
+        if GSASIIpath.binaryPath:
+            prog = os.path.join(GSASIIpath.binaryPath,"convcell")
+        else:
+            prog = 'convcell'
         if sys.platform.startswith('win'):
             prog += '.exe'
         if not shutil.which(prog):
@@ -5278,8 +5281,8 @@ If you continue from this point, it is quite likely that all intensity computati
         covariance matrix. Finally the derivative list is used to find
         the s.u. on the expression using Ted Prince's method.
         '''
-        import GSASIIexprGUI as G2exG
-        import GSASIIstrMath as G2stMth
+        from . import GSASIIexprGUI as G2exG
+        from . import GSASIIstrMath as G2stMth
         def extendChanges():
             '''Propagate changes due to constraint and rigid bodies
             from varied parameters to dependent parameters
@@ -6030,19 +6033,19 @@ Do you want to transfer the cell refinement flag to the Dij terms?
 
     def OnRunFprime(self,event):
         '''Run Fprime'''
-        import fprime
+        from . import fprime
         self.fprime = fprime.Fprime(self)
         self.fprime.Show()
 
     def OnRunAbsorb(self,event):
         '''Run Absorb'''
-        import Absorb
+        from . import Absorb
         self.absorb = Absorb.Absorb(self)
         self.absorb.Show()
 
     def OnRunPlotXNFF(self,evnt):
         '''Run PlotXNFF'''
-        import PlotXNFF
+        from . import PlotXNFF
         self.plotXNFF = PlotXNFF.PlotXNFF(self)
         self.plotXNFF.Show()
 

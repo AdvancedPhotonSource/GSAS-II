@@ -2216,7 +2216,7 @@ def patchControls(Controls):
     to G2VarObj objects
     (See :ref:`Parameter Limits<ParameterLimits>` description.)
     '''
-    import GSASIIfiles as G2fil
+    from . import GSASIIfiles as G2fil
     #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
     for d in 'parmMaxDict','parmMinDict':
         if d not in Controls: Controls[d] = {}

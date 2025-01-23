@@ -18,12 +18,12 @@ class PhaseReaderClass(G2obj.ImportPhase):
             formatName = 'GSAS-II gpx',
             longFormatName = 'GSAS-II project (.gpx file) import'
             )
-        
+
     def ContentsValidator(self, filename):
         "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
         if True:
             fp = open(filename,'rb')
-        try: 
+        try:
             if '2' in platform.python_version_tuple()[0]:
                 data = pickle.load(fp)
             else:
@@ -48,8 +48,8 @@ class PhaseReaderClass(G2obj.ImportPhase):
             return False            # no blocks with coordinates
         elif len(phasenames) == 1: # one block, no choices
             selblk = 0
-        else:                       # choose from options                
-            import GSASIIctrlGUI as G2G
+        else:                       # choose from options
+            from .. import GSASIIctrlGUI as G2G
             selblk = G2G.PhaseSelector(phasenames,ParentFrame=ParentFrame,
                 title= 'Select a phase from the list below',)
             if selblk is None:

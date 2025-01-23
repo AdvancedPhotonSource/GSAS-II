@@ -32,19 +32,19 @@ Pwrm1 = chr(0x207b)+chr(0x0b9)
 Pwrm2 = chr(0x207b)+chr(0x0b2)
 Pwrm6 = chr(0x207b)+chr(0x2076)
 Pwrm4 = chr(0x207b)+chr(0x2074)
-Angstr = chr(0x00c5)   
+Angstr = chr(0x00c5)
 
 [wxID_FPRIMECHOICE1, wxID_FPRIMECHOICE2, wxID_SPINTEXT1, wxID_SPINTEXT2,
  wxID_FPRIMERESULTS,wxID_FPRIMESLIDER1, wxID_SPINBUTTON,
 ] = [wx.NewId() for _init_ctrls in range(7)]
 
-[wxID_FPRIMEEXIT, wxID_FPRIMEDELETE, wxID_FPRIMENEW, 
+[wxID_FPRIMEEXIT, wxID_FPRIMEDELETE, wxID_FPRIMENEW,
 ] = [wx.NewId() for _init_coll_FPRIME_Items in range(3)]
 
-[wxID_FPRIMEKALPHAAGKA, wxID_FPRIMEKALPHACOKA, wxID_FPRIMEKALPHACRKA, 
- wxID_FPRIMEKALPHACUKA, wxID_FPRIMEKALPHAFEKA, wxID_FPRIMEKALPHAMNKA, 
- wxID_FPRIMEKALPHAMOKA, wxID_FPRIMEKALPHANIKA, wxID_FPRIMEKALPHAZNKA, 
-wxID_FPRIMEKALPHAGAKA,wxID_FPRIMEKALPHAINKA, 
+[wxID_FPRIMEKALPHAAGKA, wxID_FPRIMEKALPHACOKA, wxID_FPRIMEKALPHACRKA,
+ wxID_FPRIMEKALPHACUKA, wxID_FPRIMEKALPHAFEKA, wxID_FPRIMEKALPHAMNKA,
+ wxID_FPRIMEKALPHAMOKA, wxID_FPRIMEKALPHANIKA, wxID_FPRIMEKALPHAZNKA,
+wxID_FPRIMEKALPHAGAKA,wxID_FPRIMEKALPHAINKA,
 ] = [wx.NewId() for _init_coll_KALPHA_Items in range(11)]
 
 [wxID_FPRIMEABOUT] = [wx.NewId() for _init_coll_ABOUT_Items in range(1)]
@@ -143,7 +143,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     def _init_ctrls(self, parent):
 
         wx.Frame.__init__(self, parent=parent,
-              size=wx.Size(500, 300),style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX, title='Fprime')              
+              size=wx.Size(500, 300),style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX, title='Fprime')
         self._init_utils()
         self.SetMenuBar(self.menuBar1)
         panel = wx.Panel(self)
@@ -158,23 +158,23 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         selSizer.Add((5,10),0)
         selSizer.Add(wx.StaticText(parent=panel, label='Wavelength:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
-        self.SpinText1 = wx.TextCtrl(id=wxID_SPINTEXT1, parent=panel, 
+        self.SpinText1 = wx.TextCtrl(id=wxID_SPINTEXT1, parent=panel,
               size=wx.Size(100,20), value = "%6.4f" % (self.Wave),style=wx.TE_PROCESS_ENTER )
         selSizer.Add(self.SpinText1,0)
         selSizer.Add((5,10),0)
         self.SpinText1.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText1, id=wxID_SPINTEXT1)
-        
+
         selSizer.Add(wx.StaticText(parent=panel, label='Energy:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
-        self.SpinText2 = wx.TextCtrl(id=wxID_SPINTEXT2, parent=panel, 
-              size=wx.Size(100,20), value = "%7.4f" % (self.Energy),style=wx.TE_PROCESS_ENTER) 
+        self.SpinText2 = wx.TextCtrl(id=wxID_SPINTEXT2, parent=panel,
+              size=wx.Size(100,20), value = "%7.4f" % (self.Energy),style=wx.TE_PROCESS_ENTER)
         selSizer.Add(self.SpinText2,0)
         self.SpinText2.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText2, id=wxID_SPINTEXT2)
         mainSizer.Add(selSizer,0)
         mainSizer.Add((10,10),0)
-        
+
         slideSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.SpinButton = wx.SpinButton(id=wxID_SPINBUTTON, parent=panel, 
+        self.SpinButton = wx.SpinButton(id=wxID_SPINBUTTON, parent=panel,
               size=wx.Size(25,24), style=wx.SP_VERTICAL | wx.SP_ARROW_KEYS)
         slideSizer.Add(self.SpinButton)
         self.SpinButton.SetRange(-1,1)
@@ -188,7 +188,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.slider1.Bind(wx.EVT_SLIDER, self.OnSlider1, id=wxID_FPRIMESLIDER1)
         mainSizer.Add(slideSizer,0,wx.EXPAND)
         mainSizer.Add((10,10),0)
-        
+
         choiceSizer = wx.BoxSizer(wx.HORIZONTAL)
         choiceSizer.Add((5,10),0)
         choiceSizer.Add(wx.StaticText(parent=panel, label='Plot scales:'),0,wx.EXPAND)
@@ -208,7 +208,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             else:
                 self.FFxaxis = 'T'
             self.UpDateFPlot(self.Wave,rePlot=False)
-            
+
         self.choice2 = wx.ComboBox(id=wxID_FPRIMECHOICE2, value=' sin('+Gktheta+')/'+Gklambda,
             choices=[' sin('+Gktheta+')/'+Gklambda,' 2'+Gktheta,' Q'],
             parent=panel, style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -224,7 +224,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Lines = []
         self.Elems = []
         self.linePicked = None
-        
+
     def OnFPRIMEExitMenu(self, event):
         self.parent.G2plotNB.Delete('Fprime')
         self.Close()
@@ -254,7 +254,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Delete.Enable(True)
             self.CalcFPPS()
             self.SetWaveEnergy(self.Wave)
-            
+
     def OnFPRIMEDeleteMenu(self, event):
         if len(self.Elems):
             ElList = []
@@ -271,7 +271,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 if not self.Elems:
                     self.Delete.Enable(False)
                 self.SetWaveEnergy(self.Wave)
-        
+
     def OnKALPHACrkaMenu(self, event):
         self.SetWaveEnergy(2.28962)
 
@@ -295,22 +295,22 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
 
     def OnKALPHAGakaMenu(self, event):
         self.SetWaveEnergy(1.34134)
-    
+
     def OnKALPHAMokaMenu(self, event):
         self.SetWaveEnergy(0.70926)
 
     def OnKALPHAAgkaMenu(self, event):
         self.SetWaveEnergy(0.55936)
-        
+
     def OnKALPHAInkaMenu(self, event):
         self.SetWaveEnergy(0.51357)
-        
+
     def OnSpinText1(self, event):
         self.SetWaveEnergy(float(self.SpinText1.GetValue()))
-        
+
     def OnSpinText2(self, event):
         self.SetWaveEnergy(self.Kev/(float(self.SpinText2.GetValue())))
-       
+
     def OnSpinButton(self, event):
         move = self.SpinButton.GetValue()/10000.
         self.Wave = min(max(self.Wave+move,self.Wmin),self.Wmax)
@@ -323,11 +323,11 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         else:
             Wave = self.Kev/(float(self.slider1.GetValue())/1000.)
         self.SetWaveEnergy(Wave)
-        
+
     def OnKeyPress(self,event):
         if event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
-            self.SetWaveEnergy(self.Wave)            
+            self.SetWaveEnergy(self.Wave)
 
     def UpDateFPlot(self,Wave,rePlot=True):
         """Plot f' & f" vs wavelength 0.05-3.0A"""
@@ -357,7 +357,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         Ymin = 0.0
         Ymax = 0.0
         colors=['r','b','g','c','m','k']
-        if self.FPPS: 
+        if self.FPPS:
             for i,Fpps in enumerate(self.FPPS):
                 Color = colors[i%6]
                 Ymin = min(Ymin,min(Fpps[2]),min(Fpps[3]))
@@ -367,7 +367,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 fppsP3 = np.array(Fpps[3])
                 self.ax.plot(fppsP1,fppsP2,Color,label=Fpps[0]+" f '")
                 self.ax.plot(fppsP1,fppsP3,Color,linestyle='dashed',label=Fpps[0]+' f "')
-        if self.ifWave: 
+        if self.ifWave:
             self.ax.set_xlabel(r'$\mathsf{\lambda, \AA}$',fontsize=14)
             self.ax.axvline(x=Wave,picker=3,color='black')
         else:
@@ -411,7 +411,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             X = []
             ff = []
             ffo = []
-            for S in Stl: 
+            for S in Stl:
                 ff.append(G2elem.ScatFac(Elem[2],S*S)+res)
                 ffo.append(G2elem.ScatFac(Elem[2],S*S))
                 if self.FFxaxis == 'S':
@@ -429,7 +429,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         if self.Elems:
             self.bx.legend(loc='best')
         self.bx.set_ylim(0.0,Ymax+1.0)
-        
+
         if newPlot:
             newPlot = False
             self.Page.canvas.draw()
@@ -446,10 +446,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 self.bxylim = []
                 tb.push_current()
             self.Page.canvas.draw()
-        
+
     def OnPick(self, event):
         self.linePicked = event.artist
-        
+
     def OnMotion(self,event):
         xpos = event.xdata
         if xpos and xpos>0.1:
@@ -465,7 +465,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 self.parent.G2plotNB.status.SetStatusText("%s: %.4f, f,f+f': %.3f"%(self.bxlabel,xpos,ypos),1)
         if self.linePicked:
             self.SetWaveEnergy(Wave)
-                
+
     def OnRelease(self, event):
         if self.linePicked is None: return
         self.linePicked = None
@@ -474,7 +474,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             if self.ifWave:
                 Wave = xpos
             else:
-                Wave = self.Kev/xpos               
+                Wave = self.Kev/xpos
             self.SetWaveEnergy(Wave)
 
     def SetWaveEnergy(self,Wave):
@@ -589,19 +589,19 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         info.Copyright = '''
 Robert B. Von Dreele, 2008(C)
 Argonne National Laboratory
-This product includes software developed 
-by the UChicago Argonne, LLC, as 
+This product includes software developed
+by the UChicago Argonne, LLC, as
 Operator of Argonne National Laboratory.        '''
         info.Description = '''
-For calculating real and resonant X-ray scattering factors to 250keV;       
-based on Fortran program of Cromer & Liberman corrected for 
+For calculating real and resonant X-ray scattering factors to 250keV;
+based on Fortran program of Cromer & Liberman corrected for
 Kissel & Pratt energy term; Jensen term not included
 (D. T. Cromer and D. A. Liberman, Acta Cryst. (1981). A37, 267-268.)
         '''
         wxadv.AboutBox(info)
 
 if __name__ == "__main__":
-    import GSASIIplot as G2plt
+    from . import GSASIIplot as G2plt
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame

@@ -48,9 +48,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
         return True
     
     def Reader(self,filename, ParentFrame=None, **unused):
-        '''Read the TIF file using :func:`GetTifData`. If that fails,
-        use :func:`scipy.misc.imread` and give the user a chance to
-        edit the likely wrong default image parameters. 
+        '''Read the TIF file using :func:`GetTifData`.
         '''
         self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)
         if self.Npix == 0:

@@ -684,7 +684,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     sumImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
     if sumImg is None:
         return []
-    sumImg = np.array(sumImg,dtype='int32')
+    sumImg = np.array(sumImg,dtype=np.int32)
     darkImg = False
     if 'dark image' in Controls:
         darkImg,darkScale = Controls['dark image']
@@ -697,7 +697,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
             darkImage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
             if darkImg is None:
                 raise Exception('Error reading dark image {}'.format(imagefile))
-            sumImg += np.array(darkImage*darkScale,dtype='int32')
+            sumImg += np.array(darkImage*darkScale,dtype=np.int32)
     if 'background image' in Controls:
         backImg,backScale = Controls['background image']
         if backImg:     #ignores any transmission effect in the background image
@@ -709,9 +709,9 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
             if backImage is None:
                 raise Exception('Error reading background image {}'.format(imagefile))
             if darkImg:
-                backImage += np.array(darkImage*darkScale/backScale,dtype='int32')
+                backImage += np.array(darkImage*darkScale/backScale,dtype=np.int32)
             else:
-                sumImg += np.array(backImage*backScale,dtype='int32')
+                sumImg += np.array(backImage*backScale,dtype=np.int32)
     if 'Gain map' in Controls:
         gainMap = Controls['Gain map']
         if gainMap:
@@ -726,7 +726,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     sumImg -= int(Controls.get('Flat Bkg',0))
     Imax = np.max(sumImg)
     Controls['range'] = [(0,Imax),[0,Imax]]
-    return np.asarray(sumImg,dtype='int32')
+    return np.asarray(sumImg,dtype=np.int32)
 
 def _constr_type(var):
     '''returns the constraint type based on phase/histogram use

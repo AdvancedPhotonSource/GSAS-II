@@ -1097,7 +1097,7 @@ def readMasks(filename,masks,ignoreThreshold):
             S = File.readline()
             continue
         [key,val] = S.strip().split(':',1)
-        if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
+        if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds','Xlines','Ylines']:
             if ignoreThreshold and key == 'Thresholds':
                 S = File.readline()
                 continue

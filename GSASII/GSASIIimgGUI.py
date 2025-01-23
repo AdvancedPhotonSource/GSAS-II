@@ -74,7 +74,7 @@ def GetImageZ(G2frame,data,newRange=False):
     Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
     if imagefile is None: return []
     formatName = data.get('formatName','')
-    sumImg = np.array(G2fil.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=formatName),dtype='float32')
+    sumImg = np.array(G2fil.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=formatName),dtype=np.float32)
     if sumImg is None:
         return []
     darkImg = False
@@ -87,9 +87,9 @@ def GetImageZ(G2frame,data,newRange=False):
                 dformatName = Ddata.get('formatName','')
                 Npix,darkfile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
 #                darkImage = G2fil.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
-                darkImage = np.array(G2fil.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName),dtype='float32')
-                if darkImg is not None:
-                    sumImg += np.array(darkImage*darkScale,dtype='float32')
+                darkImage = np.array(G2fil.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName),dtype=np.float32)
+                if darkImg is not None:                
+                    sumImg += np.array(darkImage*darkScale,dtype=np.float32)
             else:
                 print('Warning: resetting dark image (not found: {})'.format(
                     darkImg))
@@ -102,11 +102,11 @@ def GetImageZ(G2frame,data,newRange=False):
                 Npix,backfile,imagetag = G2IO.GetCheckImageFile(G2frame,Bid)
                 Bdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Bid,'Image Controls'))
                 bformatName = Bdata.get('formatName','')
-                backImage = np.array(G2fil.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName),dtype='float32')
+                backImage = np.array(G2fil.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName),dtype=np.float32)
                 if darkImg and backImage is not None:
-                    backImage += np.array(darkImage*darkScale/backScale,dtype='float32')
+                    backImage += np.array(darkImage*darkScale/backScale,dtype=np.float32)
                 if backImage is not None:
-                    sumImg += np.array(backImage*backScale,dtype='float32')
+                    sumImg += np.array(backImage*backScale,dtype=np.float32)
     if 'Gain map' in data:
         gainMap = data['Gain map']
         if gainMap:
@@ -122,7 +122,8 @@ def GetImageZ(G2frame,data,newRange=False):
     Imin = np.min(sumImg)
     if 'range' not in data or newRange:
         data['range'] = [(Imin,Imax),[Imin,Imax]]
-    return np.asarray(np.rint(sumImg),dtype='int32')
+    #return np.asarray(np.rint(sumImg),dtype=np.int32)
+    return np.array(np.array(np.rint(sumImg),dtype=int),dtype=np.int32)  # double-cast removes warning. Why?
 
 def UpdateImageData(G2frame,data):
 
@@ -1789,7 +1790,7 @@ def UpdateMasks(G2frame,data):
     def onDeleteMask(event):
         Obj = event.GetEventObject()
         typ = Obj.locationcode.split('+')[0]
-        num = int(Obj.locationcode.split('+')[1])
+        num = int(Obj.locationcode.split('+')[1])-1 #off by one?
         del(data[typ][num])
         wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
@@ -2013,7 +2014,6 @@ def UpdateMasks(G2frame,data):
 
     def OnNewXlineMask(event):
         'Start a new x-line mask'
-        print('x')
         G2frame.MaskKey = 'x'
         G2plt.OnStartMask(G2frame)
 
@@ -2194,7 +2194,7 @@ def UpdateMasks(G2frame,data):
     def OnAzimuthPlot(event):
         GkTheta = chr(0x03f4)
         Obj = event.GetEventObject()
-        ringId = int(Obj.locationcode.split('+')[1])
+        ringId = int(Obj.locationcode.split('+')[1])-1
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
         image = GetImageZ(G2frame,Controls)
         RingInt = G2img.AzimuthIntegrate(image,Controls,data,ringId)

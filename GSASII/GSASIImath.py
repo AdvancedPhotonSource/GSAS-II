@@ -4655,7 +4655,7 @@ def SearchMap(generalData,drawingData,Neg=False):
         res = mapData['GridStep']*2.
         incre = np.array(rho.shape,dtype=float)
         step = max(1.0,1./res)+1
-        steps = np.array((3*[step,]),dtype='int32')
+        steps = np.array((3*[step,]),dtype=np.int32)
     except KeyError:
         G2fil.G2Print ('**** ERROR - Fourier map not defined')
         return peaks,mags

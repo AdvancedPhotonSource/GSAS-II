@@ -4,7 +4,6 @@
 '''
 import wx
 import wx.aui
-import matplotlib as mpl
 import matplotlib.figure as mplfig
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas

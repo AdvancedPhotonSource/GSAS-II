@@ -45,3 +45,6 @@ jobs:
       # run install to see if it works
       - name: Build
         run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
+
+      - name: test
+        run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} test

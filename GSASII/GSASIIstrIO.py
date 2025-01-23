@@ -14,6 +14,7 @@ import os.path as ospath
 import time
 import math
 import random as rand
+import shutil
 import copy
 import pickle as cPickle
 import numpy as np
@@ -27,7 +28,6 @@ from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
 from . import GSASIIstrMath as G2stMth
 from . import GSASIIfiles as G2fil
-from ._utils import _copy_file
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -632,7 +632,7 @@ def GPXBackup(GPXfile,makeBack=True):
     tries = 0
     while True:
         try:
-            _copy_file(GPXfile,GPXback)
+            shutil.copy(GPXfile,GPXback)
             break
         except:
             tries += 1

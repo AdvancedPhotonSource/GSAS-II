@@ -25,7 +25,12 @@ import time
 import sys
 import random as ran
 import subprocess as subp
+import platform
+import shutil
 
+import numpy as np
+import numpy.linalg as nl
+import numpy.ma as ma
 import scipy.optimize as so
 from . import GSASIIpath
 from . import GSASIIlattice as G2lat
@@ -49,13 +54,8 @@ from . import GSASIIobj as G2obj
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIfiles as G2fl
 from . import GSASIIconstrGUI as G2cnstG
-import numpy as np
-import numpy.linalg as nl
-import numpy.ma as ma
 from . import atmdata
 from . import ISODISTORT as ISO
-import platform
-from ._utils import _copy_file
 
 # XXX I suspect this is Unix-specific -- need porting help!
 
@@ -6053,7 +6053,9 @@ def UpdatePhaseData(G2frame,Item,data):
                     if os.path.exists(fName): # is there a file by this name in the current directory?
                         RMCPdict['files'][fil][0] = fName
                     else: # nope, copy it
-                        _copy_file(dlg.GetPath(), os.path.join(G2frame.LastGPXdir,fName))
+                        # TODO: is G2frame.LastGPXdir the right choice here or
+                        #       do I want the current working directory (same?)
+                        shutil.copy(dlg.GetPath(), os.path.join(G2frame.LastGPXdir,fName))
                     if not os.path.exists(fName): # sanity check
                         print(f'Error: file {fName} not found in .gpx directory ({G2frame.LastGPXdir})')
                         return
@@ -7948,7 +7950,6 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             finally:
                 dlg.Destroy()
             if result == wx.ID_YES:
-                import shutil
                 shutil.rmtree(rmcname)
             else:
                 return

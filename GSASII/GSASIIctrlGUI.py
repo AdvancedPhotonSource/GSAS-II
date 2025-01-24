@@ -49,7 +49,6 @@ from . import GSASIIlattice as G2lat
 from . import GSASIImath as G2mth
 from . import GSASIIstrMain as G2stMn
 from . import GSASIImiscGUI as G2IO
-from . import config_example
 from .tutorialIndex import tutorialIndex
 if sys.version_info[0] >= 3:
     unicode = str

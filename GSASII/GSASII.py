@@ -14,7 +14,6 @@ except ModuleNotFoundError:
     
 if pkginfo is None:  # fixup path if GSASII not installed into Python
     os.environ["GSASII_YOLO_PATH"] = "True"
-    #print('GSAS-II not installed in Python: Hacking sys.path')
     sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
 
 from GSASII.GSASIIGUI import main

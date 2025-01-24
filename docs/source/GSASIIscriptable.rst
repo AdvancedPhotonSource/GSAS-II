@@ -631,8 +631,9 @@ Sample Parameters                           Should be provided as a **list** of 
                                             Available for powder histograms only.
 \                     Absorption
 \                     Contrast
-\                     DisplaceX             Sample displacement along the X direction
-\                     DisplaceY             Sample displacement along the Y direction
+\                     DisplaceX             Sample displacement along the X direction (Debye-Scherrer)
+\                     DisplaceY             Sample displacement along the Y direction (Debye-Scherrer)
+\                     Shift                 Bragg-Brentano sample displacement 
 \                     Scale                 Histogram Scale factor
 
 Background                                  Sample background. Value will be a dict or 

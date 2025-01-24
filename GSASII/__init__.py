@@ -3,6 +3,7 @@ import sys
 
 sys.path.append('.')
 
+class PathHackingException(Exception): pass
 
 def make_path_watcher():
     import sys
@@ -14,10 +15,12 @@ def make_path_watcher():
             return
         module, filename, path, meta_path, path_hooks = args
         if path is not None and tuple(path) != init_path:
-            for line in traceback.format_stack():
+            lines = list(traceback.format_stack())
+            for line in lines:
                 print(line.strip())
             print(set(path) - set(init_path))
-            sys.exit(1)
+            #sys.exit(1)
+            raise PathHackingException(lines[-2].strip())
     return no_path_hacking
 
 if not os.environ.get("GSASII_YOLO_PATH", ''):

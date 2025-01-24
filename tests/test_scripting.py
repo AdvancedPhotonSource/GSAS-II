@@ -7,14 +7,18 @@ import tempfile
 import numpy.testing as npt
 home = os.path.dirname(__file__)
 work = tempfile.gettempdir()
-work='/tmp/'
 
-import importlib  # fixup path if GSASII not installed into Python
+import importlib.util  # fixup path if GSASII not installed into Python
 if importlib.util.find_spec('GSASII') is None:
     print('GSAS-II not installed in Python: Hacking sys.path')
     os.environ["GSASII_YOLO_PATH"] = "True"
     sys.path.append(os.path.dirname(home))
-
+else:
+    # this seems to be needed to run scriptable inside the testing framework
+    # TODO: figure out why this is
+    os.environ["GSASII_YOLO_PATH"] = "True"
+    
+    
 import GSASII.GSASIIscriptable as G2sc
 
 def test_refine():

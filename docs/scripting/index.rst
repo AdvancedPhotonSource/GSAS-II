@@ -23,10 +23,10 @@ included here.
     :maxdepth: 2
     :numbered: 4
 
+    GSASIIscriptable.rst 
+    objvarorg.rst 
+    GSASIIobj.rst 
     packages.rst
-    objvarorg.rst
-    GSASIIobj.rst
-    GSASIIscriptable.rst
     scrpt-indices.rst
 
 .. toctree::

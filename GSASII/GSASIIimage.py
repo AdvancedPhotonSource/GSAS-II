@@ -787,6 +787,42 @@ def EdgeFinder(image,data):
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     return zip(tax,tay)
+
+def polymask(blkSize,X,Y,Poly):
+    
+      # DO K=0,N-1
+      #   MASK(K) = .FALSE.
+      #   DO I=0,M-1
+      #     P2X = POLY(I,0)
+      #     P2Y = POLY(I,1)
+      #     IF (Y(K) .GT. MIN(P1Y,P2Y)) THEN
+      #       IF (Y(K) .LE. MAX(P1Y,P2Y)) THEN
+      #         IF (X(K) .LE. MAX(P1X,P2X)) THEN
+      #           IF (P1Y .NE.P2Y) THEN
+      #             XINTERS = (Y(K)-P1Y)*(P2X-P1X)/(P2Y-P1Y)+P1X
+      #           END IF
+      #           IF ( (P1X .EQ. P2X) .OR. (X(K) .LE. XINTERS) ) THEN
+      #             MASK(K) = .NOT.MASK(K)
+      #           END IF
+      #         END IF
+      #       END IF
+      #     END IF
+      #     P1X = P2X
+      #     P1Y = P2Y
+      #   END DO
+      # END DO
+    import matplotlib.figure as mplfig
+    figure = mplfig.Figure(figsize=(1,1),dpi=blkSize)
+#    canvas = hcCanvas(figure)
+    figure.clf()
+    ax0 = figure.add_subplot()
+    ax0.axis("off")
+    figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
+      
+      
+      
+    return
+    
     
 def MakeFrameMask(data,frame):
     '''Assemble a Frame mask for a image, according to the input supplied.

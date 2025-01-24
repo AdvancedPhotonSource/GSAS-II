@@ -5572,10 +5572,17 @@ def UpdatePhaseData(G2frame,Item,data):
             if PE.ShowModal() == wx.ID_OK:
                 Atype2 = PE.Elem.strip()
                 AtomInfo2 = G2elem.GetAtomInfo(Atype2)
-                Z2 = AtomInfo2['Z']
+                FF2 = G2elem.GetFFtable([Atype2])[Atype2]
                 B2 = AtomInfo2['Isotopes']['Nat. Abund.']['SL'][0]
             PE.Destroy()
-            for ind in indx:
+            SQ = 0.0
+            PE2 = G2G.SingleFloatDialog(G2frame,'form factor','Enter sinth/lam for atom frac split',SQ)
+            if PE2.ShowModal() == wx.ID_OK:
+                SQ = PE2.GetValue()
+            PE2.Destroy()    
+            ff2 = G2elem.ScatFac(FF2,SQ**2)
+        print(' X-ray site fractions for sin(th)/lam = %.3f'%SQ)
+        for ind in indx:
                 Aname1 = atomData[ind][ct-1]
                 Atype1 = G2elem.FixValence(atomData[ind][ct])
                 Afrac = atomData[ind][cx+3]
@@ -5584,9 +5591,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 if Atype1 == Atype2:
                     print('ERROR - 2nd atom type must be different from selected atom')
                     continue
-                Z1 = AtomInfo1['Z']
+                FF1 = G2elem.GetFFtable([Atype1])[Atype1]
+                ff1 = G2elem.ScatFac(FF1,SQ**2)
                 B1 = AtomInfo1['Isotopes']['Nat. Abund.']['SL'][0]
-                frac1 = (Z1*Afrac-Z2)/(Z1-Z2)
+                frac1 = (ff1*Afrac-ff2)/(ff1-ff2)
                 bfrac1 = (B1*Afrac-B2)/(B1-B2)
                 print(' For %s: X-ray based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell'     \
                       %(Aname1,Atype1,frac1,frac1*Amult,Atype2,(1.-frac1),(1.-frac1)*Amult))

@@ -300,12 +300,6 @@ Data tab. After changing this, GSAS-II needs to be restarted for the
 change to take effect. Default is False.
 '''
 
-svn_exec = None
-'''Defines the full path to a subversion executable. 
-If None (the default), GSAS-II will search for a svn or svn.exe file 
-in the current path or in the location where the current Python is located.
-'''
-
 G2RefinementWindow = False
 '''When True a custom progress window is displayed to track the 
 progress of refinements. When False a generic wxpython supplied progress

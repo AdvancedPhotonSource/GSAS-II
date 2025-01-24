@@ -101,24 +101,6 @@ def addPrevGPX(fil,cDict):
     cDict['previous_GPX_files'][1] = files[:5]
     configDict['previous_GPX_files'] = cDict['previous_GPX_files'][1]
 
-# routines for looking a version numbers in files
-version = -1
-def SetVersionNumber(RevString):
-    '''Set the subversion (svn) version number. No longer in use.
-
-    :param str RevString: something like "$Revision: 5796 $"
-      that is set by subversion when the file is retrieved from subversion.
-
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5796 $")`` in every python
-    file.
-    '''
-    try:
-        RevVersion = int(RevString.split(':')[1].split()[0])
-        global version
-        version = max(version,RevVersion)
-    except:
-        pass
-
 def LoadConfigFile(filename):
     '''Read a GSAS-II configuration file.
     Comments (starting with "%") are removed, as are empty lines
@@ -185,10 +167,9 @@ def GetBinaryPrefix(pyver=None):
 
 #==============================================================================
 #==============================================================================
-# hybrid routines that use git & svn (to be revised to remove svn someday)
 G2_installed_result = None
 def HowIsG2Installed():
-    '''Determines if GSAS-II was installed with git, svn or none of the above.
+    '''Determines if GSAS-II was installed with git.
     Result is cached to avoid time needed for multiple calls of this.
 
     :returns:
@@ -196,7 +177,6 @@ def HowIsG2Installed():
         if installed from the GSAS-II GitHub repository (defined in g2URL),
         the string is 'github', if the post-3/2024 directory structure is
         in use '-rev' is appended.
-      * or 'svn' is installed from an svn repository (assumed as defined in g2home)
       * or 'noVCS' if installed without a connection to a version control system
     '''
     global G2_installed_result
@@ -216,26 +196,12 @@ def HowIsG2Installed():
         return G2_installed_result
     except:
         pass
-    if svnGetRev(verbose=False):
-        G2_installed_result = 'svn'
-        return G2_installed_result
     G2_installed_result = 'noVCS'
     return G2_installed_result
 
 def GetVersionNumber():
-    '''Obtain a version number for GSAS-II from git, svn or from the
+    '''Obtain a version number for GSAS-II from git or from the
     files themselves, if no other choice.
-
-    This routine was used to get the GSAS-II version from strings
-    placed in files by svn with the version number being the latest
-    number found, gathered by :func:`SetVersionNumber` (not 100% accurate
-    as the latest version might have files changed that are not tagged
-    by svn or with a call to SetVersionNumber. Post-svn this info
-    will not be reliable, and this mechanism is replaced by a something
-    created with a git hook, file git_verinfo.py (see the git_filters.py file).
-
-    Before resorting to the approaches above, try to ask git or svn
-    directly.
 
     :returns: an int value usually, but a value of 'unknown' might occur
     '''
@@ -264,10 +230,6 @@ def GetVersionNumber():
             pass
         return "unknown"
 
-    elif HowIsG2Installed() == 'svn':
-        rev = svnGetRev()
-        if rev is not None: return rev
-
     # No luck asking, look up version information from git_verinfo.py
     try:
         import git_verinfo as gv
@@ -284,11 +246,7 @@ def GetVersionNumber():
     except:
         pass
 
-    # all else failed, use the svn SetVersionNumber value (global version)
-    if version > 5000:  # a small number must be wrong
-        return version
-    else:
-        return "unknown"
+    return "unknown"
 
 def getG2VersionInfo():
     if HowIsG2Installed().startswith('git'):
@@ -321,25 +279,6 @@ def getG2VersionInfo():
             elif len(rc) > 0:
                 msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
         return f"  GSAS-II:    {commit.hexsha[:6]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
-    elif HowIsG2Installed() == 'svn':
-        rev = svnGetRev()
-        if rev is None:
-            "no SVN"
-        else:
-            rev = f"SVN version {rev}"
-
-        # patch 11/2020: warn if GSASII path has not been updated past v4576.
-        # For unknown reasons on Mac with gsas2full, there have been checksum
-        # errors in the .so files that prevented svn from completing updates.
-        # If GSASIIpath.svnChecksumPatch is not present, then the fix for that
-        # has not been retrieved, so warn. Keep for a year or so.
-        try:
-            svnChecksumPatch
-        except:
-            print('Warning GSAS-II incompletely updated. Please contact toby@anl.gov')
-        # end patch
-
-        return f"Latest GSAS-II revision: {GetVersionNumber()} (svn {rev})"
     else:
         try:
             import git_verinfo as gv
@@ -965,766 +904,6 @@ def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTu
 
 #==============================================================================
 #==============================================================================
-# routines to interface with subversion
-g2home = 'https://subversion.xray.aps.anl.gov/pyGSAS' # 'Define the location of the GSAS-II subversion repository'
-proxycmds = [] # 'Used to hold proxy information for subversion, set if needed in whichsvn'
-svnLocCache = None  # 'Cached location of svn to avoid multiple searches for it'
-
-def MakeByte2str(arg):
-    '''Convert output from subprocess pipes (bytes) to str (unicode) in Python 3.
-    In Python 2: Leaves output alone (already str).
-    Leaves stuff of other types alone (including unicode in Py2)
-    Works recursively for string-like stuff in nested loops and tuples.
-
-    typical use::
-
-        out = MakeByte2str(out)
-
-    or::
-
-        out,err = MakeByte2str(s.communicate())
-
-    '''
-    if isinstance(arg,str): return arg
-    if isinstance(arg,bytes):
-        try:
-            return arg.decode()
-        except:
-            if GetConfigValue('debug'): print('Decode error')
-            return arg
-    if isinstance(arg,list):
-        return [MakeByte2str(i) for i in arg]
-    if isinstance(arg,tuple):
-        return tuple([MakeByte2str(i) for i in arg])
-    return arg
-
-def getsvnProxy():
-    '''Loads a proxy for subversion from the proxyinfo.txt file created
-    by bootstrap.py or File => Edit Proxy...; If not found, then the
-    standard http_proxy and https_proxy environment variables are scanned
-    (see https://docs.python.org/3/library/urllib.request.html#urllib.request.getproxies)
-    with case ignored and that is used.
-    '''
-    global proxycmds
-    proxycmds = []
-    proxyinfo = os.path.join(os.path.expanduser('~/.G2local/'),"proxyinfo.txt")
-    if not os.path.exists(proxyinfo):
-        proxyinfo = os.path.join(path2GSAS2,"proxyinfo.txt")
-    if os.path.exists(proxyinfo):
-        fp = open(proxyinfo,'r')
-        host = fp.readline().strip()
-        # allow file to begin with comments
-        while host.startswith('#'):
-            host = fp.readline().strip()
-        port = fp.readline().strip()
-        etc = []
-        line = fp.readline()
-        while line:
-            etc.append(line.strip())
-            line = fp.readline()
-        fp.close()
-        setsvnProxy(host,port,etc)
-        return host,port,etc
-    import urllib.request
-    proxdict = urllib.request.getproxies()
-    varlist = ("https","http")
-    for var in proxdict:
-        if var.lower() in varlist:
-            proxy = proxdict[var]
-            pl = proxy.split(':')
-            if len(pl) < 2: continue
-            host = pl[1].strip('/')
-            port = ''
-            if len(pl) == 3:
-                port = pl[2].strip('/').strip()
-            return host,port,''
-    return '','',''
-
-def setsvnProxy(host,port,etc=[]):
-    '''Sets the svn commands needed to use a proxy
-    '''
-    global proxycmds
-    proxycmds = []
-    host = host.strip()
-    port = port.strip()
-    if host:
-        proxycmds.append('--config-option')
-        proxycmds.append('servers:global:http-proxy-host='+host)
-        if port:
-            proxycmds.append('--config-option')
-            proxycmds.append('servers:global:http-proxy-port='+port)
-    for item in etc:
-        proxycmds.append(item)
-
-def whichsvn():
-    '''Returns a path to the subversion exe file, if any is found.
-    Searches the current path after adding likely places where GSAS-II
-    might install svn.
-
-    :returns: None if svn is not found or an absolute path to the subversion
-      executable file.
-    '''
-    # use a previosuly cached svn location
-    global svnLocCache
-    if svnLocCache: return svnLocCache
-    # prepare to find svn
-    is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    svnprog = 'svn'
-    if sys.platform.startswith('win'): svnprog += '.exe'
-    host,port,etc = getsvnProxy()
-    if GetConfigValue('debug') and host:
-        print('DBG_Using proxy host {} port {}'.format(host,port))
-    if GetConfigValue('svn_exec'):
-        exe_file = GetConfigValue('svn_exec')
-        print('Using ',exe_file)
-        if is_exe(exe_file):
-            try:
-                p = subprocess.Popen([exe_file,'help'],stdout=subprocess.PIPE)
-                res = p.stdout.read()
-                if not res: return
-                p.communicate()
-                svnLocCache = os.path.abspath(exe_file)
-                return svnLocCache
-            except:
-                pass
-    # add likely places to find subversion when installed with GSAS-II
-    pathlist = os.environ["PATH"].split(os.pathsep)
-    pathlist.insert(0,os.path.split(sys.executable)[0])
-    pathlist.insert(1,path2GSAS2)
-    for rpt in ('..','bin'),('..','Library','bin'),('svn','bin'),('svn',),('.'):
-        pt = os.path.normpath(os.path.join(path2GSAS2,*rpt))
-        if os.path.exists(pt):
-            pathlist.insert(0,pt)
-    # search path for svn or svn.exe
-    for path in pathlist:
-        exe_file = os.path.join(path, svnprog)
-        if is_exe(exe_file):
-            try:
-                p = subprocess.Popen([exe_file,'help'],stdout=subprocess.PIPE)
-                res = p.stdout.read()
-                if not res: return
-                p.communicate()
-                svnLocCache = os.path.abspath(exe_file)
-                return svnLocCache
-            except:
-                pass
-    svnLocCache = None
-
-svn_version = None
-def svnVersion(svn=None):
-    '''Get the version number of the current subversion executable.
-    The result is cached, as this takes a bit of time to run and
-    is done a fair number of times.
-
-    :returns: a string with a version number such as "1.6.6" or None if
-      subversion is not found.
-
-    '''
-    global svn_version
-    if svn_version is not None:
-        return svn_version
-    if not svn: svn = whichsvn()
-    if not svn: return
-
-    cmd = [svn,'--version','--quiet']
-    s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print ('subversion error!\nout=%s'%out)
-        print ('err=%s'%err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        return None
-    svn_version = out.strip()
-    return svn_version
-
-def svnVersionNumber(svn=None):
-    '''Get the version number of the current subversion executable
-
-    :returns: a fractional version number such as 1.6 or None if
-      subversion is not found.
-
-    '''
-    ver = svnVersion(svn)
-    if not ver: return
-    M,m = ver.split('.')[:2]
-    return int(M)+int(m)/10.
-
-def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
-    '''Get the revision log information for a specific version of the specified package
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located.
-    :param int version: the version number to be looked up or None (default)
-       for the latest version.
-
-    :returns: a dictionary with keys (one hopes) 'author', 'date', 'msg', and 'revision'
-
-    '''
-    import xml.etree.ElementTree as ET
-    svn = whichsvn()
-    if not svn: return
-    if version is not None:
-        vstr = '-r'+str(version)
-    else:
-        vstr = '-rHEAD'
-
-    cmd = [svn,'log',fpath,'--xml',vstr]
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print ('out=%s'%out)
-        print ('err=%s'%err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        return None
-    x = ET.fromstring(out)
-    d = {}
-    for i in x.iter('logentry'):
-        d = {'revision':i.attrib.get('revision','?')}
-        for j in i:
-            d[j.tag] = j.text
-        break # only need the first
-    return d
-
-svnLastError = ''
-def svnGetRev(fpath=os.path.split(__file__)[0],local=True,verbose=True):
-    '''Obtain the version number for the either the last update of the local version
-    or contacts the subversion server to get the latest update version (# of Head).
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-    :param bool local: determines the type of version number, where
-       True (default): returns the latest installed update
-       False: returns the version number of Head on the server
-
-    :Returns: the version number as an str or
-       None if there is a subversion error (likely because the path is
-       not a repository or svn is not found). The error message is placed in
-       global variable svnLastError
-    '''
-
-    import xml.etree.ElementTree as ET
-    svn = whichsvn()
-    if not svn: return
-    if local:
-        cmd = [svn,'info',fpath,'--xml']
-    else:
-        cmd = [svn,'info',fpath,'--xml','-rHEAD']
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--non-interactive', '--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    # if GetConfigValue('debug'):
-    #     s = 'subversion command:\n  '
-    #     for i in cmd: s += i + ' '
-    #     print(s)
-    s = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        if verbose:
-            print ('svn failed\n%s'%out)
-            print ('err=%s'%err)
-            print('\nsvn command:',' '.join(cmd))
-        global svnLastError
-        svnLastError = err
-        return None
-    x = ET.fromstring(out)
-    for i in x.iter('entry'):
-        rev = i.attrib.get('revision')
-        if rev: return rev
-
-def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
-    '''Returns a list of files that were changed locally. If no files are changed,
-       the list has length 0
-
-    :param fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-
-    :returns: None if there is a subversion error (likely because the path is
-       not a repository or svn is not found)
-
-    '''
-    import xml.etree.ElementTree as ET
-    svn = whichsvn()
-    if not svn: return
-    cmd = [svn,'status',fpath,'--xml']
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err: return None
-    x = ET.fromstring(out)
-    changed = []
-    for i in x.iter('entry'):
-        if i.find('wc-status').attrib.get('item') == 'modified':
-            changed.append(i.attrib.get('path'))
-    return changed
-
-def svnCleanup(fpath=os.path.split(__file__)[0],verbose=True):
-    '''This runs svn cleanup on a selected local directory.
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-    '''
-    svn = whichsvn()
-    if not svn: return
-    if verbose: print(u"Performing svn cleanup at "+fpath)
-    cmd = [svn,'cleanup',fpath]
-    if verbose: showsvncmd(cmd)
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print(60*"=")
-        print("****** An error was noted, see below *********")
-        print(60*"=")
-        print(err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        #raise Exception('svn cleanup failed')
-        return False
-    elif verbose:
-        print(out)
-    return True
-
-def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
-    '''This performs an update of the files in a local directory from a server.
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-    :param version: the number of the version to be loaded. Used only
-       cast as a string, but should be an integer or something that corresponds to a
-       string representation of an integer value when cast. A value of None (default)
-       causes the latest version on the server to be used.
-    '''
-    svn = whichsvn()
-    if not svn: return
-    if version:
-        verstr = '-r' + str(version)
-    else:
-        verstr = '-rHEAD'
-    if verbose: print(u"Updating files at "+fpath)
-    cmd = [svn,'update',fpath,verstr,
-           '--non-interactive',
-           '--accept','theirs-conflict','--force']
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    #if verbose or GetConfigValue('debug'):
-    if verbose:
-        s = 'subversion command:\n  '
-        for i in cmd: s += i + ' '
-        print(s)
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print(60*"=")
-        print("****** An error was noted, see below *********")
-        print(60*"=")
-        print(err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        if svnCleanup(fpath):
-            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            out,err = MakeByte2str(s.communicate())
-            if err:
-                print(60*"=")
-                print("****** Drat, failed again: *********")
-                print(60*"=")
-                print(err)
-            else:
-                return
-        if 'Checksum' in err:  # deal with Checksum problem
-            err = svnChecksumPatch(svn,fpath,verstr)
-            if err:
-                print('error from svnChecksumPatch\n\t',err)
-            else:
-                return
-        raise Exception('svn update failed')
-    elif verbose:
-        print(out)
-
-def showsvncmd(cmd):
-    s = '\nsvn command:  '
-    for i in cmd: s += i + ' '
-    print(s)
-
-def svnChecksumPatch(svn,fpath,verstr):
-    '''This performs a fix when svn cannot finish an update because of
-    a Checksum mismatch error. This seems to be happening on OS X for
-    unclear reasons.
-    '''
-    print('\nAttempting patch for svn Checksum mismatch error\n')
-    svnCleanup(fpath)
-    cmd = [svn,'update','--set-depth','empty',
-               os.path.join(fpath,'bindist')]
-    showsvncmd(cmd)
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--non-interactive', '--trust-server-cert']
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    #if err: print('error=',err)
-    cmd = [svn,'switch',g2home+'/trunk/bindist',
-               os.path.join(fpath,'bindist'),
-               '--non-interactive', '--trust-server-cert', '--accept',
-               'theirs-conflict', '--force', '-rHEAD', '--ignore-ancestry']
-    showsvncmd(cmd)
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    DownloadG2Binaries(g2home,verbose=True)
-    cmd = [svn,'update','--set-depth','infinity',
-               os.path.join(fpath,'bindist')]
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--non-interactive', '--trust-server-cert']
-    showsvncmd(cmd)
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    #if err: print('error=',err)
-    cmd = [svn,'update',fpath,verstr,
-                       '--non-interactive',
-                       '--accept','theirs-conflict','--force']
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    showsvncmd(cmd)
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    #if err: print('error=',err)
-    return err
-
-def svnUpgrade(fpath=os.path.split(__file__)[0]):
-    '''This reformats subversion files, which may be needed if an upgrade of subversion is
-    done.
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-    '''
-    svn = whichsvn()
-    if not svn: return
-    cmd = [svn,'upgrade',fpath,'--non-interactive']
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print("svn upgrade did not happen (this is probably OK). Messages:")
-        print (err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-
-def svnUpdateProcess(version=None,projectfile=None,branch=None):
-    '''perform an update of GSAS-II in a separate python process'''
-    if not projectfile:
-        projectfile = ''
-    else:
-        projectfile = os.path.realpath(projectfile)
-        print ('restart using %s'%projectfile)
-    if branch:
-        version = branch
-    elif not version:
-        version = ''
-    else:
-        version = str(version)
-    # start the upgrade in a separate interpreter (avoids loading .pyd files)
-    ex = sys.executable
-    if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
-        if os.path.exists(ex+'w'): ex += 'w'
-    proc = subprocess.Popen([ex,__file__,projectfile,version])
-    if sys.platform != "win32":
-        proc.wait()
-    sys.exit()
-
-def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
-    '''This performs a switch command to move files between subversion trees.
-    Note that if the files were previously downloaded,
-    the switch command will update the files to the newest version.
-
-    :param str rpath: path to locate files, relative to the GSAS-II
-      installation path (defaults to path2GSAS2)
-    :param str URL: the repository URL
-    :param str loadpath: the prefix for the path, if specified. Defaults to path2GSAS2
-    :param bool verbose: if True (default) diagnostics are printed
-    '''
-    svn = whichsvn()
-    if not svn: return
-    URL = baseURL[:]
-    if baseURL[-1] != '/':
-        URL = baseURL + '/' + filename
-    else:
-        URL = baseURL + filename
-    if loadpath:
-        fpath = os.path.join(loadpath,rpath,filename)
-        svntmp = os.path.join(loadpath,'.svn','tmp')
-    else:
-        fpath = os.path.join(path2GSAS2,rpath,filename)
-        svntmp = os.path.join(path2GSAS2,'.svn','tmp')
-    # fix up problems with missing empty directories
-    if not os.path.exists(fpath):
-        print('Repairing missing directory',fpath)
-        cmd = [svn,'revert',fpath]
-        s = subprocess.Popen(cmd,stderr=subprocess.PIPE)
-        out,err = MakeByte2str(s.communicate())
-        if out: print(out)
-        if err: print(err)
-    if not os.path.exists(svntmp):
-        print('Repairing missing directory',svntmp)
-        cmd = ['mkdir',svntmp]
-        s = subprocess.Popen(cmd,stderr=subprocess.PIPE)
-        out,err = MakeByte2str(s.communicate())
-        if out: print(out)
-        if err: print(err)
-
-    cmd = [svn,'switch',URL,fpath,
-           '--non-interactive','--trust-server-cert',
-           '--accept','theirs-conflict','--force','-rHEAD']
-    if svnVersionNumber(svn) > 1.6: cmd += ['--ignore-ancestry']
-    if proxycmds: cmd += proxycmds
-    if verbose:
-        print(u"Loading files to "+fpath+u"\n  from "+URL)
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print(60*"=")
-        print ("****** An error was noted, see below *********")
-        print(60*"=")
-        print ('out=%s'%out)
-        print ('err=%s'%err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        if svnCleanup(fpath):
-            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            out,err = MakeByte2str(s.communicate())
-            if err:
-                print(60*"=")
-                print("****** Drat, failed again: *********")
-                print(60*"=")
-                print(err)
-            else:
-                return True
-        return False
-    if verbose:
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        print('\n=== Output from svn switch'+(43*'='))
-        print(out.strip())
-        print((70*'=')+'\n')
-    return True
-
-def svnInstallDir(URL,loadpath):
-    '''Load a subversion tree into a specified directory
-
-    :param str URL: the repository URL
-    :param str loadpath: path to locate files
-
-    '''
-    svn = whichsvn()
-    if not svn: return
-    cmd = [svn,'co',URL,loadpath,'--non-interactive']
-    if svnVersionNumber() >= 1.6: cmd += ['--trust-server-cert']
-    print("Loading files from "+URL)
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())   #this fails too easily
-    if err:
-        print(60*"=")
-        print ("****** An error was noted, see below *********")
-        print(60*"=")
-        print (err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        if svnCleanup(loadpath):
-            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            out,err = MakeByte2str(s.communicate())
-            if err:
-                print(60*"=")
-                print("****** Drat, failed again: *********")
-                print(60*"=")
-                print(err)
-                return False
-        else:
-            return False
-    print ("Files installed at: "+loadpath)
-    return True
-
-def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
-    '''Compare file status to repository (svn status -u)
-
-    :returns: updatecount,modcount,locked where
-       updatecount is the number of files waiting to be updated from
-       repository
-       modcount is the number of files that have been modified locally
-       locked  is the number of files tagged as locked
-    '''
-    import xml.etree.ElementTree as ET
-    svn = whichsvn()
-    if version is not None:
-        vstr = '-r'+str(version)
-    else:
-        vstr = '-rHEAD'
-    cmd = [svn,'st',fpath,'--xml','-u',vstr]
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--non-interactive', '--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print ('out=%s'%out)
-        print ('err=%s'%err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        return None
-
-    locked = 0
-    updatecount = 0
-    modcount = 0
-    x = ET.fromstring(out)
-    for i0 in x.iter('entry'):
-        #filename = i0.attrib.get('path','?')
-        #wc_rev = ''
-        status = ''
-        switched = ''
-        for i1 in i0.iter('wc-status'):
-            #wc_rev = i1.attrib.get('revision','')
-            status = i1.attrib.get('item','')
-            switched = i1.attrib.get('switched','')
-            if i1.attrib.get('wc-locked',''): locked += 1
-        if status == "unversioned": continue
-        if switched == "true": continue
-        if status == "modified":
-            modcount += 1
-        elif status == "normal":
-            updatecount += 1
-        #file_rev = ''
-        #for i2 in i1.iter('commit'):
-        #    file_rev = i2.attrib.get('revision','')
-        #local_status = ''
-        #for i1 in i0.iter('repos-status'):
-        #    local_status = i1.attrib.get('item','')
-        #print(filename,wc_rev,file_rev,status,local_status,switched)
-    return updatecount,modcount,locked
-
-def svnList(URL,verbose=True):
-    '''Get a list of subdirectories from and svn repository
-    '''
-    svn = whichsvn()
-    if not svn:
-        print('**** unable to load files: svn not found ****')
-        return ''
-    # get binaries matching the required type -- other than for the numpy version
-    cmd = [svn, 'list', URL,'--non-interactive', '--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    if verbose:
-        s = 'Running svn command:\n  '
-        for i in cmd: s += i + ' '
-        print(s)
-    p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    res,err = MakeByte2str(p.communicate())
-    return res
-
-def DownloadG2Binaries(g2home,verbose=True):
-    '''Download GSAS-II binaries from appropriate section of the
-    GSAS-II svn repository based on the platform, numpy and Python
-    version
-    '''
-    bindir = GetBinaryPrefix()
-    #npver = 'n{}.{}'.format(*np.__version__.split('.')[0:2])
-    inpver = intver(np.__version__)
-    svn = whichsvn()
-    if not svn:
-        print('**** unable to load files: svn not found ****')
-        return ''
-    # get binaries matching the required type -- other than for the numpy version
-    cmd = [svn, 'list', g2home + '/Binaries/','--non-interactive', '--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    if verbose:
-        s = 'Running svn command:\n  '
-        for i in cmd: s += i + ' '
-        print(s)
-    p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    res,err = MakeByte2str(p.communicate())
-    versions = {}
-    for d in res.split():
-        if d.startswith(bindir):
-            v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
-            versions[v] = d
-    intVersionsList = sorted(versions.keys())
-    if not intVersionsList:
-        print('No binaries located matching',bindir)
-        return
-    elif inpver < min(intVersionsList):
-        vsel = min(intVersionsList)
-        print('Warning: The current numpy version, {}, is older than\n\tthe oldest dist version, {}'
-              .format(np.__version__,fmtver(vsel)))
-    elif inpver >= max(intVersionsList):
-        vsel = max(intVersionsList)
-        if verbose: print(
-                'FYI: The current numpy version, {}, is newer than the newest dist version {}'
-                .format(np.__version__,fmtver(vsel)))
-    else:
-        vsel = min(intVersionsList)
-        for v in intVersionsList:
-            if v <= inpver:
-                vsel = v
-            else:
-                if verbose: print(
-                        'FYI: Selecting dist version {} as the current numpy version, {},\n\tis older than the next dist version {}'
-                        .format(fmtver(vsel),np.__version__,fmtver(v)))
-                break
-    distdir = g2home + '/Binaries/' + versions[vsel]
-    # switch reset command: distdir = g2home + '/trunk/bindist'
-    svnSwitchDir('bindist','',distdir,verbose=verbose)
-    return os.path.join(path2GSAS2,'bindist')
-
-# def svnTestBranch(loc=None):
-#     '''Returns the name of the branch directory if the installation has been switched.
-#     Returns none, if not a branch
-#     the test 2frame branch. False otherwise
-#     '''
-#     if loc is None: loc = path2GSAS2
-#     svn = whichsvn()
-#     if not svn:
-#         print('**** unable to load files: svn not found ****')
-#         return ''
-#     cmd = [svn, 'info', loc]
-#     if proxycmds: cmd += proxycmds
-#     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-#     res,err = MakeByte2str(p.communicate())
-#     for l in res.split('\n'):
-#         if "Relative URL:" in l: break
-#     if "/branch/" in l:
-#         return l[l.find("/branch/")+8:].strip()
-#     else:
-#         return None
-
-def svnSwitch2branch(branch=None,loc=None,svnHome=None):
-    '''Switch to a subversion branch if specified. Switches to trunk otherwise.
-    '''
-    if svnHome is None: svnHome = g2home
-    svnURL = svnHome + '/trunk'
-    if branch:
-        if svnHome.endswith('/'):
-            svnURL = svnHome[:-1]
-        else:
-            svnURL = svnHome
-        if branch.startswith('/'):
-            svnURL += branch
-        else:
-            svnURL += '/' + branch
-    svnSwitchDir('','',svnURL,loadpath=loc)
-#==============================================================================
-#==============================================================================
-
 def runScript(cmds=[], wait=False, G2frame=None):
     '''run a shell script of commands in an external process
 
@@ -2487,7 +1666,6 @@ if __name__ == '__main__':
     regressversion = None
     help = False
     project = None
-    version = None
 
     for arg in sys.argv[1:]:
         if '--git-fetch' in arg:   # pulls latest updates from server but does not apply them
@@ -2544,7 +1722,7 @@ if __name__ == '__main__':
             try:
                 regressversion = g2repo.commit(gitversion).hexsha
             except git.BadName:
-                print(f'invalid version specified ({version}) for GitHub regression')
+                print(f'invalid version specified ({regressversion}) for GitHub regression')
                 help = True
                 break
             if updateType:
@@ -2556,28 +1734,15 @@ if __name__ == '__main__':
         elif '--help' in arg:
             help = True
             break
-        elif os.path.exists(arg):   # svn args parsed later; this is just checking
+        elif os.path.exists(arg):   # this is just checking
             project = arg
             pass
-        else:   # for old-style svn update
-            if arg.isdecimal() or not arg:
-                #version = arg
-                pass
-            else:
-                print(f'unknown arg {arg}')
-                help = True
-        if gitUpdate and version:
-            print('Conflicting arguments (git & svn opts combined?)')
+        else:
+            print(f'unknown arg {arg}')
             help = True
 
     if help or len(sys.argv) == 1:
         print('''Options when running GSASIIpath.py standalone
-
-to update/regress repository from svn repository:
-   python GSASIIpath.py <project> <version>
-            where <project> is an optional path reference to a .gpx file
-            and <version> is a specific GSAS-II version to install
-                (default is latest)
 
 to update/regress repository from git repository:
    python GSASIIpath.py option <project>
@@ -2721,39 +1886,5 @@ to update/regress repository from git repository:
             # subprocess.Popen([sys.executable,G2scrpt])
         from . import GSASIIfiles
         GSASIIfiles.openInNewTerm(project)
-        print ('exiting update process')
-        sys.exit()
-
-    else:
-        # this is the old svn update process
-        LoadConfig()
-        import time
-        time.sleep(1) # delay to give the main process a chance to exit
-        # perform an update and restart GSAS-II
-        try:
-            project,version = sys.argv[1:3]
-        except ValueError:
-            project = None
-            version = 'trunk'
-        loc = os.path.dirname(__file__)
-        if version == 'trunk':
-            svnSwitch2branch('')
-        elif '/' in version:
-            svnSwitch2branch(version)
-        elif version:
-            print("Regress to version "+str(version))
-            svnUpdateDir(loc,version=version)
-        else:
-            print("Update to current version")
-            svnUpdateDir(loc)
-        ex = sys.executable
-        if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
-            if os.path.exists(ex+'w'): ex += 'w'
-        if project:
-            print("Restart GSAS-II with project file "+str(project))
-            subprocess.Popen([ex,os.path.join(loc,'GSASII.py'),project])
-        else:
-            print("Restart GSAS-II without a project file ")
-            subprocess.Popen([ex,os.path.join(loc,'GSASII.py')])
         print ('exiting update process')
         sys.exit()

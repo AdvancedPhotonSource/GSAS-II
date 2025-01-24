@@ -9,11 +9,7 @@ Routines for dealing with file locations, etc.
 
 Determines the location of the compiled (.pyd or .so) libraries.
 
-Interfaces with subversion (svn): 
-Determine the subversion release number by determining the highest version number
-where :func:`SetVersionNumber` is called (best done in every GSASII file).
-Other routines will update GSASII from the subversion server if svn can be
-found.
+Interfaces with git and gets version number.
 
 Accesses configuration options, as defined in config.py
 

@@ -66,15 +66,10 @@ def main():
         print('Unable to run with current installation, please reset or reinstall')
         # if GSASIIpath.HowIsG2Installed().startswith('git'):
         #     print('use this command w/gitstrap')
-        # elif GSASIIpath.HowIsG2Installed().startswith('svn'):
-        #     print('use this command w/bootstrap')
         sys.exit()
         # print('Unable to run with current setup, do you want to update to the')
         # try:
-        #     if '2' in platform.python_version_tuple()[0]:
-        #         ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
-        #     else:
-        #         ans = input("latest GSAS-II version? Update ([Yes]/no): ")
+        #     ans = input("latest GSAS-II version? Update ([Yes]/no): ")
         # except:
         #     ans = 'no'
         # if ans.strip().lower() == "no":
@@ -83,12 +78,8 @@ def main():
         #     sys.exit()
         # print('Updating...')
         # import GSASIIctrlGUI as G2G
-        #GSASIIpath.svnUpdateProcess()
         # if GSASIIpath.HowIsG2Installed().startswith('git'):
         #     gitCheckUpdates(None)
-        # elif GSASIIpath.HowIsG2Installed().startswith('svn'):
-        #     svnCheckUpdates(None)
-        # else:
     from . import GSASIIdataGUI as G2gd
     G2gd.GSASIImain(application) # start the GUI
     if sys.platform == "darwin":

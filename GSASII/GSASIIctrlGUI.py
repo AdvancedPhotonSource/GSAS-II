@@ -9646,9 +9646,9 @@ def ImportMsg(parent,msgs):
     could not be installed (due to uninstalled Python packages). Then
     offer the chance to install GSAS-II packages using :func:`SelectPkgInstall`
     '''
-    text = ('Message(s) from load of importers\n\n  '+
-                '\n\n'.join(msgs)+
-                '\n\nNote: These errors only need to be addressed if you want to use the importers listed above')
+    text = ('Warnings message(s) from load of importers:\n\n * '+
+                '\n\n * '.join(msgs)+
+                '\n\n\tTo use any of these importers, press the "Install packages" button\n\tbelow. It is fine to ignore these warnings if you will not need to read\n\tthat file type.')
     ShowScrolledInfo(parent,text,
                     header='Importer load problems',
                     width=650,
@@ -9678,17 +9678,22 @@ def SelectPkgInstall(event):
     dlg = event.GetEventObject().GetParent()
     dlg.EndModal(wx.ID_OK)
     G2frame = wx.App.GetMainTopWindow()
-    choices = []
+
+    choices = {}
     for key in G2fil.condaRequestList:
         for item in G2fil.condaRequestList[key]:
-            choices.append((item,key))
-    msg = 'Select packages to install'
+            if item in choices:
+                choices[item] += f', {key}'
+            else:
+                choices[item] = key
+    msg = 'Select package(s) to install'
     if GSASIIpath.condaTest():
         msg += ' using conda'
     else:
         msg += ' using pip'
     sel = MultiColMultiSelDlg(G2frame, 'Install packages?', msg,
-                             [('package',120,0),('needed by',300,0)], choices)
+                             [('package',120,0),('needed by',300,0)],
+                             [i for i in choices.items()])
     if sel is None: return
     if not any(sel): return
     pkgs = [choices[i][0] for i,f in enumerate(sel) if f]

@@ -4,17 +4,25 @@
 from __future__ import division, print_function
 import numpy as np
 import os.path
-from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
 try:
     import CifFile as cif # PyCifRW from James Hester as a package
 except ImportError:
-    from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+    try:
+        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+    except ImportError:
+        cif = None
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 
 class CIFpwdReader(G2obj.ImportPowderData):
     'Routines to import powder data from a CIF file'
     def __init__(self):
+        if cif is None:
+            self.UseReader = False
+            msg = 'CIF PWDR Reader skipped because PyCifRW (CifFile) module is not installed.'
+            G2fil.ImportErrorMsg(msg,{'CIF powder importer':['pycifrw']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.CIF','.cif'),
             strictExtension=False,

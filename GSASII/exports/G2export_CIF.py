@@ -18,8 +18,9 @@ try:
     import wx.lib.scrolledpanel as wxscroll
     import wx.lib.resizewidget as rw
     interactive = True
-    from . import GSASIIctrlGUI as G2G
+    from .. import GSASIIctrlGUI as G2G
 except ImportError:
+    G2G = None
     # Avoid wx dependency for Scriptable
     class Placeholder(object):
         def __init__(self):
@@ -1679,6 +1680,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             In all cases the initial data_ header is stripped (there should only be one!)
             '''
             CIFobj = G2dict.get(cifKey)
+            if CIFobj is None: return
             if defaultname:
                 defaultname = G2obj.StripUnicode(defaultname)
                 defaultname = re.sub(r'[^a-zA-Z0-9_-]','',defaultname)
@@ -4668,6 +4670,17 @@ class ExportProjectCIF(ExportCIF):
         #print('reloaded GSASIImapvars')
         #### end debug stuff ##############################
 
+        if G2G is None:
+            print('Unable to export without GUI access')
+            return
+        try:
+            import CifFile as cif # PyCifRW from James Hester as a package
+        except ImportError:
+            try:
+                from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+            except ImportError:
+                msg = 'The PyCifRW package is not installed. CIF templates cannot be accessed. Created CIFs will be incomplete'
+                G2G.G2MessageBox(self.G2frame,msg,'no PyCifRW')
         self.CIFname = ''
         self.seqData = seqData
         self.Controls = Controls
@@ -5038,7 +5051,11 @@ def PickleCIFdict(fil):
     try:
         import CifFile as cif # PyCifRW from James Hester as a package
     except ImportError:
-        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        try:
+            from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        except ImportError:
+            print('Warning: Unable to import PyCifRW')
+            return {}
     cifdic = {}
     try:
         fp = open(fil,'r')             # patch: open file to avoid windows bug
@@ -5178,7 +5195,11 @@ def dict2CIF(dblk,loopstructure,blockname='Template'):
     try:
         import CifFile as cif # PyCifRW from James Hester as a package
     except ImportError:
-        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        try:
+            from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        except ImportError:
+            print('Warning: Unable to import PyCifRW')
+            return {}
     # compile a 'list' of items in loops
     loopnames = set()
     for i in loopstructure:
@@ -5654,6 +5675,8 @@ class CIFtemplateSelect(wx.BoxSizer):
             dblk,loopstructure = copy.deepcopy(self.CIF_template) # don't modify original
         else:
             cf = G2obj.ReadCIF(self.CIF_template)
+            if len(cf) == 0:
+                raise Exception("No CIF data_ blocks found")
             dblk,loopstructure = CIF2dict(cf)
         dlg = EditCIFtemplate(self.cifdefs,dblk,loopstructure,self.defaultname)
         val = dlg.Post()

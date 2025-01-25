@@ -6,15 +6,24 @@
 from __future__ import division, print_function
 import numpy as np
 import os.path
+from .. import GSASIIpath
 from .. import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
 try:
     import CifFile as cif # PyCifRW from James Hester as a package
 except ImportError:
-    from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+    try:
+        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+    except ImportError:
+        cif = None
 
 class CIFhklReader(G2obj.ImportStructFactor):
     'Routines to import Phase information from a CIF file'
     def __init__(self):
+        if cif is None:
+            self.UseReader = False
+            msg = 'CIF Xtal Reader skipped because PyCifRW (CifFile) module is not installed.'
+            G2fil.ImportErrorMsg(msg,{'CIF HKLF importer':['pycifrw']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist = ('.CIF','.cif','.FCF','.fcf','.HKL','.hkl'),
             strictExtension = False,

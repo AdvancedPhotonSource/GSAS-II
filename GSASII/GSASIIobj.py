@@ -229,14 +229,22 @@ def ReadCIF(URLorFile):
     (from James Hester).
     The open routine gets confused with DOS names that begin with a letter and colon
     "C:\\dir\" so this routine will try to open the passed name as a file and if that
-    fails, try it as a URL
+    fails, try it as a URL.
+
+    Used for CIF imports and for reading CIF templates for project CIF exports
 
     :param str URLorFile: string containing a URL or a file name. Code will try first
       to open it as a file and then as a URL.
 
-    :returns: a PyCifRW CIF object.
+    :returns: a PyCifRW CIF object or an empty string if PyCifRW is not accessible
     '''
-    import CifFile as cif # PyCifRW from James Hester
+    try:
+        import CifFile as cif # PyCifRW from James Hester as a package
+    except ImportError:
+        try:
+            from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        except ImportError:
+            return ''
 
     # alternate approach:
     #import urllib

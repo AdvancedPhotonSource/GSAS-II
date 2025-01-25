@@ -24,8 +24,6 @@ class brml_ReaderClass(G2obj.ImportPowderData):
         if xml is None:
             self.UseReader = False
             msg = 'Bruker .brml Reader skipped because xmltodict module is not installed.'
-            if GSASIIpath.condaTest():
-                msg += ' To fix this press "Install packages" button below'
             from .. import GSASIIfiles as G2fil
             G2fil.ImportErrorMsg(msg,{'Bruker .brml Importer':['xmltodict']})
         self.scriptable = True

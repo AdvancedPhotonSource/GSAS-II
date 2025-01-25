@@ -9,22 +9,29 @@ import numpy as np
 import re
 import copy
 import os.path
+from .. import GSASIIpath
 from .. import GSASIIobj as G2obj
 from .. import GSASIIspc as G2spc
 from .. import GSASIIElem as G2elem
 from .. import GSASIIlattice as G2lat
-from .. import GSASIIpath
 from .. import GSASIIfiles as G2fil
 try:
     import CifFile as cif # PyCifRW from James Hester as a package
 except ImportError:
-    from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+    try:
+        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+    except ImportError:
+        cif = None
 debug = GSASIIpath.GetConfigValue('debug')
 #debug = False
 
 class CIFPhaseReader(G2obj.ImportPhase):
     'Implements a phase importer from a possibly multi-block CIF file'
     def __init__(self):
+        if cif is None:
+            self.UseReader = False
+            msg = 'CIFPhase Reader skipped because PyCifRW (CifFile) module is not installed.'
+            G2fil.ImportErrorMsg(msg,{'CIF Phase importer':['pycifrw']})
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.CIF','.cif','.mcif'),
             strictExtension=False,

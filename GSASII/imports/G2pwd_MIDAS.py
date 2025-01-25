@@ -14,8 +14,8 @@ from .. import GSASIIobj as G2obj
 from .. import GSASIIfiles as G2fil
 from .. import GSASIIpath
 
-instprmList = [('Bank',1.0), ('Lam',0.413263), ('Polariz.',0.99), 
-            ('SH/L',0.002), ('Type','PXC'), ('U',1.163), ('V',-0.126), 
+instprmList = [('Bank',1.0), ('Lam',0.413263), ('Polariz.',0.99),
+            ('SH/L',0.002), ('Type','PXC'), ('U',1.163), ('V',-0.126),
             ('W',0.063), ('X',0.0), ('Y',0.0), ('Z',0.0), ('Zero',0.0)]
 #   comments
 #   sample parameters
@@ -28,12 +28,12 @@ sampleprmList = [('InstrName','APS 1-ID'), ('Temperature', 295.0)]
 # 'Thick': 1.0, 'Contrast': [0.0, 0.0], 'Trans': 1.0, 'SlitLen': 0.0}
 
 class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
-    '''Routine to read multiple powder patterns from a Zarr file 
-    created by MIDAS. Perhaps in the future, other software might also 
-    use this file type as well. 
+    '''Routine to read multiple powder patterns from a Zarr file
+    created by MIDAS. Perhaps in the future, other software might also
+    use this file type as well.
 
-    For Midas, the main file is <file>.zip, but optionally sample and 
-    instrument parameters can be placed in <file>.samprm and <file>.instprm. 
+    For Midas, the main file is <file>.zip, but optionally sample and
+    instrument parameters can be placed in <file>.samprm and <file>.instprm.
     Any parameters placed in those files will override values set in the .zip
     file.
     '''
@@ -43,8 +43,6 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         if zarr is None:
             self.UseReader = False
             msg = 'MIDAS_Zarr Reader skipped because zarr module is not installed.'
-            if GSASIIpath.condaTest():
-                msg += ' To fix this press "Install packages" button below'
             G2fil.ImportErrorMsg(msg,{'MIDAS Zarr importer':['zarr']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.zarr.zip',),strictExtension=True,
@@ -68,18 +66,18 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         return False
 
     def Reader(self, filename, ParentFrame=None, **kwarg):
-        '''Scan file for sections needed by defined file types (currently 
+        '''Scan file for sections needed by defined file types (currently
         only Midas) and then use appropriate routine to read the file.
-        Most of the time the results are placed in the buffer arg (if supplied) 
-        so the file is not read on most calls. 
+        Most of the time the results are placed in the buffer arg (if supplied)
+        so the file is not read on most calls.
 
-        For MIDAS, masking can eliminate some or all points in an azimuthal 
-        region. This will only return "lineouts" (aka diffractograms) that 
-        have 20 or more points in them. 
+        For MIDAS, masking can eliminate some or all points in an azimuthal
+        region. This will only return "lineouts" (aka diffractograms) that
+        have 20 or more points in them.
 
-        Note that if Reader.selections is used to select individual 
-        "lineouts", the selections are numbered against all possible 
-        "lineouts" not the ones that have 20 or more points. 
+        Note that if Reader.selections is used to select individual
+        "lineouts", the selections are numbered against all possible
+        "lineouts" not the ones that have 20 or more points.
         '''
         fpbuffer = kwarg.get('buffer',{})
         if not hasattr(self,'blknum'):
@@ -99,7 +97,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 return False
             finally:
                 del fp
-                    
+
         if self.mode == 'midas':
             return self.readMidas(filename, fpbuffer)
 
@@ -125,7 +123,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             try:
                 fp = zarr.open(filename, 'r')
                 fpbuffer['REtaMap'] = np.array(fp['REtaMap']) # 4 x Nbins x Nazimuth
-                # [0]: radius; [1] 2theta; [2] eta; [3] bin area 
+                # [0]: radius; [1] 2theta; [2] eta; [3] bin area
                 # tabulate integrated intensities image & eta
                 fpbuffer['intenArr'] = []
                 fpbuffer['attributes'] = []
@@ -143,7 +141,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 fpbuffer['unmasked'] = [(fpbuffer['REtaMap'][3][:,i] != 0) for i in range(Nazim)] # will be True if area is >0
                 # find the azimuths with more than 20 points
                 mAzm = [i for i in range(Nazim) if sum(fpbuffer['unmasked'][i]) > 20]
-                
+
                 # generate a list of lineouts to be read from selections
                 if self.selections:
                     sel = self.selections
@@ -151,12 +149,12 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                     sel = range(Nimg*Nazim) # nothing selected, use all
                 # fpbuffer['2Read'] is the list of lineouts to be read, where each entry
                 # contains two values, the azumuth and the image number (iAzm,iImg)
-                # defined points for each lineout are then 
+                # defined points for each lineout are then
                 #   intensities : fpbuffer['intenArr'][iImg][:,iAzm][unmasked[iAzm]]
                 #   2thetas: fpbuffer['REtaMap'][1][:,iAzm][unmasked[iAzm]]
                 fpbuffer['2Read'] = [(i%Nazim,i//Nazim) for i in sel if i%Nazim in mAzm]
                 # xfrom Zarr dict into a native dict
-                self.MIDASinstprm = {i:j[0] for i,j in fp['InstrumentParameters'].items()} 
+                self.MIDASinstprm = {i:j[0] for i,j in fp['InstrumentParameters'].items()}
                 # change a few keys
                 for key,newkey in [('Polariz','Polariz.'),('SH_L','SH/L')]:
                     if key in self.MIDASinstprm:
@@ -167,7 +165,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 return False
             finally:
                 del fp
-            # get overriding sample & instrument parameters 
+            # get overriding sample & instrument parameters
             self.MIDASsampleprm = {}
             samplefile = os.path.splitext(filename)[0] + '.samprm'
             if os.path.exists(samplefile):
@@ -189,7 +187,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 fp.close()
                 nbank,self.instvals = G2fil.ReadInstprm(instLines, None, self.Sample)
         #======================================================================
-        # start reading 
+        # start reading
         #======================================================================
         # look for the next non-empty scan (lineout)
         iAzm,iImg = fpbuffer['2Read'][self.blknum]
@@ -211,7 +209,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         omega = 999.  # indicates an error
         try:
             omega = 0.5 * (
-                fpbuffer['attributes'][iImg]['FirstOme'] + 
+                fpbuffer['attributes'][iImg]['FirstOme'] +
                 fpbuffer['attributes'][iImg]['LastOme'])
         except:
             pass
@@ -219,8 +217,8 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         radius = 1000   # sample to detector distance (mm)
         if 'Distance' in self.MIDASinstprm:
             radius = self.MIDASinstprm['Distance']/1000   # convert from microns
-        
-        # now transfer instprm & sample prms into current histogram 
+
+        # now transfer instprm & sample prms into current histogram
         self.pwdparms['Instrument Parameters'] = [{}, {}]
         inst = {}
         inst.update(instprmList)

@@ -5648,7 +5648,7 @@ class MyHelp(wx.Menu):
         self.Append(wx.ID_ABOUT,'&About GSAS-II',
                         'Shows version and citation info')
         frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
-        if GSASIIpath.HowIsG2Installed():
+        if GSASIIpath.HowIsG2Installed().startswith('git'):
             helpobj = self.Append(wx.ID_ANY,'&Check for updates\tCtrl+U',
                     'Updates to latest GSAS-II version')
             if os.access(GSASIIpath.path2GSAS2, os.W_OK):

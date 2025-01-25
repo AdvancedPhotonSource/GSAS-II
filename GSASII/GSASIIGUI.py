@@ -15,6 +15,7 @@ __version__ = '2.0.0'
 try:
     from . import git_verinfo
     __version__ = git_verinfo.git_tags[0]
+    if not __version__: __version__ = git_verinfo.git_prevtags[0]
 except ImportError:
     pass
 

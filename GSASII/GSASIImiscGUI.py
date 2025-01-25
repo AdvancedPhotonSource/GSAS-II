@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 '''
-Misc routines for GUI-based input and output, including image reading follow. 
+Misc routines for GUI-based input and output, including image reading follow.
 
 This module contains quite a bit of older code that could use some attention,
 or possibly movement into other modules. It was previously called GSASIIIO.py
-which is why most modules reference it as G2IO. 
+which is why most modules reference it as G2IO.
 
 '''
 
@@ -58,7 +58,7 @@ def FileDlgFixExt(dlg,file):
     if ext not in file:
         file += ext
     return file
-        
+
 def GetPowderPeaks(fileName):
     'Read powder peaks from a file'
     sind = lambda x: math.sin(x*math.pi/180.)
@@ -81,7 +81,7 @@ def GetPowderPeaks(fileName):
     File.close()
     if Comments:
        print ('Comments on file:')
-       for Comment in Comments: 
+       for Comment in Comments:
             print (Comment)
             if 'wavelength' in Comment:
                 wave = float(Comment.split('=')[1])
@@ -166,7 +166,7 @@ def GetCheckImageFile(G2frame,treeId):
         #GSASIIpath.IPyBreak()
 
     if not os.path.exists(imagefile):
-        # note that this fails (at least on Mac) to get an image during the GUI initialization 
+        # note that this fails (at least on Mac) to get an image during the GUI initialization
         prevnam = os.path.split(imagefile)[1]
         prevext = os.path.splitext(imagefile)[1]
         wildcard = 'Image format (*'+prevext+')|*'+prevext
@@ -192,7 +192,7 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     h,w = Image.size[:2]
     mainsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'File '+str(filename)+'\nImage size: '+str(h)+' x '+str(w)),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
-    
+
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Wavelength (\xC5) '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
@@ -244,7 +244,7 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     dlg.SetSizer(mainsizer)
     dlg.CenterOnParent()
     dlg.ShowModal()
-    
+
 def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     '''Load an image into the tree. Saves the location of the image, as well as the
     ImageTag (where there is more than one image in the file), if defined.
@@ -318,7 +318,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
         Data['centerAzm'] = False
         Data['fullIntegrate'] = GSASIIpath.GetConfigValue('fullIntegrate',True)
         Data['setRings'] = False
-        Data['background image'] = ['',-1.0]                            
+        Data['background image'] = ['',-1.0]
         Data['dark image'] = ['',-1.0]
         Data['Flat Bkg'] = 0.0
         Data['Oblique'] = [0.5,False]
@@ -346,9 +346,9 @@ def ReadImages(G2frame,imagefile):
     be made in only one place.
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object.
-    :param str imagefile: name of image file 
+    :param str imagefile: name of image file
 
-    :returns: a list of the id's of the IMG tree items created 
+    :returns: a list of the id's of the IMG tree items created
     '''
     # determine which formats are compatible with this file
     primaryReaders = []
@@ -369,7 +369,7 @@ def ReadImages(G2frame,imagefile):
         rd.errors = "" # clear out any old errors
         if not rd.ContentsValidator(imagefile): # rejected on cursory check
             errorReport += "\n  "+rd.formatName + ' validator error'
-            if rd.errors: 
+            if rd.errors:
                 errorReport += ': '+rd.errors
                 continue
         ParentFrame = G2frame
@@ -409,7 +409,7 @@ def ReadImages(G2frame,imagefile):
         print('Error reading file '+imagefile)
         print('Error messages(s)\n'+errorReport)
         return []
-        #raise Exception('No image read')    
+        #raise Exception('No image read')
 
 def SaveMultipleImg(G2frame):
     if not G2frame.GPXtree.GetCount():
@@ -451,7 +451,7 @@ def SaveMultipleImg(G2frame):
         for key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
             File.write(key+':'+str(mask[key])+'\n')
         File.close()
-        
+
 def PutG2Image(filename,Comments,Data,Npix,image):
     'Write an image as a python pickle - might be better as an .edf file?'
     File = open(filename,'wb')
@@ -464,7 +464,7 @@ try:
     objectScanIgnore += [ma.MaskedArray] # fails in doc builds
 except AttributeError:
     pass
-        
+
 def objectScan(data,tag,indexStack=[]):
     '''Recursively scan an object looking for unexpected data types.
     This is used in debug mode to scan .gpx files for objects we did not
@@ -498,7 +498,7 @@ def objectScan(data,tag,indexStack=[]):
         if "gdi.Colour" in str(type(data)):
             return tuple(data)
         return
-    
+
 def cPickleLoad(fp):
     if '2' in platform.python_version_tuple()[0]:
         return cPickle.load(fp)
@@ -568,7 +568,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             # scan the GPX file for unexpected objects
             if GSASIIpath.GetConfigValue('debug'):
                 global unexpectedObject
-                unexpectedObject = False               
+                unexpectedObject = False
                 objectScan(data,'tree item "{}" entry '.format(datum[0]))
                 #if unexpectedObject:
                 #    print(datum[0])
@@ -595,16 +595,16 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 for j,(name,val) in enumerate(data[1:]):
                     if name not in xferItems: continue
                     data[j+1][1] = hdata[hItems[name]][1]
-            if datum[0].startswith('PWDR'):                
+            if datum[0].startswith('PWDR'):
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present
                     datum[1][0]['ranId'] = ran.randint(0,sys.maxsize)
                 G2frame.GPXtree.SetItemPyData(Id,datum[1][:3])  #temp. trim off junk (patch?)
-            elif datum[0].startswith('HKLF'): 
+            elif datum[0].startswith('HKLF'):
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present
                     datum[1][0]['ranId'] = ran.randint(0,sys.maxsize)
                 G2frame.GPXtree.SetItemPyData(Id,datum[1])
             else:
-                G2frame.GPXtree.SetItemPyData(Id,datum[1])             
+                G2frame.GPXtree.SetItemPyData(Id,datum[1])
                 if datum[0] == 'Controls' and 'LastSavedUsing' in datum[1]:
                     LastSavedUsing = datum[1]['LastSavedUsing']
                 if datum[0] == 'Controls' and 'PythonVersions' in datum[1] and GSASIIpath.GetConfigValue('debug') and showProvenance:
@@ -684,7 +684,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             G2G.updateNotifier(G2frame,int(LastSavedUsing.split()[0]))
         except:
             pass
-    
+
 def ProjFileSave(G2frame):
     'Save a GSAS-II project file'
     if not G2frame.GPXtree.IsEmpty():
@@ -699,16 +699,16 @@ def ProjFileSave(G2frame):
         try:
             Controls = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+            Controls['PythonVersions'] = G2frame.PackageVersions
             Controls['LastSavedAs'] = os.path.abspath(G2frame.GSASprojectfile)
             Controls['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
             if GSASIIpath.HowIsG2Installed().startswith('git'):
-                try:
-                    g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
-                    commit = g2repo.head.commit
-                    Controls['LastSavedUsing'] += f" git {commit.hexsha[:6]}"
-                except:
-                    pass
-            Controls['PythonVersions'] = G2frame.PackageVersions
+                g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
+                commit = g2repo.head.commit
+                Controls['LastSavedUsing'] += f" git {commit.hexsha[:8]}"
+            else:
+                from . import git_verinfo as gv
+                Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
         except:
             pass
         wx.BeginBusyCursor()
@@ -718,15 +718,15 @@ def ProjFileSave(G2frame):
                 data = []
                 name = G2frame.GPXtree.GetItemText(item)
                 if name.startswith('Hist/Phase'):  # skip over this
-                    item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                            
+                    item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
                     continue
                 data.append([name,G2frame.GPXtree.GetItemPyData(item)])
                 item2, cookie2 = G2frame.GPXtree.GetFirstChild(item)
                 while item2:
                     name = G2frame.GPXtree.GetItemText(item2)
                     data.append([name,G2frame.GPXtree.GetItemPyData(item2)])
-                    item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)                            
-                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                            
+                    item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
                 cPickle.dump(data,file,2)
             file.close()
             pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
@@ -752,20 +752,20 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     Comments.append('Dark image = %s\n'%str(data['dark image']))
     Comments.append('Background image = %s\n'%str(data['background image']))
     Comments.append('Gain map = %s\n'%str(data['Gain map']))
-    
+
     if 'PWDR' in name:
         if 'target' in data:
-            names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+            names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
             codes = [0 for i in range(14)]
         else:
             if data.get('IfPink',False):
                 names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','Azimuth']
                 codes = [0 for i in range(15)]
             else:
-                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
                 codes = [0 for i in range(12)]
     elif 'SASD' in name:
-        names = ['Type','Lam','Zero','Azimuth'] 
+        names = ['Type','Lam','Zero','Azimuth']
         codes = [0 for i in range(4)]
         X = 4.*np.pi*npsind(X/2.)/data['wavelength']    #convert to q
     Xminmax = [X[0],X[-1]]
@@ -796,7 +796,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         Sample['Omega'] = data['GonioAngles'][0]
         Sample['Chi'] = data['GonioAngles'][1]
         Sample['Phi'] = data['GonioAngles'][2]
-        Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center 
+        Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center
         polariz = data['PolaVal'][0]
         for item in Comments:
             for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2','FreePrm3','Omega',
@@ -828,7 +828,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         W = np.where(Y>0.,1./Y,1.e-6)                    #probably not true
         Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=Aname)
         G2frame.IntgOutList.append(Id)
-        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)                    
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
         G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Limits'),copy.deepcopy([tuple(Xminmax),Xminmax]))
         if 'PWDR' in Aname:
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Background'),[['chebyschev-1',1,3,1.0,0.0,0.0],
@@ -843,7 +843,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Index Peak List'),[[],[]])
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Unit Cells List'),[])
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Reflection Lists'),{})
-        elif 'SASD' in Aname:             
+        elif 'SASD' in Aname:
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Substances'),G2pwd.SetDefaultSubstances())
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Sample Parameters'),Sample)
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Models'),G2pwd.SetDefaultSASDModel())
@@ -853,7 +853,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         G2frame.GPXtree.SetItemPyData(Id,[valuesdict,
             [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     return Id       #last powder pattern generated
-    
+
 def XYsave(G2frame,XY,labelX='X',labelY='Y',names=[]):
     'Save XY table data'
     pth = G2G.GetExportPath(G2frame)
@@ -878,10 +878,10 @@ def XYsave(G2frame,XY,labelX='X',labelY='Y',names=[]):
             header = '%s,%s(%d)\n'%(labelX,labelY,i)
         File.write(header)
         for x,y in XY[i].T:
-            File.write('%.3f,%.3f\n'%(x,y))   
+            File.write('%.3f,%.3f\n'%(x,y))
     File.close()
-    print (' XY data saved to: '+filename)                        
-    
+    print (' XY data saved to: '+filename)
+
 def PeakListSave(G2frame,file,peaks):
     'Save powder peaks to a data file'
     print ('save peak list to file: '+G2frame.peaklistfile)
@@ -896,7 +896,7 @@ def PeakListSave(G2frame,file,peaks):
         file.write("%10.4f %12.2f %10.3f %10.3f \n" % \
             (peak[0],peak[2],peak[4],peak[6]))
     print ('peak list saved')
-              
+
 def IndexPeakListSave(G2frame,peaks):
     'Save powder peaks from the indexing list'
     file = open(G2frame.peaklistfile,'wa')
@@ -923,7 +923,7 @@ def ExportPowderList(G2frame):
     along with their descriptions (note that a extension may be repeated
     but descriptions are unique).
     This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only.
-    
+
     :param wx.Frame G2frame: the GSAS-II main data tree window
     '''
     extList = []
@@ -940,13 +940,13 @@ def ExportPowderList(G2frame):
 
 def ExportPowder(G2frame,TreeName,fileroot,extension,hint=''):
     '''Writes a single powder histogram using the Export routines.
-    This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only. 
+    This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only.
 
     :param wx.Frame G2frame: the GSAS-II main data tree window
     :param str TreeName: the name of the histogram (PWDR ...) in the data tree
     :param str fileroot: name for file to be written, extension ignored
     :param str extension: extension for file to be written (start with '.'). Must
-      match a powder export routine that has a Writer object. 
+      match a powder export routine that has a Writer object.
     :param str hint: a string that must match the export's format
     '''
     filename = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
@@ -972,7 +972,7 @@ def ExportPowder(G2frame,TreeName,fileroot,extension,hint=''):
         print('No Export routine supports extension '+extension)
 
 def ExportSequentialFullCIF(G2frame,seqData,Controls):
-    '''Handles access to CIF exporter a bit differently for sequential fits, as this is 
+    '''Handles access to CIF exporter a bit differently for sequential fits, as this is
     not accessed via the usual export menus
     '''
     from exports import G2export_CIF
@@ -983,12 +983,12 @@ def ExportSequentialFullCIF(G2frame,seqData,Controls):
     ########################################################################
     obj = G2export_CIF.ExportProjectCIF(G2frame)
     obj.Exporter(None,seqData=seqData,Controls=Controls)
-    
+
 def ExportSequential(G2frame,data,obj,exporttype):
     '''
     Used to export from every phase/dataset in a sequential refinement using
     a .Writer method for either projects or phases. Prompts to select histograms
-    and for phase exports, which phase(s). 
+    and for phase exports, which phase(s).
 
     :param wx.Frame G2frame: the GSAS-II main data tree window
     :param dict data: the sequential refinement data object
@@ -1111,7 +1111,7 @@ def ReadDIFFaX(DIFFaXfile):
         elif trans:
             if diff:
                 Trans.append(diff)
-   
+
 #STRUCTURE records
     laueRec = Struct[1].split()
     Layer['Laue'] = laueRec[0]
@@ -1150,7 +1150,7 @@ def ReadDIFFaX(DIFFaXfile):
                 if '/' in val:
                     newVals.append(eval(val+'.'))
                 else:
-                    newVals.append(float(val))                
+                    newVals.append(float(val))
             atomRec = [atomName,atomType,newVals[0],newVals[1],newVals[2],newVals[4],newVals[3]/78.9568]
             Layer['Layers'][-1]['Atoms'].append(atomRec)
             N += 1
@@ -1203,7 +1203,7 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
         msgs[phlbl] = newData
         return
     # create a new phase
-    try: 
+    try:
         sgnum = int(newData[0].strip())
         sgsym = G2spc.spgbyNum[sgnum]
         sgname = sgsym.replace(" ","")
@@ -1221,7 +1221,7 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
     Atoms = newPhase['Atoms'] = []
     for a in newData[3:]:
         if not a.strip(): continue
-        try: 
+        try:
             elem,n,wyc,x,y,z = a.split()
             atom = []
             atom.append(elem+n)
@@ -1233,7 +1233,7 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
             atom.append(SytSym)
             atom.append(Mult)
             atom.append('I')
-            atom += [0.02,0.,0.,0.,0.,0.,0.,]                    
+            atom += [0.02,0.,0.,0.,0.,0.,0.,]
             atom.append(ran.randint(0,sys.maxsize))
             Atoms.append(atom)
         except:
@@ -1269,23 +1269,23 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
 
 def mkParmDictfromTree(G2frame,sigDict=None):
     '''Load the GSAS-II refinable parameters from the tree into dict parmDict
-    Updating refined values to those from the last cycle. Optionally 
+    Updating refined values to those from the last cycle. Optionally
     compute the s.u. values for the parameters and place them in sigDict.
 
-    The actions in the routine are used in a number of places around 
-    the GSAS-II code where it would be "cleaner" to use this instead. 
-    Perhaps that will happen as code revisions are made. One example 
+    The actions in the routine are used in a number of places around
+    the GSAS-II code where it would be "cleaner" to use this instead.
+    Perhaps that will happen as code revisions are made. One example
     of this, :meth:`GSASIIfiles.ExportBaseclass.loadParmDict`.
 
     :param wx.Frame G2frame: a reference to the main GSAS-II window
-    :param dict sigDict: a Python dict with sigma (s.u.) values for 
+    :param dict sigDict: a Python dict with sigma (s.u.) values for
       each parameter
 
-    :returns: parmDict, a dict with the value for all refined and most 
+    :returns: parmDict, a dict with the value for all refined and most
       unrefined GSAS-II parameters used in the diffraction computations.
       This parmDict version has only values, as opposed to the version
       used in some parts of the code that has refinement flags and initial
-      values as well. 
+      values as well.
     '''
     from . import GSASIIstrIO as G2stIO
     from . import GSASIIstrMath as G2stMth
@@ -1295,7 +1295,7 @@ def mkParmDictfromTree(G2frame,sigDict=None):
     rigidbodyDict = {}
     covDict = {}
     consDict = {}
-    
+
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if G2frame.GPXtree.IsEmpty(): return # nothing to do
     rigidbodyDict = G2frame.GPXtree.GetItemPyData(
@@ -1304,7 +1304,7 @@ def mkParmDictfromTree(G2frame,sigDict=None):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
     consDict = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints'))
-    
+
     rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
     parmDict.update(rbDict)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -1365,7 +1365,7 @@ if __name__ == '__main__':
     #filename = '/tmp/notzip.zip'
     #filename = '/tmp/all.zip'
     #filename = '/tmp/11bmb_7652.zip'
-    
+
     #selection=None, confirmoverwrite=True, parent=None
     # choicelist=[ ('a','b','c'),
     #              ('test1','test2'),('no choice',)]

@@ -907,13 +907,16 @@ class G2Project(G2ObjectWrapper):
         controls_data['PythonVersions'] = G2fil.get_python_versions(modList)
         #    G2 version info
         controls_data['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
-        if GSASIIpath.HowIsG2Installed().startswith('git'):
-            try:
+        try:
+            if GSASIIpath.HowIsG2Installed().startswith('git'):
                 g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
                 commit = g2repo.head.commit
-                controls_data['LastSavedUsing'] += f" git {commit.hexsha[:6]} script"
-            except:
-                pass
+                controls_data['LastSavedUsing'] += f" git {commit.hexsha[:8]} script"
+            else:
+                from . import git_verinfo as gv
+                Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
+        except:
+            pass
         #    .gpx name
         if filename:
             filename = os.path.abspath(os.path.expanduser(filename))

@@ -31,6 +31,7 @@ filversion = "?"
 try:
     import git_verinfo
     filversion = git_verinfo.git_tags[0]
+    if not filversion: filversion = git_verinfo.git_prevtags[0]
 except:
     pass
 from . import GSASIIlattice as G2lat

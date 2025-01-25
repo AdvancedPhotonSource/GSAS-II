@@ -362,7 +362,7 @@ versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
 'versions of modules that are known to have bugs'
 versionDict['tooNewWarn'] = {}
 'module versions newer than what we have tested & where problems are suspected'
-versionDict['tooNewUntested'] = {'Python':'3.12','wx': '4.2.3'}
+versionDict['tooNewUntested'] = {'Python':'3.14','wx': '4.2.3'}
 'module versions newer than what we have tested but no problems are suspected'
 
 def ShowVersions():
@@ -454,20 +454,21 @@ def ShowVersions():
     print(GSASIIpath.getG2VersionInfo())
 
     # warn if problems with Git
-    try:
-        import git
-    except ImportError as msg:
-        if 'Failed to initialize' in msg.msg:
-            print('The gitpython package is unable to locate a git installation.')
-            print('See https://gsas-ii.readthedocs.io/en/latest/packages.html for more information.')
-        elif 'No module' in msg.msg:
-            print('Warning: Python gitpython module not installed')
-        else:
-            print(f'gitpython failed to import, but why? Error:\n{msg}')
-        print('Note: git and gitpython are required for GSAS-II to self-update')
-    except Exception as msg:
-        print(f'git import failed with unexpected error:\n{msg}')
-        print('Note: git and gitpython are required for GSAS-II to self-update')
+    if GSASIIpath.HowIsG2Installed().startswith('git'):
+        try:
+            import git
+        except ImportError as msg:
+            if 'Failed to initialize' in msg.msg:
+                print('The gitpython package is unable to locate a git installation.')
+                print('See https://gsas-ii.readthedocs.io/en/latest/packages.html for more information.')
+            elif 'No module' in msg.msg:
+                print('Warning: Python gitpython module not installed')
+            else:
+                print(f'gitpython failed to import, but why? Error:\n{msg}')
+            print('Note: git and gitpython are required for GSAS-II to self-update')
+        except Exception as msg:
+            print(f'git import failed with unexpected error:\n{msg}')
+            print('Note: git and gitpython are required for GSAS-II to self-update')
 
     # warn if problems with requests package
     try:
@@ -656,8 +657,10 @@ class GSASII(wx.Frame):
             item = parent.Append(wx.ID_ANY,'Reopen current\tCtrl+0','Reread the current GSAS-II project (.gpx) file')
             self.Bind(wx.EVT_MENU, self.OnFileReread, id=item.GetId())
 
-        item = parent.Append(wx.ID_ANY,"Install GSASIIscriptable shortcut",'')
-        self.Bind(wx.EVT_MENU,
+        # if Git install assume GSAS-II was not installed into Python
+        if GSASIIpath.HowIsG2Installed().startswith('git'):
+            item = parent.Append(wx.ID_ANY,"Install GSASIIscriptable shortcut",'')
+            self.Bind(wx.EVT_MENU,
                       lambda event: GSASIIpath.makeScriptShortcut(),
                       item)
 

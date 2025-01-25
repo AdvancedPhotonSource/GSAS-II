@@ -208,17 +208,9 @@ def GetVersionNumber():
     if HowIsG2Installed().startswith('git'):
         # look for a recorded tag -- this is quick
         try:
-            import git_verinfo as gv
-            try:
-                for item in gv.git_tags:
-                    if item.isnumeric(): return int(item)
-            except:
-                pass
-            try:
-                for item in gv.git_prevtags:
-                    if item.isnumeric(): return int(item)
-            except:
-                pass
+            from . import git_verinfo as gv
+            for item in gv.git_tags+gv.git_prevtags:
+                if item.isnumeric(): return int(item)
         except:
             pass
         # no luck, ask Git for the most recent tag (must start & end with a number)
@@ -232,20 +224,11 @@ def GetVersionNumber():
 
     # No luck asking, look up version information from git_verinfo.py
     try:
-        import git_verinfo as gv
-        try:
-            for item in gv.git_tags:
-                if item.isnumeric(): return int(item)
-        except:
-            pass
-        try:
-            for item in gv.git_prevtags:
-                if item.isnumeric(): return int(item)
-        except:
-            pass
+        from . import git_verinfo as gv
+        for item in gv.git_tags+gv.git_prevtags:
+            if item.isnumeric(): return int(item)
     except:
         pass
-
     return "unknown"
 
 def getG2VersionInfo():
@@ -278,21 +261,17 @@ def getG2VersionInfo():
                 msg += f"\n\t**** Please consider updating. >= {len(rc)} updates have been posted"
             elif len(rc) > 0:
                 msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
-        return f"  GSAS-II:    {commit.hexsha[:6]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
+        return f"  GSAS-II:    {commit.hexsha[:8]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
     else:
         try:
-            import git_verinfo as gv
-            if gv.git_tags:
-                msg = f"{' '.join(gv.git_tags)}, Git: {gv.git_version[:6]}"
-            else:
-                msg = (f"{gv.git_version[:6]}; "+
-                       f"Prev ver: {' '.join(gv.git_prevtags)}"+
-                       f", {gv.git_prevtaggedversion[:6]}")
-            return f"GSAS-II version: {msg} (Manual update)"
+            from . import git_verinfo as gv
+            for item in gv.git_tags+gv.git_prevtags:
+                if item.isnumeric():
+                    return f"GSAS-II version: Git: {gv.git_version[:8]}, #{item} (installed without update capability)"
         except:
             pass
-    # all else fails, use the old version number routine
-    return f"GSAS-II installed manually, last revision: {GetVersionNumber()}"
+    # Failed to get version info, fallback on old version number routine
+    return f"GSAS-II installed without git, last tag: {GetVersionNumber()}"
 
 #==============================================================================
 #==============================================================================
@@ -1495,6 +1474,9 @@ def makeScriptShortcut():
       indicates an error.
     '''
     import datetime as dt
+    if not HowIsG2Installed().startswith('git'):
+        print('GSAS-II installed directly, shortcut likely not needed')
+        return None
     for p in sys.path:
         if 'site-packages' in p: break
     else:

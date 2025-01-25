@@ -787,42 +787,6 @@ def EdgeFinder(image,data):
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     return zip(tax,tay)
-
-def polymask(blkSize,X,Y,Poly):
-    
-      # DO K=0,N-1
-      #   MASK(K) = .FALSE.
-      #   DO I=0,M-1
-      #     P2X = POLY(I,0)
-      #     P2Y = POLY(I,1)
-      #     IF (Y(K) .GT. MIN(P1Y,P2Y)) THEN
-      #       IF (Y(K) .LE. MAX(P1Y,P2Y)) THEN
-      #         IF (X(K) .LE. MAX(P1X,P2X)) THEN
-      #           IF (P1Y .NE.P2Y) THEN
-      #             XINTERS = (Y(K)-P1Y)*(P2X-P1X)/(P2Y-P1Y)+P1X
-      #           END IF
-      #           IF ( (P1X .EQ. P2X) .OR. (X(K) .LE. XINTERS) ) THEN
-      #             MASK(K) = .NOT.MASK(K)
-      #           END IF
-      #         END IF
-      #       END IF
-      #     END IF
-      #     P1X = P2X
-      #     P1Y = P2Y
-      #   END DO
-      # END DO
-    import matplotlib.figure as mplfig
-    figure = mplfig.Figure(figsize=(1,1),dpi=blkSize)
-#    canvas = hcCanvas(figure)
-    figure.clf()
-    ax0 = figure.add_subplot()
-    ax0.axis("off")
-    figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-      
-      
-      
-    return
-    
     
 def MakeFrameMask(data,frame):
     '''Assemble a Frame mask for a image, according to the input supplied.
@@ -1279,6 +1243,35 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     TA[3] = G2pwd.Polarization(data['PolaVal'][0],TA[0],TA[1]-90.)[0]
     return TA           #2-theta, azimuth & geom. corr. arrays
 
+def polymask(data,Poly):
+    
+    import matplotlib.figure as mplfig
+    try:
+        from matplotlib.backends.backend_agg import FigureCanvasAgg as hcCanvas
+    except ImportError:
+        from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
+    Nx,Ny = data['size']
+    pixelSize = data['pixelSize']
+    scalex = pixelSize[0]/1000.
+    scaley = pixelSize[1]/1000.
+    figure = mplfig.Figure(figsize=(Nx/400.,Ny/400.),dpi=400,facecolor='black')
+    canvas = hcCanvas(figure)
+    figure.clf()
+    ax0 = figure.add_subplot()
+    ax0.axis("off")
+    figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
+    for poly in Poly:
+        px = np.array(poly).T[0]/scalex
+        py = np.array(poly).T[1]/scaley
+        ax0.fill(px,py,'white')
+    ax0.set_xbound(0,Nx)
+    ax0.set_ybound(0,Ny)
+    agg = canvas.switch_backends(hcCanvas)
+    agg.draw()
+    img, (width, height) = agg.print_to_buffer()
+    Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
+    return Zimg[:,:,0]
+
 def MakeMaskMap(data,masks,iLim,jLim,tamp):
     '''Makes a mask array from masking parameters that are not determined by 
     image calibration parameters or the image intensities. Thus this uses 
@@ -1297,7 +1290,11 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    
+    if masks['Polygons']:
+        if iLim[0] == jLim[0] == 0:
+            masks['Pmask'] = polymask(data,masks['Polygons'])
+    else:
+        masks['Pmask'] = None
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
     tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
@@ -1310,10 +1307,11 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
         tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
             tay,len(frame),frame,tamp)[:nI*nJ])^True)
     polygons = masks['Polygons']
-    for polygon in polygons:
-        if polygon:
-            tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
-                tay,len(polygon),polygon,tamp)[:nI*nJ]))
+    if polygons:
+        tam = ma.mask_or(tam,ma.make_mask(masks['Pmask'][iLim[0]:iLim[1],jLim[0]:jLim[1]].flatten()))
+        # for polygon in polygons:
+        #     tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
+        #         tay,len(polygon),polygon,tamp)[:nI*nJ]))
     points = masks['Points']
     if len(points):
         for X,Y,rsq in points.T:

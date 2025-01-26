@@ -1243,18 +1243,36 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     TA[3] = G2pwd.Polarization(data['PolaVal'][0],TA[0],TA[1]-90.)[0]
     return TA           #2-theta, azimuth & geom. corr. arrays
 
-def polymask(data,Poly):
+def polymask(data,Poly,outside=False):
+    ''' Applies polygon  & frame masks via calls to matplotlib routines; 
+    should be called only once during image processing. Individual masked blocks
+    are then pulled from the output array.
+    
+    :param dict data: GSAS-II image data object (describes the image)
+    :param list Poly: list of polygons; if empty, returns None
+    :param bool outside: True: mask on outside polygon for frame mask
+        False (default): mask on inside - typical polygon mask
+    :returns: Zimg, array[Nx,Ny] size of full image mask for all polygons considered
+    '''
     
     import matplotlib.figure as mplfig
     try:
         from matplotlib.backends.backend_agg import FigureCanvasAgg as hcCanvas
     except ImportError:
         from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
+    
+    if not Poly:
+        return []
+    outmask = 'black'
+    inmask = 'white'
+    if outside:
+        outmask = 'white'
+        inmask = 'black'
     Nx,Ny = data['size']
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    figure = mplfig.Figure(figsize=(Nx/400.,Ny/400.),dpi=400,facecolor='black')
+    figure = mplfig.Figure(figsize=(Nx/400.,Ny/400.),dpi=400,facecolor=outmask)
     canvas = hcCanvas(figure)
     figure.clf()
     ax0 = figure.add_subplot()
@@ -1263,14 +1281,14 @@ def polymask(data,Poly):
     for poly in Poly:
         px = np.array(poly).T[0]/scalex
         py = np.array(poly).T[1]/scaley
-        ax0.fill(px,py,'white')
+        ax0.fill(px,py,inmask)
     ax0.set_xbound(0,Nx)
     ax0.set_ybound(0,Ny)
     agg = canvas.switch_backends(hcCanvas)
     agg.draw()
     img, (width, height) = agg.print_to_buffer()
     Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
-    return Zimg[:,:,0]
+    return np.flipud(Zimg[:,:,0])
 
 def MakeMaskMap(data,masks,iLim,jLim,tamp):
     '''Makes a mask array from masking parameters that are not determined by 
@@ -1290,11 +1308,19 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    if masks['Polygons']:
-        if iLim[0] == jLim[0] == 0:
-            masks['Pmask'] = polymask(data,masks['Polygons'])
-    else:
-        masks['Pmask'] = None
+    frame = []
+    poly = []
+    if iLim[0] == jLim[0] == 0:
+#        frame = polymask(data,masks['Frames'],outside=True)
+        poly = polymask(data,masks['Polygons'])
+        # if len(frame):
+        #     masks['Pmask'] =  frame
+        #     if len(poly):
+        #         masks['Pmask'] = masks['Pmask']+poly
+        if len(poly):
+            masks['Pmask'] =  poly
+        else:
+            masks['Pmask'] =  None
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
     tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
@@ -1307,11 +1333,8 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
         tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
             tay,len(frame),frame,tamp)[:nI*nJ])^True)
     polygons = masks['Polygons']
-    if polygons:
+    if polygons or frame:
         tam = ma.mask_or(tam,ma.make_mask(masks['Pmask'][iLim[0]:iLim[1],jLim[0]:jLim[1]].flatten()))
-        # for polygon in polygons:
-        #     tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
-        #         tay,len(polygon),polygon,tamp)[:nI*nJ]))
     points = masks['Points']
     if len(points):
         for X,Y,rsq in points.T:

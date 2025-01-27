@@ -788,46 +788,46 @@ def EdgeFinder(image,data):
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     return zip(tax,tay)
     
-def MakeFrameMask(data,frame):
-    '''Assemble a Frame mask for a image, according to the input supplied.
-    Note that this requires use of the Fortran polymask routine that is limited
-    to 1024x1024 arrays, so this computation is done in blocks (fixed at 512) 
-    and the master image is assembled from that. 
+# def MakeFrameMask(data,frame): #obsolete
+#     '''Assemble a Frame mask for a image, according to the input supplied.
+#     Note that this requires use of the Fortran polymask routine that is limited
+#     to 1024x1024 arrays, so this computation is done in blocks (fixed at 512) 
+#     and the master image is assembled from that. 
 
-    :param dict data: Controls for an image. Used to find the image size
-      and the pixel dimensions. 
-    :param list frame: Frame parameters, typically taken from ``Masks['Frames']``.
-    :returns: a mask array with dimensions matching the image Controls.
-    '''
-    import polymask as pm
-    pixelSize = data['pixelSize']
-    scalex = pixelSize[0]/1000.
-    scaley = pixelSize[1]/1000.
-    blkSize = 512
-    Nx,Ny = data['size']
-    nXBlks = (Nx-1)//blkSize+1
-    nYBlks = (Ny-1)//blkSize+1
-    tam = ma.make_mask_none(data['size'])
-    for iBlk in range(nXBlks):
-        iBeg = iBlk*blkSize
-        iFin = min(iBeg+blkSize,Nx)
-        for jBlk in range(nYBlks):
-            jBeg = jBlk*blkSize
-            jFin = min(jBeg+blkSize,Ny)                
-            nI = iFin-iBeg
-            nJ = jFin-jBeg
-            tax,tay = np.mgrid[iBeg+0.5:iFin+.5,jBeg+.5:jFin+.5]         #bin centers not corners
-            tax = np.asfarray(tax*scalex,dtype=np.float32)
-            tay = np.asfarray(tay*scaley,dtype=np.float32)
-            tamp = ma.make_mask_none((1024*1024))
-            tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
-                tay.flatten(),len(frame),frame,tamp)[:nI*nJ])^True  #switch to exclude around frame
-            if tamp.shape:
-                tamp = np.reshape(tamp[:nI*nJ],(nI,nJ))
-                tam[iBeg:iFin,jBeg:jFin] = ma.mask_or(tamp[0:nI,0:nJ],tam[iBeg:iFin,jBeg:jFin])
-            else:
-                tam[iBeg:iFin,jBeg:jFin] = True
-    return tam.T
+#     :param dict data: Controls for an image. Used to find the image size
+#       and the pixel dimensions. 
+#     :param list frame: Frame parameters, typically taken from ``Masks['Frames']``.
+#     :returns: a mask array with dimensions matching the image Controls.
+#     '''
+#     import polymask as pm
+#     pixelSize = data['pixelSize']
+#     scalex = pixelSize[0]/1000.
+#     scaley = pixelSize[1]/1000.
+#     blkSize = 512
+#     Nx,Ny = data['size']
+#     nXBlks = (Nx-1)//blkSize+1
+#     nYBlks = (Ny-1)//blkSize+1
+#     tam = ma.make_mask_none(data['size'])
+#     for iBlk in range(nXBlks):
+#         iBeg = iBlk*blkSize
+#         iFin = min(iBeg+blkSize,Nx)
+#         for jBlk in range(nYBlks):
+#             jBeg = jBlk*blkSize
+#             jFin = min(jBeg+blkSize,Ny)                
+#             nI = iFin-iBeg
+#             nJ = jFin-jBeg
+#             tax,tay = np.mgrid[iBeg+0.5:iFin+.5,jBeg+.5:jFin+.5]         #bin centers not corners
+#             tax = np.asfarray(tax*scalex,dtype=np.float32)
+#             tay = np.asfarray(tay*scaley,dtype=np.float32)
+#             tamp = ma.make_mask_none((1024*1024))
+#             tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
+#                 tay.flatten(),len(frame),frame,tamp)[:nI*nJ])^True  #switch to exclude around frame
+#             if tamp.shape:
+#                 tamp = np.reshape(tamp[:nI*nJ],(nI,nJ))
+#                 tam[iBeg:iFin,jBeg:jFin] = ma.mask_or(tamp[0:nI,0:nJ],tam[iBeg:iFin,jBeg:jFin])
+#             else:
+#                 tam[iBeg:iFin,jBeg:jFin] = True
+#     return tam.T
 
 def CalcRings(G2frame,ImageZ,data,masks):
     pixelSize = data['pixelSize']
@@ -864,7 +864,7 @@ def CalcRings(G2frame,ImageZ,data,masks):
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)
     if frame:
-        tam = ma.mask_or(tam,MakeFrameMask(data,frame))
+        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,frame)-255)))
     for iH,H in enumerate(HKL):
         if debug:   print (H) 
         dsp = H[3]
@@ -942,7 +942,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)
     if frame:
-        tam = ma.mask_or(tam,MakeFrameMask(data,frame))
+        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,frame)-255)))
     for iH,H in enumerate(HKL):
         if debug:   print (H) 
         dsp = H[3]
@@ -1917,40 +1917,6 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
         else:
             return None
 
-# Original version
-# def AutoPixelMask(Image,Masks,Controls,numChans,dlg=None):
-#     '''Find "bad" regions on an image and remove them with a pixel mask.
-#     This works by masking pixels that are well outside the range of the
-#     radial average.
-#     Original version from RBVD, takes 1-5 min per image. No longer in use.
-#     '''
-#     #if GSASIIpath.GetConfigValue('debug'): print('original AutoPixelMask starting')
-#     frame = Masks['Frames']
-#     tam = ma.make_mask_none(Image.shape)
-#     if frame:
-#         tam = ma.mask_or(tam,MakeFrameMask(Controls,frame))
-#     LUtth = np.array(Controls['IOtth'])
-#     dtth = (LUtth[1]-LUtth[0])/numChans
-#     esdMul = Masks['SpotMask']['esdMul']
-#     prob = 100.*sc.erf(esdMul/np.sqrt(2.))
-#     print(' Spots greater than %.2f of band intensity are masked'%prob)
-#     mask = ma.make_mask_none(Image.shape)
-#     band = ma.array(Image,mask=ma.nomask)
-#     TA = Make2ThetaAzimuthMap(Controls,(0,Image.shape[0]),(0,Image.shape[1]))[0]    #2-theta array
-#     TThs = np.linspace(LUtth[0],LUtth[1],numChans,False)
-#     for it,TTh in enumerate(TThs):
-#         band.mask = ma.masked_outside(TA,TTh,TTh+dtth).mask+tam
-#         pcmax = np.percentile(band.compressed(),[prob,50.])
-#         mband = ma.masked_greater(band,pcmax[0])
-#         std = ma.std(mband)
-#         anom = ma.masked_greater((band-pcmax[1])/std,esdMul)
-#         mask ^= (anom.mask^band.mask)
-#         if not dlg is None:
-#             GoOn = dlg.Update(it,newmsg='Processed 2-theta rings = %d'%(it))
-#             if not GoOn[0]:
-#                 break
-#     return mask
-
 def TestFastPixelMask():
     '''Test if the fast (C) version of Auto Pixel Masking is available.
 
@@ -1994,7 +1960,7 @@ def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     frame = Masks['Frames']
     tam = ma.make_mask_none(Image.shape)
     if frame:
-        tam = ma.mask_or(tam,MakeFrameMask(Controls,frame))
+        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(Controls,frame)-255)))
     ttmin = float(Masks['SpotMask'].get('SearchMin',0.0))
     ttmax = float(Masks['SpotMask'].get('SearchMax',180.0))
     esdMul = float(Masks['SpotMask']['esdMul'])
@@ -2061,7 +2027,7 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     frame = Masks['Frames']
     tam = ma.make_mask_none(Image.shape)
     if frame:
-        tam = ma.mask_or(tam,MakeFrameMask(Controls,frame))
+        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(Controls,frame)-255)))
     LUtth = np.array(Controls['IOtth'])
     dtth = (LUtth[1]-LUtth[0])/numChans
     esdMul = Masks['SpotMask']['esdMul']   

@@ -25,7 +25,7 @@ import time
 import sys
 import random as ran
 import subprocess as subp
-import platform
+#import platform
 import shutil
 
 import numpy as np
@@ -3055,11 +3055,12 @@ def UpdatePhaseData(G2frame,Item,data):
         import tempfile
         import re
         import requests
-        from exports import G2export_CIF
+        from GSASII.exports import G2export_CIF
         isosite="https://stokes.byu.edu/iso/"
         upscript='isocifuploadfile.php'
         isoscript='isocifform.php'
-        isoCite = '''For use of this supergroup search, please cite H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISOCIF, ISOTROPY Software Suite, iso.byu.edu.'''
+        isoSubCite = ('For use of this supergroup search, please cite:\n'+
+           G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...',wrap=60,indent=5))
         latTol,coordTol,occTol = 0.001, 0.01, 0.1
         oacomp,occomp = G2mth.phaseContents(data)
         ophsnam = data['General']['Name']
@@ -3130,7 +3131,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                      'occupancy tolerance'],
                                 values=[latTol,coordTol,occTol],
                                 limits=3*[[0.,2.]],formats=3*['%.5g'],
-                                header=isoCite)
+                                header=isoSubCite)
             res = dlg.ShowModal()
             latTol,coordTol,occTol = dlg.GetValues()
             dlg.Destroy()
@@ -3250,7 +3251,7 @@ def UpdatePhaseData(G2frame,Item,data):
             Restraints[ophsnam]['Angle']['Angles'] = []
         f = saveIsoNewPhase(G2frame,data,newPhase,orgFilName)
 
-        wx.MessageBox(f"{isoCite}\n\nCreated project in space group {sglbl} as file {f}",
+        wx.MessageBox(f"{isoSubCite}\n\nCreated project in space group {sglbl} as file {f}",
                           style=wx.ICON_INFORMATION,caption='File created')
         for i in fileList: os.unlink(i) # cleanup tmp web pages
         def _GetPhase():
@@ -5705,12 +5706,6 @@ def UpdatePhaseData(G2frame,Item,data):
         def OnFileCheck(event):
             DysData['clear'] = fileCheck.GetValue()
 
-        cite = ''' For use of Dysnomia, please cite:
-      Dysnomia, a computer program for maximum-entropy method (MEM)
-      analysis and its performance in the MEM-based pattern fitting,
-      K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193.
-      doi: https://doi.org/10.1017/S088571561300002X
-      '''
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
         Map = generalData['Map']
@@ -5746,7 +5741,9 @@ def UpdatePhaseData(G2frame,Item,data):
         topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
         wx.CallAfter(G2frame.dataWindow.SetDataSize)
 
-        mainSizer.Add(wx.StaticText(MEMData,label=cite))
+        mainSizer.Add(wx.StaticText(MEMData,label=
+            ' For use of Dysnomia, please cite:\n'+
+              G2G.GetCite('Dysnomia',wrap=60,indent=5)))
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
         lineSizer.Add(wx.StaticText(MEMData,label=' MEM Optimization method: '),0,WACV)
         OptMeth = wx.ComboBox(MEMData,-1,value=DysData['Optimize'],choices=['ZSPA','L-BFGS'],
@@ -5858,12 +5855,9 @@ def UpdatePhaseData(G2frame,Item,data):
             wx.MessageBox('Non standard space group '+SpGrp+' not permitted in Dysnomia','Dysnomia Error',
                 style=wx.ICON_ERROR)
             return
-        cite = ''' For use of Dysnomia, please cite:
-      Dysnomia, a computer program for maximum-entropy method (MEM)
-      analysis and its performance in the MEM-based pattern fitting,
-      K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193.
-      doi: https://doi.org/10.1017/S088571561300002X'''
-        wx.MessageBox(cite,caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
+        wx.MessageBox(' For use of Dysnomia, please cite:\n\n'+
+                          G2G.GetCite('Dysnomia'),
+                          caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
 
         print('Run '+DYSNOMIA)
         subp.call([DYSNOMIA,prfName])
@@ -6835,10 +6829,10 @@ def UpdatePhaseData(G2frame,Item,data):
             subSizer.Add((-1,-1),1,wx.EXPAND)
             mainSizer.Add(subSizer)
             mainSizer.Add((5,5))
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
-'''"RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker,
-D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
-19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218'''))
+            txt = wx.StaticText(G2frame.FRMC,label=
+                    f"Please cite: {G2G.GetCite('RMCProfile')}")
+            txt.Wrap(500)
+            mainSizer.Add(txt)
             mainSizer.Add((5,5))
             Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
             aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
@@ -7413,17 +7407,11 @@ D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter (2007),
                         item,xmin=-3.,xmax=3.,size=(70,25)),0,WACV)
                 return atomVarSizer
 
-            subSizer = wx.BoxSizer(wx.HORIZONTAL)
-            subSizer.Add((-1,-1),1,wx.EXPAND)
-            subSizer.Add(wx.StaticText(G2frame.FRMC,label='For use of PDFfit, please cite:'),0,WACV)
-            subSizer.Add((-1,-1),1,wx.EXPAND)
-            mainSizer.Add(subSizer)
-            mainSizer.Add((5,5))
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=
-'''"PDFfit2 and PDFgui: computer programs for studying nanostructures in crystals",
-C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen &&
-S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond. Matter
-(2007), 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335219'''))
+            txt = wx.StaticText(G2frame.FRMC,label=
+                                    'For use of PDFfit, please cite: '+
+                                    G2G.GetCite('PDFfit2'))
+            txt.Wrap(500)
+            mainSizer.Add(txt)
             mainSizer.Add((5,5))
             if 'PDFfit' not in data['RMC'] or not data['RMC']['PDFfit'] or 'delta1' not in data['RMC']['PDFfit']:
                 if 'PDFfit' not in data['RMC']:
@@ -7540,8 +7528,8 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             topSizer.Add(RMCsel,0)
             topSizer.Add((20,0))
             txt = wx.StaticText(G2frame.FRMC,
-                label=' NB: if you change any of the entries below, you must redo the Operations/Setup RMC step above to apply them before doing Operations/Execute')
-            txt.Wrap(400)
+                label='NB: if you change any of the entries below, you must redo the Operations/Setup RMC step above to apply them before doing Operations/Execute')
+            txt.Wrap(250)
             topSizer.Add(txt,0)
             mainSizer.Add(topSizer,0)
             RMCmisc['RMCnote'] = wx.StaticText(G2frame.FRMC)
@@ -7696,12 +7684,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 wx.MessageBox(f'File {rname} does not exist. Has the Operations/"Setup RMC" menu command been run?',
                                   caption='Run setup',style=wx.ICON_WARNING)
                 return
-        wx.MessageBox(''' For use of PDFfit2, please cite:
-      PDFfit2 and PDFgui: computer progerama for studying nanostructures in crystals,
-C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen &
-S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond. Matter
-(2007), 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335219''',
-      caption='PDFfit2',style=wx.ICON_INFORMATION)
+        wx.MessageBox(' For use of PDFfit2, please cite:\n\n'+
+                          G2G.GetCite('PDFfit2'),
+                          caption='PDFfit2',style=wx.ICON_INFORMATION)
         G2frame.OnFileSave(event)
         print (' GSAS-II project saved')
         if sys.platform.lower().startswith('win'):
@@ -7953,20 +7938,9 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
                 shutil.rmtree(rmcname)
             else:
                 return
-        G2G.G2MessageBox(G2frame,
-'''For use of fullrmc, please cite:
-
-      "Atomic Stochastic Modeling & Optimization
-      with fullrmc", B. Aoun, J. Appl. Cryst. 2022,
-      55(6) 1664-1676, DOI: 10.1107/S1600576722008536.
-
-      "Fullrmc, a Rigid Body Reverse Monte Carlo
-      Modeling Package Enabled with Machine Learning
-      and Artificial Intelligence",
-      B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111.
-      DOI: 10.1002/jcc.24304
-
-      Note: A more advanced version of fullrmc can be found at www.fullrmc.com''',
+        G2G.G2MessageBox(G2frame,f'For use of fullrmc, please cite:\n\n'+
+                             G2G.GetCite('fullrmc')+
+                             '\n\nNote: A more advanced version of fullrmc can be found at www.fullrmc.com',
                              'Please cite fullrmc')
         ilog = 0
         while True:
@@ -8024,13 +7998,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             caption='RMCProfile',style=wx.ICON_INFORMATION)
                 return
             rmcexe = os.path.split(rmcfile)[0]
-        print(rmcexe)
-        wx.MessageBox(''' For use of RMCProfile, please cite:
-      RMCProfile: Reverse Monte Carlo for polycrystalline materials,
-      M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui,
-      Jour. Phys.: Cond. Matter 2007, 19, 335218.
-      doi: https://doi.org/10.1088/0953-8984/19/33/335218''',
-      caption='RMCProfile',style=wx.ICON_INFORMATION)
+        #print(rmcexe)
+        wx.MessageBox(
+            f' For use of RMCProfile, please cite:\n\n'+
+            G2G.GetCite("RMCProfile"),
+            caption='RMCProfile',style=wx.ICON_INFORMATION)
         if os.path.isfile(pName+'.his6f'):
             os.remove(pName+'.his6f')
         if os.path.isfile(pName+'.xray'):
@@ -8815,8 +8787,11 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             if SGLaue not in ['mmm','2/m','-1']:
                 mainSizer.Add(wx.StaticText(ISODIST,label=' NB: ISODISTORT distortion mode symmetry is too high to be used in PDFfit'))
-            mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite))
-
+            txt = wx.StaticText(ISODIST,label=
+                            ' For use of ISODISTORT, please cite: '+
+                            G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...'))
+            txt.Wrap(500)
+            mainSizer.Add(txt)
             mainSizer.Add(wx.StaticText(ISODIST,label=
 u''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
  display mode values. The positions in the Atoms and Draw Atoms tabs, as well as the atom
@@ -8895,11 +8870,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             or ('G2OccVarList' in ISOdata))
         G2frame.dataWindow.ISODDataEdit.Enable(G2G.wxID_SHOWISOMODES,('G2VarList' in ISOdata))
 
-        ISOcite = ''' For use of ISODISTORT, please cite:
-   H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
-   B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for
-   Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).
-  '''
         if ISODIST.GetSizer():
             ISODIST.GetSizer().Clear(True)
 
@@ -8920,8 +8890,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 #end initialization
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(ISODIST,label=ISOcite))
-
+        txt = wx.StaticText(ISODIST,label=
+                            ' For use of ISODISTORT, please cite: '+
+                            G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...'))
+        txt.Wrap(500)
+        mainSizer.Add(txt)
+        mainSizer.Add((-1,5))
+        G2G.HorizontalLine(mainSizer,ISODIST)
+        mainSizer.Add((-1,5))
         mainSizer.Add(displaySetup())
 
         if 'radio' in ISOdata:
@@ -9632,12 +9608,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         debug = False       #set True to run DIFFax to compare/debug (must be in bin)
         idebug = 0
         if debug: idebug = 1
-        wx.MessageBox(''' For use of DIFFaX, please cite:
-  A general recursion method for calculating diffracted intensities from crystals containing
-  planar faults,
-  M.M.J. Treacy, J.M. Newsam & M.W. Deem, Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
-  doi: https://doi.org/10.1098/rspa.1991.0062
-      ''',caption='DIFFaX',style=wx.ICON_INFORMATION)
+        wx.MessageBox(' For use of DIFFaX, please cite:\n\n'+
+                          G2G.GetCite('DIFFaX'),
+                          caption='DIFFaX',style=wx.ICON_INFORMATION)
         ctrls = ''
         dlg = DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:

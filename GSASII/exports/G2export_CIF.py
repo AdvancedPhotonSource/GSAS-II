@@ -2529,8 +2529,8 @@ class ExportCIF(G2fil.ExportBaseclass):
                     self.labellist = []
                 WriteAtomsNuclear(self.fp, self.Phases[phasenam], phasenam,
                                   self.parmDict, self.sigDict, self.labellist,
-                                      self.OverallParms['Rigid bodies'],
-                                      self.RBsuDict)
+                                      self.OverallParms['Rigid bodies'])
+#                                      self.RBsuDict)
             else:
                 try:
                     self.labellist

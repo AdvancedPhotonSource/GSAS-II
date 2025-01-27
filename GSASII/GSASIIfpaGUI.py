@@ -80,11 +80,6 @@ IBmonoParms = [
 '''Additional FPA dict entries used in :func:`FillParmSizer`, needed for Incident Beam Monochromator
 '''
 
-Citation = '''MH Mendenhall, K Mullen && JP Cline (2015), J. Res. of NIST, 120, p223. DOI: 10.6028/jres.120.014
-
-For Incident Beam Mono model, also cite: MH Mendenhall, D Black && JP Cline (2019), J. Appl. Cryst., 52, p1087. DOI: 10.1107/S1600576719010951
-'''
-
 IBmono = False
 '''set to True if an incident beam monochromator is in use
 '''
@@ -782,7 +777,9 @@ def MakeSimSizer(G2frame, dlg):
     readBtn.Bind(wx.EVT_BUTTON,_onReadFPA)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
     MainSizer.Add((-1,4),1,wx.EXPAND,1)
-    txt = wx.StaticText(dlg,wx.ID_ANY,'If you use this, please cite: '+Citation,size=(350,-1))
+    txt = wx.StaticText(dlg,wx.ID_ANY,'If you use this, please cite: '+
+                            G2G.GetCite('Fundamental parameter fitting'),
+                            size=(350,-1))
     txt.Wrap(340)
     MainSizer.Add(txt,0,wx.ALIGN_CENTER)
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)

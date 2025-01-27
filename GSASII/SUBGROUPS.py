@@ -7,11 +7,12 @@ import sys
 import os
 import numpy as np
 import numpy.linalg as nl
+from . import GSASIIpath
+GSASIIpath.SetBinaryPath()
 from . import GSASIIspc as G2spc
 from . import GSASIIlattice as G2lat
 from . import GSASIIElem as G2elem
-from . import GSASIIpath
-GSASIIpath.SetBinaryPath()
+from . import GSASIIctrlGUI as G2G
 bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
 submagSite = bilbaoSite + 'subgrmag1_general_GSAS.pl?'
 pseudosym = 'pseudosym/nph-pseudosym'
@@ -30,15 +31,10 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     :returns: (error,text) error: if True no error or False; where 
       text containts a possible web page text
     '''
-    print('''
+    print(f'''
     For use of SUBGROUPS, please cite:
-      Symmetry-Based Computational Tools for Magnetic Crystallography,
-      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
-      Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: 10.1146/annurev-matsci-070214-021008
-    ''')
-        
-        
+{G2G.GetCite('Bilbao: k-SUBGROUPSMAG',wrap=70,indent=5)}''')
+
     def getSpGrp(item):
         return item.replace('<i>','').replace('</i>','').replace('<sub>','').replace('</sub>','')
     
@@ -139,13 +135,9 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
     :returns: (error,text) error: if True no error or False; where 
       text containts a possible web page text
     '''
-    print('''
+    print(f'''
     For use of k-SUBGROUPSMAG, please cite:
-      Symmetry-Based Computational Tools for Magnetic Crystallography,
-      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
-      Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: 10.1146/annurev-matsci-070214-021008
-    ''')
+{G2G.GetCite('Bilbao: k-SUBGROUPSMAG',wrap=70,indent=5)}''')
 
     def getSpGrp(item):
         return item.replace('<i>','').replace('</i>','').replace('<sub>','').replace('</sub>','')
@@ -279,12 +271,6 @@ def parseBilbaoCheckLattice(page):
         found.append((acell,cellmat))
     return found
 
-GetStdSGsetCite = '''Using Bilbao Crystallographic Server utility IDENTIFY GROUP. Please cite:
-Symmetry-Based Computational Tools for Magnetic Crystallography,
-J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and 
-M.I. Aroyo, Annu. Rev. Mater. Res. 2015. 45,217-48.
-doi: 10.1146/annurev-matsci-070214-021008'''
-
 def GetStdSGset(SGData=None, oprList=[]):
     '''Determine the standard setting for a space group from either
     a list of symmetry operators or a space group object using the 
@@ -312,8 +298,9 @@ def GetStdSGset(SGData=None, oprList=[]):
     elif SGData:
         SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(SGData)
         oprList = [x.lower() for x in SymOpList]
-
-    print('\n'+GetStdSGsetCite+'\n')
+    print('Using Bilbao Crystallographic Server utility IDENTIFY GROUP. '+
+              'Please cite:\n'+
+              G2G.GetCite('Bilbao: k-SUBGROUPSMAG',wrap=70,indent=5))
     postdict = {'tipog':'gesp','generators':'\n'.join(oprList)}
     page = GSASIIpath.postURL(Site,postdict,timeout=timeout)
     if not page:
@@ -478,12 +465,9 @@ def applySym(xform,cell):
             ))
     return cellsList
 
-BilbaoSymSearchCite = '''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+BilbaoSymSearchCite = f'''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
 program; Please cite:
-C. Capillas, E.S. Tasci, G. de la Flor, D. Orobengoa, J.M. Perez-Mato 
-and M.I. Aroyo. "A new computer tool at the Bilbao Crystallographic 
-Server to detect and characterize pseudosymmetry". Z. Krist. (2011), 
-226(2), 186-196 DOI:10.1524/zkri.2011.1321.'''
+{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''
 
 def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None,
                          pagelist=None, keepCell=False):
@@ -811,12 +795,9 @@ def createStdSetting(cifFile,rd):
         return False
     files = {'cifile': open(cifFile,'rb')}
     values = {'strtidy':''}
-    print('''Submitting structure to Bilbao "CIF to Standard Setting" web service
-Please cite:
-Symmetry-Based Computational Tools for Magnetic Crystallography,
-J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and 
-M.I. Aroyo, Annu. Rev. Mater. Res. 2015. 45,217-48.
-doi: 10.1146/annurev-matsci-070214-021008''')
+    print(f'''Submitting structure to Bilbao "CIF to Standard Setting" (strtidy)
+web service. Please cite:
+{G2G.GetCite('Bilbao: PSEUDOLATTICE',wrap=70,indent=5)}''')
     r0 = requests.post(bilbaoSite+cif2std, files=files, data=values)
     structure = r0.text[r0.text.lower().find('<pre>')+5:r0.text.lower().find('</pre>')].strip()
     spnum,celllist,natom = structure.split('\n')[:3]

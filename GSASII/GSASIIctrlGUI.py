@@ -5681,6 +5681,9 @@ class MyHelp(wx.Menu):
         helpobj = self.Append(wx.ID_ANY,'Help on current data tree item\tF1',
                 'Access web page on selected item in tree')
         frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
+        helpobj = self.Append(wx.ID_ANY,'Citation information',
+                'Show papers that GSAS-II users may wish to cite')
+        frame.Bind(wx.EVT_MENU, ShowCitations, id=helpobj.GetId())
 
     def OnHelpById(self,event):
         '''Called when Help on... is pressed in a menu. Brings up a web page
@@ -5722,24 +5725,22 @@ class MyHelp(wx.Menu):
         info = wxadv.AboutDialogInfo()
         info.Name = 'GSAS-II'
         info.SetVersion(GSASIIpath.getG2VersionInfo())
-        #info.Developers = ['Robert B. Von Dreele','Brian H. Toby']
-        info.Copyright = ('(c) ' + time.strftime('%Y') +
-''' Argonne National Laboratory
-This product includes software developed
-by the UChicago Argonne, LLC, as
-Operator of Argonne National Laboratory.''')
-        info.Description = '''General Structure Analysis System-II (GSAS-II)
-Robert B. Von Dreele and Brian H. Toby
-
-Please cite as:
-  B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013)
-For small angle use cite:
-  R.B. Von Dreele, J. Appl. Cryst. 47, 1748-9 (2014)
-For DIFFaX use cite:
-  M.M.J. Treacy, J.M. Newsam & M.W. Deem,
-  Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
-'''
+        info.Developers = ['Robert B. Von Dreele','Brian H. Toby']
         info.WebSite = ("https://gsasii.github.io","GSAS-II home page")
+        msg = '''Argonne National Laboratory
+This product includes software developed
+by the UChicago Argonne, LLC, as Operator
+of Argonne National Laboratory.'''
+        info.Copyright = f'(c) {time.strftime("%Y")} {msg}'
+        msg = '''General Structure Analysis System-II (GSAS-II). Please cite as:
+      B.H. Toby & R.B. Von Dreele, J. Appl. Cryst.
+      46, 544-549 (2013)
+Also see Help/"Citation information" for other works used in GSAS-II. Citations encourage scientists to make their software available.'''
+#        msg += '\n'
+#        for key in CitationDict:
+#            msg += f"\n * For {key} use cite:\n"
+#            msg += GetCite(key,wrap=50,indent=3)
+        info.Description = msg
         wxadv.AboutBox(info)
 
     def OnCheckUpdates(self,event):
@@ -5768,6 +5769,38 @@ For DIFFaX use cite:
             dlg.ShowModal()
             dlg.Destroy()
             return
+
+def ShowCitations(event):
+    '''Show all work that GSAS-II users may wish to cite
+    '''
+    parent = wx.GetApp().GetMainTopWindow()
+    def copy2clip(event):
+        'copy citation info to clipboard'
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(wx.TextDataObject(msg))
+            wx.TheClipboard.Close()
+        else:
+            G2frame.ErrorDialog('Clipboard locked','Sorry, unable to access the clipboard, try again later. You might need to restart GSAS-II or reboot')
+            return
+        G2MessageBox(parent,
+                'Citation information placed in clipboard. ',
+                'Citations copied')
+        event.GetEventObject().GetParent().EndModal(wx.ID_OK)
+    msg = '''You are using GSAS-II. Please cite it as:
+
+   B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013).
+
+Depending on what sections of the code you are using, you may wish to
+cite some of the following works as well:'''
+    for key in CitationDict:
+        msg += f"\n\n * For {key} use cite:\n"
+        msg += GetCite(key,wrap=95,indent=6)
+    msg += '\n\nNote that your citations are one of the strongest ways you can say thank you to the\nscientists who make their software available to you.'
+    res = ShowScrolledInfo(parent,msg,header='Please Cite',
+                           buttonlist=[
+        ('Close', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
+        ('Copy to clipboard', copy2clip),
+       ])
 
 ################################################################################
 class HelpButton(wx.Button):
@@ -8801,13 +8834,75 @@ def setColorButton(parent,array,key,callback=None,callbackArgs=[]):
         colorButton.Bind(wcs.EVT_COLOURSELECT, OnColor)
     return colorButton
 
+CitationDict = {}
+def SaveCite(prog,text):
+    '''Save citation information as it is referenced so that all of it can be
+    displayed in the About GSAS-II window
+    '''
+    global CitationDict
+    CitationDict[prog] = text
+
+def GetCite(key,wrap=None,indent=None):
+    '''Return citation information, optionally with text wrapping.
+    '''
+    if GSASIIpath.GetConfigValue('debug') and key not in CitationDict:
+        print(f'Warning: GetCite citation ref {key!r} not defined.')
+    txt = CitationDict.get(key,'')
+    leftmargin = ''
+    if indent:
+        leftmargin=indent*' '
+    if wrap:
+        import textwrap
+        txt = '\n'.join(textwrap.wrap(txt,wrap,
+                    replace_whitespace=False,
+                    break_long_words=False,
+                    initial_indent=leftmargin, subsequent_indent=leftmargin))
+    return txt
+#########################
+# Catalog citation refs #
+#########################
+# OK to call SaveCite anywhere in GSAS-II, but putting calls here allows control
+# over their sequence. Calls anywhere else will show up after these.
+SaveCite('small angle scattering',
+         'R.B. Von Dreele, J. Appl. Cryst. 47, 1748-9 (2014)')
+SaveCite('DIFFaX',
+         'M.M.J. Treacy, J.M. Newsam & M.W. Deem, Proc. Roy. Soc. Lond. A 433, 499-520 (1991) doi: https://doi.org/10.1098/rspa.1991.0062')
+SaveCite('NIST*LATTICE',
+'''V. L. Karen and A. D. Mighell, NIST Technical Note 1290 (1991), https://nvlpubs.nist.gov/nistpubs/Legacy/TN/nbstechnicalnote1290.pdf; V. L. Karen & A. D. Mighell, U.S. Patent 5,235,523, https://patents.google.com/patent/US5235523A/en?oq=5235523''')
+SaveCite('Parameter Impact',
+             'Toby, B. H. (2024). "A simple solution to the Rietveld refinement recipe problem." J. Appl. Cryst. 57(1): 175-180.')
+SaveCite('Fundamental parameter fitting',
+'''MH Mendenhall, K Mullen && JP Cline (2015), J. Res. of NIST, 120, p223. DOI: 10.6028/jres.120.014;
+For Incident Beam Mono model, also cite: MH Mendenhall, D Black && JP Cline (2019), J. Appl. Cryst., 52, p1087. DOI: 10.1107/S1600576719010951
+''')
+SaveCite('RMCProfile',
+'"RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, Jour. Phys.: Cond. Matter 2007, 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218')
+SaveCite('PDFfit2',
+'"PDFfit2 and PDFgui: computer programs for studying nanostructures in crystals", C.L. Farrow, P.Juhas, J.W. Liu, D. Bryndin, E.S. Bozin, J. Bloch, Th. Proffen and S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., https://doi.org/10.1088/0953-8984/19/33/335219')
+SaveCite('ISOTROPY, ISODISTORT, ISOCIF...',
+'H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISOTROPY Software Suite, iso.byu.edu.; B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).')
+SaveCite('ISODISPLACE',
+'D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." J. Appl. Cryst. 39, 607-614 (2006).')
+SaveCite('fullrmc',
+'''"Atomic Stochastic Modeling & Optimization with fullrmc", B. Aoun, J. Appl. Cryst. 2022, 55(6) 1664-1676, DOI: 10.1107/S1600576722008536.
+"Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. DOI: 10.1002/jcc.24304''')
+SaveCite('Bilbao: PSEUDO',
+'''C. Capillas, E.S. Tasci, G. de la Flor, D. Orobengoa, J.M. Perez-Mato and M.I. Aroyo. "A new computer tool at the Bilbao Crystallographic Server to detect and characterize pseudosymmetry". Z. Krist. (2011), 226(2), 186-196 DOI:10.1524/zkri.2011.1321.''')
+SaveCite('Bilbao: k-SUBGROUPSMAG',
+'Symmetry-Based Computational Tools for Magnetic Crystallography, J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo, Annu. Rev. Mater. Res. 2015. 45,217-48. doi: 10.1146/annurev-matsci-070214-021008')
+SaveCite('Bilbao: PSEUDOLATTICE',
+'Bilbao Crystallographic Server I: Databases and crystallographic computing programs, M. I. Aroyo, J. M. Perez-Mato, C. Capillas, E. Kroumova, S. Ivantchev, G. Madariaga, A. Kirov & H. Wondratschek, Z. Krist. 221, 1, 15-27 (2006). doi: https://doi.org/doi:10.1524/zkri.2006.221.1.15''')
+SaveCite('Bilbao+GSAS-II magnetism',
+'Determining magnetic structures in GSAS-II using the Bilbao Crystallographic Server tool k-SUBGROUPSMAG, R.B. Von Dreele & L. Elcoro, Acta Cryst. 2024, B80. doi: https://doi.org/10.1107/S2052520624008436')
+SaveCite('SHAPES',
+'A New Algorithm for the Reconstruction of Protein Molecular Envelopes from X-ray Solution Scattering Data, J. Badger, Jour. of Appl. Chrystallogr. 2019, 52, 937-944. doi: https://doi.org/10.1107/S1600576719009774')
+SaveCite('Scikit-Learn',
+'"Scikit-learn: Machine Learning in Python", Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M. and Duchesnay, E., Journal of Machine Learning Research (2011) 12, 2825-2830.')
+SaveCite('Dysnomia',
+'Dysnomia, a computer program for maximum-entropy method (MEM) analysis and its performance in the MEM-based pattern fitting, K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193. doi: https://doi.org/10.1017/S088571561300002X')
+
 def NISTlatUse(msgonly=False):
-        msg = '''Performing cell symmetry search using NIST*LATTICE. Please cite:
-        V. L. Karen and A. D. Mighell, NIST Technical Note 1290 (1991),
-        https://nvlpubs.nist.gov/nistpubs/Legacy/TN/nbstechnicalnote1290.pdf
-        and
-        V. L. Karen & A. D. Mighell, U.S. Patent 5,235,523,
-        https://patents.google.com/patent/US5235523A/en?oq=5235523'''
+        msg = f'Performing cell symmetry search using NIST*LATTICE.\n\nPlease cite: {GetCite("NIST*LATTICE")}'
         print(msg)
         if msgonly: return msg
         wx.MessageBox(msg,caption='Using NIST*LATTICE',style=wx.ICON_INFORMATION)

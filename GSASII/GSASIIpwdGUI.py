@@ -4781,12 +4781,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             return
         #import SUBGROUPS as kSUB
         wx.BeginBusyCursor()
-        wx.MessageBox(''' For use of PSEUDOLATTICE, please cite:
-      Bilbao Crystallographic Server I: Databases and crystallographic computing programs,
-      M. I. Aroyo, J. M. Perez-Mato, C. Capillas, E. Kroumova, S. Ivantchev, G. Madariaga, A. Kirov & H. Wondratschek
-      Z. Krist. 221, 1, 15-27 (2006).
-      doi: https://doi.org/doi:10.1524/zkri.2006.221.1.15''',
-        caption='Bilbao PSEUDOLATTICE',style=wx.ICON_INFORMATION)
+        wx.MessageBox(' For use of PSEUDOLATTICE, please cite:\n\n'+
+                          G2G.GetCite('Bilbao: PSEUDOLATTICE'),
+                          caption='Bilbao PSEUDOLATTICE',
+                          style=wx.ICON_INFORMATION)
         page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
         wx.EndBusyCursor()
         if not page: return
@@ -4959,14 +4957,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
                 return
             wx.BeginBusyCursor()
-            wx.MessageBox(''' For use of SUBGROUPS, please cite:
-      Symmetry-Based Computational Tools for Magnetic Crystallography,
-      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
-      Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: https://doi.org/10.1146/annurev-matsci-070214-021008''',caption='Bilbao SUBGROUPS',style=wx.ICON_INFORMATION)
-
+            wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
+                              G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
+                              caption='Bilbao SUBGROUPS',
+                              style=wx.ICON_INFORMATION)
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
-#            SUBGROUPS,baseList = kMAG.GetNonStdSubgroups(SGData,kvec[:9],star,Landau,maximal)
             wx.EndBusyCursor()
             if SubGroups is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
@@ -5088,15 +5083,13 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 return
             magAtms = [atom for atom in controls[15] if atom[1] == atype]
             wx.BeginBusyCursor()
-            wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:
-      Symmetry-Based Computational Tools for Magnetic Crystallography,
-      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
-      Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: https://doi.org/10.1146/annurev-matsci-070214-021008 and
-      Determining magnetic structures in GSAS-II using the Bilbao Crystallographic Server
-      tool k-SUBGROUPSMAG, R.B. Von Dreele & L. Elcoro, Acta Cryst. 2024, B80.
-      doi: https://doi.org/10.1107/S2052520624008436
-      ''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
+            wx.MessageBox(
+                ' For use of k-SUBGROUPSMAG in GSAS-II, please cite:\n\n'+
+                G2G.GetCite('Bilbao: k-SUBGROUPSMAG')+
+                '\nand\n'+
+                G2G.GetCite('Bilbao+GSAS-II magnetism'),
+                caption='Bilbao/GSAS-II Magnetism',
+                style=wx.ICON_INFORMATION)
 
             MAXMAGN,baseList = kSUB.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
@@ -5153,8 +5146,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def OnISODISTORT_kvec(phase_nam):   # needs attention from Yuanpeng
-        '''Search for
-        using the ISODISTORT web service
+        '''Search for k-vector using the ISODISTORT web service
         '''
         def _showWebPage(event):
             'Show a web page when the user presses the "show" button'
@@ -5181,13 +5173,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
 
         #isoscript='isocifform.php'
-        isoCite = '''For use of this please cite
-            H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY
-            Software Suite, iso.byu.edu. B. J. Campbell, H. T. Stokes,
-            D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for
-            Exploring Structural Distortions." J. Appl. Cryst.
-            39, 607-614 (2006).
-        '''
+        #isoCite = ('For use of this please cite\n'+
+        #    G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...',wrap=60,indent=5)+
+        #    G2G.GetCite('ISODISPLACE',wrap=60,indent=5))
+
         #latTol,coordTol,occTol = 0.001, 0.01, 0.1
         phaseID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
         Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
@@ -7909,12 +7898,9 @@ def UpdateModelsGrid(G2frame,data):
 
         elif data['Current'] == 'Shapes':
             SaveState()
-            wx.MessageBox(''' For use of SHAPES, please cite:
-      A New Algroithm for the Reconstruction of Protein Molecular Envelopes
-      from X-ray Solution Scattering Data,
-      J. Badger, Jour. of Appl. Chrystallogr. 2019, 52, 937-944.
-      doi: https://doi.org/10.1107/S1600576719009774''',
-      caption='Program Shapes',style=wx.ICON_INFORMATION)
+            wx.MessageBox(' For use of SHAPES, please cite:\n\n'+
+                G2G.GetCite('SHAPES'),
+                caption='Program Shapes',style=wx.ICON_INFORMATION)
             dlg = wx.ProgressDialog('Running SHAPES','Cycle no.: 0 of 160',161,
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
 

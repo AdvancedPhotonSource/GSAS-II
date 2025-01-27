@@ -84,7 +84,7 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(240,240,240)
 DULL_YELLOW = (230,230,190)
 
-# define Ids for wx menu items
+# transformation matrices
 commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.]]),
     'ba-c':np.array([[0.,1.,0.],[1.,0.,0.],[0.,0.,-1.]]),'-cba':np.array([[0.,0.,-1.],[0.,1.,0.],[1.,0.,0.]]),
     'bca':np.array([[0.,1.,0.],[0.,0.,1.],[1.,0.,0.]]),'cab':np.array([[0.,0.,1.],[1.,0.,0.],[0.,1.,0.]]),
@@ -2792,10 +2792,6 @@ If you continue from this point, it is quite likely that all intensity computati
         menubar.Append(menu=self.ExportMenu, title='Export')
         self._init_Exports(self.ExportMenu)
         self._Add_ExportMenuItems(self.ExportMenu)
-        if GSASIIpath.GetConfigValue('Enable_logging'):
-            self.MacroMenu = wx.Menu(title='')
-            menubar.Append(menu=self.MacroMenu, title='Macro')
-            self._init_Macro()
         if addhelp:
             HelpMenu=G2G.MyHelp(self,includeTree=True,
                 morehelpitems=[('&Tutorials\tCtrl+T','Tutorials'),])
@@ -5240,7 +5236,11 @@ If you continue from this point, it is quite likely that all intensity computati
         dlg.Destroy()
 
     def OnDerivCalc(self,event):
-        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        controlId = GetGPXtreeItemId(self,self.root, 'Controls')
+        if not controlId:
+            self.ErrorDialog('Computation error','No refinement information present')
+            return
+        Controls = self.GPXtree.GetItemPyData(controlId)
         self._cleanPartials(Controls)  # set phase partials as invalid
         self.OnFileSave(event)
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile) # check constraints are OK
@@ -5271,7 +5271,7 @@ If you continue from this point, it is quite likely that all intensity computati
             txt = txt.replace('Pwd=','Histogram: ')
             tbl.append([x,(' T' if x in varyList else '  '),derivCalcs[x][1],txt])
         G2G.G2ScrolledGrid(self,'Parameter Impact Results','Impact Results',tbl,colLbls,colTypes,
-            maxSize=(700,400),comment=' Cite: Toby, B. H. (2024). "A simple solution to the Rietveld refinement recipe problem." J. Appl. Cryst. 57(1): 175-180.')
+            maxSize=(700,400),comment=f' Cite: {G2G.GetCite("Parameter Impact")}')
 
     def OnExpressionCalc(self,event):
         '''Compute an arbitrary expression (supplied by user) as well as the

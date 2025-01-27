@@ -1790,7 +1790,7 @@ def UpdateMasks(G2frame,data):
     def onDeleteMask(event):
         Obj = event.GetEventObject()
         typ = Obj.locationcode.split('+')[0]
-        num = int(Obj.locationcode.split('+')[1])-1 #off by one?
+        num = int(Obj.locationcode.split('+')[1]) 
         del(data[typ][num])
         wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
@@ -2464,7 +2464,7 @@ def UpdateMasks(G2frame,data):
                     polyList.append("%.2f, %.2f"%(x,y))
                 polyText = wx.ComboBox(G2frame.dataWindow,value=polyList[0],choices=polyList,style=wx.CB_READONLY)
                 littleSizer.Add(polyText,0,WACV)
-                code = '%s+%d'%('Polygons',1)
+                code = '%s+%d'%('Polygons',i)
                 polyDelete = G2G.G2Button(G2frame.dataWindow,label='delete?',
                     locationcode=code,handler=onDeleteMask)
                 littleSizer.Add(polyDelete,0,WACV)

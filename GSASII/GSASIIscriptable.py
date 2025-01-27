@@ -6372,7 +6372,7 @@ class G2Image(G2ObjectWrapper):
             ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
         tam = ma.make_mask_none(ImageZ.shape)
         if frame:
-            tam = ma.mask_or(tam,G2img.MakeFrameMask(Controls,frame))
+            tam = ma.mask_or(tam,ma.make_mask(np.abs(G2img.polymask(Controls,frame)-255)))
         return tam
 
     def getVary(self,*args):
@@ -6686,7 +6686,7 @@ class G2Image(G2ObjectWrapper):
             frame = Masks['Frames']
             tam = ma.make_mask_none(Image.shape)
             if frame:
-                tam = ma.mask_or(tam,G2img.MakeFrameMask(Controls,frame))
+                tam = ma.mask_or(tam,ma.make_mask(np.abs(G2img.polymask(Controls,frame)-255)))
         else:
             tam = FrameMask
         if ThetaMap is None:

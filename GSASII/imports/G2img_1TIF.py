@@ -79,10 +79,10 @@ def GetTifData(filename):
                     polarization = float(line.split('=')[1])
                 elif 'samplechangercoordinate' == keyword.lower():
                     samplechangerpos = float(line.split('=')[1])
-                elif 'detectorxpixelsize' == keyword.lower():
-                    xpixelsize = float(line.split('=')[1])
-                elif 'detectorypixelsize' == keyword.lower():
-                    ypixelsize = float(line.split('=')[1])
+                # elif 'detectorxpixelsize' == keyword.lower():
+                #     xpixelsize = float(line.split('=')[1])
+                # elif 'detectorypixelsize' == keyword.lower():
+                #     ypixelsize = float(line.split('=')[1])
             except:
                 G2fil.G2Print('error reading metadata: '+line)
         Meta.close()

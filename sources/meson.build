@@ -123,14 +123,14 @@ py.extension_module('pypowder',
   link_with: powsubs_lib
 )
 
-r = run_command(py, '-m', 'numpy.f2py', 'polymask.for', '-m', 'polymask', '--lower', check:true)
-py.extension_module(
-  'polymask',
-  ['polymask.for', 'polymaskmodule.c', 'polymask-f2pywrappers.f'],
-  dependencies : [py_dep, numpy_dep, fortranobject_dep],
-  install : true,
-  subdir: 'GSASII',
-)
+# r = run_command(py, '-m', 'numpy.f2py', 'polymask.for', '-m', 'polymask', '--lower', check:true)
+# py.extension_module(
+#   'polymask',
+#   ['polymask.for', 'polymaskmodule.c', 'polymask-f2pywrappers.f'],
+#   dependencies : [py_dep, numpy_dep, fortranobject_dep],
+#   install : true,
+#   subdir: 'GSASII',
+# )
 
 r = run_command(py, '-m', 'numpy.f2py', 'pydiffax.for', '-m', 'pydiffax', '--lower', check:true)
 py.extension_module('pydiffax',

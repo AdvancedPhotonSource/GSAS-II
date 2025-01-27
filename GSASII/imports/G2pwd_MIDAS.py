@@ -257,7 +257,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         self.powderentry[0] = filename
         #self.powderentry[1] = Pos # position offset (never used, I hope)
         self.powderentry[2] = self.blknum  # consecutive bank number
-        self.idstring = f'{os.path.split(filename)[1][:10]} img={iImg} omega={omega} eta={eta}'
+        self.idstring = f'{os.path.split(filename)[1]} img={iImg} omega={omega} eta={eta}'
         if GSASIIpath.GetConfigValue('debug'):
             print(f'Read entry #{iAzm} img# {iImg} from file {filename}\n{self.idstring}')
 #        else:

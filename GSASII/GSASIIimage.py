@@ -1243,15 +1243,13 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     TA[3] = G2pwd.Polarization(data['PolaVal'][0],TA[0],TA[1]-90.)[0]
     return TA           #2-theta, azimuth & geom. corr. arrays
 
-def polymask(data,Poly,outside=False):
+def polymask(data,Poly):
     ''' Applies polygon  & frame masks via calls to matplotlib routines; 
     should be called only once during image processing. Individual masked blocks
     are then pulled from the output array.
     
     :param dict data: GSAS-II image data object (describes the image)
     :param list Poly: list of polygons; if empty, returns None
-    :param bool outside: True: mask on outside polygon for frame mask
-        False (default): mask on inside - typical polygon mask
     :returns: Zimg, array[Nx,Ny] size of full image mask for all polygons considered
     '''
     
@@ -1265,9 +1263,6 @@ def polymask(data,Poly,outside=False):
         return []
     outmask = 'black'
     inmask = 'white'
-    if outside:
-        outmask = 'white'
-        inmask = 'black'
     Nx,Ny = data['size']
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
@@ -1288,9 +1283,9 @@ def polymask(data,Poly,outside=False):
     agg.draw()
     img, (width, height) = agg.print_to_buffer()
     Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
-    return np.flipud(Zimg[:,:,0])
+    return Zimg[:,:,0]
 
-def MakeMaskMap(data,masks,iLim,jLim,tamp):
+def MakeMaskMap(data,masks,iLim,jLim):
     '''Makes a mask array from masking parameters that are not determined by 
     image calibration parameters or the image intensities. Thus this uses 
     mask Frames, Polygons and Lines settings (but not Thresholds, Rings or
@@ -1301,39 +1296,34 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
     :param dict data: GSAS-II image data object (describes the image)
     :param list iLim: boundary along x-pixels
     :param list jLim: boundary along y-pixels
-    :param np.array tamp: all-zero pixel mask array used in Polymask
-    :returns: array[nI,nJ] TA: 2-theta, azimuth, 2 geometric corrections
+    :returns: array[nI,nJ] TA: X, Y
     '''
-    import polymask as pm
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
     frame = []
     poly = []
     if iLim[0] == jLim[0] == 0:
-#        frame = polymask(data,masks['Frames'],outside=True)
-        poly = polymask(data,masks['Polygons'])
-        # if len(frame):
-        #     masks['Pmask'] =  frame
-        #     if len(poly):
-        #         masks['Pmask'] = masks['Pmask']+poly
+        if masks['Frames']:
+            frame = np.abs(polymask(data,masks['Frames'])-255) #turn inner to outer mask
+        if masks['Polygons']:
+            poly = polymask(data,masks['Polygons'])
+        if len(frame):
+            masks['Pmask'] =  frame
+            if len(poly):
+                masks['Pmask'] = masks['Pmask']+poly
         if len(poly):
             masks['Pmask'] =  poly
         else:
-            masks['Pmask'] =  None
+            masks['Pmask'] =  []
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
     tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     #make position masks here
-    frame = masks['Frames']
     tam = ma.make_mask_none((nI*nJ))
-    if frame:
-        tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
-            tay,len(frame),frame,tamp)[:nI*nJ])^True)
-    polygons = masks['Polygons']
-    if polygons or frame:
+    if len(masks['Pmask']):
         tam = ma.mask_or(tam,ma.make_mask(masks['Pmask'][iLim[0]:iLim[1],jLim[0]:jLim[1]].flatten()))
     points = masks['Points']
     if len(points):
@@ -1460,7 +1450,6 @@ def MakeUseMask(data,masks,blkSize=128):
     nXBlks = (Nx-1)//blkSize+1
     nYBlks = (Ny-1)//blkSize+1
     useMask = []
-    tamp = ma.make_mask_none((1024*1024))       #NB: this array size used in the fortran polymask module
     for iBlk in range(nYBlks):
         iBeg = iBlk*blkSize
         iFin = min(iBeg+blkSize,Ny)
@@ -1468,7 +1457,7 @@ def MakeUseMask(data,masks,blkSize=128):
         for jBlk in range(nXBlks):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
-            mask = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp)          #2-theta & azimuth arrays & create position mask
+            mask = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin))          #2-theta & azimuth arrays & create position mask
             useMaskj.append(mask)
         useMask.append(useMaskj)
     return useMask
@@ -1518,7 +1507,6 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
     nYBlks = (Ny-1)//blkSize+1
-    tamp = ma.make_mask_none((1024*1024))       #NB: this array size used in the fortran histogram2d
     for iBlk in range(nYBlks):
         iBeg = iBlk*blkSize
         iFin = min(iBeg+blkSize,Ny)
@@ -1528,7 +1516,7 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask (none here)
             TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
             TAr = [i[:,:,0] for i in np.dsplit(TA,4)]    #azimuth, 2-theta, dist**2/d0**2, pol
-            tam = MakeMaskMap(data,AMasks,(iBeg,iFin),(jBeg,jFin),tamp)
+            tam = MakeMaskMap(data,AMasks,(iBeg,iFin),(jBeg,jFin))
             Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
             tax,tay,taz,tad = Fill2ThetaAzimuthMap(AMasks,TAr,tam,Block,ringMask=True)    #applies Ring masks only & returns contents
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -1609,7 +1597,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     nYBlks = (Ny-1)//blkSize+1
     tbeg = time.time()
     times = [0,0,0,0,0]
-    tamp = ma.make_mask_none((1024*1024))       #NB: this array size used in the fortran histogram2d
     for iBlk in range(nYBlks):
         iBeg = iBlk*blkSize
         iFin = min(iBeg+blkSize,Ny)
@@ -1631,7 +1618,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             if useMask:
                 tam = useMask[iBlk][jBlk]
             else:
-                tam = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp)
+                tam = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin))
             Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
             tax,tay,taz,tad = Fill2ThetaAzimuthMap(Masks,TAr,tam,Block)    #applies remaining masks
             times[0] += time.time()-t0      # time mask application

@@ -5153,7 +5153,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def OnISODISTORT_kvec(phase_nam):   # needs attention from Yuanpeng
+    def OnISODISTORT_kvec(event):   # needs attention from Yuanpeng
         '''Search for 
         using the ISODISTORT web service 
         '''
@@ -5191,8 +5191,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         '''
         #latTol,coordTol,occTol = 0.001, 0.01, 0.1
         phaseID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
-        Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
-            G2frame,phaseID,G2frame.kvecSearch['phase']))
+        phase_nam = G2frame.kvecSearch['phase']
+        Phase = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(
+                G2frame, phaseID, phase_nam
+            )
+        )
         data = Phase
         #oacomp,occomp = G2mth.phaseContents(data)
         #ophsnam = data['General']['Name']
@@ -5287,10 +5291,15 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 data["isofilename"] = ""
                 out5 = requests.post(isoformsite, data=data).text
 
-                continue
+                out_cif = ISO.GetISOcif(out5, 2)
+                cif_fn_part1 = radio_val.split()[0]
+                cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
+                cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
+                cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
+                with open(cif_fn, 'wb') as fl:
+                    fl.write(out_cif.encode("utf-8"))
 
                 # TODO: parse out the distortion info from out5
-                # 1. download the CIF file for each search result
                 # 2. load the CIF file as a phase and create a project for it
                 # 3. we may want to package up all the project files and save
                 #    to a user specified location for later use.
@@ -6891,7 +6900,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
             # TODO: Add a button to call ISODISTORT
             ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
-            ISObut.Bind(wx.EVT_BUTTON,OnISODISTORT_kvec)
+            ISObut.Bind(wx.EVT_BUTTON, OnISODISTORT_kvec)
             hSizer.Add(ISObut)
 
             mainSizer.Add(hSizer)

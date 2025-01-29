@@ -5192,7 +5192,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         #latTol,coordTol,occTol = 0.001, 0.01, 0.1
         phaseID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
         Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
-            G2frame,phaseID,phase_nam))
+            G2frame,phaseID,G2frame.kvecSearch['phase']))
         data = Phase
         #oacomp,occomp = G2mth.phaseContents(data)
         #ophsnam = data['General']['Name']
@@ -6884,15 +6884,15 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         if mode == 2:
-            #OnISODISTORT_kvec(phase_sel) # TODO: not ready yet
+            # OnISODISTORT_kvec(phase_sel) # TODO: not ready yet
 
             hSizer = wx.BoxSizer(wx.HORIZONTAL)
             hSizer.Add(gridDisplay)
 
             # TODO: Add a button to call ISODISTORT
-            # ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
-            # ISObut.Bind(wx.EVT_BUTTON,OnISODIST)
-            # hSizer.Add(ISObut)
+            ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
+            ISObut.Bind(wx.EVT_BUTTON,OnISODISTORT_kvec)
+            hSizer.Add(ISObut)
 
             mainSizer.Add(hSizer)
         else:

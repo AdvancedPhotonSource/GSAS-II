@@ -5238,7 +5238,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         # we can use the `use` check box to select the k-vector to use.
         data['input'] = 'kvector'
         data['irrepcount'] = '1'
-        data['kvec1'] = ' 1 *GM, k16 (0,0,0)'
+        data['kvec1'] = ' 2 *DT, k11 (0,0,g)'
+        data['kparam31'] = '1/3'
         data['nmodstar1'] = '0'
         out3 = requests.post(isoformsite, data=data).text
     
@@ -5283,12 +5284,13 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
             radio_vals = radio_val_pattern.findall(out4)
             cleaned_radio_vals = [value.strip() for value in radio_vals]
+            iso_fn = _get_opt_val('isofilename', out4).strip()
+            data["isofilename"] = iso_fn
 
             for radio_val in cleaned_radio_vals:
                 data["input"] = "distort"
                 data["origintype"] = "method2"
                 data["orderparam"] = radio_val + '" CHECKED'
-                data["isofilename"] = ""
                 out5 = requests.post(isoformsite, data=data).text
 
                 out_cif = ISO.GetISOcif(out5, 2)

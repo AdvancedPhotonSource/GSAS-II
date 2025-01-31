@@ -5181,6 +5181,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         import requests
         import G2export_CIF
         import ISODISTORT as ISO
+        from fractions import Fraction
         isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
 
         #isoscript='isocifform.php'
@@ -5247,6 +5248,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 to be used in the post request.
             """
             from fractions import Fraction
+
             k_vec_dict = {
                 " 1 *GM, k16 (0,0,0)": (0, 0, 0),
                 " 2 *DT, k11 (0,0,g)": (0, 0, "a"),
@@ -5324,6 +5326,26 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                         final_match = match
 
                 return final_match
+            
+            k_vec_form = match_vector_pattern(k_vec, k_vec_dict)
+
+            data_update = dict()
+            data_update['kvec1'] = k_vec_form
+            kvec_template = k_vec_dict[k_vec_form]
+            if isinstance(kvec_template[0], str):
+                num = k_vec[0].numerator
+                den = k_vec[0].denominator
+                data_update['kparam11'] = f"{num}/{den}"
+            if isinstance(kvec_template[1], str):
+                num = k_vec[1].numerator
+                den = k_vec[1].denominator
+                data_update['kparam21'] = f"{num}/{den}"
+            if isinstance(kvec_template[2], str):
+                num = k_vec[2].numerator
+                den = k_vec[2].denominator
+                data_update['kparam31'] = f"{num}/{den}"
+
+            return data_update
 
         k_table = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         k_cells, _ = k_table[2:4]
@@ -5332,15 +5354,70 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 kpoint = cells[row][3:6]
                 break
 
-        # TODO: refer to line-4601 for codes to convert the k-vector in the
-        # TODO: conventional setting to primitive setting.
-        # TODO: here we need to convert the k-vector into the primitive setting
-        # TODO: before we can use it in the isodistort web service.
+        # The following chunk of code is for converting the k-vector from the
+        # conventional setting to the primitive setting.
+        phase_sel = G2frame.kvecSearch['phase']
+        _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        Phase = Phases[phase_sel]
+
+        lat_type = Phase["General"]["SGData"]["SGLatt"]
+        lat_sym = Phase["General"]["SGData"]["SGSys"]
+        if lat_sym == "trigonal":
+            brav_sym = "hR"
+        else:
+            brav_sym = lat_sym[0] + lat_type
+
+        Trans = np.eye(3)
+        Uvec = np.zeros(3)
+        Vvec = np.zeros(3)
+
+        newPhase = copy.deepcopy(Phase)
+        newPhase['ranId'] = ran.randint(0, sys.maxsize)
+        newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+        newPhase, _ = G2lat.TransformPhase(Phase, newPhase, Trans,
+            Uvec, Vvec, False)
+        atoms_pointer = newPhase['General']['AtomPtrs']
+
+        atom_coords = list()
+        atom_types = list()
+        for atom in newPhase["Atoms"]:
+            coord_tmp = atom[atoms_pointer[0]:atoms_pointer[0] + 3]
+            atom_coords.append(coord_tmp)
+            type_tmp = atom[atoms_pointer[1]]
+            atom_types.append(type_tmp)
+
+        atom_ids = kvs.unique_id_gen(atom_types)
+
+        cell_params = newPhase["General"]["Cell"][1:7]
+        lat_vectors = kvs.lat_params_to_vec(cell_params)
+
+        hkl_refls = list()
+        for i in range(6):
+            for j in range(6):
+                for k in range(6):
+                    hkl_refls.append([i, j, k])
+
+        k_search = kvs.kVector(
+            brav_sym, lat_vectors,
+            atom_coords, atom_ids,hkl_refls,
+            [0.], 0.
+        )
+        kpoint = k_search.hklConvToPrim(kpoint)
+        kpoint_frac = (
+            Fraction(kpoint[0]).limit_denominator(10),
+            Fraction(kpoint[1]).limit_denominator(10),
+            Fraction(kpoint[2]).limit_denominator(10)
+        )
 
         data['input'] = 'kvector'
         data['irrepcount'] = '1'
-        data['kvec1'] = '10 *P, k10 (1/3,1/3,g)'
-        data['kparam31'] = '1/3'
+        # data['kvec1'] = '10 *P, k10 (1/3,1/3,g)'
+        # data['kparam31'] = '1/3'
+
+        data_update = setup_kvec_input(kpoint_frac)
+        for key, value in data_update.items():
+            data[key] = value
+
         data['nmodstar1'] = '0'
         out3 = requests.post(isoformsite, data=data).text
     

@@ -138,19 +138,19 @@ DefaultAutoScale = "userComment2"
 '''DefaultAutoScale selects one of the AutoScale_ParmNames.
 Used in AutoIntegration
 '''
-Main_Size = '(700,450)'
+Main_Size = (700,450)
 '''Main window size (width, height) - initially uses wx.DefaultSize but will updated
  and saved as the user changes the window
 '''
-Main_Pos = '(100,100)'
+Main_Pos = (100,100)
 '''Main window location - will be updated & saved when user moves
 it. If position is outside screen then it will be repositioned to default
 '''
-Plot_Size = '(700,600)'
+Plot_Size = (700,600)
 '''Plot window size (width, height) - initially uses wx.DefaultSize but will updated
  and saved as the user changes the window
 '''
-Plot_Pos = '(200,200)'
+Plot_Pos = (200,200)
 '''Plot window location - will be updated & saved when user moves it
 these widows. If position is outside screen then it will be repositioned to default
 '''

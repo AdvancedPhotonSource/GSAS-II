@@ -36,11 +36,16 @@ fmtver = lambda v: str(v//1000)+'.'+str(v%1000)
 intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
 
 def GetConfigValue(key,default=None,getDefault=False):
-    '''Return the configuration file value for key or a default value if not present
-
-    :param str key: a value to be found in the configuration (config.py) file
-    :param default: a value to be supplied if none is in the config file or
-      the config file is not found. Defaults to None
+    '''Return the configuration file value for key or a default value 
+    if not specified.
+    
+    :param str key: a value to be found in the configuration settings
+    :param any default: a value to be supplied if a value for key is 
+      not specified in the config file or the config file is not found. 
+      Defaults to None.
+    :param bool getDefault: If True looks up the default value from the 
+      config_example.py file (default value is False). Do not specify a 
+      getDefault=True if a value is provided for default. 
     :returns: the value found or the default.
     '''
     if getDefault:
@@ -938,7 +943,8 @@ def runScript(cmds=[], wait=False, G2frame=None):
 
 def IPyBreak_base(userMsg=None):
     '''A routine that invokes an IPython session at the calling location
-    This routine is only used when debug=True is set in config.py
+    This routine is only used when debug=True is set in the configuration 
+    settings
     '''
     savehook = sys.excepthook # save the exception hook
     try:
@@ -970,8 +976,8 @@ def exceptHook(*args):
     '''A routine to be called when an exception occurs. It prints the traceback
     with fancy formatting and then calls an IPython shell with the environment
     of the exception location.
-
-    This routine is only used when debug=True is set in config.py
+    
+    This routine is only used when debug=True is set in the configuration settings
     '''
     try:
         from IPython.core import ultratb
@@ -1012,7 +1018,7 @@ def exceptHook(*args):
 
 def DoNothing():
     '''A routine that does nothing. This is called in place of IPyBreak and pdbBreak
-    except when the debug option is set True in config.py
+    except when the debug option is set True in the configuration settings
     '''
     pass
 
@@ -1127,7 +1133,8 @@ def SetBinaryPath(showConfigMsg=False):
     BinaryPathFailed = pathHacking._path_discovery(showConfigMsg)
 
 def LoadConfig(printInfo=True):
-    # setup read of config.py, if present
+    '''Read configuration settings from config.py, if present
+    '''
     global configDict
     try:
         import config
@@ -1146,6 +1153,121 @@ def LoadConfig(printInfo=True):
         print(60*'*')
         configDict = {'Clip_on':True}
 
+def XferConfigIni():
+    '''copy the contents of the config.py file to file ~/.GSASII/config.ini. 
+    This is not currently in use in GSAS-II
+    '''
+    import types
+    configDict = {}
+    try:
+        import config
+        #import config_example as config
+        for i in config.__dict__:
+            if i.startswith('__') and i.endswith('__'): continue
+            if isinstance(config.__dict__[i],types.ModuleType): continue
+            configDict.update({i:str(config.__dict__[i])})
+    except ImportError as err:
+        print("Error importing config.py file\n",err)
+        return
+    except Exception as err:
+        print("Error reading config.py file\n",err)
+        return
+    print(f"Contents of {config.__file__} to be written...")
+    WriteIniConfi(configDict)
+
+def WriteIniConfi(configDict):
+    '''Write the configDict information to the GSAS-II ini settings 
+    into file ~/.GSASII/config.ini. This routine will eventually be 
+    plumbed into GSASIIctrlGUI.SaveConfigVars.
+    '''
+    import configparser
+    
+    localdir = os.path.expanduser('~/.GSASII')
+    if not os.path.exists(localdir):
+        try:
+            os.mkdir(g2local)
+            print(f'Created directory {localdir}')
+        except:
+            print(f'Error trying to create directory {localdir}')
+            return True
+    cfgfile = os.path.join(localdir,'config.ini')
+    cfgP = configparser.ConfigParser()
+    cfgP['GUI settings'] = configDict
+
+    # Write the configuration file
+    with open(cfgfile, 'w') as configfile:
+        cfgP.write(configfile)
+    print(f"Configuraton settings saved as {cfgfile}")
+
+def LoadIniConfig():
+    '''
+    Not currently in use, but intended to replace LoadConfig.
+    '''
+    import configparser
+    global configDict
+    configDict = {'Clip_on':True}
+    cfgfile = os.path.expanduser('~/.GSASII/config.ini')
+    if not os.path.exists(cfgfile):
+        print(f'N.B. Configuration file {cfgfile} does not exist')
+        return
+    try:
+        import config_example
+    except ImportError as err:
+        print("Error importing config_example.py file\n",err)
+        return
+
+    # get the original capitalization (lost by configparser)
+    capsDict = {key.lower():key for key in config_example.__dict__ if not key.startswith('__')}
+
+    try:
+        cfg = configparser.ConfigParser()
+        # Read the configuration file
+        cfg.read(cfgfile)
+    except Exception as err:
+        print("Error reading {cfgfile}\n",err)
+        return
+
+    # Access values from the configuration file
+    cfgG = cfg['GUI settings']
+    for key in cfgG:
+        key = key.lower()  # not needed... but in case configparser ever changes
+        capKey = capsDict.get(key)
+        if capKey is None:
+            print(f'Item {key} not defined in config_example')
+            continue
+        try:
+            print('\n',key,capKey)
+            print(cfgG[key])
+            if cfgG[key] == 'None':
+                configDict[capKey] = None
+            elif key.endswith('_pos') or key.endswith('_size'): # list of integers                
+                configDict[capKey] = tuple([int(i) for i in
+                                    cfgG[key].strip('()').split(',')])
+            elif key.endswith('_location') or key.endswith('_directory') or key.endswith('_exec'): # None (above) or str
+                configDict[capKey] = cfgG.get(key)
+            elif cfgG[key].startswith('[') and cfgG[key].endswith(']'): # list of strings
+                s = cfgG[key].strip('[]')
+                if s == '':
+                    res = []
+                else:
+                    res = [i.strip("'").replace(r'\\','\\') for i in s.split(', ')]
+                configDict[capKey] = res                                    
+            elif isinstance(config_example.__dict__[capKey],bool):
+                configDict[capKey] = cfgG.getboolean(key)
+            elif isinstance(config_example.__dict__[capKey],float):
+                configDict[capKey] = cfgG.getfloat(key)
+            elif isinstance(config_example.__dict__[capKey],int):
+                configDict[capKey] = cfgG.getint(key)
+            elif isinstance(config_example.__dict__[capKey],str):
+                configDict[capKey] = cfgG.get(key).replace(r'\\','\\')
+            else:
+                print('*** problem with',type(config_example.__dict__[capKey]))
+                continue
+        except:
+            continue
+        print(f'{config_example.__dict__[capKey]!r}')
+        print(f'{configDict[capKey]!r}')
+        
 # def MacStartGSASII(g2script,project=''):
 #     '''Start a new instance of GSAS-II by opening a new terminal window and starting
 #     a new GSAS-II process. Used on Mac OS X only.

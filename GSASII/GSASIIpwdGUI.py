@@ -5153,6 +5153,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
+
     def OnISODISTORT_kvec(event):   # needs attention from Yuanpeng
         '''Search for 
         using the ISODISTORT web service 
@@ -5166,6 +5167,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 '<head><base href="https://stokes.byu.edu/iso/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
+
         def showWebtext(txt):
             import tempfile
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
@@ -5234,11 +5236,110 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             except ValueError:
                 break
 
-        # TODO: bring in the searched k-vector.
-        # we can use the `use` check box to select the k-vector to use.
+        def setup_kvec_input(k_vec):
+            """Set up the input for isodistort post request
+
+            Args:
+                k_vec (str): The k-vector to use for the isodistort request.
+
+            Returns:
+                dict: New entries and those need to be corrected in the data
+                to be used in the post request.
+            """
+            from fractions import Fraction
+            k_vec_dict = {
+                " 1 *GM, k16 (0,0,0)": (0, 0, 0),
+                " 2 *DT, k11 (0,0,g)": (0, 0, "a"),
+                " 3 *LD, k6 (a,a,0)": ("a", "a", 0),
+                " 4 *SM, k5 (a,0,0)": ("a", 0, 0),
+                " 5 *A, k17 (0,0,1/2)": (0, 0, Fraction(1, 2)),
+                " 6 *H, k15 (1/3,1/3,1/2)": (
+                    Fraction(1, 3),
+                    Fraction(1, 3),
+                    Fraction(1, 2)
+                ),
+                " 7 *K, k13 (1/3,1/3,0)": (Fraction(1, 3), Fraction(1, 3), 0),
+                " 8 *L, k14 (1/2,0,1/2)": (Fraction(1, 2), 0, Fraction(1, 2)),
+                " 9 *M, k12 (1/2,0,0)": (Fraction(1, 2), 0, 0),
+                "10 *P, k10 (1/3,1/3,g)": (
+                    Fraction(1, 3),
+                    Fraction(1, 3),
+                    "g"
+                ),
+                "11 *Q, k8 (a,a,1/2)": ("a", "a", Fraction(1, 2)),
+                "12 *R, k7 (a,0,1/2)": ("a", 0, Fraction(1, 2)),
+                "13 *U, k9 (1/2,0,g)": (Fraction(1, 2), 0, "g"),
+                "14 *B, k1 (a,b,0)": ("a", "b", 0),
+                "15 *C, k4 (a,a,g)": ("a", "a", "g"),
+                "16 *D, k3 (a,0,g)": ("a", 0, "g"),
+                "17 *E, k2 (a,b,1/2)": ("a", "b", Fraction(1, 2)),
+                "18 *GP, k0 (a,b,g)": ("a", "b", "g")
+            }
+
+            def match_vector_pattern(k_vec, k_vec_dict):
+                """Check the k-vector against the standard form in isodistort.
+
+                Args:
+                    k_vec (str): The k-vector to use for the isodistort
+                    request.
+                    k_vec_dict (dict): The standard k-vector form in
+                    isodistort.
+
+                Returns:
+                    str: The standard k-vector form in isodistort.
+                """
+                all_matches = list()
+                for desc, pattern in k_vec_dict.items():
+                    if len(pattern) != len(k_vec):
+                        continue
+                    placeholders = {}
+                    match = True
+                    for p_val, k_val in zip(pattern, k_vec):
+                        if isinstance(p_val, str):
+                            if p_val.isalpha():
+                                if p_val not in placeholders:
+                                    placeholders[p_val] = k_val
+                                elif placeholders[p_val] != k_val:
+                                    match = False
+                                    break
+                            else:
+                                match = False
+                                break
+                        else:
+                            if p_val != k_val:
+                                match = False
+                                break
+                    if match:
+                        all_matches.append(desc)
+
+                idp_params_num = 3
+                for match in all_matches:
+                    params = list()
+                    for item in k_vec_dict[match]:
+                        if isinstance(item, str):
+                            params.append(item)
+                    idp_params = list(set(params))
+                    if len(idp_params) <= idp_params_num:
+                        idp_params_num = len(idp_params)
+                        final_match = match
+
+                return final_match
+
+        k_table = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        k_cells, _ = k_table[2:4]
+        for row in range(len(k_cells)):
+            if UnitCellsTable.GetValue(row, 0):
+                kpoint = cells[row][3:6]
+                break
+
+        # TODO: refer to line-4601 for codes to convert the k-vector in the
+        # TODO: conventional setting to primitive setting.
+        # TODO: here we need to convert the k-vector into the primitive setting
+        # TODO: before we can use it in the isodistort web service.
+
         data['input'] = 'kvector'
         data['irrepcount'] = '1'
-        data['kvec1'] = ' 2 *DT, k11 (0,0,g)'
+        data['kvec1'] = '10 *P, k10 (1/3,1/3,g)'
         data['kparam31'] = '1/3'
         data['nmodstar1'] = '0'
         out3 = requests.post(isoformsite, data=data).text
@@ -5267,7 +5368,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         pos = out3.index("irrep1")
         pos1 = out3[pos:].index("</SELECT>")
         str_tmp = out3[pos:][:pos1]
-        ir_options = re.findall(r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp)
+        ir_options = re.findall(
+            r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp
+        )
 
         for ir_opt, _ in ir_options:
             data["input"] = "irrep"
@@ -6895,12 +6998,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         if mode == 2:
-            # OnISODISTORT_kvec(phase_sel) # TODO: not ready yet
-
             hSizer = wx.BoxSizer(wx.HORIZONTAL)
             hSizer.Add(gridDisplay)
 
-            # TODO: Add a button to call ISODISTORT
             ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
             ISObut.Bind(wx.EVT_BUTTON, OnISODISTORT_kvec)
             hSizer.Add(ISObut)

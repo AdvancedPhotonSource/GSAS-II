@@ -601,10 +601,6 @@ def GSASIImain(application):
     application.SetTopWindow(application.main)
     # save the current package versions
     application.main.PackageVersions = G2fil.get_python_versions([wx, mpl, np, sp, ogl])
-    if GSASIIpath.GetConfigValue('wxInspector'):
-        import wx.lib.inspection as wxeye
-        wxeye.InspectionTool().Show()
-
     try:
         application.SetAppDisplayName('GSAS-II')
     except:

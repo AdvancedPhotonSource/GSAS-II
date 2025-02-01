@@ -58,8 +58,11 @@ def GetConfigValue(key,default=None,getDefault=False):
         return None
 
 def SetConfigValue(parmdict):
-    '''Set configuration variables from a dictionary where elements are lists
-    First item in list is the default value and second is the value to use.
+    '''Set configuration variables. Note that parmdict is a dictionary 
+    from :func:`GSASIIctrlGUI.GetConfigValsDocs` where each element is a 
+    lists. The first item in list is the default value, the second is 
+    the value to use for that configuration variable. Most of the 
+    information gathered in GetConfigValsDocs is no longer used. 
     '''
     global configDict
     for var in parmdict:
@@ -1132,53 +1135,10 @@ def SetBinaryPath(showConfigMsg=False):
     LoadConfig(showConfigMsg)
     BinaryPathFailed = pathHacking._path_discovery(showConfigMsg)
 
-def LoadConfig(printInfo=True):
-    '''Read configuration settings from config.py, if present
-    '''
-    global configDict
-    try:
-        import config
-        configDict = config.__dict__
-        import inspect
-        vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
-        if printInfo:
-            print (str(len(vals))+' values read from config file '+os.path.abspath(config.__file__))
-    except ImportError:
-        configDict = {'Clip_on':True}
-    except Exception as err:
-        print(60*'*',"\nError reading config.py file")
-        if printInfo:
-            import traceback
-            print(traceback.format_exc())
-        print(60*'*')
-        configDict = {'Clip_on':True}
-
-def XferConfigIni():
-    '''copy the contents of the config.py file to file ~/.GSASII/config.ini. 
-    This is not currently in use in GSAS-II
-    '''
-    import types
-    configDict = {}
-    try:
-        import config
-        #import config_example as config
-        for i in config.__dict__:
-            if i.startswith('__') and i.endswith('__'): continue
-            if isinstance(config.__dict__[i],types.ModuleType): continue
-            configDict.update({i:str(config.__dict__[i])})
-    except ImportError as err:
-        print("Error importing config.py file\n",err)
-        return
-    except Exception as err:
-        print("Error reading config.py file\n",err)
-        return
-    print(f"Contents of {config.__file__} to be written...")
-    WriteIniConfi(configDict)
-
-def WriteIniConfi(configDict):
+def WriteConfig(configDict):
     '''Write the configDict information to the GSAS-II ini settings 
-    into file ~/.GSASII/config.ini. This routine will eventually be 
-    plumbed into GSASIIctrlGUI.SaveConfigVars.
+    into file ~/.GSASII/config.ini. Called from 
+    :func:`GSASIIctrlGUI.SaveConfigVars`.
     '''
     import configparser
     
@@ -1199,13 +1159,16 @@ def WriteIniConfi(configDict):
         cfgP.write(configfile)
     print(f"Configuraton settings saved as {cfgfile}")
 
-def LoadIniConfig():
-    '''
-    Not currently in use, but intended to replace LoadConfig.
+def LoadConfig(printInfo=True):
+    '''Read configuration settings from ~/.GSASII/config.ini, if present.
+    Place the values into global dict configDict.
+
+    :param bool printInfo: if printInfo is True (default) then a message
+      is shown with the number of settings read (upon startup).
     '''
     import configparser
     global configDict
-    configDict = {'Clip_on':True}
+    configDict = {}
     cfgfile = os.path.expanduser('~/.GSASII/config.ini')
     if not os.path.exists(cfgfile):
         print(f'N.B. Configuration file {cfgfile} does not exist')
@@ -1236,8 +1199,6 @@ def LoadIniConfig():
             print(f'Item {key} not defined in config_example')
             continue
         try:
-            print('\n',key,capKey)
-            print(cfgG[key])
             if cfgG[key] == 'None':
                 configDict[capKey] = None
             elif key.endswith('_pos') or key.endswith('_size'): # list of integers                
@@ -1265,8 +1226,10 @@ def LoadIniConfig():
                 continue
         except:
             continue
-        print(f'{config_example.__dict__[capKey]!r}')
-        print(f'{configDict[capKey]!r}')
+    if printInfo:
+        print (f'{len(configDict)} values read from {cfgfile}')
+    # make sure this value is set
+    configDict['Clip_on'] = configDict.get('Clip_on',True)
         
 # def MacStartGSASII(g2script,project=''):
 #     '''Start a new instance of GSAS-II by opening a new terminal window and starting

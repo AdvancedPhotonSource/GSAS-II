@@ -6372,7 +6372,7 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
 
 
 ################################################################################
-# configuration routines (for editing config.py)
+# configuration settings routines
 def SaveGPXdirectory(path,write=True):
     if GSASIIpath.GetConfigValue('Starting_directory') == path: return
     vars = GetConfigValsDocs()
@@ -6430,112 +6430,22 @@ def GetConfigValsDocs():
             key = None
     return d
 
-inhibitSave = False
 def SaveConfigVars(vars,parent=None):
-    '''Write the current config variable values to config.py
+    '''Write the current config variable values to  ~/.GSASII/config.ini
 
     :params dict vars: a dictionary of variable settings and meanings as
-      created in :func:`GetConfigValsDocs`.
-    :param parent: wx.Frame object or None (default) for parent
-      of error message if no file can be written.
+      created in :func:`GetConfigValsDocs`. Most of the information gathered 
+      in GetConfigValsDocs is no longer used here. 
+    :param parent: wx.Frame object or None. No longer used.
     :returns: True if unable to write the file, None otherwise
     '''
-    if inhibitSave:
-        if GSASIIpath.GetConfigValue('debug'):
-            print('inhibitSave prevents saving configuration')
-        return
-
-    # try to write to where an old config file is located
-    try:
-        import config
-        savefile = config.__file__
-    except ImportError: # no config.py file yet
-        savefile = os.path.join(GSASIIpath.path2GSAS2,'config.py')
-    except Exception: # import failed
-        # find the bad file, save it in a new name and prepare to overwrite it
-        for p in sys.path:
-            savefile = os.path.join(p,'config.py')
-            if os.path.exists(savefile):
-                import distutils.file_util as dfu
-                keepfile = os.path.join(p,'config.py_corrupt')
-                print('Current config file contains an error:',savefile)
-                print('saving that file as',keepfile)
-                dfu.copy_file(savefile,keepfile)
-                print('preparing to overwrite...')
-                break
-        else:
-            print('unexpected error importing config.py')
-            savefile = os.path.join(GSASIIpath.path2GSAS2,'config.py')
-
-    # try to open file for write
-    try:
-        savefile = os.path.splitext(savefile)[0]+'.py' # convert .pyc to .py
-        fp = open(savefile,'w')
-    except IOError:  # can't write there, write in local mods directory
-        # create a local mods directory, if needed
-        g2local = os.path.expanduser('~/.G2local/')
-        if not os.path.exists(g2local):
-            try:
-                print(u'Creating directory '+g2local)
-                os.mkdir(g2local)
-            except:
-                if parent:
-                    G2MessageBox(parent,
-                                     f'Error trying to create directory {g2local}. Unable to save')
-                else:
-                    print(u'Error trying to create directory '+g2local)
-                return True
-            sys.path.insert(0,os.path.expanduser('~/.G2local/'))
-        savefile = os.path.join(os.path.expanduser('~/.G2local/'),'config.py')
-        try:
-            fp = open(savefile,'w')
-        except IOError:
-            if parent:
-                G2MessageBox(parent,'Error trying to write configuration to '+savefile,
-                    'Unable to save')
-            else:
-                print('Error trying to write configuration to '+savefile)
-            return True
-    import datetime
-    fp.write("# -*- coding: utf-8 -*-\n'''\n")
-    fp.write("*config.py: Configuration options*\n----------------------------------\n")
-    fp.write("This file created in SelectConfigSetting on {:%d %m %Y %H:%M}\n".
-             format(datetime.datetime.now()))
-    fp.write("'''\n\n")
-    fp.write("import os.path\n")
-    fp.write("import GSASIIpath\n\n")
+    configDict = {}
     for var in sorted(vars.keys(),key=lambda s: s.lower()):
         if vars[var][1] is None: continue
         if vars[var][1] == '': continue
         if vars[var][0] == vars[var][1]: continue
-        try:
-            float(vars[var][1]) # test for number
-            fp.write(var + ' = ' + str(vars[var][1])+'\n')
-        except:
-            if type(vars[var][1]) is list:
-                fp.write(var + ' = [\n')
-                for varstr in vars[var][1]:
-                    if '\\' in varstr:
-                        fp.write('\t  os.path.normpath("' + varstr.replace('\\','/') +'"),\n')
-                    else:
-                        fp.write('\t  "' + str(varstr)+'",\n')
-                fp.write('   ]\n')
-            elif type(vars[var][1]) is tuple:
-                fp.write(var + ' = ' + str(vars[var][1])+'\n')
-            else:
-                try:
-                    eval(vars[var][1]) # test for an expression
-                    fp.write(var + ' = ' + str(vars[var][1])+'\n')
-                except: # must be a string
-                    varstr = vars[var][1]
-                    if '\\' in varstr:
-                        fp.write(var + ' = os.path.normpath("' + varstr.replace('\\','/') +'")\n')
-                    else:
-                        fp.write(var + ' = "' + str(varstr)+'"\n')
-        if vars[var][3]:
-            fp.write("'''" + str(vars[var][3]) + "\n'''\n\n")
-    fp.close()
-    print('wrote file '+savefile)
+        configDict[var] = vars[var][1]
+    return GSASIIpath.WriteConfig(configDict)
 
 class SelectConfigSetting(wx.Dialog):
     '''Dialog to select configuration variables and set associated values.
@@ -6620,25 +6530,14 @@ class SelectConfigSetting(wx.Dialog):
                 self.colorChip.SetBackgroundColour('yellow')
                 self.colorChip.SetForegroundColour('black')
 
-    def OnApplyChanges(self,event=None):
-        'Set config variables to match the current settings'
-        GSASIIpath.SetConfigValue(self.vars)
-        self.EndModal(wx.ID_OK)
-        global inhibitSave
-        if event is not None: inhibitSave = True
-        from . import GSASIImpsubs as G2mp
-        G2mp.ResetMP()
-
     def OnSave(self,event):
-        '''Write the config variables to config.py and then set them
+        '''Write the config variables to ~/.GSASII/config.ini
         as the current settings
         '''
-        global inhibitSave
-        inhibitSave = False
-        if not SaveConfigVars(self.vars,parent=self):
-            self.OnApplyChanges() # force a reload of the config settings
-        else:
-            self.EndModal(wx.ID_OK)
+        print(self.vars)
+        SaveConfigVars(self.vars,parent=self)
+        GSASIIpath.SetConfigValue(self.vars)
+        self.EndModal(wx.ID_OK)
 
     def OnBoolSelect(self,event):
         'Respond to a change in a True/False variable'
@@ -6654,7 +6553,7 @@ class SelectConfigSetting(wx.Dialog):
         if dlg.ShowModal() == wx.ID_OK:
             var = self.choice[0]
             self.vars[var][1] = dlg.GetPath()
-            self.strEd.SetValue(self.vars[var][1])
+            self.strEd.ChangeValue(self.vars[var][1])
             self.OnChange()
         dlg.Destroy()
 
@@ -6696,7 +6595,7 @@ class SelectConfigSetting(wx.Dialog):
                 val = dlg.GetPath()
                 if os.path.exists(val) and is_exe(val):
                     self.vars[var][1] = val
-                    self.strEd.SetValue(self.vars[var][1])
+                    self.strEd.ChangeValue(self.vars[var][1])
                     self.OnChange()
                 else:
                     dlg.Destroy()
@@ -6798,7 +6697,7 @@ class SelectConfigSetting(wx.Dialog):
                 self.strEd = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=str,
                     OKcontrol=self.OnChange,size=sz,notBlank=False)
                 if self.vars[var][1] is not None:
-                    self.strEd.SetValue(self.vars[var][1])
+                    self.strEd.ChangeValue(self.vars[var][1])
                 if btn:
                     self.varsizer.Add(self.strEd, 0, wx.ALL|wx.EXPAND, 5)
                     self.varsizer.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)

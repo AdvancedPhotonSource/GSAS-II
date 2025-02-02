@@ -15,9 +15,10 @@ path2repo = os.path.dirname(path2GSAS2)
 if __name__ == '__main__':
 
     g2repo = git.Repo(path2repo)
-#    if g2repo.active_branch.name != 'master':
-#        print(f'Not on master branch {commit0[:6]!r}')
-#        sys.exit()
+    # for now allow this to be used on the develop branch
+    #if g2repo.active_branch.name != 'master':
+    #    print(f'Not on master branch {commit0[:6]!r}')
+    #    sys.exit()
     if g2repo.head.is_detached:
         print(f'Detached head {commit0[:6]!r}')
         sys.exit()
@@ -29,17 +30,20 @@ if __name__ == '__main__':
                   f' with path {path2repo}')
         sys.exit()
     commit = g2repo.head.commit
-    ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
+    #ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
     now = dt.datetime.now().replace(
         tzinfo=commit.committed_datetime.tzinfo)
     commit0 = commit.hexsha
-    tags0 = g2repo.git.tag('--points-at',commit).split('\n')
+    #tags0 = g2repo.git.tag('--points-at',commit).split('\n')
+    tags0 = [i for i in g2repo.git.tag('--points-at',commit).split('\n') if i.isdecimal()]
     history = list(g2repo.iter_commits('HEAD'))
     for i in history[1:]:
         tags = g2repo.git.tag('--points-at',i)
         if not tags: continue
         commitm1 = i.hexsha
-        tagsm1 = tags.split('\n')
+        #tagsm1 = tags.split('\n')
+        tagsm1 = [i for i in tags.split('\n') if i.isdecimal()]
+        if not tagsm1: continue
         break
     pyfile = os.path.join(path2GSAS2,'git_verinfo.py')
     try:
@@ -58,5 +62,18 @@ if __name__ == '__main__':
         fp.write('git_tags = []\n')
     fp.write(f'git_prevtaggedversion = {commitm1!r}\n')
     fp.write(f'git_prevtags = {tagsm1}\n')
+    # get the latest version number
+    releases = [i for i in g2repo.tags if '.' in i.name]
+    majors = [i.name.split('.')[0] for i in releases]
+    major = max([int(i) for i in majors if i.isdecimal()])
+    minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'{major}.')]
+    minor = max([int(i) for i in minors if i.isdecimal()])
+    minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'{major}.{minor}')]
+    # mini can be integer, float or even have letters (5.2.1.1rc1)
+    # for now, ignore anything with letters or decimals
+    mini = max([int(i) for i in minis if i.isdecimal()])
+    versiontag = f'{major}.{minor}.{mini}'
+    fp.write(f'git_versiontag = {versiontag!r}\n')
+    #
     fp.close()
     print(f'Created git version file {pyfile} at {now} for {commit0[:6]!r}')

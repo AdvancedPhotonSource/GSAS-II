@@ -1,8 +1,9 @@
-# create tag number for the latest git check in and record that in
-# the git_version.py file.
+# create numerical tag number for the latest git check in and record that in
+# the git_version.py file. This also advances the minor version number
+# for the GSAS-II version number (from 5.X.Y to 5.X+1.0)
 
 # perhaps someday this should be made automatic in some fashion (perhaps
-# not used on every check-in but don't go too many days/mosds without a new
+# not used on every check-in but don't go too many days/mods without a new
 # version #
 
 # perhaps someday include as a clean (run on git add) or smudge
@@ -33,7 +34,7 @@ if __name__ == '__main__':
 
     g2repo = git.Repo(path2repo)
     if g2repo.active_branch.name != 'master':
-        print(f'Not on master branch {commit0[:6]!r}')
+        print('Not on master branch')
         sys.exit()
     if g2repo.head.is_detached:
         print(f'Detached head {commit0[:6]!r}')
@@ -53,9 +54,9 @@ if __name__ == '__main__':
     # for now, ignore anything with letters or decimals
     mini = max([int(i) for i in minis if i.isdecimal()])
     latest = f'{major}.{minor}.{mini}'
-    nextmini = f'{major}.{minor}.{mini+1}'
+    #nextmini = f'{major}.{minor}.{mini+1}'
     nextminor = f'{major}.{minor+1}.0'
-    versiontag = nextmini
+    versiontag = nextminor
     if versiontag in releases:
         print(f'Versioning problem, generated next version {versiontag} already defined!')
         versiontag = '?'
@@ -84,7 +85,7 @@ if __name__ == '__main__':
         print(f'created tag {tagnum} for {i.hexsha[:7]}')
         if versiontag != '?':
             g2repo.create_tag(str(versiontag),ref=i)
-            print(f'created tag {versiontag} for {i.hexsha[:7]}')
+            print(f'created version # {versiontag} for {i.hexsha[:7]}')
         break
 
     # create a file with GSAS-II version information
@@ -95,17 +96,18 @@ if __name__ == '__main__':
                   f' with path {path2repo}')
         sys.exit()
     commit = g2repo.head.commit
-    ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
+    #ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
     now = dt.datetime.now().replace(
         tzinfo=commit.committed_datetime.tzinfo)
     commit0 = commit.hexsha
-    tags0 = g2repo.git.tag('--points-at',commit).split('\n')
+    tags0 = [i for i in g2repo.git.tag('--points-at',commit).split('\n') if i.isdecimal()]
     history = list(g2repo.iter_commits('HEAD'))
     for i in history[1:]:
         tags = g2repo.git.tag('--points-at',i)
         if not tags: continue
         commitm1 = i.hexsha
-        tagsm1 = tags.split('\n')
+        tagsm1 = [i for i in tags.split('\n') if i.isdecimal()]
+        if not tagsm1: continue
         break
     pyfile = os.path.join(path2GSAS2,'git_verinfo.py')
     try:
@@ -124,7 +126,7 @@ if __name__ == '__main__':
         fp.write('git_tags = []\n')
     fp.write(f'git_prevtaggedversion = {commitm1!r}\n')
     fp.write(f'git_prevtags = {tagsm1}\n')
-    fp.write(f'git_versiontags = {versiontag!r}\n')
+    fp.write(f'git_versiontag = {versiontag!r}\n')
     fp.close()
     print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')
 

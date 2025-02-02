@@ -39,9 +39,27 @@ if __name__ == '__main__':
         print(f'Detached head {commit0[:6]!r}')
         sys.exit()
     # make a list of tags without a dash; get the largest numeric tag
+    # someday use the packaging module (but no more dependencies for now)
     numtag = [i for i in g2repo.tags if '-' not in i.name]
     max_numeric = max([int(i.name) for i in numtag if i.name.isdecimal()])
-
+    # get the latest version number
+    releases = [i for i in g2repo.tags if '.' in i.name]
+    majors = [i.name.split('.')[0] for i in releases]
+    major = max([int(i) for i in majors if i.isdecimal()])
+    minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'{major}.')]
+    minor = max([int(i) for i in minors if i.isdecimal()])
+    minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'{major}.{minor}')]
+    # mini can be integer, float or even have letters (5.2.1.1rc1)
+    # for now, ignore anything with letters or decimals
+    mini = max([int(i) for i in minis if i.isdecimal()])
+    latest = f'{major}.{minor}.{mini}'
+    nextmini = f'{major}.{minor}.{mini+1}'
+    nextminor = f'{major}.{minor+1}.0'
+    versiontag = nextmini
+    if versiontag in releases:
+        print(f'Versioning problem, generated next version {versiontag} already defined!')
+        versiontag = '?'
+        
     # scan for the newest untagged commits, stopping at the first
     # tagged one
     untagged = []
@@ -63,7 +81,10 @@ if __name__ == '__main__':
             print(f'Error: {tagnum} would be repeated')
             break
         g2repo.create_tag(str(tagnum),ref=i)
-        print(f'created tag {tagnum} for {i.hexsha[:6]}')
+        print(f'created tag {tagnum} for {i.hexsha[:7]}')
+        if versiontag != '?':
+            g2repo.create_tag(str(versiontag),ref=i)
+            print(f'created tag {versiontag} for {i.hexsha[:7]}')
         break
 
     # create a file with GSAS-II version information
@@ -103,8 +124,9 @@ if __name__ == '__main__':
         fp.write('git_tags = []\n')
     fp.write(f'git_prevtaggedversion = {commitm1!r}\n')
     fp.write(f'git_prevtags = {tagsm1}\n')
+    fp.write(f'git_versiontags = {versiontag!r}\n')
     fp.close()
-    print(f'Created git version file {pyfile} at {now} for {commit0[:6]!r}')
+    print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')
 
     print('Now do\n\t git add \n\t git commit \n\t git push \n\t git push --follow-tags (better than git push --tags?)')
 

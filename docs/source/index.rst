@@ -1,12 +1,12 @@
 .. This lists all the sections of the documentation. Some of the below
-.. reference a single file. Others reference multiple files. 
+.. reference a single file. Others reference multiple files.
 
 GSAS-II Developer's Documentation
 =================================
 
 The documentation here is intended for those wishing to extend the
 capabilities within the GSAS-II framework, for scientists/students
-working to understand how 
+working to understand how
 GSAS-II works, or for people wishing to develop scripting applications
 using the GSAS-II Python API (module :mod:`GSASIIscriptable`). Note that most
 data structures used in GSAS-II are defined in module :mod:`GSASIIobj`.
@@ -28,24 +28,25 @@ For scripting use of GSAS-II, see  :ref:`GSASIIscriptable`.
 
 	  *Documentation Version:*
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	  
+
 	    .. include:: version.rst
 
 	  *Contents:*
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     
+
 .. toctree::
     :maxdepth: 2
     :numbered: 4
 
     packages.rst
+    versioning.rst
     objvarorg.rst
     GSASII.rst
     GSASIIobj.rst
     GSASIIutil.rst
     GSASIIGUIr.rst
-    GSASIIGUI.rst 
-    GSASIIdata.rst 
+    GSASIIGUI.rst
+    GSASIIdata.rst
     GSASIIstruc.rst
     GSASIImapvars.rst
     GSASIIimage.rst
@@ -57,8 +58,7 @@ For scripting use of GSAS-II, see  :ref:`GSASIIscriptable`.
     GSASIIscriptable.rst
     GSASIIscripts.rst
     GSASIIweb.rst
-    imports.rst 
+    imports.rst
     exports.rst
     G2tools.rst
     indices.rst
-

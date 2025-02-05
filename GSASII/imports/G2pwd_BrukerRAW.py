@@ -37,12 +37,12 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             self.formatName = 'Bruker RAW ver. 3'
         elif head == 'RAW4.00':
             self.formatName = 'Bruker RAW ver. 4'
-            self.errors += "Sorry, this is a Version 4 Bruker file. "
-            self.errors += "We need documentation for it so that it can be implemented in GSAS-II. "
-            self.errors += "Use PowDLL (http://users.uoi.gr/nkourkou/powdll/) to convert it to ASCII xy."
-            print(self.errors)
-            fp.close()
-            return False
+            # self.errors += "Sorry, this is a Version 4 Bruker file. "
+            # self.errors += "We need documentation for it so that it can be implemented in GSAS-II. "
+            # self.errors += "Use PowDLL (http://users.uoi.gr/nkourkou/powdll/) to convert it to ASCII xy."
+            # print(self.errors)
+            # fp.close()
+            # return False
         else:
             self.errors = 'Unexpected information in header: '
             if all([ord(c) < 128 and ord(c) != 0 for c in str(head)]): # show only if ASCII
@@ -161,38 +161,93 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     self.repeat = True
             fp.close()
             
-        elif 'ver. 4' in self.formatName:   #does not work - format still elusive
+        elif 'ver. 4' in self.formatName: 
+            driveNo = 0
             fp.seek(12)   #ok
-            self.comments.append('Date='+self.Read(fp,10))
-            self.comments.append('Time='+self.Read(fp,10))
-            fp.seek(144)
-            self.comments.append('Sample='+self.Read(fp,60))
-            fp.seek(564)  # where is it?
-            radius = st.unpack('<f',fp.read(4))[0]
-            self.comments.append('Gonio. radius=%.2f'%(radius))
-            self.Sample['Gonio. radius'] = radius
-            fp.seek(516)  #ok
-            self.comments.append('Anode='+self.Read(fp,4))
-            fp.seek(472)  #ok
-            self.comments.append('Ka mean=%.5f'%(st.unpack('<d',fp.read(8))[0]))
-            self.comments.append('Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
-            self.comments.append('Ka2=%.5f'%(st.unpack('<d',fp.read(8))[0]))
-            self.comments.append('Kb=%.5f'%(st.unpack('<d',fp.read(8))[0]))
-            self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
-            fp.seek(pos)  #deliberate fail here - pos not known from file contents
-            self.idstring = os.path.basename(filename) + ' Scan '+str(1)
-            nSteps = int(st.unpack('<i',fp.read(4))[0])
-            st.unpack('<d',fp.read(8))[0]
-            start2Th = st.unpack('<d',fp.read(8))[0]
-            fp.seek(pos+176)
-            step = st.unpack('<d',fp.read(8))[0]
-            pos += headLen      #position at start of data block
-            fp.seek(pos)                                    
-            x = np.array([start2Th+i*step for i in range(nSteps)])
-            y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
-            w = 1./y
-            self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
-            fp.close()
+            self.comments.append('Date='+self.Read(fp,12).strip('\x00'))
+            self.comments.append('Time='+self.Read(fp,10).strip('\x00'))
+            fp.seek(61)     #start of header segments
+            while True:
+                segtype = st.unpack('<I',fp.read(4))[0]
+                if not segtype or segtype == 160:    
+                    break           # done with header
+                seglen = max(st.unpack('<I',fp.read(4))[0],8)
+                if segtype == 10:
+                    fp.read(4)    #skip these
+                    self.comments.append('%s=%s'%(self.Read(fp,24).strip('\x00'),self.Read(fp,seglen-36).strip('\x00')))
+                elif segtype == 30: #x-ray source info
+                    fp.read(64)
+                    self.comments.append('Ka mean=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+                    self.comments.append('Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+                    self.comments.append('Ka2=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+                    self.comments.append('Kb=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+                    self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+                    fp.read(4)
+                    self.comments.append('Anode='+self.Read(fp,4).strip('\x00'))
+                    fp.read(seglen-120)
+                elif segtype == 60:
+                    alignFlag = st.unpack('<I',fp.read(4))[0]
+                    driveName = self.Read(fp,24).strip('\x00')
+                    fp.read(32)
+                    Delt = st.unpack('<d',fp.read(8))[0]
+                    fp.read(seglen-76)
+                    self.comments.append('Drive %s: align flag %d'%(driveName,alignFlag))
+                    self.comments.append('Drive %s: delta %f'%(driveName,Delt))
+                    driveNo += 1
+                else:
+                    fp.read(seglen-8)
+            while (segtype == 0 or segtype == 160):
+                self.idstring = os.path.basename(filename)  # + ' Scan '+str(blockNum)
+                meta = {}
+                fp.read(28)
+                meta['ScanType'] = self.Read(fp,24).strip('\x00')
+                if meta['ScanType'] not in ['Locked Coupled','Unlocked Coupled']:
+                    return False
+                fp.read(16)
+                startAngle = st.unpack('<d',fp.read(8))[0]
+                meta['startAngle'] = '%.4f'%startAngle
+                stepSize = st.unpack('<d',fp.read(8))[0]
+                meta['stepSize'] = '%.4f'%stepSize
+                Nsteps = st.unpack('<I',fp.read(4))[0]
+                meta['Nsteps'] = '%d'%Nsteps
+                meta['stepTime(ms)'] = st.unpack('<f',fp.read(4))[0]
+                fp.read(4)
+                meta['generatorVoltage(kV)'] = st.unpack('<f',fp.read(4))[0]
+                meta['generatorCurrent(mA)'] = st.unpack('<f',fp.read(4))[0]
+                fp.read(4)
+                meta['usedWave'] = st.unpack('<d',fp.read(8))[0]
+                fp.read(16)
+                datumSize = st.unpack('<I',fp.read(4))[0]
+                hdrSize = st.unpack('<I',fp.read(4))[0]
+                fp.read(16)
+                if meta['ScanType'] in ['Locked Coupled','Unlocked Coupled']:
+                    while hdrSize > 0:
+                        segtype = st.unpack('<I',fp.read(4))[0]
+                        seglen = max(st.unpack('<I',fp.read(4))[0],8)
+                        if segtype == 50:
+                            fp.read(4)
+                            segName = self.Read(fp,24).strip('\x00')
+                            if segName in ['Theta','2Theta','Chi','Phi','BeamTranslation','Z-Drive','Divergence Slit']:
+                                fp.read(20)
+                                meta['start %s'%segName] = '%.4f'%(st.unpack('<d',fp.read(8))[0])
+                                fp.read(seglen-64)
+                            else:
+                                fp.read(seglen-36)
+                        else:
+                            fp.read(seglen-8)
+                        hdrSize -= seglen
+                    #end of reading scan header   
+                    x = np.array([startAngle+i*stepSize for i in range(Nsteps)])
+                    y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(Nsteps)])
+                    w = 1./y
+                    self.powderdata = [x,y,w,np.zeros(Nsteps),np.zeros(Nsteps),np.zeros(Nsteps)]
+                    for item in meta:
+                        self.comments.append('%s = %s'%(item,str(meta[item])))
+                    fp.close()
+                else:
+                    meta['Unknown range/scan type'] = True
+                    fp.read(hdrSize)
+                    fp.read(datumSize*Nsteps)
         else:
             return False
             

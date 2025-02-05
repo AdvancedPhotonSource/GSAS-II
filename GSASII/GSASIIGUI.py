@@ -11,11 +11,13 @@ import sys
 
 from . import GSASIIpath
 
-__version__ = '2.0.0'
+__version__ = '5.0.0'
 try:
     from . import git_verinfo
-    __version__ = git_verinfo.git_tags[0]
-    if not __version__: __version__ = git_verinfo.git_prevtags[0]
+    if len(git_verinfo.git_tags):
+        __version__ = git_verinfo.git_tags[0]
+    elif len(git_verinfo.git_prevtags):
+        __version__ = git_verinfo.git_prevtags[0]
 except ImportError:
     pass
 

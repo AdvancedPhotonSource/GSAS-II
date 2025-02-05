@@ -15,14 +15,14 @@ platforms = ["linux-64", "win-64", "osx-arm64"]
 [tasks]
 
 clean-build = { cmd = "(rm dist/*whl || true) && (rm -r build || true) ", cwd='../' }
-
+savetags =  { cmd = "python save-versions.py", cwd='../GSASII/install' }
 build =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends_on = ['clean-build']}
-install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends_on=['build']}
-install-editable =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends_on=['clean-build']}
+install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends_on=['savetags', 'build']}
+install-editable =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends_on=['clean-build', 'savetags']}
 
 build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends_on = ['clean-build'], env={CC = 'clang-cl', CXX ='clang-cl'}}
-install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends_on=['build-win']}
-install-editable-win =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends_on=['clean-build'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
+install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends_on=['savetags', 'build-win']}
+install-editable-win =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends_on=['clean-build', 'savetags'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
 
 build-and-go ={ depends_on= ["install", "ui"]}
 build-and-go-win ={ depends_on= ["install-win", "ui"]}
@@ -57,6 +57,7 @@ compilers = ">=1.8.0,<2"
 clang = ">=17.0.6,<20"
 pycifrw = ">=4.4.0"
 pytest = ">=8.3.4,<9"
+gitpython = ">=3.1.44,<4"
 
 [feature.py311.dependencies]
 python = "<3.12,>=3.11"

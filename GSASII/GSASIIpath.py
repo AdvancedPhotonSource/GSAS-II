@@ -143,7 +143,7 @@ def GetBinaryPrefix(pyver=None):
     linux_64_p3.9_n1.21).
 
     Note that any change made here is also needed in GetBinaryDir in
-    fsource/SConstruct
+    fsource/SConstruct or GSASII-buildtools/compile/nameTar.py
     '''
     if sys.platform == "win32":
         prefix = 'win'
@@ -1174,7 +1174,7 @@ def LoadConfig(printInfo=True):
         print(f'N.B. Configuration file {cfgfile} does not exist')
         return
     try:
-        import config_example
+        from . import config_example
     except ImportError as err:
         print("Error importing config_example.py file\n",err)
         return

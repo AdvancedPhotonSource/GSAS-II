@@ -10,7 +10,13 @@ work = tempfile.gettempdir()
 
 skip = False
 import importlib.util  # fixup path if GSASII not installed into Python
-if importlib.util.find_spec('GSASII.GSASIIscriptable') is None:
+G2loc = None
+try: 
+    G2loc = importlib.util.find_spec('GSASII.GSASIIscriptable')
+except ModuleNotFoundError:
+    print('ModuleNotFound for GSASII.GSASIIscriptable')
+
+if G2loc is None:
     print('GSAS-II not installed in Python: Hacking sys.path')
     os.environ["GSASII_YOLO_PATH"] = "True"
     sys.path.append(os.path.dirname(home))
@@ -21,6 +27,7 @@ else:
         print("unable to run inside testing suite?!")
         skip = True
 
+import GSASII
 import GSASII.GSASIIscriptable as G2sc
 
 def test_refine():

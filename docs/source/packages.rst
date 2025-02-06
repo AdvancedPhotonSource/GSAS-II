@@ -174,9 +174,12 @@ Python extension packages are required:
 * matplotlib (http://matplotlib.org/contents.html)  and
 * PyOpenGL (http://pyopengl.sourceforge.net/documentation). 
 
-GSAS-II will not start if the above packages are not available. In
-addition, several Python packages are referenced in sections of the
-GUI code, but are not required. If these packages are not present, warning
+GSAS-II will not start or will start but will not be able to do much
+if the above packages are not available.
+
+In addition to the previous required packages, several Python packages
+are utilized in limited sections of the GUI code, but are not
+required. If these packages are not present, warning
 messages may be generated if they would be needed, or menu items may
 be omitted, but the vast bulk of GSAS-II will function normally. These
 optional packages are:

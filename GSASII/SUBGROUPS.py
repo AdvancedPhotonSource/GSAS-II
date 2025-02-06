@@ -465,10 +465,6 @@ def applySym(xform,cell):
             ))
     return cellsList
 
-BilbaoSymSearchCite = f'''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
-program; Please cite:
-{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''
-
 def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None,
                          pagelist=None, keepCell=False):
     '''Perform a search for a supergroup consistent with a phase
@@ -509,7 +505,9 @@ def BilbaoSymSearch1(sgnum, phase, maxdelta=2, angtol=None,
         contain possible supergroup settings.
     '''
     
-    print('\n'+BilbaoSymSearchCite+'\n')
+    print(f'''\nUsing the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+program; Please cite:
+{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}\n''')
 
     postdict = {
         "formulae":'',

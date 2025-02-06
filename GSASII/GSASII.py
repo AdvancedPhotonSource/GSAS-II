@@ -11,14 +11,12 @@ try:
     pkginfo = importlib.util.find_spec('GSASII.GSASIIGUI')
 except ModuleNotFoundError:
     pkginfo = None
-    
-if pkginfo is None:  # fixup path if GSASII not installed into Python
-    os.environ["GSASII_YOLO_PATH"] = "True"
-    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
-
-from GSASII.GSASIIGUI import main
 
 if __name__ == '__main__':
+    if pkginfo is None:  # fixup path if GSASII not installed into Python
+        os.environ["GSASII_YOLO_PATH"] = "True"
+        sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+    from GSASII.GSASIIGUI import main
     if pkginfo is None:  # fixup path if GSASII not installed into Python
         print('GSAS-II not installed in Python: Hacking sys.path')
     main()

@@ -3294,7 +3294,9 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             dlg.SetSizer(mainSizer)
             mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                                            SUBGROUPS.BilbaoSymSearchCite))
+                f'''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+program; Please cite:
+{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''))
             mainSizer.Add((-1,5))
             G2G.HorizontalLine(mainSizer,dlg)
             txt = wx.StaticText(dlg,wx.ID_ANY,
@@ -3367,7 +3369,9 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             dlg.SetSizer(mainSizer)
             mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                                            SUBGROUPS.BilbaoSymSearchCite))
+                    f'''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+program; Please cite:
+{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''))
             mainSizer.Add((-1,5))
             G2G.HorizontalLine(mainSizer,dlg)
             showSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -3470,7 +3474,10 @@ def UpdatePhaseData(G2frame,Item,data):
                                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             dlg.SetSizer(mainSizer)
-            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,SUBGROUPS.BilbaoSymSearchCite))
+            mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                    f'''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+program; Please cite:
+{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''))
             if msg:
                 txt = wx.StaticText(dlg,wx.ID_ANY,'Starting from '+msg.replace('\n',' '))
             txt.Wrap(width)
@@ -3563,7 +3570,9 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             dlg.SetSizer(mainSizer)
             mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                                            SUBGROUPS.BilbaoSymSearchCite))
+                f'''Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+program; Please cite:
+{G2G.GetCite('Bilbao: PSEUDO',wrap=70,indent=5)}'''))
             mainSizer.Add((-1,10))
             mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
                 f'From the starting model, {len(gpxList)} possible supergroups were located.'))

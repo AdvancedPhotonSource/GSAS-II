@@ -292,9 +292,9 @@ def PrintBlength(BLtables,wave,pFile):
     for El in BLtables:
         if 'Q' not in El:
             BP,BPP = G2el.BlenResCW([El,],BLtables,wave)
-            Elstr += ' %8s'%(El)
-            FPstr += ' %8.3f'%(BP)
-            FPPstr += ' %8.3f'%(BPP)
+            Elstr += f' {El:>8}'
+            FPstr += f' {BP[0]:8.3f}'
+            FPPstr += f' {BPP[0]:8.3f}'
     pFile.write(Elstr+'\n')
     pFile.write(FPstr+'\n')
     pFile.write(FPPstr+'\n')

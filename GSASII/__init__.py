@@ -23,7 +23,7 @@ def make_path_watcher():
             raise PathHackingException(lines[-2].strip())
     return no_path_hacking
 
-if not os.environ.get("GSASII_YOLO_PATH", ''):
+if os.environ.get("GSASII_NOPATHHACKING", ''):
     sys.addaudithook(make_path_watcher())
 
 del sys, make_path_watcher, os

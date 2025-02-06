@@ -29,7 +29,7 @@ build-and-go-win ={ depends_on= ["install-win", "ui"]}
 
 test = {cmd = "python -m pytest ../" }
 
-ui = "python -m GSASII"
+ui = 'GSASII_NOPATHHACKING="true" python -m GSASII'
 
 
 [dependencies]
@@ -58,6 +58,17 @@ clang = ">=17.0.6,<20"
 pycifrw = ">=4.4.0"
 pytest = ">=8.3.4,<9"
 gitpython = ">=3.1.44,<4"
+ipython = ">=8.32.0,<9"
+
+# The list above contains a number of items that are needed only for
+# installation/development, not runtime:
+#     cython, meson-python, gitpython
+# This is also likely true for these, but I am less sure:
+#      tomli, wheel, python-build, compilers, clang, ninja, pkg-config, pyproject-metadata
+# Also, users probably do not need pytest or ipython, but these might be included only when
+#  install-editable is used.
+#
+# TODO? separate runtime & build/install dependencies
 
 [feature.py311.dependencies]
 python = "<3.12,>=3.11"

@@ -31,6 +31,7 @@ if __name__ == '__main__':
         sys.exit()
     commit = g2repo.head.commit
     commitm1 = '?'
+    tagsm1 = None
     #ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
     now = dt.datetime.now().replace(
         tzinfo=commit.committed_datetime.tzinfo)

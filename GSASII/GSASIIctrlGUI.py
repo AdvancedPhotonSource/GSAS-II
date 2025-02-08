@@ -10184,12 +10184,13 @@ The switch will be made unless Cancel is pressed.'''
             if not os.path.exists(script):
                 print(f'Platform-specific script {script!r} not found')
                 script = ''
-                break
+            break
     else:
         print(f'Unknown platform {sys.platform}')
     # on a Mac, make an applescript
     if script and sys.platform.startswith('darwin'):
         print(f'running {script}')
+        import subprocess
         out = subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
     # On linux, make a desktop icon
     # On windows make a batch file

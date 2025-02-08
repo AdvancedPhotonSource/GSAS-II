@@ -2036,28 +2036,6 @@ def LoadConfig(printInfo=True):
         print(60*'*')
         configDict = {'Clip_on':True}
 
-def XferConfigIni():
-    '''copy the contents of the config.py file to file ~/.GSASII/config.ini. 
-    This is not currently in use in GSAS-II
-    '''
-    import types
-    configDict = {}
-    try:
-        import config
-        #import config_example as config
-        for i in config.__dict__:
-            if i.startswith('__') and i.endswith('__'): continue
-            if isinstance(config.__dict__[i],types.ModuleType): continue
-            configDict.update({i:str(config.__dict__[i])})
-    except ImportError as err:
-        print("Error importing config.py file\n",err)
-        return
-    except Exception as err:
-        print("Error reading config.py file\n",err)
-        return
-    print(f"Contents of {config.__file__} to be written...")
-    WriteIniConfi(configDict)
-
 def WriteIniConfi(configDict):
     '''Write the configDict information to the GSAS-II ini settings 
     into file ~/.GSASII/config.ini. This routine will eventually be 

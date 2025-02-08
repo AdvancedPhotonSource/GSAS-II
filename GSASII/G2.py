@@ -9,7 +9,7 @@
 
 import os
 import sys
-import importlib
+import importlib.util
 try:
     pkginfo = importlib.util.find_spec('GSASII.GSASIIGUI')
 except ModuleNotFoundError:

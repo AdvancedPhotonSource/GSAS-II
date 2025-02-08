@@ -6434,8 +6434,8 @@ def SaveConfigVars(vars,parent=None):
     '''Write the current config variable values to  ~/.GSASII/config.ini
 
     :params dict vars: a dictionary of variable settings and meanings as
-      created in :func:`GetConfigValsDocs`. Most of the information gathered 
-      in GetConfigValsDocs is no longer used here. 
+      created in :func:`GetConfigValsDocs`. Most of the information gathered
+      in GetConfigValsDocs is no longer used here.
     :param parent: wx.Frame object or None. No longer used.
     :returns: True if unable to write the file, None otherwise
     '''
@@ -9031,120 +9031,6 @@ class ScrolledStaticText(wx.StaticText):
             self.timer.Stop()
         self.msgpos += 1
         if self.msgpos >= len(self.fullmsg): self.msgpos = 0
-
-#===========================================================================
-# this has been moved to GSASIIfiles, since it does not need wx
-# def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
-#     '''Open a new and independent GSAS-II session in separate terminal
-#     or console window and as a separate process that will continue
-#     even if the calling process exits.
-#     Intended to work on all platforms.
-
-#     This could be used to run other scripts inside python other than GSAS-II
-
-#     :param str project: the name of an optional parameter to be
-#       passed to the script (usually a .gpx file to be opened in
-#       a new GSAS-II session)
-#     :param str g2script: the script to be run. If None (default)
-#       the GSASII.py file in the same directory as this file will
-#       be used.
-#     :param str pythonapp: the Python interpreter to be used.
-#       Defaults to sys.executable which is usually what is wanted.
-#     :param str terminal: a name for a preferred terminal emulator
-#     '''
-#     import subprocess
-#     if g2script is None:
-#         g2script = os.path.join(os.path.dirname(__file__),'GSASII.py')
-
-#     if sys.platform == "darwin":
-#         if project:
-#             script = f'''
-# set python to "{pythonapp}"
-# set appwithpath to "{g2script}"
-# set filename to "{project}"
-# set filename to the quoted form of the POSIX path of filename
-
-# tell application "Terminal"
-#      activate
-#      do script python & " " & appwithpath & " " & filename & "; exit"
-# end tell
-# '''
-#         else:
-#             script = f'''
-# set python to "{pythonapp}"
-# set appwithpath to "{g2script}"
-
-# tell application "Terminal"
-#      activate
-#      do script python & " " & appwithpath & " " & "; exit"
-# end tell
-# '''
-#         subprocess.Popen(["osascript","-e",script])
-#     elif sys.platform.startswith("win"):
-#         cmds = [pythonapp, g2script]
-#         if project: cmds += [project]
-#         subprocess.Popen(cmds,creationflags=subprocess.CREATE_NEW_CONSOLE)
-#     else:
-#         import shutil
-#         script = ''
-#         # try a bunch of common terminal emulators in Linux
-#         # there does not appear to be a good way to way to specify this
-#         # perhaps this should be a GSAS-II config option
-#         for term in ("lxterminal", "gnome-terminal", 'konsole', "xterm",
-#                          "terminator", "terminology", "tilix"):
-#             try:
-#                 found = shutil.which(term)
-#                 if not found: continue
-#             except AttributeError:
-#                 print(f'shutil.which() failed (why?); assuming {term} present')
-#                 found = True
-#             if term == "gnome-terminal":
-#                 #terminal = 'gnome-terminal -t "GSAS-II console" --'
-#                 cmds = [term,'--title','"GSAS-II console"','--']
-#                 script = "echo; echo Press Enter to close window; read line"
-#                 break
-#             elif term == "lxterminal":
-#                #terminal = 'lxterminal -t "GSAS-II console" -e'
-#                cmds = [term,'-t','"GSAS-II console"','-e']
-#                script = "echo;echo Press Enter to close window; read line"
-#                break
-#             elif term == "xterm":
-#                 #terminal = 'xterm -title "GSAS-II console" -hold -e'
-#                 cmds = [term,'-title','"GSAS-II console"','-hold','-e']
-#                 script = "echo; echo This window can now be closed"
-#                 break
-#             elif term == "terminator":
-#                 cmds = [term,'-T','"GSAS-II console"','-x']
-#                 script = "echo;echo Press Enter to close window; read line"
-#                 break
-#             elif term == "konsole":
-#                 cmds = [term,'-p','tabtitle="GSAS-II console"','--hold','-e']
-#                 script = "echo; echo This window can now be closed"
-#                 break
-#             elif term == "tilix":
-#                 cmds = [term,'-t','"GSAS-II console"','-e']
-#                 script = "echo;echo Press Enter to close window; read line"
-#                 break
-#             elif term == "terminology":
-#                 cmds = [term,'-T="GSAS-II console"','--hold','-e']
-#                 script = "echo; echo This window can now be closed"
-#                 break
-#         else:
-#             print("No known terminal was found to use, Can't start {}")
-#             return
-
-#         fil = '/tmp/GSAS2-launch.sh'
-#         cmds += ['/bin/sh',fil]
-#         fp = open(fil,'w')
-#         if project:
-#             fp.write(f"{pythonapp} {g2script} {project}\n")
-#         else:
-#             fp.write(f"{pythonapp} {g2script}\n")
-#         fp.write(f"rm {fil}\n")
-#         if script:
-#             fp.write(f"{script}\n")
-#         fp.close()
-#         subprocess.Popen(cmds,start_new_session=True)
 
 #===========================================================================
 def ExtractFileFromZip(filename, selection=None, confirmread=True,

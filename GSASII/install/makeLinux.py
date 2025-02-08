@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 '''
 This script creates a menu entry and dektop shortcut for Gnome
-(and perhaps KDE) desktop managers. The most recent testing 
+(and perhaps KDE) desktop managers. The most recent testing
 has been on Raspberry Pi OS.
-My hope is to improve this further to work conveniently with a wider 
-range of Linux desktop managers. 
+My hope is to improve this further to work conveniently with a wider
+range of Linux desktop managers.
 
-Run this script with one optional argument, the location of the GSASII.py
+Run this script with one optional argument, the location of the G2.py
 file. That location may be specified relative to the current path or given
-an absolute path, but will be accessed via an absolute path. 
-If no arguments are supplied, the path to the ``GSASII.py`` file
-is assumed to be in the parent directory to the one where this file 
-(``makeLinux.py``) is found. 
+an absolute path, but will be accessed via an absolute path.
+If no arguments are supplied, the path to the ``G2.py`` file
+is assumed to be in the parent directory to the one where this file
+(``makeLinux.py``) is found.
 
 The contents of this file may also be run from inside the gitstrap.py
-installation script. In that case, the following variables are already 
-defined: 
+installation script. In that case, the following variables are already
+defined:
 
   * path2GSAS2   is the directory with all GSAS-II Python code
-  * G2script     has the location of the GSASII.py file
+  * G2script     has the location of the G2.py file
   * path2repo    is the location of the GSAS-II git repository
 
-The path to Python is determined from the version of Python used to 
+The path to Python is determined from the version of Python used to
 run this script.
 '''
 import sys, os, os.path, stat, shutil, subprocess, plistlib
@@ -45,7 +45,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         # find the main GSAS-II script if not on command line
         path2GSAS2 = os.path.dirname(os.path.dirname(__file__))
         path2repo = os.path.dirname(path2GSAS2)
-        G2script = os.path.abspath(path2GSAS2,"GSASII.py")
+        G2script = os.path.abspath(path2GSAS2,"G2.py")
     elif __file__.endswith("makeLinux.py") and len(sys.argv) == 2:
         G2script = os.path.abspath(sys.argv[1])
         path2GSAS2 = os.path.dirname(G2script)
@@ -56,10 +56,10 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         print(f"running makeLinux.py indirectly inside {__file__!r}")
     pythonexe = os.path.realpath(sys.executable)
     G2icon = os.path.join(path2GSAS2,'icons','gsas2.png')
-    
+
     print('Python installed at ',pythonexe)
     print('GSAS-II installed at',path2GSAS2)
-    print('GSASII.py at        ',G2script)
+    print('G2.py at            ',G2script)
     print('GSASII icon at      ',G2icon)
 
     # make sure we have the stuff we need
@@ -72,7 +72,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
     if os.path.splitext(G2script)[1] != '.py':
         print("\nScript "+G2script+" does not have extension .py")
         Usage()
-        
+
     mfile = None   # menu file
     if "XDG_DATA_HOME" in os.environ and os.path.exists(
             os.path.join(os.environ.get("XDG_DATA_HOME"),"applications")):
@@ -139,7 +139,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         elif term == "terminology":
             terminal = term + ' -T="GSAS-II console" --hold -e'
             script = "echo; echo This window can now be closed"
-            break                
+            break
         else:
             print("unknown terminal",term)
             sys.exit()
@@ -147,7 +147,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         print("No terminal found -- no shortcuts created")
         sys.exit()
     add2script = ''
-    if script: add2script = '; ' + script 
+    if script: add2script = '; ' + script
     for f,t in zip((dfile,mfile),('Desktop','Menu')):
         if f is None: continue
         try:

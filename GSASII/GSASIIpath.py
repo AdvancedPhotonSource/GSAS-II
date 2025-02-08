@@ -36,16 +36,16 @@ fmtver = lambda v: str(v//1000)+'.'+str(v%1000)
 intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
 
 def GetConfigValue(key,default=None,getDefault=False):
-    '''Return the configuration file value for key or a default value 
+    '''Return the configuration file value for key or a default value
     if not specified.
-    
+
     :param str key: a value to be found in the configuration settings
-    :param any default: a value to be supplied if a value for key is 
-      not specified in the config file or the config file is not found. 
+    :param any default: a value to be supplied if a value for key is
+      not specified in the config file or the config file is not found.
       Defaults to None.
-    :param bool getDefault: If True looks up the default value from the 
-      config_example.py file (default value is False). Do not specify a 
-      getDefault=True if a value is provided for default. 
+    :param bool getDefault: If True looks up the default value from the
+      config_example.py file (default value is False). Do not specify a
+      getDefault=True if a value is provided for default.
     :returns: the value found or the default.
     '''
     if getDefault:
@@ -58,11 +58,11 @@ def GetConfigValue(key,default=None,getDefault=False):
         return None
 
 def SetConfigValue(parmdict):
-    '''Set configuration variables. Note that parmdict is a dictionary 
-    from :func:`GSASIIctrlGUI.GetConfigValsDocs` where each element is a 
-    lists. The first item in list is the default value, the second is 
-    the value to use for that configuration variable. Most of the 
-    information gathered in GetConfigValsDocs is no longer used. 
+    '''Set configuration variables. Note that parmdict is a dictionary
+    from :func:`GSASIIctrlGUI.GetConfigValsDocs` where each element is a
+    lists. The first item in list is the default value, the second is
+    the value to use for that configuration variable. Most of the
+    information gathered in GetConfigValsDocs is no longer used.
     '''
     global configDict
     for var in parmdict:
@@ -924,7 +924,7 @@ def runScript(cmds=[], wait=False, G2frame=None):
             projectfile = ''
             if G2frame.GSASprojectfile:
                 projectfile = os.path.realpath(G2frame.GSASprojectfile)
-            main = os.path.join(path2GSAS2,'GSASII.py')
+            main = os.path.join(path2GSAS2,'G2.py')
             ex = sys.executable
             if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
                 if os.path.exists(ex+'w'): ex += 'w'
@@ -946,7 +946,7 @@ def runScript(cmds=[], wait=False, G2frame=None):
 
 def IPyBreak_base(userMsg=None):
     '''A routine that invokes an IPython session at the calling location
-    This routine is only used when debug=True is set in the configuration 
+    This routine is only used when debug=True is set in the configuration
     settings
     '''
     savehook = sys.excepthook # save the exception hook
@@ -979,7 +979,7 @@ def exceptHook(*args):
     '''A routine to be called when an exception occurs. It prints the traceback
     with fancy formatting and then calls an IPython shell with the environment
     of the exception location.
-    
+
     This routine is only used when debug=True is set in the configuration settings
     '''
     try:
@@ -1026,7 +1026,7 @@ def DoNothing():
     pass
 
 def InvokeDebugOpts():
-    'Called in GSASII.py to set up debug options'
+    'Called to set up debug options'
     if any('SPYDER' in name for name in os.environ):
         print('Running from Spyder, keeping breakpoint() active & skipping exception trapping')
     elif GetConfigValue('debug'):
@@ -1136,13 +1136,13 @@ def SetBinaryPath(showConfigMsg=False):
     BinaryPathFailed = pathHacking._path_discovery(showConfigMsg)
 
 def WriteConfig(configDict):
-    '''Write the configDict information to the GSAS-II ini settings 
-    into file ~/.GSASII/config.ini. Called from 
+    '''Write the configDict information to the GSAS-II ini settings
+    into file ~/.GSASII/config.ini. Called from
     :func:`GSASIIctrlGUI.SaveConfigVars`.
     '''
     import configparser
-    
-    localdir = os.path.expanduser('~/.GSASII')
+
+    localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
     if not os.path.exists(localdir):
         try:
             os.mkdir(g2local)
@@ -1166,13 +1166,37 @@ def LoadConfig(printInfo=True):
     :param bool printInfo: if printInfo is True (default) then a message
       is shown with the number of settings read (upon startup).
     '''
+    def XferConfigIni():
+        '''copy the contents of the config.py file to file ~/.GSASII/config.ini.
+        This "patch code" used for master->develop transition and can eventually
+        be removed.
+        '''
+        import types
+        configDict = {}
+        try:
+            import config
+            #import config_example as config
+            for i in config.__dict__:
+                if i.startswith('__') and i.endswith('__'): continue
+                if isinstance(config.__dict__[i],types.ModuleType): continue
+                configDict.update({i:str(config.__dict__[i])})
+        except ImportError as err:
+            print("Error importing config.py file\n",err)
+            return
+        except Exception as err:
+            print("Error reading config.py file\n",err)
+            return
+        print(f"Contents of {config.__file__} to be written...")
+        WriteIniConfi(configDict)
+
     import configparser
     global configDict
     configDict = {}
-    cfgfile = os.path.expanduser('~/.GSASII/config.ini')
+    cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
     if not os.path.exists(cfgfile):
         print(f'N.B. Configuration file {cfgfile} does not exist')
-        return
+        # patch 2/7/25: transform GSAS-II config.py contents to config.ini
+        XferConfigIni()
     try:
         from . import config_example
     except ImportError as err:
@@ -1201,7 +1225,7 @@ def LoadConfig(printInfo=True):
         try:
             if cfgG[key] == 'None':
                 configDict[capKey] = None
-            elif key.endswith('_pos') or key.endswith('_size'): # list of integers                
+            elif key.endswith('_pos') or key.endswith('_size'): # list of integers
                 configDict[capKey] = tuple([int(i) for i in
                                     cfgG[key].strip('()').split(',')])
             elif key.endswith('_location') or key.endswith('_directory') or key.endswith('_exec'): # None (above) or str
@@ -1212,7 +1236,7 @@ def LoadConfig(printInfo=True):
                     res = []
                 else:
                     res = [i.strip("'").replace(r'\\','\\') for i in s.split(', ')]
-                configDict[capKey] = res                                    
+                configDict[capKey] = res
             elif isinstance(config_example.__dict__[capKey],bool):
                 configDict[capKey] = cfgG.getboolean(key)
             elif isinstance(config_example.__dict__[capKey],float):
@@ -1230,41 +1254,6 @@ def LoadConfig(printInfo=True):
         print (f'{len(configDict)} values read from {cfgfile}')
     # make sure this value is set
     configDict['Clip_on'] = configDict.get('Clip_on',True)
-        
-# def MacStartGSASII(g2script,project=''):
-#     '''Start a new instance of GSAS-II by opening a new terminal window and starting
-#     a new GSAS-II process. Used on Mac OS X only.
-
-#     :param str g2script: file name for the GSASII.py script
-#     :param str project: GSAS-II project (.gpx) file to be opened, default is blank
-#       which opens a new project
-#     '''
-#     if project and os.path.splitext(project)[1] != '.gpx':
-#         print(f'file {project} cannot be used. Not GSAS-II project (.gpx) file')
-#         return
-#     if project and not os.path.exists(project):
-#         print(f'file {project} cannot be found.')
-#         return
-#     elif project:
-#         project = os.path.abspath(project)
-#         if not os.path.exists(project):
-#             print(f'lost project {project} with abspath')
-#             raise Exception(f'lost project {project} with abspath')
-#     g2script = os.path.abspath(g2script)
-#     pythonapp = sys.executable
-#     if os.path.exists(pythonapp+'w'): pythonapp += 'w'
-#     script = f'''
-# set python to "{pythonapp}"
-# set appwithpath to "{g2script}"
-# set filename to "{project}"
-# set filename to the quoted form of the POSIX path of filename
-
-# tell application "Terminal"
-#      activate
-#      do script python & " " & appwithpath & " " & filename & "; exit"
-# end tell
-# '''
-#     subprocess.Popen(["osascript","-e",script])
 
 def MacRunScript(script):
     '''Start a bash script in a new terminal window.
@@ -1944,7 +1933,7 @@ to update/regress repository from git repository:
 
     if gitUpdate:
         # now restart GSAS-II with the new version
-        # G2scrpt = os.path.join(path2GSAS2,'GSASII.py')
+        # G2scrpt = os.path.join(path2GSAS2,'G2.py')
         if project:
             print(f"Restart GSAS-II with project file {project!r}")
             # subprocess.Popen([sys.executable,G2scrpt,project])

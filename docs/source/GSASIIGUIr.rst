@@ -140,7 +140,7 @@ Function name                      Description
                                    to a function. This function allows all the menu Ids to be
                                    defined as the menus are created in one place and then can be 
                                    used in Bind elsewhere in the code.
-:func:`openInNewTerm`              opens a Python routine (usually GSASII.py) in a
+:func:`openInNewTerm`              opens a Python routine (usually G2.py) in a
                                    new terminal window (works on all platforms)				   
 ================================  =================================================================
 

@@ -4367,7 +4367,6 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.LastGPXdir = dlg.GetDirectory()
         finally:
             dlg.Destroy()
-        #G2script = os.path.join(os.path.split(__file__)[0],'GSASII.py')
         G2fil.openInNewTerm(GSASprojectfile)
 
     def SetTitleByGPX(self):
@@ -8607,7 +8606,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2frame.PatternId = item
             data = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,item,'PDF Controls'))
             G2pdG.UpdatePDFGrid(G2frame,data)
-            for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
+            for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs
             if len(data['G(R)']):
                 G2plt.PlotISFG(G2frame,data,plotType='G(R)')
         elif G2frame.GPXtree.GetItemText(item) == 'Phases':
@@ -8677,7 +8676,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
         G2pdG.UpdatePDFGrid(G2frame,data)
-        for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
+        for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs
         if len(data['G(R)']):
             if 'I(Q)' in data:  G2plt.PlotISFG(G2frame,data,plotType='I(Q)')
             if 'S(Q)' in data:  G2plt.PlotISFG(G2frame,data,plotType='S(Q)')

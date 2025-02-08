@@ -1473,7 +1473,7 @@ def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
       passed to the script (usually a .gpx file to be opened in
       a new GSAS-II session)
     :param str g2script: the script to be run. If None (default)
-      the GSASII.py file in the same directory as this file will
+      the G2.py file in the same directory as this file will
       be used.
     :param str pythonapp: the Python interpreter to be used.
       Defaults to sys.executable which is usually what is wanted.
@@ -1481,7 +1481,7 @@ def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
     '''
     import subprocess
     if g2script is None:
-        g2script = os.path.join(os.path.dirname(__file__),'GSASII.py')
+        g2script = os.path.join(os.path.dirname(__file__),'G2.py')
 
     if sys.platform == "darwin":
         if project:

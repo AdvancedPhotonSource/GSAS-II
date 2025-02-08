@@ -1,3 +1,6 @@
+# obsolete GSAS-II settings file
+config.py
+
 # local code for debugging
 debug_setup.py.example
 debug_setup.py

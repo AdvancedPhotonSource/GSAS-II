@@ -9,7 +9,7 @@ import numpy as np
 import testinp.spctestinp as spctestinp
 import testinp.sgtbxtestinp as sgtbxtestinp
 
-import importlib
+import importlib.util
 if importlib.util.find_spec('GSASII') is None: # hack path if GSASII not installed into Python
     home = os.path.dirname(__file__)
     sys.path.append(os.path.dirname(home))

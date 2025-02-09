@@ -1145,10 +1145,10 @@ def WriteConfig(configDict):
     localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
     if not os.path.exists(localdir):
         try:
-            os.mkdir(g2local)
+            os.mkdir(localdir)
             print(f'Created directory {localdir}')
-        except:
-            print(f'Error trying to create directory {localdir}')
+        except Exception as msg:
+            print(f'Error trying to create directory {localdir}\n{msg}')
             return True
     cfgfile = os.path.join(localdir,'config.ini')
     cfgP = configparser.ConfigParser()
@@ -1187,7 +1187,7 @@ def LoadConfig(printInfo=True):
             print("Error reading config.py file\n",err)
             return
         print(f"Contents of {config.__file__} to be written...")
-        WriteIniConfi(configDict)
+        WriteConfig(configDict)
 
     import configparser
     global configDict

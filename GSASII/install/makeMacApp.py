@@ -2,6 +2,7 @@
 #------------------------------------------------------------
 # this version intended for use with git installations
 #------------------------------------------------------------
+# TODO: clean up use of args: installLoc will always be the parent of path2GSAS
 '''
 This routine creates an app bundle named GSAS-II.app. Inside the
 bundle is a symbolic link to the Python executable named "GSAS-II"
@@ -25,18 +26,17 @@ seems to work.
 
 Three different paths are needed to run this script::
 
-    path2GSAS:  The location where the G2.py (and other GSAS-II
-       Python files) are found.
+    path2GSAS:  The location where the GSAS-II Python files are found.
     installLoc: The location where the GSAS-II.app app bundle and
-       the GSAS-II.py will be placed.
+       the GSAS-II.py will be placed. This will be the parent of path2GSAS
     pythonLoc:  The location of the Python executable.
 
 Under normal circumstances, the locations for all of these paths
 can be determined from the location of the makeMacApp.py file.
 Note that when GSAS-II is installed from git using gitstrap.py,
 the git repository is placed at <loc>/GSAS-II and the GSAS-II
-Python scripts are placed at the GSASII child directory, so that
-GSAS-II is started from the G2.py script at <loc>/GSAS-II/GSASII/
+Python scripts are placed in the <loc>/GSAS-II/GSASII child directory. 
+GSAS-II is started from the <loc>/GSAS-II/GSAS-II.py script created here
 and the current script (makeMacApp.py) will be found in
 <loc>/GSAS-II/GSASII/install/.
 
@@ -104,13 +104,13 @@ if __name__ == '__main__':
     if len(sys.argv) == 4:
         pythonLoc = os.path.abspath(sys.argv[3])
     # sanity checking
-    G2script = os.path.abspath(os.path.join(path2GSAS,"G2.py"))
-    if not os.path.exists(G2script):
-        print(f"\nERROR: File {G2script!r} not found")
-        Usage()
-    if os.path.splitext(G2script)[1].lower() != '.py':
-        print(f"\nScript {G2script!r} does not have extension .py")
-        Usage()
+    # G2script = os.path.abspath(os.path.join(path2GSAS,"G2.py"))
+    # if not os.path.exists(G2script):
+    #     print(f"\nERROR: File {G2script!r} not found")
+    #     Usage()
+    # if os.path.splitext(G2script)[1].lower() != '.py':
+    #     print(f"\nScript {G2script!r} does not have extension .py")
+    #     Usage()
     if not os.path.exists(installLoc):
         print(f"\nERROR: directory {installLoc!r} not found")
         Usage()
@@ -127,7 +127,7 @@ if __name__ == '__main__':
         Usage()
 
     print(f'Using Python: {pythonLoc}')
-    print(f'Using GSAS-II script: {G2script}')
+    #print(f'Using GSAS-II script: {G2script}')
     print(f'Install location: {installLoc}')
 
     # files to be created
@@ -135,17 +135,27 @@ if __name__ == '__main__':
     g2Name = os.path.abspath(os.path.join(installLoc,project+'.py'))
 
 # new approach, use previously created tar (.tgz) file
+# with pre-built startup app. See macStartScript.py
 if __name__ == '__main__' and sys.platform == "darwin":
     if os.path.exists(appName):
         print(f"\nRemoving old Mac app {appName!r}")
         subprocess.call(["rm","-rf",appName])
     subprocess.call(["mkdir","-p",appName])
     subprocess.call(["tar","xzvf",tarLoc,'-C',appName])
-    # create a link named GSAS-II.py to the script
+    # create a script named GSAS-II.py to be run by the AppleScript
     if os.path.exists(g2Name): # cleanup
-        print(f"\nRemoving sym link {g2Name!r}")
+        print(f"\nRemoving {g2Name!r}")
         os.remove(g2Name)
-    os.symlink(G2script,g2Name)
+    #os.symlink(G2script,g2Name)
+    open(g2Name,'w').write('''# this script starts GSAS-II when not installed into Python
+# it will be called from the GSAS-II.app AppleScript
+# it should be not be renamed or moved
+import sys,os
+print('Hacking sys.path to provide access to GSAS-II')
+sys.path.insert(0,os.path.dirname(__file__))
+from GSASII.GSASIIGUI import main
+main()
+''')
     if pythonLoc != os.path.join(installLoc,'../bin',"python"):
         link = os.path.join(appName,'Contents','MacOS','GSAS-II')
         try:
@@ -160,181 +170,3 @@ if __name__ == '__main__' and sys.platform == "darwin":
     subprocess.call(["open","-R",appName])
 
     sys.exit()
-
-#if __name__ == '__main__' and sys.platform == "darwin":
-if False:
-    iconfile = os.path.join(path2GSAS,'icons','gsas2.icns') # optional icon file
-    if not os.path.exists(iconfile): # patch 3/2024 for svn dir organization
-        iconfile = os.path.join(path2GSAS,'gsas2.icns') # optional icon file
-
-    AppleScript = '''(*   GSAS-II AppleScript by B. Toby (brian.toby@anl.gov)
-     It can launch GSAS-II by double clicking or by dropping a data file
-     or folder over the app.
-     It runs GSAS-II in a terminal window.
-*)
-
-(* test if a file is present and exit with an error message if it is not  *)
-on TestFilePresent(appwithpath)
-	tell application "System Events"
-		if (file appwithpath exists) then
-		else
-			display dialog "Error: file " & appwithpath & " not found. If you have moved this file recreate the AppleScript with bootstrap.py." with icon caution buttons {{"Quit"}}
-			return
-		end if
-	end tell
-end TestFilePresent
-
-(*
-------------------------------------------------------------------------
-this section responds to a double-click. No file is supplied to GSAS-II
-------------------------------------------------------------------------
-*)
-on run
-	set python to "{:s}"
-	set appwithpath to "{:s}"
-	set env to "{:s}"
-	TestFilePresent(appwithpath)
-	TestFilePresent(python)
-	tell application "Terminal"
-		do script env & python & " " & appwithpath & "; exit"
-	end tell
-end run
-
-(*
------------------------------------------------------------------------------------------------
-this section handles starting with files dragged into the AppleScript
- o it goes through the list of file(s) dragged in
- o then it converts the colon-delimited macintosh file location to a POSIX filename
- o for every non-directory file dragged into the icon, it starts GSAS-II, passing the file name
-------------------------------------------------------------------------------------------------
-*)
-
-on open names
-	set python to "{:s}"
-	set appwithpath to "{:s}"
-	set env to "{:s}"
-
-	TestFilePresent(appwithpath)
-	repeat with filename in names
-		set filestr to (filename as string)
-		if filestr ends with ":" then
-                        (* should not happen, skip directories *)
-		else
-			(* if this is an input file, open it *)
-			set filename to the quoted form of the POSIX path of filename
-			tell application "Terminal"
-				activate
-				do script env & python & " " & appwithpath & " " & filename & "; exit"
-			end tell
-		end if
-	end repeat
-end open
-'''
-    # create a link named GSAS-II.py to the script
-    newScript = os.path.join(path2GSAS,'GSAS-II.py')
-    if os.path.exists(newScript): # cleanup
-        print("\nRemoving sym link",newScript)
-        os.remove(newScript)
-    os.symlink(os.path.split(G2script)[1],newScript)
-    G2script=newScript
-
-    # find Python used to run GSAS-II and set a new to use to call it
-    # inside the app that will be created
-    pythonExe = os.path.realpath(sys.executable)
-    newpython =  os.path.join(appPath,"Contents","MacOS",projectname)
-
-    # create an app using this python and if that fails to run wx, look for a
-    # pythonw and try that with wx
-    for i in 1,2,3:
-        if os.path.exists(appPath): # cleanup
-            print("\nRemoving old "+projectname+" app ("+str(appPath)+")")
-            shutil.rmtree(appPath)
-
-        shell = os.path.join("/tmp/","appscrpt.script")
-        f = open(shell, "w")
-        f.write(AppleScript.format(newpython,G2script,'',newpython,G2script,''))
-        f.close()
-
-        try:
-            subprocess.check_output(["osacompile","-o",appPath,shell],stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as msg:
-            print('''Error compiling AppleScript.
-            Report the next message along with details about your Mac to toby@anl.gov''')
-            print(msg.output)
-            sys.exit()
-        # create a link to the python inside the app, if named to match the project
-        if pythonExe != newpython: os.symlink(pythonExe,newpython)
-
-        # test if newpython can run wx
-        def RunPython(image,cmd):
-            'Run a command in a python image'
-            try:
-                err=None
-                p = subprocess.Popen([image,'-c',cmd],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                out = p.stdout.read()
-                err = p.stderr.read()
-                p.communicate()
-                return out,err
-            except Exception(err):
-                return '','Exception = '+err
-
-        testout,errout = RunPython(newpython,'import numpy; import wx; wx.App(); print("-"+"OK-")')
-        if isinstance(testout,bytes): testout = testout.decode()
-        if "-OK-" in testout:
-            print('wxpython app ran',testout)
-            break
-        elif i == 1:
-            print('Run of wx in',pythonExe,'failed, looking for pythonw')
-            pythonExe = os.path.join(os.path.split(sys.executable)[0],'pythonw')
-            if not os.path.exists(pythonExe):
-                print('Warning no pythonw found with ',sys.executable,
-                      '\ncontinuing, hoping for the best')
-        elif i == 2:
-            print('Warning could not run wx with',pythonExe,
-                      'will try with that external to app')
-            newpython = pythonExe
-        else:
-            print('Warning still could not run wx with',pythonExe,
-                      '\ncontinuing, hoping for the best')
-
-    # change the icon
-    oldicon = os.path.join(appPath,"Contents","Resources","droplet.icns")
-    #if os.path.exists(iconfile) and os.path.exists(oldicon):
-    if os.path.exists(iconfile):
-        shutil.copyfile(iconfile,oldicon)
-
-    # Edit the app plist file to restrict the type of files that can be dropped
-    if hasattr(plistlib,'load'):
-        fp = open(os.path.join(appPath,"Contents",'Info.plist'),'rb')
-        d = plistlib.load(fp)
-        fp.close()
-    else:
-        d = plistlib.readPlist(os.path.join(appPath,"Contents",'Info.plist'))
-    d['CFBundleDocumentTypes'] = [{
-        'CFBundleTypeExtensions': ['gpx'],
-        'CFBundleTypeName': 'GSAS-II project',
-        'CFBundleTypeRole': 'Editor'}]
-
-    if hasattr(plistlib,'dump'):
-        fp = open(os.path.join(appPath,"Contents",'Info.plist'),'wb')
-        plistlib.dump(d,fp)
-        fp.close()
-    else:
-        plistlib.writePlist(d,os.path.join(appPath,"Contents",'Info.plist'))
-
-    # Big Sur: open & save the file in the editor to set authorization levels
-    osascript = '''
-    tell application "Script Editor"
-       set MyName to open "{}"
-       save MyName
-       (* close MyName *)
-       (* quit *)
-    end tell
-'''.format(appPath)
-    # detect MacOS 11 (11.0 == 10.16!)
-    if platform.mac_ver()[0].split('.')[0] == '11' or platform.mac_ver()[0][:5] == '10.16':
-        print("\nFor Big Sur and later, save the app in Script Editor before using it\n")
-        subprocess.Popen(["osascript","-e",osascript])
-    print("\nCreated "+projectname+" app ("+str(appPath)+
-          ").\nViewing app in Finder so you can drag it to the dock if, you wish.")
-    subprocess.call(["open","-R",appPath])

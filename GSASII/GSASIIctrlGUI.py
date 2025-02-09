@@ -10192,9 +10192,13 @@ The switch will be made unless Cancel is pressed.'''
         print(f'running {script}')
         import subprocess
         out = subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
-    # On linux, make a desktop icon
-    # On windows make a batch file
-    #    each has hard-coded paths to Python and GSAS-II
+    # On windows make a batch file with hard-coded paths to Python and GSAS-II
+    elif script and sys.platform.startswith('win'):
+        script = os.path.normpath(os.path.join(GSASIIpath.path2GSAS2,'install',s))
+        print(f'running {script!r}')
+        import subprocess
+        out = subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
+    # On linux, make a desktop icon with hard-coded paths to Python and GSAS-II
     elif script:
         sys.argv = [script]
         print(f'running {sys.argv[0]}')

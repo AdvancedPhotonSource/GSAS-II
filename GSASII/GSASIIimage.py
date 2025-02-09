@@ -1469,7 +1469,7 @@ def MakeUseMask(data,masks,blkSize=128):
 
 def MakeGainMap(image,Ix,Iy,data,blkSize=128):
     import scipy.ndimage.filters as sdif
-    Iy *= npcosd(Ix[:-1])**3       #undo parallax
+    Iy /= npcosd(Ix[:-1])       #undo parallax
     Iy *= (1000./data['distance'])**2    #undo r^2 effect
     Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
     if data['Oblique'][1]:

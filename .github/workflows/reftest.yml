@@ -37,7 +37,8 @@ jobs:
     steps:
       # checkout repo
       - uses: actions/checkout@v2
-        ref: develop
+        with:
+          ref: develop
 
       # set up pixi
       - uses: prefix-dev/setup-pixi@v0.8.1

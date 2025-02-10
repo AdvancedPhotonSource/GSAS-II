@@ -1,0 +1,56 @@
+name: explore self-test fail
+
+on: [workflow_dispatch]
+
+#on:
+  #workflow_dispatch:   # Allows you to run this workflow manually from the Actions tab
+  # Runs on pushes targeting the default branch
+  #push:
+  #  branches-ignore:
+  #    - master
+  #   branches: ['develop']
+  #pull_request:
+  #  branches: ['develop']
+
+
+
+
+# Default to bash
+defaults:
+  run:
+    shell: bash
+
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+#          - name: 'ubuntu-22.04'
+#          - name: 'macos-latest'
+          - name: 'windows-latest'
+            cmd_extra: '-win'
+#        env: ['py310', 'py311', 'py312', 'py313']
+        env: ['py312']
+    runs-on: ${{ matrix.os.name }}
+    steps:
+      # checkout repo
+      - uses: actions/checkout@v2
+
+      # set up pixi
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          environments: ${{ matrix.env }}
+          pixi-version: v0.39.5
+          manifest-path: pixi/pixi.toml
+
+      # run install to see if it works
+      - name: Build
+        run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
+
+      - name: test
+        run: |
+          ls
+          ls ..
+          python tests/test_scriptref.py

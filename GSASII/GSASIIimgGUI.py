@@ -362,7 +362,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2plt.PlotExposedImage(G2frame,event=None)
         if Id: G2frame.GPXtree.SelectItem(Id)
-
+        
+    def OnMultiGainMap(event):
+        print('TBD - gain map from multiple images')
+        
     def OnCalcRings(event):
         '''Use existing calibration values to compute rings & display them
         '''
@@ -1679,6 +1682,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     G2frame.Bind(wx.EVT_MENU, OnCalcRings, id=G2G.wxID_CALCRINGS)
     G2frame.Bind(wx.EVT_MENU, OnDistRecalib, id=G2G.wxID_IMDISTRECALIB)
     G2frame.Bind(wx.EVT_MENU, OnClearCalib, id=G2G.wxID_IMCLEARCALIB)
+    G2frame.Bind(wx.EVT_MENU, OnMultiGainMap, id=G2G.wxID_IMMULTGAINMAP)
 #    if data.get('calibrant'):
 #        mode = True
 #    else:

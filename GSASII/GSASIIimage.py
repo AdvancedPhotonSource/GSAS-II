@@ -707,14 +707,19 @@ def GetTthAzmG(x,y,data):
         dxyz = dxyz0
     ctth = costth(dxyz)
     tth = npacosd(ctth)
-    azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.
-# G-calculation - use Law of sines
-    distm = data['distance']/1000.0
-    sinB2 = np.minimum(np.ones_like(tth),
-                    (data['distance']*npsind(tth))**2/(dx**2+dy**2))
-    #sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
-    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
-    G = distm**2*sinB2/npsind(C)**2
+    azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
+# old G-calculation        
+    x0 = data['distance']*nptand(tilt)
+    x0x = x0*npcosd(data['rotation'])
+    x0y = x0*npsind(data['rotation'])
+    distsq = data['distance']**2
+    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+# # G-calculation - use Law of sines - wrong for nonzero det2theta!
+#     distm = data['distance']/1000.0
+#     sinB2 = np.minimum(np.ones_like(tth),
+#         (data['distance']*npsind(tth))**2/(dx**2+dy**2))
+#     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+#     G = distm**2*sinB2/npsind(C)**2
     return tth,azm,G
 
 def meanAzm(a,b):
@@ -1468,7 +1473,7 @@ def MakeUseMask(data,masks,blkSize=128):
 
 def MakeGainMap(image,Ix,Iy,data,blkSize=128):
     import scipy.ndimage.filters as sdif
-    Iy *= npcosd(Ix[:-1])**3       #undo parallax
+    Iy /= npcosd(Ix[:-1])       #undo parallax
     Iy *= (1000./data['distance'])**2    #undo r^2 effect
     Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
     if data['Oblique'][1]:
@@ -1687,7 +1692,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         H1 = LRazm
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
-    H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
+    if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
+        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
     # H0 *= (data['distance']/1000.)**2    #remove r^2 effect - done earlier
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?

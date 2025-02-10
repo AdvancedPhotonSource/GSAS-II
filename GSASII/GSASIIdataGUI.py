@@ -6925,7 +6925,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2G.Define_wxId('wxID_IMCALIBRATE', 'wxID_IMRECALIBRATE', 'wxID_IMINTEGRATE', 'wxID_IMCLEARCALIB', 'wxID_IMRECALIBALL',
             'wxID_IMCOPYCONTROLS', 'wxID_INTEGRATEALL', 'wxID_IMSAVECONTROLS', 'wxID_IMLOADCONTROLS', 'wxID_IMAUTOINTEG',
             'wxID_IMCOPYSELECTED', 'wxID_SAVESELECTEDCONTROLS', 'wxID_IMXFERCONTROLS', 'wxID_IMRESETDIST', 'wxID_CALCRINGS',
-            'wxID_LOADELECTEDCONTROLS','wxID_IMDISTRECALIB', 'wxID_IMINTEGPDFTOOL')
+            'wxID_LOADELECTEDCONTROLS','wxID_IMDISTRECALIB', 'wxID_IMINTEGPDFTOOL','wxID_IMMULTGAINMAP')
         G2G.Define_wxId('wxID_IMDRWPHS')
         def _makemenu():     # routine to create menu when first used
             self.ImageMenu = wx.MenuBar()
@@ -6938,6 +6938,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.ImageEdit.Append(G2G.wxID_CALCRINGS,'Calculate rings','Calculate rings from calibration parameters')
             self.ImageEdit.Append(G2G.wxID_IMDISTRECALIB,'Multi-distance Recalibrate','Recalibrate all images varying delta-distance and fitting wavelength')
             self.ImageEdit.Append(G2G.wxID_IMCLEARCALIB,'Clear calibration','Clear calibration data points and rings')
+            self.ImageEdit.Append(G2G.wxID_IMMULTGAINMAP,'Multiimage Gain map','Make gain map from multiple images')
             ImageIntegrate = wx.Menu(title='')
             self.ImageMenu.Append(menu=ImageIntegrate, title='Integration')
             ImageIntegrate.Append(G2G.wxID_IMINTEGRATE,'Integrate','Integrate selected image')

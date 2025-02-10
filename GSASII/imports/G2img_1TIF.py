@@ -208,7 +208,7 @@ def GetTifData(filename):
     elif 270 in IFD:
         File.seek(IFD[270][2][0])
         S = File.read(IFD[273][2][0]-IFD[270][2][0])
-        if b'Pilatus3' in S:
+        if b'Pilatus3' in S or sizexy == [1475,1679]:
             tifType = 'Pilatus3'
             dataType = 0
             pixy = [172.,172.]

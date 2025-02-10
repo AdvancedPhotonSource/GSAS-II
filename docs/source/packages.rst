@@ -120,14 +120,16 @@ as defined in variable :attr:`GSASIIdataGUI.versionDict`,
 but for new installations we are currently recommending the following
 interpreter/package versions: 
 
- * Python 3.11 is recommended. GSAS-II should run with any Python
+ * Python 3.11, 3.12 or 3.13 is recommended. GSAS-II should run with any Python
    version from 3.7 or later, but you will need to locate (from the
    old subversion server) or locate binaries to match that Python version. 
  * wxPython 4.2 or later is recommended, but with Python <=3.9 any
    wx4.x version should be OK. However, there may be problems with
    newer sections of the GUI with wx <4.0.
- * NumPy 1.26 recommended, but anything from 1.17 on is likely fine,
-   but does need to approximately match the GSAS-II binaries. 
+ * NumPy 1.26 recommended with Python 3.11 and 2.2 with 3.12 or 3.13,
+   but anything from 1.17 on is likely fine,
+   but if you do not match the supplied GSAS-II binaries you will
+   need to build them yourself. 
  * matplotlib 3.6 is recommended, but 3.4 or later is preferred. 
  * pyOpenGL: no version-related problems have been seen.
  * SciPy: no version-related problems have been seen, but in at least one
@@ -138,9 +140,13 @@ For more details on problems noted with specific versions of Python
 and Python packages, see comments below and details here:
 :attr:`GSASIIdataGUI.versionDict`,
    
-Note that GSAS-II is currently being developed using Python 3.11. We
-are seeing compilation problems with Python 3.12 that will be addressed
-later via the build migration to meson.  We are no longer
+Note that GSAS-II is currently being developed using Python 3.11 and 3.13. We
+have just adopted a build process using meson in place of scons for
+Python 3.12+ but this is not incorporated into the master branch and
+is not fully documented. If you need to build the GSAS-II binaries at
+this time, please contact Brian. 
+
+We are no longer
 supporting Python 2.7 and <=3.6, and strongly encourage that
 systems running GSAS-II under these older Python versions reinstall
 Python. Typically this is done by reinstalling GSAS-II from a current self-installer. 
@@ -238,6 +244,9 @@ environment this command can be used::
   
   conda env export --from-history -n <env>
 
+Note that binaries for Python 3.12 and 3.13 are also now supplied,
+with numpy=2.2. 
+  
 .. _ScriptingRequirements:
 
   
@@ -323,12 +332,17 @@ Required Binary Files
 As noted before, GSAS-II also requires that some code be compiled.
 For the following platforms, binary images are provided at
 https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest
-for Python 3.11 and NumPy 1.26:
+for Python 3.11 and NumPy 1.26, Python 3.12 and NumPy 2.2, and Python
+3.13 and NumPy 2.2 for these platforms:
 
   * Windows-10: 64-bit Intel-compatible processors.
   * MacOS: Intel processors.
   * MacOS: ARM processors, aka Apple Silicon (M1, etc). 
-  * Linux: 64-bit Intel-compatible processors. 
+  * Linux: 64-bit Intel-compatible processors.
+
+Some binaries are also supplied for Raspberry Pi, but may not be
+up-to-date. Please ask for newer if needed:
+    
   * Linux: ARM processors (64-bit and 32-bit Raspberry Pi OS and
     Ubuntu for Raspberry Pi).
 
@@ -338,6 +352,10 @@ Should one wish to run GSAS-II where binary files are not
 supplied (such as 32-bit Windows or Linux) or with other combinations of
 Python/NumPy, compilation will be need to be done by the user. See
 the `compilation information <https://advancedphotonsource.github.io/GSAS-II-tutorials/compile.html>`_ for more information. 
+We have just adopted a build process using meson in place of scons for
+Python 3.12+ but this is not incorporated into the master branch and
+is not fully documented. If you need to build the GSAS-II binaries at
+this time, please contact Brian.
 
 Supported Externally-Developed Software
 ----------------------------------------------------

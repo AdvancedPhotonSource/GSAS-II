@@ -1215,7 +1215,11 @@ def LoadConfig(printInfo=True):
         return
 
     # Access values from the configuration file
-    cfgG = cfg['GUI settings']
+    try:
+        cfgG = cfg['GUI settings']
+    except KeyError:
+        cfgG = {}
+        
     for key in cfgG:
         key = key.lower()  # not needed... but in case configparser ever changes
         capKey = capsDict.get(key)

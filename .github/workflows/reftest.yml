@@ -53,6 +53,4 @@ jobs:
 
       - name: test
         run: |
-          ls
-          ls ..
-          python tests/test_scriptref.py
+          pixi run -e ${{ matrix.env }} python tests/test_scriptref.py

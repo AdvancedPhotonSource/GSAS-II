@@ -1,4 +1,4 @@
-name: explore self-test fail
+name: explore self-test failure
 
 on: [workflow_dispatch]
 
@@ -49,8 +49,8 @@ jobs:
 
       # run install to see if it works
       - name: Build
-        run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
+        run: pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
 
       - name: test
         run: |
-          pixi run -e ${{ matrix.env }} python tests/test_scriptref.py
+          pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} python tests/test_scriptref.py

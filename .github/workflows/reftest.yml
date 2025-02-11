@@ -51,11 +51,16 @@ jobs:
       - name: test
         run: |
           pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} python tests/debugref.py
+
+      - name: directory
+        if: failure()
+        run: |
           ls
+
 
       # if debug needed, create a copy of the build directory
       - name: Save artifact  # creates zip file with directory contents
-        #if: failure()
+        if: failure()
         uses: actions/upload-pages-artifact@v3
         with:
             path: .

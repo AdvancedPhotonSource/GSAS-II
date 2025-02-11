@@ -55,7 +55,8 @@ jobs:
       - name: directory
         if: failure()
         run: |
-          ls
+          mkdir ./debug
+	  mv *.gpx ./debug/
 
 
       # if debug needed, create a copy of the build directory
@@ -63,6 +64,6 @@ jobs:
         if: failure()
         uses: actions/upload-pages-artifact@v3
         with:
-            path: .
+            path: ./debug
             name: debugref
             retention-days: 1

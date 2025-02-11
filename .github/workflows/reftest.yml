@@ -51,7 +51,7 @@ jobs:
       - name: test
         run: |
           pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} python tests/debugref.py
-	  ls
+          ls
 
       # if debug needed, create a copy of the build directory
       - name: Save artifact  # creates zip file with directory contents

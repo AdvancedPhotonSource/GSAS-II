@@ -12,9 +12,6 @@ on: [workflow_dispatch]
   #pull_request:
   #  branches: ['develop']
 
-
-
-
 # Default to bash
 defaults:
   run:
@@ -53,4 +50,14 @@ jobs:
 
       - name: test
         run: |
-          pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} python tests/test_scriptref.py
+          pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} python tests/debugref.py
+	  ls
+
+      # if debug needed, create a copy of the build directory
+      - name: Save artifact  # creates zip file with directory contents
+        #if: failure()
+        uses: actions/upload-pages-artifact@v3
+        with:
+            path: .
+            name: debugref
+            retention-days: 1

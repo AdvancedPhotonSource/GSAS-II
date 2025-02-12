@@ -5196,6 +5196,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 break
 
         if kpoint is None:
+            wx.MessageBox(
+                "Please select a k-vector from the table.", 
+                style=wx.ICON_INFORMATION,
+                caption='Isotropic Subgroup Generation'
+            )
+
             return
 
         #isoscript='isocifform.php'
@@ -5206,15 +5212,23 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             Exploring Structural Distortions." J. Appl. Cryst.
             39, 607-614 (2006).
         '''
-        info_str = "CIF files of the isotropic subgroups associated with the "
-        info_str += "selected k-vector will be created.\n"
-        info_str += "Generated CIF files will be saved in the same directory "
-        info_str += "as the current project file."
+        info_str = '''CIF files of the isotropic subgroups associated with the
+            selected k-vector will be created.
+            Generated CIF files will be saved in the same directory as the
+            current project file.
+            This can take up to a few minutes. Check the terminal for progress.
+        '''
         wx.MessageBox(
             f"{isoCite}\n\n{info_str}", 
             style=wx.ICON_INFORMATION,
             caption='Isotropic Subgroup Generation'
         )
+
+        wx.GetApp().Yield()
+
+        info_msg = "Processing IRREPs for the selected k-vector. "
+        info_msg += "This can take up to a few minutes."
+        print(info_msg)
 
         phaseID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
         phase_nam = G2frame.kvecSearch['phase']
@@ -5427,8 +5441,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         data['input'] = 'kvector'
         data['irrepcount'] = '1'
-        # data['kvec1'] = '10 *P, k10 (1/3,1/3,g)'
-        # data['kparam31'] = '1/3'
 
         data_update = setup_kvec_input(kpoint_frac)
         for key, value in data_update.items():
@@ -5466,6 +5478,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         )
 
         for ir_opt, _ in ir_options:
+            print("Processing irrep:", ir_opt)
             data["input"] = "irrep"
             data['irrep1'] = ir_opt
             out4 = requests.post(isoformsite, data=data).text
@@ -5484,6 +5497,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             data["isofilename"] = iso_fn
 
             for radio_val in cleaned_radio_vals:
+                print("Processing mode:", radio_val)
                 data["input"] = "distort"
                 data["origintype"] = "method2"
                 data["orderparam"] = radio_val + '" CHECKED'
@@ -5494,6 +5508,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
                 cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
                 cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
+                cif_fn = os.path.join(os.getcwd(), cif_fn)
                 with open(cif_fn, 'wb') as fl:
                     fl.write(out_cif.encode("utf-8"))
 
@@ -5501,6 +5516,16 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 # TODO: 2. Keep everything in the current project, only
                 # TODO:    replacing the phase with the new CIF
                 # TODO: 3. Save the project files
+
+        info_msg = f'''Done with subgroup output for the selected k-vector.
+            Please check output files in the following directory,
+            {os.getcwd()}
+        '''
+        wx.MessageBox(
+            info_msg, 
+            style=wx.ICON_INFORMATION,
+            caption='Isotropic Subgroup Generation'
+        )
 
         try:
             os.unlink(tmp.name)

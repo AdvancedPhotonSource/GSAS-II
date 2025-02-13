@@ -10084,6 +10084,11 @@ def gitSwitch2DevBranch(event):
     to the develop (eventually to be renamed main) branch. 
     Complication here is that the GSASII.py file gets renamed 
     to G2.py so "shortcuts" need to be re-created to reference that. 
+
+    This is not yet "plumbed" into the current code, but it has been
+    tested with Windows and Mac. At some point this will be made part of the
+    update process in the master branch, but this routine is not needed in 
+    the develop (or eventially main) branch.
     '''
     G2frame = wx.App.GetMainTopWindow()
     gitInst = GSASIIpath.HowIsG2Installed()

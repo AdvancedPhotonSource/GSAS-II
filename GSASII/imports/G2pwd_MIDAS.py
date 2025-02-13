@@ -56,6 +56,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         '''Test if valid by seeing if the zarr module recognizes the file. Then
         get file type (currently Midas only)
         '''
+        fp = None
         try:
             fp = zarr.open(filename, 'r')
             if all([(i in fp) for i in self.midassections]): # are expected MIDAS sections present?

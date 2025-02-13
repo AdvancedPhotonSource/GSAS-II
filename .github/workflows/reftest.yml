@@ -1,6 +1,6 @@
 name: explore self-test failure
 
-on: [workflow_dispatch]
+on: [workflow_dispatch, push]
 
 #on:
   #workflow_dispatch:   # Allows you to run this workflow manually from the Actions tab
@@ -48,6 +48,10 @@ jobs:
       - name: Build
         run: pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
 
+      - name: test
+        run: |
+          pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} conda install m2w64-ntldd-git
+  
       - name: test
         run: |
           pixi run --manifest-path pixi/pixi.toml -e ${{ matrix.env }} python tests/debugref.py

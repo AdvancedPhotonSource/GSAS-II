@@ -4,6 +4,8 @@
 
 from __future__ import division, print_function
 from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+from .. import GSASIIfil as G2fil
 try:
     import imageio
 except ImportError:

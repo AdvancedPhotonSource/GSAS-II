@@ -16,7 +16,7 @@ py.extension_module('fmask',
         subdir: 'GSASII',
         )
 
-# Fortan compilation:
+# Fortran compilation:
 
 #histogram2d_source = custom_target('histogram2dmodule.c',
 #  input : ['histogram2d.for'],  # .f so no F90 wrappers

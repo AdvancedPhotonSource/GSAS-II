@@ -1157,7 +1157,7 @@ def WriteConfig(configDict):
     # Write the configuration file
     with open(cfgfile, 'w') as configfile:
         cfgP.write(configfile)
-    print(f"Configuraton settings saved as {cfgfile}")
+    print(f"Configuration settings saved as {cfgfile}")
 
 def LoadConfig(printInfo=True):
     '''Read configuration settings from ~/.GSASII/config.ini, if present.

@@ -20,7 +20,7 @@ build =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', de
 install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['savetags', 'build']}
 install-editable =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends-on=['clean-build', 'savetags']}
 
-build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build'], env={CC = 'clang-cl', CXX ='clang-cl'}}
+build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build'], } # env={CC = 'clang-cl', CXX ='clang-cl'}}
 install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['savetags', 'build-win']}
 install-editable-win =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends-on=['clean-build', 'savetags'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
 

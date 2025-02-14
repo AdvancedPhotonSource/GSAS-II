@@ -34,7 +34,7 @@ class CBF_ReaderClass(G2obj.ImportImage):
         return True
         
 def GetCbfData(self,filename):    
-    'Read cif binarydetector data cbf file'
+    'Read cif binary detector data cbf file'
     
     import unpack_cbf as cbf
     if GSASIIpath.GetConfigValue('debug'):

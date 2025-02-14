@@ -41,8 +41,10 @@ def GetEdfData(filename,imageOnly=False):
     sizexy = [0,0]
     pixSize = [154,154]     #Pixium4700?
     cent = [0,0]
+    pcent = [0,0]
     wave = 1.54187  #default <CuKa>
     dist = 1000.
+    Temperature = 300.
     head = ['European detector data',]
     for line in lines:
         line = line.replace(';',' ').strip()
@@ -55,31 +57,47 @@ def GetEdfData(filename,imageOnly=False):
             dType = fields[2]
         elif 'wavelength' in line:
             wave = float(fields[2])
+        elif 'Wavelength' in line:
+            wave = float(fields[2])*1.e10
         elif 'Size' in line:
             imSize = int(fields[2])
 #        elif 'DataType' in lines:
 #            dType = fields[2]
         elif 'pixel_size_x' in line:
             pixSize[0] = float(fields[2])
+        elif 'PSize_1' in line:
+            pixSize[0] = float(fields[2])*1.e6
         elif 'pixel_size_y' in line:
             pixSize[1] = float(fields[2])
-        elif 'beam_center_x' in line:
+        elif 'PSize_2' in line:
+            pixSize[1] = float(fields[2])*1.e6
+        elif 'beam_center_x' in line: 
             cent[0] = float(fields[2])
+        elif 'Center_1' in line:
+            pcent[0] = float(fields[2])
         elif 'beam_center_y' in line:
             cent[1] = float(fields[2])
+        elif 'Center_2' in line:
+            pcent[1] = float(fields[2])
         elif 'refined_distance' in line:
             dist = float(fields[2])
+        elif 'Temperature' in line:
+            Temperature = float(fields[2])
         if line:
             head.append(line)
         else:   #blank line at end of header
-            break  
+            break
+    if any(pcent):
+        cent[0] = pcent[0]*pixSize[0]/1000.
+        cent[1] = pcent[1]*pixSize[1]/1000.
     File.seek(fileSize-imSize)
     if dType == 'UnsignedShort':        
         image = np.array(np.frombuffer(File.read(imSize),dtype=np.int16),dtype=np.int32)
     else:
         image = np.array(np.frombuffer(File.read(imSize),dtype=np.int32),dtype=np.int32)
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
+    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist*1000.,'center':cent,
+            'size':sizexy,'Temperature':Temperature+273.}
     Npix = sizexy[0]*sizexy[1]
     File.close()    
     if imageOnly:

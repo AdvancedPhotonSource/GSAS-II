@@ -46,7 +46,6 @@ import GSASIIElem as G2elem
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
-import GSASIIstrIO as G2stIO
 
 DEBUG = False       #=True for various prints
 TRANSP = False      #=true to transpose images for testing
@@ -1382,7 +1381,7 @@ def LogCellChanges(G2frame):
             if not phasedict['Histograms'][hist]['Use']: continue
             hId = Histograms[hist]['hId']
             if any(phasedict['Histograms'][hist]['HStrain'][1]) or phasedict['General']['Cell'][0]:
-                cellList,cellSig = G2stIO.getCellSU(pId,hId,SGData,parmDict,covData)
+                cellList,cellSig = G2lat.getCellSU(pId,hId,SGData,parmDict,covData)
                 prevsig = 0
                 s = f'Phase {pId} Hist {hId}:'
                 for i,(lbl,defsig,val,sig) in enumerate(zip(cellNames,defsigL,cellList,cellSig)):

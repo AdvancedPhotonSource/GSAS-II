@@ -7470,7 +7470,7 @@ other than being included in the Notebook section of the project file.''')
     botSizer.Clear(True)
     parent = G2frame.dataWindow.bottomPanel    
     botSizer.Add((20,-1))
-    controls['Notebook']['order'] = controls['Notebook'].get('order',False)
+    controls['Notebook']['order'] = controls['Notebook'].get('order',True)
     botSizer.Add(wx.StaticText(parent,wx.ID_ANY,'  order: '),0,WACV)
     botSizer.Add(G2G.EnumSelector(parent,controls['Notebook'],
                          'order',['oldest-1st','newest-1st'],[False,True],

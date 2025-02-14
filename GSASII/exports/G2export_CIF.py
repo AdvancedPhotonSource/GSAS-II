@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''Classes in :mod:`G2export_CIF` follow:
 '''
@@ -76,7 +75,7 @@ def getCellwStrain(phasedict,seqData,pId,histname):
     try:    # convert to direct cell
         A,zeros = G2stIO.cellFill(pfx,phasedict['General']['SGData'],cellDict,zeroDict)
         cell = list(G2lat.A2cell(A)) + [G2lat.calc_V(A)]
-        cE = G2stIO.getCellEsd(pfx,phasedict['General']['SGData'],A,covData,unique=True)
+        cE = G2lat.getCellEsd(pfx,phasedict['General']['SGData'],A,covData,unique=True)
     except:
         cell = 7*[None]
         cE = 7*[None]
@@ -252,7 +251,7 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
                     A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
                     c = G2lat.A2cell(A)
                     vol = G2lat.calc_V(A)
-                    cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData,unique=True)
+                    cE = G2lat.getCellEsd(pfx,SGdata[pId],A,covData,unique=True)
                 except:
                     c = 6*[None]
                     cE = 6*[None]
@@ -1519,7 +1518,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         for h,T in Tlist.items():
             pId = phasedict['pId']
             hId = self.Histograms[h]['hId']
-            cellList,cellSig = G2stIO.getCellSU(pId,hId,
+            cellList,cellSig = G2lat.getCellSU(pId,hId,
                                         phasedict['General']['SGData'],
                                         self.parmDict,
                                         self.OverallParms['Covariance'])
@@ -1531,7 +1530,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         for h,T in DijTlist.items():
             pId = phasedict['pId']
             hId = self.Histograms[h]['hId']
-            cellList,cellSig = G2stIO.getCellSU(pId,hId,
+            cellList,cellSig = G2lat.getCellSU(pId,hId,
                                         phasedict['General']['SGData'],
                                         self.parmDict,
                                         self.OverallParms['Covariance'])
@@ -2433,7 +2432,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     if self.Histograms[h]['ranId'] == hRanId:
                         pId = phasedict['pId']
                         hId = self.Histograms[h]['hId']
-                        cellList,cellSig = G2stIO.getCellSU(pId,hId,
+                        cellList,cellSig = G2lat.getCellSU(pId,hId,
                                         phasedict['General']['SGData'],
                                         self.parmDict,
                                         self.OverallParms['Covariance'])
@@ -2578,7 +2577,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 if self.Histograms[h]['ranId'] == hRanId:
                     pId = phasedict['pId']
                     hId = self.Histograms[h]['hId']
-                    cellList,cellSig = G2stIO.getCellSU(pId,hId,
+                    cellList,cellSig = G2lat.getCellSU(pId,hId,
                                         phasedict['General']['SGData'],
                                         self.parmDict,
                                         self.OverallParms['Covariance'])

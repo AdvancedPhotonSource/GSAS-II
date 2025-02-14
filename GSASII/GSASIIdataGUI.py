@@ -3007,10 +3007,7 @@ If you continue from this point, it is quite likely that all intensity computati
                       GSASIIpath.GetConfigValue('Starting_directory'))
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
-            try:
-                self.GSASprojectfile = os.path.splitext(arg[1])[0]+u'.gpx'
-            except:
-                self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
+            self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
             self.dirname = os.path.abspath(os.path.dirname(arg[1]))
             if self.dirname:
                 self.GSASprojectfile = os.path.split(self.GSASprojectfile)[1]
@@ -5471,6 +5468,7 @@ If you continue from this point, it is quite likely that all intensity computati
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     self.reloadFromGPX(rtext,Rvals)
+                    G2IO.LogCellChanges(self)
                 if refPlotUpdate:
                     refPlotUpdate({},restore=True)
                     refPlotUpdate = None
@@ -7407,6 +7405,11 @@ other than being included in the Notebook section of the project file.''')
             data.append(f'[CM] {dlg.GetValue().strip()}')
         dlg.Destroy()
         wx.CallAfter(UpdateNotebook,G2frame,data)
+    def OnSaveNotebook(event):
+        filename = os.path.splitext(G2frame.GSASprojectfile)[0]+'_notebook.txt'
+        filename = os.path.join(G2frame.dirname,filename)
+        open(filename,'w').write(textBox.GetText())
+        print(f'Notebook contents written into {filename}')
     def onPlotNotebook():
         'Locate R values from the Notebook and plot them'
         NBinfo['plotLbl']
@@ -7438,11 +7441,11 @@ other than being included in the Notebook section of the project file.''')
     filterLbls = ['all',
                       'Timestamps','Refinement results','Variables',
                       'Comments','Charge flip','Fourier','Peak fit',
-                      'Constraints','Restraints','Rigid Bodies']
+                      'Constraints','Restraints','Rigid Bodies','Cell params']
     filterPrefix = ['',
                         'TS', 'REF','VARS',
                         'CM', 'CF', 'FM', 'PF',
-                        'CNSTR','RSTR','RB']
+                        'CNSTR','RSTR','RB','CEL']
     cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
     if cId:
         controls = G2frame.GPXtree.GetItemPyData(cId)
@@ -7468,7 +7471,7 @@ other than being included in the Notebook section of the project file.''')
     botSizer.Clear(True)
     parent = G2frame.dataWindow.bottomPanel    
     botSizer.Add((20,-1))
-    controls['Notebook']['order'] = controls['Notebook'].get('order',False)
+    controls['Notebook']['order'] = controls['Notebook'].get('order',True)
     botSizer.Add(wx.StaticText(parent,wx.ID_ANY,'  order: '),0,WACV)
     botSizer.Add(G2G.EnumSelector(parent,controls['Notebook'],
                          'order',['oldest-1st','newest-1st'],[False,True],
@@ -7488,9 +7491,12 @@ other than being included in the Notebook section of the project file.''')
     botSizer.Add((20,-1))
     botSizer.Add(fBtn,0,WACV)
     botSizer.Add((20,-1),1,wx.EXPAND,1)
+    Btn = wx.Button(parent,label='Save')
+    botSizer.Add(Btn,0,WACV)
+    Btn.Bind(wx.EVT_BUTTON,OnSaveNotebook)
     import wx.stc as stc
-    text = stc.StyledTextCtrl(G2frame.dataWindow,wx.ID_ANY)
-    text.SetScrollWidthTracking(True)    # does not seem to do anything
+    textBox = stc.StyledTextCtrl(G2frame.dataWindow,wx.ID_ANY)
+    textBox.SetScrollWidthTracking(True)    # does not seem to do anything
     if controls['Notebook']['order']:
         # reverse entries in blocks, so that lines stay after their timestamp
         order = []
@@ -7524,22 +7530,22 @@ other than being included in the Notebook section of the project file.''')
             show = True
         if show:
             if prefix == 'TS':
-                if not first: text.AppendText("\n")
-                text.AppendText(line.strip())
+                if not first: textBox.AppendText("\n")
+                textBox.AppendText(line.strip())
             elif prefix and (controls['Notebook']['filterSel'][0]
                                 or controls['Notebook']['filterSel'][1]):
                 # indent all but timestamps
                 for l in line.strip().split('\n'):
-                    if not first: text.AppendText("\n")
-                    text.AppendText('    '+l.strip())
+                    if not first: textBox.AppendText("\n")
+                    textBox.AppendText('    '+l.strip())
                     first = False
             else:
-                if not first: text.AppendText("\n")
-                text.AppendText(line.strip())
+                if not first: textBox.AppendText("\n")
+                textBox.AppendText(line.strip())
         first = False
     bigSizer = wx.BoxSizer(wx.VERTICAL)
-    bigSizer.Add(text,1,wx.EXPAND)
-    text.SetReadOnly(True)
+    bigSizer.Add(textBox,1,wx.EXPAND)
+    textBox.SetReadOnly(True)
     bigSizer.Layout()
     bigSizer.FitInside(G2frame.dataWindow)
     G2frame.dataWindow.SetSizer(bigSizer)

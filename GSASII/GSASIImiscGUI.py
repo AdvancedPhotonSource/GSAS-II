@@ -1355,6 +1355,44 @@ def mkParmDictfromTree(G2frame,sigDict=None):
             covDict['covMatrix'],covDict['varyList'],covDict['sig']))
     return parmDict
 
+def LogCellChanges(G2frame):
+    '''Log varied cell parameters into the data tree notebook'''
+    covData = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
+    parmDict = mkParmDictfromTree(G2frame)
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
+    cellNames = list(G2lat.cellAlbl) + ['vol']
+    for phase in Phases:
+        phasedict = Phases[phase]
+        pId = phasedict['pId']
+        SGData = phasedict['General']['SGData']
+        laue = SGData['SGLaue']
+        if laue == '2/m':
+            laue += SGData['SGUniq']
+        for symlist,celllist in G2lat.UniqueCellByLaue:
+            if laue in symlist:
+                uniqCellIndx = celllist
+                break
+        else: # should not happen
+            uniqCellIndx = list(range(6))
+
+        for hist in phasedict['Histograms']:
+            if not phasedict['Histograms'][hist]['Use']: continue
+            hId = Histograms[hist]['hId']
+            if any(phasedict['Histograms'][hist]['HStrain'][1]) or phasedict['General']['Cell'][0]:
+                cellList,cellSig = G2lat.getCellSU(pId,hId,SGData,parmDict,covData)
+                prevsig = 0
+                s = f'Phase {pId} Hist {hId}:'
+                for i,(lbl,defsig,val,sig) in enumerate(zip(cellNames,defsigL,cellList,cellSig)):
+                    if i != 6 and i not in uniqCellIndx: continue
+                    if sig:
+                        txt = G2mth.ValEsd(val,sig)
+                        prevsig = -sig # use this as the significance for next value
+                    else:
+                        txt = G2mth.ValEsd(val,min(defsig,prevsig),True)
+                    s += f' {lbl}={txt}'
+                G2frame.AddToNotebook(s,'CEL',False)
 if __name__ == '__main__':
     import GSASIIdataGUI
     application = GSASIIdataGUI.GSASIImain(0)

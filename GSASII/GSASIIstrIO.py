@@ -2254,7 +2254,7 @@ def getCellEsd(pfx,SGData,A,covData,unique=False):
 def getCellSU(pId,hId,SGData,parmDict,covData):
     '''Compute the unit cell parameters and standard uncertainties
     where lattice parameters and Hstrain (Dij) may be refined. This is 
-    called only for generation of CIFs. 
+    called only for generation of CIFs and for GSASIImiscGUI.LogCellChanges.
     
     :param pId: phase index
     :param hId: histogram index

@@ -58,7 +58,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         '''
         fp = None
         try:
-            fp = zarr.open(filename, 'r')
+            fp = zarr.open(filename, mode='r')
             if all([(i in fp) for i in self.midassections]): # are expected MIDAS sections present?
                 self.mode = 'midas'
                 return True # must be present for Midas output

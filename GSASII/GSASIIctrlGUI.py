@@ -10458,6 +10458,9 @@ def SelectPkgInstall(event):
     if sel is None: return
     if not any(sel): return
     pkgs = [choices[i][0] for i,f in enumerate(sel) if f]
+    wx.BeginBusyCursor()
+    pdlg = wx.ProgressDialog('Updating','Installing Python packages; this can take a while',
+                    parent=G2frame)
     if GSASIIpath.condaTest():
         patch_condarc()
         if not GSASIIpath.condaTest(True):
@@ -10465,18 +10468,24 @@ def SelectPkgInstall(event):
         err = GSASIIpath.condaInstall(pkgs)
         if err:
             print(f'Error from conda: {err}')
+            wx.EndBusyCursor()
+            pdlg.Destroy()
             return
     else:
         err = GSASIIpath.pipInstall(pkgs)
         if err:
             print(f'Error from pip: {err}')
+            wx.EndBusyCursor()
+            pdlg.Destroy()
             return
+    wx.EndBusyCursor()
+    pdlg.Destroy()
     msg = '''You must restart GSAS-II to access the importer(s) 
-requiring the installed package(s). 
+requiring the package(s) just installed.
 
-Select "Yes" to save, "No" to skip the save, or "Cancel"
-to discontinue the restart process and continue GSAS-II 
-without the importer(s). 
+Select "Yes" to save and restart, "No" to restart without
+the save, or "Cancel" to discontinue the restart process 
+and continue use of GSAS-II without the importer(s).
 
 If "Yes", GSAS-II will reopen the project after the update.
 '''

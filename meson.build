@@ -3,7 +3,12 @@ project(
     'c', 'cython', 'fortran',
     version: '2.0.0',
     license: 'BSD',
-    meson_version: '>= 1.1.0',
+    meson_version: '>= 1.2.0',
+    default_options : {
+      'optimization': '2',
+      # 'fortran_std': 'f2018'
+    }
+
 )
 
 # Seek the backend
@@ -26,8 +31,9 @@ if fc.get_id() == 'gcc'
   # add_global_arguments('-fcheck=bounds', language : 'fortran')
   add_global_arguments('-fno-range-check', language : 'fortran')
   add_global_arguments('-w', language : 'fortran')
-  add_global_arguments('-O2', language : 'fortran')
 endif
+
+
 
 
 py = import('python').find_installation(pure: false)

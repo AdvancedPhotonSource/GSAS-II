@@ -100,7 +100,7 @@
 *                    ignored for the purposes of applying              *
 *                    instrumental broadening.                          *
 ************************************************************************
-**********************     integer*4 variables     *********************
+*******************     integer(kind=4) variables     ******************
 ************************************************************************
 *d-> a_number(MAX_A,MAX_L)                                             *
 *                 -  numeric label of atom in the layer.               *
@@ -197,7 +197,7 @@
 *                    'data.sfc')                                       *
 *                                                                      *
 ************************************************************************
-***********************     real*8 variables     ***********************
+********************     real(kind=8) variables     ********************
 ************************************************************************
 *    a0           -  One of seven reciprocal lattice constants         *
 *d-> a_B(MAX_A,MAX_L)                                                  *
@@ -353,7 +353,7 @@
 *                    a-direction. Wx and Wy in Angstroms.              *
 *                                                                      *
 ************************************************************************
-*********************     complex*16 variables     *********************
+******************     complex(kind=8) variables     *******************
 ************************************************************************
 *    l_phi(MAX_L,MAX_L)                                                *
 *                 -  Phases of components of 'mat'                     *
@@ -384,33 +384,34 @@
      |        k_mirror, hk_mirror, check_sym, same_rz, any_sharp,
      |        same_layer, finite_width,debug
 *
-      integer*4 l_seq(XP_MAX), pow(MAX_BIN), a_type(MAX_A,MAX_L),
+      integer(kind=4) l_seq(XP_MAX), pow(MAX_BIN), a_type(MAX_A,MAX_L),
      |          l_n_atoms(MAX_L), l_symmetry(MAX_L), l_actual(MAX_L),
      |          a_number(MAX_A,MAX_L), e_sf(MAX_TA)
-      integer*4 SymGrpNo, no_trials, h_bnd, k_bnd, cntrl, max_pow,
+      integer(kind=4) SymGrpNo, no_trials, h_bnd, k_bnd, cntrl, max_pow,
      |          l_cnt,full_brd, full_shrp, sadblock, loglin, bitdepth,
      |          rad_type, n_layers, n_actual, blurring, n_atoms, maxsad
-      integer*4 NONE, CENTRO, GAUSS, LORENZ, PS_VGT, PV_GSS, PV_LRN,
-     |          X_RAY, NEUTRN, ELECTN
+      integer(kind=4) NONE, CENTRO, GAUSS, LORENZ, PS_VGT, PV_GSS,
+     |          PV_LRN, X_RAY, NEUTRN, ELECTN
 *
-      real*8 l_alpha(MAX_L,MAX_L), l_r(3,MAX_L,MAX_L), l_g(MAX_L),
+      real(kind=8) l_alpha(MAX_L,MAX_L), l_r(3,MAX_L,MAX_L), l_g(MAX_L),
      |       a_pos(3,MAX_A,MAX_L), a_B(MAX_A,MAX_L),
      |       a_occup(MAX_A,MAX_L), high_atom(MAX_L), low_atom(MAX_L),
      |       r_B11(MAX_L,MAX_L),r_B22(MAX_L,MAX_L),r_B33(MAX_L,MAX_L),
      |       r_B12(MAX_L,MAX_L),r_B23(MAX_L,MAX_L),r_B31(MAX_L,MAX_L),
      |       hx_ky(MAX_A,MAX_L), spec(MAX_SP), brd_spc(MAX_SP),
      |       detune(MAX_L,MAX_L), x_sf(9,MAX_TA)
-      real*8 a_B11,a_B22,a_B33,a_B12,a_B23,a_B31
-      real*8 tolerance, max_var, max_angle, l_bnd, l_rz,
+      real(kind=8) a_B11,a_B22,a_B33,a_B12,a_B23,a_B31
+      real(kind=8) tolerance, max_var, max_angle, l_bnd, l_rz,
      |       PI, PI2, RAD2DEG, DEG2RAD, scaleint, brightness, lambda,
      |       th2_min, th2_max, d_theta, h_start, k_start,h_end, k_end,
      |       cell_a, cell_b, cell_c, cell_gamma, pv_u, pv_v, pv_w,
      |       pv_gamma, FWHM, mltplcty, bnds_wt, theta1, theta2, a0, b0,
      |       c0, d0, ab0, bc0, ca0, tiny_inty, fatsWalla_hk
-      real*8 formfactor(FFACT_SIZE),ffact_scale,Wa,Wb,ffhkcnst,ffwdth
-      real*8 n_sf(MAX_TA)
+      real(kind=8) formfactor(FFACT_SIZE),ffact_scale,Wa,Wb,ffhkcnst,
+     |       ffwdth
+      real(kind=8) n_sf(MAX_TA)
 *
-      complex*16 mat(MAX_L,MAX_L), mat1(MAX_L,MAX_L),
+      complex(kind=8) mat(MAX_L,MAX_L), mat1(MAX_L,MAX_L),
      |           l_phi(MAX_L,MAX_L), wavefn
 *
       common /chars1/ a_name, atom_l

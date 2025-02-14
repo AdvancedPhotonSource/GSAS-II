@@ -9,11 +9,11 @@ Cf2py intent(in,out) IMG
 Cf2py depend(MX,MY) IMG
 
       IMPLICIT NONE
-      INTEGER*4 BITDECODE(0:7),SETBITS(0:16),IN,N,MX,MY,BITNUM
-      INTEGER*4 PIXEL,SPILLBITS,USEDBITS,VALIDS,WINDOW,TOTAL
-      INTEGER*4 IMG(0:MX-1,0:MY-1),NEXTINT
-      INTEGER*4 SPILL,ROW,COL,PIXNUM,MM1
-      INTEGER*2 TMP
+      INTEGER(kind=4) BITDECODE(0:7),SETBITS(0:16),IN,N,MX,MY,BITNUM
+      INTEGER(kind=4) PIXEL,SPILLBITS,USEDBITS,VALIDS,WINDOW,TOTAL
+      INTEGER(kind=4) IMG(0:MX-1,0:MY-1),NEXTINT
+      INTEGER(kind=4) SPILL,ROW,COL,PIXNUM,MM1
+      INTEGER(kind=2) TMP
       CHARACTER*1 CMPR(0:N-1)
       DATA BITDECODE /0,4,5,6,7,8,16,32/
       DATA SETBITS /Z'0000',Z'0001',Z'0003',Z'0007',
@@ -66,7 +66,7 @@ Cf2py depend(MX,MY) IMG
                 SPILL = ICHAR(CMPR(IN))
                 IN = IN+1
                 SPILLBITS = 8
-              END IF                
+              END IF
             ELSE
               PIXNUM = PIXNUM-1
               IF ( BITNUM .EQ. 0 ) THEN
@@ -75,7 +75,7 @@ Cf2py depend(MX,MY) IMG
                 NEXTINT = IAND(WINDOW,SETBITS(BITNUM))
                 VALIDS = VALIDS-BITNUM
                 WINDOW = ISHFT(WINDOW,-BITNUM)
-                IF ( BTEST(NEXTINT,BITNUM-1) ) 
+                IF ( BTEST(NEXTINT,BITNUM-1) )
      1            NEXTINT = IOR(NEXTINT,NOT(SETBITS(BITNUM)))
               END IF
 
@@ -91,7 +91,7 @@ Cf2py depend(MX,MY) IMG
      1              (IMG(COL-1,ROW)+IMG(0,ROW)+
      1              IMG(MM1,ROW-1)+IMG(MM1-1,ROW-1) +2)/4
                 ELSE
-                  TMP = NEXTINT + 
+                  TMP = NEXTINT +
      1              (IMG(COL-1,ROW)+IMG(COL+1,ROW-1)+
      1              IMG(COL,ROW-1)+IMG(COL-1,ROW-1) +2)/4
                 END IF
@@ -104,18 +104,18 @@ Cf2py depend(MX,MY) IMG
               PIXEL = PIXEL+1
             END IF
           END DO
-        END IF      
+        END IF
       END DO
       DO ROW=0,MM1
         DO COL=0,MM1
             IF ( IMG(COL,ROW).LT.0 ) IMG(COL,ROW) = IMG(COL,ROW)+65536
         END DO
       END DO
-      
+
       RETURN
       END
 
-      
+
       SUBROUTINE PACK_F3(N,CMPR,MX,MY,IMG)
 
 Cf2py intent(in) N
@@ -127,12 +127,12 @@ Cf2py intent(in,out) IMG
 Cf2py depend(MX,MY) IMG
 
       IMPLICIT NONE
-      INTEGER*4 BITDECODE(0:7),SETBITS(0:16),IN,N,MX,MY,BITNUM
-      INTEGER*4 PIXEL,SPILLBITS,USEDBITS,VALIDS,WINDOW,TOTAL
-      INTEGER*4 IMG(0:MX-1,0:MY-1),NEXTINT
-      INTEGER*4 SPILL,ROW,COL,PIXNUM,MM1
-      INTEGER*2 TMP
-      INTEGER*1 CMPR(0:N-1)
+      INTEGER(kind=4) BITDECODE(0:7),SETBITS(0:16),IN,N,MX,MY,BITNUM
+      INTEGER(kind=4) PIXEL,SPILLBITS,USEDBITS,VALIDS,WINDOW,TOTAL
+      INTEGER(kind=4) IMG(0:MX-1,0:MY-1),NEXTINT
+      INTEGER(kind=4) SPILL,ROW,COL,PIXNUM,MM1
+      INTEGER(kind=2) TMP
+      INTEGER(kind=1) CMPR(0:N-1)
       DATA BITDECODE /0,4,5,6,7,8,16,32/
       DATA SETBITS /Z'0000',Z'0001',Z'0003',Z'0007',
      1  Z'000F',Z'001F',Z'003F',Z'007F',Z'00FF',
@@ -184,7 +184,7 @@ Cf2py depend(MX,MY) IMG
                 SPILL = ICHAR(CHAR(CMPR(IN)))
                 IN = IN+1
                 SPILLBITS = 8
-              END IF                
+              END IF
             ELSE
               PIXNUM = PIXNUM-1
               IF ( BITNUM .EQ. 0 ) THEN
@@ -193,7 +193,7 @@ Cf2py depend(MX,MY) IMG
                 NEXTINT = IAND(WINDOW,SETBITS(BITNUM))
                 VALIDS = VALIDS-BITNUM
                 WINDOW = ISHFT(WINDOW,-BITNUM)
-                IF ( BTEST(NEXTINT,BITNUM-1) ) 
+                IF ( BTEST(NEXTINT,BITNUM-1) )
      1            NEXTINT = IOR(NEXTINT,NOT(SETBITS(BITNUM)))
               END IF
 
@@ -209,7 +209,7 @@ Cf2py depend(MX,MY) IMG
      1              (IMG(COL-1,ROW)+IMG(0,ROW)+
      1              IMG(MM1,ROW-1)+IMG(MM1-1,ROW-1) +2)/4
                 ELSE
-                  TMP = NEXTINT + 
+                  TMP = NEXTINT +
      1              (IMG(COL-1,ROW)+IMG(COL+1,ROW-1)+
      1              IMG(COL,ROW-1)+IMG(COL-1,ROW-1) +2)/4
                 END IF
@@ -222,14 +222,13 @@ Cf2py depend(MX,MY) IMG
               PIXEL = PIXEL+1
             END IF
           END DO
-        END IF      
+        END IF
       END DO
       DO ROW=0,MM1
         DO COL=0,MM1
             IF ( IMG(COL,ROW).LT.0 ) IMG(COL,ROW) = IMG(COL,ROW)+65536
         END DO
       END DO
-      
+
       RETURN
       END
-

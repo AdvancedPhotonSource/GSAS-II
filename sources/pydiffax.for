@@ -9,9 +9,9 @@ cf2py intent(in) DEBG
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
                 
-      INTEGER*4 NATP,I,J
+      INTEGER(kind=4) NATP,I,J
       CHARACTER*4 ATYPES(NATP)
-      REAL*4  SFDAT(9,NATP)
+      REAL(kind=4)  SFDAT(9,NATP)
       LOGICAL DEBG
                 
 C fill common x-ray scattering factors
@@ -38,7 +38,7 @@ Cf2py intent(in) DELTTH
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
 
-      REAL*8 LAMB,TTHMIN,TTHMAX,DELTTH
+      REAL(kind=8) LAMB,TTHMIN,TTHMAX,DELTTH
         
       lambda = lamb
       th2_min = TTHMIN*DEG2RAD
@@ -61,8 +61,8 @@ cf2py depend(NST) STSEQ
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
 
       CHARACTER*12 LAUESYM
-      INTEGER*4 CNTRLS(7),NST,STSEQ(NST),I
-      REAL*8 WDTH(2)                  
+      INTEGER(kind=4) CNTRLS(7),NST,STSEQ(NST),I
+      REAL(kind=8) WDTH(2)                  
       LOGICAL*4 ok,GETLAY
       EXTERNAL GETLAY
                                       
@@ -133,10 +133,10 @@ Cf2py depend(NL) LNUM
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
 
-      INTEGER*4 NATM,NL,LNUM(NL),NU,LSYM(NU)
+      INTEGER(kind=4) NATM,NL,LNUM(NL),NU,LSYM(NU)
       CHARACTER*4 ATMTP(NATM)
-      REAL*8  CELL(4),ATMXOU(8,NATM)
-      INTEGER*4 I,J,K,IL,IA
+      REAL(kind=8)  CELL(4),ATMXOU(8,NATM)
+      INTEGER(kind=4) I,J,K,IL,IA
 
 C fill Common - cell stuff & finish symmetry stuff
       cell_a = CELL(1)
@@ -187,9 +187,9 @@ Cf2py depend(NL) TRP,TRX
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
         
-      INTEGER*4 I,J,K
-      INTEGER*4 NL
-      REAL*4  TRP(NL,NL),TRX(NL,NL,3)
+      INTEGER(kind=4) I,J,K
+      INTEGER(kind=4) NL
+      REAL(kind=4)  TRP(NL,NL),TRX(NL,NL,3)
                                
 C fill common transitions stuff
       DO J=1,NL
@@ -213,8 +213,8 @@ Cf2py depend(NSADP) SADP
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
 
-      INTEGER*4 CNTRLS(7),NSADP,I,j,k
-      REAL*8 SADP(NSADP),AGLQ16
+      INTEGER(kind=4) CNTRLS(7),NSADP,I,j,k
+      REAL(kind=8) SADP(NSADP),AGLQ16
       LOGICAL GETSPC,ok
         
       EXTERNAL AGLQ16,GETSPC
@@ -273,8 +273,8 @@ Cf2py depend(NBRD) BRDSPC
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
         
-      INTEGER*4 BLUR,i,NBRD    
-      REAL*8 U,V,W,HW,BRDSPC(NBRD),tth_min
+      INTEGER(kind=4) BLUR,i,NBRD    
+      REAL(kind=8) U,V,W,HW,BRDSPC(NBRD),tth_min
         
       tth_min = ZERO
             
@@ -308,9 +308,9 @@ Cf2py intent(out) NBLK
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
 
-      INTEGER*4 CNTRLS(7),NSADP,i_plane,hk_lim,i,j,k
-      INTEGER*4 HKLIM,NBLK
-      REAL*8 SADP(NSADP),AGLQ16,l_upper,INCR
+      INTEGER(kind=4) CNTRLS(7),NSADP,i_plane,hk_lim,i,j,k
+      INTEGER(kind=4) HKLIM,NBLK
+      REAL(kind=8) SADP(NSADP),AGLQ16,l_upper,INCR
       LOGICAL ok
         
       EXTERNAL AGLQ16                 

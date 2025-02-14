@@ -15,10 +15,10 @@ Cf2py intent(out) SGGEN
 Cf2py intent(out) IERR
 
       CHARACTER*(20) SPG
-      INTEGER*4     LAUE,SGINV,SGLATT,SGUNIQ,SGNOPS,IERR,SGNCEN
-      REAL*4        SGMTRX(24,3,3),SGTRNS(24,3),SGGEN(24)
-      REAL*4        RT(5,4,25),CEN(3,4)
-      INTEGER*4     JRT(3,5,24)
+      INTEGER(kind=4)     LAUE,SGINV,SGLATT,SGUNIQ,SGNOPS,IERR,SGNCEN
+      REAL(kind=4)        SGMTRX(24,3,3),SGTRNS(24,3),SGGEN(24)
+      REAL(kind=4)        RT(5,4,25),CEN(3,4)
+      INTEGER(kind=4)     JRT(3,5,24)
 
 
       CALL SGROUPNP(SPG,LAUE,SGUNIQ,SGINV,SGLATT,SGNOPS,SGPOL,JRT,
@@ -51,10 +51,10 @@ Cf2py intent(out) HKL
 Cf2py intent(out) IABSNT
 Cf2py intent(out) MULP
 
-      INTEGER*4     ICEN,NSYM
-      REAL*4        SGMTRX(NSYM,3,3),SGTRNS(NSYM,3),SGCEN(NCV,3)
-      REAL*4        CEN(3,NCV),HKL(4,24),XH(4)
-      INTEGER*4     JRT(3,5,24),JHK,NCV
+      INTEGER(kind=4)     ICEN,NSYM
+      REAL(kind=4)        SGMTRX(NSYM,3,3),SGTRNS(NSYM,3),SGCEN(NCV,3)
+      REAL(kind=4)        CEN(3,NCV),HKL(4,24),XH(4)
+      INTEGER(kind=4)     JRT(3,5,24),JHK,NCV
 
       DO J=1,NCV
         DO I=1,3

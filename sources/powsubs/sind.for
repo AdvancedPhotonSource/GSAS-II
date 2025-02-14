@@ -1,4 +1,4 @@
-      REAL*4 FUNCTION SIND(ARG)
+      REAL(kind=4) FUNCTION SIND(ARG)
 
 !PURPOSE: Calculate sine from angle in deg.
 
@@ -6,7 +6,7 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        ARG                 !Sine argument in degrees
+      REAL(kind=4)        ARG                 !Sine argument in degrees
 
 !INCLUDE STATEMENTS:
 

@@ -9,22 +9,22 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        AX,AY               !Real & imaginary parts of argument z
-      REAL*4        ANSX,ANSY           !Real & imaginary parts of result
+      REAL(kind=4)        AX,AY               !Real & imaginary parts of argument z
+      REAL(kind=4)        ANSX,ANSY           !Real & imaginary parts of result
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
 
-      REAL*4        ZX,ZY               
-      REAL*4        CLNX,CLNY           
-      REAL*4        TEMX,TEMY           
-      REAL*4        SUBX,SUBY           
-      REAL*4        EULERX              
-      REAL*4        ZANSX,ZANSY         
-      REAL*4        DEDZX,DEDZY         
-      REAL*4        RATX,RATY           
-      REAL*4        ADDX,ADDY           
+      REAL(kind=4)        ZX,ZY               
+      REAL(kind=4)        CLNX,CLNY           
+      REAL(kind=4)        TEMX,TEMY           
+      REAL(kind=4)        SUBX,SUBY           
+      REAL(kind=4)        EULERX              
+      REAL(kind=4)        ZANSX,ZANSY         
+      REAL(kind=4)        DEDZX,DEDZY         
+      REAL(kind=4)        RATX,RATY           
+      REAL(kind=4)        ADDX,ADDY           
 
 !SUBROUTINES CALLED:
 

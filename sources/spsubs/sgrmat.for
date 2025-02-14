@@ -13,10 +13,10 @@ C       ALLEN C. LARSON, 14 CERRADO LOOP, SANTA FE, NM 87505, USA
 
 !Calling sequence parameters:
 
-      INTEGER*4     IOP                 !Matrix generator count
-      REAL*4        RT(5,4,25)          !Matrix to be generated
-      INTEGER*4     N                   !Number of the matrix to be generated
-      REAL*4        A,B,C,D,E,F,G,H,O   !Matrix terms
+      INTEGER(kind=4)     IOP                 !Matrix generator count
+      REAL(kind=4)        RT(5,4,25)          !Matrix to be generated
+      INTEGER(kind=4)     N                   !Number of the matrix to be generated
+      REAL(kind=4)        A,B,C,D,E,F,G,H,O   !Matrix terms
 
 !Local varaibles:
 

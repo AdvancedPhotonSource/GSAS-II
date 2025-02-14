@@ -7,13 +7,13 @@
 
 !CALL SEQUENCE PARAMETERS:
 
-      REAL*4        MVAL                !Packed matrix value
+      REAL(kind=4)        MVAL                !Packed matrix value
 
 !Local variables:
 
       LOGICAL*4     NOTFOUND            !Loop control flag
-      REAL*4        MATVALS(64)         !Packed matrix values
-      REAL*4        OPRFLGS(64)         !Operation flags
+      REAL(kind=4)        MATVALS(64)         !Packed matrix values
+      REAL(kind=4)        OPRFLGS(64)         !Operation flags
 
 !Data statements:
 

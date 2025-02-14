@@ -11,13 +11,13 @@ Cf2py depend(M) SPOTS
 Cf2py intent(in,out) MASK
 
       IMPLICIT NONE
-      INTEGER*4    N,M
-      REAL*4       X(0:N-1),Y(0:N-1)
-      REAL*8       SPOTS(0:M-1,0:2)
+      INTEGER(kind=4)    N,M
+      REAL(kind=4)       X(0:N-1),Y(0:N-1)
+      REAL(kind=8)       SPOTS(0:M-1,0:2)
       LOGICAL*1    MASK(0:1024*1024-1)
 
-      INTEGER*4    I,K
-      REAL*4       XYRAD2,XINTERS
+      INTEGER(kind=4)    I,K
+      REAL(kind=4)       XYRAD2,XINTERS
       
       DO K=0,N-1
         MASK(K) = .FALSE.

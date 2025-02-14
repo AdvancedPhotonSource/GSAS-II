@@ -7,8 +7,8 @@ c  of intervals (N), this routine returns arrays X and W of length N,
 c  containing the abscissas and weights of the Gauss-Legendre N-point
 c  quadrature formula.
 c
-      implicit real*4 (a-h,o-z)
-      REAL*4        X1,X2,X(N),W(N)     
+      implicit real(kind=4) (a-h,o-z)
+      REAL(kind=4)        X1,X2,X(N),W(N)     
       parameter (eps=3.e-7)
 C
       m=(n+1)/2

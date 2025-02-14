@@ -10,29 +10,29 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        DT                  !Delta-TOF from center
-      REAL*4        ALP                 !Exponential rise
-      REAL*4        BET                 !Exponential decay
-      REAL*4        SIG                 !Gaussian variance
-      REAL*4        GAM                 !Lorentzian FWHM
-      REAL*4        FUNC                !Value of pseudo-Voigt at DX
-      REAL*4        DFDX                !dF/dta
-      REAL*4        DFDA                !dF/da
-      REAL*4        DFDB                !dF/db
-      REAL*4        DFDS                !dF/ds
-      REAL*4        DFDG                !dF/dg
+      REAL(kind=4)        DT                  !Delta-TOF from center
+      REAL(kind=4)        ALP                 !Exponential rise
+      REAL(kind=4)        BET                 !Exponential decay
+      REAL(kind=4)        SIG                 !Gaussian variance
+      REAL(kind=4)        GAM                 !Lorentzian FWHM
+      REAL(kind=4)        FUNC                !Value of pseudo-Voigt at DX
+      REAL(kind=4)        DFDX                !dF/dta
+      REAL(kind=4)        DFDA                !dF/da
+      REAL(kind=4)        DFDB                !dF/db
+      REAL(kind=4)        DFDS                !dF/ds
+      REAL(kind=4)        DFDG                !dF/dg
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
 
-      REAL*4        COFG(6),COFL(6)     !Linear combination coeffs
-      REAL*4        ACOFG(7),ACOFL(7)   
-      REAL*4        GNORM               !Gaussian Normalization constant
-      REAL*4        COFT(6),COFN(3)     
-      REAL*4        NORM                !Normalization constant
-      REAL*4        RXA,IXA,RXB,IXB     !Exp-integral arguements
-      REAL*4        RFA,IFA,RFB,IFB     !Exp-integral results
+      REAL(kind=4)        COFG(6),COFL(6)     !Linear combination coeffs
+      REAL(kind=4)        ACOFG(7),ACOFL(7)   
+      REAL(kind=4)        GNORM               !Gaussian Normalization constant
+      REAL(kind=4)        COFT(6),COFN(3)     
+      REAL(kind=4)        NORM                !Normalization constant
+      REAL(kind=4)        RXA,IXA,RXB,IXB     !Exp-integral arguements
+      REAL(kind=4)        RFA,IFA,RFB,IFB     !Exp-integral results
 
 !SUBROUTINES CALLED:
 

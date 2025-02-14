@@ -6,20 +6,20 @@
 
 ! Input data list
 
-      REAL*4        XH(4)               ! Input Miller indices
-      INTEGER*4     NSYM                ! Number of symmetry matrices
-      INTEGER*4     RT(3,5,24)          ! The symmetry matrices
-      INTEGER*4     ICEN                ! Flag indicating 1bar
-      INTEGER*4     NCV                 ! The number of lattice centering vectors
-      REAL*4        CEN(3,NCV)            ! The lattice centering vectors
+      REAL(kind=4)        XH(4)               ! Input Miller indices
+      INTEGER(kind=4)     NSYM                ! Number of symmetry matrices
+      INTEGER(kind=4)     RT(3,5,24)          ! The symmetry matrices
+      INTEGER(kind=4)     ICEN                ! Flag indicating 1bar
+      INTEGER(kind=4)     NCV                 ! The number of lattice centering vectors
+      REAL(kind=4)        CEN(3,NCV)            ! The lattice centering vectors
 
 !Output data list
 
-      INTEGER*4     JHK                 ! Number of equivalent indices generated
-      REAL*4        HKL(4,24)           ! The generated Miller indices
-      INTEGER*4     IHKL(4,24)          ! The generated Miller indices
-      INTEGER*4     IABSNT              ! Space group absence flag
-      INTEGER*4     MULP                ! Multiplicity for powder line intensities
+      INTEGER(kind=4)     JHK                 ! Number of equivalent indices generated
+      REAL(kind=4)        HKL(4,24)           ! The generated Miller indices
+      INTEGER(kind=4)     IHKL(4,24)          ! The generated Miller indices
+      INTEGER(kind=4)     IABSNT              ! Space group absence flag
+      INTEGER(kind=4)     MULP                ! Multiplicity for powder line intensities
 
 !CODE
 

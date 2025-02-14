@@ -8,14 +8,14 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*8        DGAMMLN              !ln(gamma(xx)) with xx>0
-      REAL*4        XX                  !argument must be >0
+      REAL(kind=8)        DGAMMLN              !ln(gamma(xx)) with xx>0
+      REAL(kind=4)        XX                  !argument must be >0
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
 
-      REAL*8        COF(6),STP,HALF,ONE,FPF,X,TMP,SER 
+      REAL(kind=8)        COF(6),STP,HALF,ONE,FPF,X,TMP,SER 
 
 !SUBROUTINES CALLED:
 

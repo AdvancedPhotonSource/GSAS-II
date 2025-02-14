@@ -6,16 +6,16 @@
 
 !CALLING ARGUMENTS:
 
-      INTEGER*4     L,M                 !Order & index
-      REAL*4        PSI                 !Angle (in deg)
-      REAL*4        P                   !Value returned
+      INTEGER(kind=4)     L,M                 !Order & index
+      REAL(kind=4)        PSI                 !Angle (in deg)
+      REAL(kind=4)        P                   !Value returned
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
                                                  
-      INTEGER*4     S                   
-      REAL*4        APR,RS              
+      INTEGER(kind=4)     S                   
+      REAL(kind=4)        APR,RS              
                                                  
 !FUNCTION DEFINITIONS:
 

@@ -11,13 +11,13 @@ C               The National Research Council of Canada
 C                               by
 C       Allen C. Larson, 14 Cerrado Loop, Santa Fe, NM 87505-8832, USA
 
-      INTEGER*4     M                   !
-      REAL*4        RT(5,4,25)          !Matrices being generated
-      INTEGER*4     N                   !Sequence no. of matrix 1
-      INTEGER*4     M2                  !Sequence no. of matrix 2
-      INTEGER*4     LCENT               !Number of Lattice centering vectors
-      INTEGER*4     LAUENO              !Laue group flag
-      INTEGER*4     IER                 !Error flag
+      INTEGER(kind=4)     M                   !
+      REAL(kind=4)        RT(5,4,25)          !Matrices being generated
+      INTEGER(kind=4)     N                   !Sequence no. of matrix 1
+      INTEGER(kind=4)     M2                  !Sequence no. of matrix 2
+      INTEGER(kind=4)     LCENT               !Number of Lattice centering vectors
+      INTEGER(kind=4)     LAUENO              !Laue group flag
+      INTEGER(kind=4)     IER                 !Error flag
 
       DIMENSION     ICENV(3,5),NCVT(7),JCVT(7)
       DATA ICENV/0,0,0, 0,6,6, 6,0,6, 6,6,0, 6,6,6/

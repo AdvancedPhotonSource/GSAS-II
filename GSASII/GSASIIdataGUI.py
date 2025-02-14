@@ -6962,7 +6962,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # IMG / Masks
         G2G.Define_wxId('wxID_MASKCOPY', 'wxID_MASKSAVE', 'wxID_MASKLOAD', 'wxID_NEWMASKSPOT', 'wxID_NEWMASKARC', 'wxID_NEWMASKRING',
             'wxID_NEWMASKFRAME', 'wxID_NEWMASKPOLY','wxID_NEWMASKXLINE','wxID_NEWMASKYLINE','wxID_MASKLOADNOT',
-            'wxID_FINDSPOTS', 'wxID_AUTOFINDSPOTS', 'wxID_DELETESPOTS',)
+            'wxID_FINDSPOTS', 'wxID_AUTOFINDSPOTS', 'wxID_DELETESPOTS','wxID_MASKCOPYSELECTED')
         def _makemenu():     # routine to create menu when first used
             self.MaskMenu = wx.MenuBar()
             self.PrefillDataMenu(self.MaskMenu)
@@ -6971,6 +6971,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             submenu = wx.Menu()
             self.MaskEdit.AppendSubMenu( submenu,'Create new','')
             self.MaskEdit.Append(G2G.wxID_MASKCOPY,'Copy mask','Copy mask to other images')
+            self.MaskEdit.Append(G2G.wxID_MASKCOPYSELECTED,'Copy Selected','Copy selected masks to other images')
             self.MaskEdit.Append(G2G.wxID_MASKSAVE,'Save mask','Save mask to file')
             self.MaskEdit.Append(G2G.wxID_MASKLOADNOT,'Load mask','Load mask from file; ignoring threshold')
             self.MaskEdit.Append(G2G.wxID_MASKLOAD,'Load mask w/threshold','Load mask from file keeping the threshold value')

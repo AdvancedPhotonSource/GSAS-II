@@ -148,51 +148,51 @@ def UpdateImageData(G2frame,data):
             UpdateImageData(G2frame,data)
         dlg.Destroy()
         
-    def OnMakeGainMap(event):
-        #import scipy.ndimage.filters as sdif
-        sumImg = GetImageZ(G2frame,data)
-        masks = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
-            G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))
-        Data = copy.deepcopy(data)
-        #force defaults for GainMap calc
-        Data['IOtth'] = [0.1,60.0]
-        Data['outAzimuths'] = 1
-        Data['LRazimuth'] = [0.,360.]
-        Data['outChannels'] = 5000
-        Data['binType'] = '2-theta'
-        Data['color'] = 'gray'
-        G2frame.Integrate = G2img.ImageIntegrate(sumImg,Data,masks,blkSize)            
-        Iy,azms,Ix = G2frame.Integrate[:3]
-        GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,Data,blkSize)*1000.
-        Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
-        pth = os.path.split(os.path.abspath(imagefile))[0]
-        outname = 'GainMap'
-        dlg = wx.FileDialog(G2frame, 'Choose gain map filename', pth,outname, 
-            'G2img files (*.G2img)|*.G2img',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-        if dlg.ShowModal() == wx.ID_OK:
-            newimagefile = dlg.GetPath()
-            newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
-            Data['formatName'] = 'GSAS-II image'
-            Data['range'] = [(500,2000),[800,1200]]
-            GainMap = np.where(GainMap > 2000,2000,GainMap)
-            GainMap = np.where(GainMap < 500,500,GainMap)
-            masks['Thresholds'] = [(500.,2000.),[800.,1200.]]
-            G2IO.PutG2Image(newimagefile,[],data,Npix,GainMap)
-            GMname = 'IMG '+os.path.split(newimagefile)[1]
-            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,GMname)
-            if not Id:            
-                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=GMname)
-                G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
-                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
-                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),Data)
-                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),masks)
-            else:
-                G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
-                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'),[])
-                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'),Data)
-                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Masks'),masks)
-            G2frame.GPXtree.Expand(Id)
-            G2frame.GPXtree.SelectItem(Id)      #to show the gain map & put it in the list 
+    # def OnMakeGainMap(event):         #obsolete?
+    #     #import scipy.ndimage.filters as sdif
+    #     sumImg = GetImageZ(G2frame,data)
+    #     masks = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
+    #         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))
+    #     Data = copy.deepcopy(data)
+    #     #force defaults for GainMap calc
+    #     Data['IOtth'] = [0.1,60.0]
+    #     Data['outAzimuths'] = 1
+    #     Data['LRazimuth'] = [0.,360.]
+    #     Data['outChannels'] = 5000
+    #     Data['binType'] = '2-theta'
+    #     Data['color'] = 'gray'
+    #     G2frame.Integrate = G2img.ImageIntegrate(sumImg,Data,masks,blkSize)            
+    #     Iy,azms,Ix = G2frame.Integrate[:3]
+    #     GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,Data,blkSize)*1000.
+    #     Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
+    #     pth = os.path.split(os.path.abspath(imagefile))[0]
+    #     outname = 'GainMap'
+    #     dlg = wx.FileDialog(G2frame, 'Choose gain map filename', pth,outname, 
+    #         'G2img files (*.G2img)|*.G2img',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+    #     if dlg.ShowModal() == wx.ID_OK:
+    #         newimagefile = dlg.GetPath()
+    #         newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
+    #         Data['formatName'] = 'GSAS-II image'
+    #         Data['range'] = [(500,2000),[800,1200]]
+    #         GainMap = np.where(GainMap > 2000,2000,GainMap)
+    #         GainMap = np.where(GainMap < 500,500,GainMap)
+    #         masks['Thresholds'] = [(500.,2000.),[800.,1200.]]
+    #         G2IO.PutG2Image(newimagefile,[],data,Npix,GainMap)
+    #         GMname = 'IMG '+os.path.split(newimagefile)[1]
+    #         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,GMname)
+    #         if not Id:            
+    #             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=GMname)
+    #             G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
+    #             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
+    #             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),Data)
+    #             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),masks)
+    #         else:
+    #             G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
+    #             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'),[])
+    #             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'),Data)
+    #             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Masks'),masks)
+    #         G2frame.GPXtree.Expand(Id)
+    #         G2frame.GPXtree.SelectItem(Id)      #to show the gain map & put it in the list 
 
     G2frame.PhaseRing2Th = [] # list of known phase rings to superimpose
     # listing 2theta, color, width, line-style for each ring
@@ -245,10 +245,10 @@ def UpdateImageData(G2frame,data):
     tthSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'det2theta',xmin=-180.,xmax=180.,nDig=(10,2)),0,WACV)
     tthSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample changer position %.2f mm '%data['samplechangerpos']),0,WACV)
     mainSizer.Add(tthSizer,0)
-    if not data['Gain map']:
-        makeGain = wx.Button(G2frame.dataWindow,label='Make gain map from this image? NB: use only an amorphous pattern for this')
-        makeGain.Bind(wx.EVT_BUTTON,OnMakeGainMap)
-        mainSizer.Add(makeGain)
+    # if not data['Gain map']:
+    #     makeGain = wx.Button(G2frame.dataWindow,label='Make gain map from this image? NB: use only an amorphous pattern for this')
+    #     makeGain.Bind(wx.EVT_BUTTON,OnMakeGainMap)
+    #     mainSizer.Add(makeGain)
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################
@@ -364,7 +364,94 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         if Id: G2frame.GPXtree.SelectItem(Id)
         
     def OnMultiGainMap(event):
-        print('TBD - gain map from multiple images')
+        Id = None
+        Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
+        First = True
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Image calibration controls','Select images for gain map:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                items = dlg.GetSelections()
+                G2frame.EnablePlot = False
+                for item in items:
+                    name = Names[item]
+                    print ('Gain map from '+name)
+                    G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                    Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
+                    pth = os.path.split(os.path.abspath(imagefile))[0]
+                    ImDat = copy.deepcopy(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')))
+                    sumImg = GetImageZ(G2frame,ImDat)
+                    #force defaults for GainMap calc
+                    ImDat['IOtth'] = [0.1,60.0]
+                    ImDat['outAzimuths'] = 1
+                    ImDat['LRazimuth'] = [0.,360.]
+                    ImDat['outChannels'] = 5000
+                    ImDat['binType'] = '2-theta'
+                    ImDat['color'] = 'GSPaired'
+                    ImDat['setRings'] = False
+                    ImMsk = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
+                        G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))
+                    Integrate = G2img.ImageIntegrate(sumImg,ImDat,ImMsk,blkSize)            
+                    Iy,azms,Ix = Integrate[:3]
+                    GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,ImDat,blkSize)*1000.
+                    GainMap = np.where(GainMap > 1200,0,GainMap)
+                    GainMap = np.where(GainMap < 800,0,GainMap)
+                    ImDat['formatName'] = 'GSAS-II image'
+                    ImDat['range'] = [(500,2000),[800,1200]]
+                    if First:
+                        First = False
+                        GMsum = np.where(GainMap>0,GainMap,0.0)
+                        pixels = np.where(GainMap>0,1,0)
+                    else:
+                        GMsum += np.where(GainMap>0,GainMap,0.0)
+                        pixels += np.where(GainMap >0,1,0)
+                    #leave for possible diagnostics?
+                    # ImMsk['Thresholds'] = [(500.,2000.),[800.,1200.]]
+                    # GMname = os.path.splitext(imagefile)[0]+'_GM.G2img'
+                    # G2IO.PutG2Image(GMname,[],ImDat,Npix,GainMap)
+                    # Name = 'IMG '+os.path.split(GMname)[1]
+                    # Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,Name)
+                    # if not Id:            
+                    #     Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=Name)
+                    #     G2frame.GPXtree.SetItemPyData(Id,[Npix,GMname])
+                    #     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
+                    #     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),ImDat)
+                    #     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),ImMsk)
+                    # else:
+                    #     G2frame.GPXtree.SetItemPyData(Id,[Npix,GMname])
+                    #     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'),[])
+                    #     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'),ImDat)
+                    #     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Masks'),ImMsk)
+                    #end of diagnostic block
+        finally:
+            dlg.Destroy()
+        GMsum /= pixels
+        # GMsum = np.where(GMsum > 2000,0,GMsum)
+        # GMsum = np.where(GMsum < 500,0,GMsum)
+        outname = 'GainMap'
+        dlg = wx.FileDialog(G2frame, 'Choose gain map filename', pth,outname, 
+            'G2img files (*.G2img)|*.G2img',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        if dlg.ShowModal() == wx.ID_OK:
+            newimagefile = dlg.GetPath()
+            newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
+            ImMsk['Thresholds'] = [(500.,2000.),[800.,1200.]]
+            G2IO.PutG2Image(newimagefile,[],ImDat,Npix,GMsum)
+            Name = 'IMG '+os.path.split(newimagefile)[1]
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,Name)
+            if not Id:            
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=Name)
+                G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
+                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
+                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),ImDat)
+                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),ImMsk)
+            else:
+                G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'),[])
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'),ImDat)
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Masks'),ImMsk)
+            G2frame.GPXtree.SelectItem(Id)
+        else:
+            print('Gain map not saved!')
+        dlg.Destroy()
         
     def OnCalcRings(event):
         '''Use existing calibration values to compute rings & display them
@@ -1840,6 +1927,42 @@ def UpdateMasks(G2frame,data):
         finally:
             dlg.Destroy()
 
+    def OnCopySelected(event):
+        Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
+        if len(Names) == 1:
+            G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
+            return
+        Source = G2frame.GPXtree.GetItemText(G2frame.Image)
+        # Assemble a list of item labels
+        keyList = ['Points','Rings','Arcs','Polygons','Xlines','Ylines','Frames','Thresholds']
+        keyList.sort(key=lambda s: s.lower())
+        keyText = [i+' = '+str(data[i]) for i in keyList]
+        # sort both lists together, ordered by keyText
+        selectedKeys = []
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which masks\nto copy',
+            'Select masks', keyText)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                selectedKeys = [keyList[i] for i in dlg.GetSelections()]
+        finally:
+            dlg.Destroy()
+        if not selectedKeys: return # nothing to copy
+        copyDict = {}
+        for parm in selectedKeys:
+            copyDict[parm] = data[parm]
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy mask from\n'+Source+' to...',
+            'Copy masks', Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    item = Names[i]
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Masks'))
+                    Controls.update(copy.deepcopy(copyDict))
+        finally:
+            dlg.Destroy()            
+                
     def OnSaveMask(event):
         CleanupMasks(data)
         pth = G2G.GetExportPath(G2frame)
@@ -2214,6 +2337,7 @@ def UpdateMasks(G2frame,data):
     else:
         CleanupMasks(data) # posting page for 1st time; clean out anything unfinished
     G2frame.Bind(wx.EVT_MENU, OnCopyMask, id=G2G.wxID_MASKCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnCopySelected, id=G2G.wxID_MASKCOPYSELECTED)
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOAD)
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOADNOT)
     G2frame.Bind(wx.EVT_MENU, OnSaveMask, id=G2G.wxID_MASKSAVE)

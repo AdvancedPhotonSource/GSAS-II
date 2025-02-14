@@ -8,13 +8,11 @@ from __future__ import division, print_function
 import math
 import time
 import copy
-import sys
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
 from scipy.optimize import leastsq
 import scipy.interpolate as scint
-import scipy.special as sc
 import GSASIIpath
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
@@ -1468,7 +1466,6 @@ def MakeUseMask(data,masks,blkSize=128):
     return useMask
 
 def MakeGainMap(image,Ix,Iy,data,blkSize=128):
-    import scipy.ndimage.filters as sdif
     Iy /= npcosd(Ix[:-1])       #undo parallax
     Iy *= (1000./data['distance'])**2    #undo r^2 effect
     Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
@@ -1489,8 +1486,7 @@ def MakeGainMap(image,Ix,Iy,data,blkSize=128):
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
             Ipix = IyInt(TA[0])
             GainMap[iBeg:iFin,jBeg:jFin] = image[iBeg:iFin,jBeg:jFin]/(Ipix*TA[3])
-    GainMap = np.nan_to_num(GainMap,1.0)
-    GainMap = sdif.gaussian_filter(GainMap,3.,order=0)
+    GainMap /= np.nanmedian(GainMap)
     return 1./GainMap
 
 def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):

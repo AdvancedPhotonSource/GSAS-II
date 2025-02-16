@@ -3322,6 +3322,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
             pFile.write(ptlbls+'\n')
             pFile.write(ptstr+'\n')
             pFile.write(sigstr+'\n')
+            return True
         
     def PrintSHPOAndSig(pfx,hapData,POsig):
         Tindx = 1.0
@@ -3566,7 +3567,12 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                             PrintSHPOAndSig(pfx,hapData['Pref.Ori.'],PhFrExtPOSig)
                     PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
                     PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
-                    PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
+                    ref = PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
+                    if ref:
+                        cellList,cellSig = G2lat.getCellSU(pId,hId,SGData,parmDict,
+                                {'varyList':varyList,'covMatrix':covMatrix})
+                        txt = G2lat.showCellSU(cellList,cellSig,SGData)
+                        pFile.write(f'   resulting cell parameters: {txt}\n')
                     if pfx+'LayerDisp' in SizeMuStrSig:
                         pFile.write(' Layer displacement : %10.3f, sig %10.3f\n'%(hapData['Layer Disp'][0],SizeMuStrSig[pfx+'LayerDisp']))            
                     if Phases[phase]['General']['Type'] != 'magnetic' and not parmDict.get(pfx+'LeBail') and 'E' not in Inst['Type'][0]:

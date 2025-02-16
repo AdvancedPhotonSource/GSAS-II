@@ -226,14 +226,13 @@ def getCellSU(pId,hId,SGData,parmDict,covData):
     '''Compute the unit cell parameters and standard uncertainties
     where lattice parameters and Hstrain (Dij) may be refined. 
 
-    At present this is called only for generation of CIFs and 
-    in GSASIImiscGUI.LogCellChanges.
-    
     :param pId: phase index
     :param hId: histogram index
-    :param SGdata: space group information
+    :param SGdata: space group information for current phase
     :param dict parmDict: parameter dict, must have all non-zero Dij and Ai terms
     :param dict covData: covariance tree item 
+    :returns: cellList,cellSig where each term is a list of 7 items, 
+       a, b,... Vol and sig(a), sig(b),... sig(Vol), respectively
     '''
 
     Dnames = [f'{pId}:{hId}:D{i}' for i in ['11','22','33','12','13','23']]
@@ -307,6 +306,42 @@ def getCellSU(pId,hId,SGData,parmDict,covData):
         CS[4] = -CS[4]
         CS[3] = -CS[3]
     return cell,[CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
+
+def showCellSU(cellList,cellSig,SGData,cellNames=None):
+    '''Produce the cell parameters from :func:`getCellSU` as a nicely 
+    formatted string
+
+    :param list cellList: a list of 7 items, a, b,... Vol, from getCellSU
+    :param list cellSig: a list of 7 items, sig(a), sig(b),... sig(Vol), 
+      from getCellSU
+    :param SGdata: space group information for current phase
+    :param list cellNames: if specified, should be the labels to be 
+      used for a, b,... volume. Defaults to cellAlbl & 'vol', but for 
+      on-screen use, cellUlbl might be better than cellAlbl
+    '''
+    defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
+    if cellNames is None:
+        cellNames = list(cellAlbl) + ['vol']
+    laue = SGData['SGLaue']
+    if laue == '2/m':
+        laue += SGData['SGUniq']
+    for symlist,celllist in UniqueCellByLaue:
+        if laue in symlist:
+            uniqCellIndx = celllist
+            break
+    else: # should not happen
+        uniqCellIndx = list(range(6))
+    prevsig = 0
+    s = ''
+    for i,(lbl,defsig,val,sig) in enumerate(zip(cellNames,defsigL,cellList,cellSig)):
+        if i != 6 and i not in uniqCellIndx: continue
+        if sig:
+            txt = G2mth.ValEsd(val,sig)
+            prevsig = -sig # use this as the significance for next value
+        else:
+            txt = G2mth.ValEsd(val,min(defsig,prevsig),True)
+        s += f' {lbl}={txt}'
+    return s
 
 def getCellEsd(pfx,SGData,A,covData,unique=False):
     '''Compute the standard uncertainty on cell parameters

@@ -47,7 +47,7 @@ import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIobj as G2obj
 import GSASIIctrlGUI as G2G
-import GSASIIfiles as G2fl
+import GSASIIfiles as G2fil
 import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
@@ -8012,7 +8012,7 @@ S.J.L. Billinge, J. Phys, Condens. Matter 19, 335219 (2007)., Jour. Phys.: Cond.
     def RunRMCProfile(event):
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
-        rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
+        rmcfile = G2fil.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
         os_name = platform.system()
         if os_name == "Darwin":
             rmcexe = os.path.join(

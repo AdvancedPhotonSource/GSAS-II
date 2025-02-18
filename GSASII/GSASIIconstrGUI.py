@@ -26,7 +26,7 @@ import GSASIImath as G2mth
 import GSASIIlattice as G2lat
 import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
-import GSASIIfiles as G2fl
+import GSASIIfiles as G2fil
 import GSASIIplot as G2plt
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
@@ -2756,7 +2756,7 @@ create a Vector or Residue rigid body.
             rd.ReInitialize()
             rd.errors = ""
             if not rd.ContentsValidator(filename):   # Report error
-                G2fl.G2Print("Warning: File {} has a validation error".format(filename))
+                G2fil.G2Print("Warning: File {} has a validation error".format(filename))
                 return
             if len(rd.selections) > 1:
                 print("File {} has {} phases. This is unexpected."
@@ -2767,7 +2767,7 @@ create a Vector or Residue rigid body.
             try:
                 rd.Reader(filename)
             except Exception as msg:
-                G2fl.G2Print("Warning: read of file {} failed\n{}".format(
+                G2fil.G2Print("Warning: read of file {} failed\n{}".format(
                     filename,rd.errors))
                 if GSASIIpath.GetConfigValue('debug'):
                     print(msg)
@@ -4141,14 +4141,14 @@ def ShowIsoDistortCalc(G2frame,phase=None):
                 subSizer2.Add((-1,-1))
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
             try:
-                value = G2fl.FormatSigFigs(delocc)
+                value = G2fil.FormatSigFigs(delocc)
             except TypeError:
                 value = str(delocc)
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
             #subSizer.Add((10,-1))
             subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
             try:
-                value = G2fl.FormatSigFigs(val/norm)
+                value = G2fil.FormatSigFigs(val/norm)
                 if 'varyList' in covdata:
                     if str(G2mode) in covdata['varyList']:
                         sig = covdata['sig'][covdata['varyList'].index(str(G2mode))]

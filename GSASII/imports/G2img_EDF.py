@@ -59,17 +59,17 @@ def GetEdfData(filename,imageOnly=False):
             wave = float(fields[2])
         elif 'Wavelength' in line:
             wave = float(fields[2])*1.e10
-        elif 'Size' in line:
+        elif 'Size' == fields[0]:
             imSize = int(fields[2])
 #        elif 'DataType' in lines:
 #            dType = fields[2]
         elif 'pixel_size_x' in line:
             pixSize[0] = float(fields[2])
-        elif 'PSize_1' in line:
+        elif 'PSize_1' == fields[0]:
             pixSize[0] = float(fields[2])*1.e6
         elif 'pixel_size_y' in line:
             pixSize[1] = float(fields[2])
-        elif 'PSize_2' in line:
+        elif 'PSize_2' == fields[0]:
             pixSize[1] = float(fields[2])*1.e6
         elif 'beam_center_x' in line: 
             cent[0] = float(fields[2])
@@ -83,6 +83,8 @@ def GetEdfData(filename,imageOnly=False):
             dist = float(fields[2])
         elif 'Temperature' in line:
             Temperature = float(fields[2])
+        elif 'SampleDistance' in line:
+            dist = float(fields[2])
         if line:
             head.append(line)
         else:   #blank line at end of header

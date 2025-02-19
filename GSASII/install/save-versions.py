@@ -1,4 +1,4 @@
-# record tag number and git hash into the git_version.py file.
+# record tag number and git hash into a saved_version.py file.
 #
 import os
 import sys
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         tagsm1 = [i for i in tags.split('\n') if i.isdecimal()]
         if not tagsm1: continue
         break
-    pyfile = os.path.join(path2GSAS2,'git_verinfo.py')
+    pyfile = os.path.join(path2GSAS2,'saved_version.py')
     try:
         fp = open(pyfile,'w')
     except:

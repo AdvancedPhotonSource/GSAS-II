@@ -5,7 +5,8 @@ config.py
 debug_setup.py.example
 debug_setup.py
 
-GSASII/git_verinfo.py
+# created by install/saved-versions.py
+GSASII/saved_version.py
 
 # created on MacOS by makeMacApp.py
 GSAS-II.app/

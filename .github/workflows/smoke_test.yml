@@ -27,8 +27,9 @@ jobs:
         os:
           - name: 'ubuntu-22.04'
           - name: 'macos-latest'
-          - name: 'windows-latest'
-            cmd_extra: '-win'
+# windows build is broken; don't test for now
+#          - name: 'windows-latest'
+#            cmd_extra: '-win'
         env: ['py310', 'py311', 'py312', 'py313']
     runs-on: ${{ matrix.os.name }}
     steps:

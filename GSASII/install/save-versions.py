@@ -1,4 +1,4 @@
-# record tag number and git hash into the git_version.py file.
+# record tag number and git hash into a saved_version.py file.
 #
 import os
 import sys
@@ -19,9 +19,7 @@ if __name__ == '__main__':
     #if g2repo.active_branch.name != 'master':
     #    print(f'Not on master branch {commit0[:6]!r}')
     #    sys.exit()
-    if g2repo.head.is_detached:
-        print(f'Detached head {commit0[:6]!r}')
-        sys.exit()
+
     # create a file with GSAS-II version information
     try:
         g2repo = git.Repo(path2repo)
@@ -36,6 +34,7 @@ if __name__ == '__main__':
     now = dt.datetime.now().replace(
         tzinfo=commit.committed_datetime.tzinfo)
     commit0 = commit.hexsha
+
     #tags0 = g2repo.git.tag('--points-at',commit).split('\n')
     tags0 = [i for i in g2repo.git.tag('--points-at',commit).split('\n') if i.isdecimal()]
     history = list(g2repo.iter_commits('HEAD'))
@@ -47,7 +46,7 @@ if __name__ == '__main__':
         tagsm1 = [i for i in tags.split('\n') if i.isdecimal()]
         if not tagsm1: continue
         break
-    pyfile = os.path.join(path2GSAS2,'git_verinfo.py')
+    pyfile = os.path.join(path2GSAS2,'saved_version.py')
     try:
         fp = open(pyfile,'w')
     except:

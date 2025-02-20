@@ -2200,7 +2200,10 @@ def autoBkgCalc(bkgdict,ydata):
     :param np.array ydata: array of Y values
     :returns: points for background intensity at each Y position
     '''
-    import pybaselines.whittaker
+    try:
+        import pybaselines.whittaker
+    except:
+        raise Exception("import of pybaselines failed. autobackground requires this")
     lamb = int(10**bkgdict['autoPrms']['logLam'])
     if bkgdict['autoPrms']['opt'] == 0:
         func = pybaselines.whittaker.arpls

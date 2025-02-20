@@ -54,6 +54,7 @@ misc = [
   "h5py",
   "hdf5",
   "imageio",
+  "pybaselines",
 ]
 web = [
   "conda",

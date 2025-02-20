@@ -138,7 +138,8 @@ interpreter/package versions:
  * PyCifRW: no version issues are known. We have been using an older
    version for a long time, but in 2025 switched to the latest version
    and did not see any problems.
-
+ * pybaselines: no version issues are known.
+   
 For more details on problems noted with specific versions of Python
 and Python packages, see comments below and details here:
 :attr:`GSASIIdataGUI.versionDict`,
@@ -226,7 +227,12 @@ optional packages are:
   environment for GSAS-II
   (`conda create -n <env> package-list...`), it will not be added
   to that environment unless you request it specifically.
-
+* pybaselines: Determines a background for a powder pattern in the
+  "autobackground" option. See https://pybaselines.readthedocs.io and
+   https://github.com/derb12/pybaselines for more information.
+* xmltodict: Needed to read Bruker BRML files. The BRML importer will
+  not appear in the importer menu if this package is not installed.
+   
 *Conda command*:
   Should you wish to install Python and the desired packages yourself,
   this is certainly possible. For Linux, ``apt`` or ``yum`` is an option, as is
@@ -235,13 +241,13 @@ optional packages are:
   conda-forge. Here is a typical conda command used to install a GSAS-II compatible
   Python interpreter after miniforge has been installed::
 
-       conda install python=3.11  numpy=1.26 wxpython scipy matplotlib pyopengl pillow h5py imageio requests git gitpython pycifrw -c conda-forge
+       conda install python=3.11  numpy=1.26 wxpython scipy matplotlib pyopengl pillow h5py imageio requests git gitpython pycifrw pybaselines -c conda-forge
 
   for development environments, it is useful to have build and
   debugging tools available, so here is a more extensive list of
   useful packages::
 
-     conda create -n py311 python=3.11 numpy=1.26 matplotlib scipy wxpython  pyopengl imageio h5py hdf5 pillow requests pycifrw ipython conda spyder-kernels meson sphinx sphinx-rtd-theme jupyter git gitpython -c conda-forge
+     conda create -n py311 python=3.11 numpy=1.26 matplotlib scipy wxpython  pyopengl imageio h5py hdf5 pillow requests pycifrw pybaselines ipython conda spyder-kernels meson sphinx sphinx-rtd-theme jupyter git gitpython -c conda-forge
 
 To find out what packages have been directly installed in a conda
 environment this command can be used::
@@ -280,7 +286,8 @@ additional packages are installed:
 * matplotlib (http://matplotlib.org/contents.html),
 * Pillow (https://pillow.readthedocs.org) and/or
 * h5py and hdf5
-
+* pybaselines (https://github.com/derb12/pybaselines)
+  
 but none of these are required to run scripts and the vast
 majority of scripts will not need these packages.
 
@@ -406,11 +413,6 @@ beyond a standard installation are needed to access their functionality.
     Searches for higher symmetry unit cells and possible relationships
     between unit cells. An API has been written and this will be
     integrated into the GSAS-II GUI.
-
-  **pybaselines**
-   Determines a background for a powder pattern in the "autobackground"
-   option. See https://pybaselines.readthedocs.io for more
-   information.
 
 The following web services can also be accessed from computers that
 have internet access. All software needed for this access is included

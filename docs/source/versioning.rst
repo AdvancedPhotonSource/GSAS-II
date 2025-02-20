@@ -36,8 +36,8 @@ To assign a new integer tag number (and increment the minor version number), use
 
    This script is used when there are significant changes (possibly cumulative) to the
    code and a new release should be tagged both with a new integer tag number and
-   minor version number. It updates the `git_verinfo.py` version file so that non-git
-   installs of GSAS-II can report the currect version number.
+   minor version number. It updates the `git_verinfo.py` version file so that
+   GSAS-II can quickly report the current version numbers. 
 
 To increment only the mini version number, use script:
 
@@ -45,13 +45,18 @@ To increment only the mini version number, use script:
 
    This script is used when the have been minor changes made in GSAS-II and 
    the changes warrent an update (for example, due to a bug fix). This cannot be used
-   when an integer tag number has been assigned to the 
-   current GSAS-II commit code.
+   when a new integer tag number has been assigned to the 
+   current GSAS-II commit.
+   It also updates the `git_verinfo.py` version file so that
+   GSAS-II can quickly report the current version numbers.
 
    `.../GSASII/install/save-versions.py`
 
-   This script is used to save the latest version info in the `git_verinfo.py` file.
-   No tags or release version numbers are created. 
+   This script is used to save the latest version info in the `saved_version.py` file.
+   This file is created when a non-git install is made for GSAS-II so that the
+   hash number for the current git version (which cannot be
+   placed into the `git_verinfo.py` file) is recorded. 
+   The `save-versions.py` script does not change any tags or release version numbers. 
 
 
 History

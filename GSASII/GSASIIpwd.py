@@ -27,13 +27,7 @@ import scipy.signal as signal
 from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
 
-filversion = "?"
-try:
-    import git_verinfo
-    filversion = git_verinfo.git_tags[0]
-    if not filversion: filversion = git_verinfo.git_prevtags[0]
-except:
-    pass
+filversion = str(GSASIIpath.GetVersionNumber())
 from . import GSASIIlattice as G2lat
 from . import GSASIIspc as G2spc
 from . import GSASIIElem as G2elem

@@ -695,20 +695,21 @@ def ProjFileSave(G2frame):
             return
         print ('save to file: '+G2frame.GSASprojectfile)
         # stick the file name into the tree and version info into tree so they are saved.
-        # (Controls should always be created at this point)
+        # (Controls should always have been created in tree at this point)
         try:
             Controls = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
             Controls['PythonVersions'] = G2frame.PackageVersions
             Controls['LastSavedAs'] = os.path.abspath(G2frame.GSASprojectfile)
-            Controls['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
+            Controls['LastSavedUsing'] = f"#{GSASIIpath.GetVersionNumber()}, {GSASIIpath.GetVersionTag()}"
             if GSASIIpath.HowIsG2Installed().startswith('git'):
                 g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
                 commit = g2repo.head.commit
                 Controls['LastSavedUsing'] += f" git {commit.hexsha[:8]}"
             else:
-                from . import git_verinfo as gv
-                Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
+                gv = getSavedVersionInfo()
+                if gv is not None:
+                    Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
         except:
             pass
         wx.BeginBusyCursor()

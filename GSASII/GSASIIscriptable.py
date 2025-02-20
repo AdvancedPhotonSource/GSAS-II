@@ -913,8 +913,9 @@ class G2Project(G2ObjectWrapper):
                 commit = g2repo.head.commit
                 controls_data['LastSavedUsing'] += f" git {commit.hexsha[:8]} script"
             else:
-                from . import git_verinfo as gv
-                Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
+                gv = getSavedVersionInfo()
+                if gv is not None:
+                    Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
         except:
             pass
         #    .gpx name

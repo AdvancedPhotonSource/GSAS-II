@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#GSASII
+#GSASIIGUI
 '''
+This provides a short file that is used to start the GSAS-II GUI
+
 A single class, :class:`G2App`, is defined here to create
-an wxPython application. This is only used on
+a wxPython application. This is only used on
 MacOS. For other platforms ``wx.App()`` is called directly.
 '''
 
@@ -12,15 +14,12 @@ import sys
 from . import GSASIIpath
 
 __version__ = '5.0.0'
-try:
-    from . import git_verinfo
-    if len(git_verinfo.git_tags):
-        __version__ = git_verinfo.git_tags[0]
-    elif len(git_verinfo.git_prevtags):
-        __version__ = git_verinfo.git_prevtags[0]
-except ImportError:
-    pass
-
+gv = GSASIIpath.getSavedVersionInfo()
+if gv is not None:
+    if len(gv.git_tags):
+        __version__ = gv.git_tags[0]
+    elif len(gv.git_prevtags):
+        __version__ = gv.git_prevtags[0]
 
 def main():
     import scipy.optimize # loading here addresses problem with build for wx on Pi

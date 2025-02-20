@@ -207,39 +207,90 @@ def HowIsG2Installed():
     G2_installed_result = 'noVCS'
     return G2_installed_result
 
-def GetVersionNumber():
-    '''Obtain a version number for GSAS-II from git or from the
-    files themselves, if no other choice.
+def getSavedVersionInfo():
+    '''Get version number information from a file written by install
+    routines. This is faster than getting the information from git. Also,
+    when GSAS-II is installed into Python, the files are no longer in 
+    a git repository so querying git is not possible.
 
-    :returns: an int value usually, but a value of 'unknown' might occur
+    The saved_version.py file is written by install/save_versions.py.
+    The git_verinfo.py file is written by install/tag-version.py or
+    by install/incr-mini-version.py. If both are present, use the 
+    saved_version.py file preferentially. 
+
+    :returns: a reference to the version variables or None if no 
+      version info file is found.
     '''
+    try:
+        from . import saved_version as gv
+        return gv
+    except:
+        pass
+    try:
+        from . import git_verinfo as gv
+        return gv
+    except:
+        pass
+    return None  # this is unexpected as all dists should have git_verinfo.py
+
+def GetVersionNumber():
+    '''Obtain a numeric (sequential) version number for GSAS-II from version
+    files, or directly from git if no other choice.
+
+    :returns: an int value normally, but unexpected error conditions could result in 
+      a value of 'unknown' or '?'.
+    '''
+    # look for a previously recorded tag -- this is quick
+    gv = getSavedVersionInfo()
+    if gv is not None:
+        for item in gv.git_tags+gv.git_prevtags:
+            if item.isnumeric(): return int(item)
+
     if HowIsG2Installed().startswith('git'):
-        # look for a recorded tag -- this is quick
-        try:
-            from . import git_verinfo as gv
-            for item in gv.git_tags+gv.git_prevtags:
-                if item.isnumeric(): return int(item)
-        except:
-            pass
-        # no luck, ask Git for the most recent tag (must start & end with a number)
+        # unexpected: should always find a version from getSavedVersionInfo()
+        #   from a version file, but if that fails ask Git for the most
+        #   recent tag that starts & ends with a digit and does not contain a '.'
         try:
             g2repo = openGitRepo(path2GSAS2)
-            tag,vers,gnum = g2repo.git.describe('--tags','--match','[0-9]*[0-9]').split('-')
+            tag,vers,gnum = g2repo.git.describe('--tags','--match','[0-9]*[0-9]',
+                                                         '--exclude','*.*').split('-')
             if tag.isnumeric(): return int(tag)
         except:
             pass
         return "unknown"
 
-    # No luck asking, look up version information from git_verinfo.py
-    try:
-        from . import git_verinfo as gv
-        for item in gv.git_tags+gv.git_prevtags:
-            if item.isnumeric(): return int(item)
-    except:
-        pass
-    return "unknown"
+    # Not installed from git and no version file -- very strange!
+    return "?"
+
+def GetVersionTag():
+    '''Obtain a release (X.Y.Z) version number for GSAS-II from version
+    files, or directly from git if no other choice.
+
+    :returns: a string of form <Major>.<Minor>.<mini> normally, but unexpected 
+      error conditions could result in a value of '?.?.?' or '?'.
+    '''
+    # look for a previously recorded tag -- this is quick
+    gv = getSavedVersionInfo()
+    if gv is not None:
+        if '?' not in gv.git_versiontag: return gv.git_versiontag
+
+    if HowIsG2Installed().startswith('git'):
+        # unexpected: should always find a version from getSavedVersionInfo()
+        #   from a version file, but if that fails ask Git for the most
+        #   recent tag that has the X.Y.Z format.
+        try:
+            g2repo = openGitRepo(path2GSAS2)
+            tag,vers,gnum = g2repo.git.describe('--tags','--match','*.*.*').split('-')
+            return tag
+        except:
+            pass
+        return "?.?.?"
+
+    # Not installed from git and no version file -- very strange!
+    return "?"
 
 def getG2VersionInfo():
+    gv = getSavedVersionInfo()
     if HowIsG2Installed().startswith('git'):
         g2repo = openGitRepo(path2GSAS2)
         commit = g2repo.head.commit
@@ -248,7 +299,7 @@ def getG2VersionInfo():
             tzinfo=commit.committed_datetime.tzinfo)
         delta = now - commit.committed_datetime
         age = delta.total_seconds()/(60*60*24.)
-        gversion = f"Tag: #{GetVersionNumber()}"
+        gversion = f"Tag: #{GetVersionNumber()}, {GetVersionTag()}"
         msg = ''
         if g2repo.head.is_detached:
             msg = ("\n" +
@@ -270,16 +321,12 @@ def getG2VersionInfo():
             elif len(rc) > 0:
                 msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
         return f"  GSAS-II:    {commit.hexsha[:8]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
-    else:
-        try:
-            from . import git_verinfo as gv
-            for item in gv.git_tags+gv.git_prevtags:
-                if item.isnumeric():
-                    return f"GSAS-II version: Git: {gv.git_version[:8]}, #{item} (installed without update capability)"
-        except:
-            pass
+    elif gv is not None:
+        for item in gv.git_tags+gv.git_prevtags:
+            if item.isnumeric():
+                return f"GSAS-II version: Git: {gv.git_version[:8]}, #{item} (installed without update capability)"
     # Failed to get version info, fallback on old version number routine
-    return f"GSAS-II installed without git, last tag: {GetVersionNumber()}"
+    return f"GSAS-II installed without git, last tag: #{GetVersionNumber()}, {GetVersionTag()}"
 
 #==============================================================================
 #==============================================================================

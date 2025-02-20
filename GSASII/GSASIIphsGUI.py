@@ -10287,7 +10287,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             atomData[r][c] = parms
                             drawAtoms.SetCellValue(r,c,parms)
                         FindBondsDraw(data)
-                        G2plt.PlotStructure(G2frame,data)
+#                        G2plt.PlotStructure(G2frame,data)
                     dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Label':
                     dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom labelling style',labelChoice)
@@ -10681,8 +10681,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             indx = selection
         else:
             indx = getAtomSelections(drawAtoms,ct-1,
-                                    'as center of sphere addition',
-                                    includeView=True)
+                'as center of sphere addition',includeView=True)
         if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -16064,7 +16063,7 @@ tab, use Operations->"Pawley create")''')
         
     def OnPeaksDelete(event):
         if 'Map Peaks' in data:
-            mapPeaks = data['Map Peaks']
+            mapPeaks = np.array(data['Map Peaks'])
             Ind = getAtomSelections(mapPeaks)
             Ind.sort()
             Ind.reverse()
@@ -16122,7 +16121,8 @@ tab, use Operations->"Pawley create")''')
         
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
-            Ind = getAtomSelections(G2frame.MapPeaks)
+            mapPeaks = np.array(data['Map Peaks'])
+            Ind = getAtomSelections(mapPeaks)
             if Ind:
                 wx.BeginBusyCursor()
                 try:
@@ -16149,7 +16149,7 @@ tab, use Operations->"Pawley create")''')
                 
     def OnPeaksUnique(event):
         if 'Map Peaks' in data:
-            mapPeaks = data['Map Peaks']
+            mapPeaks = np.array(data['Map Peaks'])
             Ind = getAtomSelections(G2frame.MapPeaks)
             if Ind:
                 choice = ['x=0','y=0','z=0','origin','center']

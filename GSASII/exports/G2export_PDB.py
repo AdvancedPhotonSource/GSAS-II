@@ -231,4 +231,113 @@ class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
                 self.Write(fmt.format(atom[ct],*xyz))
             self.CloseFile()
             print('Phase '+phasenam+' written to XYZ file '+self.fullpath)
+            
+class ExportDrawPhaseCartXYZ(G2fil.ExportBaseclass):
+    '''Used to create a Cartesian XYZ file for a phase draw atoms
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
+            G2frame=G2frame,
+            formatName = 'Draw Atoms Cartesian XYZ',
+            extension='.XYZ',
+            longFormatName = 'Export draw atoms with Cartesian coordinates as .XYZ file'
+            )
+        self.exporttype = ['phase']
+        self.multiple = True
+
+    def Exporter(self,event=None):
+        
+        def getRadius(atom):
+            atNum = General['AtomTypes'].index(atom[ct])
+            if 'H' == atom[ct]:
+                if drawingData['showHydrogen']:
+                    if 'vdW' in atom[cs]:
+                        radius = vdwScale*vdWRadii[atNum]
+                    else:
+                        radius = ballScale*drawingData['sizeH']
+                else:
+                    radius = 0.0
+            else:
+                if 'vdW' in atom[cs]:
+                    radius = vdwScale*vdWRadii[atNum]
+                else:
+                    radius = ballScale*BondRadii[atNum]
+            return radius
+            
+        '''Export as a XYZ file
+        '''
+        # the export process starts here
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        # create a dict with refined values and their uncertainties
+        self.loadParmDict()
+        if self.ExportSelect():    # set export parameters; ask for file name
+            return
+        filename = self.filename
+        self.OpenFile()
+        for phasenam in self.phasenam:
+            phasedict = self.Phases[phasenam] # pointer to current phase info
+            General = phasedict['General']
+            i = self.Phases[phasenam]['pId']
+            drawingData = phasedict['Drawing']
+            vdwScale = drawingData['vdwScale']
+            vdWRadii = General['vdWRadii']
+            BondRadii = General['BondRadii']
+            bondR = drawingData['bondRadius']
+            ballScale = drawingData['ballScale']
+            cx,ct,cs,ci = drawingData['atomPtrs']
+            Atoms = drawingData['Atoms']
+            if not len(Atoms):
+                print('**** ERROR - Phase '+phasenam+' has no atoms! ****')
+                continue
+            if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
+                self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
+            Cell = General['Cell'][1:7]
+            A,B = G2lat.cell2AB(Cell)
+            fmt = '{:4s}'+4*'{:10.3f}'
+            line = ' line: ('+3*'{:10.3f}'+') - ('+3*'{:10.3f}'+')'
+            stick = ' stick: ('+3*'{:10.3f}'+') - ('+3*'{:10.3f}'+') r = '+'{:10.3}'
+            face = ' face: ('+3*'{:10.3f}'+') - ('+3*'{:10.3f}'+') - ('+3*'{:10.3f}'+')'
+            self.Write('Atoms: number: {:6d}'.format(len(Atoms)))
+            self.Write('Atoms list: element, X , Y, Z, radius')
+            for atom in Atoms:
+                radius = getRadius(atom)
+                xyz = np.inner(A,np.array(atom[cx:cx+3]))
+                self.Write(fmt.format(atom[ct],*xyz,radius))
+            if drawingData['unitCellBox']:
+                uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
+                uEdges = np.array([
+                    [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
+                    [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
+                    [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
+                self.Write('cell edges:')
+                xyz = [[0,0,0],[1,1,1]]
+                for edge in uEdges:
+                    xyz = [np.inner(A,edge[0]),np.inner(A,edge[1])]
+                    self.Write(line.format(xyz[0][0],xyz[0][1],xyz[0][2],xyz[1][0],xyz[1][1],xyz[1][2]))
+            self.Write('bonds:')
+            for atom in Atoms:
+                xyz = np.inner(A,np.array(atom[cx:cx+3]))
+                radius = getRadius(atom)
+                Bonds = atom[-2]
+                for bond in Bonds:
+                    vec = np.inner(A,bond)
+                    dist = np.sqrt(np.sum(vec**2))
+                    xyz0 = xyz+vec*(radius/dist)
+                    bxyz = xyz+vec
+                    if 'sticks' in atom[cs]:
+                        self.Write(stick.format(xyz0[0],xyz0[1],xyz0[2],bxyz[0],bxyz[1],bxyz[2],bondR))
+            self.Write('polygons:')
+            for atom in Atoms:
+                xyz = np.inner(A,np.array(atom[cx:cx+3]))
+                Faces = atom[-1]
+                for facet in Faces:
+                    vx = facet[0]+xyz
+                    self.Write(face.format(vx[0,0],vx[0,1],vx[0,2],vx[1,0],vx[1,1],vx[1,2],vx[2,0],vx[2,1],vx[2,2]))
+            self.CloseFile()
+            print('Phase Draw Atoms '+phasenam+' written to XYZ file '+self.fullpath)
+            
                 

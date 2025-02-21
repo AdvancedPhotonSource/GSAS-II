@@ -25,8 +25,8 @@ C         DELTAS 2 THROUGH 9 (I.E. 7+13+35+31+91+57+155+130 = 519).
 C
       DO 300  IDEL = IDEL1,IDEL2
          DO 200 I = 1,IDEL
-         DO 200 J = 1,IDEL
-         DO 200 K = 1,IDEL
+         DO J = 1,IDEL
+         DO K = 1,IDEL
             IPROD = I*J*K
             IF(IPROD.NE.IDEL) GO TO 200
 C
@@ -47,8 +47,8 @@ C              --- SET TOP TRIANGULAR ELEMENTS EQUAL TO ZERO
 C
 C              --- GENERATE ALL MATRICES CONSISTENT WITH GIVEN DIAGONAL
                DO 100 II = 1,IDEL
-               DO 100 JJ = 1,IDEL
-               DO 100 KK = 1,IDEL
+               DO JJ = 1,IDEL
+               DO KK = 1,IDEL
                   IQ12 = II - 1
                   IQ13 = JJ - 1
                   IQ23 = KK - 1
@@ -75,7 +75,11 @@ C
                      ISQ22(IQMATF) = IQ22
                      ISQ23(IQMATF) = IQ23
                      ISQ33(IQMATF) = IQ33
+                  END DO
+                  END DO
   100          CONTINUE
+         END DO
+         END DO
   200    CONTINUE
   300 CONTINUE
       RETURN

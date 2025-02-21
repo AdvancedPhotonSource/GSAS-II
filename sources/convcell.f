@@ -1,7 +1,7 @@
 C***********************************************************************
-C     
+C
 C----- PROGRAM TO EXPAND A REDUCED CELL TO A CONVENTIONAL CELL
-C     
+C
 	REAL DEGRAD
 	PARAMETER (DEGRAD = 57.295779)
 
@@ -11,46 +11,46 @@ C
 	integer	icell
       CHARACTER*1 ICENTER
 
-	INTEGER*2 UX1(44)/ 1, 1, 1, 1, 1, 0, 1,-1, 1, 1, 1, 1, 1, 1,
-	1	1,-1,-1, 0,-1, 0, 0, 0, 0, 1, 0, 1, 0,-1,1, 0, 1, 1, 
-	2	1,-1, 0, 1, 1,-1,-1, 0, 0,-1,-1, 1/
-	INTEGER*2 VX1(44) /-1,-1, 0,-1, 0, 1, 0,-1, 0, 1, 0, 0, 1, 1,
-	1	0,-1, 0,-1, 0, 1, 1, 1, 1, 2, 1, 0,-1, 0, 0, 1, 0, 0, 
-	2	0, 0,-1, 0, 0, 0,-2,-1,-1, 0,0, 0/
-	INTEGER*2 WX1(44) / 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-	1	0, 0,-1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 
-	2	0, 0, 0, 0, 2, 0, 0, 0,-2, 0, 0, 0/
-	INTEGER*2 UX2(44) / 1,-1, 0,-1, 1, 1, 1,-1,-1, 1, 0, 0,-1,-1,
-	1	0, 1,-1, 1, 0, 0, 0, 0, 0, 0, 0,-1,-1,-1, 1, 0, 0, 0, 
-	2	0, 0,-1,-1, 1, 1,-1, 0, 0, 0,-1, 0/
-	INTEGER*2 VX2(44) / 1, 0, 1, 0, 1, 0, 1, 0, 1,-1, 1, 1, 1, 1,
-	1	1,-1,-1,-1,-1, 1, 0, 0,-1,-1,-1, 2, 0, 0,-2, 1, 1, 1, 
-	2	1, 0, 0, 0, 0, 2, 0, 1,-1,-1,-1, 1/
-	INTEGER*2 WX2(44) /-1, 1, 0, 1, 0, 1, 0,-1, 0, 0, 0, 0, 0, 0,
-	1	0, 0, 0,-1, 1,-1, 1, 1, 1, 1, 1, 0, 0, 2, 0,-2, 0, 0, 
-	2	0,-1, 0,-2, 0, 0, 0, 2, 0, 0,-2, 0/
-	INTEGER*2 UX3(44) /-1,-1, 0,-1, 0, 1, 0, 0,-1, 0, 0, 0, 0, 0,
-	1	1, 1, 0, 1,-1,-1, 1, 1, 1, 1, 1,-1, 1, 0, 0,-1, 0, 0, 
-	2	0, 0, 0, 0, 0, 0, 0,-1,-1, 1, 0, 0/
-	INTEGER*2 VX3(44) / 1,-1, 0,-1, 1, 1, 1,-1,-1, 0, 0, 0, 0, 0,
-	1	1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0,-1, 1, 0, 0, 0, 0, 
-	2	0,-1, 0, 1, 1, 0, 0, 0, 0, 1,-1, 0/
-	INTEGER*2 WX3(44) / 1,-1, 1,-1, 1, 0, 1,-1, 3,-1, 1, 1, 1, 1,
-	1	2, 2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 2,-1, 0,-1, 0, 1, 1, 
-	2	1, 0,-1, 0, 0,-1,-1, 0, 0, 2, 0, 1/
+	INTEGER(kind=2) UX1(44)/ 1, 1, 1, 1, 1, 0, 1,-1, 1, 1, 1, 1,
+	1	1, 1, 1,-1,-1, 0,-1, 0, 0, 0, 0, 1, 0, 1, 0,-1,1, 0,
+	2	1, 1, 1,-1, 0, 1, 1,-1,-1, 0, 0,-1,-1, 1/
+	INTEGER(kind=2) VX1(44) /-1,-1, 0,-1, 0, 1, 0,-1, 0, 1, 0, 0,
+	1	1, 1, 0,-1, 0,-1, 0, 1, 1, 1, 1, 2, 1, 0,-1, 0, 0, 1,
+	2	0, 0, 0, 0,-1, 0, 0, 0,-2,-1,-1, 0,0, 0/
+	INTEGER(kind=2) WX1(44) / 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0,
+	1	0, 0, 0, 0,-1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0,
+	2	0, 0, 0, 0, 0, 0, 2, 0, 0, 0,-2, 0, 0, 0/
+	INTEGER(kind=2) UX2(44) / 1,-1, 0,-1, 1, 1, 1,-1,-1, 1, 0, 0,
+	1	-1, -1, 0, 1,-1, 1, 0, 0, 0, 0, 0, 0, 0,-1,-1,-1, 1,
+	2	0, 0, 0, 0, 0,-1,-1, 1, 1,-1, 0, 0, 0,-1, 0/
+	INTEGER(kind=2) VX2(44) / 1, 0, 1, 0, 1, 0, 1, 0, 1,-1, 1, 1,
+	1	1, 1, 1,-1,-1,-1,-1, 1, 0, 0,-1,-1,-1, 2, 0, 0,-2, 1,
+	2	1, 1, 1, 0, 0, 0, 0, 2, 0, 1,-1,-1,-1, 1/
+	INTEGER(kind=2) WX2(44) /-1, 1, 0, 1, 0, 1, 0,-1, 0, 0, 0, 0,
+	1	0, 0, 0, 0, 0,-1, 1,-1, 1, 1, 1, 1, 1, 0, 0, 2, 0,-2,
+	2	0, 0, 0,-1, 0,-2, 0, 0, 0, 2, 0, 0,-2, 0/
+	INTEGER(kind=2) UX3(44) /-1,-1, 0,-1, 0, 1, 0, 0,-1, 0, 0, 0,
+	1	0, 0, 1, 1, 0, 1,-1,-1, 1, 1, 1, 1, 1,-1, 1, 0, 0,-1,
+	2	0, 0, 0, 0, 0, 0, 0, 0, 0,-1,-1, 1, 0, 0/
+	INTEGER(kind=2) VX3(44) / 1,-1, 0,-1, 1, 1, 1,-1,-1, 0, 0, 0,
+	1	0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0,-1, 1, 0, 0,
+	2	0, 0, 0,-1, 0, 1, 1, 0, 0, 0, 0, 1,-1, 0/
+	INTEGER(kind=2) WX3(44) / 1,-1, 1,-1, 1, 0, 1,-1, 3,-1, 1, 1,
+	1	1, 1, 2, 2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 2,-1, 0,-1, 0,
+	2	1, 1, 1, 0,-1, 0, 0,-1,-1, 0, 0, 2, 0, 1/
 C-----
 C-----SET THE INPUT AND OUTPUT UNIT NUMBERS
 !      DATA NTIN/3/
       DATA NTOUT/6/
 C----------------------------------------------------------------------
-C     
+C
 C-----SET APPROXIMATE ERROR WINDOW FOR ANGLES NEAR 90.00
-C     
+C
       DEL=0.05
       Q=0.004
-C     
+C
 C-----TRANSFER THE REDUCED CELL TO LOCAL VARIABLES
-C     
+C
 !	OPEN(UNIT=0,STATUS='OLD')
 	READ(5,6900,END=800) AI, BI, CI, ALPI, BETI, GAMI
 6900	FORMAT(6F10.0)
@@ -61,12 +61,12 @@ C
 	ALPHR = ALPI
 	BETR = BETI
 	GAMR = GAMI
-C     
+C
 C-----SET ANGLES OF 90.0+/-DEL TO 90.0
 C-----RESETTING THESE ANGLES IS PERFORMED IN ORDER THAT THE A*B DOT
 C-----PRODUCTS CALCULATE TO ZERO WHEN THE ANGLE IS 90.0 WITHIN
 C-----A REASONABLE ERROR.
-C     
+C
       IF(ALPHR.GT.90.0-DEL .AND. ALPHR.LT.90.0+DEL) ALPHR=90.0
       IF(BETR .GT.90.0-DEL .AND. BETR .LT.90.0+DEL) BETR =90.0
       IF(GAMR .GT.90.0-DEL .AND. GAMR .LT.90.0+DEL) GAMR =90.0
@@ -97,9 +97,9 @@ C     PICK OUT TRANSFORMATION MATRIX
       UZ3=UX3(L)
       VZ3=VX3(L)
       WZ3=WX3(L)
-C     
+C
 C-----SET ICENTER TO THE METRIC SYMMETRY BASED ON THE REDUCED CELL #
-C     
+C
 	IF (ISEQ.EQ.1) THEN
 	  ICELL = 1
 	  ICENTER ='F'
@@ -150,43 +150,43 @@ C
 	  ICENTER ='P'
 	ENDIF
 C----------------------------------------------------------------------
-C     
+C
 C-----RESET THE REDUCED CELL ANGLES TO THE TRUE VALUES NOW THAT THE
-C-----METRIC SYMMETRY HAS BEEN DETERMINED. 
-C     
+C-----METRIC SYMMETRY HAS BEEN DETERMINED.
+C
       AR=ALPI/DEGRAD
       BR=BETI/DEGRAD
       GR=GAMI/DEGRAD
-C     
+C
 C----CALC. LENGTH OF A VECTOR(A)(BRAVAIS FINAL) SQRT(A DOT A)
       CALL SYMDOT(UZ1,VZ1,WZ1,UZ1,VZ1,WZ1,ARI,BRI,CRI,AR,BR,GR,DOTAA)
       AZF=SQRT(DOTAA)
-C     
+C
 C-----CALC. LENGTH OF VECTOR(B)(BRAVAIS FINAL)SQRT(B DOT B)
-C     
+C
       CALL SYMDOT(UZ2,VZ2,WZ2,UZ2,VZ2,WZ2,ARI,BRI,CRI,AR,BR,GR,DOTBB)
       BZF=SQRT(DOT BB)
-C     
+C
 C----CALC. LENGTH OF VECTOR(C)(BRAVAIS FINAL) SQRT(C DOT C)
-C     
+C
       CALL SYMDOT(UZ3,VZ3,WZ3,UZ3,VZ3,WZ3,ARI,BRI,CRI,AR,BR,GR,DOTCC)
       CZF=SQRT(DOTCC)
-C     
+C
 C-----CALC. ANGLE BETWEEN AZF AND BZF(ANGLE GAMMA)
       CALL SYMDOT(UZ1,VZ1,WZ1,UZ2,VZ2,WZ2,ARI,BRI,CRI,AR,BR,GR,DOTAB)
       COSG=DOTAB/(AZF*BZF)
       AGAM=ACOS(COSG)
       AGAMD=AGAM*DEGRAD
-C     
+C
 C----CALC. ANGLE BETWEEN AZF AND CZF(ANGLE BETA)
-C     
+C
       CALL SYMDOT(UZ1,VZ1,WZ1,UZ3,VZ3,WZ3,ARI,BRI,CRI,AR,BR,GR,DOTAC)
       COSB=DOTAC/(AZF*CZF)
       ABET=ACOS(COSB)
       ABETD=ABET*DEGRAD
-C     
+C
 C------CALC. ANGLE BETWEEN BZF AND CZF(ANGLE ALPHA)
-C     
+C
       CALL SYMDOT(UZ2,VZ2,WZ2,UZ3,VZ3,WZ3,ARI,BRI,CRI,AR,BR,GR,DOTBC)
       COSA=DOTBC/(BZF*CZF)
       AALP=ACOS(COSA)
@@ -201,20 +201,20 @@ C
  800	CONTINUE
 	end
 C======================================================================
-      SUBROUTINE SYMTST(NTOUT, IWARN, ISEQ, Q, E, 
+      SUBROUTINE SYMTST(NTOUT, IWARN, ISEQ, Q, E,
 	1	ARI, BRI, CRI, ALPHR, BETR, GAMR)
 
 	REAL E(6), Q
 
-C     
+C
 C-----SYMTST TESTS FOR EQUALITY OF DOT PRODUCTS BASED ON DIFFERENCES
 C-----BEING SMALLER THAT A PRESET VALUE FOR THE RELATIVE ERROR IN A*A
 C-----B*B, C*C, B*C, A*C OR A*B.
-C     
+C
 C-----THE RELATIVE ERROR Q IS SET TO 0.004 IN SUBROUTINE SYM
 C-----THE INCREMENT DQ INSURES THAT Q*E>0 NEAR 90 DEG
-C     
-C     
+C
+C
 	ISEQ=0
       DQ=0.04
       ISEQ=0
@@ -225,7 +225,7 @@ C-----DETERMINE REDUCED FORM TYPE (- OR +) BASED ON TRUE REDUCED CELL
 	NEG=-1
       elseIF(E(4).GT.Q.AND.E(5).GT.Q.AND.E(6).GE.Q) then
 	NEG=0
-      else	
+      else
 	NEG=-1
 	IF(ALPHR.LT.89.99.OR.BETR.LT.89.99.OR.GAMR.LT.89.99)NEG=0
 	IWARN=IWARN+1
@@ -234,9 +234,9 @@ C-----DETERMINE REDUCED FORM TYPE (- OR +) BASED ON TRUE REDUCED CELL
       endif
 C-----TEST FOR A=B=C ------------------------------------------------------
       IF(ABS(E(1)-E(3)) .LT. Q*E(3)) THEN
-C     
+C
 C-----REDUCED FORM WITH A=B=C    (NUMBERS 1 TO 8) -------------------------
-C     
+C
 	IF(NEG.NE.-1) THEN
 	  X=E(1)/2.
 	  IF (ABS(E(4)-X).LT.(E(4)*Q+DQ).AND.ABS(E(5)-X).LT.(E(5)*Q+DQ)
@@ -272,9 +272,9 @@ C
       ENDIF
 C-----TEST FOR A=B --------------------------------------------------------
       IF(ABS(E(1)-E(2)) .LT. Q*E(2)) THEN
-C     
+C
 C-----REDUCED FORMS WITH A=B   (NUMBERS 9 TO 17) --------------------------
-C     
+C
 	IF(NEG.NE.-1) THEN
 	  X=E(1)/2.
 	  IF(ABS(E(4)-X).LT.(E(4)*Q+DQ).AND.ABS(E(5)-X).LT.(E(5)*Q+DQ)
@@ -308,11 +308,11 @@ C
 	ENDIF
       ENDIF
 C-----TEST FOR B=C ------------------------------------------------------
-      IF(ABS(E(2)-E(3)) .LT. Q*E(3) .and. 
+      IF(ABS(E(2)-E(3)) .LT. Q*E(3) .and.
 	1	ABS(BRI-CRI).LE.ABS(BRI*Q)) THEN
-C     
+C
 C-----REDUCED FORMS WITH B=C    (NUMBERS 18 TO 25) ----------------------
-C     
+C
 	IF(NEG.NE.-1) THEN
 	  X=E(1)/2.
 	  IF (ABS(E(4)-X/2.).LT.(ABS(E(4)*Q)+DQ).AND.
@@ -345,9 +345,9 @@ C
 	  IF (ISEQ .NE. 0) RETURN
 	ENDIF
       ENDIF
-C     
+C
 C-----REDUCED FORMS WITH A.NE.B.NE.C   (NUMBERS 26 TO 44)
-C     
+C
       IF(NEG.NE.-1) THEN
 	X=E(1)/2.
 	Y=E(2)/2.
@@ -409,7 +409,7 @@ C
       RETURN
       END
       SUBROUTINE SYMDOT(UZ1,VZ1,WZ1,UZ2,VZ2,WZ2,XI,YI,ZI,AR,BR,GR,DOTXY)
-C     
+C
 C-----DOT PRODUCT SUBROUTINE(X DOT Y) WHERE
 C-----VECTOR X=(UZ1A+VZ1B+WZ1C)
 C-------VECTOR Y=UZ2A+VZ2B+WZ2C)

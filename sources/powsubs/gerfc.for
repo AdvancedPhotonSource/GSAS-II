@@ -6,13 +6,13 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        Y                   !
-      REAL*4        GERFC                !Result
+      REAL(kind=4)        Y                   !
+      REAL(kind=4)        GERFC                !Result
 
 !INCLUDE STATEMENTS:
 
       DIMENSION     P(5),Q(4),P1(9),Q1(8),P2(6),Q2(5) 
-      REAL*4        P,Q,P1,Q1,P2,Q2,XMIN,XLARGE,SQRPI,X, 
+      REAL(kind=4)        P,Q,P1,Q1,P2,Q2,XMIN,XLARGE,SQRPI,X, 
      1                RES,XSQ,XNUM,XDEN,XI
       INTEGER       ISW,I               
 

@@ -6,14 +6,14 @@
 
 !CALLING ARGUMENTS:             
 
-      INTEGER*4     L,M,S               !Order & subindices
-      REAL*4        AP                  !Output value
+      INTEGER(kind=4)     L,M,S               !Order & subindices
+      REAL(kind=4)        AP                  !Output value
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
 
-      REAL*4        LNORM,ALM0S,A1,A2   
+      REAL(kind=4)        LNORM,ALM0S,A1,A2   
 
 !FUNCTION DEFINITIONS:
 

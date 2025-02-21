@@ -24,18 +24,18 @@ Cf2py intent(in,out) qmat
 Cf2py depend(nxbins,nybins) qmat
 
       IMPLICIT NONE
-      INTEGER*8   N
-      REAL*4      X(0:N-1),Y(0:N-1),Z(0:N-1)
-      INTEGER*8   NXBINS,NYBINS
-      REAL*8      XLIM(0:1),YLIM(0:1)
-      REAL*4      NST(0:NXBINS-1,0:NYBINS-1)
-      REAL*4      HST(0:NXBINS-1,0:NYBINS-1)
-      REAL*4      AMAT(0:NXBINS-1,0:NYBINS-1)
-      REAL*4      QMAT(0:NXBINS-1,0:NYBINS-1)
+      INTEGER(kind=8)   N
+      REAL(kind=4)      X(0:N-1),Y(0:N-1),Z(0:N-1)
+      INTEGER(kind=8)   NXBINS,NYBINS
+      REAL(kind=8)      XLIM(0:1),YLIM(0:1)
+      REAL(kind=4)      NST(0:NXBINS-1,0:NYBINS-1)
+      REAL(kind=4)      HST(0:NXBINS-1,0:NYBINS-1)
+      REAL(kind=4)      AMAT(0:NXBINS-1,0:NYBINS-1)
+      REAL(kind=4)      QMAT(0:NXBINS-1,0:NYBINS-1)
 
-      INTEGER*4   I,J,K
-      REAL*8      DX,DY
-      REAL*4      DDX,DDY,AOLD
+      INTEGER(kind=4)   I,J,K
+      REAL(kind=8)      DX,DY
+      REAL(kind=4)      DDX,DDY,AOLD
       DO K=0,N-1
         IF ( ( X(K).GE.XLIM(0) .AND. X(K).LT.XLIM(1) ) .AND.
      1    ( Y(K).GE.YLIM(0) .AND. Y(K).LT.YLIM(1) )) THEN

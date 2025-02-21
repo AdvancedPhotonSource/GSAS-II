@@ -9,17 +9,17 @@
 
 !INCLUDE STATEMENTS:
                              
-      REAL*4        QT                  
+      REAL(kind=4)        QT                  
       COMMON /QLMNVAL/QT(2109)
 
 !LOCAL VARIABLES:
 
-      REAL*8        SUM,TEMP,TEMP1      
-      INTEGER*4     I,LMN,M,MM          
+      REAL(kind=8)        SUM,TEMP,TEMP1      
+      INTEGER(kind=4)     I,LMN,M,MM          
 
 !FUNCTION DEFINITIONS:                     
 
-      REAL*8        FACTLN              !Compute ln-factorial & binominal coeffs.
+      REAL(kind=8)        FACTLN              !Compute ln-factorial & binominal coeffs.
 
 !DATA STATEMENTS:
 

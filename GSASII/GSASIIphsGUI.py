@@ -10436,6 +10436,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             table.append(atom[:colLabels.index('I/A')+1])
             rowLabels.append(str(i))
 
+        G2frame.atomTable = None
         G2frame.atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         drawAtoms.SetTable(G2frame.atomTable, True)
         drawAtoms.SetMargins(0,0)
@@ -10573,9 +10574,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 attr.SetBackgroundColour(color)
                 drawAtoms.SetAttr(r,cs+2,attr)
                 data['Drawing']['Atoms'][r][cs+2] = color
-        drawAtoms.ClearSelection()
         dlg.Destroy()
-        G2frame.GetStatusBar().SetStatusText('',1)
+        drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
             
     def ResetAtomColors(event):
@@ -11444,7 +11444,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 #new code
 #                drawingData['Zclip'] = min(drawingData['Zclip'],0.95*drawingData['cameraPos'])
                 Zclip.SetScaledValue(drawingData['Zclip'])
-                Zval.SetValue(drawingData['Zclip'])
+                Zval.ChangeValue(drawingData['Zclip'])
                 xmin=1.0    #.01*drawingData['Zclip']*drawingData['cameraPos']/100.
                 xmax=2.*drawingData['cameraPos']
                 Zclip.SetScaledRange(xmin,xmax)

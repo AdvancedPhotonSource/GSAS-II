@@ -238,7 +238,7 @@ def UpdateImageData(G2frame,data):
     if 'det2theta' not in data:
         data['det2theta'] = 0.0
     if 'Gain map' not in data:
-        data['Gain map'] = ''
+        data['Gain map'] = ' '
 #end patch
     tthSizer = wx.BoxSizer(wx.HORIZONTAL)
     tthSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Detector 2-theta: '),0,WACV)
@@ -263,7 +263,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     if 'Flat Bkg' not in data:
         data['Flat Bkg'] = 0.0
     if 'Gain map' not in data:
-        data['Gain map'] = ''
+        data['Gain map'] = ' '
     if 'GonioAngles' not in data:
         data['GonioAngles'] = [0.,0.,0.]
     if 'DetDepth' not in data:
@@ -424,9 +424,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     #end of diagnostic block
         finally:
             dlg.Destroy()
-        GMsum /= pixels
+        GMsum = np.where(pixels>0,GMsum/pixels,0)
         # GMsum = np.where(GMsum > 2000,0,GMsum)
         # GMsum = np.where(GMsum < 500,0,GMsum)
+        GMsum = np.array(GMsum,dtype=np.int32)
         outname = 'GainMap'
         dlg = wx.FileDialog(G2frame, 'Choose gain map filename', pth,outname, 
             'G2img files (*.G2img)|*.G2img',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -621,8 +622,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         Imax = np.max(G2frame.ImageZ)
         data['range'] = [(0,Imax),[Imin,Imax]]
         masks['Thresholds'] = [(0,Imax),[Imin,Imax]]
-        G2frame.slideSizer.GetChildren()[1].Window.SetValue(Imax)   #tricky 
-        G2frame.slideSizer.GetChildren()[4].Window.SetValue(Imin)   #tricky
+        G2frame.slideSizer.GetChildren()[1].Window.ChangeValue(Imax)   #tricky 
+        G2frame.slideSizer.GetChildren()[4].Window.ChangeValue(Imin)   #tricky
          
     def OnIntegrate(event,useTA=None,useMask=None):
         '''Integrate image in response to a menu event or from the AutoIntegrate
@@ -748,7 +749,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
                     'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList','orientation',
-                    'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
+                    'binType','SampleShape','PolaVal','SampleAbs','dark image','background image','Gain map']
         keyList.sort(key=lambda s: s.lower())
         keyText = [i+' = '+str(data[i]) for i in keyList]
         # sort both lists together, ordered by keyText

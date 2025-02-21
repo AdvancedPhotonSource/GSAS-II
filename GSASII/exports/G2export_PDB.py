@@ -298,11 +298,11 @@ class ExportDrawPhaseCartXYZ(G2fil.ExportBaseclass):
             Cell = General['Cell'][1:7]
             A,B = G2lat.cell2AB(Cell)
             fmt = '{:4s}'+4*'{:10.3f}'
-            line = ' line: ('+3*'{:10.3f}'+') - ('+3*'{:10.3f}'+')'
-            stick = ' stick: ('+3*'{:10.3f}'+') - ('+3*'{:10.3f}'+') r = '+'{:10.3}'
-            face = ' face: ('+3*'{:10.3f}'+') - ('+3*'{:10.3f}'+') - ('+3*'{:10.3f}'+')'
-            self.Write('Atoms: number: {:6d}'.format(len(Atoms)))
-            self.Write('Atoms list: element, X , Y, Z, radius')
+            line = ' line '+6*'{:10.3f}'
+            stick = ' stick '+7*'{:10.3f}'
+            face = ' tri '+9*'{:10.3f}'
+            self.Write('XYZ file of drawn %s - Cartesian axes suitable for 3D printing/glass etching'%phasenam)
+            self.Write('Atoms as balls: element X Y Z radius')
             for atom in Atoms:
                 radius = getRadius(atom)
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
@@ -318,7 +318,7 @@ class ExportDrawPhaseCartXYZ(G2fil.ExportBaseclass):
                 for edge in uEdges:
                     xyz = [np.inner(A,edge[0]),np.inner(A,edge[1])]
                     self.Write(line.format(xyz[0][0],xyz[0][1],xyz[0][2],xyz[1][0],xyz[1][1],xyz[1][2]))
-            self.Write('bonds:')
+            self.Write('bonds as ball surface to midpoint: x0 y0 z0 x1 y1 z1 r')
             for atom in Atoms:
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
                 radius = getRadius(atom)
@@ -330,7 +330,7 @@ class ExportDrawPhaseCartXYZ(G2fil.ExportBaseclass):
                     bxyz = xyz+vec
                     if 'sticks' in atom[cs]:
                         self.Write(stick.format(xyz0[0],xyz0[1],xyz0[2],bxyz[0],bxyz[1],bxyz[2],bondR))
-            self.Write('polygons:')
+            self.Write('polygon faces as triangles: x0 y0 z0 x1 y1 z1 x2 y2 z2')
             for atom in Atoms:
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
                 Faces = atom[-1]

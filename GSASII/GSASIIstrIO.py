@@ -707,7 +707,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
             G2fil.G2Print ('ERROR - bad data in least squares result')
             infile.close()
             outfile.close()
-            _copy_file(GPXback,GPXfile)
+            shutil.copy(GPXback,GPXfile)
             G2fil.G2Print ('GPX file save failed - old version retained',mode='error')
             return
 

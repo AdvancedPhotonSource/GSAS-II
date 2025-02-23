@@ -67,17 +67,17 @@ if __name__ == '__main__':
     else:
         fp.write(f'git_prevtags = []\n')
     # get the latest version number
-    releases = [i for i in g2repo.tags if '.' in i.name]
+    releases = [i for i in g2repo.tags if '.' in i.name and i.name.startswith('v')]
     if releases:
-        majors = [i.name.split('.')[0] for i in releases]
+        majors = [i.name.split('.')[0][1:] for i in releases]
         major = max([int(i) for i in majors if i.isdecimal()])
-        minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'{major}.')]
+        minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'v{major}.')]
         minor = max([int(i) for i in minors if i.isdecimal()])
-        minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'{major}.{minor}')]
+        minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'v{major}.{minor}')]
         # mini can be integer, float or even have letters (5.2.1.1rc1)
         # for now, ignore anything with letters or decimals
         mini = max([int(i) for i in minis if i.isdecimal()])
-        versiontag = f'{major}.{minor}.{mini}'
+        versiontag = f'v{major}.{minor}.{mini}'
     else:
         versiontag = '?'
     fp.write(f'git_versiontag = {versiontag!r}\n')

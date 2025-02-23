@@ -27,7 +27,7 @@ if __name__ == '__main__':
     #    print('Not on master branch')
     #    sys.exit()
     if g2repo.head.is_detached:
-        print(f'Detached head {commit0[:6]!r}')
+        print(f'Detached head {commit0[:7]!r}')
         sys.exit()
     # make a list of tags without a dash; get the largest numeric tag
     # someday use the packaging module (but no more dependencies for now)
@@ -42,18 +42,18 @@ if __name__ == '__main__':
         sys.exit()
 
     # get the latest version number
-    releases = [i for i in g2repo.tags if '.' in i.name]
-    majors = [i.name.split('.')[0] for i in releases]
+    releases = [i for i in g2repo.tags if '.' in i.name and i.name.startswith('v')]
+    majors = [i.name.split('.')[0][1:] for i in releases]
     major = max([int(i) for i in majors if i.isdecimal()])
-    minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'{major}.')]
+    minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'v{major}.')]
     minor = max([int(i) for i in minors if i.isdecimal()])
-    minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'{major}.{minor}')]
+    minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'v{major}.{minor}')]
     # mini can be integer, float or even have letters (5.2.1.1rc1)
     # for now, ignore anything with letters or decimals
     mini = max([int(i) for i in minis if i.isdecimal()])
     #latest = f'{major}.{minor}.{mini}'
-    nextmini = f'{major}.{minor}.{mini+1}'
-    #nextminor = f'{major}.{minor+1}.0'
+    nextmini = f'v{major}.{minor}.{mini+1}'
+    #nextminor = f'v{major}.{minor+1}.0'    
     versiontag = nextmini
     if versiontag in releases:
         print(f'Versioning problem, generated next version {versiontag} already defined!')
@@ -94,4 +94,4 @@ if __name__ == '__main__':
     fp.write(f'git_versiontag = {versiontag!r}\n')
     #
     fp.close()
-    print(f'Created git version file {pyfile} at {now} for {commit0[:6]!r}')
+    print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')

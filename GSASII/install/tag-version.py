@@ -33,60 +33,50 @@ path2repo = os.path.dirname(path2GSAS2)
 if __name__ == '__main__':
 
     g2repo = git.Repo(path2repo)
-    if g2repo.active_branch.name != 'master':
-        print('Not on master branch')
-        sys.exit()
+#    if g2repo.active_branch.name != 'master':
+#        print('Not on master branch')
+#        sys.exit()
     if g2repo.head.is_detached:
-        print(f'Detached head {commit0[:6]!r}')
+        print(f'Detached head {commit0[:7]!r}')
         sys.exit()
     # make a list of tags without a dash; get the largest numeric tag
     # someday use the packaging module (but no more dependencies for now)
     numtag = [i for i in g2repo.tags if '-' not in i.name]
     max_numeric = max([int(i.name) for i in numtag if i.name.isdecimal()])
     # get the latest version number
-    releases = [i for i in g2repo.tags if '.' in i.name]
-    majors = [i.name.split('.')[0] for i in releases]
+    releases = [i for i in g2repo.tags if '.' in i.name and i.name.startswith('v')]
+    majors = [i.name.split('.')[0][1:] for i in releases]
     major = max([int(i) for i in majors if i.isdecimal()])
-    minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'{major}.')]
+    minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'v{major}.')]
     minor = max([int(i) for i in minors if i.isdecimal()])
-    minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'{major}.{minor}')]
+    minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'v{major}.{minor}')]
     # mini can be integer, float or even have letters (5.2.1.1rc1)
     # for now, ignore anything with letters or decimals
     mini = max([int(i) for i in minis if i.isdecimal()])
     latest = f'{major}.{minor}.{mini}'
-    #nextmini = f'{major}.{minor}.{mini+1}'
-    nextminor = f'{major}.{minor+1}.0'
+    #nextmini = f'v{major}.{minor}.{mini+1}'
+    nextminor = f'v{major}.{minor+1}.0'
     versiontag = nextminor
     if versiontag in releases:
         print(f'Versioning problem, generated next version {versiontag} already defined!')
         versiontag = '?'
         
-    # scan for the newest untagged commits, stopping at the first
-    # tagged one
-    untagged = []
-    for i,c in enumerate(g2repo.iter_commits('HEAD')):
-        if i > 500:
-            print('No tag found in 500 commits!')
-            #break
-            sys.exit()
-        tags = g2repo.git.tag('--points-at',c).split('\n')
-        if tags == ['']:
-            untagged.append(c)
-        else:
-            break
-    # add a tag to the newest untagged version
-    tagnum = max_numeric
-    for i in sorted(untagged,key=lambda k:k.committed_datetime,reverse=True):
+    # is the newest commit tagged?
+    c = g2repo.head.commit
+    tags = g2repo.git.tag('--points-at',c).split('\n')
+    if tags != ['']:
+        print(f'Latest commit ({c.hexsha[:7]}) is already tagged ({tags}).')
+        sys.exit()
+    # add a tag to the newest commit
+    tagnum = max_numeric + 1
+    while str(tagnum) in g2repo.tags:
+        print(f'Error: {tagnum} would be repeated')
         tagnum += 1
-        if str(tagnum) in g2repo.tags:
-            print(f'Error: {tagnum} would be repeated')
-            break
-        g2repo.create_tag(str(tagnum),ref=i)
-        print(f'created tag {tagnum} for {i.hexsha[:7]}')
-        if versiontag != '?':
-            g2repo.create_tag(str(versiontag),ref=i)
-            print(f'created version # {versiontag} for {i.hexsha[:7]}')
-        break
+    g2repo.create_tag(str(tagnum),ref=c)
+    print(f'created tag {tagnum} for {c.hexsha[:7]}')
+    if versiontag != '?':
+        g2repo.create_tag(str(versiontag),ref=c)
+        print(f'created version # {versiontag} for {c.hexsha[:7]}')
 
     # create a file with GSAS-II version information
     try:
@@ -130,7 +120,7 @@ if __name__ == '__main__':
     fp.close()
     print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')
 
-    print('Now do\n\t git add \n\t git commit \n\t git push \n\t git push --follow-tags (better than git push --tags?)')
+    print('Now do:\n\t git add \n\t git commit \n\t git push \n\t git push --tags (better than git push --follow-tags?)')
 
 # Git 2.4 has added the push.followTags option to turn that flag on by default which you can set with:
 #

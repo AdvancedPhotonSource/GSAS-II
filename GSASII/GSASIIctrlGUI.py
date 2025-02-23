@@ -9518,7 +9518,144 @@ The switch will be made unless Cancel is pressed.'''
     G2fil.openInNewTerm(project)
     print ('exiting GSAS-II')
     sys.exit()
+    
+def gitSwitch2DevBranch(event):
+    '''This is "patch" code to switch from the master branch
+    to the develop (eventually to be renamed main) branch. 
+    Complication here is that the GSASII.py file gets renamed 
+    to G2.py so "shortcuts" need to be re-created to reference that. 
 
+    This is not yet "plumbed" into the current code, but it has been
+    tested with Windows and Mac. At some point this will be made part of the
+    update process in the master branch, but this routine is not needed in 
+    the develop (or eventially main) branch.
+    '''
+    G2frame = wx.App.GetMainTopWindow()
+    gitInst = GSASIIpath.HowIsG2Installed()
+    if not gitInst.startswith('github-rev'):
+        G2MessageBox(G2frame,
+            'Unable to switch branches unless GSAS-II has been installed from GitHub; installed as: '+gitInst,
+            'Not a git install')
+        return
+    if not os.path.exists(GSASIIpath.path2GSAS2): 
+        print(f'Warning: Directory {GSASIIpath.path2GSAS2} not found')
+        return
+    if os.path.exists(os.path.join(GSASIIpath.path2GSAS2,'..','.git')):
+        path2repo = os.path.join(path2GSAS2,'..')  # expected location
+    elif os.path.exists(os.path.join(GSASIIpath.path2GSAS2,'.git')):
+        path2repo = GSASIIpath.path2GSAS2
+    else:
+        print(f'Warning: Repository {path2GSAS2} not found')
+        return
+    try:
+        g2repo = GSASIIpath.openGitRepo(path2repo)
+    except Exception as msg:
+        print(f'Warning: Failed to open repository. Error: {msg}')
+        return
+    if g2repo.is_dirty() or g2repo.index.diff("HEAD"): # changed or staged files
+        G2MessageBox(G2frame,
+            'You have local changes. They must be reset, committed or stashed before switching branches',
+            'Local changes')
+        return
+    if g2repo.head.is_detached:
+        G2MessageBox(G2frame,
+            'You have a old previous version loaded; you must be on a branch head to switching branches',
+            'Detached head')
+        return
+    if g2repo.active_branch.name != "master":
+        G2MessageBox(G2frame,
+            f'You are on the {g2repo.active_branch.name} branch. This can only be run from master.',
+            'Not on master')
+        return
+        
+    # make sure that branches are accessible & get updates
+    print('getting updates...',end='')
+    g2repo.git.remote('set-branches','origin','*')
+    print('..',end='')
+    g2repo.git.fetch()
+    print('.done')
+    branchlist = [i.strip() for i in g2repo.git.branch('-r').split('\n') if '->' not in i]
+    choices = [i for i in  [os.path.split(i)[1] for i in branchlist] if i != g2repo.active_branch.name]
+    b = "develop"
+    if b not in choices: 
+        G2MessageBox(G2frame,
+            f'You are on the {g2repo.active_branch.name!r} branch, but branch {b!r} was not found.',
+            f'No {b} branch')
+        return
+    msg = f'''Confirm switching from git branch {g2repo.active_branch.name!r} to {b!r}.
+
+If confirmed here, GSAS-II will restart. 
+
+Do you want to save your project before restarting?
+Select "Yes" to save, "No" to skip the save, or "Cancel"
+to discontinue the restart process.
+
+If "Yes", GSAS-II will reopen the project after the update.
+
+The switch will be made unless Cancel is pressed.'''
+    dlg = wx.MessageDialog(G2frame, msg, 'Confirm branch switch?',
+                wx.YES_NO|wx.CANCEL|wx.YES_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    if ans == wx.ID_CANCEL:
+        return
+    elif ans == wx.ID_YES:
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        project = os.path.abspath(G2frame.GSASprojectfile)
+        print(f"Restarting GSAS-II with project file {project!r}")
+    else:
+        print("Restarting GSAS-II without a project file ")
+        project = None
+    # I hope that it is possible to do a checkout on Windows
+    # (source files are not locked). If this is not the case
+    # then another approach will be needed, where a .bat file is used
+    # or GSASIIpath is used, as is the case for updates
+    a = g2repo.git.checkout(b)
+    if 'Your branch is behind' in a:
+        print('updating local copy of branch')
+        print(g2repo.git.pull())
+    # post-install stuff (following gitstrap.py)
+    print(f'Byte-compiling all .py files in {GSASIIpath.path2GSAS2!r}... ',end='')
+    import compileall
+    compileall.compile_dir(GSASIIpath.path2GSAS2,quiet=True)
+    print('done')
+    #
+    print('start system-specific install')
+    for k,s in {'win':"makeBat.py", 'darwin':"makeMacApp.py",
+                    'linux':"makeLinux.py"}.items():
+        if sys.platform.startswith(k):
+            script = os.path.join(GSASIIpath.path2GSAS2,'install',s)
+            if not os.path.exists(script):
+                print(f'Platform-specific script {script!r} not found')
+                script = ''
+            break
+    else:
+        print(f'Unknown platform {sys.platform}')
+    # on a Mac, make an applescript
+    if script and sys.platform.startswith('darwin'):
+        print(f'running {script}')
+        import subprocess
+        out = subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
+    # On windows make a batch file with hard-coded paths to Python and GSAS-II
+    elif script and sys.platform.startswith('win'):
+        script = os.path.normpath(os.path.join(GSASIIpath.path2GSAS2,'install',s))
+        print(f'running {script!r}')
+        import subprocess
+        out = subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
+    # On linux, make a desktop icon with hard-coded paths to Python and GSAS-II
+    elif script:
+        sys.argv = [script]
+        print(f'running {sys.argv[0]}')
+        with open(sys.argv[0]) as source_file:
+            exec(source_file.read())
+
+    print('system-specific install done')
+
+    G2fil.openInNewTerm(project)
+    print ('exiting GSAS-II')
+    sys.exit()
+    
 #===========================================================================
 # Importer GUI stuff
 def ImportMsg(parent,msgs):
@@ -9577,6 +9714,9 @@ def SelectPkgInstall(event):
     if sel is None: return
     if not any(sel): return
     pkgs = [choices[i][0] for i,f in enumerate(sel) if f]
+    wx.BeginBusyCursor()
+    pdlg = wx.ProgressDialog('Updating','Installing Python packages; this can take a while',
+                    parent=G2frame)
     if GSASIIpath.condaTest():
         patch_condarc()
         if not GSASIIpath.condaTest(True):
@@ -9584,18 +9724,24 @@ def SelectPkgInstall(event):
         err = GSASIIpath.condaInstall(pkgs)
         if err:
             print(f'Error from conda: {err}')
+            wx.EndBusyCursor()
+            pdlg.Destroy()
             return
     else:
         err = GSASIIpath.pipInstall(pkgs)
         if err:
             print(f'Error from pip: {err}')
+            wx.EndBusyCursor()
+            pdlg.Destroy()
             return
-    msg = '''You must restart GSAS-II to access the importer(s)
-requiring the installed package(s).
+    wx.EndBusyCursor()
+    pdlg.Destroy()
+    msg = '''You must restart GSAS-II to access the importer(s) 
+requiring the package(s) just installed.
 
-Select "Yes" to save, "No" to skip the save, or "Cancel"
-to discontinue the restart process and continue GSAS-II
-without the importer(s).
+Select "Yes" to save and restart, "No" to restart without
+the save, or "Cancel" to discontinue the restart process 
+and continue use of GSAS-II without the importer(s).
 
 If "Yes", GSAS-II will reopen the project after the update.
 '''

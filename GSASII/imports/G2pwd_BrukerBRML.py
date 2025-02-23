@@ -8,7 +8,7 @@ from .. import GSASIIpath
 try:
     import xmltodict as xml
 except Exception as msg:
-    if GSASIIpath.GetConfigValue('debug'): print(f'Debug: xmltodict error = {msg}')
+    #if GSASIIpath.GetConfigValue('debug'): print(f'Debug: xmltodict error = {msg}')
     xml = None
 from .. import GSASIIobj as G2obj
 

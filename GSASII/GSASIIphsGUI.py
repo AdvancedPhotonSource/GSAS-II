@@ -52,13 +52,10 @@ from . import GSASIImath as G2mth
 from . import GSASIIpwd as G2pwd
 from . import GSASIIobj as G2obj
 from . import GSASIIctrlGUI as G2G
-from . import GSASIIfiles as G2fl
+from . import GSASIIfiles as G2fil
 from . import GSASIIconstrGUI as G2cnstG
 from . import atmdata
 from . import ISODISTORT as ISO
-
-# XXX I suspect this is Unix-specific -- need porting help!
-
 
 try:
     wx.NewIdRef
@@ -8000,7 +7997,7 @@ program; Please cite:
     def RunRMCProfile(event):
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
-        rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
+        rmcfile = G2fil.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
         os_name = platform.system()
         if os_name == "Darwin":
             rmcexe = os.path.join(
@@ -10274,7 +10271,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             atomData[r][c] = parms
                             drawAtoms.SetCellValue(r,c,parms)
                         FindBondsDraw(data)
-                        G2plt.PlotStructure(G2frame,data)
+#                        G2plt.PlotStructure(G2frame,data)
                     dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Label':
                     dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom labelling style',labelChoice)
@@ -10423,6 +10420,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             table.append(atom[:colLabels.index('I/A')+1])
             rowLabels.append(str(i))
 
+        G2frame.atomTable = None
         G2frame.atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         drawAtoms.SetTable(G2frame.atomTable, True)
         drawAtoms.SetMargins(0,0)
@@ -10560,9 +10558,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 attr.SetBackgroundColour(color)
                 drawAtoms.SetAttr(r,cs+2,attr)
                 data['Drawing']['Atoms'][r][cs+2] = color
-        drawAtoms.ClearSelection()
         dlg.Destroy()
-        G2frame.GetStatusBar().SetStatusText('',1)
+        drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 
     def ResetAtomColors(event):
@@ -10668,8 +10665,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             indx = selection
         else:
             indx = getAtomSelections(drawAtoms,ct-1,
-                                    'as center of sphere addition',
-                                    includeView=True)
+                'as center of sphere addition',includeView=True)
         if not indx: return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -11432,7 +11428,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 #new code
 #                drawingData['Zclip'] = min(drawingData['Zclip'],0.95*drawingData['cameraPos'])
                 Zclip.SetScaledValue(drawingData['Zclip'])
-                Zval.SetValue(drawingData['Zclip'])
+                Zval.ChangeValue(drawingData['Zclip'])
                 xmin=1.0    #.01*drawingData['Zclip']*drawingData['cameraPos']/100.
                 xmax=2.*drawingData['cameraPos']
                 Zclip.SetScaledRange(xmin,xmax)
@@ -16051,7 +16047,7 @@ tab, use Operations->"Pawley create")''')
 
     def OnPeaksDelete(event):
         if 'Map Peaks' in data:
-            mapPeaks = data['Map Peaks']
+            mapPeaks = np.array(data['Map Peaks'])
             Ind = getAtomSelections(mapPeaks)
             Ind.sort()
             Ind.reverse()
@@ -16109,7 +16105,8 @@ tab, use Operations->"Pawley create")''')
 
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
-            Ind = getAtomSelections(G2frame.MapPeaks)
+            mapPeaks = np.array(data['Map Peaks'])
+            Ind = getAtomSelections(mapPeaks)
             if Ind:
                 wx.BeginBusyCursor()
                 try:
@@ -16136,7 +16133,7 @@ tab, use Operations->"Pawley create")''')
 
     def OnPeaksUnique(event):
         if 'Map Peaks' in data:
-            mapPeaks = data['Map Peaks']
+            mapPeaks = np.array(data['Map Peaks'])
             Ind = getAtomSelections(G2frame.MapPeaks)
             if Ind:
                 choice = ['x=0','y=0','z=0','origin','center']

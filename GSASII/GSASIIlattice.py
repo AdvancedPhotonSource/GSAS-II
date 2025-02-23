@@ -188,13 +188,15 @@ def cellDijFill(pfx,phfx,SGData,parmDict):
     '''Returns the filled-out reciprocal cell (A) terms
     from the parameter dictionaries corrected for Dij.
 
-    :param str pfx: parameter prefix ("n::", where n is a phase number)
+    :param str pfx: parameter prefix ("n::", where n is a phase index)
+    :param str phfx: parameter prefix ("n:h:", where n is a phase index 
+       and h is a histogram index)
     :param dict SGdata: a symmetry object
     :param dict parmDict: a dictionary of parameters
 
-    :returns: A,sigA where each is a list of six terms with the A terms
+    :returns: A, a list of six terms
     '''
-    if pfx+'D11' not in parmDict:
+    if phfx+'D11' not in parmDict:
         return None
     if SGData['SGLaue'] in ['-1',]:
         A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A1']+parmDict[phfx+'D22'],
@@ -229,6 +231,205 @@ def cellDijFill(pfx,phfx,SGData,parmDict):
         A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],
              parmDict[pfx+'A0']+parmDict[phfx+'D11'],0,0,0]
     return A
+
+def getCellSU(pId,hId,SGData,parmDict,covData):
+    '''Compute the unit cell parameters and standard uncertainties
+    where lattice parameters and Hstrain (Dij) may be refined. 
+
+    :param pId: phase index
+    :param hId: histogram index
+    :param SGdata: space group information for current phase
+    :param dict parmDict: parameter dict, must have all non-zero Dij and Ai terms
+    :param dict covData: covariance tree item 
+    :returns: cellList,cellSig where each term is a list of 7 items, 
+       a, b,... Vol and sig(a), sig(b),... sig(Vol), respectively
+    '''
+
+    Dnames = [f'{pId}:{hId}:D{i}' for i in ['11','22','33','12','13','23']]
+    Anames = [f'{pId}::A{i}' for i in range(6)]
+    pfx = f'{pId}::'
+    phfx = f'{pId}:{hId}:'
+    A = cellDijFill(pfx,phfx,SGData,parmDict)
+    cell = list(A2cell(A)) + [calc_V(A)]
+    
+    rVsq = calc_rVsq(A)
+    G,g = A2Gmat(A)       #get recip. & real metric tensors
+    varyList = covData['varyList']
+    covMatrix = covData['covMatrix']
+    if len(covMatrix):
+        vcov = G2mth.getVCov(Anames+Dnames,varyList,covMatrix)
+        for i in [0,6]:
+            for j in [0,6]:
+                if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm']:
+                    vcov[1+i,1+j] = vcov[3+i,3+j] = vcov[i,1+j] = vcov[1+i,j] = vcov[i,j]
+                    vcov[1+i,3+j] = vcov[3+i,1+j] = vcov[i,3+j] = vcov[3+i,j] = vcov[i,j]
+                    vcov[1+i,2+j] = vcov[2+i,1+j] = vcov[2+i,3+j] = vcov[3+i,2+j] = vcov[i,2+j]
+                elif SGData['SGLaue'] in ['m3','m3m']:
+                    vcov[i:3+i,j:3+j] = vcov[i,j]
+                elif SGData['SGLaue'] in ['4/m', '4/mmm']:
+                    vcov[i:2+i,j:2+j] = vcov[i,j]
+                    vcov[1+i,2+j] = vcov[2+i,1+j] = vcov[i,2+j]
+                elif SGData['SGLaue'] in ['3R','3mR']:
+                    vcov[i:3+j,i:3+j] = vcov[i,j]
+                    #        vcov[4,4] = vcov[5,5] = vcov[3,3]
+                    vcov[3+i:6+i,3+j:6+j] = vcov[3,3+j]
+                    vcov[i:3+i,3+j:6+j] = vcov[i,3+j]
+                    vcov[3+i:6+i,j:3+j] = vcov[3+i,j]
+    else:
+        vcov = np.eye(12)
+    delt = 1.e-9
+    drVdA = np.zeros(12)
+    for i in range(12):
+        A[i%6] += delt
+        drVdA[i] = calc_rVsq(A)
+        A[i%6] -= 2*delt
+        drVdA[i] -= calc_rVsq(A)
+        A[i%6] += delt
+    drVdA /= 2.*delt
+    srcvlsq = np.inner(drVdA,np.inner(drVdA,vcov))
+    Vol = 1/np.sqrt(rVsq)
+    sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
+    
+    dcdA = np.zeros((12,12))
+    for i in range(12):
+        pdcdA =np.zeros(12)
+        A[i%6] += delt
+        pdcdA += A2cell(A) + A2cell(A)
+        A[i%6] -= 2*delt
+        pdcdA -= A2cell(A) + A2cell(A)
+        A[i%6] += delt
+        dcdA[i] = pdcdA/(2.*delt)
+    sigMat = np.inner(dcdA,np.inner(dcdA,vcov))
+    var = np.diag(sigMat)
+    CS = np.where(var>0.,np.sqrt(var),0.)
+    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','m3','m3m','4/m','4/mmm']:
+        CS[3:6] = 0.0
+    # show s.u. values only for the unique values
+    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','4/m', '4/mmm']:
+        CS[1] = -CS[1]
+    elif SGData['SGLaue'] in ['m3','m3m']:
+        CS[1] = -CS[1]
+        CS[2] = -CS[2]
+    elif SGData['SGLaue'] in ['3R','3mR']:
+        CS[1] = -CS[1]
+        CS[2] = -CS[2]
+        CS[4] = -CS[4]
+        CS[3] = -CS[3]
+    return cell,[CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
+
+def showCellSU(cellList,cellSig,SGData,cellNames=None):
+    '''Produce the cell parameters from :func:`getCellSU` as a nicely 
+    formatted string
+
+    :param list cellList: a list of 7 items, a, b,... Vol, from getCellSU
+    :param list cellSig: a list of 7 items, sig(a), sig(b),... sig(Vol), 
+      from getCellSU
+    :param SGdata: space group information for current phase
+    :param list cellNames: if specified, should be the labels to be 
+      used for a, b,... volume. Defaults to cellAlbl & 'vol', but for 
+      on-screen use, cellUlbl might be better than cellAlbl
+    '''
+    defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
+    if cellNames is None:
+        cellNames = list(cellAlbl) + ['vol']
+    laue = SGData['SGLaue']
+    if laue == '2/m':
+        laue += SGData['SGUniq']
+    for symlist,celllist in UniqueCellByLaue:
+        if laue in symlist:
+            uniqCellIndx = celllist
+            break
+    else: # should not happen
+        uniqCellIndx = list(range(6))
+    prevsig = 0
+    s = ''
+    for i,(lbl,defsig,val,sig) in enumerate(zip(cellNames,defsigL,cellList,cellSig)):
+        if i != 6 and i not in uniqCellIndx: continue
+        if sig:
+            txt = G2mth.ValEsd(val,sig)
+            prevsig = -sig # use this as the significance for next value
+        else:
+            txt = G2mth.ValEsd(val,min(defsig,prevsig),True)
+        s += f' {lbl}={txt}'
+    return s
+
+def getCellEsd(pfx,SGData,A,covData,unique=False):
+    '''Compute the standard uncertainty on cell parameters
+    
+    :param str pfx: prefix of form "p::"
+    :param SGdata: space group information
+    :param list A: Reciprocal cell Ai terms
+    :param dict covData: covariance tree item 
+    :param bool unique: when True, only directly refined parameters
+      (a in cubic, a & alpha in rhombohedral cells) are assigned 
+      positive s.u. values. Used for CIF generation.
+    '''
+    rVsq = calc_rVsq(A)
+    G,g = A2Gmat(A)       #get recip. & real metric tensors
+    RMnames = [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
+    varyList = covData['varyList']
+    covMatrix = covData['covMatrix']
+    if len(covMatrix):
+        vcov = G2mth.getVCov(RMnames,varyList,covMatrix)
+        if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm']:
+            vcov[1,1] = vcov[3,3] = vcov[0,1] = vcov[1,0] = vcov[0,0]
+            vcov[1,3] = vcov[3,1] = vcov[0,3] = vcov[3,0] = vcov[0,0]
+            vcov[1,2] = vcov[2,1] = vcov[2,3] = vcov[3,2] = vcov[0,2]
+        elif SGData['SGLaue'] in ['m3','m3m']:
+            vcov[0:3,0:3] = vcov[0,0]
+        elif SGData['SGLaue'] in ['4/m', '4/mmm']:
+            vcov[0:2,0:2] = vcov[0,0]
+            vcov[1,2] = vcov[2,1] = vcov[0,2]
+        elif SGData['SGLaue'] in ['3R','3mR']:
+            vcov[0:3,0:3] = vcov[0,0]
+    #        vcov[4,4] = vcov[5,5] = vcov[3,3]
+            vcov[3:6,3:6] = vcov[3,3]
+            vcov[0:3,3:6] = vcov[0,3]
+            vcov[3:6,0:3] = vcov[3,0]
+    else:
+        vcov = np.eye(6)
+    delt = 1.e-9
+    drVdA = np.zeros(6)
+    for i in range(6):
+        A[i] += delt
+        drVdA[i] = calc_rVsq(A)
+        A[i] -= 2*delt
+        drVdA[i] -= calc_rVsq(A)
+        A[i] += delt
+    drVdA /= 2.*delt    
+    srcvlsq = np.inner(drVdA,np.inner(drVdA,vcov))
+    Vol = 1/np.sqrt(rVsq)
+    sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
+    
+    dcdA = np.zeros((6,6))
+    for i in range(6):
+        pdcdA =np.zeros(6)
+        A[i] += delt
+        pdcdA += A2cell(A)
+        A[i] -= 2*delt
+        pdcdA -= A2cell(A)
+        A[i] += delt
+        dcdA[i] = pdcdA/(2.*delt)
+    
+    sigMat = np.inner(dcdA,np.inner(dcdA,vcov))
+    var = np.diag(sigMat)
+    CS = np.where(var>0.,np.sqrt(var),0.)
+    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','m3','m3m','4/m','4/mmm']:
+        CS[3:6] = 0.0
+    # show s.u. values only for the unique values
+    if not unique:
+        pass
+    elif SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','4/m', '4/mmm']:
+        CS[1] = -CS[1]
+    elif SGData['SGLaue'] in ['m3','m3m']:
+        CS[1] = -CS[1]
+        CS[2] = -CS[2]
+    elif SGData['SGLaue'] in ['3R','3mR']:
+        CS[1] = -CS[1]
+        CS[2] = -CS[2]
+        CS[4] = -CS[4]
+        CS[3] = -CS[3]
+    return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
 
 def CellDijCorr(Cell,SGData,Data,hist):
     '''Returns the cell corrected for Dij values.
@@ -382,16 +583,16 @@ def subVals(expr,A,T):
 # Mat = np.linalg.inv(Trans).T
 # Aold = [0.05259986634758891, 0.05259986634758891, 0.005290771904550856, 0.052599866347588925, 0, 0]
 # Anew = [0.018440738491448085, 0.03944989976069168, 0.034313054205100654, 0, -0.00513684555559103, 0]
-# cellConstr = G2lat.GenerateCellConstraints()
-# calcA = [G2lat.subVals(i,Aold,Mat) for i in cellConstr]
+# cellConstr = GenerateCellConstraints()
+# calcA = [subVals(i,Aold,Mat) for i in cellConstr]
 # print('original   xform A',Anew)
 # print('calculated xfrom A',calcA)
 # print('input')
-# print('  old cell',G2lat.A2cell(Aold))
-# print('  new cell',G2lat.A2cell(Anew))
+# print('  old cell',A2cell(Aold))
+# print('  new cell',A2cell(Anew))
 # print('derived results')
-# print('  from eq.',G2lat.A2cell(calcA))
-# print('  diffs   ',np.array(G2lat.A2cell(calcA)) - G2lat.A2cell(Anew))
+# print('  from eq.',A2cell(calcA))
+# print('  diffs   ',np.array(A2cell(calcA)) - A2cell(Anew))
 
 def fmtCellConstraints(cellConstr):
     '''Format the cell relationships created in :func:`GenerateCellConstraints`

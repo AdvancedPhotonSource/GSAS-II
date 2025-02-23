@@ -214,7 +214,7 @@ def GetTifData(filename):
             pixy = [172.,172.]
             File.seek(IFD[273][2][0])
             G2fil.G2Print ('Read Pilatus3 tiff file: '+filename)
-            image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
+            image = np.array(np.frombuffer(File.read(4*Npix),dtype=byteOrd+'f4'),dtype=np.int32)
         elif b'ImageJ' in S:
             tifType = 'ImageJ'
             dataType = 0

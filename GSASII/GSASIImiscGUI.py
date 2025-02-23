@@ -1356,6 +1356,24 @@ def mkParmDictfromTree(G2frame,sigDict=None):
             covDict['covMatrix'],covDict['varyList'],covDict['sig']))
     return parmDict
 
+def LogCellChanges(G2frame):
+    '''Log varied cell parameters into the data tree notebook'''
+    covData = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
+    parmDict = mkParmDictfromTree(G2frame)
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    for phase in Phases:
+        phasedict = Phases[phase]
+        pId = phasedict['pId']
+        SGData = phasedict['General']['SGData']
+        for hist in phasedict['Histograms']:
+            if not phasedict['Histograms'][hist]['Use']: continue
+            hId = Histograms[hist]['hId']
+            if any(phasedict['Histograms'][hist]['HStrain'][1]) or phasedict['General']['Cell'][0]:
+                cellList,cellSig = G2lat.getCellSU(pId,hId,SGData,parmDict,covData)
+                txt = G2lat.showCellSU(cellList,cellSig,SGData)
+                G2frame.AddToNotebook(f'Phase {pId} Hist {hId}: {txt}',
+                                          'CEL',False)
 if __name__ == '__main__':
     from . import GSASIIdataGUI
     application = GSASIIdataGUI.GSASIImain(0)

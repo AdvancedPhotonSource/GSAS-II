@@ -1407,9 +1407,14 @@ def condaInstall(packageList):
                   '\nConsider using the "conda install conda" command')
         return None
     try:
+        print(f'preparing to install {packageList}'+
+                  '\nThis can take a while')
+        # the next line works, but the subsequent cli is considered more stable
+        #conda.cli.main('install',  '-y', *packageList)
+        # this is considered to be supported in the long term
         (out, err, rc) = conda.cli.python_api.run_command(
             conda.cli.python_api.Commands.INSTALL,packageList,
-            search_path=('conda-forge'),
+#            search_path=('conda-forge'),   # broken!
 #    use_exception_handler=True#, stdout=sys.stdout,
             stderr=sys.stderr)
         #print('rc=',rc)

@@ -60,7 +60,15 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             if all([(i in fp) for i in self.midassections]): # are expected MIDAS sections present?
                 self.mode = 'midas'
                 return True # must be present for Midas output
-        except:
+        except FileNotFoundError as msg:
+            self.errors = f'Exception from zarr module (version={zarr.__version__}):'
+            self.errors += '\n\t' + str(msg)
+            if os.path.exists(filename) and zarr.__version__.startswith('3.0'):
+                self.errors +='\n\n*** this is likely due to a buggy version of the zarr module'
+                self.errors +='\n*** please use "conda install zarr=2.18" to fix this'
+        except Exception as msg:
+            self.errors = f'Exception from zarr module (version={zarr.__version__}):'
+            self.errors += '\n\t' + str(msg)
             return False
         finally:
             del fp

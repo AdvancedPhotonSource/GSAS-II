@@ -107,7 +107,7 @@ on GetPythonLocation()
 end GetPythonLocation
 
 on GetG2Location()
-	(* find the GSASII.py script in the same directory as this script *)
+	(* find the GSAS-II.py script in the same directory as this script *)
 	tell application "Finder"
 		set scriptdir to the POSIX path of (container of (path to me) as alias)
 	end tell

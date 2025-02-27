@@ -2172,10 +2172,6 @@ def SummRestraints(restraintDict):
             res += f'Phase {ph} Restraints: {s}'
     return res
 
-
-# getCellEsd has been moved but leave reference here for now
-getCellEsd = G2lat.getCellEsd
-
 def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):
     '''Called after a refinement to transfer parameters from the parameter dict to
     the phase(s) information read from a GPX file. Also prints values to the .lst file
@@ -2458,7 +2454,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         pfx = str(pId)+'::'
         if cell[0]:
             A,sigA = cellFill(pfx,SGData,parmDict,sigDict)
-            cellSig = getCellEsd(pfx,SGData,A,covData,unique=True)  #includes sigVol
+            cellSig = G2lat.getCellEsd(pfx,SGData,A,covData,unique=True)  #includes sigVol
             if pFile: pFile.write(' Reciprocal metric tensor: \n')
             ptfmt = "%15.9f"
             names = ['A11','A22','A33','A12','A13','A23']

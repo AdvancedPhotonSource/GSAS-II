@@ -2296,7 +2296,7 @@ class ExportBaseclass(object):
         try:
             pfx = str(phasedict['pId'])+'::'
             A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
-            cellSig = G2stIO.getCellEsd(pfx,phasedict['General']['SGData'],A,
+            cellSig = G2lat.getCellEsd(pfx,phasedict['General']['SGData'],A,
                 self.OverallParms['Covariance'],unique=unique)  # returns 7 vals, includes sigVol
             cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
             return cellList,cellSig
@@ -2337,7 +2337,7 @@ class ExportBaseclass(object):
             'varyList': [Dlookup.get(striphist(v),v) for v in data_name['varyList']],
             'covMatrix': data_name['covMatrix']
             }
-        return list(G2lat.A2cell(A)) + [G2lat.calc_V(A)], G2stIO.getCellEsd(str(pId)+'::',SGdata,A,covData)
+        return list(G2lat.A2cell(A)) + [G2lat.calc_V(A)], G2lat.getCellEsd(str(pId)+'::',SGdata,A,covData)
 
     def GetAtoms(self,phasenam):
         """Gets the atoms associated with a phase. Can be used with standard

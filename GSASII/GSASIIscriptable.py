@@ -4473,7 +4473,7 @@ class G2Phase(G2ObjectWrapper):
                 sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList']))
 
             A, sigA = G2stIO.cellFill(pfx, sgdata, parmDict, sigDict)
-            cellSig = G2stIO.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
+            cellSig = G2lat.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
             cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
             cellDict, cellSigDict = {}, {}
             for i, key in enumerate(['length_a', 'length_b', 'length_c',
@@ -5560,7 +5560,7 @@ class G2SeqRefRes(G2ObjectWrapper):
         # convert to direct cell
         c = G2lat.A2cell(A)
         vol = G2lat.calc_V(A)
-        cE = G2stIO.getCellEsd(pfx,SGdata,A,covData)
+        cE = G2lat.getCellEsd(pfx,SGdata,A,covData)
         return list(c)+[vol],cE,uniqCellIndx
 
     def get_VaryList(self,hist):

@@ -1297,7 +1297,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
                     c = G2lat.A2cell(A)
                     vol = G2lat.calc_V(A)
-                    cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
+                    cE = G2lat.getCellEsd(pfx,SGdata[pId],A,covData)
                 except:
                     c = 6*[None]
                     cE = 6*[None]

@@ -1418,7 +1418,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
         covData = DisAglData['covData']
         pfx = str(DisAglData['pId'])+'::'
         A = G2lat.cell2A(Cell[:6])
-        cellSig = G2stIO.getCellEsd(pfx,SGData,A,covData)
+        cellSig = G2lat.getCellEsd(pfx,SGData,A,covData)
         names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
         valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
         line = '\n Unit cell:'

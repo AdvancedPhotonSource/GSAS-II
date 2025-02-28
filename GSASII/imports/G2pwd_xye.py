@@ -83,8 +83,8 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                         gotCcomment = True
                         continue   
                     if S[0] in ["'",'#','!']:
-                        if 'q' in S and not self.Wave:
-                            wave = S.split()[1]
+                        if 'wavelength' in S and not self.Wave:
+                            wave = S.split()[2]
                             if wave: 
                                 try:
                                     self.Wave = float(wave)

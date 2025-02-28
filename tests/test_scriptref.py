@@ -44,18 +44,21 @@ def test_refine():
     gpx.refine()
     testR('Before fitting',96.681098,99.748994)
     # 
-    h1.set_refinements({'Limits': [16.,158.4]})
-    h2.set_refinements({'Limits': [19.,153.]})
-    gpx.set_Controls('cycles', 8)
+    #h1.set_refinements({'Limits': [16.,158.4]})
+    #h2.set_refinements({'Limits': [19.,153.]})
+    h1.set_refinements({'Limits': [16.,110]})   # decreasing range speeds this up by ~40%
+    h2.set_refinements({'Limits': [19.,120.]})
+    #gpx.set_Controls('cycles', 8)
+    gpx.set_Controls('cycles', 3)  # also gains ~x1.5 in speed
     h1.set_refinements({"Background": { "no. coeffs": 6, "refine": True }})
     h2.set_refinements({"Background": { "no. coeffs": 3, "refine": True }})
     gpx.refine()
-    testR('Fit scale & bkg',40.64193551740201,18.6189841945785)
+    testR('Fit scale & bkg',45.811562,17.864834)
     #
     phase0.set_refinements({'Cell':True})
     phase0.set_HAP_refinements({'HStrain':True},[h2])
     gpx.refine()
-    testR('Fit cells',30.072804646662338,15.014744642359773)
+    testR('Fit cells',32.475886, 15.02412)
     #
     phase0.set_HAP_refinements({'Mustrain':{'refine':True}},[h1])
     #phase0.set_HAP_refinements({'Size':{'refine':True}},[h1])
@@ -64,13 +67,17 @@ def test_refine():
     phase0.set_refinements({"Atoms":{"all":"XU"}})
     gpx.refine()
     testR('add Mustrain, Shift, Displace[XY], atomic X & Uiso',
-              12.66845815113383,6.695761603085025)
+              13.407161,  6.360408)
     #
     h1.set_refinements({'Instrument Parameters': ['U', 'V', 'W']})
     h2.set_refinements({'Instrument Parameters': ['U', 'V', 'W']})
     gpx.refine()
-    testR('add UVW',10.518485346229324,4.495180030877684)
+    testR('add UVW',10.785432,  4.130126)
     print('OK')
     
 if __name__ == '__main__':
+    import time
+    start = time.time()
     test_refine()
+    print('elapsed=',time.time()-start)
+    

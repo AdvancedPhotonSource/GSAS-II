@@ -207,13 +207,21 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         Obj.SetValue('%3d %3d %3d'%(h,k,l))
 
     def OnPOOrder(event):
+        '''Respond when the SH order is changed in the GUI.
+        Updates the dict with the cylindrical Spherical harmonics 
+        coefficients for the specified order, retaining values from 
+        the previous dict, if values were already present
+        '''
         Obj = event.GetEventObject()
         Order = int(Obj.GetValue())
         UseList[G2frame.hist]['Pref.Ori.'][4] = Order
-        UseList[G2frame.hist]['Pref.Ori.'][5] = SetPOCoef(Order,G2frame.hist)
+        UseList[G2frame.hist]['Pref.Ori.'][5] = SetPOCoef(Order)
         wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
 
     def OnPOType(event):
+        '''Respond when the SH type is changed in the GUI.
+        Note that values set that are not used are also not changed.
+        '''
         Obj = event.GetEventObject()
         if 'March' in Obj.GetValue():
             UseList[G2frame.hist]['Pref.Ori.'][0] = 'MD'
@@ -251,12 +259,16 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         UseList[G2frame.hist]['FixedSeqVars'] = [phaseKeys[i] for i in sel]
         wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
 
-    def SetPOCoef(Order,hist):
+    def SetPOCoef(Order):
+        '''Sets up a dict with the cylindrical Spherical harmonics 
+        coefficients for the specified order. 
+        Retains values from the previous dict, if values were already present
+        '''
         cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
-        newPOCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
+        newPOCoef = dict(zip(cofNames,len(cofNames)*[0.]))
         POCoeff = UseList[G2frame.hist]['Pref.Ori.'][5]
         for cofName in POCoeff:
-            if cofName in  cofNames:
+            if cofName in cofNames:
                 newPOCoef[cofName] = POCoeff[cofName]
         return newPOCoef
 

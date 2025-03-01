@@ -4998,14 +4998,14 @@ class G2Phase(G2ObjectWrapper):
         """Retrieves or sets individual HAP parameters for one histogram or
         multiple histograms.
 
-
         :param str param: is a parameter name, which can be 'Scale' or
           'PhaseFraction' (either can be used for phase
-          fraction), 'Use', 'Extinction' or 'LeBail'.
+          fraction), 'Use', 'Extinction', 'LeBail', 'PO' 
+          (for Prefered Orientation).
           If not specified or invalid
           an exception is generated showing the list of valid parameters.
           At present, these HAP parameters cannot be access with this function:
-          'Pref.Ori.', 'Size', 'Mustrain', 'HStrain', 'Babinet'. On request this
+          'Size', 'Mustrain', 'HStrain', 'Babinet'. On request this
           might be addressed in the future. Some of these values can be set via
           :meth:`G2Phase.set_HAP_refinements`.
         :param newValue: the value to use when setting the HAP parameter for the
@@ -5013,6 +5013,10 @@ class G2Phase(G2ObjectWrapper):
           an exception will be generated if not possible. If not specified,
           and only one histogram is selected, the value is retrieved and
           returned.
+          When param='PO' then this value is interpreted as the following:
+            if the value is 0 or an even integer, then the preferred 
+            orientation model is set to "Spherical harmonics". If the value is 
+            1, then "March-Dollase" is used. Any other value generates an error.
         :param list targethistlist: a list of histograms where each item in the
             list can be a histogram object (:class:`G2PwdrData`),
             a histogram name or the index number of the histogram.
@@ -5022,7 +5026,8 @@ class G2Phase(G2ObjectWrapper):
             are used.
 
             targethistlist must correspond to a single histogram if a value
-            is to be returned (when argument newValue is not specified).
+            is to be returned (i.e. when argument newValue is not specified).
+        :param int order: is a value for the order when     
 
         :returns: the value of the parameter, when argument newValue is not specified.
 
@@ -5050,17 +5055,20 @@ class G2Phase(G2ObjectWrapper):
         refFloatParam = ('Scale','Extinction')
         useBool = False
         useFloat = False
+        useInt = False
         if param == 'PhaseFraction': param = 'Scale'
         if param in boolParam:
             useBool = True
         elif param in refFloatParam:
             useFloat = True
+        elif param in ['PO']:
+            useInt = True
         else:
             s = ''
-            for i in boolParam+refFloatParam+['PhaseFraction']:
+            for i in boolParam+refFloatParam+['PhaseFraction','PO']:
                 if s != '': s += ', '
                 s += f'"{i}"'
-            raise G2ScriptException('Invalid parameter. Valid choices are: '+s)
+            raise G2ScriptException(f'Invalid parameter. Valid choices are: {s}')
         if not doSet and len(targethistlist) > 1:
             raise G2ScriptException(f'Unable to report value from {len(targethistlist)} histograms')
         for h in targethistlist:
@@ -5076,6 +5084,28 @@ class G2Phase(G2ObjectWrapper):
                 self.data['Histograms'][h][param] = bool(newValue)
             elif useFloat:
                 self.data['Histograms'][h][param][0] = float(newValue)
+            elif useInt:
+                if newValue is None:
+                    return self.data['Histograms'][h]['Pref.Ori.']
+                try:
+                    intval = int(newValue)
+                except:
+                    intval = None
+                if intval == 1:
+                    self.data['Histograms'][h]['Pref.Ori.'][0] = 'MD'
+                elif intval is not None and 2*int(intval//2) == intval:
+                    SGData = self.data['General']['SGData']
+                    cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',intval,False)     #cylindrical & no M
+
+                    self.data['Histograms'][h]['Pref.Ori.'][0] = 'SH'
+                    self.data['Histograms'][h]['Pref.Ori.'][4] = intval
+                    olddict = self.data['Histograms'][h]['Pref.Ori.'][5]
+                    newdict = dict(zip(cofNames,len(cofNames)*[0.]))
+                    # retain any old values in existing dict
+                    newdict.update({i:olddict[i] for i in olddict if i in newdict})
+                    self.data['Histograms'][h]['Pref.Ori.'][5] = newdict
+                else:
+                    raise G2ScriptException(f'Preferred orientation value of {newValue} is invalid')
             else:
                 print('unexpected action')
 

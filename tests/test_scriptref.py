@@ -73,6 +73,16 @@ def test_refine():
     h2.set_refinements({'Instrument Parameters': ['U', 'V', 'W']})
     gpx.refine()
     testR('add UVW',10.785432,  4.130126)
+    # change to Spherical Harmonics, order=2 for the 1st histogram & refine
+    phase0.HAPvalue('PO',2,[h1])
+    phase0.set_HAP_refinements({"Pref.Ori.":True})
+    gpx.refine()
+    POdict = phase0.HAPvalue('PO',targethistlist=[h1])[5]
+    print('Spherical harmonics values:',POdict)
+    npt.assert_allclose((POdict['C(2,0)'],POdict['C(2,2)']),
+                            [0.1171084051086,0.11462063648716], rtol=0.001)
+    testR('add PO',10.496639, 4.128754)
+    #
     print('OK')
     
 if __name__ == '__main__':

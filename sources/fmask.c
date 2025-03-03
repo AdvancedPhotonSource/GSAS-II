@@ -132,23 +132,18 @@ static PyObject *fmask_func(PyObject *self, PyObject *args) {
 
   /* Sanity checks on function arguments */
   if (PyArray_DESCR(frame)->type_num != NPY_BOOL ||
-      PyArray_STRIDE(frame, 0) != PyArray_ITEMSIZE(frame) ||
       PyArray_NDIM(frame) != 1)
     return makeTypeException("Arg 1 (frame): expected 1-dimensional array of type bool w/stride 1.");
   if (PyArray_DESCR(TA)->type_num != NPY_DOUBLE ||
-      PyArray_STRIDE(TA, 0) != PyArray_ITEMSIZE(TA) ||
       PyArray_NDIM(TA) != 1)
     return makeTypeException("Arg 2 (TA): expected 1-dimensional array of type np.float64 w/stride 1.");
   if (PyArray_DESCR(image)->type_num != NPY_INT32 ||
-      PyArray_STRIDE(image, 0) != PyArray_ITEMSIZE(image) ||
       PyArray_NDIM(image) != 1)
     return makeTypeException("Arg 3 (image): expected 1-dimensional array of type np.float64 w/stride 1.");
   if (PyArray_DESCR(TThs)->type_num != NPY_DOUBLE ||
-      PyArray_STRIDE(TThs, 0) != PyArray_ITEMSIZE(TThs) ||
       PyArray_NDIM(TThs) != 1)
     return makeTypeException("Arg 4 (TThs): expected 1-dimensional array of type np.float64 w/stride 1.");
   if (PyArray_DESCR(outMask)->type_num != NPY_BOOL ||
-      PyArray_STRIDE(outMask, 0) != PyArray_ITEMSIZE(outMask) ||
       PyArray_NDIM(outMask) != 1)
     return makeTypeException("Arg 3 (outMask): expected 1-dimensional array of type bool w/stride 1.");
   // special tests for the output array

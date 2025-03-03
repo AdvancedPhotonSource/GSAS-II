@@ -786,8 +786,8 @@ def EdgeFinder(image,data):
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
     tay,tax = np.mgrid[0:Nx,0:Ny]
-    tax = np.asfarray(tax*scalex,dtype=np.float32)
-    tay = np.asfarray(tay*scaley,dtype=np.float32)
+    tax = np.asarray(tax*scalex,dtype=np.float32)
+    tay = np.asarray(tay*scaley,dtype=np.float32)
     tam = ma.getmask(ma.masked_less(image.flatten(),edgemin))
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
@@ -1238,8 +1238,8 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
-    tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
-    tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
+    tax = np.asarray(tax*scalex,dtype=np.float32).flatten()
+    tay = np.asarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     TA = np.empty((4,nI,nJ))
@@ -1325,8 +1325,8 @@ def MakeMaskMap(data,masks,iLim,jLim):
         else:
             masks['Pmask'] =  []
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
-    tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
-    tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
+    tax = np.asarray(tax*scalex,dtype=np.float32).flatten()
+    tay = np.asarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     #make position masks here

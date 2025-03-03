@@ -187,6 +187,8 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
         print(line)
         return celldict
     finally:
+        p.stdout.close()
+        p.stderr.close()
         p.terminate()
     if len(celldict['output']) == 0 or len(err) > 0:
         print('Error:' ,err.decode())
@@ -252,6 +254,8 @@ def ConvCell(redcell):
         return None
         #return cell
     finally:
+        p.stdout.close()
+        p.stderr.close()
         p.terminate()
     if len(err) >  0:
         print('Error:' ,err.decode())
@@ -320,6 +324,8 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
     if output: fp = open(output,'w')
     # read output and parse
     lines = [b.decode() for b in p.stdout.readlines()]
+    p.stdout.close()
+    p.stderr.close()
     p.terminate()
     if fp:
         for line in lines: _emulateLP(line,fp)
@@ -440,6 +446,8 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
 
     d = 1
     lines = [b.decode() for b in p.stdout.readlines()]
+    p.stdout.close()
+    p.stderr.close()
     p.terminate()
     fp = None
     if output: fp = open(output,'w')
@@ -562,8 +570,10 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
         print('CellSymSearch parse error at line ',lnum,'\nNote error:',msg)
         print(line)
         return celldict
-    finally:
-        p.terminate()
+#    finally:
+#        p.stdout.close()
+#        p.stderr.close()
+#        p.terminate()
     if len(symCellList) == 0 or len(err) > 0:
         print('Error:' ,err.decode())
     return symCellList

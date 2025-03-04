@@ -219,10 +219,12 @@ def LoadDictFromProjFile(ProjFile):
         G2fil.G2Print ('\n*** Error attempt to open project file that does not exist: \n    {}'.
                    format(ProjFile))
         raise IOError('GPX file {} does not exist'.format(ProjFile))
+    errmsg = ''
     try:
         Project, nameList = G2stIO.GetFullGPX(ProjFile)
     except Exception as msg:
-        raise IOError(msg)
+        errmsg = msg
+    if errmsg: raise IOError(errmsg)
     return Project,nameList
 
 def SaveDictToProjFile(Project,nameList,ProjFile):
@@ -269,10 +271,12 @@ def PreSetup(data):
 def SetupGeneral(data, dirname):
     '''Initialize phase data.
     '''
+    errmsg = ''
     try:
         G2elem.SetupGeneral(data,dirname)
     except ValueError as msg:
-        raise G2ScriptException(msg)
+        errmsg = msg
+    if errmsg: raise G2ScriptException(errmsg)
 
 def make_empty_project(author=None, filename=None):
     """Creates an dictionary in the style of GSASIIscriptable, for an empty
@@ -384,11 +388,30 @@ class G2ImportException(Exception):
 class G2ScriptException(Exception):
     pass
 
-def import_generic(filename, readerlist, fmthint=None, bank=None):
+def import_generic(filename, readerlist, fmthint=None, bank=None,
+                       URL=False, download_loc=None):
     """Attempt to import a filename, using a list of reader objects.
 
     Returns the first reader object which worked."""
     # Translated from OnImportGeneric method in GSASII.py
+    if URL is True:
+        import requests
+        fname = os.path.split(filename)[1]
+        if download_loc is None:
+            import tempfile
+            download_loc = tempfile.gettempdir()
+        elif os.path.isdir(download_loc) and os.path.exists(download_loc):
+            pass
+        elif os.path.exists(os.path.dirname(download_loc)):
+            download_loc,fname = os.path.split(download_loc)
+            pass
+        else:
+            raise G2ScriptException(f"Import error: Cannot download to {download_loc}")
+        G2fil.G2Print(f'Preparing to download {filename}')
+        response = requests.get(filename)
+        filename = os.path.join(download_loc,fname)
+        open(filename,'wb').write(response.content)
+        G2fil.G2Print(f'File {filename} written')
     primaryReaders, secondaryReaders = [], []
     for reader in readerlist:
         if fmthint is not None and fmthint not in reader.formatName: continue
@@ -1179,19 +1202,23 @@ class G2Project(G2ObjectWrapper):
         if wavelength is not None:
             if 'Lam1' in pwdrdata['Instrument Parameters'][0]:
                 # have alpha 1,2 here
+                errmsg = ''
                 try:
                     pwdrdata['Instrument Parameters'][0]['Lam1'][0] = float(wavelength[0])
                     pwdrdata['Instrument Parameters'][0]['Lam1'][1] = float(wavelength[0])
                     pwdrdata['Instrument Parameters'][0]['Lam2'][0] = float(wavelength[1])
                     pwdrdata['Instrument Parameters'][0]['Lam2'][1] = float(wavelength[1])
                 except:
-                    raise G2ScriptException("add_simulated_powder_histogram Error: only one wavelength with alpha 1+2 histogram?")
+                    errmsg = "add_simulated_powder_histogram Error: only one wavelength with alpha 1+2 histogram?"
+                if errmsg: raise G2ScriptException(errmsg)
             elif 'Lam' in pwdrdata['Instrument Parameters'][0]:
+                errmsg = ''
                 try:
                     pwdrdata['Instrument Parameters'][0]['Lam'][0] = float(wavelength)
                     pwdrdata['Instrument Parameters'][0]['Lam'][1] = float(wavelength)
                 except:
-                    raise G2ScriptException("add_simulated_powder_histogram Error: invalid wavelength?")
+                    errmsg = "add_simulated_powder_histogram Error: invalid wavelength?"
+                if errmsg: raise G2ScriptException(errmsg)
             else:
                 raise G2ScriptException("add_simulated_powder_histogram Error: can't set a wavelength for a non-CW dataset")
         self.data[histname] = pwdrdata
@@ -1658,17 +1685,17 @@ class G2Project(G2ObjectWrapper):
         if imageRef in self._images():
             return G2Image(self.data[imageRef], imageRef, self)
 
+        errmsg = ''
         try:
             # imageRef should be an index
             num = int(imageRef)
             imageRef = self._images()[num]
             return G2Image(self.data[imageRef], imageRef, self)
         except ValueError:
-            raise Exception("imageRef {} not an object, name or image index in current selected project"
-                                .format(imageRef))
+            errmsg = "imageRef {imageRef} not an object, name or image index in current selected project"
         except IndexError:
-            raise Exception("imageRef {} out of range (max={}) in current selected project"
-                                .format(imageRef,len(self._images())-1))
+            errmsg = "imageRef {imageRef} out of range (max={len(self._images())-1)}) in current selected project"
+        if errmsg: raise G2ScriptException(errmsg)
 
     def images(self):
         """
@@ -1705,15 +1732,17 @@ class G2Project(G2ObjectWrapper):
         if pdfRef in self._pdfs():
             return G2PDF(self.data[pdfRef], pdfRef, self)
 
+        errmsg = ''
         try:
             # pdfRef should be an index
             num = int(pdfRef)
             pdfRef = self._pdfs()[num]
             return G2PDF(self.data[pdfRef], pdfRef, self)
         except ValueError:
-            raise Exception(f"pdfRef {pdfRef} not an object, name or PDF index in current selected project")
+            errmsg = f"pdfRef {pdfRef} not an object, name or PDF index in current selected project"
         except IndexError:
-            raise Exception(f"pdfRef {pdfRef} out of range (max={len(G2SmallAngle)-1}) in current selected project")
+            errmsg = f"pdfRef {pdfRef} out of range (max={len(G2SmallAngle)-1}) in current selected project"
+        if errmsg: raise Exception(errmsg)
     def pdfs(self):
         """
         Returns a list of all the PDFs in the project.
@@ -2066,15 +2095,17 @@ class G2Project(G2ObjectWrapper):
         if sasRef in self._sasd():
             return G2SmallAngle(self.data[sasRef], sasRef, self)
 
+        errmsg = ''
         try:
             # sasRef should be an index
             num = int(sasRef)
             sasRef = self._sasd()[num]
             return G2PDF(self.data[sasRef], sasRef, self)
         except ValueError:
-            raise Exception(f"sasRef {sasRef} not an object, name or SAS index in current selected project")
+            errmsg = f"sasRef {sasRef} not an object, name or SAS index in current selected project"
         except IndexError:
-            raise Exception(f"sasRef {sasRef} out of range (max={len(self._sasd())-1}) in current selected project")
+            errmsg = "sasRef {sasRef} out of range (max={len(self._sasd())-1}) in current selected project"
+        if errmsg: raise Exception(errmsg)
 
     def SASs(self):
         """
@@ -2468,7 +2499,8 @@ class G2Project(G2ObjectWrapper):
         return G2obj.G2VarObj(phase, hist, varname, atomId)
 
     def add_image(self, imagefile, fmthint=None, defaultImage=None,
-                      indexList=None, cacheImage=False):
+                      indexList=None, cacheImage=False,
+                      URL=False, download_loc=None):
         """Load an image into a project
 
         :param str imagefile: The image file to read, a filename.
@@ -2485,12 +2517,34 @@ class G2Project(G2ObjectWrapper):
           to be included in the project.
         :param bool cacheImage: When True, the image is cached to save
           in rereading it later. Default is False (no caching).
-
+        :param bool URL: if True, the contents of imagefile is a URL 
+          and the file will be downloaded and saved. The file will be 
+          written in the specified directory (see `download_loc`)
+          or a temporary location, if not specified. Note that 
+          if a temporary location, if the proiject (.gpx) file is 
+          saved, the image may not be accessible if the .gpx file
+          is later reopened. Default is False.
+          If URL is specified and the Python requests package is 
+          not installed, a `ModuleNotFoundError` Exception will occur. 
+          will occur. 
+        :param str download_loc: a location or file name where the 
+          image will be saved. Note that for almost all image types, 
+          the image cannot be read if the file extension does not
+          match what is expected for the format. (This can be determined
+          by looking at the importer code; if `strictExtension=True`, 
+          the extension must be in the `extensionlist` list.)
+          If only a directory is specified, the file name will be taken 
+          from the URL, which will likely cause problems if it does
+          not match the needed extension. 
+          If URL is specified and the default download_loc
+          value is used (None), the image will be saved in a temporary 
+          location that will persist until the OS removes it.
         :returns: a list of :class:`G2Image` object(s) for the added image(s)
         """
         LoadG2fil()
-        imagefile = os.path.abspath(os.path.expanduser(imagefile))
-        readers = import_generic(imagefile, Readers['Image'], fmthint=fmthint)
+        if not URL: imagefile = os.path.abspath(os.path.expanduser(imagefile))
+        readers = import_generic(imagefile, Readers['Image'],
+                    fmthint=fmthint, URL=URL, download_loc=download_loc)
         objlist = []
         for i,rd in enumerate(readers):
             if indexList is not None and i not in indexList:
@@ -3822,10 +3876,12 @@ class G2PwdrData(G2ObjectWrapper):
             elif key == 'Instrument Parameters':
                 instrument, secondary = self.data['Instrument Parameters']
                 for iparam in value:
+                    errmsg = ''
                     try:
                         instrument[iparam][2] = True
                     except IndexError:
-                        raise ValueError("Invalid key:", iparam)
+                        errmsg = f"Invalid key: {iparam}"
+                    if errmsg: raise ValueError(errmsg)
             else:
                 raise ValueError("Unknown key:", key)
         # Fit fixed points after the fact - ensure they are after fixed points
@@ -5335,6 +5391,7 @@ class G2Phase(G2ObjectWrapper):
     def _getBondRest(self,nam):
         if 'Restraints' not in self.proj.data:
             raise G2ScriptException(f"{nam} error: Restraints entry not in data tree")
+        errmsg = ''
         try:
             return self.proj.data['Restraints']['data'][self.name]['Bond']
         except:
@@ -5701,13 +5758,14 @@ class G2SeqRefRes(G2ObjectWrapper):
           refinement results and the second element has the contents of
           the histogram tree items.
         '''
+        errmsg = ''
         try:
             hist = self.data['histNames'][hist]
         except IndexError:
-            raise Exception('Histogram #{} is out of range from the Sequential Refinement'
-                                .format(hist))
+            errmsg = 'Histogram #{hist} is out of range from the Sequential Refinement'
         except TypeError:
             pass
+        if errmsg: raise Exception(errmsg)
         if hist not in self.data['histNames']:
             raise Exception('Histogram {} is not included in the Sequential Refinement'
                                 .format(hist))
@@ -6148,6 +6206,7 @@ class G2Image(G2ObjectWrapper):
             G2fil.G2Print('Allowed args:\n',[nam for nam,typ in self.findControl('')])
             raise Exception('arg {} not defined in G2Image.setControl'
                                 .format(arg))
+        errmsg = ''
         try:
             if typ == 'int':
                 self.data['Image Controls'][arg] = int(value)
@@ -6165,8 +6224,9 @@ class G2Image(G2ObjectWrapper):
                 raise Exception('Unknown type {} for arg {} in  G2Image.setControl'
                                     .format(typ,arg))
         except:
-            raise Exception('Error formatting value {} as type {} for arg {} in  G2Image.setControl'
-                                    .format(value,typ,arg))
+            errmsg = 'Error formatting value {value} as type {typ} for arg {arg} in  G2Image.setControl'
+
+        if errmsg: raise Exception(errmsg)
 
     def getControl(self,arg):
         '''Return an Image Controls parameter in the current image.
@@ -6667,7 +6727,7 @@ class G2Image(G2ObjectWrapper):
         Mask is placed into the G2image object where it will be
         accessed during integration. Note that this increases the .gpx file
         size significantly; use :meth:`~G2Image.clearPixelMask` to delete
-        this if it need not be saved.
+        this, if it need not be saved.
 
         This code is based on :func:`GSASIIimage.FastAutoPixelMask`
         but has been modified to recycle expensive computations
@@ -6741,12 +6801,15 @@ class G2Image(G2ObjectWrapper):
             G2fil.G2Print(f'Fast mask: Spots greater or less than {esdMul:.1f} of median abs deviation are masked')
             outMask = np.zeros_like(tam,dtype=bool).ravel()
             TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
+            errmsg = ''
             try:
                 fmask.mask(esdMul, tam.ravel(), TA.ravel(),
                                         Image.ravel(), TThs, outMask, ttmin, ttmax)
             except Exception as msg:
-                print('Exception in fmask.mask\n\t',msg)
-                raise Exception(msg)
+                errmsg = msg
+            if errmsg:
+                print('Exception in fmask.mask\n\t',errmsg)
+                raise Exception(errmsg)
             outMask = outMask.reshape(Image.shape)
         else: # slow search, no sense using cache to save time
             Masks['SpotMask']['SearchMin'] = ttmin

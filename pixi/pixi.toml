@@ -18,8 +18,9 @@ clean-build = { cmd = "(rm dist/*whl || true) && (rm -r build || true) ", cwd='.
 saveversions =  { cmd = "python save-versions.py", cwd='../GSASII/install' }
 build =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build']}
 install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['saveversions', 'build']}
+
 # following contains a rather messy way to get files into bin area
-install-editable =  { cmd = "pip install -ve . --no-build-isolation; /bin/cp -v $(find ./build -name convcell) ./pixi/.pixi/envs/default/bin/; /bin/cp -v $(find ./build -name LATTIC) ./pixi/.pixi/envs/default/bin/", cwd='../', depends-on=['clean-build', 'saveversions']}
+install-editable =  { cmd = "pip install -ve . --no-build-isolation; /bin/cp -v $(find ./build -name convcell) ./pixi/.pixi/envs/$PIXI_ENVIRONMENT_NAME/bin/; /bin/cp -v $(find ./build -name LATTIC) ./pixi/.pixi/envs/$PIXI_ENVIRONMENT_NAME/bin/", cwd='../', depends-on=['clean-build', 'saveversions']}
 
 # at present all windows stuff is questionable because flang does not [yet] work for GSAS-II binaries
 build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build'] , env={CC = 'clang-cl', CXX ='clang-cl'}}

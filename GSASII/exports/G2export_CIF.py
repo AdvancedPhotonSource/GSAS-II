@@ -17,7 +17,6 @@ try:
     import wx.lib.scrolledpanel as wxscroll
     import wx.lib.resizewidget as rw
     interactive = True
-    from .. import GSASIIctrlGUI as G2G
 except ImportError:
     G2G = None
     # Avoid wx dependency for Scriptable
@@ -1381,6 +1380,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 if msg: msg += '\n'
                 msg += lbl + " contains unicode characters: " + val
         if msg:
+            from .. import GSASIIctrlGUI as G2G
             G2G.G2MessageBox(self.G2frame,
                              'Error: CIFs can contain only ASCII characters. Please change item(s) below:\n\n'+msg,
                              'Unicode not valid for CIF')
@@ -2038,6 +2038,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             if 'DisAglCtls' not in generalData:
                 # should not happen, since DisAglDialog should be called
                 # for all phases before getting here
+                from .. import GSASIIctrlGUI as G2G
                 dlg = G2G.DisAglDialog(
                     self.G2frame,
                     {},
@@ -3417,6 +3418,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         def EditAuthor(event=None):
             'dialog to edit the CIF author info'
             'Edit the CIF author name'
+            from .. import GSASIIctrlGUI as G2G
             dlg = G2G.SingleStringDialog(self.G2frame,
                                           'Get CIF Author',
                                           'Provide CIF Author name (Last, First)',
@@ -3435,6 +3437,7 @@ class ExportCIF(G2fil.ExportBaseclass):
 
         def EditInstNames(event=None):
             'Provide a dialog for editing instrument names; for sequential fit, only need one name'
+            from .. import GSASIIctrlGUI as G2G
             dictlist = []
             keylist = []
             lbllist = []
@@ -3468,6 +3471,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             '''
             but = event.GetEventObject()
             phasedict = but.phasedict
+            from .. import GSASIIctrlGUI as G2G
             dlg = G2G.DisAglDialog(
                 self.G2frame,
                 phasedict['General']['DisAglCtls'], # edited
@@ -3489,6 +3493,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             '''Fills the CIF Defaults window with controls for editing various CIF export
             parameters (mostly related to templates).
             '''
+            from .. import GSASIIctrlGUI as G2G
             if len(self.cifdefs.GetChildren()) > 0:
                 saveSize = self.cifdefs.GetSize()
                 self.cifdefs.DestroyChildren()
@@ -3659,6 +3664,7 @@ class ExportCIF(G2fil.ExportBaseclass):
 
         def SelectDisAglFlags(event):
             'Select Distance/Angle use flags for the selected phase'
+            from .. import GSASIIctrlGUI as G2G
             phasenam = event.GetEventObject().phase
             phasedict = self.Phases[phasenam]
             SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(phasedict['General']['SGData'])
@@ -4059,6 +4065,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             #i = self.Phases[phasenam]['pId']
             phasedict = self.Phases[phasenam] # pointer to current phase info
             if 'DisAglCtls' not in phasedict['General']:
+                from .. import GSASIIctrlGUI as G2G
                 dlg = G2G.DisAglDialog(
                     self.G2frame,
                     {},
@@ -4709,6 +4716,7 @@ class ExportPhaseCIF(ExportCIF):
         self.author = ''
 
     def mergeMag(self,G2frame,ChemPhase,MagPhase):
+        from .. import GSASIIctrlGUI as G2G
         def onChange(*args,**kwargs):
             wx.CallLater(100,showMergeMag)
         def showMergeMag():
@@ -5246,6 +5254,7 @@ class EditCIFtemplate(wx.Dialog):
       saving the CIF.
     '''
     def __init__(self,parent,cifblk,loopstructure,defaultname):
+        from .. import GSASIIctrlGUI as G2G
         OKbuttons = []
         self.cifblk = cifblk
         self.loopstructure = loopstructure
@@ -5290,6 +5299,7 @@ class EditCIFtemplate(wx.Dialog):
         return (self.ShowModal() == wx.ID_OK)
     def _onSave(self,event):
         'Save CIF entries in a template file'
+        from .. import GSASIIctrlGUI as G2G
         pth = G2G.GetExportPath(self.G2frame)
         dlg = wx.FileDialog(
             self, message="Save as CIF template",
@@ -5334,6 +5344,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
     :param (other): optional keyword parameters for wx.ScrolledPanel
     '''
     def __init__(self, parent, cifblk, loopstructure, cifdic={}, OKbuttons=[], **kw):
+        from .. import GSASIIctrlGUI as G2G
         self.parent = parent
         wxscroll.ScrolledPanel.__init__(self, parent, wx.ID_ANY, **kw)
         self.vbox = None
@@ -5492,6 +5503,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
         numerical values and highlights them as invalid.
         Use a selection widget when there are specific enumerated values for a string.
         '''
+        from .. import GSASIIctrlGUI as G2G
         if self.cifdic.get(dataname):
             if self.cifdic[dataname].get('_enumeration'):
                 values = ['?']+self.cifdic[dataname]['_enumeration']
@@ -5648,6 +5660,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         self.Add(hbox)
     def _onGetTemplateFile(self,event):
         'select a template file'
+        from .. import GSASIIctrlGUI as G2G
         pth = G2G.GetImportPath(self.G2frame)
         if not pth: pth = '.'
         dlg = wx.FileDialog(

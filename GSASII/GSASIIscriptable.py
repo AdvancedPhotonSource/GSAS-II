@@ -410,7 +410,8 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
         G2fil.G2Print(f'Preparing to download {filename}')
         response = requests.get(filename)
         filename = os.path.join(download_loc,fname)
-        open(filename,'wb').write(response.content)
+        with open(filename,'wb') as fp:
+            fp.write(response.content)
         G2fil.G2Print(f'File {filename} written')
     primaryReaders, secondaryReaders = [], []
     for reader in readerlist:

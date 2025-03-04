@@ -13,12 +13,13 @@ import copy
 import re
 interactive = False
 try:
+    # TODO: code that calls wx should be hidden in GUI modules that are imported only when needed
     import wx
     import wx.lib.scrolledpanel as wxscroll
     import wx.lib.resizewidget as rw
     interactive = True
 except ImportError:
-    G2G = None
+    G2G = None  # used in Project export 
     # Avoid wx dependency for Scriptable
     class Placeholder(object):
         def __init__(self):
@@ -4684,8 +4685,10 @@ class ExportProjectCIF(ExportCIF):
         except ImportError:
             try:
                 from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+                cif
             except ImportError:
                 msg = 'The PyCifRW package is not installed. CIF templates cannot be accessed. Created CIFs will be incomplete'
+                from .. import GSASIIctrlGUI as G2G
                 G2G.G2MessageBox(self.G2frame,msg,'no PyCifRW')
         self.CIFname = ''
         self.seqData = seqData

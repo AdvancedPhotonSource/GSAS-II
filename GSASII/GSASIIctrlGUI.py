@@ -10081,14 +10081,14 @@ The switch will be made unless Cancel is pressed.'''
     
 def gitSwitch2DevBranch(event):
     '''This is "patch" code to switch from the master branch
-    to the develop (eventually to be renamed main) branch. 
+    to the main branch. 
     Complication here is that the GSASII.py file gets renamed 
     to G2.py so "shortcuts" need to be re-created to reference that. 
 
     This is not yet "plumbed" into the current code, but it has been
     tested with Windows and Mac. At some point this will be made part of the
     update process in the master branch, but this routine is not needed in 
-    the develop (or eventially main) branch.
+    the main branch.
     '''
     G2frame = wx.App.GetMainTopWindow()
     gitInst = GSASIIpath.HowIsG2Installed()
@@ -10136,7 +10136,7 @@ def gitSwitch2DevBranch(event):
     print('.done')
     branchlist = [i.strip() for i in g2repo.git.branch('-r').split('\n') if '->' not in i]
     choices = [i for i in  [os.path.split(i)[1] for i in branchlist] if i != g2repo.active_branch.name]
-    b = "develop"
+    b = "main"
     if b not in choices: 
         G2MessageBox(G2frame,
             f'You are on the {g2repo.active_branch.name!r} branch, but branch {b!r} was not found.',

@@ -9191,6 +9191,12 @@ def gitFetch(G2frame):
                 wx.GetApp().Yield()
                 if not ok:
                     return
+        G2frame.UpdateTask.terminate()
+        try:
+            G2frame.UpdateTask.wait(1)
+        except TimeoutExpired:
+            pass
+        
         if GSASIIpath.GetConfigValue('debug'): print('background update complete')
         # try update one more time just to make sure
         GSASIIpath.gitGetUpdate('immediate')

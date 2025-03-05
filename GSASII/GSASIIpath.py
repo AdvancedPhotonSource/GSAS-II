@@ -1594,6 +1594,12 @@ def addCondaPkg():
                          stderr=subprocess.PIPE,
                          encoding='UTF-8')
     out,err = p.communicate()
+    p.terminate()
+    try:
+        p.wait(1)
+    except TimeoutExpired:
+        pass
+    
     if out is not None and GetConfigValue('debug'): print('Output from adding conda:\n',out)
     if err and err is not None:
         print('Note error/warning from running conda:\n',err)

@@ -1238,7 +1238,7 @@ def LoadConfig(printInfo=True):
     '''
     def XferConfigIni():
         '''copy the contents of the config.py file to file ~/.GSASII/config.ini.
-        This "patch code" used for master->develop transition and can eventually
+        This "patch code" used for master->main transition and can eventually
         be removed.
         '''
         import types

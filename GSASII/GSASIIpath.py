@@ -1096,8 +1096,8 @@ def InvokeDebugOpts():
     else: # not in spyder or debug enabled, hide breakpoints
         os.environ['PYTHONBREAKPOINT'] = '0'
 
-def TestSPG(fpth):
-    '''Test if pyspg.[so,.pyd] can be run from a location in the path
+def TestSPG():
+    '''Test if pyspg.[so,.pyd] can be run from a location in the existing path
     Do not modify the path if not.
     '''
     try:
@@ -1105,18 +1105,24 @@ def TestSPG(fpth):
         pyspg
         return True
     except ImportError:
+        pass
+    try:
+        import pyspg
+        pyspg
+    except ImportError:
         return False
     try:
         pyspg.sgforpy('P -1')
     except Exception as err:
         print(70*'=')
-        print(f'Module pyspg in {fpth!r} could not be run\nerror msg: {err}')
+        print(f'Module pyspg in {pyspg.__file__} could not be run\nerror msg: {err}')
         print(70*'=')
         return False
     return True
 
-def _old_TestSPG(fpth):
-    '''Test if pyspg.[so,.pyd] can be run from a location in the path
+def pathhack_TestSPG(fpth):
+    '''Test if pyspg.[so,.pyd] can be run from a specified location. If so 
+    modify the path to include it.
     '''
     try:
         if not os.path.exists(fpth): return False

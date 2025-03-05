@@ -479,7 +479,7 @@ def ShowVersions():
         print('Warning: Python requests package not installed (required for\n'+
               ' GSAS-II to access web pages or self-install binary modules)')
 
-    if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
+    if not GSASIIpath.TestSPG():
         path2repo = os.path.dirname(GSASIIpath.path2GSAS2)
         installLoc = os.path.join(path2repo,'GSASII-bin')
         binarydir = GSASIIpath.getGitBinaryLoc(verbose=True)
@@ -504,7 +504,7 @@ def ShowVersions():
                         GSASIIpath.SetBinaryPath(True)
                     except:
                         print('Download failed, sorry')
-    if not GSASIIpath.TestSPG(GSASIIpath.binaryPath):
+    if not GSASIIpath.pathhack_TestSPG(GSASIIpath.binaryPath):
         versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
     else:
         if GSASIIpath.binaryPath:

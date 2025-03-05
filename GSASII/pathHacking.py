@@ -58,7 +58,7 @@ def _path_discovery(printInfo=False):
             searchpathlist.append(versions[vmax])
         for fpth in searchpathlist:
             if not glob.glob(os.path.join(fpth,'pyspg.*')): continue
-            if GSASIIpath.TestSPG(fpth):
+            if GSASIIpath.pathhack_TestSPG(fpth):
                 binpath = fpth   # got one that works, look no farther!
                 break
         else:

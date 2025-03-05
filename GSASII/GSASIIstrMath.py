@@ -4842,7 +4842,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             W = wtFactor*w
             wdy = -ma.sqrt(w[xB:xF])*(yd[xB:xF])
             Histogram['Residuals']['Durbin-Watson'] = ma.sum(ma.diff(wdy)**2)/ma.sum(wdy**2)
-            wdy *= np.sqrt(wtFactor)
+            wdy *= ma.sqrt(wtFactor)
             Histogram['Residuals']['Nobs'] = ma.count(x[xB:xF])
             Nobs += Histogram['Residuals']['Nobs']
             Histogram['Residuals']['sumwYo'] = ma.sum(W[xB:xF]*y[xB:xF]**2)
@@ -4867,7 +4867,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 elif not GoOn:
                     raise G2obj.G2RefineCancel('Cancel pressed')
                 #dlg.Raise()
-            M = np.concatenate((M,wdy))
+            M = ma.concatenate((M,wdy))
 #end of PWDR processing
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]

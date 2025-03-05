@@ -145,25 +145,39 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
-    p = subprocess.Popen([nistlattice],
+    # import shutil
+    # print(shutil.which(nistlattice))
+    p = subprocess.Popen([nistlattice],encoding='UTF-8',
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-    p.stdin.write(bytearray(inp,'utf8'))
+    p.stdin.write(inp)
     p.stdin.close()
     # read output and parse
     err = p.stderr.read()
+    cellout = p.stdout.readlines()
+    p.terminate()
+    try:
+        p.wait(1)
+    except TimeoutExpired:
+        print('timeout on wait')
+        p.kill()
+        try:
+            p.wait(2)
+        except TimeoutExpired:
+            pass
+    p.stdout.close()
+    p.stderr.close()
+    
     celldict['input'] = (cellin,center,setting)
     celldict['output'] = []
     d = 1
     line = '?'
-    linenum = 0
     fp = None
     if output: fp = open(output,'w')
     try:
-        for b in p.stdout.readlines():
+        for linenum,line in enumerate(cellout,1):
             linenum += 1
-            line = b.decode()
             _emulateLP(line,fp)
             pat = r"T 2= (.*)/ (.*)/ (.*)"  # transform matrix
             s = re.split(pat,line)
@@ -183,15 +197,11 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
                 vol = float(re.split(r" *([\d\.-]*) *",s[2],maxsplit=1)[1])
                 celldict['output'].append((d,lat,vol,mat,'P',' ')) # note reduced cells are all primitive
     except:
-        print('ReduceCell parse error at line ',linenum)
-        print(line)
+        print(f'ReduceCell parse error at line {linenum}\n{line}')
         return celldict
-    finally:
-        p.terminate()
-        p.stdout.close()
-        p.stderr.close()
     if len(celldict['output']) == 0 or len(err) > 0:
-        print('Error:' ,err.decode())
+        print(f'ReduceCell Error = {err}')
+    if output: fp.close()
     return celldict
 
 def ConvCell(redcell):
@@ -212,30 +222,43 @@ def ConvCell(redcell):
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
-    p = subprocess.Popen([convcell],
+    p = subprocess.Popen([convcell],encoding='UTF-8',
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-    p.stdin.write(bytearray(inp,'utf8'))
+    p.stdin.write(inp)
     p.stdin.close()
     # read output and parse
     err = p.stderr.read()
+    out = p.stdout.readlines()
+    p.terminate()
+    try:
+        p.wait(1)
+    except TimeoutExpired:
+        print('timeout on wait')
+        p.kill()
+        try:
+            p.wait(2)
+        except TimeoutExpired:
+            pass
+    p.stdout.close()
+    p.stderr.close()
     if debug and err:
-        print('ConvCell err=',err)
+        print(f'ConvCell err = {err}')
     line = '?'
     linenum = 0
     cell = []
     center = ' '
     setting = ' '
     try:
-        for b in p.stdout.readlines():
-            line = b.decode()
+        while out:
+            line=out.pop(0)
+            if not line.strip(): continue
+            linenum += 1
             if '**WARNING**' in line:
                 print('Note: Warning generated in conversion of reduced\n  cell',
                       redcell,'\n  (Probably OK to ignore)')
                 continue
-            if not line.strip(): continue
-            linenum += 1
             if linenum == 1:
                 cell = [float(i) for i in line.split()[:6]]
                 center = line.split()[-1]
@@ -245,20 +268,13 @@ def ConvCell(redcell):
             if linenum == 2:
                 mat = np.array([float(i) for i in line.split()]).reshape(3,3)
     except:
-        print('ConvCell parse error at line ',linenum)
-        print(line)
-        if debug:
-            print("\nRemaining lines:")
-            for b1 in p.stdout.readlines():
-                print(b1.decode())
+        print(f'ConvCell parse error at line {linenum}:\n{line}')
+        if debug and out:
+            print("\nUnprocessed convcell output:")
+            for line in out: print(line)
         return None
-        #return cell
-    finally:
-        p.terminate()
-        p.stdout.close()
-        p.stderr.close()
     if len(err) >  0:
-        print('Error:' ,err.decode())
+        print(f'ConvCell Error: {err}')
     return (cell,center,setting,mat)
 
 
@@ -312,19 +328,28 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
-    p = subprocess.Popen([nistlattice],
+    p = subprocess.Popen([nistlattice],encoding='UTF-8',
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-    p.stdin.write(bytearray(inp,'utf8'))
+    p.stdin.write(inp)
     p.stdin.close()
     err = p.stderr.read()
+    lines = p.stdout.readlines()
     line = '?'
     fp = None
     if output: fp = open(output,'w')
     # read output and parse
-    lines = [b.decode() for b in p.stdout.readlines()]
     p.terminate()
+    try:
+        p.wait(1)
+    except TimeoutExpired:
+        print('timeout on wait')
+        p.kill()
+        try:
+            p.wait(2)
+        except TimeoutExpired:
+            pass
     p.stdout.close()
     p.stderr.close()
     if fp:
@@ -379,7 +404,7 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
 
         lnum += 1
     if len(err) > 0:
-        print('Execution error:' ,err.decode())
+        print(f'CompareCell error: {err}')
     return xforms
 
 def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
@@ -435,20 +460,30 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
-    p = subprocess.Popen([nistlattice],
+    p = subprocess.Popen([nistlattice],encoding='UTF-8',
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-    p.stdin.write(bytearray(inp,'utf8'))
+    p.stdin.write(inp)
     p.stdin.close()
     # read output and parse
     err = p.stderr.read()
+    lines = p.stdout.readlines()
 
-    d = 1
-    lines = [b.decode() for b in p.stdout.readlines()]
     p.terminate()
+    try:
+        p.wait(1)
+    except TimeoutExpired:
+        print('timeout on wait')
+        p.kill()
+        try:
+            p.wait(2)
+        except TimeoutExpired:
+            pass
     p.stdout.close()
     p.stderr.close()
+    
+    d = 1
     fp = None
     if output: fp = open(output,'w')
     if fp:
@@ -570,12 +605,8 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
         print('CellSymSearch parse error at line ',lnum,'\nNote error:',msg)
         print(line)
         return celldict
-#    finally:
-#        p.terminate()
-#        p.stdout.close()
-#        p.stderr.close()
     if len(symCellList) == 0 or len(err) > 0:
-        print('Error:' ,err.decode())
+        print(f'CellSymSearch error: {err}')
     return symCellList
 
 if __name__ == '__main__':  # test code

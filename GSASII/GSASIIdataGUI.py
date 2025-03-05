@@ -457,6 +457,7 @@ def ShowVersions():
     if GSASIIpath.HowIsG2Installed().startswith('git'):
         try:
             import git
+            git
         except ImportError as msg:
             if 'Failed to initialize' in msg.msg:
                 print('The gitpython package is unable to locate a git installation.')
@@ -473,6 +474,7 @@ def ShowVersions():
     # warn if problems with requests package
     try:
         import requests
+        requests
     except:
         print('Warning: Python requests package not installed (required for\n'+
               ' GSAS-II to access web pages or self-install binary modules)')
@@ -639,6 +641,7 @@ class GSASII(wx.Frame):
         if GSASIIpath.GetConfigValue('debug'):
             try:
                 import IPython
+                IPython
                 item = parent.Append(wx.ID_ANY,"IPython Console",'')
                 self.Bind(wx.EVT_MENU,
                               lambda event:GSASIIpath.IPyBreak(),
@@ -5743,6 +5746,7 @@ If you continue from this point, it is quite likely that all intensity computati
         try:
             SKLearn = False
             import sklearn.cluster
+            sklearn.cluster
             SKLearn = True
         except:
             res = GSASIIpath.condaInstall('scikit-learn')
@@ -7410,7 +7414,8 @@ other than being included in the Notebook section of the project file.''')
     def OnSaveNotebook(event):
         filename = os.path.splitext(G2frame.GSASprojectfile)[0]+'_notebook.txt'
         filename = os.path.join(G2frame.dirname,filename)
-        open(filename,'w').write(textBox.GetText())
+        with open(filename,'w') as fp:
+            fp.write(textBox.GetText())
         print(f'Notebook contents written into {filename}')
     def onPlotNotebook():
         'Locate R values from the Notebook and plot them'

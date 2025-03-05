@@ -3043,7 +3043,8 @@ def UpdatePhaseData(G2frame,Item,data):
             txt = event.GetEventObject().page
             tmp = tempfile.NamedTemporaryFile(suffix='.html',
                         delete=False)
-            open(tmp.name,'w').write(txt.replace(
+            with open(tmp.name,'w') as fp:
+                fp.write(txt.replace(
                 '<HEAD>',
                 '<head><base href="https://stokes.byu.edu/iso/">',
                 ))
@@ -3100,7 +3101,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 flags=re.IGNORECASE)[0]
         except IndexError:
             tmp1 = tempfile.NamedTemporaryFile(suffix='.html')
-            open(tmp1.name,'w').write(r1.text.replace(
+            with open(tmp1.name,'w') as fp:
+                fp.write(r1.text.replace(
                 '<HEAD>',
                 '<head><base href="https://stokes.byu.edu/iso/">',
                 ))
@@ -3273,7 +3275,8 @@ def UpdatePhaseData(G2frame,Item,data):
             num = event.GetEventObject().IndexNum
             tmp = tempfile.NamedTemporaryFile(suffix='.html',
                         delete=False)
-            open(tmp.name,'w').write(pagelist[num].replace(
+            with open(tmp.name,'w') as fp:
+                fp.write(pagelist[num].replace(
                 '<head>',
                 '<head><base href="https://www.cryst.ehu.es/">',
                 ))
@@ -3454,13 +3457,13 @@ program; Please cite:
             '''Show a summary with info from a search of supergroups in
             :func:`OnSuperSearch` (in :func:`UpdatePhaseData`)
             '''
-            import SUBGROUPS
             def _showWebPage(event):
                 import tempfile
                 f = event.GetEventObject().webFile
                 tmp = tempfile.NamedTemporaryFile(suffix='.html',
                                 delete=False)
-                open(tmp.name,'w').write(f.replace(
+                with open(tmp.name,'w') as fp:
+                    fp.write(f.replace(
                         '<head>',
                         '<head><base href="https://www.cryst.ehu.es/">',
                         ))
@@ -7952,7 +7955,7 @@ program; Please cite:
                 shutil.rmtree(rmcname)
             else:
                 return
-        G2G.G2MessageBox(G2frame,f'For use of fullrmc, please cite:\n\n'+
+        G2G.G2MessageBox(G2frame,'For use of fullrmc, please cite:\n\n'+
                              G2G.GetCite('fullrmc')+
                              '\n\nNote: A more advanced version of fullrmc can be found at www.fullrmc.com',
                              'Please cite fullrmc')
@@ -8014,7 +8017,7 @@ program; Please cite:
             rmcexe = os.path.split(rmcfile)[0]
         #print(rmcexe)
         wx.MessageBox(
-            f' For use of RMCProfile, please cite:\n\n'+
+            ' For use of RMCProfile, please cite:\n\n'+
             G2G.GetCite("RMCProfile"),
             caption='RMCProfile',style=wx.ICON_INFORMATION)
         if os.path.isfile(pName+'.his6f'):
@@ -17004,6 +17007,7 @@ def checkPDFfit(G2frame):
     # see if diffpy has been installed directly
     try:
         from diffpy.pdffit2 import PdfFit
+        PdfFit
         return True
     except:
         pass
@@ -17012,6 +17016,7 @@ def checkPDFfit(G2frame):
     # Python in a separate environment
     try:     # have conda. Can we access it programmatically?
         import conda.cli.python_api
+        conda.cli.python_api
     except:
         G2G.G2MessageBox(G2frame,'You are running a directly installed Python. You will need to install PDFfit2 directly as well, preferably in a separate virtual environment.')
         return

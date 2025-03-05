@@ -3457,7 +3457,8 @@ def fullrmcDownload():
               'https://github.com/bachiraoun/fullrmc/tree/master/standalones',
               '\nCreating '+fil,
               '\nThis may take a while...')
-    open(fil, "wb").write(requests.get(URL).content)
+    with open(fil, "wb") as fp:
+        fp.write(requests.get(URL).content)
     print('...Download completed')
     if setXbit:
         import stat
@@ -3474,6 +3475,8 @@ def findPDFfit():
     try:
         from diffpy.pdffit2 import PdfFit
         import diffpy
+        PdfFit
+        diffpy
         return sys.executable
     except Exception as msg:
         print('Error importing PDFfit2:\n',msg)

@@ -5153,15 +5153,15 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             import tempfile
             txt = event.GetEventObject().page
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
-            open(tmp.name,'w').write(txt.replace('<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',))
+            with open(tmp.name,'w') as fp:
+                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/iso/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
         def showWebtext(txt):
             import tempfile
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
-            open(tmp.name,'w').write(txt.replace('<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',))
+            with open(tmp.name,'w') as fp:
+                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/iso/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
@@ -5273,7 +5273,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 data["origintype"] = "method2"
                 data["orderparam"] = radio_val + '" CHECKED'
                 data["isofilename"] = ""
-                out5 = requests.post(isoformsite, data=data).text
+                requests.post(isoformsite, data=data).text
 
                 continue
 

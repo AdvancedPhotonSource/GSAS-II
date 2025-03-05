@@ -15,7 +15,8 @@ isouploadsite = 'https://stokes.byu.edu/iso/isodistortuploadfile.php'
 isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
 
 def HandleError(out):
-    open('out.html','wb').write(out.encode("utf-8"))
+    with open('out.html','wb') as fp:
+        fp.write(out.encode("utf-8"))
     url = os.path.realpath('out.html')
     try:
         os.startfile(url)
@@ -263,7 +264,8 @@ def GetISODISTORTcif(Phase):
     #     print(item,data2[item])
     out4 = requests.post(isoformsite,data=data2).text
     #print(out4)
-    #open('pyout4.html','wb').write(out4.encode("utf-8"))
+    #with open('pyout4.html','wb') as fp:
+        #fp.write(out4.encode("utf-8"))
 
     #retrieve data needed for next(last) step
 

@@ -378,8 +378,10 @@ def GetSupergroup(SGnum,dlg=None):
         out1 = GSASIIpath.postURL(Site,{'gnum':SGnum,'show':'show','click':click}
                                 ,timeout=timeout)
         if not out1: return None
-        #open(f'/tmp/{click}.html','w').write(out1)
-        #open(f'/tmp/last.html','w').write(out1)
+        #with open(f'/tmp/{click}.html','w') as fp:
+        #    fp.write(out1)
+        #with open(f'/tmp/last.html','w') as fp:
+        #    fp.write(out1)
         if dlg: dlg.Update(2+i,newmsg=f'processing {line[1]}, #{i+1} of {len(xforms)}')
         mvlist = []
         for s in [i.split('</pre>')[0] for i in out1.split('<pre>')[1::2]]:
@@ -556,7 +558,8 @@ program; Please cite:
     return scanBilbaoSymSearch1(page0,postdict)+[savedcookies]
         
 def scanBilbaoSymSearch1(page0,postdict):
-    #open(f'/tmp/pseudosym0.html','w').write(page0)
+    #open(f'/tmp/pseudosym0.html','w') as fp:
+    #    fp.write(page0)
     valsdict = {} # base for all supergroups 
     csdict = {}   # supergroups w/default selection value
     rowdict = {}  # information in table row for each supergroup

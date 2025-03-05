@@ -9,7 +9,7 @@ import os
 import sys
 import platform
 import glob
-import pathlib
+#import pathlib
 import subprocess
 import datetime as dt
 try:
@@ -507,7 +507,7 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
             g2repo.remote().fetch()
             fetched = True
         except git.GitCommandError as msg:
-            print(f'Failed to get updates from {g2repo.remote().url}')
+            print(f'Failed to get updates from {g2repo.remote().url}\nerror: {msg}')
     try:
         head = g2repo.head.ref
         tracking = head.tracking_branch()
@@ -798,7 +798,8 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
         tar.close()
         if verbose: print(f'Downloading {tarURL}')
         r = requests.get(tarURL, allow_redirects=True)
-        open(tar.name, 'wb').write(r.content)
+        with open(tar.name, 'wb') as fp:
+            fp.write(r.content)
         # open in tar
         tarobj = tarfile.open(name=tar.name)
         if nameByVersion:
@@ -928,7 +929,8 @@ def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTu
         r = requests.get(URL, allow_redirects=True)
         outfil = os.path.join(targetDir,fil)
         if r.status_code == 200:
-            open(outfil, 'wb').write(r.content)
+            with open(outfil, 'wb') as fp:
+                fp.write(r.content)
             print(f'wrote {outfil}')
         elif r.status_code == 404:
             print(f'Warning: {fil} is likely a subdirectory of directory {"/".join(dirlist)!r}')
@@ -1030,7 +1032,8 @@ def exceptHook(*args):
     This routine is only used when debug=True is set in the configuration settings
     '''
     try:
-        from IPython.core import ultratb
+        #from IPython.core import ultratb
+        import IPython.core.ultratb
     except:
         pass
 
@@ -1082,6 +1085,7 @@ def InvokeDebugOpts():
             global pdbBreak
             pdbBreak = pdb.set_trace
             import IPython
+            IPython
             global IPyBreak
             IPyBreak = IPyBreak_base
             sys.excepthook = exceptHook
@@ -1093,11 +1097,23 @@ def InvokeDebugOpts():
         os.environ['PYTHONBREAKPOINT'] = '0'
 
 def TestSPG(fpth):
+    '''Test if pyspg.[so,.pyd] can be run from a location in the path
+    Do not modify the path if not.
+    '''
     try:
         from . import pyspg
+        pyspg
         return True
     except ImportError:
-        return _old_TestSPG(fpth)
+        return False
+    try:
+        pyspg.sgforpy('P -1')
+    except Exception as err:
+        print(70*'=')
+        print(f'Module pyspg in {fpth!r} could not be run\nerror msg: {err}')
+        print(70*'=')
+        return False
+    return True
 
 def _old_TestSPG(fpth):
     '''Test if pyspg.[so,.pyd] can be run from a location in the path
@@ -1158,11 +1174,12 @@ def SetBinaryPath(showConfigMsg=False):
     global BinaryPathLoaded,binaryPath,BinaryPathFailed
     if BinaryPathLoaded or BinaryPathFailed: return
     try:
-        inpver = intver(np.__version__)
+        intver(np.__version__)
     except (AttributeError,TypeError): # happens on building docs
         return
     try:
         from GSASII import pypowder
+        pypowder
         binaryPath = None   # special value to indicate that binaries have been installed into package
         if showConfigMsg:
             print(f'GSAS-II binaries co-located with GSAS-II: {os.path.dirname(__file__)}')
@@ -1358,6 +1375,7 @@ def condaTest(requireAPI=False):
         # is the conda package available?
         try:
             import conda.cli.python_api
+            conda.cli.python_api
         except:
             print('You do not have the conda package installed in this environment',
                   '\nConsider using the "conda install conda" command')
@@ -1567,12 +1585,12 @@ def addCondaPkg():
         script += 'conda install conda -n '+currenv+' -y'
         p = subprocess.Popen(script,shell=True,env={},
                          #stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    out,err = MakeByte2str(p.communicate())
-    #print('Output from adding conda:\n',out)
-    if err:
-        print('Note error/warning:')
-        print(err)
+                         stderr=subprocess.PIPE,
+                         encoding='UTF-8')
+    out,err = p.communicate()
+    if out is not None and GetConfigValue('debug'): print('Output from adding conda:\n',out)
+    if err and err is not None:
+        print('Note error/warning from running conda:\n',err)
     if currenv == "base":
         print('\nUnexpected action: adding conda to base environment???')
 #==============================================================================

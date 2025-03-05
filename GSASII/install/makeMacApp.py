@@ -76,8 +76,7 @@ If that does not exist, then the location of the current Python executable
 '''
 
 from __future__ import division, print_function
-import sys, os, os.path, stat, shutil, subprocess, plistlib
-import platform
+import sys, os, os.path, subprocess
 def Usage():
     print(f"\nUsage:\n\tpython {os.path.abspath(sys.argv[0])} [install_path] [<GSAS-II_script>] [Python_loc]\n")
     sys.exit()
@@ -147,7 +146,8 @@ if __name__ == '__main__' and sys.platform == "darwin":
         print(f"\nRemoving {g2Name!r}")
         os.remove(g2Name)
     #os.symlink(G2script,g2Name)
-    open(g2Name,'w').write('''# this script starts GSAS-II when not installed into Python
+    with open(g2Name,'w') as fp:
+        fp.write('''# this script starts GSAS-II when not installed into Python
 # it will be called from the GSAS-II.app AppleScript
 # it should be not be renamed or moved
 import sys,os

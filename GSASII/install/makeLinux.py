@@ -24,7 +24,7 @@ defined:
 The path to Python is determined from the version of Python used to
 run this script.
 '''
-import sys, os, os.path, stat, shutil, subprocess, plistlib
+import sys, os, os.path, stat, shutil
 import datetime
 desktop_template = """
 [Desktop Entry]
@@ -104,7 +104,6 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
              stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH)
 
     script = ''
-    import shutil
     for term in ("lxterminal", "gnome-terminal", 'konsole', "xterm",
                          "terminator", "terminology", "tilix"):
         try:
@@ -151,9 +150,8 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
     for f,t in zip((dfile,mfile),('Desktop','Menu')):
         if f is None: continue
         try:
-            open(f,'w').write(desktop_template.format(
-                terminal,
-                G2start+add2script,G2icon))
+            with open(f,'w') as fp:
+                fp.write(desktop_template.format(terminal,G2start+add2script,G2icon))
             os.chmod(
                 dfile,
                 stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH)

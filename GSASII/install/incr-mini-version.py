@@ -95,3 +95,6 @@ if __name__ == '__main__':
     #
     fp.close()
     print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')
+
+    print('Now do:\n\t git add \n\t git commit \n\t git push \n\t git push --tags\n (try "git push origin HEAD --tags")')
+    

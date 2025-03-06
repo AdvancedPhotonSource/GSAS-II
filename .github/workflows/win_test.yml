@@ -56,6 +56,7 @@ jobs:
       - name: GSAS-II test
         shell: bash -el {0}
         run: |
+          cd G2
           python test/test_elm.py
 
 

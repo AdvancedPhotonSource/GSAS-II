@@ -34,9 +34,18 @@ jobs:
       - name: Conda info
         shell: bash -el {0}
         run: conda info
-      - name: Conda list
-        shell: pwsh
-        run: conda list
+        run: |
+          # tailor the numpy version to match the GSAS-II binaries 
+          if [ "${{ matrix.env }}" == "py313" ]; then
+            npver=2.2
+          elif [ "${{ matrix.env }}" == "py312" ]; then
+            npver=2.2
+          elif [ "${{ matrix.env }}" == "py311" ]; then
+            npver=1.26
+          fi
+          conda list
+          conda info
+          conda install numpy={$npver} scipy requests pytest
 
 
       #   #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
@@ -48,15 +57,3 @@ jobs:
       #     #channels: conda-forge
           
       # - name: config python
-      #   run: |
-      #     # tailor the numpy version to match the GSAS-II binaries 
-      #     if [ "${{ matrix.env }}" == "py313" ]; then
-      #       npver=2.2
-      #     elif [ "${{ matrix.env }}" == "py312" ]; then
-      #       npver=2.2
-      #     elif [ "${{ matrix.env }}" == "py311" ]; then
-      #       npver=1.26
-      #     fi
-      #     conda list
-      #     conda info
-      #     #conda create build python=${{ matrix.python-version }} numpy={$npver} scipy requests pytest

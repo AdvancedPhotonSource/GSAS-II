@@ -5,6 +5,7 @@ on:
   push:
     branches-ignore:
       - master
+      - main
   #   branches: ['develop']
 #  pull_request:
 #    branches: ['main']
@@ -22,8 +23,8 @@ jobs:
     strategy:
       #fail-fast: false
       matrix:
-        env: ['py313']
-#        env: ['py310', 'py311', 'py312', 'py313']
+#        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.13"]
     runs-on: 'windows-latest'
     steps:
       - name: Get conda
@@ -32,12 +33,17 @@ jobs:
         with:
           activate-environment: build
           miniforge-version: latest
-          python-version: ${{ matrix.env }}
+          python-version: ${{ matrix.python-version }}
 
       # configure conda
       - name:  config python
         run: |
+          # tailor the numpy version to match the GSAS-II binaries 
           if [ "${{ matrix.env }}" == "py313" ]; then
             npver=2.2
+          elif [ "${{ matrix.env }}" == "py312" ]; then
+            npver=2.2
+          elif [ "${{ matrix.env }}" == "py311" ]; then
+            npver=1.26
           fi
           conda install numpy={$npver} scipy requests pytest

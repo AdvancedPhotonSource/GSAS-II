@@ -49,14 +49,17 @@ jobs:
       - name: GSAS-II install
         shell: bash -el {0}
         run: |
-          mkdir G2
-          cd G2
+          #mkdir G2
+          #cd G2
           curl -L -O https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/raw/main/install/gitstrap.py
           python gitstrap.py --nocheck --noshortcut --branch=main
       - name: GSAS-II test
         shell: bash -el {0}
         run: |
-          cd G2
+          dir /s
+          #cd G2
+          dir GSAS-II
+          dir /s
           python tests/test_elm.py
           python -m pytest 
 

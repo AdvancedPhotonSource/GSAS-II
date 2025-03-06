@@ -57,7 +57,8 @@ jobs:
         shell: bash -el {0}
         run: |
           cd G2
-          python test/test_elm.py
+          python tests/test_elm.py
+          python -m pytest 
 
 
       #   #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security

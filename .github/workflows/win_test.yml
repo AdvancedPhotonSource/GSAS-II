@@ -20,10 +20,10 @@ defaults:
 jobs:
   build:
     strategy:
-      fail-fast: false
+      #fail-fast: false
       matrix:
-#        env: ['py313']
-        env: ['py310', 'py311', 'py312', 'py313']
+        env: ['py313']
+#        env: ['py310', 'py311', 'py312', 'py313']
     runs-on: 'windows-latest'
     steps:
       - name: Get conda
@@ -36,7 +36,8 @@ jobs:
 
       # configure conda
       - name:  config python
-        if [ ${{ matrix.env }} == 'py313' ]; then
-          npver=2.2
-        fi
-        run: conda install numpy={$npver} scipy requests pytest
+        run: |
+          if [ "${{ matrix.env }}" == "py313" ]; then
+            npver=2.2
+          fi
+          conda install numpy={$npver} scipy requests pytest

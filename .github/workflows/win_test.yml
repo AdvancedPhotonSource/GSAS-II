@@ -44,8 +44,13 @@ jobs:
           fi
           #conda list
           #conda info
-          #conda install --quiet numpy=${npver} scipy requests pytest
-          conda install --quiet numpy=${npver} requests pytest briantoby::gsas2pkg -c conda-forge
+          conda install --quiet numpy=${npver} scipy requests pytest
+          #conda install --quiet numpy=${npver} requests pytest briantoby::gsas2pkg -c conda-forge
+          mkdir G2
+          cd G2
+          curl -L -O https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/raw/main/install/gitstrap.py
+          python gitstrap.py --nocheck --noshortcut -branch=main
+          python test/test_elm.py
 
 
       #   #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security

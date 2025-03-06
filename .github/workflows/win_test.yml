@@ -28,15 +28,14 @@ jobs:
     runs-on: 'windows-latest'
     steps:
       - name: Get conda
-        #uses: conda-incubator/setup-miniconda@v3.0.3
-        uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
+        uses: conda-incubator/setup-miniconda@v3
+        #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
         with:
           activate-environment: build
           miniforge-version: latest
           python-version: ${{ matrix.python-version }}
-
-      # configure conda
-      - name:  config python
+          channels: conda-forge
+      - name: config python
         run: |
           # tailor the numpy version to match the GSAS-II binaries 
           if [ "${{ matrix.env }}" == "py313" ]; then
@@ -46,5 +45,4 @@ jobs:
           elif [ "${{ matrix.env }}" == "py311" ]; then
             npver=1.26
           fi
-          mamba activate build
           conda install python=${{ matrix.python-version }} numpy={$npver} scipy requests pytest

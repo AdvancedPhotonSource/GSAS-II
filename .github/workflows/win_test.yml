@@ -31,10 +31,12 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
         with:
-          activate-environment: build
+          #activate-environment: build
           miniforge-version: latest
-          python-version: ${{ matrix.python-version }}
-          channels: conda-forge
+          auto-activate-base: true
+          #python-version: ${{ matrix.python-version }}
+          #channels: conda-forge
+          
       - name: config python
         run: |
           # tailor the numpy version to match the GSAS-II binaries 
@@ -45,4 +47,6 @@ jobs:
           elif [ "${{ matrix.env }}" == "py311" ]; then
             npver=1.26
           fi
-          conda install python=${{ matrix.python-version }} numpy={$npver} scipy requests pytest
+          conda list
+          conda info
+          #conda create build python=${{ matrix.python-version }} numpy={$npver} scipy requests pytest

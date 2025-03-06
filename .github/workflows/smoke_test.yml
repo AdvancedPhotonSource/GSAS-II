@@ -5,6 +5,7 @@ on:
   push:
     branches-ignore:
       - master
+      - win-self-test-sandbox-1
   #   branches: ['develop']
   pull_request:
     branches: ['main']

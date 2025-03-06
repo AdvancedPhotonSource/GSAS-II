@@ -14,39 +14,49 @@ on:
 
 
 # Default to bash
-defaults:
-  run:
-    shell: bash
+#defaults:
+#  run:
+#    shell: bash
 
 jobs:
-  build:
+  test-G2:
     strategy:
-      #fail-fast: false
+      fail-fast: false
       matrix:
 #        python-version: ["3.11", "3.12", "3.13"]
         python-version: ["3.13"]
     runs-on: 'windows-latest'
     steps:
-      - name: Get conda
-        uses: conda-incubator/setup-miniconda@v3
-        #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
+      - uses: conda-incubator/setup-miniconda@v3
         with:
-          #activate-environment: build
-          miniforge-version: latest
-          auto-activate-base: true
-          #python-version: ${{ matrix.python-version }}
-          #channels: conda-forge
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+      - name: Conda info
+        shell: bash -el {0}
+        run: conda info
+      - name: Conda list
+        shell: pwsh
+        run: conda list
+
+
+      #   #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
+      #   with:
+      #     #activate-environment: build
+      #     miniforge-version: latest
+      #     auto-activate-base: true
+      #     #python-version: ${{ matrix.python-version }}
+      #     #channels: conda-forge
           
-      - name: config python
-        run: |
-          # tailor the numpy version to match the GSAS-II binaries 
-          if [ "${{ matrix.env }}" == "py313" ]; then
-            npver=2.2
-          elif [ "${{ matrix.env }}" == "py312" ]; then
-            npver=2.2
-          elif [ "${{ matrix.env }}" == "py311" ]; then
-            npver=1.26
-          fi
-          conda list
-          conda info
-          #conda create build python=${{ matrix.python-version }} numpy={$npver} scipy requests pytest
+      # - name: config python
+      #   run: |
+      #     # tailor the numpy version to match the GSAS-II binaries 
+      #     if [ "${{ matrix.env }}" == "py313" ]; then
+      #       npver=2.2
+      #     elif [ "${{ matrix.env }}" == "py312" ]; then
+      #       npver=2.2
+      #     elif [ "${{ matrix.env }}" == "py311" ]; then
+      #       npver=1.26
+      #     fi
+      #     conda list
+      #     conda info
+      #     #conda create build python=${{ matrix.python-version }} numpy={$npver} scipy requests pytest

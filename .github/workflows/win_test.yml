@@ -1,0 +1,42 @@
+name: run self-tests on Windows
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches-ignore:
+      - master
+  #   branches: ['develop']
+#  pull_request:
+#    branches: ['main']
+
+  workflow_dispatch:    # Allows running this workflow manually
+
+
+# Default to bash
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+#        env: ['py313']
+        env: ['py310', 'py311', 'py312', 'py313']
+    runs-on: 'windows-latest'
+    steps:
+      - name: Get conda
+        #uses: conda-incubator/setup-miniconda@v3.0.3
+        uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
+        with:
+          activate-environment: build
+          miniforge-version: latest
+          python-version: ${{ matrix.env }}
+
+      # configure conda
+      - name:  config python
+        if [ ${{ matrix.env }} == 'py313' ]; then
+          npver=2.2
+        fi
+        run: conda install numpy={$npver} scipy requests pytest

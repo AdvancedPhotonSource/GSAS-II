@@ -48,12 +48,14 @@ jobs:
           #conda install --quiet numpy=${npver} requests pytest briantoby::gsas2pkg -c conda-forge
       - name: GSAS-II install
         shell: bash -el {0}
+        run: |
           mkdir G2
           cd G2
           curl -L -O https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/raw/main/install/gitstrap.py
           python gitstrap.py --nocheck --noshortcut --branch=main
       - name: GSAS-II test
         shell: bash -el {0}
+        run: |
           python test/test_elm.py
 
 

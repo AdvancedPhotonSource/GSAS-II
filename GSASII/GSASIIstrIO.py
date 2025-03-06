@@ -3113,7 +3113,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                                     refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,randI*StartI, 0.0,0.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr
                     if len(refList) == 0:
-                        raise G2obj.G2Exception(' Ouch #8: no reflections in data range - rethink PWDR limits')
+                        raise G2obj.G2Exception(f'Ouch #8: no reflections in data range.\nRethink PWDR limits for phase {phase!r} and histogram {histogram!r}')
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0],'Super':ifSuper}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]

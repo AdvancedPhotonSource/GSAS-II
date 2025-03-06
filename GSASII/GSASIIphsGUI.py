@@ -16453,7 +16453,7 @@ tab, use Operations->"Pawley create")''')
             y = refData[hist].T[6].T
             xy = [x,y]
             XY.append(np.array(xy))
-        G2plt.PlotXY(G2frame,XY,XY2=[],labelX='POobs',labelY='POcalc',newPlot=False,Title='Texture fit error')
+        G2plt.PlotXY(G2frame,XY,labelX='POobs',labelY='POcalc',lines=False,newPlot=False,Title='Texture fit error')
         UpdateTexture()
         G2plt.PlotTexture(G2frame,data,Start=False)            
             

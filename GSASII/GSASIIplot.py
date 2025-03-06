@@ -2511,7 +2511,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 else:
                     Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False)
             else:
-                Plot.plot(X,Y,marker='+',color=colors[ixy%NC],picker=False)
+                Plot.scatter(X,Y,marker='+',color=colors[ixy%NC],picker=False)
         if len(vertLines):
             for ixy,X in enumerate(vertLines):
                 dX = Page.Offset[0]*(ixy)*Xmax/500.
@@ -2554,7 +2554,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
             'u: offset up','o: reset offset','g: toggle grid','s: save data as csv file')
     else:
-        Page.Choice = None
+        Page.Choice = ('g: toggle grid','s: save data as csv file')
     Draw()
     
         

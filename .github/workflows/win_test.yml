@@ -46,4 +46,5 @@ jobs:
           elif [ "${{ matrix.env }}" == "py311" ]; then
             npver=1.26
           fi
-          conda install numpy={$npver} scipy requests pytest
+          mamba activate build
+          conda install python=${{ matrix.python-version }} numpy={$npver} scipy requests pytest

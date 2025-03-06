@@ -388,31 +388,38 @@ class G2ImportException(Exception):
 class G2ScriptException(Exception):
     pass
 
+def downloadFile(URL,download_loc=None):
+    '''Download the URL 
+    '''
+        
+    import requests
+    fname = os.path.split(URL)[1]
+    if download_loc is None:
+       import tempfile
+       download_loc = tempfile.gettempdir()
+    elif os.path.isdir(download_loc) and os.path.exists(download_loc):
+        pass
+    elif os.path.exists(os.path.dirname(download_loc)):
+        download_loc,fname = os.path.split(download_loc)
+        pass
+    else:
+        raise G2ScriptException(f"Import error: Cannot download to {download_loc}")
+    G2fil.G2Print(f'Preparing to download {URL}')
+    response = requests.get(URL)
+    filename = os.path.join(download_loc,fname)
+    with open(filename,'wb') as fp:
+        fp.write(response.content)
+    G2fil.G2Print(f'File {filename} written')
+    return filename
+
 def import_generic(filename, readerlist, fmthint=None, bank=None,
                        URL=False, download_loc=None):
     """Attempt to import a filename, using a list of reader objects.
 
     Returns the first reader object which worked."""
-    # Translated from OnImportGeneric method in GSASII.py
     if URL is True:
-        import requests
-        fname = os.path.split(filename)[1]
-        if download_loc is None:
-            import tempfile
-            download_loc = tempfile.gettempdir()
-        elif os.path.isdir(download_loc) and os.path.exists(download_loc):
-            pass
-        elif os.path.exists(os.path.dirname(download_loc)):
-            download_loc,fname = os.path.split(download_loc)
-            pass
-        else:
-            raise G2ScriptException(f"Import error: Cannot download to {download_loc}")
-        G2fil.G2Print(f'Preparing to download {filename}')
-        response = requests.get(filename)
-        filename = os.path.join(download_loc,fname)
-        with open(filename,'wb') as fp:
-            fp.write(response.content)
-        G2fil.G2Print(f'File {filename} written')
+        filename = downloadFile(filename,download_loc)
+    # Translated from OnImportGeneric method in GSASII.py
     primaryReaders, secondaryReaders = [], []
     for reader in readerlist:
         if fmthint is not None and fmthint not in reader.formatName: continue
@@ -952,8 +959,8 @@ class G2Project(G2ObjectWrapper):
         SaveDictToProjFile(self.data, self.names, self.filename)
 
     def add_powder_histogram(self, datafile, iparams=None, phases=[],
-                                 fmthint=None,
-                                 databank=None, instbank=None, multiple=False):
+                    fmthint=None, databank=None, instbank=None,
+                    multiple=False, URL=False):
         """Loads a powder data histogram or multiple powder histograms
         into the project.
 
@@ -965,7 +972,7 @@ class G2Project(G2ObjectWrapper):
         :param str datafile: A filename with the powder data file to read.
           Note that in unix fashion, "~" can be used to indicate the
           home directory (e.g. ~/G2data/data.fxye).
-        :param str iparams: A filenme for an instrument parameters file,
+        :param str iparams: A filename for an instrument parameters file,
             or a pair of instrument parameter dicts from :func:`load_iprms`.
             This may be omitted for readers that provide the instrument
             parameters in the file. (Only a few importers do this.)
@@ -992,21 +999,33 @@ class G2Project(G2ObjectWrapper):
         :param bool multiple: If False (default) only one dataset is read, but if
           specified as True, all selected banks of data (see databank)
           are read in.
+        :param bool URL: if True, the contents of datafile is a URL and
+          if not a dict, the contents of iparams is also a URL.
+          both files will be downloaded to a temporary location 
+          and read. The downloaded files will not be saved. 
+          If URL is specified and the Python requests package is 
+          not installed, a `ModuleNotFoundError` Exception will occur. 
+          will occur.
         :returns: A :class:`G2PwdrData` object representing
             the histogram, or if multiple is True, a list of :class:`G2PwdrData`
             objects is returned.
         """
         LoadG2fil()
-        datafile = os.path.abspath(os.path.expanduser(datafile))
-        try:
-            iparams = os.path.abspath(os.path.expanduser(iparams))
-        except:
-            pass
-        pwdrreaders = import_generic(datafile, Readers['Pwdr'],fmthint=fmthint,bank=databank)
+        if not URL:
+            datafile = os.path.abspath(os.path.expanduser(datafile))
+        pwdrreaders = import_generic(datafile, Readers['Pwdr'],fmthint=fmthint,
+                                         bank=databank, URL=URL)
         if not multiple: pwdrreaders = pwdrreaders[0:1]
         histlist = []
+        if URL:
+            iparmfile = downloadFile(iparams)
+        else:
+            try:
+                iparmfile = os.path.abspath(os.path.expanduser(iparams))
+            except:
+                pass
         for r in pwdrreaders:
-            histname, new_names, pwdrdata = load_pwd_from_reader(r, iparams,
+            histname, new_names, pwdrdata = load_pwd_from_reader(r, iparmfile,
                                           [h.name for h in self.histograms()],bank=instbank)
             if histname in self.data:
                 G2fil.G2Print("Warning - redefining histogram", histname)
@@ -1235,7 +1254,7 @@ class G2Project(G2ObjectWrapper):
 
     def add_phase(self, phasefile=None, phasename=None, histograms=[],
                       fmthint=None, mag=False,
-                      spacegroup='P 1',cell=None):
+                      spacegroup='P 1',cell=None, URL=False):
         """Loads a phase into the project, usually from a .cif file
 
         :param str phasefile: The CIF file (or other file type, see fmthint)
@@ -1259,6 +1278,12 @@ class G2Project(G2ObjectWrapper):
           this is only used when phasefile is None.
         :param list cell: a list with six unit cell constants
             (a, b, c, alpha, beta and gamma in Angstrom/degrees).
+        :param bool URL: if True, the contents of phasefile is a URL 
+          and the file will be downloaded to a temporary location 
+          and read. The downloaded file will not be saved. 
+          If URL is specified and the Python requests package is 
+          not installed, a `ModuleNotFoundError` Exception will occur. 
+          will occur. 
 
         :returns: A :class:`G2Phase` object representing the
             new phase.
@@ -1302,11 +1327,15 @@ class G2Project(G2ObjectWrapper):
             self.update_ids()
             return self.phase(phasename)
 
-        phasefile = os.path.abspath(os.path.expanduser(phasefile))
-        if not os.path.exists(phasefile):
-            raise G2ImportException(f'File {phasefile} does not exist')
+        if not URL: 
+            phasefile = os.path.abspath(os.path.expanduser(phasefile))
+            if not os.path.exists(phasefile):
+                raise G2ImportException(f'File {phasefile} does not exist')
+        else:
+            print(f'reading phase from URL {phasefile}')
         # TODO: handle multiple phases in a file
-        phasereaders = import_generic(phasefile, Readers['Phase'], fmthint=fmthint)
+        phasereaders = import_generic(phasefile, Readers['Phase'],
+                                          fmthint=fmthint, URL=URL)
         phasereader = phasereaders[0]
 
         if phasereader.MPhase and mag:

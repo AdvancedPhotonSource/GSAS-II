@@ -147,28 +147,13 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
         os.remove('NIST10')
     # import shutil
     # print(shutil.which(nistlattice))
-    p = subprocess.Popen([nistlattice],encoding='UTF-8',
+    with subprocess.Popen([nistlattice],encoding='UTF-8',
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-    p.stdin.write(inp)
-    p.stdin.close()
-    # read output and parse
-    err = p.stderr.read()
-    cellout = p.stdout.readlines()
-    p.terminate()
-    try:
-        p.wait(1)
-    except TimeoutExpired:
-        print('timeout on wait')
-        p.kill()
-        try:
-            p.wait(2)
-        except TimeoutExpired:
-            pass
-    p.stdout.close()
-    p.stderr.close()
-    
+                             stderr=subprocess.PIPE) as p:
+        o,err = p.communicate(input=inp)
+
+    cellout = o.split('\n')
     celldict['input'] = (cellin,center,setting)
     celldict['output'] = []
     d = 1
@@ -222,27 +207,13 @@ def ConvCell(redcell):
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
-    p = subprocess.Popen([convcell],encoding='UTF-8',
+    with subprocess.Popen([convcell],encoding='UTF-8',
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-    p.stdin.write(inp)
-    p.stdin.close()
-    # read output and parse
-    err = p.stderr.read()
-    out = p.stdout.readlines()
-    p.terminate()
-    try:
-        p.wait(1)
-    except TimeoutExpired:
-        print('timeout on wait')
-        p.kill()
-        try:
-            p.wait(2)
-        except TimeoutExpired:
-            pass
-    p.stdout.close()
-    p.stderr.close()
+                             stderr=subprocess.PIPE) as p:
+        o,err = p.communicate(input=inp)
+
+    out = o.split('\n')
     if debug and err:
         print(f'ConvCell err = {err}')
     line = '?'
@@ -250,6 +221,7 @@ def ConvCell(redcell):
     cell = []
     center = ' '
     setting = ' '
+    mat = ''
     try:
         while out:
             line=out.pop(0)
@@ -328,30 +300,14 @@ def CompareCell(cell1, center1, cell2, center2, tolerance=3*[0.2]+3*[1],
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
-    p = subprocess.Popen([nistlattice],encoding='UTF-8',
+    with subprocess.Popen([nistlattice],encoding='UTF-8',
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-    p.stdin.write(inp)
-    p.stdin.close()
-    err = p.stderr.read()
-    lines = p.stdout.readlines()
-    line = '?'
+                             stderr=subprocess.PIPE) as p:
+        o,err = p.communicate(input=inp)
+
+    lines = o.split('\n')
     fp = None
-    if output: fp = open(output,'w')
-    # read output and parse
-    p.terminate()
-    try:
-        p.wait(1)
-    except TimeoutExpired:
-        print('timeout on wait')
-        p.kill()
-        try:
-            p.wait(2)
-        except TimeoutExpired:
-            pass
-    p.stdout.close()
-    p.stderr.close()
     if fp:
         for line in lines: _emulateLP(line,fp)
         fp.close()
@@ -460,29 +416,13 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
-    p = subprocess.Popen([nistlattice],encoding='UTF-8',
+    with subprocess.Popen([nistlattice],encoding='UTF-8',
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-    p.stdin.write(inp)
-    p.stdin.close()
-    # read output and parse
-    err = p.stderr.read()
-    lines = p.stdout.readlines()
+                             stderr=subprocess.PIPE) as p:
+        o,err = p.communicate(input=inp)
 
-    p.terminate()
-    try:
-        p.wait(1)
-    except TimeoutExpired:
-        print('timeout on wait')
-        p.kill()
-        try:
-            p.wait(2)
-        except TimeoutExpired:
-            pass
-    p.stdout.close()
-    p.stderr.close()
-    
+    lines = o.split('\n')
     d = 1
     fp = None
     if output: fp = open(output,'w')

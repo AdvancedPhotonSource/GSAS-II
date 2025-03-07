@@ -137,9 +137,11 @@ static PyObject *fmask_func(PyObject *self, PyObject *args) {
   if (PyArray_DESCR(TA)->type_num != NPY_DOUBLE ||
       PyArray_NDIM(TA) != 1)
     return makeTypeException("Arg 2 (TA): expected 1-dimensional array of type np.float64 w/stride 1.");
-  if (PyArray_DESCR(image)->type_num != NPY_INT32 ||
+  // in Windows the type might be INT which is the same as INT32
+  if ((PyArray_DESCR(image)->type_num != NPY_INT &&
+       PyArray_DESCR(image)->type_num != NPY_INT32) ||
       PyArray_NDIM(image) != 1)
-    return makeTypeException("Arg 3 (image): expected 1-dimensional array of type np.float64 w/stride 1.");
+    return makeTypeException("Arg 3 (image): expected 1-dimensional array of type np.int32 w/stride 1.");
   if (PyArray_DESCR(TThs)->type_num != NPY_DOUBLE ||
       PyArray_NDIM(TThs) != 1)
     return makeTypeException("Arg 4 (TThs): expected 1-dimensional array of type np.float64 w/stride 1.");

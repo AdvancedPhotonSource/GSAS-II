@@ -32,7 +32,7 @@ DIFFaXsubs_lib = static_library('DIFFaXsubs_lib',
  DIFFaXsubs_src,
 )
 NISTlatsubs_src = [
-  'NISTlatsubs/BLOCKDATA1.f',
+#  'NISTlatsubs/BLOCKDATA1.f',
   'NISTlatsubs/CENTER.f',
   'NISTlatsubs/CKPT02.f',
   'NISTlatsubs/DERIV.f',
@@ -200,6 +200,6 @@ py.extension_module('unpack_cbf',
 #)
 
 executable('convcell', files('convcell.f'), install:true)
-executable('LATTIC', files('LATTIC.f'), link_with:NISTlatsubs_lib, install:true)
-
+#executable('LATTIC', files('LATTIC.f'), link_with:NISTlatsubs_lib, install:true)
+executable('LATTIC', files('LATTIC.f','NISTlatsubs/BLOCKDATA1.f'), link_with:NISTlatsubs_lib, install:true)
 subdir('k_vec_cython')

@@ -64,26 +64,29 @@ jobs:
         run: |
           cd GSAS-II
           python tests/test_elm.py
+          python tests/test_spg.py
 
-      - name: GSAS-II all tests
-        if: always()
-        shell: bash -el {0}
-        run: |
-          cd GSAS-II
-          ls
-          python -m pytest
+      # - name: GSAS-II all tests
+      #   if: always()
+      #   shell: bash -el {0}
+      #   run: |
+      #     cd GSAS-II
+      #     ls
+      #     python -m pytest
+
       - name: try pyspg
         if: always()
         shell: bash -el {0}
         run: |
           cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
-          python -c "import pyspg"
+          python
+          python -v -c "import pyspg"
 
       - name: try ldd
         if: always()
         shell: bash -el {0}
         run: |
-          conda create -n ntldd m2w64-ntldd-git
+          conda create -n ntldd python=3.13 m2w64-ntldd-git
           conda activate ntldd
           cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
           ls

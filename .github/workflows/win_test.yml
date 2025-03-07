@@ -56,10 +56,8 @@ jobs:
       - name: GSAS-II test
         shell: bash -el {0}
         run: |
-          dir /s
-          #cd G2
-          dir GSAS-II
-          dir /s
+          ls -R
+          cd GSAS-II
           python tests/test_elm.py
           python -m pytest 
 

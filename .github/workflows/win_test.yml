@@ -57,7 +57,7 @@ jobs:
         shell: bash -el {0}
         run: |
           ls -l GSAS-II/GSASII-bin/win_64_p3.13_n2.2
-          ls -l GSAS-II/tests2
+          ls -l GSAS-II/tests
       - name: GSAS-II single test
         if: always()
         shell: bash -el {0}
@@ -77,7 +77,7 @@ jobs:
         shell: bash -el {0}
         run: |
           cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
-          python -c import pyspg
+          python -c "import pyspg"
 
       - name: try ldd
         if: always()
@@ -87,7 +87,7 @@ jobs:
           conda activate ntldd
           cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
           ls
-          ntldd *.py
+          ntldd *.pyd
 
       #   #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
       #   with:

@@ -53,14 +53,41 @@ jobs:
           #cd G2
           curl -L -O https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/raw/main/install/gitstrap.py
           python gitstrap.py --nocheck --noshortcut --branch=main
-      - name: GSAS-II test
+      - name: find files
         shell: bash -el {0}
         run: |
-          ls -R
+          ls -l GSAS-II/GSASII-bin/win_64_p3.13_n2.2
+          ls -l GSAS-II/tests2
+      - name: GSAS-II single test
+        if: always()
+        shell: bash -el {0}
+        run: |
           cd GSAS-II
           python tests/test_elm.py
-          python -m pytest 
 
+      - name: GSAS-II all tests
+        if: always()
+        shell: bash -el {0}
+        run: |
+          cd GSAS-II
+          ls
+          python -m pytest
+      - name: try pyspg
+        if: always()
+        shell: bash -el {0}
+        run: |
+          cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
+          python -c import pyspg
+
+      - name: try ldd
+        if: always()
+        shell: bash -el {0}
+        run: |
+          conda create -n ntldd m2w64-ntldd-git
+          conda activate ntldd
+          cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
+          ls
+          ntldd *.py
 
       #   #uses: conda-incubator/setup-miniconda@030178870c779d9e5e1b4e563269f3aa69b04081 # v3.0.3 using hash for security
       #   with:

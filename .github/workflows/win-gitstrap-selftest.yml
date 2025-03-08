@@ -1,6 +1,7 @@
 name: GSAS-II self-tests on Windows via gitstrap
 
 on:
+  workflow_dispatch:    # Allows running this workflow manually
   # Runs on pushes targeting the default branch
 #  push:
 #    branches-ignore:
@@ -9,7 +10,6 @@ on:
 #  pull_request:
 #    branches: ['main']
 
-  workflow_dispatch:    # Allows running this workflow manually
 
 jobs:
   test-GSAS-II:

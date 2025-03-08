@@ -1,6 +1,7 @@
 name: run self-tests on Windows
 
 on:
+  workflow_dispatch:    # Allows running this workflow manually
   # Runs on pushes targeting the default branch
   push:
     branches-ignore:
@@ -9,7 +10,6 @@ on:
 #  pull_request:
 #    branches: ['main']
 
-  workflow_dispatch:    # Allows running this workflow manually
 
 jobs:
   test-GSAS-II:
@@ -36,6 +36,8 @@ jobs:
           elif [ "${{ matrix.python-version }}" == "3.11" ]; then
             npver=1.26
           fi
+          conda list
+          conda info
           conda install python=${{ matrix.python-version }} numpy=${npver} scipy requests pytest git gitpython pycifrw -c conda-forge --override-channels --quiet
           #conda install --quiet numpy=${npver} requests pytest briantoby::gsas2pkg -c conda-forge
           conda info

@@ -42,7 +42,7 @@ jobs:
           elif [ "${{ matrix.python-version }}" == "3.11" ]; then
             npver=1.26
           fi
-          conda install python=${{ matrix.python-version }} numpy=${npver} scipy requests pytest git gitpython -c conda-forge --override-channels --quiet
+          conda install python-gil python=${{ matrix.python-version }} numpy=${npver} scipy requests pytest git gitpython -c conda-forge --override-channels --quiet
           #conda install --quiet numpy=${npver} requests pytest briantoby::gsas2pkg -c conda-forge
           conda info
           conda list
@@ -89,7 +89,7 @@ jobs:
         if: always()
         shell: bash -el {0}
         run: |
-          conda create -n ntldd python=3.13 m2w64-ntldd-git
+          conda create -n ntldd python=3.13 numpy=2.2 m2w64-ntldd-git
           conda activate ntldd
           cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
           ls

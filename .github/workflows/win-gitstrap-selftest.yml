@@ -1,0 +1,52 @@
+name: GSAS-II self-tests on Windows via gitstrap
+
+on:
+  workflow_dispatch:    # Allows running this workflow manually
+  # Runs on pushes targeting the default branch
+  push:
+    branches-ignore:
+      - master
+  #   branches: ['main']
+#  pull_request:
+#    branches: ['main']
+
+
+jobs:
+  test-GSAS-II:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+#        python-version: ["3.11", "3.12", "3.13"]
+#        python-version: ["3.13"]
+    runs-on: 'windows-latest'
+    steps:
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+      - name: Conda install
+        shell: bash -el {0}
+        run: |
+          # tailor the numpy version to match the GSAS-II binaries 
+          if [ "${{ matrix.python-version }}" == "3.13" ]; then
+            npver="2.2 python-gil"
+          elif [ "${{ matrix.python-version }}" == "3.12" ]; then
+            npver=2.2
+          elif [ "${{ matrix.python-version }}" == "3.11" ]; then
+            npver=1.26
+          fi
+          conda install python=${{ matrix.python-version }} numpy=${npver} scipy requests pytest git gitpython pycifrw -c conda-forge --override-channels --quiet
+          #conda info
+          #conda list
+      - name: GSAS-II install
+        shell: bash -el {0}
+        run: |
+          curl -L -O https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/raw/main/install/gitstrap.py
+          python gitstrap.py --nocheck --noshortcut --branch=main
+
+      - name: GSAS-II all tests
+        shell: bash -el {0}
+        run: |
+          cd GSAS-II
+          python -m pytest

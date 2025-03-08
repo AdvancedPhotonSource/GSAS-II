@@ -77,6 +77,12 @@ def SetPrintLevel(level):
         if mode in level.lower():
             printLevel = mode
             return
+def SetDebugMode(mode):
+    '''Set the debug configuration mode on (mode=True) or off (mode=False).
+    This will provide some additional output that may help with 
+    tracking down problems in the code.
+    '''
+    GSASIIpath.SetConfigValue({'debug':bool(mode)})
 
 def installScriptingShortcut():
     '''Creates a file named G2script in the current Python site-packages directory.
@@ -429,7 +435,7 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
         elif flag:
             primaryReaders.append(reader)
     if not secondaryReaders and not primaryReaders:
-        raise G2ImportException("Could not read file: ", filename)
+        raise G2ImportException(f"Could not read file: {filename}")
 
     with open(filename, 'r'):
         rd_list = []
@@ -486,7 +492,7 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                     G2fil.G2Print("{} block # {} read by Reader {}"
                               .format(filename,bank,rd.formatName))
                 return rd_list
-    raise G2ImportException("No reader could read file: " + filename)
+    raise G2ImportException(f"No reader could read file: {filename}")
 
 
 def load_iprms(instfile, reader, bank=None):
@@ -533,8 +539,7 @@ def load_iprms(instfile, reader, bank=None):
     elif ibanks == 1:
         reader.instbank = 1
     else:
-        raise G2ImportException("Instrument parameter file has {} banks, select one with instbank param."
-                                    .format(ibanks))
+        raise G2ImportException(f"Instrument parameter file has {ibanks} banks, select one with instbank param.")
     reader.powderentry[2] = 1
     reader.instfile = instfile
     reader.instmsg = '{} bank {}'.format(instfile,reader.instbank)

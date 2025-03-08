@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.12", "3.13"]
+#        python-version: ["3.11", "3.12", "3.13"]
 #        python-version: ["3.13"]
     runs-on: 'windows-latest'
     steps:
@@ -29,13 +30,13 @@ jobs:
         run: |
           # tailor the numpy version to match the GSAS-II binaries 
           if [ "${{ matrix.python-version }}" == "3.13" ]; then
-            npver=2.2
+            npver="2.2 python-gil"
           elif [ "${{ matrix.python-version }}" == "3.12" ]; then
             npver=2.2
           elif [ "${{ matrix.python-version }}" == "3.11" ]; then
             npver=1.26
           fi
-          conda install python-gil python=${{ matrix.python-version }} numpy=${npver} scipy requests pytest git gitpython pycifrw -c conda-forge --override-channels --quiet
+          conda install python=${{ matrix.python-version }} numpy=${npver} scipy requests pytest git gitpython pycifrw -c conda-forge --override-channels --quiet
           #conda info
           #conda list
       - name: GSAS-II install

@@ -50,7 +50,7 @@ jobs:
       - name: find files
         shell: bash -el {0}
         run: |
-          ls -l GSAS-II/GSASII-bin/win_64_p3.13_n2.2
+          ls -l GSAS-II/GSASII-bin/win_64_p3.11_n1.26
           ls -l GSAS-II/tests
 
       - name: GSAS-II single test
@@ -73,9 +73,9 @@ jobs:
         if: always()
         shell: bash -el {0}
         run: |
-          cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
+          cd GSAS-II/GSASII-bin/win_64_p3.11_n1.26
           python -VV
-          python -v -c "import sys; print(sys.path)"
+          #python -v -c "import sys; print(sys.path)"
           python -v -c "import pyspg"
 
       - name: try ldd
@@ -84,7 +84,7 @@ jobs:
         run: |
           conda create -n ntldd python=3.13 numpy=2.2 m2w64-ntldd-git
           conda activate ntldd
-          cd GSAS-II/GSASII-bin/win_64_p3.13_n2.2
+          cd GSAS-II/GSASII-bin/win_64_p3.11_n1.26
           ls
           ntldd *.pyd
           python -c "import pyspg"

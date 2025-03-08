@@ -45,13 +45,6 @@ jobs:
           curl -L -O https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/raw/main/install/gitstrap.py
           python gitstrap.py --nocheck --noshortcut --branch=main
 
-      # - name: GSAS-II single test
-      #   shell: bash -el {0}
-      #   run: |
-      #     cd GSAS-II
-      #     python tests/test_elm.py
-      #    python tests/test_spg.py
-
       - name: GSAS-II all tests
         shell: bash -el {0}
         run: |

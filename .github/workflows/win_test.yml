@@ -1,11 +1,11 @@
-name: run self-tests on Windows
+name: debug self-tests on Windows w/3.11
 
 on:
   workflow_dispatch:    # Allows running this workflow manually
   # Runs on pushes targeting the default branch
-  #push:
-  #  branches-ignore:
-  #    - master
+  push:
+    branches-ignore:
+      - master
   #   branches: ['main']
 #  pull_request:
 #    branches: ['main']
@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
 #        python-version: ["3.11", "3.12", "3.13"]
-#        python-version: ["3.11"]
-        python-version: ["3.12"]
+        python-version: ["3.11"]
+#        python-version: ["3.12"]
     runs-on: 'windows-latest'
     steps:
       - uses: conda-incubator/setup-miniconda@v3
@@ -36,8 +36,8 @@ jobs:
           elif [ "${{ matrix.python-version }}" == "3.11" ]; then
             npver=1.26
           fi
-          conda list
-          conda info
+          #conda list
+          #conda info
           conda install python=${{ matrix.python-version }} numpy=${npver} scipy requests pytest git gitpython pycifrw -c conda-forge --override-channels --quiet
           #conda install --quiet numpy=${npver} requests pytest briantoby::gsas2pkg -c conda-forge
           conda info
@@ -53,8 +53,8 @@ jobs:
       - name: find files
         shell: bash -el {0}
         run: |
-          #ls -l GSAS-II/GSASII-bin/win_64_p3.11_n1.26
-          ls -l GSAS-II/GSASII-bin/win_64_p3.12_n2.2
+          ls -l GSAS-II/GSASII-bin/win_64_p3.11_n1.26
+          #ls -l GSAS-II/GSASII-bin/win_64_p3.12_n2.2
           ls -l GSAS-II/tests
 
       - name: GSAS-II single test
@@ -77,17 +77,18 @@ jobs:
         if: always()
         shell: bash -el {0}
         run: |
-          #cd GSAS-II/GSASII-bin/win_64_p3.11_n1.26
-          cd GSAS-II/GSASII-bin/win_64_p3.12_n2.2
+          cd GSAS-II/GSASII-bin/win_64_p3.11_n1.26
+          #cd GSAS-II/GSASII-bin/win_64_p3.12_n2.2
           python -VV
           #python -v -c "import sys; print(sys.path)"
-          python -v -c "import pyspg"
+          python -c "import pyspg"
 
       - name: try ldd
         if: always()
         shell: bash -el {0}
         run: |
-          conda create -n ntldd python=3.12 numpy=2.2 m2w64-ntldd-git
+          #conda create -n ntldd python=3.12 numpy=2.2 m2w64-ntldd-git
+          conda create -n ntldd python=3.11 numpy=1.26 m2w64-ntldd-git
           conda activate ntldd
           #cd GSAS-II/GSASII-bin/win_64_p3.11_n1.26
           cd GSAS-II/GSASII-bin/win_64_p3.12_n2.2

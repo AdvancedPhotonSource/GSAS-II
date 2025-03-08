@@ -2831,7 +2831,7 @@ def SHTXcal(refl,im,g,pfx,hfx,SGData,calcControls,parmDict):
         Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
         Ksl,x,x = G2lat.GetKsl(L,M,parmDict[pfx+'SHmodel'],psi,gam)
         Lnorm = G2lat.Lnorm(L)
-        odfCor += parmDict[pfx+item]*Lnorm*Kcl*Ksl
+        odfCor += parmDict[pfx+item]*Lnorm*Kcl[0]*Ksl[0]
     return odfCor
     
 def SHTXcalDerv(refl,im,g,pfx,hfx,SGData,calcControls,parmDict):
@@ -2857,7 +2857,7 @@ def SHTXcalDerv(refl,im,g,pfx,hfx,SGData,calcControls,parmDict):
         Ksl,dKsdp,dKsdg = G2lat.GetKsl(L,M,parmDict[pfx+'SHmodel'],psi,gam)
         Lnorm = G2lat.Lnorm(L)
         odfCor += parmDict[pfx+item]*Lnorm*Kcl*Ksl
-        dFdODF[pfx+item] = Lnorm*Kcl*Ksl
+        dFdODF[pfx+item] = Lnorm*Kcl[0]*Ksl[0]
         for i in range(3):
             dFdSA[i] += parmDict[pfx+item]*Lnorm*Kcl*(dKsdp*dPSdA[i]+dKsdg*dGMdA[i])
     return odfCor,dFdODF,dFdSA
@@ -2886,7 +2886,7 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
         Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
         Lnorm = G2lat.Lnorm(L)
-        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
+        odfCor += parmDict[phfx+item]*Lnorm*Kcl[0]*Ksl[0]
     return np.squeeze(odfCor)
     
 def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
@@ -2914,7 +2914,7 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
         Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
         Lnorm = G2lat.Lnorm(L)
-        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
+        odfCor += parmDict[phfx+item]*Lnorm*Kcl[0]*Ksl[0]
         dFdODF[phfx+item] = Kcl*Ksl*Lnorm
     return odfCor,dFdODF
     
@@ -3029,7 +3029,7 @@ def GetPwdrExtDerv(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     return dbde*sth2+dlde*(1.-sth2)
     
 def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
-    'Needs a doc string'    #need powder extinction!
+    'Needs a doc string'    
     parmDict[phfx+'Scale'] = max(1.e-12,parmDict[phfx+'Scale'])                      #put floor on phase fraction scale
     parmDict[hfx+'Scale'] = max(1.e-12,parmDict[hfx+'Scale'])                        #put floor on histogram scale
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3+im]               #scale*multiplicity
@@ -3037,7 +3037,7 @@ def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
         Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5+im],parmDict[hfx+'Azimuth'])[0]
     POcorr = 1.0
     if pfx+'SHorder' in parmDict:                 #generalized spherical harmonics texture - takes precidence
-        POcorr = SHTXcal(refl,im,g,pfx,hfx,SGData,calcControls,parmDict)[0]
+        POcorr = SHTXcal(refl,im,g,pfx,hfx,SGData,calcControls,parmDict)
     elif calcControls[phfx+'poType'] == 'MD':         #March-Dollase
         POcorr = GetPrefOri(uniq,G,g,phfx,hfx,SGData,calcControls,parmDict)
     elif calcControls[phfx+'SHord']:                #cylindrical spherical harmonics

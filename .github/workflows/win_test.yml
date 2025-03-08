@@ -3,9 +3,9 @@ name: run self-tests on Windows
 on:
   workflow_dispatch:    # Allows running this workflow manually
   # Runs on pushes targeting the default branch
-  push:
-    branches-ignore:
-      - master
+  #push:
+  #  branches-ignore:
+  #    - master
   #   branches: ['main']
 #  pull_request:
 #    branches: ['main']
@@ -87,7 +87,7 @@ jobs:
         if: always()
         shell: bash -el {0}
         run: |
-          conda create -n ntldd python=3.13 numpy=2.2 m2w64-ntldd-git
+          conda create -n ntldd python=3.12 numpy=2.2 m2w64-ntldd-git
           conda activate ntldd
           #cd GSAS-II/GSASII-bin/win_64_p3.11_n1.26
           cd GSAS-II/GSASII-bin/win_64_p3.12_n2.2

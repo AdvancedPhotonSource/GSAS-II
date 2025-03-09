@@ -2,10 +2,9 @@ name: smoke test
 
 on:
   # Runs on pushes targeting the default branch
-  push:
-    branches-ignore:
-      - master
-      - win-self-test-sandbox-1
+#  push:
+#    branches-ignore:
+#      - master
   #   branches: ['develop']
   pull_request:
     branches: ['main']

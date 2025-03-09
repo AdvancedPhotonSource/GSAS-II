@@ -540,13 +540,13 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
             dFFdS[Ojname] = dSHdOj
             dFFdS[Okname] = dSHdOk
         elif iAt in SHCdict and 'X' in hType:
-            orKeys = [item for item in ORBtables[Atype] if item not in ['ZSlater','NSlater','SZE','popCore','popVal']]
+            orKeys = [item for item in ORBtables[Atype] if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']]
             orbs = SHCdict[iAt]
             UVmat = np.inner(nl.inv(SHCdict[-iAt]['UVmat']),Bmat)
             Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),UVmat,[1.,0.,0.,1.])
             atFlg.append(1.0)
             orbTable = ORBtables[Atype][orKeys[0]] 
-            ffOrb = {item:orbTable[item] for item in orbTable if item not in ['ZSlater','NSlater','SZE','popCore','popVal']}
+            ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
             FFcore = G2el.ScatFac(ffOrb,SQR)    #core
             FFtot = np.zeros_like(FFcore)
             for orb in orbs:
@@ -558,7 +558,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                     SQk = SQR/kappa**2
                     korb = orb
                 orbTable = ORBtables[Atype][orKeys[int(orb)+1]]
-                ffOrb = {item:orbTable[item] for item in orbTable if item not in ['ZSlater','NSlater','SZE','popCore','popVal']}
+                ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
                 ff = Ne*G2el.ScatFac(ffOrb,SQk)
                 dffdk = G2el.ScatFacDer(ffOrb,SQk)
                 dSH = 0.0

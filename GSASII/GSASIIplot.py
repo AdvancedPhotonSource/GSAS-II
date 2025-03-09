@@ -3429,7 +3429,7 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,neigh):
         P += p**2
     if not np.any(P):
         P = np.ones((31,31))
-#    P = np.abs(P)
+#    P *= P
     color = np.array(general['Color'][general['AtomTypes'].index(atType)])/255.
     Plot.plot_surface(X*P,Y*P,Z*P,rstride=1,cstride=1,color=color,linewidth=1)
     for atm in neigh[0]:

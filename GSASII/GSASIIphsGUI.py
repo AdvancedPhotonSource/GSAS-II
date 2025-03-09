@@ -2910,8 +2910,10 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_MULTIMCSA,True)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,False)
             
-        mainSizer.Add(PawleySizer())
-        G2G.HorizontalLine(mainSizer,General)
+        dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
+        if nhist > 0:
+            mainSizer.Add(PawleySizer())
+            G2G.HorizontalLine(mainSizer,General)
         
         mainSizer.Add(MapSizer())
         G2G.HorizontalLine(mainSizer,General)
@@ -16892,10 +16894,12 @@ tab, use Operations->"Pawley create")''')
         G2frame.phaseDisplay.AddPage(G2frame.MEMData,'Dysnomia')
         Pages.append('Dysnomia')
         
+    dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
     Pages.append('Map peaks')
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
+    if nhist > 0:    
         Pages.append('MC/SA')
         G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
@@ -16904,18 +16908,19 @@ tab, use Operations->"Pawley create")''')
     if data['General']['Type'] == 'nuclear':
         ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(ISODIST,'ISODISTORT')
-        Pages.append('ISODISTORT')        
-    
-    Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
-    G2frame.phaseDisplay.AddPage(Texture,'Texture')
-    Pages.append('Texture')
-    PawleyRefList = wx.Panel(G2frame.phaseDisplay)
-    G2frame.PawleyRefl = None  # grid now created when needed
+        Pages.append('ISODISTORT')
+        
+    if nhist > 0:            
+        Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(Texture,'Texture')
+        Pages.append('Texture')
+        PawleyRefList = wx.Panel(G2frame.phaseDisplay)
+        G2frame.PawleyRefl = None  # grid now created when needed
 #    G2frame.PawleyRefl = G2G.GSGrid(PawleyRefList)  
 #    G2frame.PawleyRefl.SetScrollRate(0,0)
 #    G2frame.phaseDisplay.gridList.append(G2frame.PawleyRefl)
-    G2frame.phaseDisplay.AddPage(PawleyRefList,'Pawley reflections')
-    Pages.append('Pawley reflections')
+        G2frame.phaseDisplay.AddPage(PawleyRefList,'Pawley reflections')
+        Pages.append('Pawley reflections')
     G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_ISODISP,'ISODISTORT' in data)
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOMAG,'magPhases' in data)

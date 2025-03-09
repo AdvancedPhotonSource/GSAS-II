@@ -3425,10 +3425,11 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,neigh):
     RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
     P  = np.zeros((31,31))*Nek3
     for shc in SHC:
-        P += 2.*SHC[shc][0]*SHC[shc][2]**3*G2lat.KslCalc(shc,RAP[1],RAP[2]).reshape((31,31))
+        p = 2.*SHC[shc][0]*SHC[shc][2]**3*G2lat.KslCalc(shc,RAP[1],RAP[2]).reshape((31,31))
+        P += p**2
     if not np.any(P):
         P = np.ones((31,31))
-    P = np.abs(P)
+#    P = np.abs(P)
     color = np.array(general['Color'][general['AtomTypes'].index(atType)])/255.
     Plot.plot_surface(X*P,Y*P,Z*P,rstride=1,cstride=1,color=color,linewidth=1)
     for atm in neigh[0]:

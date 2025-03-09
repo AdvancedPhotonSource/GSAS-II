@@ -1722,8 +1722,9 @@ def UpdatePhaseData(G2frame,Item,data):
                     Restraints = G2frame.GPXtree.GetItemPyData(resId)
                     i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
                     if i: G2frame.GPXtree.SetItemText(i,newName)
-                    Restraints[newName] = Restraints[oldName]
-                    del Restraints[oldName]
+                    if len(Restraints):
+                        Restraints[newName] = Restraints[oldName]
+                        del Restraints[oldName]
                                                 
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!

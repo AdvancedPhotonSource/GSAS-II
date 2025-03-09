@@ -20,10 +20,10 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
 	  installer-url: https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/gsas2full-Latest-Windows-x86_64.exe
-      - name: find files
-        shell: bash -el {0}
-        run: |
-          ls -l 
+#      - name: find files
+#        shell: bash -el {0}
+#        run: |
+#          ls -l 
 
       # - name: GSAS-II single test
       #   if: always()

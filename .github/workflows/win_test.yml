@@ -80,7 +80,7 @@ jobs:
           cd GSAS-II/GSASII-bin/win_64_p3.11_n1.26
           #cd GSAS-II/GSASII-bin/win_64_p3.12_n2.2
           python -VV
-          #python -v -c "import sys; print(sys.path)"
+          python -c "import sys; print(sys.path)"
           python -c "import pyspg"
 
       - name: try ldd
@@ -94,4 +94,4 @@ jobs:
           #cd GSAS-II/GSASII-bin/win_64_p3.12_n2.2
           ls
           ntldd *.pyd
-          python -c "import pyspg"
+          python -c "import sys; sys.path.insert(0,'.'); import pyspg"

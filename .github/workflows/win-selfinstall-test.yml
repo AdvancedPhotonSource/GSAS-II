@@ -52,7 +52,7 @@ jobs:
           call c:\ProgramData\gsas2new\Scripts\activate
           where python
           python -VV
-          conda install -y pytest
+          call conda install -y pytest
           cd c:\ProgramData\gsas2new\GSAS-II
           python -m pytest
 

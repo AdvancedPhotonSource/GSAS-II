@@ -23,37 +23,37 @@ jobs:
         with:
           url: "https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/gsas2new-5804-Windows-x86_64.exe"
           #target: download/
-      - name: find it
-        shell: bash
-        run: |
-          ls -R
+      #- name: find it
+      #  shell: bash
+      #  run: |
+      #    ls -R
 
       - name: GSAS-II install
         shell: pwsh
         run: Start-Process -FilePath .\gsas2new-5804-Windows-x86_64.exe -ArgumentList "/S /AddToPath=1 " -NoNewWindow -Wait
 
-      - name: find install
-        if: always()
-        shell: bash
-        run: |
-          ls -R
+      #- name: find install
+      #  if: always()
+      #  shell: bash
+      #  run: |
+      #    ls -R
           
       - name: GSAS-II find GSAS-II
         if: always()
         shell: bash
         run: |
-          cd c:/ProgramData/gsas2new
+          cd c:/ProgramData/gsas2new/GSAS-II
           ls
 
       - name: try all tests
         if: always()
-        shell: bash
+        shell: cmd
         run: |
-          call c:/ProgramData/gsas2new/Scripts/activate
+          call c:\ProgramData\gsas2new\Scripts\activate
           where python
           python -VV
           conda install -y pytest
-          cd c:/ProgramData/gsas2new
+          cd c:\ProgramData\gsas2new\GSAS-II
           python -m pytest
 
       #     #python -v -c "import sys; print(sys.path)"

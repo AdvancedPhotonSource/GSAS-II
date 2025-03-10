@@ -21,7 +21,7 @@ jobs:
         id: downloadfile
         name: Download the file
         with:
-          url: "https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/gsas2full-Latest-Windows-x86_64.exe"
+          url: "https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/gsas2new-5804-Windows-x86_64.exe"
           #target: download/
       - name: find it
         if: always()
@@ -31,7 +31,7 @@ jobs:
 
       - name: GSAS-II single test
         shell: pwsh
-        run: Start-Process -FilePath .\gsas2new-Latest-Windows-x86_64.exe -ArgumentList "/S /AddToPath=1 /D=.\G2 " -NoNewWindow -Wait
+        run: Start-Process -FilePath .\gsas2new-5804-Windows-x86_64.exe -ArgumentList "/S /AddToPath=1 /D=.\G2 " -NoNewWindow -Wait
 
       - name: GSAS-II find GSAS-II
         if: always()

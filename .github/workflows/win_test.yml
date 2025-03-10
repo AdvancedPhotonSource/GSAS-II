@@ -3,9 +3,9 @@ name: debug self-tests on Windows w/3.11
 on:
   workflow_dispatch:    # Allows running this workflow manually
   # Runs on pushes targeting the default branch
-  push:
-    branches-ignore:
-      - master
+#  push:
+#    branches-ignore:
+#      - master
   #   branches: ['main']
 #  pull_request:
 #    branches: ['main']

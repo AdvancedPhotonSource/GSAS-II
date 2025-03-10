@@ -51,10 +51,10 @@ jobs:
         run: |
           call c:\ProgramData\gsas2new\Scripts\activate
           python -VV
-          call conda install -y pytest
-          cd c:\ProgramData\gsas2new\GSAS-II
+          call conda install -y --quiet pytest
+          call cd c:\ProgramData\gsas2new\GSAS-II
           dir
-          python -m pytest .
+          python -m pytest c:/ProgramData/gsas2new/GSAS-II
 
       #     #python -v -c "import sys; print(sys.path)"
       #     python -c "import pyspg"

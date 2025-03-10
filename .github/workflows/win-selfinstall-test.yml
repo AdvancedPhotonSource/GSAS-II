@@ -24,7 +24,7 @@ jobs:
           url: "https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/gsas2new-5804-Windows-x86_64.exe"
           #target: download/
       - name: find it
-        shell: bash -el {0}
+        shell: bash
         run: |
           ls -R
 
@@ -40,16 +40,16 @@ jobs:
           
       - name: GSAS-II find GSAS-II
         if: always()
-        shell: bash -el {0}
+        shell: bash
         run: |
-          cd c:\ProgramData\gsas2new
+          cd c:/ProgramData/gsas2new
           ls
 
       - name: try all tests
         if: always()
-        shell: bash -el {0}
+        shell: bash
         run: |
-          cd c:\ProgramData\gsas2new
+          cd c:/ProgramData/gsas2new
           Scripts\activate
           where python
           python -VV

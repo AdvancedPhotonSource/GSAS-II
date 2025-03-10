@@ -50,10 +50,10 @@ jobs:
         shell: bash
         run: |
           cd c:/ProgramData/gsas2new
-          Scripts\activate
+          Scripts/activate
           where python
           python -VV
-          conda install pytest -y
+          conda install -y pytest
           python -m pytest
 
       #     #python -v -c "import sys; print(sys.path)"

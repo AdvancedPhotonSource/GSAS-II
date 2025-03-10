@@ -34,7 +34,7 @@ jobs:
 
       - name: find install
         if: always()
-        shell: bash -el {0}
+        shell: bash
         run: |
           ls -R
           
@@ -42,14 +42,14 @@ jobs:
         if: always()
         shell: bash -el {0}
         run: |
-          cd gsas2new
+          cd c:\ProgramData\gsas2new
           ls
 
       - name: try all tests
         if: always()
         shell: bash -el {0}
         run: |
-          cd gsas2new
+          cd c:\ProgramData\gsas2new
           Scripts\activate
           where python
           python -VV

@@ -1367,7 +1367,8 @@ def LogCellChanges(G2frame):
         SGData = phasedict['General']['SGData']
         for hist in phasedict['Histograms']:
             if not phasedict['Histograms'][hist]['Use']: continue
-            if 'S' in phasedict['Histograms'][hist]['Type']: continue
+            #skip single crystal histograms!
+            if 'Type' in phasedict['Histograms'][hist] and 'S' in phasedict['Histograms'][hist]['Type']: continue
             hId = Histograms[hist]['hId']
             if any(phasedict['Histograms'][hist]['HStrain'][1]) or phasedict['General']['Cell'][0]:
                 cellList,cellSig = G2lat.getCellSU(pId,hId,SGData,parmDict,covData)

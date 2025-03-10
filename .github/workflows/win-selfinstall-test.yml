@@ -38,23 +38,23 @@ jobs:
       #  run: |
       #    ls -R
           
-      - name: GSAS-II find GSAS-II
-        if: always()
-        shell: bash
-        run: |
-          cd c:/ProgramData/gsas2new/GSAS-II
-          ls
+      #- name: GSAS-II find GSAS-II
+      #  if: always()
+      #  shell: bash
+      #  run: |
+      #    cd c:/ProgramData/gsas2new/GSAS-II
+      #    ls
 
       - name: try all tests
         if: always()
         shell: cmd
         run: |
           call c:\ProgramData\gsas2new\Scripts\activate
-          where python
           python -VV
           call conda install -y pytest
           cd c:\ProgramData\gsas2new\GSAS-II
-          python -m pytest
+          dir
+          python -m pytest .
 
       #     #python -v -c "import sys; print(sys.path)"
       #     python -c "import pyspg"

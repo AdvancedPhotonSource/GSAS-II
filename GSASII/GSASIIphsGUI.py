@@ -11972,6 +11972,22 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 
     def UpdateDeformation(AtdId):
         
+        def MakeUVmat(defData,U,V):
+            MX = U
+            if 'A' in defData['MUV']:
+                MY = V
+                MZ = np.cross(MX,MY)
+                MZ /= nl.norm(MZ)
+                MY = np.cross(MZ,MX)
+                MY /= nl.norm(MY)
+            else:
+                MZ = V
+                MY = np.cross(MZ,MX)
+                MY /= nl.norm(MY)
+                MZ = np.cross(MX,MY)
+                MZ /= nl.norm(MZ)
+            return np.array([MX,MY,MZ])
+        
         def OnDeformRef(event):
             Obj = event.GetEventObject()
             dId,oId,dkey = Indx[Obj.GetId()]
@@ -11997,6 +12013,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             deformationData[-dId]['MUV'] = Obj.GetValue()
+            U = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['U'])]
+            V = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
+            UVmat = MakeUVmat(deformationData[-dId],U,V)
+            data['Deformations'][-dId]['UVmat'] = UVmat
             wx.CallAfter(UpdateDeformation,dId)
             
         def OnUvec(event):
@@ -12006,20 +12026,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if Obj.GetValue() == deformationData[-dId]['V']:
                 Obj.SetValue(deformationData[-dId]['U'])
             else:
-                MX = UVvec[dId][Obj.GetSelection()]
-                if 'A' in deformationData[-dId]['MUV']:
-                    MY = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
-                    MZ = np.cross(MX,MY)
-                    MZ /= nl.norm(MZ)
-                    MY = np.cross(MZ,MX)
-                    MY /= nl.norm(MY)
-                else:
-                    MZ = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
-                    MY = np.cross(MZ,MX)
-                    MY /= nl.norm(MY)
-                    MZ = np.cross(MX,MY)
-                    MZ /= nl.norm(MZ)
-                UVmat = np.array([MX,MY,MZ])
+                U = UVvec[dId][Obj.GetSelection()]
+                V = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
+                UVmat = MakeUVmat(deformationData[-dId],U,V)
                 if np.any(np.isnan(UVmat)):
                     Obj.SetValue(deformationData[-dId]['U'])
                     G2G.G2MessageBox(G2frame,'ERROR: Z: U-vector zero or parallel to V','Invalid vector choice')
@@ -12028,6 +12037,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     UVmat *= -1.
                 deformationData[-dId]['U'] =  Obj.GetValue()
                 data['Deformations'][-dId]['UVmat'] = UVmat
+            wx.CallAfter(UpdateDeformation,dId)
             
         def OnVvec(event):
             "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
@@ -12036,20 +12046,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if Obj.GetValue() == deformationData[-dId]['U']:
                 Obj.SetValue(deformationData[-dId]['V'])
             else:
-                MX = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['U'])]
-                if 'A' in deformationData[-dId]['MUV']:
-                    MY = UVvec[dId][Obj.GetSelection()]
-                    MZ = np.cross(MX,MY)
-                    MZ /= nl.norm(MZ)
-                    MY = np.cross(MZ,MX)
-                    MY /= nl.norm(MY)
-                else:
-                    MZ = UVvec[dId][Obj.GetSelection()]
-                    MY = np.cross(MZ,MX)
-                    MY /= nl.norm(MY)
-                    MZ = np.cross(MX,MY)
-                    MZ /= nl.norm(MZ)
-                UVmat = np.array([MX,MY,MZ])
+                U = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['U'])]
+                V = UVvec[dId][Obj.GetSelection()]
+                UVmat = MakeUVmat(deformationData[-dId],U,V)
                 if np.any(np.isnan(UVmat)):
                     Obj.SetValue(deformationData[-dId]['V'])
                     G2G.G2MessageBox(G2frame,'ERROR: V-vector zero or parallel to U','Invalid vector choice')
@@ -12058,6 +12057,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     UVmat *= -1.
                 deformationData[-dId]['V'] =  Obj.GetValue()
                 data['Deformations'][-dId]['UVmat'] = UVmat
+            wx.CallAfter(UpdateDeformation,dId)
                 
         def OnAtSel(event):
             dId = atomList[atSel.GetValue()]
@@ -12097,10 +12097,13 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(deformation,label=' Select an atom '),0,WACV)
-        atSel = wx.ComboBox(deformation,value=AtChoice,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        atSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
-        topSizer.Add(atSel,0,WACV)
+        if dId is None:
+            topSizer.Add(wx.StaticText(deformation,label='No atoms in deformation list. Do add atom first'),0,WACV)
+        else:
+            topSizer.Add(wx.StaticText(deformation,label=' Select an atom '),0,WACV)
+            atSel = wx.ComboBox(deformation,value=AtChoice,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            atSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
+            topSizer.Add(atSel,0,WACV)
         mainSizer.Add(topSizer,0,wx.EXPAND)
         if dId is not None:
             Indx = {}
@@ -12134,7 +12137,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 UVvec[dId] += [neigh[1][3]/neigh[1][2],(neigh[0][3]+neigh[1][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2),]    #B, A+B
             if Nneigh == 4:
                 UVvec[dId] += [(neigh[0][3]+neigh[1][3]+neigh[2][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2+neigh[2][2]**2),] #A+B+C
-                               
             plotAtm = wx.Button(deformation,label='Plot')
             plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
             Indx[plotAtm.GetId()] = dId

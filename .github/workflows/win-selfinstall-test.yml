@@ -49,11 +49,11 @@ jobs:
         if: always()
         shell: bash
         run: |
-          cd c:/ProgramData/gsas2new
-          Scripts/activate
+          call c:/ProgramData/gsas2new/Scripts/activate
           where python
           python -VV
           conda install -y pytest
+          cd c:/ProgramData/gsas2new
           python -m pytest
 
       #     #python -v -c "import sys; print(sys.path)"

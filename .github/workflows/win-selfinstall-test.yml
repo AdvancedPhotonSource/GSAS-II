@@ -20,10 +20,10 @@ jobs:
       - uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9 # 1.6.0
         id: downloadfile
         name: Download the file
-	with:
+        with:
           url: "https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/download/v1.0.1/gsas2full-Latest-Windows-x86_64.exe"
-           target: download
-	  
+          target: download/
+
       - name: GSAS-II single test
         shell: pwsh
         run: Start-Process -FilePath .\download\gsas2new-5804-Windows-x86_64.exe -ArgumentList "/S /AddToPath=1 /D=.\G2 " -NoNewWindow -Wait
@@ -33,19 +33,18 @@ jobs:
         shell: bash -el {0}
         run: |
           cd G2
-	  ls
+          ls
 
       - name: try pyspg
         if: always()
         shell: bash -el {0}
         run: |
           cd G2
-	  Scripts\activate
-	  where python
-	  python -VV
-	  conda install pytest -y
-	  python -m pytest
-
+          Scripts\activate
+          where python
+          python -VV
+          conda install pytest -y
+          python -m pytest
 
 
 

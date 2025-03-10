@@ -31,20 +31,20 @@ jobs:
 
       - name: GSAS-II single test
         shell: pwsh
-        run: Start-Process -FilePath .\gsas2new-5804-Windows-x86_64.exe -ArgumentList "/S /AddToPath=1 /D=.\G2 " -NoNewWindow -Wait
+        run: Start-Process -FilePath .\gsas2new-5804-Windows-x86_64.exe -ArgumentList "/S /AddToPath=1 " -NoNewWindow -Wait
 
       - name: GSAS-II find GSAS-II
         if: always()
         shell: bash -el {0}
         run: |
-          cd G2
+          cd gsas2new
           ls
 
       - name: try all tests
         if: always()
         shell: bash -el {0}
         run: |
-          cd G2
+          cd gsas2new
           Scripts\activate
           where python
           python -VV

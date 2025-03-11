@@ -5477,6 +5477,20 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp
         )
 
+        G2frame.OnFileSave(None)
+        orgFilName = G2frame.GSASprojectfile
+        phsnam = phase_sel
+        resId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
+        Restraints = G2frame.GPXtree.GetItemPyData(resId)
+        resId = G2gd.GetGPXtreeItemId(G2frame, resId, phsnam)
+        orgData = copy.deepcopy(data)
+
+        if Restraints:
+            Restraints[phsnam]['Bond']['Bonds'] = []
+            Restraints[phsnam]['Angle']['Angles'] = []
+            savedRestraints = Restraints[phsnam]
+            del Restraints[phsnam]
+
         for ir_opt, _ in ir_options:
             print("Processing irrep:", ir_opt)
             data["input"] = "irrep"

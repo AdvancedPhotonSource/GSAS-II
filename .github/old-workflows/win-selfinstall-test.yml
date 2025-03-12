@@ -3,9 +3,9 @@ name: install self-installer on Windows
 on:
   workflow_dispatch:    # Allows running this workflow manually
   # Runs on pushes targeting the default branch
-  push:
-    branches-ignore:
-      - master
+#  push:
+#    branches-ignore:
+#      - master
   #   branches: ['main']
 #  pull_request:
 #    branches: ['main']

@@ -1581,24 +1581,21 @@ def addCondaPkg():
     currenv = os.environ['CONDA_DEFAULT_ENV']
     if sys.platform == "win32":
         cmd = [os.environ['CONDA_EXE'],'install','conda','-n',currenv,'-y']
-        p = subprocess.Popen(cmd,
+        with subprocess.Popen(cmd,
                          #stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         encoding='UTF-8') as p:
+            out,err = p.communicate()
     else:
         script = 'source ' + os.path.join(
             os.path.dirname(os.environ['CONDA_PYTHON_EXE']),
             'activate') + ' base; '
         script += 'conda install conda -n '+currenv+' -y'
-        p = subprocess.Popen(script,shell=True,env={},
+        with subprocess.Popen(script,shell=True,env={},
                          #stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
-                         encoding='UTF-8')
-    out,err = p.communicate()
-    p.terminate()
-    try:
-        p.wait(1)
-    except TimeoutExpired:
-        pass
+                         encoding='UTF-8') as p:
+            out,err = p.communicate()
     
     if out is not None and GetConfigValue('debug'): print('Output from adding conda:\n',out)
     if err and err is not None:

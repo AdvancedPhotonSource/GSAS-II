@@ -64,6 +64,12 @@ jobs:
           cd GSAS-II
           python tests/test_elm.py
           python tests/test_spg.py
+          pip install cython
+          cd sources/k_vec_cython
+          python setup.py build_ext --inplace
+          mv *.pyd ../../tests
+          cd ../../tests
+          python test_k_vec.py
 
       # - name: GSAS-II all tests
       #   if: always()

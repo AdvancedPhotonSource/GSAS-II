@@ -297,6 +297,9 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 M2 = func(x0+XvecAll,*args)
             except Exception as Msg:
                 if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
+                #import traceback
+                #Msg.msg += '\n'
+                #Msg.msg += traceback.format_exc()
                 G2fil.G2Print(Msg.msg,mode='warn')
                 loops += 1
                 d = np.abs(np.diag(nl.qr(Amatlam)[1]))

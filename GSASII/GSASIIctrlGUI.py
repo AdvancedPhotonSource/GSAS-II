@@ -8417,7 +8417,7 @@ def skimGPX(fl):
             cnt += 1
             note = None
             try:
-                data = G2IO.cPickleLoad(fp)
+                data = G2IO.pickleLoad(fp)
             except EOFError:
                 #print(cnt,'entries read')
                 break

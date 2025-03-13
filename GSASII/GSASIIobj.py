@@ -12,14 +12,10 @@ import re
 import random as ran
 import sys
 import os.path
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    import pickle as cPickle
-from . import GSASIIpath
-from . import GSASIImath as G2mth
-from . import GSASIIspc as G2spc
+import pickle
 import numpy as np
+from GSASII import GSASIImath as G2mth
+from GSASII import GSASIIspc as G2spc
 
 DefaultControls = {
     'deriv type':'analytic Hessian',
@@ -162,7 +158,7 @@ def GetPhaseNames(fl):
     PhaseNames = []
     while True:
         try:
-            data = cPickle.load(fl)
+            data = pickle.load(fl)
         except EOFError:
             break
         datum = data[0]
@@ -2247,6 +2243,7 @@ def patchControls(Controls):
     # end patch
 
 if __name__ == "__main__":
+    from . import GSASIIpath
     # test variable descriptions
     for var in '0::Afrac:*',':1:Scale','1::dAx:0','::undefined':
         v = var.split(':')[2]

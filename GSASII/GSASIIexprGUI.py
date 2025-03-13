@@ -993,10 +993,7 @@ if __name__ == "__main__":
 
     #app.MainLoop()
 
-    if '2' in platform.python_version_tuple()[0]:
-        import cPickle
-    else:
-        import pickle as cPickle
+    import pickle
     def showEQ(calcobj):
         print
         print (calcobj.eObj.expression)
@@ -1014,7 +1011,7 @@ if __name__ == "__main__":
     calcobj.SetupCalc(parmDict2)
     showEQ(calcobj)
     fp = open('/tmp/obj.pickle','w')
-    cPickle.dump(obj,fp)
+    pickle.dump(obj,fp)
     fp.close()
 
     obj.expression = "A*np.exp(-2/B)"
@@ -1026,7 +1023,7 @@ if __name__ == "__main__":
     showEQ(calcobj)
 
     fp = open('/tmp/obj.pickle','r')
-    obj = cPickle.load(fp)
+    obj = pickle.load(fp)
     fp.close()
     parmDict2 = {'0::Afrac:0':0.0, '0::Afrac:1': 1.0}
     calcobj = G2obj.ExpressionCalcObj(obj)

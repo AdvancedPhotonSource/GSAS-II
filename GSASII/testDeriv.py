@@ -17,7 +17,7 @@ calculation & for the 1st selected derivative (rest should be the same).
 import sys
 import os
 import copy
-import pickle as cPickle
+import pickle
 import io as StringIO
 import cProfile,pstats
 import wx
@@ -121,13 +121,13 @@ class testDeriv(wx.Frame):
             
     def TestRead(self):
         file = open(self.testFile,'rb')
-        self.values = cPickle.load(file,encoding='Latin-1')
-        self.HistoPhases = cPickle.load(file,encoding='Latin-1')
-        (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file,encoding='Latin-1')
-        self.parmDict = cPickle.load(file,encoding='Latin-1')
-        self.varylist = cPickle.load(file,encoding='Latin-1')
-        self.calcControls = cPickle.load(file,encoding='Latin-1')
-        self.pawleyLookup = cPickle.load(file,encoding='Latin-1')
+        self.values = pickle.load(file,encoding='Latin-1')
+        self.HistoPhases = pickle.load(file,encoding='Latin-1')
+        (self.constrDict,self.fixedList,self.depVarList) = pickle.load(file,encoding='Latin-1')
+        self.parmDict = pickle.load(file,encoding='Latin-1')
+        self.varylist = pickle.load(file,encoding='Latin-1')
+        self.calcControls = pickle.load(file,encoding='Latin-1')
+        self.pawleyLookup = pickle.load(file,encoding='Latin-1')
         self.names = self.varylist+self.depVarList
         self.use = [False for i in range(len(self.names))]
         self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.names]

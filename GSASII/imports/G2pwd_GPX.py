@@ -3,15 +3,12 @@
 '''
 from __future__ import division, print_function
 import platform
-import pickle as cPickle
+import pickle
 import numpy as np
 from .. import GSASIIobj as G2obj
 
-def cPickleLoad(fp):
-    if '2' in platform.python_version_tuple()[0]:
-        return cPickle.load(fp)
-    else:
-        return cPickle.load(fp,encoding='latin-1')
+def pickleLoad(fp):
+    return pickle.load(fp,encoding='latin-1')
 
 class GSAS2_ReaderClass(G2obj.ImportPowderData):
     """Routines to import powder data from a GSAS-II file
@@ -27,19 +24,19 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             )
         
     def ContentsValidator(self, filename):
-        "Test if the 1st section can be read as a cPickle block, if not it can't be .GPX!"
+        "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
         fp = open(filename,'rb')
         try: 
-            data = cPickleLoad(fp)
+            data = pickleLoad(fp)
         except:
-            self.errors = 'This is not a valid .GPX file. Not recognized by cPickle'
+            self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
             fp.close()
             return False
         fp.seek(0)
         nhist = 0
         while True:
             try:
-                data = cPickleLoad(fp)
+                data = pickleLoad(fp)
             except EOFError:
                 break
             if data[0][0][:4] == 'PWDR':
@@ -72,7 +69,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
                 while True:
                     pos = fp.tell()
                     try:
-                        data = cPickleLoad(fp)
+                        data = pickleLoad(fp)
                     except EOFError:
                         break
                     if data[0][0][:4] == 'PWDR':
@@ -105,7 +102,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
 
         fp = open(filename,'rb')
         fp.seek(poslist[selblk])
-        data = cPickleLoad(fp)
+        data = pickleLoad(fp)
         N = len(data[0][1][1][0])
         #self.powderdata = data[0][1][1]
         self.powderdata = [

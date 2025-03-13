@@ -15,7 +15,7 @@ import os.path as ospath
 import time
 import math
 import copy
-import pickle as cPickle
+import pickle
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
@@ -289,8 +289,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         #args = ([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg)
         #print '*** before fit chi**2',np.sum(G2stMth.errRefine(values,*args)**2)
         #fl = open('beforeFit.cpickle','wb')
-        #cPickle.dump(values,fl,1)
-        #cPickle.dump(args[:-1],fl,1)
+        #pickle.dump(values,fl,1)
+        #pickle.dump(args[:-1],fl,1)
         #fl.close()
         Ftol = Controls['min dM/M']
         Xtol = Controls['SVDtol']
@@ -659,13 +659,13 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     if GSASIIpath.GetConfigValue('debug'):   # and IfOK:
 #needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
         fl = open(ospath.splitext(GPXfile)[0]+'.testDeriv','wb')
-        cPickle.dump(result[0],fl,1)
-        cPickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
-        cPickle.dump([constrDict,fixedList,G2mv.GetDependentVars()],fl,1)
-        cPickle.dump(parmDict,fl,1)
-        cPickle.dump(varyList,fl,1)
-        cPickle.dump(calcControls,fl,1)
-        cPickle.dump(pawleyLookup,fl,1)
+        pickle.dump(result[0],fl,1)
+        pickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
+        pickle.dump([constrDict,fixedList,G2mv.GetDependentVars()],fl,1)
+        pickle.dump(parmDict,fl,1)
+        pickle.dump(varyList,fl,1)
+        pickle.dump(calcControls,fl,1)
+        pickle.dump(pawleyLookup,fl,1)
         fl.close()
     if dlg:
         return True,Rvals

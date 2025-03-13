@@ -18,10 +18,7 @@ import numpy.ma as ma
 import math
 import copy
 import random as ran
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    import pickle as cPickle
+import pickle
 import scipy.interpolate as si
 from . import GSASIIpath
 from . import GSASIImath as G2mth
@@ -901,7 +898,7 @@ def UpdatePeakGrid(G2frame, data):
         PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
             Id = G2gd.GetGPXtreeItemId(G2frame,PatternId, item)
-            oldvals = cPickle.load(file)
+            oldvals = pickle.load(file)
             G2frame.GPXtree.SetItemPyData(Id,oldvals)
             if item == 'Peak List':
                 data.update(G2frame.GPXtree.GetItemPyData(Id))
@@ -917,7 +914,7 @@ def UpdatePeakGrid(G2frame, data):
         file = open(G2frame.undofile,'wb')
         PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
-            cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
+            pickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
         file.close()
         G2frame.dataWindow.UnDo.Enable(True)
 
@@ -7921,7 +7918,7 @@ def UpdateModelsGrid(G2frame,data):
         print ('Undo last refinement')
         file = open(G2frame.undosasd,'rb')
         PatternId = G2frame.PatternId
-        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),pickle.load(file))
         print (' Models recovered')
         file.close()
 
@@ -7930,7 +7927,7 @@ def UpdateModelsGrid(G2frame,data):
         file = open(G2frame.undosasd,'wb')
         PatternId = G2frame.PatternId
         for item in ['Models']:
-            cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
+            pickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
         file.close()
         G2frame.dataWindow.SasdUndo.Enable(True)
 
@@ -8766,7 +8763,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         print ('Undo last refinement')
         file = open(G2frame.undorefd,'rb')
         PatternId = G2frame.PatternId
-        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),pickle.load(file))
         print (' Model recovered')
         file.close()
 
@@ -8774,7 +8771,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         G2frame.undorefd = os.path.join(G2frame.dirname,'GSASIIrefd.save')
         file = open(G2frame.undorefd,'wb')
         PatternId = G2frame.PatternId
-        cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Models')),file,1)
+        pickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Models')),file,1)
         file.close()
         G2frame.dataWindow.REFDUndo.Enable(True)
 

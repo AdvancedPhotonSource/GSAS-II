@@ -107,10 +107,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     '''
     import struct as st
     import platform
-    if '2' in platform.python_version_tuple()[0]:
-        import cPickle
-    else:
-        import pickle as cPickle
+    import pickle
     import time
     more = False
     time0 = time.time()
@@ -172,7 +169,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             File = open(filename,'wb')
             Data = {'pixelSize':[200.,200.],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
             image = np.reshape(image,(sizexy[1],sizexy[0]))
-            cPickle.dump([head,Data,Npix,image],File,1)
+            pickle.dump([head,Data,Npix,image],File,1)
             File.close()
             self.sumfile = filename
             self.formatName = 'GSAS-II image'

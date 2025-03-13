@@ -14,14 +14,7 @@ import sys
 import os
 import platform
 import glob
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    try:
-        import _pickle as cPickle
-    except:
-        print('Warning: failed to import the optimized Py3 pickle (_pickle)')
-        import pickle as cPickle
+import pickle
 
 import wx
 import numpy as np
@@ -86,11 +79,8 @@ def RwFtest(npts,Rwp0,nvar0,Rwp1,nvar1):
     import scipy.stats
     return scipy.stats.f.cdf(F,nu1,nu2)
 
-def cPickleLoad(fp):
-    if '2' in platform.python_version_tuple()[0]:
-        return cPickle.load(fp)
-    else:
-       return cPickle.load(fp,encoding='latin-1')
+def pickleLoad(fp):
+    return pickle.load(fp,encoding='latin-1')
 
 def main(application):
     '''Start up the GSAS-II GUI'''
@@ -395,7 +385,7 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = cPickleLoad(filep)
+                    data = pickleLoad(filep)
                 except EOFError:
                     break
                 if not data[0][0].startswith('PWDR'): continue
@@ -479,7 +469,7 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = cPickleLoad(filep)
+                    data = pickleLoad(filep)
                 except EOFError:
                     break
                 if not data[0][0].startswith('Phase'): continue
@@ -549,7 +539,7 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = cPickleLoad(filep)
+                    data = pickleLoad(filep)
                 except EOFError:
                     break
                 if data[0][0].startswith('PWDR'):

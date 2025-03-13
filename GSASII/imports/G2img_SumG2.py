@@ -3,7 +3,7 @@
 '''
 
 from __future__ import division, print_function
-import pickle as cPickle
+import pickle
 from .. import GSASIIobj as G2obj
 class G2_ReaderClass(G2obj.ImportImage):
     '''Routine to read an image that has been pickled in Python. Images
@@ -15,7 +15,7 @@ class G2_ReaderClass(G2obj.ImportImage):
             extensionlist=('.G2img',),
             strictExtension=True,
             formatName = 'GSAS-II image',
-            longFormatName = 'cPickled image from GSAS-II'
+            longFormatName = 'pickled image from GSAS-II'
             )
 
     def ContentsValidator(self, filename):
@@ -23,17 +23,17 @@ class G2_ReaderClass(G2obj.ImportImage):
         '''
         try:
             fp = open(filename,'rb')
-            cPickle.load(fp)
+            pickle.load(fp)
             fp.close()
         except:
             return False
         return True
         
     def Reader(self,filename, ParentFrame=None, **unused):
-        '''Read using cPickle
+        '''Read using pickle
         '''
         Fp = open(filename,'rb')
-        self.Comments,self.Data,self.Npix,self.Image = cPickle.load(Fp)
+        self.Comments,self.Data,self.Npix,self.Image = pickle.load(Fp)
         Fp.close()
         self.LoadImage(ParentFrame,filename)
         return True

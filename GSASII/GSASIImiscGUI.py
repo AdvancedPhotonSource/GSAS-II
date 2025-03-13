@@ -25,7 +25,7 @@ import os
 import re
 import copy
 import platform
-import pickle as cPickle
+import pickle
 import sys
 import random as ran
 
@@ -455,7 +455,7 @@ def SaveMultipleImg(G2frame):
 def PutG2Image(filename,Comments,Data,Npix,image):
     'Write an image as a python pickle - might be better as an .edf file?'
     File = open(filename,'wb')
-    cPickle.dump([Comments,Data,Npix,image],File,2)
+    pickle.dump([Comments,Data,Npix,image],File,2)
     File.close()
     return
 
@@ -486,6 +486,11 @@ def objectScan(data,tag,indexStack=[]):
         return None
     elif type(data) in objectScanIgnore:
         return None
+    # not always recognized:
+    elif 'GSASIIobj.G2VarObj' in str(type(data)):
+        return None
+    elif 'GSASIIobj.ExpressionObj' in str(type(data)):
+        return None
     else:
         s = 'unexpected object in '+tag
         for i in indexStack:
@@ -499,11 +504,8 @@ def objectScan(data,tag,indexStack=[]):
             return tuple(data)
         return
 
-def cPickleLoad(fp):
-    if '2' in platform.python_version_tuple()[0]:
-        return cPickle.load(fp)
-    else:
-       return cPickle.load(fp,encoding='latin-1')
+def pickleLoad(fp):
+    return pickle.load(fp,encoding='latin-1')
 
 def ProjFileOpen(G2frame,showProvenance=True):
     'Read a GSAS-II project file and load into the G2 data tree'
@@ -530,22 +532,22 @@ def ProjFileOpen(G2frame,showProvenance=True):
             if result == wx.ID_YES:
                 updateFromSeq = True
                 fp = open(GPXphase,'rb')
-                data = cPickleLoad(fp) # first block in file should be Phases
+                data = pickleLoad(fp) # first block in file should be Phases
                 if data[0][0] != 'Phases':
                     raise Exception('Unexpected block in {} file. How did this happen?'
                             .format(GPXphase))
                 Phases = {}
                 for name,vals in data[1:]:
                     Phases[name] = vals
-                name,CovData = cPickleLoad(fp)[0] # 2nd block in file should be Covariance
-                name,RigidBodies = cPickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
+                name,CovData = pickleLoad(fp)[0] # 2nd block in file should be Covariance
+                name,RigidBodies = pickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
                 fp.close()
                 # index the histogram updates
                 hist = open(GPXhist,'rb')
                 try:
                     while True:
                         loc = hist.tell()
-                        datum = cPickleLoad(hist)[0]
+                        datum = pickleLoad(hist)[0]
                         tmpHistIndex[datum[0]] = loc
                 except EOFError:
                     pass
@@ -558,7 +560,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             sizeList = {}
         while True:
             try:
-                data = cPickleLoad(filep)
+                data = pickleLoad(filep)
             except EOFError:
                 break
             datum = data[0]
@@ -586,7 +588,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 data[0][1] = RigidBodies
             elif updateFromSeq and datum[0] in tmpHistIndex:
                 hist.seek(tmpHistIndex[datum[0]])
-                hdata = cPickleLoad(hist)
+                hdata = pickleLoad(hist)
                 if data[0][0] != hdata[0][0]:
                     print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
                 datum = hdata[0]
@@ -728,7 +730,7 @@ def ProjFileSave(G2frame):
                     data.append([name,G2frame.GPXtree.GetItemPyData(item2)])
                     item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
-                cPickle.dump(data,file,2)
+                pickle.dump(data,file,2)
             file.close()
             pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
             if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveGPXdirectory(pth)

@@ -45,7 +45,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             msg = 'MIDAS_Zarr Reader skipped because zarr module is not installed.'
             if GSASIIpath.condaTest():
                 msg += ' To fix this press "Install packages" button below'
-            G2fil.ImportErrorMsg(msg,{'MIDAS Zarr importer':['zarr']})
+            G2fil.ImportErrorMsg(msg,{'MIDAS Zarr importer':['zarr=2.18.*']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.zarr.zip',),strictExtension=True,
             formatName = 'MIDAS zarr',longFormatName = 'MIDAS zarr intergrated scans')

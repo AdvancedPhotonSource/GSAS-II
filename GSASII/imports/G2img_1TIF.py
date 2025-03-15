@@ -32,6 +32,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
             try:
                 from PIL import Image as Im
             except ImportError:
+                msg = 'TIF_Reader may not be able to read some less common image formats because the pillow module is not installed.'
                 G2fil.ImportErrorMsg(msg,{'TIF Image importer':['pillow']})
 
     def ContentsValidator(self, filename):

@@ -1,5 +1,6 @@
-# perform a GSAS-II refinement using GSASIIscriptable and tutorial
-# data
+# test_image(): read in a MAR image (tests pack_f binary module) and then
+#               integrate it using GeneratePixelMask (tests fmask binary module)
+# test_CBF(): read in a CBF image (tests unpack_cbf module)
 
 import os
 import sys
@@ -23,6 +24,7 @@ import GSASII
 import GSASII.GSASIIscriptable as G2sc
 
 def test_image():
+    print('Testing read, mask & integration of MAR image')
     try:
         import requests
     except ModuleNotFoundError:
@@ -58,11 +60,31 @@ def test_image():
     assert abs(i6 - 26236.795563010724) < 0.1, msg+' intensity'
     print('OK')
     
+def test_CBF():
+    print('Testing read of CBF image')
+    try:
+        import requests
+    except ModuleNotFoundError:
+        print('Module requests not installed, test_CBF cannot be run')
+        return
+    workloc = lambda fil: os.path.join(work,fil)
+    gpx = G2sc.G2Project(newgpx=workloc('test_CBF.gpx'))
+    img = 'https://advancedphotonsource.github.io/GSAS-II-tutorials/selftestdata/130mm_0001.cbf'
+    img = gpx.add_image(img, fmthint='CBF', cacheImage=True, URL=True,
+                      download_loc=None)
+#    img = gpx.add_image(fmthint='CBF', cacheImage=True,
+#                      imagefile='/tmp/130mm_0001.cbf')
+    assert img[0].image.sum() == 184080517, 'Sum for entire image'
+    assert img[0].image[1000,:].sum() == 96380, 'Sum for one column'
+    assert img[0].image[:,1000].sum() == 146435, 'Sum for one row'
+    print('OK')
+
 if __name__ == '__main__':
     #import GSASII.GSASIIpath as GSASIIpath
     #GSASIIpath.InvokeDebugOpts()
     #import time
     #start = time.time()
     test_image()
+    test_CBF()
     #print('elapsed=',time.time()-start)
     

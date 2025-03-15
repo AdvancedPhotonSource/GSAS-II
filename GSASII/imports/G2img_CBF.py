@@ -16,7 +16,7 @@ class CBF_ReaderClass(G2obj.ImportImage):
             extensionlist=('.cbf',),
             strictExtension=True,
             formatName = 'CBF image',
-            longFormatName = 'CIF Binary Data Format image file (NB: Slow!)'
+            longFormatName = 'CIF Binary Data Format (CBF) image file (NB: Slow!)'
             )
 
     def ContentsValidator(self, filename):        
@@ -36,7 +36,10 @@ class CBF_ReaderClass(G2obj.ImportImage):
 def GetCbfData(self,filename):    
     'Read cif binary detector data cbf file'
     
-    import unpack_cbf as cbf
+    if GSASIIpath.binaryPath:
+        import unpack_cbf as cbf
+    else:
+        from .. import unpack_cbf as cbf
     if GSASIIpath.GetConfigValue('debug'):
         print ('Reading cif binary detector data cbf file: '+filename)
     File = open(filename,'rb')
@@ -49,7 +52,6 @@ def GetCbfData(self,filename):
     byteOrd = '<'
     stream = File.read()
     if 'bytes' in str(type(stream)):
-        print ('decoding: '+filename)
         stream = stream.decode('latin-1')
     starter = '\x0c\x1a\x04\xd5'
     imageBeg = stream.find(starter)+4
@@ -84,10 +86,8 @@ def GetCbfData(self,filename):
         elif 'Detector_2theta' in line:
             det2theta = float(fields[2])
     if compImageSize is None:
-        print('CBF failed to read header')
-        print(header)
-        print('\\r\\n in header','\r\n' in header, 'size',imageBeg)
-        return
+        print('CBF error failed to read header')
+        return False
         
     nxy = sizexy[0]*sizexy[1]
     cent = [cent[0]*pixSize[0]/1000.,cent[1]*pixSize[1]/1000.]

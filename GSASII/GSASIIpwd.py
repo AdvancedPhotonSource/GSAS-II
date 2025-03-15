@@ -47,6 +47,12 @@ try:
 except ImportError:
     print ('pydiffax is not available for this platform')
 from . import GSASIIfiles as G2fil
+try:
+    import pybaselines.whittaker
+except:
+    G2fil.NeededPackage({'Auto background capability':['pybaselines']})
+
+
 
 # trig functions in degrees
 tand = lambda x: math.tan(x*math.pi/180.)

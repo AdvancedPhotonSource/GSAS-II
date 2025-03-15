@@ -46,6 +46,7 @@ from . import GSASIImath as G2mth
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIobj as G2obj
 from . import GSASIIpwdplot as G2pwpl
+from . import GSASIIfiles as G2fil
 try:
     if GSASIIpath.binaryPath:    # TODO: I think this may use a fair amount of memory; delay import?
         import pytexture as ptx
@@ -73,6 +74,10 @@ except ImportError:
     from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
 except RuntimeError:  # happens during doc builds
     pass
+try:
+    import imageio
+except ImportError:
+    G2fil.NeededPackage({'Saving movies':['imageio']})
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)

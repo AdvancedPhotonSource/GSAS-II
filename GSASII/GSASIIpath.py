@@ -1495,6 +1495,11 @@ def pipInstall(packageList):
     :returns: None if the the command ran normally, or an error message
       if it did not.
     '''
+    # update conda package specs (pkg=1.2.3) to pip package specs (pkg==1.2.3)
+    # at present no other specifiers are used. 
+    for i,val in enumerate(packageList):
+        if '=' in val and '==' not in val:
+            packageList[i] = packageList[i].replace('=','==')
     try:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install']+packageList)
     except Exception as msg:

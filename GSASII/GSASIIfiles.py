@@ -122,6 +122,47 @@ def get_python_versions(packagelist):
                      ' ' + platform.machine()])
     return versions
 
+ImportErrors = []
+condaRequestList = {}
+def ImportErrorMsg(errormsg=None,pkg={}):
+    '''Store error message(s) from loading importers (usually missing
+    packages. Or, report back all messages, if called with no argument.
+
+    :param str errormsg: a string containing the error message. If not
+      supplied, the function returns the error message(s).
+    :param dict pkg: a dict where the key is the name of the importer and the
+      value is a list containing the packages that need to be installed to
+      allow the importer to be used.
+
+    :returns: the error messages as a list (an empty list if there are none),
+      only if errormsg is None (the default).
+    '''
+    if errormsg is None:
+        return ImportErrors
+    ImportErrors.append(errormsg)
+    if pkg: NeededPackage(pkg)
+
+def NeededPackage(pkgDict):
+    '''Store packages that are needed to add functionality to GSAS-II
+
+    :param dict pkgDict: a dict where the key is the describes the routine
+      or the unavailable functionality that requires addition of a Python
+      package and the value is a list containing the packages that need to 
+      be installed. If a specific version of a package is required then 
+      indicate that by placing version information into the name (see 
+      https://docs.conda.io/projects/conda/en/4.6.0/_downloads/52a95608c49671267e40c689e0bc00ca/conda-cheatsheet.pdf). Note that the names containing "pkg=x.y"
+      will be translated to "pkg==x.y" for pip installs, but more complex 
+      package specifications (see 
+      https://pip.pypa.io/en/latest/reference/requirement-specifiers/) will 
+      probably work only for conda installations.
+
+      Examples::
+
+          {'MIDAS Zarr importer':['zarr=2.18.*']}
+          {'HDF5 image importer':['h5py','hdf5']}
+    '''
+    condaRequestList.update(pkgDict)
+
 def makeInstDict(names,data,codes):
     inst = dict(zip(names,zip(data,data,codes)))
     for item in inst:
@@ -449,6 +490,7 @@ def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
         if not Sample.get(item): continue
         fp.write(f"{indent}{item}:{Sample[item]}\n")
 
+# version of LoadImportRoutines from before switch to "main"
 # def _old_LoadImportRoutines(prefix, errprefix=None, traceback=False):
 #     '''Routine to locate GSASII importers matching a prefix string.
 #
@@ -522,26 +564,7 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                     readerlist.append(reader)
     return readerlist
 
-ImportErrors = []
-condaRequestList = {}
-def ImportErrorMsg(errormsg=None,pkg={}):
-    '''Store error message(s) from loading importers (usually missing
-    packages. Or, report back all messages, if called with no argument.
-
-    :param str errormsg: a string containing the error message. If not
-      supplied, the function returns the error message(s).
-    :param dict pkg: a dict where the key is the name of the importer and the
-      value is a list containing the packages that need to be installed to
-      allow the importer to be used.
-
-    :returns: the error messages as a list (an empty list if there are none),
-      only if errormsg is None (the default).
-    '''
-    if errormsg is None:
-        return ImportErrors
-    ImportErrors.append(errormsg)
-    if pkg: condaRequestList.update(pkg)
-
+# version of LoadExportRoutines from before switch to "main" 
 # def _LoadExportRoutines(parent, usetraceback=False):
 #     '''Routine to locate GSASII exporters. Warns if more than one file
 #     with the same name is in the path or if a file is found that is not

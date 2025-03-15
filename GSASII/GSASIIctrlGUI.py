@@ -5666,6 +5666,11 @@ class MyHelp(wx.Menu):
             helpobj = self.Append(wx.ID_ANY,'Switch to/from branch',
                     'Switch to/from a GSAS-II development branch')
             frame.Bind(wx.EVT_MENU, gitSelectBranch, helpobj)
+        # test if conda present? 
+        helpobj = self.Append(wx.ID_ANY,'Add packages for more functionality',
+                'Install optional Python packages to provide more GSAS-II capabilities')
+        helpobj.Enable(bool(G2fil.condaRequestList))
+        frame.Bind(wx.EVT_MENU, SelectPkgInstall, id=helpobj.GetId())
         # provide special help topic names for extra items in help menu
         for lbl,indx in morehelpitems:
             helpobj = self.Append(wx.ID_ANY,lbl,'')
@@ -9694,16 +9699,19 @@ def SelectPkgInstall(event):
     useful for other GSAS-II actions.
     '''
     dlg = event.GetEventObject().GetParent()
-    dlg.EndModal(wx.ID_OK)
+    if hasattr(dlg,'EndModal'):   # present when called from a dialog
+        dlg.EndModal(wx.ID_OK)
     G2frame = wx.App.GetMainTopWindow()
 
     choices = {}
+    keylist = []
     for key in G2fil.condaRequestList:
         for item in G2fil.condaRequestList[key]:
             if item in choices:
                 choices[item] += f', {key}'
             else:
                 choices[item] = key
+                keylist.append(item)
     msg = 'Select package(s) to install'
     if GSASIIpath.condaTest():
         msg += ' using conda'
@@ -9714,7 +9722,7 @@ def SelectPkgInstall(event):
                              [i for i in choices.items()])
     if sel is None: return
     if not any(sel): return
-    pkgs = [choices[i][0] for i,f in enumerate(sel) if f]
+    pkgs = [keylist[i] for i,f in enumerate(sel) if f]
     wx.BeginBusyCursor()
     pdlg = wx.ProgressDialog('Updating','Installing Python packages; this can take a while',
                     parent=G2frame)

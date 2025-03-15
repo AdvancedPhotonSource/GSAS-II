@@ -26,6 +26,13 @@ class TIF_ReaderClass(G2obj.ImportImage):
             longFormatName = 'Various .tif and pseudo-TIF formats using GSAS-II reader'
             )
         self.scriptable = True
+        try:
+            import Image as Im
+        except ImportError:
+            try:
+                from PIL import Image as Im
+            except ImportError:
+                G2fil.ImportErrorMsg(msg,{'TIF Image importer':['pillow']})
 
     def ContentsValidator(self, filename):
         '''Does the header match the required TIF header?

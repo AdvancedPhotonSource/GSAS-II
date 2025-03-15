@@ -435,6 +435,7 @@ def ShowVersions():
             pass
     if Image is None:
         print ("Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations")
+        G2fil.NeededPackage({'Saving plot images':['pillow']})
     else:
         # version # can be in various places, try standard dunderscore first
         for ver in '__version__','VERSION','PILLOW_VERSION':
@@ -478,6 +479,7 @@ def ShowVersions():
     except:
         print('Warning: Python requests package not installed (required for\n'+
               ' GSAS-II to access web pages or self-install binary modules)')
+        G2fil.NeededPackage({'Accessing web resources':['requests']})
 
     if not GSASIIpath.TestSPG():
         path2repo = os.path.dirname(GSASIIpath.path2GSAS2)

@@ -547,13 +547,13 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
             dFFdS[Ojname] = dSHdOj
             dFFdS[Okname] = dSHdOk
         elif iAt in SHCdict and 'X' in hType:
-            orKeys = [item for item in ORBtables[Atype] if item not in ['ZSlater','NSlater','SZE','popCore','popVal']]
+            orKeys = [item for item in ORBtables[Atype] if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']]
             orbs = SHCdict[iAt]
             UVmat = np.inner(nl.inv(SHCdict[-iAt]['UVmat']),Bmat)
             Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),UVmat,[1.,0.,0.,1.])
             atFlg.append(1.0)
-            orbTable = ORBtables[Atype][orKeys[0]]
-            ffOrb = {item:orbTable[item] for item in orbTable if item not in ['ZSlater','NSlater','SZE','popCore','popVal']}
+            orbTable = ORBtables[Atype][orKeys[0]] 
+            ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
             FFcore = G2el.ScatFac(ffOrb,SQR)    #core
             FFtot = np.zeros_like(FFcore)
             for orb in orbs:
@@ -565,7 +565,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                     SQk = SQR/kappa**2
                     korb = orb
                 orbTable = ORBtables[Atype][orKeys[int(orb)+1]]
-                ffOrb = {item:orbTable[item] for item in orbTable if item not in ['ZSlater','NSlater','SZE','popCore','popVal']}
+                ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
                 ff = Ne*G2el.ScatFac(ffOrb,SQk)
                 dffdk = G2el.ScatFacDer(ffOrb,SQk)
                 dSH = 0.0
@@ -2838,7 +2838,7 @@ def SHTXcal(refl,im,g,pfx,hfx,SGData,calcControls,parmDict):
         Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
         Ksl,x,x = G2lat.GetKsl(L,M,parmDict[pfx+'SHmodel'],psi,gam)
         Lnorm = G2lat.Lnorm(L)
-        odfCor += parmDict[pfx+item]*Lnorm*Kcl*Ksl
+        odfCor += parmDict[pfx+item]*Lnorm*Kcl[0]*Ksl[0]
     return odfCor
 
 def SHTXcalDerv(refl,im,g,pfx,hfx,SGData,calcControls,parmDict):
@@ -2864,7 +2864,7 @@ def SHTXcalDerv(refl,im,g,pfx,hfx,SGData,calcControls,parmDict):
         Ksl,dKsdp,dKsdg = G2lat.GetKsl(L,M,parmDict[pfx+'SHmodel'],psi,gam)
         Lnorm = G2lat.Lnorm(L)
         odfCor += parmDict[pfx+item]*Lnorm*Kcl*Ksl
-        dFdODF[pfx+item] = Lnorm*Kcl*Ksl
+        dFdODF[pfx+item] = Lnorm*Kcl[0]*Ksl[0]
         for i in range(3):
             dFdSA[i] += parmDict[pfx+item]*Lnorm*Kcl*(dKsdp*dPSdA[i]+dKsdg*dGMdA[i])
     return odfCor,dFdODF,dFdSA
@@ -2893,7 +2893,7 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
         Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
         Lnorm = G2lat.Lnorm(L)
-        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
+        odfCor += parmDict[phfx+item]*Lnorm*Kcl[0]*Ksl[0]
     return np.squeeze(odfCor)
 
 def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
@@ -2921,7 +2921,7 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
         Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
         Lnorm = G2lat.Lnorm(L)
-        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
+        odfCor += parmDict[phfx+item]*Lnorm*Kcl[0]*Ksl[0]
         dFdODF[phfx+item] = Kcl*Ksl*Lnorm
     return odfCor,dFdODF
 
@@ -3036,7 +3036,7 @@ def GetPwdrExtDerv(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     return dbde*sth2+dlde*(1.-sth2)
 
 def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
-    'Needs a doc string'    #need powder extinction!
+    'Needs a doc string'    
     parmDict[phfx+'Scale'] = max(1.e-12,parmDict[phfx+'Scale'])                      #put floor on phase fraction scale
     parmDict[hfx+'Scale'] = max(1.e-12,parmDict[hfx+'Scale'])                        #put floor on histogram scale
     Icorr = parmDict[phfx+'Scale']*parmDict[hfx+'Scale']*refl[3+im]               #scale*multiplicity

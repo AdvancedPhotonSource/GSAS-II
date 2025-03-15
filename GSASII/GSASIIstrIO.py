@@ -1185,17 +1185,16 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         for Ename in ORBtable:
             orbdata = ORBtable[Ename]
             for item in orbdata:
-                if item in ['ZSlater','NSlater','SZE','popCore','popVal']:
-                    continue
-                fa = orbdata[item]['fa']
-                fb = orbdata[item]['fb']
-                if 'core' in item:
-                    name = ('%s %s'%(Ename,item)).ljust(13)
-                else:
-                    name = '   '+item.ljust(10)
-                pFile.write(' %13s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
-                    (name,fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],orbdata[item]['fc']))
-
+                if 'core' in item or '<' in item:
+                    fa = orbdata[item]['fa']
+                    fb = orbdata[item]['fb']
+                    if 'core' in item:                    
+                        name = ('%s %s'%(Ename,item)).ljust(13)
+                    else:
+                        name = '   '+item.ljust(10)
+                    pFile.write(' %13s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
+                        (name,fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],orbdata[item]['fc']))
+                
     def PrintMFtable(MFtable):
         pFile.write('\n <j0> Magnetic scattering factors:\n')
         pFile.write('   Symbol     mfa                                    mfb                                     mfc\n')

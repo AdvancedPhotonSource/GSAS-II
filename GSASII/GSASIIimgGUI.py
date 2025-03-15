@@ -1270,10 +1270,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 Razm += 360.
             if data['fullIntegrate']:
                 Razm = Lazm+360.
-            if data['LRazimuth'][0] != Lazm or data['LRazimuth'][1] != Razm:
-                G2frame.Lazim.ChangeValue(Lazm)
-                G2frame.Razim.ChangeValue(Razm)
-                data['LRazimuth'] = [Lazm,Razm]
+            # if data['LRazimuth'][0] != Lazm or data['LRazimuth'][1] != Razm:
+            #     G2frame.Lazim.ChangeValue(Lazm)
+            #     G2frame.Razim.ChangeValue(Razm)
+            data['LRazimuth'] = [Lazm,Razm]
+            wx.CallAfter(UpdateImageControls,G2frame,data,masks)
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
 
         def OnNumOutAzms(invalid,value,tc):
@@ -1378,7 +1379,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         if data['fullIntegrate']:
             G2frame.Razim.ChangeValue(LRazim[0]+360.)
             G2frame.Razim.Enable(False)
-            #G2frame.Razim.SetBackgroundColour(VERY_LIGHT_GREY)
         littleSizer.Add(G2frame.Razim,0,WACV)
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' No. 2-theta/azimuth bins'),0,WACV)

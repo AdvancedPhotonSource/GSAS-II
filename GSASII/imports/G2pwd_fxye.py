@@ -270,7 +270,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 TOF += [T+Step*(i-Tch) for i in range(Tch,tch)]
                 Tch,T,Step = tmap
             TOF = np.array(TOF)*clockWd
-            return TOF
+            return TOF[:-1]     #code makes extra step
 
         Banks = []
         Pos = []

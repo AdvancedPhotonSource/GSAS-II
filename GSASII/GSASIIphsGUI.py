@@ -1723,9 +1723,10 @@ def UpdatePhaseData(G2frame,Item,data):
                     Restraints = G2frame.GPXtree.GetItemPyData(resId)
                     i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
                     if i: G2frame.GPXtree.SetItemText(i,newName)
-                    Restraints[newName] = Restraints[oldName]
-                    del Restraints[oldName]
-
+                    if len(Restraints):
+                        Restraints[newName] = Restraints[oldName]
+                        del Restraints[oldName]
+                                                
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
@@ -2910,10 +2911,12 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_SINGLEMCSA,True)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_MULTIMCSA,True)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,False)
-
-        mainSizer.Add(PawleySizer())
-        G2G.HorizontalLine(mainSizer,General)
-
+            
+        dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
+        if nhist > 0:
+            mainSizer.Add(PawleySizer())
+            G2G.HorizontalLine(mainSizer,General)
+        
         mainSizer.Add(MapSizer())
         G2G.HorizontalLine(mainSizer,General)
 
@@ -11955,7 +11958,23 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         event.StopPropagation()
 
     def UpdateDeformation(AtdId):
-
+        
+        def MakeUVmat(defData,U,V):
+            MX = U
+            if 'A' in defData['MUV']:
+                MY = V
+                MZ = np.cross(MX,MY)
+                MZ /= nl.norm(MZ)
+                MY = np.cross(MZ,MX)
+                MY /= nl.norm(MY)
+            else:
+                MZ = V
+                MY = np.cross(MZ,MX)
+                MY /= nl.norm(MY)
+                MZ = np.cross(MX,MY)
+                MZ /= nl.norm(MZ)
+            return np.array([MX,MY,MZ])
+        
         def OnDeformRef(event):
             Obj = event.GetEventObject()
             dId,oId,dkey = Indx[Obj.GetId()]
@@ -11981,6 +12000,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             deformationData[-dId]['MUV'] = Obj.GetValue()
+            U = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['U'])]
+            V = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
+            UVmat = MakeUVmat(deformationData[-dId],U,V)
+            data['Deformations'][-dId]['UVmat'] = UVmat
             wx.CallAfter(UpdateDeformation,dId)
 
         def OnUvec(event):
@@ -11990,20 +12013,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if Obj.GetValue() == deformationData[-dId]['V']:
                 Obj.SetValue(deformationData[-dId]['U'])
             else:
-                MX = UVvec[dId][Obj.GetSelection()]
-                if 'A' in deformationData[-dId]['MUV']:
-                    MY = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
-                    MZ = np.cross(MX,MY)
-                    MZ /= nl.norm(MZ)
-                    MY = np.cross(MZ,MX)
-                    MY /= nl.norm(MY)
-                else:
-                    MZ = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
-                    MY = np.cross(MZ,MX)
-                    MY /= nl.norm(MY)
-                    MZ = np.cross(MX,MY)
-                    MZ /= nl.norm(MZ)
-                UVmat = np.array([MX,MY,MZ])
+                U = UVvec[dId][Obj.GetSelection()]
+                V = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['V'])]
+                UVmat = MakeUVmat(deformationData[-dId],U,V)
                 if np.any(np.isnan(UVmat)):
                     Obj.SetValue(deformationData[-dId]['U'])
                     G2G.G2MessageBox(G2frame,'ERROR: Z: U-vector zero or parallel to V','Invalid vector choice')
@@ -12012,7 +12024,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     UVmat *= -1.
                 deformationData[-dId]['U'] =  Obj.GetValue()
                 data['Deformations'][-dId]['UVmat'] = UVmat
-
+            wx.CallAfter(UpdateDeformation,dId)
+            
         def OnVvec(event):
             "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
             Obj = event.GetEventObject()
@@ -12020,20 +12033,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if Obj.GetValue() == deformationData[-dId]['U']:
                 Obj.SetValue(deformationData[-dId]['V'])
             else:
-                MX = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['U'])]
-                if 'A' in deformationData[-dId]['MUV']:
-                    MY = UVvec[dId][Obj.GetSelection()]
-                    MZ = np.cross(MX,MY)
-                    MZ /= nl.norm(MZ)
-                    MY = np.cross(MZ,MX)
-                    MY /= nl.norm(MY)
-                else:
-                    MZ = UVvec[dId][Obj.GetSelection()]
-                    MY = np.cross(MZ,MX)
-                    MY /= nl.norm(MY)
-                    MZ = np.cross(MX,MY)
-                    MZ /= nl.norm(MZ)
-                UVmat = np.array([MX,MY,MZ])
+                U = UVvec[dId][UVchoice[dId].index(deformationData[-dId]['U'])]
+                V = UVvec[dId][Obj.GetSelection()]
+                UVmat = MakeUVmat(deformationData[-dId],U,V)
                 if np.any(np.isnan(UVmat)):
                     Obj.SetValue(deformationData[-dId]['V'])
                     G2G.G2MessageBox(G2frame,'ERROR: V-vector zero or parallel to U','Invalid vector choice')
@@ -12042,7 +12044,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     UVmat *= -1.
                 deformationData[-dId]['V'] =  Obj.GetValue()
                 data['Deformations'][-dId]['UVmat'] = UVmat
-
+            wx.CallAfter(UpdateDeformation,dId)
+                
         def OnAtSel(event):
             dId = atomList[atSel.GetValue()]
             wx.CallAfter(UpdateDeformation,dId)
@@ -12081,10 +12084,13 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(deformation,label=' Select an atom '),0,WACV)
-        atSel = wx.ComboBox(deformation,value=AtChoice,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        atSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
-        topSizer.Add(atSel,0,WACV)
+        if dId is None:
+            topSizer.Add(wx.StaticText(deformation,label='No atoms in deformation list. Do add atom first'),0,WACV)
+        else:
+            topSizer.Add(wx.StaticText(deformation,label=' Select an atom '),0,WACV)
+            atSel = wx.ComboBox(deformation,value=AtChoice,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            atSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
+            topSizer.Add(atSel,0,WACV)
         mainSizer.Add(topSizer,0,wx.EXPAND)
         if dId is not None:
             Indx = {}
@@ -12118,7 +12124,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 UVvec[dId] += [neigh[1][3]/neigh[1][2],(neigh[0][3]+neigh[1][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2),]    #B, A+B
             if Nneigh == 4:
                 UVvec[dId] += [(neigh[0][3]+neigh[1][3]+neigh[2][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2+neigh[2][2]**2),] #A+B+C
-
             plotAtm = wx.Button(deformation,label='Plot')
             plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
             Indx[plotAtm.GetId()] = dId
@@ -16440,7 +16445,7 @@ tab, use Operations->"Pawley create")''')
             y = refData[hist].T[6].T
             xy = [x,y]
             XY.append(np.array(xy))
-        G2plt.PlotXY(G2frame,XY,XY2=[],labelX='POobs',labelY='POcalc',newPlot=False,Title='Texture fit error')
+        G2plt.PlotXY(G2frame,XY,labelX='POobs',labelY='POcalc',lines=False,newPlot=False,Title='Texture fit error')
         UpdateTexture()
         G2plt.PlotTexture(G2frame,data,Start=False)
 
@@ -16878,11 +16883,13 @@ tab, use Operations->"Pawley create")''')
         G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MEMData,'Dysnomia')
         Pages.append('Dysnomia')
-
+        
+    dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
     Pages.append('Map peaks')
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
+    if nhist > 0:    
         Pages.append('MC/SA')
         G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
@@ -16892,17 +16899,18 @@ tab, use Operations->"Pawley create")''')
         ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(ISODIST,'ISODISTORT')
         Pages.append('ISODISTORT')
-
-    Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
-    G2frame.phaseDisplay.AddPage(Texture,'Texture')
-    Pages.append('Texture')
-    PawleyRefList = wx.Panel(G2frame.phaseDisplay)
-    G2frame.PawleyRefl = None  # grid now created when needed
-#    G2frame.PawleyRefl = G2G.GSGrid(PawleyRefList)
+        
+    if nhist > 0:            
+        Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(Texture,'Texture')
+        Pages.append('Texture')
+        PawleyRefList = wx.Panel(G2frame.phaseDisplay)
+        G2frame.PawleyRefl = None  # grid now created when needed
+#    G2frame.PawleyRefl = G2G.GSGrid(PawleyRefList)  
 #    G2frame.PawleyRefl.SetScrollRate(0,0)
 #    G2frame.phaseDisplay.gridList.append(G2frame.PawleyRefl)
-    G2frame.phaseDisplay.AddPage(PawleyRefList,'Pawley reflections')
-    Pages.append('Pawley reflections')
+        G2frame.phaseDisplay.AddPage(PawleyRefList,'Pawley reflections')
+        Pages.append('Pawley reflections')
     G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_ISODISP,'ISODISTORT' in data)
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOMAG,'magPhases' in data)

@@ -4837,11 +4837,11 @@ If you continue from this point, it is quite likely that all intensity computati
                     Comments = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Comments'))
                     Parms = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Instrument Parameters'))[0]
                     fullLimits = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Limits'))[0]
-                    if 'C' in Parms['Type'][0]:
+                    if 'T' in Parms['Type'][0]:
+                        qMax = tof2q(fullLimits[0],Parms['difC'][1])
+                    else:   #'A', 'B' or 'C'
                         wave = G2mth.getWave(Parms)
                         qMax = tth2q(fullLimits[1],wave)
-                    else:   #'T'of
-                        qMax = tof2q(fullLimits[0],Parms['difC'][1])
                     Qlimits.append([0.9*qMax,qMax])
                     ElList = {}
                     sumnum = 1.
@@ -7241,7 +7241,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.DeformationMenu.Append(menu=wx.Menu(title=''),title='Select tab')
             self.DeformationEdit = wx.Menu(title='')
             self.DeformationMenu.Append(menu=self.DeformationEdit, title='Edit Deformations')
-            self.DeformationEdit.Append(G2G.wxID_DEFORMSETSEL,'Select atoms','Select atoms for deformation study')
+            self.DeformationEdit.Append(G2G.wxID_DEFORMSETSEL,'Add atoms','Add atoms for deformation study')
             self.DeformationEdit.Append(G2G.wxID_DEFORMDISTSET,'Set bond parms','Set bond selection parameters')
             self.PostfillDataMenu()
 

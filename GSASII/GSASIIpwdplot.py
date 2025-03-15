@@ -1649,17 +1649,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.SubBack = False
         Page.plotStyle['logPlot'] = False
         # is the selected histogram in the refinement? if not pick the 1st to show
+        # instead select the first powder pattern and plot it
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        if plottingItem not in Histograms:
+        if plottingItem not in Histograms:  
+            # current plotted item is not in refinement
             histoList = [i for i in Histograms.keys() if i.startswith('PWDR ')]
             if len(histoList) != 0:
                 plottingItem = histoList[0]
-                Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
-                G2frame.GPXtree.SelectItem(Id)
-                PlotPatterns(G2frame,newPlot,plotType,None,extraKeys,refineMode)
-                # wx.CallAfter(PlotPatterns,G2frame,newPlot,plotType,None,
-                #      extraKeys,refineMode)
-                return
+                G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
+                data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+                G2frame.GPXtree.SelectItem(G2frame.PatternId)
+                PlotPatterns(G2frame,True,plotType,None,extraKeys)
     #=====================================================================================
     if not new:
         G2frame.xylim = copy.copy(limits)

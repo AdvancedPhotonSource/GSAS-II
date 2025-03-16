@@ -19,21 +19,16 @@ saveversions =  { cmd = "python save-versions.py", cwd='../GSASII/install' }
 build =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build']}
 install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['saveversions', 'build']}
 
-# following contains a rather messy way to get files into bin area
+# following contains a rather kludgy way to get files into bin area
 install-editable =  { cmd = "pip install -ve . --no-build-isolation; /bin/cp -v $(find ./build -name convcell) ./pixi/.pixi/envs/$PIXI_ENVIRONMENT_NAME/bin/; /bin/cp -v $(find ./build -name LATTIC) ./pixi/.pixi/envs/$PIXI_ENVIRONMENT_NAME/bin/", cwd='../', depends-on=['clean-build', 'saveversions']}
-
-# at present all windows stuff is questionable because flang does not [yet] work for GSAS-II binaries
-build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
-install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['saveversions', 'build-win']}
-install-editable-win =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends-on=['clean-build', 'saveversions'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
+install-editable-win =  { cmd = "pip install -ve . --no-build-isolation; cp ./build/*/sources/LATTIC.exe ./pixi/.pixi/envs/*/Scripts/; cp ./build/*/sources/convcell.exe ./pixi/.pixi/envs/*/Scripts/; ls; ls -d ./pixi/.pixi/envs/*/Scripts/*.exe", cwd='../', depends-on=['clean-build', 'saveversions']}
 
 build-and-go ={ depends-on= ["install", "ui"]}
-build-and-go-win ={ depends-on= ["install-win", "ui"]}
+#build-and-go-win ={ depends-on= ["install-win", "ui"]}
 
 test = {cmd = "python -m pytest ../" }
 
 ui = 'GSASII_NOPATHHACKING="true" python -m GSASII'
-
 
 [dependencies]
 cython = ">=3.0.11,<4"
@@ -56,8 +51,6 @@ pip = ">=24.3.1,<25"
 python-build = ">=1.2.2.post1,<2"
 zarr = "*"
 xmltodict = ">=0.14.2,<0.15"
-compilers = ">=1.8.0,<2"
-clang = ">=17.0.6,<20"
 pycifrw = ">=4.4.0"
 pytest = ">=8.3.4,<9"
 gitpython = ">=3.1.44,<4"
@@ -70,6 +63,13 @@ ipython = ">=8.32.0,<9"
 #      tomli, wheel, python-build, compilers, clang, ninja, pkg-config, pyproject-metadata
 # Also, users probably do not need pytest or ipython, but these might be included only when
 #  install-editable is used.
+# removed to switch to gcc/gfortran:
+#    compilers = ">=1.8.0,<2"
+#    clang = ">=17.0.6,<20"
+# the following has windows commands that build with lang, which does not [yet?] work for GSAS-II binaries
+#build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
+#install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['saveversions', 'build-win']}
+#install-editable-win =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends-on=['clean-build', 'saveversions'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
 #
 # TODO? separate runtime & build/install dependencies
 
@@ -90,3 +90,7 @@ py310 = ['py310']
 py311 = ['py311']
 py312 = ['py312']
 py313 = ['py313']
+
+[target.win-64.dependencies]
+gfortran = ">=14.2.0,<14.3"
+gcc = ">=14.2.0,<14.3"

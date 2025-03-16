@@ -27,8 +27,7 @@ jobs:
         os:
           - name: 'ubuntu-22.04'
           - name: 'macos-latest'
-# windows build is broken; don't test for now
-#          - name: 'windows-latest'
+          - name: 'windows-latest'
 #            cmd_extra: '-win'
         env: ['py310', 'py311', 'py312', 'py313']
     runs-on: ${{ matrix.os.name }}
@@ -45,7 +44,8 @@ jobs:
 
       # run install to see if it works
       - name: Build
-        run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
+        # run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
+        run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install
 
       - name: test
         run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} test

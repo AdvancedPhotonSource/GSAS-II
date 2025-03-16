@@ -496,18 +496,18 @@ def ShowVersions():
                 result = dlg.ShowModal()
             finally:
                 dlg.Destroy()
-                if result != wx.ID_NO:
-                    try:
-                        GSASIIpath.InstallGitBinary(binarydir, installLoc,
+            if result != wx.ID_NO:
+                try:
+                    GSASIIpath.InstallGitBinary(binarydir, installLoc,
                                                     nameByVersion=True)
-                        msg = f'Binaries installed from {binarydir} to {installLoc}\n'
-                        print(msg)
-                        GSASIIpath.BinaryPathFailed = False
-                        GSASIIpath.SetBinaryPath(True)
-                    except:
-                        print('Download failed, sorry')
-    if not GSASIIpath.pathhack_TestSPG(GSASIIpath.binaryPath):
-        versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
+                    msg = f'Binaries installed from {binarydir} to {installLoc}\n'
+                    print(msg)
+                    GSASIIpath.BinaryPathFailed = False
+                    GSASIIpath.SetBinaryPath(True)
+                except:
+                    print('Download failed, sorry')
+                if not GSASIIpath.pathhack_TestSPG(GSASIIpath.binaryPath):
+                    versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
     else:
         if GSASIIpath.binaryPath:
             prog = os.path.join(GSASIIpath.binaryPath,"convcell")
@@ -516,14 +516,14 @@ def ShowVersions():
         if sys.platform.startswith('win'):
             prog += '.exe'
         if not shutil.which(prog):
-            versionDict['errors'] += 'Installed binary files need an update. If you built them, rerun scons'
+            versionDict['errors'] += 'NIST*LATTICE binaries not found. You may have old binaries or an installation problem. If you built them built binaries, rerun scons or meson'
     if warn:
         print(70*'=')
         print('''You are running GSAS-II in a Python environment with either untested
 or known to be problematic packages, as noted above. If you are seeing
 problems in running GSAS-II you are suggested to install an additional
 copy of GSAS-II from one of the gsas2full installers (see
-https://bit.ly/G2install). This will provide a working Python
+https://GSASII.github.io/). This will provide a working Python
 environment as well as the latest GSAS-II version.
 
 For information on GSAS-II package requirements see

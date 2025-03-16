@@ -31,7 +31,6 @@ test = {cmd = "python -m pytest ../" }
 ui = 'GSASII_NOPATHHACKING="true" python -m GSASII'
 
 [dependencies]
-cython = ">=3.0.11,<4"
 h5py = ">=3.12.1,<4"
 imageio = ">=2.36.1,<3"
 matplotlib = ">=3.10.0,<4"
@@ -55,18 +54,30 @@ pycifrw = ">=4.4.0"
 pytest = ">=8.3.4,<9"
 gitpython = ">=3.1.44,<4"
 ipython = ">=8.32.0,<9"
+cython = ">=3.0.11,<4"
+
+[target.win-64.dependencies]
+gfortran = ">=14.2.0,<14.3"
+gcc = ">=14.2.0,<14.3"
+
+[target.osx-arm64.dependencies]
+compilers = ">=1.9.0,<2"
+clang = ">=18.1.8,<19"
+
+# for now assume gcc & gfortran already installed in Linux
 
 # The list above contains a number of items that are needed only for
 # installation/development, not runtime:
-#     cython, meson-python, gitpython
+#     cython, meson-python, gitpython, gfortran, gcc, compilers, clang
 # This is also likely true for these, but I am less sure:
-#      tomli, wheel, python-build, compilers, clang, ninja, pkg-config, pyproject-metadata
+#      tomli, wheel, python-build, ninja, pkg-config, pyproject-metadata
 # Also, users probably do not need pytest or ipython, but these might be included only when
 #  install-editable is used.
-# removed to switch to gcc/gfortran:
+# dependencies removed to switch to gcc/gfortran:
 #    compilers = ">=1.8.0,<2"
 #    clang = ">=17.0.6,<20"
-# the following has windows commands that build with lang, which does not [yet?] work for GSAS-II binaries
+# also, the following has windows commands that build with lang, which
+# does not [yet?] work for GSAS-II binaries
 #build-win =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
 #install-win = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['saveversions', 'build-win']}
 #install-editable-win =  { cmd = "pip install -ve . --no-build-isolation" , cwd='../', depends-on=['clean-build', 'saveversions'] , env={CC = 'clang-cl', CXX ='clang-cl'}}
@@ -90,7 +101,3 @@ py310 = ['py310']
 py311 = ['py311']
 py312 = ['py312']
 py313 = ['py313']
-
-[target.win-64.dependencies]
-gfortran = ">=14.2.0,<14.3"
-gcc = ">=14.2.0,<14.3"

@@ -8159,11 +8159,11 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     Draw('main')
     Draw('main')    #to fill both buffers so save works
     if rbType == 'Vector': return UpdateDraw
+
 #### Plot Layers ################################################################################
-def PlotLayers(G2frame,Layers,laySeq,defaults):
+def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
     '''Layer plotting package. Can show layer structures as balls & sticks
     '''
-
     global AtNames,AtTypes,XYZ,Bonds,Faces
 
     def FindBonds(atTypes,XYZ):
@@ -8620,6 +8620,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Page.camera['backColor'] = np.array([0,0,0,0])
     Page.context = wx.glcanvas.GLContext(Page.canvas)
     Page.canvas.SetCurrent(Page.context)
+    if firstCall: # on Mac need to draw twice, but needs to be delayed
+        wx.CallAfter(Draw,'main')
     wx.CallAfter(Draw,'main')
 
 #### Plot Cluster Analysis ####################################################

@@ -4929,7 +4929,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
 
     Note that parameters all updated in place
     '''
-    import atmdata
+    from . import atmdata
     path = sys.path
     for name in path:
         if 'bin' in name:
@@ -5106,7 +5106,7 @@ def SetPWDRscan(inst,limits,profile):
 
 def SetStackingSF(Layers,debug):
 # Load scattering factors into DIFFaX arrays
-    import atmdata
+    from . import atmdata
     atTypes = Layers['AtInfo'].keys()
     aTypes = []
     for atype in atTypes:

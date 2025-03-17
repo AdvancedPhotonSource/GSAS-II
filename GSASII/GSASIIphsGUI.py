@@ -9199,7 +9199,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 
             def OnDrawLayer(event):
                 drawLayer.SetValue(False)
-                G2plt.PlotLayers(G2frame,Layers,[il,],plotDefaults)
+                G2plt.PlotLayers(G2frame,Layers,[il,],plotDefaults,firstCall=True)
 
             def OnSameAs(event):
                 Layer['SameAs'] = sameas.GetValue()
@@ -9268,7 +9268,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 Yi = Indx[Obj.GetId()]
                 Xi,c =  event.GetRow(),event.GetCol()
                 if Xi >= 0 and c == 5:   #plot column
-                    G2plt.PlotLayers(G2frame,Layers,[Yi,Xi,],plotDefaults)
+                    G2plt.PlotLayers(G2frame,Layers,[Yi,Xi,],plotDefaults,firstCall=True)
                 else:
                     Psum = 0.
                     for Xi in range(len(transArray)):
@@ -9365,7 +9365,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 except ValueError:
                     plotSeq.SetValue('Error in string '+plotSeq.GetValue())
                     return
-                G2plt.PlotLayers(G2frame,Layers,vals,plotDefaults)
+                G2plt.PlotLayers(G2frame,Layers,vals,plotDefaults,firstCall=True)
 
             Names = [' %s: %d,'%(layer['Name'],iL+1) for iL,layer in enumerate(Layers['Layers'])]
             plotSizer = wx.BoxSizer(wx.VERTICAL)
@@ -9640,20 +9640,20 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 
         if 'PWDR' in  simCodes[0]:    #powder pattern
             data['Layers']['selInst'] = simCodes[1]
-            UseList = []
-            for item in data['Histograms']:
-                if 'PWDR' in item:
-                    UseList.append(item)
+            UseList = [item for item in data['Histograms'] if 'PWDR' in item]
             if not UseList:
                 wx.MessageBox('No PWDR data for this phase to simulate',caption='Data error',style=wx.ICON_EXCLAMATION)
                 return
-            dlg = wx.SingleChoiceDialog(G2frame,'Data to simulate','Select',UseList)
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelection()
-                HistName = UseList[sel]
+            elif len(UseList) == 1: # don't ask questions when we know the answer!
+                HistName = UseList[0]
             else:
-                return
-            dlg.Destroy()
+                dlg = wx.SingleChoiceDialog(G2frame,'Data to simulate','Select',UseList)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    HistName = UseList[sel]
+                else:
+                    return
+                dlg.Destroy()
             G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,HistName)
             sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                 G2frame,G2frame.PatternId, 'Sample Parameters'))

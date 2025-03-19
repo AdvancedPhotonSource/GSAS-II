@@ -322,16 +322,67 @@ def getG2VersionInfo():
                 msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
         return f"  GSAS-II:    {commit.hexsha[:8]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
     elif gv is not None:
+        vt = ''
+        cvt = ''
+        try:
+            if gv.git_versiontag:
+                vt = gv.git_versiontag
+                cvt,cvn = getGitHubVersion()
+        except:
+            pass
+                
         for item in gv.git_tags+gv.git_prevtags:
             if item.isnumeric():
-                return f"GSAS-II version: Git: {gv.git_version[:8]}, #{item} (installed without update capability)"
-    # Failed to get version info, fallback on old version number routine
+                tags = item
+                if vt:
+                    tags += f', {vt}'
+                msg = f"GSAS-II version: Git: {gv.git_version[:8]}, #{tags} (reinstall to update)"
+                if vt != cvt and cvt is not None:
+                    msg += f'\n\tNote that the current GSAS-II version is {cvt}'
+                return msg
+    # Failed to get version info, fallback on old version number routine; should not happen anymore
     return f"GSAS-II installed without git, last tag: #{GetVersionNumber()}, {GetVersionTag()}"
 
 #==============================================================================
 #==============================================================================
-# routines to interface with git.
+# routines to interface with GitHub.
+def saveGitHubVersion():
+    '''Get the latest GSAS-II version tags from the GitHub site
+    and place them into the config.ini file. This is always done in 
+    background so that app startup time is minimally delayed. 
 
+    :returns: Returns a Popen object (see subprocess).
+    '''
+    try:
+        import requests
+    except:
+        print('Unable to use requests module')
+        return
+    return subprocess.Popen([sys.executable, __file__, '--github-tags'])
+    if GetConfigValue('debug'): print('Updates fetched')
+
+def getGitHubVersion():
+    '''Get the latest git version info when not accessible from git
+    as saved by saveGitHubVersion
+    '''
+    import configparser
+    cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+    if not os.path.exists(cfgfile):
+        if GetConfigValue('debug'): print(f"{cfgfile} not found")
+        return None,None
+    try:
+        cfg = configparser.ConfigParser()
+        # Read the configuration file
+        cfg.read(cfgfile)
+    except Exception as err:
+        if GetConfigValue('debug'): print(f"Error reading {cfgfile}\n",err)
+        return None,None
+    if 'version info' not in cfg:
+        if GetConfigValue('debug'): print(f"no saved version number in {cfgfile}")
+        return None,None
+    return cfg['version info'].get('lastVersionTag'),cfg['version info'].get('lastVersionNumber')
+
+# routines to interface with git.
 BASE_HEADER = {'Accept': 'application/vnd.github+json',
                'X-GitHub-Api-Version': '2022-11-28'}
 
@@ -828,13 +879,16 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
         os.unlink(tar.name)
 
 def GetRepoUpdatesInBackground():
-    '''Wrapper to make sure that :func:`gitGetUpdate` is called only
+    '''Get the latest GSAS-II version info.
+    This serves to make sure that :func:`gitGetUpdate` is called only
     if git has been used to install GSAS-II.
 
     :returns: returns a Popen object (see subprocess)
     '''
     if HowIsG2Installed().startswith('git'):
         return gitGetUpdate(mode='Background')
+    else:
+        return saveGitHubVersion()
 
 def gitStartUpdate(cmdopts):
     '''Update GSAS-II in a separate process, by running this script with the
@@ -1222,6 +1276,8 @@ def WriteConfig(configDict):
             return True
     cfgfile = os.path.join(localdir,'config.ini')
     cfgP = configparser.ConfigParser()
+    if os.path.exists(cfgfile): 
+        cfgP.read(cfgfile)  # read previous file so other sections are retained
     cfgP['GUI settings'] = configDict
 
     # Write the configuration file
@@ -1270,8 +1326,11 @@ def LoadConfig(printInfo=True):
     try:
         from . import config_example
     except ImportError as err:
-        print("Error importing config_example.py file\n",err)
-        return
+        try:
+            import GSASII.config_example as config_example
+        except ImportError as err:
+            print("Error importing config_example.py file\n",err)
+            return
 
     # get the original capitalization (lost by configparser)
     capsDict = {key.lower():key for key in config_example.__dict__ if not key.startswith('__')}
@@ -1818,6 +1877,12 @@ if __name__ == '__main__':
                 help = True
                 break
             updateType = 'fetch'
+        elif '--github-tags' in arg:   # gets latest tags from github
+            if preupdateType or updateType or gitUpdate:
+                print(f'previous option conflicts with {arg}')
+                help = True
+                break
+            updateType = 'tags'
         elif '--git-reset' in arg:   # restores locally changed GSAS-II files to distributed versions also updates
             gitUpdate = True
             if preupdateType:
@@ -1902,16 +1967,43 @@ to update/regress repository from git repository:
 
             --git-regress=version
 
+            --github-tags         saves most recent tag info from GitHub
+
        and where <project> is an optional path reference to a .gpx file
 
        Note: --git-reset and --git-stash cannot be used together. Likewise
              --git-update and --git-regress cannot be used together.
              However either --git-reset or --git-stash can be used
              with either --git-update or --git-regress.
+
              --git-fetch cannot be used with any other options.
+             --github-tags cannot be used with any other options.
 ''')
         sys.exit()
 
+    if updateType == 'tags':
+        # get the most recent tag numbers from the GitHub site. Do this
+        # via GitHub when git access is not available. Use here
+        # allows this to be done in the background.
+        import requests
+        url='https://github.com/AdvancedPhotonSource/GSAS-II/tags'
+        releases = requests.get(url=url)
+        taglist = [tag.split('"')[0] for tag in releases.text.split('AdvancedPhotonSource/GSAS-II/releases/tag/')[1:]]
+        lastver = sorted([t for t in taglist if 'v' in t])[-1]
+        lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]
+        #print('tags=',lastver,lastnum)
+        # add tag info to config file
+        import configparser
+        cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+        cfg = configparser.ConfigParser()
+        cfg.read(cfgfile)
+        if 'version info' not in cfg:
+            cfg.add_section('version info')
+        cfg['version info'].update(
+            {'lastVersionTag':lastver,'lastVersionNumber':lastnum})
+        with open(cfgfile, 'w') as configfile:
+            cfg.write(configfile)
+        sys.exit()
 
     if updateType == 'fetch':
         # download the latest updates from GitHub to the local repository

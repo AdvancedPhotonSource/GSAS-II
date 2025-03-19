@@ -64,8 +64,21 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             self.errors = f'Exception from zarr module (version={zarr.__version__}):'
             self.errors += '\n\t' + str(msg)
             if os.path.exists(filename) and zarr.__version__.startswith('3.0'):
-                self.errors +='\n\n*** this is likely due to a buggy version of the zarr module'
-                self.errors +='\n*** please use "conda install zarr=2.18" to fix this'
+                self.errors +='\n\n*** This is likely due to incompatibility between MIDAS and zarr v3.x'
+                if GSASIIpath.condaTest():
+                    self.errors +='\n*** please use "conda install zarr=2.18" to fix this'
+                    print('preparing to remove incompatible zarr package...')
+                    try:
+                        import conda.cli.python_api
+                        (out, err, rc) = conda.cli.python_api.run_command(
+                            conda.cli.python_api.Commands.REMOVE,'zarr')
+                        self.errors +='\n*** zarr has been removed. Restarting GSAS-II and reinstalling'
+                        self.errors +='\n*** zarr (using the Imports/Show Importer Errors) should fix this.'
+                    except Exception as msg:
+                        print('remove failed\n',msg)
+                    print('...done')
+                else:
+                    self.errors +='\n*** please use command pip install "zarr=2.18.*" to fix this'
         except Exception as msg:
             self.errors = f'Exception from zarr module (version={zarr.__version__}):'
             self.errors += '\n\t' + str(msg)

@@ -1429,8 +1429,9 @@ def findConda():
         return None
 
 def condaTest(requireAPI=False):
-    '''Returns True if it appears that Python is being run under Anaconda
-    Python with conda present. Tests for conda environment vars and that
+    '''Returns True if it appears that Python is being run under 
+    Anaconda/conda-forge Python with conda present. 
+    Tests for conda environment vars and that 
     the conda package is installed in the current environment.
 
     :returns: True, if running under Conda

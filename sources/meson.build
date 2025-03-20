@@ -203,3 +203,17 @@ executable('convcell', files('convcell.f'), install:true)
 #executable('LATTIC', files('LATTIC.f'), link_with:NISTlatsubs_lib, install:true)
 executable('LATTIC', files('LATTIC.f','NISTlatsubs/BLOCKDATA1.f'), link_with:NISTlatsubs_lib, install:true)
 subdir('k_vec_cython')
+
+# create text file with version info
+r = run_command(py, 'tagbinaries.py', check:true)
+
+if host_machine.system() == 'windows'
+   install = files('install.bat')
+   sysinstall = files('sysinstall.bat')
+else
+   install = files('install.sh')
+   sysinstall = files('sysinstall.sh')
+endif 
+
+r = run_target('local-install', command: install)
+r = run_target('system-install', command: sysinstall)

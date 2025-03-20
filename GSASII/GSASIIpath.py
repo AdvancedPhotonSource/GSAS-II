@@ -1154,9 +1154,20 @@ def TestSPG():
     '''Test if pyspg.[so,.pyd] can be run from a location in the existing path
     Do not modify the path if not.
     '''
+    def showVersion():
+        try:
+            f = os.path.join(os.path.dirname(pyspg.__file__),'GSASIIversion.txt')
+            with open(f,'r') as fp:
+                version = fp.readline().strip()
+                vnum = fp.readline().strip()
+            print(f'  Binary ver: {vnum}, {version}')
+        except:
+            if GetConfigValue('debug'): 
+                print('  Binaries:   undated')
     try:
         from . import pyspg
         pyspg
+        showVersion()
         return True
     except ImportError:
         pass
@@ -1172,6 +1183,7 @@ def TestSPG():
         print(f'Module pyspg in {pyspg.__file__} could not be run\nerror msg: {err}')
         print(70*'=')
         return False
+    showVersion()
     return True
 
 def pathhack_TestSPG(fpth):

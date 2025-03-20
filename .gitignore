@@ -28,8 +28,10 @@ __pycache__
 
 # from Spyder
 .spyproject
+
 # GSAS binaries
 GSASII/bindist
+GSASII/bin
 
 # Local dev env files
 .vscode

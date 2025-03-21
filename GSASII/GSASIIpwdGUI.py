@@ -5428,40 +5428,14 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 import seekpath
                 seekpath
             except:
-                msg = 'Performing a k-vector search requires installation of the Python seekpath package. Press Yes to install this. \n\nGSAS-II will restart after the installation.'
-                dlg = wx.MessageDialog(G2frame, msg,'Install package?',wx.YES_NO|wx.ICON_QUESTION)
-                result = wx.ID_NO
+                G2fil.NeededPackage({'magnetic k-vector search':['seekpath']})
+                msg = 'Performing a k-vector search requires installation of the Python seekpath package. Use the Help/Add Package... to install that package.'
+                dlg = wx.MessageDialog(G2frame, msg,'Install seekpath package')
                 try:
-                    result = dlg.ShowModal()
+                    dlg.ShowModal()
                 finally:
                     dlg.Destroy()
-                    wx.GetApp().Yield()
-                if result != wx.ID_YES: return
-                wx.BeginBusyCursor()
-                try:             # can we install via conda?
-                    import conda.cli.python_api
-                    conda.cli.python_api
-                    print('Starting conda install of seekpath...')
-                    GSASIIpath.condaInstall(['seekpath'])
-                    print('conda install of seekpath completed')
-                except Exception as msg:
-                    print(msg)
-                    try:
-                        print('Starting pip install of seekpath...')
-                        GSASIIpath.pipInstall(['seekpath'])
-                        print('pip install of seekpath completed')
-                    except Exception as msg:
-                        print('install of seekpath failed, sorry\n',msg)
-                        return
-                finally:
-                    wx.EndBusyCursor()
-                ans = G2frame.OnFileSave(None)
-                if not ans: return
-                project = os.path.abspath(G2frame.GSASprojectfile)
-                print(f"Restarting GSAS-II with project file {project!r}")
-                G2fil.openInNewTerm(project)
-                print ('exiting GSAS-II')
-                sys.exit()
+                return
 
             # msg = G2G.NISTlatUse(True)
             _, _, cells, _, _, _ = data

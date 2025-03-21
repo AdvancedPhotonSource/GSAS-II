@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import pytest
 
 import importlib.util
 if importlib.util.find_spec('GSASII') is None:
@@ -69,15 +70,19 @@ spos = [
 threshold = 0.008
 brav_type = "hR"
 
-k_search = kvs.kVector(
-    brav_type,
-    pcell,
-    ppos,
-    nums,
-    nuc_p,
-    spos,
-    threshold
-)
+try:
+    import seekpath
+    k_search = kvs.kVector(
+        brav_type,
+        pcell,
+        ppos,
+        nums,
+        nuc_p,
+        spos,
+        threshold
+    )
+except ModuleNotFoundError:
+    k_search = None
 
 selftestlist = []
 selftestquiet = True
@@ -94,7 +99,7 @@ def _ReportTest():
         if doc is not None:
             print(
                 f'testing {os.path.split(__file__)[1]}'
-                'with {caller}\n\t({doc})'
+                f' with {caller}\n\t({doc})'
             )
         else:
             print(f'testing {os.path.split(__file__)[1]} with {caller}')
@@ -112,7 +117,7 @@ def test_AtomID():
 
 selftestlist.append(test_AtomID)
 
-
+@pytest.mark.skipif(k_search is None, reason='No seekpath module')
 def test_LatConstruct():
     '''self-test #1: test the lattice vectors construction routine'''
     _ReportTest()
@@ -165,6 +170,7 @@ def test_LatConstruct():
 selftestlist.append(test_LatConstruct)
 
 
+@pytest.mark.skipif(k_search is None, reason='No seekpath module')
 def test_CriticalRoutines():
     '''self-test #2: test the critical routines'''
     _ReportTest()
@@ -187,6 +193,7 @@ def test_CriticalRoutines():
 selftestlist.append(test_CriticalRoutines)
 
 
+@pytest.mark.skipif(k_search is None, reason='No seekpath module')
 def test_KVecCandidateUpdate():
     '''self-test #3: test the updating of the list of alternative k vectors'''
     _ReportTest()
@@ -270,7 +277,7 @@ def test_KVecCandidateUpdate():
 
 selftestlist.append(test_KVecCandidateUpdate)
 
-
+@pytest.mark.skipif(k_search is None, reason='No seekpath module')
 def test_KVecSearch():
     '''self-test #4: test the k vector search routine'''
     _ReportTest()

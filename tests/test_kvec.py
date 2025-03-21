@@ -100,20 +100,20 @@ def _ReportTest():
             print(f'testing {os.path.split(__file__)[1]} with {caller}')
 
 
-def TestAtomID():
+def test_AtomID():
     '''self-test #0: test the unique ID generation routine'''
     _ReportTest()
     atom_types = ["Cr", "Cr", "Cr", "Sb", "Sb", "Se"]
     atom_types_id = kvs.unique_id_gen(atom_types)
     msg = "Unique ID generation failed"
     assert atom_types_id == [1, 1, 1, 2, 2, 3], msg
-    print("TestAtomID passed")
+    print("test_AtomID passed")
 
 
-selftestlist.append(TestAtomID)
+selftestlist.append(test_AtomID)
 
 
-def TestLatConstruct():
+def test_LatConstruct():
     '''self-test #1: test the lattice vectors construction routine'''
     _ReportTest()
     cell_params = [5., 5., 5., 90, 90., 90.]
@@ -159,13 +159,13 @@ def TestLatConstruct():
         atol=1e-5
     ), msg
 
-    print("TestLatConstruct passed")
+    print("test_LatConstruct passed")
 
 
-selftestlist.append(TestLatConstruct)
+selftestlist.append(test_LatConstruct)
 
 
-def TestCriticalRoutines():
+def test_CriticalRoutines():
     '''self-test #2: test the critical routines'''
     _ReportTest()
     hkl_p = k_search.hklConvToPrim(nuc_p[2][:3])
@@ -184,10 +184,10 @@ def TestCriticalRoutines():
     ), msg
 
 
-selftestlist.append(TestCriticalRoutines)
+selftestlist.append(test_CriticalRoutines)
 
 
-def TestKVecCandidateUpdate():
+def test_KVecCandidateUpdate():
     '''self-test #3: test the updating of the list of alternative k vectors'''
     _ReportTest()
 
@@ -268,10 +268,10 @@ def TestKVecCandidateUpdate():
     ), msg
 
 
-selftestlist.append(TestKVecCandidateUpdate)
+selftestlist.append(test_KVecCandidateUpdate)
 
 
-def TestKVecSearch():
+def test_KVecSearch():
     '''self-test #4: test the k vector search routine'''
     _ReportTest()
 
@@ -426,7 +426,7 @@ def TestKVecSearch():
     ), msg
 
 
-selftestlist.append(TestKVecSearch)
+selftestlist.append(test_KVecSearch)
 
 
 if __name__ == "__main__":

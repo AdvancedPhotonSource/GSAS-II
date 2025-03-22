@@ -14,8 +14,8 @@ import GSASIIobj as G2obj
 import GSASIIfiles as G2fil
 import GSASIIpath
 
-instprmList = [('Bank',1.0), ('Lam',0.413263), ('Polariz.',0.99), 
-            ('SH/L',0.002), ('Type','PXC'), ('U',1.163), ('V',-0.126), 
+instprmList = [('Bank',1.0), ('Lam',0.413263), ('Polariz.',0.99),
+            ('SH/L',0.002), ('Type','PXC'), ('U',1.163), ('V',-0.126),
             ('W',0.063), ('X',0.0), ('Y',0.0), ('Z',0.0), ('Zero',0.0)]
 #   comments
 #   sample parameters
@@ -28,12 +28,12 @@ sampleprmList = [('InstrName','APS 1-ID'), ('Temperature', 295.0)]
 # 'Thick': 1.0, 'Contrast': [0.0, 0.0], 'Trans': 1.0, 'SlitLen': 0.0}
 
 class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
-    '''Routine to read multiple powder patterns from a Zarr file 
-    created by MIDAS. Perhaps in the future, other software might also 
-    use this file type as well. 
+    '''Routine to read multiple powder patterns from a Zarr file
+    created by MIDAS. Perhaps in the future, other software might also
+    use this file type as well.
 
-    For Midas, the main file is <file>.zip, but optionally sample and 
-    instrument parameters can be placed in <file>.samprm and <file>.instprm. 
+    For Midas, the main file is <file>.zip, but optionally sample and
+    instrument parameters can be placed in <file>.samprm and <file>.instprm.
     Any parameters placed in those files will override values set in the .zip
     file.
     '''
@@ -43,89 +43,89 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         if zarr is None:
             self.UseReader = False
             msg = 'MIDAS_Zarr Reader skipped because zarr module is not installed.'
-            if GSASIIpath.condaTest():
-                msg += ' To fix this press "Install packages" button below'
-            G2fil.ImportErrorMsg(msg,{'MIDAS Zarr importer':['zarr=2.18.*']})
+            G2fil.ImportErrorMsg(msg,{'MIDAS Zarr importer':['zarr']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.zarr.zip',),strictExtension=True,
             formatName = 'MIDAS zarr',longFormatName = 'MIDAS zarr intergrated scans')
         self.scriptable = True
         #self.Iparm = {} #only filled for EDS data
 
+    def zarrOpen(self,filename):
+        import asyncio
+        async def zarrAsyncOpen(filename):
+            fp = store = None
+            try:
+                fp = zarr.open(filename, mode='r')
+                return fp,store
+            except:
+                # workaround for zarr 3.0.x where "auto discover" is
+                # not yet implemented
+                # (https://github.com/zarr-developers/zarr-python/issues/2922)
+                try:
+                    store = await zarr.storage.ZipStore.open(filename, mode="r")
+                    fp = zarr.open_group(store, mode='r')
+                    return fp,store
+                except FileNotFoundError as msg:
+                    print (f'cannot read as zarr file: {filename}')
+                except Exception as msg:
+                    self.errors = f'Exception from zarr module (version={zarr.__version__}):'
+                    self.errors += '\n\t' + str(msg)
+            return None,None
+        fp,store = asyncio.run(zarrAsyncOpen(filename))
+        return fp,store
+                        
     def ContentsValidator(self, filename):
         '''Test if valid by seeing if the zarr module recognizes the file. Then
         get file type (currently Midas only)
         '''
-        fp = None
-        try:
-            fp = zarr.open(filename, mode='r')
-            if all([(i in fp) for i in self.midassections]): # are expected MIDAS sections present?
-                self.mode = 'midas'
-                return True # must be present for Midas output
-        except FileNotFoundError as msg:
+        fp, store = self.zarrOpen(filename)
+        if not fp:
             self.errors = f'Exception from zarr module (version={zarr.__version__}):'
             self.errors += '\n\t' + str(msg)
-            if os.path.exists(filename) and zarr.__version__.startswith('3.0'):
-                self.errors +='\n\n*** This is likely due to incompatibility between MIDAS and zarr v3.x'
-                if GSASIIpath.condaTest():
-                    self.errors +='\n*** please use "conda install zarr=2.18" to fix this'
-                    print('preparing to remove incompatible zarr package...')
-                    try:
-                        import conda.cli.python_api
-                        (out, err, rc) = conda.cli.python_api.run_command(
-                            conda.cli.python_api.Commands.REMOVE,'zarr')
-                        self.errors +='\n*** zarr has been removed. Restarting GSAS-II and reinstalling'
-                        self.errors +='\n*** zarr (using the Imports/Show Importer Errors) should fix this.'
-                    except Exception as msg:
-                        print('remove failed\n',msg)
-                    print('...done')
-                else:
-                    self.errors +='\n*** please use command pip install "zarr=2.18.*" to fix this'
-        except Exception as msg:
-            self.errors = f'Exception from zarr module (version={zarr.__version__}):'
-            self.errors += '\n\t' + str(msg)
-            return False
-        finally:
-            del fp
-        return False
+            self.errors += '\nPlease report this'
+        elif all([(i in fp) for i in self.midassections]): # are expected MIDAS sections present?
+            self.mode = 'midas'
+            del fp, store
+            return True # Passes test for Midas output
+        #else:  # test here for any other formats that might use zarr
+        #    pass
+        del fp, store
+        return
 
     def Reader(self, filename, ParentFrame=None, **kwarg):
-        '''Scan file for sections needed by defined file types (currently 
+        '''Scan file for sections needed by defined file types (currently
         only Midas) and then use appropriate routine to read the file.
-        Most of the time the results are placed in the buffer arg (if supplied) 
-        so the file is not read on most calls. 
+        Most of the time the results are placed in the buffer arg (if supplied)
+        so the file is not read on most calls.
 
-        For MIDAS, masking can eliminate some or all points in an azimuthal 
-        region. This will only return "lineouts" (aka diffractograms) that 
-        have 20 or more points in them. 
+        For MIDAS, masking can eliminate some or all points in an azimuthal
+        region. This will only return "lineouts" (aka diffractograms) that
+        have 20 or more points in them.
 
-        Note that if Reader.selections is used to select individual 
-        "lineouts", the selections are numbered against all possible 
-        "lineouts" not the ones that have 20 or more points. 
+        Note that if Reader.selections is used to select individual
+        "lineouts", the selections are numbered against all possible
+        "lineouts" not the ones that have 20 or more points.
         '''
         fpbuffer = kwarg.get('buffer',{})
         if not hasattr(self,'blknum'):
             self.blknum = 0    # image counter for multi-image files
         # check if this is a valid MIDAS file
         if self.mode is None:
-            try:
-                fp = zarr.open(filename, 'r')
-                 # are expected MIDAS sections present?
-                if all([(i in fp) for i in self.midassections]):
-                    self.mode = 'midas'
-                else:
-                    print (f'{filename} is not a MIDAS file')
-                    return False
-            except:
-                print (f'cannot read as zarr file: {filename}')
-                return False
-            finally:
-                del fp
-                    
+            fp, store = self.zarrOpen(filename)
+            # are expected MIDAS sections present?
+            if all([(i in fp) for i in self.midassections]):
+                self.mode = 'midas'
+            else:
+                print (f'{filename} is not a MIDAS file')
+            del fp, store
+        #else:  # test here for any other formats that might use zarr
+        #    pass
+        
         if self.mode == 'midas':
-            return self.readMidas(filename, fpbuffer)
-
-        return False
+            res = self.readMidas(filename, fpbuffer)
+        else:
+            res = False
+        return res
 
     def readMidas(self, filename, fpbuffer={}):
         '''Read zarr file produced by Midas
@@ -145,9 +145,9 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         if doread:   # read into buffer
             print('Caching MIDAS zarr contents...')
             try:
-                fp = zarr.open(filename, 'r')
+                fp, store = self.zarrOpen(filename)
                 fpbuffer['REtaMap'] = np.array(fp['REtaMap']) # 4 x Nbins x Nazimuth
-                # [0]: radius; [1] 2theta; [2] eta; [3] bin area 
+                # [0]: radius; [1] 2theta; [2] eta; [3] bin area
                 # tabulate integrated intensities image & eta
                 fpbuffer['intenArr'] = []
                 fpbuffer['attributes'] = []
@@ -165,7 +165,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 fpbuffer['unmasked'] = [(fpbuffer['REtaMap'][3][:,i] != 0) for i in range(Nazim)] # will be True if area is >0
                 # find the azimuths with more than 20 points
                 mAzm = [i for i in range(Nazim) if sum(fpbuffer['unmasked'][i]) > 20]
-                
+
                 # generate a list of lineouts to be read from selections
                 if self.selections:
                     sel = self.selections
@@ -173,12 +173,13 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                     sel = range(Nimg*Nazim) # nothing selected, use all
                 # fpbuffer['2Read'] is the list of lineouts to be read, where each entry
                 # contains two values, the azumuth and the image number (iAzm,iImg)
-                # defined points for each lineout are then 
+                # defined points for each lineout are then
                 #   intensities : fpbuffer['intenArr'][iImg][:,iAzm][unmasked[iAzm]]
                 #   2thetas: fpbuffer['REtaMap'][1][:,iAzm][unmasked[iAzm]]
                 fpbuffer['2Read'] = [(i%Nazim,i//Nazim) for i in sel if i%Nazim in mAzm]
                 # xfrom Zarr dict into a native dict
-                self.MIDASinstprm = {i:j[0] for i,j in fp['InstrumentParameters'].items()} 
+                #self.MIDASinstprm = {i:j[0] for i,j in fp['InstrumentParameters'].items()}
+                self.MIDASinstprm = {i:fp['InstrumentParameters'][i][0] for i in fp['InstrumentParameters']}
                 # change a few keys
                 for key,newkey in [('Polariz','Polariz.'),('SH_L','SH/L')]:
                     if key in self.MIDASinstprm:
@@ -188,8 +189,8 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 print ('cannot open file '+ filename)
                 return False
             finally:
-                del fp
-            # get overriding sample & instrument parameters 
+                del fp, store
+            # get overriding sample & instrument parameters
             self.MIDASsampleprm = {}
             samplefile = os.path.splitext(filename)[0] + '.samprm'
             if os.path.exists(samplefile):
@@ -211,7 +212,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 fp.close()
                 nbank,self.instvals = G2fil.ReadInstprm(instLines, None, self.Sample)
         #======================================================================
-        # start reading 
+        # start reading
         #======================================================================
         # look for the next non-empty scan (lineout)
         iAzm,iImg = fpbuffer['2Read'][self.blknum]
@@ -233,7 +234,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         omega = 999.  # indicates an error
         try:
             omega = 0.5 * (
-                fpbuffer['attributes'][iImg]['FirstOme'] + 
+                fpbuffer['attributes'][iImg]['FirstOme'] +
                 fpbuffer['attributes'][iImg]['LastOme'])
         except:
             pass
@@ -241,8 +242,8 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         radius = 1000   # sample to detector distance (mm)
         if 'Distance' in self.MIDASinstprm:
             radius = self.MIDASinstprm['Distance']/1000   # convert from microns
-        
-        # now transfer instprm & sample prms into current histogram 
+
+        # now transfer instprm & sample prms into current histogram
         self.pwdparms['Instrument Parameters'] = [{}, {}]
         inst = {}
         inst.update(instprmList)

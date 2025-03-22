@@ -135,7 +135,7 @@ def test_LatConstruct():
     ]
     latt_vec = kvs.lat_params_to_vec(cell_params)
     assert np.allclose(
-        latt_vec[0], [4.33013, -2.5, 3.06162],
+        latt_vec[0], [4.33013, -2.5, 0.],
         atol=1e-5
     ), msg
     assert np.allclose(

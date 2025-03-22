@@ -117,6 +117,7 @@ def test_AtomID():
 
 selftestlist.append(test_AtomID)
 
+
 @pytest.mark.skipif(k_search is None, reason='No seekpath module')
 def test_LatConstruct():
     '''self-test #1: test the lattice vectors construction routine'''
@@ -203,22 +204,28 @@ def test_KVecCandidateUpdate():
     k_trial = [.5, .5, .5]  # T point
     k_opt_list = list()
     k_opt_dist = list()
+    k_opt_ad = list()
+    k_opt_md = list()
     k_opt_out = k_search.updateCandidateList(
         k_trial,
         k_opt_list,
         k_opt_dist,
+        k_opt_ad,
+        k_opt_md,
         False
     )
-    (k_opt_list, k_opt_dist) = k_opt_out
+    (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md) = k_opt_out
 
     k_trial = [.5, 0, .5]  # F point
     k_opt_out = k_search.updateCandidateList(
         k_trial,
         k_opt_list,
         k_opt_dist,
+        k_opt_ad,
+        k_opt_md,
         False
     )
-    (k_opt_list, k_opt_dist) = k_opt_out
+    (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md) = k_opt_out
 
     assert np.allclose(
         k_opt_list[0],
@@ -247,9 +254,11 @@ def test_KVecCandidateUpdate():
         k_trial,
         k_opt_list,
         k_opt_dist,
+        k_opt_ad,
+        k_opt_md,
         False
     )
-    (k_opt_list, k_opt_dist) = k_opt_out
+    (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md) = k_opt_out
 
     assert np.allclose(
         k_opt_list[0],
@@ -262,7 +271,7 @@ def test_KVecCandidateUpdate():
         atol=1e-5
     ), msg
 
-    k_opt_final, kd_opt_final = k_search.kOptFinder()
+    k_opt_final, kd_opt_final, _, _ = k_search.kOptFinder()
     assert np.allclose(
         k_opt_final[0],
         [0., 0., 0.],
@@ -276,6 +285,7 @@ def test_KVecCandidateUpdate():
 
 
 selftestlist.append(test_KVecCandidateUpdate)
+
 
 @pytest.mark.skipif(k_search is None, reason='No seekpath module')
 def test_KVecSearch():
@@ -340,7 +350,6 @@ def test_KVecSearch():
         threshold,
         option=2,
         kstep=[0.002, 0.002, 0.002],
-        kscope=[0., 0.5, 0., 1., 0., 1.5],
         processes=16
     )
 
@@ -414,7 +423,6 @@ def test_KVecSearch():
         threshold,
         option=2,
         kstep=[0.002, 0.002, 0.002],
-        kscope=[0., 0.5, 0., 1., 0., 1.5],
         processes=16
     )
 

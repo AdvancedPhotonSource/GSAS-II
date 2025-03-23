@@ -39,10 +39,12 @@ try:
     import seekpath
 except ModuleNotFoundError:
     G2fil.NeededPackage({'magnetic k-vector search':['seekpath']})
+    print('k_vector_search: seekpath could not be imported')
     gen_option_avail = False
 try:
     from GSASII.kvec_general import parallel_proc
 except ModuleNotFoundError:
+    print('k_vector_search: kvec_general could not be imported')
     gen_option_avail = False
 
 def unique_id_gen(string_list: list) -> list:

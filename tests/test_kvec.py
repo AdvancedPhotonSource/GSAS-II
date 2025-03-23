@@ -195,6 +195,7 @@ selftestlist.append(test_CriticalRoutines)
 
 
 @pytest.mark.skipif(k_search is None, reason='No seekpath module')
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_KVecCandidateUpdate():
     '''self-test #3: test the updating of the list of alternative k vectors'''
     _ReportTest()
@@ -231,23 +232,22 @@ def test_KVecCandidateUpdate():
         k_opt_list[0],
         [.5, 0., .5],
         atol=1e-5
-    ), msg
+    ), msg+f'\nk_opt_list[0] {k_opt_list[0]}, [.5, 0., .5]'
     assert np.allclose(
         k_opt_dist[0],
         0.14445,
         atol=1e-5
-    ), msg
-
+    ), msg+f'\nk_opt_dist[0] {k_opt_dist[0]}, 0.14445'
     assert np.allclose(
         k_opt_list[1],
         [.5, .5, .5],
         atol=1e-5
-    ), msg
+    ), msg+f'\nk_opt_list[1] {k_opt_list[1]}, [.5, .5, .5]'
     assert np.allclose(
         k_opt_dist[1],
-        .20353,
+        0.20353,
         atol=1e-5
-    ), msg
+    ), msg+f'\nk_opt_dist[1] {k_opt_dist[1]}, 0.20353'
 
     k_trial = [0, 0, 0]  # Gamma point
     k_opt_out = k_search.updateCandidateList(
@@ -264,30 +264,30 @@ def test_KVecCandidateUpdate():
         k_opt_list[0],
         [0., 0., 0.],
         atol=1e-5
-    ), msg
+    ), msg+f'\nk_opt_list[0] {k_opt_list[0]}, [0, 0, 0]'
     assert np.allclose(
         k_opt_dist[0],
         0.,
         atol=1e-5
-    ), msg
+    ), msg+f'\nk_opt_dist[0] {k_opt_dist[0]}, 0.'
 
     k_opt_final, kd_opt_final, _, _ = k_search.kOptFinder()
     assert np.allclose(
         k_opt_final[0],
         [0., 0., 0.],
         atol=1e-5
-    ), msg
+    ), msg+f'\nk_opt_final[0] {k_opt_final[0]}, [0, 0, 0]'
     assert np.allclose(
         kd_opt_final[0],
         0.,
         atol=1e-5
-    ), msg
-
+    ), msg+f'\nkd_opt_final[0] {kd_opt_final[0]}, 0.0'
 
 selftestlist.append(test_KVecCandidateUpdate)
 
 
 @pytest.mark.skipif(k_search is None, reason='No seekpath module')
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_KVecSearch():
     '''self-test #4: test the k vector search routine'''
     _ReportTest()

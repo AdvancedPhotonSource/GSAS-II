@@ -141,7 +141,20 @@ def ShowVersions():
     except:
         out += "GSAS-II location: not set\n"
     try:
-        out += f"Binary location:  {GSASIIpath.binaryPath}\n"
+        if GSASIIpath.binaryPath is None:
+            from . import pyspg
+            loc = os.path.dirname(pyspg.__file__)
+        else:
+            loc = GSASIIpath.binaryPath
+        try:
+            f = os.path.join(loc,'GSASIIversion.txt')
+            with open(f,'r') as fp:
+                version = fp.readline().strip()
+                vnum = fp.readline().strip()
+            dated = f'{vnum}, {version}'
+        except:
+            dated = 'undated'
+        out += f"Binary location:  {loc} ({dated})\n"
     except:
         out += "Binary location:  not found\n"
     return out

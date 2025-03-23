@@ -41,7 +41,7 @@ except ModuleNotFoundError:
     G2fil.NeededPackage({'magnetic k-vector search':['seekpath']})
     gen_option_avail = False
 try:
-    from GSASII.kvec_general. import parallel_proc
+    from GSASII.kvec_general import parallel_proc
 except ModuleNotFoundError:
     gen_option_avail = False
 

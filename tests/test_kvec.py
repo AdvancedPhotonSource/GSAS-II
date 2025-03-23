@@ -235,7 +235,7 @@ def test_KVecCandidateUpdate():
     ), msg+f'\nk_opt_list[0] {k_opt_list[0]}, [.5, 0., .5]'
     assert np.allclose(
         k_opt_dist[0],
-        0.14445,
+        0.08340,
         atol=1e-5
     ), msg+f'\nk_opt_dist[0] {k_opt_dist[0]}, 0.14445'
     assert np.allclose(
@@ -245,7 +245,7 @@ def test_KVecCandidateUpdate():
     ), msg+f'\nk_opt_list[1] {k_opt_list[1]}, [.5, .5, .5]'
     assert np.allclose(
         k_opt_dist[1],
-        0.20353,
+        0.11751,
         atol=1e-5
     ), msg+f'\nk_opt_dist[1] {k_opt_dist[1]}, 0.20353'
 

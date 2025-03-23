@@ -32,6 +32,7 @@ from . import GSASIIlattice as G2lat
 from . import GSASIIspc as G2spc
 from . import GSASIIElem as G2elem
 from . import GSASIImath as G2mth
+from . import GSASIIfiles as G2fil
 try:
     if GSASIIpath.binaryPath:
         import  pypowder as pyd
@@ -46,13 +47,6 @@ try:
         from . import pydiffax as pyx
 except ImportError:
     print ('pydiffax is not available for this platform')
-from . import GSASIIfiles as G2fil
-try:
-    import pybaselines.whittaker
-except:
-    G2fil.NeededPackage({'Auto background capability':['pybaselines']})
-
-
 
 # trig functions in degrees
 tand = lambda x: math.tan(x*math.pi/180.)

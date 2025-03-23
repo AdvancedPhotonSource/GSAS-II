@@ -480,6 +480,10 @@ def ShowVersions():
         print('Warning: Python requests package not installed (required for\n'+
               ' GSAS-II to access web pages or self-install binary modules)')
         G2fil.NeededPackage({'Accessing web resources':['requests']})
+    try:
+        import pybaselines.whittaker
+    except:
+        G2fil.NeededPackage({'Auto background capability':['pybaselines']})
 
     if not GSASIIpath.TestSPG():
         path2repo = os.path.dirname(GSASIIpath.path2GSAS2)

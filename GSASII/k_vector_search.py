@@ -27,20 +27,25 @@
 # acknowledged for their useful comments.
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
-import numpy as np
 import sys
-from scipy.optimize import linear_sum_assignment
+import time
 import math
+import numpy as np
+from scipy.optimize import linear_sum_assignment
 from . import GSASIIfiles as G2fil
+
+gen_option_avail = True
 try:
     import seekpath
-    from kvec_general import parallel_proc
-    gen_option_avail = True
 except ModuleNotFoundError:
     G2fil.NeededPackage({'magnetic k-vector search':['seekpath']})
+    print('k_vector_search: seekpath could not be imported')
     gen_option_avail = False
-import time
-
+try:
+    from GSASII.kvec_general import parallel_proc
+except ModuleNotFoundError:
+    print('k_vector_search: kvec_general could not be imported')
+    gen_option_avail = False
 
 def unique_id_gen(string_list: list) -> list:
     """Generate unique IDs for strings included in the string list and the same

@@ -1,6 +1,7 @@
 set OUTDIR=%MESON_SOURCE_ROOT%\GSASII\bin
-copy /y "%MESON_BUILD_ROOT%\sources\"*.so ${OUTDIR}\
-copy /y "%MESON_BUILD_ROOT%\sources\"*/*.so ${OUTDIR}\
-copy /y "%MESON_BUILD_ROOT%\sources\"LATTIC ${OUTDIR}\
-copy /y "%MESON_BUILD_ROOT%\sources\"convcell ${OUTDIR}\
-copy /y "%MESON_BUILD_ROOT%\sources\"GSAS*.txt ${OUTDIR}\
+mkdir %OUTDIR%
+copy /y "%MESON_BUILD_ROOT%\sources\"*.pyd %OUTDIR%\
+copy /y "%MESON_BUILD_ROOT%\sources\k_vec_cython\"*.pyd %OUTDIR%\
+copy /y "%MESON_BUILD_ROOT%\sources\"LATTIC.exe %OUTDIR%\
+copy /y "%MESON_BUILD_ROOT%\sources\"convcell.exe %OUTDIR%\
+copy /y "%MESON_BUILD_ROOT%\sources\"GSAS*.txt %OUTDIR%\

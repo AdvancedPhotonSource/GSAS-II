@@ -11972,6 +11972,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
 
     def UpdateDeformation(AtdId):
         
+        def OnRadFxn(event):
+            deformationData['Radial'] = radFxn.GetStringSelection()
+        
         def MakeUVmat(defData,U,V):
             MX = U
             if 'A' in defData['MUV']:
@@ -12097,8 +12100,15 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        deformationData['Radial'] = deformationData.get('Bessel','Bessel')
+        topSizer.Add(wx.StaticText(deformation,label=' Select radial fxn: '),0,WACV)
+        radFxn = wx.ComboBox(deformation,value=deformationData['Radial'],
+            choices=['Bessel','Slater'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        radFxn.Bind(wx.EVT_COMBOBOX,OnRadFxn)
+        topSizer.Add(radFxn,0,WACV)
         if dId is None:
-            topSizer.Add(wx.StaticText(deformation,label='No atoms in deformation list. Do add atom first'),0,WACV)
+            topSizer.Add(wx.StaticText(deformation,
+                label='No atoms in deformation list. Do add atom first (neutral atoms only)'),0,WACV)
         else:
             topSizer.Add(wx.StaticText(deformation,label=' Select an atom '),0,WACV)
             atSel = wx.ComboBox(deformation,value=AtChoice,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)

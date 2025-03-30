@@ -7233,7 +7233,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.DeformationMenu.Append(menu=wx.Menu(title=''),title='Select tab')
             self.DeformationEdit = wx.Menu(title='')
             self.DeformationMenu.Append(menu=self.DeformationEdit, title='Edit Deformations')
-            self.DeformationEdit.Append(G2G.wxID_DEFORMSETSEL,'Add atoms','Add atoms for deformation study')
+            self.DeformationEdit.Append(G2G.wxID_DEFORMSETSEL,'Add atoms','Add atoms for deformation study, neutral atoms only')
             self.DeformationEdit.Append(G2G.wxID_DEFORMDISTSET,'Set bond parms','Set bond selection parameters')
             self.PostfillDataMenu()
 

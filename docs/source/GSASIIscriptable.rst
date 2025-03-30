@@ -86,7 +86,7 @@ Scripting class name                              Description
 
 :ref:`G2PDF <Class_G2PDF>`                 :class:`~GSASIIscriptable.G2PDF`: PDF histogram info
 
-:ref:`G2PDF <Class_G2SmallAngle>`          :class:`~GSASIIscriptable.G2SmallAngle`: Small Angle scattering histogram info
+:ref:`G2SmallAngle <Class_G2SmallAngle>`          :class:`~GSASIIscriptable.G2SmallAngle`: Small Angle scattering histogram info
 
 :ref:`G2SeqRefRes <Class_G2SeqRefRes>`     :class:`~GSASIIscriptable.G2SeqRefRes`:
                                            The sequential results table

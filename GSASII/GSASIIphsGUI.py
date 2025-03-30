@@ -12104,7 +12104,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             atSel = wx.ComboBox(deformation,value=AtChoice,choices=list(atomList.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
             atSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
             topSizer.Add(atSel,0,WACV)
-        
         mainSizer.Add(topSizer,0,wx.EXPAND)
         if dId is not None:
             Indx = {}

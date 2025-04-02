@@ -4120,7 +4120,8 @@ class OrderBox(wxscroll.ScrolledPanel):
 ################################################################################
 def GetImportFile(G2frame, message, defaultDir="", defaultFile="",
     style=wx.FD_OPEN, parent=None,*args, **kwargs):
-    '''Uses a customized dialog that gets files from the appropriate import directory. 
+    '''Uses a standard or GSASII-customized dialog that gets files 
+    from the appropriate import directory. 
     Arguments are used the same as in :func:`wx.FileDialog`. Selection of
     multiple files is allowed if argument style includes wx.FD_MULTIPLE.
 
@@ -4138,29 +4139,244 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="",
     #if GSASIIpath.GetConfigValue('debug'):
     #    print('debug: GetImportFile from '+defaultDir)
     #    print('debug: GetImportFile pth '+pth)
-    dlg = wx.FileDialog(parent, message, defaultDir, defaultFile, *args,style=style, **kwargs)
-#    dlg.CenterOnParent()
-    if not defaultDir and pth: dlg.SetDirectory(pth)
-    try:
-        if dlg.ShowModal() == wx.ID_OK:
-            if style & wx.FD_MULTIPLE:
-                filelist = dlg.GetPaths()
-                if len(filelist) == 0: return []
-            else:
-                filelist = [dlg.GetPath(),]
-            # not sure if we want to do this (why use wx.CHANGE_DIR?)
-            if style & wx.FD_CHANGE_DIR: # to get Mac/Linux to change directory like windows!
-                os.chdir(dlg.GetDirectory())
-        else: # cancel was pressed
-            return []
-    finally:
-        dlg.Destroy()
+    browseOpt = GSASIIpath.GetConfigValue('G2FileBrowser')
+    # unspecified value defaults to True on Linux, False for Windows/Linux
+    if sys.platform.startswith("linux") and browseOpt is None:
+        browseOpt = True
+    if browseOpt:
+        filelist = G2FileBrowser(parent, message, defaultDir, style=style,
+                                     **kwargs)
+        if len(filelist) == 0: return []
+        if style & wx.FD_CHANGE_DIR: # to get Mac/Linux to change directory like windows!
+            os.chdir(os.path.dirname(filelist[0]))
+    else:
+        dlg = wx.FileDialog(parent, message, defaultDir, defaultFile, *args, style=style, **kwargs)
+    #    dlg.CenterOnParent()
+        if not defaultDir and pth: dlg.SetDirectory(pth)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                if style & wx.FD_MULTIPLE:
+                    filelist = dlg.GetPaths()
+                    if len(filelist) == 0: return []
+                else:
+                    filelist = [dlg.GetPath(),]
+                # not sure if we want to do this (why use wx.CHANGE_DIR?)
+                if style & wx.FD_CHANGE_DIR: # to get Mac/Linux to change directory like windows!
+                    os.chdir(dlg.GetDirectory())
+            else: # cancel was pressed
+                return []
+        finally:
+            dlg.Destroy()
     # save the path of the first file and reset the TutorialImportDir variable
     pth = os.path.split(os.path.abspath(filelist[0]))[0]
     if GSASIIpath.GetConfigValue('Save_paths'): SaveImportDirectory(pth)
     G2frame.LastImportDir = pth
     G2frame.TutorialImportDir = None
     return filelist
+
+def G2FileBrowser(parent, message, defaultDir, *args,
+           style=wx.FD_OPEN,wildcard="any file (*.*)|*.*",
+           **kwargs):
+    '''Create a file browser for selecting one or more files from
+    a directory. The user may select the directory where the files 
+    and must select an extension from a specified list. Optionally, 
+    a filter may be supplied to ignore files not matching a glob 
+    pattern. When a large number of files is found, the file list
+    is broken into ranges.
+
+    Arguments used are the same as in :func:`wx.FileDialog`. Selection of
+    multiple files is allowed if argument style includes wx.FD_MULTIPLE.
+    Note that other positional or keyword parameters, other than those below 
+    are allowed, but are ignored.
+
+    :param parent: parent window to dialog to be created
+    :param message: message to place at top of dialog
+    :param defaultDir: starting directory
+    :param style: selection style. Bit settings other than wx.FD_MULTIPLE 
+      are ignored. When wx.FD_MULTIPLE is specified, multiple files can 
+      be selected.
+    :param wildcard: defines the extensions allowed for selecting files.
+       of form "type A (*.A;*.B;*.c)|*.A;*.B;*.c|any file (*.*)|*.*". See 
+       :func:`wx.FileDialog` for more information on this.
+
+    :returns: a list of selected files. Will contain only one file unless
+       style=wx.FD_MULTIPLE has been used.
+    '''
+    maxFiles = 300   # when more than this number of files is found in a
+                     # directory, after applying the extension and filter
+                     # the list is broken into ranges
+    import fnmatch   # import these now as not commonly used in GSAS-II
+    import wx.lib.filebrowsebutton as filebrowse
+    def OnDirSelect(event,**kwargs):
+        '''Called when a directory or an extension is selected. 
+        Loads dlg.filelist with the files in that directory and 
+        with the selected extension.
+        '''
+        try:  # exit if listbox not yet created
+            listbox
+        except:
+            return
+        extSel = typeSel.GetValue()
+        typeTxt.SetLabel(f"({extDict.get(extSel,'?')})")
+        dlg.filelist = []
+        dirVal = fb.GetValue()
+        if os.path.exists(dirVal):
+            dlg.filelist = glob.glob(os.path.join(dirVal,extSel))
+        if filterTxt[0] and filterTxt[0].strip() != '*':
+            dlg.filelist = [i for i in dlg.filelist if
+                                fnmatch.fnmatch(os.path.split(i)[1], filterTxt[0])]
+        dlg.filelist.sort()
+        if len(dlg.filelist) == 0:
+            dlg.choices=['No matching files present']
+            listbox.Enable(False)
+        else:
+            last = int(1.1*maxFiles)
+            dlg.choices=dlg.filelist[:last]
+            listbox.Enable(True)
+        onSelection(None)
+        SetupNumSelect()
+        listbox.SetItems([os.path.split(f)[1] for f in dlg.choices])
+    def onSelection(event):
+        'Called when a file is selected. Enables the Read button'
+        selections = []
+        if event is not None:
+            selections = listbox.GetSelections()
+        if len(selections) > 0:
+            OKbtn.SetDefault()
+            OKbtn.Enable(True)
+        else:
+            CNbtn.SetDefault()
+            OKbtn.Enable(False)
+    def SetupNumSelect():
+        'defines the contents of the file range selector'
+        numfiles = len(dlg.filelist)
+        if numfiles < maxFiles:
+            choices = ['all files']
+            numSel.Enable(False)
+        else:
+            ranges = []
+            for i in range(numfiles//maxFiles+1):
+                first = i*maxFiles+1
+                if first > numfiles: break
+                last = min(numfiles,int((i+1.1)*maxFiles))
+                ranges.append((first,last))
+                if last >= numfiles: break
+            choices = []
+            for first,last in ranges:
+                choices.append(f"files {first}-{last}")
+            numSel.Enable(True)
+        numSel.SetItems(choices)
+        numSel.SetSelection(0)
+    def OnNumSelect(event):
+        'responds to a selection of a file range'
+        i = numSel.GetSelection()
+        first = i*maxFiles+1
+        last = int((i+1.1)*maxFiles)
+        dlg.choices=dlg.filelist[first-1:last]
+        listbox.SetItems([os.path.split(f)[1] for f in dlg.choices])
+
+    # parse the wildcard list
+    extDict = {}
+    for i,item in enumerate(wildcard.split('|')):
+        if i % 2 == 0:
+            nam = item.split('(')[0].strip()
+        else:
+            for ext in item.split(';'):
+                extDict[ext] = nam
+    # single or multiple file selection?
+    if style & wx.FD_MULTIPLE:
+        multiple = True
+        lbl = 'Select one or more files'
+    else:
+        multiple = False
+        lbl = 'Select a file'
+    # make the GUI
+    dlg = wx.Dialog(parent,wx.ID_ANY,lbl,
+                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    dlg.choices=[]
+    dlg.filelist = []
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    # title at top
+    mainSizer.Add((0,5))
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,message))
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND,0)
+    mainSizer.Add((0,10))
+    # directory selector
+    fb = filebrowse.DirBrowseButton(dlg, wx.ID_ANY,
+                                    labelText='Directory:',
+                                    changeCallback=OnDirSelect)
+    mainSizer.Add(fb,0,wx.EXPAND|wx.BOTTOM,5)
+    # extension selector
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,' Extension: '))
+    choices = list(extDict.keys())
+    typeSel = wx.ComboBox(dlg,choices=choices,value=choices[0],
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    typeSel.Bind(wx.EVT_COMBOBOX, OnDirSelect)
+    if len(choices) == 1:
+        typeSel.Enable(False)
+    subSizer.Add(typeSel)
+    subSizer.Add((5,-1))
+    typeTxt = wx.StaticText(dlg,wx.ID_ANY,'')
+    subSizer.Add(typeTxt)
+    # filter
+    mainSizer.Add(subSizer)
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,' Filter: '))
+    filterTxt = ['*']
+    txt = ValidatedTxtCtrl(dlg,filterTxt,0,notBlank=False,
+                        OKcontrol=OnDirSelect,
+                        OnLeave=OnDirSelect,OnLeaveArgs=[])
+    txt.SetMinSize((100,-1))
+    txt.Bind(wx.EVT_LEAVE_WINDOW, OnDirSelect)
+    txt.Bind(wx.EVT_KILL_FOCUS, OnDirSelect)
+    txt.Bind(wx.EVT_TEXT_ENTER, OnDirSelect)
+    subSizer.Add(txt,1,wx.EXPAND|wx.RIGHT,2)
+    mainSizer.Add(subSizer,0,wx.EXPAND,0)
+    # listbox
+    if multiple:
+        listbox = wx.ListBox(dlg, wx.ID_ANY, style=wx.LB_MULTIPLE)
+    else:
+        listbox = wx.ListBox(dlg, wx.ID_ANY, style=wx.LB_SINGLE)
+    listbox.Bind(wx.EVT_LISTBOX,onSelection)
+    listbox.SetMinSize((350,200))
+    mainSizer.Add(listbox,1,wx.EXPAND,1)
+    # file subset selection (disabled when not needed)
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,' range of files: '))
+    choices = ['all files']
+    numSel = wx.ComboBox(dlg,choices=choices,value=choices[0],
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    numSel.SetMinSize((150,-1))
+    numSel.Bind(wx.EVT_COMBOBOX, OnNumSelect)
+    if len(choices) == 1:
+        numSel.Enable(False)
+    subSizer.Add(numSel)
+    mainSizer.Add(subSizer,0,wx.TOP,5)
+    # cancel/read buttons
+    btnsizer = wx.StdDialogButtonSizer()
+    CNbtn = wx.Button(dlg, wx.ID_CANCEL)
+    btnsizer.AddButton(CNbtn)
+    OKbtn = wx.Button(dlg, wx.ID_OK,'Read')
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,0,wx.ALIGN_RIGHT,50)
+    # finish up
+    dlg.SetSizer(mainSizer)
+    mainSizer.Layout()
+    mainSizer.Fit(dlg)
+    dlg.CenterOnParent()
+    fb.SetValue(os.path.abspath(os.path.expanduser(defaultDir)))
+    # wait for button press
+    selections = []
+    if dlg.ShowModal() == wx.ID_OK:
+        selections = [dlg.choices[i] for i in listbox.GetSelections()]
+    dlg.Destroy()
+    return selections
 
 def GetImportPath(G2frame):
     '''Determines the default location to use for importing files. Tries sequentially

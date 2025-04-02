@@ -64,7 +64,16 @@ GSAS-II-provided Dialog (full window) routines:
 ================================  =================================================================
 Class or function name             Description
 ================================  =================================================================
+:func:`G2MessageBox`               Displays text typically used for errors or warnings. 
+:func:`ShowScrolledInfo`           Dialog to display longer text where scrolling is
+                                   possibly needed
 :class:`gpxFileSelector`           File browser dialog for opening existing .gpx files
+:func:`GetImportFile`              Gets one or more files from the appropriate import
+                                   directory, which can be overridden. Arguments follow those
+                                   of :func:`wx.FileDialog`
+:func:`G2FileBrowser`              An alternate file selection dialog
+                                   to use in place of :func:`wx.FileDialog`. Offers a
+                                   filter and breaks long lists into ranges. 
 :func:`askSaveFile`                Get a file name from user
 :func:`askSaveDirectory`           Get a directory name from user
 :class:`MultiColumnSelection`      A dialog that builds a multicolumn table, word wrapping
@@ -100,13 +109,7 @@ Class or function name             Description
                                    with optional range validation.
 :class:`SingleStringDialog`        Dialog to obtain a single string value from user, 
                                    with optional an optional default value.
-:func:`G2MessageBox`               Displays text typically used for errors or warnings. 
-:func:`ShowScrolledInfo`           Dialog to display longer text where scrolling is
-                                   possibly needed
 :func:`GetItemOrder`               Dialog for ordering items into columns
-:func:`GetImportFile`              Gets one ore more file from the appropriate import
-                                   directory, which can be overridden. Arguments follow those
-                                   of :func:`wx.FileDialog`
 :class:`ScrolledMultiEditor`       Dialog for editing many dict- or list-contained items.
                                    with validation. Results are placed in dict or list.
 :func:`CallScrolledMultiEditor`    Routine for editing many dict- or list-contained items.

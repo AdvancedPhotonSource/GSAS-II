@@ -87,9 +87,6 @@ avoided.
 Save_paths=False
 '''When set to True, the last-used path for saving of .gpx and for
 importing of input files is saved in the configuration file.
-Note that since this causes the config.py file to be updated whenever files are
-saved/imported, any temporary config settings can be saved to disk at that
-point.
 '''
 
 Starting_directory=None
@@ -324,4 +321,10 @@ font size for the GSAS-II windows. Default is 0. An increment much larger than
 ~4 will likely cause some places where text no longer fits, but might be useful on high resolution monitors.
 %%
 Restart GSAS-II for this setting to take effect.
+'''
+
+G2FileBrowser = False
+'''When set to True, the GSAS-II provided file browser is used to find
+files when files are imported. For Linux the default is True, but
+for Windows and Mac, the default is False
 '''

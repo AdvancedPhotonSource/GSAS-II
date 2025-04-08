@@ -11930,11 +11930,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         if dlg.ShowModal() == wx.ID_OK:
             indxes = dlg.GetSelections()
             for indx in indxes:
+                fxchoice = []
                 orbs = atmdata.OrbFF[types[indx]]
                 data['Deformations'][Ids[indx]] = []
-                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Z','UVmat':np.eye(3)}
                 newj0 = True
                 newjn = True
+                radial = ''
                 for orb in orbs:
                     if 'core' in orb:
                         continue        #skip core - has no parameters
@@ -11942,6 +11943,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         if 'j0' in orb:
                             if newj0:
                                 data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])   #no sp. harm for j0 terms
+                                if 'Bessel' not in fxchoice:
+                                    fxchoice.append('Bessel')
+                                radial = 'Bessel'
                                 newj0 = False
                             else:
                                 data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False]}])   #no sp. harm for j0 terms; one kappa only
@@ -11961,6 +11965,28 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                                     cofTerms.update({negname:[0.0,False]})
                             orbDict.update(cofTerms)
                             data['Deformations'][Ids[indx]].append([orb,orbDict])
+                        elif 'Sl ' in orb:
+                            if 'Slater' not in fxchoice:
+                                fxchoice.append('Slater')
+                                if not radial:
+                                    radial = 'Slater'
+                            if 's' in orb:
+                                data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])   #no sp. harm for s terms
+                            else:   #p, d or f
+                                orbDict = {}
+                                Order = 'spdf'.index(orb[-1])
+                                cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
+                                cofNames = [name.replace('C','D') for name in cofNames]
+                                cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
+                                for name in cofNames:
+                                    if str(Order) in name and '0' not in name:
+                                        negname = name.replace(',',',-')
+                                        cofTerms.update({negname:[0.0,False]})
+                                orbDict.update(cofTerms)
+                                orbDict.update({'Ne':[float(orbs[orb]['Ne']),False]})
+                                data['Deformations'][Ids[indx]].append([orb,orbDict])
+                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Y','UVmat':np.eye(3),
+                    'MUV':"A: X'=U, Y'=(UxV)xU & Z'=UxV",'Radial':radial,'fxchoice':fxchoice}
         dlg.Destroy()
         if not len(indxes):
             return
@@ -11973,7 +11999,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
     def UpdateDeformation(AtdId):
         
         def OnRadFxn(event):
-            deformationData['Radial'] = radFxn.GetStringSelection()
+            Obj = event.GetEventObject()
+            dId = Indx[Obj.GetId()]
+            deformationData[-dId]['Radial'] = radFxn.GetStringSelection()
+            wx.CallAfter(UpdateDeformation,dId)
         
         def MakeUVmat(defData,U,V):
             MX = U
@@ -12065,6 +12094,32 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         def OnAtSel(event):
             dId = atomList[atSel.GetValue()]
             wx.CallAfter(UpdateDeformation,dId)
+            
+        def Kappa(deformation,orbSizer,dId,orb,name,Indx):
+            orbSizer.Add(wx.StaticText(deformation,label=orb[0]+name))
+            orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.5,xmax=1.5))
+            Tcheck = wx.CheckBox(deformation,-1,'Refine?')
+            Tcheck.SetValue(orb[1]['kappa'][1])
+            Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
+            Indx[Tcheck.GetId()] = [dId,iorb,'kappa']
+            orbSizer.Add(Tcheck)
+            
+        def NeSizer(deformation,orbSizer,dId,orb,Indx):
+            orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['Ne'],0,nDig=(8,3),xmin=0.,xmax=10.))
+            Tcheck = wx.CheckBox(deformation,-1,'Refine?')
+            Tcheck.SetValue(orb[1]['Ne'][1])
+            Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
+            Indx[Tcheck.GetId()] = [dId,iorb,'Ne']
+            orbSizer.Add(Tcheck)
+            
+        def Dsizer(deformation,orbSizer,dId,orb,Indx):
+            orbSizer.Add(wx.StaticText(deformation,label=item+':'))
+            orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,3),xmin=-2.,xmax=2.))
+            Tcheck = wx.CheckBox(deformation,-1,'Refine?')
+            Tcheck.SetValue(orb[1][item][1])
+            Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
+            Indx[Tcheck.GetId()] = [dId,iorb,item]
+            orbSizer.Add(Tcheck)
         
         # UpdateDeformation executable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
@@ -12100,12 +12155,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        deformationData['Radial'] = deformationData.get('Bessel','Bessel')
-        topSizer.Add(wx.StaticText(deformation,label=' Select radial fxn: '),0,WACV)
-        radFxn = wx.ComboBox(deformation,value=deformationData['Radial'],
-            choices=['Bessel','Slater'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        radFxn.Bind(wx.EVT_COMBOBOX,OnRadFxn)
-        topSizer.Add(radFxn,0,WACV)
         if dId is None:
             topSizer.Add(wx.StaticText(deformation,
                 label='No atoms in deformation list. Do add atom first (neutral atoms only)'),0,WACV)
@@ -12163,6 +12212,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             matSel.Bind(wx.EVT_COMBOBOX,OnMatSel)
             Indx[matSel.GetId()] = dId
             matSizer.Add(matSel,0,WACV)
+            deformationData[-dId]['Radial'] = deformationData[-dId].get('Radial','Bessel')
+            topSizer.Add(wx.StaticText(deformation,label=' Select radial fxn: '),0,WACV)
+            fxchoice = deformationData[-dId].get('fxchoice',['Bessel',])
+            radFxn = wx.ComboBox(deformation,value=deformationData[-dId]['Radial'],
+                choices=fxchoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[radFxn.GetId()] = dId
+            radFxn.Bind(wx.EVT_COMBOBOX,OnRadFxn)
+            topSizer.Add(radFxn,0,WACV)
             mainSizer.Add(matSizer)
             oriSizer = wx.BoxSizer(wx.HORIZONTAL)
             oriSizer.Add(wx.StaticText(deformation,label=' Select orbital U vector: '),0,WACV)
@@ -12179,48 +12236,48 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             
             orbSizer = wx.FlexGridSizer(0,9,2,2)
             for iorb,orb in enumerate(deformationData[dId]):
-                if 'kappa' in orb[1]:
-                    name = ' kappa: '
-                    if '<j0>' not in orb[0]:
+                if deformationData[-dId]['Radial'] == 'Bessel' and 'Sl ' not in orb[0]:
+                    if 'kappa' in orb[1]:
+                        name = ' kappa: '
+                        if '<j0>' not in orb[0]:
+                            for i in range(3): orbSizer.Add((5,5),0)
+                            name = " kappa': "
+                        Kappa(deformation,orbSizer,dId,orb,name,Indx)
+                    if '<j0>' in orb[0]:
+                        if 'kappa' not in orb[1]:
+                            orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
+                        else:
+                            orbSizer.Add(wx.StaticText(deformation,label=' Ne:'))
+                        NeSizer(deformation,orbSizer,dId,orb,Indx)
                         for i in range(3): orbSizer.Add((5,5),0)
-                        name = " kappa': "
-                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+name))
-                    orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.5,xmax=1.5))
-                    Tcheck = wx.CheckBox(deformation,-1,'Refine?')
-                    Tcheck.SetValue(orb[1]['kappa'][1])
-                    Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
-                    Indx[Tcheck.GetId()] = [dId,iorb,'kappa']
-                    orbSizer.Add(Tcheck)
-                if '<j0>' in orb[0]:
+                        continue
+                    nItem = 0
                     if 'kappa' not in orb[1]:
-                        orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
-                    else:
+                        for i in range(3): orbSizer.Add((5,5),0)
+                    for item in orb[1]:
+                        if 'D' in item:                            
+                            nItem += 1
+                            Dsizer(deformation,orbSizer,dId,orb,Indx)
+                            if nItem in [2,4,6,8,10]:
+                                for i in range(3): orbSizer.Add((5,5),0)
+                    for i in range(3): orbSizer.Add((5,5),0)
+                elif deformationData[-dId]['Radial'] == 'Slater' and 'Sl ' in orb[0]: 
+                    if 'kappa' in orb[1]:
+                        name = ' kappa: '
+                        Kappa(deformation,orbSizer,dId,orb,name,Indx)
                         orbSizer.Add(wx.StaticText(deformation,label=' Ne:'))
-                    orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['Ne'],0,nDig=(8,3),xmin=0.,xmax=10.))
-                    Tcheck = wx.CheckBox(deformation,-1,'Refine?')
-                    Tcheck.SetValue(orb[1]['Ne'][1])
-                    Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
-                    Indx[Tcheck.GetId()] = [dId,iorb,'Ne']
-                    orbSizer.Add(Tcheck)
+                    else:
+                        orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
+                    NeSizer(deformation,orbSizer,dId,orb,Indx)
+                    nItem = 0
+                    for item in orb[1]:
+                        if 'D' in item:
+                            nItem += 1
+                            Dsizer(deformation,orbSizer,dId,orb,Indx)
+                            if nItem in [2,4,6,8,10]:
+                                for i in range(3): orbSizer.Add((5,5),0)
                     for i in range(3): orbSizer.Add((5,5),0)
                     continue
-                nItem = 0
-                if 'kappa' not in orb[1]:
-                    for i in range(3): orbSizer.Add((5,5),0)
-                for item in orb[1]:
-                    if 'D' in item:
-                        nItem += 1
-                        orbSizer.Add(wx.StaticText(deformation,label=item+':'))
-                        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,3),xmin=-2.,xmax=2.))
-                        Tcheck = wx.CheckBox(deformation,-1,'Refine?')
-                        Tcheck.SetValue(orb[1][item][1])
-                        Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
-                        Indx[Tcheck.GetId()] = [dId,iorb,item]
-                        orbSizer.Add(Tcheck)
-                        if nItem in [2,4,6,8,10]:
-                            for i in range(3): orbSizer.Add((5,5),0)
-                for i in range(3): orbSizer.Add((5,5),0)
-                    
             mainSizer.Add(orbSizer)    
 
         SetPhaseWindow(deformation,mainSizer)

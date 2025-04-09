@@ -4338,9 +4338,9 @@ def G2FileBrowser(parent, message, defaultDir, *args,
     mainSizer.Add(subSizer,0,wx.EXPAND,0)
     # listbox
     if multiple:
-        listbox = wx.ListBox(dlg, wx.ID_ANY, style=wx.LB_MULTIPLE)
+        listbox = wx.ListBox(dlg, wx.ID_ANY, style=wx.LB_MULTIPLE|wx.LB_ALWAYS_SB)
     else:
-        listbox = wx.ListBox(dlg, wx.ID_ANY, style=wx.LB_SINGLE)
+        listbox = wx.ListBox(dlg, wx.ID_ANY, style=wx.LB_SINGLE|wx.LB_ALWAYS_SB)
     listbox.Bind(wx.EVT_LISTBOX,onSelection)
     listbox.SetMinSize((350,200))
     mainSizer.Add(listbox,1,wx.EXPAND,1)

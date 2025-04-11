@@ -628,6 +628,8 @@ def CompileVarDesc():
         'ANe([01])' : ' Atomic <j0> orbital population for orbital, \\1',
         'AD\\([0-6],[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',
         'AD\\([0-6],-[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',     #need both!
+        'AUVmat' : ' Atomic orbital orientation matrix, \\1',
+        'ARadial' : 'Atomic radial function, \\1',
         # Hist (:h:<var>) & Phase (HAP) vars (p:h:<var>)
         'Back(.*)': 'Background term #\\1',
         'BkPkint;(.*)':'Background peak #\\1 intensity',

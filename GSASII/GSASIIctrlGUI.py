@@ -5142,6 +5142,8 @@ class VirtualVarBox(wx.ListCtrl):
         subSizer.Add((-1,-1),1,wx.EXPAND)
         try:
             value = G2fil.FormatSigFigs(self.parmWin.parmDict[name])
+        except ValueError:
+            value = str(self.parmWin.parmDict[name])
         except TypeError:
             value = str(self.parmWin.parmDict[name])+' -?' # unexpected
         subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
@@ -5293,6 +5295,8 @@ class VirtualVarBox(wx.ListCtrl):
         elif col == 3:
             try:
                 value = G2fil.FormatSigFigs(self.parmWin.parmDict[name])
+            except ValueError:
+                value = str(self.parmWin.parmDict[name])    #array!
             except TypeError:
                 value = str(self.parmWin.parmDict[name])+' -?' # unexpected
             return value

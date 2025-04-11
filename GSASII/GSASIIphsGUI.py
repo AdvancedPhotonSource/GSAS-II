@@ -12253,7 +12253,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         continue
                     nItem = 0
                     if 'kappa' not in orb[1]:
-                        for i in range(3): orbSizer.Add((5,5),0)
+                        orbSizer.Add(wx.StaticText(deformation,label=orb[0]+':'))
+                        for i in range(2): orbSizer.Add((5,5),0)
                     for item in orb[1]:
                         if 'D' in item:                            
                             nItem += 1

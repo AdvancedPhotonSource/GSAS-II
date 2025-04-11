@@ -2287,8 +2287,10 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             DefTable = Deformations[AtDef]
             pFile.write('\n Atom: %s at %10.5f, %10.5f, %10.5f sytsym: %s\n'%(atom[ct-1],atom[cx],atom[cx+1],atom[cx+2],atom[cs]))
             pFile.write(135*'-'+'\n')
-            for iorb,orb in enumerate(DefTable):
+            iorb = 0
+            for orb in DefTable:
                 if ('B' in radial and 'S' not in orb[0]) or ('S' in radial and 'S' in orb[0]):
+                    iorb += 1
                     names = orb[0].ljust(12)+ 'names : '
                     values = 12*' '+'values: '
                     sigstr = 12*' '+'esds  : '

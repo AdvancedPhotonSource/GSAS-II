@@ -12095,8 +12095,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             dId = atomList[atSel.GetValue()]
             wx.CallAfter(UpdateDeformation,dId)
             
-        def Kappa(deformation,orbSizer,dId,orb,name,Indx):
-            orbSizer.Add(wx.StaticText(deformation,label=orb[0]+name))
+        def Kappa(deformation,orbSizer,dId,orb,Indx):
             orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.5,xmax=1.5))
             Tcheck = wx.CheckBox(deformation,-1,'Refine?')
             Tcheck.SetValue(orb[1]['kappa'][1])
@@ -12237,20 +12236,18 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             orbSizer = wx.FlexGridSizer(0,9,2,2)
             for iorb,orb in enumerate(deformationData[dId]):
                 if deformationData[-dId]['Radial'] == 'Bessel' and 'Sl ' not in orb[0]:
-                    if 'kappa' in orb[1]:
-                        name = ' kappa: '
-                        if '<j0>' not in orb[0]:
-                            for i in range(3): orbSizer.Add((5,5),0)
-                            name = " kappa': "
-                        Kappa(deformation,orbSizer,dId,orb,name,Indx)
                     if '<j0>' in orb[0]:
-                        if 'kappa' not in orb[1]:
-                            orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
-                        else:
-                            orbSizer.Add(wx.StaticText(deformation,label=' Ne:'))
+                        orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
                         NeSizer(deformation,orbSizer,dId,orb,Indx)
+                        if 'kappa' in orb[1]:
+                            orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
+                            Kappa(deformation,orbSizer,dId,orb,Indx)
                         for i in range(3): orbSizer.Add((5,5),0)
                         continue
+                    if 'kappa' in orb[1]:
+                        for i in range(3): orbSizer.Add((5,5),0)
+                        orbSizer.Add(wx.StaticText(deformation,label=orb[0]+" kappa':"))
+                        Kappa(deformation,orbSizer,dId,orb,Indx)
                     nItem = 0
                     if 'kappa' not in orb[1]:
                         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+':'))
@@ -12263,13 +12260,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                                 for i in range(3): orbSizer.Add((5,5),0)
                     for i in range(3): orbSizer.Add((5,5),0)
                 elif deformationData[-dId]['Radial'] == 'Slater' and 'Sl ' in orb[0]: 
-                    if 'kappa' in orb[1]:
-                        name = ' kappa: '
-                        Kappa(deformation,orbSizer,dId,orb,name,Indx)
-                        orbSizer.Add(wx.StaticText(deformation,label=' Ne:'))
-                    else:
-                        orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
+                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
                     NeSizer(deformation,orbSizer,dId,orb,Indx)
+                    if 'kappa' in orb[1]:
+                        orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
+                        Kappa(deformation,orbSizer,dId,orb,Indx)
                     nItem = 0
                     for item in orb[1]:
                         if 'D' in item:

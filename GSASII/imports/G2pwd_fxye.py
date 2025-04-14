@@ -205,6 +205,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     x = Tmap2TOF(self.TimeMap['1'],self.clockWd['1'])
                 else:
                     x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
+                x = x[:len(y)]   #Tmap2TOF add extra step(s)
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
            
         def GetALTdata(File,Pos,Bank):
@@ -236,6 +237,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             N = len(x)
             if self.clockWd:
                 x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
+                x = x[:len(y)]   #Tmap2TOF add extra step(s)
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
             
         def GetTimeMap(File,Pos,TimeMap):
@@ -270,7 +272,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 TOF += [T+Step*(i-Tch) for i in range(Tch,tch)]
                 Tch,T,Step = tmap
             TOF = np.array(TOF)*clockWd
-            return TOF[:-1]     #code makes extra step
+            return TOF
 
         Banks = []
         Pos = []

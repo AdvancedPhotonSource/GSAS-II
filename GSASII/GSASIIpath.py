@@ -707,12 +707,12 @@ def getGitBinaryReleases(cache=False):
       The value associated with each key contains the full URL to
       download a tar containing that binary distribution.
     '''
-    # Get first page of releases
     try:
         import requests
     except:
         print('Unable to install binaries in getGitBinaryReleases():\n requests module not available')
         return
+    # Get first page of releases. (Could there be more than one?)
     releases = []
     tries = 0
     while tries < 5: # this has been known to fail, so retry
@@ -722,20 +722,14 @@ def getGitBinaryReleases(cache=False):
             headers=BASE_HEADER
         ).json()
         try:
-            # Get assets of latest release
-            assets = requests.get(
-                url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",
-                headers=BASE_HEADER
-                ).json()
-
+            # loop over assets of latest release (will [-1] always get this?)
             versions = []
             URLs = []
-            count = 0
-            for asset in assets:
-                if asset['name'].endswith('.tgz'):
-                    versions.append(asset['name'][:-4]) # Remove .tgz tail
-                    URLs.append(asset['browser_download_url'])
-                    count += 1
+            for asset in releases[-1]['assets']:
+                if not asset['name'].endswith('.tgz'): continue
+                versions.append(asset['name'][:-4]) # Remove .tgz tail
+                URLs.append(asset['browser_download_url'])
+            count = len(versions)
             # Cache the binary releases for later use in case GitHub
             # prevents us from using a query to get them
             if cache and count > 4:
@@ -746,7 +740,7 @@ def getGitBinaryReleases(cache=False):
                 fp.close()
             return dict(zip(versions,URLs))
         except:
-            print('Attempt to list GSAS-II binary releases failed, sleeping for 10 sec and then retrying')
+            print('Attempt to get GSAS-II binary releases/assets failed, sleeping for 10 sec and then retrying')
             import time
             time.sleep(10)  # this does not seem to help when GitHub is not letting the queries through
 
@@ -762,7 +756,7 @@ def getGitBinaryReleases(cache=False):
     except:
         raise IOError('Cache read of releases failed too.')
 
-def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
+def getGitBinaryLoc(npver=None,pyver=None,verbose=True,debug=False):
     '''Identify the best GSAS-II binary download location from the
     distributions in the latest release section of the github repository
     on the CPU platform, and Python & numpy versions. The CPU & Python
@@ -783,11 +777,15 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
         inpver = intver(np.__version__)
     # get binaries matching the required install, approximate match for numpy
     URLdict = getGitBinaryReleases()
+    if debug:
+        print('URLdict:')
+        for k in URLdict: print(k,URLdict[k])
     versions = {}
     for d in URLdict:
         if d.startswith(bindir):
             v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
             versions[v] = d
+    if debug: print('versions:',versions)
     intVersionsList = sorted(versions.keys())
     if not intVersionsList:
         print('No binaries located to match',bindir)
@@ -844,6 +842,7 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
         print('Unable to install binaries in InstallGitBinary():\n requests module not available')
         return
     # download to scratch
+    tarobj = None
     tar = tempfile.NamedTemporaryFile(suffix='.tgz',delete=False)
     try:
         tar.close()
@@ -873,9 +872,11 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
             # set file mode and mod/access times (but not ownership)
             os.chmod(newfil,f.mode)
             os.utime(newfil,(f.mtime,f.mtime))
-            if verbose: print(f'Created GSAS-II binary file {newfil}')
+            if verbose: print(f'Created GSAS-II binary file {os.path.split(newfil)[1]}')
+        if verbose: print(f'Binary files created in {os.path.split(newfil)[0]}')
+
     finally:
-        del tarobj
+        if tarobj: del tarobj
         os.unlink(tar.name)
 
 def GetRepoUpdatesInBackground():

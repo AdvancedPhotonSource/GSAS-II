@@ -488,6 +488,9 @@ def ShowVersions():
     if not GSASIIpath.TestSPG():
         path2repo = os.path.dirname(GSASIIpath.path2GSAS2)
         installLoc = os.path.join(path2repo,'GSASII-bin')
+        # TODO: note new code in gitstrap.py that avoids use of getGitBinaryLoc
+        # when the desired binary exists. Better to do lookup with
+        # getGitBinaryLoc only when an exact match is not available
         binarydir = GSASIIpath.getGitBinaryLoc(verbose=True)
         if not binarydir:
             versionDict['errors'] += 'GSAS-II does not have a binaries built for this version of Python. You will need to install a supported Python version or build binaries yourself. See https://gsas-ii.readthedocs.io/en/latest/packages.html#python-requirements\n\n'
@@ -513,6 +516,8 @@ def ShowVersions():
                 if not GSASIIpath.pathhack_TestSPG(GSASIIpath.binaryPath):
                     versionDict['errors'] += 'Error accessing GSAS-II binary files. Only limited functionality available.'
     else:
+        # TODO: use GSASIIversion.txt (in binary directory) to see
+        # if version is recent enough rather than use presence of convcell[.exe]
         if GSASIIpath.binaryPath:
             prog = os.path.join(GSASIIpath.binaryPath,"convcell")
         else:
@@ -520,7 +525,7 @@ def ShowVersions():
         if sys.platform.startswith('win'):
             prog += '.exe'
         if not shutil.which(prog):
-            versionDict['errors'] += 'NIST*LATTICE binaries not found. You may have old binaries or an installation problem. If you built them built binaries, rerun scons or meson'
+            versionDict['errors'] += 'NIST*LATTICE binaries not found. You may have old binaries or an installation problem. If you built these binaries, rerun scons or meson'
     if warn:
         print(70*'=')
         print('''You are running GSAS-II in a Python environment with either untested

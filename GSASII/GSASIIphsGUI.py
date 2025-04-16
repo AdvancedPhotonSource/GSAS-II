@@ -12187,7 +12187,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if Nneigh > 2:
                 Nneigh += 1
             Nneigh = min(4,Nneigh)
-            UVchoice[dId] = ['X','Y','Z','X+Y','X+Y+Z','A','B','A+B','A+B+C']
+            UVchoice[dId] = ['X','Y','Z','X+Y','X+Y+Z','A','B','C','A+B','A+B+C']
             UVvec[dId] = [[1.,0.,0.],[0.,1.,0.],[0.,0.,1.],[1.,1.,0.]/sqt2,[1.,1.,1.]/sqt3,]
             if Nneigh >= 1:
                 UVvec[dId] += [neigh[0][3]/neigh[0][2],]         #A
@@ -12248,10 +12248,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         for i in range(3): orbSizer.Add((5,5),0)
                         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+" kappa':"))
                         Kappa(deformation,orbSizer,dId,orb,Indx)
-                    nItem = 0
                     if 'kappa' not in orb[1]:
                         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+':'))
                         for i in range(2): orbSizer.Add((5,5),0)
+                    nItem = 0
                     for item in orb[1]:
                         if 'D' in item:                            
                             nItem += 1

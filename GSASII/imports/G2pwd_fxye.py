@@ -151,6 +151,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     x = Tmap2TOF(self.TimeMap['1'],self.clockWd['1'])
                 else:
                     x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
+                x = x[:len(y)]   #Tmap2TOF add extra step(s)
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
         
         def GetSTDdata(File,Pos,Bank):

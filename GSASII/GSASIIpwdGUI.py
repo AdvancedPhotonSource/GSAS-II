@@ -5485,11 +5485,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         resId = G2gd.GetGPXtreeItemId(G2frame, resId, phsnam)
         orgData = copy.deepcopy(data)
 
-        if Restraints:
-            Restraints[phsnam]['Bond']['Bonds'] = []
-            Restraints[phsnam]['Angle']['Angles'] = []
-            savedRestraints = Restraints[phsnam]
-            del Restraints[phsnam]
+        item, cookie = G2frame.GPXtree.GetFirstChild(phaseID)
+        while item and G2frame.GPXtree.GetItemText(item) != phase_sel:
+            item, cookie = G2frame.GPXtree.GetNextChild(phaseID, cookie)
+
+        # TODO: We can probably refer to the `OnDeletePhase` method defined in
+        # `GSASIIdataGUI` to delete the phase.
 
         for ir_opt, _ in ir_options:
             print("Processing irrep:", ir_opt)
@@ -5526,10 +5527,23 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 with open(cif_fn, 'wb') as fl:
                     fl.write(out_cif.encode("utf-8"))
 
-                # TODO: 1. Create project files for each of the CIFs
-                # TODO: 2. Keep everything in the current project, only
-                # TODO:    replacing the phase with the new CIF
-                # TODO: 3. Save the project files
+                # TODO: Load phase to the project and associate it with the
+                # histogram attached to the original phase.
+                # Q1: How to find out all the histograms associated with the
+                # original phase?
+                # Q2: How to load the phase to the project properly?
+
+        # restore the original saved project
+        G2frame.OnFileOpen(None, filename=orgFilName, askSave=False)
+
+        # reopen tree to the original phase
+        def _ShowPhase():
+            phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
+            G2frame.GPXtree.Expand(phId)        
+            phId = G2gd.GetGPXtreeItemId(G2frame, phId, phsnam)
+            G2frame.GPXtree.SelectItem(phId)
+
+        wx.CallLater(100, _ShowPhase)
 
         info_msg = f'''Done with subgroup output for the selected k-vector.
             Please check output files in the following directory,

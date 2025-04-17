@@ -11919,11 +11919,13 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         choices = []
         types = []
         Ids = []
+        sytsyms = []
         for atom in data['Atoms']:
             if atom[ct] in atmdata.OrbFF and atom[cia+8] not in data['Deformations']:
                 choices.append(atom[ct-1])
                 types.append(atom[ct])
                 Ids.append(atom[cia+8])
+                sytsyms.append(atom[cs])
         if not choices: return      #no atoms in phase!
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Select atom','Choose atom to select',choices)
         indxes = []
@@ -11956,7 +11958,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             else:
                                 orbDict = {}
                             Order = int(orb.split('>')[0][-1])
-                            cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
+                            cofNames,cofSgns = G2lat.GenRBCoeff(sytsyms[indx],'1',Order)
                             cofNames = [name.replace('C','D') for name in cofNames]
                             cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
                             for name in cofNames:
@@ -11975,7 +11977,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                             else:   #p, d or f
                                 orbDict = {}
                                 Order = 'spdf'.index(orb[-1])
-                                cofNames,cofSgns = G2lat.GenRBCoeff('1','1',Order)
+                                cofNames,cofSgns = G2lat.GenRBCoeff(sytsyms[indx],'1',Order)      #sytsym, RBsym = '1'
                                 cofNames = [name.replace('C','D') for name in cofNames]
                                 cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
                                 for name in cofNames:

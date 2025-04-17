@@ -2417,7 +2417,7 @@ def RBChk(sytsym,L,M):
             if M%2: return True,1.0
         elif 'mmm' in sytsym :
             if not L%2 and not M%2: return True,1.0
-        elif sytsym == '2(x)':
+        elif sytsym == '2(x)' or sytsym == '2(100)':
             return True,-1.0**(L-M)
         elif sytsym == '2(y)':
             return True,-1.0**L

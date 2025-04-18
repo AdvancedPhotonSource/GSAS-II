@@ -5807,7 +5807,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         rho = G2mth.getRho([Cx,Cy,Cz],mapData)
         if contours:
             try:
-                contlevels = contourSet.get_array()
+                contlevels = contourSet._levels
                 contstr = str(contlevels).strip('[]')
                 G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
             except AttributeError:

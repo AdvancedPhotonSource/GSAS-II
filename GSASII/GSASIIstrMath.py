@@ -555,7 +555,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
             FFcore = G2el.ScatFac(ffOrb,SQR)    #core
             FFtot = np.zeros_like(FFcore)
             for orb in orbs:
-                if 'UVmat' in orb:
+                if 'UVmat' in orb or 'Radial' in orb:   #problem of orb = '0'
                     continue
                 Ne = orbs[orb].get('Ne',1.0) # not there for non <j0> orbs
                 if 'kappa' in orbs[orb]:
@@ -570,18 +570,33 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                 if '<j0>' in orKeys[int(orb)]:
                     dSH = 1.0
                 for term in orbs[orb]:
-                    if 'D(' in term:
-                        item = term.replace('D','C')
-                        SH = G2lat.KslCalc(item,Th,Ph)
-                        FFtot += SH*orbs[orb][term]*ff
-                        name = 'A%s%s:%d'%(term,orb,iAt)
-                        dFFdS[name] = SH*ff
-                        dSH += SH*orbs[orb][term]
-                    elif 'Ne' in term:
-                        name = 'ANe%s:%d'%(orb,iAt)
-                        dFFdS[name] = ff/Ne
-                        if 'j0' in orKeys[int(orb)]:
-                            FFtot += ff
+                    if 'B' in radial:       #'Bessel'
+                        if 'D(' in term:
+                            item = term.replace('D','C')
+                            SH = G2lat.KslCalc(item,Th,Ph)
+                            FFtot += SH*orbs[orb][term]*ff
+                            name = 'A%s%s:%d'%(term,orb,iAt)
+                            dFFdS[name] = SH*ff
+                            dSH += SH*orbs[orb][term]
+                        elif 'Ne' in term:
+                            name = 'ANe%s:%d'%(orb,iAt)
+                            dFFdS[name] = ff/Ne
+                            if 'j0' in orKeys[int(orb)]:
+                                FFtot += ff
+                    else: #'Slater'
+                        if 'Ne' in term:
+                            name = 'ANe%s:%d'%(orb,iAt)
+                            dFFdS[name] = ff/Ne
+                            if 'core' in orKeys[int(orb)] or 's' in orKeys[int(orb)]:
+                                FFtot += ff
+                                continue
+                        elif 'D(' in term:
+                            item = term.replace('D','C')
+                            SH = G2lat.KslCalc(item,Th,Ph)
+                            FFtot += SH*orbs[orb][term]*ff
+                            name = 'A%s%s:%d'%(term,orb,iAt)
+                            dFFdS[name] = SH*ff
+                            dSH += SH*orbs[orb][term]
                 name = 'Akappa%s:%d'%(korb,iAt)
                 if name in dFFdS:
                     dFFdS[name] += -2.0*Ne*SQk*dSH*dffdk/kappa

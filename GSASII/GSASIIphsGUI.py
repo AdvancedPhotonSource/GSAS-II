@@ -11919,6 +11919,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         choices = []
         types = []
         Ids = []
+        sytsyms = []
         for atom in data['Atoms']:
             if atom[ct] in atmdata.OrbFF and atom[cia+8] not in data['Deformations']:
                 choices.append(atom[ct-1])

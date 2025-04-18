@@ -12034,7 +12034,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             neigh = G2mth.FindAllNeighbors(data,atom[ct-1],AtNames)
             deform = deformationData[dId]
             UVmat = deformationData[-dId]['UVmat']
-            G2plt.PlotDeform(G2frame,generalData,atom[ct-1],atom[ct],deform,UVmat,neigh)            
+            radial = deformationData[-dId]['Radial']
+            G2plt.PlotDeform(G2frame,generalData,atom[ct-1],atom[ct],deform,UVmat,radial,neigh)            
 
         def OnDelAtm(event):
             Obj = event.GetEventObject()
@@ -12121,6 +12122,28 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
             Indx[Tcheck.GetId()] = [dId,iorb,item]
             orbSizer.Add(Tcheck)
+            
+        def OnNewHarm(event):
+            Obj = event.GetEventObject()
+            dId = Indx[Obj.GetId()]
+            atom = atomData[AtLookUp[dId]]
+            for harm in data['Deformations'][dId]:
+                if 'Sl' in harm[0]:
+                    Harm = harm
+            Order = 1
+            Hkeys = list(Harm[1].keys())
+            orders = [int(item[2]) for item in Hkeys if 'D' in item]
+            if len(orders):
+                Order = max(orders)+1
+            cofNames,cofSgns = G2lat.GenRBCoeff(atom[cs],'1',Order)      #sytsym, RBsym = '1'
+            cofNames = [name.replace('C','D') for name in cofNames]
+            cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
+            for name in cofNames:
+                if str(Order) in name and '0' not in name:
+                    negname = name.replace(',',',-')
+                    cofTerms.update({negname:[0.0,False]})
+            Harm[1].update(cofTerms)
+            wx.CallAfter(UpdateDeformation,dId)
         
         # UpdateDeformation executable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
@@ -12233,6 +12256,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Vvec.Bind(wx.EVT_COMBOBOX,OnVvec)
             Indx[Vvec.GetId()] = dId
             oriSizer.Add(Vvec,0,WACV)
+            if 'Slater' in data['Deformations'][-dId]['Radial']:
+                newHarm = wx.Button(deformation,label='Add harmonic')
+                newHarm.Bind(wx.EVT_BUTTON,OnNewHarm)
+                Indx[newHarm.GetId()] = dId
+                oriSizer.Add(newHarm,0,WACV)
             mainSizer.Add(oriSizer)
             
             orbSizer = wx.FlexGridSizer(0,9,2,2)
@@ -12272,7 +12300,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         if 'D' in item:
                             nItem += 1
                             Dsizer(deformation,orbSizer,dId,orb,Indx)
-                            if nItem in [2,4,6,8,10]:
+                            if nItem in [2,4,6,8,10,12,14]:
                                 for i in range(3): orbSizer.Add((5,5),0)
                     for i in range(3): orbSizer.Add((5,5),0)
                     continue

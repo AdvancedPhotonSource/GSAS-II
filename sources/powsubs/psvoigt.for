@@ -9,26 +9,26 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        DX                  !Delta-x from center
-      REAL*4        SIG                 !Gaussian variance
-      REAL*4        GAM                 !Lorentzian FWHM
-      REAL*4        FUNC                !Value of pseudo-Voigt at DX
-      REAL*4        DFDX                !dF/dx
-      REAL*4        DFDS                !dF/ds
-      REAL*4        DFDG                !dF/dg
+      REAL(kind=4)        DX                  !Delta-x from center
+      REAL(kind=4)        SIG                 !Gaussian variance
+      REAL(kind=4)        GAM                 !Lorentzian FWHM
+      REAL(kind=4)        FUNC                !Value of pseudo-Voigt at DX
+      REAL(kind=4)        DFDX                !dF/dx
+      REAL(kind=4)        DFDS                !dF/ds
+      REAL(kind=4)        DFDG                !dF/dg
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
 
-      REAL*4        COFG(6),COFL(6)     !Linear combination coeffs
-      REAL*4        ACOFG(7),ACOFL(7)   
-      REAL*4        GNORM               !Gaussian Normalization constant
-      REAL*4        COFT(6),COFN(3) 
-      REAL*4        EPS                 !Are values different
+      REAL(kind=4)        COFG(6),COFL(6)     !Linear combination coeffs
+      REAL(kind=4)        ACOFG(7),ACOFL(7)   
+      REAL(kind=4)        GNORM               !Gaussian Normalization constant
+      REAL(kind=4)        COFT(6),COFN(3) 
+      REAL(kind=4)        EPS                 !Are values different
 ! Local variables saved between calls
-      REAL*4        PREV_SIG,PREV_GAM
-      REAL*4        ETA,FWHM,FRAC,DSDG,DSDL,SUMHM,DEDF,SQSG
+      REAL(kind=4)        PREV_SIG,PREV_GAM
+      REAL(kind=4)        ETA,FWHM,FRAC,DSDG,DSDL,SUMHM,DEDF,SQSG
       SAVE          ETA,FWHM,FRAC,PREV_SIG,PREV_GAM,DSDG,DSDL,SUMHM,
      1                   DEDF,SQSG
       
@@ -110,20 +110,20 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        DX                  !DELTA-X FROM CENTER
-      REAL*4        SIG                 !GAUSSIAN VARIANCE
-      REAL*4        GAM                 !LORENTZIAN FWHM
-      REAL*4        FUNC                !VALUE OF PSEUDO-VOIGT AT DX
-      REAL*4        DFDX                !DF/DX
-      REAL*4        DFDS                !DF/DS
-      REAL*4        DFDG                !DF/DG
+      REAL(kind=4)        DX                  !DELTA-X FROM CENTER
+      REAL(kind=4)        SIG                 !GAUSSIAN VARIANCE
+      REAL(kind=4)        GAM                 !LORENTZIAN FWHM
+      REAL(kind=4)        FUNC                !VALUE OF PSEUDO-VOIGT AT DX
+      REAL(kind=4)        DFDX                !DF/DX
+      REAL(kind=4)        DFDS                !DF/DS
+      REAL(kind=4)        DFDG                !DF/DG
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
 
-      REAL*4        GNORM               !GAUSSIAN NORMALIZATION CONSTANT
-      REAL*4        COFEG(7),COFEL(7),COFGG(6),COFGL(6)    
+      REAL(kind=4)        GNORM               !GAUSSIAN NORMALIZATION CONSTANT
+      REAL(kind=4)        COFEG(7),COFEL(7),COFGG(6),COFGL(6)    
 
 !SUBROUTINES CALLED:
 

@@ -1185,7 +1185,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         for Ename in ORBtable:
             orbdata = ORBtable[Ename]
             for item in orbdata:
-                if 'core' in item or '<' in item:
+                if 'core' in item or '<' in item or 'Sl ' in item:
                     fa = orbdata[item]['fa']
                     fb = orbdata[item]['fb']
                     if 'core' in item:                    
@@ -1386,27 +1386,29 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             if AtDef < 0:
                 continue
             atom = G2mth.GetAtomsById(Atoms,AtLookup,[AtDef,])[0]
+            radial = Deformations[-AtDef]['Radial']
             DefTable = Deformations[AtDef]
             pFile.write('\n Atom: %s at %10.5f, %10.5f, %10.5f sytsym: %s\n'%(atom[ct-1],atom[cx],atom[cx+1],atom[cx+2],atom[cs]))
             pFile.write(135*'-'+'\n')
             for orb in DefTable:
-                names = orb[0].ljust(12)+ 'names : '
-                values = 12*' '+'values: '
-                refine = 12*' '+'refine: '
-                for item in orb[1]:
-                    if 'kappa' in item:
-                        name = 'kappa'.rjust(10)
-                        if '<j0>' not in orb[0]:
-                            name = "kappa'".rjust(10)
-                        names += name
-                    else:
-                        names += item.rjust(10)
-                    values += '%10.5f'%orb[1][item][0]
-                    refine += '%10s'%str(orb[1][item][1])
-                pFile.write(names+'\n')
-                pFile.write(values+'\n')
-                pFile.write(refine+'\n')
-
+                if ('B' in radial and 'S' not in orb[0]) or ('S' in radial and 'S' in orb[0]):
+                    names = orb[0].ljust(12)+ 'names : '
+                    values = 12*' '+'values: '
+                    refine = 12*' '+'refine: '
+                    for item in orb[1]:
+                        if 'kappa' in item:
+                            name = 'kappa'.rjust(10)
+                            if '<j0>' not in orb[0]:
+                                name = "kappa'".rjust(10)
+                            names += name
+                        else:
+                            names += item.rjust(10)
+                        values += '%10.5f'%orb[1][item][0]
+                        refine += '%10s'%str(orb[1][item][1])
+                    pFile.write(names+'\n')
+                    pFile.write(values+'\n')
+                    pFile.write(refine+'\n')
+                
     def PrintWaves(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         pFile.write('\n Modulation waves\n')
@@ -1856,18 +1858,22 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             if len(Deformations) and not General.get('doPawley'):
                 for iAt in Deformations:
                     if iAt < 0:
-                        #### capture UVmat here????
                         continue
                     AtId = AtLookup[iAt]
                     phaseDict[pfx+'UVmat:%d'%AtId] = Deformations[-iAt]['UVmat']
+                    radial = phaseDict[pfx+'Radial:%d'%AtId] = Deformations[-iAt]['Radial']
                     DefAtm = Deformations[iAt]
-                    for iorb,orb in enumerate(DefAtm):
-                        for parm in orb[1]:
-                            name = pfx+'A%s%d:%d'%(parm,iorb,AtId)
-                            phaseDict[name] = orb[1][parm][0]
-                            if orb[1][parm][1]:
-                                phaseVary.append(name)
-
+                    ip = 0
+                    for orb in DefAtm:
+                        if ('B' in radial and 'S' not in orb[0]) or \
+                        ('S' in radial and 'S' in orb[0]):
+                            ip += 1
+                            for parm in orb[1]:
+                                    name = pfx+'A%s%d:%d'%(parm,ip,AtId)
+                                    phaseDict[name] = orb[1][parm][0]
+                                    if orb[1][parm][1]:
+                                        phaseVary.append(name)
+                    
             textureData = General['SH Texture']
             if textureData['Order']:    # and seqHistName is not None:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
@@ -2272,31 +2278,35 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             pFile.write(135*'-'+'\n')
             atom = G2mth.GetAtomsById(Atoms,AtLookup,[AtDef,])[0]
             AtId = AtLookup[AtDef]
+            radial = Deformations[-AtDef]['Radial']
             DefTable = Deformations[AtDef]
             pFile.write('\n Atom: %s at %10.5f, %10.5f, %10.5f sytsym: %s\n'%(atom[ct-1],atom[cx],atom[cx+1],atom[cx+2],atom[cs]))
             pFile.write(135*'-'+'\n')
-            for iorb,orb in enumerate(DefTable):
-                names = orb[0].ljust(12)+ 'names : '
-                values = 12*' '+'values: '
-                sigstr = 12*' '+'esds  : '
-                for item in orb[1]:
-                    pName = 'A%s%d:%d'%(item,iorb,AtId)
-                    if 'kappa' in item:
-                        name = 'kappa'.rjust(10)
-                        if '<j0>' not in orb[0]:
-                            name = "kappa'".rjust(10)
-                        names += name
-                    else:
-                        names += item.rjust(10)
-                    values += '%10.5f'%orb[1][item][0]
-                    if pName in deformSig:
-                        sigstr += '%10.5f'%deformSig[pName]
-                    else:
-                        sigstr += 10*' '
-                pFile.write(names+'\n')
-                pFile.write(values+'\n')
-                pFile.write(sigstr+'\n')
-
+            iorb = 0
+            for orb in DefTable:
+                if ('B' in radial and 'S' not in orb[0]) or ('S' in radial and 'S' in orb[0]):
+                    iorb += 1
+                    names = orb[0].ljust(12)+ 'names : '
+                    values = 12*' '+'values: '
+                    sigstr = 12*' '+'esds  : '
+                    for item in orb[1]:
+                        pName = 'A%s%d:%d'%(item,iorb,AtId)
+                        if 'kappa' in item:
+                            name = 'kappa'.rjust(10)
+                            if '<j0>' not in orb[0]:
+                                name = "kappa'".rjust(10)
+                            names += name
+                        else:
+                            names += item.rjust(10)
+                        values += '%10.5f'%orb[1][item][0]
+                        if pName in deformSig:
+                            sigstr += '%10.5f'%deformSig[pName]
+                        else:
+                            sigstr += 10*' '
+                    pFile.write(names+'\n')
+                    pFile.write(values+'\n')
+                    pFile.write(sigstr+'\n')
+            
     def PrintWavesAndSig(General,Atoms,wavesSig):
         cx,ct,cs,cia = General['AtomPtrs']
         pFile.write('\n Modulation waves\n')
@@ -2626,12 +2636,17 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     continue
                 AtId = AtLookup[iAt]
                 DefAtm = Deformations[iAt]
-                for iorb,orb in enumerate(DefAtm):
-                    for parm in orb[1]:
-                        name = 'A%s%d:%d'%(parm,iorb,AtId)
-                        orb[1][parm][0] = parmDict[pfx+name]
-                        if pfx+name in sigDict:
-                            deformSig[name] = sigDict[pfx+name]
+                radial = Deformations[-iAt]['Radial']
+                iorb = 0
+                for orb in DefAtm:
+                    if ('B' in radial and 'S' not in orb[0]) or \
+                    ('S' in radial and 'S' in orb[0]):
+                        iorb += 1
+                        for parm in orb[1]:
+                            name = 'A%s%d:%d'%(parm,iorb,AtId)
+                            orb[1][parm][0] = parmDict[pfx+name]
+                            if pfx+name in sigDict:
+                                deformSig[name] = sigDict[pfx+name]
 
             if pFile: PrintAtomsAndSig(General,Atoms,sigDict,sigKey)
             if pFile and len(Deformations):

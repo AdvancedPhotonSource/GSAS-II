@@ -480,36 +480,38 @@ def MagScatFac(El, SQ):
     NMF0 = np.sum(nfa)+El['nfc']
     MF0 = MMF0+(2.0/El['gfac']-1.0)*NMF0
     return (MMF+(2.0/El['gfac']-1.0)*NMF)/MF0
-
-#def SlaterFF(El,SQ,k,N):
-
+  
 def scaleCoef(terms):
-    ''' rescale J2K6 form factor coeff - now correct?
+    ''' rescale J2K6 form factor coeff - matches J2K fortran result
     '''
     terms = copy.deepcopy(terms)
     for term in terms:
         z2 = 2.*term[1]/Bohr
         k = 2*term[2]+1
-        term[0] *= np.sqrt((z2**k)/math.factorial(k-1))
+        rn = (z2**k)/math.factorial(k-1)
+        term[0] *= np.sqrt(rn)
     return terms
 
-def J2Kff(sq,terms):
-
+def J2Kff(fpsq,terms,orb):
+    
     def Transo(nn,z,s):
         d = s**2+z**2
-        a = np.zeros((12,len(list(s))))
-        a[1,:] = 1./d
+        a = np.zeros((28,s.shape[0]))
         tz = 2.0*z
-        for nx in list(range(nn-1)):
-            a[nx+2,:] = (tz*(nx+1)*a[nx+1,:]-(nx+2)*(nx)*a[nx,:])/d[nxs,:]
-        return a[nn]
-
-    fjc = np.zeros_like(sq)
+        a[2,:] = 1./d
+        for nx in list(range(1,nn)):
+            pp = (nx)*(nx-1)
+            i3 = nx+2
+            a[nx+2,:] = (tz*nx*a[nx+1,:]-pp*a[nx,:])/d[nxs,:]
+        return a[i3]
+    
+    fjc = np.zeros_like(fpsq)
     for term1 in terms:
         for term2 in terms:
             zz = (term1[1]+term2[1])/Bohr
             nn = term1[2]+term2[2]
-            ff = term1[0]*term2[0]*Transo(nn,zz,sq)
+            tf = Transo(nn,zz,fpsq)
+            ff = term1[0]*term2[0]*tf*orb
             fjc += ff
     return fjc
 

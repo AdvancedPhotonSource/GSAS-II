@@ -86,7 +86,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 else:  # item missing from tree! stick in NaN's!
                     sampleData = {}
                 for item in sampleParmDict:
-                    sampleParmDict[item].append(sampleData.get(item,np.NaN))
+                    sampleParmDict[item].append(sampleData.get(item,np.nan))
         for item in sampleParmDict:
             if sampleParmDict[item]:
                 frstValue = sampleParmDict[item][0]

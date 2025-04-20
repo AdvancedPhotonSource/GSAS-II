@@ -3402,22 +3402,25 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Page.canvas.draw()
 
 #### PlotDeform ######################################################################################
-def PlotDeform(G2frame,general,atName,atType,deform,UVmat,neigh):
+def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
     ''' Plot deformation atoms & neighbors
     '''
     SHC = {}
-#    Nek3 = 1.0
-    Nek3 = 0.0
     for item in deform:
-        if '<j0>' in item[0]:
-            # if 's' in item[0] or 'd' in item[0]:
-            #     Nek3 = item[1]['Ne'][0]*item[1]['kappa'][0]**3
-            continue
-        if 'kappa' in item[1]:
-            kappa = item[1]['kappa'][0]
-        for trm in item[1]:
-            if 'D(' in trm:
-                SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappa]
+        if 'Be' in radial and 'Sl' not in item[0]:
+            if '<j0>' in item[0]:
+                continue
+            if 'kappa' in item[1]:
+                kappa = item[1]['kappa'][0]
+            for trm in item[1]:
+                if 'D(' in trm:
+                    SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappa]
+        elif 'Sl' in radial and 'Sl' in item[0]:
+            if 'kappa' in item[1]:
+                kappa = item[1]['kappa'][0]
+            for trm in item[1]:
+                if 'D(' in trm:
+                    SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappa]            
     plotType = atName+' deformation'
     G2frame.G2plotNB.Delete(plotType)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'3d')
@@ -3431,7 +3434,7 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,neigh):
     Z = 0.5*np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     XYZ = np.array([X.flatten(),Y.flatten(),Z.flatten()])
     RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
-    P  = np.zeros((31,31))*Nek3
+    P  = np.zeros((31,31))
     for shc in SHC:
         p = 2.*SHC[shc][0]*SHC[shc][2]**3*G2lat.KslCalc(shc,RAP[1],RAP[2]).reshape((31,31))
         P += p**2
@@ -5815,7 +5818,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         rho = G2mth.getRho([Cx,Cy,Cz],mapData)
         if contours:
             try:
-                contlevels = contourSet.get_array()
+                contlevels = contourSet._levels
                 contstr = str(contlevels).strip('[]')
                 G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
             except AttributeError:

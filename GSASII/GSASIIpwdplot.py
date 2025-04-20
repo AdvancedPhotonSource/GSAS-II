@@ -759,6 +759,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
 
         ####====== start of OnPickPwd
+        plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
         try:
             inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()

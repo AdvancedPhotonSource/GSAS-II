@@ -647,21 +647,24 @@ class PDF_ReaderClass(G2obj.ImportPhase):
         Atoms = []
         S = fp.readline()
         line = 1
-        SGData = None
+        SGData = G2obj.P1SGData
+        SGset = False
         cell = []
         cellkey = []
         while S:
             if 'space_group' in S:
                 break
-            S = fp.readline()                    
+            S = fp.readline()
+            line += 1
         while S:
             self.errors = 'Error reading at line '+str(line)
             if 'phase_name' in S:
                 Title = S.split('"')[1]
-            elif 'Space group (HMS)' in S:
+            elif 'Space group (HMS)' in S or 'space_group' in S:
                 SpGrp = S.split()[-1]
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
                 E,SGData = G2spc.SpcGroup(SpGrpNorm)
+                if not E: SGset = True
                 # space group processing failed, try to look up name in table
                 while E:
                     print (G2spc.SGErrors(E))
@@ -671,10 +674,13 @@ class PDF_ReaderClass(G2obj.ImportPhase):
                     if dlg.ShowModal() == wx.ID_OK:
                         SpGrp = dlg.GetValue()
                         E,SGData = G2spc.SpcGroup(SpGrp)
+                        if not E:
+                            SGset = True
+                            break
                     else:
                         SGData = G2obj.P1SGData # P 1
-                        self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
-                        self.warnings += "Change this in phase's General tab."            
+                        SGset = False
+
                     dlg.Destroy()
                 G2spc.SGPrint(SGData) #silent check of space group symbol
             elif 'a a_' in S[:7]:
@@ -752,6 +758,9 @@ class PDF_ReaderClass(G2obj.ImportPhase):
                 Atoms.append(atom)
             S = fp.readline()                
         fp.close()
+        if not SGset:
+            self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
+            self.warnings += " Change this in phase's General tab."
         self.errors = 'Error after read complete'
         if not SGData:
             raise self.ImportException("No space group (spcgroup entry) found")

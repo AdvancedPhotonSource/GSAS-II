@@ -547,49 +547,69 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
             dFFdS[Ojname] = dSHdOj
             dFFdS[Okname] = dSHdOk
         elif iAt in SHCdict and 'X' in hType:
+            radial = SHCdict[-iAt]['Radial']
             orKeys = [item for item in ORBtables[Atype] if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']]
+            if 'B' in radial:
+                orKeys = [item for item in orKeys if 'Sl' not in item]
+            else:
+                orKeys = [item for item in orKeys if 'Sl' in item]
             orbs = SHCdict[iAt]
             UVmat = np.inner(nl.inv(SHCdict[-iAt]['UVmat']),Bmat)
             Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),UVmat,[1.,0.,0.,1.])
             atFlg.append(1.0)
-            orbTable = ORBtables[Atype][orKeys[0]] 
+            orbTable = ORBtables[Atype][orKeys[0]]  # should point at either Sl core or a Bessel core
             ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
-            FFcore = G2el.ScatFac(ffOrb,SQR)    #core
-            FFtot = np.zeros_like(FFcore)
+            print(iAt,orKeys,orbs)
+            FFcore = G2el.ScatFac(ffOrb,SQR)    #core; same for Sl & Be
+            FFval = np.zeros_like(FFcore)
             for orb in orbs:
-                if 'UVmat' in orb:
+                if 'UVmat' in orb or 'Radial' in orb:   #problem of orb = '0'
                     continue
                 Ne = orbs[orb].get('Ne',1.0) # not there for non <j0> orbs
                 if 'kappa' in orbs[orb]:
                     kappa = orbs[orb]['kappa']
                     SQk = SQR/kappa**2
                     korb = orb
-                orbTable = ORBtables[Atype][orKeys[int(orb)+1]]
+                orbTable = ORBtables[Atype][orKeys[int(orb)]]
                 ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
                 ff = Ne*G2el.ScatFac(ffOrb,SQk)
+#                print(orb,ff[:20])
                 dffdk = G2el.ScatFacDer(ffOrb,SQk)
                 dSH = 0.0
-                if '<j0>' in orKeys[int(orb)+1]:
-                    dSH = 1.0
-                for term in orbs[orb]:
-                    if 'D(' in term:
-                        item = term.replace('D','C')
-                        SH = G2lat.KslCalc(item,Th,Ph)
-                        FFtot += SH*orbs[orb][term]*ff
-                        name = 'A%s%s:%d'%(term,orb,iAt)
-                        dFFdS[name] = SH*ff
-                        dSH += SH*orbs[orb][term]
-                    elif 'Ne' in term:
-                        name = 'ANe%s:%d'%(orb,iAt)
-                        dFFdS[name] = ff/Ne
-                        if 'j0' in orKeys[int(orb)+1]:
-                            FFtot += ff
+                if 'B' in radial:       #'Bessel' - works ok, I think
+                    if '<j0>' in orKeys[int(orb)]:
+                        dSH = 1.0
+                    for term in orbs[orb]:
+                        if 'D(' in term:
+                            item = term.replace('D','C')
+                            SH = G2lat.KslCalc(item,Th,Ph)
+                            FFval += SH*orbs[orb][term]*ff
+                            name = 'A%s%s:%d'%(term,orb,iAt)
+                            dFFdS[name] = SH*ff
+                            dSH += SH*orbs[orb][term]
+                        elif 'Ne' in term:
+                            name = 'ANe%s:%d'%(orb,iAt)
+                            dFFdS[name] = ff/Ne
+                            FFval += ff
+                else: #'Slater'
+                    name = 'ANe%s:%d'%(orb,iAt)
+                    dFFdS[name] = ff/Ne
+                    FFval += ff
+                    for term in orbs[orb]:
+                        if 'D(' in term:    #skip 'Ne'
+                            item = term.replace('D','C')
+                            SH = G2lat.KslCalc(item,Th,Ph)
+                            FFval += SH*orbs[orb][term]*ff
+                            name = 'A%s%s:%d'%(term,orb,iAt)
+                            dFFdS[name] = SH*ff
+                            dSH += SH*orbs[orb][term]
                 name = 'Akappa%s:%d'%(korb,iAt)
                 if name in dFFdS:
                     dFFdS[name] += -2.0*Ne*SQk*dSH*dffdk/kappa
                 else:
                     dFFdS[name] = -2.0*Ne*SQk*dSH*dffdk/kappa
-            FF[:,iAt] = FFcore+FFtot
+            print(FFval[:20])
+            FF[:,iAt] = FFcore+FFval
         else:
             atFlg.append(0.)
     if ifDeriv:
@@ -627,12 +647,12 @@ def GetSHC(pfx,parmDict):
             if orb not in SHCdict[atid]:
                 SHCdict[atid][orb] = {}
             SHCdict[atid][orb][name[:-1]] = parmDict[parm] #[atom id][orb no.][deform. coef]
-        if pfx+'UVmat' in parm:
+        if pfx+'UVmat' in parm or pfx+'Radial' in parm:
             items = parm.split(':')
             atid = int(items[-1])
             if -atid not in SHCdict:
                 SHCdict[-atid] = {}
-            SHCdict[-atid]['UVmat'] = parmDict[parm]
+            SHCdict[-atid][items[2]] = parmDict[parm]
     if len(SHCdict):
         return {pfx:SHCdict,}
     else: return {}

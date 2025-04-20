@@ -255,7 +255,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             for val in cf[blk].get(xcf,'?'):
                 v,e = cif.get_number_with_esd(val)
                 if v is None: # not parsed
-                    vl.append(np.NaN)
+                    vl.append(np.nan)
                 else:
                     vl.append(v)
             x = np.array(vl)
@@ -269,8 +269,8 @@ class CIFpwdReader(G2obj.ImportPowderData):
         for val in cf[blk].get(ycf,'?'):
             v,e = cif.get_number_with_esd(val)
             if v is None: # not parsed
-                vl.append(np.NaN)
-                v2.append(np.NaN)
+                vl.append(np.nan)
+                v2.append(np.nan)
             else:
                 vl.append(v)
                 if e is None:
@@ -315,7 +315,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 for val in cf[blk].get(sucf,'?'):
                     v,e = cif.get_number_with_esd(val)
                     if v is None or e is None: # not parsed or no ESD
-                        vl.append(np.NaN)
+                        vl.append(np.nan)
                     elif e <= 0:
                         vl.append(1.)
                     else:
@@ -328,7 +328,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             for val in cf[blk].get(ycf,'?'):
                 v,e = cif.get_number_with_esd(val)
                 if v is None: # not parsed
-                    vl.append(np.NaN)
+                    vl.append(np.nan)
                 else:
                     vl.append(v)
             y /= np.array(vl)

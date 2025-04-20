@@ -294,7 +294,17 @@ def GetVersionNumber():
     else:
         return "unknown"
     
+def getG2Branch():
+    '''Get name of current branch, as named on local computer
+    '''
+    if HowIsG2Installed().startswith('git'):
+        g2repo = openGitRepo(path2GSAS2)
+        return g2repo.active_branch.name
+    
 def getG2VersionInfo():
+    '''Get the git version information. This can be a bit slow, so reading
+    .../GSASII/saved_version.py may be faster (in main but not master branch)
+    '''
     if HowIsG2Installed().startswith('git'):
         g2repo = openGitRepo(path2GSAS2)
         commit = g2repo.head.commit
@@ -2265,7 +2275,7 @@ def condaInstall(packageList):
                   '\nConsider using the "conda install conda" command')
         return None
     try:
-        print(f'preparing to install {packageList}'+
+        print(f'Preparing to install package(s): {" ,".join(packageList)}'+
                   '\nThis can take a while')
         # the next line works, but the subsequent cli is considered more stable
         #conda.cli.main('install',  '-y', *packageList)

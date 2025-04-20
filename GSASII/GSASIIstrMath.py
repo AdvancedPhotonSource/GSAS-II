@@ -552,8 +552,9 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
             atFlg.append(1.0)
             orbTable = ORBtables[Atype][orKeys[0]]  # should point at either Sl core or a Bessel core
             ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
-            FFcore = G2el.ScatFac(ffOrb,SQR)    #core
-            FFtot = np.zeros_like(FFcore)
+            print(iAt,orKeys,orbs)
+            FFcore = G2el.ScatFac(ffOrb,SQR)    #core; same for Sl & Be
+            FFval = np.zeros_like(FFcore)
             for orb in orbs:
                 if 'UVmat' in orb or 'Radial' in orb:   #problem of orb = '0'
                     continue
@@ -565,35 +566,33 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                 orbTable = ORBtables[Atype][orKeys[int(orb)]]
                 ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
                 ff = Ne*G2el.ScatFac(ffOrb,SQk)
+#                print(orb,ff[:20])
                 dffdk = G2el.ScatFacDer(ffOrb,SQk)
                 dSH = 0.0
-                if '<j0>' in orKeys[int(orb)]:
-                    dSH = 1.0
-                for term in orbs[orb]:
-                    if 'B' in radial:       #'Bessel'
+                if 'B' in radial:       #'Bessel' - works ok, I think
+                    if '<j0>' in orKeys[int(orb)]:
+                        dSH = 1.0
+                    for term in orbs[orb]:
                         if 'D(' in term:
                             item = term.replace('D','C')
                             SH = G2lat.KslCalc(item,Th,Ph)
-                            FFtot += SH*orbs[orb][term]*ff
+                            FFval += SH*orbs[orb][term]*ff
                             name = 'A%s%s:%d'%(term,orb,iAt)
                             dFFdS[name] = SH*ff
                             dSH += SH*orbs[orb][term]
                         elif 'Ne' in term:
                             name = 'ANe%s:%d'%(orb,iAt)
                             dFFdS[name] = ff/Ne
-                            if 'j0' in orKeys[int(orb)]:
-                                FFtot += ff
-                    else: #'Slater'
-                        if 'Ne' in term:
-                            name = 'ANe%s:%d'%(orb,iAt)
-                            dFFdS[name] = ff/Ne
-                            if 'core' in orKeys[int(orb)] or 's' in orKeys[int(orb)]:
-                                FFtot += ff
-                                continue
-                        elif 'D(' in term:
+                            FFval += ff
+                else: #'Slater'
+                    name = 'ANe%s:%d'%(orb,iAt)
+                    dFFdS[name] = ff/Ne
+                    FFval += ff
+                    for term in orbs[orb]:
+                        if 'D(' in term:    #skip 'Ne'
                             item = term.replace('D','C')
                             SH = G2lat.KslCalc(item,Th,Ph)
-                            FFtot += SH*orbs[orb][term]*ff
+                            FFval += SH*orbs[orb][term]*ff
                             name = 'A%s%s:%d'%(term,orb,iAt)
                             dFFdS[name] = SH*ff
                             dSH += SH*orbs[orb][term]
@@ -602,7 +601,8 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                     dFFdS[name] += -2.0*Ne*SQk*dSH*dffdk/kappa
                 else:
                     dFFdS[name] = -2.0*Ne*SQk*dSH*dffdk/kappa
-            FF[:,iAt] = FFcore+FFtot
+            print(FFval[:20])
+            FF[:,iAt] = FFcore+FFval
         else:
             atFlg.append(0.)
     if ifDeriv:

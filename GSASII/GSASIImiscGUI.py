@@ -1334,7 +1334,7 @@ def mkParmDictfromTree(G2frame,sigDict=None):
         constList += consDict[item]
     G2mv.InitVars()     # process constraints
     constrDict,fixedList,ignored = G2mv.ProcessConstraints(constList)
-    varyList = list(covDict.get('varyListStart'))
+    varyList = list(covDict.get('varyListStart',[]))
     if varyList is None and len(constrDict) == 0:
         # no constraints can use varyList
         varyList = covDict.get('varyList')

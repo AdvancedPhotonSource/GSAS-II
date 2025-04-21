@@ -1981,7 +1981,7 @@ class ExportBaseclass(object):
         # now process the constraints
         G2mv.InitVars()
         constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList)
-        varyList = covDict.get('varyListStart')
+        varyList = covDict.get('varyListStart',[])
         if varyList is None and len(constrDict) == 0:
             # no constraints can use varyList
             varyList = covDict.get('varyList')

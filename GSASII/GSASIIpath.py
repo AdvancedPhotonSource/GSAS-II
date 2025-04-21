@@ -294,7 +294,10 @@ def getG2Branch():
     '''
     if HowIsG2Installed().startswith('git'):
         g2repo = openGitRepo(path2GSAS2)
-        return g2repo.active_branch.name
+        try:
+            return g2repo.active_branch.name
+        except TypeError: # likely on a detached head
+            return '?'
     
 def getG2VersionInfo():
     '''Get the git version information. This can be a bit slow, so reading
@@ -1116,7 +1119,16 @@ def exceptHook(*args):
     except ImportError:
         print ('IPython not installed or is really old')
         return
-
+    except TypeError:  # Ipython 9.x removes color_scheme
+        try:
+            IPython.core.ultratb.FormattedTB(call_pdb=False)(*args)
+            from IPython.core import getipython
+            if getipython.get_ipython() is None:
+                ipshell = InteractiveShellEmbed.instance()
+            else:
+                ipshell = InteractiveShellEmbed()
+        except Exception as msg:
+            print('IPython patch failed, msg=',msg)
     import inspect
     frame = inspect.getinnerframes(args[2])[-1][0]
     msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)

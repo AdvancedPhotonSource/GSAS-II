@@ -10389,7 +10389,7 @@ it may be easier to simply reinstall GSAS-II.
 See web page GSASII.github.io for information on how to install GSAS-II. 
 '''
         parent = wx.GetApp().GetMainTopWindow()
-        res = G2G.ShowScrolledInfo(parent,msg,header='Please Note',
+        res = ShowScrolledInfo(parent,msg,header='Please Note',
                                 height=250)
         return
 
@@ -10420,7 +10420,7 @@ Select "Save" to save, "Skip" to skip the save, or "Cancel"
 to discontinue the update process.
 
 The update will be made unless Cancel is pressed.'''
-    ans = G2G.ShowScrolledInfo(parent,msg,header='Please Note',
+    ans = ShowScrolledInfo(parent,msg,header='Please Note',
                                 height=350,
                                 buttonlist=[
            ('Save project and update',

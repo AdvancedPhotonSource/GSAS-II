@@ -559,7 +559,6 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
             atFlg.append(1.0)
             orbTable = ORBtables[Atype][orKeys[0]]  # should point at either Sl core or a Bessel core
             ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
-            print(iAt,orKeys,orbs)
             FFcore = G2el.ScatFac(ffOrb,SQR)    #core; same for Sl & Be
             FFval = np.zeros_like(FFcore)
             for orb in orbs:
@@ -573,7 +572,6 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                 orbTable = ORBtables[Atype][orKeys[int(orb)]]
                 ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
                 ff = Ne*G2el.ScatFac(ffOrb,SQk)
-#                print(orb,ff[:20])
                 dffdk = G2el.ScatFacDer(ffOrb,SQk)
                 dSH = 0.0
                 if 'B' in radial:       #'Bessel' - works ok, I think
@@ -595,6 +593,7 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                     name = 'ANe%s:%d'%(orb,iAt)
                     dFFdS[name] = ff/Ne
                     FFval += ff
+                    dSH = 1.0
                     for term in orbs[orb]:
                         if 'D(' in term:    #skip 'Ne'
                             item = term.replace('D','C')
@@ -608,7 +607,6 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                     dFFdS[name] += -2.0*Ne*SQk*dSH*dffdk/kappa
                 else:
                     dFFdS[name] = -2.0*Ne*SQk*dSH*dffdk/kappa
-            print(FFval[:20])
             FF[:,iAt] = FFcore+FFval
         else:
             atFlg.append(0.)

@@ -12185,6 +12185,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             #end patch
             atom = atomData[AtLookUp[dId]]
             neigh = G2mth.FindAllNeighbors(data,atom[ct-1],AtNames)[0]
+            neigh = G2mth.sortArray(neigh,2)    #sort by dist
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(deformation,label=' For atom %s, site sym %s:'%(atom[ct-1],atom[cs])),0,WACV)
             names = []
@@ -12249,7 +12250,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 Indx[newHarm.GetId()] = dId
                 oriSizer.Add(newHarm,0,WACV)
             mainSizer.Add(oriSizer)
-
+            G2G.HorizontalLine(mainSizer,deformation)
+            mainSizer.Add(wx.StaticText(deformation,label=' Deformation parameters:'))
             orbSizer = wx.FlexGridSizer(0,9,2,2)
             for iorb,orb in enumerate(deformationData[dId]):
                 if deformationData[-dId]['Radial'] == 'Bessel' and 'Sl ' not in orb[0]:

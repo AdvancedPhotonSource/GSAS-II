@@ -299,7 +299,10 @@ def getG2Branch():
     '''
     if HowIsG2Installed().startswith('git'):
         g2repo = openGitRepo(path2GSAS2)
-        return g2repo.active_branch.name
+        try:
+            return g2repo.active_branch.name
+        except TypeError: # likely on a detached head
+            return '?'
     
 def getG2VersionInfo():
     '''Get the git version information. This can be a bit slow, so reading

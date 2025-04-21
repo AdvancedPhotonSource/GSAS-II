@@ -2643,7 +2643,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
                 btn = wx.Button(dlg, b) 
                 btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(event.Id))
             btnsizer.Add(btn)
-            btnsizer.Add((3,-1))
+            btnsizer.Add((6,-1))
     mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
     dlg.SetSizer(mainSizer)
     mainSizer.Fit(dlg)
@@ -10351,12 +10351,14 @@ def gitSwitchMaster2Main():
         G2MessageBox(G2frame,msg,'Local changes')
 
         return
-    # need the ability to update when regressed
-#    if g2repo.head.is_detached:
-#        G2MessageBox(G2frame,
-#            'You have a old previous version loaded; you must be on a branch head to updateswitching branches',
-#            'Detached head')
-#        return
+    # Should not get here with detached head (regressed version) need to be on latest (last) version
+    # go get into this routine
+    if g2repo.head.is_detached:
+        G2MessageBox(G2frame,
+            'You have a old previous version loaded; you must be on a branch head to updateswitching branches',
+            'Detached head')
+        return
+    # this also should not happen
     if g2repo.active_branch.name != "master":
         G2MessageBox(G2frame,
             f'You are on the {g2repo.active_branch.name} branch. This can only be run from master.',

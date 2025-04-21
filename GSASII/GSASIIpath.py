@@ -321,7 +321,7 @@ def getG2VersionInfo():
             rc,lc,_ = gitCheckForUpdates(False,g2repo)
             if rc is None:
                 msg += f"\n\tNo history found. On development branch? ({g2repo.active_branch})"
-            elif str(g2repo.active_branch) != 'master':
+            elif str(g2repo.active_branch) != 'main':
                 msg += f'\n\tUsing development branch "{g2repo.active_branch}"'
             elif age > 60 and len(rc) > 0:
                 msg += f"\n\t**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
@@ -497,7 +497,7 @@ def gitTestGSASII(verbose=True,g2repo=None):
        * value&1==1: repository has local changes (uncommitted/stashed)
        * value&2==2: repository has been regressed (detached head)
        * value&4==4: repository has staged files
-       * value&8==8: repository has has been switched to non-master branch
+       * value&8==8: repository has has been switched to other than main branch
 
        * value==0:   no problems noted
     '''
@@ -524,8 +524,8 @@ def gitTestGSASII(verbose=True,g2repo=None):
     if g2repo.head.is_detached:
         code += 2                             # detached
     else:
-        if g2repo.active_branch.name != 'master':
-            code += 8                         # not on master branch
+        if g2repo.active_branch.name != 'main':
+            code += 8                         # not on main branch
     if g2repo.index.diff("HEAD"): code += 4   # staged
 
     # test if there are local changes committed
@@ -579,11 +579,11 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
 
 def countDetachedCommits(g2repo=None):
     '''Count the number of commits that have been made since
-    a commit that is containined in the master branch
+    a commit that is containined in the main branch
 
     returns the count and the commit object for the
     parent commit that connects the current stranded
-    branch to the master branch.
+    branch to the main branch.
 
     None is returned if no connection is found
     '''
@@ -591,11 +591,11 @@ def countDetachedCommits(g2repo=None):
         g2repo = openGitRepo(path2GSAS2)
     if not g2repo.head.is_detached:
         return 0,g2repo.commit()
-    # is detached head in master branch?
-    if g2repo.commit() in g2repo.iter_commits('master'):
+    # is detached head in main branch?
+    if g2repo.commit() in g2repo.iter_commits('main'):
         return 0,g2repo.commit()
-    # count number of commits since leaving master branch
-    masterList = list(g2repo.iter_commits('master'))
+    # count number of commits since leaving main branch
+    masterList = list(g2repo.iter_commits('main'))
     for c,i in enumerate(g2repo.commit().iter_parents()):
         if i in masterList:
             return c+1,i
@@ -603,37 +603,37 @@ def countDetachedCommits(g2repo=None):
         return None,None
 
 def gitCountRegressions(g2repo=None):
-    '''Count the number of new check ins on the master branch since
+    '''Count the number of new check ins on the main branch since
     the head was detached as well as any checkins made on the detached
     head.
 
-    :returns: mastercount,detachedcount, where
+    :returns: maincount,detachedcount, where
 
-      * mastercount is the number of check ins made on the master branch
+      * maincount is the number of check ins made on the main branch
         remote repository since the reverted check in was first made.
       * detachedcount is the number of check ins made locally
         starting from the detached head (hopefully 0)
 
-      If the connection between the current head and the master branch
+      If the connection between the current head and the main branch
       cannot be established, None is returned for both.
       If the connection from the reverted check in to the newest version
-      (I don't see how this could happen) then only mastercount will be None.
+      (I don't see how this could happen) then only maincount will be None.
     '''
     if g2repo is None:
         g2repo = openGitRepo(path2GSAS2)
-    # get parent of current head that is in master branch
+    # get parent of current head that is in main branch
     detachedcount,parent = countDetachedCommits(g2repo)
     if detachedcount is None: return None,None
-    mastercount = 0
-    for h in g2repo.iter_commits('master'):
+    maincount = 0
+    for h in g2repo.iter_commits('main'):
         if h == parent:
-            return mastercount,detachedcount
-        mastercount += 1
+            return maincount,detachedcount
+        maincount += 1
     return None,detachedcount
 
 def gitGetUpdate(mode='Background'):
     '''Download the latest updates into the local copy of the GSAS-II
-    repository from the remote master, but don't actually update the
+    repository from the remote main, but don't actually update the
     GSAS-II files being used. This can be done immediately or in background.
 
     In 'Background' mode, a background process is launched. The results
@@ -655,7 +655,7 @@ def gitGetUpdate(mode='Background'):
         if GetConfigValue('debug'): print('Updates fetched')
 
 def gitHistory(values='tag',g2repo=None,maxdepth=100):
-    '''Provides the history of commits to the master, either as tags
+    '''Provides the history of commits to the main, either as tags
     or hash values
 
     :param str values: specifies what type of values are returned.
@@ -673,7 +673,7 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
     '''
     if g2repo is None:
         g2repo = openGitRepo(path2GSAS2)
-    history = list(g2repo.iter_commits('master'))
+    history = list(g2repo.iter_commits('main'))
     if values.lower().startswith('h'):
         return [i.hexsha for i in history]
     elif values.lower().startswith('t'):
@@ -952,7 +952,7 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
         return None
 
 def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRepo,
-                 branchname="master"):
+                 branchname="main"):
     '''Create a URL that can be used to view/downlaod the raw version of
     file in a GitHub repository.
 
@@ -962,7 +962,7 @@ def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRe
     :param str orgName: the name of the GitHub organization
     :param str repoName: the name of the GitHub repository
     :param str branchname: the name of the GitHub branch. Defaults
-       to "master".
+       to "main".
 
     :returns: a URL-encoded URL
     '''
@@ -2094,10 +2094,10 @@ to update/regress repository from git repository:
     if preupdateType == 'reset':
         # --git-reset   (preupdateType = 'reset')
         print('Restoring locally-updated GSAS-II files to original status')
-        openGitRepo(path2GSAS2).git.reset('--hard','origin/master')
+        openGitRepo(path2GSAS2).git.reset('--hard','origin/main')
         try:
-            if g2repo.active_branch.name != 'master':
-                g2repo.git.switch('master')
+            if g2repo.active_branch.name != 'main':
+                g2repo.git.switch('main')
         except TypeError:   # fails on detached head
             pass
 
@@ -2119,7 +2119,7 @@ to update/regress repository from git repository:
             sys.exit()
         print('Updating to latest GSAS-II version')
         if g2repo.head.is_detached:
-            g2repo.git.switch('master')
+            g2repo.git.switch('main')
         g2repo.git.merge('--ff-only')
         print('git: updated to latest version')
 

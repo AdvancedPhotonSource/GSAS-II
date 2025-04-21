@@ -452,7 +452,6 @@ def ShowVersions():
         print ("  Max threads:%s"%mkl.get_max_threads())
     except:
         pass
-    print(GSASIIpath.getG2VersionInfo())
 
     # warn if problems with Git
     if GSASIIpath.HowIsG2Installed().startswith('git'):
@@ -538,6 +537,7 @@ environment as well as the latest GSAS-II version.
 For information on GSAS-II package requirements see
 https://gsas-ii.readthedocs.io/en/latest/packages.html''')
         print(70*'=','\n')
+    print(GSASIIpath.getG2VersionInfo())
 
 def TestOldVersions():
     '''Test the versions of required Python packages, etc.

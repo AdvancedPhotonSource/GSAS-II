@@ -13,6 +13,8 @@ import sys
 oldg2script = os.path.join(os.path.dirname(__file__),'GSASII.py')
 if os.path.exists(oldg2script):
     os.remove(oldg2script)
+    print(f'Cleanup: removing old {oldg2script!r} file')
+# end patch
 import importlib.util
 try:
     pkginfo = importlib.util.find_spec('GSASII.GSASIIGUI')

@@ -2643,6 +2643,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
                 btn = wx.Button(dlg, b) 
                 btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(event.Id))
             btnsizer.Add(btn)
+            btnsizer.Add((3,-1))
     mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
     dlg.SetSizer(mainSizer)
     mainSizer.Fit(dlg)
@@ -10392,22 +10393,20 @@ See web page GSASII.github.io for information on how to install GSAS-II.
                                 height=250)
         return
 
-    
-    msg = f'''
-In April 2025, GSAS-II GSAS-II switched to a new branch ("main") 
+    # all checks passed, check with user and then get started
+    msg = f'''In April 2025, GSAS-II GSAS-II switched to a new branch ("main") 
 that has significant internal reorganization requested by several users. All 
 future updates will be on this branch. If you continue here, GSAS-II will 
 make the changes needed to move your installation to the new branch:
 
-1) Additional Python packages needed by GSAS-II will be installed. 
-2) Git will be used to install the latest GSAS-II files 
-3) Shortcuts to the latest GSAS-II version will be installed; shortcuts 
-   previously installed will fail if not replaced.
+  1) Additional Python packages needed by GSAS-II will be installed. 
+  2) Git will be used to install the latest GSAS-II files 
+  3) Shortcuts to the latest GSAS-II version will be installed; shortcuts 
+     previously installed will fail if not replaced.
 
 If the update fails, please reinstall GSAS-II from https://bit.ly/G2download
 (https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest)
 See web page GSASII.github.io for information on how to install.
-
 
 Confirm switching from git branch {g2repo.active_branch.name!r} to {b!r} by
 selecting "Save" or "Skip" below ("Cancel" will quit the update).
@@ -10420,7 +10419,7 @@ to discontinue the update process.
 
 The update will be made unless Cancel is pressed.'''
     ans = ShowScrolledInfo(G2frame,msg,header='Please Note',
-                                height=350,
+                                height=400,
                                 buttonlist=[
            ('Save project and update',
             lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
@@ -10470,6 +10469,7 @@ The update will be made unless Cancel is pressed.'''
 
     # 2) switch to the main branch
     #=======================================
+    print('Starting checkout of new branch')
     a = g2repo.git.checkout("main")
     if 'Your branch is behind' in a:
         print('updating local copy of branch')
@@ -10483,7 +10483,7 @@ The update will be made unless Cancel is pressed.'''
     
     # now run the replaced system-specific installers to create shortcuts
     # pointing to G2.py 
-    print('start system-specific install')
+    print('\nStart system-specific install')
     for k,s in {'win':"makeBat.py", 'darwin':"makeMacApp.py",
                     'linux':"makeLinux.py"}.items():
         if sys.platform.startswith(k):
@@ -10514,9 +10514,13 @@ The update will be made unless Cancel is pressed.'''
 
     print('system-specific install done, restarting\n\n')
 
-    G2fil.openInNewTerm(project)
-    print ('exiting this session after update completed')
-    sys.exit()
+    g2script = os.path.join(GSASIIpath.path2GSAS2,'G2.py')
+    if os.path.exists(g2script):
+        G2fil.openInNewTerm(project,g2script)
+        print ('exiting this session after update completed')
+        sys.exit()
+    else:
+        print(f'Unexpected error: file {g2script!r} not found')
     
 #===========================================================================
 def svnCheckUpdates(G2frame):

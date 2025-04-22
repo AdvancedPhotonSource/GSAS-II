@@ -2850,6 +2850,7 @@ def setupRBDistDerv(parmDict,varyList,sigList,rigidbodyDict,Phases):
     and the values are reused in every distance and angle computation.
 
     :returns: multiParmDict,changedParmDict where
+
       * multiParmDict[k] (k in varyList, plus None) is the copy of
         parmDict where parameter k has been changed;
       * changedParmDict[k] (k in varyList) is a list of all the parameters that have been

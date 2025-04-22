@@ -14,7 +14,7 @@ interfaces to DIFFaX & Dysnomia.
 ------------------------------------
 
 
-.. automodule:: GSASIIpwd
+.. automodule:: GSASII.GSASIIpwd
     :members: 
     :private-members:
     :special-members:

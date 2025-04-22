@@ -1,5 +1,10 @@
-# perform a TOF GSAS-II refinement using GSASIIscriptable and tutorial
-# data. This tests the TOF diffraction code and that Marquardt damping works
+'''
+test_tofref.py 
+===============
+Perform a TOF GSAS-II refinement using GSASIIscriptable and tutorial
+data. This tests the TOF diffraction code and that Marquardt damping works.
+'''
+
 
 import os
 import sys
@@ -23,6 +28,8 @@ import GSASII
 import GSASII.GSASIIscriptable as G2sc
 
 def test_refine():
+    '''Tests a TOF refinement with POWGEN data
+    '''
     def testR(msg,w1):
         print(f"*** {msg}: Rwp(h1)={h1.residuals['wR']:.5f}")
         npt.assert_allclose([h1.residuals['wR']], [w1], rtol=0.0001)

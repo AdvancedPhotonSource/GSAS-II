@@ -1,5 +1,8 @@
-'''Unit tests for code in GSASIIspc.py. Also exercises the pyspg
-Fortran routine
+'''
+test_spg.py 
+===============
+Unit tests for code in GSASIIspc.py. Also exercises the pyspg
+Fortran routine.
 '''
 import os
 import sys

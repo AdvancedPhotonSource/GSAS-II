@@ -16,7 +16,7 @@ Accesses configuration options, as defined in config.py
 GSASIIpath Classes & Routines
 ------------------------------------
 
-.. automodule:: GSASIIpath
+.. automodule:: GSASII.GSASIIpath
     :members: 
 
 -------------------------------------------
@@ -26,7 +26,7 @@ GSASIIpath Classes & Routines
 Configuration variables
 ------------------------------------
 
-.. automodule:: config_example
+.. automodule:: GSASII.config_example
     :members: 
 
 -----------------------------------------
@@ -36,7 +36,7 @@ Configuration variables
 GSASIIElem Routines
 ------------------------------------
 
-.. automodule:: GSASIIElem
+.. automodule:: GSASII.GSASIIElem
     :members: 
 
 -----------------------------------------
@@ -75,7 +75,7 @@ and ``h`` a histogram number are used for the *Dij* values.
 GSASIIlattice Classes & Routines
 ------------------------------------
 
-.. automodule:: GSASIIlattice
+.. automodule:: GSASII.GSASIIlattice
     :members: 
 
        
@@ -89,7 +89,7 @@ stored in a :ref:`Space Group (SGData)<SGData_table>` object.
 GSASIIspc Classes & Routines
 ------------------------------------
 
-.. automodule:: GSASIIspc
+.. automodule:: GSASII.GSASIIspc
     :members: 
 
 ---------------------------------------------
@@ -101,7 +101,7 @@ Module with miscellaneous routines for input and output from files.
 GSASIIfiles Classes & Routines
 ------------------------------------
 
-.. automodule:: GSASIIfiles
+.. automodule:: GSASII.GSASIIfiles
     :members: 
 
 --------------------------------------------------
@@ -111,7 +111,7 @@ GSASIIfiles Classes & Routines
 GSASIImpsubs Classes & Routines
 ------------------------------------
 
-.. automodule:: GSASIImpsubs
+.. automodule:: GSASII.GSASIImpsubs
     :members: 
 
 ---------------------------------------------------
@@ -121,14 +121,14 @@ GSASIImpsubs Classes & Routines
 nistlat Classes & Routines
 ------------------------------------
 
-.. automodule:: nistlat
+.. automodule:: GSASII.nistlat
     :members: 
 
 -----------------------------------------
 *ReadMarCCDFrame: Read Mar Files*
 -----------------------------------------
 
-.. automodule:: ReadMarCCDFrame
+.. automodule:: GSASII.ReadMarCCDFrame
     :members: 
 
 -----------------------------------------
@@ -141,7 +141,7 @@ from X-ray Solution Scattering Data",
 John Badger, J. Appl. Cryst. (2019) 52, 937-944.
 (DOI: 10.1107/S1600576719009774) modified to run inside GSAS-II.
 
-.. automodule:: G2shapes
+.. automodule:: GSASII.G2shapes
     :members:
        
 --------------------------------------------
@@ -151,6 +151,6 @@ John Badger, J. Appl. Cryst. (2019) 52, 937-944.
 tutorialIndex Contents
 ------------------------------------
 
-.. automodule:: tutorialIndex
+.. automodule:: GSASII.tutorialIndex
     :members: 
 

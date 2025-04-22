@@ -1,5 +1,9 @@
-# test the two NIST* LATTICE binaries, LATTIC and convcell and
-# their Python wrappers in module nistlat.py
+'''
+test_nistlat.py 
+===============
+Tests the two NIST*LATTICE binaries, LATTIC and convcell using
+their Python wrappers in module nistlat.py
+'''
 
 import os
 import sys
@@ -26,6 +30,7 @@ V = lambda cell: float(G2lat.calc_V(G2lat.cell2A(cell)))
 work = tempfile.gettempdir()
 
 def test_CellSymSearch():
+    'test_CellSymSearch(): nistlat.CellSymSearch'
     print('test_CellSymSearch(): nistlat.CellSymSearch')
     cell = [14.259, 22.539, 8.741, 90., 114.1, 90.]
     center = 'C'
@@ -60,6 +65,7 @@ def test_CellSymSearch():
     print('OK')
 
 def test_CompareCell():
+    'test_CompareCell(): nistlat.CompareCell'
     print('test_CompareCell(): nistlat.CompareCell')
     cell1 = (5.03461,5.03461,13.74753,90,90,120)
     center1 = 'R'
@@ -84,6 +90,7 @@ def test_CompareCell():
     print('OK')
 
 def test_ConvCell():
+    'test_ConvCell(): nistlat.ConvCell'
     print('test_ConvCell(): nistlat.ConvCell')
     # convert a rhombohedral cell to hexagonal setting
     cellin = [5.,5.,5.,85.,85.,85.,]
@@ -103,6 +110,7 @@ def test_ConvCell():
     print('OK')
 
 def test_ReduceCell():
+    'test_ReduceCell(): nistlat.ReduceCell'
     print('test_ReduceCell(): nistlat.ReduceCell')
     res = nistlat.ReduceCell('I',[3,3,5,90,90,90])   # body-center tetragonal
     rcell= res['output'][0][1]

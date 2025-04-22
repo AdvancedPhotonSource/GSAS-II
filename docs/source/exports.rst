@@ -30,7 +30,7 @@ example of a map export.
 G2export_examples Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_examples
+.. automodule:: GSASII.exports.G2export_examples
     :members: 
     :synopsis: Demonstrates sample code that exports a phase or dataset to
       a text file.
@@ -57,7 +57,7 @@ GSAS-II data export to a spreadsheet program, etc. Defines a number of
 G2export_csv Classes and Routines
 -------------------------------------------
       
-.. automodule:: G2export_csv
+.. automodule:: GSASII.exports.G2export_csv
     :members: 
     :synopsis: Exports a phase or dataset to a spreadsheet via a 
        comma-separated-variable (csv) format file.
@@ -75,7 +75,7 @@ which writes atom positions in orthogonal coordinates for a phase.
 G2export_PDB Classes and Routines
 -------------------------------------------
        
-.. automodule:: G2export_PDB
+.. automodule:: GSASII.exports.G2export_PDB
     :members: 
     :synopsis: Cartesian coordinate export, including PDB format
 
@@ -89,7 +89,7 @@ a SciPy routine to write a PNG format file.
 G2export_image Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_image
+.. automodule:: GSASII.exports.G2export_image
     :members: 
     :synopsis: Exports images
 
@@ -108,7 +108,7 @@ is used by COOT (:class:`ExportMapCCP4`) are implemented.
 G2export_map Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_map
+.. automodule:: GSASII.exports.G2export_map
     :members: 
     :synopsis: Export Fourier and charge-flip atomic density maps
 	      
@@ -122,7 +122,7 @@ Code to export coordinates in the SHELX .ins format
 G2export_shelx Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_shelx 
+.. automodule:: GSASII.exports.G2export_shelx 
     :members: 
     :synopsis: Export a phase in Shelx format
 
@@ -150,7 +150,7 @@ when calling that method.
 G2export_CIF Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_CIF
+.. automodule:: GSASII.exports.G2export_CIF
     :members: 
     :synopsis: Export a project in CIF format
 	       
@@ -163,7 +163,7 @@ Creates files used by GSAS (FXYE) & TOPAS (XYE) as input
 G2export_pwdr Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_pwdr
+.. automodule:: GSASII.exports.G2export_pwdr
     :members: 
     :synopsis: Export powder data in GSAS and Topas formats
 
@@ -176,7 +176,7 @@ Code to create .chi (Fit2D like) files for GSAS-II powder data export
 G2export_FIT2d Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_FIT2D 
+.. automodule:: GSASII.exports.G2export_FIT2D 
     :members: 
     :synopsis: Export powder data in Fit2D (.chi) format
        
@@ -199,7 +199,7 @@ with a good chance of getting things to work.
 G2export_JSON Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_JSON
+.. automodule:: GSASII.exports.G2export_JSON
     :members:
 
 ------------------------------------------------------
@@ -222,5 +222,5 @@ This module initially written by Conrad Gillard. For any enquiries please contac
 G2export_Bracket Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_Bracket
+.. automodule:: GSASII.exports.G2export_Bracket
     :members: 

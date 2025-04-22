@@ -1,3 +1,9 @@
+'''
+test_elm.py 
+==============
+Performs a very simple test on the element tables.
+'''
+
 import os
 import sys
 import importlib.util
@@ -8,6 +14,7 @@ if importlib.util.find_spec('GSASII') is None: # hack path if GSASII not install
 from GSASII import GSASIIElem
 
 def test_get_xsection():
+    'Test that a cross-section for a single element is read'
     xsection = GSASIIElem.GetXsectionCoeff('Fe')
     assert len(xsection) > 0
 

@@ -324,7 +324,7 @@ method                                                Use
 .. _Class_G2SmallAngle:
 
 Class :class:`~GSASIIscriptable.G2SmallAngle`
------------------------------------------
+-----------------------------------------------
 
   To work with Small Angle (currently only SASD entries), object :class:`~GSASIIscriptable.G2SmallAngle`, encapsulates a SASD entry.
   At present no methods are provided.
@@ -1687,6 +1687,6 @@ JSON website: `Introducing JSON <http://json.org/>`_.
 API: Complete Documentation
 ===========================
 
-.. automodule:: GSASIIscriptable
+.. automodule:: GSASII.GSASIIscriptable
     :members: 
 

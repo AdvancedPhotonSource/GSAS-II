@@ -1,5 +1,5 @@
 *GSASII: GSAS-II GUI*
- ===========================
+===========================
 
 Script G2.py 
 ----------------------------------------
@@ -29,6 +29,11 @@ are not installed or are incompatible with the OS/Python packages,
 the user is asked if they should be updated from the subversion site. 
 The wxPython app is then passed to :func:`GSASIIdataGUI.GSASIImain`, 
 which creates the GSAS-II GUI and finally the event loop is started.
+
+.. automodule:: GSASII.GSASIIGUI
+    :members: 
+    :private-members:
+    :special-members:
 
 Keyboard Menu Shortcuts
 ----------------------------------------
@@ -74,12 +79,3 @@ vary depending on the type of plot.
  M           Minimize GSAS-II windows (MacOS Windows menu).
              This is system-assigned 
 ==========  ====================================================
-
-GSAS-II contents
-----------------------------------------
-
-
-.. automodule:: GSASIIGUI
-    :members: 
-    :private-members:
-    :special-members:

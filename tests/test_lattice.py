@@ -1,4 +1,8 @@
-'''Unit tests for code in GSASIIlattice.py.
+'''
+test_lattice.py 
+================
+Performs comprehensive unit tests for many but by no means all 
+routines in :mod:`~GSASII.GSASIIlattice`.
 '''
 
 import os
@@ -14,7 +18,7 @@ from GSASII.GSASIIlattice import *
 
 import testinp.sgtbxlattinp as sgtbxlattinp
 
-# self-test materials follow.
+# self-test data & routines follow.
 selftestlist = []
 '''Defines a list of self-tests'''
 selftestquiet = True
@@ -142,6 +146,7 @@ def TestData():
     'C(4,0,2)': (-0.1897, 0.12530720)},[1,0,0]]
 
 def test_gmat():
+    'tests cell2Gmat, fillgmat, Gmat2cell'
     if NeedTestData: TestData()
     msg = 'test cell2Gmat, fillgmat, Gmat2cell'
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:

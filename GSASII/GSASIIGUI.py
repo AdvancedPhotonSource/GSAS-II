@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIGUI
 '''
-This provides a short file that is used to start the GSAS-II GUI
-
-A single class, :class:`G2App`, is defined here to create
-a wxPython application. This is only used on
-MacOS. For other platforms ``wx.App()`` is called directly.
+GSASIIGUI provides a short file that is used to start the GSAS-II GUI. 
+It is usually called from `G2.py` but this routine can also be invoked
+directly when GSAS-II has been installed into Python. 
+On MacOS, a class, :class:`G2App`, is defined inside :func:`main` that creates
+a wxPython application. For other platforms ``wx.App()`` is called directly.
 '''
 
 import sys
@@ -22,6 +22,8 @@ if gv is not None:
         __version__ = gv.git_prevtags[0]
 
 def main():
+    '''This routine is called to start the GSAS-II GUI
+    '''
     import scipy.optimize # loading here addresses problem with build for wx on Pi
     import wx
     # the next line removes the need for pythonw. Thanks to Matt Newville!

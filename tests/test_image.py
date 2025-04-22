@@ -1,6 +1,9 @@
-# test_image(): read in a MAR image (tests pack_f binary module) and then
-#               integrate it using GeneratePixelMask (tests fmask binary module)
-# test_CBF(): read in a CBF image (tests unpack_cbf module)
+'''
+test_image.py 
+==============
+Performs tests that image integration and pixel masking are working. 
+Also tests the imports that require GSAS-II-compiled binaries.
+'''
 
 import os
 import sys
@@ -24,6 +27,9 @@ import GSASII
 import GSASII.GSASIIscriptable as G2sc
 
 def test_image():
+    '''Read in a MAR image (tests pack_f binary module) and then
+    integrate it using GeneratePixelMask (tests fmask binary module)
+    '''
     print('Testing read, mask & integration of MAR image')
     try:
         import requests
@@ -61,6 +67,7 @@ def test_image():
     print('OK')
     
 def test_CBF():
+    'Read in a CBF image (tests unpack_cbf module)'
     print('Testing read of CBF image')
     try:
         import requests

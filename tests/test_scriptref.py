@@ -1,5 +1,9 @@
-# perform a GSAS-II refinement using GSASIIscriptable and tutorial
-# data
+'''
+test_scriptref.py 
+==================
+Performs a CW GSAS-II refinement using GSASIIscriptable and tutorial
+data. Tests texture code as well. 
+'''
 
 import os
 import sys
@@ -23,6 +27,7 @@ import GSASII
 import GSASII.GSASIIscriptable as G2sc
 
 def test_refine():
+    'Performs a GSAS-II refinement using GSASIIscriptable and tutorial data'
     def testR(msg,w1,w2):
         print(f"*** {msg}: Rwp(h1)={h1.residuals['wR']:.5f}, Rwp(h2)={h2.residuals['wR']:.5f}")
         npt.assert_allclose([h1.residuals['wR'],h2.residuals['wR']],

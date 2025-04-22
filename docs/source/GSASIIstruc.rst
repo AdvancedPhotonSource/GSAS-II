@@ -12,7 +12,7 @@ GSASIIstrMain Classes & Routines
 ---------------------------------------
 
 
-.. automodule:: GSASIIstrMain
+.. automodule:: GSASII.GSASIIstrMain
     :members: 
 
 ------------------------------------------
@@ -23,7 +23,7 @@ GSASIIstrMath Classes & Routines
 ---------------------------------------
 
        
-.. automodule:: GSASIIstrMath
+.. automodule:: GSASII.GSASIIstrMath
     :members: 
 
 ---------------------------------------
@@ -33,5 +33,5 @@ GSASIIstrMath Classes & Routines
 GSASIIstrIO Classes & Routines
 ---------------------------------------
 
-.. automodule:: GSASIIstrIO
+.. automodule:: GSASII.GSASIIstrIO
     :members: 

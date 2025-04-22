@@ -6126,9 +6126,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
     this ensures that the window's scroll bars are placed properly.
     Initial GUI creation for the contents of dataWindow is done in
-    :func:`SelectDataTreeItem`(), which is invoked when a selection
+    :func:`SelectDataTreeItem`, which is invoked when a selection
     is made in the data tree selection. This may places items into
-    the dataWindow, but more commonly calls other routeins tht call
+    the dataWindow, but more commonly calls other routines tht call
     that.
 
     Routines that are called multiple times to redraw the contents

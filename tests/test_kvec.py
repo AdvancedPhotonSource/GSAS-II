@@ -1,3 +1,9 @@
+'''
+test_kvec.py 
+==============
+Performs a series of tests on the k-vector search code.
+'''
+
 import os
 import sys
 import numpy as np

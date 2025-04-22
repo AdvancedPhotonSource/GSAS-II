@@ -784,7 +784,7 @@ Used in :func:`getConstrError` to display warning messages.
 *GSASIImapvars Routines/variables*
 ---------------------------------------
 
-.. automodule:: GSASIImapvars
+.. automodule:: GSASII.GSASIImapvars
     :members: 
     :private-members:
     :special-members:

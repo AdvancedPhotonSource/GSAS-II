@@ -11,7 +11,7 @@ Least-squares minimization and misc. computation routines.
 *GSASIImath Classes and routines*
 ------------------------------------
 
-.. automodule:: GSASIImath
+.. automodule:: GSASII.GSASIImath
     :members: 
     :private-members:
     :special-members:

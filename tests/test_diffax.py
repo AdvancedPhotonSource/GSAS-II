@@ -1,5 +1,10 @@
-# perform a DIFFaX computation using the GSAS-II interface to the
-# pydiffax.so/.pyd module
+'''
+test_diffax.py 
+==============
+Performs a DIFFaX computation using the GSAS-II interface to the
+pydiffax.so [.pyd] module
+'''
+
 
 import os
 import sys
@@ -25,6 +30,7 @@ import GSASII
 import GSASII.GSASIIpwd as G2pwd
 
 def test_diffax():
+    'tests DIFFaX'
     print('test_diffax(): test a small DIFFaX computation')
     # define input needed for computation
     layerinfo = {

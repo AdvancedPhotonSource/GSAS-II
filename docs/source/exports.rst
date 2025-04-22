@@ -1,6 +1,9 @@
 *GSAS-II Export Modules*
 ====================================
 
+.. TODO: Check references below to see if they need to be
+..            expanded to :func:`~GSASII.GSASIIctrlGUI.G2RadioButtons`
+
 Exports are implemented by deriving a class from 
 :class:`GSASIIfiles.ExportBaseclass`. Initialization of 
 ``self.exporttype`` determines the type of export that will be performed

@@ -1,6 +1,12 @@
 *GSASIImapvars: Param Constraints*
 =================================================
 
+.. TODO: The tables below probably need work. The references such as :class:`EnumSelector`
+.. and :func:`G2RadioButtons` may need to be replaced by 
+.. :class:`~GSASII.GSASIIctrlGUI.EnumSelector` and 
+.. :func:`~GSASII.GSASIIctrlGUI.G2RadioButtons`. That will require 
+.. realigning the tables big-time. 
+
 *Summary/Contents*
 ----------------------------
 

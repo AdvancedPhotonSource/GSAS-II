@@ -2399,12 +2399,12 @@ def RBChk(sytsym,L,M):
             if not L%2 and not (M//2)%2: return True,1.0
         elif sytsym == '4/mmm(z)':
             if not L%2 and not M%4: return True,1.0
-        elif sytsym == '3' or sytsym == '3(111)':
+        elif sytsym in ['3','3(111)']:
             if not M%3: return True,1.0     #P?
-        elif sytsym == '-3' or sytsym == '-3(111)':
+        elif sytsym in ['-3','-3(111)']:
             if not L%2 and not M%3: return True,1.0    #P?
         elif sytsym in ['32','32(100)','32(111)']:
-            if not M%3: return True,-1.0**L
+            if not M%3: return True,-1.0**(L-M)
         elif sytsym == '32(120)':
             if not M%3: return True,-1.0**(L-M)
         elif sytsym in ['3m','3m(100)','3m(111)']:
@@ -2427,7 +2427,7 @@ def RBChk(sytsym,L,M):
             if M%2: return True,1.0
         elif 'mmm' in sytsym :
             if not L%2 and not M%2: return True,1.0
-        elif sytsym == '2(x)' or sytsym == '2(100)':
+        elif sytsym in ['2(x)','2(100)']:
             return True,-1.0**(L-M)
         elif sytsym == '2(y)':
             return True,-1.0**L

@@ -12114,6 +12114,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             Obj = event.GetEventObject()
             dId = Indx[Obj.GetId()]
             atom = atomData[AtLookUp[dId]]
+            sytsym = atom[cs].strip()
             for harm in data['Deformations'][dId]:
                 if 'Sl' in harm[0]:
                     Harm = harm
@@ -12122,7 +12123,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             orders = [int(item[2]) for item in Hkeys if 'D' in item]
             if len(orders):
                 Order = max(orders)+1
-            cofNames,cofSgns = G2lat.GenRBCoeff(atom[cs],'1',Order)      #sytsym, RBsym = '1'
+            cofNames = []
+            while not len(cofNames) and Order < 5:
+                cofNames,cofSgns = G2lat.GenRBCoeff(sytsym,'1',Order)      #sytsym, RBsym = '1'
+                Order += 1
+            Order -= 1
             cofNames = [name.replace('C','D') for name in cofNames]
             cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
             for name in cofNames:
@@ -12131,7 +12136,21 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     cofTerms.update({negname:[0.0,False]})
             Harm[1].update(cofTerms)
             wx.CallAfter(UpdateDeformation,dId)
-        
+            
+        def OnDelHarm(event):
+            Obj = event.GetEventObject()
+            dId = Indx[Obj.GetId()]
+            for harm in data['Deformations'][dId]:
+                if 'Sl' in harm[0]:
+                    Harm = harm
+            Hkeys = list(Harm[1].keys())
+            if len(Hkeys) > 1:  #always an "Ne"
+                maxord = max([int(item[2]) for item in Hkeys if 'D' in item])
+                for item in Hkeys:
+                    if 'D' in item and int(item[2]) == maxord:
+                        del Harm[1][item]
+            wx.CallAfter(UpdateDeformation,dId)
+            
         # UpdateDeformation executable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
         generalData = data['General']
@@ -12188,6 +12207,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             neigh = G2mth.sortArray(neigh,2)    #sort by dist
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(deformation,label=' For atom %s, site sym %s:'%(atom[ct-1],atom[cs])),0,WACV)
+            plotAtm = wx.Button(deformation,label='Plot')
+            plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
+            Indx[plotAtm.GetId()] = dId
+            lineSizer.Add(plotAtm,0,WACV)
+            delAtm = wx.Button(deformation,label='Delete')
+            delAtm.Bind(wx.EVT_BUTTON,OnDelAtm)
+            Indx[delAtm.GetId()] = dId
+            lineSizer.Add(delAtm,0,WACV)
+            mainSizer.Add(lineSizer)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             names = []
             if not len(neigh):
                 lineSizer.Add(wx.StaticText(deformation,label=' No neighbors found; Do Set bond parms to expand search'),0,WACV)
@@ -12208,14 +12237,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 UVvec[dId] += [neigh[1][3]/neigh[1][2],(neigh[0][3]+neigh[1][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2),]    #B, A+B
             if Nneigh == 4:
                 UVvec[dId] += [(neigh[0][3]+neigh[1][3]+neigh[2][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2+neigh[2][2]**2),] #A+B+C
-            plotAtm = wx.Button(deformation,label='Plot')
-            plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
-            Indx[plotAtm.GetId()] = dId
-            lineSizer.Add(plotAtm,0,WACV)
-            delAtm = wx.Button(deformation,label='Delete')
-            delAtm.Bind(wx.EVT_BUTTON,OnDelAtm)
-            Indx[delAtm.GetId()] = dId
-            lineSizer.Add(delAtm,0,WACV)
             mainSizer.Add(lineSizer)
             matSizer = wx.BoxSizer(wx.HORIZONTAL)
             Mchoice = ["A: X'=U, Y'=(UxV)xU & Z'=UxV","B: X'=U, Y'=UxV & Z'=Ux(UxV)"]
@@ -12249,6 +12270,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 newHarm.Bind(wx.EVT_BUTTON,OnNewHarm)
                 Indx[newHarm.GetId()] = dId
                 oriSizer.Add(newHarm,0,WACV)
+                delHarm = wx.Button(deformation,label='Delete highest harmonic')
+                delHarm.Bind(wx.EVT_BUTTON,OnDelHarm)
+                Indx[delHarm.GetId()] = dId
+                oriSizer.Add(delHarm,0,WACV)
             mainSizer.Add(oriSizer)
             G2G.HorizontalLine(mainSizer,deformation)
             mainSizer.Add(wx.StaticText(deformation,label=' Deformation parameters:'))

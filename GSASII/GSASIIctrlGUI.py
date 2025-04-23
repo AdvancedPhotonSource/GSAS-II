@@ -5970,10 +5970,7 @@ For DIFFaX use cite:
         '''
         if GSASIIpath.HowIsG2Installed().startswith('git'):
             # Patch: switch from master to main
-#            if GSASIIpath.getG2Branch() == 'master':
-            # DEBUG code (TODO remove when ready to switch branches)
-            # for now testing by user toby in debug mode only
-            if GSASIIpath.GetConfigValue('debug') and GSASIIpath.getG2Branch() == 'master' and os.environ.get('USER','?') == 'toby':
+            if GSASIIpath.getG2Branch() == 'master':
                 gitSwitchMaster2Main()
                 return
             gitCheckUpdates(self.frame)

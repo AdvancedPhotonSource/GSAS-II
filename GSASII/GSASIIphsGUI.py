@@ -12306,18 +12306,22 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 elif deformationData[-dId]['Radial'] == 'Slater' and 'Sl ' in orb[0]: 
                     orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
                     NeSizer(deformation,orbSizer,dId,orb,Indx)
+                    Np = 2
                     if 'kappa' in orb[1]:
                         orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
                         Kappa(deformation,orbSizer,dId,orb,Indx)
-                    nItem = 0
+                        Np = 1
+                    for i in range(3*Np): orbSizer.Add((5,5),0)
+                    iD = 1
                     for item in orb[1]:
                         if 'D' in item:
-                            nItem += 1
+                            if iD < int(item[2]):
+                                iD = int(item[2])
+                                nItems = orbSizer.GetItemCount()%9
+                                if nItems:
+                                    nB = 9-nItems
+                                    for i in range(nB): orbSizer.Add((5,5),0)
                             Dsizer(deformation,orbSizer,dId,orb,Indx)
-                            if nItem in [2,4,6,8,10,12,14]:
-                                for i in range(3): orbSizer.Add((5,5),0)
-                    for i in range(3): orbSizer.Add((5,5),0)
-                    continue
             mainSizer.Add(orbSizer)    
 
         SetPhaseWindow(deformation,mainSizer)

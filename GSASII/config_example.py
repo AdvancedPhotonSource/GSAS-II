@@ -128,7 +128,7 @@ Used in AutoIntegration
 '''
 Main_Size = (700,450)
 '''Main window size (width, height) - initially uses wx.DefaultSize but will updated
- and saved as the user changes the window.
+and saved as the user changes the window.
 This is used internally by GSAS-II and would not normally be changed by a user. 
 '''
 Main_Pos = (100,100)

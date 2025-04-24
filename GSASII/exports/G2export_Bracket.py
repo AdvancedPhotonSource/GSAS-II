@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+'''Classes in :mod:`~GSASII.exports.G2export_Bracket` follow.
+'''
 
 # This module initially written by Conrad Gillard. For any enquiries please contact conrad.gillard@gmail.com
 # Export3col exporter adapted from Exportbracket by BHT

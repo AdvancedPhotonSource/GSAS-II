@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_JSON` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_JSON` follow:
 
 This code is to honor my friend Robert Papoular, who wants to see what is 
 inside a .gpx file.

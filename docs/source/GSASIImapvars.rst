@@ -1,12 +1,9 @@
 *GSASIImapvars: Param Constraints*
 =================================================
 
-.. TODO: The tables below probably need work. The references such as :class:`EnumSelector`
-.. and :func:`G2RadioButtons` may need to be replaced by 
-.. :class:`~GSASII.GSASIIctrlGUI.EnumSelector` and 
-.. :func:`~GSASII.GSASIIctrlGUI.G2RadioButtons`. That will require 
-.. realigning the tables big-time. 
+ .. py:currentmodule:: GSASII.GSASIImapvars
 
+   
 *Summary/Contents*
 ----------------------------
 
@@ -88,11 +85,12 @@ main section of the GSAS-II data tree under heading ``Constraints``.
 This dict has four keys, 'Hist', 'HAP', 'Global', and 'Phase', 
 each containing a list of constraints. An additional set of constraints 
 are generated for each phase based on symmetry considerations by calling 
-:func:`GSASIIstrIO.GetPhaseData`. 
+:func:`~GSASII.GSASIIstrIO.GetPhaseData` in module
+:mod:`GSASII.GSASIIstrIO`. 
 
 Note that in the constraints, as stored in the GSAS-II data tree, parameters 
 are stored as :class:`GSASIIobj.G2VarObj` objects, as these objects allow for 
-changes in numbering of phases, histograms and atoms since :class:`GSASIIobj.G2VarObj` objects 
+changes in numbering of phases, histograms and atoms since :class:`~.GSASIIobj.G2VarObj` objects 
 use random Id's for references.
 When constraints are interpreted (in :func:`ProcessConstraints`), 
 these references are resolved to the numbered objects by looking up random Id's 
@@ -212,7 +210,7 @@ possible to specify equivalences that conflict with constraints.
 Should parameter be used as both a dependent and an independent variable or if a parameter is used both in 
 an the equivalence and in a "New Var" or "Const" constraints, the equivalence 
 is converted to a constraint (Const) to 
-avoid conflicts. The equivalences that require this are addressed in ::func:`GenerateConstraints` where
+avoid conflicts. The equivalences that require this are addressed in :func:`GenerateConstraints` where
 :func:`CheckEquivalences` is used to locate problematic variables in equivalences 
 and then change these equivalences to "Const" equations. Also, unneeded equivalences are removed.
 
@@ -234,7 +232,9 @@ Equivalenced parameters ("EQUIV" constraints), when defined by users,
 or when created to relate phases, are stored as a type "e" 
 :ref:`constraint (see definitions)<Constraint_definitions_table>`.
 Symmetry-generated equivalences are generated prior 
-to display or refinement in :func:`GSASIIstrIO.GetPhaseData`.
+to display or refinement in 
+:func:`~GSASII.GSASIIstrIO.GetPhaseData` from module
+:mod:`GSASII.GSASIIstrIO`. 
 These are not stored in the data tree. 
 
 Hold parameters (Fixed)
@@ -251,47 +251,50 @@ The "Hold" constraints are stored as a type "h"
 
 .. _Constraints_processing:
 
+.. py:currentmodule:: GSASII.GSASIIconstrGUI
+
 Constraint Processing
 ---------------------
 
 When constraints will be used or edited, they are processed using a series of
 calls. This is done in GSAS-II from several locations:
 
-* For error checking from the tree in :mod:`GSASIIconstrGUI`,
-  :func:`GSASIIconstrGUI.CheckConstraints` loads constraints from 
+* For error checking from the tree in :mod:`~GSASII.GSASIIconstrGUI`,
+  routine
+  :func:`~GSASII.GSASIIconstrGUI.CheckConstraints` loads constraints from 
   the data tree.
 
 * When the table of refined parameters is shown, constraints are also 
-  processed in function :func:`GSASIIdataGUI.GSASII.OnShowLSParms` using 
-  :func:`GSASIIconstrGUI.CheckConstraints`
+  processed in function :func:`GSASII.GSASIIdataGUI.GSASII.OnShowLSParms` using 
+  :func:`~GSASII.GSASIIconstrGUI.CheckConstraints`
 
 * To write parameters in the Export sections of the program, 
-  :func:`GSASIIfiles.ExportBaseclass.loadParmDict` loads results as well as constraints 
+  :func:`GSASII.GSASIIfiles.ExportBaseclass.loadParmDict` loads results as well as constraints 
   from the tree. This works a bit differently from the above, so it
   makes direct calls to the constraints routines. 
 
 * For error checking from a GPX file 
-  :func:`GSASIIstrIO.ReadCheckConstraints` loads constraints 
-  (called in :mod:`GSASIIdataGUI` and :mod:`GSASIIscriptable`), 
-  which is similar to :func:`GSASIIconstrGUI.CheckConstraints`. 
-  :func:`~GSASIIstrIO.ReadCheckConstraints` is called by 
-  :meth:`GSASIIdataGUI.GSASII.OnRefine` and 
-  :meth:`GSASIIdataGUI.GSASII.OnSeqRefine` 
+  :func:`GSASII.GSASIIstrIO.ReadCheckConstraints` loads constraints 
+  (called in :mod:`~GSASII.GSASIIdataGUI` and :mod:`~GSASII.GSASIIscriptable`), 
+  which is similar to :func:`~GSASII.GSASIIconstrGUI.CheckConstraints`. 
+  :func:`~GSASII.GSASIIstrIO.ReadCheckConstraints` is called by 
+  :meth:`GSASII.GSASIIdataGUI.GSASII.OnRefine` and 
+  :meth:`GSASII.GSASIIdataGUI.GSASII.OnSeqRefine` 
   before constraints are generated for use in refinements so they can 
   be shown in the GUI. This is also called to check for errors in
-  :class:`GSASIIscriptable.G2Project`. 
+  :class:`GSASII.GSASIIscriptable.G2Project`. 
 
 * To create the constraints for use in a refinement, in 
-  :mod:`GSASIIstrMain`, functions :func:`GSASIIstrMain.Refine` and 
-  :func:`GSASIIstrMain.SeqRefine` load and process the constraints again.
-  This is repeated here because :func:`~GSASIIstrMain.Refine` and 
-  :func:`~GSASIIstrMain.SeqRefine` are intended to operate as stand-alone
+  :mod:`~GSASII.GSASIIstrMain`, functions :func:`~GSASII.GSASIIstrMain.Refine` and 
+  :func:`~GSASII.GSASIIstrMain.SeqRefine` load and process the constraints again.
+  This is repeated here because :func:`~GSASII.GSASIIstrMain.Refine` and 
+  :func:`~GSASII.GSASIIstrMain.SeqRefine` are intended to operate as stand-alone
   routines that may be called directly.
 
 * After sequential fits have been completed, the previously processed 
   constraint info is read from the sequential results section of the 
   data tree. Function 
-  :func:`GSASIIseqGUI.UpdateSeqResults` displays the sequential results
+  :func:`GSASII.GSASIIseqGUI.UpdateSeqResults` displays the sequential results
   table also processes constraints. 
 
 TODO: Note that G2stIO.makeTwinFrConstr is called only in one place. It probably needs to be included in all of the above.
@@ -303,42 +306,43 @@ When constraints are processed, the following steps are used:
    In the initial processing, all of the stored constraints are appended
    into a single list.
 
-#. Then :func:`InitVars` is used to initialize the global variables in 
-   this module (:mod:`GSASIImapvars`). This may be done before the previous 
+#. Then :func:`~GSASII.GSASIImapvars.InitVars` is used to initialize the global variables in 
+   this module (:mod:`~GSASII.GSASIImapvars`). This may be done before the previous 
    step.
 
-#. Then :func:`ProcessConstraints` is used to initially process the 
+#. Then :func:`~GSASII.GSASIImapvars.ProcessConstraints` is used to initially process the 
    constraints user-supplied constraints (from the data tree), 
    as described in :ref:`Constraint Reorganization <ProcessConstraints>`.
    When constraints are read from a GPX file, rather than the data tree, use 
-   :func:`GSASIIstrIO.ReadConstraints` (which calls :func:`ProcessConstraints`).
+   :func:`GSASII.GSASIIstrIO.ReadConstraints` (which calls :func:`~GSASII.GSASIImapvars.ProcessConstraints`).
 
 #. Symmetry-generated equivalences are then created in 
-   :func:`GSASIIstrIO.GetPhaseData`, which also calls 
-   :func:`GSASIIstrIO.cellVary` and for Pawley refinements 
-   :func:`GSASIIstrIO.GetPawleyConstr`. These are entered directly into this
-   module's globals using :func:`StoreEquivalence`.
+   :func:`GSASII.GSASIIstrIO.GetPhaseData`, which also calls 
+   :func:`GSASII.GSASIIstrIO.cellVary` and for Pawley refinements 
+   :func:`GSASII.GSASIIstrIO.GetPawleyConstr`. These are entered directly into this
+   module's globals using :func:`~GSASII.GSASIImapvars.StoreEquivalence`.
 
 #. Constraints/equivalences are then checked for possible conflicts with
-   :func:`GenerateConstraints` which in turn calls :func:`CheckEquivalences`. 
+   :func:`~GSASII.GSASIImapvars.GenerateConstraints` which in turn
+   calls :func:`~GSASII.GSASIImapvars.CheckEquivalences`. 
    These routines group the constraints
    and possibly reorganize them, as discussed below for
-   :func:`GenerateConstraints` (:ref:`discussed here <GenerateConstraints>`)
-   and for :func:`CheckEquivalences` (:ref:`discussed here <CheckEquivalences>`).
+   :func:`~GSASII.GSASIImapvars.GenerateConstraints` (:ref:`discussed here <GenerateConstraints>`)
+   and for :func:`~GSASII.GSASIImapvars.CheckEquivalences` (:ref:`discussed here <CheckEquivalences>`).
 	
-#. Note that for debugging, :func:`VarRemapShow` can be called at any point
-   after :func:`GenerateConstraints` has been called. This will display the
+#. Note that for debugging, :func:`~GSASII.GSASIImapvars.VarRemapShow` can be called at any point
+   after :func:`~GSASII.GSASIImapvars.GenerateConstraints` has been called. This will display the
    generated constraints. 
 
 .. _ProcessConstraints:
 
-Constraint Reorganization (:func:`ProcessConstraints`)
+Constraint Reorganization [:func:`ProcessConstraints`]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:func:`ProcessConstraints` is used to initially process the 
+:func:`~GSASII.GSASIImapvars.ProcessConstraints` is used to initially process the 
 constraints from the list of dict entries. The "Const" and "New Var" are placed into two 
-lists (:data:`constrDict` and :data:`fixedList`) that are later used for parameter 
-grouping (in :func:`GenerateConstraints`). "Hold" and "Equivalence" constraints are 
+lists (:data:`~GSASII.GSASIImapvars.constrDict` and :data:`fixedList`) that are later used for parameter 
+grouping (in :func:`~GSASII.GSASIImapvars.GenerateConstraints`). "Hold" and "Equivalence" constraints are 
 separated into separate storage.
  
    For "**Const**" entries, 
@@ -359,10 +363,11 @@ separated into separate storage.
 
    For "**Hold**" entries, 
      User-supplied “Hold” constraints are stored in global variable :data:`holdParmList`.
-     Initialized in :func:`InitVars`; set in :func:`StoreHold`. Type of hold is stored in
+     Initialized in :func:`~GSASII.GSASIImapvars.InitVars`; set in :func:`~GSASII.GSASIImapvars.StoreHold`. Type of hold is stored in
      :data:`holdParmType`.
 
-   **Equivalences** are stored using :func:`StoreEquivalence` into this module's globals 
+   **Equivalences** are stored
+     using :func:`~GSASII.GSASIImapvars.StoreEquivalence` into this module's globals 
      (:data:`dependentParmList`, :data:`arrayList`, :data:`invarrayList`, :data:`indParmList`,
      and :data:`symGenList`).
      For each equivalence:
@@ -373,7 +378,7 @@ separated into separate storage.
      * a list of multipliers for each dependent variable is placed in :data:`invarrayList`
      * an entry of either True or False is placed in :data:`symGenList`, where True indicates that the entry has been generated from symmetry.
 
-The output from :func:`ProcessConstraints` will have the form as below, 
+The output from :func:`~GSASII.GSASIImapvars.ProcessConstraints` will have the form as below, 
 where the first entry is a "Const" and the second is a "New Var". 
 
   .. code-block:: python
@@ -385,14 +390,14 @@ where the first entry is a "Const" and the second is a "New Var".
 
 .. _GenerateConstraints:
 
-Constraint Checking and Grouping (:func:`GenerateConstraints`)
+Constraint Checking and Grouping [:func:`GenerateConstraints`]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Function :func:`GenerateConstraints` is used to
+Function :func:`~GSASII.GSASIImapvars.GenerateConstraints` is used to
 process the parameter equivalences and constraint lists created in 
-:func:`ProcessConstraints` (``constrDict`` and ``fixedList``). :func:`GenerateConstraints` 
+:func:`~GSASII.GSASIImapvars.ProcessConstraints` (``constrDict`` and ``fixedList``). :func:`~GSASII.GSASIImapvars.GenerateConstraints` 
 is used to generate error/warning messages, to set up lists that are used to show this 
-information for the GUI (using :func:`getConstrError`) and to 
+information for the GUI (using :func:`~GSASII.GSASIImapvars.getConstrError`) and to 
 generate the information stored in :ref:`global arrays <GlobalVariables>` that are used later to 
 apply the constraints. 
 
@@ -401,7 +406,7 @@ that have a wildcard (*) for the histogram number, such as 1:*:Scale which would
 to the phase fraction for Phase ` in every histogram. The "*" will be replaced with 
 the number of the current histogram.
 
-Equivalences are checked with :func:`CheckEquivalences` (described in detail 
+Equivalences are checked with :func:`~GSASII.GSASIImapvars.CheckEquivalences` (described in detail 
 :ref:`below <CheckEquivalences>`). This may result in the creation of additional "Hold"
 and "Constr" constraints being added to the ``constrDict`` and ``fixedList`` lists.
 
@@ -429,7 +434,7 @@ Constraints cannot be processed without changes if any of the terms within have 
   those parameters can be removed from the constraint, with an adjustment of the equation 
   sum.  
 
-Constraint expressions ("Const" and "New Var") are sorted by routine :func:`GroupConstraints` into 
+Constraint expressions ("Const" and "New Var") are sorted by routine :func:`~GSASII.GSASIImapvars.GroupConstraints` into 
 groups so that each group contains the minimum number of entries that 
 ensures each parameter is referenced in only one group.
 This is done by scanning the 
@@ -439,7 +444,7 @@ a parameter in that list is added to the current group and those
 parameters are added to this list of parameters. The list of ungrouped 
 expressions is then scanned again until no more expressions are added to the 
 current group. This process is repeated until every expression has been 
-placed in a group. Function :func:`GroupConstraints` returns two lists of lists.
+placed in a group. Function :func:`~GSASII.GSASIImapvars.GroupConstraints` returns two lists of lists.
 The first has, for each group, a list of the indices in :data:`constrDict` 
 that comprise the group (there can be only one). The second list contains, 
 for each group, the unique parameter names in that group. 
@@ -505,24 +510,24 @@ This then can describe a system of Np simultaneous equations:
    \end{matrix}\right)
 
 This is done by creating a square matrix from the group using 
-:func:`_FillArray`. The top Nc rows in the matrix are filled
-as described above. Then :func:`_RowEchelon` is used to see if
+:func:`~GSASII.GSASIImapvars._FillArray`. The top Nc rows in the matrix are filled
+as described above. Then :func:`~GSASII.GSASIImapvars._RowEchelon` is used to see if
 those entries in the matrix can be coverted to row-echelon form. This 
 will raise an Exception there is linear dependence between the initial Nc rows 
 (which means that no matter what values are used for any remaining rows, that the matrix 
 will be singular). If that is not the case and Nc<Np then any remaining rows that
 were not specified are filled in. For each of these rows, first only the 
 diagonal element in that row of the matrix is set to 1 
-and the upper portion of the matrix is again tested with :func:`_RowEchelon` 
+and the upper portion of the matrix is again tested with :func:`~GSASII.GSASIImapvars._RowEchelon` 
 to check for linear independence. This is likely to be non-singular, 
-but should :func:`_RowEchelon` fail, 
-:func:`_FillArray` will then try setting each other element in that row to either 
+but should :func:`~GSASII.GSASIImapvars._RowEchelon` fail, 
+:func:`~GSASII.GSASIImapvars._FillArray` will then try setting each other element in that row to either 
 1 or -1. One of those options should be linearly independent from every other 
 row of the matrix. 
 
 The  
 `Gram-Schmidt process <http://en.wikipedia.org/wiki/Gram-Schmidt>`_, 
-implemented  in :func:`GramSchmidtOrtho`, is used to find orthonormal unit 
+implemented  in :func:`~GSASII.GSASIImapvars.GramSchmidtOrtho`, is used to find orthonormal unit 
 vectors which are used to replace the remaining Np-Nc rows of the matrix. This will fail with 
 a ``ConstraintException`` if this is not possible (singular matrix), but that would be 
 unexpected since the matrix could be converted to row-echelon form. The 
@@ -548,12 +553,12 @@ False to indicate that this is not a symmetry generated constraint.
 
 .. _CheckEquivalences:
 
-Equivalence Checking and Reorganization (:func:`CheckEquivalences`)
+Equivalence Checking and Reorganization [:func:`CheckEquivalences`]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Equivalences need to be checked for usages that could be internally conflicted 
-or have possible conflicts with other constraints. Function :func:`CheckEquivalences`
-is called within :func:`GenerateConstraints` to diagnose and where
+or have possible conflicts with other constraints. Function :func:`~GSASII.GSASIImapvars.CheckEquivalences`
+is called within :func:`~GSASII.GSASIImapvars.GenerateConstraints` to diagnose and where
 possible resolve such uses, as discussed below. 
 
 **Mixed parameter use:**
@@ -666,12 +671,14 @@ possible resolve such uses, as discussed below.
 ------------------
 
 This module uses a number of global variables. One set is used to store the 
-constraints and equivalences after processing by :func:`StoreEquivalence` and 
-:func:`GenerateConstraints`.  
-These globals are expected to be used only by this module's (:mod:`GSASIImapvars`) internal routines.
+constraints and equivalences after processing by :func:`~GSASII.GSASIImapvars.StoreEquivalence` and 
+:func:`~GSASII.GSASIImapvars.GenerateConstraints`.  
+These globals are expected to be used only by this module's (:mod:`~GSASII.GSASIImapvars`) internal routines.
 
 Lists with information from Constraint Equation and New Var constraints. Each entry
 in these variables is related to a group of constraints. 
+
+.. py:currentmodule:: GSASII.GSASIImapvars
 
 .. tabularcolumns:: |l|p{4.5in}|
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_FIT2D` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_FIT2D` follow:
 '''
 from __future__ import division, print_function
 import os.path

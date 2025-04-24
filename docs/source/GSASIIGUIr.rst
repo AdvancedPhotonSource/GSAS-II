@@ -4,18 +4,11 @@
 The modules documented here provide GUI or graphics capabilities that
 are used in multiple sections of the GSAS-II GUI or graphics. 
 
-.. TODO: The tables below need work. The references such as :class:`EnumSelector`
-.. and :func:`G2RadioButtons` don't work. What is needed is 
-.. :class:`~GSASII.GSASIIctrlGUI.EnumSelector` and 
-.. :func:`~GSASII.GSASIIctrlGUI.G2RadioButtons`. That will require 
-.. realigning the tables big-time. 
-
-
 ---------------------------------------------
 *GSASIIctrlGUI: Custom GUI controls*
 ---------------------------------------------
 
- .. py:currentmodule:: GSASIIctrlGUI
+ .. py:currentmodule:: GSASII.GSASIIctrlGUI
 
 A library of specialized widgets (GUI controls) for use in the GSAS-II
 data window or dialogs:
@@ -145,13 +138,14 @@ Miscellaneous GUI support routines:
 ================================  =================================================================
 Function name                      Description
 ================================  =================================================================
-:func:`Define_wxId`                Create a unique wx.Id symbol in _initMenus in :mod:`GSASIIdataGUI`.
+:func:`Define_wxId`                Create a unique wx.Id symbol in _initMenus in 
+                                   :mod:`GSASII.GSASIIdataGUI`.
                                    Such symbols are needed when the menu item is defined in a 
                                    different location from the wx.Bind that links the menu item 
                                    to a function. This function allows all the menu Ids to be
                                    defined as the menus are created in one place and then can be 
                                    used in Bind elsewhere in the code.
-:func:`openInNewTerm`              opens a Python routine (usually G2.py) in a
+:func:`openInNewTerm`              opens a Python routine (usually ``G2.py``) in a
                                    new terminal window (works on all platforms)				   
 ================================  =================================================================
 
@@ -167,12 +161,12 @@ Function name                      Description
                                    of each line.
 :func:`StripUnicode`               Removes unicode characters from strings 
 :func:`GetImportPath`              Determines the default location to use for importing files.
-                                   Tries sequentially :attr:`G2frame.TutorialImportDir`,
+                                   Tries sequentially ``G2frame.TutorialImportDir``,
                                    config var ``Import_directory`` and
-                                   :attr:`G2frame.LastImportDir`.
+                                   ``G2frame.LastImportDir``.
 :func:`GetExportPath`              Determines the default location to use for writing files.
-                                   Tries sequentially :attr:`G2frame.LastExportDir` and
-                                   :attr:`G2frame.LastGPXdir`
+                                   Tries sequentially ``G2frame.LastExportDir`` and
+                                   ``G2frame.LastGPXdir``
 ================================  =================================================================
 
 

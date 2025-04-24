@@ -139,8 +139,8 @@ read successfully. Optionally, use `self.warnings` to indicate any
 problems. 
 
 If the file cannot be read,  the ``Reader`` routine should
-return False or raise an :class:`GSASIIobj.ImportBaseclass.ImportException`
-exception. (Why either? Sometimes an exception is the easiest way to
+return False or raise an :meth:`GSASIIobj.ImportBaseclass.ImportException`
+exception. (Why are both available? Sometimes an exception is the easiest way to
 bail out of a called routine.) Place text in `self.errors` and/or use:: 
 
      ImportException('Error message')
@@ -175,10 +175,10 @@ histograms or multiple images from a single file. Variable
 *Reader support routines*
 ____________________________________
 
-Note that GSASIIctrlGUI supplies three GUI routines, 
-:meth:`~GSASIIctrlGUI.BlockSelector` 
-:meth:`~GSASIIctrlGUI.MultipleBlockSelector` and 
-:meth:`~GSASIIctrlGUI.MultipleChoiceSelector` that are useful for 
+Note that module :mod:`~GSASII.GSASIIctrlGUI` supplies three GUI routines, 
+:meth:`~GSASII.GSASIIctrlGUI.BlockSelector`, 
+:meth:`~GSASII.GSASIIctrlGUI.MultipleBlockSelector`, and 
+:meth:`~GSASII.GSASIIctrlGUI.MultipleChoicesDialog` that are useful for 
 selecting amongst one or more datasets (and perhaps phases) or data items for 
 ``Reader()`` routines that may encounter more than one set of information
 in a file. 
@@ -197,13 +197,13 @@ numbers in the expected places?
 
 This routine is passed a single argument:
 
-* `filepointer`: a file object (created by :func:`open`) that accesses
+* `filepointer`: a file object [created by Python intrinsic :func:`open`] that accesses
   the file and is points to the beginning of the file when ContentsValidator is
   called. 
 
-Note that :meth:`GSASIIobj.ImportBaseclass.CIFValidator` is a ContentsValidator
-for validating CIF files. 
-
+Note that :meth:`~GSASIIobj.ImportBaseclass.CIFValidator`
+found in :class:`GSASIIobj.ImportBaseclass` is a ContentsValidator
+for validating CIF files.
 
 ContentsValidator return values
 ________________________________
@@ -235,15 +235,17 @@ They must be found in files named `G2phase*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a ``Reader`` method.
 The distributed routines are:
 
-*Module G2phase: PDB, .EXP & JANA m40,m50*
--------------------------------------------
+*Module G2phase* (PDB, PDF, .EXP & JANA m40,m50)
+---------------------------------------------------------
 
-A set of short routines to read in phases using routines that were
-previously implemented in GSAS-II: PDB, GSAS .EXP and JANA m40-m50 file formats
+A set of short routines to read in phases in a number of formats, as
+created by a number of external programs. The PDB (Protein Data Bank)
+format uses coordinates in Angstroms. Other software includes
+GSAS/EXPGUI .EXP, JANA .m40-.m50 and Powder Diffaction File entries from the ICDD.
 
 .. automodule:: GSASII.imports.G2phase
     :members: 
-    :synopsis: Uses previously implemented code: PDB and GSAS .EXP
+    :synopsis: Coordinates/Cell import from common external software
 	       
 
 *Module G2phase_GPX: Import phase from GSAS-II project*
@@ -347,17 +349,25 @@ Parses a CIF using  PyCifRW from James Hester
     :members: 
     :synopsis: Reads powder data from a CIF
 
-*Module G2pwd_BrukerRAW: Bruker .raw & .brml*
+*Module G2pwd_BrukerRAW: Bruker .raw*
 ---------------------------------------------------
 
-Routine to read in powder data from a Bruker versions 1, 2, or 3 .raw
-or a .brml file.
-Alas, we have not been able to get documentation for the version 4
-.raw file, so this is not yet supported.
+Routine to read in powder data from most Bruker versions 2, 3, or 4 .raw
+files.
 	       
 .. automodule:: GSASII.imports.G2pwd_BrukerRAW
     :members: 
-    :synopsis: Reads powder data from a Brucker .raw file
+    :synopsis: Reads powder data from a Bruker .raw file
+
+*Module G2pwd_BrukerBRML: Bruker .brml*
+---------------------------------------------------
+
+Routine to read in powder data from a Bruker .brml file.
+	       
+.. automodule:: GSASII.imports.G2pwd_BrukerBRML
+    :members: 
+    :synopsis: Reads powder data from a Brucker .brml file
+               
 
 *Module G2pwd_FP: FullProf .dat data*
 -------------------------------------
@@ -426,7 +436,7 @@ PyCifRW from James Hester (https://github.com/jamesrhester/pycifrw).
 =================================================
 
 Small angle scattering data importer routines are classes derived from
-, :class:`GSASIIobj.ImportSmallAngle`.
+, :class:`GSASIIobj.ImportSmallAngleData`.
 They must be found in files named `G2sad*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a ``Reader`` method.
 The distributed routines are in:
@@ -558,9 +568,9 @@ images, all are read.
     :members: 
 
 
-======================================
- PDF Importer Routines
-======================================
+======================================================
+ Pair Distribution Function (PDF) Importer Routines
+======================================================
 
 PDF importer routines are classes derived from
 :class:`GSASIIobj.ImportPDFData`. 

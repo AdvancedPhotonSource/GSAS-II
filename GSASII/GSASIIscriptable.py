@@ -5118,9 +5118,11 @@ class G2Phase(G2ObjectWrapper):
           and only one histogram is selected, the value is retrieved and
           returned.
           When param='PO' then this value is interpreted as the following:
+
             if the value is 0 or an even integer, then the preferred 
             orientation model is set to "Spherical harmonics". If the value is 
             1, then "March-Dollase" is used. Any other value generates an error.
+
         :param list targethistlist: a list of histograms where each item in the
             list can be a histogram object (:class:`G2PwdrData`),
             a histogram name or the index number of the histogram.
@@ -5131,7 +5133,6 @@ class G2Phase(G2ObjectWrapper):
 
             targethistlist must correspond to a single histogram if a value
             is to be returned (i.e. when argument newValue is not specified).
-        :param int order: is a value for the order when     
 
         :returns: the value of the parameter, when argument newValue is not specified.
 

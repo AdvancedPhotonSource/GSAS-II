@@ -6760,7 +6760,6 @@ class SelectConfigSetting(wx.Dialog):
         '''Write the config variables to ~/.GSASII/config.ini
         as the current settings
         '''
-        print(self.vars)
         SaveConfigVars(self.vars,parent=self)
         GSASIIpath.SetConfigValue(self.vars)
         self.EndModal(wx.ID_OK)

@@ -1739,24 +1739,29 @@ def makeScriptShortcut():
         print('No site-packages directory found in Python path')
         return
     newfil = os.path.join(p,'G2script.py')
-    fp = open(newfil,'w')
-    fp.write(f'#Created in makeScriptShortcut from {__file__}')
-    fp.write(dt.datetime.strftime(dt.datetime.now(),
-                                      " at %Y-%m-%dT%H:%M\n"))
+    with open(newfil,'w') as fp:
+        fp.write(f'#Created in makeScriptShortcut from {__file__}')
+        fp.write(dt.datetime.strftime(dt.datetime.now(),
+                                          " at %Y-%m-%dT%H:%M\n"))
 
-    fp.write(f"""import sys,os
+        fp.write(f"""
+import sys,os
 Path2GSASII=r'{path2GSAS2}'
 if os.path.exists(os.path.join(Path2GSASII,'GSASIIscriptable.py')):
     print('setting up GSASIIscriptable from',Path2GSASII)
-    if Path2GSASII not in sys.path:
-        sys.path.insert(0,Path2GSASII)
-    from GSASIIscriptable import *
+    if os.path.dirname(Path2GSASII) not in sys.path:
+        sys.path.insert(0,os.path.dirname(Path2GSASII))
+    try:
+        from GSASII.GSASIIscriptable import *
+    except:
+        print('Import of GSASIIscriptable failed.\\nRerun "Install GSASIIscriptable shortcut" from inside GSAS-II?')
+        sys.exit()
 else:
     print('GSASIIscriptable not found in ',Path2GSASII)
     print('Rerun "Install GSASIIscriptable shortcut" from inside GSAS-II')
     sys.exit()
-""")
-    fp.close()
+    """)
+        fp.close()
     print('Created file',newfil)
     try:
         import G2script

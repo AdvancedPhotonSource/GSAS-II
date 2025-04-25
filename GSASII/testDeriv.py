@@ -22,11 +22,18 @@ import io as StringIO
 import cProfile,pstats
 import wx
 import numpy as np
-from . import GSASIIpath
+# path hack for restart, when needed
+import importlib.util
+try:
+    importlib.util.find_spec('GSASII.GSASIIGUI')
+except ModuleNotFoundError:
+    print('GSAS-II not installed in Python; Hacking sys.path')
+    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+from GSASII import GSASIIpath
 GSASIIpath.SetBinaryPath()
-from . import GSASIIstrMath as G2stMth
-from . import GSASIItestplot as plot
-from . import GSASIImapvars as G2mv
+from GSASII import GSASIIstrMath as G2stMth
+from GSASII import GSASIItestplot as plot
+from GSASII import GSASIImapvars as G2mv
 try:  # fails on doc build
     from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics

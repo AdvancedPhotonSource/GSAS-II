@@ -17,6 +17,7 @@ from . import GSASIIpath
 from . import GSASIIElem as G2elem
 from . import GSASIIElemGUI as G2elemGUI
 from . import GSASIIctrlGUI as G2G
+from . import GSASIIpwd as G2pwd
 
 try:
     wx.NewIdRef
@@ -87,6 +88,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     Zcell = 1
     Pack = 0.50
     Radius = 0.4
+    muT = 0.0
     def _init_coll_ABOUT_Items(self, parent):
 
         parent.Append(wxID_ABSORBABOUT,'About')
@@ -460,6 +462,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     'Element: '+str(Els),"N = ",Elem[2]," f'=",(r1[0]+r2[0])/2.0,
                     ' f"=',(r1[1]+r2[1])/2.0,' '+Gkmu+'=',mu,'barns')
             muT += mu
+            self.muT = muT
 
         if self.Volume:
             Text += "%s %s%10.4g %s" % ("Total",' '+Gkmu+' =',self.Pack*muT/self.Volume,'cm'+Pwrm1+', ')
@@ -587,13 +590,21 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
             self.Page.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             newPlot = True
-            self.ax = self.Page.figure.add_subplot(111,label='absorb')
+            GS_kw = {'width_ratios':[1,1],}
+            self.ax,self.bx = self.Page.figure.subplots(1,2,gridspec_kw=GS_kw)
         self.fplot.set_visible(False)
         self.Page.Choice = (' key press','g: toggle grid',)
         self.Page.keyPress = self.OnKeyPress
         self.ax.clear()
+        self.bx.clear()
         self.ax.set_title('X-Ray Absorption',x=0,ha='left')
         self.ax.set_ylabel(r"$\mu R$",fontsize=14)
+        self.bx.set_title(r"Cylinder abs. corr. for $\lambda= %.4f\AA$"%self.Wave,x=0,ha='left')
+        self.bx.set_xlabel(r"$2\theta$",fontsize=14)
+        Tth = np.arange(0.,140.0,0.1)
+        pmut = self.Radius*self.Pack*self.muT/(10.0*self.Volume)
+        Xabs = 1./G2pwd.Absorb('Cylinder',pmut,Tth)
+        self.bx.plot(Tth,Xabs)
         Ymin = 0.0
         Ymax = 0.0
         if self.FPPS:

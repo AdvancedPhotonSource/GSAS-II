@@ -62,7 +62,7 @@ Details for GSAS-II use on these specific platforms follows below:
   Will GSAS-II run on Linux with other types of CPUs? That will mostly
   depend on support for Python and wxPython on that CPU. If those can
   be used, you can likely build the GSAS-II binaries with gcc &
-  gfortran. Expect to modify the SConstruct file.
+  gfortran. Expect to need to modify the meson files.
 
   **Raspberry Pi** (ARM) Linux: GSAS-II has been installed on both 32-bit
   and the 64-bit version of the Raspberry Pi OS (formerly
@@ -144,9 +144,10 @@ For more details on problems noted with specific versions of Python
 and Python packages, see comments below and details here:
 :attr:`GSASIIdataGUI.versionDict`,
 
-Note that GSAS-II is currently being developed using Python 3.11 and 3.13. We
-have just adopted a build process using meson in place of scons for
-Python 3.12+ but this is not incorporated into the master branch and
+Note that GSAS-II is currently being developed using Python 3.11
+through 3.13. We
+have just adopted a build process using meson (replacing scons) for
+Python 3.12+ and
 is not fully documented. If you need to build the GSAS-II binaries at
 this time, please contact Brian.
 
@@ -203,22 +204,29 @@ optional packages are:
   If your computer does not already have git in the path, also include
   the git package to obtain that binary (if you are not sure, it does
   not hurt to do this anyway).
+  
 * requests: this package simplifies http access
   (https://requests.readthedocs.io/). It is used for access to
   webpages such as ISODISTORT and for some internal software
-  downloads. It is required for support of git updating and installation.
-* Pillow (https://pillow.readthedocs.org) or PIL (http://www.pythonware.com/products/pil/). This is used to read and save certain types of images.
+  downloads. It is required for support of git updating and
+  installation.
+  
+* Pillow (https://pillow.readthedocs.org) or PIL
+  (http://www.pythonware.com/products/pil/). This is used to read and
+  save certain types of images.
+  
 * h5py is the HDF5 interface and hdf5 is the support package. These
   packages are (not surprisingly) required
   to import images from HDF5 files. If these libraries are not present,
   the HDF5 importer(s) will not appear in the import menu and a
   warning message appears on GSAS-II startup.
+  
 * imageio is used to make movies. This is optional and is offered for plotting
   superspace (modulated) structures.
-* win32com (windows only): this module is
-  used to install GSAS-II on windows machines. GSAS-II can be used on
-  Windows without this, but the installation will offer less
-  integration into Windows. Conda provides this under the name pywin32.
+  
+* seekpath is used for magnetic lattice (k-vector) searches
+  (https://seekpath.readthedocs.io) 
+  
 * conda: the conda package allows access to package installation,
   etc. features from  inside Python. It is not required but is helpful
   to have, as it allows GSAS-II to install some packages that are not
@@ -227,12 +235,20 @@ optional packages are:
   environment for GSAS-II
   (`conda create -n <env> package-list...`), it will not be added
   to that environment unless you request it specifically.
+  
 * pybaselines: Determines a background for a powder pattern in the
   "autobackground" option. See https://pybaselines.readthedocs.io and
   https://github.com/derb12/pybaselines for more information.
+  
 * xmltodict: Needed to read Bruker BRML files. The BRML importer will
   not appear in the importer menu if this package is not installed.
    
+* win32com (windows only): this module is
+  used to install GSAS-II on windows machines. GSAS-II can be used on
+  Windows without this, but the installation will offer less
+  integration into Windows. Conda provides this under the name
+  pywin32.
+  
 *Conda command*:
   Should you wish to install Python and the desired packages yourself,
   this is certainly possible. For Linux, ``apt`` or ``yum`` is an option, as is
@@ -283,10 +299,13 @@ These packages fortunately are common and are easy to install. There are
 some relatively minor scripting capabilities that will only run when a few
 additional packages are installed:
 
+* requests: for web access
 * matplotlib (http://matplotlib.org/contents.html),
 * Pillow (https://pillow.readthedocs.org) and/or
-* h5py and hdf5
-* pybaselines (https://github.com/derb12/pybaselines)
+* h5py (requires hdf5). Used to read HDF5 files.
+* pybaselines: for auto-background (https://github.com/derb12/pybaselines)
+* xmltodict: for Bruker BRML files.
+* seekpath: for k-vector searching
   
 but none of these are required to run scripts and the vast
 majority of scripts will not need these packages.
@@ -343,9 +362,9 @@ Optional Python Packages
   relatively small amount of Fortran code that is included with
   GSAS-II.
 
-* SCons (https://scons.org/) is used to compile the relatively small amount of
+* SCons (https://scons.org/) was used to compile the relatively small amount of
    Fortran code that is included with GSAS-II. Use of this is only for
-   Python 3.11 and previous. It is discussed in the next section of this chapter.
+   Python 3.11 and previous. It should no longer be needed.
 
 Required Binary Files
 --------------------------------
@@ -380,8 +399,8 @@ Should one wish to run GSAS-II where binary files are not
 supplied (such as 32-bit Windows or Linux) or with other combinations of
 Python/NumPy, compilation will be need to be done by the user. See
 the `compilation information <https://advancedphotonsource.github.io/GSAS-II-tutorials/compile.html>`_ for more information.
-We have just adopted a build process using meson in place of scons for
-Python 3.12+ but this is not incorporated into the master branch and
+We have just adopted a build process using meson (in place of scons) for
+Python 3.12+. This is incorporated in the "main" branch, but 
 is not fully documented. If you need to build the GSAS-II binaries at
 this time, please contact Brian.
 

@@ -303,6 +303,7 @@ def getG2VersionInfo():
     '''Get the git version information. This can be a bit slow, so reading
     .../GSASII/saved_version.py may be faster (in main but not master branch)
     '''
+    gv = getSavedVersionInfo()
     if HowIsG2Installed().startswith('git'):
         g2repo = openGitRepo(path2GSAS2)
         commit = g2repo.head.commit
@@ -2146,14 +2147,20 @@ to update/regress repository from git repository:
         g2repo.git.checkout(regressversion)
 
     if gitUpdate:
+        # path hack for restart, when needed
+        import importlib.util
+        try:
+            importlib.util.find_spec('GSASII.GSASIIGUI')
+        except ModuleNotFoundError:
+            print('GSAS-II not installed in Python; Hacking sys.path')
+            sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+
         # now restart GSAS-II with the new version
         # G2scrpt = os.path.join(path2GSAS2,'G2.py')
         if project:
             print(f"Restart GSAS-II with project file {project!r}")
-            # subprocess.Popen([sys.executable,G2scrpt,project])
         else:
             print("Restart GSAS-II without a project file ")
-            # subprocess.Popen([sys.executable,G2scrpt])
         from . import GSASIIfiles
         GSASIIfiles.openInNewTerm(project)
         print ('exiting update process')

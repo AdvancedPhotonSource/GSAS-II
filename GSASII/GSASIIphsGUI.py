@@ -12225,18 +12225,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 lineSizer.Add(wx.StaticText(deformation,label=' Neighbors: '+str(names)),0,WACV)
             else:
                 names = 'Too many neighbors - change atom radii to fix'
-            Nneigh = len(neigh)
-            if Nneigh > 2:
-                Nneigh += 1
-            Nneigh = min(4,Nneigh)
-            UVchoice[dId] = ['X','Y','Z','X+Y','X+Y+Z','A','B','C','A+B','A+B+C']
+            UVchoice[dId] = ['X','Y','Z','X+Y','X+Y+Z',]
             UVvec[dId] = [[1.,0.,0.],[0.,1.,0.],[0.,0.,1.],[1.,1.,0.]/sqt2,[1.,1.,1.]/sqt3,]
-            if Nneigh >= 1:
-                UVvec[dId] += [neigh[0][3]/neigh[0][2],]         #A
-            if Nneigh >= 2:
-                UVvec[dId] += [neigh[1][3]/neigh[1][2],(neigh[0][3]+neigh[1][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2),]    #B, A+B
-            if Nneigh == 4:
-                UVvec[dId] += [(neigh[0][3]+neigh[1][3]+neigh[2][3])/np.sqrt(neigh[0][2]**2+neigh[1][2]**2+neigh[2][2]**2),] #A+B+C
+            NUVvec,NUVchoice = G2lat.SetUVvec(neigh)
+            UVchoice[dId] += NUVchoice
+            UVvec[dId] += NUVvec
             mainSizer.Add(lineSizer)
             matSizer = wx.BoxSizer(wx.HORIZONTAL)
             Mchoice = ["A: X'=U, Y'=(UxV)xU & Z'=UxV","B: X'=U, Y'=UxV & Z'=Ux(UxV)"]
@@ -12256,12 +12249,12 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             mainSizer.Add(matSizer)
             oriSizer = wx.BoxSizer(wx.HORIZONTAL)
             oriSizer.Add(wx.StaticText(deformation,label=' Select orbital U vector: '),0,WACV)
-            Uvec = wx.ComboBox(deformation,value=deformationData[-dId]['U'],choices=UVchoice[dId][:Nneigh+5],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Uvec = wx.ComboBox(deformation,value=deformationData[-dId]['U'],choices=UVchoice[dId],style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Uvec.Bind(wx.EVT_COMBOBOX,OnUvec)
             Indx[Uvec.GetId()] = dId
             oriSizer.Add(Uvec,0,WACV)
             oriSizer.Add(wx.StaticText(deformation,label=' Select orbital V vector: '),0,WACV)
-            Vvec = wx.ComboBox(deformation,value=deformationData[-dId]['V'],choices=UVchoice[dId][:Nneigh+5],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Vvec = wx.ComboBox(deformation,value=deformationData[-dId]['V'],choices=UVchoice[dId],style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Vvec.Bind(wx.EVT_COMBOBOX,OnVvec)
             Indx[Vvec.GetId()] = dId
             oriSizer.Add(Vvec,0,WACV)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_csv` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_csv` follow:
 '''
 # note documentation in docs/source/exports.rst
 #

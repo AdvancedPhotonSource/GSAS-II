@@ -30,7 +30,9 @@ class PhaseReaderClass(G2obj.ImportPhase):
         return True
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        'Read a rmc6f file using :meth:`ReadINSPhase`'
+        '''Read a rmc6f file using 
+        :meth:`~GSASII.imports.G2phase_rmc6f.PhaseReaderClass.Readrmc6fPhase`
+        '''
         self.Phase = self.Readrmc6fPhase(filename, ParentFrame)
         return True
 

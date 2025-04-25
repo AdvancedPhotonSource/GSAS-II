@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_CIF` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_CIF` follow:
 '''
 # note documentation in docs/source/exports.rst
 #
@@ -84,13 +84,13 @@ def getCellwStrain(phasedict,seqData,pId,histname):
 
 def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
     '''Setup sequential results table (based on code from
-    GSASIIseqGUI.UpdateSeqResults)
+    :func:`GSASII.GSASIIseqGUI.UpdateSeqResults`)
 
     TODO: This should be merged with the table build code in
-    GSASIIseqGUI.UpdateSeqResults and moved to somewhere non-GUI
-    like GSASIIstrIO to create a single routine that can be used
+    :func:`GSASII.GSASIIseqGUI.UpdateSeqResults` and moved to somewhere non-GUI
+    like :mod:`~GSASII.GSASIIstrIO` to create a single routine that can be used
     in both places, but this means returning some
-    of the code that has been removed from there
+    of the code that has been removed from there.
     '''
 
     newAtomDict = seqData[seqHistList[0]].get('newAtomDict',{}) # dict with atom positions; relative & absolute
@@ -4657,7 +4657,9 @@ class ExportCIF(G2fil.ExportBaseclass):
 class ExportProjectCIF(ExportCIF):
     '''Used to create a CIF of an entire project
 
-    also called directly in :func:`GSASIImiscGUI.ExportSequentialFullCIF`
+    also called directly in 
+    :func:`~GSASII.GSASIImiscGUI.ExportSequentialFullCIF`
+    in :mod:`~GSASII.GSASIImiscGUI`
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''

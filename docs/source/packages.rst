@@ -229,7 +229,7 @@ optional packages are:
   to that environment unless you request it specifically.
 * pybaselines: Determines a background for a powder pattern in the
   "autobackground" option. See https://pybaselines.readthedocs.io and
-   https://github.com/derb12/pybaselines for more information.
+  https://github.com/derb12/pybaselines for more information.
 * xmltodict: Needed to read Bruker BRML files. The BRML importer will
   not appear in the importer menu if this package is not installed.
    
@@ -340,10 +340,8 @@ Optional Python Packages
   https://gsas-ii.readthedocs.io is usually reasonably up to date.
 
 * meson (https://mesonbuild.com/meson-python/) is used to compile the
-  relatively small amount of
-   Fortran code that is included with GSAS-II. Use of this will be
-   documented in the future.
-
+  relatively small amount of Fortran code that is included with
+  GSAS-II.
 
 * SCons (https://scons.org/) is used to compile the relatively small amount of
    Fortran code that is included with GSAS-II. Use of this is only for

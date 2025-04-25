@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-'''
+'''There are several classes in :mod:`~GSASII.imports.G2phase`. 
+The documentation for them follows.
 '''
 
 from __future__ import division, print_function
@@ -51,7 +52,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         return False
 
     def Reader(self,filename, ParentFrame=None, **unused):
-        'Read a PDF file using :meth:`ReadPDBPhase`'
+        'Read a PDB file using :meth:`ReadPDBPhase`'
         self.Phase = self.ReadPDBPhase(filename, ParentFrame)
         return True
         
@@ -192,7 +193,9 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         return False
 
     def Reader(self,filename,ParentFrame=None,usedRanIdList=[],**unused):
-        'Read a phase from a GSAS .EXP file using :meth:`ReadEXPPhase`'
+        '''Read a phase from a GSAS .EXP file using 
+        :meth:`~EXP_ReaderClass.ReadEXPPhase`
+        '''
         self.Phase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
         while self.Phase['ranId'] in usedRanIdList:
             self.Phase['ranId'] = ran.randint(0,sys.maxsize)
@@ -612,7 +615,8 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         return Phase
     
 class PDF_ReaderClass(G2obj.ImportPhase):
-    'Routine to import Phase information from ICDD PDF Card files'
+    '''Routine to import Phase information from ICDD Powder Diffraction 
+    File(r) Card, exported by their software.'''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.str',),

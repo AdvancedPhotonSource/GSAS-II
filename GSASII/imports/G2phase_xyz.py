@@ -32,7 +32,7 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
         return True
 
     def Reader(self,filename, ParentFrame=None, **unused):
-        'Read a PDF file using :meth:`ReadPDBPhase`'
+        'Read a phase from an XYZ file.'
         self.errors = 'Error opening file'
         fp = open(filename, 'r')
         self.Phase = {}

@@ -2916,6 +2916,29 @@ def H2ThPh(H,Bmat,Q):
     Th = np.where(Th<0.,Th+360.,Th)
     return Th,Ph        #azimuth,polar angles
 
+def SetUVvec(Neigh):
+    ''' Set deformation coordinate choices from neighbors; called in G2phsGUI/UpdateDeformation
+    
+    param: list neigh: list of neighboring atoms; each with name, dist & cartesian vector
+
+    :returns list UVvec: list of normalized vectors
+    :returns list UVchoice: list of names for each
+    '''
+    UVvec = []
+    UVchoice = []    
+    choice = ['A','B','C','D','E','F','G','H']
+    for N,neigh in enumerate(Neigh):
+        UVvec += [neigh[3]/neigh[2],]
+        UVchoice += choice[N]
+    Nneigh = len(Neigh)
+    if Nneigh >= 2:
+        UVvec += [(Neigh[0][3]+Neigh[1][3])/np.sqrt(Neigh[0][2]**2+Neigh[1][2]**2),]
+        UVchoice += ['A+B',]
+    if Nneigh >= 3:
+        UVvec += [(Neigh[0][3]+Neigh[1][3]+Neigh[2][3])/np.sqrt(Neigh[0][2]**2+Neigh[1][2]**2+Neigh[2][2]**2),]
+        UVchoice += ['A+B+C',]
+    return UVvec,UVchoice
+
 def SHarmcal(SytSym,SHFln,psi,gam):
     '''Perform a surface spherical harmonics computation.
     Presently only used for plotting

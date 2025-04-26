@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 """
-Classes and routines defined in :mod:`GSASIIscriptable` follow.
+Classes and routines defined in :mod:`~GSASII.GSASIIscriptable` follow.
 A script will create one or more :class:`G2Project` objects by reading
 a GSAS-II project (.gpx) file or creating a new one and will then
 perform actions such as adding a histogram (method :meth:`G2Project.add_powder_histogram`),
@@ -360,11 +360,6 @@ def GenerateReflections(spcGrp,cell,Qmax=None,dmin=None,TTmax=None,wave=None):
 
     Example:
 
-    >>> import os,sys
-    >>> sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    >>> import GSASIIscriptable as G2sc
-    GSAS-II binary directory: /Users/toby/software/G2/GSASII/bin
-    17 values read from config file /Users/toby/software/G2/GSASII/config.py
     >>> refs = G2sc.GenerateReflections('P 1',
     ...                     (5.,6.,7.,90.,90.,90),
     ...                     TTmax=20,wave=1)
@@ -5565,10 +5560,8 @@ class G2SeqRefRes(G2ObjectWrapper):
 
     As an example::
 
-        import os,sys
-        sys.path.insert(0,'/Users/toby/software/G2/GSASII')
+        import os
         PathWrap = lambda fil: os.path.join('/Users/toby/Scratch/SeqTut2019Mar',fil)
-        from . import GSASIIscriptable as G2sc
         gpx = G2sc.G2Project(PathWrap('scr4.gpx'))
         seq = gpx.seqref()
         lbl = ('a','b','c','alpha','beta','gamma','Volume')

@@ -56,6 +56,7 @@ from . import GSASIIfiles as G2fil
 from . import GSASIIconstrGUI as G2cnstG
 from . import atmdata
 from . import ISODISTORT as ISO
+from . import SUBGROUPS
 
 try:
     wx.NewIdRef
@@ -3620,7 +3621,6 @@ program; Please cite:
             return s
 
         #### processing for OnSuperSearch starts here ####
-        import SUBGROUPS
         fileList = []
         ReSearch = {}
         gpxList = []
@@ -3844,7 +3844,6 @@ program; Please cite:
         '''Uses the Bilbao web site to transform a space group and coordinates
         to a standard setting
         '''
-        import SUBGROUPS
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(generalData['SGData'])

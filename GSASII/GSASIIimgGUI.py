@@ -347,7 +347,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     # add setdist to varylist etc. so that it is displayed in Seq Res table
                     varyList.append('setdist')
                     sigList.append(None)
-                    covar = np.lib.pad(covar, (0,1), 'constant')
+                    covar = np.pad(covar, (0,1), 'constant')
 #                    vals.append(Data.get('samplechangerpos',Data['samplechangerpos']))
 #                    varyList.append('chgrpos')
 #                    sigList.append(None)
@@ -590,7 +590,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 #                    # add setdist to varylist etc. so that it is displayed in Seq Res table
 #                    varyList.append('setdist')
 #                    sigList.append(None)
-#                    covar = np.lib.pad(covar, (0,1), 'constant')
+#                    covar = np.pad(covar, (0,1), 'constant')
 #                    vals.append(Data.get('samplechangerpos',Data['samplechangerpos']))
 #                    varyList.append('chgrpos')
 #                    sigList.append(None)

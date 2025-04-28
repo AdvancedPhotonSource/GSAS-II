@@ -4776,7 +4776,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         else:
             dlg.Destroy()
             return
-        #import SUBGROUPS as kSUB
         wx.BeginBusyCursor()
         wx.MessageBox(' For use of PSEUDOLATTICE, please cite:\n\n'+
                           G2G.GetCite('Bilbao: PSEUDOLATTICE'),
@@ -4910,7 +4909,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def OnRunSubs(event):
-        #import SUBGROUPS as kSUB
         G2frame.dataWindow.RunSubGroupsMag.Enable(False)
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
@@ -5008,8 +5006,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def OnRunSubsMag(event,kvec1=None):
-        #import SUBGROUPS as kSUB
-
         def strTest(text):
             if '.' in text: # no decimals
                 return False

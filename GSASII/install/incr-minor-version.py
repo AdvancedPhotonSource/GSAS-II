@@ -107,6 +107,7 @@ if __name__ == '__main__':
     g2repo.index.add([pyfile])
     g2repo.index.commit('increment minor version')
     g2repo.remote(name='origin').push()
-    g2repo.remote(name='origin').push('--tags')
+    g2repo.remotes.origin.push(versiontag)
+    g2repo.remotes.origin.push(str(tagnum))
 
 #    print('Now do:\n\t git add \n\t git commit \n\t git push \n\t git push --tags\n (try "git push origin HEAD --tags")')

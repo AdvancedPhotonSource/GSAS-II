@@ -6812,8 +6812,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 'Copy selected unit cell from indexing to cell refinement fields')
             self.LoadCell = self.IndexEdit.Append(G2G.wxID_LOADCELL,'Load Phase',
                 'Load unit cell from a phase tree entry')
-            self.ImportCell = self.IndexEdit.Append(G2G.wxID_IMPORTCELL,'Import Cell',
-                'Import unit cell from file')
+            # TODO: broken. Needs to be a cascade menu as per ReImportMenuId?
+            # self.ImportCell = self.IndexEdit.Append(G2G.wxID_IMPORTCELL,'Import Cell',
+            #     'Import unit cell from file')
             self.TransposeCell = self.IndexEdit.Append(G2G.wxID_TRANSFORMCELL,'Transform Cell',
                 'Transform unit cell')
             self.RefineCell = self.IndexEdit.Append(G2G.wxID_REFINECELL,'Refine Cell',
@@ -7093,6 +7094,17 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             G2G.Define_wxId('wxID_ISOSRCH')
             self.GeneralCalc.Append(G2G.wxID_ISOSRCH,'ISOCIF Supergroup search','Search for settings of this phase in higher symmetry')
             self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
+
+            submenu = wx.Menu()
+            self.GeneralCalc.AppendSubMenu(submenu,'Replace phase','Replace phase from file')
+            # setup a cascade menu for the formats that have been defined
+            self.ReplaceMenuId = {}  # points to readers for each menu entry
+            for reader in self.parent.GetTopLevelParent().ImportPhaseReaderlist:
+                item = submenu.Append(wx.ID_ANY,'Replace phase from '+reader.formatName+' file',reader.longFormatName)
+                self.ReplaceMenuId[item.GetId()] = reader
+            item = submenu.Append(wx.ID_ANY,'guess format from file','Replace phase, try to determine format from file')
+            self.ReplaceMenuId[item.GetId()] = None # try all readers
+            
             self.PostfillDataMenu()
         #self.DataGeneral = _makemenu
 

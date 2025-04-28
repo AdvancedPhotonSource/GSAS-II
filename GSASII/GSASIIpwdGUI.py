@@ -4480,29 +4480,34 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         OnHklShow(None,indexFrom=' Indexing from loaded unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def ImportUnitCell(event):
-        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)[:5]
-        reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
-        rdlist = G2frame.OnImportGeneric(reqrdr,
-            G2frame.ImportPhaseReaderlist,'phase')
-        if len(rdlist) == 0: return
-        rd = rdlist[0]
-        Cell = rd.Phase['General']['Cell']
-        SGData = rd.Phase['General']['SGData']
-        if '1 1' in SGData['SpGrp']:
-            wx.MessageBox('Unusable space group',caption='Monoclinic '+SGData['SpGrp']+' not usable here',style=wx.ICON_EXCLAMATION)
-            return
-        controls[4] = 1
-        controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
-        if controls[5][1:] == 'm3': controls[5] += 'm'
-        if 'P3' in controls[5] or 'P-3' in controls[5]: controls[5] = 'P6/mmm'
-        if 'R' in controls[5]: controls[5] = 'R3-H'
-        controls[6:13] = Cell[1:8]
-        controls[13] = SGData['SpGrp']
-        ssopt['SgResults'] = []
-        G2frame.dataWindow.RefineCell.Enable(True)
-        OnHklShow(None,indexFrom=' Indexing from imported unit cell & symmetry settings')
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+    # TODO: I think this used to work, but this needs to be revisited due to
+    # AttributeError: 'G2DataWindow' object has no attribute 'ReImportMenuId'
+    # from: 
+    #    reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
+    #
+    # def ImportUnitCell(event):
+    #     controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)[:5]
+    #     reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
+    #     rdlist = G2frame.OnImportGeneric(reqrdr,
+    #         G2frame.ImportPhaseReaderlist,'phase')
+    #     if len(rdlist) == 0: return
+    #     rd = rdlist[0]
+    #     Cell = rd.Phase['General']['Cell']
+    #     SGData = rd.Phase['General']['SGData']
+    #     if '1 1' in SGData['SpGrp']:
+    #         wx.MessageBox('Unusable space group',caption='Monoclinic '+SGData['SpGrp']+' not usable here',style=wx.ICON_EXCLAMATION)
+    #         return
+    #     controls[4] = 1
+    #     controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
+    #     if controls[5][1:] == 'm3': controls[5] += 'm'
+    #     if 'P3' in controls[5] or 'P-3' in controls[5]: controls[5] = 'P6/mmm'
+    #     if 'R' in controls[5]: controls[5] = 'R3-H'
+    #     controls[6:13] = Cell[1:8]
+    #     controls[13] = SGData['SpGrp']
+    #     ssopt['SgResults'] = []
+    #     G2frame.dataWindow.RefineCell.Enable(True)
+    #     OnHklShow(None,indexFrom=' Indexing from imported unit cell & symmetry settings')
+    #     wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def onRefineCell(event):
         data = RefineCell(G2frame)
@@ -6658,7 +6663,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
     G2frame.Bind(wx.EVT_MENU, OnNISTLatSym, id=G2G.wxID_NISTLATSYM)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
-    G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
+    #G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
     G2frame.Bind(wx.EVT_MENU, TransformUnitCell, id=G2G.wxID_TRANSFORMCELL)
     G2frame.Bind(wx.EVT_MENU, onRefineCell, id=G2G.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)

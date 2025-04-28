@@ -1696,37 +1696,11 @@ def UpdatePhaseData(G2frame,Item,data):
                     return '(00g)'
 
             def OnPhaseName(event):
+                'called when the phase name is changed in "General"'
                 event.Skip()
-                oldName = generalData['Name']
-                phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
-                phaseNameList = usedHistograms.keys() # phase names in use
                 newName = NameTxt.GetValue().strip()
-                if newName and newName != oldName:
-                    newName = G2obj.MakeUniqueLabel(newName,list(phaseNameList))
-                    generalData['Name'] = newName
-                    G2frame.G2plotNB.Rename(oldName,generalData['Name'])
-                    G2frame.GPXtree.SetItemText(Item,generalData['Name'])
-                    # change phase name key in Reflection Lists for each histogram
-                    for hist in data['Histograms']:
-                        ht = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
-                        rt = G2gd.GetGPXtreeItemId(G2frame,ht,'Reflection Lists')
-                        if not rt: continue
-                        RfList = G2frame.GPXtree.GetItemPyData(rt)
-                        if oldName not in RfList:
-                            print('Warning: '+oldName+' not in Reflection List for '+
-                                  hist)
-                            continue
-                        RfList[newName] = RfList[oldName]
-                        del RfList[oldName]
-                    NameTxt.SetValue(newName)
-                    # rename Restraints
-                    resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
-                    Restraints = G2frame.GPXtree.GetItemPyData(resId)
-                    i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
-                    if i: G2frame.GPXtree.SetItemText(i,newName)
-                    if len(Restraints):
-                        Restraints[newName] = Restraints[oldName]
-                        del Restraints[oldName]
+                renamePhaseName(Item,generalData,newName)
+                NameTxt.SetValue(newName)
                                                 
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
@@ -4188,11 +4162,13 @@ program; Please cite:
         resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
         Restraints = G2frame.GPXtree.GetItemPyData(resId)
         resId = G2gd.GetGPXtreeItemId(G2frame,resId,phsnam)
-        Restraints[phsnam]['Bond']['Bonds'] = []
-        Restraints[phsnam]['Angle']['Angles'] = []
-        savedRestraints = Restraints[phsnam]
+        savedRestraints = None
+        if phsnam in Restraints:
+            Restraints[phsnam]['Bond']['Bonds'] = []
+            Restraints[phsnam]['Angle']['Angles'] = []
+            savedRestraints = Restraints[phsnam]
+            del Restraints[phsnam]
         orgData = copy.deepcopy(data)
-        del Restraints[phsnam]
         for sel in sels:
             data.update(copy.deepcopy(orgData))   # get rid of prev phase
             magchoice = subKeep[sel]
@@ -4248,8 +4224,8 @@ program; Please cite:
                 RfList[newName] = []
                 if phsnam in RfList:
                     del RfList[phsnam]
-            # copy cleared restraints
-            Restraints[generalData['Name']] = savedRestraints
+            if savedRestraints: # restore cleared restraints
+                Restraints[generalData['Name']] = savedRestraints
             if resId: G2frame.GPXtree.SetItemText(resId,newName)
             data.update(newPhase)
             #clear away prev subgroup choices
@@ -5651,7 +5627,52 @@ program; Please cite:
         #imp.reload(G2cnstG)
         G2cnstG.ShowIsoModes(G2frame,data['General']['Name'])
 
+    def OnReplacePhase(event):
+        'Called to replace the current phase with a new phase from a file'
+        reqrdr = G2frame.dataWindow.ReplaceMenuId.get(event.GetId())
+        rdlist = G2frame.OnImportGeneric(reqrdr,
+            G2frame.ImportPhaseReaderlist,'phase')
+        if len(rdlist) == 0: return
+        # rdlist is only expected to have one entry
+        rd = rdlist[0]
+        # Strict = True
+        # if 'rmc6f' in rd.readfilename:
+        #     Strict = False
+        #     idx = -1
+        phsnam = data['General']['Name']
+        # clear out stuff that in general should not be
+        # transferred from one phase to another
+        resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        Restraints = G2frame.GPXtree.GetItemPyData(resId)
+        # resId = G2gd.GetGPXtreeItemId(G2frame,resId,phsnam)
+        if phsnam in Restraints:
+            del Restraints[phsnam]
+        consId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints')
+        Constraints = G2frame.GPXtree.GetItemPyData(consId)
+        # TODO: would be cleaner to just delete constraints w/phase data['pId']
+        Constraints['Phase'] = []
+        del data['magPhases']
+        data['MCSA'] = {'Models':
+            [{'Type': 'MD', 'Coef': [1.0, False, [0.8, 1.2]], 'axis': [0, 0, 1]}],
+            'Results': [], 'AtInfo': {}}
+        data['RMC'] = {'RMCProfile': {}, 'fullrmc': {}, 'PDFfit': {}}
+        data['ISODISTORT'] = {}
+        data['Deformations'] = {}
+        # copy over most of the data from the reader object
+        # but keep original name, pId & ranId
+        for key in ['General', 'Atoms', 'Drawing', 'Histograms', 'Pawley ref', 'RBModels']:
+            data[key] = rd.Phase[key]
+        # restore existing phase name
+        newname = rd.Phase['General']['Name']
+        data['General']['Name'] = phsnam
+        # rename phase to new name from file
+        renamePhaseName(G2frame.PickId, data['General'],newname)
+        # force a reload of current tree item
+        G2frame.PickIdText = []
+        wx.CallAfter(G2gd.SelectDataTreeItem,G2frame,G2frame.PickId)
+
     def OnReImport(event):
+        'Called to replace the coordinates with "original" values from a file'
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
@@ -16698,6 +16719,8 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
         G2frame.Bind(wx.EVT_MENU, OnApplySubgroups, id=G2G.wxID_USEBILBAOSUB)
         G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
+        for Id in G2frame.dataWindow.ReplaceMenuId:     #loop over submenu items
+            G2frame.Bind(wx.EVT_MENU, OnReplacePhase, id=Id)
         # Data (unless Hist/Phase tree entry shown)
         if not GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataMenu)
@@ -16903,6 +16926,39 @@ tab, use Operations->"Pawley create")''')
         G2plt.PlotStructure(G2frame,data,False,misc['UpdateTable'])
         G2frame.Raise()
         return
+
+    def renamePhaseName(phaseItem,generalData,newName):
+        '''Called to rename the phase. Updates the tree and items that
+        reference the file name. 
+        '''
+        oldName = generalData['Name']
+        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+        phaseNameList = usedHistograms.keys() # phase names in use
+        if newName and newName != oldName:
+            newName = G2obj.MakeUniqueLabel(newName,list(phaseNameList))
+            generalData['Name'] = newName
+            G2frame.G2plotNB.Rename(oldName,generalData['Name'])
+            G2frame.GPXtree.SetItemText(phaseItem,generalData['Name'])
+            # change phase name key in Reflection Lists for each histogram
+            for hist in data['Histograms']:
+                ht = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+                rt = G2gd.GetGPXtreeItemId(G2frame,ht,'Reflection Lists')
+                if not rt: continue
+                RfList = G2frame.GPXtree.GetItemPyData(rt)
+                if oldName not in RfList:
+                    print('Warning: '+oldName+' not in Reflection List for '+
+                          hist)
+                    continue
+                RfList[newName] = RfList[oldName]
+                del RfList[oldName]
+            # rename Restraints
+            resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+            Restraints = G2frame.GPXtree.GetItemPyData(resId)
+            i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
+            if i: G2frame.GPXtree.SetItemText(i,newName)
+            if len(Restraints) and oldName in Restraints:
+                Restraints[newName] = Restraints[oldName]
+                del Restraints[oldName]
 
     #### UpdatePhaseData execution starts here
     # make sure that the phase menu bars get created before selecting

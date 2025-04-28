@@ -1433,8 +1433,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
         DifLine[0].set_xdata(X[Ibeg:Ifin])
         DifLine[0].set_ydata(DZ[Ibeg:Ifin])
-        lims = [min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])]
-        if all(np.isfinite(lims)): Plot1.set_ylim(lims)
+        try:
+            lims = [min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])]
+            if all(np.isfinite(lims)): Plot1.set_ylim(lims)
+        except:
+            pass
         CalcLine[0].set_xdata(X)
         ObsLine[0].set_xdata(X)
         BackLine[0].set_xdata(X)

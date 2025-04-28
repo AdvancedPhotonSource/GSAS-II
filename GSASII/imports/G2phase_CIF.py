@@ -42,6 +42,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
     def ContentsValidator(self, filename):
         fp = open(filename,'r')
         ok = self.CIFValidator(fp)
+        print('validator: ',ok)
         fp.close()
         return ok
 
@@ -75,7 +76,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
         try:
             cf = G2obj.ReadCIF(filename)
         except cif.StarError as msg:
-            msg  = 'Unreadable cif file\n'+str(msg)
+            msg  = f'\nThis file does not have valid CIF syntax. Web site https://checkcif.iucr.org/ can help find CIF errors. If VESTA or https://addie.ornl.gov/conf_viewer is able to read this CIF, it may allow you to rewrite it as a valid file. \n\nError from PyCifRW: {msg}'
             self.errors = msg
             self.warnings += msg
             return False

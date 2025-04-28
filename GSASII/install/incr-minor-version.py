@@ -1,23 +1,7 @@
-# create numerical tag number for the latest git check in and record that in
-# the git_version.py file. This also advances the minor version number
-# for the GSAS-II version number (from 5.X.Y to 5.X+1.0)
+# create a new numerical tag number for the most recent git checkin
+# and advance the minor GSAS-II version number (from 5.X.Y to 5.X+1.0)
+# Record the hash and version numbers in the git_version.py file.
 
-# perhaps someday this should be made automatic in some fashion (perhaps
-# not used on every check-in but don't go too many days/mods without a new
-# version #
-
-# perhaps someday include as a clean (run on git add) or smudge
-# step (run on git pull).
-# Alternately, on commit/pull might get a count of how many untagged
-# check-ins there have been.
-#
-#    [filter "createVersionFile"]
-#       clean  = python git_filters.py --tag-version
-#       smudge = python git_filters.py --record-version
-# for debug of auto-run scripts, include a redirect in the script to
-# send output to a log file:
-#    sys.stderr = sys.stdout = open('/tmp/gitfilter.log','a')
-#
 import os
 import sys
 import datetime as dt
@@ -32,10 +16,15 @@ path2repo = os.path.dirname(path2GSAS2)
 
 if __name__ == '__main__':
 
-    g2repo = git.Repo(path2repo)
-#    if g2repo.active_branch.name != 'master':
-#        print('Not on master branch')
-#        sys.exit()
+    try:
+        g2repo = git.Repo(path2repo)
+    except:
+        print('Launch of gitpython for version file failed'+
+                  f' with path {path2repo}')
+        sys.exit()
+    if g2repo.active_branch.name != 'main':
+        print('Not on main branch')
+        sys.exit()
     if g2repo.head.is_detached:
         print(f'Detached head {commit0[:7]!r}')
         sys.exit()
@@ -43,6 +32,17 @@ if __name__ == '__main__':
     # someday use the packaging module (but no more dependencies for now)
     numtag = [i for i in g2repo.tags if '-' not in i.name]
     max_numeric = max([int(i.name) for i in numtag if i.name.isdecimal()])
+    commit = g2repo.head.commit
+    now = dt.datetime.now().replace(
+        tzinfo=commit.committed_datetime.tzinfo)
+    commit0 = commit.hexsha
+    # is the newest commit tagged?
+    tags0 = g2repo.git.tag('--points-at',commit)
+    if tags0: tags0 = tags0.split('\n')
+    if tags0:
+        print(f'Latest commit ({commit.hexsha[:7]}) is already tagged ({tags0}).')
+        sys.exit()
+
     # get the latest version number
     releases = [i for i in g2repo.tags if '.' in i.name and i.name.startswith('v')]
     majors = [i.name.split('.')[0][1:] for i in releases]
@@ -60,36 +60,19 @@ if __name__ == '__main__':
     if versiontag in releases:
         print(f'Versioning problem, generated next version {versiontag} already defined!')
         versiontag = '?'
-        
-    # is the newest commit tagged?
-    c = g2repo.head.commit
-    tags = g2repo.git.tag('--points-at',c).split('\n')
-    if tags != ['']:
-        print(f'Latest commit ({c.hexsha[:7]}) is already tagged ({tags}).')
         sys.exit()
-    # add a tag to the newest commit
+    if versiontag != '?':
+        g2repo.create_tag(str(versiontag),ref=commit)
+        print(f'created version # {versiontag} for {commit.hexsha[:7]}')
+
+    # add a numeric tag to the newest commit as well
     tagnum = max_numeric + 1
     while str(tagnum) in g2repo.tags:
         print(f'Error: {tagnum} would be repeated')
         tagnum += 1
-    g2repo.create_tag(str(tagnum),ref=c)
-    print(f'created tag {tagnum} for {c.hexsha[:7]}')
-    if versiontag != '?':
-        g2repo.create_tag(str(versiontag),ref=c)
-        print(f'created version # {versiontag} for {c.hexsha[:7]}')
+    g2repo.create_tag(str(tagnum),ref=commit)
+    print(f'created tag {tagnum} for {commit.hexsha[:7]}')
 
-    # create a file with GSAS-II version information
-    try:
-        g2repo = git.Repo(path2repo)
-    except:
-        print('Launch of gitpython for version file failed'+
-                  f' with path {path2repo}')
-        sys.exit()
-    commit = g2repo.head.commit
-    #ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
-    now = dt.datetime.now().replace(
-        tzinfo=commit.committed_datetime.tzinfo)
-    commit0 = commit.hexsha
     tags0 = [i for i in g2repo.git.tag('--points-at',commit).split('\n') if i.isdecimal()]
     history = list(g2repo.iter_commits('HEAD'))
     for i in history[1:]:
@@ -99,6 +82,7 @@ if __name__ == '__main__':
         tagsm1 = [i for i in tags.split('\n') if i.isdecimal()]
         if not tagsm1: continue
         break
+    # create a file with GSAS-II version information
     pyfile = os.path.join(path2GSAS2,'git_verinfo.py')
     try:
         fp = open(pyfile,'w')
@@ -120,9 +104,9 @@ if __name__ == '__main__':
     fp.close()
     print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')
 
-    print('Now do:\n\t git add \n\t git commit \n\t git push \n\t git push --tags\n (try "git push origin HEAD --tags")')
+    g2repo.index.add([pyfile])
+    g2repo.index.commit('increment minor version')
+    g2repo.remote(name='origin').push()
+    g2repo.remote(name='origin').push('--tags')
 
-# Git 2.4 has added the push.followTags option to turn that flag on by default which you can set with:
-#
-#    git config --global push.followTags true
-# or by adding followTags = true to the [push] section of your ~/.gitconfig file.
+#    print('Now do:\n\t git add \n\t git commit \n\t git push \n\t git push --tags\n (try "git push origin HEAD --tags")')

@@ -1,6 +1,6 @@
-# create a new "mini" GSAS-II version number for the latest git check in.
-# (The version will change from from 5.X.Y to 5.X.Y+1)
-# Also record version info in the git_version.py file.
+# create a new numerical tag number for the most recent git checkin
+# and advance the "mini" GSAS-II version number (from 5.X.Y to 5.X.Y+1)
+# Record the hash and version numbers in the git_version.py file.
 
 # This routine is used where the current version has not been
 # given a numerical tag number
@@ -22,23 +22,31 @@ path2repo = os.path.dirname(path2GSAS2)
 
 if __name__ == '__main__':
 
-    g2repo = git.Repo(path2repo)
-    #if g2repo.active_branch.name != 'master':
-    #    print('Not on master branch')
-    #    sys.exit()
+    try:
+        g2repo = git.Repo(path2repo)
+    except:
+        print('Launch of gitpython for version file failed'+
+                  f' with path {path2repo}')
+        sys.exit()
+    if g2repo.active_branch.name != 'main':
+        print('Not on main branch')
+        sys.exit()
     if g2repo.head.is_detached:
         print(f'Detached head {commit0[:7]!r}')
         sys.exit()
     # make a list of tags without a dash; get the largest numeric tag
     # someday use the packaging module (but no more dependencies for now)
+    numtag = [i for i in g2repo.tags if '-' not in i.name]
+    max_numeric = max([int(i.name) for i in numtag if i.name.isdecimal()])
     commit = g2repo.head.commit
     now = dt.datetime.now().replace(
         tzinfo=commit.committed_datetime.tzinfo)
     commit0 = commit.hexsha
+    # is the newest commit tagged?
     tags0 = g2repo.git.tag('--points-at',commit)
     if tags0: tags0 = tags0.split('\n')
     if tags0:
-        print(f'Current version is tagged as {tags0}. This is not the routine to use')
+        print(f'Latest commit ({commit.hexsha[:7]}) is already tagged ({tags0}).')
         sys.exit()
 
     # get the latest version number
@@ -51,7 +59,7 @@ if __name__ == '__main__':
     # mini can be integer, float or even have letters (5.2.1.1rc1)
     # for now, ignore anything with letters or decimals
     mini = max([int(i) for i in minis if i.isdecimal()])
-    #latest = f'{major}.{minor}.{mini}'
+    latest = f'{major}.{minor}.{mini}'
     nextmini = f'v{major}.{minor}.{mini+1}'
     #nextminor = f'v{major}.{minor+1}.0'    
     versiontag = nextmini
@@ -63,17 +71,24 @@ if __name__ == '__main__':
         g2repo.create_tag(str(versiontag),ref=commit)
         print(f'created version # {versiontag} for {commit.hexsha[:7]}')
 
-# code taken from save-versions.py
+    # add a numeric tag to the newest commit as well
+    tagnum = max_numeric + 1
+    while str(tagnum) in g2repo.tags:
+        print(f'Error: {tagnum} would be repeated')
+        tagnum += 1
+    g2repo.create_tag(str(tagnum),ref=commit)
+    print(f'created tag {tagnum} for {commit.hexsha[:7]}')
+
     tags0 = [i for i in g2repo.git.tag('--points-at',commit).split('\n') if i.isdecimal()]
     history = list(g2repo.iter_commits('HEAD'))
     for i in history[1:]:
         tags = g2repo.git.tag('--points-at',i)
         if not tags: continue
         commitm1 = i.hexsha
-        #tagsm1 = tags.split('\n')
         tagsm1 = [i for i in tags.split('\n') if i.isdecimal()]
         if not tagsm1: continue
         break
+    # create a file with GSAS-II version information
     pyfile = os.path.join(path2GSAS2,'git_verinfo.py')
     try:
         fp = open(pyfile,'w')
@@ -92,9 +107,12 @@ if __name__ == '__main__':
     fp.write(f'git_prevtaggedversion = {commitm1!r}\n')
     fp.write(f'git_prevtags = {tagsm1}\n')
     fp.write(f'git_versiontag = {versiontag!r}\n')
-    #
     fp.close()
     print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')
 
-    print('Now do:\n\t git add \n\t git commit \n\t git push \n\t git push --tags\n (try "git push origin HEAD --tags")')
-    
+    g2repo.index.add([pyfile])
+    g2repo.index.commit('increment mini version')
+    g2repo.remote(name='origin').push()
+    g2repo.remote(name='origin').push('--tags')
+
+#    print('Now do:\n\t git add \n\t git commit \n\t git push \n\t git push --tags\n (try "git push origin HEAD --tags")')

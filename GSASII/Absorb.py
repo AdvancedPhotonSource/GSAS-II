@@ -89,6 +89,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     Pack = 0.50
     Radius = 0.4
     muT = 0.0
+    muR = 0.0
     def _init_coll_ABOUT_Items(self, parent):
 
         parent.Append(wxID_ABSORBABOUT,'About')
@@ -465,8 +466,9 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.muT = muT
 
         if self.Volume:
+            self.muR = self.Radius*self.Pack*muT/(10.0*self.Volume)
             Text += "%s %s%10.4g %s" % ("Total",' '+Gkmu+' =',self.Pack*muT/self.Volume,'cm'+Pwrm1+', ')
-            Text += "%s%10.4g%s" % ('Total '+Gkmu+'R =',self.Radius*self.Pack*muT/(10.0*self.Volume),', ')
+            Text += "%s%10.4g%s" % ('Total '+Gkmu+'R =',self.muR,', ')
             Text += "%s%10.4f%s\n" % ('Transmission exp(-2'+Gkmu+'R) =', \
                 100.0*math.exp(-2.*self.Radius*self.Pack*muT/(10.0*self.Volume)),'%')
             if muT > 0.:
@@ -475,6 +477,9 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     Text += "%s %10.4g mm\n"%("1/e (~27.2%) penetration depth = ",pene)
                 else:
                     Text += "%s %10.4g %sm\n"%("1/e (~27.2%) penetration depth = ",1000.0*pene,Gkmu)
+                Tth = np.array([0.0,140.0])
+                Xabs = 1./G2pwd.Absorb('Cylinder',self.muR,Tth)
+                Text += "%s %10.4g to %10.4g\n"%("Cylinder absorption correction extremes:",Xabs[0],Xabs[1])
             self.Results.SetValue(Text)
             den = Mass/(0.602*self.Volume)
             if self.ifVol:
@@ -602,8 +607,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.bx.set_title(r"Cylinder abs. corr. for $\lambda= %.4f\AA$"%self.Wave,x=0,ha='left')
         self.bx.set_xlabel(r"$2\theta$",fontsize=14)
         Tth = np.arange(0.,140.0,0.1)
-        pmut = self.Radius*self.Pack*self.muT/(10.0*self.Volume)
-        Xabs = 1./G2pwd.Absorb('Cylinder',pmut,Tth)
+        Xabs = 1./G2pwd.Absorb('Cylinder',self.muR,Tth)
         self.bx.plot(Tth,Xabs)
         Ymin = 0.0
         Ymax = 0.0

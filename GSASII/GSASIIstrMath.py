@@ -428,7 +428,7 @@ def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
         RBsu[k] = np.sqrt(np.inner(Avec.T,np.inner(covMatrix,Avec)))
     return RBsu
 
-def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,ifDeriv=False):
+def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,ifDeriv=False):
     ''' Computes hkl dependent form factors & derivatives from spinning rigid bodies
     :param array HKL: reflection hkl set to be considered
     :param array Bmat: inv crystal to Cartesian transfomation matrix
@@ -555,7 +555,8 @@ def MakeSpHarmFF(HKL,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,
                 orKeys = [item for item in orKeys if 'Sl' in item]
             orbs = SHCdict[iAt]
             UVmat = np.inner(nl.inv(SHCdict[-iAt]['UVmat']),Bmat)
-            Th,Ph = G2lat.H2ThPh(np.reshape(HKL,(-1,3)),UVmat,[1.,0.,0.,1.])
+            R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),UVmat)
+            R = 1/R     # correct dspacings
             atFlg.append(1.0)
             orbTable = ORBtables[Atype][orKeys[0]]  # should point at either Sl core or a Bessel core
             ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
@@ -1214,7 +1215,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         #FF has to have the Bessel*Sph.Har.*atm form factor for each refletion in Uniq for Q atoms; otherwise just normal FF
         #this must be done here. NB: same place for non-spherical atoms; same math except no Bessel part.
         if pfx in SHCdict:
-            MakeSpHarmFF(Uniq,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ)     #Not Amat!
+            MakeSpHarmFF(Uniq,Amat,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ)     #Not Amat!
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
         if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
@@ -1337,7 +1338,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in np.reshape(Uniq,(-1,3))])      #Nref*Nops,3,3
         Hij = np.reshape(np.array([G2lat.UijtoU6(uij) for uij in Hij]),(-1,len(SGT),6))     #Nref,Nops,6
         if pfx in SHCdict:
-            dffdsh,atFlg = MakeSpHarmFF(Uniq,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,True)
+            dffdsh,atFlg = MakeSpHarmFF(Uniq,Amat,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,True)
             if len(dffdSH):
                 for item in dffdSH:
                     dffdSH[item] = np.concatenate((dffdSH[item],dffdsh[item]))

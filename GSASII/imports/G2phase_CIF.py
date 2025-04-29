@@ -47,6 +47,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
         return ok
 
     def Reader(self,filename, ParentFrame=None, usedRanIdList=[], **unused):
+        if cif is None: # can happen in scripting
+            print('Attempting to read a CIF without PyCifRW installed')
+            raise Exception('Attempting to read a CIF without PyCifRW installed')
         isodistort_warnings = '' # errors that would prevent an isodistort analysis
         self.Phase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
         # make sure the ranId is really unique!

@@ -5662,6 +5662,16 @@ program; Please cite:
         # but keep original name, pId & ranId
         for key in ['General', 'Atoms', 'Drawing', 'Histograms', 'Pawley ref', 'RBModels']:
             data[key] = rd.Phase[key]
+        # TODO: want to keep Histograms rather than wipe it out?
+        # If so, need to think about Dij & microstrain:
+            # UseList = newPhase['Histograms']
+            # for hist in UseList:
+            #     # reset Dij & microstrain terms where # of terms changes
+            #     if len(UseList[hist]['Mustrain'][4]) != NShkl:
+            #         UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+            #     if len(UseList[hist]['HStrain'][0]) != NDij:
+            #         UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+
         # restore existing phase name
         newname = rd.Phase['General']['Name']
         data['General']['Name'] = phsnam

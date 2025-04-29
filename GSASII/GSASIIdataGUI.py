@@ -2079,6 +2079,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 N = (np.log(end)-np.log(start))/step
                 x = np.exp((np.arange(0,N))*step+np.log(start*1000.))
                 N = len(x)
+                rd.Sample['Scale'][0] = 5000. # default is way too low for "counts"
             else:
                 N = int((end-start)/step)+1
                 x = np.linspace(start,end,N,True)
@@ -8155,7 +8156,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
         iBeg = np.searchsorted(data[1][0],Limits[1][0])
         iFin = np.searchsorted(data[1][0],Limits[1][1])+1
         meanI = np.mean(data[1][1][iBeg:iFin])
-        S = -1.0+np.sum(np.log(meanI**2/(data[1][1][iBeg:iFin]-meanI)**2))/(iFin-iBeg)
+        S = None
+        if meanI != 0:
+            S = -1.0+np.sum(np.log(meanI**2/(data[1][1][iBeg:iFin]-meanI)**2))/(iFin-iBeg)
 #patches
     if not data:
         return
@@ -8217,7 +8220,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #        comp.Bind(wx.EVT_COMBOBOX, OnCompression)
 #        wtSizer.Add(comp,0,WACV)
 
-    if kind == 'PWDR':
+    if kind == 'PWDR' and S is not None:
         wtSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data "Surprise" factor: %.3f'%S))
     mainSizer.Add(wtSizer,0,wx.EXPAND)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)

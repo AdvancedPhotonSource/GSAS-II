@@ -4150,6 +4150,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     G2frame.GPXtree.SetItemPyData(IndexId,data)
     G2frame.IndexPeaksTable = G2G.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataWindow.currentGrids = []
+    G2frame.indxPeaks = G2G.GSGrid(parent=G2frame.dataWindow)
     G2frame.indxPeaks.SetRowLabelSize(45)
     G2frame.indxPeaks.SetTable(G2frame.IndexPeaksTable, True)
     XY = []

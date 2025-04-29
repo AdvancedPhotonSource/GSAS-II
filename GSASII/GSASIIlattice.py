@@ -2887,6 +2887,20 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
             Kcl = pcrs*(cosd(N*beta)+sind(N*beta))
     return Kcl*Ksl,Lnorm(L)
 
+def H2ThPh2(H,Bmat):
+    '''Convert HKL to spherical polar & azimuth angles
+
+    :param array H: array of hkl as [n,3]
+    :param [3,3] array Bmat: inv crystal to Cartesian transformation
+    :returns array Th: HKL azimuth angles
+    :returns array Ph: HKL polar angles
+    '''
+    Hcart = np.inner(H,Bmat)
+    R = np.sqrt(np.sum(np.square(Hcart),axis=1))
+    Pl = acosd(Hcart[:,2]/R)
+    Az = atan2d(Hcart[:,1],Hcart[:,0])
+    return R,Az,Pl
+
 def H2ThPh(H,Bmat,Q):
     '''Convert HKL to spherical polar & azimuth angles
 

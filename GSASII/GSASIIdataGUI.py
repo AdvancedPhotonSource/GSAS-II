@@ -1615,42 +1615,43 @@ If you continue from this point, it is quite likely that all intensity computati
         #1st priority: is there an instrument parameter file matching the current file
         # with extension .instprm, .prm, .inst, or .ins? If so read it
         basename = os.path.splitext(filename)[0]
-        #-- look for an instrument file matching the name of the data file -------------
-        print('looking for default instrument parameter file named\n\t',
-                  os.path.split(basename)[1],
-                  'with extensions .prm, .inst, .ins or .instprm')
-        for ext in '.prm','.inst','.ins','.instprm':
-            if self.zipfile:
-                instfile = G2G.ExtractFileFromZip(self.zipfile,
-                    selection=os.path.split(basename + ext)[1],parent=self)
-                if instfile == None:
+        if basename:
+            #-- look for an instrument file matching the name of the data file -------------
+            print('looking for default instrument parameter file named\n\t',
+                      os.path.split(basename)[1],
+                      'with extensions .prm, .inst, .ins or .instprm')
+            for ext in '.prm','.inst','.ins','.instprm':
+                if self.zipfile:
+                    instfile = G2G.ExtractFileFromZip(self.zipfile,
+                        selection=os.path.split(basename + ext)[1],parent=self)
+                    if instfile == None:
+                        continue
+                    print(f'created {instfile} from {self.zipfile}')
+                    self.cleanupList.append(instfile)
+                else:
+                    instfile = basename + ext
+                if not os.path.exists(instfile):
                     continue
-                print(f'created {instfile} from {self.zipfile}')
-                self.cleanupList.append(instfile)
-            else:
-                instfile = basename + ext
-            if not os.path.exists(instfile):
-                continue
-            if 'instprm' in instfile:
-                Lines = self.OpenPowderInstprm(instfile)
-                instParmList = self.ReadPowderInstprm(Lines,bank,rd)    #this is [Inst1,Inst2] a pair of dicts
-                if 'list' in str(type(instParmList)):
-                    rd.instfile = instfile
-                    rd.instmsg = 'GSAS-II file '+instfile
-                    return instParmList
+                if 'instprm' in instfile:
+                    Lines = self.OpenPowderInstprm(instfile)
+                    instParmList = self.ReadPowderInstprm(Lines,bank,rd)    #this is [Inst1,Inst2] a pair of dicts
+                    if 'list' in str(type(instParmList)):
+                        rd.instfile = instfile
+                        rd.instmsg = 'GSAS-II file '+instfile
+                        return instParmList
+                    else:
+                        #print 'debug: open/read failed',instfile
+                        pass # fail silently
                 else:
-                    #print 'debug: open/read failed',instfile
-                    pass # fail silently
-            else:
-                Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
-                if Iparm:
-                    #print 'debug: success'
-                    rd.instfile = instfile
-                    rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-                    return G2fil.SetPowderInstParms(Iparm,rd)
-                else:
-                    #print 'debug: open/read failed',instfile
-                    pass # fail silently
+                    Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
+                    if Iparm:
+                        #print 'debug: success'
+                        rd.instfile = instfile
+                        rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+                        return G2fil.SetPowderInstParms(Iparm,rd)
+                    else:
+                        #print 'debug: open/read failed',instfile
+                        pass # fail silently
 
         #-- look for an instrument file matching the name of the data file -------------
         #  2nd choice: is there an instrument parameter file defined in the
@@ -2023,7 +2024,7 @@ If you continue from this point, it is quite likely that all intensity computati
             return
         Iparm1, Iparm2 = Iparm
         if 'T' in Iparm1['Type'][0]:
-            rd.idstring = ' TOF neutron simulation'
+            rd.idstring = 'TOF neutron simulation'
             simType = 'TOF'
         else:
             # need to get name, 2theta start, end, step
@@ -2044,28 +2045,25 @@ If you continue from this point, it is quite likely that all intensity computati
         N = 0
         while (N < 3): # insist on a dataset with a few points
             if 'TOF' in rd.idstring:
-                names = ('dataset name', 'start TOF(ms)', 'end TOF(ms)', 'DT/T')
+                names = ('dataset name', 'T start (ms)', 'T end (ms)', 'DT/T')
                 inp = [rd.idstring, 10.,80.,0.0005] # see names for what's what
-                dlg = G2G.ScrolledMultiEditor(
-                    self,[inp] * len(inp),range(len(inp)),names,
-                    header='Enter simulation name and range',
-                    minvals=(None,.5,1.0,0.0001),
-                    maxvals=(None,500.,500.,.01),
-                    sizevals=((225,-1),)
-                    )
+                minvals = (None,.5,1.0,0.0001)
+                maxvals = (None,500.,500.,.01)
             else:
                 names = ('dataset name', 'start angle', 'end angle', 'step size')
                 if not wave or wave < 1.0:
                     inp = [rd.idstring, 10.,40.,0.005] # see names for what's what
                 else:
                     inp = [rd.idstring, 10.,80.,0.01] # see names for what's what
-                dlg = G2G.ScrolledMultiEditor(
-                    self,[inp] * len(inp),range(len(inp)),names,
-                    header='Enter simulation name and range',
-                    minvals=(None,0.001,0.001,0.0001),
-                    maxvals=(None,180.,180.,.1),
-                    sizevals=((225,-1),)
-                    )
+                minvals=(None,0.001,0.001,0.0001),
+                maxvals=(None,180.,180.,.1),
+            dlg = G2G.ScrolledMultiEditor(
+                self,[inp] * len(inp),range(len(inp)),names,
+                header='Enter ramnge for simulation and histogram name',
+                minvals=minvals,
+                maxvals=maxvals,
+                sizevals=((250,-1),None,None,None),
+                size=(400,150))
             dlg.CenterOnParent()
             if dlg.ShowModal() == wx.ID_OK:
                 if inp[1] > inp[2]:
@@ -2075,11 +2073,14 @@ If you continue from this point, it is quite likely that all intensity computati
                 step = abs(step)
             else:
                 return False
+            # TODO: compute if the range and see if the widths are all
+            # positive here. If OK continue, otherwise warn and reject the
+            # limits (as per issue #170)
             if 'TOF' in rd.idstring:
                 N = (np.log(end)-np.log(start))/step
                 x = np.exp((np.arange(0,N))*step+np.log(start*1000.))
                 N = len(x)
-                rd.Sample['Scale'][0] = 5000. # default is way too low for "counts"
+                rd.Sample['Scale'][0] = 5000. # default (1) is way too low for "counts"
             else:
                 N = int((end-start)/step)+1
                 x = np.linspace(start,end,N,True)

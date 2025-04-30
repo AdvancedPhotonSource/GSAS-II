@@ -1472,7 +1472,7 @@ def G2RadioButtons(parent,loc,key,choices,values=None,OnChange=None):
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
                              CopyButton=False, ASCIIonly=False, **kw):
-    '''Shell routine to call a ScrolledMultiEditor dialog. See
+    '''Wrapper routine to call a ScrolledMultiEditor dialog. See
     :class:`ScrolledMultiEditor` for parameter definitions.
 
     :returns: True if the OK button is pressed; False if the window is closed
@@ -1641,6 +1641,9 @@ class ScrolledMultiEditor(wx.Dialog):
                     self.ButtonIndex[but] = i
                 subSizer.Add(but)
             # create the validated TextCrtl, store it and add it to the sizer
+            if type(d[k]) is str and d[k].startswith(' ') and GSASIIpath.GetConfigValue('debug'):
+                # seems to cause problems when the window resizes?!? See issue #171
+                print(f'ScrolledMultiEditor Warning: initial space in {d[k]!r} may cause problems')
             ctrl = ValidatedTxtCtrl(panel,d,k,OKcontrol=self.ControlOKButton,ASCIIonly=ASCIIonly,
                                     **kargs)
             self.ValidatedControlsList.append(ctrl)

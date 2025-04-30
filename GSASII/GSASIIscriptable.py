@@ -5100,12 +5100,13 @@ class G2Phase(G2ObjectWrapper):
         :param str param: is a parameter name, which can be 'Scale' or
           'PhaseFraction' (either can be used for phase
           fraction), 'Use', 'Extinction', 'LeBail', 'PO' 
-          (for Prefered Orientation).
+          (for Preferred Orientation).
           If not specified or invalid
           an exception is generated showing the list of valid parameters.
-          At present, these HAP parameters cannot be access with this function:
-          'Size', 'Mustrain', 'HStrain', 'Babinet'. On request this
-          might be addressed in the future. Some of these values can be set via
+          At present, only these HAP parameters cannot be accessed with 
+          this function: 'Size', 'Mustrain', 'HStrain', 'Babinet'. 
+          This might be addressed in the future. 
+          Some of these values can be set via
           :meth:`G2Phase.set_HAP_refinements`.
         :param newValue: the value to use when setting the HAP parameter for the
           appropriate histogram(s). Will be converted to the proper type or

@@ -5,7 +5,7 @@ or Q vs intensity with an optional 3rd column for s.u.(I)
 '''
 
 from __future__ import division, print_function
-import os.path as ospath
+import os.path
 import numpy as np
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
@@ -38,9 +38,10 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         Qchi = False
         self.Wave = None
         fp = open(filename,'r')
-        if '.chi' in filename:
+        ext = os.path.splitext(filename)[1]
+        if ext == '.chi':
             self.Chi = True
-        if '.qchi' in filename:
+        if ext == '.qchi':
             Qchi = True
         if2theta = False
         ifQ = False
@@ -83,7 +84,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                         gotCcomment = True
                         continue   
                     if S[0] in ["'",'#','!']:
-                        if 'wavelength' in S and not self.Wave:
+                        if 'wavelength' in S and not self.Wave and '.q' in ext:
                             wave = S.split()[2]
                             if wave: 
                                 try:
@@ -212,7 +213,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         self.powderentry[0] = filename
         #self.powderentry[1] = pos # bank offset (N/A here)
         #self.powderentry[2] = 1 # xye file only has one bank
-        self.idstring = ospath.basename(filename)
+        self.idstring = os.path.basename(filename)
         # scan comments for temperature
         Temperature = 300.
         for S in self.comments:

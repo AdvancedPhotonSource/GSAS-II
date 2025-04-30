@@ -33,14 +33,14 @@
 !       RT     Scratch array of 500 words needed by sgroup
 !       IER    Error flag no.
 
-      INTEGER*4     JRT(3,5,24)         !Output matrices, with flags
+      INTEGER(kind=4)     JRT(3,5,24)         !Output matrices, with flags
       CHARACTER*20  SPG                 !Input stribg to be parced
-      REAL*4        CEN(3,4)            !Lattice centering vectors
-      REAL*4        RT(5,4,25)          !Raw trial matrices with some flags
-      REAL*4        D(3,3)              !Origin definition data
+      REAL(kind=4)        CEN(3,4)            !Lattice centering vectors
+      REAL(kind=4)        RT(5,4,25)          !Raw trial matrices with some flags
+      REAL(kind=4)        D(3,3)              !Origin definition data
       CHARACTER*33  CHR                 !List of characters which will be recognized
-      INTEGER*4     LCEN(7)             !Latice centering flags
-      INTEGER*4     L(4,4)              !First parcing output, Characters converted to numbers
+      INTEGER(kind=4)     LCEN(7)             !Latice centering flags
+      INTEGER(kind=4)     L(4,4)              !First parcing output, Characters converted to numbers
 
 !               C B A P F I R
       DATA LCEN/4,3,2,1,6,5,7/

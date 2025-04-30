@@ -14,91 +14,91 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        DTT                 !delta 2-theta in degrees                 
-      REAL*4        TTHETA              !2-theta in degrees              
-      REAL*4        ALP,BET,SIG,GAM             
-      REAL*4        SL,HL               !S/L & H/L               
-      REAL*4        PRFUNC              
-      REAL*4        DPRDT               
-      REAL*4        ALPART,BEPART,SIGPART,GAMPART     
-      REAL*4        SLPART,HLPART       
+      REAL(kind=4)        DTT                 !delta 2-theta in degrees                 
+      REAL(kind=4)        TTHETA              !2-theta in degrees              
+      REAL(kind=4)        ALP,BET,SIG,GAM             
+      REAL(kind=4)        SL,HL               !S/L & H/L               
+      REAL(kind=4)        PRFUNC              
+      REAL(kind=4)        DPRDT               
+      REAL(kind=4)        ALPART,BEPART,SIGPART,GAMPART     
+      REAL(kind=4)        SLPART,HLPART       
 
 !INCLUDE STATEMENTS:
-      REAL*4 SIND,COSD,TAND,ACOSD
+      REAL(kind=4) SIND,COSD,TAND,ACOSD
 
 !LOCAL VARIABLES:
 
-      REAL*4        R                   ! pseudo-voight intensity
-      REAL*4        DRDT                ! deriv R w/r theta
-      REAL*4        DRDA                ! deriv R w/r alpha
-      REAL*4        DRDB                ! deriv R w/r beta
-      REAL*4        DRDS                ! deriv R w/r sig
-      REAL*4        DRDG                ! deriv R w/r gam
-      REAL*4        F                   
-      REAL*4        G                   
-      REAL*4        DFDA                
-      REAL*4        DGDA                
-      REAL*4        DGDB                
-      REAL*4        DYDA                
-      REAL*4        DYDB                
-      REAL*4        SIN2THETA2          ! sin(2theta)**2
-      REAL*4        COS2THETA           ! cos(2theta)
-      REAL*4        SIN2THETA           ! sin(2THETA)
-      REAL*4        SINDELTA            ! sin(Delta)
-      REAL*4        COSDELTA            ! cos(Delta)
-      REAL*4        RCOSDELTA           ! 1/cos(Delta)
-      REAL*4        TANDELTA            ! tan(Delta)
-      REAL*4        COSDELTA2           ! cos(Delta)**2
-      REAL*4        A                   ! asym1 [coff(9)]
-      REAL*4        B                   ! asym2 [coff(10)]
-      REAL*4        APB                 ! (A+B)
-      REAL*4        AMB                 ! (A-B)
-      REAL*4        APB2                ! (A+B)**2
+      REAL(kind=4)        R                   ! pseudo-voight intensity
+      REAL(kind=4)        DRDT                ! deriv R w/r theta
+      REAL(kind=4)        DRDA                ! deriv R w/r alpha
+      REAL(kind=4)        DRDB                ! deriv R w/r beta
+      REAL(kind=4)        DRDS                ! deriv R w/r sig
+      REAL(kind=4)        DRDG                ! deriv R w/r gam
+      REAL(kind=4)        F                   
+      REAL(kind=4)        G                   
+      REAL(kind=4)        DFDA                
+      REAL(kind=4)        DGDA                
+      REAL(kind=4)        DGDB                
+      REAL(kind=4)        DYDA                
+      REAL(kind=4)        DYDB                
+      REAL(kind=4)        SIN2THETA2          ! sin(2theta)**2
+      REAL(kind=4)        COS2THETA           ! cos(2theta)
+      REAL(kind=4)        SIN2THETA           ! sin(2THETA)
+      REAL(kind=4)        SINDELTA            ! sin(Delta)
+      REAL(kind=4)        COSDELTA            ! cos(Delta)
+      REAL(kind=4)        RCOSDELTA           ! 1/cos(Delta)
+      REAL(kind=4)        TANDELTA            ! tan(Delta)
+      REAL(kind=4)        COSDELTA2           ! cos(Delta)**2
+      REAL(kind=4)        A                   ! asym1 [coff(9)]
+      REAL(kind=4)        B                   ! asym2 [coff(10)]
+      REAL(kind=4)        APB                 ! (A+B)
+      REAL(kind=4)        AMB                 ! (A-B)
+      REAL(kind=4)        APB2                ! (A+B)**2
 
 ! Intermediate variables
 
-      REAL*4        RSUMWG2             !      1.0/(sum of w G)**2
-      REAL*4        SUMWG               !      sum of w G
-      REAL*4        WG                  !      w G
-      REAL*4        RSUMWG              !      1.0/sum of w G
-      REAL*4        SUMWRG              !      sum of w G
-      REAL*4        SUMWDGDA            !      sum of w dGdA
-      REAL*4        SUMWRDGDA           !      sum of w R dGdA
-      REAL*4        SUMWDGDB            !      sum of w dGdB
-      REAL*4        SUMWRDGDB           !      sum of w R dGdB
-      REAL*4        SUMWGDRD2T          !      sum of w G dRd(2theta)
-      REAL*4        SUMWGDRDALP         !      sum of w G dRdp(n)
-      REAL*4        SUMWGDRDBET         !      sum of w G dRdp(n)
-      REAL*4        SUMWGDRDSIG         !      sum of w G dRdp(n)
-      REAL*4        SUMWGDRDGAM         !      sum of w G dRdp(n)
-      REAL*4        SUMWGDRDA           
-      REAL*4        SUMWGDRDB           
-      REAL*4        EMIN                ! 2phi minimum
-      REAL*4        EINFL               ! 2phi of inflection point
-      REAL*4        DEMINDA             ! Derivative of Emin wrt A
-      REAL*4        DELTA               ! Angle of integration for convolution
-      REAL*4        DDELTADA            
-      REAL*4        TMP,TMP1,TMP2       ! intermediates
-      INTEGER*4     I,K,IT              ! Miscellaneous loop variables
+      REAL(kind=4)        RSUMWG2             !      1.0/(sum of w G)**2
+      REAL(kind=4)        SUMWG               !      sum of w G
+      REAL(kind=4)        WG                  !      w G
+      REAL(kind=4)        RSUMWG              !      1.0/sum of w G
+      REAL(kind=4)        SUMWRG              !      sum of w G
+      REAL(kind=4)        SUMWDGDA            !      sum of w dGdA
+      REAL(kind=4)        SUMWRDGDA           !      sum of w R dGdA
+      REAL(kind=4)        SUMWDGDB            !      sum of w dGdB
+      REAL(kind=4)        SUMWRDGDB           !      sum of w R dGdB
+      REAL(kind=4)        SUMWGDRD2T          !      sum of w G dRd(2theta)
+      REAL(kind=4)        SUMWGDRDALP         !      sum of w G dRdp(n)
+      REAL(kind=4)        SUMWGDRDBET         !      sum of w G dRdp(n)
+      REAL(kind=4)        SUMWGDRDSIG         !      sum of w G dRdp(n)
+      REAL(kind=4)        SUMWGDRDGAM         !      sum of w G dRdp(n)
+      REAL(kind=4)        SUMWGDRDA           
+      REAL(kind=4)        SUMWGDRDB           
+      REAL(kind=4)        EMIN                ! 2phi minimum
+      REAL(kind=4)        EINFL               ! 2phi of inflection point
+      REAL(kind=4)        DEMINDA             ! Derivative of Emin wrt A
+      REAL(kind=4)        DELTA               ! Angle of integration for convolution
+      REAL(kind=4)        DDELTADA            
+      REAL(kind=4)        TMP,TMP1,TMP2       ! intermediates
+      INTEGER(kind=4)     I,K,IT              ! Miscellaneous loop variables
 c       
 c       Local Variables for Gaussian Integration
 c        
-      INTEGER*4     NGT                 !number of terms in Gaussian quadrature
-      INTEGER*4     NUMTAB              ! number of pre-computed Gaussian tables
+      INTEGER(kind=4)     NGT                 !number of terms in Gaussian quadrature
+      INTEGER(kind=4)     NUMTAB              ! number of pre-computed Gaussian tables
       PARAMETER      (NUMTAB=34)
-      INTEGER*4     NTERMS(NUMTAB)      ! number of terms in each table - must be even
-      INTEGER*4     FSTTERM(NUMTAB)     ! location of 1st term: N.B. N/2 terms
+      INTEGER(kind=4)     NTERMS(NUMTAB)      ! number of terms in each table - must be even
+      INTEGER(kind=4)     FSTTERM(NUMTAB)     ! location of 1st term: N.B. N/2 terms
       LOGICAL*4     CALCLFG(NUMTAB)     ! true if table has previously been calculated
-      INTEGER*4     ARRAYNUM            ! number of selected array
-      INTEGER*4     ARRAYSIZE           ! size of complete array
+      INTEGER(kind=4)     ARRAYNUM            ! number of selected array
+      INTEGER(kind=4)     ARRAYSIZE           ! size of complete array
       PARAMETER      (ARRAYSIZE=1670)
-      REAL*4        XP(ARRAYSIZE)       !Gaussian abscissas
-      REAL*4        WP(ARRAYSIZE)       !Gaussian weights
-      REAL*4        XPT(400)            !temporary Gaussian abscissas
-      REAL*4        WPT(400)            !temporary Gaussian weights
-      REAL*4        STOFW               
+      REAL(kind=4)        XP(ARRAYSIZE)       !Gaussian abscissas
+      REAL(kind=4)        WP(ARRAYSIZE)       !Gaussian weights
+      REAL(kind=4)        XPT(400)            !temporary Gaussian abscissas
+      REAL(kind=4)        WPT(400)            !temporary Gaussian weights
+      REAL(kind=4)        STOFW               
       PARAMETER (STOFW=2.35482005)
-      REAL*4        TODEG               
+      REAL(kind=4)        TODEG               
       PARAMETER (todeg=57.2957795)
       SAVE      CALCLFG,XP,WP          !VALUES TO BE SAVED ACROSS CALLS
 

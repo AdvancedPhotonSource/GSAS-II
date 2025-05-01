@@ -971,6 +971,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
 
         if not UseList[G2frame.hist]['LeBail'] or 'HKLF' in G2frame.hist[:4]:
             bottomSizer.Add(ScaleSizer(),0,wx.BOTTOM,5)
+        else:
+            # if phase fraction/scale is hidden, turn off flag
+            UseList[G2frame.hist]['Scale'][1] = False
 
         if G2frame.hist[:4] == 'PWDR':
             if UseList[G2frame.hist]['Size'][0] == 'isotropic':

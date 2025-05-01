@@ -12836,7 +12836,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Extinction','Babinet','Flack','Twins']
         else:  #PWDR
-            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','Layer Disp']
         copyNames += ['Scale','Fix FXU','FixedSeqVars']
         copyDict = {}
         for name in copyNames:
@@ -12946,7 +12946,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Extinction','Babinet','Flack','Twins']
         else:  #PWDR
-            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','Layer Disp']
         copyNames += ['Scale','Fix FXU','FixedSeqVars']
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
@@ -13027,7 +13027,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         if 'HKLF' in histNam:
             copyNames = ['Extinction','Babinet','Flack','Twins']
         else:  #PWDR
-            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Layer Disp']
+            copyNames = ['Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','Layer Disp']
         copyNames += ['Scale','Fix FXU','FixedSeqVars']
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
@@ -13073,7 +13073,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
                         data['Histograms'][histoName] = {
                             'Histogram':histoName,'Show':False,
-                            'LeBail':False,'newLeBail':False,
+                            'LeBail':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],'Type':Inst['Type'][0],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],

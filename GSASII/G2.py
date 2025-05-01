@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 
 if __name__ == '__main__':
     if pkginfo is None:  # hack path if GSASII not installed into Python
-        print('GSAS-II not installed in Python; Hacking sys.path')
+        print('Adding GSAS-II location to Python system path')
         sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
     from GSASII.GSASIIGUI import main
     main()

@@ -1342,12 +1342,12 @@ def LoadConfig(printInfo=True):
                 if isinstance(config.__dict__[i],types.ModuleType): continue
                 configDict.update({i:str(config.__dict__[i])})
         except ImportError as err:
-            print("Error importing config.py file\n",err)
+            print("New install: start without a config.py file")
             return
         except Exception as err:
             print("Error reading config.py file\n",err)
             return
-        print(f"Contents of {config.__file__} to be written...")
+        print(f"Contents of {config.__file__} to be written from config.py...")
         WriteConfig(configDict)
 
     import configparser
@@ -2157,7 +2157,7 @@ to update/regress repository from git repository:
         try:
             importlib.util.find_spec('GSASII.GSASIIGUI')
         except ModuleNotFoundError:
-            print('GSAS-II not installed in Python; Hacking sys.path')
+            print('Adding GSAS-II location to Python system path')
             sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
 
         # now restart GSAS-II with the new version

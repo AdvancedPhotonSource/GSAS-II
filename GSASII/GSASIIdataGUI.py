@@ -5427,18 +5427,23 @@ If you continue from this point, it is quite likely that all intensity computati
             print ('\nError message(s):\n',errmsg)
             self.ErrorDialog('Error in constraints',errmsg)
             return
-        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         if Controls.get('newLeBail',False):
             dlgtxt = '''Reset Le Bail structure factors?
 
-    Yes: all structure factors are reset to start at unity; Le Bail-only fitting will be used before any least-squares cycles.\n
-    No: least-squares starts with previously set structure factors.'''
-            dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Mode',style=wx.YES_NO)
-            result = wx.ID_NO
-            try:
-                result = dlgb.ShowModal()
-            finally:
-                dlgb.Destroy()
+Yes: all structure factors are reset to start at unity; Le Bail-only fitting will be applied before any least-squares cycles.\n
+No: least-squares fitting starts with previously fit structure factors.'''
+            #dlgb = wx.MessageDialog(self,dlgtxt,'Le Bail Mode',style=wx.YES_NO)
+            #result = wx.ID_NO
+            # try:
+            #     result = dlgb.ShowModal()
+            # finally:
+            #     dlgb.Destroy()
+            result = G2G.ShowScrolledInfo(self,dlgtxt,header='Le Bail Mode',
+                                            width=400,height=200,
+                                           buttonlist=[
+        ('Yes', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_YES)),
+        ('No', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_NO))
+                                               ])
             if result == wx.ID_YES:
                 res = self.OnLeBail(event)
                 if res: return
@@ -5457,7 +5462,7 @@ If you continue from this point, it is quite likely that all intensity computati
         else:
             refPlotUpdate = None
         try:
-            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)
+            OK,Rvals = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate,newLeBail=Controls.get('newLeBail',False))
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
@@ -5509,8 +5514,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 dlg.Destroy()
         else:
             self.ErrorDialog('Refinement error',Rvals['msg'])
-        # a fit has been done, no need to reset intensities again
-        Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        # if a LeBail fit has been done, no need to ask about reseting intensities again
         Controls['newLeBail'] = False
 
     def OnLeBail(self,event):

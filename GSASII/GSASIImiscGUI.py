@@ -1360,6 +1360,9 @@ def mkParmDictfromTree(G2frame,sigDict=None):
 
 def LogCellChanges(G2frame):
     '''Log varied cell parameters into the data tree notebook'''
+    Controls = G2frame.GPXtree.GetItemPyData(
+        G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+    if Controls['max cyc'] == 0: return # no fit so no change
     covData = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance'))
     parmDict = mkParmDictfromTree(G2frame)

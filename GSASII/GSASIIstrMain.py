@@ -443,7 +443,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
     return IfOK,Rvals,result,covMatrix,sig,Lastshft
 
-def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
+def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,allDerivs=False):
     '''Global refinement -- refines to minimize against all histograms.
     This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an
     interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from
@@ -463,7 +463,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     parmDict = {}
     G2mv.InitVars()
     Controls = G2stIO.GetControls(GPXfile)
-    Controls['newLeBail'] = Controls.get('newLeBail',False)
+    Controls['newLeBail'] = newLeBail  # override value from file
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)

@@ -641,7 +641,7 @@ def GPXBackup(GPXfile,makeBack=True):
             time.sleep(1)           #just wait a second!
     return GPXback
 
-def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,parmFrozenList,makeBack=True):
+def SaveUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,parmFrozenList,makeBack=True):
     ''' Updates gpxfile from all histograms that are found in any phase
     and any phase that used a histogram. Also updates rigid body definitions.
     This is used for non-sequential fits, but not for sequential fitting.
@@ -658,8 +658,8 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
     '''
 
     GPXback = GPXBackup(GPXfile,makeBack)
-    G2fil.G2Print ('Read from file:'+GPXback)
-    G2fil.G2Print ('Save to file  :'+GPXfile)
+    G2fil.G2Print (f'Read from file: {GPXback}')
+    G2fil.G2Print (f'Save to file: {GPXfile}')
     infile = open(GPXback,'rb')
     outfile = open(GPXfile,'wb')
     while True:
@@ -680,6 +680,9 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,par
             data[0][1] = RigidBodies
         elif datum[0] == 'Controls':
             Controls = data[0][1]
+            # if a LeBail fit has been done, no need to ask again about
+            # resetting intensities
+            Controls['newLeBail'] = False
             if 'parmFrozen' not in Controls:
                 Controls['parmFrozen'] = {}
             Controls['parmFrozen']['FrozenList'] = [i if type(i) is G2obj.G2VarObj
@@ -836,8 +839,8 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     :param str GPXfile: full .gpx file name
     '''
     GPXback = GPXBackup(GPXfile)
-    G2fil.G2Print ('Read from file:'+GPXback)
-    G2fil.G2Print ('Save to file  :'+GPXfile)
+    G2fil.G2Print (f'Read from file: {GPXback}')
+    G2fil.G2Print (f'Save to file: {GPXfile}')
     GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
     fp = open(GPXphase,'rb')
     data = pickleLoad(fp) # first block in file should be Phases

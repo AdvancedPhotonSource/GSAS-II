@@ -5514,8 +5514,6 @@ No: least-squares fitting starts with previously fit structure factors.'''
                 dlg.Destroy()
         else:
             self.ErrorDialog('Refinement error',Rvals['msg'])
-        # if a LeBail fit has been done, no need to ask about reseting intensities again
-        Controls['newLeBail'] = False
 
     def OnLeBail(self,event):
         '''Do a 1 cycle LeBail refinement with no other variables; usually done upon initialization of a LeBail refinement
@@ -7648,7 +7646,6 @@ def UpdateControls(G2frame,data):
         data['Marquardt'] = -3
     if 'newLeBail' not in data:
         data['newLeBail'] = False
-
     #end patch
 
     def SeqSizer():

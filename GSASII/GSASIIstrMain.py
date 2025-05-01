@@ -595,7 +595,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                         )
                     G2fil.G2Print('Note: ',msg)
                     Rvals['msg'] += msg
-            G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
+            # save refinement results into .gpx file
+            G2stIO.SaveUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
             printFile.close()
             G2fil.G2Print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
             G2fil.G2Print (' ***** Refinement successful *****')
@@ -827,7 +828,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
             'covMatrix':None,'title':GPXfile,'freshCOV':True}   #np.zeros([0,0])?
           # ??  'newAtomDict':newAtomDict,'newCellDict':newCellDict,
 
-        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,[],True)
+        G2stIO.SaveUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,[],True)
         G2fil.G2Print (' ***** LeBail fit completed *****')
         return True,Rvals
     except Exception as Msg:

@@ -11989,21 +11989,22 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                                 fxchoice.append('Slater')
                                 if not radial:
                                     radial = 'Slater'
-                            if 's' in orb:
-                                data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])   #no sp. harm for s terms
-                            else:   #p, d or f
-                                orbDict = {}
-                                Order = 'spdf'.index(orb[-1])
-                                cofNames,cofSgns = G2lat.GenRBCoeff(sytsyms[indx],'1',Order)      #sytsym, RBsym = '1'
-                                cofNames = [name.replace('C','D') for name in cofNames]
-                                cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
-                                for name in cofNames:
-                                    if str(Order) in name and '0' not in name:
-                                        negname = name.replace(',',',-')
-                                        cofTerms.update({negname:[0.0,False]})
-                                orbDict.update(cofTerms)
-                                orbDict.update({'Ne':[float(orbs[orb]['Ne']),False]})
-                                data['Deformations'][Ids[indx]].append([orb,orbDict])
+                            if 'Sl val' in orb: #valence; no harmonics
+                                data['Deformations'][Ids[indx]].append([orb,{'Ne':[float(orbs[orb]['Ne']),False],'kappa':[1.0,False]}])
+                                break
+                            # else:   #p, d or f
+                            #     orbDict = {}
+                            #     Order = 'spdf'.index(orb[-1])
+                            #     cofNames,cofSgns = G2lat.GenRBCoeff(sytsyms[indx],'1',Order)      #sytsym, RBsym = '1'
+                            #     cofNames = [name.replace('C','D') for name in cofNames]
+                            #     cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
+                            #     for name in cofNames:
+                            #         if str(Order) in name and '0' not in name:
+                            #             negname = name.replace(',',',-')
+                            #             cofTerms.update({negname:[0.0,False]})
+                            #     orbDict.update(cofTerms)
+                            #     orbDict.update({'Ne':[float(orbs[orb]['Ne']),False]})
+                            #     data['Deformations'][Ids[indx]].append([orb,orbDict])
                 data['Deformations'][-Ids[indx]] = {'U':'X','V':'Y','UVmat':np.eye(3),
                     'MUV':"A: X'=U, Y'=(UxV)xU & Z'=UxV",'Radial':radial,'fxchoice':fxchoice}
         dlg.Destroy()
@@ -12154,17 +12155,18 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             if len(orders):
                 Order = max(orders)+1
             cofNames = []
-            while not len(cofNames) and Order < 5:
+            notFound = True
+            while notFound and Order < 6:
                 cofNames,cofSgns = G2lat.GenRBCoeff(sytsym,'1',Order)      #sytsym, RBsym = '1'
+                cofNames = [name.replace('C','D') for name in cofNames]
+                for name in cofNames:
+                    if name not in Hkeys:   #new names found
+                        notFound = False
+                        Harm[1].update({name:[0.0,False]})
+                        if '0' not in name:
+                            negname = name.replace(',',',-')
+                            Harm[1].update({negname:[0.0,False]})
                 Order += 1
-            Order -= 1
-            cofNames = [name.replace('C','D') for name in cofNames]
-            cofTerms = {name:[0.0,False] for name in cofNames if str(Order) in name}
-            for name in cofNames:
-                if str(Order) in name and '0' not in name:
-                    negname = name.replace(',',',-')
-                    cofTerms.update({negname:[0.0,False]})
-            Harm[1].update(cofTerms)
             wx.CallAfter(UpdateDeformation,dId)
             
         def OnDelHarm(event):

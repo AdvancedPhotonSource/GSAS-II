@@ -12134,7 +12134,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             
         def Dsizer(deformation,orbSizer,dId,orb,Indx):
             orbSizer.Add(wx.StaticText(deformation,label=item+':'))
-            orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,3),xmin=-2.,xmax=2.))
+            orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,5),xmin=-1.,xmax=1.))
             Tcheck = wx.CheckBox(deformation,-1,'Refine?')
             Tcheck.SetValue(orb[1][item][1])
             Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
@@ -12163,9 +12163,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     if name not in Hkeys:   #new names found
                         notFound = False
                         Harm[1].update({name:[0.0,False]})
-                        if '0' not in name:
-                            negname = name.replace(',',',-')
-                            Harm[1].update({negname:[0.0,False]})
+                        # if '0' not in name:
+                        #     negname = name.replace(',',',-')
+                        #     Harm[1].update({negname:[0.0,False]})
                 Order += 1
             wx.CallAfter(UpdateDeformation,dId)
             

@@ -3609,6 +3609,7 @@ If you continue from this point, it is quite likely that all intensity computati
         DataList = []
         IdList = []
         Names = []
+        Items = []
         Comments = ['Sum equals: \n']
         if self.GPXtree.GetCount():
             item, cookie = self.GPXtree.GetFirstChild(self.root)
@@ -3616,6 +3617,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 name = self.GPXtree.GetItemText(item)
                 Names.append(name)
                 if 'IMG' in name:
+                    Items.append(item)
                     TextList.append(name)
                     DataList.append(self.GPXtree.GetImageLoc(item))        #Size,Image,Tag
                     IdList.append(item)
@@ -3627,14 +3629,28 @@ If you continue from this point, it is quite likely that all intensity computati
             TextList.append('default_sum_name')
             dlg = self.SumDialog(self,'Sum data',' Enter scale for each image to be summed','IMG',
                 TextList,DataList)
+            chkItems = ['pixelSize','wavelength','distance','center','size','tilt','rotation']
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     imSize = 0
                     result,scales = dlg.GetData()
                     First = True
                     Found = False
-                    for name,scale in zip(result,scales):
+                    for item,name,scale in zip(Items,result,scales):
                         if scale:
+                            if not Found:
+                                Data = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,item,'Image Controls'))
+                                chkData = {Id:Data[Id] for Id in chkItems}
+                            else:
+                                data = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,item,'Image Controls'))
+                                chkdata = {Id:data[Id] for Id in chkItems}
+                                if str(chkdata) != str(chkData):
+                                    self.ErrorDialog('Image Controls error','Images to be summed must have same Image Controls - see Console for list')
+                                    chkDiff = [[iD,chkData[iD],chkdata[iD]] for iD in chkData if str(chkData[iD]) !=  str(chkdata[iD])]
+                                    print('Differences: ')
+                                    for diff in chkDiff:
+                                        print('%s: %s %s'%(diff[0],str(diff[1]),str(diff[2])))
+                                    return
                             Found = True
                             Comments.append("%10.3f %s" % (scale,' * '+name))
                             i = TextList.index(name)

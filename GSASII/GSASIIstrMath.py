@@ -449,15 +449,15 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
         QA = G2mth.invQ(Orient)       #rotates about chosen axis
         Q = G2mth.prodQQ(QB,QA)     #might be switched? QB,QA is order for plotting
         M = np.inner(G2mth.Q2Mat(Q),Bmat)
-        return G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),M)
+        return G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),M)[1:]
 
     dFFdS = {}
     atFlg = []
-    Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
+    R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
     SQR = np.repeat(SQ,HKL.shape[1])
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:
-            Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
+            R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
             atFlg.append(1.0)
             SHdat = SHCdict[iAt]
             symAxis = np.array(SHdat['symAxis'])

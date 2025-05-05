@@ -2896,7 +2896,8 @@ def H2ThPh2(H,Bmat):
     '''
     Hcart = np.inner(H,Bmat)
     R = np.sqrt(np.sum(np.square(Hcart),axis=1))
-    Pl = acosd(Hcart[:,2]/R)
+    Hcart /= R[:,nxs]
+    Pl = acosd(Hcart[:,2])
     Az = atan2d(Hcart[:,1],Hcart[:,0])
     return R,Az,Pl
 

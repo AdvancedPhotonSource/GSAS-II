@@ -60,14 +60,14 @@ if __name__ == '__main__':
     tags0 = g2repo.git.tag('--points-at',commit)
     if tags0: tags0 = tags0.split('\n')
     if tags0:
-        print(f'Latest commit ({commit.hexsha[:7]}) is already tagged ({', '.join(tags0)}).')
+        print(f'Latest commit ({commit.hexsha[:7]}) is already tagged ({", ".join(tags0)}).')
         sys.exit()
     prev = g2repo.head.commit.parents
     if len(prev) == 1:
         tagsm1 = g2repo.git.tag('--points-at',prev[0])
         if tagsm1: tagsm1 = tagsm1.split('\n')
         if tagsm1:
-            print(f'Previous commit ({prev[0].hexsha[:7]}) is already tagged ({', '.join(tagsm1)}).')
+            print(f'Previous commit ({prev[0].hexsha[:7]}) is already tagged ({", ".join(tagsm1)}).')
             sys.exit()
 
     # get the latest version number

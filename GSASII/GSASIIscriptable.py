@@ -449,21 +449,23 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
         elif flag:
             primaryReaders.append(reader)
     if not secondaryReaders and not primaryReaders:
-        print('Available importers:')
-        for reader in readerlist:
-            print(f'\t{reader.longFormatName}')
         # common reason for read error -- package needed?
         l = []
         for i in Readers['importErrpkgs']:
             for j in G2fil.condaRequestList[i]:
                 if j not in l: l.append(j)
-        if Readers['importErrpkgs']:
+        print(f'\nReading of file {filename!r} failed.')
+        if fmthint is not None and hintcount == 0:
+            print(f'\nNo readers matched hint {fmthint!r}\n')
+        if Readers['importErrpkgs']: 
+            print('Not all importers are available due to uninstalled Python packages.')
             print('The following importer(s) are not available:\n'+
                   f'\t{", ".join(Readers["importErrpkgs"])}')
             print('because the following optional Python package(s) are not installed:\n'+
                   f'\t{", ".join(l)}\n')
-        if fmthint is not None and hintcount == 0:
-            print(f'No readers matched hint {fmthint!r}\n')
+        print('Available importers:')
+        for reader in readerlist:
+            print(f'\t{reader.longFormatName}')
         raise G2ImportException(f"Could not read file: {filename}")
 
     with open(filename, 'r'):

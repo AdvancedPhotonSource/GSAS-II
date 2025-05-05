@@ -13,7 +13,7 @@ import platform
 import os
 import sys
 import glob
-import inspect
+#import inspect
 import re
 
 import numpy as np
@@ -23,7 +23,7 @@ from . import GSASIIlattice as G2lat
 from . import GSASIIstrIO as G2stIO
 from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
-from . import GSASIIlattice as G2lat
+#from . import GSASIIlattice as G2lat
 
 #if not sys.platform.startswith('win'):
 #    try:

@@ -5447,7 +5447,7 @@ def anneal(func, x0, args=(), schedule='fast',
     else:
         x0 = random.uniform(size=len(x0))*(upper-lower) + lower
         best_state.x = None
-        best_state.cost = numpy.Inf
+        best_state.cost = numpy.inf
 
     last_state.x = asarray(x0).copy()
     fval = func(x0,*args)

@@ -42,12 +42,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
     def ContentsValidator(self, filename):
         fp = open(filename,'r')
         ok = self.CIFValidator(fp)
-        print('validator: ',ok)
+        #print('validator: ',ok)
         fp.close()
         return ok
 
     def Reader(self,filename, ParentFrame=None, usedRanIdList=[], **unused):
-        if cif is None: # can happen in scripting
+        if cif is None: # unexpected, but worth a specific error message
             print('Attempting to read a CIF without PyCifRW installed')
             raise Exception('Attempting to read a CIF without PyCifRW installed')
         isodistort_warnings = '' # errors that would prevent an isodistort analysis

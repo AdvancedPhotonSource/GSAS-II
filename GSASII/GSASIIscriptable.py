@@ -54,7 +54,7 @@ from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
 
 # Delay imports loading to not slow down small scripts that don't need them
-Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
+Readers = {'Pwdr': [], 'Phase': [], 'Image': [], 'importErrpkgs': []}
 '''Readers by reader type'''
 exportersByExtension = {}
 '''Specifies the list of extensions that are supported for Powder data export'''
@@ -166,10 +166,14 @@ def LoadG2fil():
     '''
     if len(Readers['Pwdr']) > 0: return
     # initialize imports
+    before = list(G2fil.condaRequestList.keys())
     Readers['Pwdr'] = G2fil.LoadImportRoutines("pwd", "Powder_Data")
     Readers['Phase'] = G2fil.LoadImportRoutines("phase", "Phase")
     Readers['Image'] = G2fil.LoadImportRoutines("img", "Image")
     Readers['HKLF'] = G2fil.LoadImportRoutines('sfact','Struct_Factor')
+    # save list of importers that could not be loaded
+    Readers['importErrpkgs'] = [i for i in G2fil.condaRequestList.keys()
+                                if i not in before]
 
     # initialize exports
     for obj in G2fil.LoadExportRoutines(None):
@@ -435,14 +439,31 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
         filename = downloadFile(filename,download_loc)
     # Translated from OnImportGeneric method in GSASII.py
     primaryReaders, secondaryReaders = [], []
+    hintcount = 0
     for reader in readerlist:
         if fmthint is not None and fmthint not in reader.formatName: continue
+        hintcount += 1
         flag = reader.ExtensionValidator(filename)
         if flag is None:
             secondaryReaders.append(reader)
         elif flag:
             primaryReaders.append(reader)
     if not secondaryReaders and not primaryReaders:
+        print('Available importers:')
+        for reader in readerlist:
+            print(f'\t{reader.longFormatName}')
+        # common reason for read error -- package needed?
+        l = []
+        for i in Readers['importErrpkgs']:
+            for j in G2fil.condaRequestList[i]:
+                if j not in l: l.append(j)
+        if Readers['importErrpkgs']:
+            print('The following importer(s) are not available:\n'+
+                  f'\t{", ".join(Readers["importErrpkgs"])}')
+            print('because the following optional Python package(s) are not installed:\n'+
+                  f'\t{", ".join(l)}\n')
+        if fmthint is not None and hintcount == 0:
+            print(f'No readers matched hint {fmthint!r}\n')
         raise G2ImportException(f"Could not read file: {filename}")
 
     with open(filename, 'r'):

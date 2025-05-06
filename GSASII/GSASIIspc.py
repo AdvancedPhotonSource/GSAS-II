@@ -3911,7 +3911,11 @@ def CompareSym(symList,sgName=None,SGData=None):
         raise Exception('CompareSym called without symmetry input')
 
     for sym in symList:
-        syMat = ParseXYZ(sym)
+        try:
+            syMat = ParseXYZ(sym)
+        except:
+            print(f'Ignoring unparsable sym op {sym}')
+            continue
 
         for i,mat in enumerate(matList):
             if np.allclose(mat[0],syMat[0]) and np.allclose(offsetNorm(mat[1]),offsetNorm(syMat[1])):

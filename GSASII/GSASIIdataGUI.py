@@ -1061,8 +1061,11 @@ class GSASII(wx.Frame):
                         errorReport += ': '+rd.errors
                 if rd_list: # read succeeded, was there a warning or any errors?
                     if rd.warnings:
-                        self.ErrorDialog('Read Warning','The '+ rd.formatName+
-                            ' reader reported a warning message:\n\n'+rd.warnings)
+#                        self.ErrorDialog('Read Warning','The '+ rd.formatName+
+#                            ' reader reported warning message(s):\n\n'+rd.warnings)
+                        msg = f'The {rd.formatName} reader reported warning message(s):\n\n{rd.warnings}'
+                        print(msg)
+                        G2G.ShowScrolledInfo(self,msg,header='Read Warning')
                     break # success in reading, try no further
             else:
                 if singlereader:

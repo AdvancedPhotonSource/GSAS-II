@@ -516,7 +516,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.Phase['Atoms'].append(atomlist)
                 ranIdlookup[atomlist[0]] = atomlist[-1]
                 if atomlist[0] in atomlbllist:
-                    self.warnings += ' ERROR: repeated atom label: '+atomlist[0]
+                    self.warnings += f' note: repeated atom label: {atomlist[0]}\n'
                 else:
                     atomlbllist.append(atomlist[0])
 

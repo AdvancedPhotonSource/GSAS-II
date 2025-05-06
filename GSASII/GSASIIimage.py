@@ -1470,7 +1470,7 @@ def MakeUseMask(data,masks,blkSize=128):
         useMask.append(useMaskj)
     return useMask
 
-def MakeGainMap(image,Ix,Iy,data,blkSize=128):
+def MakeGainMap(image,Ix,Iy,data,mask,blkSize=128):
     Iy /= npcosd(Ix[:-1])       #undo parallax
     Iy *= (1000./data['distance'])**2    #undo r^2 effect
     Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
@@ -1478,6 +1478,7 @@ def MakeGainMap(image,Ix,Iy,data,blkSize=128):
         Iy *= G2pwd.Oblique(data['Oblique'][0],Ix[:-1])     #undo penetration
     IyInt = scint.interp1d(Ix[:-1],Iy[0],bounds_error=False)
     GainMap = np.zeros_like(image,dtype=float)
+    Mask = np.zeros_like(image,dtype=bool)
     #do interpolation on all points - fills in the empty bins; leaves others the same
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
@@ -1489,10 +1490,12 @@ def MakeGainMap(image,Ix,Iy,data,blkSize=128):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+            tam = MakeMaskMap(data,mask,(iBeg,iFin),(jBeg,jFin))
             Ipix = IyInt(TA[0])
-            GainMap[iBeg:iFin,jBeg:jFin] = image[iBeg:iFin,jBeg:jFin]/(Ipix*TA[3])
+            Mask[iBeg:iFin,jBeg:jFin] = tam
+            GainMap[iBeg:iFin,jBeg:jFin] = np.array(image[iBeg:iFin,jBeg:jFin]/(Ipix*TA[3]))
     GainMap /= np.nanmedian(GainMap)
-    return 1./GainMap
+    return 1./GainMap,Mask
 
 def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
     ''' Integrate by azimuth around the ring masked region in 0.5 deg steps

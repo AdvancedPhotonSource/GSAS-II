@@ -378,7 +378,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                     Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
                     pth = os.path.split(os.path.abspath(imagefile))[0]
-                    ImDat = copy.deepcopy(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')))
+                    ImDat = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
+                        G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')))
                     sumImg = GetImageZ(G2frame,ImDat)
                     #force defaults for GainMap calc
                     ImDat['IOtth'] = [0.1,60.0]
@@ -392,36 +393,25 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))
                     Integrate = G2img.ImageIntegrate(sumImg,ImDat,ImMsk,blkSize)            
                     Iy,azms,Ix = Integrate[:3]
-                    GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,ImDat,blkSize)*1000.
-                    GainMap = np.where(GainMap > 1200,0,GainMap)
-                    GainMap = np.where(GainMap < 800,0,GainMap)
+                    GainMap,Mask = G2img.MakeGainMap(sumImg,Ix,Iy,ImDat,ImMsk,blkSize)
+                    if ImDat['invert_x']:
+                        Mask = np.flip(Mask,1)
+                    if ImDat['invert_y']:
+                        Mask = np.flip(Mask,0)
+                    GainMap *= 1000
+                    GainMap = ma.array(GainMap,mask=Mask)
+                    GainMap = ma.where(GainMap > 1200,0,GainMap)
+                    GainMap = ma.where(GainMap < 800,0,GainMap)
+                    Mask = ma.getmask(GainMap)
                     ImDat['formatName'] = 'GSAS-II image'
                     ImDat['range'] = [(500,2000),[800,1200]]
                     if First:
                         First = False
-                        GMsum = np.where(GainMap>0,GainMap,0.0)
-                        pixels = np.where(GainMap>0,1,0)
+                        GMsum = np.where(Mask,0.0,GainMap)
+                        pixels = np.where(Mask,0,1)
                     else:
-                        GMsum += np.where(GainMap>0,GainMap,0.0)
-                        pixels += np.where(GainMap >0,1,0)
-                    #leave for possible diagnostics?
-                    # ImMsk['Thresholds'] = [(500.,2000.),[800.,1200.]]
-                    # GMname = os.path.splitext(imagefile)[0]+'_GM.G2img'
-                    # G2IO.PutG2Image(GMname,[],ImDat,Npix,GainMap)
-                    # Name = 'IMG '+os.path.split(GMname)[1]
-                    # Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,Name)
-                    # if not Id:            
-                    #     Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=Name)
-                    #     G2frame.GPXtree.SetItemPyData(Id,[Npix,GMname])
-                    #     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
-                    #     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),ImDat)
-                    #     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),ImMsk)
-                    # else:
-                    #     G2frame.GPXtree.SetItemPyData(Id,[Npix,GMname])
-                    #     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'),[])
-                    #     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'),ImDat)
-                    #     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Masks'),ImMsk)
-                    #end of diagnostic block
+                        GMsum += np.where(Mask,0.0,GainMap)
+                        pixels += np.where(Mask,0,1)
         finally:
             dlg.Destroy()
         GMsum = np.where(pixels>0,GMsum/pixels,0)
@@ -434,7 +424,14 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         if dlg.ShowModal() == wx.ID_OK:
             newimagefile = dlg.GetPath()
             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
-            ImMsk['Thresholds'] = [(500.,2000.),[800.,1200.]]
+            ImSize = ImDat['size']
+            pixSize = ImDat['pixelSize']
+            ImDat.update({'tilt':0.0,'rotation':0.0,'distance':1000.0,'showLines':False,
+                'calibrant':' ',
+                'center':[500.*ImSize[0]/pixSize[0],500.*ImSize[1]/pixSize[1]]})
+            ImMsk = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],
+                'Thresholds':[(500.,2000.),[800.,1200.]],
+                'SpotMask':{'esdMul':2.,'spotMask':None}}       #remove all masks
             G2IO.PutG2Image(newimagefile,[],ImDat,Npix,GMsum)
             Name = 'IMG '+os.path.split(newimagefile)[1]
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,Name)

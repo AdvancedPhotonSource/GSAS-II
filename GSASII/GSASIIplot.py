@@ -7430,9 +7430,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     contourSet = ax0.contour(ZU,colors='k',linewidths=1)
             ax0.axis("off")
             figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-            agg = canvas.switch_backends(hcCanvas)
-            agg.draw()
-            img, (width, height) = agg.print_to_buffer()
+            try:
+                agg = canvas.switch_backends(hcCanvas)
+                agg.draw()
+                img, (width, height) = agg.print_to_buffer()
+            except AttributeError:
+                img, (width,height) = canvas.print_to_buffer()
             Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
             RenderViewPlane(msize*eplane,Zimg,width,height)
         try:

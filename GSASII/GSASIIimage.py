@@ -1287,9 +1287,7 @@ def polymask(data,Poly):
         ax0.fill(px,py,inmask)
     ax0.set_xbound(0,Nx)
     ax0.set_ybound(0,Ny)
-    agg = canvas.switch_backends(hcCanvas)
-    agg.draw()
-    img, (width, height) = agg.print_to_buffer()
+    img, (width,height) = canvas.print_to_buffer()
     Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
     return Zimg[:,:,0]
 

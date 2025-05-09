@@ -1604,14 +1604,17 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
     testRBObj['rbObj']['OrientVec'][0] = A
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
     for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
-        G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
+        G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
+#        G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
     try:
-        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+#        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+        G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
     except:
         pass
     for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
-        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
+        sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
+#        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
     if G2frame.testRBObjSizers.get('OnOrien') is None: return
     G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj']['drawMode'])
@@ -14366,7 +14369,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 deltaList = getDeltaXYZ(selDict,data,rbObj)
                 data['testRBObj']['rbObj']['Orig'][0] += deltaList.sum(axis=0)/len(deltaList)
                 for i,item in enumerate(Xsizers):
-                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
+#                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
+                    item.ChangeValue(data['testRBObj']['rbObj']['Orig'][0][i])
                 UpdateTablePlot()
 
             def onFitOrientation(event):
@@ -14398,7 +14402,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 data['testRBObj']['rbObj']['Orig'][0][:] = out[0][4:]
                 data['testRBObj']['rbObj']['Orient'][0][:] = G2mth.normQ(out[0][:4])
                 for i,item in enumerate(Xsizers):
-                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
+#                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
+                    item.ChangeValue(data['testRBObj']['rbObj']['Orig'][0][i])
                 updateAddRBorientText(G2frame,data['testRBObj'],Bmat)
                 UpdateTablePlot()
 

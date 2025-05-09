@@ -5814,7 +5814,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
-        Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
+        try:
+            Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
+        except:   # not sure why this happens, pyOpenGL 3.1.6 bug on MacOS? (3.1.9 OK)
+            G2frame.G2plotNB.status.SetStatusText('Cursor position calc failed',1)
+            return
         rho = G2mth.getRho([Cx,Cy,Cz],mapData)
         if contours:
             try:

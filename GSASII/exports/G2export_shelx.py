@@ -38,7 +38,7 @@ class ExportPhaseShelx(G2fil.ExportBaseclass):
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
                 self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
-            #fp = self.OpenFile()
+            self.OpenFile(filename)
             # title line
             self.Write("TITL from "+str(self.G2frame.GSASprojectfile)+", phase "+str(phasenam))
             # get & write cell parameters

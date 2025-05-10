@@ -6170,7 +6170,7 @@ class G2Single(G2ObjectWrapper):
 
 blkSize = 128
 '''Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses
-less memory, must be <=1024 (for polymask/histogram3d)
+less memory, must be <=1024 (for histogram3d)
 '''
 
 def calcMaskMap(imgprms,mskprms):

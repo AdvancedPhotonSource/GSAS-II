@@ -254,7 +254,7 @@ def UpdateImageData(G2frame,data):
 ################################################################################
 ##### Image Controls
 ################################################################################
-blkSize = 128 #128 seems to be optimal; will break in polymask if >1024
+blkSize = 128 #128 seems to be optimal
 def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly=False):
     '''Shows and handles the controls on the "Image Controls"
     data tree entry

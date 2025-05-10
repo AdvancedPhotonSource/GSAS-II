@@ -793,50 +793,6 @@ def EdgeFinder(image,data):
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     return zip(tax,tay)
     
-# def MakeFrameMask(data,frame): #obsolete
-#     '''Assemble a Frame mask for a image, according to the input supplied.
-#     Note that this requires use of the Fortran polymask routine that is limited
-#     to 1024x1024 arrays, so this computation is done in blocks (fixed at 512) 
-#     and the master image is assembled from that. 
-
-#     :param dict data: Controls for an image. Used to find the image size
-#       and the pixel dimensions. 
-#     :param list frame: Frame parameters, typically taken from ``Masks['Frames']``.
-#     :returns: a mask array with dimensions matching the image Controls.
-#     '''
-#     if GSASIIpath.binaryPath:
-#         import polymask as pm
-#     else:
-#         from . import polymask as pm
-#     pixelSize = data['pixelSize']
-#     scalex = pixelSize[0]/1000.
-#     scaley = pixelSize[1]/1000.
-#     blkSize = 512
-#     Nx,Ny = data['size']
-#     nXBlks = (Nx-1)//blkSize+1
-#     nYBlks = (Ny-1)//blkSize+1
-#     tam = ma.make_mask_none(data['size'])
-#     for iBlk in range(nXBlks):
-#         iBeg = iBlk*blkSize
-#         iFin = min(iBeg+blkSize,Nx)
-#         for jBlk in range(nYBlks):
-#             jBeg = jBlk*blkSize
-#             jFin = min(jBeg+blkSize,Ny)                
-#             nI = iFin-iBeg
-#             nJ = jFin-jBeg
-#             tax,tay = np.mgrid[iBeg+0.5:iFin+.5,jBeg+.5:jFin+.5]         #bin centers not corners
-#             tax = np.asfarray(tax*scalex,dtype=np.float32)
-#             tay = np.asfarray(tay*scaley,dtype=np.float32)
-#             tamp = ma.make_mask_none((1024*1024))
-#             tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
-#                 tay.flatten(),len(frame),frame,tamp)[:nI*nJ])^True  #switch to exclude around frame
-#             if tamp.shape:
-#                 tamp = np.reshape(tamp[:nI*nJ],(nI,nJ))
-#                 tam[iBeg:iFin,jBeg:jFin] = ma.mask_or(tamp[0:nI,0:nJ],tam[iBeg:iFin,jBeg:jFin])
-#             else:
-#                 tam[iBeg:iFin,jBeg:jFin] = True
-#     return tam.T
-
 def CalcRings(G2frame,ImageZ,data,masks):
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
@@ -1251,23 +1207,25 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     TA[3] = G2pwd.Polarization(data['PolaVal'][0],TA[0],TA[1]-90.)[0]
     return TA           #2-theta, azimuth & geom. corr. arrays
 
-def polymask(data,Poly):
-    ''' Applies polygon  & frame masks via calls to matplotlib routines; 
-    should be called only once during image processing. Individual masked blocks
-    are then pulled from the output array.
+def polymask(data,Poly,Spots=[]):
+    ''' Applies spot(point), polygon  & frame masks via calls to matplotlib routines; 
+    should be called only once each during image processing. A separate call is used for a frame.
+    Individual masked blocks are then pulled from the output array.
     
     :param dict data: GSAS-II image data object (describes the image)
     :param list Poly: list of polygons; if empty, returns None
-    :returns: Zimg, array[Nx,Ny] size of full image mask for all polygons considered
+    :param list Spots: list of spots/points; if empty, returns None
+    :returns: Zimg, array[Nx,Ny] size of full image mask for all polygons/spots or frame considered
     '''
     
     import matplotlib.figure as mplfig
+    from matplotlib.patches import Circle
     try:
         from matplotlib.backends.backend_agg import FigureCanvasAgg as hcCanvas
     except ImportError:
         from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
     
-    if not Poly:
+    if not Poly and not Spots:
         return []
     outmask = 'black'
     inmask = 'white'
@@ -1285,6 +1243,12 @@ def polymask(data,Poly):
         px = np.array(poly).T[0]/scalex
         py = np.array(poly).T[1]/scaley
         ax0.fill(px,py,inmask)
+    for spot in Spots:
+        px = np.array(spot).T[0]/scalex
+        py = np.array(spot).T[1]/scaley
+        rad = 0.5*np.array(spot).T[2]/scaley
+        psp = Circle((px,py),radius=rad,fc=inmask,ec='none')        
+        ax0.add_artist(psp)
     ax0.set_xbound(0,Nx)
     ax0.set_ybound(0,Ny)
     img, (width,height) = canvas.print_to_buffer()
@@ -1296,7 +1260,7 @@ def MakeMaskMap(data,masks,iLim,jLim):
     image calibration parameters or the image intensities. Thus this uses 
     mask Frames, Polygons and Lines settings (but not Thresholds, Rings or
     Arcs). Used on a rectangular section of an image (must be 1024x1024 or
-    smaller, as dictated by module polymask) where the size is determined
+    smaller) where the size is determined
     by iLim and jLim.
 
     :param dict data: GSAS-II image data object (describes the image)
@@ -1313,7 +1277,7 @@ def MakeMaskMap(data,masks,iLim,jLim):
         if masks['Frames']:
             frame = np.abs(polymask(data,masks['Frames'])-255) #turn inner to outer mask
         if masks['Polygons']:
-            poly = polymask(data,masks['Polygons'])
+            poly = polymask(data,masks['Polygons'],masks['Points'])
         if len(frame):
             masks['Pmask'] =  frame
             if len(poly):
@@ -1331,10 +1295,6 @@ def MakeMaskMap(data,masks,iLim,jLim):
     tam = ma.make_mask_none((nI*nJ))
     if len(masks['Pmask']):
         tam = ma.mask_or(tam,ma.make_mask(masks['Pmask'][iLim[0]:iLim[1],jLim[0]:jLim[1]].flatten()))
-    points = masks['Points']
-    if len(points):
-        for X,Y,rsq in points.T:
-            tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
     if tam.shape:
         tam = np.reshape(tam,(nI,nJ))
     else:
@@ -1449,9 +1409,6 @@ def MakeUseMask(data,masks,blkSize=128):
     :returns: a list of TA blocks
     '''
     Masks = copy.deepcopy(masks)
-    Masks['Points'] = np.array(Masks['Points']).T           #get spots as X,Y,R arrays
-    if np.any(masks['Points']):
-        Masks['Points'][2] = np.square(Masks['Points'][2]/2.)
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
     nYBlks = (Ny-1)//blkSize+1
@@ -1599,9 +1556,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     if 'SASD' in data['type']:
         muT = -np.log(muT)/2.       #Transmission to 1/2 thickness muT
     Masks = copy.deepcopy(masks)
-    Masks['Points'] = np.array(Masks['Points']).T           #get spots as X,Y,R arrays
-    if np.any(masks['Points']):
-        Masks['Points'][2] = np.square(Masks['Points'][2]/2.)
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H2 = np.linspace(lutth[0],lutth[1],numChans+1)

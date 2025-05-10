@@ -1258,7 +1258,7 @@ def polymask(data,Poly,Spots=[]):
 def MakeMaskMap(data,masks,iLim,jLim):
     '''Makes a mask array from masking parameters that are not determined by 
     image calibration parameters or the image intensities. Thus this uses 
-    mask Frames, Polygons and Lines settings (but not Thresholds, Rings or
+    mask Frames, Polygons, Points, and Lines settings (but not Thresholds, Rings or
     Arcs). Used on a rectangular section of an image (must be 1024x1024 or
     smaller) where the size is determined
     by iLim and jLim.
@@ -1276,7 +1276,7 @@ def MakeMaskMap(data,masks,iLim,jLim):
     if iLim[0] == jLim[0] == 0:
         if masks['Frames']:
             frame = np.abs(polymask(data,masks['Frames'])-255) #turn inner to outer mask
-        if masks['Polygons']:
+        if masks['Polygons'] or masks['Points']:
             poly = polymask(data,masks['Polygons'],masks['Points'])
         if len(frame):
             masks['Pmask'] =  frame

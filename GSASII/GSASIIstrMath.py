@@ -453,11 +453,11 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
 
     dFFdS = {}
     atFlg = []
-    R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
+#    R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
     SQR = np.repeat(SQ,HKL.shape[1])
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:
-            R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
+#            R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
             atFlg.append(1.0)
             SHdat = SHCdict[iAt]
             symAxis = np.array(SHdat['symAxis'])
@@ -1419,7 +1419,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for item in dffdSH:
-            if 'SH' in item or 'O' in item:
+            if 'Sh' in item or 'O' in item:
                 if i == int(item.split(':')[1]):
                     dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=1)
             else:

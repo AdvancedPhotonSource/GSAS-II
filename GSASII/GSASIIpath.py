@@ -368,6 +368,7 @@ def saveGitHubVersion():
     '''
     try:
         import requests
+        requests
     except:
         print('Unable to use requests module')
         return
@@ -1341,7 +1342,7 @@ def LoadConfig(printInfo=True):
                 if i.startswith('__') and i.endswith('__'): continue
                 if isinstance(config.__dict__[i],types.ModuleType): continue
                 configDict.update({i:str(config.__dict__[i])})
-        except ImportError as err:
+        except ImportError:
             print("New install: start without a config.py file")
             return
         except Exception as err:
@@ -1360,7 +1361,7 @@ def LoadConfig(printInfo=True):
         XferConfigIni()
     try:
         from . import config_example
-    except ImportError as err:
+    except ImportError:
         try:
             import GSASII.config_example as config_example
         except ImportError as err:
@@ -1897,6 +1898,122 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
     else:
         return None
 
+#===========================================================================
+# duplicated from GSASIIfiles to avoid using an import below
+# perhaps the references to G2fil.openInNewTerm() should be
+# changed to reference this here.
+def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
+    '''Open a new and independent GSAS-II session in separate terminal
+    or console window and as a separate process that will continue
+    even if the calling process exits.
+    Intended to work on all platforms.
+
+    This could be used to run other scripts inside python other than GSAS-II
+
+    :param str project: the name of an optional parameter to be
+      passed to the script (usually a .gpx file to be opened in
+      a new GSAS-II session)
+    :param str g2script: the script to be run. If None (default)
+      the G2.py file in the same directory as this file will
+      be used.
+    :param str pythonapp: the Python interpreter to be used.
+      Defaults to sys.executable which is usually what is wanted.
+    :param str terminal: a name for a preferred terminal emulator
+    '''
+    #import subprocess
+    if g2script is None:
+        g2script = os.path.join(os.path.dirname(__file__),'G2.py')
+
+    if sys.platform == "darwin":
+        if project:
+            script = f'''
+set python to "{pythonapp}"
+set appwithpath to "{g2script}"
+set filename to "{project}"
+set filename to the quoted form of the POSIX path of filename
+
+tell application "Terminal"
+     activate
+     do script python & " " & appwithpath & " " & filename & "; exit"
+end tell
+'''
+        else:
+            script = f'''
+set python to "{pythonapp}"
+set appwithpath to "{g2script}"
+
+tell application "Terminal"
+     activate
+     do script python & " " & appwithpath & " " & "; exit"
+end tell
+'''
+        subprocess.Popen(["osascript","-e",script])
+    elif sys.platform.startswith("win"):
+        cmds = [pythonapp, g2script]
+        if project: cmds += [project]
+        subprocess.Popen(cmds,creationflags=subprocess.CREATE_NEW_CONSOLE)
+    else:
+        import shutil
+        script = ''
+        # try a bunch of common terminal emulators in Linux
+        # there does not appear to be a good way to way to specify this
+        # perhaps this should be a GSAS-II config option
+        for term in ("lxterminal", "gnome-terminal", 'konsole', "xterm",
+                         "terminator", "terminology", "tilix"):
+            try:
+                found = shutil.which(term)
+                if not found: continue
+            except AttributeError:
+                print(f'shutil.which() failed (why?); assuming {term} present')
+                found = True
+            if term == "gnome-terminal":
+                #terminal = 'gnome-terminal -t "GSAS-II console" --'
+                cmds = [term,'--title','"GSAS-II console"','--']
+                script = "echo; echo Press Enter to close window; read line"
+                break
+            elif term == "lxterminal":
+               #terminal = 'lxterminal -t "GSAS-II console" -e'
+               cmds = [term,'-t','"GSAS-II console"','-e']
+               script = "echo;echo Press Enter to close window; read line"
+               break
+            elif term == "xterm":
+                #terminal = 'xterm -title "GSAS-II console" -hold -e'
+                cmds = [term,'-title','"GSAS-II console"','-hold','-e']
+                script = "echo; echo This window can now be closed"
+                break
+            elif term == "terminator":
+                cmds = [term,'-T','"GSAS-II console"','-x']
+                script = "echo;echo Press Enter to close window; read line"
+                break
+            elif term == "konsole":
+                cmds = [term,'-p','tabtitle="GSAS-II console"','--hold','-e']
+                script = "echo; echo This window can now be closed"
+                break
+            elif term == "tilix":
+                cmds = [term,'-t','"GSAS-II console"','-e']
+                script = "echo;echo Press Enter to close window; read line"
+                break
+            elif term == "terminology":
+                cmds = [term,'-T="GSAS-II console"','--hold','-e']
+                script = "echo; echo This window can now be closed"
+                break
+        else:
+            print("No known terminal was found to use, Can't start {}")
+            return
+
+        fil = '/tmp/GSAS2-launch.sh'
+        cmds += ['/bin/sh',fil]
+        fp = open(fil,'w')
+        if project:
+            fp.write(f"{pythonapp} {g2script} {project}\n")
+        else:
+            fp.write(f"{pythonapp} {g2script}\n")
+        fp.write(f"rm {fil}\n")
+        if script:
+            fp.write(f"{script}\n")
+        fp.close()
+        subprocess.Popen(cmds,start_new_session=True)
+
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a
     separate process.
@@ -2153,12 +2270,12 @@ to update/regress repository from git repository:
 
     if gitUpdate:
         # path hack for restart, when needed
-        import importlib.util
-        try:
-            importlib.util.find_spec('GSASII.GSASIIGUI')
-        except ModuleNotFoundError:
-            print('Adding GSAS-II location to Python system path')
-            sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+        #import importlib.util
+        #try:
+        #    importlib.util.find_spec('GSASII.GSASIIGUI')
+        #except ModuleNotFoundError:
+        #    print('Adding GSAS-II location to Python system path')
+        #    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
 
         # now restart GSAS-II with the new version
         # G2scrpt = os.path.join(path2GSAS2,'G2.py')
@@ -2166,7 +2283,8 @@ to update/regress repository from git repository:
             print(f"Restart GSAS-II with project file {project!r}")
         else:
             print("Restart GSAS-II without a project file ")
-        from . import GSASIIfiles
-        GSASIIfiles.openInNewTerm(project)
+        #from . import GSASIIfiles
+        #GSASIIfiles.openInNewTerm(project)
+        openInNewTerm(project)
         print ('exiting update process')
         sys.exit()

@@ -1484,6 +1484,7 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
         return str(val)
 
 #===========================================================================
+# N.B. duplicated in GSASIIpath
 def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
     '''Open a new and independent GSAS-II session in separate terminal
     or console window and as a separate process that will continue

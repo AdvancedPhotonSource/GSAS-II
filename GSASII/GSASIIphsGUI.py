@@ -14182,13 +14182,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 if not rbType in data['RBModels']:
                     data['RBModels'][rbType] = []
                 if rbType == 'Spin':    #convert items to lists of shells
-                    for name in ['atColor','atType','Natoms','nSH','Radius','RBId','RBname','RBsym']:
-                        # #patch
-                        # if name == 'Radius' and name not in rbObj:
-                        #     item = rbObj['radius']
-                        # else:
+                    for name in ['atColor','atType','Natoms','nSH','RBId','RBname','RBsym']:
                         item = rbObj[name]
-                        rbObj[name] = [item,]
+                        rbObj[name] = [rbObj[name],]
+                    rbObj['Radius'] = [[1.0,False],]
                 data['RBModels'][rbType].append(copy.deepcopy(rbObj))
                 RBData[rbType][rbId]['useCount'] += 1
                 del data['testRBObj']
@@ -14321,8 +14318,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     for i in dups:
                         msg += i
                         msg += ', '
-                    wx.MessageBox(msg[:-2],caption='Duplicated Fixed Atoms',
-                                      style=wx.ICON_EXCLAMATION)
+                    wx.MessageBox(msg[:-2],caption='Duplicated Fixed Atoms',style=wx.ICON_EXCLAMATION)
                     return
                 return selDict
 
@@ -14457,7 +14453,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             def OnOrigSet(event):
                 data['testRBObj']['rbObj']['Orig'][0] = data['Drawing']['viewPoint'][0]
                 for i,item in enumerate(Xsizers):
-                    item.SetValue(data['testRBObj']['rbObj']['Orig'][0][i])
+                    item.ChangeValue(data['testRBObj']['rbObj']['Orig'][0][i])
                 UpdateSytSym()
                 UpdateTablePlot()
 

@@ -3492,7 +3492,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             bodSizer.Add(G2G.ValidatedTxtCtrl(SpinRBDisplay,data['Spin'][spinID],'RBname'))
             bodSizer.Add(wx.StaticText(SpinRBDisplay,label='Q'),0)
             data['Spin'][spinID]['rbType'] = 'Q'    #patch
-            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','3m','32','4/mmm','-42m','mmm','2/m','-1','1']
+            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','3m','32','3','4/mmm','-42m','mmm','2/m','2','m','-1','1']
             data['Spin'][spinID]['RBsym'] = data['Spin'][spinID].get('RBsym','53m')
             simsel = wx.ComboBox(SpinRBDisplay,choices=symchoice,value=data['Spin'][spinID]['RBsym'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)

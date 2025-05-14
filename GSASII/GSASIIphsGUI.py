@@ -13404,8 +13404,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 rbData = RBData['Spin'][rbIds[selection]]
                 RBObj['RBId'].append(rbIds[selection])
                 RBObj['SHC'].append({})
-                for name in ['atColor','atType','Natoms','nSH','RBname','RBsym','Radius']:
+                for name in ['atColor','atType','Natoms','nSH','RBname','RBsym']:
                     RBObj[name].append(rbData[name])
+                RBObj['Radius'].append([1.0,False])
                 RBObj['hide'].append(False)
                 RBData['Spin'][rbIds[selection]]['useCount'] += 1
                 G2plt.PlotStructure(G2frame,data)

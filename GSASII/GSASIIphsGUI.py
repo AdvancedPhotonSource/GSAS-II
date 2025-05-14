@@ -14182,11 +14182,11 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     data['RBModels'][rbType] = []
                 if rbType == 'Spin':    #convert items to lists of shells
                     for name in ['atColor','atType','Natoms','nSH','Radius','RBId','RBname','RBsym']:
-                        #patch
-                        if name == 'Radius' and name not in rbObj:
-                            item = rbObj['radius']
-                        else:
-                            item = rbObj[name]
+                        # #patch
+                        # if name == 'Radius' and name not in rbObj:
+                        #     item = rbObj['radius']
+                        # else:
+                        item = rbObj[name]
                         rbObj[name] = [item,]
                 data['RBModels'][rbType].append(copy.deepcopy(rbObj))
                 RBData[rbType][rbId]['useCount'] += 1

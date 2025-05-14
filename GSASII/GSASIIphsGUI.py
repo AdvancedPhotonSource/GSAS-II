@@ -11870,22 +11870,22 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             def onLeave(*args,**kwargs):
                 G2plt.PlotStructure(G2frame,data)
             for key in key1,key2,key3:
-                if key not in var: var[key] = 0
+                if key not in var: var[key] = 0.
             mapSizer = wx.FlexGridSizer(0,3,5,5)
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show Map points within:'),0,WACV)
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key1,
                 xmin=0.0,xmax=5.0,nDig=(10,1),size=(50,-1),
-                OnLeave=onLeave))
+                typeHint=float,OnLeave=onLeave))
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show atoms within:'),0,WACV)
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key2,
                 xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1),
-                OnLeave=onLeave))
+                typeHint=float,OnLeave=onLeave))
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Label distance to atoms within:'),0,WACV)
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key3,
                 xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1),
-                OnLeave=onLeave))
+                typeHint=float,OnLeave=onLeave))
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
             return mapSizer
 

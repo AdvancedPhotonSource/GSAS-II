@@ -7306,10 +7306,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 RenderLabel(x,y,z,'  '+atom[ct-2],radius,wxGreen,matRot)
         if not FourD and len(rhoXYZ) and drawingData['showMap']:       #no green dot map for 4D - it's wrong!
             RenderMap(rho,rhoXYZ,indx,Rok)
-        if (pageName == 'Draw Atoms' or pageName == 'Draw Options') and (
-                drawingData['VPPeakDistRad'] + drawingData['VPatomsExpandRad']
-                 + drawingData['VPatomsDistRad']
-                ) > 0:
+        try:
+            disSum = (drawingData['VPPeakDistRad'] +
+                          drawingData['VPatomsExpandRad'] +
+                          drawingData['VPatomsDistRad'])
+        except:
+            disSum = 0
+        if (pageName == 'Draw Atoms' or pageName == 'Draw Options') and disSum > 0:
             PeakDistRadius = drawingData['VPPeakDistRad']
             atomsExpandRadius = drawingData['VPatomsExpandRad']
             atomsdistRadius = drawingData['VPatomsDistRad']

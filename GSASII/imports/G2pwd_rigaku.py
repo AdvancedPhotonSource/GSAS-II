@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import division, print_function
 import os
 import os.path as ospath
-import platform
 import numpy as np
-import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 class Rigaku_txtReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
     then 1 or 11(!) intensity values on the line. The example file is proceeded
@@ -83,8 +81,6 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
                 print('Warning: Inconsistent step size for Rigaku .txt file on line '+
                           f'{i+1}\n\tHere {stepsize:.5f} prev {self.stepsize:.5f}')
                 warn_once = False
-#                fp.close()
-#                return False
             if j > 30:
                 fp.close()
                 return True
@@ -149,10 +145,7 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
     # values we will need for later read.
 
     def ContentsValidator(self, filename):
-        if '2' in platform.python_version_tuple()[0]:
-            fp = open(filename,'Ur')
-        else:
-            fp = open(filename,'r',encoding='latin-1')
+        fp = open(filename,'r',encoding='latin-1')
         self.vals = None
         self.stepsize = None
         if '.rasx' in filename:
@@ -219,10 +212,7 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
                 
             
         else:    #.ras file
-            if '2' in platform.python_version_tuple()[0]:
-                fp = open(filename,'Ur')
-            else:
-                fp = open(filename,'r',encoding='latin-1')
+            fp = open(filename,'r',encoding='latin-1')
             blockNum = self.selections[0]
             x = []
             y = []

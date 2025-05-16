@@ -1,27 +1,27 @@
 # -*- coding: utf-8 -*-
 #GSASII image calculations: Image calibration, masking & integration routines.
 '''
-Classes and routines defined in :mod:`GSASIIimage` follow. 
+Classes and routines defined in :mod:`GSASIIimage` follow.
 '''
 
 from __future__ import division, print_function
 import math
 import time
 import copy
-import sys
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
 from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import scipy.special as sc
-import GSASIIpath
-import GSASIIlattice as G2lat
-import GSASIIpwd as G2pwd
-import GSASIIspc as G2spc
+from . import GSASIIpath
+GSASIIpath.SetBinaryPath()
+from . import GSASIIlattice as G2lat
+from . import GSASIIpwd as G2pwd
+from . import GSASIIspc as G2spc
 #import GSASIImath as G2mth
-import GSASIIfiles as G2fil
-import ImageCalibrants as calFile
+from . import GSASIIfiles as G2fil
+from . import ImageCalibrants as calFile
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -42,7 +42,7 @@ npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 nxs = np.newaxis
 debug = False
-    
+
 def pointInPolygon(pXY,xy):
     'Needs a doc string'
     #pXY - assumed closed 1st & last points are duplicates
@@ -58,11 +58,11 @@ def pointInPolygon(pXY,xy):
                 Inside = not Inside
         p1x,p1y = p2x,p2y
     return Inside
-    
+
 def peneCorr(tth,dep,dist):
     'Needs a doc string'
     return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
-        
+
 def makeMat(Angle,Axis):
     '''Make rotation matrix from Angle and Axis
 
@@ -73,9 +73,9 @@ def makeMat(Angle,Axis):
     ss = npsind(Angle)
     M = np.array(([1.,0.,0.],[0.,cs,-ss],[0.,ss,cs]),dtype=np.float32)
     return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
-                    
+
 def FitEllipse(xy):
-    
+
     def ellipse_center(p):
         ''' gives ellipse center coordinates
         '''
@@ -84,14 +84,14 @@ def FitEllipse(xy):
         x0=(c*d-b*f)/num
         y0=(a*f-b*d)/num
         return np.array([x0,y0])
-    
+
     def ellipse_angle_of_rotation( p ):
         ''' gives rotation of ellipse major axis from x-axis
         range will be -90 to 90 deg
         '''
         b,c,a = p[1]/2., p[2], p[0]
         return 0.5*npatand(2*b/(a-c))
-    
+
     def ellipse_axis_length( p ):
         ''' gives ellipse radii in [minor,major] order
         '''
@@ -102,7 +102,7 @@ def FitEllipse(xy):
         res1=np.sqrt(up/down1)
         res2=np.sqrt(up/down2)
         return np.array([ res2,res1])
-    
+
     xy = np.array(xy)
     x = np.asarray(xy.T[0])[:,np.newaxis]
     y = np.asarray(xy.T[1])[:,np.newaxis]
@@ -130,10 +130,10 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     :param dict parmDict: all calibration parameters
     :param bool Print: set to True (default) to print the results
     :param bool covar: set to True to return the covariance matrix (default is False)
-    :returns: [chisq,vals,sigList] unless covar is True, then 
+    :returns: [chisq,vals,sigList] unless covar is True, then
         [chisq,vals,sigList,coVarMatrix] is returned
     '''
-        
+
     def CalibPrint(ValSig,chisq,Npts):
         print ('Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
         ptlbls = 'names :'
@@ -151,10 +151,10 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
                 sigstr += 12*' '
         print (ptlbls)
         print (ptstr)
-        print (sigstr)        
-        
+        print (sigstr)
+
     def ellipseCalcD(B,xyd,varyList,parmDict):
-        
+
         x,y,dsp = xyd
         varyDict = dict(zip(varyList,B))
         parms = {}
@@ -169,7 +169,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         dxy = peneCorr(tth,parms['dep'],parms['dist'])
         stth = npsind(tth)
         cosb = npcosd(parms['tilt'])
-        tanb = nptand(parms['tilt'])        
+        tanb = nptand(parms['tilt'])
         tbm = nptand((tth-parms['tilt'])/2.)
         tbp = nptand((tth+parms['tilt'])/2.)
         d = parms['dist']+dxy
@@ -189,7 +189,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         Rcalc = (P+Q)/R
         M = (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
         return M
-        
+
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
     fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f']
     Fmt = dict(zip(names,fmt))
@@ -202,7 +202,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         sig = []
         ValSig = []
         sigList = []
-    else:    
+    else:
         sig = list(np.sqrt(chisq*np.diag(result[1])))
         sigList = np.zeros(7)
         for i,name in enumerate(varyList):
@@ -226,10 +226,10 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
     :param dict parmDict: calibration parameters
     :param bool Print: set to True (default) to print the results
     :param bool covar: set to True to return the covariance matrix (default is False)
-    :returns: [chisq,vals,sigDict] unless covar is True, then 
+    :returns: [chisq,vals,sigDict] unless covar is True, then
         [chisq,vals,sigDict,coVarMatrix] is returned
     '''
-        
+
     def CalibPrint(parmDict,sigDict,chisq,Npts):
         ptlbls = 'names :'
         ptstr =  'values:'
@@ -272,7 +272,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
                 fmt = '%12.4f'
             else:
                 fmt = '%12.3f'
-                
+
             ptlbls += "%s" % (name.rjust(12))
             if name == 'phi':
                 ptstr += fmt % (parmDict[name]%360.)
@@ -303,14 +303,14 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
             deltaDist = parms['deltaDist']
         else:
             deltaDist = np.array([parms['delta'+str(int(d))] for d in dist])
-                
+
         phi = parms['phi']-90.               #get rotation of major axis from tilt axis
         tth = 2.0*npasind(parms['wavelength']/(2.*dsp))
         phi0 = npatan2d(y-detY,x-detX)
         dxy = peneCorr(tth,parms['dep'],dist-deltaDist)
         stth = npsind(tth)
         cosb = npcosd(parms['tilt'])
-        tanb = nptand(parms['tilt'])        
+        tanb = nptand(parms['tilt'])
         tbm = nptand((tth-parms['tilt'])/2.)
         tbp = nptand((tth+parms['tilt'])/2.)
         d = (dist-deltaDist)+dxy
@@ -329,7 +329,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         P = 2.*R0**2*zdis*npcosd(phi0-phi)
         Rcalc = (P+Q)/R
         return (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
-        
+
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
@@ -346,7 +346,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         return [chisq,vals,sigDict,result[1]]
     else:
         return [chisq,vals,sigDict]
-    
+
 def ImageLocalMax(image,w,Xpix,Ypix):
     'Needs a doc string'
     w2 = w*2
@@ -365,8 +365,8 @@ def ImageLocalMax(image,w,Xpix,Ypix):
         ypix += Zmax//w2-w
         return xpix,ypix,np.ravel(ZMax)[Zmax],max(0.0001,np.ravel(ZMin)[Zmin])   #avoid neg/zero minimum
     else:
-        return 0,0,0,0      
-    
+        return 0,0,0,0
+
 def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     'Needs a doc string'
     def ellipseC():
@@ -378,7 +378,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
         return np.pi*apb*(1+3*(amb/apb)**2/(10+np.sqrt(4-3*(amb/apb)**2)))
-        
+
     cent,phi,radii = ellipse
     cphi = cosd(phi-90.)        #convert to major axis rotation
     sphi = sind(phi-90.)
@@ -404,12 +404,12 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
         ring = []
         azm = []
     return ring,azm
-    
+
 def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     '''uses Dandelin spheres to find ellipse or hyperbola parameters from detector geometry
     on output
     radii[0] (b-minor axis) set < 0. for hyperbola
-    
+
     '''
     radii = [0,0]
     stth = sind(tth)
@@ -442,7 +442,7 @@ def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
 #thus shift from beam to ellipse center is [Z*sin(phi),-Z*cos(phi)]
     elcent = [cent[0]+zdis*sind(phi),cent[1]-zdis*cosd(phi)]
     return elcent,phi,radii
-    
+
 def GetEllipse(dsp,data):
     '''uses Dandelin spheres to find ellipse or hyperbola parameters from detector geometry
     as given in image controls dictionary (data) and a d-spacing (dsp)
@@ -457,22 +457,22 @@ def GetEllipse(dsp,data):
     return GetEllipse2(tth,dxy,dist,cent,tilt,phi)
 
 def GetDetectorXY(dsp,azm,data):
-    '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg) 
+    '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
     & image controls dictionary (data) - new version
-    it seems to be only used in plotting 
+    it seems to be only used in plotting
     '''
     def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
-     
+
     	ndotu = planeNormal.dot(rayDirection)
-    	if ndotu < epsilon:    
+    	if ndotu < epsilon:
     		return None
-     
+
     	w = rayPoint - planePoint
     	si = -planeNormal.dot(w) / ndotu
     	Psi = w + si * rayDirection + planePoint
     	return Psi
-    
-    
+
+
     dist = data['distance']
     cent = data['center']
     T = makeMat(data['tilt'],0)
@@ -495,12 +495,12 @@ def GetDetectorXY(dsp,azm,data):
     xyz -= np.array([0.,0.,dist])                 #translate back
     xyz = np.inner(xyz,iMN)
     return np.squeeze(xyz)[:2]+cent
-        
+
 def GetDetectorXY2(dsp,azm,data):
-    '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg) 
+    '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
     & image controls dictionary (data)
-    it seems to be only used in plotting 
-    '''    
+    it seems to be only used in plotting
+    '''
     elcent,phi,radii = GetEllipse(dsp,data)
     phi = data['rotation']-90.          #to give rotation of major axis
     tilt = data['tilt']
@@ -542,15 +542,15 @@ def GetDetectorXY2(dsp,azm,data):
     if data['det2theta']:
         xy[0] += dist*nptand(data['det2theta']+data['tilt']*npsind(data['rotation']))
     return xy
-    
+
 def GetDetXYfromThAzm(Th,Azm,data):
     '''Computes a detector position from a 2theta angle and an azimultal
     angle (both in degrees) - apparently not used!
     '''
-    dsp = data['wavelength']/(2.0*npsind(Th))    
+    dsp = data['wavelength']/(2.0*npsind(Th))
     return GetDetectorXY(dsp,Azm,data)
 
-# this suite not used for integration - only image plotting & mask positioning                    
+# this suite not used for integration - only image plotting & mask positioning
 def GetTthAzmDsp2(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
     OK for ellipses & hyperbola.
@@ -575,11 +575,11 @@ def GetTthAzmDsp2(x,y,data): #expensive
     dxy = peneCorr(tth,dep,dist)
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
-    tth = npatan2d(DY,DX) 
+    tth = npatan2d(DY,DX)
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
     return np.array([tth,azm,dsp])
-    
+
 def GetTthAzmDsp(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
     OK for ellipses & hyperbola.
@@ -588,11 +588,11 @@ def GetTthAzmDsp(x,y,data): #expensive
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
         and dsp is the d-space - not used in integration
     '''
-    
+
     def costth(xyz):
         u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
         return np.dot(u,np.array([0.,0.,1.]))
-        
+
 #zero detector 2-theta: tested with tilted images - perfect integrations
     wave = data['wavelength']
     dx = x-data['center'][0]
@@ -610,7 +610,7 @@ def GetTthAzmDsp(x,y,data): #expensive
         dzp = peneCorr(tth0,data['DetDepth'],dist)
         dxyz0[:,:,2] += dzp
 #non zero detector 2-theta:
-    if data['det2theta']:        
+    if data['det2theta']:
         tthMat = makeMat(data['det2theta'],1)
         dxyz = np.inner(dxyz0,tthMat.T)
     else:
@@ -618,37 +618,37 @@ def GetTthAzmDsp(x,y,data): #expensive
     ctth = costth(dxyz)
     tth = npacosd(ctth)
     dsp = wave/(2.*npsind(tth/2.))
-    azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
+    azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.
     return [tth,azm,dsp]
-    
+
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
     if data['det2theta']:
         return GetTthAzmDsp(x,y,data)[0]
     else:
         return GetTthAzmDsp2(x,y,data)[0]
-    
+
 def GetTthAzm(x,y,data):
     'Give 2-theta, azimuth values for detector x,y position; calibration info in data'
     if data['det2theta']:
         return GetTthAzmDsp(x,y,data)[0:2]
     else:
         return GetTthAzmDsp2(x,y,data)[0:2]
-    
+
 def GetDsp(x,y,data):
     'Give d-spacing value for detector x,y position; calibration info in data'
     if data['det2theta']:
         return GetTthAzmDsp(x,y,data)[2]
     else:
         return GetTthAzmDsp2(x,y,data)[2]
-       
+
 def GetAzm(x,y,data):
     'Give azimuth value for detector x,y position; calibration info in data'
     if data['det2theta']:
         return GetTthAzmDsp(x,y,data)[1]
     else:
         return GetTthAzmDsp2(x,y,data)[1]
-# these two are used only for integration & finding pixel masks    
+# these two are used only for integration & finding pixel masks
 def GetTthAzmG2(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
      calibration info in data - only used in integration for detector 2-theta = 0
@@ -658,11 +658,11 @@ def GetTthAzmG2(x,y,data):
     MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
     dx = x-data['center'][0]
     dy = y-data['center'][1]
-    dz = np.dot(np.dstack([dx.T,dy.T,np.zeros_like(dx.T)]),MN).T[2]    
-    xyZ = dx**2+dy**2-dz**2    
+    dz = np.dot(np.dstack([dx.T,dy.T,np.zeros_like(dx.T)]),MN).T[2]
+    xyZ = dx**2+dy**2-dz**2
     tth0 = npatand(np.sqrt(xyZ)/(dist-dz))
     dzp = peneCorr(tth0,data['DetDepth'],dist)
-    tth = npatan2d(np.sqrt(xyZ),dist-dz+dzp) 
+    tth = npatan2d(np.sqrt(xyZ),dist-dz+dzp)
     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
 # G-calculation - use Law of sines
     distm = data['distance']/1000.0
@@ -678,11 +678,11 @@ def GetTthAzmG(x,y,data):
      calibration info in data - only used in integration for detector 2-theta != 0.
      checked OK for ellipses & hyperbola
      This is the slow step in image integration
-     '''     
+     '''
     def costth(xyz):
         u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
         return np.dot(u,np.array([0.,0.,1.]))
-        
+
 #zero detector 2-theta: tested with tilted images - perfect integrations
     dx = x-data['center'][0]
     dy = y-data['center'][1]
@@ -699,7 +699,7 @@ def GetTthAzmG(x,y,data):
         dzp = peneCorr(tth0,data['DetDepth'],dist)
         dxyz0[:,:,2] += dzp
 #non zero detector 2-theta:
-    if data.get('det2theta',0):        
+    if data.get('det2theta',0):
         tthMat = makeMat(data['det2theta'],1)
         dxyz = np.inner(dxyz0,tthMat.T)
     else:
@@ -707,13 +707,18 @@ def GetTthAzmG(x,y,data):
     ctth = costth(dxyz)
     tth = npacosd(ctth)
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360.        
-# G-calculation - use Law of sines
-    distm = data['distance']/1000.0
-    sinB2 = np.minimum(np.ones_like(tth),
-                    (data['distance']*npsind(tth))**2/(dx**2+dy**2))
-    #sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
-    C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
-    G = distm**2*sinB2/npsind(C)**2
+# old G-calculation        
+    x0 = data['distance']*nptand(tilt)
+    x0x = x0*npcosd(data['rotation'])
+    x0y = x0*npsind(data['rotation'])
+    distsq = data['distance']**2
+    G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+# # G-calculation - use Law of sines - wrong for nonzero det2theta!
+#     distm = data['distance']/1000.0
+#     sinB2 = np.minimum(np.ones_like(tth),
+#         (data['distance']*npsind(tth))**2/(dx**2+dy**2))
+#     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
+#     G = distm**2*sinB2/npsind(C)**2
     return tth,azm,G
 
 def meanAzm(a,b):
@@ -726,19 +731,19 @@ def meanAzm(a,b):
 #        azm += 180.
 #    elif quad == 3:
 #        azm = 360-azm
-    return azm      
-       
+    return azm
+
 def ImageCompress(image,scale):
     ''' Reduces size of image by selecting every n'th point
     param: image array: original image
-    param: scale int: intervsl between selected points 
+    param: scale int: intervsl between selected points
     returns: array: reduced size image
     '''
     if scale == 1:
         return image
     else:
         return image[::scale,::scale]
-        
+
 def checkEllipse(Zsum,distSum,xSum,ySum,dist,x,y):
     'Needs a doc string'
     avg = np.array([distSum/Zsum,xSum/Zsum,ySum/Zsum])
@@ -779,56 +784,15 @@ def EdgeFinder(image,data):
     pixelSize = data['pixelSize']
     edgemin = data['edgemin']
     scalex = pixelSize[0]/1000.
-    scaley = pixelSize[1]/1000.    
+    scaley = pixelSize[1]/1000.
     tay,tax = np.mgrid[0:Nx,0:Ny]
-    tax = np.asfarray(tax*scalex,dtype=np.float32)
-    tay = np.asfarray(tay*scaley,dtype=np.float32)
+    tax = np.asarray(tax*scalex,dtype=np.float32)
+    tay = np.asarray(tay*scaley,dtype=np.float32)
     tam = ma.getmask(ma.masked_less(image.flatten(),edgemin))
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     return zip(tax,tay)
     
-# def MakeFrameMask(data,frame): #obsolete
-#     '''Assemble a Frame mask for a image, according to the input supplied.
-#     Note that this requires use of the Fortran polymask routine that is limited
-#     to 1024x1024 arrays, so this computation is done in blocks (fixed at 512) 
-#     and the master image is assembled from that. 
-
-#     :param dict data: Controls for an image. Used to find the image size
-#       and the pixel dimensions. 
-#     :param list frame: Frame parameters, typically taken from ``Masks['Frames']``.
-#     :returns: a mask array with dimensions matching the image Controls.
-#     '''
-#     import polymask as pm
-#     pixelSize = data['pixelSize']
-#     scalex = pixelSize[0]/1000.
-#     scaley = pixelSize[1]/1000.
-#     blkSize = 512
-#     Nx,Ny = data['size']
-#     nXBlks = (Nx-1)//blkSize+1
-#     nYBlks = (Ny-1)//blkSize+1
-#     tam = ma.make_mask_none(data['size'])
-#     for iBlk in range(nXBlks):
-#         iBeg = iBlk*blkSize
-#         iFin = min(iBeg+blkSize,Nx)
-#         for jBlk in range(nYBlks):
-#             jBeg = jBlk*blkSize
-#             jFin = min(jBeg+blkSize,Ny)                
-#             nI = iFin-iBeg
-#             nJ = jFin-jBeg
-#             tax,tay = np.mgrid[iBeg+0.5:iFin+.5,jBeg+.5:jFin+.5]         #bin centers not corners
-#             tax = np.asfarray(tax*scalex,dtype=np.float32)
-#             tay = np.asfarray(tay*scaley,dtype=np.float32)
-#             tamp = ma.make_mask_none((1024*1024))
-#             tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
-#                 tay.flatten(),len(frame),frame,tamp)[:nI*nJ])^True  #switch to exclude around frame
-#             if tamp.shape:
-#                 tamp = np.reshape(tamp[:nI*nJ],(nI,nJ))
-#                 tam[iBeg:iFin,jBeg:jFin] = ma.mask_or(tamp[0:nI,0:nJ],tam[iBeg:iFin,jBeg:jFin])
-#             else:
-#                 tam[iBeg:iFin,jBeg:jFin] = True
-#     return tam.T
-
 def CalcRings(G2frame,ImageZ,data,masks):
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
@@ -837,7 +801,7 @@ def CalcRings(G2frame,ImageZ,data,masks):
     data['ellipses'] = []
     if not data['calibrant']:
         G2fil.G2Print ('warning: no calibration material selected')
-        return    
+        return
     skip = data['calibskip']
     dmin = data['calibdmin']
     if data['calibrant'] not in calFile.Calibrants:
@@ -866,7 +830,7 @@ def CalcRings(G2frame,ImageZ,data,masks):
     if frame:
         tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,frame)-255)))
     for iH,H in enumerate(HKL):
-        if debug:   print (H) 
+        if debug:   print (H)
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
@@ -880,12 +844,12 @@ def CalcRings(G2frame,ImageZ,data,masks):
         if Ring:
             if iH not in absent and iH >= skip:
                 data['rings'].append(np.array(Ring))
-        data['ellipses'].append(copy.deepcopy(ellipse+('r',)))    
-   
+        data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
+
 def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     '''Called to repeat the calibration on an image, usually called after
-    calibration is done initially to improve the fit, but also 
-    can be used after reading approximate calibration parameters, 
+    calibration is done initially to improve the fit, but also
+    can be used after reading approximate calibration parameters,
     if they are close enough that the first ring can be found.
 
     :param G2frame: The top-level GSAS-II frame or None, to skip plotting
@@ -910,7 +874,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         data['DetDepth'] /= data['distance']
     if not data['calibrant']:
         G2fil.G2Print ('warning: no calibration material selected')
-        return []    
+        return []
     skip = data['calibskip']
     dmin = data['calibdmin']
     if data['calibrant'] not in calFile.Calibrants:
@@ -944,7 +908,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     if frame:
         tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,frame)-255)))
     for iH,H in enumerate(HKL):
-        if debug:   print (H) 
+        if debug:   print (H)
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
@@ -960,15 +924,15 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
                 data['rings'].append(np.array(Ring))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
             Found = True
-        elif not Found:         #skipping inner rings, keep looking until ring found 
+        elif not Found:         #skipping inner rings, keep looking until ring found
             continue
         else:                   #no more rings beyond edge of detector
             data['ellipses'].append([])
             continue
     if not data['rings']:
         G2fil.G2Print ('no rings found; try lower Min ring I/Ib',mode='warn')
-        return []    
-        
+        return []
+
     rings = np.concatenate((data['rings']),axis=0)
     if getRingsOnly:
         return rings,HKL
@@ -984,22 +948,22 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
-        data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
+        data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
     G2fil.G2Print ('calibration time = %.3f'%(time.time()-time0))
     if G2frame:
-        import GSASIIplot as G2plt
-        G2plt.PlotImage(G2frame,newImage=True)        
+        from . import GSASIIplot as G2plt
+        G2plt.PlotImage(G2frame,newImage=True)
     return [vals,varyList,sigList,parmDict,covar]
 
 def ImageCalibrate(G2frame,data):
     '''Called to perform an initial image calibration after points have been
     selected for the inner ring.
 
-    Called only from ``OnImRelease`` (mouse release) in 
-    :func:`GSASIIplot.PlotImage`, thus expected to be used from GUI 
+    Called only from ``OnImRelease`` (mouse release) in
+    :func:`GSASIIplot.PlotImage`, thus expected to be used from GUI
     only (not scripted)
     '''
-    import GSASIIplot as G2plt
+    from . import GSASIIplot as G2plt
     G2fil.G2Print ('Image calibration:')
     time0 = time.time()
     ring = data['ring']
@@ -1015,7 +979,7 @@ def ImageCalibrate(G2frame,data):
     if len(ring) < 5:
         G2fil.G2Print ('ERROR - not enough inner ring points for ellipse')
         return False
-        
+
     #fit start points on inner ring
     data['ellipses'] = []
     data['rings'] = []
@@ -1027,7 +991,7 @@ def ImageCalibrate(G2frame,data):
         ellipse = outE
     else:
         return False
-        
+
     #setup 360 points on that ring for "good" fit
     data['ellipses'].append(ellipse[:]+('g',))
     Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]
@@ -1044,13 +1008,13 @@ def ImageCalibrate(G2frame,data):
     data['ellipses'].append(ellipse[:]+('r',))
     data['rings'].append(np.array(Ring))
     G2plt.PlotImage(G2frame,newImage=True)
-    
+
 #setup for calibration
     data['rings'] = []
     if not data['calibrant']:
         G2fil.G2Print ('Warning: no calibration material selected')
         return True
-    
+
     skip = data['calibskip']
     dmin = data['calibdmin']
 #generate reflection set
@@ -1098,7 +1062,7 @@ def ImageCalibrate(G2frame,data):
 #ellipse to cone axis (x-ray beam); 2 choices depending on sign of tilt
         zdisp = radii[1]*ttth*tand(tilt)
         zdism = radii[1]*ttth*tand(-tilt)
-#cone axis position; 2 choices. Which is right?     
+#cone axis position; 2 choices. Which is right?
 #NB: zdisp is || to major axis & phi is rotation of minor axis
 #thus shift from beam to ellipse center is [Z*sin(phi),-Z*cos(phi)]
         centp = [elcent[0]+zdisp*sind(phi),elcent[1]-zdisp*cosd(phi)]
@@ -1115,7 +1079,7 @@ def ImageCalibrate(G2frame,data):
             G2fil.G2Print (fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1]))
             Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
-                'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
+                'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}
             varyList = [item for item in varyDict if varyDict[item]]
             if len(Ringp) > 10:
                 chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)[0]
@@ -1205,21 +1169,21 @@ def ImageCalibrate(G2frame,data):
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
     G2fil.G2Print ('calibration time = %.3f'%(time.time()-time0))
-    G2plt.PlotImage(G2frame,newImage=True)        
+    G2plt.PlotImage(G2frame,newImage=True)
     return True
-    
+
 def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     '''Makes a set of matrices that provide the 2-theta, azimuth and geometric
-    correction values for each pixel in an image taking into account the 
-    detector orientation. Can be used for the entire image or a rectangular 
-    section of an image (determined by iLim and jLim). 
+    correction values for each pixel in an image taking into account the
+    detector orientation. Can be used for the entire image or a rectangular
+    section of an image (determined by iLim and jLim).
 
     This is used in two ways. For image integration, the computation is done
     over blocks of fixed size (typically 128 or 256 pixels) but for pixel mask
     generation, the two-theta matrix for all pixels is computed. Note that
-    for integration, this routine will be called to generate sections as needed 
-    or may be called by :func:`MakeUseTA`, which creates all sections at 
-    once, so they can be reused multiple times. 
+    for integration, this routine will be called to generate sections as needed
+    or may be called by :func:`MakeUseTA`, which creates all sections at
+    once, so they can be reused multiple times.
 
     :param dict data: GSAS-II image data object (describes the image)
     :param list iLim: boundary along x-pixels
@@ -1230,8 +1194,8 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
-    tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
-    tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
+    tax = np.asarray(tax*scalex,dtype=np.float32).flatten()
+    tay = np.asarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     TA = np.empty((4,nI,nJ))
@@ -1243,23 +1207,25 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     TA[3] = G2pwd.Polarization(data['PolaVal'][0],TA[0],TA[1]-90.)[0]
     return TA           #2-theta, azimuth & geom. corr. arrays
 
-def polymask(data,Poly):
-    ''' Applies polygon  & frame masks via calls to matplotlib routines; 
-    should be called only once during image processing. Individual masked blocks
-    are then pulled from the output array.
+def polymask(data,Poly,Spots=[]):
+    ''' Applies spot(point), polygon  & frame masks via calls to matplotlib routines; 
+    should be called only once each during image processing. A separate call is used for a frame.
+    Individual masked blocks are then pulled from the output array.
     
     :param dict data: GSAS-II image data object (describes the image)
     :param list Poly: list of polygons; if empty, returns None
-    :returns: Zimg, array[Nx,Ny] size of full image mask for all polygons considered
+    :param list Spots: list of spots/points; if empty, returns None
+    :returns: Zimg, array[Nx,Ny] size of full image mask for all polygons/spots or frame considered
     '''
     
     import matplotlib.figure as mplfig
+    from matplotlib.patches import Circle
     try:
         from matplotlib.backends.backend_agg import FigureCanvasAgg as hcCanvas
     except ImportError:
         from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
     
-    if not Poly:
+    if not Poly and not Spots:
         return []
     outmask = 'black'
     inmask = 'white'
@@ -1277,21 +1243,25 @@ def polymask(data,Poly):
         px = np.array(poly).T[0]/scalex
         py = np.array(poly).T[1]/scaley
         ax0.fill(px,py,inmask)
+    for spot in Spots:
+        px = np.array(spot).T[0]/scalex
+        py = np.array(spot).T[1]/scaley
+        rad = 0.5*np.array(spot).T[2]/scaley
+        psp = Circle((px,py),radius=rad,fc=inmask,ec='none')        
+        ax0.add_artist(psp)
     ax0.set_xbound(0,Nx)
     ax0.set_ybound(0,Ny)
-    agg = canvas.switch_backends(hcCanvas)
-    agg.draw()
-    img, (width, height) = agg.print_to_buffer()
+    img, (width,height) = canvas.print_to_buffer()
     Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
     return Zimg[:,:,0]
 
 def MakeMaskMap(data,masks,iLim,jLim):
     '''Makes a mask array from masking parameters that are not determined by 
     image calibration parameters or the image intensities. Thus this uses 
-    mask Frames, Polygons and Lines settings (but not Thresholds, Rings or
-    Arcs). Used on a rectangular section of an image (must be 1024x1024 or 
-    smaller, as dictated by module polymask) where the size is determined 
-    by iLim and jLim. 
+    mask Frames, Polygons, Points, and Lines settings (but not Thresholds, Rings or
+    Arcs). Used on a rectangular section of an image (must be 1024x1024 or
+    smaller) where the size is determined
+    by iLim and jLim.
 
     :param dict data: GSAS-II image data object (describes the image)
     :param list iLim: boundary along x-pixels
@@ -1306,8 +1276,8 @@ def MakeMaskMap(data,masks,iLim,jLim):
     if iLim[0] == jLim[0] == 0:
         if masks['Frames']:
             frame = np.abs(polymask(data,masks['Frames'])-255) #turn inner to outer mask
-        if masks['Polygons']:
-            poly = polymask(data,masks['Polygons'])
+        if masks['Polygons'] or masks['Points']:
+            poly = polymask(data,masks['Polygons'],masks['Points'])
         if len(frame):
             masks['Pmask'] =  frame
             if len(poly):
@@ -1317,19 +1287,15 @@ def MakeMaskMap(data,masks,iLim,jLim):
         else:
             masks['Pmask'] =  []
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
-    tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
-    tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
+    tax = np.asarray(tax*scalex,dtype=np.float32).flatten()
+    tay = np.asarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     #make position masks here
     tam = ma.make_mask_none((nI*nJ))
     if len(masks['Pmask']):
         tam = ma.mask_or(tam,ma.make_mask(masks['Pmask'][iLim[0]:iLim[1],jLim[0]:jLim[1]].flatten()))
-    points = masks['Points']
-    if len(points):
-        for X,Y,rsq in points.T:
-            tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
-    if tam.shape: 
+    if tam.shape:
         tam = np.reshape(tam,(nI,nJ))
     else:
         tam = ma.make_mask_none((nI,nJ))
@@ -1338,28 +1304,28 @@ def MakeMaskMap(data,masks,iLim,jLim):
             tam[xline-iLim[0],:] = True
     for yline in masks.get('Ylines',[]):    #a x pixel position
         if jLim[0] <= yline <= jLim[1]:
-            tam[:,yline-jLim[0]] = True            
+            tam[:,yline-jLim[0]] = True
     return tam           #position mask
 
 def Fill2ThetaAzimuthMap(masks,TAr,tam,image,ringMask=False):
-    '''Makes masked intensity correction arrays that depend on image 
-    intensity, 2theta and azimuth. Masking is generated from the 
-    combination of the following: 
-    an array previously generated by :func:`MakeMaskMap` combined with 
-    Thresholds, Rings and Arcs mask input. 
+    '''Makes masked intensity correction arrays that depend on image
+    intensity, 2theta and azimuth. Masking is generated from the
+    combination of the following:
+    an array previously generated by :func:`MakeMaskMap` combined with
+    Thresholds, Rings and Arcs mask input.
 
     These correction arrays are generated for a rectangular section
-    of an image (must be 1024x1024 or smaller) where the size is 
+    of an image (must be 1024x1024 or smaller) where the size is
     determined the input arrays.
 
-    Note that older, less optimized, code has been left commented out below 
-    in case there are future problems or questions. 
+    Note that older, less optimized, code has been left commented out below
+    in case there are future problems or questions.
 
     :param dict masks: GSAS-II mask settings
     :param np.array TAr: 2theta/azimuth/correction arrays, reshaped
     :param np.array tam: mask array from :func:`MakeMaskMap`
     :param np.array image: image array
-    :returns: a list of 4 masked arrays with values for: azimuth, 2-theta, 
+    :returns: a list of 4 masked arrays with values for: azimuth, 2-theta,
        intensity/polarization, dist**2/d0**2
     '''
     tax,tay,tad,pol = TAr    #azimuth, 2-theta, dist**2/d0**2, pol
@@ -1370,7 +1336,7 @@ def Fill2ThetaAzimuthMap(masks,TAr,tam,image,ringMask=False):
         image = image.data
     else:
         mask = tam.reshape(image.shape)
-        
+
     # apply Ring & Arc masks. Note that this could be done in advance
     # and be cached (like tam & TAr) but it is not clear this is needed
     # often or that a lot of time is saved.
@@ -1387,7 +1353,7 @@ def Fill2ThetaAzimuthMap(masks,TAr,tam,image,ringMask=False):
     Zlim = masks['Thresholds'][1]
     #taz = ma.masked_outside(image.flatten(),int(Zlim[0]),Zlim[1])
     mask |= (image < Zlim[0]) | (image > Zlim[1])
-    
+
     #tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
     #tax = ma.compressed(ma.array(tax.flatten(),mask=tam))   #azimuth
     #tay = ma.compressed(ma.array(tay.flatten(),mask=tam))   #2-theta
@@ -1403,7 +1369,7 @@ def Fill2ThetaAzimuthMap(masks,TAr,tam,image,ringMask=False):
         return tax[mask],tay[mask],image[mask]/pol[mask],tad[mask]
 
 def MakeUseTA(data,blkSize=128):
-    '''Precomputes the set of blocked arrays for 2theta-azimuth mapping from 
+    '''Precomputes the set of blocked arrays for 2theta-azimuth mapping from
     the controls settings of the current image for image integration.
     This computation is done optionally, but provides speed as the results
     from this can be cached to avoid recomputation for a series of images
@@ -1412,7 +1378,7 @@ def MakeUseTA(data,blkSize=128):
     :param np.array data: specifies parameters for an image
     :param int blkSize: a blocksize that is selected for speed
     :returns: a list of TA blocks
-    ''' 
+    '''
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
     nYBlks = (Ny-1)//blkSize+1
@@ -1441,11 +1407,8 @@ def MakeUseMask(data,masks,blkSize=128):
     :param np.array data: specifies mask parameters for an image
     :param int blkSize: a blocksize that is selected for speed
     :returns: a list of TA blocks
-    ''' 
+    '''
     Masks = copy.deepcopy(masks)
-    Masks['Points'] = np.array(Masks['Points']).T           #get spots as X,Y,R arrays
-    if np.any(masks['Points']):
-        Masks['Points'][2] = np.square(Masks['Points'][2]/2.)
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
     nYBlks = (Ny-1)//blkSize+1
@@ -1462,15 +1425,15 @@ def MakeUseMask(data,masks,blkSize=128):
         useMask.append(useMaskj)
     return useMask
 
-def MakeGainMap(image,Ix,Iy,data,blkSize=128):
-    import scipy.ndimage.filters as sdif
-    Iy *= npcosd(Ix[:-1])**3       #undo parallax
+def MakeGainMap(image,Ix,Iy,data,mask,blkSize=128):
+    Iy /= npcosd(Ix[:-1])       #undo parallax
     Iy *= (1000./data['distance'])**2    #undo r^2 effect
     Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
     if data['Oblique'][1]:
         Iy *= G2pwd.Oblique(data['Oblique'][0],Ix[:-1])     #undo penetration
     IyInt = scint.interp1d(Ix[:-1],Iy[0],bounds_error=False)
     GainMap = np.zeros_like(image,dtype=float)
+    Mask = np.zeros_like(image,dtype=bool)
     #do interpolation on all points - fills in the empty bins; leaves others the same
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
@@ -1482,16 +1445,20 @@ def MakeGainMap(image,Ix,Iy,data,blkSize=128):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+            tam = MakeMaskMap(data,mask,(iBeg,iFin),(jBeg,jFin))
             Ipix = IyInt(TA[0])
-            GainMap[iBeg:iFin,jBeg:jFin] = image[iBeg:iFin,jBeg:jFin]/(Ipix*TA[3])
-    GainMap = np.nan_to_num(GainMap,1.0)
-    GainMap = sdif.gaussian_filter(GainMap,3.,order=0)
-    return 1./GainMap
+            Mask[iBeg:iFin,jBeg:jFin] = tam
+            GainMap[iBeg:iFin,jBeg:jFin] = np.array(image[iBeg:iFin,jBeg:jFin]/(Ipix*TA[3]))
+    GainMap /= np.nanmedian(GainMap)
+    return 1./GainMap,Mask
 
 def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
     ''' Integrate by azimuth around the ring masked region in 0.5 deg steps
     '''
-    import histogram2d as h2d
+    if GSASIIpath.binaryPath:
+        import histogram2d as h2d
+    else:
+        from . import histogram2d as h2d
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = 720
     ring = masks['Rings'][ringId]
@@ -1528,7 +1495,7 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
                 else:
                     tabs = np.ones_like(taz)
             else:
-                tabs = np.ones_like(taz)                
+                tabs = np.ones_like(taz)
             taz = np.array((taz*tad*tabs),dtype='float32')
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
@@ -1538,34 +1505,37 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
     return np.stack((Azms,H0.T[0]))
 
 def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask=None):
-    '''Integrate an image; called from ``OnIntegrate()`` and 
-    ``OnIntegrateAll()`` inside :func:`GSASIIimgGUI.UpdateImageControls` 
+    '''Integrate an image; called from ``OnIntegrate()`` and
+    ``OnIntegrateAll()`` inside :func:`GSASIIimgGUI.UpdateImageControls`
     as well as :meth:`GSASIIscriptable.G2Image.Integrate`.
 
     :param np.array image: contains the 2-D image
     :param np.array data: specifies controls/calibration parameters for an image
     :param np.array masks: specifies masks parameters for an image
     :param int blkSize: a blocksize that is selected for speed
-    :param bool returnN: If True, causes an extra matrix (NST) to be 
-      returned. The default is False. 
-    :param np.array useTA: contains a cached set of blocked 
-      2theta/azimuth/correction matrices (see :func:`MakeUseTA`) for the 
-      current image. 
+    :param bool returnN: If True, causes an extra matrix (NST) to be
+      returned. The default is False.
+    :param np.array useTA: contains a cached set of blocked
+      2theta/azimuth/correction matrices (see :func:`MakeUseTA`) for the
+      current image.
       The default, None, causes this to be computed as needed.
-    :param np.array useMask: contains a cached set of blocked masks (see 
-      :func:`MakeUseMask`) for the current image. 
+    :param np.array useMask: contains a cached set of blocked masks (see
+      :func:`MakeUseMask`) for the current image.
       The default, None, causes this to be computed as needed.
 
-    :returns: list ints, azms, Xvals, cancel (or ints, azms, Xvals, 
-      NST, cancel if returnN is True), where azms is a list of ``M`` azimuth 
+    :returns: list ints, azms, Xvals, cancel (or ints, azms, Xvals,
+      NST, cancel if returnN is True), where azms is a list of ``M`` azimuth
       values that were requested for integration, ints is a list ``M`` arrays
-      of diffraction intensities (where each array of diffraction data is 
-      length ``N``), Xvals is an array of "x" values, 2theta, Q, log(q) 
-      (determined by data['binType']), also of length ``N``. Variable cancel 
-      will always be False, since a status window is no longer supported.      
+      of diffraction intensities (where each array of diffraction data is
+      length ``N``), Xvals is an array of "x" values, 2theta, Q, log(q)
+      (determined by data['binType']), also of length ``N``. Variable cancel
+      will always be False, since a status window is no longer supported.
     '''
     #for q, log(q) bins need data['binType']
-    import histogram2d as h2d
+    if GSASIIpath.binaryPath:
+        import histogram2d as h2d
+    else:
+        from . import histogram2d as h2d
     G2fil.G2Print ('Beginning image integration; image range: %d %d'%(np.min(image),np.max(image)))
     CancelPressed = False
     LUtth = np.array(data['IOtth'])
@@ -1574,7 +1544,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     numChans = (data['outChannels']//4)*4
     Dazm = (LRazm[1]-LRazm[0])/numAzms
     if '2-theta' in data.get('binType','2-theta'):
-        lutth = LUtth                
+        lutth = LUtth
     elif 'log(q)' in data['binType']:
         lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
     elif 'q' == data['binType'].lower():
@@ -1586,9 +1556,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     if 'SASD' in data['type']:
         muT = -np.log(muT)/2.       #Transmission to 1/2 thickness muT
     Masks = copy.deepcopy(masks)
-    Masks['Points'] = np.array(Masks['Points']).T           #get spots as X,Y,R arrays
-    if np.any(masks['Points']):
-        Masks['Points'][2] = np.square(Masks['Points'][2]/2.)
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H2 = np.linspace(lutth[0],lutth[1],numChans+1)
@@ -1634,7 +1601,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                 else:
                     tabs = np.ones_like(taz)
             else:
-                tabs = np.ones_like(taz)                
+                tabs = np.ones_like(taz)
             if 'log(q)' in data.get('binType',''):
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
             elif 'q' == data.get('binType','').lower():
@@ -1666,18 +1633,19 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         except ValueError:
             problemEntries.append(i)
             H0.append(np.zeros(numChans,order='F',dtype=np.float32))
-    H0 = np.nan_to_num(np.array(H0))        
+    H0 = np.nan_to_num(np.array(H0))
     if 'log(q)' in data.get('binType',''):
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
     elif 'q' == data.get('binType','').lower():
         H2 = 2.*npasind(H2*data['wavelength']/(4.*np.pi))
-    if Dazm:        
+    if Dazm:
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
     else:
         H1 = LRazm
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
-    H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
+    if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
+        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
     # H0 *= (data['distance']/1000.)**2    #remove r^2 effect - done earlier
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
@@ -1698,7 +1666,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         return H0,H1,H2,NST,CancelPressed
     else:
         return H0,H1,H2,CancelPressed
-    
+
 def MakeStrStaRing(ring,Image,Controls):
     ellipse = GetEllipse(ring['Dset'],Controls)
     pixSize = Controls['pixelSize']
@@ -1719,10 +1687,10 @@ def MakeStrStaRing(ring,Image,Controls):
         ring['ImtaObs'] = [[],[]]
         ring['ImtaCalc'] = [[],[]]
         return [],[]    #bad ring; no points found
-    
+
 def FitStrSta(Image,StrSta,Controls):
     'Needs a doc string'
-    
+
     StaControls = copy.deepcopy(Controls)
     phi = StrSta['Sample phi']
     wave = Controls['wavelength']
@@ -1750,7 +1718,7 @@ def FitStrSta(Image,StrSta,Controls):
             ring['covMat'] = covMat
             G2fil.G2Print ('Variance in normalized ring intensity: %.3f'%(ring['Ivar']))
     CalcStrSta(StrSta,Controls)
-    
+
 def IntStrSta(Image,StrSta,Controls):
     StaControls = copy.deepcopy(Controls)
     pixelSize = Controls['pixelSize']
@@ -1774,7 +1742,7 @@ def IntStrSta(Image,StrSta,Controls):
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
             RingsAI.append(np.array(list(zip(ringazm,ringint))).T)
     return RingsAI
-    
+
 def CalcStrSta(StrSta,Controls):
 
     wave = Controls['wavelength']
@@ -1803,7 +1771,7 @@ def CalcStrSta(StrSta,Controls):
 def calcFij(omg,phi,azm,th):
     '''    Uses parameters as defined by Bob He & Kingsley Smith, Adv. in X-Ray Anal. 41, 501 (1997)
 
-    :param omg: his omega = sample omega rotation; 0 when incident beam || sample surface, 
+    :param omg: his omega = sample omega rotation; 0 when incident beam || sample surface,
         90 when perp. to sample surface
     :param phi: his phi = sample phi rotation; usually = 0, axis rotates with omg.
     :param azm: his chi = azimuth around incident beam
@@ -1837,7 +1805,7 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
         print (ptlbls)
         print (ptstr)
         print (sigstr)
-        
+
     def strainCalc(p,xyd,dset,wave,phi,StaType):
         E = np.array([[p[0],p[1],0],[p[1],p[2],0],[0,0,0]])
         dspo,azm,dsp = xyd
@@ -1848,7 +1816,7 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
         else:
             dspc = dset*(V+1.)
         return dspo-dspc
-        
+
     names = ['e11','e12','e22']
     fmt = ['%12.2f','%12.2f','%12.2f']
     result = leastsq(strainCalc,p0,args=(rings,dset,wave,phi,StaType),full_output=True)
@@ -1871,7 +1839,7 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
         posx = ma.sum(gdx)/ma.count(gdx)
         posy = ma.sum(gdy)/ma.count(gdy)
         return posx,posy
-    
+
     def calcPeak(values,nxy,pixSize,img):
         back,mag,px,py,sig = values
         peak = np.zeros([nxy,nxy])+back
@@ -1879,10 +1847,10 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
         gdx,gdy = np.mgrid[0:nxy,0:nxy]
         gdx = (gdx-nxy//2)*pixSize[0]/1000.
         gdy = (gdy-nxy//2)*pixSize[1]/1000.
-        arg = (gdx-px)**2+(gdy-py)**2        
+        arg = (gdx-px)**2+(gdy-py)**2
         peak += mag*nor*np.exp(-arg/(2.*sig**2))
         return ma.compressed(img-peak)/np.sqrt(ma.compressed(img))
-    
+
     def calc2Peak(values,nxy,pixSize,img):
         back,mag,px,py,sigx,sigy,rho = values
         peak = np.zeros([nxy,nxy])+back
@@ -1891,10 +1859,10 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
         gdx = (gdx-nxy//2)*pixSize[0]/1000.
         gdy = (gdy-nxy//2)*pixSize[1]/1000.
         argnor = -1./(2.*(1.-rho**2))
-        arg = (gdx-px)**2/sigx**2+(gdy-py)**2/sigy**2-2.*rho*(gdx-px)*(gdy-py)/(sigx*sigy)        
+        arg = (gdx-px)**2/sigx**2+(gdy-py)**2/sigy**2-2.*rho*(gdx-px)*(gdy-py)/(sigx*sigy)
         peak += mag*nor*np.exp(argnor*arg)
-        return ma.compressed(img-peak)/np.sqrt(ma.compressed(img))        
-    
+        return ma.compressed(img-peak)/np.sqrt(ma.compressed(img))
+
     nxy2 = nxy//2
     ImBox = Image[ind[1]-nxy2:ind[1]+nxy2+1,ind[0]-nxy2:ind[0]+nxy2+1]
     back = np.min(ImBox)
@@ -1923,7 +1891,10 @@ def TestFastPixelMask():
     :returns: True if the airxd.mask package can be imported; False otherwise.
     '''
     try:
-        import fmask
+        if GSASIIpath.binaryPath:
+            import fmask
+        else:
+            from . import fmask
     except ModuleNotFoundError:
         if GSASIIpath.GetConfigValue('debug'): print('fmask not found')
         return False
@@ -1932,28 +1903,31 @@ def TestFastPixelMask():
 def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     '''Find "bad" regions on an image and create a pixel mask to remove them.
     This works by masking pixels that are m*sigma outside the range of the
-    median at that radial distance using the using the fmask C module (based on the 
-    AIRXD C++ code https://github.com/AdvancedPhotonSource/AIRXD-ML-PUB, developed 
+    median at that radial distance using the using the fmask C module (based on the
+    AIRXD C++ code https://github.com/AdvancedPhotonSource/AIRXD-ML-PUB, developed
     by Howard Yanxon, Wenqian Xu and James Weng.)
 
-    This is much faster than  AutoPixelMask, which does pretty much the 
+    This is much faster than  AutoPixelMask, which does pretty much the
     same computation, but uses pure Python/numpy code.
 
-    Called from GSASIIimgGUI.UpdateMasks.OnFindPixelMask (single image) 
-    and GSASIIimgGUI.UpdateMasks.OnAutoFindPixelMask (multiple images) 
+    Called from GSASIIimgGUI.UpdateMasks.OnFindPixelMask (single image)
+    and GSASIIimgGUI.UpdateMasks.OnAutoFindPixelMask (multiple images)
     [see :func:`GSASIIimgGUI.UpdateMasks`]
 
     :param np.array Image: 2D data structure describing a diffaction image
-    :param dict Masks: contents of Masks data tree 
+    :param dict Masks: contents of Masks data tree
     :param dict Controls: diffraction & calibration parameters for image from
       IMG data tree entry
-    :param int numChans: number of channels in eventual 2theta pattern 
+    :param int numChans: number of channels in eventual 2theta pattern
       after integration
-    :returns: a bool mask array with the same shape as Image 
+    :returns: a bool mask array with the same shape as Image
     '''
 
     try:
-        import fmask
+        if GSASIIpath.binaryPath:
+            import fmask
+        else:
+            from . import fmask
         if GSASIIpath.GetConfigValue('debug'): print('Loaded fmask from',fmask.__file__)
     except:
         return None
@@ -1968,45 +1942,45 @@ def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     LUtth = np.array(Controls['IOtth'])
     TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
 
-    # fp = open('/tmp/maskdump.pickle','wb')   # make external test file 
+    # fp = open('/tmp/maskdump.pickle','wb')   # make external test file
     # import pickle
     # pickle.dump(tam,fp) # frame mask
     # pickle.dump(TA,fp)  # 2theta values
-    # pickle.dump(Image,fp)  # image values 
+    # pickle.dump(Image,fp)  # image values
     # pickle.dump(TThs,fp)  # 2theta bins
     # fp.close()
-        
+
     print(' Fast mask: Spots greater or less than %.1f of median abs deviation are masked'%esdMul)
     outMask = np.zeros_like(tam,dtype=bool).ravel()
-    
+
     if dlg: dlg.Update(10,"Fast scan in progress")
     try:
         masked = fmask.mask(esdMul, tam.ravel(), TA.ravel(), Image.ravel(), TThs, outMask, ttmin, ttmax)
     except Exception as msg:
         print('Exception in fmask.mask\n\t',msg)
     return outMask.reshape(Image.shape)
-    
+
 def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     '''Find "bad" regions on an image and creata a pixel mask to remove them.
     This works by masking pixels that are well outside the range of the
     median at that radial distance.
     This is ~4x faster than the original version from RBVD.
-    Developed by Howard Yanxon, Wenqian Xu and James Weng. 
+    Developed by Howard Yanxon, Wenqian Xu and James Weng.
 
-    Called from GSASIIimgGUI.UpdateMasks.OnFindPixelMask (single image) 
-    and GSASIIimgGUI.UpdateMasks.OnAutoFindPixelMask (multiple images) 
+    Called from GSASIIimgGUI.UpdateMasks.OnFindPixelMask (single image)
+    and GSASIIimgGUI.UpdateMasks.OnAutoFindPixelMask (multiple images)
     [see :func:`GSASIIimgGUI.UpdateMasks`]
 
     :param np.array Image: 2D data structure describing a diffaction image
-    :param dict Masks: contents of Masks data tree 
+    :param dict Masks: contents of Masks data tree
     :param dict Controls: diffraction & calibration parameters for image from
       IMG data tree entry
-    :param int numChans: number of channels in eventual 2theta pattern 
+    :param int numChans: number of channels in eventual 2theta pattern
       after integration
     :param wx.Dialog dlg: a widget that can be used to show the status of
-      the pixel mask scan and can optionally be used to cancel the scan. If 
+      the pixel mask scan and can optionally be used to cancel the scan. If
       dlg=None then this is ignored (for non-GUI use).
-    :returns: a mask array with the same shape as Image or None if the 
+    :returns: a mask array with the same shape as Image or None if the
       the scan is cancelled from the dlg Dialog.
     '''
     #if GSASIIpath.GetConfigValue('debug'): print('faster all-Python AutoPixelMask')
@@ -2018,7 +1992,7 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     except ImportError:
         try:
             from scipy.stats import median_absolute_deviation as MAD
-            if GSASIIpath.GetConfigValue('debug'): 
+            if GSASIIpath.GetConfigValue('debug'):
                 print('Using deprecated scipy.stats.median_absolute_deviation routine')
         except:
             print('Unable to load scipy.stats.median_abs_deviation')
@@ -2030,16 +2004,16 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
         tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(Controls,frame)-255)))
     LUtth = np.array(Controls['IOtth'])
     dtth = (LUtth[1]-LUtth[0])/numChans
-    esdMul = Masks['SpotMask']['esdMul']   
+    esdMul = Masks['SpotMask']['esdMul']
     print(' Spots greater or less than %.1f of median abs deviation are masked'%esdMul)
     band = np.array(Image)
     TA = Make2ThetaAzimuthMap(Controls, (0, Image.shape[0]), (0, Image.shape[1]))[0]
     TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
     mask = (TA >= LUtth[1]) | (TA < LUtth[0]) | tam
- 
+
     for it in range(len(TThs)):
         masker = (TA >= TThs[it]) & (TA < TThs[it]+dtth) & ~tam
-        if (TThs[it] < Masks['SpotMask'].get('SearchMin',0.0) or 
+        if (TThs[it] < Masks['SpotMask'].get('SearchMin',0.0) or
             TThs[it] > Masks['SpotMask'].get('SearchMax',180.0)):
             mask |= masker
             continue
@@ -2079,7 +2053,7 @@ def DoPolaCalib(ImageZ,imageData,arcTth):
         'Thresholds':imageData['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
     AMasks = {'Points':[],'Rings':[],'Arcs':[Arc,],'Polygons':[],'Frames':[],
         'Thresholds':imageData['range'],'SpotMask':{'esdMul':3.,'spotMask':None}}
-    
+
     def func(p):
         p = min(1.0,max(p,0.0))
         data['PolaVal'][0] = p
@@ -2092,7 +2066,7 @@ def DoPolaCalib(ImageZ,imageData,arcTth):
     res = minimize_scalar(func,bracket=[1.,.999],tol=.0001)
     print(res)
     pola = min(1.0,max(res.x,.0))
-    
+
     Pola = []
     for arc in [75,80,85,90,95]:
         Arc = [arcTth,[arc,arc+10.],2.0]
@@ -2108,4 +2082,3 @@ def DoPolaCalib(ImageZ,imageData,arcTth):
     print(' Polarization: %.4f(%d)'%(mean,std))
     print(' time: %.2fs'%(time.time()-time0))
     imageData['PolaVal'][0] = mean
-    

@@ -4,20 +4,25 @@
  *GSASIIscriptable: Scripting Interface*
 =========================================
 
+.. py:currentmodule:: GSASII
 
+.. tip::
+
+   Note that with the transition from the "master" branch to the "main" branch of GSAS-II, `described here <https://advancedphotonsource.github.io/GSAS-II-tutorials/master2main.html>`_, the initial code needed to access the GSAS-II scripting module changes. Older scripts may require minor changes to import GSASIIscriptable, as described in :ref:`ScriptingShortcut`. The instructions below have been updated for use of the current ("main") branch. 
+   
 *Summary/Contents*
 ==================
 
 Routines to use an increasing amount of GSAS-II's capabilities from scripts, 
 without use of the graphical user interface (GUI). GSASIIscriptable can create and access
 GSAS-II project (.gpx) files and can directly perform image handling and refinements.  
-The module defines wrapper classes (inheriting from :class:`~GSASIIscriptable.G2ObjectWrapper`) for a growing number 
+The module defines wrapper classes (inheriting from
+:class:`~GSASIIscriptable.G2ObjectWrapper`) for a growing number  
 of data tree items.
 
-GSASIIscriptable can be used in two ways. It offers a command-line mode, but 
-the more widely used and more powerful mode of GSASIIscriptable is 
-used is via Python scripts that 
-call the module's application interface (API), these are summarized immediately below and are documented in the :ref:`complete API documentation <API>` section.
+GSASIIscriptable is normally used by writing Python commands via
+this module's application programming interface (API). There is also a mechanism
+where GSASIIscriptable can be accessed via shell/batch commands (see :ref:`CommandlineInterface`), called command-line mode. Access to GSASIIscriptable via the API is used more widely than via command-line mode and offers many more features. The material below introduces and summarizes use of GSASIIscriptable via the API. Following that, detailed descriptions of all routines are provided in the :ref:`complete API documentation <API>` section.
 
 While the command-line mode 
 provides access a number of features without writing Python scripts 
@@ -33,22 +38,137 @@ Installation of GSASIIscriptable
 ================================
 
 GSASIIscriptable is included as part of a standard GSAS-II installation that includes the GSAS-II GUI (as described in the `installation instructions <https://advancedphotonsource.github.io/GSAS-II-tutorials/install.html>`_). People who will will use scripting extensively will still need access to the GUI
-for some activities, since the scripting API has not yet been extended to all
-features of GSAS-II and even if that is ever completed, there will still be some things that GSAS-II does with the GUI would be almost impossible to implement without a interactive graphical view of the data.
+for some activities, since the scripting API does not cover all
+features of GSAS-II. Even if that were to be completed, there will still be some things that GSAS-II does with the GUI would be almost impossible to implement without a interactive graphical view of the project.
 
-Nonetheless, there may be times where it does make sense to install GSAS-II without all of the GUI components, for example on a compute server.
-The minimal requirements for use of GSASIIscriptable are only Python, numpy and scipy, but additional optional packages that can be utilized are described in 
-the :ref:`ScriptingRequirements` section of the requirements chapter, which also provides some installation instructions.
+Nonetheless, there may be times where it does make sense to install GSAS-II without all of the Python packages needed for running the GUI, for example on a compute server or cluster. The minimal requirements for use of GSASIIscriptable are:
 
-In a standard GSAS-II installation, no changes are made to Python. When the GUI is invoked, a small script or Windows batch file is used to start GSAS-II inside Python. When
-GSASIIscriptable is used, Python must be provided with the location of the GSAS-II files. There are two ways this can be done:
+    * python
+    * numpy
+    * scipy
+
+GSASIIscriptable can be used without these packages, but with significantly reduced functionality, so their inclusion is highly recommended:
+
+    * PyCifRW
+    * requests
+
+There are a few other packages that may be used in GSASIIscriptable, for example to import specific types of powder or image data or perform specific types of computations. They are not commonly needed, but if access is attempted, it should be obvious from error messages:
+
+    * h5py
+    * xmltodict
+    * pybaselines
+    * seekpath
+    * matplotlib
+    * pillow
+
+More information on Python packages used in GSAS-II is provided in 
+the :ref:`ScriptingRequirements` section of the Requirements chapter, which also provides some installation instructions.
+
+.. _ScriptingShortcut: 
+
+
+Accessing the GSASIIscriptable Module
+===========================================
+
+When GSAS-II is installed with GSAS2MAIN or GSAS2PKG, or with the ``gitstrap.py`` script, or directly with git, the GSAS-II software is installed outside of Python. When the GUI is invoked, a small script or Windows batch file is used to invoke Python with a reference to a file  (named ``G2.py``) that starts the GSAS-II GUI.
+It is also possible to install GSAS-II inside Python (for example with pixi), but work on this is not yet complete or documented.
+
+When GSASIIscriptable is used, and GSAS-II has been installed outside of Python, some mechanism is needed to provide the location of the GSAS-II files. There are two ways this can be done:
 
  #. define the GSAS-II installation location in the Python ``sys.path``, or
- #. install a reference to GSAS-II inside Python. 
+ #. install a reference to GSAS-II inside the Python installation. 
 
 The latter method requires an extra installation step, but has the advantage that
-it allows writing portable GSAS-II scripts. This is discussed further in the
-:ref:`ScriptingShortcut` section of this chapter.
+it allows writing portable GSAS-II scripts.
+
+Explicit GSASIIscriptable Specification
+-------------------------------------------------
+**MacOS/Linux**:
+
+  The example below is for MacOS/Linux and assumes that GSAS-II has been installed in location ``/Users/toby/g2main/`` such that there is a directory ``/Users/toby/g2main/GSAS-II/GSASII`` that contains all the GSAS-II Python files such as ``GSASIIscriptable.py``. Place code like this into the beginning of your script so that the location of GSAS-II files can be found:
+
+  .. code-block::  python
+
+    import sys
+    sys.path.insert(0,'/Users/toby/g2main/GSAS-II') # needed to find GSASII package
+    from GSASII import GSASIIscriptable as G2sc
+
+**Windows**:
+    
+  A similar example, but for Windows, assumes that GSAS-II has been installed in location ``C:\Users\toby\gsas2main`` such that there is a directory ``C:\Users\toby\gsas2main\GSAS-II\GSASII`` that contains all the GSAS-II Python files such as ``GSASIIscriptable.py``. Place code like this into the beginning of your script (note that use of forward slashes is deliberate; to use back slashes, they must be doubled or placed in a raw-string, ``'C:\\Users\\...'`` or ``r'C:\Users\...'``): 
+
+  .. code-block::  python
+
+    import sys
+    sys.path.insert(0,'/Users/toby/gsas2main/GSAS-II') # needed to find GSASII package
+    from GSASII import GSASIIscriptable as G2sc
+
+  Note that the directory that is placed in the path is the one that contains the ``GSASII`` directory. Previously, this path contained this directory, but now is its parent. 
+
+Install GSASIIscriptable Location Into Python
+---------------------------------------------------
+
+  As an alternative to defining the location of GSAS-II in every script, you can define the location of GSAS-II inside Python *once*, but note that this must be done for each version of Python, if you plan to use GSAS-II scripting with more that one. If you have more than one version of GSAS-II installed, only one can be defined for a Python installation, but the previous method, where ``sys.path`` is modified, can be used with all of the GSAS-II installions. 
+
+  There are three different ways to use GSAS-II to define a location for GSASIIscriptable. You can choose the method that is easiest for you. 
+
+  .. image:: /images/menu.png
+     :scale: 33 %
+     :alt: Install shortcut from File menu
+     :align: right
+             
+  1. The most easy option is to invoke the "Install GSASIIscriptable shortcut" command in the GSAS-II GUI File menu.
+
+     This performs the same actions as below, but since the location of both Python and the GSAS-II files are defined within the GUI, no additional input is needed.
+     
+  2. Alternatively, using the commands modeled after the ones above, add the Python command ``G2sc.installScriptingShortcut()`` into your script as::
+
+      import sys
+      sys.path.insert(0,'/Users/toby/gsas2main/GSAS-II') # needed to find GSASII package
+      from GSASII import GSASIIscriptable as G2sc   
+      G2sc.installScriptingShortcut()
+
+    This only needs to be done once. After the script has been run, remove the command or comment it out.   
+
+  3. The third choice is to run two command-line (bash/zsh/DOS,...) commands. This assumes that the intended Python interpreter is already in the path. (If not use a conda activate command.)   Note that the directory that is used is the parent of the ``GSASII`` directory (the directory that contains ``GSASII``.) 
+
+     Here are the commands on **MacOS/Linux**::
+
+         % cd /Users/toby/gsas2main/GSAS-II
+         % python -c "import GSASII.GSASIIscriptable as G2sc; G2sc.installScriptingShortcut()"
+
+     On **Windows** the commands in a cmd.exe window will be similar::
+
+         >cd \Users\toby\gsas2main\GSAS-II
+         >python -c "import GSASII.GSASIIscriptable as G2sc; G2sc.installScriptingShortcut()"
+
+     The output from this process on Windows is shown below. 
+
+     .. image:: /images/MakeShortcut.png
+       :scale: 33 %
+       :alt: test of GSASIIscriptable shortcut
+       :align: right
+
+  Once any of the above three choices has been completed, a good test to see if GSASIIscriptable is working will be commands::
+
+    import G2script as G2sc  
+    print(G2sc.ShowVersions())
+
+  as is shown in the image below. 
+
+  .. image:: /images/TestShortcut.png
+     :scale: 33 %
+     :alt: test of GSASIIscriptable shortcut
+     :align: right
+           
+
+When GSAS-II is Installed Inside Python
+----------------------------------------------------
+
+  If GSAS-II is installed inside of Python, the location of the GSAS-II software is established without any changes to the path so this command should work without using any of the above::
+
+    from GSASII import GSASIIscriptable as G2sc   
+
 
 Application Interface (API) Summary
 ===================================
@@ -86,7 +206,7 @@ Scripting class name                              Description
 
 :ref:`G2PDF <Class_G2PDF>`                 :class:`~GSASIIscriptable.G2PDF`: PDF histogram info
 
-:ref:`G2PDF <Class_G2SmallAngle>`          :class:`~GSASIIscriptable.G2SmallAngle`: Small Angle scattering histogram info
+:ref:`G2SmallAngle <Class_G2SmallAngle>`          :class:`~GSASIIscriptable.G2SmallAngle`: Small Angle scattering histogram info
 
 :ref:`G2SeqRefRes <Class_G2SeqRefRes>`     :class:`~GSASIIscriptable.G2SeqRefRes`:
                                            The sequential results table
@@ -324,7 +444,7 @@ method                                                Use
 .. _Class_G2SmallAngle:
 
 Class :class:`~GSASIIscriptable.G2SmallAngle`
------------------------------------------
+-----------------------------------------------
 
   To work with Small Angle (currently only SASD entries), object :class:`~GSASIIscriptable.G2SmallAngle`, encapsulates a SASD entry.
   At present no methods are provided.
@@ -631,8 +751,9 @@ Sample Parameters                           Should be provided as a **list** of 
                                             Available for powder histograms only.
 \                     Absorption
 \                     Contrast
-\                     DisplaceX             Sample displacement along the X direction
-\                     DisplaceY             Sample displacement along the Y direction
+\                     DisplaceX             Sample displacement along the X direction (Debye-Scherrer)
+\                     DisplaceY             Sample displacement along the Y direction (Debye-Scherrer)
+\                     Shift                 Bragg-Brentano sample displacement 
 \                     Scale                 Histogram Scale factor
 
 Background                                  Sample background. Value will be a dict or 
@@ -860,10 +981,6 @@ that displays the contents of all the histogram settings:
 
 .. code-block::  python
 
-    from __future__ import division, print_function
-    import os,sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
     gpx = G2sc.G2Project('/tmp/test.gpx')
     h = gpx.histograms()[0]
     for h in h.getHistEntryList():
@@ -941,60 +1058,9 @@ Code Examples
 .. contents:: Contents for Scripting Examples
    :local: 
 
-.. _ScriptingShortcut:
-
-Shortcut for Scripting Access
+Accessing GSASIIscriptable
 -----------------------------
-
-As is seen in a number of the code examples, the location where GSAS-II is
-specified in the GSAS-II script using commands such as 
-
-.. code-block::  python
-
-    import sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
-    import GSASIIscriptable as G2sc
-
-An alternative to this is to "install" the current GSAS-II installation into the current
-Python interpreter. Once this has been done a single time, this single command can be used to replace
-the three commands listed above for all future uses of GSASIIscripting:
-
-.. code-block::  python
-
-    import G2script as G2sc
-
-There are two ways this installation can be done. The most easy way is to invoke the
-"Install GSASIIscriptable shortcut" command in the GSAS-II GUI
-File menu. Alternatively it can be accomplished from within GSASIIscriptable
-using these commands:
-
-.. code-block::  python
-
-    import sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # update this for your installation
-    import GSASIIscriptable as G2sc
-    G2sc.installScriptingShortcut()
-
-An even simpler way to do this is from the command-line, from the GSAS-II directory.
-A full path for Python is only needed if if the Python to be used with GSAS-II is not in the
-path. 
-
-.. code-block::  bash
-
-		 terrier:toby> cd /home/beams1/TOBY/gsas2full/GSASII/
-		 terrier:toby> /mypath/bin/python -c "import GSASIIscriptable as G2sc; G2sc.installScriptingShortcut()"
-		 GSAS-II binary directory: /home/beams1/TOBY/gsas2full/GSASII/bindist
-		 Created file /home/beams1/TOBY/gsas2full/lib/python3.10/site-packages/G2script.py
-		 setting up GSASIIscriptable from /home/beams1/TOBY/gsas2full/GSASII
-		 success creating /home/beams1/TOBY/gsas2full/lib/python3.10/site-packages/G2script.py
-
-Note the shortcut only installs use of GSAS-II with the current Python
-installation. If more than one Python installation will be used with GSAS-II
-(for example because different conda environments are used), a shortcut
-should be created from within each Python environment.
-
-If more than one GSAS-II installation will be used with a Python installation, 
-a shortcut can only be used with one of them.
+As discussed in the :ref:`ScriptingShortcut` section of this chapter, GSAS-II is commonly installed outside of a Python installation, which means that Python must be instructed on how to access the GSASII package. In :ref:`that section <ScriptingShortcut>` three methods are provided for defining G2sc as the location of the GSASIIscriptable module. The scripting examples below all assume that one of choices for import statements has been executed to provide access to GSASIIscriptable.
 
 Status Information
 -----------------------------
@@ -1005,7 +1071,6 @@ install locations.
 
 .. code-block::  python
 
-    import G2script as G2sc
     print(f'Version information:\n{G2sc.ShowVersions()}')
 
 which produces output like this::
@@ -1041,10 +1106,7 @@ peak refinement script, where the data files are taken from the
 
 .. code-block::  python
 
-    from __future__ import division, print_function
-    import os,sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
-    import GSASIIscriptable as G2sc
+    import os
     datadir = os.path.expanduser("~/Scratch/peakfit")
     PathWrap = lambda fil: os.path.join(datadir,fil)
     gpx = G2sc.G2Project(newgpx=PathWrap('pkfit.gpx'))
@@ -1085,9 +1147,7 @@ Data files are found in the
 
 .. code-block::  python
 
-    import os,sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    import os
     datadir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
     PathWrap = lambda fil: os.path.join(datadir,fil)
     gpx = G2sc.G2Project(newgpx='PbSO4sim.gpx') # create a project    
@@ -1112,9 +1172,7 @@ tutorial.
 
 .. code-block::  python
 
-    import os,sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    import os
     cifdir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
     datadir = "/Users/toby/software/G2/Tutorials/TOF-CW Joint Refinement/data"
     gpx = G2sc.G2Project(newgpx='/tmp/PbSO4simT.gpx') # create a project
@@ -1135,10 +1193,6 @@ peak, changes some refinement flags and performs a refinement.
 
 .. code-block::  python
 
-    from __future__ import division, print_function
-    import os,sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
-    import GSASIIscriptable as G2sc
     datadir = "/Users/Scratch/"
     gpx = G2sc.G2Project(os.path.join(datadir,'test2.gpx'))
     gpx.histogram(0).add_back_peak(4.5,30000,5000,0)
@@ -1157,9 +1211,7 @@ and turn on and off refinement flags, add histograms and setup the sequential fi
 
 .. code-block::  python
 
-    import os,sys,glob
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    import os,glob
     datadir = os.path.expanduser("~/Scratch/SeqTut2019Mar")
     PathWrap = lambda fil: os.path.join(datadir,fil)
     # load and rename project
@@ -1202,9 +1254,7 @@ The data files are found in the
 
 .. code-block::  python
 
-    import os,sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    import os
     datadir = "/tmp"
     PathWrap = lambda fil: os.path.join(datadir,fil)
 
@@ -1219,9 +1269,7 @@ This example shows a computation similar to what is done in tutorial
 
 .. code-block::  python
 
-    import os,sys,glob
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    import os,glob
     PathWrap = lambda fil: os.path.join(
         "/Users/toby/wp/Active/MultidistanceCalibration/multimg",
         fil)
@@ -1272,9 +1320,7 @@ The files used for this exercise are found in the
 
 .. code-block::  python
 
-    import os,sys,glob
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
+    import os,glob
     PathWrap = lambda fil: os.path.join(
         "/Users/toby/wp/Active/MultidistanceCalibration/multimg",
         fil)
@@ -1327,13 +1373,6 @@ significantly so that computations are cached and are not repeated where possibl
 set of test data, processing of the first image takes ~5 seconds, but processing of subsequent
 takes on the order of 0.7 sec. 
 
-This code uses an ``import G2script as G2sc`` statement to access GSASIIscriptable
-without referencing the GSAS-II installation directory. This requires installing a reference to
-the GSAS-II location into the current a Python installation, which can be done from the GUI
-or with scripting commands, as is discussed in :ref:`ScriptingShortcut`. Here 
-function :func:`~GSASIIscriptable.installScriptingShortcut` was used to create
-the :mod:`G2script` module. That code has been retained here as comments to show what was done. 
-
 To simplify use of this script, it is assumed that the script will be placed in the same
 directory as where the data files will be collected. Other customization is done
 in variables at the beginning of the code. Note that the beamline where these data are collected
@@ -1360,15 +1399,6 @@ constraints in variable :data:`GSASIIscriptable.blkSize`. This value should be a
 .. code-block::  python
 
     import os,glob,time,shutil
-
-    #### Create G2script: do this once ################################################
-    #import sys
-    #sys.path.insert(0,'/Users/toby/software/G2/GSASII') # update with your install loc
-    #import GSASIIscriptable as G2sc
-    #G2sc.installScriptingShortcut()
-    ###################################################################################
-
-    import G2script as G2sc
     G2sc.blkSize = 2**8  # computer-dependent tuning parameter
     G2sc.SetPrintLevel('warn')   # reduces output
 
@@ -1445,7 +1475,7 @@ The primary process locates .tif files, if the corresponding
 will be processed in a secondary process. When the secondary process starts, 
 the script is imported and then `integrate_tif` is called with the name of the 
 image file from the primary process. The `integrate_tif` routine 
-will initially have an empty cache and thus the code preceeded by 
+will initially have an empty cache and thus the code preceded by 
 "load & compute controls & 2theta values" will be computed once for every 
 secondary process, which should be on an independent core. The size of the pool
 determines how many images will be processed simultaneously. 
@@ -1456,7 +1486,7 @@ mean run `integrate_tif` directly rather than through a pool. This
 facilitates timing comparisons. 
 This code seems to have a maximum speed using slightly less than the 
 total number of available cores and does benefit partially from 
-hyperthreading. A two- to three-fold speedup is seen with four cores and a 
+hyper-threading. A two- to three-fold speedup is seen with four cores and a 
 six-fold speedup has been seen with 16 cores. 
 
 .. code-block::  python
@@ -1474,7 +1504,6 @@ six-fold speedup has been seen with 16 cores.
     else:
         print(f'multiprocessing with {nodes} cores')
 
-    import G2script as G2sc
     G2sc.blkSize = 2**8  # computer-dependent tuning parameter
     #G2sc.SetPrintLevel('warn')
 
@@ -1563,10 +1592,7 @@ be specified.
 
 .. code-block::  python
 
-    import os,sys,glob
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')  # change this
-    import GSASIIscriptable as G2sc
-
+    import os,glob
     dataloc = "/Users/toby/Scratch/"                 # where to find data 
     PathWrap = lambda fil: os.path.join(dataloc,fil) # EZ way 2 add dir to filename
 
@@ -1605,7 +1631,6 @@ and the refinement is repeated.
 .. code-block::  python
 
     import os,glob
-    import G2script as G2sc
     PathWrap = lambda fil: os.path.join('/tmp',fil)
     gpx = G2sc.G2Project(newgpx=PathWrap('autobkg.gpx'))
     for i in glob.glob(PathWrap('test_RampDown-*.xye')):
@@ -1686,6 +1711,6 @@ JSON website: `Introducing JSON <http://json.org/>`_.
 API: Complete Documentation
 ===========================
 
-.. automodule:: GSASIIscriptable
+.. automodule:: GSASII.GSASIIscriptable
     :members: 
 

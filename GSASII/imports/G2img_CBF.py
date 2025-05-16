@@ -4,8 +4,8 @@
 
 from __future__ import division, print_function
 import time
-import GSASIIobj as G2obj
-import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
 import numpy as np
 class CBF_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read cif image data .cbf file.
@@ -16,7 +16,7 @@ class CBF_ReaderClass(G2obj.ImportImage):
             extensionlist=('.cbf',),
             strictExtension=True,
             formatName = 'CBF image',
-            longFormatName = 'CIF Binary Data Format image file (NB: Slow!)'
+            longFormatName = 'CIF Binary Data Format (CBF) image file (NB: Slow!)'
             )
 
     def ContentsValidator(self, filename):        
@@ -34,11 +34,14 @@ class CBF_ReaderClass(G2obj.ImportImage):
         return True
         
 def GetCbfData(self,filename):    
-    'Read cif binarydetector data cbf file'
+    'Read cif binary detector data cbf file'
     
-    import unpack_cbf as cbf
+    if GSASIIpath.binaryPath:
+        import unpack_cbf as cbf
+    else:
+        from .. import unpack_cbf as cbf
     if GSASIIpath.GetConfigValue('debug'):
-        print ('Read cif binary detector data cbf file: '+filename)
+        print ('Reading cif binary detector data cbf file: '+filename)
     File = open(filename,'rb')
     sizexy = [0,0]
     pixSize = [172,172]     #Pixium4700?
@@ -59,6 +62,7 @@ def GetCbfData(self,filename):
     else:
         term = '\n' #LF only
     head = head.split(term)
+    compImageSize = None
     for line in head:
         fields = line.split()
         if 'Wavelength' in line:
@@ -81,6 +85,10 @@ def GetCbfData(self,filename):
             Npix = int(fields[1])
         elif 'Detector_2theta' in line:
             det2theta = float(fields[2])
+    if compImageSize is None:
+        print('CBF error failed to read header')
+        return False
+        
     nxy = sizexy[0]*sizexy[1]
     cent = [cent[0]*pixSize[0]/1000.,cent[1]*pixSize[1]/1000.]
     File.seek(0)

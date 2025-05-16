@@ -10,7 +10,7 @@ import sys
 import os.path
 import numpy as np
 import numpy.ma as ma
-import GSASIIpath
+from . import GSASIIpath
 # Don't depend on wx/matplotlib/scipy for scriptable; or for Sphinx docs
 try:
     import wx
@@ -26,13 +26,13 @@ try:
 except (ImportError, ValueError) as err:
     print('GSASIIpwdplot: matplotlib not imported')
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
-import GSASIIdataGUI as G2gd
-import GSASIIpwdGUI as G2pdG
-import GSASIIlattice as G2lat
-import GSASIImath as G2mth
-import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIpwdGUI as G2pdG
+from . import GSASIIlattice as G2lat
+from . import GSASIImath as G2mth
+from . import GSASIIctrlGUI as G2G
 #import GSASIIobj as G2obj
-import GSASIIplot as G2plt
+from . import GSASIIplot as G2plt
 import matplotlib.colors as mpcls
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -759,6 +759,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
 
         ####====== start of OnPickPwd
+        plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
         try:
             inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
@@ -1432,8 +1433,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
         DifLine[0].set_xdata(X[Ibeg:Ifin])
         DifLine[0].set_ydata(DZ[Ibeg:Ifin])
-        lims = [min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])]
-        if all(np.isfinite(lims)): Plot1.set_ylim(lims)
+        try:
+            lims = [min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])]
+            if all(np.isfinite(lims)): Plot1.set_ylim(lims)
+        except:
+            pass
         CalcLine[0].set_xdata(X)
         ObsLine[0].set_xdata(X)
         BackLine[0].set_xdata(X)
@@ -1649,17 +1653,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.SubBack = False
         Page.plotStyle['logPlot'] = False
         # is the selected histogram in the refinement? if not pick the 1st to show
+        # instead select the first powder pattern and plot it
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        if plottingItem not in Histograms:
+        if plottingItem not in Histograms:  
+            # current plotted item is not in refinement
             histoList = [i for i in Histograms.keys() if i.startswith('PWDR ')]
             if len(histoList) != 0:
                 plottingItem = histoList[0]
-                Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
-                G2frame.GPXtree.SelectItem(Id)
-                PlotPatterns(G2frame,newPlot,plotType,None,extraKeys,refineMode)
-                # wx.CallAfter(PlotPatterns,G2frame,newPlot,plotType,None,
-                #      extraKeys,refineMode)
-                return
+                G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
+                data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+                G2frame.GPXtree.SelectItem(G2frame.PatternId)
+                PlotPatterns(G2frame,True,plotType,None,extraKeys)
     #=====================================================================================
     if not new:
         G2frame.xylim = copy.copy(limits)

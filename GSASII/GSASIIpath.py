@@ -9,6 +9,7 @@ import os
 import sys
 import platform
 import glob
+#import pathlib
 import subprocess
 import datetime as dt
 try:
@@ -27,7 +28,7 @@ G2binURL = "https://api.github.com/repos/AdvancedPhotonSource/GSAS-II-buildtools
 g2URL = "https://github.com/AdvancedPhotonSource/GSAS-II.git"
 # tutorial repo owner & Repo name
 gitTutorialOwn,gitTutorialRepo = 'AdvancedPhotonSource', 'GSAS-II-Tutorials'
-    
+
 path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # location of this file; save before any changes in pwd
 
 # convert version numbers as '1.2.3' to integers (1002) and back (to 1.2)
@@ -35,11 +36,16 @@ fmtver = lambda v: str(v//1000)+'.'+str(v%1000)
 intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
 
 def GetConfigValue(key,default=None,getDefault=False):
-    '''Return the configuration file value for key or a default value if not present
-    
-    :param str key: a value to be found in the configuration (config.py) file
-    :param default: a value to be supplied if none is in the config file or
-      the config file is not found. Defaults to None
+    '''Return the configuration file value for key or a default value
+    if not specified.
+
+    :param str key: a value to be found in the configuration settings
+    :param any default: a value to be supplied if a value for key is
+      not specified in the config file or the config file is not found.
+      Defaults to None.
+    :param bool getDefault: If True looks up the default value from the
+      config_example.py file (default value is False). Do not specify a
+      getDefault=True if a value is provided for default.
     :returns: the value found or the default.
     '''
     if getDefault:
@@ -52,8 +58,11 @@ def GetConfigValue(key,default=None,getDefault=False):
         return None
 
 def SetConfigValue(parmdict):
-    '''Set configuration variables from a dictionary where elements are lists
-    First item in list is the default value and second is the value to use.
+    '''Set configuration variables. Note that parmdict is a dictionary
+    from :func:`GSASIIctrlGUI.GetConfigValsDocs` where each element is a
+    lists. The first item in list is the default value, the second is
+    the value to use for that configuration variable. Most of the
+    information gathered in GetConfigValsDocs is no longer used.
     '''
     global configDict
     for var in parmdict:
@@ -69,26 +78,26 @@ def SetConfigValue(parmdict):
 
 def GetConfigDefault(key):
     '''Return the default value for a config value
-    
+
     :param str key: a value to be found in the configuration (config_example.py) file
     :returns: the default value or None
     '''
     try:
-        import config_example
+        from . import config_example
     except:
         return None
     return config_example.__dict__.get(key)
 
 def addPrevGPX(fil,cDict):
-    '''Add a GPX file to the list of previous files. 
+    '''Add a GPX file to the list of previous files.
     Move previous names to start of list. Keep most recent five files
     '''
     global configDict
     fil = os.path.abspath(os.path.expanduser(fil))
-    if 'previous_GPX_files' not in cDict: 
+    if 'previous_GPX_files' not in cDict:
         cDict['previous_GPX_files'] = [[],[],[],'Previous .gpx files'] # unexpected
     try:
-        pos = cDict['previous_GPX_files'][1].index(fil) 
+        pos = cDict['previous_GPX_files'][1].index(fil)
         if pos == 0: return
         cDict['previous_GPX_files'][1].pop(pos) # if present, remove if not 1st
     except ValueError:
@@ -100,28 +109,10 @@ def addPrevGPX(fil,cDict):
     cDict['previous_GPX_files'][1] = files[:5]
     configDict['previous_GPX_files'] = cDict['previous_GPX_files'][1]
 
-# routines for looking a version numbers in files
-version = -1
-def SetVersionNumber(RevString):
-    '''Set the subversion (svn) version number. No longer in use.
-
-    :param str RevString: something like "$Revision: 5796 $"
-      that is set by subversion when the file is retrieved from subversion.
-
-    Place ``GSASIIpath.SetVersionNumber("$Revision: 5796 $")`` in every python
-    file.
-    '''
-    try:
-        RevVersion = int(RevString.split(':')[1].split()[0])
-        global version
-        version = max(version,RevVersion)
-    except:
-        pass
-        
 def LoadConfigFile(filename):
     '''Read a GSAS-II configuration file.
     Comments (starting with "%") are removed, as are empty lines
-    
+
     :param str filename: base file name (such as 'file.dat'). Files with this name
       are located from the path and the contents of each are concatenated.
     :returns: a list containing each non-empty (after removal of comments) line
@@ -148,11 +139,11 @@ def LoadConfigFile(filename):
 
 def GetBinaryPrefix(pyver=None):
     '''Creates the first part of the binary directory name
-    such as linux_64_p3.9 (where the full name will be 
-    linux_64_p3.9_n1.21). 
+    such as linux_64_p3.9 (where the full name will be
+    linux_64_p3.9_n1.21).
 
-    Note that any change made here is also needed in GetBinaryDir in 
-    fsource/SConstruct
+    Note that any change made here is also needed in GetBinaryDir in
+    fsource/SConstruct or GSASII-buildtools/compile/nameTar.py
     '''
     if sys.platform == "win32":
         prefix = 'win'
@@ -184,18 +175,16 @@ def GetBinaryPrefix(pyver=None):
 
 #==============================================================================
 #==============================================================================
-# hybrid routines that use git & svn (to be revised to remove svn someday)
 G2_installed_result = None
 def HowIsG2Installed():
-    '''Determines if GSAS-II was installed with git, svn or none of the above.
+    '''Determines if GSAS-II was installed with git.
     Result is cached to avoid time needed for multiple calls of this.
 
-    :returns: 
-      * a string starting with 'git' from git, 
-        if installed from the GSAS-II GitHub repository (defined in g2URL), 
+    :returns:
+      * a string starting with 'git' from git,
+        if installed from the GSAS-II GitHub repository (defined in g2URL),
         the string is 'github', if the post-3/2024 directory structure is
         in use '-rev' is appended.
-      * or 'svn' is installed from an svn repository (assumed as defined in g2home)
       * or 'noVCS' if installed without a connection to a version control system
     '''
     global G2_installed_result
@@ -215,81 +204,106 @@ def HowIsG2Installed():
         return G2_installed_result
     except:
         pass
-    if svnGetRev(verbose=False):
-        G2_installed_result = 'svn'
-        return G2_installed_result
     G2_installed_result = 'noVCS'
     return G2_installed_result
-        
-def GetVersionNumber():
-    '''Obtain a version number for GSAS-II from git, svn or from the 
-    files themselves, if no other choice. 
 
-    This routine was used to get the GSAS-II version from strings 
-    placed in files by svn with the version number being the latest 
-    number found, gathered by :func:`SetVersionNumber` (not 100% accurate
-    as the latest version might have files changed that are not tagged
-    by svn or with a call to SetVersionNumber. Post-svn this info
-    will not be reliable, and this mechanism is replaced by a something
-    created with a git hook, file git_verinfo.py (see the git_filters.py file).
+def getSavedVersionInfo():
+    '''Get version number information from a file written by install
+    routines. This is faster than getting the information from git. Also,
+    when GSAS-II is installed into Python, the files are no longer in 
+    a git repository so querying git is not possible.
 
-    Before resorting to the approaches above, try to ask git or svn 
-    directly.
+    The saved_version.py file is written by install/save_versions.py.
+    The git_verinfo.py file is written by install/tag-version.py or
+    by install/incr-mini-version.py. If both are present, use the 
+    saved_version.py file preferentially. 
 
-    :returns: an int value usually, but a value of 'unknown' might occur 
+    :returns: a reference to the version variables or None if no 
+      version info file is found.
     '''
+    try:
+        from . import saved_version as gv
+        return gv
+    except:
+        pass
+    try:
+        from . import git_verinfo as gv
+        return gv
+    except:
+        pass
+    return None  # this is unexpected as all dists should have git_verinfo.py
+
+def GetVersionNumber():
+    '''Obtain a numeric (sequential) version number for GSAS-II from version
+    files, or directly from git if no other choice.
+
+    :returns: an int value normally, but unexpected error conditions could result in 
+      a value of 'unknown' or '?'.
+    '''
+    # look for a previously recorded tag -- this is quick
+    gv = getSavedVersionInfo()
+    if gv is not None:
+        for item in gv.git_tags+gv.git_prevtags:
+            if item.isnumeric(): return int(item)
+
     if HowIsG2Installed().startswith('git'):
-        # look for a recorded tag -- this is quick
-        try:
-            import git_verinfo as gv
-            try:
-                for item in gv.git_tags:
-                    if item.isnumeric(): return int(item)
-            except:
-                pass
-            try:
-                for item in gv.git_prevtags:
-                    if item.isnumeric(): return int(item)
-            except:
-                pass
-        except:
-            pass
-        # no luck, ask Git for the most recent tag (must start & end with a number)
+        # unexpected: should always find a version from getSavedVersionInfo()
+        #   from a version file, but if that fails ask Git for the most
+        #   recent tag that starts & ends with a digit and does not contain a '.'
         try:
             g2repo = openGitRepo(path2GSAS2)
-            tag,vers,gnum = g2repo.git.describe('--tags','--match','[0-9]*[0-9]').split('-')
+            tag,vers,gnum = g2repo.git.describe('--tags','--match','[0-9]*[0-9]',
+                                                         '--exclude','*.*').split('-')
             if tag.isnumeric(): return int(tag)
         except:
             pass
         return "unknown"
-    
-    elif HowIsG2Installed() == 'svn':
-        rev = svnGetRev()
-        if rev is not None: return rev
 
-    # No luck asking, look up version information from git_verinfo.py
-    try:
-        import git_verinfo as gv
+    # Not installed from git and no version file -- very strange!
+    return "?"
+
+def GetVersionTag():
+    '''Obtain a release (X.Y.Z) version number for GSAS-II from version
+    files, or directly from git if no other choice.
+
+    :returns: a string of form <Major>.<Minor>.<mini> normally, but unexpected 
+      error conditions could result in a value of '?.?.?' or '?'.
+    '''
+    # look for a previously recorded tag -- this is quick
+    gv = getSavedVersionInfo()
+    if gv is not None:
+        if '?' not in gv.git_versiontag: return gv.git_versiontag
+
+    if HowIsG2Installed().startswith('git'):
+        # unexpected: should always find a version from getSavedVersionInfo()
+        #   from a version file, but if that fails ask Git for the most
+        #   recent tag that has the X.Y.Z format.
         try:
-            for item in gv.git_tags:
-                if item.isnumeric(): return int(item)
+            g2repo = openGitRepo(path2GSAS2)
+            tag,vers,gnum = g2repo.git.describe('--tags','--match','*.*.*').split('-')
+            return tag
         except:
             pass
+        return "?.?.?"
+
+    # Not installed from git and no version file -- very strange!
+    return "?"
+
+def getG2Branch():
+    '''Get name of current branch, as named on local computer
+    '''
+    if HowIsG2Installed().startswith('git'):
+        g2repo = openGitRepo(path2GSAS2)
         try:
-            for item in gv.git_prevtags:
-                if item.isnumeric(): return int(item)
-        except:
-            pass
-    except:
-        pass
-        
-    # all else failed, use the svn SetVersionNumber value (global version)
-    if version > 5000:  # a small number must be wrong
-        return version
-    else:
-        return "unknown"
+            return g2repo.active_branch.name
+        except TypeError: # likely on a detached head
+            return '?'
     
 def getG2VersionInfo():
+    '''Get the git version information. This can be a bit slow, so reading
+    .../GSASII/saved_version.py may be faster (in main but not master branch)
+    '''
+    gv = getSavedVersionInfo()
     if HowIsG2Installed().startswith('git'):
         g2repo = openGitRepo(path2GSAS2)
         commit = g2repo.head.commit
@@ -298,7 +312,7 @@ def getG2VersionInfo():
             tzinfo=commit.committed_datetime.tzinfo)
         delta = now - commit.committed_datetime
         age = delta.total_seconds()/(60*60*24.)
-        gversion = f"Tag: #{GetVersionNumber()}"
+        gversion = f"Tag: #{GetVersionNumber()}, {GetVersionTag()}"
         msg = ''
         if g2repo.head.is_detached:
             msg = ("\n" +
@@ -311,7 +325,7 @@ def getG2VersionInfo():
             rc,lc,_ = gitCheckForUpdates(False,g2repo)
             if rc is None:
                 msg += f"\n\tNo history found. On development branch? ({g2repo.active_branch})"
-            elif str(g2repo.active_branch) != 'master':
+            elif str(g2repo.active_branch) != 'main':
                 msg += f'\n\tUsing development branch "{g2repo.active_branch}"'
             elif age > 60 and len(rc) > 0:
                 msg += f"\n\t**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
@@ -319,45 +333,70 @@ def getG2VersionInfo():
                 msg += f"\n\t**** Please consider updating. >= {len(rc)} updates have been posted"
             elif len(rc) > 0:
                 msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
-        return f"  GSAS-II:    {commit.hexsha[:6]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
-    elif HowIsG2Installed() == 'svn':
-        rev = svnGetRev()
-        if rev is None: 
-            "no SVN"
-        else:
-            rev = f"SVN version {rev}"
-
-        # patch 11/2020: warn if GSASII path has not been updated past v4576.
-        # For unknown reasons on Mac with gsas2full, there have been checksum
-        # errors in the .so files that prevented svn from completing updates.
-        # If GSASIIpath.svnChecksumPatch is not present, then the fix for that
-        # has not been retrieved, so warn. Keep for a year or so. 
+        return f"  GSAS-II:    {commit.hexsha[:8]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
+    elif gv is not None:
+        vt = ''
+        cvt = ''
         try:
-            svnChecksumPatch
-        except:
-            print('Warning GSAS-II incompletely updated. Please contact toby@anl.gov')
-        # end patch
-            
-        return f"Latest GSAS-II revision: {GetVersionNumber()} (svn {rev})"
-    else:
-        try:
-            import git_verinfo as gv
-            if gv.git_tags:
-                msg = f"{' '.join(gv.git_tags)}, Git: {gv.git_version[:6]}"
-            else:
-                msg = (f"{gv.git_version[:6]}; "+
-                       f"Prev ver: {' '.join(gv.git_prevtags)}"+
-                       f", {gv.git_prevtaggedversion[:6]}")
-            return f"GSAS-II version: {msg} (Manual update)"
+            if gv.git_versiontag:
+                vt = gv.git_versiontag
+                cvt,cvn = getGitHubVersion()
         except:
             pass
-    # all else fails, use the old version number routine
-    return f"GSAS-II installed manually, last revision: {GetVersionNumber()}"
+                
+        for item in gv.git_tags+gv.git_prevtags:
+            if item.isnumeric():
+                tags = item
+                if vt:
+                    tags += f', {vt}'
+                msg = f"GSAS-II version: Git: {gv.git_version[:8]}, #{tags} (reinstall to update)"
+                if vt != cvt and cvt is not None:
+                    msg += f'\n\tNote that the current GSAS-II version is {cvt}'
+                return msg
+    # Failed to get version info, fallback on old version number routine; should not happen anymore
+    return f"GSAS-II installed without git, last tag: #{GetVersionNumber()}, {GetVersionTag()}"
 
 #==============================================================================
 #==============================================================================
+# routines to interface with GitHub.
+def saveGitHubVersion():
+    '''Get the latest GSAS-II version tags from the GitHub site
+    and place them into the config.ini file. This is always done in 
+    background so that app startup time is minimally delayed. 
+
+    :returns: Returns a Popen object (see subprocess).
+    '''
+    try:
+        import requests
+        requests
+    except:
+        print('Unable to use requests module')
+        return
+    return subprocess.Popen([sys.executable, __file__, '--github-tags'])
+    if GetConfigValue('debug'): print('Updates fetched')
+
+def getGitHubVersion():
+    '''Get the latest git version info when not accessible from git
+    as saved by saveGitHubVersion
+    '''
+    import configparser
+    cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+    if not os.path.exists(cfgfile):
+        if GetConfigValue('debug'): print(f"{cfgfile} not found")
+        return None,None
+    try:
+        cfg = configparser.ConfigParser()
+        # Read the configuration file
+        cfg.read(cfgfile)
+    except Exception as err:
+        if GetConfigValue('debug'): print(f"Error reading {cfgfile}\n",err)
+        return None,None
+    if 'version info' not in cfg:
+        if GetConfigValue('debug'): print(f"no saved version number in {cfgfile}")
+        return None,None
+    return cfg['version info'].get('lastVersionTag'),cfg['version info'].get('lastVersionNumber')
+
 # routines to interface with git.
-
 BASE_HEADER = {'Accept': 'application/vnd.github+json',
                'X-GitHub-Api-Version': '2022-11-28'}
 
@@ -365,34 +404,34 @@ def openGitRepo(repo_path):
     try:
         import git
     except:
-        return None        
+        return None
     try:  # patch 3/2024 for svn dir organization
         return git.Repo(path2GSAS2)
     except git.InvalidGitRepositoryError:
         pass
     return git.Repo(os.path.dirname(path2GSAS2))
-        
+
 def gitLookup(repo_path,gittag=None,githash=None):
     '''Return information on a particular checked-in version
-    of GSAS-II. 
+    of GSAS-II.
 
     :param str repo_path: location where GSAS-II has been installed
-    :param str gittag: a tag value. 
-    :param str githash: hex hash code (abbreviated to as few characters as 
+    :param str gittag: a tag value.
+    :param str githash: hex hash code (abbreviated to as few characters as
        needed to keep it unique). If None (default), a tag must be supplied.
-    :returns: either None if the tag/hash is not found or a tuple with 
-       four values (hash, tag-list, message,date_time) where 
+    :returns: either None if the tag/hash is not found or a tuple with
+       four values (hash, tag-list, message,date_time) where
 
-        * hash (str) is the git checking hash code; 
-        * tag-list is a list of tags (typically there will 
-          be one or two); 
+        * hash (str) is the git checking hash code;
+        * tag-list is a list of tags (typically there will
+          be one or two);
         * message is the check-in message (str)
         * date_time is the check-in date as a datetime object
     '''
     try:
         import git
     except:
-        return None        
+        return None
     g2repo = openGitRepo(repo_path)
     if gittag is not None and githash is not None:
         raise ValueError("Cannot specify a hash and a tag")
@@ -410,16 +449,16 @@ def gitLookup(repo_path,gittag=None,githash=None):
         raise ValueError("Must specify either a hash or a tag")
     tags = [i.name for i in g2repo.tags if i.commit == commit]
     return (commit.hexsha, tags, commit.message,commit.committed_datetime)
-    
-def gitHash2Tags(githash=None,g2repo=None):
-    '''Find tags associated with a particular git commit. 
-    Note that if `githash` cannot be located because it does not 
-    exist or is not unique, a `git.BadName` exception is raised. 
 
-    :param str githash: hex hash code (abbreviated to as few characters as 
+def gitHash2Tags(githash=None,g2repo=None):
+    '''Find tags associated with a particular git commit.
+    Note that if `githash` cannot be located because it does not
+    exist or is not unique, a `git.BadName` exception is raised.
+
+    :param str githash: hex hash code (abbreviated to as few characters as
        needed to keep it unique). If None (default), the HEAD is used.
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
     :returns: a list of tags (each a string)
     '''
     if g2repo is None:
@@ -430,17 +469,17 @@ def gitHash2Tags(githash=None,g2repo=None):
         commit = g2repo.commit(githash)
     #return [i.name for i in g2repo.tags if i.commit == commit] # slow with a big repo
     return g2repo.git.tag('--points-at',commit).split('\n')
-    
+
 def gitTag2Hash(gittag,g2repo=None):
     '''Provides the hash number for a git tag.
-    Note that if `gittag` cannot be located because it does not 
-    exist or is too old and is beyond the `depth` of the local 
-    repository, a `ValueError` exception is raised. 
+    Note that if `gittag` cannot be located because it does not
+    exist or is too old and is beyond the `depth` of the local
+    repository, a `ValueError` exception is raised.
 
     :param str repo_path: location where GSAS-II has been installed.
     :param str gittag: a tag value.
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
     :returns: a str value with the hex hash for the commit.
     '''
     if g2repo is None:
@@ -451,9 +490,9 @@ def gitTestGSASII(verbose=True,g2repo=None):
     '''Test a the status of a GSAS-II installation
 
     :param bool verbose: if True (default), status messages are printed
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
-    :returns: istat, with the status of the repository, with one of the 
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
+    :returns: istat, with the status of the repository, with one of the
       following values:
 
        * -1: path is not found
@@ -463,12 +502,12 @@ def gitTestGSASII(verbose=True,g2repo=None):
        * value&1==1: repository has local changes (uncommitted/stashed)
        * value&2==2: repository has been regressed (detached head)
        * value&4==4: repository has staged files
-       * value&8==8: repository has has been switched to non-master branch
+       * value&8==8: repository has has been switched to other than main branch
 
        * value==0:   no problems noted
     '''
     if g2repo is None:
-        if not os.path.exists(path2GSAS2): 
+        if not os.path.exists(path2GSAS2):
             if verbose: print(f'Warning: Directory {path2GSAS2} not found')
             return -1
         if os.path.exists(os.path.join(path2GSAS2,'..','.git')):
@@ -490,32 +529,32 @@ def gitTestGSASII(verbose=True,g2repo=None):
     if g2repo.head.is_detached:
         code += 2                             # detached
     else:
-        if g2repo.active_branch.name != 'master':
-            code += 8                         # not on master branch
+        if g2repo.active_branch.name != 'main':
+            code += 8                         # not on main branch
     if g2repo.index.diff("HEAD"): code += 4   # staged
 
     # test if there are local changes committed
     return code
 
 def gitCheckForUpdates(fetch=True,g2repo=None):
-    '''Provides a list of the commits made locally and those in the 
-    local copy of the repo that have not been applied. Does not 
-    provide useful information in the case of a detached Head (see 
+    '''Provides a list of the commits made locally and those in the
+    local copy of the repo that have not been applied. Does not
+    provide useful information in the case of a detached Head (see
     :func:`countDetachedCommits` for that.)
 
     :param bool fetch: if True (default), updates are copied over from
       the remote repository (git fetch), before checking for changes.
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
-    :returns: a list containing (remotecommits, localcommits, fetched) where 
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
+    :returns: a list containing (remotecommits, localcommits, fetched) where
 
-       * remotecommits is a list of hex hash numbers of remote commits and 
+       * remotecommits is a list of hex hash numbers of remote commits and
        * localcommits is a list of hex hash numbers of local commits and
        * fetched is a bool that will be True if the update (fetch)
          step ran successfully
 
-       Note that if the head is detached (GSAS-II has been reverted to an 
-       older version) or the branch has been changed, the values for each 
+       Note that if the head is detached (GSAS-II has been reverted to an
+       older version) or the branch has been changed, the values for each
        of the three items above will be None.
     '''
     try:
@@ -533,7 +572,7 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
             g2repo.remote().fetch()
             fetched = True
         except git.GitCommandError as msg:
-            print(f'Failed to get updates from {g2repo.remote().url}')
+            print(f'Failed to get updates from {g2repo.remote().url}\nerror: {msg}')
     try:
         head = g2repo.head.ref
         tracking = head.tracking_branch()
@@ -542,14 +581,14 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
         return remotecommits,localcommits,fetched
     except:
         return (None,None,None)
-    
+
 def countDetachedCommits(g2repo=None):
     '''Count the number of commits that have been made since
-    a commit that is containined in the master branch
+    a commit that is containined in the main branch
 
-    returns the count and the commit object for the 
+    returns the count and the commit object for the
     parent commit that connects the current stranded
-    branch to the master branch.
+    branch to the main branch.
 
     None is returned if no connection is found
     '''
@@ -557,11 +596,11 @@ def countDetachedCommits(g2repo=None):
         g2repo = openGitRepo(path2GSAS2)
     if not g2repo.head.is_detached:
         return 0,g2repo.commit()
-    # is detached head in master branch?
-    if g2repo.commit() in g2repo.iter_commits('master'):
+    # is detached head in main branch?
+    if g2repo.commit() in g2repo.iter_commits('main'):
         return 0,g2repo.commit()
-    # count number of commits since leaving master branch
-    masterList = list(g2repo.iter_commits('master'))
+    # count number of commits since leaving main branch
+    masterList = list(g2repo.iter_commits('main'))
     for c,i in enumerate(g2repo.commit().iter_parents()):
         if i in masterList:
             return c+1,i
@@ -569,48 +608,48 @@ def countDetachedCommits(g2repo=None):
         return None,None
 
 def gitCountRegressions(g2repo=None):
-    '''Count the number of new check ins on the master branch since
+    '''Count the number of new check ins on the main branch since
     the head was detached as well as any checkins made on the detached
-    head. 
+    head.
 
-    :returns: mastercount,detachedcount, where 
+    :returns: maincount,detachedcount, where
 
-      * mastercount is the number of check ins made on the master branch 
-        remote repository since the reverted check in was first made. 
-      * detachedcount is the number of check ins made locally 
+      * maincount is the number of check ins made on the main branch
+        remote repository since the reverted check in was first made.
+      * detachedcount is the number of check ins made locally
         starting from the detached head (hopefully 0)
 
-      If the connection between the current head and the master branch 
+      If the connection between the current head and the main branch
       cannot be established, None is returned for both.
       If the connection from the reverted check in to the newest version
-      (I don't see how this could happen) then only mastercount will be None.
+      (I don't see how this could happen) then only maincount will be None.
     '''
     if g2repo is None:
         g2repo = openGitRepo(path2GSAS2)
-    # get parent of current head that is in master branch
+    # get parent of current head that is in main branch
     detachedcount,parent = countDetachedCommits(g2repo)
     if detachedcount is None: return None,None
-    mastercount = 0
-    for h in g2repo.iter_commits('master'):
+    maincount = 0
+    for h in g2repo.iter_commits('main'):
         if h == parent:
-            return mastercount,detachedcount
-        mastercount += 1
+            return maincount,detachedcount
+        maincount += 1
     return None,detachedcount
 
 def gitGetUpdate(mode='Background'):
-    '''Download the latest updates into the local copy of the GSAS-II 
-    repository from the remote master, but don't actually update the 
-    GSAS-II files being used. This can be done immediately or in background. 
+    '''Download the latest updates into the local copy of the GSAS-II
+    repository from the remote main, but don't actually update the
+    GSAS-II files being used. This can be done immediately or in background.
 
-    In 'Background' mode, a background process is launched. The results 
-    from the process are recorded in file in ~/GSASII_bkgUpdate.log 
-    (located in %HOME% on Windows). A pointer to the created process is 
+    In 'Background' mode, a background process is launched. The results
+    from the process are recorded in file in ~/GSASII_bkgUpdate.log
+    (located in %HOME% on Windows). A pointer to the created process is
     returned.
 
-    In 'immediate' mode, the update is performed immediately. The 
+    In 'immediate' mode, the update is performed immediately. The
     function does not return until after the update is downloaded.
 
-    :returns: In 'Background' mode, returns a Popen object (see subprocess). 
+    :returns: In 'Background' mode, returns a Popen object (see subprocess).
       In 'immediate' mode nothing is returned.
     '''
     if mode == 'Background':
@@ -621,25 +660,25 @@ def gitGetUpdate(mode='Background'):
         if GetConfigValue('debug'): print('Updates fetched')
 
 def gitHistory(values='tag',g2repo=None,maxdepth=100):
-    '''Provides the history of commits to the master, either as tags 
+    '''Provides the history of commits to the main, either as tags
     or hash values
 
-    :param str values: specifies what type of values are returned. 
-      If values=='hash', then hash values or for values=='tag', a 
-      list of list of tag(s). 
-    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If 
-       None (default) it will be opened. 
-    :returns: a list of str values where each value is a hash for 
-      a commit (values=='hash'), 
+    :param str values: specifies what type of values are returned.
+      If values=='hash', then hash values or for values=='tag', a
+      list of list of tag(s).
+    :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
+       None (default) it will be opened.
+    :returns: a list of str values where each value is a hash for
+      a commit (values=='hash'),
       for values=='tag', a list of lists, where a list of tags is provided
-      for each commit. When tags are provided, for any commit that does 
+      for each commit. When tags are provided, for any commit that does
       not have any associated tag(s), that entry is omitted from the list.
-      for values=='both', a list of lists, where a hash is followed by a 
+      for values=='both', a list of lists, where a hash is followed by a
       list of tags (if any) is provided
     '''
     if g2repo is None:
         g2repo = openGitRepo(path2GSAS2)
-    history = list(g2repo.iter_commits('master'))
+    history = list(g2repo.iter_commits('main'))
     if values.lower().startswith('h'):
         return [i.hexsha for i in history]
     elif values.lower().startswith('t'):
@@ -653,7 +692,7 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
         # for t in g2repo.tags:
         #     tagmap.setdefault(t.commit.hexsha, []).append(t.name)
         # return [[i.hexsha]+tagmap.get(i.hexsha,[]) for i in history]
-        
+
         # potentially faster code
         r1 = [[i.hexsha]+g2repo.git.tag('--points-at',i).split('\n')
                     for i in history[:maxdepth]]
@@ -664,54 +703,48 @@ def gitHistory(values='tag',g2repo=None,maxdepth=100):
 def getGitBinaryReleases(cache=False):
     '''Retrieves the binaries and download urls of the latest release
 
-    :param bool cache: when cache is True and the binaries file names 
-       are retrieved (does not always succeed when done via GitHub 
-       Actions), the results are saved in a file for reuse should the 
-       retrieval fail. Default is False so the file is not changed. 
+    :param bool cache: when cache is True and the binaries file names
+       are retrieved (does not always succeed when done via GitHub
+       Actions), the results are saved in a file for reuse should the
+       retrieval fail. Default is False so the file is not changed.
 
-    :returns: a URL dict for GSAS-II binary distributions found in the newest 
-      release in a GitHub repository. The repo location is defined in global 
+    :returns: a URL dict for GSAS-II binary distributions found in the newest
+      release in a GitHub repository. The repo location is defined in global
       `G2binURL`.
 
-      The dict keys are references to binary distributions, which are named 
-      as f"{platform}_p{pver}_n{npver}" where platform is determined 
+      The dict keys are references to binary distributions, which are named
+      as f"{platform}_p{pver}_n{npver}" where platform is determined
       in :func:`GSASIIpath.GetBinaryPrefix` (linux_64, mac_arm, win_64,...)
-      and where `pver` is the Python version (such as "3.10") and `npver` is 
+      and where `pver` is the Python version (such as "3.10") and `npver` is
       the numpy version (such as "1.26").
 
-      The value associated with each key contains the full URL to 
-      download a tar containing that binary distribution. 
+      The value associated with each key contains the full URL to
+      download a tar containing that binary distribution.
     '''
-    # Get first page of releases
     try:
         import requests
     except:
         print('Unable to install binaries in getGitBinaryReleases():\n requests module not available')
         return
+    # Get first page of releases. (Could there be more than one?)
     releases = []
     tries = 0
     while tries < 5: # this has been known to fail, so retry
         tries += 1
         releases = requests.get(
-            url=f"{G2binURL}/releases", 
+            url=f"{G2binURL}/releases",
             headers=BASE_HEADER
         ).json()
-        try:        
-            # Get assets of latest release
-            assets = requests.get(
-                url=f"{G2binURL}/releases/{releases[-1]['id']}/assets",
-                headers=BASE_HEADER
-                ).json()
-
+        try:
+            # loop over assets of latest release (will [-1] always get this?)
             versions = []
             URLs = []
-            count = 0
-            for asset in assets:
-                if asset['name'].endswith('.tgz'):
-                    versions.append(asset['name'][:-4]) # Remove .tgz tail
-                    URLs.append(asset['browser_download_url'])
-                    count += 1
-            # Cache the binary releases for later use in case GitHub 
+            for asset in releases[-1]['assets']:
+                if not asset['name'].endswith('.tgz'): continue
+                versions.append(asset['name'][:-4]) # Remove .tgz tail
+                URLs.append(asset['browser_download_url'])
+            count = len(versions)
+            # Cache the binary releases for later use in case GitHub
             # prevents us from using a query to get them
             if cache and count > 4:
                 fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
@@ -721,7 +754,7 @@ def getGitBinaryReleases(cache=False):
                 fp.close()
             return dict(zip(versions,URLs))
         except:
-            print('Attempt to list GSAS-II binary releases failed, sleeping for 10 sec and then retrying')
+            print('Attempt to get GSAS-II binary releases/assets failed, sleeping for 10 sec and then retrying')
             import time
             time.sleep(10)  # this does not seem to help when GitHub is not letting the queries through
 
@@ -736,20 +769,20 @@ def getGitBinaryReleases(cache=False):
         return res
     except:
         raise IOError('Cache read of releases failed too.')
-    
-def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
-    '''Identify the best GSAS-II binary download location from the 
-    distributions in the latest release section of the github repository 
+
+def getGitBinaryLoc(npver=None,pyver=None,verbose=True,debug=False):
+    '''Identify the best GSAS-II binary download location from the
+    distributions in the latest release section of the github repository
     on the CPU platform, and Python & numpy versions. The CPU & Python
     versions must match, but the numpy version may only be close.
-    
+
     :param str npver: Version number to use for numpy, if None (default)
       the version is taken from numpy in the current Python interpreter.
     :param str pyver: Version number to use for Python, if None (default)
       the version is taken from the current Python interpreter.
     :param bool verbose: if True (default), status messages are printed
     :returns: a URL for the tar file (success) or None (failure)
-    '''    
+    '''
     bindir = GetBinaryPrefix(pyver)
     if npver:
         inpver = intver(npver)
@@ -758,11 +791,15 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
         inpver = intver(np.__version__)
     # get binaries matching the required install, approximate match for numpy
     URLdict = getGitBinaryReleases()
+    if debug:
+        print('URLdict:')
+        for k in URLdict: print(k,URLdict[k])
     versions = {}
     for d in URLdict:
         if d.startswith(bindir):
             v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
             versions[v] = d
+    if debug: print('versions:',versions)
     intVersionsList = sorted(versions.keys())
     if not intVersionsList:
         print('No binaries located to match',bindir)
@@ -797,15 +834,15 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True):
 
 def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
     '''Install the GSAS-II binary files into the location
-    specified. 
-    
+    specified.
+
     :param str tarURL: a URL for the tar file.
     :param str instDir: location directory to install files. This directory
         may not exist and will be created if needed.
     :param bool nameByVersion: if True, files are put into a subdirectory
-        of `instDir`, named to match the tar file (with plaform, Python & 
-        numpy versions). 
-        Default is False, where the binary files are put directly into 
+        of `instDir`, named to match the tar file (with plaform, Python &
+        numpy versions).
+        Default is False, where the binary files are put directly into
         `instDir`.
     :param bool verbose: if True (default), status messages are printed.
     :returns: None
@@ -819,12 +856,14 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
         print('Unable to install binaries in InstallGitBinary():\n requests module not available')
         return
     # download to scratch
+    tarobj = None
     tar = tempfile.NamedTemporaryFile(suffix='.tgz',delete=False)
     try:
         tar.close()
         if verbose: print(f'Downloading {tarURL}')
         r = requests.get(tarURL, allow_redirects=True)
-        open(tar.name, 'wb').write(r.content)
+        with open(tar.name, 'wb') as fp:
+            fp.write(r.content)
         # open in tar
         tarobj = tarfile.open(name=tar.name)
         if nameByVersion:
@@ -847,23 +886,28 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
             # set file mode and mod/access times (but not ownership)
             os.chmod(newfil,f.mode)
             os.utime(newfil,(f.mtime,f.mtime))
-            if verbose: print(f'Created GSAS-II binary file {newfil}')
+            if verbose: print(f'Created GSAS-II binary file {os.path.split(newfil)[1]}')
+        if verbose: print(f'Binary files created in {os.path.split(newfil)[0]}')
+
     finally:
-        del tarobj
+        if tarobj: del tarobj
         os.unlink(tar.name)
 
 def GetRepoUpdatesInBackground():
-    '''Wrapper to make sure that :func:`gitGetUpdate` is called only 
+    '''Get the latest GSAS-II version info.
+    This serves to make sure that :func:`gitGetUpdate` is called only
     if git has been used to install GSAS-II.
-    
+
     :returns: returns a Popen object (see subprocess)
     '''
     if HowIsG2Installed().startswith('git'):
         return gitGetUpdate(mode='Background')
+    else:
+        return saveGitHubVersion()
 
 def gitStartUpdate(cmdopts):
-    '''Update GSAS-II in a separate process, by running this script with the 
-    options supplied in the call to this function and then exiting GSAS-II. 
+    '''Update GSAS-II in a separate process, by running this script with the
+    options supplied in the call to this function and then exiting GSAS-II.
     '''
     cmd = [sys.executable, __file__] + cmdopts
     if GetConfigValue('debug'): print('Starting updates with command\n\t'+
@@ -876,14 +920,14 @@ def gitStartUpdate(cmdopts):
     sys.exit()
 
 def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
-    '''Obtain a the contents of a GitHub repository directory using 
+    '''Obtain a the contents of a GitHub repository directory using
     the GitHub REST API.
 
-    :param str dirlist: a list of sub-directories `['parent','child',sub']` 
-      for `parent/child/sub` or `[]` for a file in the top-level directory.     
+    :param str dirlist: a list of sub-directories `['parent','child',sub']`
+      for `parent/child/sub` or `[]` for a file in the top-level directory.
     :param str orgName: the name of the GitHub organization
     :param str repoName: the name of the GitHub repository
-    :returns: a list of file names or None if the dirlist info does not 
+    :returns: a list of file names or None if the dirlist info does not
       reference a directory
 
     examples::
@@ -891,11 +935,11 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
         dirGitHub([], 'GSASII', 'TutorialTest')
         dirGitHub(['TOF Sequential Single Peak Fit', 'data'])
 
-    The first example will get the contents of the top-level 
-    directory for the specified repository 
+    The first example will get the contents of the top-level
+    directory for the specified repository
 
-    The second example will provide the contents of the 
-    "TOF Sequential Single Peak Fit"/data directory. 
+    The second example will provide the contents of the
+    "TOF Sequential Single Peak Fit"/data directory.
     '''
     try:
         import requests
@@ -913,17 +957,17 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
         return None
 
 def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRepo,
-                 branchname="master"):
-    '''Create a URL that can be used to view/downlaod the raw version of 
-    file in a GitHub repository. 
+                 branchname="main"):
+    '''Create a URL that can be used to view/downlaod the raw version of
+    file in a GitHub repository.
 
-    :param str dirlist: a list of sub-directories `['parent','child',sub']` 
-      for `parent/child/sub` or `[]` for a file in the top-level directory.     
+    :param str dirlist: a list of sub-directories `['parent','child',sub']`
+      for `parent/child/sub` or `[]` for a file in the top-level directory.
     :param str filename: the name of the file
     :param str orgName: the name of the GitHub organization
     :param str repoName: the name of the GitHub repository
-    :param str branchname: the name of the GitHub branch. Defaults 
-       to "master".
+    :param str branchname: the name of the GitHub branch. Defaults
+       to "main".
 
     :returns: a URL-encoded URL
     '''
@@ -936,7 +980,7 @@ def rawGitHubURL(dirlist,filename,orgName=gitTutorialOwn, repoName=gitTutorialRe
     return f"https://raw.githubusercontent.com/{orgName}/{repoName}/{branchname}/{dirname}{filename}"
 
 def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
-    '''Download the entire contents of a directory from a repository 
+    '''Download the entire contents of a directory from a repository
     on GitHub. Used to download data for a tutorial.
     '''
     try:
@@ -954,7 +998,8 @@ def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTu
         r = requests.get(URL, allow_redirects=True)
         outfil = os.path.join(targetDir,fil)
         if r.status_code == 200:
-            open(outfil, 'wb').write(r.content)
+            with open(outfil, 'wb') as fp:
+                fp.write(r.content)
             print(f'wrote {outfil}')
         elif r.status_code == 404:
             print(f'Warning: {fil} is likely a subdirectory of directory {"/".join(dirlist)!r}')
@@ -964,776 +1009,16 @@ def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTu
 
 #==============================================================================
 #==============================================================================
-# routines to interface with subversion
-g2home = 'https://subversion.xray.aps.anl.gov/pyGSAS' # 'Define the location of the GSAS-II subversion repository'
-proxycmds = [] # 'Used to hold proxy information for subversion, set if needed in whichsvn'
-svnLocCache = None  # 'Cached location of svn to avoid multiple searches for it'
-
-def MakeByte2str(arg):
-    '''Convert output from subprocess pipes (bytes) to str (unicode) in Python 3.
-    In Python 2: Leaves output alone (already str). 
-    Leaves stuff of other types alone (including unicode in Py2)
-    Works recursively for string-like stuff in nested loops and tuples.
-
-    typical use::
-
-        out = MakeByte2str(out)
-
-    or::
-
-        out,err = MakeByte2str(s.communicate())
-    
-    '''
-    if isinstance(arg,str): return arg
-    if isinstance(arg,bytes):
-        try:
-            return arg.decode()
-        except:
-            if GetConfigValue('debug'): print('Decode error')
-            return arg
-    if isinstance(arg,list):
-        return [MakeByte2str(i) for i in arg]
-    if isinstance(arg,tuple):
-        return tuple([MakeByte2str(i) for i in arg])
-    return arg
-                
-def getsvnProxy():
-    '''Loads a proxy for subversion from the proxyinfo.txt file created 
-    by bootstrap.py or File => Edit Proxy...; If not found, then the 
-    standard http_proxy and https_proxy environment variables are scanned
-    (see https://docs.python.org/3/library/urllib.request.html#urllib.request.getproxies) 
-    with case ignored and that is used. 
-    '''
-    global proxycmds
-    proxycmds = []
-    proxyinfo = os.path.join(os.path.expanduser('~/.G2local/'),"proxyinfo.txt")
-    if not os.path.exists(proxyinfo):
-        proxyinfo = os.path.join(path2GSAS2,"proxyinfo.txt")
-    if os.path.exists(proxyinfo):
-        fp = open(proxyinfo,'r')
-        host = fp.readline().strip()
-        # allow file to begin with comments
-        while host.startswith('#'):
-            host = fp.readline().strip()
-        port = fp.readline().strip()
-        etc = []
-        line = fp.readline()
-        while line:
-            etc.append(line.strip())
-            line = fp.readline()
-        fp.close()
-        setsvnProxy(host,port,etc)
-        return host,port,etc
-    import urllib.request
-    proxdict = urllib.request.getproxies()
-    varlist = ("https","http")
-    for var in proxdict:
-        if var.lower() in varlist:
-            proxy = proxdict[var]
-            pl = proxy.split(':')
-            if len(pl) < 2: continue
-            host = pl[1].strip('/')
-            port = ''
-            if len(pl) == 3:
-                port = pl[2].strip('/').strip()
-            return host,port,''
-    return '','',''
-
-def setsvnProxy(host,port,etc=[]):
-    '''Sets the svn commands needed to use a proxy
-    '''
-    global proxycmds
-    proxycmds = []
-    host = host.strip()
-    port = port.strip()
-    if host: 
-        proxycmds.append('--config-option')
-        proxycmds.append('servers:global:http-proxy-host='+host)
-        if port:
-            proxycmds.append('--config-option')
-            proxycmds.append('servers:global:http-proxy-port='+port)
-    for item in etc:
-        proxycmds.append(item)
-        
-def whichsvn():
-    '''Returns a path to the subversion exe file, if any is found.
-    Searches the current path after adding likely places where GSAS-II
-    might install svn. 
-
-    :returns: None if svn is not found or an absolute path to the subversion
-      executable file.
-    '''
-    # use a previosuly cached svn location
-    global svnLocCache
-    if svnLocCache: return svnLocCache
-    # prepare to find svn
-    is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    svnprog = 'svn'
-    if sys.platform.startswith('win'): svnprog += '.exe'
-    host,port,etc = getsvnProxy()
-    if GetConfigValue('debug') and host:
-        print('DBG_Using proxy host {} port {}'.format(host,port))
-    if GetConfigValue('svn_exec'):
-        exe_file = GetConfigValue('svn_exec')
-        print('Using ',exe_file)
-        if is_exe(exe_file):
-            try:
-                p = subprocess.Popen([exe_file,'help'],stdout=subprocess.PIPE)
-                res = p.stdout.read()
-                if not res: return
-                p.communicate()
-                svnLocCache = os.path.abspath(exe_file)
-                return svnLocCache
-            except:
-                pass
-    # add likely places to find subversion when installed with GSAS-II
-    pathlist = os.environ["PATH"].split(os.pathsep)
-    pathlist.insert(0,os.path.split(sys.executable)[0])
-    pathlist.insert(1,path2GSAS2)
-    for rpt in ('..','bin'),('..','Library','bin'),('svn','bin'),('svn',),('.'):
-        pt = os.path.normpath(os.path.join(path2GSAS2,*rpt))
-        if os.path.exists(pt):
-            pathlist.insert(0,pt)    
-    # search path for svn or svn.exe
-    for path in pathlist:
-        exe_file = os.path.join(path, svnprog)
-        if is_exe(exe_file):
-            try:
-                p = subprocess.Popen([exe_file,'help'],stdout=subprocess.PIPE)
-                res = p.stdout.read()
-                if not res: return
-                p.communicate()
-                svnLocCache = os.path.abspath(exe_file)
-                return svnLocCache
-            except:
-                pass        
-    svnLocCache = None
-
-svn_version = None
-def svnVersion(svn=None):
-    '''Get the version number of the current subversion executable.
-    The result is cached, as this takes a bit of time to run and 
-    is done a fair number of times.
-
-    :returns: a string with a version number such as "1.6.6" or None if
-      subversion is not found.
-
-    '''
-    global svn_version
-    if svn_version is not None:
-        return svn_version
-    if not svn: svn = whichsvn()
-    if not svn: return
-
-    cmd = [svn,'--version','--quiet']
-    s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print ('subversion error!\nout=%s'%out)
-        print ('err=%s'%err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        return None
-    svn_version = out.strip()
-    return svn_version
-
-def svnVersionNumber(svn=None):
-    '''Get the version number of the current subversion executable
-
-    :returns: a fractional version number such as 1.6 or None if
-      subversion is not found.
-
-    '''
-    ver = svnVersion(svn)
-    if not ver: return 
-    M,m = ver.split('.')[:2]
-    return int(M)+int(m)/10.
-
-def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
-    '''Get the revision log information for a specific version of the specified package
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located.
-    :param int version: the version number to be looked up or None (default)
-       for the latest version.
-
-    :returns: a dictionary with keys (one hopes) 'author', 'date', 'msg', and 'revision'
-
-    '''
-    import xml.etree.ElementTree as ET
-    svn = whichsvn()
-    if not svn: return
-    if version is not None:
-        vstr = '-r'+str(version)
-    else:
-        vstr = '-rHEAD'
-
-    cmd = [svn,'log',fpath,'--xml',vstr]
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print ('out=%s'%out)
-        print ('err=%s'%err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        return None
-    x = ET.fromstring(out)
-    d = {}
-    for i in x.iter('logentry'):
-        d = {'revision':i.attrib.get('revision','?')}
-        for j in i:
-            d[j.tag] = j.text
-        break # only need the first
-    return d
-
-svnLastError = ''
-def svnGetRev(fpath=os.path.split(__file__)[0],local=True,verbose=True):
-    '''Obtain the version number for the either the last update of the local version
-    or contacts the subversion server to get the latest update version (# of Head).
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-    :param bool local: determines the type of version number, where
-       True (default): returns the latest installed update 
-       False: returns the version number of Head on the server
-
-    :Returns: the version number as an str or 
-       None if there is a subversion error (likely because the path is
-       not a repository or svn is not found). The error message is placed in
-       global variable svnLastError
-    '''
-
-    import xml.etree.ElementTree as ET
-    svn = whichsvn()
-    if not svn: return
-    if local:
-        cmd = [svn,'info',fpath,'--xml']
-    else:
-        cmd = [svn,'info',fpath,'--xml','-rHEAD']
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--non-interactive', '--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    # if GetConfigValue('debug'):
-    #     s = 'subversion command:\n  '
-    #     for i in cmd: s += i + ' '
-    #     print(s)
-    s = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        if verbose:
-            print ('svn failed\n%s'%out)
-            print ('err=%s'%err)
-            print('\nsvn command:',' '.join(cmd))
-        global svnLastError
-        svnLastError = err
-        return None
-    x = ET.fromstring(out)
-    for i in x.iter('entry'):
-        rev = i.attrib.get('revision')
-        if rev: return rev
-
-def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
-    '''Returns a list of files that were changed locally. If no files are changed,
-       the list has length 0
-
-    :param fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-
-    :returns: None if there is a subversion error (likely because the path is
-       not a repository or svn is not found)
-
-    '''
-    import xml.etree.ElementTree as ET
-    svn = whichsvn()
-    if not svn: return
-    cmd = [svn,'status',fpath,'--xml']
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err: return None
-    x = ET.fromstring(out)
-    changed = []
-    for i in x.iter('entry'):
-        if i.find('wc-status').attrib.get('item') == 'modified': 
-            changed.append(i.attrib.get('path'))
-    return changed
-
-def svnCleanup(fpath=os.path.split(__file__)[0],verbose=True):
-    '''This runs svn cleanup on a selected local directory. 
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-    '''
-    svn = whichsvn()
-    if not svn: return
-    if verbose: print(u"Performing svn cleanup at "+fpath)
-    cmd = [svn,'cleanup',fpath]
-    if verbose: showsvncmd(cmd)        
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print(60*"=")
-        print("****** An error was noted, see below *********")
-        print(60*"=")
-        print(err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        #raise Exception('svn cleanup failed')
-        return False
-    elif verbose:
-        print(out)
-    return True
-        
-def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
-    '''This performs an update of the files in a local directory from a server. 
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-    :param version: the number of the version to be loaded. Used only
-       cast as a string, but should be an integer or something that corresponds to a
-       string representation of an integer value when cast. A value of None (default)
-       causes the latest version on the server to be used.
-    '''
-    svn = whichsvn()
-    if not svn: return
-    if version:
-        verstr = '-r' + str(version)
-    else:
-        verstr = '-rHEAD'
-    if verbose: print(u"Updating files at "+fpath)
-    cmd = [svn,'update',fpath,verstr,
-           '--non-interactive',
-           '--accept','theirs-conflict','--force']
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    #if verbose or GetConfigValue('debug'):
-    if verbose:
-        s = 'subversion command:\n  '
-        for i in cmd: s += i + ' '
-        print(s)
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print(60*"=")
-        print("****** An error was noted, see below *********")
-        print(60*"=")
-        print(err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        if svnCleanup(fpath):
-            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            out,err = MakeByte2str(s.communicate())
-            if err:
-                print(60*"=")
-                print("****** Drat, failed again: *********")
-                print(60*"=")
-                print(err)
-            else:
-                return
-        if 'Checksum' in err:  # deal with Checksum problem
-            err = svnChecksumPatch(svn,fpath,verstr)
-            if err:
-                print('error from svnChecksumPatch\n\t',err)
-            else:
-                return
-        raise Exception('svn update failed')
-    elif verbose:
-        print(out)
-
-def showsvncmd(cmd):
-    s = '\nsvn command:  '
-    for i in cmd: s += i + ' '
-    print(s)
-
-def svnChecksumPatch(svn,fpath,verstr):
-    '''This performs a fix when svn cannot finish an update because of
-    a Checksum mismatch error. This seems to be happening on OS X for 
-    unclear reasons. 
-    '''
-    print('\nAttempting patch for svn Checksum mismatch error\n')
-    svnCleanup(fpath)
-    cmd = [svn,'update','--set-depth','empty',
-               os.path.join(fpath,'bindist')]
-    showsvncmd(cmd)        
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--non-interactive', '--trust-server-cert']
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    #if err: print('error=',err)
-    cmd = [svn,'switch',g2home+'/trunk/bindist',
-               os.path.join(fpath,'bindist'),
-               '--non-interactive', '--trust-server-cert', '--accept',
-               'theirs-conflict', '--force', '-rHEAD', '--ignore-ancestry']
-    showsvncmd(cmd)        
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    DownloadG2Binaries(g2home,verbose=True)
-    cmd = [svn,'update','--set-depth','infinity',
-               os.path.join(fpath,'bindist')]
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--non-interactive', '--trust-server-cert']
-    showsvncmd(cmd)        
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    #if err: print('error=',err)
-    cmd = [svn,'update',fpath,verstr,
-                       '--non-interactive',
-                       '--accept','theirs-conflict','--force']
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    showsvncmd(cmd)        
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    #if err: print('error=',err)
-    return err
-        
-def svnUpgrade(fpath=os.path.split(__file__)[0]):
-    '''This reformats subversion files, which may be needed if an upgrade of subversion is
-    done. 
-
-    :param str fpath: path to repository dictionary, defaults to directory where
-       the current file is located
-    '''
-    svn = whichsvn()
-    if not svn: return
-    cmd = [svn,'upgrade',fpath,'--non-interactive']
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print("svn upgrade did not happen (this is probably OK). Messages:")
-        print (err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-
-def svnUpdateProcess(version=None,projectfile=None,branch=None):
-    '''perform an update of GSAS-II in a separate python process'''
-    if not projectfile:
-        projectfile = ''
-    else:
-        projectfile = os.path.realpath(projectfile)
-        print ('restart using %s'%projectfile)
-    if branch:
-        version = branch
-    elif not version:
-        version = ''
-    else:
-        version = str(version)
-    # start the upgrade in a separate interpreter (avoids loading .pyd files)
-    ex = sys.executable
-    if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
-        if os.path.exists(ex+'w'): ex += 'w'
-    proc = subprocess.Popen([ex,__file__,projectfile,version])
-    if sys.platform != "win32":
-        proc.wait()
-    sys.exit()
-
-def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
-    '''This performs a switch command to move files between subversion trees.
-    Note that if the files were previously downloaded, 
-    the switch command will update the files to the newest version.
-    
-    :param str rpath: path to locate files, relative to the GSAS-II
-      installation path (defaults to path2GSAS2)
-    :param str URL: the repository URL
-    :param str loadpath: the prefix for the path, if specified. Defaults to path2GSAS2
-    :param bool verbose: if True (default) diagnostics are printed
-    '''
-    svn = whichsvn()
-    if not svn: return
-    URL = baseURL[:]
-    if baseURL[-1] != '/':
-        URL = baseURL + '/' + filename
-    else:
-        URL = baseURL + filename
-    if loadpath:
-        fpath = os.path.join(loadpath,rpath,filename)
-        svntmp = os.path.join(loadpath,'.svn','tmp')
-    else:
-        fpath = os.path.join(path2GSAS2,rpath,filename)
-        svntmp = os.path.join(path2GSAS2,'.svn','tmp')
-    # fix up problems with missing empty directories
-    if not os.path.exists(fpath):
-        print('Repairing missing directory',fpath)
-        cmd = [svn,'revert',fpath]
-        s = subprocess.Popen(cmd,stderr=subprocess.PIPE)
-        out,err = MakeByte2str(s.communicate())
-        if out: print(out)
-        if err: print(err)
-    if not os.path.exists(svntmp):
-        print('Repairing missing directory',svntmp)
-        cmd = ['mkdir',svntmp]
-        s = subprocess.Popen(cmd,stderr=subprocess.PIPE)
-        out,err = MakeByte2str(s.communicate())
-        if out: print(out)
-        if err: print(err)
-        
-    cmd = [svn,'switch',URL,fpath,
-           '--non-interactive','--trust-server-cert',
-           '--accept','theirs-conflict','--force','-rHEAD']
-    if svnVersionNumber(svn) > 1.6: cmd += ['--ignore-ancestry']
-    if proxycmds: cmd += proxycmds
-    if verbose:
-        print(u"Loading files to "+fpath+u"\n  from "+URL)
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print(60*"=")
-        print ("****** An error was noted, see below *********")
-        print(60*"=")
-        print ('out=%s'%out)
-        print ('err=%s'%err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        if svnCleanup(fpath):
-            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            out,err = MakeByte2str(s.communicate())
-            if err:
-                print(60*"=")
-                print("****** Drat, failed again: *********")
-                print(60*"=")
-                print(err)
-            else:
-                return True
-        return False
-    if verbose:
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        print('\n=== Output from svn switch'+(43*'='))
-        print(out.strip())
-        print((70*'=')+'\n')
-    return True
-
-def svnInstallDir(URL,loadpath):
-    '''Load a subversion tree into a specified directory
-
-    :param str URL: the repository URL
-    :param str loadpath: path to locate files
-
-    '''
-    svn = whichsvn()
-    if not svn: return
-    cmd = [svn,'co',URL,loadpath,'--non-interactive']
-    if svnVersionNumber() >= 1.6: cmd += ['--trust-server-cert']
-    print("Loading files from "+URL)
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())   #this fails too easily
-    if err:
-        print(60*"=")
-        print ("****** An error was noted, see below *********")
-        print(60*"=")
-        print (err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        if svnCleanup(loadpath):
-            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-            out,err = MakeByte2str(s.communicate())
-            if err:
-                print(60*"=")
-                print("****** Drat, failed again: *********")
-                print(60*"=")
-                print(err)
-                return False
-        else:
-            return False
-    print ("Files installed at: "+loadpath)
-    return True
-
-def svnGetFileStatus(fpath=os.path.split(__file__)[0],version=None):
-    '''Compare file status to repository (svn status -u)
-
-    :returns: updatecount,modcount,locked where 
-       updatecount is the number of files waiting to be updated from 
-       repository 
-       modcount is the number of files that have been modified locally
-       locked  is the number of files tagged as locked
-    '''
-    import xml.etree.ElementTree as ET
-    svn = whichsvn()
-    if version is not None:
-        vstr = '-r'+str(version)
-    else:
-        vstr = '-rHEAD'
-    cmd = [svn,'st',fpath,'--xml','-u',vstr]
-    if svnVersionNumber() >= 1.6:
-        cmd += ['--non-interactive', '--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = MakeByte2str(s.communicate())
-    if err:
-        print ('out=%s'%out)
-        print ('err=%s'%err)
-        s = '\nsvn command:  '
-        for i in cmd: s += i + ' '
-        print(s)
-        return None
-
-    locked = 0
-    updatecount = 0
-    modcount = 0
-    x = ET.fromstring(out)
-    for i0 in x.iter('entry'):
-        #filename = i0.attrib.get('path','?')
-        #wc_rev = ''
-        status = ''
-        switched = ''
-        for i1 in i0.iter('wc-status'):
-            #wc_rev = i1.attrib.get('revision','')
-            status = i1.attrib.get('item','')
-            switched = i1.attrib.get('switched','')
-            if i1.attrib.get('wc-locked',''): locked += 1
-        if status == "unversioned": continue
-        if switched == "true": continue
-        if status == "modified":
-            modcount += 1
-        elif status == "normal":
-            updatecount += 1
-        #file_rev = ''
-        #for i2 in i1.iter('commit'):
-        #    file_rev = i2.attrib.get('revision','')
-        #local_status = ''
-        #for i1 in i0.iter('repos-status'):
-        #    local_status = i1.attrib.get('item','')
-        #print(filename,wc_rev,file_rev,status,local_status,switched)
-    return updatecount,modcount,locked
-
-def svnList(URL,verbose=True):
-    '''Get a list of subdirectories from and svn repository
-    '''    
-    svn = whichsvn()
-    if not svn:
-        print('**** unable to load files: svn not found ****')
-        return ''
-    # get binaries matching the required type -- other than for the numpy version
-    cmd = [svn, 'list', URL,'--non-interactive', '--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    if verbose:
-        s = 'Running svn command:\n  '
-        for i in cmd: s += i + ' '
-        print(s)
-    p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    res,err = MakeByte2str(p.communicate())
-    return res
-
-def DownloadG2Binaries(g2home,verbose=True):
-    '''Download GSAS-II binaries from appropriate section of the
-    GSAS-II svn repository based on the platform, numpy and Python
-    version
-    '''    
-    bindir = GetBinaryPrefix()
-    #npver = 'n{}.{}'.format(*np.__version__.split('.')[0:2])
-    inpver = intver(np.__version__)
-    svn = whichsvn()
-    if not svn:
-        print('**** unable to load files: svn not found ****')
-        return ''
-    # get binaries matching the required type -- other than for the numpy version
-    cmd = [svn, 'list', g2home + '/Binaries/','--non-interactive', '--trust-server-cert']
-    if proxycmds: cmd += proxycmds
-    if verbose:
-        s = 'Running svn command:\n  '
-        for i in cmd: s += i + ' '
-        print(s)
-    p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    res,err = MakeByte2str(p.communicate())
-    versions = {}
-    for d in res.split():
-        if d.startswith(bindir):
-            v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
-            versions[v] = d
-    intVersionsList = sorted(versions.keys())
-    if not intVersionsList:
-        print('No binaries located matching',bindir)
-        return
-    elif inpver < min(intVersionsList):
-        vsel = min(intVersionsList)
-        print('Warning: The current numpy version, {}, is older than\n\tthe oldest dist version, {}'
-              .format(np.__version__,fmtver(vsel)))
-    elif inpver >= max(intVersionsList):
-        vsel = max(intVersionsList)
-        if verbose: print(
-                'FYI: The current numpy version, {}, is newer than the newest dist version {}'
-                .format(np.__version__,fmtver(vsel)))
-    else:
-        vsel = min(intVersionsList)
-        for v in intVersionsList:
-            if v <= inpver:
-                vsel = v
-            else:
-                if verbose: print(
-                        'FYI: Selecting dist version {} as the current numpy version, {},\n\tis older than the next dist version {}'
-                        .format(fmtver(vsel),np.__version__,fmtver(v)))
-                break
-    distdir = g2home + '/Binaries/' + versions[vsel]
-    # switch reset command: distdir = g2home + '/trunk/bindist'
-    svnSwitchDir('bindist','',distdir,verbose=verbose)
-    return os.path.join(path2GSAS2,'bindist')
-
-# def svnTestBranch(loc=None):
-#     '''Returns the name of the branch directory if the installation has been switched.
-#     Returns none, if not a branch
-#     the test 2frame branch. False otherwise
-#     '''
-#     if loc is None: loc = path2GSAS2
-#     svn = whichsvn()
-#     if not svn:
-#         print('**** unable to load files: svn not found ****')
-#         return ''
-#     cmd = [svn, 'info', loc]
-#     if proxycmds: cmd += proxycmds
-#     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-#     res,err = MakeByte2str(p.communicate())
-#     for l in res.split('\n'):
-#         if "Relative URL:" in l: break
-#     if "/branch/" in l:
-#         return l[l.find("/branch/")+8:].strip()
-#     else:
-#         return None
-    
-def svnSwitch2branch(branch=None,loc=None,svnHome=None):
-    '''Switch to a subversion branch if specified. Switches to trunk otherwise.
-    '''
-    if svnHome is None: svnHome = g2home
-    svnURL = svnHome + '/trunk'
-    if branch:
-        if svnHome.endswith('/'):
-            svnURL = svnHome[:-1]
-        else:
-            svnURL = svnHome
-        if branch.startswith('/'):
-            svnURL += branch
-        else:
-            svnURL += '/' + branch
-    svnSwitchDir('','',svnURL,loadpath=loc)
-#==============================================================================
-#==============================================================================
-    
 def runScript(cmds=[], wait=False, G2frame=None):
     '''run a shell script of commands in an external process
-    
+
     :param list cmds: a list of str's, each ietm containing a shell (cmd.exe
       or bash) command
-    :param bool wait: if True indicates the commands should be run and then 
-      the script should return. If False, then the currently running Python 
+    :param bool wait: if True indicates the commands should be run and then
+      the script should return. If False, then the currently running Python
       will exit. Default is False
     :param wx.Frame G2frame: provides the location of the current .gpx file
-      to be used to restart GSAS-II after running the commands, if wait 
+      to be used to restart GSAS-II after running the commands, if wait
       is False. Default is None which prevents restarting GSAS-II regardless of
       the value of wait.
     '''
@@ -1745,7 +1030,7 @@ def runScript(cmds=[], wait=False, G2frame=None):
         suffix = '.sh'
     else:
         suffix = '.bat'
-        
+
     fp = tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False)
     shellname = fp.name
     for line in cmds:
@@ -1757,7 +1042,7 @@ def runScript(cmds=[], wait=False, G2frame=None):
             projectfile = ''
             if G2frame.GSASprojectfile:
                 projectfile = os.path.realpath(G2frame.GSASprojectfile)
-            main = os.path.join(path2GSAS2,'GSASII.py')
+            main = os.path.join(path2GSAS2,'G2.py')
             ex = sys.executable
             if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
                 if os.path.exists(ex+'w'): ex += 'w'
@@ -1779,10 +1064,11 @@ def runScript(cmds=[], wait=False, G2frame=None):
 
 def IPyBreak_base(userMsg=None):
     '''A routine that invokes an IPython session at the calling location
-    This routine is only used when debug=True is set in config.py
+    This routine is only used when debug=True is set in the configuration
+    settings
     '''
     savehook = sys.excepthook # save the exception hook
-    try: 
+    try:
         from IPython.terminal.embed import InteractiveShellEmbed
     except ImportError:
         try:
@@ -1811,15 +1097,16 @@ def exceptHook(*args):
     '''A routine to be called when an exception occurs. It prints the traceback
     with fancy formatting and then calls an IPython shell with the environment
     of the exception location.
-    
-    This routine is only used when debug=True is set in config.py    
+
+    This routine is only used when debug=True is set in the configuration settings
     '''
     try:
-        from IPython.core import ultratb
+        #from IPython.core import ultratb
+        import IPython.core.ultratb
     except:
         pass
 
-    try: 
+    try:
         from IPython.terminal.embed import InteractiveShellEmbed
         import IPython.core
         if sys.platform.startswith('win'):
@@ -1834,7 +1121,16 @@ def exceptHook(*args):
     except ImportError:
         print ('IPython not installed or is really old')
         return
-
+    except TypeError:  # Ipython 9.x removes color_scheme
+        try:
+            IPython.core.ultratb.FormattedTB(call_pdb=False)(*args)
+            from IPython.core import getipython
+            if getipython.get_ipython() is None:
+                ipshell = InteractiveShellEmbed.instance()
+            else:
+                ipshell = InteractiveShellEmbed()
+        except Exception as msg:
+            print('IPython patch failed, msg=',msg)
     import inspect
     frame = inspect.getinnerframes(args[2])[-1][0]
     msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
@@ -1853,12 +1149,12 @@ def exceptHook(*args):
 
 def DoNothing():
     '''A routine that does nothing. This is called in place of IPyBreak and pdbBreak
-    except when the debug option is set True in config.py
+    except when the debug option is set True in the configuration settings
     '''
-    pass 
+    pass
 
 def InvokeDebugOpts():
-    'Called in GSASII.py to set up debug options'
+    'Called to set up debug options'
     if any('SPYDER' in name for name in os.environ):
         print('Running from Spyder, keeping breakpoint() active & skipping exception trapping')
     elif GetConfigValue('debug'):
@@ -1867,6 +1163,7 @@ def InvokeDebugOpts():
             global pdbBreak
             pdbBreak = pdb.set_trace
             import IPython
+            IPython
             global IPyBreak
             IPyBreak = IPyBreak_base
             sys.excepthook = exceptHook
@@ -1877,8 +1174,45 @@ def InvokeDebugOpts():
     else: # not in spyder or debug enabled, hide breakpoints
         os.environ['PYTHONBREAKPOINT'] = '0'
 
-def TestSPG(fpth):
-    '''Test if pyspg.[so,.pyd] can be run from a location in the path
+def TestSPG():
+    '''Test if pyspg.[so,.pyd] can be run from a location in the existing path
+    Do not modify the path if not.
+    '''
+    def showVersion():
+        try:
+            f = os.path.join(os.path.dirname(pyspg.__file__),'GSASIIversion.txt')
+            with open(f,'r') as fp:
+                version = fp.readline().strip()
+                vnum = fp.readline().strip()
+            print(f'  Binary ver: {vnum}, {version}')
+        except:
+            if GetConfigValue('debug'): 
+                print('  Binaries:   undated')
+    try:
+        from . import pyspg
+        pyspg
+        showVersion()
+        return True
+    except ImportError:
+        pass
+    try:
+        import pyspg
+        pyspg
+    except ImportError:
+        return False
+    try:
+        pyspg.sgforpy('P -1')
+    except Exception as err:
+        print(70*'=')
+        print(f'Module pyspg in {pyspg.__file__} could not be run\nerror msg: {err}')
+        print(70*'=')
+        return False
+    showVersion()
+    return True
+
+def pathhack_TestSPG(fpth):
+    '''Test if pyspg.[so,.pyd] can be run from a specified location. If so 
+    modify the path to include it.
     '''
     try:
         if not os.path.exists(fpth): return False
@@ -1918,151 +1252,177 @@ def TestSPG(fpth):
         return False
     sys.path = savpath
     return True
-    
-def SetBinaryPath(printInfo=False, loadBinary=False):
-    '''
-    Add location of GSAS-II shared libraries (binaries: .so or 
-    .pyd files) to path
-    
-    This routine must be executed after GSASIIpath is imported 
-    and before any other GSAS-II imports are done, since 
-    they assume binary files are in path
 
-    :param bool printInfo: When True, information is printed to show
-      has happened (default is False)
-    :param bool loadBinary: no longer in use. This is now done in 
-      :func:`GSASIIdataGUI.ShowVersions`.
+def SetBinaryPath(showConfigMsg=False):
     '''
-    # run this routine only once no matter how many times it is called
-    # using the following globals to check for repeated calls
+    Add location of GSAS-II shared libraries (binaries: .so or
+    .pyd files) to path (when needed). When GSAS-II is installed by
+    pixi, no change in the path is needed.
+
+    This routine must be executed after GSASIIpath is imported
+    and before any other GSAS-II imports are done, since
+    they may assume binary files are in path
+
+    :param bool showConfigMsg: When True, config info is shown (default is False)
+    '''
+    # cache the results of this routine so that repeated calls
+    # only search for binary routines once
     global BinaryPathLoaded,binaryPath,BinaryPathFailed
     if BinaryPathLoaded or BinaryPathFailed: return
     try:
-        inpver = intver(np.__version__)
+        intver(np.__version__)
     except (AttributeError,TypeError): # happens on building docs
         return
-    if path2GSAS2 not in sys.path:
-        sys.path.insert(0,path2GSAS2)  # make sure current path is used
-    binpath = None
-    binprfx = GetBinaryPrefix()
-    # places to look for the GSAS-II binary directory
-    binseapath = [os.path.abspath(sys.path[0])]  # where Python is installed
-    binseapath += [os.path.abspath(os.path.dirname(__file__))]  # directory where this file is found
-    binseapath += [os.path.dirname(binseapath[-1])]  # parent of above directory
-    binseapath += [os.path.expanduser('~/.GSASII')]       # directory in user's home
-    def appendIfExists(searchpathlist,loc,subdir):
-        newpath = os.path.join(loc,subdir)
-        if os.path.exists(newpath):
-            if newpath in searchpathlist: return
-            searchpathlist.append(newpath)
-    searched = []
-    for loc in binseapath:
-        if loc in searched: continue
-        searched.append(loc)
-        # Look at bin directory (created by a local compile) before looking for standard dist files
-        searchpathlist = []
-        appendIfExists(searchpathlist,loc,'bin')
-        appendIfExists(searchpathlist,loc,'bindist')
-        appendIfExists(searchpathlist,loc,'GSASII-bin')
-        # also look for directories named by platform etc in loc/AllBinaries or loc
-        versions = {}
-        namedpath =  glob.glob(os.path.join(loc,'AllBinaries',binprfx+'*'))
-        namedpath += glob.glob(os.path.join(loc,'GSASII-bin',binprfx+'*'))
-        for d in namedpath:
-            d = os.path.realpath(d)
-            v = intver(d.rstrip('/').split('_')[-1].lstrip('n'))
-            versions[v] = d
-        vmin = None
-        vmax = None
-        # try to order the search in a way that makes sense
-        for v in sorted(versions.keys()):
-            if v <= inpver:
-                vmin = v
-            elif v > inpver:
-                vmax = v
-                break
-        if vmin in versions and versions[vmin] not in searchpathlist:
-            searchpathlist.append(versions[vmin])
-        if vmax in versions and versions[vmax] not in searchpathlist:
-            searchpathlist.append(versions[vmax])
-        for fpth in searchpathlist:
-            if TestSPG(fpth):
-                binpath = fpth   # got one that works, look no farther!
-                break
-        else:
-            continue
-        break
-    if binpath:  # were GSAS-II binaries found?
-        binaryPath = binpath
+    try:
+        from GSASII import pypowder
+        pypowder
+        binaryPath = None   # special value to indicate that binaries have been installed into package
+        if showConfigMsg:
+            print(f'GSAS-II binaries co-located with GSAS-II: {os.path.dirname(__file__)}')
         BinaryPathLoaded = True
-    else:
-        print('*** ERROR: Unable to find GSAS-II binaries. Much of GSAS-II cannot function')
-        BinaryPathFailed = True
-        return None
+        LoadConfig(showConfigMsg)
+        return
+    except ImportError:
+        pass
 
-    # add the data import and export directory to the search path
-    if binpath not in sys.path: sys.path.insert(0,binpath)
-    if printInfo: print(f'GSAS-II binary directory: {binpath}')
-    newpath = os.path.join(path2GSAS2,'imports')
-    if newpath not in sys.path: sys.path.append(newpath)
-    newpath = os.path.join(path2GSAS2,'exports')
-    if newpath not in sys.path: sys.path.append(newpath)
-    LoadConfig(printInfo)
+    try:
+        from . import pathHacking
+    except ImportError:
+        print('Binary load failed and module pathHacking not present')
+        BinaryPathFailed = True
+        return
+
+    LoadConfig(showConfigMsg)
+    BinaryPathFailed = pathHacking._path_discovery(showConfigMsg)
+
+def WriteConfig(configDict):
+    '''Write the configDict information to the GSAS-II ini settings
+    into file ~/.GSASII/config.ini. Called from
+    :func:`GSASIIctrlGUI.SaveConfigVars`.
+    '''
+    import configparser
+
+    localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
+    if not os.path.exists(localdir):
+        try:
+            os.mkdir(localdir)
+            print(f'Created directory {localdir}')
+        except Exception as msg:
+            print(f'Error trying to create directory {localdir}\n{msg}')
+            return True
+    cfgfile = os.path.join(localdir,'config.ini')
+    cfgP = configparser.ConfigParser()
+    if os.path.exists(cfgfile): 
+        cfgP.read(cfgfile)  # read previous file so other sections are retained
+    cfgP['GUI settings'] = configDict
+
+    # Write the configuration file
+    with open(cfgfile, 'w') as configfile:
+        cfgP.write(configfile)
+    print(f"Configuration settings saved as {cfgfile}")
 
 def LoadConfig(printInfo=True):
-    # setup read of config.py, if present
+    '''Read configuration settings from ~/.GSASII/config.ini, if present.
+    Place the values into global dict configDict.
+
+    :param bool printInfo: if printInfo is True (default) then a message
+      is shown with the number of settings read (upon startup).
+    '''
+    def XferConfigIni():
+        '''copy the contents of the config.py file to file ~/.GSASII/config.ini.
+        This "patch code" used for master->main transition and can eventually
+        be removed.
+        '''
+        import types
+        configDict = {}
+        try:
+            import config
+            #import config_example as config
+            for i in config.__dict__:
+                if i.startswith('__') and i.endswith('__'): continue
+                if isinstance(config.__dict__[i],types.ModuleType): continue
+                configDict.update({i:str(config.__dict__[i])})
+        except ImportError:
+            print("New install: start without a config.py file")
+            return
+        except Exception as err:
+            print("Error reading config.py file\n",err)
+            return
+        print(f"Contents of {config.__file__} to be written from config.py...")
+        WriteConfig(configDict)
+
+    import configparser
     global configDict
+    configDict = {}
+    cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+    if not os.path.exists(cfgfile):
+        print(f'N.B. Configuration file {cfgfile} does not exist')
+        # patch 2/7/25: transform GSAS-II config.py contents to config.ini
+        XferConfigIni()
     try:
-        import config
-        configDict = config.__dict__
-        import inspect
-        vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
-        if printInfo:
-            print (str(len(vals))+' values read from config file '+os.path.abspath(config.__file__))
+        from . import config_example
     except ImportError:
-        configDict = {'Clip_on':True}
+        try:
+            import GSASII.config_example as config_example
+        except ImportError as err:
+            print("Error importing config_example.py file\n",err)
+            return
+
+    # get the original capitalization (lost by configparser)
+    capsDict = {key.lower():key for key in config_example.__dict__ if not key.startswith('__')}
+
+    try:
+        cfg = configparser.ConfigParser()
+        # Read the configuration file
+        cfg.read(cfgfile)
     except Exception as err:
-        print(60*'*',"\nError reading config.py file")
-        if printInfo:
-            import traceback
-            print(traceback.format_exc())
-        print(60*'*')
-        configDict = {'Clip_on':True}
+        print("Error reading {cfgfile}\n",err)
+        return
 
-# def MacStartGSASII(g2script,project=''):
-#     '''Start a new instance of GSAS-II by opening a new terminal window and starting
-#     a new GSAS-II process. Used on Mac OS X only.
-
-#     :param str g2script: file name for the GSASII.py script
-#     :param str project: GSAS-II project (.gpx) file to be opened, default is blank
-#       which opens a new project
-#     '''
-#     if project and os.path.splitext(project)[1] != '.gpx':
-#         print(f'file {project} cannot be used. Not GSAS-II project (.gpx) file')
-#         return
-#     if project and not os.path.exists(project):
-#         print(f'file {project} cannot be found.')
-#         return 
-#     elif project:
-#         project = os.path.abspath(project)
-#         if not os.path.exists(project): 
-#             print(f'lost project {project} with abspath')
-#             raise Exception(f'lost project {project} with abspath')
-#     g2script = os.path.abspath(g2script)
-#     pythonapp = sys.executable
-#     if os.path.exists(pythonapp+'w'): pythonapp += 'w'
-#     script = f'''
-# set python to "{pythonapp}"
-# set appwithpath to "{g2script}"
-# set filename to "{project}"
-# set filename to the quoted form of the POSIX path of filename
-
-# tell application "Terminal"
-#      activate
-#      do script python & " " & appwithpath & " " & filename & "; exit"
-# end tell
-# '''
-#     subprocess.Popen(["osascript","-e",script])
+    # Access values from the configuration file
+    try:
+        cfgG = cfg['GUI settings']
+    except KeyError:
+        cfgG = {}
+        
+    for key in cfgG:
+        key = key.lower()  # not needed... but in case configparser ever changes
+        capKey = capsDict.get(key)
+        if capKey is None:
+            print(f'Item {key} not defined in config_example')
+            continue
+        try:
+            if cfgG[key] == 'None':
+                configDict[capKey] = None
+            elif key.endswith('_pos') or key.endswith('_size'): # list of integers
+                configDict[capKey] = tuple([int(i) for i in
+                                    cfgG[key].strip('()').split(',')])
+            elif key.endswith('_location') or key.endswith('_directory') or key.endswith('_exec'): # None (above) or str
+                configDict[capKey] = cfgG.get(key)
+            elif cfgG[key].startswith('[') and cfgG[key].endswith(']'): # list of strings
+                s = cfgG[key].strip('[]')
+                if s == '':
+                    res = []
+                else:
+                    res = [i.strip("'").replace(r'\\','\\') for i in s.split(', ')]
+                configDict[capKey] = res
+            elif isinstance(config_example.__dict__[capKey],bool):
+                configDict[capKey] = cfgG.getboolean(key)
+            elif isinstance(config_example.__dict__[capKey],float):
+                configDict[capKey] = cfgG.getfloat(key)
+            elif isinstance(config_example.__dict__[capKey],int):
+                configDict[capKey] = cfgG.getint(key)
+            elif isinstance(config_example.__dict__[capKey],str):
+                configDict[capKey] = cfgG.get(key).replace(r'\\','\\')
+            else:
+                print('*** problem with',type(config_example.__dict__[capKey]))
+                continue
+        except:
+            continue
+    if printInfo:
+        print (f'{len(configDict)} values read from {cfgfile}')
+    # make sure this value is set
+    configDict['Clip_on'] = configDict.get('Clip_on',True)
 
 def MacRunScript(script):
     '''Start a bash script in a new terminal window.
@@ -2087,7 +1447,7 @@ end tell
 # conda/pip routines
 def findConda():
     '''Determines if GSAS-II has been installed as g2conda or gsas2full
-    with conda located relative to this file. 
+    with conda located relative to this file.
     We could also look for conda relative to the python (sys.executable)
     image, but I don't want to muck around with python that someone else
     installed.
@@ -2103,19 +1463,20 @@ def findConda():
         return conda,activate
     else:
         return None
-        
+
 def condaTest(requireAPI=False):
     '''Returns True if it appears that Python is being run under Anaconda 
     Python with conda present. Tests for conda environment vars and that 
     the conda package is installed in the current environment.
 
     :returns: True, if running under Conda
-    '''    
+    '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE', 'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]): return False
     if requireAPI:
         # is the conda package available?
         try:
             import conda.cli.python_api
+            conda.cli.python_api
         except:
             print('You do not have the conda package installed in this environment',
                   '\nConsider using the "conda install conda" command')
@@ -2123,7 +1484,7 @@ def condaTest(requireAPI=False):
 
     # There is no foolproof way to check if someone activates conda
     # but then calls a different Python using its path...
-    # ...If we are in the base environment then the conda Python 
+    # ...If we are in the base environment then the conda Python
     # should be the same path as the one currently being run:
     if os.environ['CONDA_DEFAULT_ENV'] == 'base':
         try:
@@ -2139,17 +1500,17 @@ def condaTest(requireAPI=False):
     dir2 = os.path.dirname(sys.executable)
     if sys.platform != "win32": # python in .../bin/..
         dir1 = os.path.dirname(dir1)
-        dir2 = os.path.dirname(dir2)    
+        dir2 = os.path.dirname(dir2)
     return commonPath(dir1,dir2)
 
 def condaInstall(packageList):
     '''Installs one or more packages using the anaconda conda package
-    manager. Can be used to install multiple packages and optionally 
+    manager. Can be used to install multiple packages and optionally
     use channels.
 
     :param list packageList: a list of strings with name(s) of packages
-      and optionally conda options. 
-      Examples:: 
+      and optionally conda options.
+      Examples::
 
        packageList=['gsl']
        packageList=['-c','conda-forge','wxpython']
@@ -2165,9 +1526,14 @@ def condaInstall(packageList):
                   '\nConsider using the "conda install conda" command')
         return None
     try:
+        print(f'Preparing to install package(s): {" ,".join(packageList)}'+
+                  '\nThis can take a while')
+        # the next line works, but the subsequent cli is considered more stable
+        #conda.cli.main('install',  '-y', *packageList)
+        # this is considered to be supported in the long term
         (out, err, rc) = conda.cli.python_api.run_command(
             conda.cli.python_api.Commands.INSTALL,packageList,
-            search_path=('conda-forge'),
+#            search_path=('conda-forge'),   # broken!
 #    use_exception_handler=True#, stdout=sys.stdout,
             stderr=sys.stderr)
         #print('rc=',rc)
@@ -2179,7 +1545,7 @@ def condaInstall(packageList):
         print(f"\nConda error occurred, see below\n{msg}")
         return "error occurred"
     return None
-    
+
 def fullsplit(fil,prev=None):
     '''recursive routine to split all levels of directory names
     '''
@@ -2195,8 +1561,8 @@ def fullsplit(fil,prev=None):
     return out
 
 def commonPath(dir1,dir2):
-    '''Check if two directories share a path. Note that paths 
-    are considered the same if either directory is a subdirectory 
+    '''Check if two directories share a path. Note that paths
+    are considered the same if either directory is a subdirectory
     of the other, but not if they are in different subdirectories
     /a/b/c shares a path with /a/b/c/d but /a/b/c/d and /a/b/c/e do not.
 
@@ -2210,11 +1576,11 @@ def commonPath(dir1,dir2):
 def pipInstall(packageList):
     '''Installs one or more packages using the pip package installer.
     Use of this should be avoided if conda can be used (see :func:`condaTest`
-    to test for conda). Can be used to install multiple packages together. 
-    One can use pip options, but this is probably not needed. 
+    to test for conda). Can be used to install multiple packages together.
+    One can use pip options, but this is probably not needed.
 
     :param list packageList: a list of strings with name(s) of packages
-      Examples:: 
+      Examples::
 
        packageList=['gsl']
        packageList=['wxpython','matplotlib','scipy']
@@ -2224,34 +1590,39 @@ def pipInstall(packageList):
     :returns: None if the the command ran normally, or an error message
       if it did not.
     '''
+    # update conda package specs (pkg=1.2.3) to pip package specs (pkg==1.2.3)
+    # at present no other specifiers are used. 
+    for i,val in enumerate(packageList):
+        if '=' in val and '==' not in val:
+            packageList[i] = packageList[i].replace('=','==')
     try:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install']+packageList)
     except Exception as msg:
         return msg
     return None
-    
+
 def condaEnvCreate(envname, packageList, force=False):
     '''Create a Python interpreter in a new conda environment. Use this
-    when there is a potential conflict between packages and it would 
+    when there is a potential conflict between packages and it would
     be better to keep the packages separate (which is one of the reasons
-    conda supports environments). Note that conda should be run from the 
-    base environment; this attempts to deal with issues if it is not. 
+    conda supports environments). Note that conda should be run from the
+    base environment; this attempts to deal with issues if it is not.
 
     Currently, this is used only to install diffpy.PDFfit2.
 
-    :param str envname: the name of the environment to be created. 
+    :param str envname: the name of the environment to be created.
       If the environment exists, it will be overwritten only if force is True.
-    :param list packageList: a list of conda install create command 
+    :param list packageList: a list of conda install create command
       options, such as::
 
             ['python=3.7', 'conda', 'gsl', 'diffpy.pdffit2',
                 '-c', 'conda-forge', '-c', 'diffpy']
 
-    :param bool force: if False (default) an error will be generated 
+    :param bool force: if False (default) an error will be generated
       if an environment exists
 
     :returns: (status,msg) where status is True if an error occurs and
-      msg is a string with error information if status is True or the 
+      msg is a string with error information if status is True or the
       location of the newly-created Python interpreter.
     '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV',
@@ -2295,13 +1666,13 @@ def condaEnvCreate(envname, packageList, force=False):
     except Exception as msg:
         print("Error occurred, see below\n",msg)
         return True,'Error: '+str(msg)
-    
+
 def addCondaPkg():
-    '''Install the conda API into the current conda environment using the 
+    '''Install the conda API into the current conda environment using the
     command line, so that the API can be used in the current Python interpreter
 
     Attempts to do this without a shell failed on the Mac because it seems that
-    the environment was inherited; seems to work w/o shell on Windows. 
+    the environment was inherited; seems to work w/o shell on Windows.
     '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
                         'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
@@ -2310,29 +1681,32 @@ def addCondaPkg():
     currenv = os.environ['CONDA_DEFAULT_ENV']
     if sys.platform == "win32":
         cmd = [os.environ['CONDA_EXE'],'install','conda','-n',currenv,'-y']
-        p = subprocess.Popen(cmd,
+        with subprocess.Popen(cmd,
                          #stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         encoding='UTF-8') as p:
+            out,err = p.communicate()
     else:
         script = 'source ' + os.path.join(
             os.path.dirname(os.environ['CONDA_PYTHON_EXE']),
             'activate') + ' base; '
         script += 'conda install conda -n '+currenv+' -y'
-        p = subprocess.Popen(script,shell=True,env={},
+        with subprocess.Popen(script,shell=True,env={},
                          #stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    out,err = MakeByte2str(p.communicate())
-    #print('Output from adding conda:\n',out)
-    if err:
-        print('Note error/warning:')
-        print(err)
+                         stderr=subprocess.PIPE,
+                         encoding='UTF-8') as p:
+            out,err = p.communicate()
+    
+    if out is not None and GetConfigValue('debug'): print('Output from adding conda:\n',out)
+    if err and err is not None:
+        print('Note error/warning from running conda:\n',err)
     if currenv == "base":
         print('\nUnexpected action: adding conda to base environment???')
 #==============================================================================
 #==============================================================================
 # routines for reorg of GSAS-II directory layout
 def getIconFile(imgfile):
-    '''Looks in either the main GSAS-II install location (old) or subdirectory 
+    '''Looks in either the main GSAS-II install location (old) or subdirectory
     icons (after reorg) for an icon
 
     :returns: the full path for the icon file
@@ -2354,33 +1728,41 @@ def makeScriptShortcut():
     The new shortcut is then tested.
 
     :returns: returns the name of the created file if successful. None
-      indicates an error. 
+      indicates an error.
     '''
     import datetime as dt
+    if not HowIsG2Installed().startswith('git'):
+        print('GSAS-II installed directly, shortcut likely not needed')
+        return None
     for p in sys.path:
         if 'site-packages' in p: break
     else:
         print('No site-packages directory found in Python path')
         return
     newfil = os.path.join(p,'G2script.py')
-    fp = open(newfil,'w')
-    fp.write(f'#Created in makeScriptShortcut from {__file__}')
-    fp.write(dt.datetime.strftime(dt.datetime.now(),
-                                      " at %Y-%m-%dT%H:%M\n"))
+    with open(newfil,'w') as fp:
+        fp.write(f'#Created in makeScriptShortcut from {__file__}')
+        fp.write(dt.datetime.strftime(dt.datetime.now(),
+                                          " at %Y-%m-%dT%H:%M\n"))
 
-    fp.write(f"""import sys,os
+        fp.write(f"""
+import sys,os
 Path2GSASII=r'{path2GSAS2}'
 if os.path.exists(os.path.join(Path2GSASII,'GSASIIscriptable.py')):
     print('setting up GSASIIscriptable from',Path2GSASII)
-    if Path2GSASII not in sys.path:
-        sys.path.insert(0,Path2GSASII)
-    from GSASIIscriptable import *
+    if os.path.dirname(Path2GSASII) not in sys.path:
+        sys.path.insert(0,os.path.dirname(Path2GSASII))
+    try:
+        from GSASII.GSASIIscriptable import *
+    except:
+        print('Import of GSASIIscriptable failed.\\nRerun "Install GSASIIscriptable shortcut" from inside GSAS-II?')
+        sys.exit()
 else:
     print('GSASIIscriptable not found in ',Path2GSASII)
     print('Rerun "Install GSASIIscriptable shortcut" from inside GSAS-II')
     sys.exit()
-""")
-    fp.close()
+    """)
+        fp.close()
     print('Created file',newfil)
     try:
         import G2script
@@ -2416,28 +1798,28 @@ pdbBreak = DoNothing
 
 def postURL(URL,postdict,getcookie=None,usecookie=None,
                 timeout=None,retry=2,mode='get'):
-    '''Posts a set of values as from a web form using the "get" or "post" 
-    protocols. 
+    '''Posts a set of values as from a web form using the "get" or "post"
+    protocols.
     If access fails to an https site, the access is retried with http.
 
-    :param str URL: the URL to post; typically something 
+    :param str URL: the URL to post; typically something
        like 'http://www.../dir/page?'
     :param dict postdict: contains keywords and values, such
        as {'centrosymmetry': '0', 'crystalsystem': '0', ...}
     :param dict getcookie: dict to save cookies created in call, or None
-       (default) if not needed. 
-    :param dict usecookie: dict containing cookies to be used in call, 
+       (default) if not needed.
+    :param dict usecookie: dict containing cookies to be used in call,
        or None (default) if not needed.
-    :param int timeout: specifies a timeout period for the get or post (default 
-      is None, which means the timeout period is set by the server). The value 
-      when specified is the time in seconds to wait before giving up on the 
+    :param int timeout: specifies a timeout period for the get or post (default
+      is None, which means the timeout period is set by the server). The value
+      when specified is the time in seconds to wait before giving up on the
       request.
     :param int retry: the number of times to retry the request, if it times out.
       This is only used if timeout is specified. The default is 2. Note that
       if retry is left at the default value (2), The timeout is increased by
       25% for the second try.
     :param str mode: either 'get' (default) or 'post'. Determines how
-       the request will be submitted. 
+       the request will be submitted.
     :returns: a string with the response from the web server or None
        if access fails.
     '''
@@ -2453,7 +1835,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
         reqopt = requests.get
     else:
         reqopt = requests.post
-    
+
     repeat = True
     count = 0
     while repeat:
@@ -2475,7 +1857,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
             else:
                 print('request to {} failed. Reason={}'.format(URL,r.reason))
         except requests.exceptions.ConnectionError as msg:
-            if 'time' in str(msg) and 'out' in str(msg): 
+            if 'time' in str(msg) and 'out' in str(msg):
                 print(f'server timeout accessing {URL}')
                 if GetConfigValue('debug'): print('full error=',msg)
                 if timeout is not None and count < retry:
@@ -2516,9 +1898,125 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
     else:
         return None
 
+#===========================================================================
+# duplicated from GSASIIfiles to avoid using an import below
+# perhaps the references to G2fil.openInNewTerm() should be
+# changed to reference this here.
+def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
+    '''Open a new and independent GSAS-II session in separate terminal
+    or console window and as a separate process that will continue
+    even if the calling process exits.
+    Intended to work on all platforms.
+
+    This could be used to run other scripts inside python other than GSAS-II
+
+    :param str project: the name of an optional parameter to be
+      passed to the script (usually a .gpx file to be opened in
+      a new GSAS-II session)
+    :param str g2script: the script to be run. If None (default)
+      the G2.py file in the same directory as this file will
+      be used.
+    :param str pythonapp: the Python interpreter to be used.
+      Defaults to sys.executable which is usually what is wanted.
+    :param str terminal: a name for a preferred terminal emulator
+    '''
+    #import subprocess
+    if g2script is None:
+        g2script = os.path.join(os.path.dirname(__file__),'G2.py')
+
+    if sys.platform == "darwin":
+        if project:
+            script = f'''
+set python to "{pythonapp}"
+set appwithpath to "{g2script}"
+set filename to "{project}"
+set filename to the quoted form of the POSIX path of filename
+
+tell application "Terminal"
+     activate
+     do script python & " " & appwithpath & " " & filename & "; exit"
+end tell
+'''
+        else:
+            script = f'''
+set python to "{pythonapp}"
+set appwithpath to "{g2script}"
+
+tell application "Terminal"
+     activate
+     do script python & " " & appwithpath & " " & "; exit"
+end tell
+'''
+        subprocess.Popen(["osascript","-e",script])
+    elif sys.platform.startswith("win"):
+        cmds = [pythonapp, g2script]
+        if project: cmds += [project]
+        subprocess.Popen(cmds,creationflags=subprocess.CREATE_NEW_CONSOLE)
+    else:
+        import shutil
+        script = ''
+        # try a bunch of common terminal emulators in Linux
+        # there does not appear to be a good way to way to specify this
+        # perhaps this should be a GSAS-II config option
+        for term in ("lxterminal", "gnome-terminal", 'konsole', "xterm",
+                         "terminator", "terminology", "tilix"):
+            try:
+                found = shutil.which(term)
+                if not found: continue
+            except AttributeError:
+                print(f'shutil.which() failed (why?); assuming {term} present')
+                found = True
+            if term == "gnome-terminal":
+                #terminal = 'gnome-terminal -t "GSAS-II console" --'
+                cmds = [term,'--title','"GSAS-II console"','--']
+                script = "echo; echo Press Enter to close window; read line"
+                break
+            elif term == "lxterminal":
+               #terminal = 'lxterminal -t "GSAS-II console" -e'
+               cmds = [term,'-t','"GSAS-II console"','-e']
+               script = "echo;echo Press Enter to close window; read line"
+               break
+            elif term == "xterm":
+                #terminal = 'xterm -title "GSAS-II console" -hold -e'
+                cmds = [term,'-title','"GSAS-II console"','-hold','-e']
+                script = "echo; echo This window can now be closed"
+                break
+            elif term == "terminator":
+                cmds = [term,'-T','"GSAS-II console"','-x']
+                script = "echo;echo Press Enter to close window; read line"
+                break
+            elif term == "konsole":
+                cmds = [term,'-p','tabtitle="GSAS-II console"','--hold','-e']
+                script = "echo; echo This window can now be closed"
+                break
+            elif term == "tilix":
+                cmds = [term,'-t','"GSAS-II console"','-e']
+                script = "echo;echo Press Enter to close window; read line"
+                break
+            elif term == "terminology":
+                cmds = [term,'-T="GSAS-II console"','--hold','-e']
+                script = "echo; echo This window can now be closed"
+                break
+        else:
+            print("No known terminal was found to use, Can't start {}")
+            return
+
+        fil = '/tmp/GSAS2-launch.sh'
+        cmds += ['/bin/sh',fil]
+        fp = open(fil,'w')
+        if project:
+            fp.write(f"{pythonapp} {g2script} {project}\n")
+        else:
+            fp.write(f"{pythonapp} {g2script}\n")
+        fp.write(f"rm {fil}\n")
+        if script:
+            fp.write(f"{script}\n")
+        fp.close()
+        subprocess.Popen(cmds,start_new_session=True)
+
 if __name__ == '__main__':
-    '''What follows is called to update (or downdate) GSAS-II in a 
-    separate process. 
+    '''What follows is called to update (or downdate) GSAS-II in a
+    separate process.
     '''
     # check what type of update is being called for
     import git
@@ -2528,8 +2026,7 @@ if __name__ == '__main__':
     regressversion = None
     help = False
     project = None
-    version = None
-    
+
     for arg in sys.argv[1:]:
         if '--git-fetch' in arg:   # pulls latest updates from server but does not apply them
             if preupdateType or updateType:
@@ -2537,6 +2034,12 @@ if __name__ == '__main__':
                 help = True
                 break
             updateType = 'fetch'
+        elif '--github-tags' in arg:   # gets latest tags from github
+            if preupdateType or updateType or gitUpdate:
+                print(f'previous option conflicts with {arg}')
+                help = True
+                break
+            updateType = 'tags'
         elif '--git-reset' in arg:   # restores locally changed GSAS-II files to distributed versions also updates
             gitUpdate = True
             if preupdateType:
@@ -2585,7 +2088,7 @@ if __name__ == '__main__':
             try:
                 regressversion = g2repo.commit(gitversion).hexsha
             except git.BadName:
-                print(f'invalid version specified ({version}) for GitHub regression')
+                print(f'invalid version specified ({regressversion}) for GitHub regression')
                 help = True
                 break
             if updateType:
@@ -2597,28 +2100,15 @@ if __name__ == '__main__':
         elif '--help' in arg:
             help = True
             break
-        elif os.path.exists(arg):   # svn args parsed later; this is just checking
+        elif os.path.exists(arg):   # this is just checking
             project = arg
             pass
-        else:   # for old-style svn update
-            if arg.isdecimal() or not arg: 
-                #version = arg
-                pass
-            else:
-                print(f'unknown arg {arg}')
-                help = True
-        if gitUpdate and version:
-            print('Conflicting arguments (git & svn opts combined?)')
+        else:
+            print(f'unknown arg {arg}')
             help = True
 
     if help or len(sys.argv) == 1:
         print('''Options when running GSASIIpath.py standalone
-
-to update/regress repository from svn repository:
-   python GSASIIpath.py <project> <version>
-            where <project> is an optional path reference to a .gpx file
-            and <version> is a specific GSAS-II version to install 
-                (default is latest)
 
 to update/regress repository from git repository:
    python GSASIIpath.py option <project>
@@ -2626,24 +2116,51 @@ to update/regress repository from git repository:
             --git-fetch            downloads lastest changes from repo
                                    any other options will be ignored
 
-            --git-stash="message"  saves local changes 
+            --git-stash="message"  saves local changes
 
-            --git-reset            discards local changes 
+            --git-reset            discards local changes
 
             --git-update
 
             --git-regress=version
 
+            --github-tags         saves most recent tag info from GitHub
+
        and where <project> is an optional path reference to a .gpx file
 
        Note: --git-reset and --git-stash cannot be used together. Likewise
              --git-update and --git-regress cannot be used together.
-             However either --git-reset or --git-stash can be used 
+             However either --git-reset or --git-stash can be used
              with either --git-update or --git-regress.
+
              --git-fetch cannot be used with any other options.
+             --github-tags cannot be used with any other options.
 ''')
         sys.exit()
 
+    if updateType == 'tags':
+        # get the most recent tag numbers from the GitHub site. Do this
+        # via GitHub when git access is not available. Use here
+        # allows this to be done in the background.
+        import requests
+        url='https://github.com/AdvancedPhotonSource/GSAS-II/tags'
+        releases = requests.get(url=url)
+        taglist = [tag.split('"')[0] for tag in releases.text.split('AdvancedPhotonSource/GSAS-II/releases/tag/')[1:]]
+        lastver = sorted([t for t in taglist if 'v' in t])[-1]
+        lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]
+        #print('tags=',lastver,lastnum)
+        # add tag info to config file
+        import configparser
+        cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
+        cfg = configparser.ConfigParser()
+        cfg.read(cfgfile)
+        if 'version info' not in cfg:
+            cfg.add_section('version info')
+        cfg['version info'].update(
+            {'lastVersionTag':lastver,'lastVersionNumber':lastnum})
+        with open(cfgfile, 'w') as configfile:
+            cfg.write(configfile)
+        sys.exit()
 
     if updateType == 'fetch':
         # download the latest updates from GitHub to the local repository
@@ -2691,7 +2208,7 @@ to update/regress repository from git repository:
                                       " at %Y-%m-%dT%H:%M\n\n"))
         fp.close()
         sys.exit()
-        
+
     if gitUpdate:
         import time
         time.sleep(1) # delay to give the main process a chance to exit
@@ -2708,14 +2225,14 @@ to update/regress repository from git repository:
             print(f'Update failed with message {msg}\n')
             sys.exit()
         print('git repo opened')
-                  
+
     if preupdateType == 'reset':
         # --git-reset   (preupdateType = 'reset')
         print('Restoring locally-updated GSAS-II files to original status')
-        openGitRepo(path2GSAS2).git.reset('--hard','origin/master')
+        openGitRepo(path2GSAS2).git.reset('--hard','origin/main')
         try:
-            if g2repo.active_branch.name != 'master': 
-                g2repo.git.switch('master')
+            if g2repo.active_branch.name != 'main':
+                g2repo.git.switch('main')
         except TypeError:   # fails on detached head
             pass
 
@@ -2726,7 +2243,7 @@ to update/regress repository from git repository:
             g2repo.git.stash(f'-m"{message}"')
         else:
             g2repo.git.stash()
-            
+
     # Update to the latest GSAS-II version. This assumes that a fetch has
     # been done prior, or this will only update to the last time that
     # it was done.
@@ -2737,7 +2254,7 @@ to update/regress repository from git repository:
             sys.exit()
         print('Updating to latest GSAS-II version')
         if g2repo.head.is_detached:
-            g2repo.git.switch('master')
+            g2repo.git.switch('main')
         g2repo.git.merge('--ff-only')
         print('git: updated to latest version')
 
@@ -2752,49 +2269,22 @@ to update/regress repository from git repository:
         g2repo.git.checkout(regressversion)
 
     if gitUpdate:
+        # path hack for restart, when needed
+        #import importlib.util
+        #try:
+        #    importlib.util.find_spec('GSASII.GSASIIGUI')
+        #except ModuleNotFoundError:
+        #    print('Adding GSAS-II location to Python system path')
+        #    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+
         # now restart GSAS-II with the new version
-        # G2scrpt = os.path.join(path2GSAS2,'GSASII.py')
+        # G2scrpt = os.path.join(path2GSAS2,'G2.py')
         if project:
             print(f"Restart GSAS-II with project file {project!r}")
-            # subprocess.Popen([sys.executable,G2scrpt,project])
         else:
             print("Restart GSAS-II without a project file ")
-            # subprocess.Popen([sys.executable,G2scrpt])
-        import GSASIIfiles
-        GSASIIfiles.openInNewTerm(project)
-        print ('exiting update process')
-        sys.exit()
-        
-    else:
-        # this is the old svn update process
-        LoadConfig()
-        import time
-        time.sleep(1) # delay to give the main process a chance to exit
-        # perform an update and restart GSAS-II
-        try:
-            project,version = sys.argv[1:3]
-        except ValueError:
-            project = None
-            version = 'trunk'
-        loc = os.path.dirname(__file__)
-        if version == 'trunk':
-            svnSwitch2branch('')
-        elif '/' in version:
-            svnSwitch2branch(version)
-        elif version:
-            print("Regress to version "+str(version))
-            svnUpdateDir(loc,version=version)
-        else:
-            print("Update to current version")
-            svnUpdateDir(loc)
-        ex = sys.executable
-        if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
-            if os.path.exists(ex+'w'): ex += 'w'
-        if project:
-            print("Restart GSAS-II with project file "+str(project))
-            subprocess.Popen([ex,os.path.join(loc,'GSASII.py'),project])
-        else:
-            print("Restart GSAS-II without a project file ")
-            subprocess.Popen([ex,os.path.join(loc,'GSASII.py')])
+        #from . import GSASIIfiles
+        #GSASIIfiles.openInNewTerm(project)
+        openInNewTerm(project)
         print ('exiting update process')
         sys.exit()

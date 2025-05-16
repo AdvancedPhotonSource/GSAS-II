@@ -1,14 +1,11 @@
 # GSAS-II
+[![Documentation Status][rtd-badge]][rtd-link]
+[![Actions Status][actions-badge]][actions-link]
 
 <!--   commented out for now
-
-[![Actions Status][actions-badge]][actions-link]
-[![Documentation Status][rtd-badge]][rtd-link]
-
 [![PyPI version][pypi-version]][pypi-link]
 [![Conda-Forge][conda-badge]][conda-link]
 [![PyPI platforms][pypi-platforms]][pypi-link]
-
 [![GitHub Discussion][github-discussions-badge]][github-discussions-link]
 --!>
 
@@ -39,22 +36,20 @@ GSAS-II is free open source software.
 
 ## URLs
 * The
-  [home page for GSAS-II](https://advancedphotonsource.github.io/GSAS-II-tutorials)
-  has recently been moved to GitHub, but some content may still be
-  only at
-  [the old location](https://subversion.xray.aps.anl.gov/trac/pyGSAS).
-  Note the new [installation instructions](https://advancedphotonsource.github.io/GSAS-II-tutorials/install.html).
+  [home page for GSAS-II](https://advancedphotonsource.github.io/GSAS-II-tutorials) has 
+  [installation instructions](https://advancedphotonsource.github.io/GSAS-II-tutorials/install.html) and a link
+  to [the downloads location](https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest).
+  (There might be some content only at
+  [the home page](https://subversion.xray.aps.anl.gov/trac/pyGSAS), but I hope not.)
 
-* This repo is the main repository for the GSAS-II source code, but
-  note that there is a separate repo for the 
-  [GSAS-II installation tools](https://github.com/AdvancedPhotonSource/GSAS-II-buildtools)
-  and another for
-  [GSAS-II web content](https://github.com/AdvancedPhotonSource/GSAS-II-tutorials) (including tutorials). The
+* [This repo](https://github.com/AdvancedPhotonSource/GSAS-II) is the main repository for the GSAS-II source code (replacing the
   [old subversion site](https://subversion.xray.aps.anl.gov/pyGSAS)
-  and its
-  [associated web site](https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser)
-  will be maintained for the immediate future. 
-* Code documentation: https://gsas-ii.readthedocs.io.
+  and the [trac web site](https://subversion.xray.aps.anl.gov/trac/pyGSAS/browser)), but there are two additional repo's associated with GSAS-II
+  * [GSAS-II installation tools](https://github.com/AdvancedPhotonSource/GSAS-II-buildtools) that includes [downloads](https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/releases/latest) as well as [automated build/test scripts](https://github.com/AdvancedPhotonSource/GSAS-II/actions)
+  and
+  * [GSAS-II web content](https://github.com/AdvancedPhotonSource/GSAS-II-tutorials) that includes [tutorials](https://advancedphotonsource.github.io/GSAS-II-tutorials/tutorials.html). 
+ 
+* Code documentation: https://gsas-ii.readthedocs.io and scripting documentation: https://gsas-ii-scripting.readthedocs.io (subset of full documentation)
 
 ## Please Cite
 If you use GSAS-II in any part of your project, please cite it in your
@@ -113,7 +108,7 @@ single refinement with subsequent parametric fitting.
 
 GSAS-II is freely distributed as open source software; see the license file for
 more details. GSAS-II runs on Windows,
-MacOS, Linux and Raspberry Pi computers. It currently receives >600
+MacOS, Linux and Raspberry Pi computers. It currently receives >950
 citations/year. 
 
 <!--   commented out for now

@@ -18,13 +18,13 @@ import wx
 import wx.lib.mixins.listctrl  as  listmix
 import wx.grid as wg
 import numpy as np
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath(True)
-import GSASIIctrlGUI as G2G
-import GSASIIobj as G2obj
-import GSASIIimgGUI as G2imG
-import GSASIIfiles as G2fil
-import GSASIIscriptable as G2sc
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIobj as G2obj
+from . import GSASIIimgGUI as G2imG
+from . import GSASIIfiles as G2fil
+from . import GSASIIscriptable as G2sc
 import multiprocessing as mp
 
 try: # fails during doc build
@@ -498,7 +498,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(self.readDir,1,wx.EXPAND,1)
         btn3 = wx.Button(mnpnl, wx.ID_ANY, "Browse")
         btn3.Bind(wx.EVT_BUTTON, self.SetSourceDir)
-        sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(btn3,0,wx.ALIGN_CENTER_VERTICAL)
         mnsizer.Add(sizer,0,wx.EXPAND,0)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add((-1,-1),1,wx.EXPAND,1)
@@ -522,7 +522,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(fInp3,1,wx.EXPAND)
         btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn3.Bind(wx.EVT_BUTTON, OnBrowse)
-        sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(btn3,0,wx.ALIGN_CENTER_VERTICAL)
         lblsizr.Add(sizer,0,wx.EXPAND)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s):'))

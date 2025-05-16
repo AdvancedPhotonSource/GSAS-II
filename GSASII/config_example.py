@@ -1,29 +1,31 @@
 # -*- coding: utf-8 -*-
 #config.py - Variables used to set optional configuration options
 '''
-This file contains optional configuration options for GSAS-II. The variables
-in this file can be copied to file config.py, which is imported if present.
-Access these variables using :func:`GSASIIpath.GetConfigValue`, which returns
-None if the variable is not set. Note that a config.py file need not
-be present, but if in use it will typically be found with the GSAS-II source
-directory (GSASIIpath.Path2GSAS2) or a directory for local GSAS-II
-modifications (~/.G2local/ or /Documents and Settings/<User>/.G2local/).  
-Note that the contents of config.py is usually changed 
-using :func:`GSASIIctrlGUI.SelectConfigSetting`.
+This file contains optional configuration options for GSAS-II. The 
+values for the variables named here will be set in file ~/.GSASII/config.ini
+which is read on startup by :func:`GSASIIpath.LoadConfig`. To check
+if a configuration variable has been set use 
+:func:`GSASIIpath.GetConfigValue`, which returns
+None if the variable is not set.
+Values are typically changed using :func:`GSASIIctrlGUI.SelectConfigSetting`
+which uses :func:`GSASIIctrlGUI.SaveConfigVars` to write the 
+~/.GSASII/config.ini file. 
 
-When defining new config variables for GSAS-II, define them here with a
-default value: use None or a string for strings, or use integers or real
-values as defaults to ensure that only values of that type are allowed. 
-Include a doc string after each variable is defined to explain
-what it does. 
+To define new config variables for GSAS-II, define them here with a
+default value: use None or a string for strings. If an integer or real
+values is used as a default, the routines will ensure that this type
+is preserved for any user setting. 
+Always include a doc string after defining each variable. This definition 
+will be shown in the GUI to explain what the variable does. 
 
 If a name ends with a particular keyword, then specialized edit 
-routines are used. 
+routines are used.
 
-* Names ending in _location or _directory are for items
+* Names ending in _location or _directory are for path items
 * Names ending in _exec for executable files (.exe on windows).
 * Names ending in _color for colors, to be specified as RGBA values 
   (note that Contour_color is restricted to color maps). 
+* Names ending in _pos or _Size are integer tuples for wx sizes or positions.
 
 For example::
 
@@ -55,12 +57,6 @@ if False line plots extend nto white space around plot frme
 Transpose = False
 'Set to True to cause images to be Transposed when read (for code development)'
 
-Enable_logging = False
-'Set to True to enable use of command logging (under development.)'
-
-logging_debug = False
-'Set to True to enable debug for logging (under development.)'
-
 Help_mode = "browser"
 '''Set to "internal" to use a Python-based web viewer to display
 help documentation and tutorials. If set to the default ("browser")
@@ -87,9 +83,6 @@ avoided.
 Save_paths=False
 '''When set to True, the last-used path for saving of .gpx and for
 importing of input files is saved in the configuration file.
-Note that since this causes the config.py file to be updated whenever files are
-saved/imported, any temporary config settings can be saved to disk at that
-point.
 '''
 
 Starting_directory=None
@@ -104,11 +97,6 @@ Import_directory=None
 updated if Save_paths is True.
 Note that os.path.expanduser is run on this before it is used, so the user's
 home directory can be specified with a '~'.
-'''
-
-wxInspector = False
-'''If set to True, the wxInspector widget is displayed when
-GSAS-II is started.
 '''
 
 Spot_mask_diameter = 1.0
@@ -138,21 +126,24 @@ DefaultAutoScale = "userComment2"
 '''DefaultAutoScale selects one of the AutoScale_ParmNames.
 Used in AutoIntegration
 '''
-Main_Size = '(700,450)'
+Main_Size = (700,450)
 '''Main window size (width, height) - initially uses wx.DefaultSize but will updated
- and saved as the user changes the window
+and saved as the user changes the window.
+This is used internally by GSAS-II and would not normally be changed by a user. 
 '''
-Main_Pos = '(100,100)'
+Main_Pos = (100,100)
 '''Main window location - will be updated & saved when user moves
-it. If position is outside screen then it will be repositioned to default
+it. If position is outside screen then it will be repositioned to default.
+This is used internally by GSAS-II and would not normally be changed by a user. '''
+Plot_Size = (700,600)
+'''Plot window size (width, height) - initially uses wx.DefaultSize but will 
+updated and saved as the user changes the window.
+This is used internally by GSAS-II and would not normally be changed by a user. 
 '''
-Plot_Size = '(700,600)'
-'''Plot window size (width, height) - initially uses wx.DefaultSize but will updated
- and saved as the user changes the window
-'''
-Plot_Pos = '(200,200)'
+Plot_Pos = (200,200)
 '''Plot window location - will be updated & saved when user moves it
-these widows. If position is outside screen then it will be repositioned to default
+these widows. If position is outside screen then it will be repositioned to default.
+This is used internally by GSAS-II and would not normally be changed by a user. 
 '''
 
 Tick_length = 8.0
@@ -237,7 +228,8 @@ PDF_Rmax = 100.
 '''
 
 previous_GPX_files = []
-'''A list of previously used .gpx files
+'''A list of previously used .gpx files. This is used internally by GSAS-II 
+and would not normally be changed by a user. 
 '''
 
 Image_calibrant = ''
@@ -300,12 +292,6 @@ Data tab. After changing this, GSAS-II needs to be restarted for the
 change to take effect. Default is False.
 '''
 
-svn_exec = None
-'''Defines the full path to a subversion executable. 
-If None (the default), GSAS-II will search for a svn or svn.exe file 
-in the current path or in the location where the current Python is located.
-'''
-
 G2RefinementWindow = False
 '''When True a custom progress window is displayed to track the 
 progress of refinements. When False a generic wxpython supplied progress
@@ -324,4 +310,10 @@ font size for the GSAS-II windows. Default is 0. An increment much larger than
 ~4 will likely cause some places where text no longer fits, but might be useful on high resolution monitors.
 %%
 Restart GSAS-II for this setting to take effect.
+'''
+
+G2FileBrowser = False
+'''When set to True, the GSAS-II provided file browser is used to find
+files when files are imported. For Linux the default is True, but
+for Windows and Mac, the default is False
 '''

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_pwdr` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_pwdr` follow:
 '''
 from __future__ import division, print_function
 import os.path
 import numpy as np
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
 
 class ExportPowderFXYE(G2fil.ExportBaseclass):
     '''Used to create a FXYE file for a powder data set

@@ -18,30 +18,27 @@ import numpy.ma as ma
 import math
 import copy
 import random as ran
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    import pickle as cPickle
+import pickle
 import scipy.interpolate as si
-import GSASIIpath
-import GSASIImath as G2mth
-import GSASIIpwd as G2pwd
-import GSASIIfiles as G2fil
-import GSASIIobj as G2obj
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIIindex as G2indx
-import GSASIIplot as G2plt
-import GSASIIpwdplot as G2pwpl
-import GSASIIdataGUI as G2gd
-import GSASIIphsGUI as G2phsG
-import GSASIIctrlGUI as G2G
-import GSASIIElemGUI as G2elemGUI
-import GSASIIElem as G2elem
-import GSASIIsasd as G2sasd
-import G2shapes
-import SUBGROUPS as kSUB
-import k_vector_search as kvs
+from . import GSASIIpath
+from . import GSASIImath as G2mth
+from . import GSASIIpwd as G2pwd
+from . import GSASIIfiles as G2fil
+from . import GSASIIobj as G2obj
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIIindex as G2indx
+from . import GSASIIplot as G2plt
+from . import GSASIIpwdplot as G2pwpl
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIphsGUI as G2phsG
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIElemGUI as G2elemGUI
+from . import GSASIIElem as G2elem
+from . import GSASIIsasd as G2sasd
+from . import G2shapes
+from . import SUBGROUPS as kSUB
+from . import k_vector_search as kvs
 try:
     VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
     WACV = wx.ALIGN_CENTER_VERTICAL
@@ -901,7 +898,7 @@ def UpdatePeakGrid(G2frame, data):
         PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
             Id = G2gd.GetGPXtreeItemId(G2frame,PatternId, item)
-            oldvals = cPickle.load(file)
+            oldvals = pickle.load(file)
             G2frame.GPXtree.SetItemPyData(Id,oldvals)
             if item == 'Peak List':
                 data.update(G2frame.GPXtree.GetItemPyData(Id))
@@ -917,7 +914,7 @@ def UpdatePeakGrid(G2frame, data):
         file = open(G2frame.undofile,'wb')
         PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
-            cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
+            pickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
         file.close()
         G2frame.dataWindow.UnDo.Enable(True)
 
@@ -1079,7 +1076,7 @@ def UpdatePeakGrid(G2frame, data):
         if G2frame.dataWindow.XtraPeakMode.IsChecked(): # adding peaks to computed pattern
             histoName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
 # do zero cycle refinement
-            import GSASIIstrMain as G2stMn
+            from . import GSASIIstrMain as G2stMn
             # recompute current pattern for current histogram, set as fixed background
             bxye = G2stMn.DoNoFit(G2frame.GSASprojectfile,histoName)
             peaksplus = peaks['xtraPeaks'] + [{}]
@@ -4484,29 +4481,34 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         OnHklShow(None,indexFrom=' Indexing from loaded unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def ImportUnitCell(event):
-        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)[:5]
-        reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
-        rdlist = G2frame.OnImportGeneric(reqrdr,
-            G2frame.ImportPhaseReaderlist,'phase')
-        if len(rdlist) == 0: return
-        rd = rdlist[0]
-        Cell = rd.Phase['General']['Cell']
-        SGData = rd.Phase['General']['SGData']
-        if '1 1' in SGData['SpGrp']:
-            wx.MessageBox('Unusable space group',caption='Monoclinic '+SGData['SpGrp']+' not usable here',style=wx.ICON_EXCLAMATION)
-            return
-        controls[4] = 1
-        controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
-        if controls[5][1:] == 'm3': controls[5] += 'm'
-        if 'P3' in controls[5] or 'P-3' in controls[5]: controls[5] = 'P6/mmm'
-        if 'R' in controls[5]: controls[5] = 'R3-H'
-        controls[6:13] = Cell[1:8]
-        controls[13] = SGData['SpGrp']
-        ssopt['SgResults'] = []
-        G2frame.dataWindow.RefineCell.Enable(True)
-        OnHklShow(None,indexFrom=' Indexing from imported unit cell & symmetry settings')
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+    # TODO: I think this used to work, but this needs to be revisited due to
+    # AttributeError: 'G2DataWindow' object has no attribute 'ReImportMenuId'
+    # from: 
+    #    reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
+    #
+    # def ImportUnitCell(event):
+    #     controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)[:5]
+    #     reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
+    #     rdlist = G2frame.OnImportGeneric(reqrdr,
+    #         G2frame.ImportPhaseReaderlist,'phase')
+    #     if len(rdlist) == 0: return
+    #     rd = rdlist[0]
+    #     Cell = rd.Phase['General']['Cell']
+    #     SGData = rd.Phase['General']['SGData']
+    #     if '1 1' in SGData['SpGrp']:
+    #         wx.MessageBox('Unusable space group',caption='Monoclinic '+SGData['SpGrp']+' not usable here',style=wx.ICON_EXCLAMATION)
+    #         return
+    #     controls[4] = 1
+    #     controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
+    #     if controls[5][1:] == 'm3': controls[5] += 'm'
+    #     if 'P3' in controls[5] or 'P-3' in controls[5]: controls[5] = 'P6/mmm'
+    #     if 'R' in controls[5]: controls[5] = 'R3-H'
+    #     controls[6:13] = Cell[1:8]
+    #     controls[13] = SGData['SpGrp']
+    #     ssopt['SgResults'] = []
+    #     G2frame.dataWindow.RefineCell.Enable(True)
+    #     OnHklShow(None,indexFrom=' Indexing from imported unit cell & symmetry settings')
+    #     wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def onRefineCell(event):
         data = RefineCell(G2frame)
@@ -4780,14 +4782,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         else:
             dlg.Destroy()
             return
-        #import SUBGROUPS as kSUB
         wx.BeginBusyCursor()
-        wx.MessageBox(''' For use of PSEUDOLATTICE, please cite:
-      Bilbao Crystallographic Server I: Databases and crystallographic computing programs,
-      M. I. Aroyo, J. M. Perez-Mato, C. Capillas, E. Kroumova, S. Ivantchev, G. Madariaga, A. Kirov & H. Wondratschek
-      Z. Krist. 221, 1, 15-27 (2006).
-      doi: https://doi.org/doi:10.1524/zkri.2006.221.1.15''',
-        caption='Bilbao PSEUDOLATTICE',style=wx.ICON_INFORMATION)
+        wx.MessageBox(' For use of PSEUDOLATTICE, please cite:\n\n'+
+                          G2G.GetCite('Bilbao: PSEUDOLATTICE'),
+                          caption='Bilbao PSEUDOLATTICE',
+                          style=wx.ICON_INFORMATION)
         page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
         wx.EndBusyCursor()
         if not page: return
@@ -4916,7 +4915,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def OnRunSubs(event):
-        #import SUBGROUPS as kSUB
         G2frame.dataWindow.RunSubGroupsMag.Enable(False)
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
@@ -4960,14 +4958,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
                 return
             wx.BeginBusyCursor()
-            wx.MessageBox(''' For use of SUBGROUPS, please cite:
-      Symmetry-Based Computational Tools for Magnetic Crystallography,
-      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
-      Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: https://doi.org/10.1146/annurev-matsci-070214-021008''',caption='Bilbao SUBGROUPS',style=wx.ICON_INFORMATION)
-
+            wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
+                              G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
+                              caption='Bilbao SUBGROUPS',
+                              style=wx.ICON_INFORMATION)
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
-#            SUBGROUPS,baseList = kMAG.GetNonStdSubgroups(SGData,kvec[:9],star,Landau,maximal)
             wx.EndBusyCursor()
             if SubGroups is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
@@ -5017,8 +5012,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def OnRunSubsMag(event,kvec1=None):
-        #import SUBGROUPS as kSUB
-
         def strTest(text):
             if '.' in text: # no decimals
                 return False
@@ -5089,15 +5082,13 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 return
             magAtms = [atom for atom in controls[15] if atom[1] == atype]
             wx.BeginBusyCursor()
-            wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:
-      Symmetry-Based Computational Tools for Magnetic Crystallography,
-      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
-      Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: https://doi.org/10.1146/annurev-matsci-070214-021008 and
-      Determining magnetic structures in GSAS-II using the Bilbao Crystallographic Server
-      tool k-SUBGROUPSMAG, R.B. Von Dreele & L. Elcoro, Acta Cryst. 2024, B80.
-      doi: https://doi.org/10.1107/S2052520624008436
-      ''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
+            wx.MessageBox(
+                ' For use of k-SUBGROUPSMAG in GSAS-II, please cite:\n\n'+
+                G2G.GetCite('Bilbao: k-SUBGROUPSMAG')+
+                '\nand\n'+
+                G2G.GetCite('Bilbao+GSAS-II magnetism'),
+                caption='Bilbao/GSAS-II Magnetism',
+                style=wx.ICON_INFORMATION)
 
             MAXMAGN,baseList = kSUB.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
@@ -5153,35 +5144,32 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-
-    def OnISODISTORT_kvec(event):   # needs attention from Yuanpeng
-        '''Search for
-        using the ISODISTORT web service
+    def OnISODISTORT_kvec(phase_nam):   # needs attention from Yuanpeng
+        '''Search for k-vector using the ISODISTORT web service
         '''
         def _showWebPage(event):
             'Show a web page when the user presses the "show" button'
             import tempfile
             txt = event.GetEventObject().page
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
-            open(tmp.name,'w').write(txt.replace('<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',))
+            with open(tmp.name,'w') as fp:
+                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/iso/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
         def showWebtext(txt):
             import tempfile
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
-            open(tmp.name,'w').write(txt.replace('<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',))
+            with open(tmp.name,'w') as fp:
+                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/iso/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
         import tempfile
         import re
         import requests
-        import G2export_CIF
-        import ISODISTORT as ISO
-        from fractions import Fraction
+        from exports import G2export_CIF
+        from . import ISODISTORT as ISO
         isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
 
         if not G2frame.kvecSearch['mode']:
@@ -5704,40 +5692,14 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 import seekpath
                 seekpath
             except:
-                msg = 'Performing a k-vector search requires installation of the Python seekpath package. Press Yes to install this. \n\nGSAS-II will restart after the installation.'
-                dlg = wx.MessageDialog(G2frame, msg,'Install package?',wx.YES_NO|wx.ICON_QUESTION)
-                result = wx.ID_NO
+                G2fil.NeededPackage({'magnetic k-vector search':['seekpath']})
+                msg = 'Performing a k-vector search requires installation of the Python seekpath package. Use the Help/Add Package... to install that package.'
+                dlg = wx.MessageDialog(G2frame, msg,'Install seekpath package')
                 try:
-                    result = dlg.ShowModal()
+                    dlg.ShowModal()
                 finally:
                     dlg.Destroy()
-                    wx.GetApp().Yield()
-                if result != wx.ID_YES: return
-                wx.BeginBusyCursor()
-                try:             # can we install via conda?
-                    import conda.cli.python_api
-                    conda.cli.python_api
-                    print('Starting conda install of seekpath...')
-                    GSASIIpath.condaInstall(['seekpath'])
-                    print('conda install of seekpath completed')
-                except Exception as msg:
-                    print(msg)
-                    try:
-                        print('Starting pip install of seekpath...')
-                        GSASIIpath.pipInstall(['seekpath'])
-                        print('pip install of seekpath completed')
-                    except Exception as msg:
-                        print('install of seekpath failed, sorry\n',msg)
-                        return
-                finally:
-                    wx.EndBusyCursor()
-                ans = G2frame.OnFileSave(None)
-                if not ans: return
-                project = os.path.abspath(G2frame.GSASprojectfile)
-                print(f"Restarting GSAS-II with project file {project!r}")
-                G2fil.openInNewTerm(project)
-                print ('exiting GSAS-II')
-                sys.exit()
+                return
 
             # msg = G2G.NISTlatUse(True)
             _, _, cells, _, _, _ = data
@@ -6964,7 +6926,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
     G2frame.Bind(wx.EVT_MENU, OnNISTLatSym, id=G2G.wxID_NISTLATSYM)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
-    G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
+    #G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
     G2frame.Bind(wx.EVT_MENU, TransformUnitCell, id=G2G.wxID_TRANSFORMCELL)
     G2frame.Bind(wx.EVT_MENU, onRefineCell, id=G2G.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
@@ -8168,12 +8130,9 @@ def UpdateModelsGrid(G2frame,data):
 
         elif data['Current'] == 'Shapes':
             SaveState()
-            wx.MessageBox(''' For use of SHAPES, please cite:
-      A New Algroithm for the Reconstruction of Protein Molecular Envelopes
-      from X-ray Solution Scattering Data,
-      J. Badger, Jour. of Appl. Chrystallogr. 2019, 52, 937-944.
-      doi: https://doi.org/10.1107/S1600576719009774''',
-      caption='Program Shapes',style=wx.ICON_INFORMATION)
+            wx.MessageBox(' For use of SHAPES, please cite:\n\n'+
+                G2G.GetCite('SHAPES'),
+                caption='Program Shapes',style=wx.ICON_INFORMATION)
             dlg = wx.ProgressDialog('Running SHAPES','Cycle no.: 0 of 160',161,
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
 
@@ -8194,7 +8153,7 @@ def UpdateModelsGrid(G2frame,data):
         print ('Undo last refinement')
         file = open(G2frame.undosasd,'rb')
         PatternId = G2frame.PatternId
-        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),pickle.load(file))
         print (' Models recovered')
         file.close()
 
@@ -8203,7 +8162,7 @@ def UpdateModelsGrid(G2frame,data):
         file = open(G2frame.undosasd,'wb')
         PatternId = G2frame.PatternId
         for item in ['Models']:
-            cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
+            pickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
         file.close()
         G2frame.dataWindow.SasdUndo.Enable(True)
 
@@ -9039,7 +8998,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         print ('Undo last refinement')
         file = open(G2frame.undorefd,'rb')
         PatternId = G2frame.PatternId
-        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),pickle.load(file))
         print (' Model recovered')
         file.close()
 
@@ -9047,7 +9006,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         G2frame.undorefd = os.path.join(G2frame.dirname,'GSASIIrefd.save')
         file = open(G2frame.undorefd,'wb')
         PatternId = G2frame.PatternId
-        cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Models')),file,1)
+        pickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Models')),file,1)
         file.close()
         G2frame.dataWindow.REFDUndo.Enable(True)
 
@@ -10428,4 +10387,3 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         mainSizer.Add((5,5),0)
         mainSizer.Add(peakSizer())
     G2frame.dataWindow.SetDataSize()
-

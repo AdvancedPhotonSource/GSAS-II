@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #GSASIIobj - data objects for GSAS-II
 '''
-Classes and routines defined in :mod:`GSASIIobj` follow. 
+Classes and routines defined in :mod:`GSASIIobj` follow.
 '''
 # Note that documentation for GSASIIobj.py has been moved
 # to file docs/source/GSASIIobj.rst
@@ -12,14 +12,10 @@ import re
 import random as ran
 import sys
 import os.path
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    import pickle as cPickle
-import GSASIIpath
-import GSASIImath as G2mth
-import GSASIIspc as G2spc
+import pickle
 import numpy as np
+from GSASII import GSASIImath as G2mth
+from GSASII import GSASIIspc as G2spc
 
 DefaultControls = {
     'deriv type':'analytic Hessian',
@@ -40,10 +36,10 @@ restraintNames = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
                   ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
                   ['ChemComp','Sites'],['Texture','HKLs'],['Moments','Moments'],
                   ['General','General']]
-'''Names of restraint keys for the restraint dict and the location of 
+'''Names of restraint keys for the restraint dict and the location of
 the restraints in each dict
 '''
-    
+
 def StripUnicode(string,subs='.'):
     '''Strip non-ASCII characters from strings
 
@@ -141,9 +137,9 @@ of a parameter name. Initialized in :func:`CompileVarDesc`.
 '''
 
 reVarStep = {}
-''' This dictionary lists the preferred step size for numerical 
-derivative computation w/r to a GSAS-II variable. Keys are compiled 
-regular expressions and values are the step size for that parameter. 
+''' This dictionary lists the preferred step size for numerical
+derivative computation w/r to a GSAS-II variable. Keys are compiled
+regular expressions and values are the step size for that parameter.
 Initialized in :func:`CompileVarDesc`.
 '''
 # create a default space group object for P1; N.B. fails when building documentation
@@ -162,7 +158,7 @@ def GetPhaseNames(fl):
     PhaseNames = []
     while True:
         try:
-            data = cPickle.load(fl)
+            data = pickle.load(fl)
         except EOFError:
             break
         datum = data[0]
@@ -184,8 +180,10 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
       [1.0,1.0,1.0,90.,90,90.,1.]
 
     '''
-    if SGData is None: SGData = P1SGData
-    if cell is None: cell=[1.0,1.0,1.0,90.,90.,90.,1.]
+    if SGData is None:
+        SGData = P1SGData
+    if cell is None:
+        cell=[1.0,1.0,1.0,90.,90.,90.,1.]
     phaseData = {
         'ranId':ran.randint(0,sys.maxsize),
         'General':{
@@ -227,14 +225,22 @@ def ReadCIF(URLorFile):
     (from James Hester).
     The open routine gets confused with DOS names that begin with a letter and colon
     "C:\\dir\" so this routine will try to open the passed name as a file and if that
-    fails, try it as a URL
+    fails, try it as a URL.
+
+    Used for CIF imports and for reading CIF templates for project CIF exports
 
     :param str URLorFile: string containing a URL or a file name. Code will try first
       to open it as a file and then as a URL.
 
-    :returns: a PyCifRW CIF object.
+    :returns: a PyCifRW CIF object or an empty string if PyCifRW is not accessible
     '''
-    import CifFile as cif # PyCifRW from James Hester
+    try:
+        import CifFile as cif # PyCifRW from James Hester as a package
+    except ImportError:
+        try:
+            from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        except ImportError:
+            return ''
 
     # alternate approach:
     #import urllib
@@ -249,15 +255,15 @@ def ReadCIF(URLorFile):
         return cif.ReadCif(URLorFile)
 
 def TestIndexAll():
-    '''Test if :func:`IndexAllIds` has been called to index all phases and 
-    histograms (this is needed before :func:`G2VarObj` can be used. 
+    '''Test if :func:`IndexAllIds` has been called to index all phases and
+    histograms (this is needed before :func:`G2VarObj` can be used.
 
     :returns: Returns True if indexing is needed.
     '''
     if PhaseIdLookup or AtomIdLookup or HistIdLookup:
         return False
     return True
-        
+
 def IndexAllIds(Histograms,Phases):
     '''Scan through the used phases & histograms and create an index
     to the random numbers of phases, histograms and atoms. While doing this,
@@ -267,17 +273,17 @@ def IndexAllIds(Histograms,Phases):
     Note: this code assumes that the atom random Id (ranId) is the last
     element each atom record.
 
-    This is called when phases & histograms are looked up 
-    in these places (only): 
-        
+    This is called when phases & histograms are looked up
+    in these places (only):
+
      * :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` (which loads the histograms and phases from a GPX file),
-     * :meth:`~GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree` (which does the same thing but from the data tree.) 
+     * :meth:`~GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree` (which does the same thing but from the data tree.)
      * :meth:`~GSASIIdataGUI.GSASII.OnFileClose` (clears out an old project)
-    
-    Note that globals :data:`PhaseIdLookup` and :data:`PhaseRanIdLookup` are 
+
+    Note that globals :data:`PhaseIdLookup` and :data:`PhaseRanIdLookup` are
     also set in :func:`AddPhase2Index` to temporarily assign a phase number
     as a phase is being imported.
- 
+
     TODO: do we need a lookup for rigid body variables?
     '''
     # process phases and atoms
@@ -333,7 +339,7 @@ def IndexAllIds(Histograms,Phases):
 
 def AddPhase2Index(rdObj,filename):
     '''Add a phase to the index during reading
-    Used where constraints are generated during import (ISODISTORT CIFs)        
+    Used where constraints are generated during import (ISODISTORT CIFs)
     '''
     ranId = rdObj.Phase['ranId']
     ph = 'from  '+filename #  phase is not named yet
@@ -580,15 +586,15 @@ def getVarDescr(varname):
     return l
 
 def CompileVarDesc():
-    '''Set the values in the variable lookup tables 
+    '''Set the values in the variable lookup tables
     (:attr:`reVarDesc` and :attr:`reVarStep`).
     This is called in :func:`getDescr` and :func:`getVarStep` so this
-    initialization is always done before use. These variables are 
+    initialization is always done before use. These variables are
     also used in script `makeVarTbl.py` which creates the table in section 3.2
     of the Sphinx docs (:ref:`VarNames_table`).
 
     Note that keys may contain regular expressions, where '[xyz]'
-    matches 'x' 'y' or 'z' (equivalently '[x-z]' describes this as range 
+    matches 'x' 'y' or 'z' (equivalently '[x-z]' describes this as range
     of values). '.*' matches any string. For example::
 
     'AUiso':'Atomic isotropic displacement parameter',
@@ -628,6 +634,8 @@ def CompileVarDesc():
         'ANe([01])' : ' Atomic <j0> orbital population for orbital, \\1',
         'AD\\([0-6],[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',
         'AD\\([0-6],-[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',     #need both!
+        'AUVmat' : ' Atomic orbital orientation matrix, \\1',
+        'ARadial' : 'Atomic radial function, \\1',
         # Hist (:h:<var>) & Phase (HAP) vars (p:h:<var>)
         'Back(.*)': 'Background term #\\1',
         'BkPkint;(.*)':'Background peak #\\1 intensity',
@@ -749,7 +757,7 @@ def CompileVarDesc():
         }.items():
         # Needs documentation: HAP: LeBail, newLeBail
         # hist: Azimuth, Chi, Omega, Phi, Bank, nDebye, nPeaks
-        
+
         if len(value) == 2:
             #VarDesc[key] = value[0]
             reVarDesc[re.compile(key)] = value[0]
@@ -759,13 +767,13 @@ def CompileVarDesc():
             reVarDesc[re.compile(key)] = value
 
 def removeNonRefined(parmList):
-    '''Remove items from variable list that are not refined and should not 
+    '''Remove items from variable list that are not refined and should not
     appear as options for constraints
 
     :param list parmList: a list of strings of form "p:h:VAR:a" where
       VAR is the variable name
 
-    :returns: a list after removing variables where VAR matches a 
+    :returns: a list after removing variables where VAR matches a
       entry in local variable NonRefinedList
     '''
     NonRefinedList = ['Omega','Type','Chi','Phi', 'Azimuth','Gonio. radius',
@@ -775,7 +783,7 @@ def removeNonRefined(parmList):
                           'nDebye', #'',
                     ]
     return [prm for prm in parmList if prm.split(':')[2] not in NonRefinedList]
-        
+
 def getDescr(name):
     '''Return a short description for a GSAS-II variable
 
@@ -801,10 +809,10 @@ def getVarStep(name,parmDict=None):
     :param str name: A complete variable name (with colons, :)
     :param dict parmDict: A dict with parameter values or None (default)
 
-    :returns: a float that should be an appropriate step size, either from 
-      the value supplied in :func:`CompileVarDesc` or based on the value for 
-      name in parmDict, if supplied. If not found or the value is zero, 
-      a default value of 1e-5 is used. If parmDict is None (default) and 
+    :returns: a float that should be an appropriate step size, either from
+      the value supplied in :func:`CompileVarDesc` or based on the value for
+      name in parmDict, if supplied. If not found or the value is zero,
+      a default value of 1e-5 is used. If parmDict is None (default) and
       no value is provided in :func:`CompileVarDesc`, then None is returned.
     '''
     CompileVarDesc() # compile the regular expressions, if needed
@@ -877,23 +885,23 @@ def prmLookup(name,prmDict):
     considering a wild card for histogram or atom number (use of
     both will never occur at the same time).
 
-    :param name: a GSAS-II parameter name (str, see :func:`getVarDescr` 
-      and :func:`CompileVarDesc`) or a :class:`G2VarObj` object. 
-    :param dict prmDict: a min/max dictionary, (parmMinDict 
+    :param name: a GSAS-II parameter name (str, see :func:`getVarDescr`
+      and :func:`CompileVarDesc`) or a :class:`G2VarObj` object.
+    :param dict prmDict: a min/max dictionary, (parmMinDict
       or parmMaxDict in Controls) where keys are :class:`G2VarObj`
-      objects. 
+      objects.
     :returns: Two values, (**matchname**, **value**), are returned where:
 
-       * **matchname** *(str)* is the :class:`G2VarObj` object 
-         corresponding to the actual matched name, 
-         which could contain a wildcard even if **name** does not; and 
+       * **matchname** *(str)* is the :class:`G2VarObj` object
+         corresponding to the actual matched name,
+         which could contain a wildcard even if **name** does not; and
        * **value** *(float)* which contains the parameter limit.
     '''
     for key,value in prmDict.items():
         if str(key) == str(name): return key,value
         if key == name: return key,value
     return None,None
-        
+
 
 def _lookup(dic,key):
     '''Lookup a key in a dictionary, where None returns an empty string
@@ -926,9 +934,9 @@ class G2VarObj(object):
     '''Defines a GSAS-II variable either using the phase/atom/histogram
     unique Id numbers or using a character string that specifies
     variables by phase/atom/histogram number (which can change).
-    Note that :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`, 
-    which calls :func:`IndexAllIds` (or 
-    :func:`GSASIIscriptable.G2Project.index_ids`) should be used to 
+    Note that :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`,
+    which calls :func:`IndexAllIds` (or
+    :func:`GSASIIscriptable.G2Project.index_ids`) should be used to
     (re)load the current Ids
     before creating or later using the G2VarObj object.
 
@@ -1107,19 +1115,19 @@ class G2VarObj(object):
         if self.name != other.name:
             return False
         return True
-    
+
     def fmtVarByMode(self, seqmode, note, warnmsg):
-        '''Format a parameter object for display. Note that these changes 
-        are only temporary and are only shown only when the Constraints 
+        '''Format a parameter object for display. Note that these changes
+        are only temporary and are only shown only when the Constraints
         data tree is selected.
 
-        * In a non-sequential refinement or where the mode is 'use-all', the 
+        * In a non-sequential refinement or where the mode is 'use-all', the
           name is converted unchanged to a str
-        * In a sequential refinement when the mode is 'wildcards-only' the 
-          name is converted unchanged to a str but a warning is added 
+        * In a sequential refinement when the mode is 'wildcards-only' the
+          name is converted unchanged to a str but a warning is added
           for non-wildcarded HAP or Histogram parameters
-        * In a sequential refinement or where the mode is 'auto-wildcard', 
-          a histogram number is converted to a wildcard (*) and then 
+        * In a sequential refinement or where the mode is 'auto-wildcard',
+          a histogram number is converted to a wildcard (*) and then
           converted to str
 
         :param str mode: the sequential mode (see above)
@@ -1129,10 +1137,10 @@ class G2VarObj(object):
         :returns: varname, explain, note, warnmsg (all str values) where:
 
           * varname is the parameter expressed as a string,
-          * explain is blank unless there is a warning explanation about 
+          * explain is blank unless there is a warning explanation about
             the parameter or blank
-          * note is the previous value unless overridden 
-          * warnmsg is the previous value unless overridden 
+          * note is the previous value unless overridden
+          * warnmsg is the previous value unless overridden
         '''
         explain = ''
         s = self.varname()
@@ -1237,19 +1245,19 @@ class ImportBaseclass(object):
 
     def ExtensionValidator(self, filename):
         '''This methods checks if the file has the correct extension
-        
+
         :returns:
-        
+
           * False if this filename will not be supported by this reader (only
             when strictExtension is True)
           * True if the extension matches the list supplied by the reader
           * None if the reader allows un-registered extensions
-          
+
         '''
         if filename:
             ext = os.path.splitext(filename)[1]
             if not ext and self.strictExtension: return False
-            for ext in self.extensionlist:                
+            for ext in self.extensionlist:
                 if sys.platform == 'windows':
                     if filename.lower().endswith(ext): return True
                 else:
@@ -1303,7 +1311,7 @@ class ImportPhase(ImportBaseclass):
     '''Defines a base class for the reading of files with coordinates
 
     Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
-    in :meth:`GSASIIdataGUI.GSASII.OnImportPhase` and in 
+    in :meth:`GSASIIdataGUI.GSASII.OnImportPhase` and in
     :func:`GSASIIscriptable.import_generic`.
     See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use this class.
@@ -1383,7 +1391,7 @@ class ImportPowderData(ImportBaseclass):
     '''Defines a base class for the reading of files with powder data.
 
     Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
-    in :meth:`GSASIIdataGUI.GSASII.OnImportPowder` and in 
+    in :meth:`GSASIIdataGUI.GSASII.OnImportPowder` and in
     :func:`GSASIIscriptable.import_generic`.
     See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use this class.
@@ -1534,10 +1542,10 @@ class ImportImage(ImportBaseclass):
       * Images are read alternatively in :func:`GSASIImiscGUI.ReadImages`, which puts image info
         directly into the data tree.
 
-      * Unlike all other data types read by GSAS-II, images are only kept in memory as 
-        they are used and function :func:`GSASIIfiles.GetImageData` or 
+      * Unlike all other data types read by GSAS-II, images are only kept in memory as
+        they are used and function :func:`GSASIIfiles.GetImageData` or
         :func:`GSASIIfiles.RereadImageData` is used to reread images
-        if they are reloaded. For quick retrieval of previously read images, it may be useful to 
+        if they are reloaded. For quick retrieval of previously read images, it may be useful to
         save sums of images or save a keyword (see ``ImageTag``, below
 
     When reading an image, the ``Reader()`` routine in the ImportImage class
@@ -1558,12 +1566,12 @@ class ImportImage(ImportBaseclass):
          * ``ImageTag``: image number or other keyword used to retrieve image from
            a multi-image data file (defaults to ``1`` if not specified).
          * ``sumfile``: holds sum image file name if a sum was produced from a multi image file
-         * ``PolaVal``: has two values, the polarization fraction (typically 0.95-0.99 
-           for synchrotrons, 0.5 for lab instruments) and a refinement flag 
+         * ``PolaVal``: has two values, the polarization fraction (typically 0.95-0.99
+           for synchrotrons, 0.5 for lab instruments) and a refinement flag
            (such as ``[0.99, False]``).
-         * ``setdist``: nominal distance from sample to detector. Note that ``distance`` may 
-           be changed during calibration, but ``setdist`` will not be, so that calibration may be 
-           repeated. 
+         * ``setdist``: nominal distance from sample to detector. Note that ``distance`` may
+           be changed during calibration, but ``setdist`` will not be, so that calibration may be
+           repeated.
 
     optional data items:
 
@@ -1664,7 +1672,7 @@ def FindFunction(f):
     except Exception as msg:
         print('call to',f,' failed with error=',str(msg))
         return None,None # not found
-                
+
 class ExpressionObj(object):
     '''Defines an object with a user-defined expression, to be used for
     secondary fits or restraints. Object is created null, but is changed
@@ -2094,12 +2102,12 @@ class G2RefineCancel(Exception):
         self.msg = msg
     def __str__(self):
         return repr(self.msg)
-    
+
 def HowDidIgetHere(wherecalledonly=False):
     '''Show a traceback with calls that brought us to the current location.
     Used for debugging.
 
-    :param bool wherecalledonly: When True, the entire calling stack is 
+    :param bool wherecalledonly: When True, the entire calling stack is
       shown. When False (default), only the 2nd to last stack entry (the
       routine that called the calling routine is shown.
     '''
@@ -2158,7 +2166,7 @@ class ShowTiming(object):
        tim0.start('start')
        tim0.start('in section 1')
        tim0.start('in section 2')
-       
+
     etc. (Note that each section should have a unique label.)
 
     After the last section, end timing with::
@@ -2166,7 +2174,7 @@ class ShowTiming(object):
 
     Show timing results with::
        tim0.show()
-       
+
     '''
     def __init__(self):
         self.timeSum =  []
@@ -2198,8 +2206,8 @@ class ShowTiming(object):
             print('{} {:20} {:8.2f} ms {:5.2f}%'.format(i,lbl,1000.*val,100*val/sumT))
 
 def validateAtomDrawType(typ,generalData={}):
-    '''Confirm that the selected Atom drawing type is valid for the current 
-    phase. If not, use 'vdW balls'. This is currently used only for setting a 
+    '''Confirm that the selected Atom drawing type is valid for the current
+    phase. If not, use 'vdW balls'. This is currently used only for setting a
     default when atoms are added to the atoms draw list.
     '''
     if typ in ('lines','vdW balls','sticks','balls & sticks','ellipsoids'):
@@ -2210,15 +2218,15 @@ def validateAtomDrawType(typ,generalData={}):
     return 'vdW balls'
 
 def patchControls(Controls):
-    '''patch routine to convert variable names used in parameter limits 
-    to G2VarObj objects 
+    '''patch routine to convert variable names used in parameter limits
+    to G2VarObj objects
     (See :ref:`Parameter Limits<ParameterLimits>` description.)
     '''
-    import GSASIIfiles as G2fil
+    from . import GSASIIfiles as G2fil
     #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
     for d in 'parmMaxDict','parmMinDict':
         if d not in Controls: Controls[d] = {}
-        for k in Controls[d]:  
+        for k in Controls[d]:
             if type(k) is str:
                 G2fil.G2Print("Applying patch to Controls['{}']".format(d))
                 Controls[d] = {G2VarObj(k):v for k,v in Controls[d].items()}
@@ -2237,6 +2245,7 @@ def patchControls(Controls):
     # end patch
 
 if __name__ == "__main__":
+    from . import GSASIIpath
     # test variable descriptions
     for var in '0::Afrac:*',':1:Scale','1::dAx:0','::undefined':
         v = var.split(':')[2]

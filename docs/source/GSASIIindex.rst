@@ -12,7 +12,7 @@ cell refinement from peak positions
 *GSASIIindex routines*
 ------------------------------------
 
-.. automodule:: GSASIIindex
+.. automodule:: GSASII.GSASIIindex
     :members: 
     :private-members:
     :special-members:

@@ -8,40 +8,40 @@ used in various locations.
 *GSASIIdata: Ramachandran Parameters*
 -----------------------------------------
        
-.. automodule:: GSASIIdata
+.. automodule:: GSASII.GSASIIdata
     :members: 
 
 -----------------------------------------
 *ElementTable: Periodic Table Data*
 -----------------------------------------
 
-.. automodule:: ElementTable
+.. automodule:: GSASII.ElementTable
     :members: 
 
 -----------------------------------------
 *FormFactors: Scattering Data*
 -----------------------------------------
 
-.. automodule:: FormFactors
+.. automodule:: GSASII.FormFactors
     :members: 
 
 -----------------------------------------
 *ImageCalibrants: Calibration Standards*
 -----------------------------------------
 
-.. automodule:: ImageCalibrants
+.. automodule:: GSASII.ImageCalibrants
     :members: 
 
 -----------------------------------------
 *atmdata: Table of atomic data*
 -----------------------------------------
 
-.. automodule:: atmdata
+.. automodule:: GSASII.atmdata
     :members: 
 
 -------------------------------------------------
 *defaultIparms: Table of instrument parameters*
 -------------------------------------------------
 
-.. automodule:: defaultIparms
+.. automodule:: GSASII.defaultIparms
     :members: 

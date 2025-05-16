@@ -4,14 +4,25 @@
 from __future__ import division, print_function
 import numpy as np
 import os.path
-import GSASIIobj as G2obj
-import CifFile as cif # PyCifRW from James Hester
-import GSASIIpath
+from .. import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
+try:
+    import CifFile as cif # PyCifRW from James Hester as a package
+except ImportError:
+    try:
+        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+    except ImportError:
+        cif = None
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 
 class CIFpwdReader(G2obj.ImportPowderData):
     'Routines to import powder data from a CIF file'
     def __init__(self):
+        if cif is None:
+            self.UseReader = False
+            msg = 'CIF PWDR Reader skipped because PyCifRW (CifFile) module is not installed.'
+            G2fil.ImportErrorMsg(msg,{'CIF powder importer':['pycifrw']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.CIF','.cif'),
             strictExtension=False,
@@ -64,7 +75,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             '_pd_proc_ls_weight',
             '_pd_meas_counts_total'
             )
-        
+
         ModDataItems = ( # items that modify the use of the data
             '_pd_meas_step_count_time',
             '_pd_meas_counts_monitor',
@@ -167,7 +178,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 choices.append(
                     'Block '+str(blk)+', '+str(l)+' points. X='+sx+' & Y='+sy
                     )
-            import GSASIIctrlGUI as G2G
+            from .. import GSASIIctrlGUI as G2G
             selections = G2G.MultipleBlockSelector(
                 choices,
                 ParentFrame=ParentFrame,
@@ -207,7 +218,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             choices.append(such)
             chlbls.append('Divide intensities by data item')
             choices.append(['none']+modch)
-            import GSASIIctrlGUI as G2G
+            from .. import GSASIIctrlGUI as G2G
             res = G2G.MultipleChoicesSelector(choices,chlbls)
             if not res:
                 self.errors = "Abort: data items not selected"
@@ -236,7 +247,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 else:
                     w,e = cif.get_number_with_esd(val)
                     if w: wl.append(w)
-                if wl: 
+                if wl:
                     if len(wl) > 1:
                         self.instdict['wave'] = wl
                     else:
@@ -244,7 +255,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             if cf[blk].get('_diffrn_ambient_temperature'):
                 val = cf[blk]['_diffrn_ambient_temperature']
                 w,e = cif.get_number_with_esd(val)
-                if w: 
+                if w:
                     self.Sample['Temperature'] = w
         xcf = xch[xi]
         if type(xcf) is tuple:
@@ -255,7 +266,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             for val in cf[blk].get(xcf,'?'):
                 v,e = cif.get_number_with_esd(val)
                 if v is None: # not parsed
-                    vl.append(np.NaN)
+                    vl.append(np.nan)
                 else:
                     vl.append(v)
             x = np.array(vl)
@@ -269,8 +280,8 @@ class CIFpwdReader(G2obj.ImportPowderData):
         for val in cf[blk].get(ycf,'?'):
             v,e = cif.get_number_with_esd(val)
             if v is None: # not parsed
-                vl.append(np.NaN)
-                v2.append(np.NaN)
+                vl.append(np.nan)
+                v2.append(np.nan)
             else:
                 vl.append(v)
                 if e is None:
@@ -301,7 +312,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                     elif v <= 0:
                         vl.append(1.)
                     else:
-                        vl.append(1./v)                
+                        vl.append(1./v)
             elif sucf ==  '_pd_meas_counts_total':
                 for val in cf[blk].get(sucf,'?'):
                     v,e = cif.get_number_with_esd(val)
@@ -315,7 +326,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 for val in cf[blk].get(sucf,'?'):
                     v,e = cif.get_number_with_esd(val)
                     if v is None or e is None: # not parsed or no ESD
-                        vl.append(np.NaN)
+                        vl.append(np.nan)
                     elif e <= 0:
                         vl.append(1.)
                     else:
@@ -328,7 +339,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             for val in cf[blk].get(ycf,'?'):
                 v,e = cif.get_number_with_esd(val)
                 if v is None: # not parsed
-                    vl.append(np.NaN)
+                    vl.append(np.nan)
                 else:
                     vl.append(v)
             y /= np.array(vl)

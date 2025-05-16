@@ -8,13 +8,15 @@ try:
 except:
     print('Module requests not installed, access to ISODISTORT not possible')
 import copy
-import GSASIIscriptable as G2sc
+from . import GSASIIscriptable as G2sc
+from . import GSASIIctrlGUI as G2G
 #import tempfile
 isouploadsite = 'https://stokes.byu.edu/iso/isodistortuploadfile.php'
 isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
 
 def HandleError(out):
-    open('out.html','wb').write(out.encode("utf-8"))
+    with open('out.html','wb') as fp:
+        fp.write(out.encode("utf-8"))
     url = os.path.realpath('out.html')
     try:
         os.startfile(url)
@@ -23,20 +25,20 @@ def HandleError(out):
             subp.call(['open', url])
         except:
             print('Could not open URL')
-            
+
 def UploadCIF(cifname):
-       #upload cif file to BYU web site 
+       #upload cif file to BYU web site
     ciffile = open(cifname,'rb')
     up1 = {'toProcess':(cifname,ciffile),}
     out1 = requests.post(isouploadsite,files=up1).text
     ciffile.close()
-    
-    #retrieve BYU temp file name for cif file    
-    
+
+    #retrieve BYU temp file name for cif file
+
     pos = out1.index('<INPUT')+7
     pos1 = out1.index('VALUE=',pos)+7
     filename = out1[pos1:out1.index('"',pos1)]
-    
+
     print('ciffile %s uploaded to ISODISTORT to make %s'%(cifname,filename))
     return filename
 
@@ -49,11 +51,11 @@ def MakePhaseCif(data):
     return tempcif
 
 def GetISODISTORT(Phase):
-    '''Run Stokes & Campbell ISODISTORT. 
+    '''Run Stokes & Campbell ISODISTORT.
     This requires doing a post to the BYU upload site with a cif file, which returns a BYU local
     copy. This is then sent to the BYU form site with various options, which returns all
-    subgroups of the entered space group as the text of a web page with a table containing the space 
-    group symbol, the transformation matrix and index for each subgroup. Selection of one of these is 
+    subgroups of the entered space group as the text of a web page with a table containing the space
+    group symbol, the transformation matrix and index for each subgroup. Selection of one of these is
     returned to the BYU form site which returns the text of a cif file to be used to create the new phase
     which can apply the distortion mode constraints
 
@@ -63,13 +65,14 @@ def GetISODISTORT(Phase):
     :returns: data2: list of str input for next run of isositortform for extracting cif file
     '''
 
-    print('''
+    print(f'''
     For use of ISODISTORT, please cite:
-      H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY Software Suite, iso.byu.edu.
-      B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
-      J. Appl. Cryst. 39, 607-614 (2006).
+
+{G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...',wrap=60,indent=5)}
+
+{G2G.GetCite('ISODISPLACE',wrap=60,indent=5)}
     ''')
-                   
+
     ISOdata = Phase['ISODISTORT']
     parentcif = ISOdata['ParentCIF']
     childcif = None
@@ -77,12 +80,12 @@ def GetISODISTORT(Phase):
         parentcif = MakePhaseCif(Phase)
     print(' Run ISODISTORT with %s as parent cif'%parentcif)
     ISOparentcif = UploadCIF(parentcif)
-    
+
     #submit cif for processing by ISODISTORT
-    
+
     up2 = {'filename':ISOparentcif,'input':'uploadparentcif'}
     out2 = requests.post(isoformsite,up2).text
-    
+
     #recover required info for the distortion search; includes info from cif file (no longer needed)
     try:
         pos = out2.index('<p><FORM')
@@ -105,14 +108,14 @@ def GetISODISTORT(Phase):
             break
     #save copy for future use
     data2 = copy.deepcopy(data)
-            
+
     #no limits on space group or lattice
-        
+
     if ISOdata['ISOmethod'] == 1:
         data['isosubgroup'] = 'no choice'
         data['isolattice'] = 'no choice'
         data['isoplattice'] = 'no choice'
-        
+
     elif ISOdata['ISOmethod'] == 3:
         print('method  3 TBD')
         return [],[]
@@ -144,13 +147,13 @@ def GetISODISTORT(Phase):
         fl.write(cifout.encode("utf-8"))
         fl.close()
         return [],cifFile
-        
+
     #do the distortion search - result is radio button list of choices
-    
+
     out3 = requests.post(isoformsite,data=data).text
-    
+
     #extract the radio button collection
-    
+
     radio = {}
     num = 0
     try:
@@ -158,7 +161,7 @@ def GetISODISTORT(Phase):
     except ValueError:
         HandleError(out3)
         return [],[]
-        
+
     while True:
         try:
             posF = out3[pos:].index('<BR>')+pos
@@ -168,14 +171,14 @@ def GetISODISTORT(Phase):
             pos = out3[posF:].index('RADIO')+posF
         except ValueError:
             break
-        
+
     if parentcif == 'ISOin.cif' or childcif == 'ISOin.cif':
         os.remove('ISOin.cif')
-    
+
     return radio,data2
 
 def GetISOcif(out4,method):
-    
+
     try:
         pos = out4.index('<FORM ACTION')
     except ValueError:
@@ -223,9 +226,9 @@ def GetISOcif(out4,method):
             except ValueError:
                 break
         data3['zeromodes'] = False
-       
-   #request a cif file    
-       
+
+   #request a cif file
+
     data3['origintype'] = 'structurefile'
     data3['inputvalues'] = 'false'
     data3['atomicradius'] = '0.4'
@@ -238,19 +241,19 @@ def GetISOcif(out4,method):
     out5 = k.text   #this is output cif!
     #print(out5)
     return out5
-    
+
 
 def GetISODISTORTcif(Phase):
-    '''Run Stokes & Campbell ISODISTORT. 
-    Selection of one of the order parameter disrections is returned to the BYU 
+    '''Run Stokes & Campbell ISODISTORT.
+    Selection of one of the order parameter disrections is returned to the BYU
     form site which returns the text of a cif file to be used to create the new phase
     which can apply the distortion mode constraints
-     
+
     :params dict Phase: GSAS-II phase data; contains result of GetISODISTORT above & selection
-    
+
     :returns: CIFfile str: name of cif file created by this in local directory
     '''
-    
+
     ISOdata = Phase['ISODISTORT']
     data2 = ISOdata['rundata']
     #choose one & resubmit
@@ -261,10 +264,11 @@ def GetISODISTORTcif(Phase):
     #     print(item,data2[item])
     out4 = requests.post(isoformsite,data=data2).text
     #print(out4)
-    #open('pyout4.html','wb').write(out4.encode("utf-8"))
-     
+    #with open('pyout4.html','wb') as fp:
+        #fp.write(out4.encode("utf-8"))
+
     #retrieve data needed for next(last) step
-    
+
     out5 = GetISOcif(out4,1)
     names = ISOdata['selection'][1].split()
     cifFile = '%s_%s%s%s.cif'%(Phase['General']['Name'],names[1],names[2].replace('*','_'),names[3])

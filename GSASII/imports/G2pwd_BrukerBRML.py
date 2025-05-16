@@ -4,14 +4,14 @@
 import os
 import shutil
 import numpy as np
-import GSASIIpath
+from .. import GSASIIpath
 try:
     import xmltodict as xml
 except Exception as msg:
-    if GSASIIpath.GetConfigValue('debug'): print(f'Debug: xmltodict error = {msg}')
+    #if GSASIIpath.GetConfigValue('debug'): print(f'Debug: xmltodict error = {msg}')
     xml = None
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+
 class brml_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a zip Bruker .brml file'
     def __init__(self):
@@ -24,8 +24,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
         if xml is None:
             self.UseReader = False
             msg = 'Bruker .brml Reader skipped because xmltodict module is not installed.'
-            if GSASIIpath.condaTest():
-                msg += ' To fix this press "Install packages" button below'
+            from .. import GSASIIfiles as G2fil
             G2fil.ImportErrorMsg(msg,{'Bruker .brml Importer':['xmltodict']})
         self.scriptable = True
 
@@ -44,16 +43,16 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                 return False
         except:
             return False
-            
+
     def Reader(self,filename, ParentFrame=None, **kwarg):
         'Read a Bruker brml file'
         def XtractXMLScan():
             '''Read the XML info into the GSAS-II reader structure.
             This structure seems to be for where the detector is scanned.
-            Code from Bob with some modifications to read a wider 
+            Code from Bob with some modifications to read a wider
             assortment of files and sample temperature
 
-            :returns: True if read suceeds. May also throw an exception 
+            :returns: True if read suceeds. May also throw an exception
               on failure
             '''
             self.idstring = f'{os.path.basename(filename)} {os.path.basename(fil)}'
@@ -69,7 +68,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             if nSteps <= 10: return False  # too short
             x = np.zeros(nSteps, dtype=float)
             y = np.zeros(nSteps, dtype=float)
-            w = np.zeros(nSteps, dtype=float) 
+            w = np.zeros(nSteps, dtype=float)
 
             if datano:
                 effTime = float(data['RawData']['DataRoutes']['DataRoute'][datano]['ScanInformation']['TimePerStepEffective'])
@@ -106,7 +105,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                     except:
                         pass
             #breakpoint()
-            try:  # is there some range in col 4 values?                
+            try:  # is there some range in col 4 values?
                 if abs(1. - min(y)/max(y)) < 1e-4: raise Exception
             except:
                 y = np.array(y3)
@@ -117,19 +116,19 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                     break
             self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
             return True
-        
+
         def XtractXMLNoscan():
             '''Read the XML info into the GSAS-II reader structure.
             This structure seems to be for where the detector is stationary.
 
-            :returns: True if read suceeds. May also throw an exception 
+            :returns: True if read suceeds. May also throw an exception
               on failure
             '''
             self.idstring = f'{os.path.basename(filename)} {os.path.basename(fil)}'
             self.powderentry[0] = filename
             self.powderentry[2] = filNum
             self.comments = []
-            try: 
+            try:
                 scandata = data['RawData']['DataRoutes']['DataRoute']['ScanInformation']['ScaleAxes']
                 if not scandata: return
                 if 'ScaleAxisInfo' not in scandata: return
@@ -153,7 +152,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             w = np.where(y>0,1/y,0.)
             self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
             return True
-        
+
         #### beginning of Reader
         if xml is None:
             return False

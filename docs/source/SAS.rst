@@ -4,13 +4,13 @@
 *GSASII small angle calculation module*
 --------------------------------------------
 
-.. automodule:: GSASIIsasd
+.. automodule:: GSASII.GSASIIsasd
     :members: 
 
 *Substances: Define Materials*
 ---------------------------------------------------------------------------------
        
-.. automodule:: Substances
+.. automodule:: GSASII.Substances
     :members: 
 
 

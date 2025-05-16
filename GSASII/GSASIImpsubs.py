@@ -18,9 +18,9 @@ from __future__ import division, print_function
 import multiprocessing as mp
 import numpy as np
 import numpy.ma as ma
-import GSASIIpath
-import GSASIIpwd as G2pwd
-import GSASIIfiles as G2fil
+from . import GSASIIpath
+from . import GSASIIpwd as G2pwd
+from . import GSASIIfiles as G2fil
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)

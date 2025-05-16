@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_PDB` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_PDB` follow:
 '''
 from __future__ import division, print_function
 import numpy as np
 import os.path
-import GSASIIfiles as G2fil
-import GSASIIlattice as G2lat
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIlattice as G2lat
 
 class ExportPhasePDB(G2fil.ExportBaseclass):
     '''Used to create a PDB file for a phase

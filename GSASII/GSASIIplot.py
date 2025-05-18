@@ -6707,10 +6707,15 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
 
-    def RenderTextureSphere(x,y,z,radius,color,shape=[20,10],Fade=None):
-        SpFade = np.zeros(list(Fade.shape)+[4,],dtype=np.dtype('B'))
-        SpFade[:,:,:3] = Fade[:,:,nxs]*list(color)
-        SpFade[:,:,3] = 60
+    def RenderTextureSphere(x,y,z,radius,ATcolor=None,shape=[20,10],Texture=None,ifFade=True):
+        SpFade = np.zeros(list(Texture.shape)+[4,],dtype=np.dtype('B'))
+        if ATcolor is None:
+            acolor = GetColorMap('RdYlGn')
+            SpFade = acolor(Texture)*255
+        else:
+            SpFade[:,:,:3] = Texture[:,:,nxs]*list(ATcolor)
+        if ifFade:
+            SpFade[:,:,3] = 60
         spID = GL.glGenTextures(1)
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
         GL.glEnable(GL.GL_BLEND)
@@ -7220,8 +7225,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
                         radius = SpnData.get('Radius',[[1.0,False],])   #patch for missing Radius
                         atColor = SpnData['atColor']
+                        ifFade = SpnData.get('fadeSh',True)
+                        useAtColor = SpnData.get('useAtColor',True)
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
-                        Npsi,Ngam = 60,30       #seems acceptable - don't use smaller!
+                        Npsi,Ngam = 360,180 
                         QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
                         QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
                         QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel
@@ -7236,10 +7243,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             if not SpnData['hide'][ish]:
                                 if nSH > 0:
                                     SHC = SpnData['SHC'][ish]
+                                    atcolor = None
+                                    if useAtColor:
+                                        atcolor = atColor[ish]
                                     P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                                     if np.min(P) < np.max(P):
                                         P = (P-np.min(P))/(np.max(P)-np.min(P))
-                                    RenderTextureSphere(x,y,z,radius[ish][0],atColor[ish],shape=[Npsi,Ngam],Fade=P.T)
+                                    RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:
@@ -7431,7 +7441,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if drawingData.get('showSlice') in [1,]:
                 contourSet = ax0.contour(Z,colors='k',linewidths=1)
             if drawingData.get('showSlice') in [2,3]:
-                acolor = GetColorMap(drawingData.get('contourColor','Paired'))
+                acolor = GetColorMap(drawingData.get('contourColor','GSPaired'))
                 ax0.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.7,interpolation='bilinear')
                 if drawingData.get('showSlice') in [3,]:
                     contourSet = ax0.contour(ZU,colors='k',linewidths=1)

@@ -6714,6 +6714,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             SpFade = acolor(Texture)*255
         else:
             SpFade[:,:,:3] = Texture[:,:,nxs]*list(ATcolor)
+            SpFade[:,:,3] = 255
         if ifFade:
             SpFade[:,:,3] = 60
         spID = GL.glGenTextures(1)
@@ -7228,7 +7229,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         ifFade = SpnData.get('fadeSh',True)
                         useAtColor = SpnData.get('useAtColor',True)
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
-                        Npsi,Ngam = 360,180 
+                        Npsi,Ngam = 90,45 
                         QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
                         QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
                         QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel

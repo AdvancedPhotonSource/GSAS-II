@@ -2973,8 +2973,8 @@ def SHarmcal(SytSym,SHFln,psi,gam):
             if SytSym in ['m3m','m3','43m','432','23'] or 'c' in trm:
                 Ksl = CubicSHarm(l,m,psi,gam)
             else:
-                p = SHFln[term][2]
-                Ksl = SphHarmAng(l,m,p,psi,gam)
+                # p = SHFln[term][2]
+                Ksl = SphHarmAng(l,m,1.0,psi,gam)
             SHVal += SHFln[term][0]*Ksl
     return SHVal
 

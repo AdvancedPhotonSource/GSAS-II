@@ -12186,6 +12186,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         del Harm[1][item]
             wx.CallAfter(UpdateDeformation,dId)
             
+        def OnShowDef(event):
+            dId = Indx[event.GetEventObject().GetId()]
+            deformationData[-dId]['showDef'] = not deformationData[-dId]['showDef']
+            G2plt.PlotStructure(G2frame,data)
+        
+        def OnAtCol(event):
+            dId = Indx[event.GetEventObject().GetId()]
+            deformationData[-dId]['atColor'] = not deformationData[-dId]['atColor']
+            G2plt.PlotStructure(G2frame,data)
+            
         # UpdateDeformation executable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
         generalData = data['General']
@@ -12246,6 +12256,18 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
             Indx[plotAtm.GetId()] = dId
             lineSizer.Add(plotAtm,0,WACV)
+            deformationData[-dId]['showDef'] = deformationData[-dId].get('showDef',False)
+            deformationData[-dId]['atColor'] = deformationData[-dId].get('atColor',True)
+            showDef = wx.CheckBox(deformation,label='show def.?')
+            showDef.SetValue(deformationData[-dId]['showDef'])
+            Indx[showDef.GetId()] = dId
+            showDef.Bind(wx.EVT_CHECKBOX,OnShowDef)
+            lineSizer.Add(showDef,0,WACV)
+            atCol = wx.CheckBox(deformation,label='use atom colors?')
+            atCol.SetValue(deformationData[-dId]['atColor'])
+            Indx[atCol.GetId()] = dId
+            atCol.Bind(wx.EVT_CHECKBOX,OnAtCol)
+            lineSizer.Add(atCol,0,WACV)
             delAtm = wx.Button(deformation,label='Delete')
             delAtm.Bind(wx.EVT_BUTTON,OnDelAtm)
             Indx[delAtm.GetId()] = dId

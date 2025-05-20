@@ -7204,13 +7204,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             radius = ballScale*drawingData['sizeH']
                     else:
                         radius = 0.0
-                # elif 'Q' in atom[ct]:       #spinning rigid body - set shell color
-                #     for Srb in RBdata.get('Spin',[]):
-                #         if Srb == generalData['SpnIds'][atom[ci]]:
-                #             fade = True
-                #             Info = G2elem.GetAtomInfo(RBdata['Spin'][Srb]['atType'])
-                #             atColor = [Info['Color'],]
-                #             break
                 else:
                     if 'vdW' in atom[cs]:
                         radius = vdwScale*vdWRadii[atNum]
@@ -7254,7 +7247,33 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:
-                    RenderSphere(x,y,z,radius,atColor)
+                    #### put deformation texture on sphere here
+                    if atom[ci] in deformationData:
+                        defCtrls = deformationData[-atom[ci]]
+                        defParms = deformationData[atom[ci]]
+                        SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
+                        if defCtrls.get('showDef',False):
+                            useAtColor = defCtrls.get('atColor',True) 
+                            atcolor = None
+                            if useAtColor:
+                                atcolor = atColor*255
+                            if defCtrls['Radial'] == 'Slater':
+                                SHC = defParms[0][1]
+                                SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
+                            UVMat = defCtrls['UVmat']
+                            Npsi,Ngam = 90,45 
+                            PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
+                            PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
+                            GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
+                            Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat)
+                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
+                            if np.min(P) < np.max(P):
+                                P = (P-np.min(P))/(np.max(P)-np.min(P))
+                            RenderTextureSphere(x,y,z,radius,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
+                        else:
+                            RenderSphere(x,y,z,radius,atColor)
+                    else:
+                        RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:
                     RenderBonds(x,y,z,Bonds,bondR,bndColor)
             elif 'ellipsoids' in atom[cs]:
@@ -7540,7 +7559,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         mcsaTypes = np.reshape(mcsaTypes,(nuniq*neqv))
         mcsaBonds = FindPeaksBonds(mcsaXYZ)
     drawAtoms = drawingData.get('Atoms',[])
-
+    deformationData = data.get('Deformations',{})
     mapData = {'MapType':False, 'rho':[]}
     showBonds = False
     if 'Map' in generalData:

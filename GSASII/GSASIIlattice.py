@@ -2662,7 +2662,10 @@ def CrsAng(H,cell,SGData):
         DR = np.inner(H3,np.inner(G,H3))
         DHR = np.inner(H,np.inner(G,H3))
     DHR /= np.sqrt(DR*DH)
-    phi = acosd(max(-1,min(DHR,1.)))
+    if DHR.shape:
+        phi = acosd(DHR)
+    else:
+        phi = acosd(max(-1,min(DHR,1.)))
     if Laue == '-1':
         BA = H.T[1]*a/(b-H.T[0]*cosd(ga))
         BB = H.T[0]*sind(ga)**2

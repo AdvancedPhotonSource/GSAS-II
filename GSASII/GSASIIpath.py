@@ -301,18 +301,17 @@ def getG2Branch():
     
 def getG2VersionInfo():
     '''Get the git version information. This can be a bit slow, so reading
-    .../GSASII/saved_version.py may be faster (in main but not master branch)
+    .../GSASII/saved_version.py may be faster
     '''
     gv = getSavedVersionInfo()
     if HowIsG2Installed().startswith('git'):
         g2repo = openGitRepo(path2GSAS2)
         commit = g2repo.head.commit
-        ctim = commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
+        ctim = commit.committed_datetime.strftime('%d-%b-%y %H:%M')
         now = dt.datetime.now().replace(
             tzinfo=commit.committed_datetime.tzinfo)
         delta = now - commit.committed_datetime
         age = delta.total_seconds()/(60*60*24.)
-        gversion = f"Tag: #{GetVersionNumber()}, {GetVersionTag()}"
         msg = ''
         if g2repo.head.is_detached:
             msg = ("\n" +
@@ -326,14 +325,19 @@ def getG2VersionInfo():
             if rc is None:
                 msg += f"\n\tNo history found. On development branch? ({g2repo.active_branch})"
             elif str(g2repo.active_branch) != 'main':
-                msg += f'\n\tUsing development branch "{g2repo.active_branch}"'
+                msg += f'\n\tUsing development branch: {g2repo.active_branch}'
             elif age > 60 and len(rc) > 0:
-                msg += f"\n\t**** This version is really old. Please update. >= {len(rc)} updates have been posted ****"
-            elif age > 5 and len(rc) > 0:
-                msg += f"\n\t**** Please consider updating. >= {len(rc)} updates have been posted"
-            elif len(rc) > 0:
-                msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
-        return f"  GSAS-II:    {commit.hexsha[:8]}, {ctim} ({age:.1f} days old). {gversion}{msg}"
+                msg += f"\n\t**** This version is really old ({age:.1f} days). Please update.\n\t**** At least {len(rc)} updates have been posted ****"
+            elif (age > 5 and len(rc) > 0) or len(rc) > 5:
+                msg += f"\n\t**** Please consider updating. This version is {age:.1f} days old\n\t**** and {len(rc)} or more updates behind."
+#            elif len(rc) > 0:
+#                msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
+        # could consider getting version & tag from gv if not None (see below)
+        gversion = f"{GetVersionNumber()}/{GetVersionTag()}"
+        if len(rc) > 0:
+            return f"  GSAS-II:    {gversion} posted {ctim} (\u2265{len(rc)} new updates) [{commit.hexsha[:8]}]{msg}"
+        else:
+            return f"  GSAS-II:    {gversion} posted {ctim} (no new updates) [{commit.hexsha[:8]}]{msg}"
     elif gv is not None:
         vt = ''
         cvt = ''
@@ -542,8 +546,10 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
     provide useful information in the case of a detached Head (see
     :func:`countDetachedCommits` for that.)
 
-    :param bool fetch: if True (default), updates are copied over from
+    :param bool fetch: if True (default), updates are downloaded from
       the remote repository (git fetch), before checking for changes.
+      At present, this feature is not used anywhere in GSAS-II (fetch=False
+      in all calls). 
     :param str g2repo: git.Rwpo connecton to GSAS-II installation. If
        None (default) it will be opened.
     :returns: a list containing (remotecommits, localcommits, fetched) where
@@ -567,8 +573,12 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
         g2repo = openGitRepo(path2GSAS2)
     if g2repo.head.is_detached:
         return (None,None,None)
+    prevremotecommits = None
     if fetch:
         try:
+            head = g2repo.head.ref
+            tracking = head.tracking_branch()
+            prevremotecommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{head.path}..{tracking.path}')]
             g2repo.remote().fetch()
             fetched = True
         except git.GitCommandError as msg:
@@ -578,6 +588,11 @@ def gitCheckForUpdates(fetch=True,g2repo=None):
         tracking = head.tracking_branch()
         localcommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{tracking.path}..{head.path}')]
         remotecommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{head.path}..{tracking.path}')]
+        if prevremotecommits is None: prevremotecommits = remotecommits
+        if fetch and len(prevremotecommits) != len(remotecommits):
+            print(f"Fetch of new GSAS-II versions uploaded {len(remotecommits)-len(prevremotecommits)} new updates.")
+        elif fetch and GetConfigValue('debug'):
+            print('Updates fetched; nothing new')
         return remotecommits,localcommits,fetched
     except:
         return (None,None,None)
@@ -2164,7 +2179,8 @@ to update/regress repository from git repository:
 
     if updateType == 'fetch':
         # download the latest updates from GitHub to the local repository
-        # in background while GSAS-II runs no updates are applied
+        # in background while GSAS-II runs no updates are applied.
+        # invoked by gitGetUpdate(mode='Background')
         logfile = os.path.join(os.path.expanduser('~'),'GSASII_bkgUpdate.log')
         mode = 'a'
         # don't let log file get too large (20K bytes)
@@ -2176,36 +2192,53 @@ to update/regress repository from git repository:
         except:
             print('background git update was unable to open log file')
             sys.exit()
-        fp.write('Starting background git update')
-        fp.write(dt.datetime.strftime(dt.datetime.now(),
-                                      " at %Y-%m-%dT%H:%M\n"))
         try:
             import git
         except:
-            fp.write('git import failed')
+            fp.write('Git background import failed')
+            fp.write(dt.datetime.strftime(dt.datetime.now(),
+                                      " at %Y-%m-%dT%H:%M\n"))
             fp.close()
             sys.exit()
         try:
             g2repo = openGitRepo(path2GSAS2)
+            prevremotecommits = None
+            if not g2repo.head.is_detached:
+                head = g2repo.head.ref
+                tracking = head.tracking_branch()
+                prevremotecommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{head.path}..{tracking.path}')]
             g2repo.remote().fetch()
-            fp.write('Updates fetched\n')
+            if not g2repo.head.is_detached:
+                head = g2repo.head.ref
+                tracking = head.tracking_branch()
+                remotecommits = [i.hexsha for i in head.commit.iter_items(g2repo, f'{head.path}..{tracking.path}')]
+                new = len(remotecommits)-len(prevremotecommits)
+                msg = f'{new} new update(s) found and downloaded, so {len(remotecommits)} total are available to install'
+                #fp.write(f'{msg}\n')
+                if new > 0: print(msg)
         except Exception as msg:
+            fp.write('Background git update message')
+            fp.write(dt.datetime.strftime(dt.datetime.now(),
+                                      " at %Y-%m-%dT%H:%M\n"))
             fp.write(f'Update failed with message {msg}\n')
 
         if g2repo.head.is_detached:
+            fp.write('Background git update message')
+            fp.write(dt.datetime.strftime(dt.datetime.now(),
+                                      " at %Y-%m-%dT%H:%M\n"))
             fp.write('Status: reverted to an old install\n')
-        else:
-            try:
-                rc,lc,_ = gitCheckForUpdates(False,g2repo)
-                if len(rc) == 0:
-                    fp.write('Status: no unapplied commits\n')
-                else:
-                    fp.write(f'Status: unapplied commits now {len(rc)}\n')
-            except Exception as msg:
-                fp.write(f'\ngitCheckForUpdates failed with message {msg}\n')
-        fp.write('update done at')
-        fp.write(dt.datetime.strftime(dt.datetime.now(),
-                                      " at %Y-%m-%dT%H:%M\n\n"))
+        # else:
+        #     try:
+        #         rc,lc,_ = gitCheckForUpdates(False,g2repo)
+        #         if len(rc) == 0:
+        #             fp.write('Status: no unapplied commits\n')
+        #         else:
+        #             fp.write(f'Status: unapplied commits now {len(rc)}\n')
+        #     except Exception as msg:
+        #         fp.write(f'\ngitCheckForUpdates failed with message {msg}\n')
+        # fp.write('update done at')
+        # fp.write(dt.datetime.strftime(dt.datetime.now(),
+        #                               " at %Y-%m-%dT%H:%M\n\n"))
         fp.close()
         sys.exit()
 

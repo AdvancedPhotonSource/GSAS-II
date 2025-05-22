@@ -6627,7 +6627,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PWDRMenu = _makemenu
 
         # HKLF - many wxIDs defined in PWDR & SASD above
-        G2G.Define_wxId('wxID_3DALLHKLPLOT','wxID_MERGEHKL')
+        G2G.Define_wxId('wxID_3DALLHKLPLOT','wxID_MERGEHKL','wxID_FIXFSQSQDATA')
         def _makemenu():     # routine to create menu when first used
             self.HKLFMenu = wx.MenuBar()
             self.PrefillDataMenu(self.HKLFMenu)
@@ -6638,6 +6638,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.ErrorAnal.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs from single crystal data in 1D')
             self.ErrorAnal.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs from single crystal data in 3D')
             self.ErrorAnal.Append(G2G.wxID_3DALLHKLPLOT,'Plot all 3D HKLs','Plot HKLs from all single crystal data in 3D')
+            self.ErrorAnal.Append(G2G.wxID_FIXFSQSQDATA,'Fix (F^2)^2 data','Fix F^2 data imported as F')
     #        self.ErrorAnal.Append(G2G.wxID_PWDCOPY,'Copy params','Copy of HKLF parameters') #unused
             self.PostfillDataMenu()
             SetDataMenuBar(G2frame,self.HKLFMenu)
@@ -8135,6 +8136,47 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),Inst)
         G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
         G2frame.GPXtree.SetItemPyData(Id,newData)
+        
+    def OnFixFsqFsq(event):
+        ''' Fix HKLF data that had been misimported as F instead of F^2'''
+        Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        Inst = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,
+            G2frame.PatternId,'Instrument Parameters'))
+        CId = GetGPXtreeItemId(G2frame,G2frame.PatternId,'Comments')
+        if CId:
+            Comments = G2frame.GPXtree.GetItemPyData(CId)
+        else:
+            Comments = []
+        Super = data[1]['Super']
+        refList = np.copy(data[1]['RefList'])
+        Comments.append(' Changing %d reflection F^2^2 to F^2 from %s'%(len(refList),Name))
+        for ih,hkl in enumerate(refList):       #undo F--> F^2
+            hkl[5+Super] = np.sqrt(hkl[5+Super])
+            hkl[6+Super] = hkl[6+Super]/(2.0*hkl[5+Super])
+            hkl[7+Super] = np.sqrt(hkl[7+Super])
+        HKLFlist = []
+        if G2frame.GPXtree.GetCount():
+            item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+            while item:
+                name = G2frame.GPXtree.GetItemText(item)
+                if name.startswith('HKLF ') and name not in HKLFlist:
+                    HKLFlist.append(name)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        newName = G2obj.MakeUniqueLabel(Name,HKLFlist)
+        newData = copy.deepcopy(data)
+        newData[0]['ranId'] = ran.randint(0,sys.maxsize)
+        newData[1]['RefList'] = refList
+        newData[0]['Nobs'] = refList.shape[0]
+        newData[0]['wR'] = 0.0
+        keys = list(newData[0].keys())
+        for item in keys:
+            if ':' in item:
+                del newData[0][item]
+        Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=newName)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),Inst)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
+        G2frame.GPXtree.SetItemPyData(Id,newData)
 
     def OnErrorAnalysis(event):
         '''Plots an "Abrams" plot - sorted delta/sig across data set.
@@ -8207,6 +8249,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnFixFsqFsq, id=G2G.wxID_FIXFSQSQDATA)
     if kind == 'PWDR':
         lbl = 'Powder'
     elif kind == 'SASD':

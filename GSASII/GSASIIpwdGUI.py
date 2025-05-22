@@ -7186,7 +7186,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     def OnToggleExt(event):
         G2frame.Hide = not G2frame.Hide
         UpdateReflectionGrid(G2frame,data,HKLF=True,Name=Name)
-
+        
     def OnPageChanged(event):
         '''Respond to a press on a phase tab by displaying the reflections. This
         routine is needed because the reflection table may not have been created yet.

@@ -7252,14 +7252,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         defCtrls = deformationData[-atom[ci]]
                         defParms = deformationData[atom[ci]]
                         SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
-                        if defCtrls.get('showDef',False):
+                        if defCtrls.get('showDef',False) and defCtrls['Radial'] == 'Slater':
                             useAtColor = defCtrls.get('atColor',True) 
                             atcolor = None
                             if useAtColor:
                                 atcolor = atColor*255
-                            if defCtrls['Radial'] == 'Slater':
-                                SHC = defParms[0][1]
-                                SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
+                            SHC = defParms[0][1]
+                            SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
                             UVMat = defCtrls['UVmat']
                             Npsi,Ngam = 90,45 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]

@@ -39,6 +39,9 @@ from . import GSASIIsasd as G2sasd
 from . import G2shapes
 from . import SUBGROUPS as kSUB
 from . import k_vector_search as kvs
+from GSASII.imports.G2phase_CIF import CIFPhaseReader as CIFpr
+from . import GSASIIscriptable as G2sc
+from . import GSASIImiscGUI as G2IO
 try:
     VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
     WACV = wx.ALIGN_CENTER_VERTICAL
@@ -5467,18 +5470,18 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         G2frame.OnFileSave(None)
         orgFilName = G2frame.GSASprojectfile
-        phsnam = phase_sel
+        phsnam = data['General']['Name']
+        # get restraints & clear geometrical restraints
         resId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
         Restraints = G2frame.GPXtree.GetItemPyData(resId)
         resId = G2gd.GetGPXtreeItemId(G2frame, resId, phsnam)
+        savedRestraints = None
+        if phsnam in Restraints:
+            Restraints[phsnam]['Bond']['Bonds'] = []
+            Restraints[phsnam]['Angle']['Angles'] = []
+            savedRestraints = Restraints[phsnam]
+            del Restraints[phsnam]
         orgData = copy.deepcopy(data)
-
-        item, cookie = G2frame.GPXtree.GetFirstChild(phaseID)
-        while item and G2frame.GPXtree.GetItemText(item) != phase_sel:
-            item, cookie = G2frame.GPXtree.GetNextChild(phaseID, cookie)
-
-        # TODO: We can probably refer to the `OnDeletePhase` method defined in
-        # `GSASIIdataGUI` to delete the phase.
 
         for ir_opt, _ in ir_options:
             print("Processing irrep:", ir_opt)
@@ -5499,6 +5502,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             iso_fn = _get_opt_val('isofilename', out4).strip()
             data["isofilename"] = iso_fn
 
+            phsnam = data['General']['Name']
+
             for radio_val in cleaned_radio_vals:
                 print("Processing mode:", radio_val)
                 data["input"] = "distort"
@@ -5515,11 +5520,28 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 with open(cif_fn, 'wb') as fl:
                     fl.write(out_cif.encode("utf-8"))
 
-                # TODO: Load phase to the project and associate it with the
-                # histogram attached to the original phase.
-                # Q1: How to find out all the histograms associated with the
-                # original phase?
-                # Q2: How to load the phase to the project properly?
+                rdlist = G2sc.import_generic(
+                    cif_fn, [CIFpr()], fmthint='CIF'
+                )
+                rd = rdlist[0]
+
+                key_list = [
+                    'General', 'Atoms', 'Drawing',
+                    'Histograms', 'Pawley ref', 'RBModels'
+                ]
+                for key in key_list:
+                    data[key] = rd.Phase[key]
+
+                newname = rd.Phase['General']['Name']
+                data['General']['Name'] = phsnam
+                G2phsG.renamePhaseName(
+                    G2frame.PickId, data['General'], newname
+                )
+
+                G2frame.GSASprojectfile = os.path.splitext(
+                    orgFilName
+                )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
+                G2IO.ProjFileSave(G2frame)
 
         # restore the original saved project
         G2frame.OnFileOpen(None, filename=orgFilName, askSave=False)

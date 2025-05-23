@@ -6707,10 +6707,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
 
-    def RenderTextureSphere(x,y,z,radius,color,shape=[20,10],Fade=None):
-        SpFade = np.zeros(list(Fade.shape)+[4,],dtype=np.dtype('B'))
-        SpFade[:,:,:3] = Fade[:,:,nxs]*list(color)
-        SpFade[:,:,3] = 60
+    def RenderTextureSphere(x,y,z,radius,ATcolor=None,shape=[20,10],Texture=None,ifFade=True):
+        SpFade = np.zeros(list(Texture.shape)+[4,],dtype=np.dtype('B'))
+        if ATcolor is None:
+            acolor = GetColorMap('RdYlGn')
+            SpFade = acolor(Texture)*255
+        else:
+            SpFade[:,:,:3] = Texture[:,:,nxs]*list(ATcolor)
+            SpFade[:,:,3] = 255
+        if ifFade:
+            SpFade[:,:,3] = 60
         spID = GL.glGenTextures(1)
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
         GL.glEnable(GL.GL_BLEND)
@@ -7198,13 +7204,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             radius = ballScale*drawingData['sizeH']
                     else:
                         radius = 0.0
-                # elif 'Q' in atom[ct]:       #spinning rigid body - set shell color
-                #     for Srb in RBdata.get('Spin',[]):
-                #         if Srb == generalData['SpnIds'][atom[ci]]:
-                #             fade = True
-                #             Info = G2elem.GetAtomInfo(RBdata['Spin'][Srb]['atType'])
-                #             atColor = [Info['Color'],]
-                #             break
                 else:
                     if 'vdW' in atom[cs]:
                         radius = vdwScale*vdWRadii[atNum]
@@ -7220,8 +7219,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
                         radius = SpnData.get('Radius',[[1.0,False],])   #patch for missing Radius
                         atColor = SpnData['atColor']
+                        ifFade = SpnData.get('fadeSh',True)
+                        useAtColor = SpnData.get('useAtColor',True)
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
-                        Npsi,Ngam = 60,30       #seems acceptable - don't use smaller!
+                        Npsi,Ngam = 90,45 
                         QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
                         QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
                         QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel
@@ -7236,14 +7237,42 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             if not SpnData['hide'][ish]:
                                 if nSH > 0:
                                     SHC = SpnData['SHC'][ish]
+                                    atcolor = None
+                                    if useAtColor:
+                                        atcolor = atColor[ish]
                                     P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                                     if np.min(P) < np.max(P):
                                         P = (P-np.min(P))/(np.max(P)-np.min(P))
-                                    RenderTextureSphere(x,y,z,radius[ish][0],atColor[ish],shape=[Npsi,Ngam],Fade=P.T)
+                                    RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:
-                    RenderSphere(x,y,z,radius,atColor)
+                    #### put deformation texture on sphere here
+                    if atom[ci] in deformationData:
+                        defCtrls = deformationData[-atom[ci]]
+                        defParms = deformationData[atom[ci]]
+                        SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
+                        if defCtrls.get('showDef',False) and defCtrls['Radial'] == 'Slater':
+                            useAtColor = defCtrls.get('atColor',True) 
+                            atcolor = None
+                            if useAtColor:
+                                atcolor = atColor*255
+                            SHC = defParms[0][1]
+                            SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
+                            UVMat = defCtrls['UVmat']
+                            Npsi,Ngam = 90,45 
+                            PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
+                            PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
+                            GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
+                            Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat)
+                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
+                            if np.min(P) < np.max(P):
+                                P = (P-np.min(P))/(np.max(P)-np.min(P))
+                            RenderTextureSphere(x,y,z,radius,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
+                        else:
+                            RenderSphere(x,y,z,radius,atColor)
+                    else:
+                        RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:
                     RenderBonds(x,y,z,Bonds,bondR,bndColor)
             elif 'ellipsoids' in atom[cs]:
@@ -7431,7 +7460,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if drawingData.get('showSlice') in [1,]:
                 contourSet = ax0.contour(Z,colors='k',linewidths=1)
             if drawingData.get('showSlice') in [2,3]:
-                acolor = GetColorMap(drawingData.get('contourColor','Paired'))
+                acolor = GetColorMap(drawingData.get('contourColor','GSPaired'))
                 ax0.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.7,interpolation='bilinear')
                 if drawingData.get('showSlice') in [3,]:
                     contourSet = ax0.contour(ZU,colors='k',linewidths=1)
@@ -7529,7 +7558,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         mcsaTypes = np.reshape(mcsaTypes,(nuniq*neqv))
         mcsaBonds = FindPeaksBonds(mcsaXYZ)
     drawAtoms = drawingData.get('Atoms',[])
-
+    deformationData = data.get('Deformations',{})
     mapData = {'MapType':False, 'rho':[]}
     showBonds = False
     if 'Map' in generalData:

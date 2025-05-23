@@ -756,11 +756,11 @@ class NumberValidator(wxValidator):
         if self.typ == int and self.positiveonly:
             self.validchars = '0123456789'
         elif self.typ == int:
-            self.validchars = '0123456789+-'
+            self.validchars = '0123456789+-%'
         elif self.typ == float:
             # allow for above and sind, cosd, sqrt, tand, pi, and abbreviations
             # also addition, subtraction, division, multiplication, exponentiation
-            self.validchars = '0123456789.-+eE/cosindcqrtap()*,'
+            self.validchars = '0123456789.-+eE/cosindcqrtap()*,%'
         else:
             self.validchars = None
             return

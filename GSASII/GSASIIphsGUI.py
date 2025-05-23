@@ -12186,6 +12186,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         del Harm[1][item]
             wx.CallAfter(UpdateDeformation,dId)
             
+        def OnShowDef(event):
+            dId = Indx[event.GetEventObject().GetId()]
+            deformationData[-dId]['showDef'] = not deformationData[-dId]['showDef']
+            G2plt.PlotStructure(G2frame,data)
+        
+        def OnAtCol(event):
+            dId = Indx[event.GetEventObject().GetId()]
+            deformationData[-dId]['atColor'] = not deformationData[-dId]['atColor']
+            G2plt.PlotStructure(G2frame,data)
+            
         # UpdateDeformation executable code starts here
         alpha = ['A','B','C','D','E','F','G','H',]
         generalData = data['General']
@@ -12246,6 +12256,18 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             plotAtm.Bind(wx.EVT_BUTTON,OnPlotAtm)
             Indx[plotAtm.GetId()] = dId
             lineSizer.Add(plotAtm,0,WACV)
+            deformationData[-dId]['showDef'] = deformationData[-dId].get('showDef',False)
+            deformationData[-dId]['atColor'] = deformationData[-dId].get('atColor',True)
+            showDef = wx.CheckBox(deformation,label='show def.?')
+            showDef.SetValue(deformationData[-dId]['showDef'])
+            Indx[showDef.GetId()] = dId
+            showDef.Bind(wx.EVT_CHECKBOX,OnShowDef)
+            lineSizer.Add(showDef,0,WACV)
+            atCol = wx.CheckBox(deformation,label='use atom colors?')
+            atCol.SetValue(deformationData[-dId]['atColor'])
+            Indx[atCol.GetId()] = dId
+            atCol.Bind(wx.EVT_CHECKBOX,OnAtCol)
+            lineSizer.Add(atCol,0,WACV)
             delAtm = wx.Button(deformation,label='Delete')
             delAtm.Bind(wx.EVT_BUTTON,OnDelAtm)
             Indx[delAtm.GetId()] = dId
@@ -13504,9 +13526,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     if not RBObj['nSH'][iSh]:
                         shSizer.Add(wx.StaticText(RigidBodies,
                             label=' Select harmonic order or try different equivalent position'))
-                    elif len(RBObj['SHC'][iSh]) > 12:
+                    elif len(RBObj['SHC'][iSh]) > 24:
                         shSizer.Add(wx.StaticText(RigidBodies,
-                            label=' WARNING: More than 12 terms found; use lower harmonic order'))
+                            label=' WARNING: More than 24 terms found; use lower harmonic order'))
                     else:
                         shcSizer = wx.FlexGridSizer(0,9,5,5)
                         for item in RBObj['SHC'][iSh]:
@@ -13525,6 +13547,14 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 Obj = event.GetEventObject()
                 iSh = Indx[Obj.GetId()]
                 RBObj['hide'][iSh] = not RBObj['hide'][iSh]
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnAtColor(event):
+                RBObj['useAtColor'] = not RBObj['useAtColor']
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnFadeShell(event):
+                RBObj['fadeSh'] = not RBObj['fadeSh']
                 G2plt.PlotStructure(G2frame,data)
 
             RBObj['hide'] = RBObj.get('hide',[False for i in range(len(RBObj['atType']))])
@@ -13552,7 +13582,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             hidesh.Bind(wx.EVT_CHECKBOX,OnHideSh)
             Indx[hidesh.GetId()] = 0
             topLine.Add(hidesh,0,WACV)
-            sprbSizer.Add(topLine)
+            sprbSizer.Add(wx.StaticText(RigidBodies,label='Spinning RB orientation parameters for %s:'%RBObj['RBname'][0]))
             sprbSizer.Add(LocationSizer(RBObj,'Spin'))
             choices = [' x ',' y ',' z ','x+y','x+y+z']
             RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
@@ -13562,6 +13592,20 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
             Indx[symRadioSet.GetId()] = rbId
             sprbSizer.Add(symRadioSet)
+            plotLine = wx.BoxSizer(wx.HORIZONTAL)
+            RBObj['useAtColor'] = RBObj.get('useAtColor',True)
+            atColor = wx.CheckBox(RigidBodies,label='Use atom color?')
+            atColor.SetValue(RBObj['useAtColor'])
+            atColor.Bind(wx.EVT_CHECKBOX,OnAtColor)
+            plotLine.Add(atColor,0,WACV)
+            RBObj['fadeSh'] = RBObj.get('fadeSh',True)
+            fadeShell = wx.CheckBox(RigidBodies,label='Fade shells?')
+            fadeShell.SetValue(RBObj['fadeSh'])
+            fadeShell.Bind(wx.EVT_CHECKBOX,OnFadeShell)
+            plotLine.Add(fadeShell,0,WACV)
+            sprbSizer.Add(plotLine)
+            G2G.HorizontalLine(sprbSizer,RigidBodies)
+            sprbSizer.Add(topLine)
             sprbSizer.Add(SHsizer())
             return sprbSizer
 
@@ -13901,7 +13945,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             rbObj = data['RBModels']['Residue'][resId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
-            resSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
+            resSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,80))
             if resId:
                 resSelect.SetSelection(resId)
                 OnResSelect(None)
@@ -13930,7 +13974,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             rbObj = data['RBModels']['Vector'][vecId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
-            vecSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
+            vecSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,80))
             if vecId is not None:
                 vecSelect.SetSelection(vecId)
                 OnVecSelect(None)
@@ -13955,7 +13999,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             rbObj = data['RBModels']['Spin'][spnId]
             data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[RBObj['Ids'][0]]][cx:cx+3]
             data['Drawing']['Quaternion'] = rbObj['Orient'][0]
-            spnSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
+            spnSelect = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,80))
             if spnId != -1:
                 spnSelect.SetSelection(spnId)
                 OnSpnSelect(None)

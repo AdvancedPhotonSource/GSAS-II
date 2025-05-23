@@ -2,15 +2,15 @@
 '''
 Read TIF files using the PIL/Pillow module.
 
-The metadata can be specified in a file with the same name and path as 
+The metadata can be specified in a file with the same name and path as
 the TIFF file except that the the extension is .metadata.
 
 The contents of that file are a series of lines of form::
 
      keyword = value
 
-Note that capitalization of keywords is ignored. Defined keywords are in table below. Any line 
-without one of these keywords will be ignored. 
+Note that capitalization of keywords is ignored. Defined keywords are in table below. Any line
+without one of these keywords will be ignored.
 
 .. Next command allows \\AA to be used in HTML
 
@@ -20,8 +20,8 @@ without one of these keywords will be ignored.
   keyword                        explanation
 ==============================  ====================================================
 wavelength                       Wavelength in :math:`\\AA`
-distance                         Distance to sample in mm 
-polarization                     Percentage polarized in horizontal plane 
+distance                         Distance to sample in mm
+polarization                     Percentage polarized in horizontal plane
 sampleChangerCoordinate          Used for sample changers to track sample
 pixelSizeX                       Pixel size in X direction (microns)
 pixelSizeY                       Pixel size in Y direction (microns)
@@ -32,16 +32,16 @@ CenterPixelY                     Location of beam center as a pixel number (in X
 '''
 
 from __future__ import division, print_function
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
-import G2img_1TIF
+from .. import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
+from . import G2img_1TIF
 DEBUG = False
 
 class TIF_LibraryReader(G2obj.ImportImage):
-    '''Reads TIF files using a standard library routine. Metadata (such as pixel 
-    size) must be specified by user, either in GUI or via a metadata file. 
-    The library TIF reader can handle compression and other things that are not 
-    commonly used at beamlines. 
+    '''Reads TIF files using a standard library routine. Metadata (such as pixel
+    size) must be specified by user, either in GUI or via a metadata file.
+    The library TIF reader can handle compression and other things that are not
+    commonly used at beamlines.
     '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -56,10 +56,10 @@ class TIF_LibraryReader(G2obj.ImportImage):
         '''Does the header match the required TIF header?
         '''
         return G2img_1TIF.TIFValidator(filename)
-    
+
     def Reader(self,filename, ParentFrame=None, **unused):
-        '''Read the TIF file using the PIL/Pillow reader and give the 
-        user a chance to edit the likely wrong default image parameters. 
+        '''Read the TIF file using the PIL/Pillow reader and give the
+        user a chance to edit the likely wrong default image parameters.
         '''
         import PIL.Image as PI
         self.Image = PI.open(filename,mode='r')

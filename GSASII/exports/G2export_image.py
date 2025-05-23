@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_image` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_image` follow:
 '''
 from __future__ import division, print_function
 import os.path
-import scipy.misc
-import GSASIIfiles as G2fil
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
+from .. import GSASIIfiles as G2fil
 
 class ExportImagePNG(G2fil.ExportBaseclass):
     '''Used to create a PNG file for a GSAS-II image
@@ -18,7 +21,10 @@ class ExportImagePNG(G2fil.ExportBaseclass):
             extension='.png',
             longFormatName = 'Export image in PNG format'
             )
-        self.exporttype = ['image']
+        if plt is None:
+            self.exporttype = []
+        else:
+            self.exporttype = ['image']
         #self.multiple = True
     def Exporter(self,event=None):
         '''Export an image
@@ -29,13 +35,12 @@ class ExportImagePNG(G2fil.ExportBaseclass):
         self.loadTree()
         if self.ExportSelect(): return # select one image; ask for a file name
         # process the selected image(s) (at present only one image)
-        for i in sorted(self.histnam): 
+        for i in sorted(self.histnam):
             filename = os.path.join(
                 self.dirname,
                 os.path.splitext(self.filename)[0] + self.extension
                 )
             imgFile = self.Histograms[i].get('Data',(None,None))
             Image = G2fil.GetImageData(self.G2frame,imgFile,imageOnly=True)
-            scipy.misc.imsave(filename,Image)
+            plt.imsave(filename,Image)
             print('Image '+imgFile+' written to file '+filename)
-            

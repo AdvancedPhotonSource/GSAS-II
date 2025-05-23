@@ -1,14 +1,24 @@
 # when run, this starts GitHub Actions workflow in another repo (GSAS-II-buildtools)
 
-# 1) note that the GitHub Actions to be run must be on: repository_dispatch:
-# 2) in the organizaion owning the remote repo, one must create a Personal Access Token
-#    (Org level) (Settings/Developer Settings/Personal Access Settings->Tokens
-#    got this to work w/classic having this access allowed: 
-#     repo:status, repo_deployment, public_repo, repo:invite, security_events, manage_runners:org
-#    better w/new style token, I guess
-# 3) save the created token in @ project-level: Settings/Secrets and vars/Actions: Repo secret
+# 1) This will trigger all GitHub Actions in workflows that has
+#           on: repository_dispatch:
+# 2) an authorized user (Brian, or perhaps organization) creates a
+#    personal access token.
+#  Do this by clicking on "picture (upper rt) 
+#     then "Settings" in drop-down and 
+#     then select "Developer settings" (at bottom). 
+#     Finally select "Fine-grained tokens"
+#  Personal access token settings:
+#     select owner: APS;
+#     select APS/G2-bld;
+#     Repo permissions: contents r/w & metadata: r/o.
+# 3) Save the created token in this (G2) project. 
+#     Use repo-level settings on 2nd line from top (may be in ... menu). 
+#     Select Actions in Secrets & variables and create a repository secret. 
+#     Name assigned must match ${{ secrets.XXX }} in workflow's curl 
+#     call ("Authorization:" setting)
 
-name: Trigger on GSASII-buildtools
+name: Test of triggering GSASII-buildtools actions
 
 on: workflow_dispatch
 

@@ -2919,6 +2919,16 @@ def UpdatePhaseData(G2frame,Item,data):
         Vvec = np.zeros(3)
         ifMag = False
         BNSlatt = ''
+        ifRB = False
+        RBModels = data['RBModels']
+        for item in RBModels:
+            if RBModels[item]:
+                ifRB = True
+        if ifRB:
+            msg = 'Rigid Bodies present'
+            text = 'Rigid bodies must be deleted before transform can be done'
+            wx.MessageBox(text,caption=msg,style=wx.ICON_EXCLAMATION)
+            return
         while True:
             dlg = TransformDialog(G2frame,data,Trans,Uvec,Vvec,ifMag,BNSlatt)
             try:

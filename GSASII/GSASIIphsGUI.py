@@ -4673,8 +4673,8 @@ program; Please cite:
                                 Atoms.SetCellStyle(row,ci,WHITE,False)
                                 saveCSI = CSI[0][i]
                             Atoms.SetCellTextColour(row,ci,BLACK)
-                if 'F' in rbExcl:
-                    Atoms.SetCellStyle(row,colF,VERY_LIGHT_GREY,True)
+                # if 'F' in rbExcl:
+                #     Atoms.SetCellStyle(row,colF,VERY_LIGHT_GREY,True)
                 if 'X' in rbExcl:
                     for c in range(0,colX+3):
                         if c != colR:
@@ -14262,7 +14262,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 recompute atom distances
                 '''
                 [tor,torSlide] = Indx[tc.GetId()]
-                torSlide.SetValue(int(value*10))
+                torSlide.ChangeValue(int(value*10))
                 UpdateTablePlot()
 
             def OnTorSlide(event):
@@ -14274,7 +14274,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 Tors = data['testRBObj']['rbObj']['Torsions'][tor]
                 val = float(Obj.GetValue())/10.
                 Tors[0] = val
-                ang.SetValue(val)
+                ang.ChangeValue(val)
                 UpdateTablePlot()
 
             def UpdateTable(event=None):
@@ -14310,7 +14310,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 rbObj['OrientVec'][0] = float(Obj.GetValue())/10.
                 for i in range(4):
                     val = rbObj['OrientVec'][i]
-                    G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
+                    G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
                 Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
                                 np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
@@ -14327,7 +14327,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
                 try:
-                    G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+                    G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
                         int(10*rbObj['OrientVec'][0]))
                 except:
                     pass

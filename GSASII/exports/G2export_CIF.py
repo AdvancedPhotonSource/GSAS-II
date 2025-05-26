@@ -5598,7 +5598,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         # find default name for template
         resetTemplate = None
         localTemplate = None
-        for pth in sys.path:           # -- search with default name
+        for pth in [os.path.dirname(__file__)]+sys.path:           # -- search with default name
             fil = os.path.join(pth,templateDefName)
             if os.path.exists(fil):
                 resetTemplate = fil

@@ -473,10 +473,12 @@ def ReadInstprm(instLines, bank, Sample={}):
                            'DisplaceY':[0.,False]})
     Sample.update(NewSample)
 
-    #if pdabc exists, process it
+    #if pdabc exists, process it, then delete from original lists
     if "pdabc" in newItems:
         idx = newItems.index('pdabc')
-        iparm1 = makePdabcDict(newVals[idx])
+        iparm1 = makePdabcDict(newVals[idx]) #returns new dictionary with pdabc data
+        del newItems[idx]
+        del newVals[idx]
     else:
         iparm1 = {}
 
@@ -1947,7 +1949,7 @@ class ExportBaseclass(object):
         self.parmDict.update(phaseDict)
         hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
         self.parmDict.update(hapDict)
-        histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
+        histVary,histDict,histDict1, controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
         self.parmDict.update(histDict)
         self.parmDict.update(zip(
             covDict.get('varyList',[]),

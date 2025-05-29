@@ -4616,7 +4616,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     return dMdvh,depDerivDict,wdf
     
 
-def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+def dervRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawleyLookup,dlg):
     '''Loop over histograms and compute derivatives of the fitting
     model (M) with respect to all parameters.  Results are returned in
     a Jacobian matrix (aka design matrix) of dimensions (n by m) where
@@ -4673,7 +4673,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
         
     return dMdV
 
-def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+def HessRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawleyLookup,dlg):
     '''Loop over histograms and compute derivatives of the fitting
     model (M) with respect to all parameters.  For each histogram, the
     Jacobian matrix, dMdv, with dimensions (n by m) where n is the
@@ -4799,13 +4799,15 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
         Hess += np.inner(dpdv*pWt,dpdv)
     return Vec,Hess
 
-def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg=None):        
+def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawleyLookup,dlg=None):        
     '''Computes the point-by-point discrepancies between every data point in every histogram
     and the observed value. Used in the Jacobian, Hessian & numeric least-squares to compute function
     
     :returns: an np array of differences between observed and computed diffraction values.
     '''
     Values2Dict(parmDict, varylist, values)
+
+
     if len(varylist):   #skip if no variables; e.g. in a zero cycle LeBail refinement
         G2mv.Dict2Map(parmDict)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
@@ -4824,23 +4826,10 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         phPartialFP = open(phasePartials,'wb')  # create/clear partials file
         phPartialFP.close()
 
-    print("\n###### in errRefine #####\n")
-    # print("parmDict =")
-    # for key in parmDict:
-    #     print(key," : ", parmDict[key])
-
-    print("Phases =")
-    for key in Phases:
-        print(key," : ", Phases[key])
-
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
-            print(f"Powder histogram: {histogram}")
-             
+
             Histogram = Histograms[histogram]
-            print("\nHistogram dictionary\n")
-            # for key in Histogram:
-            #     print(key,":",Histogram[key])
             hId = Histogram['hId'] 
             if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(hId,histogram)
             hfx = ':%d:'%(hId)

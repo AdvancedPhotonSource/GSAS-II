@@ -254,7 +254,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
     print('derivative computation time',time.time()-begin)
     return derivCalcs
 
-def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
+def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,histDict1,varyList,
     calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None):
     '''Core optimization routines, shared between SeqRefine and Refine
 
@@ -292,7 +292,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             maxCyc = Controls.get('max cyc',1)
             result = so.leastsq(G2stMth.errRefine,values,Dfun=G2stMth.dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
-                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,histDict1,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
             result[2]['num cyc'] = ncyc
             if refPlotUpdate is not None: refPlotUpdate(Histograms)   # update plot after completion
@@ -300,7 +300,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             Lamda = Controls.get('Marquardt',-3)
             maxCyc = Controls['max cyc']
             result = G2mth.HessianLSQ(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,lamda=Lamda,
-                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg),
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,histDict1,varyList,calcControls,pawleyLookup,dlg),
                 refPlotUpdate=refPlotUpdate)
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
@@ -324,7 +324,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         elif 'Hessian SVD' in Controls['deriv type']:
             maxCyc = Controls['max cyc']
             result = G2mth.HessianSVD(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,
-                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg),
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,histDict1,varyList,calcControls,pawleyLookup,dlg),
                 refPlotUpdate=refPlotUpdate)
             if result[1] is None:
                 IfOK = False
@@ -337,7 +337,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         else:           #'numeric'
             maxCyc = Controls.get('max cyc',1)
             result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,histDict1,varyList,calcControls,pawleyLookup,dlg))
             ncyc = 1
             result[2]['num cyc'] = ncyc
             if len(varyList):
@@ -492,7 +492,9 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     constrDict += TwConstr
     fixedList += TwFixed
     calcControls.update(controlDict)
-    histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,pFile=printFile)
+    histVary,histDict,histDict1, controlDict = G2stIO.GetHistogramData(Histograms,pFile=printFile)
+
+
     calcControls.update(controlDict)
     varyList = rbVary+phaseVary+hapVary+histVary
     parmDict.update(rbDict)
@@ -543,7 +545,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     try:
         covData = {}
         IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histograms,Phases,restraintDict,
-            rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
+            rigidbodyDict,parmDict,histDict1,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
             refPlotUpdate=refPlotUpdate)
         if IfOK:
             if len(covMatrix):      #empty for zero cycle refinement
@@ -731,7 +733,7 @@ def DoNoFit(GPXfile,key):
     calcControls['maxSSwave'] = maxSSwave
     hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Controls=calcControls,Print=False)
     calcControls.update(controlDict)
-    histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
+    histVary,histDict,histDict1, controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
     calcControls.update(controlDict)
     parmDict.update(rbDict)
     parmDict.update(phaseDict)
@@ -798,7 +800,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     calcControls['maxSSwave'] = maxSSwave
     hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Controls=calcControls,Print=False)
     calcControls.update(controlDict)
-    histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
+    histVary,histDict,histDict1, controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
     calcControls.update(controlDict)
     parmDict.update(rbDict)
     parmDict.update(phaseDict)
@@ -940,7 +942,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         Histo = {histogram:Histograms[histogram],}
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Controls=calcControls,Print=False)
         calcControls.update(controlDict)
-        histVary,histDict,controlDict = G2stIO.GetHistogramData(Histo,False)
+        histVary,histDict,histDict1, controlDict = G2stIO.GetHistogramData(Histo,False)
         calcControls.update(controlDict)
         varyList = rbVary+redphaseVary+hapVary+histVary
 #        if not ihst:
@@ -1066,7 +1068,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         G2mv.Dict2Map(parmDict)  # impose constraints initially
         try:
             IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histo,Phases,restraintDict,
-                rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
+                rigidbodyDict,parmDict,histDict1,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
                 refPlotUpdate=refPlotUpdate)
             try:
                 shft = '%.4f'% Rvals['Max shft/sig']

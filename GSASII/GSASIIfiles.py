@@ -126,6 +126,55 @@ def makeInstDict(names,data,codes):
         inst[item] = list(inst[item])
     return inst
 
+def makePdabcDict(pdabcString):
+    '''
+    if a pdabc entry is found in an instprm file, it will exist as a single string
+    each row is delineated by a newline and must contains 5 comma separated values
+    specifying d,TOF,alp,bet,sig.
+
+    This function will parse that string into a dictionary and then return it within
+    a container dictionary 
+    '''
+
+    if type(pdabcString) != str:
+        raise Exception("Error interpreting pdabc entry in .instprm file. Entry must be a string")
+    
+    lines = pdabcString.split("\n")
+
+    if len(lines) == 0:
+        print("Warning: pdabc entry found in .instprm file is empty")
+        return {} #no information, return empty dict
+    
+    #create empty lists to hold values
+    d = []
+    ToF = []
+    alp = []
+    bet = []
+    sig = []
+    nPdabc = 0
+    for line in lines:
+        if line: #skip empty lines
+            entry = line.split(",")
+            if len(entry) != 5:
+                raise Exception("Error interpreting pdabc entry in .instprm file. Entries must have exactly 5 comma separated values")
+            d.append(float(entry[0]))
+            ToF.append(float(entry[1]))
+            alp.append(float(entry[2]))
+            bet.append(float(entry[3]))
+            sig.append(float(entry[4]))
+            nPdabc += 1
+    
+    pdabcDict = {
+        "d":d,
+        "TOF":ToF,
+        "alp":alp,
+        "bet":bet,
+        "sig":sig
+    }
+
+    print(f"PDABC entry found and {nPdabc} lines successfully loaded")
+    return {"pdabc":pdabcDict}
+
 def SetPowderInstParms(Iparm, rd):
     '''extracts values from instrument parameters in rd.instdict
     or in array Iparm.
@@ -249,8 +298,11 @@ def SetPowderInstParms(Iparm, rd):
         Inst1 = makeInstDict(names,data,codes)
         Inst1['Bank'] = [Bank,Bank,0]
         Inst2 = {}
+
         if pfType < 0:
             Ipab = 'INS  1PAB'+str(-pfType)
+            key = Ipab+'  '
+            print("looking for key: ", key)
             Npab = int(Iparm[Ipab+'  '].strip())
             Inst2['Pdabc'] = []
             for i in range(Npab):
@@ -259,6 +311,8 @@ def SetPowderInstParms(Iparm, rd):
                 Inst2['Pdabc'].append([float(t) for t in s])
             Inst2['Pdabc'] = np.array(Inst2['Pdabc'])
             Inst2['Pdabc'].T[3] += Inst2['Pdabc'].T[0]*Inst1['difC'][0] #turn 3rd col into TOF
+
+            print(f"loaded resolution data with {Inst2['Pdabc'].shape} shape" )
         if 'INS  1I ITYP' in Iparm:
             s = Iparm['INS  1I ITYP'].split()
             Ityp = int(s[0])
@@ -418,7 +472,15 @@ def ReadInstprm(instLines, bank, Sample={}):
         Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
                            'DisplaceY':[0.,False]})
     Sample.update(NewSample)
-    return bank,[makeInstDict(newItems, newVals, len(newVals)*[False]), {}]
+
+    #if pdabc exists, process it
+    if "pdabc" in newItems:
+        idx = newItems.index('pdabc')
+        iparm1 = makePdabcDict(newVals[idx])
+    else:
+        iparm1 = {}
+
+    return bank,[makeInstDict(newItems, newVals, len(newVals)*[False]), iparm1]
 
 def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
     '''Write the contents of a GSAS-II (new) .instprm instrument parameter file

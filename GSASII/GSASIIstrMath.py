@@ -3762,7 +3762,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     
     def GetReflSigGamCW(refl,im,wave,G,GB,phfx,calcControls,parmDict):
         U = parmDict[hfx+'U']
-        V = parmDict[hfx+'V']
+        V = parmDict[hfx+'V'] 
         W = parmDict[hfx+'W']
         X = parmDict[hfx+'X']
         Y = parmDict[hfx+'Y']
@@ -3821,6 +3821,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     phasePartials = calcControls.get('PhasePartials',None)
     Nphase = len(Histogram['Reflection Lists'])     #partials made ony if Nphase > 1
     histType = calcControls[hfx+'histType']
+    print(f"about to calculate histogram {histType}")
     if phasePartials:
         
         phPartialFP = open(phasePartials,'ab')  # create histogram header
@@ -4822,10 +4823,25 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         print('Storing intensity by phase in',phasePartials)
         phPartialFP = open(phasePartials,'wb')  # create/clear partials file
         phPartialFP.close()
+
+    print("\n###### in errRefine #####\n")
+    # print("parmDict =")
+    # for key in parmDict:
+    #     print(key," : ", parmDict[key])
+
+    print("Phases =")
+    for key in Phases:
+        print(key," : ", Phases[key])
+
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
+            print(f"Powder histogram: {histogram}")
+             
             Histogram = Histograms[histogram]
-            hId = Histogram['hId']
+            print("\nHistogram dictionary\n")
+            # for key in Histogram:
+            #     print(key,":",Histogram[key])
+            hId = Histogram['hId'] 
             if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(hId,histogram)
             hfx = ':%d:'%(hId)
             wtFactor = calcControls[hfx+'wtFactor']

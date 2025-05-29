@@ -3699,6 +3699,10 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 instDict[pfx+'beta-1'] = 1.0
         elif 'E' in dataType:
             pass
+
+        print('dataType:',dataType)
+        print('InstParms:',instDict)
+        print('InstVary:',insVary)
         return dataType,instDict,insVary
         
     def GetSampleParms(hId,Sample):

@@ -453,11 +453,9 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
 
     dFFdS = {}
     atFlg = []
-#    R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
     SQR = np.repeat(SQ,HKL.shape[1])
     for iAt,Atype in enumerate(Tdata):
-        if 'Q' in Atype:
-#            R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),Bmat)
+        if 'Q' in Atype:        #spinning RB
             atFlg.append(1.0)
             SHdat = SHCdict[iAt]
             symAxis = np.array(SHdat['symAxis'])
@@ -527,7 +525,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         SHMk = G2lat.KslCalc(item,ThMk,PhMk)
                         BS = 1.0
                         if 'Q' in Atm:
-                            BS = sp.spherical_jn(l,1.0)    #Slater term here?
+                            BS = sp.spherical_jn(l,1.0)/(4.*np.pi)    #Slater term here?
                         else:
                             BS = sp.spherical_jn(l,QR*R)/(4.*np.pi)    #Bessel function
                             BSP = sp.spherical_jn(l,QR*(R+0.01))/(4.*np.pi)
@@ -547,7 +545,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             dFFdS[Oiname] = dSHdOi
             dFFdS[Ojname] = dSHdOj
             dFFdS[Okname] = dSHdOk
-        elif iAt in SHCdict and 'X' in hType:
+        elif iAt in SHCdict and 'X' in hType:   #X-ray deformation
             radial = SHCdict[-iAt]['Radial']
             orKeys = [item for item in ORBtables[Atype] if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']]
             if 'B' in radial:

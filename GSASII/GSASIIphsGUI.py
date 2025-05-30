@@ -5201,7 +5201,7 @@ program; Please cite:
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in indx:
-                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
+#                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
                         atomData[r][cid] = parm
                 SetupGeneral()
                 FillAtomsGrid(Atoms)
@@ -5572,13 +5572,15 @@ program; Please cite:
         cx,ct,cs,ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms,ct-1)
         if indx:
+            B2 = {}
             atomData = data['Atoms']
             PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
             if PE.ShowModal() == wx.ID_OK:
                 Atype2 = PE.Elem.strip()
                 AtomInfo2 = G2elem.GetAtomInfo(Atype2)
                 FF2 = G2elem.GetFFtable([Atype2])[Atype2]
-                B2 = AtomInfo2['Isotopes']['Nat. Abund.']['SL'][0]
+                for iso in AtomInfo2['Isotopes']:
+                    B2[iso] = AtomInfo2['Isotopes'][iso]['SL'][0]
             PE.Destroy()
             SQ = 0.0
             PE2 = G2G.SingleFloatDialog(G2frame,'form factor','Enter sinth/lam for atom frac split',SQ)
@@ -5588,24 +5590,36 @@ program; Please cite:
             ff2 = G2elem.ScatFac(FF2,SQ**2)
         print(' X-ray site fractions for sin(th)/lam = %.3f'%SQ)
         for ind in indx:
-                Aname1 = atomData[ind][ct-1]
-                Atype1 = G2elem.FixValence(atomData[ind][ct])
-                Afrac = atomData[ind][cx+3]
-                Amult = float(atomData[ind][cx+5])
-                AtomInfo1 = G2elem.GetAtomInfo(Atype1)
-                if Atype1 == Atype2:
-                    print('ERROR - 2nd atom type must be different from selected atom')
-                    continue
-                FF1 = G2elem.GetFFtable([Atype1])[Atype1]
-                ff1 = G2elem.ScatFac(FF1,SQ**2)
-                B1 = AtomInfo1['Isotopes']['Nat. Abund.']['SL'][0]
+            Aname1 = atomData[ind][ct-1]
+            Atype1 = G2elem.FixValence(atomData[ind][ct])
+            if Atype1 == 'Q':
+                PE = G2elemGUI.PickElement(G2frame,oneOnly=False)
+                if PE.ShowModal() == wx.ID_OK:
+                    Atype1 = PE.Elem.strip()
+                PE.Destroy()
+            Afrac = atomData[ind][cx+3]
+            Amult = float(atomData[ind][cx+5])
+            AtomInfo1 = G2elem.GetAtomInfo(Atype1)
+            if Atype1 == Atype2:
+                print('ERROR - 2nd atom type must be different from selected atom')
+                continue
+            FF1 = G2elem.GetFFtable([Atype1])[Atype1]
+            ff1 = G2elem.ScatFac(FF1,SQ**2)
+            if ff1 != ff2:
                 frac1 = (ff1*Afrac-ff2)/(ff1-ff2)
-                bfrac1 = (B1*Afrac-B2)/(B1-B2)
                 print(' For %s: X-ray based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell'     \
-                      %(Aname1,Atype1,frac1,frac1*Amult,Atype2,(1.-frac1),(1.-frac1)*Amult))
-                print('        neutron based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell\n'      \
-                      %(Atype1,bfrac1,bfrac1*Amult,Atype2,(1.-bfrac1),(1.-bfrac1)*Amult))
-
+                  %(Aname1,Atype1,frac1,frac1*Amult,Atype2,(1.-frac1),(1.-frac1)*Amult))
+            
+            B1 = AtomInfo1['Isotopes']['Nat. Abund.']['SL'][0]
+            for iso in B2:
+                if B1 != B2[iso]:
+                    bfrac1 = (B1*Afrac-B2[iso])/(B1-B2[iso])
+                    atype2 = Atype2
+                    if 'nat' not in iso:
+                        atype2 += '_%s'%iso
+                    print('        neutron based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell'      \
+                          %(Atype1,bfrac1,bfrac1*Amult,atype2,(1.-bfrac1),(1.-bfrac1)*Amult))
+    
     def OnValidProtein(event):
 
         def pickHandler(resName):

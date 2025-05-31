@@ -225,8 +225,8 @@ def cellDijFill(pfx,phfx,SGData,parmDict):
     elif SGData['SGLaue'] in ['3R', '3mR']:
         A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],
             parmDict[pfx+'A0']+parmDict[phfx+'D11'],
-            parmDict[pfx+'A3']+parmDict[phfx+'D23'],parmDict[pfx+'A3']+parmDict[phfx+'D23'],
-            parmDict[pfx+'A3']+parmDict[phfx+'D23']]
+            parmDict[pfx+'A3']+parmDict[phfx+'D12'],parmDict[pfx+'A3']+parmDict[phfx+'D12'],
+            parmDict[pfx+'A3']+parmDict[phfx+'D12']]
     elif SGData['SGLaue'] in ['m3m','m3']:
         A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],
              parmDict[pfx+'A0']+parmDict[phfx+'D11'],0,0,0]

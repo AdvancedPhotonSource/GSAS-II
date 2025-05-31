@@ -4500,7 +4500,8 @@ program; Please cite:
                 if 'Atoms' in data['Drawing'] and replot:
                     ci = colLabels.index('I/A')
                     G2mth.DrawAtomsReplaceByID(data,ci+8,atomData[r],ID)
-                    G2plt.PlotStructure(G2frame,data)
+                    G2frame.GetStatusBar().SetStatusText('Structure changed: Do "Edit Atoms/Update draw atoms" to refresh structure drawing',1)
+                    # G2plt.PlotStructure(G2frame,data)
                 if SGData['SpGrp'] != 'P 1':    #no need to update P 1 structures!
                     wx.CallAfter(Paint)
 
@@ -4525,7 +4526,8 @@ program; Please cite:
                 ID = atomData[r][ci+8]
                 if 'Atoms' in data['Drawing']:
                     G2mth.DrawAtomsReplaceByID(data,ci+8,atomData[r],ID)
-                    G2plt.PlotStructure(G2frame,data)
+                    G2frame.GetStatusBar().SetStatusText('Structure changed: Do "Edit Atoms/Update draw atoms" to refresh structure drawing',1)
+                    # G2plt.PlotStructure(G2frame,data)
                 SetupGeneral()
             else:
                 event.Skip()
@@ -4575,7 +4577,8 @@ program; Please cite:
                     G2frame.GetStatusBar().SetStatusText('Use right mouse click to brng up Atom editing options',1)
                     Atoms.ClearSelection()
                     Atoms.SelectRow(r,True)
-            G2plt.PlotStructure(G2frame,data)
+            G2frame.GetStatusBar().SetStatusText('Structure changed: Do "Edit Atoms/Update draw atoms" to refresh structure drawing',1)
+            # G2plt.PlotStructure(G2frame,data)
 
         def ChangeSelection(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -13891,14 +13894,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 return
             Indx.clear()
             rbObj = data['RBModels'][rbType][rbIndx]
-            data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             if rbType == 'Residue':
+                data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
+                data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
                 G2frame.bottomSizer =  SpnrbSizer(rbObj,rbIndx)
             else: #Vector
+                data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()

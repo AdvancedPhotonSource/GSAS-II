@@ -7418,8 +7418,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
         if drawingData['showVoids']:
-            for x,y,z in drawingData['Voids']:
-                RenderSphere(x,y,z,.05,(0.,0.,1.),True)
+            RC = len(drawingData['Voids'])*[[0.05,2*Bl]]
+            RenderDots(drawingData['Voids'],RC)
+            # for x,y,z in drawingData['Voids']:
+            #     RenderSphere(x,y,z,.05,(0.,0.,1.),True)
         if drawingData['unitCellBox']:
             RenderBox()
             if drawingData['Plane'][1]:

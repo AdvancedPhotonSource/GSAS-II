@@ -381,7 +381,7 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
     # get Hist and HAP info
     hapVary, hapDict, controlDict = G2stIO.GetHistogramPhaseData(Phases, Histograms, Print=False, resetRefList=False)
     parmDict.update(hapDict)
-    histVary, histDict, controlDict = G2stIO.GetHistogramData(Histograms, Print=False)
+    histVary, histDict, histDict1, controlDict = G2stIO.GetHistogramData(Histograms, Print=False)
     parmDict.update(histDict)
     
     # TODO: twining info needed?

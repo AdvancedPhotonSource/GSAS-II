@@ -3814,8 +3814,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         pFile.write(ptstr+'\n')
         pFile.write(varstr+'\n')
 
-    # created second histDict     
+         
     histDict = {}
+    # create second histDict
     histDict1 = {}
 
     histVary = []
@@ -3846,10 +3847,10 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             # if 'T' in Type and len(Inst[1]):    #patch -  back-to-back exponential contribution to TOF line shape is removed
             #     G2fil.G2Print ('Warning: tabulated profile coefficients are ignored')
 
-            # create histDict1
+            # create histDict1 if second instrument parameters entry is not empty
             if Inst[1]:
                 for key in Inst[1]:
-                    histDict1[pfx]=Inst[1][key]
+                    histDict1[pfx+'Pdabc']=Inst[1][key]
 
             Type,instDict,insVary = GetInstParms(hId,Inst[0])
 

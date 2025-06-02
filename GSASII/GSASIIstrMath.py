@@ -3756,7 +3756,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
     if GSASIIpath.GetConfigValue('Show_timing',False):
         print ('GetFobsSq t=',time.time()-starttime)
                 
-def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup,histogram=None):
+def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls,pawleyLookup,histogram=None):
     'Computes the powder pattern for a histogram based on contributions from all used phases'
     if GSASIIpath.GetConfigValue('Show_timing',False): starttime = time.time()
     
@@ -3775,13 +3775,25 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         gam = max(0.001,gam)
         return sig,gam
                 
-    def GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict):
+    def GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict,histDict1,hfx):
+
+        #histDict1 holds pdabc entry keyed to hfx. if histDict is empty do nothing
+
         sig = parmDict[hfx+'sig-0']+parmDict[hfx+'sig-1']*refl[4+im]**2+   \
             parmDict[hfx+'sig-2']*refl[4+im]**4+parmDict[hfx+'sig-q']*refl[4+im]
         gam = parmDict[hfx+'X']*refl[4+im]+parmDict[hfx+'Y']*refl[4+im]**2+parmDict[hfx+'Z']
         Ssig,Sgam = GetSampleSigGam(refl,im,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         sig += Ssig
         gam += Sgam
+
+        if histDict1:
+            pdabc = histDict1[hfx+'Pdabc']
+            refl[4+im] #d-spacing
+            sigTable = np.interp(refl[4+im],pdabc["d"],pdabc["sig"])
+            
+            print(f"{refl[4+im]:.4f} sig: {sig:.6f} sigTable {sigTable:.6f} total: {sig+sigTable}")
+            sig += sigTable
+
         return sig,gam
     
     def GetReflSigGamED(refl,im,G,GB,phfx,calcControls,parmDict):
@@ -4029,7 +4041,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)         #corrected reflection position - #TODO - what about tabluated offset?
                 Lorenz = sind(abs(parmDict[hfx+'2-theta'])/2)*refl[4+im]**4                                                #TOF Lorentz correction
 #                refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
-                refl[6+im:8+im] = GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
+                refl[6+im:8+im] = GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict,histDict1,hfx)    #peak sig & gam
                 refl[12+im:14+im] = GetReflAlpBet(refl,im,hfx,parmDict)             #TODO - skip if alp, bet tabulated?
                 refl[11+im],refl[15+im],refl[16+im],refl[17+im] = GetIntensityCorr(refl,im,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 refl[11+im] *= Vst*Lorenz
@@ -4841,7 +4853,7 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
             yd *= 0.0
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
-            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
+            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,histDict1,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup,histogram)
             yc[xB:xF] += yb[xB:xF]
             if not np.any(y):                   #fill dummy data

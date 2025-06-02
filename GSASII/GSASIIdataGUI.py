@@ -5146,7 +5146,7 @@ If you continue from this point, it is quite likely that all intensity computati
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,ORBtables,BLtable,MFtable,maxSSwave = \
             G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False,resetRefList=False)
-        histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
+        histVary,histDict,histDict1, controlDict = G2stIO.GetHistogramData(histDict,Print=False)
         varyList = rbVary+phaseVary+hapVary+histVary
         parmDict.update(rbDict)
         parmDict.update(phaseDict)

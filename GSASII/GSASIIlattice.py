@@ -2460,12 +2460,6 @@ def RBsymChk(RBsym,cubic,coefNames,L=18):
     :param list coefNames: sp. harm coefficient names to be checked/converted
     :param int L:  maximum spherical harmonic order no. for cubic generation if needed
     '''
-    # cubicsigns = {'C(3,1)c':[-1,],'C(4,1)c':[1,1,],'C(6,1)c':[1,-1],'C(6,2)c':[1,-1],'C(7,1)c':[1,-1],'C(8,1)c':[1,1,1],
-    #     'C(9,1)c':[1,-1],'C(9,2)c':[1,-1],'C(10,1)c':[1,-1,-1],'C(10,2)c':[1,1,-1]}
-    # cubicnames = {'C(3,1)c':['C(3,2)',],'C(4,1)c':['C(4,0)','C(4,4)'],'C(6,1)c':['C(6,0)','C(6,4)'],
-    #     'C(6,2)c':['C(6,2)','C(6,6)'],'C(7,1)c':['C(7,2)','C(7,6)'],'C(8,1)c':['C(8,0)','C(8,4)','C(8,8)'],
-    #     'C(9,1)c':['C(9,2)','C((9,6)'],'C(9,2)c':['C(9,4)','C(9,8)'],
-    #     'C(10,1)c':['C(10,0)','C(10,4)','C(10,8)'],'C(10,2)c':['C(10,2)','C(10,6)','C(10,10)']}
     newNames = []
     newSgns = []
     if cubic:       #sytsym is a cubic site
@@ -3021,7 +3015,8 @@ def SphHarmAng(L,M,P,Th,Ph):
 
     :returns ylmp value/array: as reals
     '''
-    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
+    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree; not normalized
+    #### TODO: this will be deprecated in future scipy; new one sph_harm_y in scipy 1.15.1
 
     if M > 0:
         return (-1)**M*P*np.real(ylmp)*SQ2

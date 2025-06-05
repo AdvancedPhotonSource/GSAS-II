@@ -6,19 +6,19 @@
 
 !CALLING ARGUMENTS:
 
-      INTEGER*4     N                   !Order of factorial
-      REAL*8        FACTLN              !ln(N!) returned
+      INTEGER(kind=4)     N                   !Order of factorial
+      REAL(kind=8)        FACTLN              !ln(N!) returned
 
 !INCLUDE STATEMENTS:
 
 !LOCAL VARIABLES:
                                                                 
-      REAL*8        A(100)              
-      INTEGER*4     IA(100)             
+      REAL(kind=8)        A(100)              
+      INTEGER(kind=4)     IA(100)             
                                                                 
 !FUNCTION DEFINITIONS:                          
 
-      REAL*8        DGAMMLN             
+      REAL(kind=8)        DGAMMLN             
 
 !DATA STATEMENTS:                     
          

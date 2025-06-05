@@ -8,10 +8,10 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        X,Y                 !Arguments
-      INTEGER*4     IFLAG               !Control for calculation method
-      REAL*4        DHDY                !Partial derivative wrt y
-      REAL*4        HFUNC               !Value of function
+      REAL(kind=4)        X,Y                 !Arguments
+      INTEGER(kind=4)     IFLAG               !Control for calculation method
+      REAL(kind=4)        DHDY                !Partial derivative wrt y
+      REAL(kind=4)        HFUNC               !Value of function
 
 !INCLUDE STATEMENTS:
 
@@ -21,7 +21,7 @@
 
 !FUNCTION DEFINITIONS:
 
-      REAL*4        GERFC               !Complementary error function
+      REAL(kind=4)        GERFC               !Complementary error function
 
 !DATA STATEMENTS:
 

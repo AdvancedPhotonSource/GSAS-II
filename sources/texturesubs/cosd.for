@@ -1,4 +1,4 @@
-      REAL*4 FUNCTION COSD(ARG)
+      REAL(kind=4) FUNCTION COSD(ARG)
 
 !PURPOSE: Calculate cosine from angle in deg.
 
@@ -6,7 +6,7 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        ARG                 !Cosine argument in degrees
+      REAL(kind=4)        ARG                 !Cosine argument in degrees
 
 !INCLUDE STATEMENTS:
 

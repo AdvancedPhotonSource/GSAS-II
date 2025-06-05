@@ -11,10 +11,10 @@ C               The National Research Council of Canada
 C                               by
 C       Allen C. Larson, 14 Cerrado Loop, Santa Fe, NM 87505, USA
 
-      REAL*4        X(5,4,25)           
-      INTEGER*4     I                   !Input matrix number
-      INTEGER*4     J                   !Input matrix number
-      INTEGER*4     K                   !Output matrix number
+      REAL(kind=4)        X(5,4,25)           
+      INTEGER(kind=4)     I                   !Input matrix number
+      INTEGER(kind=4)     J                   !Input matrix number
+      INTEGER(kind=4)     K                   !Output matrix number
 
       DO L=1,4
         DO M=1,4

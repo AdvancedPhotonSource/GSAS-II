@@ -13,15 +13,15 @@
 
 !Calling sequence variables
 
-      INTEGER*4     K                   !Number of fields found in the space group symbol
-      INTEGER*4     L(4,4)              !Integer values for the characters in the symbol
-      REAL*4        D(3,3)              !Location of some key elements
-      INTEGER*4     LCENT               !Lattice centering flag
-      INTEGER*4     LAUENO              !Laue Group number
-      INTEGER*4     NAXIS               !Unique axis flag for monoclinic cells
-      INTEGER*4     IER                 !Error flag
-      INTEGER*4     I209                !Diagonal 3-axis flag
-      INTEGER*4     ID                  !Number of D-glides
+      INTEGER(kind=4)     K                   !Number of fields found in the space group symbol
+      INTEGER(kind=4)     L(4,4)              !Integer values for the characters in the symbol
+      REAL(kind=4)        D(3,3)              !Location of some key elements
+      INTEGER(kind=4)     LCENT               !Lattice centering flag
+      INTEGER(kind=4)     LAUENO              !Laue Group number
+      INTEGER(kind=4)     NAXIS               !Unique axis flag for monoclinic cells
+      INTEGER(kind=4)     IER                 !Error flag
+      INTEGER(kind=4)     I209                !Diagonal 3-axis flag
+      INTEGER(kind=4)     ID                  !Number of D-glides
 
 !Local variables:
 

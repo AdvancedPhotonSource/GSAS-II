@@ -9,12 +9,12 @@ C               The National Research Council of Canada
 C                               by
 C       Allen C. Larson, 14 Cerrado Loop, Santa Fe, NM 87505, USA
 
-      INTEGER*4     LCENT               !Lattice centering type flag
-      REAL*4        CEN(3,4)            !List of lattice centering vectors
-      INTEGER*4     NCV                 !Number of lattcie centering vectors
+      INTEGER(kind=4)     LCENT               !Lattice centering type flag
+      REAL(kind=4)        CEN(3,4)            !List of lattice centering vectors
+      INTEGER(kind=4)     NCV                 !Number of lattcie centering vectors
 
-      REAL*4        CENV(3,6)           
-      INTEGER*4     NCVT(7)             
+      REAL(kind=4)        CENV(3,6)           
+      INTEGER(kind=4)     NCVT(7)             
 
       DATA NCVT/1,2,2,2,2,4,3/
       DATA CENV/  0,0.5,0.5,  0.5,0,0.5,  0.5,0.5,0,  0.5,0.5,0.5,

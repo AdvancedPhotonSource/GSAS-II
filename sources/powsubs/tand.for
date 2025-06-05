@@ -1,4 +1,4 @@
-      REAL*4 FUNCTION TAND(ARG)
+      REAL(kind=4) FUNCTION TAND(ARG)
 
 !PURPOSE: Calculate tangent from angle in deg.
 
@@ -6,7 +6,7 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        ARG                 !Tangent argument in degrees
+      REAL(kind=4)        ARG                 !Tangent argument in degrees
 
 !INCLUDE STATEMENTS:
 

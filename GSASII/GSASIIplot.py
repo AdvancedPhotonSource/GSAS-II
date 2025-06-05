@@ -2733,7 +2733,7 @@ def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',Plo
     Plot.set_title(Title)
     try:
         Page.figure.colorbar(mcolors,shrink=0.75,label='Rotation',boundaries=range(91))
-    except TypeError:
+    except:
         print('mpl error - no colorbar shown')
     Page.canvas.draw()
 

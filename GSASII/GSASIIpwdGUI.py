@@ -5235,7 +5235,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 G2frame, phaseID, phase_nam
             )
         )
-        data = Phase
+        # data = Phase
         #oacomp,occomp = G2mth.phaseContents(data)
         #ophsnam = data['General']['Name']
         fileList = []
@@ -5246,8 +5246,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         obj.loadTree()
         tmp = tempfile.NamedTemporaryFile(suffix='.cif', delete=False)
         obj.dirname,obj.filename = os.path.split(tmp.name)
-        obj.phasenam = data['General']['Name']
-        obj.Writer('', data['General']['Name'])
+        obj.phasenam = Phase['General']['Name']
+        obj.Writer('', Phase['General']['Name'])
         parentcif = tmp.name
         ISOparentcif = ISO.UploadCIF(parentcif)
         up2 = {'filename': ISOparentcif, 'input': 'uploadparentcif'}
@@ -5490,39 +5490,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             del Restraints[phsnam]
         orgData = copy.deepcopy(data)
 
-        def renamePhaseName(phaseItem,generalData,newName):
-            '''Called to rename the phase. Updates the tree and items that
-            reference the file name. 
-            '''
-            oldName = generalData['Name']
-            phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
-            phaseNameList = usedHistograms.keys() # phase names in use
-            if newName and newName != oldName:
-                newName = G2obj.MakeUniqueLabel(newName,list(phaseNameList))
-                generalData['Name'] = newName
-                G2frame.G2plotNB.Rename(oldName,generalData['Name'])
-                G2frame.GPXtree.SetItemText(phaseItem,generalData['Name'])
-                # change phase name key in Reflection Lists for each histogram
-                for hist in data['Histograms']:
-                    ht = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
-                    rt = G2gd.GetGPXtreeItemId(G2frame,ht,'Reflection Lists')
-                    if not rt: continue
-                    RfList = G2frame.GPXtree.GetItemPyData(rt)
-                    if oldName not in RfList:
-                        print('Warning: '+oldName+' not in Reflection List for '+
-                            hist)
-                        continue
-                    RfList[newName] = RfList[oldName]
-                    del RfList[oldName]
-                # rename Restraints
-                resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
-                Restraints = G2frame.GPXtree.GetItemPyData(resId)
-                i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
-                if i: G2frame.GPXtree.SetItemText(i,newName)
-                if len(Restraints) and oldName in Restraints:
-                    Restraints[newName] = Restraints[oldName]
-                    del Restraints[oldName]
-
         for ir_opt, _ in ir_options:
             print("Processing irrep:", ir_opt)
             data["input"] = "irrep"
@@ -5572,10 +5539,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     'Histograms', 'Pawley ref', 'RBModels'
                 ]
                 for key in key_list:
-                    data[key] = rd.Phase[key]
+                    Phase[key] = rd.Phase[key]
 
                 newname = rd.Phase['General']['Name']
-                data['General']['Name'] = newname
+                Phase['General']['Name'] = newname
+
+                G2phsG.renamePhaseNameTop(G2frame,Phase,G2frame.PickId,Phase['General'],newname)
 
                 G2frame.GSASprojectfile = os.path.splitext(
                     orgFilName

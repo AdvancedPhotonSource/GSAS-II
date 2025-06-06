@@ -12,6 +12,7 @@ import pickle
 import copy
 import re
 interactive = False
+G2G = None  # used in Project export 
 try:
     # TODO: code that calls wx should be hidden in GUI modules that are imported only when needed
     import wx
@@ -19,7 +20,7 @@ try:
     import wx.lib.resizewidget as rw
     interactive = True
 except ImportError:
-    G2G = None  # used in Project export 
+    wx = None
     # Avoid wx dependency for Scriptable
     class Placeholder(object):
         def __init__(self):
@@ -4679,8 +4680,13 @@ class ExportProjectCIF(ExportCIF):
         #print('reloaded GSASIImapvars')
         #### end debug stuff ##############################
 
-        if G2G is None:
+        if wx is None:
             print('Unable to export without GUI access')
+            return
+        try:
+            from .. import GSASIIctrlGUI as G2G
+        except:
+            print('Unable to export without GSASIIctrlGUI access')
             return
         try:
             import CifFile as cif # PyCifRW from James Hester as a package
@@ -4690,7 +4696,6 @@ class ExportProjectCIF(ExportCIF):
                 cif
             except ImportError:
                 msg = 'The PyCifRW package is not installed. CIF templates cannot be accessed. Created CIFs will be incomplete'
-                from .. import GSASIIctrlGUI as G2G
                 G2G.G2MessageBox(self.G2frame,msg,'no PyCifRW')
         self.CIFname = ''
         self.seqData = seqData
@@ -5593,7 +5598,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         # find default name for template
         resetTemplate = None
         localTemplate = None
-        for pth in sys.path:           # -- search with default name
+        for pth in [os.path.dirname(__file__)]+sys.path:           # -- search with default name
             fil = os.path.join(pth,templateDefName)
             if os.path.exists(fil):
                 resetTemplate = fil

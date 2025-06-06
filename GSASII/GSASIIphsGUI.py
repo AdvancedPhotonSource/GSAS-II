@@ -2919,6 +2919,16 @@ def UpdatePhaseData(G2frame,Item,data):
         Vvec = np.zeros(3)
         ifMag = False
         BNSlatt = ''
+        ifRB = False
+        RBModels = data['RBModels']
+        for item in RBModels:
+            if RBModels[item]:
+                ifRB = True
+        if ifRB:
+            msg = 'Rigid Bodies present'
+            text = 'Rigid bodies must be deleted before transform can be done'
+            wx.MessageBox(text,caption=msg,style=wx.ICON_EXCLAMATION)
+            return
         while True:
             dlg = TransformDialog(G2frame,data,Trans,Uvec,Vvec,ifMag,BNSlatt)
             try:
@@ -4490,7 +4500,8 @@ program; Please cite:
                 if 'Atoms' in data['Drawing'] and replot:
                     ci = colLabels.index('I/A')
                     G2mth.DrawAtomsReplaceByID(data,ci+8,atomData[r],ID)
-                    G2plt.PlotStructure(G2frame,data)
+                    G2frame.GetStatusBar().SetStatusText('Structure changed: Do "Edit Atoms/Update draw atoms" to refresh structure drawing',1)
+                    # G2plt.PlotStructure(G2frame,data)
                 if SGData['SpGrp'] != 'P 1':    #no need to update P 1 structures!
                     wx.CallAfter(Paint)
 
@@ -4515,7 +4526,8 @@ program; Please cite:
                 ID = atomData[r][ci+8]
                 if 'Atoms' in data['Drawing']:
                     G2mth.DrawAtomsReplaceByID(data,ci+8,atomData[r],ID)
-                    G2plt.PlotStructure(G2frame,data)
+                    G2frame.GetStatusBar().SetStatusText('Structure changed: Do "Edit Atoms/Update draw atoms" to refresh structure drawing',1)
+                    # G2plt.PlotStructure(G2frame,data)
                 SetupGeneral()
             else:
                 event.Skip()
@@ -4565,7 +4577,8 @@ program; Please cite:
                     G2frame.GetStatusBar().SetStatusText('Use right mouse click to brng up Atom editing options',1)
                     Atoms.ClearSelection()
                     Atoms.SelectRow(r,True)
-            G2plt.PlotStructure(G2frame,data)
+            G2frame.GetStatusBar().SetStatusText('Structure changed: Do "Edit Atoms/Update draw atoms" to refresh structure drawing',1)
+            # G2plt.PlotStructure(G2frame,data)
 
         def ChangeSelection(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -4663,8 +4676,8 @@ program; Please cite:
                                 Atoms.SetCellStyle(row,ci,WHITE,False)
                                 saveCSI = CSI[0][i]
                             Atoms.SetCellTextColour(row,ci,BLACK)
-                if 'F' in rbExcl:
-                    Atoms.SetCellStyle(row,colF,VERY_LIGHT_GREY,True)
+                # if 'F' in rbExcl:
+                #     Atoms.SetCellStyle(row,colF,VERY_LIGHT_GREY,True)
                 if 'X' in rbExcl:
                     for c in range(0,colX+3):
                         if c != colR:
@@ -5191,7 +5204,7 @@ program; Please cite:
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in indx:
-                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
+#                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
                         atomData[r][cid] = parm
                 SetupGeneral()
                 FillAtomsGrid(Atoms)
@@ -5562,13 +5575,15 @@ program; Please cite:
         cx,ct,cs,ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms,ct-1)
         if indx:
+            B2 = {}
             atomData = data['Atoms']
             PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
             if PE.ShowModal() == wx.ID_OK:
                 Atype2 = PE.Elem.strip()
                 AtomInfo2 = G2elem.GetAtomInfo(Atype2)
                 FF2 = G2elem.GetFFtable([Atype2])[Atype2]
-                B2 = AtomInfo2['Isotopes']['Nat. Abund.']['SL'][0]
+                for iso in AtomInfo2['Isotopes']:
+                    B2[iso] = AtomInfo2['Isotopes'][iso]['SL'][0]
             PE.Destroy()
             SQ = 0.0
             PE2 = G2G.SingleFloatDialog(G2frame,'form factor','Enter sinth/lam for atom frac split',SQ)
@@ -5578,24 +5593,36 @@ program; Please cite:
             ff2 = G2elem.ScatFac(FF2,SQ**2)
         print(' X-ray site fractions for sin(th)/lam = %.3f'%SQ)
         for ind in indx:
-                Aname1 = atomData[ind][ct-1]
-                Atype1 = G2elem.FixValence(atomData[ind][ct])
-                Afrac = atomData[ind][cx+3]
-                Amult = float(atomData[ind][cx+5])
-                AtomInfo1 = G2elem.GetAtomInfo(Atype1)
-                if Atype1 == Atype2:
-                    print('ERROR - 2nd atom type must be different from selected atom')
-                    continue
-                FF1 = G2elem.GetFFtable([Atype1])[Atype1]
-                ff1 = G2elem.ScatFac(FF1,SQ**2)
-                B1 = AtomInfo1['Isotopes']['Nat. Abund.']['SL'][0]
+            Aname1 = atomData[ind][ct-1]
+            Atype1 = G2elem.FixValence(atomData[ind][ct])
+            if Atype1 == 'Q':
+                PE = G2elemGUI.PickElement(G2frame,oneOnly=False)
+                if PE.ShowModal() == wx.ID_OK:
+                    Atype1 = PE.Elem.strip()
+                PE.Destroy()
+            Afrac = atomData[ind][cx+3]
+            Amult = float(atomData[ind][cx+5])
+            AtomInfo1 = G2elem.GetAtomInfo(Atype1)
+            if Atype1 == Atype2:
+                print('ERROR - 2nd atom type must be different from selected atom')
+                continue
+            FF1 = G2elem.GetFFtable([Atype1])[Atype1]
+            ff1 = G2elem.ScatFac(FF1,SQ**2)
+            if ff1 != ff2:
                 frac1 = (ff1*Afrac-ff2)/(ff1-ff2)
-                bfrac1 = (B1*Afrac-B2)/(B1-B2)
                 print(' For %s: X-ray based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell'     \
-                      %(Aname1,Atype1,frac1,frac1*Amult,Atype2,(1.-frac1),(1.-frac1)*Amult))
-                print('        neutron based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell\n'      \
-                      %(Atype1,bfrac1,bfrac1*Amult,Atype2,(1.-bfrac1),(1.-bfrac1)*Amult))
-
+                  %(Aname1,Atype1,frac1,frac1*Amult,Atype2,(1.-frac1),(1.-frac1)*Amult))
+            
+            B1 = AtomInfo1['Isotopes']['Nat. Abund.']['SL'][0]
+            for iso in B2:
+                if B1 != B2[iso]:
+                    bfrac1 = (B1*Afrac-B2[iso])/(B1-B2[iso])
+                    atype2 = Atype2
+                    if 'nat' not in iso:
+                        atype2 += '_%s'%iso
+                    print('        neutron based site fractions %s = %.3f, %.3f/cell; %s = %.3f, %.3f/cell'      \
+                          %(Atype1,bfrac1,bfrac1*Amult,atype2,(1.-bfrac1),(1.-bfrac1)*Amult))
+    
     def OnValidProtein(event):
 
         def pickHandler(resName):
@@ -13867,14 +13894,16 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 return
             Indx.clear()
             rbObj = data['RBModels'][rbType][rbIndx]
-            data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             if rbType == 'Residue':
+                data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
+                data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
                 G2frame.bottomSizer =  SpnrbSizer(rbObj,rbIndx)
             else: #Vector
+                data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()
@@ -14252,7 +14281,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 recompute atom distances
                 '''
                 [tor,torSlide] = Indx[tc.GetId()]
-                torSlide.SetValue(int(value*10))
+                torSlide.ChangeValue(int(value*10))
                 UpdateTablePlot()
 
             def OnTorSlide(event):
@@ -14264,7 +14293,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 Tors = data['testRBObj']['rbObj']['Torsions'][tor]
                 val = float(Obj.GetValue())/10.
                 Tors[0] = val
-                ang.SetValue(val)
+                ang.ChangeValue(val)
                 UpdateTablePlot()
 
             def UpdateTable(event=None):
@@ -14300,7 +14329,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 rbObj['OrientVec'][0] = float(Obj.GetValue())/10.
                 for i in range(4):
                     val = rbObj['OrientVec'][i]
-                    G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
+                    G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
                 Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
                                 np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
@@ -14317,7 +14346,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
                 try:
-                    G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
+                    G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
                         int(10*rbObj['OrientVec'][0]))
                 except:
                     pass

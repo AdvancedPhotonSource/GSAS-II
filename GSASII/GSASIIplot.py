@@ -2733,7 +2733,7 @@ def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',Plo
     Plot.set_title(Title)
     try:
         Page.figure.colorbar(mcolors,shrink=0.75,label='Rotation',boundaries=range(91))
-    except TypeError:
+    except:
         print('mpl error - no colorbar shown')
     Page.canvas.draw()
 
@@ -7418,8 +7418,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
         if drawingData['showVoids']:
-            for x,y,z in drawingData['Voids']:
-                RenderSphere(x,y,z,.05,(0.,0.,1.),True)
+            RC = len(drawingData['Voids'])*[[0.05,2*Bl]]
+            RenderDots(drawingData['Voids'],RC)
+            # for x,y,z in drawingData['Voids']:
+            #     RenderSphere(x,y,z,.05,(0.,0.,1.),True)
         if drawingData['unitCellBox']:
             RenderBox()
             if drawingData['Plane'][1]:

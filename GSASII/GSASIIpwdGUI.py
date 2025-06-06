@@ -1647,7 +1647,13 @@ def UpdateBackground(G2frame,data):
                 filename = os.path.splitext(filename)[0]+'.pwdrbck'
                 File = open(filename,'w')
                 File.write("#GSAS-II background parameter file; do not add/delete items!\n")
-                File.write(str(data[0])+'\n')
+                out_tmp = list()
+                for item in data[0]:
+                    if isinstance(item, np.float64) or isinstance(item, float):
+                        out_tmp.append(float(item))
+                    else:
+                        out_tmp.append(item)
+                File.write(str(out_tmp)+'\n')
                 for item in data[1]:
                     if item in ['nPeaks','background PWDR','nDebye'] or not len(data[1][item]):
                         File.write(item+':'+str(data[1][item])+'\n')

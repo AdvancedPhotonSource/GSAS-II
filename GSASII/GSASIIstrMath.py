@@ -3502,7 +3502,6 @@ def GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
 def GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict):
     '''Computes the shifts in peak position due to the Hydrostatic strain
     (HStrain, Dij terms).
-    This routine is not used anywhere
     '''
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']

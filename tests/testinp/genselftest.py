@@ -10,7 +10,7 @@
 import sys
 import datetime
 sys.path.append('..')
-import GSASIIspc
+from . import GSASIIspc
 
 sgdat = {}
 sglist = {}

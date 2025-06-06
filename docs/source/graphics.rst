@@ -115,7 +115,7 @@ plotInvalid                 False              Used to track if a plot has been 
 *GSASIIplot Classes and Routines*
 ------------------------------------
 
-.. automodule:: GSASIIplot
+.. automodule:: GSASII.GSASIIplot
     :members: 
     :private-members:
     :special-members:
@@ -123,7 +123,7 @@ plotInvalid                 False              Used to track if a plot has been 
 *GSASIIpwdplot Routines*
 ---------------------------------------
 
-.. automodule:: GSASIIpwdplot
+.. automodule:: GSASII.GSASIIpwdplot
     :members: 
     :private-members:
     :special-members:

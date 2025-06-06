@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_FIT2D` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_FIT2D` follow:
 '''
 from __future__ import division, print_function
 import os.path
 import numpy as np
-import GSASIIfiles as G2fil
-import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
 
 class ExportPowderCHI(G2fil.ExportBaseclass):
     '''Used to create a CHI file for a powder data set
@@ -72,7 +72,7 @@ class ExportPowderQCHI(G2fil.ExportBaseclass):
         self.multiple = True
 
     def Writer(self,TreeName,filename=None):
-        import GSASIIlattice as G2lat
+        from .. import GSASIIlattice as G2lat
         self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
         inst = histblk['Instrument Parameters'][0]

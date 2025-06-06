@@ -3,16 +3,28 @@
 '''
 
 from __future__ import division, print_function
-import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+from .. import GSASIIfiles as G2fil
+try:
+    import imageio
+except ImportError:
+    imageio = None
 class png_ReaderClass(G2obj.ImportImage):
     '''Reads standard PNG images; parameters are set to those of the
     Mars Rover (CheMin) diffractometer.
     '''
     def __init__(self):
+        if imageio is None:
+            self.UseReader = False
+            msg = 'CheMin Reader skipped because imageio library is not installed'
+            if GSASIIpath.condaTest():
+                msg += ' To fix this use command:\n\tconda install imageio'
+            G2fil.ImportErrorMsg(msg,{'CheMin image importer':['imageio']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.png',),
             strictExtension=True,
-            formatName = 'PNG image',
+            formatName = 'CheMin PNG image',
             longFormatName = 'PNG image from CheMin'
             )
 
@@ -20,12 +32,11 @@ class png_ReaderClass(G2obj.ImportImage):
         '''no test at this time
         '''
         return True
-        
+
     def Reader(self,filename, ParentFrame=None, **unused):
         '''Reads using standard scipy PNG reader
         '''
-        import scipy.misc
-        self.Image = scipy.misc.imread(filename,flatten=True)
+        self.Image = imageio.imread(filename,flatten=True)
         self.Npix = self.Image.size
         if self.Npix == 0:
             return False

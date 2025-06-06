@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_shelx` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_shelx` follow:
 '''
 from __future__ import division, print_function
 import os.path
-import GSASIIfiles as G2fil
-import GSASIIspc as G2spc
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIspc as G2spc
 
 class ExportPhaseShelx(G2fil.ExportBaseclass):
     '''Used to create a SHELX .ins file for a phase
@@ -38,7 +38,7 @@ class ExportPhaseShelx(G2fil.ExportBaseclass):
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
                 self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
-            #fp = self.OpenFile()
+            self.OpenFile(filename)
             # title line
             self.Write("TITL from "+str(self.G2frame.GSASprojectfile)+", phase "+str(phasenam))
             # get & write cell parameters

@@ -5,8 +5,8 @@
 from __future__ import division, print_function
 import platform
 import time
-import GSASIIobj as G2obj
-import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
 import numpy as np
 class MAR_ReaderClass(G2obj.ImportImage):
     '''Routine to read several MAR formats, .mar3450,.mar2300,.mar2560
@@ -23,7 +23,7 @@ class MAR_ReaderClass(G2obj.ImportImage):
         '''no test at this time
         '''
         return True
-        
+
     def Reader(self,filename, ParentFrame=None, **unused):
         self.Comments,self.Data,self.Npix,self.Image = GetMAR345Data(filename)
         if self.Npix == 0 or not self.Comments:
@@ -34,8 +34,11 @@ class MAR_ReaderClass(G2obj.ImportImage):
 def GetMAR345Data(filename,imageOnly=False):
     'Read a MAR-345 image plate image'
     try:
-        import pack_f as pf
-    except:
+        if GSASIIpath.binaryPath:
+            import pack_f as pf
+        else:
+            from .. import pack_f as pf
+    except ImportError:
         print ('**** ERROR - Unable to load the GSAS-II MAR image decompression, pack_f')
         return None,None,None,None
 
@@ -59,7 +62,7 @@ def GetMAR345Data(filename,imageOnly=False):
         elif 'CENTER' in line:
             values = line.split()
             center = [float(values[2])/10.,float(values[4])/10.]    #make in mm from pixels
-        if line: 
+        if line:
             head.append(line)
     data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center,'det2theta':0.0}
     for line in head:
@@ -77,7 +80,7 @@ def GetMAR345Data(filename,imageOnly=False):
         pos += 8
     pos += 37
     File.seek(pos)
-    image = np.zeros(shape=(sizex,sizey),dtype=np.int32)    
+    image = np.zeros(shape=(sizex,sizey),dtype=np.int32)
     time0 = time.time()
     if '2' in platform.python_version_tuple()[0]:
         raw = File.read()
@@ -92,4 +95,3 @@ def GetMAR345Data(filename,imageOnly=False):
         return image
     else:
         return head,data,Npix,image
-        

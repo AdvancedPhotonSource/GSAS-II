@@ -3,11 +3,11 @@ import sys
 import wx
 import numpy as np
 import copy
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
-import GSASIIspc as G2spc
-import GSASIIctrlGUI as G2G
-import GSASIIphsGUI as G2phsGUI
+from . import GSASIIspc as G2spc
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIphsGUI as G2phsGUI
 
 try:
     wx.NewId

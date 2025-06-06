@@ -1477,7 +1477,7 @@ be done with the Calculate/"View LS parms" menu window or
   :func:`prmLookup`
   :class:`GSASIIctrlGUI.ShowLSParms`
   :class:`GSASIIctrlGUI.VirtualVarBox`
-  :func:`GSASIIstrIO.SetUsedHistogramsAndPhases`
+  :func:`GSASIIstrIO.SaveUsedHistogramsAndPhases`
   :func:`GSASIIstrIO.SaveUpdatedHistogramsAndPhases`
   :func:`GSASIIstrIO.SetSeqResult`
   :func:`GSASIIstrMain.dropOOBvars`

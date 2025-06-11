@@ -3787,7 +3787,7 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
         gam += Sgam
 
         if histDict1:
-            pdabc = histDict1[hfx+'Pdabc']
+            pdabc = histDict1[hfx+'pdabc']
             refl[4+im] #d-spacing
             sigTable = np.interp(refl[4+im],pdabc["d"],pdabc["sig"])
             

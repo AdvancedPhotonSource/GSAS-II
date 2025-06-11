@@ -1741,7 +1741,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
             except KeyError:        #no more peaks to process
                 return yb+yc        
     else:
-        Pdabc = parmDict['Pdabc']
+        Pdabc = parmDict['pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
@@ -2033,7 +2033,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 break        
         
     else:
-        Pdabc = parmDict['Pdabc']
+        Pdabc = parmDict['pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
@@ -2714,7 +2714,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     parmDict.update(bakDict)
     parmDict.update(insDict)
     parmDict.update(peakDict)
-    parmDict['Pdabc'] = []      #dummy Pdabc
+    parmDict['pdabc'] = []      #dummy Pdabc
     parmDict.update(Inst2)      #put in real one if there
     if prevVaryList:
         varyList = prevVaryList[:]

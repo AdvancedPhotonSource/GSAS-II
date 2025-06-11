@@ -5103,10 +5103,10 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
             pos = Parms['difC']*dsp
         else:
             dsp = pos/Parms['difC'][1]
-        if 'Pdabc' in Parms2:
+        if 'pdabc' in Parms2:
             for x in ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
                 ins[x] = Parms.get(x,[0.0,0.0])[ind]
-            Pdabc = Parms2['Pdabc'].T
+            Pdabc = Parms2['pdabc'].T
             alp = np.interp(dsp,Pdabc[0],Pdabc[1])
             bet = np.interp(dsp,Pdabc[0],Pdabc[2])
         else:

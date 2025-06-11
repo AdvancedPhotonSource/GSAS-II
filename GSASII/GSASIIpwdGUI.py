@@ -2687,6 +2687,8 @@ def UpdateInstrumentGrid(G2frame,data):
         '''Respond to the Instrument Parameters Operations/Save Profile menu
         item: writes current parameters to a .instprm file
         It does not write Bank n: on # line & thus can be used any time w/o clash of bank nos.
+
+        note: doesn't currently write extedened instrument parameters i.e. pdabc dictionary
         '''
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(G2frame, 'Set name to save GSAS-II instrument parameters file', pth, '', 
@@ -3072,19 +3074,24 @@ def UpdateInstrumentGrid(G2frame,data):
                 labelLst.append('2-theta')
                 elemKeysLst.append(['2-theta',1])
                 dspLst.append([10,2])
-                refFlgElem.append(None)                   
-                if 'pdabc' in Inst2:
-                    Items = ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  difC: '),0,WACV)
-                    txt = '%8.2f'%(insVal['difC'])
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                    labelLst.append('difC')
-                    elemKeysLst.append(['difC',1])
-                    dspLst.append([10,2])
-                    refFlgElem.append(None)
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  alpha, beta: fixed by table'),0,WACV)
-                else:
-                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
+                refFlgElem.append(None)
+
+                #note: this if statement is commented out as current implementation of pdabc is not
+                # intended to exclude diffing difC, difA, difB, etc. from refinement.
+                # TODO: check this is OK with other applications (work around is "show multiple" in GUI: which exposes everything")                   
+                # if 'pdabc' in Inst2:
+                #     Items = ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']
+                #     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  difC: '),0,WACV)
+                #     txt = '%8.2f'%(insVal['difC'])
+                #     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                #     labelLst.append('difC')
+                #     elemKeysLst.append(['difC',1])
+                #     dspLst.append([10,2])
+                #     refFlgElem.append(None)
+                #     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  alpha, beta: fixed by table'),0,WACV)
+                # else:
+                Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
+
                 mainSizer.Add((5,5),0)
                 mainSizer.Add(subSizer)
                 mainSizer.Add((5,5),0)

@@ -498,7 +498,8 @@ def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
       parameters are written.
     '''
     if bank is not None:
-        fp.write(f"#Bank {bank}: GSAS-II instrument parameter file; do not add/delete items!\n")
+        #somehow, somewhere bank is becoming a float. Ensure it is an int here:
+        fp.write(f"#Bank {int(bank)}: GSAS-II instrument parameter file; do not add/delete items!\n")
         indent = '  '
     else:
         fp.write("#GSAS-II instrument parameter file; do not add/delete items!\n")

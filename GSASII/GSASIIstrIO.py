@@ -3850,7 +3850,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             # create histDict1 if second instrument parameters entry is not empty
             if Inst[1]:
                 for key in Inst[1]:
-                    histDict1[pfx+'Pdabc']=Inst[1][key]
+                    histDict1[pfx+'pdabc']=Inst[1][key]
 
             Type,instDict,insVary = GetInstParms(hId,Inst[0])
 

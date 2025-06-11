@@ -4997,7 +4997,7 @@ class G2Phase(G2ObjectWrapper):
             d[0] = 'uniaxial'
             d[1][0] = float(val1)
             d[1][1] = float(val2)
-            if LGmix is not None: d[1][2] = float(LGmix)            
+            if LGmix is not None: d[1][2] = float( LGmix)           
 
     def HAPvalue(self, param=None, newValue=None, targethistlist='all'):
         """Retrieves or sets individual HAP parameters for one histogram or 

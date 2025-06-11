@@ -1659,7 +1659,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             hapList += wildList        
         else:
             hapList = wildList        
-    histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
+    histVary,histDict,histDict1,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
     histList = list(histDict.keys())
     histList.sort()
     if seqHistList: # convert histogram # to wildcard

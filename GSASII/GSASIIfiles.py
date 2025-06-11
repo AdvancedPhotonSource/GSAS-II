@@ -147,7 +147,7 @@ def makePdabcDict(pdabcString):
     
     #create empty lists to hold values
     d = []
-    ToF = []
+    TOF = []
     alp = []
     bet = []
     sig = []
@@ -158,7 +158,7 @@ def makePdabcDict(pdabcString):
             if len(entry) != 5:
                 raise Exception("Error interpreting pdabc entry in .instprm file. Entries must have exactly 5 comma separated values")
             d.append(float(entry[0]))
-            ToF.append(float(entry[1]))
+            TOF.append(float(entry[1]))
             alp.append(float(entry[2]))
             bet.append(float(entry[3]))
             sig.append(float(entry[4]))
@@ -166,7 +166,7 @@ def makePdabcDict(pdabcString):
     
     pdabcDict = {
         "d":d,
-        "TOF":ToF,
+        "TOF":TOF,
         "alp":alp,
         "bet":bet,
         "sig":sig
@@ -304,15 +304,15 @@ def SetPowderInstParms(Iparm, rd):
             key = Ipab+'  '
             print("looking for key: ", key)
             Npab = int(Iparm[Ipab+'  '].strip())
-            Inst2['Pdabc'] = []
+            Inst2['pdabc'] = []
             for i in range(Npab):
                 k = Ipab+str(i+1).rjust(2)
                 s = Iparm[k].split()
-                Inst2['Pdabc'].append([float(t) for t in s])
-            Inst2['Pdabc'] = np.array(Inst2['Pdabc'])
-            Inst2['Pdabc'].T[3] += Inst2['Pdabc'].T[0]*Inst1['difC'][0] #turn 3rd col into TOF
+                Inst2['pdabc'].append([float(t) for t in s])
+            Inst2['pdabc'] = np.array(Inst2['pdabc'])
+            Inst2['pdabc'].T[3] += Inst2['pdabc'].T[0]*Inst1['difC'][0] #turn 3rd col into TOF
 
-            print(f"loaded resolution data with {Inst2['Pdabc'].shape} shape" )
+            print(f"loaded resolution data with {Inst2['pdabc'].shape} shape" )
         if 'INS  1I ITYP' in Iparm:
             s = Iparm['INS  1I ITYP'].split()
             Ityp = int(s[0])
@@ -367,7 +367,8 @@ def ReadInstprm(instLines, bank, Sample={}):
            determined by instrument settings or information 
            from the instprm file are placed here.
     :returns: bank,instdict where bank is the sample parameter set 
-           number and instdict is the instrument parameter dict   
+           number and instdict is a list containing the regular instrument parameter dict
+           and the "extended" dict, currently only containing pdabc entries (if they exist)   
 
     Note if 'Type' is set as Debye-Scherrer or Bragg-Brentano this will be used and 
     will set defaults in the sample parameters. Otherwise, a single-wavelength file 
@@ -484,12 +485,13 @@ def ReadInstprm(instLines, bank, Sample={}):
 
     return bank,[makeInstDict(newItems, newVals, len(newVals)*[False]), iparm1]
 
-def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
+def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
     '''Write the contents of a GSAS-II (new) .instprm instrument parameter file
     ToDo: use this inside G2frame.OnSave and G2frame.OnSaveAll
 
     :param file fp: Pointer to open file to be written.
     :param dict InstPrm: Instrument parameters
+    :param dict InstPrm1: "extended" instrument parameters
     :param dict Sample: Sample parameters (optional)
     :param int bank: Bank number. If not None (default), this causes
       a "#Bank" heading to be placed in the file before the 
@@ -510,6 +512,28 @@ def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
     for item in ('Gonio. radius','InstrName'):
         if not Sample.get(item): continue
         fp.write(f"{indent}{item}:{Sample[item]}\n")
+    
+    #handle pdabc entries.
+    if InstPrm1:
+        if "pdabc" in InstPrm1:
+            
+            #extract lists from InstPrm1["pdabc"] dictionary
+            d = InstPrm1["pdabc"]["d"]
+            tof = InstPrm1["pdabc"]["TOF"]
+            alp = InstPrm1["pdabc"]["alp"]
+            bet = InstPrm1["pdabc"]["bet"]
+            sig = InstPrm1["pdabc"]["sig"]
+            
+            #build output string
+            i = 0
+            resString = f"pdabc:\"\"\"{d[i]:.4f}, {tof[i]:8.1f}, {alp[i]:8.6f}, {bet[i]:8.6f}, {sig[i]:8.6f}\n"
+            for i in range(1,len(d)-1):
+                resString+=f"{d[i]:7.4f}, {tof[i]:8.1f}, {alp[i]:8.6f}, {bet[i]:8.6f}, {sig[i]:8.6f}\n"
+
+            resString+=f"{d[-1]:7.4f}, {tof[-1]:8.1f}, {alp[-1]:8.6f}, {bet[-1]:8.6f}, {sig[-1]:8.6f}\"\"\"\n"
+            
+            #write output string
+            fp.write(resString)
 
 def LoadImportRoutines(prefix, errprefix=None, traceback=False):
     '''Routine to locate GSASII importers matching a prefix string.

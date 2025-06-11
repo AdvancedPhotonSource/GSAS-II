@@ -2700,7 +2700,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 # make sure extension is .instprm
                 filename = os.path.splitext(filename)[0]+'.instprm'
                 File = open(filename,'w')
-                G2fil.WriteInstprm(File, data, Sample)
+                G2fil.WriteInstprm(File, data, Sample) 
                 File.close()
                 print ('Instrument parameters saved to: '+filename)
         finally:
@@ -2735,13 +2735,14 @@ def UpdateInstrumentGrid(G2frame,data):
                 for hist in saveList:
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
                     inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+                    inst1 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[1] #pdabc dictionary
                     Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
                     if 'Bank' not in inst:  #patch
                         bank = 1
                         if 'Bank' in hist:
                             bank = int(hist.split('Bank')[1])
                         inst['Bank'] = [bank,bank,0]
-                    G2fil.WriteInstprm(File, inst, Sample, inst['Bank'][0])
+                    G2fil.WriteInstprm(File, inst, inst1, Sample, inst['Bank'][0])
                 File.close()
         finally:
             dlg.Destroy()
@@ -3072,7 +3073,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 elemKeysLst.append(['2-theta',1])
                 dspLst.append([10,2])
                 refFlgElem.append(None)                   
-                if 'Pdabc' in Inst2:
+                if 'pdabc' in Inst2:
                     Items = ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']
                     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  difC: '),0,WACV)
                     txt = '%8.2f'%(insVal['difC'])

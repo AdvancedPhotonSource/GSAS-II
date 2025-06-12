@@ -28,8 +28,8 @@
       block data
       implicit none
 *
-      integer*4 NONE, CENTRO, GAUSS, LORENZ, PS_VGT, PV_GSS, PV_LRN,
-     |          X_RAY, NEUTRN, ELECTN
+      integer(kind=4) NONE, CENTRO, GAUSS, LORENZ, PS_VGT, PV_GSS,
+     |                 PV_LRN, X_RAY, NEUTRN, ELECTN
 *
 * The common block 'consts' also occurs in the file 'DIFFaX.inc'
       common /consts/ NONE, CENTRO, GAUSS, LORENZ, PS_VGT, PV_GSS,
@@ -62,17 +62,17 @@
 *      AGLQ16 returns the adaptively integrated value.
 * ______________________________________________________________________
 *
-      real*8 function AGLQ16(h, k, a, b, ok)
+      real(kind=8) function AGLQ16(h, k, a, b, ok)
       include 'DIFFaX.par'
 *     save
 *
-      integer*4 h, k
-      real*8 a, b
+      integer(kind=4) h, k
+      real(kind=8) a, b
       logical ok
 *
-      integer*4 maxstk, stp, n, n2
+      integer(kind=4) maxstk, stp, n, n2
       parameter(maxstk = 200)
-      real*8 sum, sum1, sum2, sum3, epsilon, epsilon2, GLQ16,
+      real(kind=8) sum, sum1, sum2, sum3, epsilon, epsilon2, GLQ16,
      |         stk(maxstk), d1, d2, d3, x
       parameter(epsilon = FIVE * eps4)
 *
@@ -173,17 +173,17 @@
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 n, list(n)
-      real*8 ll(n), ag_l(16)
-      integer*4 h, k
-      complex*16 f(MAX_L,16)
+      integer(kind=4) n, list(n)
+      real(kind=8) ll(n), ag_l(16)
+      integer(kind=4) h, k
+      complex(kind=8) f(MAX_L,16)
       logical ok
 *
       logical know_f
-      integer*4 i, j, m, p, max_poly
+      integer(kind=4) i, j, m, p, max_poly
       parameter (max_poly = 10)
-      real*8 Q2, l
-      complex*16 ff(MAX_L,max_poly), fa(MAX_L), f_ans, f_error
+      real(kind=8) Q2, l
+      complex(kind=8) ff(MAX_L,max_poly), fa(MAX_L), f_ans, f_error
 *
 * external subroutines (Some compilers need them declared external)
 *      external POLINT, GET_F
@@ -259,9 +259,9 @@
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 n
+      integer(kind=4) n
 *
-      integer*4 i, j, itmp
+      integer(kind=4) i, j, itmp
 *
       BINPOW = .false.
 *
@@ -309,12 +309,12 @@
 *      BOUNDS returns the translated value of x. x is not modified.
 * ______________________________________________________________________
 *
-      real*8 function BOUNDS(x)
+      real(kind=8) function BOUNDS(x)
       include 'DIFFaX.par'
 *
-      real*8 x
+      real(kind=8) x
 *
-      real*8 y
+      real(kind=8) y
 *
       y = x - int(x) + ONE
       y = y - int(y)
@@ -361,8 +361,8 @@
       logical diad, triad, tetrad
       logical TST_ROT, TST_MIR
       logical cell90, cell120, eq_sides
-      integer*4 GET_SYM, LENGTH, idum
-      real*8 tmp
+      integer(kind=4) GET_SYM, LENGTH, idum
+      real(kind=8) tmp
 *
 * external functions
       external TST_ROT, TST_MIR, GET_SYM, LENGTH
@@ -626,7 +626,7 @@
 * on the ratio Wa/Wb. The costly logarithm function is avoided by
 * using its derivative.
 * When off the 00l axis, the broadening is modelled as a symmetric
-* Lorentzian whose half-width depends on the angle that the Ewald 
+* Lorentzian whose half-width depends on the angle that the Ewald
 * sphere intercepts the disk of confusion (controlled by l). If
 * the lateral dimensions are not equal, then the half width is also
 * dependent on h and k. The Lorentzian is pre-computed in OPTIMZ to gain
@@ -658,13 +658,14 @@
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 h, k, m, max_indx
+      integer(kind=4) h, k, m, max_indx
 *
-      real*8 l0, l1, x
+      real(kind=8) l0, l1, x
 *
-      integer*4 n, p, i, indx
+      integer(kind=4) n, p, i, indx
 *
-      real*8 S, h_wdth, n_hw, d_hk, norm, l, scale, avg, xx, dx, tmp
+      real(kind=8) S, h_wdth, n_hw, d_hk, norm, l, scale, avg, xx, dx,
+     |             tmp
 *
 * indx indexes into the arrays spec and brd_spec
 * n indexes into the array formfactor
@@ -699,7 +700,7 @@
           dx = ((ONE-xx)*sqrt(dble(indx))*tmp + xx)*tmp
           if(m+indx-1.le.max_indx) brd_spc(m+indx-1) = dx
           norm = norm + dx
-* eps5 is reasonable. However, it may be worth experimenting more.    
+* eps5 is reasonable. However, it may be worth experimenting more.
           if(dx.lt.eps5) goto 20
           goto 10
    20   continue
@@ -757,14 +758,14 @@
 ************************************************************************
 ****************************LINPACK ROUTINES****************************
 ************************************************************************
-* 
+*
 * The following are the standard Linpack routines for solving complex
 * simultaneous equations. They were found to reduce DIFFaX run time by
-* significant amount (30% in one case) compared with the Numerical 
+* significant amount (30% in one case) compared with the Numerical
 * Recipes routines LUDCMP and LUBKSB. The only changes are
-*                      
-*                         complex -> complex*16
-*                         real    -> real*8
+*
+*                         complex -> complex(kind=8)
+*                         real    -> real(kind=8)
 *                         real()  -> dble()
 *                         aimag   -> dimag
 *
@@ -832,9 +833,9 @@
       implicit none
 *
       integer lda,n,ipvt(1),job
-      complex*16 a(lda,1),b(1)
+      complex(kind=8) a(lda,1),b(1)
 *
-      complex*16 CDOTC,t
+      complex(kind=8) CDOTC,t
       integer k,kb,l,nm1
 * MMJT: external subroutine
       external CAXPY
@@ -905,7 +906,7 @@
       subroutine CAXPY(n,ca,cx,incx,cy,incy)
       implicit none
 *
-      complex*16 cx(1),cy(1),ca
+      complex(kind=8) cx(1),cy(1),ca
       integer n,incx,incy
 *
       integer i,ix,iy
@@ -944,13 +945,13 @@
 *     vector.
 * ______________________________________________________________________
 *
-      complex*16 function CDOTC(n,cx,incx,cy,incy)
+      complex(kind=8) function CDOTC(n,cx,incx,cy,incy)
       implicit none
 *
-      complex*16 cx(1),cy(1)
+      complex(kind=8) cx(1),cy(1)
       integer incx,incy,n
 *
-      complex*16 ctemp
+      complex(kind=8) ctemp
       integer i,ix,iy
 *
       ctemp = (0.0,0.0)
@@ -1033,13 +1034,13 @@
       implicit none
 *
       integer lda,n,ipvt(1),info
-      complex*16 a(lda,1)
+      complex(kind=8) a(lda,1)
 *
-      complex*16 t
+      complex(kind=8) t
       integer ICAMAX,j,k,kp1,l,nm1
 *
-      complex*16 zdum
-      real*8 cabs1
+      complex(kind=8) zdum
+      real(kind=8) cabs1
 *
 * MMJT: external subroutine
       external CSCAL, CAXPY
@@ -1109,7 +1110,7 @@
       subroutine  CSCAL(n,ca,cx,incx)
       implicit none
 *
-      complex*16 ca,cx(1)
+      complex(kind=8) ca,cx(1)
       integer incx,n
 *
       integer i,nincx
@@ -1143,15 +1144,15 @@
       integer function ICAMAX(n,cx,incx)
       implicit none
 *
-      complex*16 cx(1)
+      complex(kind=8) cx(1)
       integer incx,n
 *
-      real*8 smax
+      real(kind=8) smax
       integer i,ix
-      complex*16 zdum
+      complex(kind=8) zdum
 *
 * statement function
-      real*8 cabs1
+      real(kind=8) cabs1
       cabs1(zdum) = abs(dble(zdum)) + abs(dimag(zdum))
 *
       ICAMAX = 0
@@ -1206,8 +1207,8 @@
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 i, j
-      real*8 delta
+      integer(kind=4) i, j
+      real(kind=8) delta
 *
       delta = eps3
 *
@@ -1255,11 +1256,11 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 r_B(MAX_L,MAX_L)
-      real*8 av_B
+      real(kind=8) r_B(MAX_L,MAX_L)
+      real(kind=8) av_B
 *
-      integer*4 i, j, m
-      real*8 error
+      integer(kind=4) i, j, m
+      real(kind=8) error
 *
       av_B = ZERO
       m = 0
@@ -1315,8 +1316,8 @@ C  401 format(1x, g12.5)
 *
       logical okay
       character*80 messge
-      integer*4 i, j, idum
-      real*8 RAN3, x, sum
+      integer(kind=4) i, j, idum
+      real(kind=8) RAN3, x, sum
 * external function
       external RAN3
 *
@@ -1410,14 +1411,15 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 FN, l_upper
-      integer*4 view, hk_lim
+      real(kind=8) FN, l_upper
+      integer(kind=4) view, hk_lim
       character*(*) infile
       logical ok
 *
-      integer*4 h, k, i, j, n, info_step, info, cnt, LENGTH, origin
-      real*8 x, S, S_value, ANGLE, W4, PNTINT, theta, Q2, l
-      real*8 l_lower, dl, high1, high2, intervals
+      integer(kind=4) h, k, i, j, n, info_step, info, cnt, LENGTH,
+     |                origin
+      real(kind=8) x, S, S_value, ANGLE, W4, PNTINT, theta, Q2, l
+      real(kind=8) l_lower, dl, high1, high2, intervals
       parameter (intervals = TWENTY)
 *
 * external functions (FN is either GLQ16 or AGLQ16)
@@ -1683,18 +1685,18 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 FN
+      real(kind=8) FN
       character*(*) infile
 *
       logical ok, SHARP, on_bndry, l_axis, shrp
-      integer*4 h, k, h_lower, h_upper, k_lower, k_upper
-      integer*4 m, i, max_indx
-      integer*4 LENGTH
-      real*8 S, Q, theta, tmp, tmp2, tmp3, fact, h_val, k_val
-      real*8 HKANGL, LL, ANGLE, AGLQ16
-      real*8 l, hk_th, x, GLQ16, l_max, min_th, max_th
-      real*8 W1, l1, l0, d_l, INTENS, L_STEP, W2, W3, l00
-      complex*16 f(MAX_L)
+      integer(kind=4) h, k, h_lower, h_upper, k_lower, k_upper
+      integer(kind=4) m, i, max_indx
+      integer(kind=4) LENGTH
+      real(kind=8) S, Q, theta, tmp, tmp2, tmp3, fact, h_val, k_val
+      real(kind=8) HKANGL, LL, ANGLE, AGLQ16
+      real(kind=8) l, hk_th, x, GLQ16, l_max, min_th, max_th
+      real(kind=8) W1, l1, l0, d_l, INTENS, L_STEP, W2, W3, l00
+      complex(kind=8) f(MAX_L)
 *
 * external functions
       external FN, GLQ16, AGLQ16, INTENS, SHARP, L_STEP, LENGTH
@@ -2153,13 +2155,13 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 S2, l
-      complex*16 f(MAX_L)
+      real(kind=8) S2, l
+      complex(kind=8) f(MAX_L)
 *
-      integer*4 i, j, m, n, type
-      real*8 fact(MAX_TA), tmp(MAX_TA), tmp_sum, dot, e_factor, Q2
+      integer(kind=4) i, j, m, n, type
+      real(kind=8) fact(MAX_TA), tmp(MAX_TA), tmp_sum, dot, e_factor, Q2
       parameter(e_factor = 0.023934D0)
-      complex*16 ctmp(MAX_TA), f_uniq(MAX_L), ctmp_sum
+      complex(kind=8) ctmp(MAX_TA), f_uniq(MAX_L), ctmp_sum
 *
       Q2 = QUARTER * S2
 * Q2 = sin(theta)**2 / lamba**2
@@ -2293,8 +2295,8 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.inc'
 *
       logical singular, LUDCMP
-      integer*4 i, j, cnt, index(MAX_L)
-      real*8 sum, g_mat(MAX_L,MAX_L), Det
+      integer(kind=4) i, j, cnt, index(MAX_L)
+      real(kind=8) sum, g_mat(MAX_L,MAX_L), Det
 *
 * external function
       external LUDCMP
@@ -2397,11 +2399,11 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 h, k
-      real*8 l
+      integer(kind=4) h, k
+      real(kind=8) l
 *
-      real*8 dot, twopi_l, fatsWaller
-      integer*4 i, j
+      real(kind=8) dot, twopi_l, fatsWaller
+      integer(kind=4) i, j
 *
 * set up matrix that represents the sequences
 * Note: mat is in 'i,j' order.
@@ -2489,14 +2491,14 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 h, k
-      real*8 l
-      complex*16 f(MAX_L), s(MAX_L)
+      integer(kind=4) h, k
+      real(kind=8) l
+      complex(kind=8) f(MAX_L), s(MAX_L)
 *
 * i_ok is used by Linpack routines
       integer i_ok, index(MAX_L)
-      integer*4 i
-      complex*16 Det, s_tmp(2)
+      integer(kind=4) i
+      complex(kind=8) Det, s_tmp(2)
 * external subroutines (Some compilers need them declared external)
 * CGEFA and CGESL are Linpack routines
       external CGEFA, CGESL
@@ -2572,13 +2574,13 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 h, k
-      real*8 l
-      complex*16 f(MAX_L), s(MAX_L)
+      integer(kind=4) h, k
+      real(kind=8) l
+      complex(kind=8) f(MAX_L), s(MAX_L)
 *
       logical ok, GET_S, MAT2N
-      integer*4 i, j
-      complex*16 ctmp, mat_n(MAX_L,MAX_L), tmp_mat(MAX_L,MAX_L)
+      integer(kind=4) i, j
+      complex(kind=8) ctmp, mat_n(MAX_L,MAX_L), tmp_mat(MAX_L,MAX_L)
 * external functions
       external GET_S, MAT2N
 *
@@ -2678,7 +2680,7 @@ C  401 format(1x, g12.5)
 *      GET_SYM returns one of the ten symmetry flags listed above.
 * ______________________________________________________________________
 *
-      integer*4 function GET_SYM(ok)
+      integer(kind=4) function GET_SYM(ok)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
@@ -2687,8 +2689,8 @@ C  401 format(1x, g12.5)
       logical diad, triad, tetrad, hexad
       logical TST_ROT, TST_MIR
       logical cell90, cell120, eq_sides
-      integer*4 idum, rot_sym
-      real*8 tmp_var
+      integer(kind=4) idum, rot_sym
+      real(kind=8) tmp_var
 *
 * external functions
       external TST_ROT, TST_MIR
@@ -2893,10 +2895,10 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 th2_low
+      real(kind=8) th2_low
 *
-      integer*4 i, j, n_low, n_high, m
-      real*8 k1, k2, k3, const, gss, std_dev, tmp, tmp1, tmp2
+      integer(kind=4) i, j, n_low, n_high, m
+      real(kind=8) k1, k2, k3, const, gss, std_dev, tmp, tmp1, tmp2
 *
       if(FWHM.le.ZERO) goto 999
       std_dev = FWHM / sqrt(EIGHT * log(TWO))
@@ -2978,18 +2980,18 @@ C  401 format(1x, g12.5)
 *      GLQ16 returns the integrated value.
 * ______________________________________________________________________
 *
-      real*8 function GLQ16(h, k, a, b, ok)
+      real(kind=8) function GLQ16(h, k, a, b, ok)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
       logical ok
-      integer*4 h, k
-      real*8 a, b
+      integer(kind=4) h, k
+      real(kind=8) a, b
 *
       logical o, too_close
-      real*8 INTENS, INTEN2
-      real*8 c1, c2, x1, x2, x3, x4, x5, x6, x7, x8
-      real*8         w1, w2, w3, w4, w5, w6, w7, w8
+      real(kind=8) INTENS, INTEN2
+      real(kind=8) c1, c2, x1, x2, x3, x4, x5, x6, x7, x8
+      real(kind=8)         w1, w2, w3, w4, w5, w6, w7, w8
 *
       parameter (x1 = 0.095012509837637440185D0)
       parameter (x2 = 0.281603550779258913230D0)
@@ -3009,15 +3011,15 @@ C  401 format(1x, g12.5)
       parameter (w7 = 0.062253523938647892863D0)
       parameter (w8 = 0.027152459411754094852D0)
 *
-      integer*4 i, j
+      integer(kind=4) i, j
 * f is approximated by a polynomial of order (n-1)
-      integer*4 n
+      integer(kind=4) n
       parameter (n = 3)
-      integer*4 list(n)
+      integer(kind=4) list(n)
 *
-      real*8 Q2, l
-      real*8 ag_l(16), samp_l(n)
-      complex*16 f(MAX_L,16)
+      real(kind=8) Q2, l
+      real(kind=8) ag_l(16), samp_l(n)
+      complex(kind=8) f(MAX_L,16)
 *
 * external functions
       external INTENS, INTEN2
@@ -3166,8 +3168,8 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 HKLUP
-      real*8 y
+      integer(kind=4) HKLUP
+      real(kind=8) y
 *
 * HKLUP returns the maximum value of h, k or l given 'max_angle'
       HKLUP(y) =  int(TWO * sin(HALF*max_angle) / (lambda*sqrt(y)))
@@ -3217,13 +3219,13 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 FN
+      real(kind=8) FN
       logical ok
 *
       logical divided
-      integer*4 h, k
-      real*8 l0, l1, max_th, x, W4, ANGLE, theta, l, S, Q2
-      real*8 t1, sum, tmp, LL, fact, d_th, l_tmp
+      integer(kind=4) h, k
+      real(kind=8) l0, l1, max_th, x, W4, ANGLE, theta, l, S, Q2
+      real(kind=8) t1, sum, tmp, LL, fact, d_th, l_tmp
 *
 * external function, passed by reference
       external FN
@@ -3360,18 +3362,18 @@ C  401 format(1x, g12.5)
 *      INTEN2 returns the intensity at h, k, l
 * ______________________________________________________________________
 *
-      real*8 function INTEN2(f, h, k, l, ok)
+      real(kind=8) function INTEN2(f, h, k, l, ok)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
       logical ok
-      integer*4 h, k
-      real*8 l
-      complex*16 f(MAX_L)
+      integer(kind=4) h, k
+      real(kind=8) l
+      complex(kind=8) f(MAX_L)
 *
-      integer*4 i, j, m
-      real*8 twopi_l, dot, tmp
-      complex*16 phi(MAX_L, MAX_L), z, z_to_n
+      integer(kind=4) i, j, m
+      real(kind=8) twopi_l, dot, tmp
+      complex(kind=8) phi(MAX_L, MAX_L), z, z_to_n
 *
       twopi_l = PI2 * l
 *
@@ -3450,19 +3452,19 @@ C  401 format(1x, g12.5)
 *      INTENS returns the intensity at h, k, l
 * ______________________________________________________________________
 *
-      real*8 function INTENS(f, h, k, l, ok)
+      real(kind=8) function INTENS(f, h, k, l, ok)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
       logical ok
-      integer*4 h, k
-      real*8 l
-      complex*16 f(MAX_L)
+      integer(kind=4) h, k
+      real(kind=8) l
+      complex(kind=8) f(MAX_L)
 *
       logical GET_S, GET_S2
-      integer*4 i
-      real*8 sum, x
-      complex*16 s(MAX_L)
+      integer(kind=4) i
+      real(kind=8) sum, x
+      complex(kind=8) s(MAX_L)
 *
 * external function
       external GET_S, GET_S2
@@ -3524,12 +3526,12 @@ C  401 format(1x, g12.5)
 *      LENGTH returns the string length.
 * ______________________________________________________________________
 *
-      integer*4 function LENGTH(string)
+      integer(kind=4) function LENGTH(string)
       implicit none
 *
       character string*(*)
 *
-      integer*4 i
+      integer(kind=4) i
 *
       i = index(string,' ')
       if(i.eq.0) then
@@ -3564,10 +3566,10 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 th2_low
+      real(kind=8) th2_low
 *
-      integer*4 i, j, n_low, n_high
-      real*8 k1, k2, k3, const, lrnz, tmp, tmp1, tmp2
+      integer(kind=4) i, j, n_low, n_high
+      real(kind=8) k1, k2, k3, const, lrnz, tmp, tmp1, tmp2
 *
       if(FWHM.le.ZERO) goto 999
 * check that cut-off is reasonable
@@ -3643,11 +3645,11 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
 *     save
 *
-      integer*4 n, MAX_N, index(MAX_N)
-      real*8 a(MAX_N,MAX_N), b(MAX_N)
+      integer(kind=4) n, MAX_N, index(MAX_N)
+      real(kind=8) a(MAX_N,MAX_N), b(MAX_N)
 *
-      integer*4 i, i2, j, row
-      real*8 sum
+      integer(kind=4) i, i2, j, row
+      real(kind=8) sum
 *
       i2 = 0
       do 20 i = 1, n
@@ -3679,7 +3681,7 @@ C  401 format(1x, g12.5)
 * "Numerical Recipes: The Art of Scientific Computing."
 * Date: 18 Aug 1988
 *  Description: This is an LU decomposition routine, and accepts
-*  real*8 variables.
+*  real(kind=8) variables.
 *  Given an n x n matrix a, with physical dimension MAX_N, this
 *  routine replaces it by the LU decomposition of a rowwise permutation
 *  of itself. a and n are input. a is the LU decomposed output; index
@@ -3707,12 +3709,12 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
 *     save
 *
-      integer*4 n, MAX_N, index(MAX_N)
-      real*8 a(MAX_N,MAX_N), Det
+      integer(kind=4) n, MAX_N, index(MAX_N)
+      real(kind=8) a(MAX_N,MAX_N), Det
 *
-      integer*4 L_MAX, i, j, m, row
+      integer(kind=4) L_MAX, i, j, m, row
       parameter (L_MAX = 100)
-      real*8 tiny, tmp(L_MAX), sum, max, tmp2
+      real(kind=8) tiny, tmp(L_MAX), sum, max, tmp2
       parameter (tiny = 1.0D-20)
 *
       LUDCMP = .false.
@@ -3804,15 +3806,15 @@ C  401 format(1x, g12.5)
 *      be found at.
 * ______________________________________________________________________
 *
-      real*8 function L_STEP(ok)
+      real(kind=8) function L_STEP(ok)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
       logical ok
 *
-      real*8 tmp, z_step
+      real(kind=8) tmp, z_step
       logical YRDSTK, resonant, decided
-      integer*4 i1, i2, i3, i4
+      integer(kind=4) i1, i2, i3, i4
 *
 * external function
       external YRDSTK
@@ -4031,11 +4033,11 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
 *     save
 *
-      integer*4 n
-      complex*16 a(MAX_L,MAX_L), b(MAX_L,MAX_L)
+      integer(kind=4) n
+      complex(kind=8) a(MAX_L,MAX_L), b(MAX_L,MAX_L)
 *
-      integer*4 i, j, m
-      complex*16 c(MAX_L,MAX_L), ctmp
+      integer(kind=4) i, j, m
+      complex(kind=8) c(MAX_L,MAX_L), ctmp
 *
 * first copy a into c
       do 10 j = 1, n
@@ -4092,10 +4094,10 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      complex*16 a(MAX_L,MAX_L)
+      complex(kind=8) a(MAX_L,MAX_L)
 *
-      integer*4 i, j
-      complex*16 tmp_mat(MAX_L,MAX_L,MAX_BIN)
+      integer(kind=4) i, j
+      complex(kind=8) tmp_mat(MAX_L,MAX_L,MAX_BIN)
 *
 * external subroutine (Some compilers need them declared external)
       external MATSQR, MATMUL
@@ -4144,11 +4146,11 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
 *     save
 *
-      integer*4 n
-      complex*16 a(MAX_L,MAX_L), b(MAX_L,MAX_L)
+      integer(kind=4) n
+      complex(kind=8) a(MAX_L,MAX_L), b(MAX_L,MAX_L)
 *
-      integer*4 i, j, m
-      complex*16 ctmp
+      integer(kind=4) i, j, m
+      complex(kind=8) ctmp
 *
       do 10 j = 1, n
         do 20 i = 1, n
@@ -4183,7 +4185,7 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 i, j
+      integer(kind=4) i, j
 *
       do 10 i = 1, n_actual
         do 20 j = 1, l_n_atoms(i)
@@ -4231,9 +4233,9 @@ C  401 format(1x, g12.5)
 *
       character*31 sym_fnam
       logical EQUALB, BINPOW, GET_G
-      integer*4 GET_SYM, i, j, j2, m, n, LENGTH
-      real*8 HKANGL, h_val, k_val
-      real*8 x, error, tmp, incr, z, old_lambda
+      integer(kind=4) GET_SYM, i, j, j2, m, n, LENGTH
+      real(kind=8) HKANGL, h_val, k_val
+      real(kind=8) x, error, tmp, incr, z, old_lambda
       logical did_it(MAX_L,MAX_L)
 *
 * external functions
@@ -4580,11 +4582,11 @@ C  401 format(1x, g12.5)
 *
       logical invert
       character*33 txt
-      integer*4 i, j, m, n, nn, j2, err_no, max_err, fact, at_num
-      integer*4 PRUNE
+      integer(kind=4) i, j, m, n, nn, j2, err_no, max_err, fact, at_num
+      integer(kind=4) PRUNE
       parameter(max_err = 100)
-      real*8 lay(3,2*MAX_A)
-      real*8 x1, y1, z1, x2, y2, z2, sum_occ, tol, tmp, BOUNDS
+      real(kind=8) lay(3,2*MAX_A)
+      real(kind=8) x1, y1, z1, x2, y2, z2, sum_occ, tol, tmp, BOUNDS
       parameter(tol = eps1)
 *
 * external functions
@@ -4698,16 +4700,16 @@ C  401 format(1x, g12.5)
 *      PNTINT returns the intensity at h, k, l
 * ______________________________________________________________________
 *
-      real*8 function PNTINT(h, k, l, ok)
+      real(kind=8) function PNTINT(h, k, l, ok)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 h, k
-      real*8 l
+      integer(kind=4) h, k
+      real(kind=8) l
       logical ok
 *
-      real*8 S, ANGLE, W4, INTENS, INTEN2, theta, x
-      complex*16 f(MAX_L)
+      real(kind=8) S, ANGLE, W4, INTENS, INTEN2, theta, x
+      complex(kind=8) f(MAX_L)
 *
 * external functions
       external INTENS, INTEN2
@@ -4773,15 +4775,15 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
 *     save
 *
-      integer*4 n
-      real*8 x, xa(n)
-      complex*16 ya(n), dy, y
+      integer(kind=4) n
+      real(kind=8) x, xa(n)
+      complex(kind=8) ya(n), dy, y
       logical ok
 *
-      integer*4 NMAX, i, m, ns
+      integer(kind=4) NMAX, i, m, ns
       parameter (NMAX = 10)
-      real*8 dif, dift, ho, hp
-      complex*16 c(NMAX), d(NMAX), w, den
+      real(kind=8) dif, dift, ho, hp
+      complex(kind=8) c(NMAX), d(NMAX), w, den
 *
       ns = 1
       dif = abs(x - xa(1))
@@ -4847,10 +4849,10 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 h, k
+      integer(kind=4) h, k
 *
-      real*8 dot
-      integer*4 i, j
+      real(kind=8) dot
+      integer(kind=4) i, j
 *
 * Set up matrix that represents the sequences
 * For the matrix inversion routines, 'mat' and 'mat1' have to be
@@ -4906,13 +4908,13 @@ C  401 format(1x, g12.5)
 * if there was an error.
 * ______________________________________________________________________
 *
-      integer*4 function PRUNE(line)
+      integer(kind=4) function PRUNE(line)
       include 'DIFFaX.par'
 *     save
 *
       character*(*) line
 *
-      integer*4 lin_len, i
+      integer(kind=4) lin_len, i
 *
       PRUNE = 0
 *
@@ -4956,11 +4958,11 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 th2_low
+      real(kind=8) th2_low
 *
-      integer*4 i, j, n_low, n_high, indx
-      real*8 th_rng, tn_th, c00, hk_inv, th0
-      real*8 k1, k2, k3, k4, k5, pVoigt, const, tmp, speci
+      integer(kind=4) i, j, n_low, n_high, indx
+      real(kind=8) th_rng, tn_th, c00, hk_inv, th0
+      real(kind=8) k1, k2, k3, k4, k5, pVoigt, const, tmp, speci
 *
 * first check the numbers
       if(pv_u.eq.ZERO .and. pv_v.eq.ZERO .and. pv_w.eq.ZERO) goto 990
@@ -5031,7 +5033,7 @@ C  401 format(1x, g12.5)
 * Date: Copyright (C) 1985
 * Returns a uniform random deviate between 0.0 and 1.0. Set 'idum'
 * to any negative value to initialize or reinitialize the sequence.
-* This version is modified to return real*8 values, and enforces static
+* This version is modified to return real(kind=8) values, and enforces static
 * storage of all local variables by use of the 'save' statement
 * (In fact 'seed' is the important variable to save, but we save all
 * anyway).
@@ -5042,17 +5044,17 @@ C  401 format(1x, g12.5)
 *      RAN3 returns a real random number between 0 and 1
 * ______________________________________________________________________
 *
-      real*8 function RAN3(idum)
+      real(kind=8) function RAN3(idum)
       implicit none
       save
 *
-      integer*4 idum
+      integer(kind=4) idum
 *
-      real*8 big, seed, mz, fac
+      real(kind=8) big, seed, mz, fac
       parameter (big=4000000.0D0,seed=1618033.0D0,mz=0.0D0,fac=2.5D-7)
-      real*8 ma(55)
-      real*8 mj, mk
-      integer*4 iff, ii, i, j, inext, inextp
+      real(kind=8) ma(55)
+      real(kind=8) mj, mk
+      integer(kind=4) iff, ii, i, j, inext, inextp
 *
       data iff /0/
 *
@@ -5122,11 +5124,11 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 h, k
-      real*8 d_l
+      integer(kind=4) h, k
+      real(kind=8) d_l
 *
       logical ok
-      real*8 S, PNTINT, ANGLE, LL, l, i1, i2, x, theta, l_next
+      real(kind=8) S, PNTINT, ANGLE, LL, l, i1, i2, x, theta, l_next
 *
 * external subroutine (Some compilers need them declared external)
 *      external GET_F
@@ -5193,13 +5195,13 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.inc'
 *     save
 *
-      integer*4 arrsize
-      real*8 array(arrsize), sigma
+      integer(kind=4) arrsize
+      real(kind=8) array(arrsize), sigma
       logical ok
 *
-      integer*4 m, i, j
-      real*8 tmparr(SADSIZE)
-      real*8 k1, k2, tmp, tmp1, tmp2, gss, normalize
+      integer(kind=4) m, i, j
+      real(kind=8) tmparr(SADSIZE)
+      real(kind=8) k1, k2, tmp, tmp1, tmp2, gss, normalize
 *
       if(sigma.eq.ZERO) return
 *
@@ -5289,7 +5291,7 @@ C  401 format(1x, g12.5)
 * is close to zero. Miniscule intensity variations can appear to be
 * huge relative to zero!
 * This function is needed in order to obtain a (crude) estimate of
-* which intensity values are too small to worry about, even if the 
+* which intensity values are too small to worry about, even if the
 * relative intensity variations seem to be large.
 * This function will be of no use if there are no streaks, that is,
 * if the crystal is perfect.
@@ -5312,9 +5314,9 @@ C  401 format(1x, g12.5)
 *
       logical ok
 *
-      integer*4 i, h, k, idum
-      real*8 RAN3, PNTINT, S, ANGLE
-      real*8 l, tot_int
+      integer(kind=4) i, h, k, idum
+      real(kind=8) RAN3, PNTINT, S, ANGLE
+      real(kind=8) l, tot_int
 *
 * external functions
       external RAN3, PNTINT
@@ -5328,7 +5330,7 @@ C  401 format(1x, g12.5)
       idum = -1
 *
 * First define angular range to sample. h_bnd, k_bnd, l_bnd
-* (defined in HKL_LIM) and max_angle, are used later on 
+* (defined in HKL_LIM) and max_angle, are used later on
 * in GET_SYM and CHK_SYM.
       max_angle = QUARTER * PI
       call HKL_LIM()
@@ -5384,9 +5386,9 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      real*8 th2_low
+      real(kind=8) th2_low
 *
-      integer*4 i, i_min, i_max
+      integer(kind=4) i, i_min, i_max
 *
       i_max = int(HALF*(th2_max - th2_min) / d_theta) + 1
 * spec(1) corresponds to the intensity at the origin and is always zero.
@@ -5447,15 +5449,15 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 mir_sym, idum
+      integer(kind=4) mir_sym, idum
       logical ok
 *
       logical is_good, match, eq_sides
-      integer*4 i, h, k, h_tmp, k_tmp
+      integer(kind=4) i, h, k, h_tmp, k_tmp
       logical cell90, cell120
-      real*8 RAN3, PNTINT, S, ANGLE
-      real*8 tiny, l
-      real*8 i_avg, tol, i1, i2, variance, rel_var
+      real(kind=8) RAN3, PNTINT, S, ANGLE
+      real(kind=8) tiny, l
+      real(kind=8) i_avg, tol, i1, i2, variance, rel_var
       parameter (tiny = FIVE * eps4)
 *
 * external functions
@@ -5712,14 +5714,14 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 rot_sym, idum
+      integer(kind=4) rot_sym, idum
       logical ok
 *
       logical is_good, match
-      integer*4 i, h, k, h_tmp, k_tmp
-      real*8 RAN3, PNTINT, S, ANGLE
-      real*8 l, i_avg, tol
-      real*8 i1, i2, i3, i4, variance, rel_var
+      integer(kind=4) i, h, k, h_tmp, k_tmp
+      real(kind=8) RAN3, PNTINT, S, ANGLE
+      real(kind=8) l, i_avg, tol
+      real(kind=8) i1, i2, i3, i4, variance, rel_var
 *
 * external functions
       external RAN3, PNTINT
@@ -5951,9 +5953,9 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
       include 'DIFFaX.inc'
 *
-      integer*4 h, k
+      integer(kind=4) h, k
 *
-      integer*4 i, m
+      integer(kind=4) i, m
 *
       do 10 m = 1, n_actual
         do 20 i = 1, l_n_atoms(m)
@@ -5982,10 +5984,10 @@ C  401 format(1x, g12.5)
       include 'DIFFaX.par'
 *     save
 *
-      real*8 x, y
+      real(kind=8) x, y
       logical ok
 *
-      real*8 tmp
+      real(kind=8) tmp
 *
       YRDSTK = .false.
       if(y.eq.ZERO) goto 999

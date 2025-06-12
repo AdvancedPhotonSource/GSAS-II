@@ -1,4 +1,4 @@
-      REAL*4  FUNCTION  ACOSD(ARG)
+      REAL(kind=4)  FUNCTION  ACOSD(ARG)
 
 !PURPOSE:
 
@@ -6,7 +6,7 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        ARG                 
+      REAL(kind=4)        ARG                 
 
 !INCLUDE STATEMENTS:
 

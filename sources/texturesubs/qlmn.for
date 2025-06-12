@@ -6,23 +6,23 @@
 
 !CALLING ARGUMENTS:         
 
-      INTEGER*4     L,MM,NN             !order & subindices (m may be <0)
-      REAL*4        Q                   !Output value
+      INTEGER(kind=4)     L,MM,NN             !order & subindices (m may be <0)
+      REAL(kind=4)        Q                   !Output value
 
 !INCLUDE STATEMENTS:
 
-      REAL*4        QT                  
+      REAL(kind=4)        QT                  
       COMMON /QLMNVAL/QT(2109)
 
 
 !LOCAL VARIABLES:
 
-      REAL*8        SUM,TEMP,TEMP1      
-      INTEGER*4     LMN,I,J,M,N         
+      REAL(kind=8)        SUM,TEMP,TEMP1      
+      INTEGER(kind=4)     LMN,I,J,M,N         
 
 !FUNCTION DEFINITIONS:                     
 
-      REAL*8        FACTLN              !Compute ln-factorial & binominal coeffs.
+      REAL(kind=8)        FACTLN              !Compute ln-factorial & binominal coeffs.
 
 !DATA STATEMENTS:
 

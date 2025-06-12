@@ -8,11 +8,11 @@
 
 !CALLING ARGUMENTS:
 
-      REAL*4        DT                  !Delta
-      REAL*4        GAM                 !Coefficient
-      REAL*4        FUNC                !Function
-      REAL*4        DLDT                !df/dt
-      REAL*4        DLDG                !df/dg
+      REAL(kind=4)        DT                  !Delta
+      REAL(kind=4)        GAM                 !Coefficient
+      REAL(kind=4)        FUNC                !Function
+      REAL(kind=4)        DLDT                !df/dt
+      REAL(kind=4)        DLDG                !df/dg
 
 !INCLUDE STATEMENTS:
 

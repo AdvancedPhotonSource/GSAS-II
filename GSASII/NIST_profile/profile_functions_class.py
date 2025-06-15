@@ -65,7 +65,7 @@ try:
     #  this is built once, and shared by all instances
     #  fftw can handle a variety of transform factorizations
     ft_factors=[
-        2*2**i*3**j*5**k for i in xrange(20) for j in range(10) for k in range(8)
+        2*2**i*3**j*5**k for i in range(20) for j in range(10) for k in range(8)
         if 2*2**i*3**j*5**k <= 1000000
     ]
     cache.enable()

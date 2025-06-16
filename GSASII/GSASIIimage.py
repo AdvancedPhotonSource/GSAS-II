@@ -1239,10 +1239,9 @@ def polymask(data,Poly,Spots=[]):
     ax0 = figure.add_subplot()
     ax0.axis("off")
     figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-    for poly in Poly:
-        px = np.array(poly).T[0]/scalex
-        py = np.array(poly).T[1]/scaley
-        ax0.fill(px,py,inmask)
+    px = np.array(Poly).T[0]/scalex
+    py = np.array(Poly).T[1]/scaley
+    ax0.fill(px,py,inmask)
     for spot in Spots:
         px = np.array(spot).T[0]/scalex
         py = np.array(spot).T[1]/scaley
@@ -1271,21 +1270,14 @@ def MakeMaskMap(data,masks,iLim,jLim):
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    frame = []
-    poly = []
+    frame = np.zeros(data['size'],dtype='uint8')
+    poly = np.zeros(data['size'],dtype='uint8')
     if iLim[0] == jLim[0] == 0:
         if masks['Frames']:
             frame = np.abs(polymask(data,masks['Frames'])-255) #turn inner to outer mask
         if masks['Polygons'] or masks['Points']:
             poly = polymask(data,masks['Polygons'],masks['Points'])
-        if len(frame):
-            masks['Pmask'] =  frame
-            if len(poly):
-                masks['Pmask'] = masks['Pmask']+poly
-        if len(poly):
-            masks['Pmask'] =  poly
-        else:
-            masks['Pmask'] =  []
+        masks['Pmask'] =  frame+poly
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asarray(tax*scalex,dtype=np.float32).flatten()
     tay = np.asarray(tay*scaley,dtype=np.float32).flatten()

@@ -362,16 +362,16 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
             return False
 
 class M90_ReaderClass(G2obj.ImportStructFactor):
-    'Routines to import F**2, sig(F**2) reflections from a JANA M90 file'
+    'Routines to import F**2, sig(F**2) reflections from a JANA M90/M91 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
             longFormatName = 'JANA [hkl, Fo2, sig(Fo2)] Structure factor text file'
         else:
             longFormatName = u'JANA [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.m90','.M90'),
+            extensionlist=('.m90','.m91'),
             strictExtension=False,
-            formatName = u'JANA M90',
+            formatName = u'JANA M90/1',
             longFormatName = longFormatName
             )
         self.Super = 0
@@ -380,17 +380,22 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
         'Discover how many columns are in the m90 file - could be 9-12 depending on satellites'
         numCols = 0
         fp = open(filename,'r')
-        for i,line in enumerate(fp):
-            if 'Data' in line:
-                startData = i
-                break
+        startData = -1
+        if 'm90' in filename.lower():
+            for i,line in enumerate(fp):
+                if 'Data' in line:
+                    startData = i
+                    break
         for i,line in enumerate(fp):
             if i > startData:
                 numCols = max(numCols,len(line.split()))
             if i > startData+20:
                 break
         fp.close()
-        self.Super = numCols-9     #= 0,1,2,or 3
+        ncol = 9 
+        if 'm91' in filename.lower():   #JANA2000 file
+            ncol = 8
+        self.Super = numCols-ncol     #= 0,1,2,or 3
         if self.Super > 1:
             raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
         return True #ColumnValidator(self, filepointer)
@@ -402,6 +407,8 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
+                if S.strip() == '999':
+                    break
                 try:
                     if self.Super == 0:
                         h,k,l,Fo,sigFo = S.split()[:5]
@@ -431,6 +438,14 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.RefDict['Type'] = 'SXC'
             self.RefDict['Super'] = self.Super
+            if 'm91' in filename:
+                filename2 = filename.replace('.m91','.m50')
+                fp = open(filename2)
+                for line,S in enumerate(fp):
+                    if 'lambda' in S:
+                        wave = float(S.split()[1])
+                        break
+                fp.close()
             self.UpdateParameters(Type='SXC',Wave=wave) # histogram type
             return True
         except:

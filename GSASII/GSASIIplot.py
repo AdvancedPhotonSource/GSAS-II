@@ -290,16 +290,10 @@ class G2Plot3D(_tabPlotWin):
             self.canvas.SetToolTipString(text)
 
     def ToolBarDraw(self):
-        mplv = eval(mpl.__version__.replace('.',','))
-        if mplv[0] >= 3 and mplv[1] >= 3:
+        try:
             self.toolbar.canvas.draw_idle()
-        else:
+        except: # patch: used for MLP <3.3
             self.toolbar.draw()
-        # mplv = eval(mpl.__version__.replace('.',','))
-        # if mplv[0] >= 3 and mplv[1] >= 3:
-        #     self.toolbar.draw_idle()
-        # else:
-        #     self.toolbar.draw()
 
 class G2PlotNoteBook(wx.Panel):
     'create a tabbed panel to hold a GSAS-II graphics window'

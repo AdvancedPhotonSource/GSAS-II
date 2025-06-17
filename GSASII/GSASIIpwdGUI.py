@@ -5174,104 +5174,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
-        import tempfile
-        import re
-        import requests
-        from GSASII.exports import G2export_CIF
-        from . import ISODISTORT as ISO
-        from fractions import Fraction
-        isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
+        def _get_opt_val(opt_name, out):
+            opt_pattern = rf'NAME="{opt_name}" VALUE="(.*?)"'
+            opt_match = re.search(opt_pattern, out)
 
-        if not G2frame.kvecSearch['mode']:
-            return
-
-        k_table = G2frame.GPXtree.GetItemPyData(UnitCellsId)
-        k_cells, _ = k_table[2:4]
-        kpoint = None
-        for row in range(len(k_cells)):
-            if UnitCellsTable.GetValue(row, 0):
-                kpoint = cells[row][3:6]
-                break
-
-        if kpoint is None:
-            wx.MessageBox(
-                "Please select a k-vector from the table.", 
-                style=wx.ICON_INFORMATION,
-                caption='Isotropic Subgroup Generation'
-            )
-
-            return
-
-        #isoscript='isocifform.php'
-        isoCite = '''For use of this please cite
-            H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISODISTORT, ISOTROPY
-            Software Suite, iso.byu.edu. B. J. Campbell, H. T. Stokes,
-            D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for
-            Exploring Structural Distortions." J. Appl. Cryst.
-            39, 607-614 (2006).
-        '''
-        info_str = '''CIF files of the isotropic subgroups associated with the
-            selected k-vector will be created.
-            Generated CIF files will be saved in the same directory as the
-            current project file.
-            This can take up to a few minutes. Check the terminal for progress.
-        '''
-        wx.MessageBox(
-            f"{isoCite}\n\n{info_str}", 
-            style=wx.ICON_INFORMATION,
-            caption='Isotropic Subgroup Generation'
-        )
-
-        wx.GetApp().Yield()
-
-        info_msg = "Processing IRREPs for the selected k-vector. "
-        info_msg += "This can take up to a few minutes."
-        print(info_msg)
-
-        phaseID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
-        phase_nam = G2frame.kvecSearch['phase']
-        Phase = G2frame.GPXtree.GetItemPyData(
-            G2gd.GetGPXtreeItemId(
-                G2frame, phaseID, phase_nam
-            )
-        )
-        # data = Phase
-        #oacomp,occomp = G2mth.phaseContents(data)
-        #ophsnam = data['General']['Name']
-        fileList = []
-        # write a CIF as a scratch file
-        obj = G2export_CIF.ExportPhaseCIF(G2frame)
-        obj.InitExport(None)
-        obj.currentExportType='phase'
-        obj.loadTree()
-        tmp = tempfile.NamedTemporaryFile(suffix='.cif', delete=False)
-        obj.dirname,obj.filename = os.path.split(tmp.name)
-        obj.phasenam = Phase['General']['Name']
-        obj.Writer('', Phase['General']['Name'])
-        parentcif = tmp.name
-        ISOparentcif = ISO.UploadCIF(parentcif)
-        up2 = {'filename': ISOparentcif, 'input': 'uploadparentcif'}
-        out2 = requests.post(isoformsite, up2).text
-        try:
-            pos = out2.index('<p><FORM')
-        except ValueError:
-            ISO.HandleError(out2)
-            return [], []
-        data = {}
-        while True:
-            try:
-                posB = out2[pos:].index('INPUT TYPE') + pos
-                posF = out2[posB:].index('>') + posB
-                items = out2[posB:posF].split('=',3)
-                name = items[2].split()[0].replace('"', '')
-                if 'isosystem' in name:
-                    break
-                vals = items[3].replace('"', '')
-                data[name] = vals
-                pos = posF
-            except ValueError:
-                break
-
+            return opt_match.group(1)
+        
         def setup_kvec_input(k_vec):
             """Set up the input for isodistort post request
 
@@ -5382,6 +5290,95 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
             return data_update
 
+        # start of OnISODISTORT_kvec computations
+        import tempfile
+        import re
+        import requests
+        from fractions import Fraction
+        from GSASII.exports import G2export_CIF
+        from . import ISODISTORT as ISO
+        isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
+
+        if not G2frame.kvecSearch['mode']:
+            return
+
+        k_table = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        k_cells, _ = k_table[2:4]
+        kpoint = None
+        for row in range(len(k_cells)):
+            if UnitCellsTable.GetValue(row, 0):
+                kpoint = cells[row][3:6]
+                break
+
+        if kpoint is None:
+            wx.MessageBox(
+                "Please select a k-vector from the table.", 
+                style=wx.ICON_INFORMATION,
+                caption='Isotropic Subgroup Generation'
+            )
+
+            return
+
+        isoCite = G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...',wrap=60,indent=5)  # reuse saved citation
+
+        info_str = '''CIF files of the isotropic subgroups associated with the
+            selected k-vector will be created.
+            Generated CIF files will be saved in the same directory as the
+            current project file.
+            This can take up to a few minutes. Check the terminal for progress.
+        '''
+        wx.MessageBox(
+            f"{isoCite}\n\n{info_str}", 
+            style=wx.ICON_INFORMATION,
+            caption='Isotropic Subgroup Generation'
+        )
+
+        wx.GetApp().Yield()
+
+        info_msg = "Processing IRREPs for the selected k-vector. "
+        info_msg += "This can take up to a few minutes."
+        print(info_msg)
+
+        # find tree item for current phase
+        phaseID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+        phase_nam = G2frame.kvecSearch['phase']
+        phaseTreeId = G2gd.GetGPXtreeItemId(G2frame, phaseID, phase_nam) # save reference
+        Phase = G2frame.GPXtree.GetItemPyData(phaseTreeId)
+        fileList = []
+        # write a CIF as a scratch file
+        obj = G2export_CIF.ExportPhaseCIF(G2frame)
+        obj.InitExport(None)
+        obj.currentExportType='phase'
+        obj.loadTree()
+        tmp = tempfile.NamedTemporaryFile(suffix='.cif', delete=False)
+        obj.dirname,obj.filename = os.path.split(tmp.name)
+        obj.phasenam = Phase['General']['Name']
+        obj.Writer('', Phase['General']['Name'])
+        parentcif = tmp.name
+        ISOparentcif = ISO.UploadCIF(parentcif)
+        up2 = {'filename': ISOparentcif, 'input': 'uploadparentcif'}
+        out2 = requests.post(isoformsite, up2).text
+        try:
+            pos = out2.index('<p><FORM')
+        except ValueError:
+            ISO.HandleError(out2)
+            return [], []
+        data = {}
+        while True:
+            try:
+                posB = out2[pos:].index('INPUT TYPE') + pos
+                posF = out2[posB:].index('>') + posB
+                items = out2[posB:posF].split('=',3)
+                name = items[2].split()[0].replace('"', '')
+                if 'isosystem' in name:
+                    break
+                vals = items[3].replace('"', '')
+                data[name] = vals
+                pos = posF
+            except ValueError:
+                break
+
+
         # The following chunk of code is for converting the k-vector from the
         # conventional setting to the primitive setting.
         phase_sel = G2frame.kvecSearch['phase']
@@ -5452,12 +5449,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         except ValueError:
             ISO.HandleError(out3)
             return [],[]
-
-        def _get_opt_val(opt_name, out):
-            opt_pattern = rf'NAME="{opt_name}" VALUE="(.*?)"'
-            opt_match = re.search(opt_pattern, out)
-
-            return opt_match.group(1)
 
         kvec1 = _get_opt_val('kvec1', out3)
         kvecnumber1 = _get_opt_val('kvecnumber1', out3)
@@ -5544,7 +5535,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 newname = rd.Phase['General']['Name']
                 Phase['General']['Name'] = newname
 
-                G2phsG.renamePhaseNameTop(G2frame,Phase,G2frame.PickId,Phase['General'],newname)
+                # rename the phase in the data tree
+                G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)
 
                 G2frame.GSASprojectfile = os.path.splitext(
                     orgFilName

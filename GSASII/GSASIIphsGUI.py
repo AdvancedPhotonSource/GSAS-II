@@ -1702,7 +1702,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 'called when the phase name is changed in "General"'
                 event.Skip()
                 newName = NameTxt.GetValue().strip()
-                renamePhaseNameTop(G2frame,data,Item,generalData,newName)
+                renamePhaseName(G2frame,data,Item,generalData,newName)
                 NameTxt.SetValue(newName)
                                                 
             def OnPhaseType(event):
@@ -5706,7 +5706,7 @@ program; Please cite:
         newname = rd.Phase['General']['Name']
         data['General']['Name'] = phsnam
         # rename phase to new name from file
-        renamePhaseNameTop(G2frame,data,G2frame.PickId, data['General'],newname)
+        renamePhaseName(G2frame,data,G2frame.PickId, data['General'],newname)
         # force a reload of current tree item
         G2frame.PickIdText = []
         wx.CallAfter(G2gd.SelectDataTreeItem,G2frame,G2frame.PickId)
@@ -17368,7 +17368,7 @@ def saveIsoNewPhase(G2frame,phData,newPhase,orgFilName):
     G2IO.ProjFileSave(G2frame)
     return G2frame.GSASprojectfile
 
-def renamePhaseNameTop(G2frame,data,phaseItem,generalData,newName):
+def renamePhaseName(G2frame,data,phaseItem,generalData,newName):
         '''Called to rename the phase. Updates the tree and items that
         reference the file name. 
         '''

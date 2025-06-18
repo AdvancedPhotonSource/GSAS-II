@@ -1418,8 +1418,7 @@ def MakeUseMask(data,masks,blkSize=128):
     return useMask
 
 def MakeGainMap(image,Ix,Iy,data,mask,blkSize=128):
-    Iy /= npcosd(Ix[:-1])       #undo parallax
-    Iy *= (1000./data['distance'])**2    #undo r^2 effect
+    Iy *= npcosd(Ix[:-1])**2       #undo parallax
     Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
     if data['Oblique'][1]:
         Iy *= G2pwd.Oblique(data['Oblique'][0],Ix[:-1])     #undo penetration
@@ -1637,8 +1636,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
-        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
-    # H0 *= (data['distance']/1000.)**2    #remove r^2 effect - done earlier
+        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:

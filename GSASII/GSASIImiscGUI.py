@@ -978,7 +978,8 @@ def ExportSequentialFullCIF(G2frame,seqData,Controls):
     '''Handles access to CIF exporter a bit differently for sequential fits, as this is
     not accessed via the usual export menus
     '''
-    from exports import G2export_CIF
+    from . import exports
+    from GSASII.exports import G2export_CIF
     ##################### debug code to reload exporter before each use ####
     #import importlib as imp
     #imp.reload(G2export_CIF)

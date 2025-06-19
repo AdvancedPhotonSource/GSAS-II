@@ -5466,6 +5466,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp
         )
 
+        proj_pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
+
         G2frame.OnFileSave(None)
         orgFilName = G2frame.GSASprojectfile
         phsnam = phase_sel
@@ -5512,7 +5514,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
                 cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
                 cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
-                cif_fn = os.path.join(os.getcwd(), cif_fn)
+                cif_fn = os.path.join(proj_pth, cif_fn)
                 with open(cif_fn, 'wb') as fl:
                     fl.write(out_cif.encode("utf-8"))
 
@@ -5533,7 +5535,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     Phase[key] = rd.Phase[key]
 
                 newname = rd.Phase['General']['Name']
-                Phase['General']['Name'] = newname
+                Phase['General']['Name'] = phsnam
 
                 # rename the phase in the data tree
                 G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #GSASIIseqGUI - Sequential Results Display routines
 '''
-Routines for Sequential Results & Cluster Analysis dataframes follow. 
+Routines for Sequential Results & Cluster Analysis dataframes follow.
 '''
 from __future__ import division, print_function
 import platform
@@ -16,29 +16,29 @@ try:
     import wx.grid as wg
 except ImportError:
     pass
-import GSASIIpath
-import GSASIImath as G2mth
-import GSASIImiscGUI as G2IO
-import GSASIIdataGUI as G2gd
-import GSASIIstrIO as G2stIO
-import GSASIIlattice as G2lat
-import GSASIIplot as G2plt
-import GSASIIpwdplot as G2pwpl
-import GSASIImapvars as G2mv
-import GSASIIobj as G2obj
-import GSASIIexprGUI as G2exG
-import GSASIIctrlGUI as G2G
+from . import GSASIIpath
+from . import GSASIImath as G2mth
+from . import GSASIImiscGUI as G2IO
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIstrIO as G2stIO
+from . import GSASIIlattice as G2lat
+from . import GSASIIplot as G2plt
+from . import GSASIIpwdplot as G2pwpl
+from . import GSASIImapvars as G2mv
+from . import GSASIIobj as G2obj
+from . import GSASIIexprGUI as G2exG
+from . import GSASIIctrlGUI as G2G
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 #####  Display of Sequential Results ##########################################
 def UpdateSeqResults(G2frame,data,prevSize=None):
     """
-    Called when any data tree entry is selected that has 'Sequential' in the name 
+    Called when any data tree entry is selected that has 'Sequential' in the name
     to show results from any sequential analysis.
-    
+
     :param wx.Frame G2frame: main GSAS-II data tree windows
 
-    :param dict data: a dictionary containing the following items:  
+    :param dict data: a dictionary containing the following items:
 
             * 'histNames' - list of histogram names in order as processed by Sequential Refinement
             * 'varyList' - list of variables - identical over all refinements in sequence
@@ -105,16 +105,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         plotName = variableLabels.get(colName,colName)
         plotName = plotSpCharFix(plotName)
         return plotName,G2frame.colList[col],G2frame.colSigs[col]
-            
+
     def PlotSelectedColRow(calltyp='',event=None):
         '''Called to plot a selected column or row by clicking
         on a row or column label. N.B. This is called for LB click
         after the event is processed so that the column or row has been
         selected. For RB clicks, the event is processed here
 
-        :param str calltyp: ='left'/'right', specifies if this was 
-          a left- or right-click, where a left click on row 
-          plots histogram; Right click on row plots V-C matrix; 
+        :param str calltyp: ='left'/'right', specifies if this was
+          a left- or right-click, where a left click on row
+          plots histogram; Right click on row plots V-C matrix;
           Left or right click on column: plots values in column
         :param obj event: from  wx.EVT_GRID_LABEL_RIGHT_CLICK
         '''
@@ -145,7 +145,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
                 PFdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PickId,'PDF Controls'))
                 G2plt.PlotISFG(G2frame,PFdata,plotType='G(R)')
-                G2frame.PickId = pickId                
+                G2frame.PickId = pickId
             else:
                 return
         elif rows and calltyp == 'right':
@@ -160,7 +160,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 'Select row or columns',
                 'Nothing selected in table. Click on column or row label(s) to plot. N.B. Grid selection can be a bit funky.'
                 )
-        
+
     def SetLabelString(col):
         '''Define or edit the label for a column in the table, to be used
         as a tooltip and for plotting
@@ -183,11 +183,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         'Called by a left MB click on a row or column label. '
         event.Skip()
         wx.CallAfter(PlotSelectedColRow,'left')
-        
+
     def PlotRightSelect(event):
         'Called by a right MB click on a row or column label'
         PlotSelectedColRow('right',event)
-        
+
     def OnPlotSelSeq(event):
         'plot the selected columns or row from menu command'
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
@@ -200,7 +200,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         else:
             G2frame.ErrorDialog('Select columns',
                 'No columns or rows selected in table. Click on row or column labels to select fields for plotting.')
-                
+
     def OnAveSelSeq(event):
         'average the selected columns from menu command'
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
@@ -216,7 +216,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         else:
             G2frame.ErrorDialog('Select columns',
                 'No columns selected in table. Click on column labels to select fields for averaging.')
-            
+
     def OnSelectUse(event):
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select rows to use','Select rows',histNames)
         sellist = [i for i,item in enumerate(G2frame.colList[1]) if item]
@@ -231,7 +231,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 G2frame.colList[1][row] = True
             G2frame.dataDisplay.ForceRefresh()
         dlg.Destroy()
-                
+
     def OnRenameSelSeq(event):
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
         colNames = [G2frame.SeqTable.GetColLabelValue(c) for c in cols]
@@ -245,21 +245,21 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         dlg = G2G.MultiStringDialog(G2frame.dataDisplay,'Set column names',colNames,newNames)
         if dlg.Show():
-            newNames = dlg.GetValues()            
+            newNames = dlg.GetValues()
             variableLabels.update(dict(zip(colNames,newNames)))
-        data['variableLabels'] = variableLabels 
+        data['variableLabels'] = variableLabels
         dlg.Destroy()
         UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
         G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
-            
+
     def OnSaveSelSeqCSV(event):
         'export the selected columns to a .csv file from menu command'
         OnSaveSelSeq(event,csv=True)
-        
+
     def OnSaveSeqCSV(event):
         'export all columns to a .csv file from menu command'
         OnSaveSelSeq(event,csv=True,allcols=True)
-        
+
     def OnSaveSelSeq(event,csv=False,allcols=False):
         'export the selected columns to a .txt or .csv file from menu command'
         def WriteLine(line):
@@ -267,7 +267,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 SeqFile.write(G2obj.StripUnicode(line))
             else:
                 SeqFile.write(line)
-                
+
         def WriteCSV():
             def WriteList(headerItems):
                 line = ''
@@ -297,7 +297,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     else:
                         if col in havesig:
                             line += ','+str(saveData[col][row])+','+str(saveSigs[col][row])
-                        else:    
+                        else:
                             line += ','+str(saveData[col][row])
                 WriteLine(line+'\n')
         def WriteSeq():
@@ -362,12 +362,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(
             G2frame,
-            'Choose text output file for your selection', pth, '', 
+            'Choose text output file for your selection', pth, '',
             wild,wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 SeqTextFile = dlg.GetPath()
-                SeqTextFile = G2IO.FileDlgFixExt(dlg,SeqTextFile) 
+                SeqTextFile = G2IO.FileDlgFixExt(dlg,SeqTextFile)
                 SeqFile = open(SeqTextFile,'w')
                 if csv:
                     WriteCSV()
@@ -376,7 +376,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 SeqFile.close()
         finally:
             dlg.Destroy()
-                
+
     def striphist(var,insChar=''):
         'strip a histogram number from a var name'
         sv = var.split(':')
@@ -384,7 +384,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if sv[1]:
             sv[1] = insChar
         return ':'.join(sv)
-        
+
     def plotSpCharFix(lbl):
         'Change selected unicode characters to their matplotlib equivalent'
         for u,p in [
@@ -395,7 +395,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             ]:
             lbl = lbl.replace(u,p)
         return lbl
-    
+
     def SelectXaxis():
         'returns a selected column number (or None) as the X-axis selection'
         ncols = G2frame.SeqTable.GetNumberCols()
@@ -413,7 +413,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         finally:
             dlg.Destroy()
         return col
-    
+
     def EnablePseudoVarMenus():
         'Enables or disables the PseudoVar menu items that require existing defs'
         if data['SeqPseudoVars']:
@@ -461,7 +461,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 del data['SeqPseudoVars'][choices[selected]]
                 data['SeqPseudoVars'][calcobj.eObj.expression] = newobj
                 UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
-        
+
     def AddNewPseudoVar(event):
         'Create a new pseudo var expression'
         dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,PSvarDict,
@@ -473,7 +473,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             calcobj = G2obj.ExpressionCalcObj(obj)
             data['SeqPseudoVars'][calcobj.eObj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
-            
+
     def AddNewDistPseudoVar(event):
         obj = None
         dlg = G2exG.BondDialog(
@@ -506,7 +506,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 obj.expression = 'Dist(%s,\n%s)'%(Oatom,Tatom.split(' d=')[0].replace(' ',''))
                 obj.distance_dict = {'pId':pId,'SGData':SGData,'symNo':symNo,'cellNo':cellNo}
                 obj.distance_atoms = [oId,tId]
-        else: 
+        else:
             dlg.Destroy()
             return
         dlg.Destroy()
@@ -524,14 +524,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             pName,Oatom,Tatoms = dlg.GetSelection()
             if Tatoms:
                 obj = G2obj.makeAngleObj(Phases[pName],Oatom,Tatoms)
-        else: 
+        else:
             dlg.Destroy()
             return
         dlg.Destroy()
         if obj:
             data['SeqPseudoVars'][obj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
-            
+
     def UpdateParmDict(parmDict):
         '''generate the atom positions and the direct & reciprocal cell values,
         because they might be needed to evaluate the pseudovar
@@ -542,7 +542,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                      )
         delList = []
         phaselist = []
-        for item in parmDict: 
+        for item in parmDict:
             if ':' not in item: continue
             key = item.split(':')
             if len(key) < 3: continue
@@ -556,7 +556,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 parmDict[akey] += parmDict[item]
                 delList.append(item)
         for item in delList:
-            del parmDict[item]                
+            del parmDict[item]
         for i in phaselist:
             pId = int(i)
             # apply cell symmetry
@@ -583,7 +583,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         GSAS-II variable name.
 
         Note this likely could be faster if the loop over calcobjs were done
-        inside after the Dict was created. 
+        inside after the Dict was created.
         '''
         if not ESD:
             return 0.
@@ -595,7 +595,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         phaselist = []
         VparmDict = sampleDict.copy()
         for incr in step,-step:
-            VparmDict.update(parmDict.copy())           
+            VparmDict.update(parmDict.copy())
             # as saved, the parmDict has updated 'A[xyz]' values, but 'dA[xyz]'
             # values are not zeroed: fix that!
             VparmDict.update({item:0.0 for item in parmDict if 'dA' in item})
@@ -605,7 +605,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # needed to evaluate the pseudovar
             for item in VparmDict:
                 if item in sampleDict:
-                    continue 
+                    continue
                 if ':' not in item: continue
                 key = item.split(':')
                 if len(key) < 3: continue
@@ -638,7 +638,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if None in results:
             return None
         return (results[0] - results[1]) / (2.*step)
-        
+
     def EnableParFitEqMenus():
         'Enables or disables the Parametric Fit menu items that require existing defs'
         if data['SeqParFitEqList']:
@@ -692,7 +692,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 calcobj = G2obj.ExpressionCalcObj(obj)
                 # prepare a dict of needed independent vars for this expression
                 indepVarDict = {var:row[i] for i,var in enumerate(colLabels) if var in indepVars}
-                calcobj.SetupCalc(indepVarDict)                
+                calcobj.SetupCalc(indepVarDict)
                 # values and sigs for current value of dependent var
                 if row[indx] is None: continue
                 calcobj.depVal = row[indx]
@@ -743,7 +743,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # lookup dependent var position
             indx = colLabels.index(obj.GetDepVar())
             # assemble a list of the independent variables
-            indepVars = obj.GetIndependentVars()            
+            indepVars = obj.GetIndependentVars()
             # loop over each datapoint
             fitvals = []
             for j,row in enumerate(zip(*G2frame.colList)):
@@ -766,7 +766,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         data['SeqParFitEqList'] = [obj for i,obj in enumerate(data['SeqParFitEqList']) if i not in selected]
         EnableParFitEqMenus()
         if data['SeqParFitEqList']: DoParEqFit(event)
-        
+
     def EditParFitEq(event):
         'Edit an existing parametric equation'
         txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in data['SeqParFitEqList']]
@@ -807,7 +807,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             data['SeqParFitEqList'].append(obj)
             EnableParFitEqMenus()
             if data['SeqParFitEqList']: DoParEqFit(event)
-                
+
     def CopyParFitEq(event):
         'Copy an existing parametric equation to be fit to sequential results'
         # compile the variable names used in previous freevars to avoid accidental name collisions
@@ -837,7 +837,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 data['SeqParFitEqList'].append(newobj)
                 EnableParFitEqMenus()
             if data['SeqParFitEqList']: DoParEqFit(event)
-                                            
+
     def GridSetToolTip(row,col):
         '''Routine to show standard uncertainties for each element in table
         as a tooltip
@@ -846,7 +846,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if G2frame.colSigs[col][row] == -0.1: return 'frozen'
             return u'\u03c3 = '+str(G2frame.colSigs[col][row])
         return ''
-        
+
     def GridColLblToolTip(col):
         '''Define a tooltip for a column. This will be the user-entered value
         (from data['variableLabels']) or the default name
@@ -856,7 +856,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         var = colLabels[col]
         return variableLabels.get(var,G2obj.fmtVarDescr(var))
-        
+
     def DoSequentialExport(event):
         '''Event handler for all Sequential Export menu items
         '''
@@ -882,7 +882,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
         else:
             dlg.Destroy()
-            
+
     def OnCellChange(event):
         c = event.GetCol()
         if c != 1: return
@@ -890,9 +890,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         val = G2frame.SeqTable.GetValue(r,c)
         data['Use'][r] = val
         G2frame.SeqTable.SetValue(r,c, val)
-        
+
     def OnSelectUpdate(event):
-        '''Update all phase parameters from a selected column in the Sequential Table. 
+        '''Update all phase parameters from a selected column in the Sequential Table.
         If no histogram is selected (or more than one), ask the user to make a selection.
 
         Loosely based on :func:`GSASIIstrIO.SetPhaseData`
@@ -925,7 +925,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             A,sigA = G2stIO.cellFill(pfx,SGData,parmDict,{})
             cell[1:7] = G2lat.A2cell(A)
             cell[7] = G2lat.calc_V(A)
-            textureData = General['SH Texture']    
+            textureData = General['SH Texture']
             if textureData['Order']:
                 for name in ['omega','chi','phi']:
                     aname = pfx+'SH '+name
@@ -994,8 +994,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                                     'MXcos:'+stiw,'MYcos:'+stiw,'MZcos:'+stiw]
                             for iname,name in enumerate(names):
                                 AtomSS[Stype][iw][0][iname] = parmDict[pfx+name]
-                                
-    def OnEditSelectPhaseVars(event): 
+
+    def OnEditSelectPhaseVars(event):
         '''Select phase parameters in a selected histogram in a sequential
         fit. This allows the user to set their value(s)
         '''
@@ -1019,7 +1019,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             lbl = "\nin {}      ".format(histNames[selRows[0]])
         else:
             lbl = "\nin {} histograms".format(len(selRows))
-        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase parmDict item(s) to set'+lbl, 
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase parmDict item(s) to set'+lbl,
                                       'Choose items to edit', phaseKeys)
         if dlg.ShowModal() == wx.ID_OK:
             select = dlg.GetSelections()
@@ -1045,8 +1045,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 parmDict.update(d) # update values used in next fit
         wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
         return
-            
-#---- UpdateSeqResults: start processing sequential results here ########## 
+
+#---- UpdateSeqResults: start processing sequential results here ##########
     # lookup table for unique cell parameters by symmetry
     if not data:
         print ('No sequential refinement results')
@@ -1059,7 +1059,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         histNames = [name for name in data['histNames']]
         Controls = {}
         ifPWDR = False
-    else:        
+    else:
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Controls'))
         # create a place to store Pseudo Vars & Parametric Fit functions, if not present
         if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
@@ -1131,17 +1131,17 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     combinedVaryList = []  # list of all varied parameters ; used for column headings
     atomsVaryList = {}     # dict of atom coords varied in any histogram, includes dependent params
                            # key is atom param name, value is esd parm name
-    firstValueDict = {}    # first value for each parameter; used to create VarDict for parametric fit pseudo vars GUI 
+    firstValueDict = {}    # first value for each parameter; used to create VarDict for parametric fit pseudo vars GUI
     foundHistNames = []    # histograms to be used in sequential table
     maxPWL = 5             # number of Pawley vars to show
     missing = 0
     newCellDict = {}
-    PSvarDict = {} # contains 1st value for each parameter in parmDict 
+    PSvarDict = {} # contains 1st value for each parameter in parmDict
                    # needed for creating & editing pseudovars
     PSvarDict.update(sampleParms)
 
-    # scan through histograms to see what are available and to make a 
-    # list of all varied parameters; also create a dict that has the 
+    # scan through histograms to see what are available and to make a
+    # list of all varied parameters; also create a dict that has the
     for i,name in enumerate(histNames):
         if name not in data:
             if missing < 5:
@@ -1160,7 +1160,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 # add variables to list as they appear
                 combinedVaryList.append(svar)
                 firstValueDict[svar] = (val,sig)
-            if '::dA' in var: 
+            if '::dA' in var:
                 atomsVaryList[var.replace('::dA','::A')] = var
                 atomsVaryList.update({i.replace('::dA','::A'):i for i in data[name]['depParmDict'] if '::dA' in i})
         # get all refined cell terms
@@ -1170,7 +1170,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         tmp = {striphist(var,'*'):tmp[var] for var in tmp}  # replace histogram #s with "*"
         tmp.update(PSvarDict)
         PSvarDict = tmp
-   
+
     if missing:
         print (' Warning: Total of %d data sets missing from sequential results'%(missing))
 
@@ -1191,7 +1191,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     histNames = foundHistNames
     # prevVaryList = []
     posdict = {}    # defines position for each entry in table; for inner
-                    # dict key is column number & value is parameter name 
+                    # dict key is column number & value is parameter name
     histNumList = []
     for i,name in enumerate(histNames):
         if name in Histograms:
@@ -1251,8 +1251,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         Types += [wg.GRID_VALUE_FLOAT,]
     sampleDict = {}
     for i,name in enumerate(histNames):
-        sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
-    # add unique cell parameters  
+        sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()]))
+    # add unique cell parameters
     if Controls.get('ShowCell',False) and len(newCellDict):
         phaseLookup = {Phases[phase]['pId']:phase for phase in Phases}
         for pId in sorted(RecpCellTerms):
@@ -1288,7 +1288,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     # override with fit result if is Dij varied
                     if var in cellAlist:
                         try:
-                            A[i] = data[name]['newCellDict'][esdLookUp[var]][1] # get refined value 
+                            A[i] = data[name]['newCellDict'][esdLookUp[var]][1] # get refined value
                         except KeyError:
                             pass
                 # apply symmetry
@@ -1297,7 +1297,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
                     c = G2lat.A2cell(A)
                     vol = G2lat.calc_V(A)
-                    cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
+                    cE = G2lat.getCellEsd(pfx,SGdata[pId],A,covData)
                 except:
                     c = 6*[None]
                     cE = 6*[None]
@@ -1373,7 +1373,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
         G2frame.colSigs += [sigs]
         G2frame.colList += [vals]
-            
+
     # tabulate dependent parameters from constraints, removing histogram numbers from
     # parm label, if needed. Add the dependent variables to the table
     depValDict = {}
@@ -1508,7 +1508,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for i,l in enumerate(colLabels):
         if l in variableLabels:
             displayLabels[i] = variableLabels[l]
-            
+
     G2frame.dataWindow.ClearData()
     G2frame.dataWindow.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataWindow)
@@ -1547,7 +1547,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
-    # highlight unconverged shifts 
+    # highlight unconverged shifts
     if histNames[0][:4] not in ['SASD','IMG ','REFD',] and deltaChiCol is not None:
         for row,name in enumerate(histNames):
             if name not in Controls.get('Seq Data',{}):
@@ -1564,7 +1564,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #G2frame.dataDisplay.SendSizeEvent() # resize needed on mac
     #G2frame.dataDisplay.Refresh() # shows colored text on mac
     G2frame.dataWindow.SetDataSize()
-    
+
 ###############################################################################################################
 #UpdateClusterAnalysis: results
 ###############################################################################################################
@@ -1582,18 +1582,11 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         ClusData['SKLearn'] = True
     except:
         ClusData['SKLearn'] = False
-        
-    SKLearnCite = '''If you use Scikit-Learn Cluster Analysis, please cite:
-    'Scikit-learn: Machine Learning in Python', Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V.,
-    Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J.,
-    Passos, A., Cournapeau, D., Brucher, M., Perrot, M. and Duchesnay, E., 
-    Journal of Machine Learning Research (2011) 12, 2825-2830.
-'''
 
     def FileSizer():
-        
+
         def OnSelectData(event):
-            
+
             def GetCaLimits(names):
                 ''' scan through data selected for cluster analysis to find highest lower & lowest upper limits
                 param: data dict: Cluster analysis info
@@ -1607,8 +1600,8 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                         PDFControls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
                         x = PDFControls['G(R)'][1][0]
                     limits = [max(np.min(x),limits[0]),min(np.max(x),limits[1])]
-                return limits                    
-                    
+                return limits
+
             choices = G2gd.GetGPXtreeDataNames(G2frame,['PWDR','PDF '])
             if len(choices) == 0:
                 G2G.G2MessageBox(G2frame,'No PWDR or PDF histograms found for cluster analysis.','No Histograms')
@@ -1633,7 +1626,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                         G2G.G2MessageBox(G2frame,'Histogram types not all the same; revise selection','Histogram type mismatch')
                         return
                     names.append(choices[sel])
-                ClusData['Files'] = names 
+                ClusData['Files'] = names
                 limits = GetCaLimits(names)
                 ClusData['Limits'] = [copy.copy(limits),limits]
                 ClusData['DataMatrix'] = []
@@ -1641,12 +1634,12 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 ClusData['CLuZ'] = None
                 ClusData['codes'] = None
                 ClusData['plots'] = 'All'
-                
+
             dlg.Destroy()
             G2frame.SetTitleByGPX()
-            
+
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-            
+
         fileSizer = wx.BoxSizer(wx.HORIZONTAL)
         Type = 'PWDR'
         if len(ClusData['Files']):
@@ -1657,13 +1650,13 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         else:
             lbl = 'No data selected for Cluster Analysis'
         fileSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl),0,WACV)
-        selSeqData = wx.Button(G2frame.dataWindow,label=' Select datasets')            
+        selSeqData = wx.Button(G2frame.dataWindow,label=' Select datasets')
         selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
         fileSizer.Add(selSeqData,0,WACV)
         return fileSizer
-    
+
     def LimitSizer():
-        
+
         def CheckLimits(invalid,value,tc):
             #TODO this needs a check on ultimate size of data array; loop over names & count points?
 
@@ -1672,9 +1665,9 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             ClusData['DataMatrix'] = []
             ClusData['ConDistMat'] = []
             ClusData['CLuZ'] = None
-            
+
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-            
+
         limitSizer = wx.BoxSizer(wx.HORIZONTAL)
         limitSizer.Add(wx.StaticText(G2frame.dataWindow,label='Enter cluster analysis data limits: '),0,WACV)
         limitSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,ClusData['Limits'][1],0,nDig=(10,3),
@@ -1682,7 +1675,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         limitSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,ClusData['Limits'][1],1,nDig=(10,3),
             xmin=ClusData['Limits'][0][0],xmax=ClusData['Limits'][0][1],OnLeave=CheckLimits),0,WACV)
         return limitSizer
-    
+
     def GetYMatSize():
         nData = 0
         for name in ClusData['Files']:
@@ -1729,30 +1722,30 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         ClusData['ConDistMat'] = []
         ClusData['CLuZ'] = None
         wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-        
+
     def MethodSizer():
-        
+
         def OnClusterMethod(event):
             ClusData['Method'] = method.GetValue()
             ClusData['ConDistMat'] = []
             ClusData['CLuZ'] = None
             OnCompute(event)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-            
+
         def OnCompute(event):
             if 'minkowski' in ClusData['Method']:
                 ClusData['ConDistMat'] = SSD.pdist(ClusData['DataMatrix'],ClusData['Method'],p=int(ClusData['MinkP']))
             else:
                 ClusData['ConDistMat'] = SSD.pdist(ClusData['DataMatrix'],ClusData['Method'])
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-            
+
         def OnExponent(event):
             ClusData['MinkP'] = minp.GetValue()
             ClusData['ConDistMat'] = []
             ClusData['CLuZ'] = None
             OnCompute(event)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-        
+
         choice = ['braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine',  \
             'euclidean', 'jensenshannon', 'minkowski', 'seuclidean',  'sqeuclidean']
         methsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1772,21 +1765,21 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         compute.Bind(wx.EVT_BUTTON,OnCompute)
         methsizer.Add(compute,0,WACV)
         return methsizer
-                
+
     def HierSizer():
-        
+
         def OnLinkMethod(event):
             ClusData['LinkMethod'] = method.GetValue()
             OnCompute(event)
-        
+
         def OnOptOrd(event):
             ClusData['Opt Order'] = not ClusData['Opt Order']
             OnCompute(event)
-        
+
         def OnCompute(event):
             ClusData['CLuZ'] = SCH.linkage(ClusData['ConDistMat'],method=ClusData['LinkMethod'],optimal_ordering=ClusData['Opt Order'])
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-        
+
         hierSizer = wx.BoxSizer(wx.HORIZONTAL)
         hierSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical clustering: Select linkage method: '),0,WACV)
         choice = ['single','complete','average','weighted','centroid','median','ward',]
@@ -1802,19 +1795,19 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         compute.Bind(wx.EVT_BUTTON,OnCompute)
         hierSizer.Add(compute,0,WACV)
         return hierSizer
-    
+
     def kmeanSizer():
-        
+
         def OnClusNum(event):
             ClusData['NumClust'] = int(numclust.GetValue())
             OnCompute(event)
-            
+
         def OnCompute(event):
             whitMat = SCV.whiten(ClusData['DataMatrix'])
             codebook,dist = SCV.kmeans2(whitMat,ClusData['NumClust'])   #use K-means++
             ClusData['codes'],ClusData['dists'] = SCV.vq(whitMat,codebook)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-        
+
         kmeanssizer = wx.BoxSizer(wx.HORIZONTAL)
         choice = [str(i) for i in range(2,16)]
         kmeanssizer.Add(wx.StaticText(G2frame.dataWindow,label='K-means clustering: select number of clusters (2-15): '),0,WACV)
@@ -1826,24 +1819,24 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         compute.Bind(wx.EVT_BUTTON,OnCompute)
         kmeanssizer.Add(compute)
         return kmeanssizer
-    
+
     def OnPlotSel(event):
         ClusData['plots'] = plotsel.GetValue()
         if ClusData['plots'] == 'Suprise':
             G2plt.PlotClusterXYZ(G2frame,None,None,ClusData,PlotName='Suprise')
         else:
             G2plt.PlotClusterXYZ(G2frame,YM,XYZ,ClusData,PlotName=ClusData['Method'],Title=ClusData['Method'])
-        
+
     def ScikitSizer():
-        
+
         def OnClusMethod(event):
             ClusData['Scikit'] = clusMethod.GetValue()
             OnCompute(event)
-        
+
         def OnClusNum(event):
             ClusData['NumClust'] = int(numclust.GetValue())
             OnCompute(event)
-            
+
         def OnCompute(event):
             whitMat = SCV.whiten(ClusData['DataMatrix'])
             if ClusData['Scikit'] == 'K-Means':
@@ -1860,11 +1853,11 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             elif ClusData['Scikit'] == 'Agglomerative clustering':
                 result = SKC.AgglomerativeClustering(n_clusters=ClusData['NumClust'],
                     affinity='precomputed',linkage='average').fit(SSD.squareform(ClusData['ConDistMat']))
-            
+
             ClusData['codes'] = result.labels_
             ClusData['Metrics'] = Metrics(whitMat,result)
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData)
-            
+
         def Metrics(whitMat,result):
             if np.max(result.labels_) >= 1:
                 Scoeff = SKM.silhouette_score(whitMat,result.labels_,metric='euclidean')
@@ -1877,9 +1870,13 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             else:
                 print('number of clusters found must be > 1 for metrics to be determined')
                 return None
-                               
+
         scikitSizer = wx.BoxSizer(wx.VERTICAL)
-        scikitSizer.Add(wx.StaticText(G2frame.dataWindow,label=SKLearnCite))
+        txt = wx.StaticText(G2frame.dataWindow,label=
+                    'If you use Scikit-Learn Cluster Analysis, please cite: '+
+                    G2G.GetCite('Scikit-Learn'))
+        txt.Wrap(500)
+        scikitSizer.Add(txt)
         choice = ['K-Means','Affinity propagation','Mean-shift','Spectral clustering','Agglomerative clustering']
         clusSizer = wx.BoxSizer(wx.HORIZONTAL)
         clusSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select clustering method: '),0,WACV)
@@ -1907,13 +1904,13 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             scikitSizer.Add(wx.StaticText(G2frame.dataWindow,
                 label='Metrics: Silhoutte: %.3f, Variance: %.3f, Davies-Bouldin: %.3f'%(metrics[0],metrics[1],metrics[2])))
         return scikitSizer
-    
+
     def memberSizer():
-        
+
         def OnClusNum(event):
             shoNum = int(numclust.GetValue())
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
-            
+
         def OnSelection(event):
             name = cluslist.GetStringSelection()
             item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
@@ -1923,15 +1920,15 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             else: #PDF
                 data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, item,'PDF Controls'))
                 G2plt.PlotISFG(G2frame,data,plotType='G(R)')
-                
-        #need 15 colors; values adjusted to match xkcs/PCA plot colors. NB: RGB reverse order from xkcd values.    
-        Colors = [['xkcd:blue',0xff0000],['xkcd:red',0x0000ff],['xkcd:green',0x00a000],['xkcd:cyan',0xd0d000], 
+
+        #need 15 colors; values adjusted to match xkcs/PCA plot colors. NB: RGB reverse order from xkcd values.
+        Colors = [['xkcd:blue',0xff0000],['xkcd:red',0x0000ff],['xkcd:green',0x00a000],['xkcd:cyan',0xd0d000],
                   ['xkcd:magenta',0xa000a0],['xkcd:black',0x000000],['xkcd:pink',0xb469ff],['xkcd:brown',0x13458b],
                   ['xkcd:teal',0x808000],['xkcd:orange',0x008cff],['xkcd:grey',0x808080],['xkcd:violet',0xe22b8a],
-                  ['xkcd:aqua',0xaaaa00],['xkcd:blueberry',0xcd5a6a],['xkcd:bordeaux',0x00008b]] 
+                  ['xkcd:aqua',0xaaaa00],['xkcd:blueberry',0xcd5a6a],['xkcd:bordeaux',0x00008b]]
         NClust = np.max(ClusData['codes'])
         memSizer = wx.BoxSizer(wx.VERTICAL)
-        memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster populations (colors refer to cluster colors in PCA plot):'))        
+        memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Cluster populations (colors refer to cluster colors in PCA plot):'))
         for i in range(NClust+1):
             nPop= len(ClusData['codes'])-np.count_nonzero(ClusData['codes']-i)
             txt = wx.StaticText(G2frame.dataWindow,label='Cluster #%d has %d members'%(i,nPop))
@@ -1940,20 +1937,20 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 txt.SetBackgroundColour(wx.Colour(50,50,50))
             else:
                 txt.SetBackgroundColour(wx.Colour(200,200,200))
-            memSizer.Add(txt)        
+            memSizer.Add(txt)
         headSizer = wx.BoxSizer(wx.HORIZONTAL)
-        headSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select cluster to list members: '),0,WACV)        
+        headSizer.Add(wx.StaticText(G2frame.dataWindow,label='Select cluster to list members: '),0,WACV)
         choice = [str(i) for i in range(NClust+1)]
         numclust = wx.ComboBox(G2frame.dataWindow,choices=choice,value=str(shoNum),style=wx.CB_READONLY|wx.CB_DROPDOWN)
         numclust.Bind(wx.EVT_COMBOBOX,OnClusNum)
         headSizer.Add(numclust,0,WACV)
-        memSizer.Add(headSizer)        
+        memSizer.Add(headSizer)
         if shoNum >= 0:
             memSizer.Add(wx.StaticText(G2frame.dataWindow,label='Members of cluster %d (select to show data plot):'%shoNum))
             ClusList = []
             for i,item in enumerate(ClusData['Files']):
                  if ClusData['codes'][i] == shoNum:
-                     ClusList.append(item)               
+                     ClusList.append(item)
             cluslist = wx.ListBox(G2frame.dataWindow, choices=ClusList)
             cluslist.SetForegroundColour(wx.Colour(Colors[shoNum][1]))
             if wx.Colour(Colors[shoNum][1]).GetLuminance() > 0.5:
@@ -1963,13 +1960,13 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             cluslist.Bind(wx.EVT_LISTBOX,OnSelection)
             memSizer.Add(cluslist)
         return memSizer
-    
+
     def outlierSizer():
-        
+
         def OnOutSel(event):
             ClusData['OutMethod'] = outsel.GetValue()
             OnCompute(event)
-            
+
         def OnCompute(event):
             if ClusData['OutMethod'] == 'One-Class SVM':
                 ClusData['codes'] = SKVM.OneClassSVM().fit_predict(ClusData['DataMatrix'])  #codes = 1 or -1
@@ -1978,7 +1975,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             elif ClusData['OutMethod'] == 'Local Outlier Factor':
                 ClusData['codes'] = SKN.LocalOutlierFactor().fit_predict(ClusData['DataMatrix'])
             wx.CallAfter(UpdateClusterAnalysis,G2frame,ClusData,shoNum)
-            
+
         outSizer = wx.BoxSizer(wx.VERTICAL)
         outSizer.Add(wx.StaticText(G2frame.dataWindow,label='Outlier (bad data) analysis with Scikit-learn:'))
         choice = ['One-Class SVM','Isolation Forest','Local Outlier Factor']
@@ -1993,7 +1990,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         outline.Add(compute,0,WACV)
         outSizer.Add(outline)
         return outSizer
-            
+
     def OnSelection(event):
         name = outlist.GetStringSelection()
         item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
@@ -2012,7 +2009,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     ClusData['OutMethod'] = ClusData.get('OutMethod','Isolation Forest')
     ClusData['MinkP'] = ClusData.get('MinkP','2')
     #end patch
-    
+
     G2frame.dataWindow.ClearData()
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)
@@ -2024,7 +2021,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
-    
+
     mainSizer.Add(FileSizer())
     if len(ClusData['Files']):
         mainSizer.Add(LimitSizer())
@@ -2034,7 +2031,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
         makeArray = wx.Button(G2frame.dataWindow,label='Make Cluster Analysis data array')
         makeArray.Bind(wx.EVT_BUTTON,OnMakeArray)
         mainSizer.Add(makeArray)
-        if len(ClusData['DataMatrix']):            
+        if len(ClusData['DataMatrix']):
 
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Distance Cluster Analysis:'))
@@ -2051,7 +2048,7 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Hierarchical Cluster Analysis:'))
                 mainSizer.Add(HierSizer())
-                
+
                 G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='K-means Cluster Analysis:'))
                 mainSizer.Add(kmeanSizer())
@@ -2074,16 +2071,16 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
             plotsel.Bind(wx.EVT_COMBOBOX,OnPlotSel)
             plotSizer.Add(plotsel,0,WACV)
             mainSizer.Add(plotSizer)
-            
+
             if ClusData['SKLearn'] and len(ClusData['ConDistMat']):
                 G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
                 subSizer = wx.BoxSizer(wx.HORIZONTAL)
                 subSizer.Add((-1,-1),1,wx.EXPAND)
-                subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Scikit-Learn Cluster Analysis: '),0,WACV)    
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Scikit-Learn Cluster Analysis: '),0,WACV)
                 subSizer.Add((-1,-1),1,wx.EXPAND)
                 mainSizer.Add(subSizer,0,wx.EXPAND)
                 mainSizer.Add(ScikitSizer())
-                
+
         if ClusData['SKLearn'] and len(ClusData['DataMatrix']) > 15:
             G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
             mainSizer.Add(outlierSizer())
@@ -2096,18 +2093,16 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
                 OutList = []
                 for i,item in enumerate(ClusData['Files']):
                      if ClusData['codes'][i] < 0:
-                         OutList.append(item)               
+                         OutList.append(item)
                 outlist = wx.ListBox(G2frame.dataWindow, choices=OutList)
                 outlist.Bind(wx.EVT_LISTBOX,OnSelection)
-                mainSizer.Add(outlist)        
+                mainSizer.Add(outlist)
             else:
                 mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='No outlier data found'))
-                
+
     bigSizer.Add(mainSizer)
     bigSizer.Layout()
     bigSizer.FitInside(G2frame.dataWindow)
     G2frame.dataWindow.SetSizer(bigSizer)
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
-
-

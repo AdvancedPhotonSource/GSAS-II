@@ -127,4 +127,15 @@ def main():
 
 if __name__ == '__main__':
     print('Running makeVarTbl.py')
+    import importlib.util
+    try:
+        pkginfo = importlib.util.find_spec('GSASII.GSASIIobj')
+    except ModuleNotFoundError:
+        pkginfo = None
+    if pkginfo is None:  # hack path if GSASII not installed into Python
+        import os
+        import sys
+        parent = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        print(f'GSAS-II not installed; Hacking sys.path to {parent}')
+        sys.path.insert(0,parent)
     main()

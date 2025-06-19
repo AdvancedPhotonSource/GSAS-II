@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_examples` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_examples` follow:
 '''
 # note documentation in docs/source/exports.rst
 #
 from __future__ import division, print_function
 import os
 import numpy as np
-import GSASIIobj as G2obj
-import GSASIImath as G2mth
-import GSASIIpwd as G2pwd
-import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+from .. import GSASIImath as G2mth
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIfiles as G2fil
 
 class ExportPhaseText(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase

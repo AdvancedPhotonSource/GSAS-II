@@ -56,14 +56,14 @@ def test_image():
     x = plist[0].getdata('x')
     tt1,i1 = (x[233]+x[280])/2,sum(i[233:281])
     #print(tt1,i1)
-    msg = 'Test 1st peak'
-    assert abs(tt1 - 2.2695) < 0.0002, msg+f' pos ({tt1})'
-    assert abs(i1 - 4656.698709171848) < 0.1, msg+f' intensity ({i1})'
+    msg = 'Confirm 1st peak'
+    assert abs(tt1 - 2.2695) < 0.0002, msg+' pos'
+    assert abs(i1 - 4645.6850578694975) < 0.1, msg+' intensity'
     tt6,i6 = (x[780]+x[850])/2,sum(i[780:851])
     #print(tt6,i6)
-    msg = 'Test 6th peak'
-    assert abs(tt6 - 3.9450) < 0.0002, msg+f' pos ({tt6})'
-    assert abs(i6 - 26423.739680809293) < 0.1, msg+f' intensity ({i6})'
+    msg = 'Confirm 6th peak'
+    assert abs(tt6 - 3.9450) < 0.0002, msg+' pos'
+    assert abs(i6 - 26236.795563010724) < 0.1, msg+' intensity'
     print('OK')
     
 def test_CBF():

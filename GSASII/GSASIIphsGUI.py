@@ -2786,15 +2786,52 @@ def UpdatePhaseData(G2frame,Item,data):
                         Title=r'%s Tetrahedral tilt vectors'%Oatoms,PlotName='Tet %s tilts for %s'%(bName,pName))
                     print(' %s-%s bond distance: %.3f(%d)'%(Oatoms,Tatoms,Bmean,Bstd*1000))
                     print(' %s tilt angle: %.2f(%d)'%(Oatoms,Tmean,Tstd*100))
-
-
+                    
+            def OnSaveDist(event):
+                pName = generalData['Name']
+                fName = os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'_TOdist.csv')
+                fp = open(fName,'w')
+                fp.write('Phase name:  %s\n'%pName)
+                Oatoms = generalData['Compare']['Oatoms']
+                Tatoms = generalData['Compare']['Tatoms']
+                bName = '%s-%s'%(Oatoms,Tatoms)
+                Bonds = generalData['Compare']['Bonds'][bName]
+                Vects = generalData['Compare']['Vects'][bName]
+                dVects = generalData['Compare']['dVects'][bName]
+                if len(Bonds['Obonds']):
+                    fp.write('%s-%s Octahedral bond lengths'%(Oatoms,Tatoms))
+                    for ib,bond in enumerate(Bonds['Obonds']):
+                       fp.write('%7.4f,'%bond) 
+                       if not (ib+1)%10: fp.write('\n')
+                    
+                if len(Bonds['Tbonds']):
+                    fp.write('%s-%s Tetrahedral bond lengths\n'%(Oatoms,Tatoms))
+                    for ib,bond in enumerate(Bonds['Tbonds']):
+                       fp.write('%7.4f,'%bond) 
+                       if not (ib+1)%10: fp.write('\n')
+                    
+                fp.close()
+                print(' %s written'%fName)
+                
             Oatoms = generalData['Compare']['Oatoms']
             Tatoms = generalData['Compare']['Tatoms']
             bName = '%s-%s'%(Oatoms,Tatoms)
             atTypes = generalData['AtomTypes']
             compSizer = wx.BoxSizer(wx.VERTICAL)
-            compSizer.Add(wx.StaticText(General,label=' Compare polyhedra to ideal octahedra/tetrahedra:'),0)
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(General,label=' Compare polyhedra to ideal octahedra/tetrahedra:'),0,WACV)
+            try:
+                if len(generalData['Compare']['Bonds'][bName]['Obonds']) or len(generalData['Compare']['Bonds'][bName]['Tbonds']):
+                    plotBtn = wx.Button(General,label='Show plots?')
+                    plotBtn.Bind(wx.EVT_BUTTON,OnCompPlots)
+                    topSizer.Add(plotBtn,0,WACV)
+                    saveBtn = wx.Button(General,label='Save distributions?')
+                    saveBtn.Bind(wx.EVT_BUTTON,OnSaveDist)
+                    topSizer.Add(saveBtn,0,WACV)
+            except KeyError:
+                pass
 
+            compSizer.Add(topSizer)
             atmselSizer = wx.BoxSizer(wx.HORIZONTAL)
             atmselSizer.Add(wx.StaticText(General,label=' Select origin atom type: '),0,WACV)
             oatmsel = wx.ComboBox(General,choices=atTypes,style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -2808,16 +2845,9 @@ def UpdatePhaseData(G2frame,Item,data):
             tatmsel.Bind(wx.EVT_COMBOBOX,OnTatmOsel)
             atmselSizer.Add(tatmsel,0,WACV)
 
-            atmselSizer.Add(wx.StaticText(General,label=' Sampling fraction:: '),0,WACV)
+            atmselSizer.Add(wx.StaticText(General,label=' Sampling fraction: '),0,WACV)
             atmselSizer.Add(G2G.ValidatedTxtCtrl(General,generalData['Compare'],'Sampling',nDig=(8,3),xmin=0.0,xmax=1.0,),0,WACV)
 
-            try:
-                if len(generalData['Compare']['Bonds'][bName]['Obonds']) or len(generalData['Compare']['Bonds'][bName]['Tbonds']):
-                    plotBtn = wx.Button(General,label='Show plots?')
-                    plotBtn.Bind(wx.EVT_BUTTON,OnCompPlots)
-                    atmselSizer.Add(plotBtn)
-            except KeyError:
-                pass
             compSizer.Add(atmselSizer,0)
             return compSizer
 
@@ -5542,22 +5572,26 @@ program; Please cite:
             DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
         try:
             if hist:
+                Bonds = DisAglData['Bonds'] = DisAglData.get('Bonds',{})
+                Angles = DisAglData['Angles'] = DisAglData.get('Angles',{})
                 pgbar = wx.ProgressDialog('Distance Angle calculation','Atoms done=',len(Oxyz)+1,
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
                 AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData,pgbar)
                 pgbar.Destroy()
-                Bonds = []
+                bonds = []
                 for dists in DistArray:
-                    Bonds += [item[3] for item in DistArray[dists]]
-                G2plt.PlotBarGraph(G2frame,Bonds,Xname=r'$\mathsf{Bonds,\AA}$',
+                    bonds += [item[3] for item in DistArray[dists]]
+                G2plt.PlotBarGraph(G2frame,bonds,Xname=r'$\mathsf{Bonds,\AA}$',
                     Title='Bond distances for %s'%Atypes,PlotName='%s Bonds'%Atypes)
-                print('Total number of bonds to %s is %d'%(Atypes,len(Bonds)))
-                Angles = []
-                for angles in AngArray:
-                    Angles += [item[2][0] for item in AngArray[angles]]
-                G2plt.PlotBarGraph(G2frame,Angles,Xname=r'$\mathsf{Angles,{^o}}$',
+                print('Total number of bonds to %s is %d'%(Atypes,len(bonds)))
+                Bonds[Atypes] = bonds
+                angles = []
+                for Item in AngArray:
+                    angles += [item[2][0] for item in AngArray[Item]]
+                G2plt.PlotBarGraph(G2frame,angles,Xname=r'$\mathsf{Angles,{^o}}$',
                     Title='Bond angles about %s'%Atypes,PlotName='%s Angles'%Atypes)
-                print('Total number of angles about %s is %d'%(Atypes,len(Angles)))
+                print('Total number of angles about %s is %d'%(Atypes,len(angles)))
+                Angles[Atypes] = angles
 
             elif fp:
                 #from importlib import reload

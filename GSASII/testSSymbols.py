@@ -1,10 +1,17 @@
 #test
 import sys
+import os
 import wx
-from . import GSASIIpath
+import importlib.util
+try:
+    importlib.util.find_spec('GSASII.GSASIIGUI')
+except ModuleNotFoundError:
+    print('GSAS-II not installed in Python; Hacking sys.path')
+    sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+from GSASII import GSASIIpath
 GSASIIpath.SetBinaryPath()
-from . import GSASIIspc as G2spc
-from . import GSASIIctrlGUI as G2G
+from GSASII import GSASIIspc as G2spc
+from GSASII import GSASIIctrlGUI as G2G
 
 try:
     wx.NewIdRef

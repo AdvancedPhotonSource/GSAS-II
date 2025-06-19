@@ -4176,6 +4176,7 @@ if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
         'I m a 2','I 2 m b','I c 2 m','I m 2 a','I b m 2','I 2 c m',
         'I m m m','I b a m','I m c b','I c m a',
         'I b c a','I c a b',
+        'I c c m','I m a a','I b m b',
         'I m m a','I b m m ','I m c m','I m a m','I m m b','I c m m',),
     'Fmmm':('F 2 2 2','F m m m', 'F d d d',
         'F m m 2','F m 2 m','F 2 m m',

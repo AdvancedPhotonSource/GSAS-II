@@ -25,6 +25,8 @@
 
 !INCLUDE STATEMENTS:
       REAL*4 SIND,COSD,TAND,ACOSD
+! External function declarations 
+      EXTERNAL SIND,COSD,TAND,ACOSD
 
 !LOCAL VARIABLES:
 

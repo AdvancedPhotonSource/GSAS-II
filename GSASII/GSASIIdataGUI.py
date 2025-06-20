@@ -7158,8 +7158,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             G2G.Define_wxId('wxID_ATOMSEDITADD', 'wxID_ATOMSEDITINSERT', 'wxID_ATOMSEDITDELETE',
                 'wxID_ATOMSMODIFY', 'wxID_ATOMSTRANSFORM', 'wxID_ATOMSVIEWADD', 'wxID_ATOMVIEWINSERT',
                 'wxID_RELOADDRAWATOMS', 'wxID_ATOMSDISAGL', 'wxID_ATOMMOVE', 'wxID_MAKEMOLECULE',
-                'wxID_ATOMSPDISAGL', 'wxID_ISODISP', 'wxID_ADDHATOM', 'wxID_UPDATEHATOM',
-                'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY','wxID_ATOMSBNDANGLHIST',
+                'wxID_ATOMSPDISAGL', 'wxID_ISODISP', 'wxID_ADDHATOM', 'wxID_UPDATEHATOM','wxID_ATOMSCLEARHIST',
+                'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY','wxID_ATOMSBNDANGLHIST','wxID_ATOMSSAVEHIST',
                 'wxID_ATOMSSETALL', 'wxID_ATOMSSETSEL','wxID_ATOMFRACSPLIT','wxID_COLLECTATOMS',
                 'wxID_ATOMSSETVP', 'wxID_ATOMSSETLST')
             self.AtomsMenu = wx.MenuBar()
@@ -7201,6 +7201,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.AtomCompute.Append(G2G.wxID_ATOMSDISAGL,'Show Distances && Angles','Compute distances & angles for selected atoms')
             self.AtomCompute.Append(G2G.wxID_ATOMSPDISAGL,'Save Distances && Angles','Compute distances & angles for selected atoms')
             self.AtomCompute.Append(G2G.wxID_ATOMSBNDANGLHIST,'Histogram Bonds && Angles','Histogram bonds & angles for selected atoms')
+            self.AtomCompute.Append(G2G.wxID_ATOMSSAVEHIST,'Save all B&&A histograms','Save all bond & angle histograms')
+            self.AtomCompute.Append(G2G.wxID_ATOMSCLEARHIST,'Clear all B&&A histograms','Clear all bond & angle histograms')
             self.AtomCompute.Append(G2G.wxID_ATOMFRACSPLIT,'Apportion atom frac','2 atom type site fraction apportion')
             self.AtomCompute.Append(G2G.wxID_ATOMSDENSITY,'Density','Compute density for current phase')
             self.AtomCompute.ISOcalc = self.AtomCompute.Append(G2G.wxID_ISODISP,'ISODISTORT mode values',

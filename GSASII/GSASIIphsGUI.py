@@ -2791,25 +2791,24 @@ def UpdatePhaseData(G2frame,Item,data):
                 pName = generalData['Name']
                 fName = os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'_TOdist.csv')
                 fp = open(fName,'w')
-                fp.write('Phase name:  %s\n'%pName)
+                fp.write('Phase name:  %s,'%pName)
                 Oatoms = generalData['Compare']['Oatoms']
                 Tatoms = generalData['Compare']['Tatoms']
                 bName = '%s-%s'%(Oatoms,Tatoms)
                 Bonds = generalData['Compare']['Bonds'][bName]
-                Vects = generalData['Compare']['Vects'][bName]
-                dVects = generalData['Compare']['dVects'][bName]
+                # Vects = generalData['Compare']['Vects'][bName]
+                # dVects = generalData['Compare']['dVects'][bName]
                 if len(Bonds['Obonds']):
-                    fp.write('%s-%s Octahedral bond lengths'%(Oatoms,Tatoms))
+                    fp.write('\n%s-%s Octahedral bond lengths,\n'%(Oatoms,Tatoms))
                     for ib,bond in enumerate(Bonds['Obonds']):
                        fp.write('%7.4f,'%bond) 
                        if not (ib+1)%10: fp.write('\n')
                     
                 if len(Bonds['Tbonds']):
-                    fp.write('%s-%s Tetrahedral bond lengths\n'%(Oatoms,Tatoms))
+                    fp.write('\n%s-%s Tetrahedral bond lengths,\n'%(Oatoms,Tatoms))
                     for ib,bond in enumerate(Bonds['Tbonds']):
                        fp.write('%7.4f,'%bond) 
                        if not (ib+1)%10: fp.write('\n')
-                    
                 fp.close()
                 print(' %s written'%fName)
                 
@@ -5502,6 +5501,35 @@ program; Please cite:
 
     def OnDistAngleHist(event):
         OnDistAngle(event,hist=True)
+        
+    def OnSaveDAHist(event):
+        Bonds = data.get('Bonds',{})
+        Angles = data.get('Angles',{})
+        if not len(Bonds) and not len(Angles):
+            print('No bond or angle histograms to save!')
+            return
+        generalData = data['General']
+        pName = generalData['Name']
+        fName = os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'_BAdist.csv')
+        fp = open(fName,'w')
+        fp.write('Phase name:  %s,'%pName)
+        for Atypes in Bonds:
+            fp.write('\nBond distances for %s, \n'%Atypes)
+            for ib,bond in enumerate(Bonds[Atypes]):
+               fp.write('%7.4f,'%bond) 
+               if not (ib+1)%10: fp.write('\n')
+        for Atypes in Angles:
+            fp.write('\nBond angles about %s, \n'%Atypes)
+            for ib,angle in enumerate(Angles[Atypes]):
+               fp.write('%7.2f,'%angle) 
+               if not (ib+1)%10: fp.write('\n')
+        fp.close()
+        print(' %s written'%fName)
+        
+    def OnClearDAHist(event):
+        data['Bonds'] = {}
+        data['Angles'] = {}
+        print('Bond & Angle histograms now empty')
 
     def OnDistAngle(event,fp=None,hist=False):
         '''Compute distances and angles in response to a menu command
@@ -5572,8 +5600,8 @@ program; Please cite:
             DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
         try:
             if hist:
-                Bonds = DisAglData['Bonds'] = DisAglData.get('Bonds',{})
-                Angles = DisAglData['Angles'] = DisAglData.get('Angles',{})
+                Bonds = data['Bonds'] = data.get('Bonds',{})
+                Angles = data['Angles'] = data.get('Angles',{})
                 pgbar = wx.ProgressDialog('Distance Angle calculation','Atoms done=',len(Oxyz)+1,
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
                 AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(DisAglCtls,DisAglData,pgbar)
@@ -5594,10 +5622,6 @@ program; Please cite:
                 Angles[Atypes] = angles
 
             elif fp:
-                #from importlib import reload
-                #reload(G2stMn)
-                #reload(G2mth)
-                #print('reloading G2stMn & G2mth')
                 G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
             else:
                 G2stMn.PrintDistAngle(DisAglCtls,DisAglData)
@@ -16878,6 +16902,8 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnDistAngle, id=G2G.wxID_ATOMSDISAGL)
         G2frame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2G.wxID_ATOMSPDISAGL)
         G2frame.Bind(wx.EVT_MENU, OnDistAngleHist, id=G2G.wxID_ATOMSBNDANGLHIST)
+        G2frame.Bind(wx.EVT_MENU, OnSaveDAHist, id=G2G.wxID_ATOMSSAVEHIST)
+        G2frame.Bind(wx.EVT_MENU, OnClearDAHist, id=G2G.wxID_ATOMSCLEARHIST)
         G2frame.Bind(wx.EVT_MENU, OnFracSplit, id=G2G.wxID_ATOMFRACSPLIT)
         G2frame.Bind(wx.EVT_MENU, OnDensity, id=G2G.wxID_ATOMSDENSITY)
         G2frame.Bind(wx.EVT_MENU, OnShowIsoDistortCalc, id=G2G.wxID_ISODISP)

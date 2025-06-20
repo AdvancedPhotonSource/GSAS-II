@@ -5042,7 +5042,7 @@ class VirtualVarBox(wx.ListCtrl):
                 if parent.hisNum != '*' and name.split(':')[1] != parent.hisNum: continue
             if (parent.varName != ' ') and (parent.varName not in name): continue
             self.varList.append(name)
-        oldlen = self.GetItemCount()
+        #oldlen = self.GetItemCount()
         self.SetItemCount(len(self.varList))
 
     def OnRowSelected(self, event, row=None):

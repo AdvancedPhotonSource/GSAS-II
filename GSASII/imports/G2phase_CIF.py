@@ -672,23 +672,31 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 msg = 'This CIF uses a space group setting not compatible with GSAS-II.\n'
                 if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
                     msg += '\nThis is likely due to the space group being set in Origin 1 rather than 2.\n'
-                msg += '''
+                haveGUI = False
+                ans = True
+                try:
+                    from .. import GSASIIctrlGUI as G2G
+                    haveGUI = G2G.haveGUI()
+                except Exception as err: # fails if non-interactive (no wxPython)
+                    print(err)
+                if haveGUI:
+                    msg += '''
 Do you want to use Bilbao's "CIF to Standard Setting" web service to
 transform this into a standard setting?
 '''
-                if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins and not centro:
-                    msg += '''
+                    if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins and not centro:
+                        msg += '''
 If you say "no" here, later, you will get the chance to apply a simple origin
 shift later as an alternative to the above.'''
+                    else:
+                        msg += '\nIf you say "no" here you will need to do this yourself manually.'
+                    try:
+                        ans = G2G.askQuestion(ParentFrame,msg,'xform structure?')
+                    except Exception as err: # fails if non-interactive (no wxPython)
+                        print(err)
                 else:
-                    msg += '\nIf you say "no" here you will need to do this yourself manually.'
-                try:
-                    from .. import GSASIIctrlGUI as G2G
-                    ans = G2G.askQuestion(ParentFrame,msg,'xform structure?')
-                except Exception as err: # fails if non-interactive (no wxPython)
-                    print(err)
-                    print('\nCIF symops do not agree with GSAS-II, calling Bilbao "CIF to Standard Setting" web service.\n')
-                    ans = True
+                    print(msg)
+                print('\nCIF symops do not agree with GSAS-II, calling Bilbao "CIF to Standard Setting" web service.\n')
                 if ans:
                     from .. import SUBGROUPS
                     SUBGROUPS.createStdSetting(filename,self)

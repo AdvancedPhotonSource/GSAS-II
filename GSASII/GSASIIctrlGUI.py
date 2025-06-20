@@ -31,7 +31,7 @@ import copy
 import random as ran
 import numpy as np
 
-import matplotlib as mpl
+#import matplotlib as mpl
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 except ImportError:
@@ -47,7 +47,7 @@ from . import GSASIIElem as G2elem
 from . import GSASIIpwd as G2pwd
 from . import GSASIIlattice as G2lat
 from . import GSASIImath as G2mth
-from . import GSASIIstrMain as G2stMn
+#from . import GSASIIstrMain as G2stMn
 from . import GSASIImiscGUI as G2IO
 from .tutorialIndex import tutorialIndex
 if sys.version_info[0] >= 3:
@@ -5042,7 +5042,7 @@ class VirtualVarBox(wx.ListCtrl):
                 if parent.hisNum != '*' and name.split(':')[1] != parent.hisNum: continue
             if (parent.varName != ' ') and (parent.varName not in name): continue
             self.varList.append(name)
-        oldlen = self.GetItemCount()
+        #oldlen = self.GetItemCount()
         self.SetItemCount(len(self.varList))
 
     def OnRowSelected(self, event, row=None):
@@ -6025,7 +6025,7 @@ cite some of the following works as well:'''
         msg += f"\n\n * For {key} use cite:\n"
         msg += GetCite(key,wrap=95,indent=6)
     msg += '\n\nNote that your citations are one of the strongest ways you can say thank you to the\nscientists who make their software available to you.'
-    res = ShowScrolledInfo(parent,msg,header='Please Cite',
+    ShowScrolledInfo(parent,msg,header='Please Cite',
                            buttonlist=[
         ('Close', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
         ('Copy to clipboard', copy2clip),
@@ -6283,7 +6283,7 @@ def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
     # place HTML title into window title
     dlg.wv.Bind(wx.EVT_UPDATE_UI, lambda event:
                     dlg.SetTitle(dlg.wv.GetCurrentTitle()))
-    lastWebView = dlg.wv
+    #lastWebView = dlg.wv
     sizer.Add(dlg.wv,1,wx.EXPAND)
     # row of buttons & URL label on bottom of window
     bsizer=wx.BoxSizer(wx.HORIZONTAL)
@@ -7349,7 +7349,7 @@ class gitVersionSelector(wx.Dialog):
     from a git repository
     '''
     def __init__(self,parent=None):
-        import git
+        #import git
         self.g2repo = GSASIIpath.openGitRepo(path2GSAS2)
         self.githistory = GSASIIpath.gitHistory('hash',self.g2repo)
         # patch Feb 2024: don't allow access to versions that are too old
@@ -7492,7 +7492,7 @@ class gitVersionSelector(wx.Dialog):
 
         :returns: a multi-line string
         '''
-        import datetime
+        #import datetime
         fmtdate = lambda c:"{:%d-%b-%Y %H:%M}".format(c.committed_datetime)
         commit = self.g2repo.commit(commit)  # converts a hash, if supplied
         msg = f'git {commit.hexsha[:10]} from {fmtdate(commit)}'
@@ -9397,6 +9397,15 @@ def askQuestion(parent,question,title):
         dlg.Destroy()
     return ans
 
+def haveGUI():
+    '''Test if there is a GUI that can be accessed
+    :returns: True if a GUI is available
+    '''
+    try:
+        return wx.App.IsMainLoopRunning()
+    except:
+        return False
+
 #===========================================================================
 def gitFetch(G2frame):
     wx.BeginBusyCursor()
@@ -9832,7 +9841,7 @@ it may be easier to simply reinstall GSAS-II.
 
 See web page GSASII.github.io for information on how to install GSAS-II. 
 '''
-        res = ShowScrolledInfo(G2frame,msg,header='Please Note',
+        ShowScrolledInfo(G2frame,msg,header='Please Note',
                                 height=250)
         return
 
@@ -9941,13 +9950,13 @@ The update will be made unless Cancel is pressed.'''
     if script and sys.platform.startswith('darwin'):
         print(f'running {script}')
         import subprocess
-        out = subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
+        subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
     # On windows make a batch file with hard-coded paths to Python and GSAS-II
     elif script and sys.platform.startswith('win'):
         script = os.path.normpath(os.path.join(GSASIIpath.path2GSAS2,'install',s))
         print(f'running {script!r}')
         import subprocess
-        out = subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
+        subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
     # On linux, make a desktop icon with hard-coded paths to Python and GSAS-II
     elif script:
         sys.argv = [script]

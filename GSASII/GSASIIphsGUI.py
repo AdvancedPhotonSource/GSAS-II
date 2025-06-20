@@ -5529,6 +5529,7 @@ program; Please cite:
     def OnClearDAHist(event):
         data['Bonds'] = {}
         data['Angles'] = {}
+        
         print('Bond & Angle histograms now empty')
 
     def OnDistAngle(event,fp=None,hist=False):

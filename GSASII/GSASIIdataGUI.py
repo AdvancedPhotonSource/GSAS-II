@@ -551,7 +551,7 @@ def TestOldVersions():
     warnmsg = ''
     errmsg = ''
     for s,m in [('Python',None), ('wx',wx), ('matplotlib', mpl), ('numpy',np),
-                    ('scipy',sp), ('OpenGL',ogl)]:
+            ('scipy',sp), ('OpenGL',ogl)]:
         if s == 'Python':
             pkgver = platform.python_version()
             prefix = ''

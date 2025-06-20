@@ -41,6 +41,7 @@
       REAL*4        DYDB                
       REAL*4        SIN2THETA2          ! sin(2theta)**2
       REAL*4        COS2THETA           ! cos(2theta)
+      REAL*4        COS2THETA2          ! cos(2theta)**2
       REAL*4        SIN2THETA           ! sin(2THETA)
       REAL*4        SINDELTA            ! sin(Delta)
       REAL*4        COSDELTA            ! cos(Delta)

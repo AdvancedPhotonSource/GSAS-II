@@ -11,6 +11,9 @@
       REAL*4        P                   !Value returned
 
 !INCLUDE STATEMENTS:
+      REAL*4 SIND,COSD 
+! External function declarations
+      EXTERNAL SIND,COSD
 
 !LOCAL VARIABLES:
                                                  

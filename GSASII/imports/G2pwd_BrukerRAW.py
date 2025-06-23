@@ -4,7 +4,7 @@
 import os
 import struct as st
 import numpy as np
-import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 class raw_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a binary Bruker .RAW file'
     def __init__(self):
@@ -30,13 +30,13 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         if 'bytes' in str(type(head)):
             head = head.decode('latin-1')
         if head[:4] == 'RAW ':
-            self.formatName = 'Bruker RAW ver. 1'
+            self.fmtVer = 'Bruker RAW ver. 1'
         elif head[:4] == 'RAW2':
-            self.formatName = 'Bruker RAW ver. 2'
+            self.fmtVer = 'Bruker RAW ver. 2'
         elif head == 'RAW1.01':
-            self.formatName = 'Bruker RAW ver. 3'
+            self.fmtVer = 'Bruker RAW ver. 3'
         elif head == 'RAW4.00':
-            self.formatName = 'Bruker RAW ver. 4'
+            self.fmtVer = 'Bruker RAW ver. 4'
             pwdrscan = fp.read()
             nBanks = pwdrscan.count(b'2Theta')
             if not len(self.selections):
@@ -60,9 +60,9 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         self.comments = []
         self.powderentry[0] = filename
         fp = open(filename,'rb')
-        if 'ver. 1' in self.formatName:
+        if 'ver. 1' in self.fmtVer:
             raise Exception('Read of Bruker "RAW " (pre-version #) file not supported')    #for now
-        elif 'ver. 2' in self.formatName:
+        elif 'ver. 2' in self.fmtVer:
             fp.seek(4)
             nBlock = int(st.unpack('<i',fp.read(4))[0])
             fp.seek(168)
@@ -100,7 +100,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                 else:
                     self.repeat = True
             fp.close()
-        elif 'ver. 3' in self.formatName:
+        elif 'ver. 3' in self.fmtVer:
             fp.seek(12)
             nBlock = int(st.unpack('<i',fp.read(4))[0])
             self.comments.append('Date='+self.Read(fp,10))
@@ -162,7 +162,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     self.repeat = True
             fp.close()
             
-        elif 'ver. 4' in self.formatName: 
+        elif 'ver. 4' in self.fmtVer: 
             driveNo = 0
             fp.seek(12)   #ok
             self.comments.append('Date='+self.Read(fp,12).strip('\x00'))
@@ -246,7 +246,10 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                         meta['Temperature'] = st.unpack('<f',fp.read(4))[0]
                         if meta['Temperature'] > 7.:  #one raw4 file had int4='9999' in this place & <7K unlikely for lab data
                             self.Sample['Temperature'] = meta['Temperature']
-                        self.Sample['Omega'] = meta['start Theta']
+                        try:
+                            self.Sample['Omega'] = float(meta['start Theta'])
+                        except:
+                            pass
                         fp.read(12)
                         x = np.array([startAngle+i*stepSize for i in range(Nsteps)])
                         y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(Nsteps)])

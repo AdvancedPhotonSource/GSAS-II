@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-'''
+'''There are several classes in :mod:`~GSASII.imports.G2phase`. 
+The documentation for them follows.
 '''
 
 from __future__ import division, print_function
@@ -13,9 +14,9 @@ try:
     import wx
 except ImportError:
     wx = None
-import GSASIIobj as G2obj
-import GSASIIspc as G2spc
-import GSASIIlattice as G2lat
+from .. import GSASIIobj as G2obj
+from .. import GSASIIspc as G2spc
+from .. import GSASIIlattice as G2lat
 try:  # fails on doc build
     R2pisq = 1./(2.*np.pi**2)
 except TypeError:
@@ -51,7 +52,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         return False
 
     def Reader(self,filename, ParentFrame=None, **unused):
-        'Read a PDF file using :meth:`ReadPDBPhase`'
+        'Read a PDB file using :meth:`ReadPDBPhase`'
         self.Phase = self.ReadPDBPhase(filename, ParentFrame)
         return True
         
@@ -192,7 +193,9 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         return False
 
     def Reader(self,filename,ParentFrame=None,usedRanIdList=[],**unused):
-        'Read a phase from a GSAS .EXP file using :meth:`ReadEXPPhase`'
+        '''Read a phase from a GSAS .EXP file using 
+        :meth:`~EXP_ReaderClass.ReadEXPPhase`
+        '''
         self.Phase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
         while self.Phase['ranId'] in usedRanIdList:
             self.Phase['ranId'] = ran.randint(0,sys.maxsize)
@@ -586,7 +589,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                     vals[6:] = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(vals[6:])/Mast)    #convert cos bij to Uij
                 Sadp[i] = [vals,False]
             Atom = [Name,aType,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso]
-            Atom += Uij
+            Atom += list(Uij)
             Atom.append(ran.randint(0,sys.maxsize))
             if len(S1) > 55:
                 Atom.append({'SS1':{'Sfrac':[waveType,]+Sfrac,'Spos':[waveType,]+Spos,'Sadp':['Fourier',]+Sadp,'Smag':['Fourier',]+Smag}})    #SS2 is for (3+2), etc.
@@ -612,7 +615,8 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         return Phase
     
 class PDF_ReaderClass(G2obj.ImportPhase):
-    'Routine to import Phase information from ICDD PDF Card files'
+    '''Routine to import Phase information from ICDD Powder Diffraction 
+    File(r) Card, exported by their software.'''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.str',),

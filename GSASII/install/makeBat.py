@@ -2,21 +2,21 @@
 '''
 This script creates a file named ``RunGSASII.bat`` and a desktop shortcut to that file.
 It registers the filetype .gpx so that the GSAS-II project files exhibit the
-GSAS-II icon and so that double-clicking on them opens them in GSAS-II. 
+GSAS-II icon and so that double-clicking on them opens them in GSAS-II.
 
-Run this script with no arguments; the path to the ``GSASII.py`` file
-is assumed to be in the parent directory to the one where this file 
+Run this script with no arguments; the path to the ``G2.py`` file
+is assumed to be in the parent directory to the one where this file
 (``makeBat.py``) is found.
 
 The contents of this file may also be run from inside the gitstrap.py
-installation script. In that case, the following variables are already 
-defined: 
+installation script. In that case, the following variables are already
+defined:
 
   * path2GSAS2   is the directory with all GSAS-II Python code
-  * G2script     has the location of the GSASII.py file
+  * G2script     has the location of the G2.py file
   * path2repo    is the location of the GSAS-II git repository
 
-The path to Python is determined from the version of Python used to 
+The path to Python is determined from the version of Python used to
 run this script.
 '''
 #
@@ -40,8 +40,8 @@ Script = '''@REM Script to start GSAS-II on Windows
 pause
 
 '''
-    
-app = None # delay starting wx until we need it. Likely not needed. 
+
+app = None # delay starting wx until we need it. Likely not needed.
 if __name__ == '__main__':
     try:
         import winreg
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         invokedDirectly = True
         path2GSAS2 = os.path.dirname(os.path.dirname(__file__))
         path2repo = os.path.dirname(path2GSAS2)
-        G2script = os.path.join(path2GSAS2,'GSASII.py')
+        G2script = os.path.join(path2GSAS2,'G2.py')
     else:
         print(f"running makeBat.py indirectly inside {__file__!r}")
         invokedDirectly = False
@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     print('Python installed at ',pythonexe)
     print('GSAS-II installed at',path2GSAS2)
-    print('GSASII.py at        ',G2script)
+    print('G2.py at            ',G2script)
     print('GSASII icon at      ',G2icon)
     print('.bat file to be at  ',G2bat)
 
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     fp.write(Script.format(activate,pexe,G2s))
     fp.close()
     print(f'\nCreated GSAS-II batch file {G2bat}')
-    
+
     # create a reset script
     gitstrap = os.path.abspath(
         os.path.normpath(os.path.join(path2repo,'..','gitstrap.py')))
@@ -147,7 +147,7 @@ if __name__ == '__main__':
                 if app is None:
                     import wx
                     app = wx.App()
-                dlg = wx.MessageDialog(None,'gpx files already assigned in registry to: \n'+oldBat+'\n Replace with: '+G2bat+'?','GSAS-II gpx in use', 
+                dlg = wx.MessageDialog(None,'gpx files already assigned in registry to: \n'+oldBat+'\n Replace with: '+G2bat+'?','GSAS-II gpx in use',
                         wx.YES_NO | wx.ICON_QUESTION | wx.STAY_ON_TOP)
                 dlg.Raise()
                 if dlg.ShowModal() == wx.ID_YES:

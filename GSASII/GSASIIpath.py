@@ -210,22 +210,22 @@ def HowIsG2Installed():
 def getSavedVersionInfo():
     '''Get version number information from a file written by install
     routines. This is faster than getting the information from git. Also,
-    when GSAS-II is installed into Python, the files are no longer in 
-    a git repository so querying git is not possible.
+    when GSAS-II is installed into Python, files are no longer in 
+    a git repository, so querying git is not possible.
 
-    The saved_version.py file is written by install/save_versions.py.
-    The git_verinfo.py file is written by install/tag-version.py or
-    by install/incr-mini-version.py. If both are present, use the 
-    saved_version.py file preferentially. 
+    The git_verinfo.py file is written by install/incr-version.py or 
+    by install/save_versions.py
+    The saved_version.py file was previousl written by 
+    install/save_versions.py but this file is no longer in use.
 
     :returns: a reference to the version variables or None if no 
       version info file is found.
     '''
-    try:
-        from . import saved_version as gv
-        return gv
-    except:
-        pass
+#    try:
+#        from . import saved_version as gv
+#        return gv
+#    except:
+#        pass
     try:
         from . import git_verinfo as gv
         return gv

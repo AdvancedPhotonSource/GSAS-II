@@ -2429,13 +2429,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             for i,item in enumerate(tbl):
                                 if type(item) is dict: continue
                                 if i in selectedPeaks:
-                                    Ni = N+1
+                                    #Ni = N+1
                                     plotVline(Page,Plot,Lines,Parms,item[0],'yellow',False,'-')
                                     Lines[-1].set_lw(Lines[-1].get_lw()+1)
                                     plotVline(Page,Plot,Lines,Parms,item[0],color,True)
                                     Lines[-1].set_lw(Lines[-1].get_lw()+1)
                                 else:
-                                    Ni = N
+                                    #Ni = N
                                     plotVline(Page,Plot,Lines,Parms,item[0],color,True)
                         except:
                             pass
@@ -3609,7 +3609,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         DZ = (Pattern[1][1]-Pattern[1][3])*np.sqrt(wtFactor*Pattern[1][2])
         valueList.append(DZ)
 
-        if sum(Pattern[1][0].mask): # are there are excluded points? If so, add them too
+        if hasattr(Pattern[1][0],'mask') and sum(Pattern[1][0].mask): # are there are excluded points? If so, add them too
             lblList.append('excluded')
             valueList.append(1*Pattern[1][0].mask)
         lblList.append('Axis-limits')

@@ -2750,6 +2750,10 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             print('Instrumental profile terms cannot be varied '+
                                     'in Laue Fringe fits:',warn)
 
+    if sum(w[xBeg:xFin]) == 0:
+        print('Unusable data: data weights are zero')
+        if dlg: dlg.Destroy()
+        return
     while not noFit:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
@@ -2765,6 +2769,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 print (traceback.format_exc())
             else:
                 print('peak fit failure')
+            if dlg: dlg.Destroy()
             return
         ncyc = int(result[2]['nfev']/2)
         runtime = time.time()-begin

@@ -1,4 +1,4 @@
-# record tag number and git hash into a saved_version.py file.
+# record tag number and git hash into a git_verinfo.py file.
 #
 import os
 import sys
@@ -46,7 +46,22 @@ if __name__ == '__main__':
         tagsm1 = [i for i in tags.split('\n') if i.isdecimal()]
         if not tagsm1: continue
         break
-    pyfile = os.path.join(path2GSAS2,'saved_version.py')
+    # get the latest version number
+    releases = [i for i in g2repo.tags if '.' in i.name and i.name.startswith('v')]
+    if releases:
+        majors = [i.name.split('.')[0][1:] for i in releases]
+        major = max([int(i) for i in majors if i.isdecimal()])
+        minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'v{major}.')]
+        minor = max([int(i) for i in minors if i.isdecimal()])
+        minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'v{major}.{minor}')]
+        # mini can be integer, float or even have letters (5.2.1.1rc1)
+        # for now, ignore anything with letters or decimals
+        mini = max([int(i) for i in minis if i.isdecimal()])
+        versiontag = f'v{major}.{minor}.{mini}'
+    else:
+        versiontag = '?'
+    # create a file with GSAS-II version information
+    pyfile = os.path.join(path2GSAS2,'git_verinfo.py')
     try:
         fp = open(pyfile,'w')
     except:
@@ -66,21 +81,7 @@ if __name__ == '__main__':
         fp.write(f'git_prevtags = {tagsm1}\n')
     else:
         fp.write(f'git_prevtags = []\n')
-    # get the latest version number
-    releases = [i for i in g2repo.tags if '.' in i.name and i.name.startswith('v')]
-    if releases:
-        majors = [i.name.split('.')[0][1:] for i in releases]
-        major = max([int(i) for i in majors if i.isdecimal()])
-        minors = [i.name.split('.')[1] for i in releases if i.name.startswith(f'v{major}.')]
-        minor = max([int(i) for i in minors if i.isdecimal()])
-        minis = [i.name.split('.',2)[2] for i in releases if i.name.startswith(f'v{major}.{minor}')]
-        # mini can be integer, float or even have letters (5.2.1.1rc1)
-        # for now, ignore anything with letters or decimals
-        mini = max([int(i) for i in minis if i.isdecimal()])
-        versiontag = f'v{major}.{minor}.{mini}'
-    else:
-        versiontag = '?'
     fp.write(f'git_versiontag = {versiontag!r}\n')
     #
     fp.close()
-    print(f'Created git version file {pyfile} at {now} for {commit0[:6]!r}')
+    print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')

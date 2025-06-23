@@ -136,7 +136,7 @@ if __name__ == '__main__':
     print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')
 
     g2repo.index.add([pyfile])
-    g2repo.index.commit('increment {mode} version')
+    g2repo.index.commit(f'increment {mode} version: {versiontag}/{tagnum}')
     print('committed',pyfile,'mode=',mode)
     g2repo.remote(name='origin').push()
     g2repo.remotes.origin.push(versiontag)

@@ -65,7 +65,8 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                     store = await zarr.storage.ZipStore.open(filename, mode="r")
                     fp = zarr.open_group(store, mode='r')
                     return fp,store
-                except FileNotFoundError as msg:
+#                except FileNotFoundError as msg:
+                except FileNotFoundError:
                     print (f'cannot read as zarr file: {filename}')
                 except Exception as msg:
                     self.errors = f'Exception from zarr module (version={zarr.__version__}):'
@@ -80,8 +81,8 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         '''
         fp, store = self.zarrOpen(filename)
         if not fp:
-            self.errors = f'Exception from zarr module (version={zarr.__version__}):'
-            self.errors += '\n\t' + str(msg)
+            self.errors = f'Error from zarr module (version={zarr.__version__}):'
+            #self.errors += '\n\t' + str(msg)
             self.errors += '\nPlease report this'
         elif all([(i in fp) for i in self.midassections]): # are expected MIDAS sections present?
             self.mode = 'midas'
@@ -228,8 +229,8 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         #   Y(GSAS) = Y-norm / nFrame
         #   sigma(Y-GSAS) = sigma(Y-norm) / nFrame
         #                 = sqrt( Y-norm / area) / nFrame
-        #   weight(Y-GSAS) is 1/sigma[Y-GSAS]**2 = nFrame**2 * area / Y-norm
-        w = np.where(y > 0, np.zeros_like(y), nFrame**2 * normalization/ y )
+        #   weight(Y-GSAS) is 1/sigma[Y-GSAS]**2 = nFrame**2 * area / Y(norm)
+        w = np.where(y <= 0, np.zeros_like(y), nFrame**2 * normalization/ y )
         omega = 999.  # indicates an error
         try:
             omega = 0.5 * (

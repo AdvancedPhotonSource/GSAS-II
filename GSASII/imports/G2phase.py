@@ -589,7 +589,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                     vals[6:] = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(vals[6:])/Mast)    #convert cos bij to Uij
                 Sadp[i] = [vals,False]
             Atom = [Name,aType,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso]
-            Atom += Uij
+            Atom += list(Uij)
             Atom.append(ran.randint(0,sys.maxsize))
             if len(S1) > 55:
                 Atom.append({'SS1':{'Sfrac':[waveType,]+Sfrac,'Spos':[waveType,]+Spos,'Sadp':['Fourier',]+Sadp,'Smag':['Fourier',]+Smag}})    #SS2 is for (3+2), etc.

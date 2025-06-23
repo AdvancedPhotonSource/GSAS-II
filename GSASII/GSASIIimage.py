@@ -1239,10 +1239,9 @@ def polymask(data,Poly,Spots=[]):
     ax0 = figure.add_subplot()
     ax0.axis("off")
     figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-    for poly in Poly:
-        px = np.array(poly).T[0]/scalex
-        py = np.array(poly).T[1]/scaley
-        ax0.fill(px,py,inmask)
+    px = np.array(Poly).T[0]/scalex
+    py = np.array(Poly).T[1]/scaley
+    ax0.fill(px,py,inmask)
     for spot in Spots:
         px = np.array(spot).T[0]/scalex
         py = np.array(spot).T[1]/scaley
@@ -1271,21 +1270,14 @@ def MakeMaskMap(data,masks,iLim,jLim):
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    frame = []
-    poly = []
+    frame = np.zeros(data['size'],dtype='uint8')
+    poly = np.zeros(data['size'],dtype='uint8')
     if iLim[0] == jLim[0] == 0:
         if masks['Frames']:
             frame = np.abs(polymask(data,masks['Frames'])-255) #turn inner to outer mask
         if masks['Polygons'] or masks['Points']:
             poly = polymask(data,masks['Polygons'],masks['Points'])
-        if len(frame):
-            masks['Pmask'] =  frame
-            if len(poly):
-                masks['Pmask'] = masks['Pmask']+poly
-        if len(poly):
-            masks['Pmask'] =  poly
-        else:
-            masks['Pmask'] =  []
+        masks['Pmask'] =  frame+poly
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asarray(tax*scalex,dtype=np.float32).flatten()
     tay = np.asarray(tay*scaley,dtype=np.float32).flatten()
@@ -1426,8 +1418,7 @@ def MakeUseMask(data,masks,blkSize=128):
     return useMask
 
 def MakeGainMap(image,Ix,Iy,data,mask,blkSize=128):
-    Iy /= npcosd(Ix[:-1])       #undo parallax
-    Iy *= (1000./data['distance'])**2    #undo r^2 effect
+    Iy *= npcosd(Ix[:-1])**2       #undo parallax
     Iy /= np.array(G2pwd.Polarization(data['PolaVal'][0],Ix[:-1],0.)[0])    #undo polarization
     if data['Oblique'][1]:
         Iy *= G2pwd.Oblique(data['Oblique'][0],Ix[:-1])     #undo penetration
@@ -1645,8 +1636,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
-        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))           #parallax correction
-    # H0 *= (data['distance']/1000.)**2    #remove r^2 effect - done earlier
+        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:

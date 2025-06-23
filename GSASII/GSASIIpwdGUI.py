@@ -2102,6 +2102,7 @@ def UpdateBackground(G2frame,data):
         back = wx.ComboBox(parent=G2frame.dataWindow,value=data[1]['background PWDR'][0],choices=Choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         back.Bind(wx.EVT_COMBOBOX,OnBackPWDR)
+        back.SetMaxSize((450,-1))
         backSizer.Add(back)
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' multiplier'),0,WACV)
         backMult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[1]['background PWDR'],1,nDig=(10,3),OnLeave=AfterChange)

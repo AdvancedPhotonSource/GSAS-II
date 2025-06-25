@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Classes in :mod:`G2export_JSON` follow:
+'''Classes in :mod:`~GSASII.exports.G2export_JSON` follow:
 
 This code is to honor my friend Robert Papoular, who wants to see what is 
 inside a .gpx file.
@@ -7,7 +7,7 @@ inside a .gpx file.
 from __future__ import division, print_function
 import json
 import numpy as np
-import GSASIIfiles as G2fil
+from .. import GSASIIfiles as G2fil
 
 class JsonEncoder(json.JSONEncoder):
     '''This provides the ability to turn np arrays and masked arrays

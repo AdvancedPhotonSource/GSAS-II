@@ -18,13 +18,13 @@ import wx
 import wx.lib.mixins.listctrl  as  listmix
 import wx.grid as wg
 import numpy as np
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath(True)
-import GSASIIctrlGUI as G2G
-import GSASIIobj as G2obj
-import GSASIIimgGUI as G2imG
-import GSASIIfiles as G2fil
-import GSASIIscriptable as G2sc
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIobj as G2obj
+from . import GSASIIimgGUI as G2imG
+from . import GSASIIfiles as G2fil
+from . import GSASIIscriptable as G2sc
 import multiprocessing as mp
 
 try: # fails during doc build

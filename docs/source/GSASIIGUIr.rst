@@ -8,54 +8,55 @@ are used in multiple sections of the GSAS-II GUI or graphics.
 *GSASIIctrlGUI: Custom GUI controls*
 ---------------------------------------------
 
- .. py:currentmodule:: GSASIIctrlGUI
+ .. py:currentmodule:: GSASII.GSASIIctrlGUI
 
 A library of specialized widgets (GUI controls) for use in the GSAS-II
 data window or dialogs:
 
 .. tabularcolumns:: |l|p{4in}|
 
-================================  =================================================================
-Class or function name             Description
-================================  =================================================================
-:class:`EnumSelector`              A combo box with a built-in call back routine that
-                                   automatically sets a dict or list entry.
-:class:`G2ChoiceButton`            A customized wx.Choice that automatically initializes to
-                                   the initial value and saves the choice directly into a dict
-                                   or list value. Optionally calls function when a
-                                   choice is selected
-:class:`G2CheckBox`                A customized wx.CheckBox that automatically initializes to
-                                   the initial value and saves the choice directly into a dict
-                                   or list value. Optionally calls function when a
-                                   choice is selected
-:func:`G2CheckBoxFrontLbl`         A version of :class:`G2CheckBox` that places the label
-                                   for the check box in front. Otherwise works the same. 
-:func:`G2RadioButtons`             Creates a series of grouped radio buttons.
-:class:`G2SliderWidget`            A customized combination of a wx.Slider and a validated 
-                                   wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
-:class:`G2Slider`                  A wrapped version of wx.Slider that implements scaling
-:class:`G2SpinWidget`              A customized combination of a wx.SpinButton and a validated 
-                                   wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
-:class:`G2MultiChoiceWindow`       Similar to :class:`G2MultiChoiceDialog` but provides
-                                   a sizer that can be placed in a frame or panel.
-:class:`HelpButton`                Creates a button labeled with a "?" that when pressed
-                                   displays help text in a modal message window
-                                   or web browser. 
-:class:`OrderBox`                  Creates a wx.Panel with scrollbars where items can be
-                                   ordered into columns.
-:class:`SortableLstCtrl`           Creates a wx.Panel for a table of data that  
-                                   can be sorted by clicking on a column label.
-:class:`ValidatedTxtCtrl`          A text control with a built-in call back routine to set dict
-                                   or list elements. Optionally validates input as float, int or
-                                   for strings non-blank. Value is set when focus changes
-:func:`HorizontalLine`             Places a line in a Frame or Dialog to separate sections.
-:class:`ScrolledStaticText`        A wx.StaticText widget that fits a large string into a 
-                                   small space by scrolling it
-:func:`ReadOnlyTextCtrl`           A wx.TextCtrl widget to be used wx.StaticText 
-                                   (no edits allowed) text appears in a box.
-:func:`setColorButton`             A button for color selection as a replacement 
-                                   for wx.ColourSelect
-================================  =================================================================
+===================================  =================================================================
+Class or function name                Description
+===================================  =================================================================
+:class:`EnumSelector`                 A combo box with a built-in call back routine that
+                                      automatically sets a dict or list entry.
+:class:`G2ChoiceButton`               A customized wx.Choice that automatically initializes to
+                                      the initial value and saves the choice directly into a dict
+                                      or list value. Optionally calls function when a
+                                      choice is selected
+:class:`G2CheckBox`                   A customized wx.CheckBox that automatically initializes to
+                                      the initial value and saves the choice directly into a dict
+                                      or list value. Optionally calls function when a
+                                      choice is selected
+:func:`G2CheckBoxFrontLbl`            A version of :class:`~GSASII.GSASIIctrlGUI.G2CheckBox` that
+                                      places the label
+                                      for the check box in front. Otherwise works the same. 
+:func:`G2RadioButtons`                Creates a series of grouped radio buttons.
+:class:`G2SliderWidget`               A customized combination of a wx.Slider and a validated 
+                                      wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
+:class:`G2Slider`                     A wrapped version of wx.Slider that implements scaling
+:class:`G2SpinWidget`                 A customized combination of a wx.SpinButton and a validated 
+                                      wx.TextCtrl (see :class:`ValidatedTxtCtrl`).
+:class:`G2MultiChoiceWindow`          Similar to :class:`G2MultiChoiceDialog` but provides
+                                      a sizer that can be placed in a frame or panel.
+:class:`HelpButton`                   Creates a button labeled with a "?" that when pressed
+                                      displays help text in a modal message window
+                                      or web browser. 
+:class:`OrderBox`                     Creates a wx.Panel with scrollbars where items can be
+                                      ordered into columns.
+:class:`SortableLstCtrl`              Creates a wx.Panel for a table of data that  
+                                      can be sorted by clicking on a column label.
+:class:`ValidatedTxtCtrl`             A text control with a built-in call back routine to set dict
+                                      or list elements. Optionally validates input as float, int or
+                                      for strings non-blank. Value is set when focus changes
+:func:`HorizontalLine`                Places a line in a Frame or Dialog to separate sections.
+:class:`ScrolledStaticText`           A wx.StaticText widget that fits a large string into a 
+                                      small space by scrolling it
+:func:`ReadOnlyTextCtrl`              A wx.TextCtrl widget to be used wx.StaticText 
+                                      (no edits allowed) text appears in a box.
+:func:`setColorButton`                A button for color selection as a replacement 
+                                      for wx.ColourSelect
+===================================  =================================================================
 
 GSAS-II-provided Dialog (full window) routines:
 
@@ -137,13 +138,14 @@ Miscellaneous GUI support routines:
 ================================  =================================================================
 Function name                      Description
 ================================  =================================================================
-:func:`Define_wxId`                Create a unique wx.Id symbol in _initMenus in :mod:`GSASIIdataGUI`.
+:func:`Define_wxId`                Create a unique wx.Id symbol in _initMenus in 
+                                   :mod:`GSASII.GSASIIdataGUI`.
                                    Such symbols are needed when the menu item is defined in a 
                                    different location from the wx.Bind that links the menu item 
                                    to a function. This function allows all the menu Ids to be
                                    defined as the menus are created in one place and then can be 
                                    used in Bind elsewhere in the code.
-:func:`openInNewTerm`              opens a Python routine (usually GSASII.py) in a
+:func:`openInNewTerm`              opens a Python routine (usually ``G2.py``) in a
                                    new terminal window (works on all platforms)				   
 ================================  =================================================================
 
@@ -159,19 +161,19 @@ Function name                      Description
                                    of each line.
 :func:`StripUnicode`               Removes unicode characters from strings 
 :func:`GetImportPath`              Determines the default location to use for importing files.
-                                   Tries sequentially :attr:`G2frame.TutorialImportDir`,
+                                   Tries sequentially ``G2frame.TutorialImportDir``,
                                    config var ``Import_directory`` and
-                                   :attr:`G2frame.LastImportDir`.
+                                   ``G2frame.LastImportDir``.
 :func:`GetExportPath`              Determines the default location to use for writing files.
-                                   Tries sequentially :attr:`G2frame.LastExportDir` and
-                                   :attr:`G2frame.LastGPXdir`
+                                   Tries sequentially ``G2frame.LastExportDir`` and
+                                   ``G2frame.LastGPXdir``
 ================================  =================================================================
 
 
 GSASIIctrlGUI Classes & Routines
 ---------------------------------------------
 
-.. automodule:: GSASIIctrlGUI
+.. automodule:: GSASII.GSASIIctrlGUI
     :members: 
 
 ---------------------------------------------
@@ -186,7 +188,7 @@ Includes support for image reading.
 GSASIImiscGUI Classes & Routines
 ---------------------------------------------
        
-.. automodule:: GSASIImiscGUI
+.. automodule:: GSASII.GSASIImiscGUI
     :members: 
 
 ---------------------------------------------

@@ -5,13 +5,13 @@ from __future__ import division, print_function
 import os.path as ospath
 import platform
 import numpy as np
-import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 
 class GSAS_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a GSAS files'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.fxye','.raw','.gsas','.gda','.gsa','.gss','.RAW','.GSAS','.GDA','.GSA','.dat'),
+            extensionlist=('.fxye','.raw','.gsas','.gda','.gsa','.gss','.RAW','.GSAS','.GDA','.GSA','.dat', 'XRA'),
             strictExtension=False,
             formatName = 'GSAS powder data',
             longFormatName = 'GSAS powder data files (.fxye, .raw, .gsas...)'
@@ -64,12 +64,12 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
     def Reader(self,filename, ParentFrame=None, **kwarg):
         '''Read a GSAS (old formats) file of type FXY, FXYE, ESD or STD types.
         If multiple datasets are requested, use self.repeat and buffer caching.
-        
-        EDS data is only in the STD format (10 values per line separated by spaces); 
-        the 1st line contains at col 60 the word "Two-Theta " followed by the appropriate value. 
-        The BANK record contains the 3 values (4th not used) after 'EDS' for converting MCA 
-        channel number (c) to keV via E = A + Bc + Cc^2; these coefficients are 
-        generally predetermined by calibration of the MCA. They & 2-theta are transferred to 
+
+        EDS data is only in the STD format (10 values per line separated by spaces);
+        the 1st line contains at col 60 the word "Two-Theta " followed by the appropriate value.
+        The BANK record contains the 3 values (4th not used) after 'EDS' for converting MCA
+        channel number (c) to keV via E = A + Bc + Cc^2; these coefficients are
+        generally predetermined by calibration of the MCA. They & 2-theta are transferred to
         the Instrument parameters data.
         '''
         def GetFXYEdata(File,Pos,Bank):
@@ -91,8 +91,8 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     w.append(1.0/float(vals[2])**2)
                 S = File.readline()
             N = len(x)
-            return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]    
-            
+            return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+
         def GetFXYdata(File,Pos,Bank):
             File.seek(Pos)
             x = []
@@ -106,13 +106,13 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 if f > 0.0:
                     y.append(f)
                     w.append(1.0/f)
-                else:              
+                else:
                     y.append(0.0)
                     w.append(0.0)
                 S = File.readline()
             N = len(x)
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-            
+
         def GetESDdata(File,Pos,Bank):
             File.seek(Pos)
             cons = Bank.split()
@@ -140,7 +140,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     if yi > 0.0:
                         y.append(yi)
                         w.append(1.0/ei**2)
-                    else:              
+                    else:
                         y.append(0.0)
                         w.append(0.0)
                     j += 1
@@ -153,7 +153,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
                 x = x[:len(y)]   #Tmap2TOF add extra step(s)
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-        
+
         def GetSTDdata(File,Pos,Bank):
             File.seek(Pos)
             cons = Bank.split()
@@ -208,7 +208,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
                 x = x[:len(y)]   #Tmap2TOF add extra step(s)
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-           
+
         def GetALTdata(File,Pos,Bank):
             File.seek(Pos)
             cons = Bank.split()
@@ -230,7 +230,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     if yi > 0.0:
                         y.append(yi)
                         w.append(1.0/ei**2)
-                    else:              
+                    else:
                         y.append(0.0)
                         w.append(0.0)
                     j += 1
@@ -240,7 +240,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
                 x = x[:len(y)]   #Tmap2TOF add extra step(s)
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
-            
+
         def GetTimeMap(File,Pos,TimeMap):
             File.seek(Pos)
             cons = TimeMap[8:].split()
@@ -264,7 +264,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             TMap = TMap.T
             TMap[0] -= 1
             return TMap.T,clockWd,mapNo
-            
+
         def Tmap2TOF(TMap,clockWd):
             TOF = []
             Tch,T,Step = TMap[0]
@@ -295,14 +295,14 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         # Save the offset (Pos), BANK line (Banks), comments for each bank
         #
         # This is going to need a fair amount of work to track line numbers
-        # in the input file. 
+        # in the input file.
         if len(Banks) != len(Pos) or len(Banks) == 0:
             i = -1
             while True:
                 i += 1
                 S = fp.readline()
                 if len(S) == 0: break
-                    
+
                 if i==0: # first line is always a comment
                     self.errors = 'Error reading title'
                     title = S[:-1]
@@ -330,8 +330,8 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                         self.errors = 'Error reading time map after bank:\n  '+str(Banks[-1])
                     timemap,clockwd,mapNo = GetTimeMap(fp,fp.tell(),S)
                     self.TimeMap[mapNo] = timemap
-                    self.clockWd[mapNo] = clockwd 
-                    
+                    self.clockWd[mapNo] = clockwd
+
 
         # Now select the bank to read
         if not Banks: # use of ContentsValidator should prevent this error
@@ -418,7 +418,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 try:
                     self.Sample['Chi'] = float(S.split('=')[1])
                 except:
-                    pass                    
+                    pass
             elif 'Phi' in S.split('=')[0]:
                 try:
                     self.Sample['Phi'] = float(S.split('=')[1])
@@ -427,10 +427,10 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         if 'EDS' in Bank:
             S = self.comments[0].lower().split('theta')
             if len(S) > 1:
-                self.Inst['2-theta'] = [float(S[1]),float(S[1]),False]                    
+                self.Inst['2-theta'] = [float(S[1]),float(S[1]),False]
         self.Sample['Temperature'] = Temperature
         fp.close()
-        return True        
+        return True
 
 def sfloat(S):
     'convert a string to a float, treating an all-blank string as zero'
@@ -445,4 +445,3 @@ def sint(S):
         return int(S)
     else:
         return 0
-

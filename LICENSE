@@ -32,19 +32,11 @@ that the following conditions are met:
 Also note that GSAS-II is normally distributed with the following
 included software:
 
-CifFile (PyCifRW): Distributed with direct permission of J. Hester, see
-	https://github.com/jamesrhester/pycifrw/blob/development/LICENSE for
-	license.
-	
-pybaselines: for license see GSASII/pybaselines/LICENSE.txt and
-	GSASII/pybaselines/LICENSES_bundled.txt.
-
 NIST_profile (Fundamental Parameters Python Code): U.S. Government work,
         not subject to copyright
 
-PDFfit2: see PDFfit2/LICENSE.txt for license.
-
-DIFFaX: Not copyrighted; Distributed with direct permission of M. Treacy
+DIFFaX: Not copyrighted; Distributed with direct permission of
+        author (M. Treacy)
 
 NIST*LATTICE: U.S. Government work, not subject to copyright
 

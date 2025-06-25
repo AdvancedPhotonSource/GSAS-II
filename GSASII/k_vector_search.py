@@ -27,18 +27,34 @@
 # acknowledged for their useful comments.
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
-import numpy as np
 import sys
-from scipy.optimize import linear_sum_assignment
+import time
 import math
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+from . import GSASIIfiles as G2fil
+from . import GSASIIpath
+GSASIIpath.SetBinaryPath()
+
+gen_option_avail = True
 try:
     import seekpath
-    from kvec_general import parallel_proc
-    gen_option_avail = True
 except ModuleNotFoundError:
+    G2fil.NeededPackage({'magnetic k-vector search':['seekpath']})
+    print('k_vector_search: seekpath could not be imported')
     gen_option_avail = False
-import time
 
+try:
+    if GSASIIpath.binaryPath:
+        import kvec_general
+    else:
+        from . import kvec_general
+except ImportError:
+    print('binary load error: kvec_general not found')
+    gen_option_avail = False
+except ModuleNotFoundError:
+    print('k_vector_search: kvec_general could not be imported')
+    gen_option_avail = False
 
 def unique_id_gen(string_list: list) -> list:
     """Generate unique IDs for strings included in the string list and the same
@@ -622,7 +638,7 @@ class kVector:
                     points = np.array(np.meshgrid(a_array, b_array, c_array))
                     points = points.T.reshape(-1, 3)
 
-                    results = parallel_proc(
+                    results = kvec_general.parallel_proc(
                         points,
                         self.nucPeaks,
                         self.superPeaks,

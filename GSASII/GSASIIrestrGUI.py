@@ -8,18 +8,18 @@ import wx.grid as wg
 import numpy as np
 import numpy.ma as ma
 import os.path
-import GSASIIpath
-import GSASIImath as G2mth
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIIdataGUI as G2gd
-import GSASIIplot as G2plt
-import GSASIIdata as G2data
-import GSASIIctrlGUI as G2G
-import GSASIIphsGUI as G2phsGUI
-import GSASIIobj as G2obj
-import GSASIIconstrGUI as G2cnstG
-import GSASIIexprGUI as G2exG
+from . import GSASIIpath
+from . import GSASIImath as G2mth
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIplot as G2plt
+from . import GSASIIdata as G2data
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIphsGUI as G2phsGUI
+from . import GSASIIobj as G2obj
+from . import GSASIIconstrGUI as G2cnstG
+from . import GSASIIexprGUI as G2exG
 
 try:
     wx.NewIdRef

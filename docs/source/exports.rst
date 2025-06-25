@@ -2,7 +2,8 @@
 ====================================
 
 Exports are implemented by deriving a class from 
-:class:`GSASIIfiles.ExportBaseclass`. Initialization of 
+:class:`~GSASII.GSASIIfiles.ExportBaseclass` in module
+:mod:`~GSASII.GSASIIfiles`. Initialization of 
 ``self.exporttype`` determines the type of export that will be performed
 ('project', 'phase', 'single', 'powder', 'image', 'map' or (someday)
 'pdf') and of ``self.multiple``
@@ -11,26 +12,26 @@ time (when False) or more than one can be selected.
 
 Powder export routines may optionally define a ``Writer()``
 method that accepts the histogram tree name as well as a file name to
-be written. This allows :mod:`GSASIIscriptable` to use the exporters
+be written. This allows :mod:`~GSASII.GSASIIscriptable` to use the exporters
 independent of the GUI.
 
 -------------------------------------------
 *Module G2export_examples: Examples*
 -------------------------------------------
 
- .. py:currentmodule:: G2export_examples  
+ .. py:currentmodule:: GSASII.exports.G2export_examples  
  
 Code to demonstrate how GSAS-II data export routines are created. The
 classes defined here, :class:`ExportPhaseText`, 
 :class:`ExportSingleText`, :class:`ExportPowderReflText`, 
 and :class:`ExportPowderText` each demonstrate a different type
-of export. Also see :class:`G2export_map.ExportMapASCII` for an
-example of a map export.
+of export. Also see
+:class:`~GSASII.exports.G2export_map.ExportMapASCII` in :mod:`~GSASII.exports.G2export_map` for an example of a map export.
 
 G2export_examples Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_examples
+.. automodule:: GSASII.exports.G2export_examples
     :members: 
     :synopsis: Demonstrates sample code that exports a phase or dataset to
       a text file.
@@ -39,7 +40,7 @@ G2export_examples Classes and Routines
 *Module G2export_csv: Spreadsheet export*
 -------------------------------------------
 
- .. py:currentmodule:: G2export_csv
+ .. py:currentmodule:: GSASII.exports.G2export_csv
 
 Code to create .csv (comma-separated variable) files for
 GSAS-II data export to a spreadsheet program, etc. Defines a number of
@@ -57,7 +58,7 @@ GSAS-II data export to a spreadsheet program, etc. Defines a number of
 G2export_csv Classes and Routines
 -------------------------------------------
       
-.. automodule:: G2export_csv
+.. automodule:: GSASII.exports.G2export_csv
     :members: 
     :synopsis: Exports a phase or dataset to a spreadsheet via a 
        comma-separated-variable (csv) format file.
@@ -66,7 +67,7 @@ G2export_csv Classes and Routines
 *Module G2export_PDB: Macromolecular export*
 --------------------------------------------
 
-.. py:currentmodule:: G2export_PDB  
+.. py:currentmodule:: GSASII.exports.G2export_PDB  
 
 Code to export a phase into the venerated/obsolete (pick one)
 ASCII PDB format. Also defines exporter :class:`ExportPhaseCartXYZ`
@@ -75,7 +76,7 @@ which writes atom positions in orthogonal coordinates for a phase.
 G2export_PDB Classes and Routines
 -------------------------------------------
        
-.. automodule:: G2export_PDB
+.. automodule:: GSASII.exports.G2export_PDB
     :members: 
     :synopsis: Cartesian coordinate export, including PDB format
 
@@ -89,7 +90,7 @@ a SciPy routine to write a PNG format file.
 G2export_image Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_image
+.. automodule:: GSASII.exports.G2export_image
     :members: 
     :synopsis: Exports images
 
@@ -97,7 +98,7 @@ G2export_image Classes and Routines
 *Module G2export_map: Map export*
 -------------------------------------------
 
-.. py:currentmodule:: G2export_map
+.. py:currentmodule:: GSASII.exports.G2export_map
 
 Code to write Fourier/Charge-Flip atomic density maps out in formats that
 can be read by external programs. At present a GSAS format
@@ -108,7 +109,7 @@ is used by COOT (:class:`ExportMapCCP4`) are implemented.
 G2export_map Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_map
+.. automodule:: GSASII.exports.G2export_map
     :members: 
     :synopsis: Export Fourier and charge-flip atomic density maps
 	      
@@ -117,12 +118,12 @@ G2export_map Classes and Routines
 -------------------------------------------
 
 Code to export coordinates in the SHELX .ins format
-(as best as I can makes sense of it).
+(as best as we can make sense of it).
 
 G2export_shelx Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_shelx 
+.. automodule:: GSASII.exports.G2export_shelx 
     :members: 
     :synopsis: Export a phase in Shelx format
 
@@ -130,12 +131,12 @@ G2export_shelx Classes and Routines
 *Module G2export_CIF: CIF Exports*
 ------------------------------------------------------
 
-.. py:currentmodule:: G2export_CIF
+.. py:currentmodule:: GSASII.exports.G2export_CIF
 		      
 This implements a complex set of CIF (Crystallographic Information
 Framework) exporters. The base class, :class:`ExportCIF`, implement a
 variety of export capabilities,
-where extra parameters for :meth:`ExportCIF:MasterExporter` determine if a project,
+where extra parameters for :meth:`ExportCIF.MasterExporter` determine if a project,
 single phase or data set are written. The subclasses of
 :class:`ExportCIF`, as listed below, supply these different parameters
 when calling that method. 
@@ -150,7 +151,7 @@ when calling that method.
 G2export_CIF Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_CIF
+.. automodule:: GSASII.exports.G2export_CIF
     :members: 
     :synopsis: Export a project in CIF format
 	       
@@ -163,7 +164,7 @@ Creates files used by GSAS (FXYE) & TOPAS (XYE) as input
 G2export_pwdr Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_pwdr
+.. automodule:: GSASII.exports.G2export_pwdr
     :members: 
     :synopsis: Export powder data in GSAS and Topas formats
 
@@ -176,7 +177,7 @@ Code to create .chi (Fit2D like) files for GSAS-II powder data export
 G2export_FIT2d Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_FIT2D 
+.. automodule:: GSASII.exports.G2export_FIT2D 
     :members: 
     :synopsis: Export powder data in Fit2D (.chi) format
        
@@ -184,7 +185,7 @@ G2export_FIT2d Classes and Routines
 *Module G2export_JSON: ASCII .gpx Export*
 ------------------------------------------------------
 
-.. py:currentmodule:: G2export_JSON
+.. py:currentmodule:: GSASII.exports.G2export_JSON
 
 This implements a fairly simple exporter, :class:`ExportJSON`, that can export the 
 contents of an entire project as a sort-of human readable (JSON) ASCII file.
@@ -199,22 +200,24 @@ with a good chance of getting things to work.
 G2export_JSON Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_JSON
+.. automodule:: GSASII.exports.G2export_JSON
     :members:
 
 ------------------------------------------------------
 *Module G2export_Bracket: ASCII .gpx Export*
 ------------------------------------------------------
 
-.. py:currentmodule:: G2export_Bracket
+.. py:currentmodule:: GSASII.exports.G2export_Bracket
 		      
 This provides to methods for tabulating GSAS-II parameters from a
 project for use in manuscript preparation into an ASCII .csv
 (spreadsheet) file.
-The first, :mod:`Exportbracket`, provides standard uncertainties for values in
-crystallographic (e.g. "bracket") notation:  i.e.: ``1.234(5)``, which
-indicates a value of ``1.234`` with a standard uncertainty of ``0.005``. The
-second method, :mod:`Export3col`, provides the standard uncertainties
+The exporter, :class:`Exportbracket`, creates a text file with
+standard uncertainties for values in crystallographic (e.g. "bracket")
+notation:
+*i.e.*: ``1.234(5)``, which
+indicates a value of ``1.234`` with a standard uncertainty of ``0.005``. A
+second method, :class:`Export3col`, provides the standard uncertainties
 as a separate column. 
 
 This module initially written by Conrad Gillard. For any enquiries please contact conrad.gillard@gmail.com.
@@ -222,5 +225,5 @@ This module initially written by Conrad Gillard. For any enquiries please contac
 G2export_Bracket Classes and Routines
 -------------------------------------------
 
-.. automodule:: G2export_Bracket
+.. automodule:: GSASII.exports.G2export_Bracket
     :members: 

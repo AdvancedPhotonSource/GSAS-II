@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 '''
-Code for accessing files, including support for reading and writing 
+Code for accessing files, including support for reading and writing
 instrument parameter files and exporting various types of data files.
 
 This module has some routines that require wxPython, but imports
-for wx and GSAS-II GUI routines is done on a per-function basis so 
+for wx and GSAS-II GUI routines is done on a per-function basis so
 that this module can be imported for GSASIIscriptable use when
 wx is not installed.
 '''
@@ -13,15 +13,17 @@ import platform
 import os
 import sys
 import glob
-import inspect
+#import inspect
 import re
 
 import numpy as np
 
-import GSASIIpath
-import GSASIIlattice as G2lat
-import GSASIIstrIO as G2stIO
-import GSASIImapvars as G2mv
+from . import GSASIIpath
+from . import GSASIIlattice as G2lat
+from . import GSASIIstrIO as G2stIO
+from . import GSASIImapvars as G2mv
+from . import GSASIImath as G2mth
+#from . import GSASIIlattice as G2lat
 
 #if not sys.platform.startswith('win'):
 #    try:
@@ -47,24 +49,24 @@ def sfloat(S):
     return 0.0
 
 G2printLevel = 'all'
-'''This defines the level of output from calls to :func:`GSASIIfiles.G2Print`, 
-which should  be used in place of print() within GSASII where possible. 
+'''This defines the level of output from calls to :func:`GSASIIfiles.G2Print`,
+which should  be used in place of print() within GSASII where possible.
 Settings for this are 'all', 'warn', 'error' or 'none'. Best to change this
 with :func:`G2SetPrintLevel`.
 
 .. seealso::
-    :func:`G2Print` 
+    :func:`G2Print`
     :func:`G2SetPrintLevel`.
 '''
 
 def G2SetPrintLevel(level):
-    '''Set the level of output from calls to :func:`G2Print`, which should 
-    be used in place of print() within GSASII. Settings for the mode are 
+    '''Set the level of output from calls to :func:`G2Print`, which should
+    be used in place of print() within GSASII. Settings for the mode are
     'all', 'warn', 'error' or 'none'
-    
-    :param str level: a string used to set the print level, which may be 
+
+    :param str level: a string used to set the print level, which may be
       'all', 'warn', 'error' or 'none'.
-      Note that capitalization and extra letters in level are ignored, so 
+      Note that capitalization and extra letters in level are ignored, so
       'Warn', 'warnings', etc. will all set the mode to 'warn'
     '''
     global G2printLevel
@@ -75,21 +77,21 @@ def G2SetPrintLevel(level):
     else:
         G2Print('G2SetPrintLevel Error: level={} cannot be interpreted.',
                     'Use all, warn, error or none.')
-        
+
 def find(name, path):
     '''find 1st occurance of file in path
     '''
     for root, dirs, files in os.walk(path):
         if name in files:
             return os.path.join(root, name)
-        
+
 def G2Print(*args,**kwargs):
     '''Print with filtering based level of output (see :func:`G2SetPrintLevel`).
-    Use G2Print() as replacement for print(). 
+    Use G2Print() as replacement for print().
 
     :param str mode: if specified, this should contain the mode for printing
-      ('error', 'warn' or anything else). If not specified, the first argument 
-      of the print command (args[0]) should contain the string 'error' for 
+      ('error', 'warn' or anything else). If not specified, the first argument
+      of the print command (args[0]) should contain the string 'error' for
       error messages and 'warn' for warning messages
       (capitalization and additional letters ignored.)
     '''
@@ -98,7 +100,7 @@ def G2Print(*args,**kwargs):
         testStr = str(args[0]).lower()
     else:
         testStr = kwargs['mode'][:].lower()
-        del kwargs['mode'] 
+        del kwargs['mode']
     level = 2
     for i,mode in enumerate(('error', 'warn')):
         if mode in testStr:
@@ -119,6 +121,47 @@ def get_python_versions(packagelist):
                      sys.platform + ' ' + platform.architecture()[0] +
                      ' ' + platform.machine()])
     return versions
+
+ImportErrors = []
+condaRequestList = {}
+def ImportErrorMsg(errormsg=None,pkg={}):
+    '''Store error message(s) from loading importers (usually missing
+    packages. Or, report back all messages, if called with no argument.
+
+    :param str errormsg: a string containing the error message. If not
+      supplied, the function returns the error message(s).
+    :param dict pkg: a dict where the key is the name of the importer and the
+      value is a list containing the packages that need to be installed to
+      allow the importer to be used.
+
+    :returns: the error messages as a list (an empty list if there are none),
+      only if errormsg is None (the default).
+    '''
+    if errormsg is None:
+        return ImportErrors
+    ImportErrors.append(errormsg)
+    if pkg: NeededPackage(pkg)
+
+def NeededPackage(pkgDict):
+    '''Store packages that are needed to add functionality to GSAS-II
+
+    :param dict pkgDict: a dict where the key is the describes the routine
+      or the unavailable functionality that requires addition of a Python
+      package and the value is a list containing the packages that need to 
+      be installed. If a specific version of a package is required then 
+      indicate that by placing version information into the name (see 
+      https://docs.conda.io/projects/conda/en/4.6.0/_downloads/52a95608c49671267e40c689e0bc00ca/conda-cheatsheet.pdf). Note that the names containing "pkg=x.y"
+      will be translated to "pkg==x.y" for pip installs, but more complex 
+      package specifications (see 
+      https://pip.pypa.io/en/latest/reference/requirement-specifiers/) will 
+      probably work only for conda installations.
+
+      Examples::
+
+          {'MIDAS Zarr importer':['zarr=2.18.*']}
+          {'HDF5 image importer':['h5py','hdf5']}
+    '''
+    condaRequestList.update(pkgDict)
 
 def makeInstDict(names,data,codes):
     inst = dict(zip(names,zip(data,data,codes)))
@@ -352,26 +395,26 @@ def SetPowderInstParms(Iparm, rd):
 def ReadInstprm(instLines, bank, Sample={}):
     '''Read contents of a GSAS-II (new) .instprm instrument parameter file
 
-    :param list instLines: contents of GSAS-II parameter file as a 
+    :param list instLines: contents of GSAS-II parameter file as a
           list of str; N.B. lines can be concatenated with ';'
-    :param int bank: bank number to use when instprm file has values 
-          for multiple banks (noted by headers of '#BANK n:...'.). This 
-          is ignored for instprm files without those headers. 
+    :param int bank: bank number to use when instprm file has values
+          for multiple banks (noted by headers of '#BANK n:...'.). This
+          is ignored for instprm files without those headers.
           If bank is None with multiple banks, the first bank is used.
-          Note that multibank .instprm files are made by 
-          a "Save all profile" command in Instrument Parameters. 
-    :param dict Sample: A dict containing sample parameters, 
+          Note that multibank .instprm files are made by
+          a "Save all profile" command in Instrument Parameters.
+    :param dict Sample: A dict containing sample parameters,
            typically corresponding to rd.Sample,
-           where rd is a reader object that 
-           is being read from. Sample parameters 
-           determined by instrument settings or information 
+           where rd is a reader object that
+           is being read from. Sample parameters
+           determined by instrument settings or information
            from the instprm file are placed here.
-    :returns: bank,instdict where bank is the sample parameter set 
+    :returns: bank,instdict where bank is the sample parameter set
            number and instdict is a list containing the regular instrument parameter dict
-           and the "extended" dict, currently only containing pdabc entries (if they exist)   
+           and the "extended" dict, currently only containing pdabc entries (if they exist)
 
-    Note if 'Type' is set as Debye-Scherrer or Bragg-Brentano this will be used and 
-    will set defaults in the sample parameters. Otherwise, a single-wavelength file 
+    Note if 'Type' is set as Debye-Scherrer or Bragg-Brentano this will be used and
+    will set defaults in the sample parameters. Otherwise, a single-wavelength file
     will set Debye-Scherrer mode and dual wavelength will set Bragg-Brentano.
     '''
     if 'GSAS-II' not in instLines[0]:
@@ -494,7 +537,7 @@ def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
     :param dict InstPrm1: "extended" instrument parameters
     :param dict Sample: Sample parameters (optional)
     :param int bank: Bank number. If not None (default), this causes
-      a "#Bank" heading to be placed in the file before the 
+      a "#Bank" heading to be placed in the file before the
       parameters are written.
     '''
     if bank is not None:
@@ -513,8 +556,8 @@ def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
     for item in ('Gonio. radius','InstrName'):
         if not Sample.get(item): continue
         fp.write(f"{indent}{item}:{Sample[item]}\n")
-    
-    #handle pdabc entries.
+
+    # handle pdabc entries.
     if InstPrm1:
         if "pdabc" in InstPrm1:
             
@@ -536,153 +579,192 @@ def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
             #write output string
             fp.write(resString)
 
+# version of LoadImportRoutines from before switch to "main"
+# def _old_LoadImportRoutines(prefix, errprefix=None, traceback=False):
+#     '''Routine to locate GSASII importers matching a prefix string.
+#
+#     Warns if more than one file with the same name is in the path
+#     or if a file is found that is not in the main directory tree.
+#     '''
+#     if errprefix is None:
+#         errprefix = prefix
+#
+#     readerlist = []
+#     import_files = {}
+#     if '.' not in sys.path: sys.path.append('.')
+#     for path in sys.path:
+#         for filename in glob.iglob(os.path.join(path, 'G2'+prefix+'*.py')):
+#             pkg = os.path.splitext(os.path.split(filename)[1])[0]
+#             if pkg in import_files:
+#                 G2Print('Warning: importer {} overrides {}'.format(import_files[pkg],os.path.abspath(filename)))
+#             elif not filename.startswith(GSASIIpath.path2GSAS2):
+#                 G2Print('Note: found importer in non-standard location:'+
+#                             f'\n\t{os.path.abspath(filename)}')
+#                 import_files[pkg] = filename
+#             else:
+#                 import_files[pkg] = filename
+
+#     for pkg in sorted(import_files.keys()):
+#         try:
+#             exec('import '+pkg)
+#             #print(eval(pkg+'.__file__'))
+#             for name, value in inspect.getmembers(eval(pkg)):
+#                 if name.startswith('_'):
+#                     continue
+#                 if inspect.isclass(value):
+#                     for method in 'Reader', 'ExtensionValidator', 'ContentsValidator':
+#                         if not hasattr(value, method):
+#                             break
+#                         if not callable(getattr(value, method)):
+#                             break
+#                     else:
+#                         reader = value()
+#                         if reader.UseReader:
+#                             readerlist.append(reader)
+#         except AttributeError:
+#             G2Print ('Import_' + errprefix + ': Attribute Error ' + import_files[pkg])
+#             if traceback:
+#                 traceback.print_exc(file=sys.stdout)
+#         except Exception as exc:
+#             G2Print ('\nImport_' + errprefix + ': Error importing file ' + import_files[pkg])
+#             G2Print (u'Error message: {}\n'.format(exc))
+#             if traceback:
+#                 traceback.print_exc(file=sys.stdout)
+#     return readerlist
+
 def LoadImportRoutines(prefix, errprefix=None, traceback=False):
-    '''Routine to locate GSASII importers matching a prefix string.
-
-    Warns if more than one file with the same name is in the path 
-    or if a file is found that is not in the main directory tree. 
-    '''
-    if errprefix is None:
-        errprefix = prefix
-
+    from . import imports
     readerlist = []
-    import_files = {}
-    if '.' not in sys.path: sys.path.append('.')
-    for path in sys.path:
-        for filename in glob.iglob(os.path.join(path, 'G2'+prefix+'*.py')):
-            pkg = os.path.splitext(os.path.split(filename)[1])[0]
-            if pkg in import_files:
-                G2Print('Warning: importer {} overrides {}'.format(import_files[pkg],os.path.abspath(filename)))
-            elif not filename.startswith(GSASIIpath.path2GSAS2):
-                G2Print('Note: found importer in non-standard location:'+
-                            f'\n\t{os.path.abspath(filename)}')
-                import_files[pkg] = filename
-            else:
-                import_files[pkg] = filename
-
-    for pkg in sorted(import_files.keys()):
-        try:
-            exec('import '+pkg)
-            #print(eval(pkg+'.__file__'))
-            for name, value in inspect.getmembers(eval(pkg)):
-                if name.startswith('_'):
-                    continue
-                if inspect.isclass(value):
-                    for method in 'Reader', 'ExtensionValidator', 'ContentsValidator':
-                        if not hasattr(value, method):
-                            break
-                        if not callable(getattr(value, method)):
-                            break
-                    else:
-                        reader = value()
-                        if reader.UseReader:
-                            readerlist.append(reader)
-        except AttributeError:
-            G2Print ('Import_' + errprefix + ': Attribute Error ' + import_files[pkg])
-            if traceback:
-                traceback.print_exc(file=sys.stdout)
-        except Exception as exc:
-            G2Print ('\nImport_' + errprefix + ': Error importing file ' + import_files[pkg])
-            G2Print (u'Error message: {}\n'.format(exc))
-            if traceback:
-                traceback.print_exc(file=sys.stdout)
+    # how to import directly from a file for extra search magic if we need
+    # https://stackoverflow.com/questions/67631/how-can-i-import-a-module-dynamically-given-the-full-path
+    # TODO handle non-bundled readers
+    for mod_name in (_ for _ in dir(imports) if _.startswith(f'G2{prefix}')):
+        mod = getattr(imports, mod_name)
+        for member_name in dir(mod):
+            if member_name.startswith('_'):
+                continue
+            member = getattr(mod, member_name)
+            if all(
+                hasattr(member, meth)
+                for meth in ('Reader', 'ExtensionValidator', 'ContentsValidator')
+            ):
+                reader = member()
+                if reader.UseReader:
+                    readerlist.append(reader)
     return readerlist
 
-ImportErrors = []
-condaRequestList = {}
-def ImportErrorMsg(errormsg=None,pkg={}):
-    '''Store error message(s) from loading importers (usually missing 
-    packages. Or, report back all messages, if called with no argument.
+# version of LoadExportRoutines from before switch to "main" 
+# def _LoadExportRoutines(parent, usetraceback=False):
+#     '''Routine to locate GSASII exporters. Warns if more than one file
+#     with the same name is in the path or if a file is found that is not
+#     in the main directory tree.
+#     '''
+#     exporterlist = []
+#     export_files = {}
+#     if '.' not in sys.path: sys.path.append('.')
+#     for path in sys.path:
+#         for filename in glob.iglob(os.path.join(path,"G2export*.py")):
+#             pkg = os.path.splitext(os.path.split(filename)[1])[0]
+#             if pkg in export_files:
+#                 G2Print('Warning: exporter {} overrides {}'.format(export_files[pkg],os.path.abspath(filename)))
+#             elif not filename.startswith(GSASIIpath.path2GSAS2):
+#                 G2Print('Note, found non-standard exporter: {}'.format(os.path.abspath(filename)))
+#                 export_files[pkg] = filename
+#             else:
+#                 export_files[pkg] = filename
+#     # go through the routines and import them, saving objects that
+#     # have export routines (method Exporter)
+#     for pkg in sorted(export_files.keys()):
+#         try:
+#             exec('import '+pkg)
+#             for clss in inspect.getmembers(eval(pkg)): # find classes defined in package
+#                 if clss[0].startswith('_'): continue
+#                 if not inspect.isclass(clss[1]): continue
+#                 # check if we have the required methods
+#                 if not hasattr(clss[1],'Exporter'): continue
+#                 if not callable(getattr(clss[1],'Exporter')): continue
+#                 if parent is None:
+#                     if not hasattr(clss[1],'Writer'): continue
+#                 else:
+#                     if not hasattr(clss[1],'loadParmDict'): continue
+#                     if not callable(getattr(clss[1],'loadParmDict')): continue
+#                 try:
+#                     exporter = clss[1](parent) # create an export instance
+#                 except AttributeError:
+#                     pass
+#                 except Exception as exc:
+#                     G2Print ('\nExport init: Error substantiating class ' + clss[0])
+#                     G2Print (u'Error message: {}\n'.format(exc))
+#                     if usetraceback:
+#                         import traceback
+#                         traceback.print_exc(file=sys.stdout)
+#                     continue
+#                 exporterlist.append(exporter)
+#         except AttributeError:
+#             G2Print ('Export Attribute Error ' + export_files[pkg])
+#             if usetraceback:
+#                 import traceback
+#                 traceback.print_exc(file=sys.stdout)
+#         except Exception as exc:
+#             G2Print ('\nExport init: Error importing file ' + export_files[pkg])
+#             G2Print (u'Error message: {}\n'.format(exc))
+#             if usetraceback:
+#                 import traceback
+#                 traceback.print_exc(file=sys.stdout)
+#     return exporterlist
 
-    :param str errormsg: a string containing the error message. If not 
-      supplied, the function returns the error message(s).
-    :param dict pkg: a dict where the key is the name of the importer and the 
-      value is a list containing the packages that need to be installed to 
-      allow the importer to be used.
-
-    :returns: the error messages as a list (an empty list if there are none), 
-      only if errormsg is None (the default).
-    '''
-    if errormsg is None:
-        return ImportErrors
-    ImportErrors.append(errormsg)
-    if pkg: condaRequestList.update(pkg)
-
-def LoadExportRoutines(parent, traceback=False):
-    '''Routine to locate GSASII exporters. Warns if more than one file
-    with the same name is in the path or if a file is found that is not 
-    in the main directory tree. 
-    '''
+def LoadExportRoutines(parent, usetraceback=False):
+    from . import exports
     exporterlist = []
-    export_files = {}
-    if '.' not in sys.path: sys.path.append('.')
-    for path in sys.path:
-        for filename in glob.iglob(os.path.join(path,"G2export*.py")):
-            pkg = os.path.splitext(os.path.split(filename)[1])[0]
-            if pkg in export_files:
-                G2Print('Warning: exporter {} overrides {}'.format(export_files[pkg],os.path.abspath(filename)))
-            elif not filename.startswith(GSASIIpath.path2GSAS2):
-                G2Print('Note, found non-standard exporter: {}'.format(os.path.abspath(filename)))
-                export_files[pkg] = filename
-            else:
-                export_files[pkg] = filename
-    # go through the routines and import them, saving objects that
-    # have export routines (method Exporter)
-    for pkg in sorted(export_files.keys()):
-        try:
-            exec('import '+pkg)
-            for clss in inspect.getmembers(eval(pkg)): # find classes defined in package
-                if clss[0].startswith('_'): continue
-                if not inspect.isclass(clss[1]): continue
-                # check if we have the required methods
-                if not hasattr(clss[1],'Exporter'): continue
-                if not callable(getattr(clss[1],'Exporter')): continue
-                if parent is None:
-                    if not hasattr(clss[1],'Writer'): continue
-                else:
-                    if not hasattr(clss[1],'loadParmDict'): continue
-                    if not callable(getattr(clss[1],'loadParmDict')): continue
-                try:
-                    exporter = clss[1](parent) # create an export instance
-                except AttributeError:
-                    pass
-                except Exception as exc:
-                    G2Print ('\nExport init: Error substantiating class ' + clss[0])
-                    G2Print (u'Error message: {}\n'.format(exc))
-                    if traceback:
-                        traceback.print_exc(file=sys.stdout)
+    # how to import directly from a file for extra search magic if we need
+    # https://stackoverflow.com/questions/67631/how-can-i-import-a-module-dynamically-given-the-full-path
+    # TODO handle non-bundled readers
+    for mod_name in (_ for _ in dir(exports) if _.startswith('G2export')):
+        mod = getattr(exports, mod_name)
+        for member_name in dir(mod):
+            if member_name.startswith('_'):
+                continue
+            member = getattr(mod, member_name)
+            if not hasattr(member, 'Exporter'):
+                continue
+            if parent is None:
+                if not hasattr(member, 'Writer'):
                     continue
+            else:
+                if not hasattr(member, 'loadParmDict'):
+                    continue
+            try:
+                exporter = member(parent)
                 exporterlist.append(exporter)
-        except AttributeError:
-            G2Print ('Export Attribute Error ' + export_files[pkg])
-            if traceback:
-                traceback.print_exc(file=sys.stdout)
-        except Exception as exc:
-            G2Print ('\nExport init: Error importing file ' + export_files[pkg])
-            G2Print (u'Error message: {}\n'.format(exc))
-            if traceback:
-                traceback.print_exc(file=sys.stdout)
+            except Exception as exc:
+                G2Print ('\nExport init: Error substantiating class ' + member_name)
+                G2Print ('Error message: {}\n'.format(exc))
+                if usetraceback:
+                    import traceback
+                    traceback.print_exc(file=sys.stdout)
+                continue
     return exporterlist
+
 
 def readColMetadata(imagefile):
     '''Reads image metadata from a column-oriented metadata table
     (1-ID style .par file). Called by :func:`GetColumnMetadata`
-    
+
     The .par file has any number of columns separated by spaces.
     The directory for the file must be specified in
     Config variable :data:`config_example.Column_Metadata_directory`.
     As an index to the .par file a second "label file" must be specified with the
     same file root name as the .par file but the extension must be .XXX_lbls (where
     .XXX is the extension of the image) or if that is not present extension
-    .lbls. 
+    .lbls.
 
     :param str imagefile: the full name of the image file (with extension, directory optional)
 
     :returns: a dict with parameter values. Named parameters will have the type based on
        the specified Python function, named columns will be character strings
-    
+
     The contents of the label file will look like this::
-    
+
         # define keywords
         filename:lambda x,y: "{}_{:0>6}".format(x,y)|33,34
         distance: float | 75
@@ -701,16 +783,16 @@ def readColMetadata(imagefile):
 
     This file contains three types of lines in any order.
      * Named parameters are evaluated with user-supplied Python code (see
-       subsequent information). Specific named parameters are used 
+       subsequent information). Specific named parameters are used
        to determine values that are used for image interpretation (see table,
        below). Any others are copied to the Comments subsection of the Image
-       tree item. 
+       tree item.
      * Column labels are defined with a column number (integer) followed by
        a colon (:) and a label to be assigned to that column. All labeled
        columns are copied to the Image's Comments subsection.
      * Comments are any line that does not contain a colon.
 
-    Note that columns are numbered starting at zero. 
+    Note that columns are numbered starting at zero.
 
     Any named parameter may be defined provided it is not a valid integer,
     but the named parameters in the table have special meanings, as descibed.
@@ -721,20 +803,20 @@ def readColMetadata(imagefile):
     Note that several keywords, if defined in the Comments, will be found and
     placed in the appropriate section of the powder histogram(s)'s Sample
     Parameters after an integration: ``Temperature``, ``Pressure``, ``Time``,
-    ``FreePrm1``, ``FreePrm2``, ``FreePrm3``, ``Omega``, ``Chi``, and ``Phi``. 
+    ``FreePrm1``, ``FreePrm2``, ``FreePrm3``, ``Omega``, ``Chi``, and ``Phi``.
 
     After the Python code, supply a vertical bar (|) and then a list of one
     more more columns that will be supplied as arguments to that function.
 
     Note that the labels for the three FreePrm items can be changed by
     including that label as a third item with an additional vertical bar. Labels
-    will be ignored for any other named parameters. 
-    
+    will be ignored for any other named parameters.
+
     The examples above are discussed here:
 
     ``filename:lambda x,y: "{}_{:0>6}".format(x,y)|33,34``
         Here the function to be used is defined with a lambda statement::
-        
+
           lambda x,y: "{}_{:0>6}".format(x,y)
 
         This function will use the format function to create a file name from the
@@ -749,15 +831,15 @@ def readColMetadata(imagefile):
 
         Here a third parameter is used to specify the number of images generated, where
         the image number is incremented for each image.
-          
+
     ``distance: float | 75``
         Here the contents of column 75 will be converted to a floating point number
         by calling float on it. Note that the spaces here are ignored.
-        
+
     ``wavelength:lambda keV: 12.398425/float(keV)|9``
         Here we define an algebraic expression to convert an energy in keV to a
         wavelength and pass the contents of column 9 as that input energy
-        
+
     ``pixelSize:lambda x: [74.8, 74.8]|0``
         In this case the pixel size is a constant (a list of two numbers). The first
         column is passed as an argument as at least one argument is required, but that
@@ -768,20 +850,20 @@ def readColMetadata(imagefile):
         and formats them in a different way. This parameter is not one of the pre-defined
         parameter names below. Some external code could be used to change the month string
         (argument ``m``) to a integer from 1 to 12.
-        
+
     ``FreePrm2: int | 34 | Free Parm2 Label``
         In this example, the contents of column 34 will be converted to an integer and
         placed as the second free-named parameter in the Sample Parameters after an
         integration. The label for this parameter will be changed to "Free Parm2 Label".
-            
+
     **Pre-defined parameter names**
-    
+
     =============  =========  ========  =====================================================
      keyword       required    type      Description
     =============  =========  ========  =====================================================
        filename    yes         str or   generates the file name prefix for the matching image
                                list     file (MyImage001 for file /tmp/MyImage001.tif) or
-                                        a list of file names. 
+                                        a list of file names.
      polarization  no         float     generates the polarization expected based on the
                                         monochromator angle, defaults to 0.99.
        center      no         list of   generates the approximate beam center on the detector
@@ -789,10 +871,10 @@ def readColMetadata(imagefile):
        distance    yes        float     generates the distance from the sample to the detector
                                         in mm
        pixelSize   no         list of   generates the size of the pixels in microns such as
-                              2 floats  [200.0, 200.0]. 
+                              2 floats  [200.0, 200.0].
        wavelength  yes        float     generates the wavelength in Angstroms
     =============  =========  ========  =====================================================
-    
+
     '''
     dir,fil = os.path.split(os.path.abspath(imagefile))
     imageName,ext = os.path.splitext(fil)
@@ -863,7 +945,7 @@ def readColMetadataLabels(lblFil):
         if len(items) < 2: continue # lines with no colon are also comments
         # does this line a definition for a named parameter?
         key = items[0]
-        try: 
+        try:
             int(key)
         except ValueError: # try as named parameter since not a valid number
             items = line.split(':',1)[1].split('|')
@@ -912,9 +994,9 @@ def evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp,ShowError=False):
 def GetColumnMetadata(reader):
     '''Add metadata to an image from a column-type metadata file
     using :func:`readColMetadata`
-    
+
     :param reader: a reader object from reading an image
-    
+
     '''
     if not GSASIIpath.GetConfigValue('Column_Metadata_directory'): return
     parParms = readColMetadata(reader.readfilename)
@@ -964,7 +1046,7 @@ def LoadControls(Slines,data):
                 save[key] = eval(val)
             else:
                 vals = val.strip('[] ').split()
-                save[key] = [float(vals[0]),float(vals[1])] 
+                save[key] = [float(vals[0]),float(vals[1])]
         elif key in cntlList:
             save[key] = eval(val)
     data.update(save)
@@ -997,7 +1079,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
       First image is read if None (default).
     :param str formatName: the image reader formatName
 
-    :returns: an image as a numpy array. 
+    :returns: an image as a numpy array.
       Formerly if imageOnly=False this would return a list of four items: Comments, Data, Npix and the Image,
       but now an exception occurs when imageOnly=False.
     '''
@@ -1006,7 +1088,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
     secondaryReaders = []
     for rd in G2frame.ImportImageReaderlist:
         flag = rd.ExtensionValidator(imagefile)
-        if flag is None: 
+        if flag is None:
             secondaryReaders.append(rd)
         elif flag:
             if not FormatName:
@@ -1024,7 +1106,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
         rd.errors = "" # clear out any old errors
         if not rd.ContentsValidator(imagefile): # rejected on cursory check
             errorReport += "\n  "+rd.formatName + ' validator error'
-            if rd.errors: 
+            if rd.errors:
                 errorReport += ': '+rd.errors
                 continue
         if imageOnly:
@@ -1058,11 +1140,11 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
     else:
         print('Error reading file '+imagefile)
         print('Error messages(s)\n'+errorReport)
-        raise Exception('No image read')    
+        raise Exception('No image read')
 
 def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
-    '''Read a single image with an image importer. This is called to 
-    reread an image after it has already been imported, so it is not 
+    '''Read a single image with an image importer. This is called to
+    reread an image after it has already been imported, so it is not
     necessary to reload metadata.
 
     Based on :func:`GetImageData` which this can replace
@@ -1081,7 +1163,7 @@ def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
     secondaryReaders = []
     for rd in ImageReaderlist:
         flag = rd.ExtensionValidator(imagefile)
-        if flag is None: 
+        if flag is None:
             secondaryReaders.append(rd)
         elif flag:
             if not FormatName:
@@ -1099,7 +1181,7 @@ def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
         rd.errors = "" # clear out any old errors
         if not rd.ContentsValidator(imagefile): # rejected on cursory check
             errorReport += "\n  "+rd.formatName + ' validator error'
-            if rd.errors: 
+            if rd.errors:
                 errorReport += ': '+rd.errors
                 continue
         flag = rd.Reader(imagefile,None,blocknum=ImageTag)
@@ -1129,7 +1211,7 @@ def readMasks(filename,masks,ignoreThreshold):
         [key,val] = S.strip().split(':',1)
         if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds','Xlines','Ylines']:
             if ignoreThreshold and key == 'Thresholds':
-                S = File.readline() 
+                S = File.readline()
                 continue
             save[key] = eval(val)
             if key == 'Thresholds':
@@ -1144,15 +1226,15 @@ def readMasks(filename,masks,ignoreThreshold):
         masks[key] = [i for i in masks[key] if len(i)]
 
 def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
-    '''Write PDF-related data (G(r), S(Q),...) into files, as 
+    '''Write PDF-related data (G(r), S(Q),...) into files, as
     selected.
 
-    :param str PDFentry: name of the PDF entry in the tree. This is 
-      used for comments in the file specifying where it came from; 
+    :param str PDFentry: name of the PDF entry in the tree. This is
+      used for comments in the file specifying where it came from;
       it can be arbitrary
-    :param str fileroot: name of file(s) to be written. The extension 
+    :param str fileroot: name of file(s) to be written. The extension
       will be ignored.
-    :param list PDFsaves: flags that determine what type of file will be 
+    :param list PDFsaves: flags that determine what type of file will be
       written:
       PDFsaves[0], if True writes a I(Q) file with a .iq extension
       PDFsaves[1], if True writes a S(Q) file with a .sq extension
@@ -1160,13 +1242,13 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
       PDFsaves[3], if True writes a G(r) file with a .gr extension
       PDFsaves[4], if True writes G(r) in a pdfGUI input file with
       a .gr extension. Note that if PDFsaves[3] and PDFsaves[4] are
-      both True, the pdfGUI overwrites the G(r) file. 
+      both True, the pdfGUI overwrites the G(r) file.
       PDFsaves[5], if True writes F(Q) & g(R) with .fq & .gr extensions
       overwrites these if selected by option 2, 3 or 4
     :param dict PDFControls: The PDF parameters and computed results
-    :param dict Inst: Instrument parameters from the PDWR entry used 
+    :param dict Inst: Instrument parameters from the PDWR entry used
       to compute the PDF. Needed only when PDFsaves[4] is True.
-    :param list Limits: Computation limits from the PDWR entry used 
+    :param list Limits: Computation limits from the PDWR entry used
       to compute the PDF. Needed only when PDFsaves[4] is True.
     '''
     import scipy.interpolate as scintp
@@ -1228,8 +1310,6 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         G2Print (' G(R) saved to: '+grfilename)
 
     if PDFsaves[4]: #pdfGUI file for G(R)
-        import GSASIImath as G2mth
-        import GSASIIlattice as G2lat       
         grfilename = fileroot+'.gr'
         grdata = PDFControls['G(R)'][1]
         qdata = PDFControls['I(Q)'][1][0]
@@ -1277,14 +1357,14 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         grfile.write('\n')
         grfile.write('#### start data\n')
         grfile.write('#S 1\n')
-        grfile.write('#L r($\\AA$)  G($\\AA^{-2}$)\n')            
+        grfile.write('#L r($\\AA$)  G($\\AA^{-2}$)\n')
         for r,gr in grnew:
             grfile.write("%15.2F %15.6F\n" % (r,gr))
         grfile.close()
         G2Print (' G(R) saved to: '+grfilename)
-        
+
     if len(PDFsaves) > 5 and PDFsaves[5]: #RMCProfile files for F(Q) & g(r) overwrites any above
-        
+
         fqfilename = fileroot+'.fq'
         fqdata = PDFControls['F(Q)'][1]
         fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
@@ -1300,7 +1380,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
             fqfile.write("%15.6g %15.6g\n" % (q,fq))
         fqfile.close()
         G2Print (' F(Q) saved to: '+fqfilename)
-        
+
         grfilename = fileroot+'.gr'
         grdata = PDFControls['g(r)'][1]
         grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
@@ -1349,8 +1429,8 @@ def FormulaEval(string):
       to be evaluated.
 
     :returns: the value for the expression as a float or None if the expression does not
-      evaluate to a valid number. 
-    
+      evaluate to a valid number.
+
     '''
     try:
         val = float(eval(string))
@@ -1380,21 +1460,21 @@ def FormatPadValue(val,maxdigits=None):
         return s
     else:
         return s+' '
-    
+
 
 def FormatValue(val,maxdigits=None):
     '''Format a float to fit in at most ``maxdigits[0]`` spaces with maxdigits[1] after decimal.
-    Note that this code has been hacked from FormatSigFigs and may have unused sections. 
+    Note that this code has been hacked from FormatSigFigs and may have unused sections.
 
     :param float val: number to be formatted.
 
     :param list maxdigits: the number of digits, places after decimal and 'f' or 'g' to be used for display of the
       number (defaults to [10,2,'f']).
 
-    :returns: a string with <= maxdigits characters (usually).  
+    :returns: a string with <= maxdigits characters (usually).
     '''
     if 'str' in str(type(val)) and (val == '?' or val == '.'):
-        return val        
+        return val
     if maxdigits is None:
         digits = [10,2,'f']
     else:
@@ -1430,7 +1510,7 @@ def FormatValue(val,maxdigits=None):
         decimals = min(digits[0]-3,digits[1])
         fmt = "{" + (":{:d}.{:d}f".format(digits[0],decimals))+"}"
     else: # in range where g formatting should do what I want
-        # used? 
+        # used?
         decimals = digits[0] - 6
         fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
     try:
@@ -1452,19 +1532,19 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
 
     :param float treatAsZero: numbers that are less than this in magnitude
       are treated as zero. Defaults to 1.0e-20, but this can be disabled
-      if set to None. 
+      if set to None.
 
-    :returns: a string with <= maxdigits characters (I hope).  
+    :returns: a string with <= maxdigits characters (I hope).
     '''
     if 'str' in str(type(val)) and (val == '?' or val == '.'):
-        return val        
+        return val
     if treatAsZero is not None:
         if abs(val) < treatAsZero:
             return '0.0'
     # negative numbers, leave room for a sign
     if np.isnan(val):
         return str(val)
-    if val < 0: maxdigits -= 1        
+    if val < 0: maxdigits -= 1
     if abs(val) < 1e-99 or abs(val) > 9.999e99:
         decimals = min(maxdigits-6,sigfigs)
         fmt = "{" + (":{:d}.{:d}g".format(maxdigits,decimals))+"}" # create format string
@@ -1482,7 +1562,7 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
         fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
     else: # larger numbers, remove decimal places
         decimals = sigfigs - 1 - int(np.log10(np.abs(val)))
-        if decimals <= 0: 
+        if decimals <= 0:
             fmt = "{" + (":{:d}.0f".format(maxdigits))+"}."
         else:
             fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
@@ -1493,28 +1573,29 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
         return str(val)
 
 #===========================================================================
+# N.B. duplicated in GSASIIpath
 def openInNewTerm(project=None,g2script=None,pythonapp=sys.executable):
-    '''Open a new and independent GSAS-II session in separate terminal 
+    '''Open a new and independent GSAS-II session in separate terminal
     or console window and as a separate process that will continue
     even if the calling process exits.
-    Intended to work on all platforms. 
+    Intended to work on all platforms.
 
     This could be used to run other scripts inside python other than GSAS-II
 
     :param str project: the name of an optional parameter to be
-      passed to the script (usually a .gpx file to be opened in 
+      passed to the script (usually a .gpx file to be opened in
       a new GSAS-II session)
     :param str g2script: the script to be run. If None (default)
-      the GSASII.py file in the same directory as this file will
-      be used. 
-    :param str pythonapp: the Python interpreter to be used. 
+      the G2.py file in the same directory as this file will
+      be used.
+    :param str pythonapp: the Python interpreter to be used.
       Defaults to sys.executable which is usually what is wanted.
     :param str terminal: a name for a preferred terminal emulator
     '''
     import subprocess
     if g2script is None:
-        g2script = os.path.join(os.path.dirname(__file__),'GSASII.py')
-    
+        g2script = os.path.join(os.path.dirname(__file__),'G2.py')
+
     if sys.platform == "darwin":
         if project:
             script = f'''
@@ -1587,7 +1668,7 @@ end tell
             elif term == "terminology":
                 cmds = [term,'-T="GSAS-II console"','--hold','-e']
                 script = "echo; echo This window can now be closed"
-                break                
+                break
         else:
             print("No known terminal was found to use, Can't start {}")
             return
@@ -1606,15 +1687,15 @@ end tell
         subprocess.Popen(cmds,start_new_session=True)
 
 def CleanupFromZip(label,cleanupList):
-    '''Delete files extracted from a zip archive, typically created with 
-    :func:`GSASIIctrl.ExtractFileFromZip` during the data import process. 
+    '''Delete files extracted from a zip archive, typically created with
+    :func:`GSASIIctrl.ExtractFileFromZip` during the data import process.
 
-    Note that image files should not be deleted as they will be reused 
+    Note that image files should not be deleted as they will be reused
     every time the image is displayed, but everything else will be saved
     in the data tree and the file copy is not needed.
 
     :param str label: for imports, this is the type of file being read
-    :param list cleanupList: a list of files that have been extracted from 
+    :param list cleanupList: a list of files that have been extracted from
       the zip archive and can be deleted.
     '''
     if not cleanupList: return
@@ -1643,7 +1724,7 @@ def trim(val):
     '''Simplify a string containing leading and trailing spaces
     as well as newlines, tabs, repeated spaces etc. into a shorter and
     more simple string, by replacing all ranges of whitespace
-    characters with a single space. 
+    characters with a single space.
 
     :param str val: the string to be simplified
 
@@ -1695,7 +1776,7 @@ class ExportBaseclass(object):
         self.filename = None # name of file to be written (single export) or template (multiple files)
         self.dirname = '' # name of directory where file(s) will be written
         self.fullpath = '' # name of file being written -- full path
-        
+
         # items that should be defined in a subclass of this class
         self.exporttype = []  # defines the type(s) of exports that the class can handle.
         # The following types are defined: 'project', "phase", "powder", "single"
@@ -1704,7 +1785,7 @@ class ExportBaseclass(object):
 
     def InitExport(self,event):
         '''Determines the type of menu that called the Exporter and
-        misc initialization. 
+        misc initialization.
         '''
         self.filename = None # name of file to be written (single export)
         self.dirname = '' # name of file to be written (multiple export)
@@ -1735,7 +1816,7 @@ class ExportBaseclass(object):
 
         :param bool AskFile: Determines how this routine processes getting a
           location to store the current export(s).
-          
+
           * if AskFile is 'ask' (default option), get the name of the file to be written;
             self.filename and self.dirname are always set. In the case where
             multiple files must be generated, the export routine should do this
@@ -1747,7 +1828,7 @@ class ExportBaseclass(object):
             multiple items will be written (as multiple files) are used
             *or* a complete file name is requested when a single file
             name is selected. self.dirname is always set and self.filename used
-            only when a single file is selected.  
+            only when a single file is selected.
           * if AskFile is 'default', creates a name of the file to be used from
             the name of the project (.gpx) file. If the project has not been saved,
             then the name of file is requested.
@@ -1760,9 +1841,9 @@ class ExportBaseclass(object):
 
         :returns: True in case of an error
         '''
-        
+
         numselected = 1
-        import GSASIIctrlGUI as G2G
+        from . import GSASIIctrlGUI as G2G
         if self.currentExportType == 'phase':
             if len(self.Phases) == 0:
                 self.G2frame.ErrorDialog(
@@ -1771,7 +1852,7 @@ class ExportBaseclass(object):
                 return True
             elif len(self.Phases) == 1:
                 self.phasenam = list(self.Phases.keys())
-            elif self.multiple: 
+            elif self.multiple:
                 choices = sorted(self.Phases.keys())
                 phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
                 if phasenum is None: return True
@@ -1887,7 +1968,7 @@ class ExportBaseclass(object):
             mapPhases = []
             choices = []
             for phasenam in sorted(self.Phases):
-                phasedict = self.Phases[phasenam] # pointer to current phase info            
+                phasedict = self.Phases[phasenam] # pointer to current phase info
                 if len(phasedict['General']['Map'].get('rho',[])):
                     mapPhases.append(phasenam)
                     if phasedict['General']['Map'].get('Flip'):
@@ -1906,7 +1987,7 @@ class ExportBaseclass(object):
                 return True
             elif len(mapPhases) == 1:
                 self.phasenam = mapPhases
-            else: 
+            else:
                 phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=self.multiple)
                 if self.multiple:
                     if not phasenum: return True
@@ -1916,7 +1997,7 @@ class ExportBaseclass(object):
                     self.phasenam = [mapPhases[phasenum]]
             numselected = len(self.phasenam)
 
-        # items selected, now set self.dirname and usually self.filename 
+        # items selected, now set self.dirname and usually self.filename
         if AskFile == 'ask' or (AskFile == 'single' and numselected == 1) or (
             AskFile == 'default' and not self.G2frame.GSASprojectfile
             ):
@@ -1943,9 +2024,9 @@ class ExportBaseclass(object):
         Expands the parm & sig dicts to include values derived from constraints.
 
         This could be made faster for sequential fits as info for each histogram is loaded
-        later when iterating over histograms. 
+        later when iterating over histograms.
         '''
-        import GSASIIdataGUI as G2gd
+        from . import GSASIIdataGUI as G2gd
         self.G2frame.CheckNotebook()
         self.parmDict = {}
         self.sigDict = {} # dict with s.u. values, currently used only for CIF & Bracket exports
@@ -2002,7 +2083,7 @@ class ExportBaseclass(object):
         else:
             varyList = list(varyList)
         # add symmetry-generated constraints
-        rigidbodyDict = self.G2frame.GPXtree.GetItemPyData(   
+        rigidbodyDict = self.G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Rigid bodies'))
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)  # done twice, needed?
@@ -2028,7 +2109,7 @@ class ExportBaseclass(object):
                 self.sigDict.update(
                     {i:v[1] for i,v in self.OverallParms['Covariance']['depSigDict'].items()})
             # compute the s.u.'s on rigid bodies
-            import GSASIIstrMath as G2stMth
+            from . import GSASIIstrMath as G2stMth
             self.RBsuDict = G2stMth.computeRBsu(self.parmDict,Phases,rigidbodyDict,
                             covDict['covMatrix'],covDict['varyList'],covDict['sig'])
 
@@ -2036,14 +2117,14 @@ class ExportBaseclass(object):
         '''Load the contents of the data tree into a set of dicts
         (self.OverallParms, self.Phases and self.Histogram as well as self.powderDict
         & self.xtalDict)
-        
+
         * The childrenless data tree items are overall parameters/controls for the
           entire project and are placed in self.OverallParms
         * Phase items are placed in self.Phases
         * Data items are placed in self.Histogram. The key for these data items
           begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.
         '''
-        import GSASIIdataGUI as G2gd
+        from . import GSASIIdataGUI as G2gd
         self.OverallParms = {}
         self.powderDict = {}
         self.sasdDict = {}
@@ -2055,7 +2136,7 @@ class ExportBaseclass(object):
         self.SeqRefhist = None
         self.DelayOpen = False
         if self.G2frame.GPXtree.IsEmpty(): return # nothing to do
-        histType = None        
+        histType = None
         if self.currentExportType == 'phase':
             # if exporting phases load them here
             sub = G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Phases')
@@ -2067,7 +2148,7 @@ class ExportBaseclass(object):
                 phaseName = self.G2frame.GPXtree.GetItemText(item)
                 self.Phases[phaseName] =  self.G2frame.GPXtree.GetItemPyData(item)
                 item, cookie = self.G2frame.GPXtree.GetNextChild(sub, cookie)
-            # Get rigid body info into self.OverallParms 
+            # Get rigid body info into self.OverallParms
             for key in ('Rigid bodies','Covariance'):
                 item = G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,key)
                 if item:
@@ -2096,32 +2177,32 @@ class ExportBaseclass(object):
                             name = name[:-1] + '10'
                         elif name[-1] in '012345678':
                             name = name[:-1] + str(int(name[-1])+1)
-                        else:                            
+                        else:
                             name += '-1'
                     self.Histograms[name] = {}
                     # the main info goes into Data, but the 0th
                     # element contains refinement results, carry
-                    # that over too now. 
+                    # that over too now.
                     self.Histograms[name]['Data'] = self.G2frame.GPXtree.GetItemPyData(item)[1]
                     self.Histograms[name][0] = self.G2frame.GPXtree.GetItemPyData(item)[0]
                     item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
-                    while item2: 
+                    while item2:
                         child = self.G2frame.GPXtree.GetItemText(item2)
                         self.Histograms[name][child] = self.G2frame.GPXtree.GetItemPyData(item2)
                         item2, cookie2 = self.G2frame.GPXtree.GetNextChild(item, cookie2)
                 item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
             # index powder and single crystal histograms by number
             for hist in self.Histograms:
-                if hist.startswith("PWDR"): 
+                if hist.startswith("PWDR"):
                     d = self.powderDict
-                elif hist.startswith("HKLF"): 
+                elif hist.startswith("HKLF"):
                     d = self.xtalDict
                 elif hist.startswith("SASD"):
                     d = self.sasdDict
                 elif hist.startswith("REFD"):
                     d = self.refdDict
                 else:
-                    return                    
+                    return
                 i = self.Histograms[hist].get('hId')
                 if i is None and not d.keys():
                     i = 0
@@ -2138,15 +2219,15 @@ class ExportBaseclass(object):
                 self.OverallParms[name] = self.G2frame.GPXtree.GetItemPyData(item)
             else:
                 item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
-                if not item2: 
+                if not item2:
                     self.OverallParms[name] = self.G2frame.GPXtree.GetItemPyData(item)
             item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
         # index powder and single crystal histograms
         for hist in self.Histograms:
             i = self.Histograms[hist]['hId']
-            if hist.startswith("PWDR"): 
+            if hist.startswith("PWDR"):
                 self.powderDict[i] = hist
-            elif hist.startswith("HKLF"): 
+            elif hist.startswith("HKLF"):
                 self.xtalDict[i] = hist
             elif hist.startswith("SASD"):
                 self.sasdDict[i] = hist
@@ -2179,14 +2260,14 @@ class ExportBaseclass(object):
         return os.path.abspath(
             os.path.splitext(self.G2frame.GSASprojectfile
                              )[0]+self.extension)
-        
+
     def askSaveFile(self):
         '''Ask the user to supply a file name
 
         :returns: a file name (str) or None if Cancel is pressed
 
         '''
-        import GSASIIctrlGUI as G2G
+        from . import GSASIIctrlGUI as G2G
         #pth = G2G.GetExportPath(self.G2frame)
         if self.G2frame.GSASprojectfile:
             defnam = os.path.splitext(
@@ -2198,14 +2279,14 @@ class ExportBaseclass(object):
 
     def askSaveDirectory(self):
         '''Ask the user to supply a directory name. Path name is used as the
-        starting point for the next export path search. 
+        starting point for the next export path search.
 
         :returns: a directory name (str) or None if Cancel is pressed
 
         TODO: Can this be replaced with G2G.askSaveDirectory?
         '''
         import wx
-        import GSASIIctrlGUI as G2G
+        from . import GSASIIctrlGUI as G2G
         pth = G2G.GetExportPath(self.G2frame)
         dlg = wx.DirDialog(
             self.G2frame, 'Input directory where file(s) will be written', pth,
@@ -2221,16 +2302,16 @@ class ExportBaseclass(object):
             dlg.Destroy()
         return filename
 
-    # Tools for file writing. 
+    # Tools for file writing.
     def OpenFile(self,fil=None,mode='w',delayOpen=False):
         '''Open the output file
 
         :param str fil: The name of the file to open. If None (default)
           the name defaults to self.dirname + self.filename.
           If an extension is supplied, it is not overridded,
-          but if not, the default extension is used. 
-        :param str mode:  The mode can 'w' to write a file, or 'a' to append to it. If 
-          the mode is 'd' (for debug), output is displayed on the console. 
+          but if not, the default extension is used.
+        :param str mode:  The mode can 'w' to write a file, or 'a' to append to it. If
+          the mode is 'd' (for debug), output is displayed on the console.
         :returns: the file object opened by the routine which is also
           saved as self.fp
         '''
@@ -2259,24 +2340,24 @@ class ExportBaseclass(object):
     def Write(self,line):
         '''write a line of output, attaching a line-end character
 
-        :param str line: the text to be written. 
+        :param str line: the text to be written.
         '''
         if self.fp is None:
             raise Exception('Attempt to Write without use of OpenFile')
         self.fp.write(line+'\n')
-        
+
     def CloseFile(self,fp=None):
         '''Close a file opened in OpenFile
 
         :param file fp: the file object to be closed. If None (default)
-          file object self.fp is closed. 
+          file object self.fp is closed.
         '''
         if self.fp is None and self.DelayOpen:
-            if GSASIIpath.GetConfigValue('debug'): 
+            if GSASIIpath.GetConfigValue('debug'):
                 print('Delayed open: close before uncreated file')
             return
         if self.fp is None:
-            if GSASIIpath.GetConfigValue('debug'): 
+            if GSASIIpath.GetConfigValue('debug'):
                 raise Exception('Attempt to CloseFile without use of OpenFile')
             else:
                 print('Attempt to CloseFile without use of OpenFile')
@@ -2286,7 +2367,7 @@ class ExportBaseclass(object):
             fp = self.fp
             self.fp = None
         if fp is not None: fp.close()
-        
+
     def SetSeqRef(self,data,hist):
         '''Set the exporter to retrieve results from a sequential refinement
         rather than the main tree
@@ -2316,7 +2397,7 @@ class ExportBaseclass(object):
 
         :param str phasenam: the name for the selected phase
         :param bool unique: when True, only directly refined parameters
-          (a in cubic, a & alpha in rhombohedral cells) are assigned 
+          (a in cubic, a & alpha in rhombohedral cells) are assigned
           positive s.u. values. Used as True for CIF generation.
         :returns: `cellList,cellSig` where each is a 7 element list corresponding
           to a, b, c, alpha, beta, gamma, volume where `cellList` has the
@@ -2328,14 +2409,14 @@ class ExportBaseclass(object):
         try:
             pfx = str(phasedict['pId'])+'::'
             A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
-            cellSig = G2stIO.getCellEsd(pfx,phasedict['General']['SGData'],A,
+            cellSig = G2lat.getCellEsd(pfx,phasedict['General']['SGData'],A,
                 self.OverallParms['Covariance'],unique=unique)  # returns 7 vals, includes sigVol
             cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
             return cellList,cellSig
         except KeyError:
             cell = phasedict['General']['Cell'][1:]
             return cell,7*[0]
-            
+
     def GetSeqCell(self,phasenam,data_name):
         """Gets the unit cell parameters and their s.u.'s for a selected phase
         and histogram in a sequential fit
@@ -2369,8 +2450,8 @@ class ExportBaseclass(object):
             'varyList': [Dlookup.get(striphist(v),v) for v in data_name['varyList']],
             'covMatrix': data_name['covMatrix']
             }
-        return list(G2lat.A2cell(A)) + [G2lat.calc_V(A)], G2stIO.getCellEsd(str(pId)+'::',SGdata,A,covData)
-                
+        return list(G2lat.A2cell(A)) + [G2lat.calc_V(A)], G2lat.getCellEsd(str(pId)+'::',SGdata,A,covData)
+
     def GetAtoms(self,phasenam):
         """Gets the atoms associated with a phase. Can be used with standard
         or macromolecular phases
@@ -2389,10 +2470,10 @@ class ExportBaseclass(object):
             U\\ :sub:`11`, U\\ :sub:`22`, U\\ :sub:`33`, U\\ :sub:`12`, U\\ :sub:`13` & U\\ :sub:`23`
             paired with their standard uncertainty (or a negative value)
         """
-        phasedict = self.Phases[phasenam] # pointer to current phase info            
+        phasedict = self.Phases[phasenam] # pointer to current phase info
         cx,ct,cs,cia = phasedict['General']['AtomPtrs']
         cfrac = cx+3
-        fpfx = str(phasedict['pId'])+'::Afrac:'        
+        fpfx = str(phasedict['pId'])+'::Afrac:'
         atomslist = []
         for i,at in enumerate(phasedict['Atoms']):
             if phasedict['General']['Type'] == 'macromolecular':

@@ -13,10 +13,11 @@ if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: Tru
 import numpy as np
 import sys
 import matplotlib as mpl
-import GSASIIpath
-import GSASIIElem as G2elem
-import GSASIIElemGUI as G2elemGUI
-import GSASIIctrlGUI as G2G
+from . import GSASIIpath
+from . import GSASIIElem as G2elem
+from . import GSASIIElemGUI as G2elemGUI
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIpwd as G2pwd
 
 try:
     wx.NewIdRef
@@ -33,7 +34,7 @@ Pwrm1 = chr(0x207b)+chr(0x0b9)
 Pwrm2 = chr(0x207b)+chr(0x0b2)
 Pwrm6 = chr(0x207b)+chr(0x2076)
 Pwrm4 = chr(0x207b)+chr(0x2074)
-Angstr = chr(0x00c5)   
+Angstr = chr(0x00c5)
 Gkmu = chr(0x3bc)
 Pwr3 = chr(0x0b3)
 Pwr4 = chr(0x2074)
@@ -44,13 +45,13 @@ Pwrm1 = chr(0x207b)+chr(0x0b9)
  wxID_RESULTS,wxID_SLIDER1, wxID_SPINBUTTON, wxID_NUMELEM, wxID_SPINTEXT5,wxID_SPINTEXT6,
 ] = [wx.NewId() for _init_ctrls in range(11)]
 
-[wxID_EXIT, wxID_DELETE, wxID_NEW, 
+[wxID_EXIT, wxID_DELETE, wxID_NEW,
 ] = [wx.NewId() for _init_coll_ABSORB_Items in range(3)]
-    
-[wxID_KALPHAAGKA, wxID_KALPHACOKA, wxID_KALPHACRKA, 
- wxID_KALPHACUKA, wxID_KALPHAFEKA, wxID_KALPHAMNKA, 
+
+[wxID_KALPHAAGKA, wxID_KALPHACOKA, wxID_KALPHACRKA,
+ wxID_KALPHACUKA, wxID_KALPHAFEKA, wxID_KALPHAMNKA,
  wxID_KALPHAMOKA, wxID_KALPHANIKA, wxID_KALPHAZNKA,
-wxID_KALPHAGAKA,wxID_KALPHAINKA, 
+wxID_KALPHAGAKA,wxID_KALPHAINKA,
 ] = [wx.NewId() for _init_coll_KALPHA_Items in range(11)]
 
 [wxID_ABSORBABOUT] = [wx.NewId() for _init_coll_ABOUT_Items in range(1)]
@@ -87,6 +88,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     Zcell = 1
     Pack = 0.50
     Radius = 0.4
+    muT = 0.0
+    muR = 0.0
     def _init_coll_ABOUT_Items(self, parent):
 
         parent.Append(wxID_ABSORBABOUT,'About')
@@ -102,37 +105,37 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         "Set of characteristic radiation from sealed tube sources"
         def OnCrkaMenu(event):
             self.SetWaveEnergy(2.28962)
-    
+
         def OnMnkaMenu(event):
             self.SetWaveEnergy(2.10174)
-    
+
         def OnFekaMenu(event):
             self.SetWaveEnergy(1.93597)
-    
+
         def OnCokaMenu(event):
             self.SetWaveEnergy(1.78896)
-    
+
         def OnNikaMenu(event):
             self.SetWaveEnergy(1.65784)
-    
+
         def OnCukaMenu(event):
             self.SetWaveEnergy(1.54052)
-    
+
         def OnZnkaMenu(event):
             self.SetWaveEnergy(1.43510)
-    
+
         def OnGakaMenu(event):
             self.SetWaveEnergy(1.34134)
-    
+
         def OnMokaMenu(event):
             self.SetWaveEnergy(0.70926)
-    
+
         def OnAgkaMenu(event):
             self.SetWaveEnergy(0.55936)
-            
+
         def OnInkaMenu(event):
             self.SetWaveEnergy(0.51357)
-    
+
         parent.Append(wxID_KALPHACRKA, 'CrKa')
         parent.Append(wxID_KALPHAMNKA, 'MnKa')
         parent.Append(wxID_KALPHAFEKA, 'FeKa')
@@ -164,7 +167,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Bind(wx.EVT_MENU, self.OnExitMenu, id=wxID_EXIT)
         self.Bind(wx.EVT_MENU, self.OnNewMenu, id=wxID_NEW)
         self.Bind(wx.EVT_MENU, self.OnDeleteMenu, id=wxID_DELETE)
-        
+
     def _init_utils(self):
         self.ABSORB = wx.Menu(title='')
 
@@ -182,11 +185,11 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
 
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, parent=parent,
-              size=wx.Size(500, 400),style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX, title='Absorb')              
+              size=wx.Size(500, 400),style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX, title='Absorb')
         self._init_utils()
         self.SetMenuBar(self.menuBar1)
         self.DrawPanel()
-        
+
     def SetSize(self):
         w,h = self.GetClientSize()
         self.panel.SetSize(wx.Size(w,h))
@@ -200,7 +203,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Results.SetEditable(False)
         mainSizer.Add(self.Results,1,wx.EXPAND)
         mainSizer.Add((10,15),0)
-        
+
         if self.Elems:
             lablSizer = wx.BoxSizer(wx.HORIZONTAL)
             lablSizer.Add((5,10),0)
@@ -218,26 +221,26 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 compSizer.Add(numElem,0)
                 numElem.Bind(wx.EVT_TEXT_ENTER, self.OnNumElem, id=wxID_NUMELEM)
             mainSizer.Add(compSizer,0)
-            mainSizer.Add((10,15),0)           
+            mainSizer.Add((10,15),0)
 
         selSizer = wx.BoxSizer(wx.HORIZONTAL)
         selSizer.Add((5,10),0)
         selSizer.Add(wx.StaticText(parent=self.panel, label='Wavelength:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
-        self.SpinText1 = wx.TextCtrl(id=wxID_SPINTEXT1, parent=self.panel, 
+        self.SpinText1 = wx.TextCtrl(id=wxID_SPINTEXT1, parent=self.panel,
             size=wx.Size(100,20), value = "%.4f" % (self.Wave),style=wx.TE_PROCESS_ENTER )
         selSizer.Add(self.SpinText1,0)
         selSizer.Add((5,10),0)
         self.SpinText1.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText1, id=wxID_SPINTEXT1)
-        
+
         selSizer.Add(wx.StaticText(parent=self.panel, label='Energy:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
-        self.SpinText2 = wx.TextCtrl(id=wxID_SPINTEXT2, parent=self.panel, 
-            size=wx.Size(100,20), value = "%.4f" % (self.Energy),style=wx.TE_PROCESS_ENTER) 
+        self.SpinText2 = wx.TextCtrl(id=wxID_SPINTEXT2, parent=self.panel,
+            size=wx.Size(100,20), value = "%.4f" % (self.Energy),style=wx.TE_PROCESS_ENTER)
         selSizer.Add(self.SpinText2,0)
         selSizer.Add((5,10),0)
         self.SpinText2.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText2, id=wxID_SPINTEXT2)
-        
+
         selSizer.Add(wx.StaticText(parent=self.panel, label='Plot scale:'),0,wx.EXPAND)
         selSizer.Add((5,10),0)
         self.choice1 = wx.ComboBox(id=wxID_CHOICE1, parent=self.panel, value='Wavelength',
@@ -247,9 +250,9 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.choice1.Bind(wx.EVT_COMBOBOX, self.OnChoice1, id=wxID_CHOICE1)
         mainSizer.Add(selSizer,0)
         mainSizer.Add((10,10),0)
-        
+
         slideSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.SpinButton = wx.SpinButton(id=wxID_SPINBUTTON, parent=self.panel, 
+        self.SpinButton = wx.SpinButton(id=wxID_SPINBUTTON, parent=self.panel,
               size=wx.Size(25,24), style=wx.SP_VERTICAL | wx.SP_ARROW_KEYS)
         slideSizer.Add(self.SpinButton)
         self.SpinButton.SetRange(-1,1)
@@ -263,30 +266,30 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.slider1.Bind(wx.EVT_SLIDER, self.OnSlider1, id=wxID_SLIDER1)
         mainSizer.Add(slideSizer,0,wx.EXPAND)
         mainSizer.Add((10,10),0)
-        
+
         cellSizer = wx.BoxSizer(wx.HORIZONTAL)
         cellSizer.Add((5,10),0)
         cellSizer.Add(wx.StaticText(parent=self.panel, label='Volume:'),0,wx.EXPAND)
         cellSizer.Add((5,10),0)
-        self.SpinText3 = wx.TextCtrl(id=wxID_SPINTEXT3, parent=self.panel, 
+        self.SpinText3 = wx.TextCtrl(id=wxID_SPINTEXT3, parent=self.panel,
               size=wx.Size(100,20), value = "%.2f" % (self.Volume),style=wx.TE_PROCESS_ENTER )
         cellSizer.Add(self.SpinText3,0)
         cellSizer.Add((5,10),0)
         self.SpinText3.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText3, id=wxID_SPINTEXT3)
-        
+
         cellSizer.Add((5,10),0)
         cellSizer.Add(wx.StaticText(parent=self.panel, label='Z(vol):'),0,wx.EXPAND)
         cellSizer.Add((5,10),0)
-        self.SpinText4 = wx.TextCtrl(id=wxID_SPINTEXT4, parent=self.panel, 
+        self.SpinText4 = wx.TextCtrl(id=wxID_SPINTEXT4, parent=self.panel,
               size=wx.Size(50,20), value = "%d" % (self.Zcell),style=wx.TE_PROCESS_ENTER )
         cellSizer.Add(self.SpinText4,0)
         cellSizer.Add((5,10),0)
         self.SpinText4.Bind(wx.EVT_TEXT_ENTER, self.OnSpinText4, id=wxID_SPINTEXT4)
-        
+
         cellSizer.Add((5,10),0)
         cellSizer.Add(wx.StaticText(parent=self.panel, label='Sample R:'),0,wx.EXPAND)
         cellSizer.Add((5,10),0)
-        self.SpinText5 = wx.TextCtrl(id=wxID_SPINTEXT5, parent=self.panel, 
+        self.SpinText5 = wx.TextCtrl(id=wxID_SPINTEXT5, parent=self.panel,
               size=wx.Size(50,20), value = "%.2f" % (self.Radius),style=wx.TE_PROCESS_ENTER )
         cellSizer.Add(self.SpinText5,0)
         cellSizer.Add((5,10),0)
@@ -295,7 +298,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         cellSizer.Add((5,10),0)
         cellSizer.Add(wx.StaticText(parent=self.panel, label='packing:'),0,wx.EXPAND)
         cellSizer.Add((5,10),0)
-        self.SpinText6 = wx.TextCtrl(id=wxID_SPINTEXT6, parent=self.panel, 
+        self.SpinText6 = wx.TextCtrl(id=wxID_SPINTEXT6, parent=self.panel,
               size=wx.Size(50,20), value = "%.2f" % (self.Pack),style=wx.TE_PROCESS_ENTER )
         cellSizer.Add(self.SpinText6,0)
         cellSizer.Add((5,10),0)
@@ -346,7 +349,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.DrawPanel()
             self.NewFPPlot = True
             self.SetWaveEnergy(self.Wave)
-            
+
     def OnDeleteMenu(self, event):
         if len(self.Elems):
             ElList = []
@@ -367,38 +370,38 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 self.ifVol = False
                 self.NewFPPlot = True
                 self.SetWaveEnergy(self.Wave)
-        
+
     def OnNumElem(self, event):
         for Elem in self.Elems:
             if event.GetEventObject().GetName() == Elem[0]:
                 Elem[2] = float(event.GetEventObject().GetValue())
                 event.GetEventObject().SetValue("%8.2f" % (Elem[2]))
                 self.ifVol = False
-            self.SetWaveEnergy(self.Wave)                
-        
+            self.SetWaveEnergy(self.Wave)
+
     def OnSpinText1(self, event):
         self.SetWaveEnergy(float(self.SpinText1.GetValue()))
-        
+
     def OnSpinText2(self, event):
         self.SetWaveEnergy(self.Kev/(float(self.SpinText2.GetValue())))
-        
+
     def OnSpinText3(self,event):
         self.Volume = max(10.,float(self.SpinText3.GetValue()))
         self.ifVol = True
         self.SetWaveEnergy(self.Wave)
-        
+
     def OnSpinText4(self,event):
         self.Zcell = max(1,float(self.SpinText4.GetValue()))
         self.SetWaveEnergy(self.Wave)
-        
+
     def OnSpinText5(self, event):
         self.Radius = max(0.01,float(self.SpinText5.GetValue()))
         self.SetWaveEnergy(self.Wave)
-       
+
     def OnSpinText6(self, event):
         self.Pack = min(1.0,max(0.01,float(self.SpinText6.GetValue())))
         self.SetWaveEnergy(self.Wave)
-       
+
     def OnSpinButton(self, event):
         move = self.SpinButton.GetValue()/10000.
         self.Wave = min(max(self.Wave+move,self.Wmin),self.Wmax)
@@ -411,7 +414,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         else:
             Wave = self.Kev/(float(self.slider1.GetValue())/1000.)
         self.SetWaveEnergy(Wave)
-        
+
     def SetWaveEnergy(self,Wave):
         self.Wave = Wave
         self.Energy = self.Kev/self.Wave
@@ -460,23 +463,28 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     'Element: '+str(Els),"N = ",Elem[2]," f'=",(r1[0]+r2[0])/2.0,
                     ' f"=',(r1[1]+r2[1])/2.0,' '+Gkmu+'=',mu,'barns')
             muT += mu
-        
+            self.muT = muT
+
         if self.Volume:
+            self.muR = self.Radius*self.Pack*muT/(10.0*self.Volume)
             Text += "%s %s%10.4g %s" % ("Total",' '+Gkmu+' =',self.Pack*muT/self.Volume,'cm'+Pwrm1+', ')
-            Text += "%s%10.4g%s" % ('Total '+Gkmu+'R =',self.Radius*self.Pack*muT/(10.0*self.Volume),', ')
+            Text += "%s%10.4g%s" % ('Total '+Gkmu+'R =',self.muR,', ')
             Text += "%s%10.4f%s\n" % ('Transmission exp(-2'+Gkmu+'R) =', \
                 100.0*math.exp(-2.*self.Radius*self.Pack*muT/(10.0*self.Volume)),'%')
             if muT > 0.:
                 pene = 10./(self.Pack*muT/self.Volume)
-                if pene > 0.01: 
+                if pene > 0.01:
                     Text += "%s %10.4g mm\n"%("1/e (~27.2%) penetration depth = ",pene)
                 else:
                     Text += "%s %10.4g %sm\n"%("1/e (~27.2%) penetration depth = ",1000.0*pene,Gkmu)
+                Tth = np.array([0.0,140.0])
+                Xabs = 1./G2pwd.Absorb('Cylinder',self.muR,Tth)
+                Text += "%s %10.4g to %10.4g\n"%("Cylinder absorption correction extremes:",Xabs[0],Xabs[1])
             self.Results.SetValue(Text)
-            den = Mass/(0.602*self.Volume)                
+            den = Mass/(0.602*self.Volume)
             if self.ifVol:
                 Text += '%s' % ('Theor. density =')
-            else:  
+            else:
                 Text += '%s' % ('Est. density =')
             Text += '%6.3f %s%.3f %s\n' % (den,'g/cm'+Pwr3+', Powder density =',self.Pack*den,'g/cm'+Pwr3)
             Text += '%s%10.2f%s\n'%('X-ray small angle scattering contrast',(28.179*Fo/self.Volume)**2,'*10'+Pwr20+'/cm'+Pwr4)
@@ -566,7 +574,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         if len(self.Elems):
             self.CalcFPPS()
             self.UpDateAbsPlot(self.Wave,rePlot=False)
-        
+
     def OnKeyPress(self,event):
         if event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
@@ -587,23 +595,30 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
             self.Page.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             newPlot = True
-            self.ax = self.Page.figure.add_subplot(111,label='absorb')
+            GS_kw = {'width_ratios':[1,1],}
+            self.ax,self.bx = self.Page.figure.subplots(1,2,gridspec_kw=GS_kw)
         self.fplot.set_visible(False)
         self.Page.Choice = (' key press','g: toggle grid',)
-        self.Page.keyPress = self.OnKeyPress    
+        self.Page.keyPress = self.OnKeyPress
         self.ax.clear()
+        self.bx.clear()
         self.ax.set_title('X-Ray Absorption',x=0,ha='left')
         self.ax.set_ylabel(r"$\mu R$",fontsize=14)
+        self.bx.set_title(r"Cylinder abs. corr. for $\lambda= %.4f\AA$"%self.Wave,x=0,ha='left')
+        self.bx.set_xlabel(r"$2\theta$",fontsize=14)
+        Tth = np.arange(0.,140.0,0.1)
+        Xabs = 1./G2pwd.Absorb('Cylinder',self.muR,Tth)
+        self.bx.plot(Tth,Xabs)
         Ymin = 0.0
         Ymax = 0.0
-        if self.FPPS: 
+        if self.FPPS:
             for Fpps in self.FPPS:
                 Ymin = min(Ymin,min(Fpps[2]))
                 Ymax = max(Ymax,max(Fpps[2]))
                 fppsP1 = np.array(Fpps[1])
                 fppsP2 = np.array(Fpps[2])
                 self.ax.plot(fppsP1,fppsP2,label=r'$\mu R$ '+Fpps[0])
-        if self.ifWave: 
+        if self.ifWave:
             self.ax.set_xlabel(r'$\mathsf{\lambda, \AA}$',fontsize=14)
             self.ax.axvline(x=Wave,picker=3,color='black')
         else:
@@ -627,10 +642,10 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 xylim = []
                 tb.push_current()
             self.Page.canvas.draw()
-        
+
     def OnPick(self, event):
         self.linePicked = event.artist
-        
+
     def OnMotion(self,event):
         xpos = event.xdata
         if xpos and xpos>0.1:
@@ -643,7 +658,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.parent.G2plotNB.status.SetStatusText('Wavelength: %.4f, Energy: %.3f, %sR: %.3f'%(Wave,self.Kev/Wave,Gkmu,ypos),1)
         if self.linePicked:
             self.SetWaveEnergy(Wave)
-                
+
     def OnRelease(self, event):
         if self.linePicked is None: return
         self.linePicked = None
@@ -652,9 +667,9 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             if self.ifWave:
                 Wave = xpos
             else:
-                Wave = self.Kev/xpos               
+                Wave = self.Kev/xpos
             self.SetWaveEnergy(Wave)
-            
+
     def OnABOUTItems0Menu(self, event):
         '''Displays the About window
         '''
@@ -667,19 +682,19 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         info.Copyright = '''
 Robert B. Von Dreele, 2009(C)
 Argonne National Laboratory
-This product includes software developed 
-by the UChicago Argonne, LLC, as 
+This product includes software developed
+by the UChicago Argonne, LLC, as
 Operator of Argonne National Laboratory.        '''
         info.Description = '''
-For calculating X-ray absorption factors to 250keV for cylindrical      
-powder samples; based on Fortran program Fprime of Cromer & Liberman 
+For calculating X-ray absorption factors to 250keV for cylindrical
+powder samples; based on Fortran program Fprime of Cromer & Liberman
 (D. T. Cromer and D. A. Liberman, Acta Cryst. (1981). A37, 267-268.)
 corrected for Kissel & Pratt energy term; Jensen term not included
         '''
         wxadv.AboutBox(info)
 
 if __name__ == "__main__":
-    import GSASIIplot as G2plt
+    from . import GSASIIplot as G2plt
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame

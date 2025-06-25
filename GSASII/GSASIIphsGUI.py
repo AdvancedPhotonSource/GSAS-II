@@ -6031,7 +6031,7 @@ program; Please cite:
         global runFile
         def OnRMCselect(event):
             G2frame.RMCchoice = RMCsel.GetStringSelection()
-            wx.CallLater(100,UpdateRMC)
+            wx.CallLater(200,UpdateRMC)
 
         def GetAtmChoice(pnl,RMCPdict):
 
@@ -10388,40 +10388,42 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
             elif r < 0:                          #dclick on col label
                 sel = -1
                 if drawAtoms.GetColLabelValue(c) == 'Style':
-                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom drawing style',styleChoice)
-                    if dlg.ShowModal() == wx.ID_OK:
-                        sel = dlg.GetSelection()
-                        parms = styleChoice[sel]
-                        for r in range(len(atomData)):
-                            atomData[r][c] = parms
-                            drawAtoms.SetCellValue(r,c,parms)
-                        FindBondsDraw(data)
-#                        G2plt.PlotStructure(G2frame,data)
-                    dlg.Destroy()
+                    DrawAtomStyle(event)
+#                     dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom drawing style',styleChoice)
+#                     if dlg.ShowModal() == wx.ID_OK:
+#                         sel = dlg.GetSelection()
+#                         parms = styleChoice[sel]
+#                         for r in range(len(atomData)):
+#                             atomData[r][c] = parms
+#                             drawAtoms.SetCellValue(r,c,parms)
+#                         FindBondsDraw(data)
+# #                        G2plt.PlotStructure(G2frame,data)
+#                     dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Label':
-                    dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom labelling style',labelChoice)
-                    if dlg.ShowModal() == wx.ID_OK:
-                        sel = dlg.GetSelection()
-                        parms = labelChoice[sel]
-                        for r in range(len(atomData)):
-                            atomData[r][c] = parms
-                            drawAtoms.SetCellValue(r,c,parms)
-                    dlg.Destroy()
+                    DrawAtomLabel(event)
+                    # dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom labelling style',labelChoice)
+                    # if dlg.ShowModal() == wx.ID_OK:
+                    #     sel = dlg.GetSelection()
+                    #     parms = labelChoice[sel]
+                    #     for r in range(len(atomData)):
+                    #         atomData[r][c] = parms
+                    #         drawAtoms.SetCellValue(r,c,parms)
+                    # dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Color':
-                    colors = wx.ColourData()
-                    colors.SetChooseFull(True)
-                    dlg = wx.ColourDialog(G2frame.GetParent(),colors)
-                    if dlg.ShowModal() == wx.ID_OK:
-                        color = dlg.GetColourData().GetColour()[:3]
-                        attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
-                        attr.SetReadOnly(True)
-                        attr.SetBackgroundColour(color)
-                        for r in range(len(atomData)):
-                            atomData[r][c] = color
-                            drawingData['Atoms'][r][c] = color
-                            drawAtoms.SetAttr(r,c,attr)
-                        UpdateDrawAtoms()
-                    dlg.Destroy()
+                    DrawAtomColor(event)
+                    # colors = wx.ColourData()
+                    # colors.SetChooseFull(True)
+                    # dlg = wx.ColourDialog(G2frame.GetParent(),colors)
+                    # if dlg.ShowModal() == wx.ID_OK:
+                    #     color = dlg.GetColourData().GetColour()[:3]
+                    # dlg.Destroy()
+                    # attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
+                    # attr.SetReadOnly(True)
+                    # attr.SetBackgroundColour(color)
+                    # for r in range(len(atomData)):
+                    #     atomData[r][c] = color
+                    #     drawingData['Atoms'][r][c] = color
+                    #     drawAtoms.SetAttr(r,c,attr)
                 elif drawAtoms.GetColLabelValue(c) == 'Residue':
                     SetChoice('Residue',c,3)
                 elif drawAtoms.GetColLabelValue(c) == '1-letter':
@@ -10453,7 +10455,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         drawingData['Atoms'][r][c] = color
                         drawAtoms.SetAttr(i,cs+2,attr)
                     dlg.Destroy()
-                    UpdateDrawAtoms()
+#                    UpdateDrawAtoms()
+            wx.CallLater(100,UpdateDrawAtoms)
             G2plt.PlotStructure(G2frame,data)
 
         def NextAtom(event):
@@ -10673,8 +10676,9 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         colors.SetChooseFull(True)
         dlg = wx.ColourDialog(None,colors)
         if dlg.ShowModal() == wx.ID_OK:
+            color = dlg.GetColourData().GetColour()[:3]
             for i in range(len(atmColors)):
-                atmColors[i] = dlg.GetColourData().GetColour()[:3]
+                atmColors[i] = color
             colorDict = dict(zip(atmTypes,atmColors))
             for r in indx:
                 color = colorDict[atomData[r][ct]]
@@ -10684,6 +10688,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 drawAtoms.SetAttr(r,cs+2,attr)
                 data['Drawing']['Atoms'][r][cs+2] = color
         dlg.Destroy()
+        UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 

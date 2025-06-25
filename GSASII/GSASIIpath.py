@@ -2031,10 +2031,11 @@ end tell
 
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a
-    separate process.
+    separate process. This is also called for background tasks such as 
+    performing a "git fetch" task or getting current tag information from
+    github.
     '''
     # check what type of update is being called for
-    import git
     gitUpdate = False
     preupdateType = None
     updateType = None
@@ -2096,6 +2097,11 @@ if __name__ == '__main__':
                 print('invalid form for --git-regress')
                 help = True
                 break
+            try:
+                import git
+            except:
+                print('Import of git failed for --git-regress')
+                sys.exit()
             gitversion = argsplit[1]
             # make sure the version or tag supplied is valid and convert to
             # a full sha hash
@@ -2242,23 +2248,23 @@ to update/regress repository from git repository:
         fp.close()
         sys.exit()
 
+    try:
+        import git
+    except:
+        print(f'Import of git failed. {updateType} update mode {preupdateType}')
+        sys.exit()
+        
     if gitUpdate:
         import time
         time.sleep(1) # delay to give the main process a chance to exit
                       # so we don't change code for a running process
                       # windows does not like that
-        try:
-            import git
-        except:
-            print('git import failed')
-            sys.exit()
-        try:
-            g2repo = openGitRepo(path2GSAS2)
-        except Exception as msg:
-            print(f'Update failed with message {msg}\n')
-            sys.exit()
-        print('git repo opened')
-
+    try:
+        g2repo = openGitRepo(path2GSAS2)
+    except Exception as msg:
+        print(f'Update failed with message {msg}\n')
+        sys.exit()
+    print('git repo opened')
     if preupdateType == 'reset':
         # --git-reset   (preupdateType = 'reset')
         print('Restoring locally-updated GSAS-II files to original status')

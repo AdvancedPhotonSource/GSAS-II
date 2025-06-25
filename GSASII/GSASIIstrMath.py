@@ -3884,7 +3884,6 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
         Dij = GetDij(phfx,SGData,parmDict)
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do something if Dij << 0.
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
-        print(f"phase: {Phase['General']['Name']} G is : {G}")
         if np.any(np.diag(G)<0.):
             msg = 'Invalid metric tensor for phase #{}\n   ({})'.format(
                 pId,Phase['General']['Name'])

@@ -10455,8 +10455,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                         drawingData['Atoms'][r][c] = color
                         drawAtoms.SetAttr(i,cs+2,attr)
                     dlg.Destroy()
-#                    UpdateDrawAtoms()
-            wx.CallLater(100,UpdateDrawAtoms)
+                    UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
 
         def NextAtom(event):
@@ -10676,9 +10675,8 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         colors.SetChooseFull(True)
         dlg = wx.ColourDialog(None,colors)
         if dlg.ShowModal() == wx.ID_OK:
-            color = dlg.GetColourData().GetColour()[:3]
             for i in range(len(atmColors)):
-                atmColors[i] = color
+                atmColors[i] = dlg.GetColourData().GetColour()[:3]
             colorDict = dict(zip(atmTypes,atmColors))
             for r in indx:
                 color = colorDict[atomData[r][ct]]
@@ -10688,7 +10686,6 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                 drawAtoms.SetAttr(r,cs+2,attr)
                 data['Drawing']['Atoms'][r][cs+2] = color
         dlg.Destroy()
-        UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 

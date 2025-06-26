@@ -7297,7 +7297,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 'wxID_DRAWVIEWPOINT', 'wxID_DRAWTRANSFORM', 'wxID_DRAWDELETE', 'wxID_DRAWFILLCELL',
                 'wxID_DRAWADDEQUIV', 'wxID_DRAWFILLCOORD', 'wxID_DRAWDISAGLTOR', 'wxID_DRAWPLANE',
                 'wxID_DRAWDISTVP', 'wxID_DRAWADDSPHERE', 'wxID_DRWAEDITRADII',
-                'wxID_DRAWSETSEL', 'wxID_DRAWLOADSEL',
+                'wxID_DRAWSETSEL', 'wxID_DRAWLOADSEL', 'wxID_DRAWADDBOX'
                 )
             G2G.Define_wxId('wxID_DRAWRESTRBOND', 'wxID_DRAWRESTRANGLE', 'wxID_DRAWRESTRPLANE', 'wxID_DRAWRESTRCHIRAL',)
             self.DrawAtomsMenu = wx.MenuBar()
@@ -7320,6 +7320,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.DrawAtomEdit.Append(G2G.wxID_DRAWSETSEL,'Select from list','Select atoms from a filtered listbox')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWADDEQUIV,'Add atoms','Add symmetry & cell equivalents to drawing set from selected atoms')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWADDSPHERE,'Add sphere of atoms','Add atoms within sphere of enclosure')
+            self.DrawAtomEdit.Append(G2G.wxID_DRAWADDBOX,'Add box of atoms','Add atoms within box of enclosure')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWTRANSFORM,'Transform draw atoms','Transform selected atoms by symmetry & cell translations')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCOORD,'Fill CN-sphere','Fill coordination sphere for selected atoms')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCELL,'Fill unit cell','Fill unit cell with selected atoms')

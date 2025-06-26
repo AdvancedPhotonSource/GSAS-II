@@ -10574,7 +10574,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                            'Generate bonded','Select from list')
         callList = (DrawAtomsDelete,DrawAtomStyle, DrawAtomLabel,
                             DrawAtomColor,SetViewPoint,AddSymEquiv,
-                            AddSphere,TransformSymEquiv,
+                            AddSphere,AddBox,TransformSymEquiv,
                             FillCoordSphere,SelDrawList)
         onRightClick = drawAtoms.setupPopup(lblList,callList)
         drawAtoms.Bind(wg.EVT_GRID_CELL_RIGHT_CLICK, onRightClick)
@@ -10785,6 +10785,10 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
+        
+    def AddBox(event):
+        print('Box of enclosure, TBD')
+        
 
     def AddSphere(event=None,selection=None,radius=None,targets=None):
         cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)
@@ -16945,6 +16949,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, SetViewPoint, id=G2G.wxID_DRAWVIEWPOINT)
         G2frame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2G.wxID_DRAWADDEQUIV)
         G2frame.Bind(wx.EVT_MENU, AddSphere, id=G2G.wxID_DRAWADDSPHERE)
+        G2frame.Bind(wx.EVT_MENU, AddBox, id=G2G.wxID_DRAWADDBOX)
         G2frame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2G.wxID_DRAWTRANSFORM)
         G2frame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2G.wxID_DRAWFILLCOORD)
         G2frame.Bind(wx.EVT_MENU, FillUnitCell, id=G2G.wxID_DRAWFILLCELL)

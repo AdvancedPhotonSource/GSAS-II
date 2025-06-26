@@ -313,6 +313,7 @@ def getG2VersionInfo():
         delta = now - commit.committed_datetime
         age = delta.total_seconds()/(60*60*24.)
         msg = ''
+        rc = None
         if g2repo.head.is_detached:
             msg = ("\n" +
             "**** You have reverted to a past version of GSAS-II. Please \n"
@@ -322,10 +323,10 @@ def getG2VersionInfo():
         else:
             msg = ''
             rc,lc,_ = gitCheckForUpdates(False,g2repo)
-            if rc is None:
-                msg += f"\n\tNo history found. On development branch? ({g2repo.active_branch})"
-            elif str(g2repo.active_branch) != 'main':
-                msg += f'\n\tUsing development branch: {g2repo.active_branch}'
+            if str(g2repo.active_branch) != 'main':
+                msg += f'\n\tUsing development branch: "{g2repo.active_branch}"'
+            elif rc is None:
+                msg += f"\n\tNo history found. On a development branch? ({g2repo.active_branch})"
             elif age > 60 and len(rc) > 0:
                 msg += f"\n\t**** This version is really old ({age:.1f} days). Please update.\n\t**** At least {len(rc)} updates have been posted ****"
             elif (age > 5 and len(rc) > 0) or len(rc) > 5:
@@ -334,7 +335,9 @@ def getG2VersionInfo():
 #                msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
         # could consider getting version & tag from gv if not None (see below)
         gversion = f"{GetVersionNumber()}/{GetVersionTag()}"
-        if len(rc) > 0:
+        if rc is None:
+            return f"  GSAS-II:    {gversion} posted {ctim} (updates unknown) [{commit.hexsha[:8]}]{msg}"
+        elif len(rc) > 0:
             return f"  GSAS-II:    {gversion} posted {ctim} (\u2265{len(rc)} new updates) [{commit.hexsha[:8]}]{msg}"
         else:
             return f"  GSAS-II:    {gversion} posted {ctim} (no new updates) [{commit.hexsha[:8]}]{msg}"

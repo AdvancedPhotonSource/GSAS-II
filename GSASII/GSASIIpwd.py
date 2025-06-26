@@ -1743,7 +1743,9 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
             except KeyError:        #no more peaks to process
                 return yb+yc
     else:
-        Pdabc = parmDict['pdabc']
+        Pdabc = []
+        if 'pdabc' in parmDict: 
+            Pdabc = parmDict['pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
@@ -1755,24 +1757,24 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 alpName = 'alp'+str(iPeak)
                 if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
+                elif len(Pdabc):
+                    alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
                 else:
-                    if len(Pdabc):
-                        alp = np.interp(dsp,Pdabc[0],Pdabc[1])
-                    else:
-                        alp = G2mth.getTOFalpha(parmDict,dsp)
+                    alp = G2mth.getTOFalpha(parmDict,dsp)
                 alp = max(0.1,alp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
+                elif len(Pdabc):
+                    bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
                 else:
-                    if len(Pdabc):
-                        bet = np.interp(dsp,Pdabc[0],Pdabc[2])
-                    else:
-                        bet = G2mth.getTOFbeta(parmDict,dsp)
+                    bet = G2mth.getTOFbeta(parmDict,dsp)
                 bet = max(0.0001,bet)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
+                elif len(Pdabc):
+                    sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
                 else:
                     sig = G2mth.getTOFsig(parmDict,dsp)
                 gamName = 'gam'+str(iPeak)
@@ -2035,7 +2037,9 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 break
 
     else:
-        Pdabc = parmDict['pdabc']
+        Pdabc = []
+        if 'pdabc' in parmDict: 
+            Pdabc = parmDict['pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
@@ -2047,26 +2051,27 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 alpName = 'alp'+str(iPeak)
                 if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
+                elif len(Pdabc):
+                    alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
+                    dada0 = 0
                 else:
-                    if len(Pdabc):
-                        alp = np.interp(dsp,Pdabc[0],Pdabc[1])
-                        dada0 = 0
-                    else:
-                        alp = G2mth.getTOFalpha(parmDict,dsp)
-                        dada0 = G2mth.getTOFalphaDeriv(dsp)
+                    alp = G2mth.getTOFalpha(parmDict,dsp)
+                    dada0 = G2mth.getTOFalphaDeriv(dsp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
+                elif len(Pdabc):
+                    bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
+                    dbdb0 = dbdb1 = dbdb2 = 0
                 else:
-                    if len(Pdabc):
-                        bet = np.interp(dsp,Pdabc[0],Pdabc[2])
-                        dbdb0 = dbdb1 = dbdb2 = 0
-                    else:
-                        bet = G2mth.getTOFbeta(parmDict,dsp)
-                        dbdb0,dbdb1,dbdb2 = G2mth.getTOFbetaDeriv(dsp)
+                    bet = G2mth.getTOFbeta(parmDict,dsp)
+                    dbdb0,dbdb1,dbdb2 = G2mth.getTOFbetaDeriv(dsp)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
+                    dsds0 = dsds1 = dsds2 = dsds3 = 0
+                elif len(Pdabc):
+                    sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
                     dsds0 = dsds1 = dsds2 = dsds3 = 0
                 else:
                     sig = G2mth.getTOFsig(parmDict,dsp)

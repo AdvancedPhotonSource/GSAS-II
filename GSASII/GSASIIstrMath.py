@@ -3761,14 +3761,14 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
             Histogram['Residuals']['hId'] = Histograms[histogram]['hId']
     if GSASIIpath.GetConfigValue('Show_timing',False):
         print ('GetFobsSq t=',time.time()-starttime)
-
-def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup,histogram=None):
+                
+def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls,pawleyLookup,histogram=None):
     'Computes the powder pattern for a histogram based on contributions from all used phases'
     if GSASIIpath.GetConfigValue('Show_timing',False): starttime = time.time()
 
     def GetReflSigGamCW(refl,im,wave,G,GB,phfx,calcControls,parmDict):
         U = parmDict[hfx+'U']
-        V = parmDict[hfx+'V']
+        V = parmDict[hfx+'V'] 
         W = parmDict[hfx+'W']
         X = parmDict[hfx+'X']
         Y = parmDict[hfx+'Y']
@@ -3780,14 +3780,26 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         gam = X/cosd(refl[5+im]/2.0)+Y*tanPos+Sgam+Z     #save peak gamma
         gam = max(0.001,gam)
         return sig,gam
+                
+    def GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict,histDict1,hfx):
 
-    def GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict):
+        #histDict1 holds pdabc entry keyed to hfx. if histDict is empty do nothing
+
         sig = parmDict[hfx+'sig-0']+parmDict[hfx+'sig-1']*refl[4+im]**2+   \
             parmDict[hfx+'sig-2']*refl[4+im]**4+parmDict[hfx+'sig-q']*refl[4+im]
         gam = parmDict[hfx+'X']*refl[4+im]+parmDict[hfx+'Y']*refl[4+im]**2+parmDict[hfx+'Z']
         Ssig,Sgam = GetSampleSigGam(refl,im,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         sig += Ssig
         gam += Sgam
+
+        if histDict1:
+            pdabc = histDict1[hfx+'pdabc']
+            refl[4+im] #d-spacing
+            sigTable = np.interp(refl[4+im],pdabc["d"],pdabc["sig"])
+            
+            #print(f"{refl[4+im]:.4f} sig: {sig:.6f} sigTable {sigTable:.6f} total: {sig+sigTable}")
+            sig += sigTable
+
         return sig,gam
 
     def GetReflSigGamED(refl,im,G,GB,phfx,calcControls,parmDict):
@@ -3869,7 +3881,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             SSGData = Phase['General']['SSGData']
             im = 1  #offset in SS reflection list
         Dij = GetDij(phfx,SGData,parmDict)
-        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do something if Dij << 0.
+        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do something if Dij << 0. (BHT: why? Might want to ensure shifts keep A positive definite)
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         if np.any(np.diag(G)<0.):
             msg = 'Invalid metric tensor for phase #{}\n   ({})'.format(
@@ -4034,7 +4046,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)         #corrected reflection position - #TODO - what about tabluated offset?
                 Lorenz = sind(abs(parmDict[hfx+'2-theta'])/2)*refl[4+im]**4                                                #TOF Lorentz correction
                 refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
-                refl[6+im:8+im] = GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
+                refl[6+im:8+im] = GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict,histDict1,hfx)    #peak sig & gam
                 refl[12+im:14+im] = GetReflAlpBet(refl,im,hfx,parmDict)             #TODO - skip if alp, bet tabulated?
                 refl[11+im],refl[15+im],refl[16+im],refl[17+im] = GetIntensityCorr(refl,im,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 refl[11+im] *= Vst*Lorenz
@@ -4621,7 +4633,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     return dMdvh,depDerivDict,wdf
 
 
-def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+def dervRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawleyLookup,dlg):
     '''Loop over histograms and compute derivatives of the fitting
     model (M) with respect to all parameters.  Results are returned in
     a Jacobian matrix (aka design matrix) of dimensions (n by m) where
@@ -4678,7 +4690,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 
     return dMdV
 
-def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
+def HessRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawleyLookup,dlg):
     '''Loop over histograms and compute derivatives of the fitting
     model (M) with respect to all parameters.  For each histogram, the
     Jacobian matrix, dMdv, with dimensions (n by m) where n is the
@@ -4804,13 +4816,15 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
         Hess += np.inner(dpdv*pWt,dpdv)
     return Vec,Hess
 
-def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg=None):
+def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawleyLookup,dlg=None):
     '''Computes the point-by-point discrepancies between every data point in every histogram
     and the observed value. Used in the Jacobian, Hessian & numeric least-squares to compute function
 
     :returns: an np array of differences between observed and computed diffraction values.
     '''
     Values2Dict(parmDict, varylist, values)
+
+
     if len(varylist):   #skip if no variables; e.g. in a zero cycle LeBail refinement
         G2mv.Dict2Map(parmDict)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
@@ -4828,10 +4842,12 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         print('Storing intensity by phase in',phasePartials)
         phPartialFP = open(phasePartials,'wb')  # create/clear partials file
         phPartialFP.close()
+
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
+
             Histogram = Histograms[histogram]
-            hId = Histogram['hId']
+            hId = Histogram['hId'] 
             if hasattr(dlg,'SetHistogram'): dlg.SetHistogram(hId,histogram)
             hfx = ':%d:'%(hId)
             wtFactor = calcControls[hfx+'wtFactor']
@@ -4842,7 +4858,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             yd *= 0.0
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
-            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
+            yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,histDict1,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup,histogram)
             yc[xB:xF] += yb[xB:xF]
             if not np.any(y):                   #fill dummy data

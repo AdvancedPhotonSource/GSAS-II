@@ -3797,7 +3797,7 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
             refl[4+im] #d-spacing
             sigTable = np.interp(refl[4+im],pdabc["d"],pdabc["sig"])
             
-            print(f"{refl[4+im]:.4f} sig: {sig:.6f} sigTable {sigTable:.6f} total: {sig+sigTable}")
+            #print(f"{refl[4+im]:.4f} sig: {sig:.6f} sigTable {sigTable:.6f} total: {sig+sigTable}")
             sig += sigTable
 
         return sig,gam
@@ -3839,7 +3839,6 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
     phasePartials = calcControls.get('PhasePartials',None)
     Nphase = len(Histogram['Reflection Lists'])     #partials made ony if Nphase > 1
     histType = calcControls[hfx+'histType']
-    print(f"about to calculate histogram {histType}")
     if phasePartials:
 
         phPartialFP = open(phasePartials,'ab')  # create histogram header
@@ -3882,7 +3881,7 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
             SSGData = Phase['General']['SSGData']
             im = 1  #offset in SS reflection list
         Dij = GetDij(phfx,SGData,parmDict)
-        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do something if Dij << 0.
+        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]  #TODO: need to do something if Dij << 0. (BHT: why? Might want to ensure shifts keep A positive definite)
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         if np.any(np.diag(G)<0.):
             msg = 'Invalid metric tensor for phase #{}\n   ({})'.format(

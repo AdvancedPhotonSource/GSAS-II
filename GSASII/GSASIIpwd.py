@@ -2514,27 +2514,38 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         return dataType,instDict,insVary
 
     def GetPkInstParms(parmDict,Inst,varyList):
+        '''This is where the default values for sigma & gamma
+        are set for peaks in single-peak fits when peakInstPrmMode is True
+        and the values are not being fit. This seems also to be done in 
+        GetPeaksParms (TODO: this routine is not needed?)
+        '''
         for name in Inst:
             Inst[name][1] = parmDict[name]
+        Pdabc = []
+        if 'pdabc' in parmDict: 
+            Pdabc = parmDict['pdabc']
         iPeak = 0
         while True:
             try:
                 sigName = 'sig'+str(iPeak)
                 pos = parmDict['pos'+str(iPeak)]
+                if 'T' in Inst['Type'][0]:
+                    dsp = G2lat.Pos2dsp(Inst,pos)
                 if sigName not in varyList and peakInstPrmMode:
-                    if 'T' in Inst['Type'][0]:
-                        dsp = G2lat.Pos2dsp(Inst,pos)
+                    if 'T' in Inst['Type'][0] and len(Pdabc):
+                        parmDict[sigName] = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
+                    elif 'T' in Inst['Type'][0]:
                         parmDict[sigName] = G2mth.getTOFsig(parmDict,dsp)
-                    if 'E' in Inst['Type'][0]:
+                    elif 'E' in Inst['Type'][0]:
                         parmDict[sigName] = G2mth.getEDsig(parmDict,pos)
                     else:
                         parmDict[sigName] = G2mth.getCWsig(parmDict,pos)
                 gamName = 'gam'+str(iPeak)
                 if gamName not in varyList and peakInstPrmMode:
                     if 'T' in Inst['Type'][0]:
-                        dsp = G2lat.Pos2dsp(Inst,pos)
+                        # N.B. Gamma is not in the lookup table
                         parmDict[gamName] = G2mth.getTOFgamma(parmDict,dsp)
-                    if 'E' in Inst['Type'][0]:
+                    elif 'E' in Inst['Type'][0]:
                         parmDict[gamName] = G2mth.getEDgam(parmDict,pos)
                     else:
                         parmDict[gamName] = G2mth.getCWgam(parmDict,pos)
@@ -2586,7 +2597,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
 
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
         '''Put values into the Peaks list from the refinement results from inside
-        the parmDict array
+        the parmDict array. 
+        This is done prior for sigma & gamma in GetPkInstParms
         '''
         names,_,_ = getHeaderInfo(Inst['Type'][0])
         off = 0
@@ -2598,6 +2610,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             for i,peak in enumerate(Peaks):
                 if type(peak) is dict: continue
                 parmDict['ttheta'+str(i)] = peak[-1]
+        Pdabc = []
+        if 'pdabc' in parmDict: 
+            Pdabc = parmDict['pdabc']
         for i,peak in enumerate(Peaks):
             if type(peak) is dict:
                 continue
@@ -2616,17 +2631,23 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 parName = names[j]+str(i)
                 if peak[2*j+off + 1] or not peakInstPrmMode: continue
                 if 'alp' in parName:
-                    if 'T' in Inst['Type'][0]:
+                    if 'T' in Inst['Type'][0] and len(Pdabc):
+                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
+                    elif 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFalpha(parmDict,dsp)
                     else: #'B'
                         peak[2*j+off] = G2mth.getPinkAlpha(parmDict,pos)
                 elif 'bet' in parName:
-                    if 'T' in Inst['Type'][0]:
+                    if 'T' in Inst['Type'][0] and len(Pdabc):
+                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
+                    elif 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFbeta(parmDict,dsp)
                     else:   #'B'
                         peak[2*j+off] = G2mth.getPinkBeta(parmDict,pos)
                 elif 'sig' in parName:
-                    if 'T' in Inst['Type'][0]:
+                    if 'T' in Inst['Type'][0] and len(Pdabc):
+                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
+                    elif 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFsig(parmDict,dsp)
                     elif 'E' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getEDsig(parmDict,pos)
@@ -2634,6 +2655,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                         peak[2*j+off] = G2mth.getCWsig(parmDict,pos)
                 elif 'gam' in parName:
                     if 'T' in Inst['Type'][0]:
+                        # N.B. Gamma is not in the pdabc lookup table
                         peak[2*j+off] = G2mth.getTOFgamma(parmDict,dsp)
                     elif 'E' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getEDgam(parmDict,pos)
@@ -2814,7 +2836,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     sigDict = dict(zip(varyList,sig))
     GetBackgroundParms(parmDict,Background)
     if bakVary: BackgroundPrint(Background,sigDict)
-    GetPkInstParms(parmDict,Inst,varyList)
+    GetPkInstParms(parmDict,Inst,varyList) # sets sigma & gamma when computed
     if insVary: InstPrint(Inst,sigDict)
     GetPeaksParms(Inst,parmDict,Peaks,varyList)
     binsperFWHM = []

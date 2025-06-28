@@ -8174,6 +8174,7 @@ program; Please cite:
             with open(script_file, 'w') as f:
                 f.write("#!/bin/bash\n")
                 f.write(f'cd "{os.getcwd()}"\n')
+                f.write(f'export PATH="{os.path.dirname(rmcfile)}":$PATH\n')
                 f.write(f'"{rmcfile}" "{pName}"\n')
             os.system("chmod +x runrmc.sh")
             ascript_file = os.path.join(os.getcwd(), "runrmc.script")

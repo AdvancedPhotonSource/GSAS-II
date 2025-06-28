@@ -1391,7 +1391,7 @@ class G2Project(G2ObjectWrapper):
 
         # process constraints, currently generated only from ISODISTORT CIFs
         if phasereader.Constraints:
-            Constraints = self.data['Constraints']
+            Constraints = self.data['Constraints']['data']
             for i in phasereader.Constraints:
                 if isinstance(i, dict):
                     if '_Explain' not in Constraints:

@@ -3430,6 +3430,51 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
 #     dspaces = [0.5/np.sqrt(G2lat.calc_rDsq2(H,G)) for H in np.eye(3)]
 #     return min(dspaces)
 
+def findrmcprofile():
+    '''Find where RMCProfile is installed. Tries the following:
+
+         1. Returns the Config var `rmcprofile_exec`, if defined. This 
+            is the executable to run.
+         2. The path is checked for a RMCprofile image. Also checked are
+            the location where the GSAS-II Python files are found, 
+            the location where GSAS-II binaries are found, the current 
+            working directory and the location where the Python 
+            interpreter is found. On MacOS the commonly-used install 
+            locations of /Applications/RMCProfile.app/Contents/MacOS/exe/
+            and ~/Applications/RMCProfile.app/Contents/MacOS/exe/
+            are also checked. 
+
+    :returns: the full path to a python executable that is assumed to
+      have fullrmc installed or None, if it was not found.
+    '''
+    rmcprofile_exe = GSASIIpath.GetConfigValue('rmcprofile_exec')
+    if rmcprofile_exe is not None:
+        if is_exe(rmcprofile_exe):
+            return rmcprofile_exe
+        else:
+            print(f'Config var rmcprofile_exec defined as {rmcprofile_exe!r} but file not found or not exe.')
+    pathlist = os.environ["PATH"].split(os.pathsep)
+    for p in (GSASIIpath.path2GSAS2,GSASIIpath.binaryPath,os.getcwd(),
+                  os.path.split(sys.executable)[0]):
+        if p not in pathlist: pathlist.append(p)
+    if sys.platform == "win32":
+        lookfor = "rmcprofile.exe"
+    elif sys.platform == "darwin":
+        lookfor = "rmcprofile"
+        pathlist.insert(0,"/Applications/RMCProfile.app/Contents/MacOS/exe")
+        pathlist.insert(0,os.path.expanduser("~/Applications/RMCProfile.app/Contents/MacOS/exe"))
+    else:
+        lookfor = "rmcprofile"
+    for p in pathlist:
+        if not os.path.exists(p): continue
+        rmcprofile_exe = os.path.abspath(os.path.join(p,lookfor))
+        if is_exe(rmcprofile_exe):
+            if GSASIIpath.GetConfigValue('debug'):
+                print(f'rmcprofile found as {rmcprofile_exe!r}')
+            return rmcprofile_exe
+    if GSASIIpath.GetConfigValue('debug'):
+        print(f'rmcprofile not found. Path searched: {pathlist}')
+
 def findfullrmc():
     '''Find where fullrmc is installed. Tries the following:
 

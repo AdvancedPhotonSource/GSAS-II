@@ -5740,7 +5740,7 @@ program; Please cite:
         Constraints = G2frame.GPXtree.GetItemPyData(consId)
         # TODO: would be cleaner to just delete constraints w/phase data['pId']
         Constraints['Phase'] = []
-        del data['magPhases']
+        if 'magPhases' in data: del data['magPhases']
         data['MCSA'] = {'Models':
             [{'Type': 'MD', 'Coef': [1.0, False, [0.8, 1.2]], 'axis': [0, 0, 1]}],
             'Results': [], 'AtInfo': {}}
@@ -7716,11 +7716,13 @@ program; Please cite:
                 RMCmisc['RMCnote'].SetLabel('Note that fullrmc is not installed or was not located')
 
     def OnSetupRMC(event):
+        written = lambda fil: print(f' {fil} written')
         generalData = data['General']
         if not G2frame.GSASprojectfile:     #force a project save
             G2frame.OnFileSaveas(event)
         dName = G2frame.LastGPXdir
         os.chdir(dName)
+        print(f'Writing input files in directory {dName!r}')
         if G2frame.RMCchoice == 'fullrmc':
             RMCPdict = data['RMC']['fullrmc']
             pName = G2frame.GSASprojectfile.split('.')[0] + '-' + generalData['Name']
@@ -7755,7 +7757,7 @@ program; Please cite:
                 Size = data['Histograms'][histoName]['Size']
                 Mustrain = data['Histograms'][histoName]['Mustrain']
                 reset = False
-                print(G2pwd.MakeInst(PWDdata,pName,Size,Mustrain,RMCPdict['UseSampBrd'])+ ' written')
+                written(G2pwd.MakeInst(PWDdata,pName,Size,Mustrain,RMCPdict['UseSampBrd']))
                 backfile = G2pwd.MakeBack(PWDdata,pName)
                 if backfile is None:
                     print(' Chebyschev-1 background not used; no .back file written')
@@ -7764,20 +7766,20 @@ program; Please cite:
                     G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
                     return
                 else:
-                    print(backfile+ ' written')
-                print(G2pwd.MakeBragg(PWDdata,pName,data)+ ' written')
+                    written(backfile)
+                written(G2pwd.MakeBragg(PWDdata,pName,data))
                 if RMCPdict['ReStart'][0]:
                     if os.path.isfile(pName+'.his6f'):
                         os.remove(pName+'.his6f')
                     RMC6f,reset = G2pwd.MakeRMC6f(PWDdata,pName,data,RMCPdict)
-                    print(RMC6f+ ' written')
+                    written(RMC6f)
                 fname = G2pwd.MakeRMCPdat(PWDdata,pName,data,RMCPdict)
                 if 'Error' in fname:
                     print(fname)
                     wx.MessageDialog(G2frame,fname,'Missing reflection list',wx.OK).ShowModal()
                     G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
                     return
-                print(fname+ ' written')
+                written(fname)
                 print('RMCProfile file build completed')
                 RMCPdict['ReStart'] = [False,False]
                 if reset:
@@ -7802,7 +7804,7 @@ program; Please cite:
             if fname is None:
                 wx.MessageDialog(G2frame,'ERROR: failure to setup PDFfit; check console','PDFfit setup failure',wx.ICON_ERROR).ShowModal()
             else:
-                print(fname+ ' written')
+                written(fname)
                 print('PDFfit file build completed')
 
     def RunPDFfit(event):
@@ -8122,22 +8124,8 @@ program; Please cite:
     def RunRMCProfile(event):
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
-        rmcfile = G2fil.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
-        os_name = platform.system()
-        if os_name == "Darwin":
-            rmcexe = os.path.join(
-                "/Applications/RMCProfile.app/Contents/MacOS/exe/",
-                "rmcprofile.x"
-            )
-        else:
-            if rmcfile is None:
-                wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
-        Obtain the zip file distribution from www.rmcprofile.org,
-        unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
-            caption='RMCProfile',style=wx.ICON_INFORMATION)
-                return
-            rmcexe = os.path.split(rmcfile)[0]
-        #print(rmcexe)
+        rmcfile = G2pwd.findrmcprofile()
+        
         wx.MessageBox(
             ' For use of RMCProfile, please cite:\n\n'+
             G2G.GetCite("RMCProfile"),
@@ -8169,32 +8157,40 @@ program; Please cite:
                 break
 
         G2frame.OnFileSave(event)
-        print (' GSAS-II project saved')
+        print ('GSAS-II project saved')
         pName = generalData['Name'].replace(' ','_')
 
-        if os_name == "Darwin":
-            with open('runrmc.sh', 'w') as f:
-                f.write("#!/bin/bash\n")
-                f.write("cd " + os.getcwd() + "\n")
-                f.write(rmcexe + " " + pName + "\n")
-            os.system("chmod +x runrmc.sh")
+        if rmcfile is None:
+            wx.MessageBox('''RMCProfile is not correctly installed for use in GSAS-II
+        This software must be downloaded separately (from 
+        https://rmcprofile.ornl.gov/download). Install the rmcprofile or 
+        rmcprofile.exe file in a location where GSAS-II can find it 
+        (see config variable rmcprofile_exec in preferences.)''',
+            caption='RMCProfile',style=wx.ICON_INFORMATION)
+            return
+
+        if sys.platform == "darwin":
             script_file = os.path.join(os.getcwd(), "runrmc.sh")
-            applescript_command = 'tell app "Terminal"\n'
-            applescript_command += "if not (exists window 1) then\n"
-            applescript_command += f'do script "source {script_file}"\n'
-            applescript_command += "else\n"
-            applescript_command += f'do script "source {script_file}"'
-            applescript_command += " in window 1\n"
-            applescript_command += "end if\nactivate\nend tell"
-            subp.Popen(['osascript', '-e', applescript_command])
+            with open(script_file, 'w') as f:
+                f.write("#!/bin/bash\n")
+                f.write(f'cd "{os.getcwd()}"\n')
+                f.write(f'"{rmcfile}" "{pName}"\n')
+            os.system("chmod +x runrmc.sh")
+            ascript_file = os.path.join(os.getcwd(), "runrmc.script")
+            with open(ascript_file, 'w') as f:
+                f.write('tell application "Terminal"\n')
+                f.write(f'''  do script "echo 'Running RMCprofile'"\n''')
+                f.write(f'  do script "bash {script_file}" in window 1\n')
+                f.write("end tell\n")
+            subp.Popen(['osascript', ascript_file])
         else:
-            exstr = rmcexe+'\\rmcprofile.exe '+pName
-            batch = open('runrmc.bat','w')
-            batch.write('Title RMCProfile\n')
-            batch.write(exstr+'\n')
-            batch.write('pause\n')
-            batch.close()
-            subp.Popen('runrmc.bat',creationflags=subp.CREATE_NEW_CONSOLE)
+            script_file = os.path.join(os.getcwd(), "runrmc.bat")
+            with open(script_file,'w') as batch:
+                batch.write('Title RMCProfile\n')   # BHT: is Title a Windows command?
+                batch.write(f'"{rmcfile}" "{pName}"\n')
+                batch.write('pause\n')
+                batch.close()
+            subp.Popen(script_file,creationflags=subp.CREATE_NEW_CONSOLE)
 #        Proc.wait()     #for it to finish before continuing on
         UpdateRMC()
 

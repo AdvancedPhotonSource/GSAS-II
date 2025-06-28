@@ -192,7 +192,7 @@ def ReadCheckConstraints(GPXfile, seqHist=None,Histograms=None,Phases=None):
     parmDict.update(phaseDict)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
     parmDict.update(hapDict)
-    histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
+    histVary,histDict,histDict1, controlDict = GetHistogramData(Histograms,Print=False)
     parmDict.update(histDict)
     varyList = rbVary+phaseVary+hapVary+histVary
     msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
@@ -3697,6 +3697,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 instDict[pfx+'beta-1'] = 1.0
         elif 'E' in dataType:
             pass
+
         return dataType,instDict,insVary
 
     def GetSampleParms(hId,Sample):
@@ -3812,6 +3813,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         pFile.write(varstr+'\n')
 
     histDict = {}
+    # create second histDict
+    histDict1 = {}
+
     histVary = []
     controlDict = {}
     histoList = list(Histograms.keys())
@@ -3833,11 +3837,20 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             controlDict[pfx+'bakType'] = Type
             histDict.update(bakDict)
             histVary += bakVary
+            
+            Inst = Histogram['Instrument Parameters']
 
-            Inst = Histogram['Instrument Parameters']        #TODO ? ignores tabulated alp,bet & delt for TOF
-            if 'T' in Type and len(Inst[1]):    #patch -  back-to-back exponential contribution to TOF line shape is removed
-                G2fil.G2Print ('Warning: tabulated profile coefficients are ignored')
+            # if statement below _maybe_ no longer needed?
+            # if 'T' in Type and len(Inst[1]):    #patch -  back-to-back exponential contribution to TOF line shape is removed
+            #     G2fil.G2Print ('Warning: tabulated profile coefficients are ignored')
+
+            # create histDict1 if second instrument parameters entry is not empty
+            if Inst[1]:
+                for key in Inst[1]:
+                    histDict1[pfx+'pdabc']=Inst[1][key]
+
             Type,instDict,insVary = GetInstParms(hId,Inst[0])
+
             controlDict[pfx+'histType'] = Type
             if 'X' in Type and Type[2] in ['A','B','C']:
                 if pfx+'Lam1' in instDict:
@@ -3883,8 +3896,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
             elif 'NC' in Inst['Type'][1] or 'NB' in Inst['Type'][1]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
-    return histVary,histDict,controlDict
 
+    return histVary,histDict,histDict1,controlDict
+    
 def SetHistogramData(parmDict,sigDict,Histograms,calcControls,Print=True,pFile=None,seq=False):
     'Shows histogram data after a refinement'
 

@@ -1317,7 +1317,7 @@ def mkParmDictfromTree(G2frame,sigDict=None):
     parmDict.update(phaseDict)
     hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
     parmDict.update(hapDict)
-    histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
+    histVary,histDict,histDict1, controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
     parmDict.update(histDict)
     parmDict.update(zip(
             covDict.get('varyList',[]),

@@ -169,6 +169,55 @@ def makeInstDict(names,data,codes):
         inst[item] = list(inst[item])
     return inst
 
+def makePdabcDict(pdabcString):
+    '''
+    if a pdabc entry is found in an instprm file, it will exist as a single string
+    each row is delineated by a newline and must contains 5 comma separated values
+    specifying d,TOF,alp,bet,sig.
+
+    This function will parse that string into a dictionary and then return it within
+    a container dictionary 
+    '''
+
+    if type(pdabcString) != str:
+        raise Exception("Error interpreting pdabc entry in .instprm file. Entry must be a string")
+    
+    lines = pdabcString.split("\n")
+
+    if len(lines) == 0:
+        print("Warning: pdabc entry found in .instprm file is empty")
+        return {} #no information, return empty dict
+    
+    #create empty lists to hold values
+    d = []
+    TOF = []
+    alp = []
+    bet = []
+    sig = []
+    nPdabc = 0
+    for line in lines:
+        if line: #skip empty lines
+            entry = line.split(",")
+            if len(entry) != 5:
+                raise Exception("Error interpreting pdabc entry in .instprm file. Entries must have exactly 5 comma separated values")
+            d.append(float(entry[0]))
+            TOF.append(float(entry[1]))
+            alp.append(float(entry[2]))
+            bet.append(float(entry[3]))
+            sig.append(float(entry[4]))
+            nPdabc += 1
+    
+    pdabcDict = {
+        "d":d,
+        "TOF":TOF,
+        "alp":alp,
+        "bet":bet,
+        "sig":sig
+    }
+
+    print(f"PDABC entry found and {nPdabc} lines successfully loaded")
+    return {"pdabc":pdabcDict}
+
 def SetPowderInstParms(Iparm, rd):
     '''extracts values from instrument parameters in rd.instdict
     or in array Iparm.
@@ -292,16 +341,21 @@ def SetPowderInstParms(Iparm, rd):
         Inst1 = makeInstDict(names,data,codes)
         Inst1['Bank'] = [Bank,Bank,0]
         Inst2 = {}
+
         if pfType < 0:
             Ipab = 'INS  1PAB'+str(-pfType)
+            key = Ipab+'  '
+            print("looking for key: ", key)
             Npab = int(Iparm[Ipab+'  '].strip())
-            Inst2['Pdabc'] = []
+            Inst2['pdabc'] = []
             for i in range(Npab):
                 k = Ipab+str(i+1).rjust(2)
                 s = Iparm[k].split()
-                Inst2['Pdabc'].append([float(t) for t in s])
-            Inst2['Pdabc'] = np.array(Inst2['Pdabc'])
-            Inst2['Pdabc'].T[3] += Inst2['Pdabc'].T[0]*Inst1['difC'][0] #turn 3rd col into TOF
+                Inst2['pdabc'].append([float(t) for t in s])
+            Inst2['pdabc'] = np.array(Inst2['pdabc'])
+            Inst2['pdabc'].T[3] += Inst2['pdabc'].T[0]*Inst1['difC'][0] #turn 3rd col into TOF
+
+            print(f"loaded resolution data with {Inst2['pdabc'].shape} shape" )
         if 'INS  1I ITYP' in Iparm:
             s = Iparm['INS  1I ITYP'].split()
             Ityp = int(s[0])
@@ -356,7 +410,8 @@ def ReadInstprm(instLines, bank, Sample={}):
            determined by instrument settings or information
            from the instprm file are placed here.
     :returns: bank,instdict where bank is the sample parameter set
-           number and instdict is the instrument parameter dict
+           number and instdict is a list containing the regular instrument parameter dict
+           and the "extended" dict, currently only containing pdabc entries (if they exist)
 
     Note if 'Type' is set as Debye-Scherrer or Bragg-Brentano this will be used and
     will set defaults in the sample parameters. Otherwise, a single-wavelength file
@@ -461,21 +516,33 @@ def ReadInstprm(instLines, bank, Sample={}):
         Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
                            'DisplaceY':[0.,False]})
     Sample.update(NewSample)
-    return bank,[makeInstDict(newItems, newVals, len(newVals)*[False]), {}]
 
-def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
+    #if pdabc exists, process it, then delete from original lists
+    if "pdabc" in newItems:
+        idx = newItems.index('pdabc')
+        iparm1 = makePdabcDict(newVals[idx]) #returns new dictionary with pdabc data
+        del newItems[idx]
+        del newVals[idx]
+    else:
+        iparm1 = {}
+
+    return bank,[makeInstDict(newItems, newVals, len(newVals)*[False]), iparm1]
+
+def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
     '''Write the contents of a GSAS-II (new) .instprm instrument parameter file
     ToDo: use this inside G2frame.OnSave and G2frame.OnSaveAll
 
     :param file fp: Pointer to open file to be written.
     :param dict InstPrm: Instrument parameters
+    :param dict InstPrm1: "extended" instrument parameters
     :param dict Sample: Sample parameters (optional)
     :param int bank: Bank number. If not None (default), this causes
       a "#Bank" heading to be placed in the file before the
       parameters are written.
     '''
     if bank is not None:
-        fp.write(f"#Bank {bank}: GSAS-II instrument parameter file; do not add/delete items!\n")
+        #somehow, somewhere bank is becoming a float. Ensure it is an int here:
+        fp.write(f"#Bank {int(bank)}: GSAS-II instrument parameter file; do not add/delete items!\n")
         indent = '  '
     else:
         fp.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
@@ -489,6 +556,28 @@ def WriteInstprm(fp, InstPrm, Sample={}, bank=None):
     for item in ('Gonio. radius','InstrName'):
         if not Sample.get(item): continue
         fp.write(f"{indent}{item}:{Sample[item]}\n")
+
+    # handle pdabc entries.
+    if InstPrm1:
+        if "pdabc" in InstPrm1:
+            
+            #extract lists from InstPrm1["pdabc"] dictionary
+            d = InstPrm1["pdabc"]["d"]
+            tof = InstPrm1["pdabc"]["TOF"]
+            alp = InstPrm1["pdabc"]["alp"]
+            bet = InstPrm1["pdabc"]["bet"]
+            sig = InstPrm1["pdabc"]["sig"]
+            
+            #build output string
+            i = 0
+            resString = f"pdabc:\"\"\"{d[i]:.4f}, {tof[i]:8.1f}, {alp[i]:8.6f}, {bet[i]:8.6f}, {sig[i]:8.6f}\n"
+            for i in range(1,len(d)-1):
+                resString+=f"{d[i]:7.4f}, {tof[i]:8.1f}, {alp[i]:8.6f}, {bet[i]:8.6f}, {sig[i]:8.6f}\n"
+
+            resString+=f"{d[-1]:7.4f}, {tof[-1]:8.1f}, {alp[-1]:8.6f}, {bet[-1]:8.6f}, {sig[-1]:8.6f}\"\"\"\n"
+            
+            #write output string
+            fp.write(resString)
 
 # version of LoadImportRoutines from before switch to "main"
 # def _old_LoadImportRoutines(prefix, errprefix=None, traceback=False):
@@ -1966,7 +2055,7 @@ class ExportBaseclass(object):
         self.parmDict.update(phaseDict)
         hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
         self.parmDict.update(hapDict)
-        histVary,histDict,controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
+        histVary,histDict,histDict1, controlDict =  G2stIO.GetHistogramData(Histograms,Print=False)
         self.parmDict.update(histDict)
         self.parmDict.update(zip(
             covDict.get('varyList',[]),

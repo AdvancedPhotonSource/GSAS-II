@@ -17197,27 +17197,28 @@ tab, use Operations->"Pawley create")''')
         RigidBodies.Bind(wx.EVT_CHAR,rbKeyPress)
         Pages.append('RB Models')
 
-    MapPeakList = wx.Panel(G2frame.phaseDisplay)
-    G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
-    # create the grid once; N.B. need to reference at this scope
-    G2frame.MapPeaks = G2G.GSGrid(MapPeakList)
-    G2frame.phaseDisplay.gridList.append(G2frame.MapPeaks)
-
-    if data['General']['doDysnomia']:
-        G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
-        G2frame.phaseDisplay.AddPage(G2frame.MEMData,'Dysnomia')
-        Pages.append('Dysnomia')
-        
     dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
-    Pages.append('Map peaks')
-    if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
+    if nhist > 0:            
+        MapPeakList = wx.Panel(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
+        # create the grid once; N.B. need to reference at this scope
+        G2frame.MapPeaks = G2G.GSGrid(MapPeakList)
+        G2frame.phaseDisplay.gridList.append(G2frame.MapPeaks)
+
+        if data['General']['doDysnomia']:
+            G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
+            G2frame.phaseDisplay.AddPage(G2frame.MEMData,'Dysnomia')
+            Pages.append('Dysnomia')
+        Pages.append('Map peaks')
+        
+    if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated'] and nhist > 0:
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
-    if nhist > 0:    
         Pages.append('MC/SA')
-        G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
-        G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
-        Pages.append('RMC')
+        
+    G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
+    G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
+    Pages.append('RMC')
 
     if data['General']['Type'] == 'nuclear':
         ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)

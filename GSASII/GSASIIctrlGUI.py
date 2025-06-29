@@ -6884,17 +6884,17 @@ class SelectConfigSetting(wx.Dialog):
             self.varsizer.Add(rb, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         else:
             if var.endswith('_directory') or var.endswith('_location'):
-                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn = wx.Button(self,wx.ID_ANY,'Select from file dialog...')
                 btn.Bind(wx.EVT_BUTTON,self.onSelDir)
                 sz = (400,-1)
             elif var.endswith('_exec'):
-                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn = wx.Button(self,wx.ID_ANY,'Select from file dialog...')
                 btn.Bind(wx.EVT_BUTTON,self.onSelExec)
                 sz = (400,-1)
             elif var.endswith('_color') and var != 'Contour_color':
                 self.colorText = wx.StaticText(self,wx.ID_ANY,size=(80,20))
                 self.colorChip = wx.StaticText(self,wx.ID_ANY,size=(80,30))
-                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn = wx.Button(self,wx.ID_ANY,'Select from color selector...')
                 btn.Bind(wx.EVT_BUTTON,self.onSelColor)
                 sz = (400,-1)
             else:

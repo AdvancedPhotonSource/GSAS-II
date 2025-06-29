@@ -2514,10 +2514,11 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         return dataType,instDict,insVary
 
     def GetPkInstParms(parmDict,Inst,varyList):
-        '''This is where the default values for sigma & gamma
-        are set for peaks in single-peak fits when peakInstPrmMode is True
-        and the values are not being fit. This seems also to be done in 
-        GetPeaksParms (TODO: this routine is not needed?)
+        '''This sets default values for sigma & gamma in the 
+        single-peak fitting parameter dict when peakInstPrmMode is True
+        and the peak values are not being fit. (Why not alpha & beta?)
+        Note similar routine, GetPeaksParms, which sets values in the 
+        peak table. (TODO: add setting of alpha & beta here?)
         '''
         for name in Inst:
             Inst[name][1] = parmDict[name]
@@ -2596,9 +2597,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         return peakDict,peakVary
 
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
-        '''Put values into the Peaks list from the refinement results from inside
-        the parmDict array. 
-        This is done prior for sigma & gamma in GetPkInstParms
+        '''Put single-peak fitting values into the Peaks List 
+        from the refinement results. Where values are not fit (unless 
+        peakInstPrmMode is False), they are computed from the 
+        Instrument Parameter values. 
+        Note that routine GetPkInstParms does this prior 
+        for sigma & gamma (only).
         '''
         names,_,_ = getHeaderInfo(Inst['Type'][0])
         off = 0

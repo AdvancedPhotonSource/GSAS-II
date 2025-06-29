@@ -3439,10 +3439,9 @@ def findrmcprofile():
             the location where the GSAS-II Python files are found, 
             the location where GSAS-II binaries are found, the current 
             working directory and the location where the Python 
-            interpreter is found. On MacOS the commonly-used install 
-            locations of /Applications/RMCProfile.app/Contents/MacOS/exe/
-            and ~/Applications/RMCProfile.app/Contents/MacOS/exe/
-            are also checked. 
+            interpreter is found. 
+            On MacOS the only place where RMCProfile can be installed
+            is /Applications/ so only that is checked.
 
     :returns: the full path to a python executable that is assumed to
       have fullrmc installed or None, if it was not found.
@@ -3461,8 +3460,10 @@ def findrmcprofile():
         lookfor = "rmcprofile.exe"
     elif sys.platform == "darwin":
         lookfor = "rmcprofile"
-        pathlist.insert(0,"/Applications/RMCProfile.app/Contents/MacOS/exe")
-        pathlist.insert(0,os.path.expanduser("~/Applications/RMCProfile.app/Contents/MacOS/exe"))
+        # MacOS: there is only one place where RMCProfile will run
+        pathlist = ["/Applications/RMCProfile.app/Contents/MacOS/exe"]
+        #pathlist.insert(0,"/Applications/RMCProfile.app/Contents/MacOS/exe")
+        #pathlist.insert(0,os.path.expanduser("~/Applications/RMCProfile.app/Contents/MacOS/exe"))
     else:
         lookfor = "rmcprofile"
     for p in pathlist:

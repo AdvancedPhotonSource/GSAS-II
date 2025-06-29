@@ -282,16 +282,11 @@ if PDFfit2 can be imported into the current Python.
 rmcprofile_exec = None
 '''Defines the full path to a compiled executable for RMCProfile (downloaded
 from https://rmcprofile.ornl.gov/download) If None (the default), GSAS-II 
-will see if RMCProfile is found in the path (or for MacOS in the standard 
-install location of "/Applications/RMCProfile.app/Contents/MacOS/exe/rmcprofile"
-If that does not work, GSAS-II will search for an executable named rmcprofile 
-(or rmcprofile.exe on Windows) in the OS search path, as well as,
-the location where the GSAS-II Python files are found, 
-the location where GSAS-II binaries are found, the current 
-working directory and the location where the Python 
-interpreter is found. On MacOS, the commonly-used install 
-locations of /Applications/RMCProfile.app/Contents/MacOS/exe/ and
-~/Applications/RMCProfile.app/Contents/MacOS/exe/ are also checked.
+will see if RMCProfile is found in the path, as well as,
+where python, the GSAS-II Python files & binaries are located and the current 
+working directory. For MacOS, RMCProfile will run only from 
+/Applications/ so that is the only location checked if rmcprofile_exec is not
+specified. 
 '''
 
 lastUpdateNotice = 0

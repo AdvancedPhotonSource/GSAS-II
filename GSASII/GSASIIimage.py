@@ -771,8 +771,10 @@ def GetLineScan(image,data):
     Ypix = ma.masked_outside(xy[0],0,Nx-1)
     xpix = Xpix[~(Xpix.mask+Ypix.mask)].compressed()
     ypix = Ypix[~(Xpix.mask+Ypix.mask)].compressed()
-    Ty = image[xpix,ypix]
+    Ty = np.array(image[xpix,ypix],dtype=float)
     Tx = ma.array(Tx,mask=Xpix.mask+Ypix.mask).compressed()
+    Ty /= npcosd(Tx)**2                        #do parallax 
+    # Ty *= (data['distance']/1000.)**2           #do dist correction 
     return [Tx,Ty]
 
 def EdgeFinder(image,data):

@@ -4497,7 +4497,7 @@ If you continue from this point, it is quite likely that all intensity computati
 
     def ExitMain(self, event):
         '''Called if exit selected or the main window is closed
-        rescord last position of data & plot windows; saved to config.py file
+        record last position of data & plot windows to config
         NB: not called if console window closed
         '''
         if self.GPXtree.GetCount() > 1:
@@ -4517,6 +4517,17 @@ If you continue from this point, it is quite likely that all intensity computati
         elif result == wx.ID_CANCEL:
             return
         else:
+            # add a version number to Notebook before exiting
+            try:
+                gv = GSASIIpath.getSavedVersionInfo()
+                if gv is not None:
+                    for item in gv.git_tags+gv.git_prevtags:
+                        if item.isnumeric(): ver = int(item)
+                    if '?' not in gv.git_versiontag: tag = gv.git_versiontag
+                    rtext = f'version {gv.git_version[:8]} {ver}/{tag}'
+                    self.AddToNotebook(rtext,'VER')
+            except:
+                pass
             if not self.OnFileSave(event): return
         try:
             FrameInfo = {'Main_Pos':tuple(self.GetPosition()),
@@ -7498,11 +7509,13 @@ other than being included in the Notebook section of the project file.''')
     filterLbls = ['all',
                       'Timestamps','Refinement results','Variables',
                       'Comments','Charge flip','Fourier','Peak fit',
-                      'Constraints','Restraints','Rigid Bodies','Cell params']
+                      'Constraints','Restraints','Rigid Bodies',
+                      'Cell params','GSAS-II version #']
     filterPrefix = ['',
                         'TS', 'REF','VARS',
                         'CM', 'CF', 'FM', 'PF',
-                        'CNSTR','RSTR','RB','CEL']
+                        'CNSTR','RSTR','RB',
+                        'CEL','VER']
     cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
     if cId:
         controls = G2frame.GPXtree.GetItemPyData(cId)

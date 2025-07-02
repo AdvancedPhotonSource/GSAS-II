@@ -774,7 +774,7 @@ def GetLineScan(image,data):
     Ty = np.array(image[xpix,ypix],dtype=float)
     Tx = ma.array(Tx,mask=Xpix.mask+Ypix.mask).compressed()
     Ty /= npcosd(Tx)**2                        #do parallax 
-    # Ty *= (data['distance']/1000.)**2           #do dist correction 
+    Ty *= (data['distance']/1000.)**2           #do dist correction 
     return [Tx,Ty]
 
 def EdgeFinder(image,data):
@@ -1241,9 +1241,10 @@ def polymask(data,Poly,Spots=[]):
     ax0 = figure.add_subplot()
     ax0.axis("off")
     figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-    px = np.array(Poly).T[0]/scalex
-    py = np.array(Poly).T[1]/scaley
-    ax0.fill(px,py,inmask)
+    for poly in Poly:
+        px = np.array(poly).T[0]/scalex
+        py = np.array(poly).T[1]/scaley
+        ax0.fill(px,py,inmask)
     for spot in Spots:
         px = np.array(spot).T[0]/scalex
         py = np.array(spot).T[1]/scaley
@@ -1869,13 +1870,15 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
         return [posx,posy,spotSize]
     else:
         result = leastsq(calc2Peak,vals,args=(nxy,pixSize,ImBox),full_output=True)
+        if result[1] is None:
+            return [px,py,spotSize]
         vals = result[0]
         ratio = vals[4]/vals[5]
         if 0.5 < ratio < 2.0 and vals[2] < 2. and vals[3] < 2.:
             posx,posy = [px+vals[2],py+vals[3]]
             return [posx,posy,min(6.*vals[4],spotSize)]
         else:
-            return None
+            return [px,py,spotSize]
 
 def TestFastPixelMask():
     '''Test if the fast (C) version of Auto Pixel Masking is available.

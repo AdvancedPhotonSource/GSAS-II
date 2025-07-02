@@ -5149,11 +5149,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         nxy = 15
                         ImMax = np.max(G2frame.ImageZ)
                         result = G2img.FitImageSpots(G2frame.ImageZ,ImMax,ind,pixelSize,nxy,G2frame.spotSize)
-                        if result:
-                            Xpos,Ypos,sig = result
-                        else:
-                            print ('Not a spot')
-                            return
+                        Xpos,Ypos,sig = result
                     spot = [Xpos,Ypos,sig]
                     Masks['Points'].append(spot)
                     artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',

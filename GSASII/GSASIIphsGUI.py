@@ -40,6 +40,7 @@ from . import GSASIIElemGUI as G2elemGUI
 from . import GSASIIddataGUI as G2ddG
 from . import GSASIIplot as G2plt
 from . import GSASIIpwdplot as G2pwpl
+from . import GSASIIphsGUI2 as G2phsG2
 # if GSASIIpath.GetConfigValue('debug'):
 #     print('Debug reloading',G2plt)
 #     import imp
@@ -1619,6 +1620,32 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
     if G2frame.testRBObjSizers.get('OnOrien') is None: return
     G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj']['drawMode'])
 
+def GetReflData(G2frame,phaseName,reflNames):
+    ReflData = {'RefList':[],'Type':''}
+    if '' in reflNames:
+        return None
+    for reflName in reflNames:
+        if 'PWDR' in reflName:
+            PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
+            if not PatternId:       #got 0
+                return None
+            reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
+            reflData = reflSets[phaseName]
+        elif 'HKLF' in reflName:
+            PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
+            if not PatternId:       #got 0
+                return None
+            reflData = G2frame.GPXtree.GetItemPyData(PatternId)[1]
+            if 'Type' not in reflData:
+                reflData['Type'] = 'SXC'
+        if ReflData['Type'] and reflData['Type'] != ReflData['Type']:
+            G2frame.ErrorDialog('Data type conflict',
+                reflName+' conflicts with previous '+ReflData['Type'])
+            return None
+        ReflData['RefList'] += list(reflData['RefList'])
+        ReflData['Type'] = reflData['Type']
+    return ReflData
+
 def UpdatePhaseData(G2frame,Item,data):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.
@@ -1633,31 +1660,6 @@ def UpdatePhaseData(G2frame,Item,data):
     :param dict data: all the information on the phase in a dictionary
 
     '''
-    def GetReflData(G2frame,phaseName,reflNames):
-        ReflData = {'RefList':[],'Type':''}
-        if '' in reflNames:
-            return None
-        for reflName in reflNames:
-            if 'PWDR' in reflName:
-                PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
-                if not PatternId:       #got 0
-                    return None
-                reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
-                reflData = reflSets[phaseName]
-            elif 'HKLF' in reflName:
-                PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
-                if not PatternId:       #got 0
-                    return None
-                reflData = G2frame.GPXtree.GetItemPyData(PatternId)[1]
-                if 'Type' not in reflData:
-                    reflData['Type'] = 'SXC'
-            if ReflData['Type'] and reflData['Type'] != ReflData['Type']:
-                G2frame.ErrorDialog('Data type conflict',
-                    reflName+' conflicts with previous '+ReflData['Type'])
-                return None
-            ReflData['RefList'] += list(reflData['RefList'])
-            ReflData['Type'] = reflData['Type']
-        return ReflData
 
     def SetupGeneral():
         try:
@@ -5821,204 +5823,204 @@ program; Please cite:
         wx.CallAfter(FillAtomsGrid,Atoms)
 
 #### Dysnomia (MEM) Data page ##############################################################################
-    def UpdateDysnomia():
-        ''' Present the controls for running Dysnomia
-        '''
-        def OnOptMeth(event):
-            DysData['Optimize'] = OptMeth.GetValue()
-            wx.CallAfter(UpdateDysnomia)
+    # def UpdateDysnomia():
+    #     ''' Present the controls for running Dysnomia
+    #     '''
+    #     def OnOptMeth(event):
+    #         DysData['Optimize'] = OptMeth.GetValue()
+    #         wx.CallAfter(UpdateDysnomia)
 
-        def OnZmult(event):
-            DysData['Lagrange'][0] = Zmult.GetValue()
-            wx.CallAfter(UpdateDysnomia)
+    #     def OnZmult(event):
+    #         DysData['Lagrange'][0] = Zmult.GetValue()
+    #         wx.CallAfter(UpdateDysnomia)
 
-        def OnStart(event):
-            DysData['DenStart'] = Start.GetValue()
+    #     def OnStart(event):
+    #         DysData['DenStart'] = Start.GetValue()
 
-        def OnPrior(event):
-            DysData['prior'] = Prior.GetValue()
-            if DysData['prior'] == 'last run':
-                if os.path.isfile(pName+'_prior.pgrid'):
-                    os.remove(pName+'_prior.pgrid')
-                os.rename(pName+'.pgrid',pName+'_prior.pgrid')
+    #     def OnPrior(event):
+    #         DysData['prior'] = Prior.GetValue()
+    #         if DysData['prior'] == 'last run':
+    #             if os.path.isfile(pName+'_prior.pgrid'):
+    #                 os.remove(pName+'_prior.pgrid')
+    #             os.rename(pName+'.pgrid',pName+'_prior.pgrid')
 
-        def OnFileCheck(event):
-            DysData['clear'] = fileCheck.GetValue()
+    #     def OnFileCheck(event):
+    #         DysData['clear'] = fileCheck.GetValue()
 
-        generalData = data['General']
-        pName = generalData['Name'].replace(' ','_')
-        Map = generalData['Map']
-        UseList = Map['RefList']
-        pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,UseList[0])       #only use 1st histogram
-        if not pId:
-            wx.MessageBox('You must prepare a fourier map before running Dysnomia','Dysnomia Error',
-                style=wx.ICON_ERROR)
-            return
-        reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
-        reflData = reflSets[generalData['Name']]['RefList']
-        refDmin = reflData[-1][4]
-        mulMin = np.argmin(reflData[:][3])
-        if reflData[mulMin][3] < 0:
-            refDmin = reflData[mulMin-1][4]
-        MEMData = G2frame.MEMData
-        if MEMData.GetSizer():
-            MEMData.GetSizer().Clear(True)
-        DysData = data['Dysnomia']
-        if 'overlap' not in DysData:
-            DysData['overlap'] = 1.0
-        if 'MEMdmin' not in DysData:
-            DysData['MEMdmin'] = refDmin
-        if 'clear' not in DysData:
-            DysData['clear'] = True
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer = G2frame.dataWindow.topBox
-        topSizer.Clear(True)
-        parent = G2frame.dataWindow.topPanel
-        lbl = f"Maximum Entropy Method (Dysnomia) controls for {data['General']['Name']!r}"
-        topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
-        topSizer.Add((-1,-1),1,wx.EXPAND)
-        topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
-        wx.CallAfter(G2frame.dataWindow.SetDataSize)
+    #     generalData = data['General']
+    #     pName = generalData['Name'].replace(' ','_')
+    #     Map = generalData['Map']
+    #     UseList = Map['RefList']
+    #     pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,UseList[0])       #only use 1st histogram
+    #     if not pId:
+    #         wx.MessageBox('You must prepare a fourier map before running Dysnomia','Dysnomia Error',
+    #             style=wx.ICON_ERROR)
+    #         return
+    #     reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
+    #     reflData = reflSets[generalData['Name']]['RefList']
+    #     refDmin = reflData[-1][4]
+    #     mulMin = np.argmin(reflData[:][3])
+    #     if reflData[mulMin][3] < 0:
+    #         refDmin = reflData[mulMin-1][4]
+    #     MEMData = G2frame.MEMData
+    #     if MEMData.GetSizer():
+    #         MEMData.GetSizer().Clear(True)
+    #     DysData = data['Dysnomia']
+    #     if 'overlap' not in DysData:
+    #         DysData['overlap'] = 1.0
+    #     if 'MEMdmin' not in DysData:
+    #         DysData['MEMdmin'] = refDmin
+    #     if 'clear' not in DysData:
+    #         DysData['clear'] = True
+    #     mainSizer = wx.BoxSizer(wx.VERTICAL)
+    #     topSizer = G2frame.dataWindow.topBox
+    #     topSizer.Clear(True)
+    #     parent = G2frame.dataWindow.topPanel
+    #     lbl = f"Maximum Entropy Method (Dysnomia) controls for {data['General']['Name']!r}"
+    #     topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
+    #     topSizer.Add((-1,-1),1,wx.EXPAND)
+    #     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
+    #     wx.CallAfter(G2frame.dataWindow.SetDataSize)
 
-        mainSizer.Add(wx.StaticText(MEMData,label=
-            ' For use of Dysnomia, please cite:\n'+
-              G2G.GetCite('Dysnomia',wrap=60,indent=5)))
-        lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-        lineSizer.Add(wx.StaticText(MEMData,label=' MEM Optimization method: '),0,WACV)
-        OptMeth = wx.ComboBox(MEMData,-1,value=DysData['Optimize'],choices=['ZSPA','L-BFGS'],
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        OptMeth.Bind(wx.EVT_COMBOBOX,OnOptMeth)
-        lineSizer.Add(OptMeth,0,WACV)
-        lineSizer.Add(wx.StaticText(MEMData,label=' Peak overlap factor'),0,WACV)
-        overlap = G2G.ValidatedTxtCtrl(MEMData,DysData,'overlap',nDig=(10,4),xmin=0.1,xmax=1.)
-        lineSizer.Add(overlap,0,WACV)
-        mainSizer.Add(lineSizer)
-        if DysData['Optimize'] == 'ZSPA':
-            Zsizer = wx.BoxSizer(wx.HORIZONTAL)
-            Zsizer.Add(wx.StaticText(MEMData,label=' Initial Lagrangian multiplier: from '),0,WACV)
-            Zmult = wx.ComboBox(MEMData,value=DysData['Lagrange'][0],choices=['user','Dysnomia'],
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Zmult.Bind(wx.EVT_COMBOBOX,OnZmult)
-            Zsizer.Add(Zmult,0,WACV)
-            if DysData['Lagrange'][0] == 'user':
-                Zsizer.Add(wx.StaticText(MEMData,label=' value: '),0,WACV)
-                lamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],1,nDig=(10,4),xmin=0.0001,xmax=1.)
-                Zsizer.Add(lamb,0,WACV)
-            Zsizer.Add(wx.StaticText(MEMData,label=' Adjust by: '),0,WACV)
-            dlamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],2,nDig=(8,2),xmin=0.05,xmax=0.1)
-            Zsizer.Add(dlamb,0,WACV)
-            mainSizer.Add(Zsizer)
+    #     mainSizer.Add(wx.StaticText(MEMData,label=
+    #         ' For use of Dysnomia, please cite:\n'+
+    #           G2G.GetCite('Dysnomia',wrap=60,indent=5)))
+    #     lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+    #     lineSizer.Add(wx.StaticText(MEMData,label=' MEM Optimization method: '),0,WACV)
+    #     OptMeth = wx.ComboBox(MEMData,-1,value=DysData['Optimize'],choices=['ZSPA','L-BFGS'],
+    #         style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    #     OptMeth.Bind(wx.EVT_COMBOBOX,OnOptMeth)
+    #     lineSizer.Add(OptMeth,0,WACV)
+    #     lineSizer.Add(wx.StaticText(MEMData,label=' Peak overlap factor'),0,WACV)
+    #     overlap = G2G.ValidatedTxtCtrl(MEMData,DysData,'overlap',nDig=(10,4),xmin=0.1,xmax=1.)
+    #     lineSizer.Add(overlap,0,WACV)
+    #     mainSizer.Add(lineSizer)
+    #     if DysData['Optimize'] == 'ZSPA':
+    #         Zsizer = wx.BoxSizer(wx.HORIZONTAL)
+    #         Zsizer.Add(wx.StaticText(MEMData,label=' Initial Lagrangian multiplier: from '),0,WACV)
+    #         Zmult = wx.ComboBox(MEMData,value=DysData['Lagrange'][0],choices=['user','Dysnomia'],
+    #             style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    #         Zmult.Bind(wx.EVT_COMBOBOX,OnZmult)
+    #         Zsizer.Add(Zmult,0,WACV)
+    #         if DysData['Lagrange'][0] == 'user':
+    #             Zsizer.Add(wx.StaticText(MEMData,label=' value: '),0,WACV)
+    #             lamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],1,nDig=(10,4),xmin=0.0001,xmax=1.)
+    #             Zsizer.Add(lamb,0,WACV)
+    #         Zsizer.Add(wx.StaticText(MEMData,label=' Adjust by: '),0,WACV)
+    #         dlamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],2,nDig=(8,2),xmin=0.05,xmax=0.1)
+    #         Zsizer.Add(dlamb,0,WACV)
+    #         mainSizer.Add(Zsizer)
 
-        Esizer = wx.BoxSizer(wx.HORIZONTAL)
-        Esizer.Add(wx.StaticText(MEMData,label=' Weight by d-spacing**'),0,WACV)
-        Efact = G2G.ValidatedTxtCtrl(MEMData,DysData,'wt pwr',xmin=0,xmax=4,size=(50,20))
-        Esizer.Add(Efact,0,WACV)
-        Dmin = G2G.ValidatedTxtCtrl(MEMData,DysData,'MEMdmin',xmin=0.5,xmax=refDmin,size=(50,20))
-        Esizer.Add(wx.StaticText(MEMData,label=' Minimum d-spacing for generated reflections: '),0,WACV)
-        Esizer.Add(Dmin,0,WACV)
-        mainSizer.Add(Esizer)
+    #     Esizer = wx.BoxSizer(wx.HORIZONTAL)
+    #     Esizer.Add(wx.StaticText(MEMData,label=' Weight by d-spacing**'),0,WACV)
+    #     Efact = G2G.ValidatedTxtCtrl(MEMData,DysData,'wt pwr',xmin=0,xmax=4,size=(50,20))
+    #     Esizer.Add(Efact,0,WACV)
+    #     Dmin = G2G.ValidatedTxtCtrl(MEMData,DysData,'MEMdmin',xmin=0.5,xmax=refDmin,size=(50,20))
+    #     Esizer.Add(wx.StaticText(MEMData,label=' Minimum d-spacing for generated reflections: '),0,WACV)
+    #     Esizer.Add(Dmin,0,WACV)
+    #     mainSizer.Add(Esizer)
 
-        if os.path.isfile(pName+'.pgrid'):
-            PriorSizer = wx.BoxSizer(wx.HORIZONTAL)
-            PriorSizer.Add(wx.StaticText(MEMData,label=' Start from densities: '),0,WACV)
-            Start = wx.ComboBox(MEMData,-1,value=DysData['DenStart'],choices=['uniform','last run'],
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Start.Bind(wx.EVT_COMBOBOX,OnStart)
-            PriorSizer.Add(Start,0,WACV)
-            PriorSizer.Add(wx.StaticText(MEMData,label=' Use as prior: '),0,WACV)
-            Prior = wx.ComboBox(MEMData,-1,value=DysData['prior'],choices=['uniform','last run'],
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Prior.Bind(wx.EVT_COMBOBOX,OnPrior)
-            PriorSizer.Add(Prior,0,WACV)
-            mainSizer.Add(PriorSizer)
-        else:
-            DysData['DenStart'] = 'uniform'
-            DysData['prior'] = 'uniform'
+    #     if os.path.isfile(pName+'.pgrid'):
+    #         PriorSizer = wx.BoxSizer(wx.HORIZONTAL)
+    #         PriorSizer.Add(wx.StaticText(MEMData,label=' Start from densities: '),0,WACV)
+    #         Start = wx.ComboBox(MEMData,-1,value=DysData['DenStart'],choices=['uniform','last run'],
+    #             style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    #         Start.Bind(wx.EVT_COMBOBOX,OnStart)
+    #         PriorSizer.Add(Start,0,WACV)
+    #         PriorSizer.Add(wx.StaticText(MEMData,label=' Use as prior: '),0,WACV)
+    #         Prior = wx.ComboBox(MEMData,-1,value=DysData['prior'],choices=['uniform','last run'],
+    #             style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    #         Prior.Bind(wx.EVT_COMBOBOX,OnPrior)
+    #         PriorSizer.Add(Prior,0,WACV)
+    #         mainSizer.Add(PriorSizer)
+    #     else:
+    #         DysData['DenStart'] = 'uniform'
+    #         DysData['prior'] = 'uniform'
 
-        Csizer = wx.BoxSizer(wx.HORIZONTAL)
-        Csizer.Add(wx.StaticText(MEMData,label=' Maximum number of cycles: '),0,WACV)
-        Cyc = G2G.ValidatedTxtCtrl(MEMData,DysData,'Ncyc',xmin=0,xmax=10000,size=(50,20))
-        Csizer.Add(Cyc,0,WACV)
-        fileCheck = wx.CheckBox(MEMData,label='Clear Dynsomia files? ')
-        fileCheck.SetValue(DysData['clear'])
-        fileCheck.Bind(wx.EVT_CHECKBOX,OnFileCheck)
-        Csizer.Add(fileCheck,0,WACV)
-        mainSizer.Add(Csizer)
-        SetPhaseWindow(G2frame.MEMData,mainSizer)
+    #     Csizer = wx.BoxSizer(wx.HORIZONTAL)
+    #     Csizer.Add(wx.StaticText(MEMData,label=' Maximum number of cycles: '),0,WACV)
+    #     Cyc = G2G.ValidatedTxtCtrl(MEMData,DysData,'Ncyc',xmin=0,xmax=10000,size=(50,20))
+    #     Csizer.Add(Cyc,0,WACV)
+    #     fileCheck = wx.CheckBox(MEMData,label='Clear Dynsomia files? ')
+    #     fileCheck.SetValue(DysData['clear'])
+    #     fileCheck.Bind(wx.EVT_CHECKBOX,OnFileCheck)
+    #     Csizer.Add(fileCheck,0,WACV)
+    #     mainSizer.Add(Csizer)
+    #     SetPhaseWindow(G2frame.MEMData,mainSizer)
 
-    def OnLoadDysnomia(event):
-        print('Load MEM - might not be implemented')
+    # def OnLoadDysnomia(event):
+    #     print('Load MEM - might not be implemented')
 
-    def OnSaveDysnomia(event):
-        print('Save MEM - might not be implemented')
+    # def OnSaveDysnomia(event):
+    #     print('Save MEM - might not be implemented')
 
-    def OnRunDysnomia(event):
+    # def OnRunDysnomia(event):
 
-        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
-        DysData = data['Dysnomia']
+    #     path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+    #     DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
+    #     DysData = data['Dysnomia']
 
-        if not os.path.exists(DYSNOMIA):
-            wx.MessageBox(''' Dysnomia is not installed. Please download it from
-    https://jp-minerals.org/dysnomia/en/
-    and install it at.'''+DYSNOMIA,
-                caption='Dysnomia not installed',style=wx.ICON_ERROR)
-            return
+    #     if not os.path.exists(DYSNOMIA):
+    #         wx.MessageBox(''' Dysnomia is not installed. Please download it from
+    # https://jp-minerals.org/dysnomia/en/
+    # and install it at.'''+DYSNOMIA,
+    #             caption='Dysnomia not installed',style=wx.ICON_ERROR)
+    #         return
 
-        generalData = data['General']
-        Map = generalData['Map']
-        UseList = Map['RefList']
-        pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,UseList[0])       #only use 1st histogram
-        if not pId:
-            wx.MessageBox('You must prepare a Fourier map before running Dysnomia','Dysnomia Error',
-                style=wx.ICON_ERROR)
-            return
-        reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
-        reflData = reflSets[generalData['Name']]['RefList']
-        if 'Type' not in Map:
-            wx.MessageBox('You must prepare a Fourier map before running Dysnomia','Dysnomia Error',
-                style=wx.ICON_ERROR)
-            return
-        Type = Map['Type']
-        MEMtype = 0
-        if 'N' in Type:
-            for el in generalData['Isotope']:
-                isotope = generalData['Isotope'][el]
-                if el not in generalData['Isotopes']:
-                    continue
-                if generalData['Isotopes'][el][isotope]['SL'][0] < 0.:
-                    MEMtype = 1
-        prfName = str(G2pwd.makePRFfile(data,MEMtype))
-        if not G2pwd.makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
-            SpGrp = generalData['SGData']['SpGrp']
-            wx.MessageBox('Non standard space group '+SpGrp+' not permitted in Dysnomia','Dysnomia Error',
-                style=wx.ICON_ERROR)
-            return
-        wx.MessageBox(' For use of Dysnomia, please cite:\n\n'+
-                          G2G.GetCite('Dysnomia'),
-                          caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
+    #     generalData = data['General']
+    #     Map = generalData['Map']
+    #     UseList = Map['RefList']
+    #     pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,UseList[0])       #only use 1st histogram
+    #     if not pId:
+    #         wx.MessageBox('You must prepare a Fourier map before running Dysnomia','Dysnomia Error',
+    #             style=wx.ICON_ERROR)
+    #         return
+    #     reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
+    #     reflData = reflSets[generalData['Name']]['RefList']
+    #     if 'Type' not in Map:
+    #         wx.MessageBox('You must prepare a Fourier map before running Dysnomia','Dysnomia Error',
+    #             style=wx.ICON_ERROR)
+    #         return
+    #     Type = Map['Type']
+    #     MEMtype = 0
+    #     if 'N' in Type:
+    #         for el in generalData['Isotope']:
+    #             isotope = generalData['Isotope'][el]
+    #             if el not in generalData['Isotopes']:
+    #                 continue
+    #             if generalData['Isotopes'][el][isotope]['SL'][0] < 0.:
+    #                 MEMtype = 1
+    #     prfName = str(G2pwd.makePRFfile(data,MEMtype))
+    #     if not G2pwd.makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
+    #         SpGrp = generalData['SGData']['SpGrp']
+    #         wx.MessageBox('Non standard space group '+SpGrp+' not permitted in Dysnomia','Dysnomia Error',
+    #             style=wx.ICON_ERROR)
+    #         return
+    #     wx.MessageBox(' For use of Dysnomia, please cite:\n\n'+
+    #                       G2G.GetCite('Dysnomia'),
+    #                       caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
 
-        print('Run '+DYSNOMIA)
-        subp.call([DYSNOMIA,prfName])
+    #     print('Run '+DYSNOMIA)
+    #     subp.call([DYSNOMIA,prfName])
 
-        DysData['DenStart'] = 'uniform'
-        DysData['prior'] = 'uniform'
-        wx.CallAfter(UpdateDysnomia)
+    #     DysData['DenStart'] = 'uniform'
+    #     DysData['prior'] = 'uniform'
+    #     wx.CallAfter(UpdateDysnomia)
 
-        goon,reflData = G2pwd.MEMupdateReflData(prfName,data,reflData)
-        if goon:
-            reflSets[generalData['Name']]['RefList'] = reflData
-            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'),reflSets)
-            OnFourierMaps(event)           #auto run Fourier
-            if DysData['clear']:
-                os.remove(os.path.splitext(prfName)[0]+'.fba')
-                os.remove(os.path.splitext(prfName)[0]+'.mem')
-                os.remove(os.path.splitext(prfName)[0]+'.out')
-                os.remove(os.path.splitext(prfName)[0]+'.prf')
-                os.remove(os.path.splitext(prfName)[0]+'_eps.raw')
-        else:
-            wx.MessageBox('Dysnomia failed to make new structure factors','Dysnomia Error',
-                style=wx.ICON_ERROR)
+    #     goon,reflData = G2pwd.MEMupdateReflData(prfName,data,reflData)
+    #     if goon:
+    #         reflSets[generalData['Name']]['RefList'] = reflData
+    #         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'),reflSets)
+    #         OnFourierMaps(event)           #auto run Fourier
+    #         if DysData['clear']:
+    #             os.remove(os.path.splitext(prfName)[0]+'.fba')
+    #             os.remove(os.path.splitext(prfName)[0]+'.mem')
+    #             os.remove(os.path.splitext(prfName)[0]+'.out')
+    #             os.remove(os.path.splitext(prfName)[0]+'.prf')
+    #             os.remove(os.path.splitext(prfName)[0]+'_eps.raw')
+    #     else:
+    #         wx.MessageBox('Dysnomia failed to make new structure factors','Dysnomia Error',
+    #             style=wx.ICON_ERROR)
 
 #### RMC Data page ################################################################################
 # fullrmc stuff TODO:
@@ -10178,76 +10180,78 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         UpdateWavesData()
 
 #### Structure drawing GUI stuff ################################################################################
-    def SetupDrawingData():
-        generalData = data['General']
-        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        atomData = data['Atoms']
-        defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,
-            'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
-            'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
-            'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,'contourMax':1.0,
-            'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,'SymFade':False,
-            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
-        V0 = np.array([0,0,1])
-        V = np.inner(Amat,V0)
-        V /= np.sqrt(np.sum(V**2))
-        A = np.arccos(np.sum(V*V0))
-        defaultDrawing['Quaternion'] = G2mth.AV2Q(A,[0,1,0])
-        try:
-            drawingData = data['Drawing']
-        except KeyError:
-            data['Drawing'] = {}
-            drawingData = data['Drawing']
-        if not drawingData:                 #fill with defaults if empty
-            drawingData = defaultDrawing.copy()
-        if 'Zstep' not in drawingData:
-            drawingData['Zstep'] = 0.5
-        if 'contourLevel' not in drawingData:
-            drawingData['contourLevel'] = 1.
-        if 'contourMax' not in drawingData:
-            drawingData['contourMax'] = 1.
-        if 'viewDir' not in drawingData:
-            drawingData['viewDir'] = [0,0,1]
-        if 'Quaternion' not in drawingData:
-            drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
-        if 'showRigidBodies' not in drawingData:
-            drawingData['showRigidBodies'] = True
-        try:  # patch of sorts; this had been set to a string; needs to be an int between 0 & 3
-            int(drawingData['showSlice'])
-        except:
-            drawingData['showSlice'] = 0
-        if 'sliceSize' not in drawingData:
-            drawingData['sliceSize'] = 5.0
-        if 'contourColor' not in drawingData:
-            drawingData['contourColor'] = 'RdYlGn'
-        if 'Plane' not in drawingData:
-            drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
-        if 'magMult' not in drawingData:
-            drawingData['magMult'] = 1.0
-        if 'SymFade' not in drawingData:
-            drawingData['SymFade'] = False
-        if 'Voids' not in drawingData:
-            drawingData['Voids'] = []
-            drawingData['showVoids'] = False
-            drawingData['showMap'] = False
-        cx,ct,cs,ci = [0,0,0,0]
-        if generalData['Type'] in ['nuclear','faulted',]:
-            cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
-        elif generalData['Type'] == 'macromolecular':
-            cx,ct,cs,ci = [5,4,9,20]         #x, type, style & index
-        elif generalData['Type'] == 'magnetic':
-            cx,ct,cs,ci = [2,1,9,20]         #x, type, style & index
-            drawingData['vdwScale'] = 0.20
-        drawingData['atomPtrs'] = [cx,ct,cs,ci]
-        if not drawingData.get('Atoms'):
-            for atom in atomData:
-                DrawAtomAdd(drawingData,atom)
-            data['Drawing'] = drawingData
-        if len(drawingData['Plane']) < 5:
-            drawingData['Plane'].append([255,255,0])
-
+def SetupDrawingData(G2frame,data):
+    
     def DrawAtomAdd(drawingData,atom):
         drawingData['Atoms'].append(G2mth.MakeDrawAtom(data,atom))
+        
+    generalData = data['General']
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    atomData = data['Atoms']
+    defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,
+        'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
+        'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
+        'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,'contourMax':1.0,
+        'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,'SymFade':False,
+        'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
+    V0 = np.array([0,0,1])
+    V = np.inner(Amat,V0)
+    V /= np.sqrt(np.sum(V**2))
+    A = np.arccos(np.sum(V*V0))
+    defaultDrawing['Quaternion'] = G2mth.AV2Q(A,[0,1,0])
+    try:
+        drawingData = data['Drawing']
+    except KeyError:
+        data['Drawing'] = {}
+        drawingData = data['Drawing']
+    if not drawingData:                 #fill with defaults if empty
+        drawingData = defaultDrawing.copy()
+    if 'Zstep' not in drawingData:
+        drawingData['Zstep'] = 0.5
+    if 'contourLevel' not in drawingData:
+        drawingData['contourLevel'] = 1.
+    if 'contourMax' not in drawingData:
+        drawingData['contourMax'] = 1.
+    if 'viewDir' not in drawingData:
+        drawingData['viewDir'] = [0,0,1]
+    if 'Quaternion' not in drawingData:
+        drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
+    if 'showRigidBodies' not in drawingData:
+        drawingData['showRigidBodies'] = True
+    try:  # patch of sorts; this had been set to a string; needs to be an int between 0 & 3
+        int(drawingData['showSlice'])
+    except:
+        drawingData['showSlice'] = 0
+    if 'sliceSize' not in drawingData:
+        drawingData['sliceSize'] = 5.0
+    if 'contourColor' not in drawingData:
+        drawingData['contourColor'] = 'RdYlGn'
+    if 'Plane' not in drawingData:
+        drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
+    if 'magMult' not in drawingData:
+        drawingData['magMult'] = 1.0
+    if 'SymFade' not in drawingData:
+        drawingData['SymFade'] = False
+    if 'Voids' not in drawingData:
+        drawingData['Voids'] = []
+        drawingData['showVoids'] = False
+        drawingData['showMap'] = False
+    cx,ct,cs,ci = [0,0,0,0]
+    if generalData['Type'] in ['nuclear','faulted',]:
+        cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
+    elif generalData['Type'] == 'macromolecular':
+        cx,ct,cs,ci = [5,4,9,20]         #x, type, style & index
+    elif generalData['Type'] == 'magnetic':
+        cx,ct,cs,ci = [2,1,9,20]         #x, type, style & index
+        drawingData['vdwScale'] = 0.20
+    drawingData['atomPtrs'] = [cx,ct,cs,ci]
+    if not drawingData.get('Atoms'):
+        for atom in atomData:
+            DrawAtomAdd(drawingData,atom)
+        data['Drawing'] = drawingData
+    if len(drawingData['Plane']) < 5:
+        drawingData['Plane'].append([255,255,0])
+
 
     def OnRestraint(event):
         cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)
@@ -10514,7 +10518,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
                     oldSizer.Detach(i.GetWindow())  # don't delete them
             oldSizer.Clear(True)
         generalData = data['General']
-        SetupDrawingData()
+        SetupDrawingData(G2frame,data)
         drawingData = data['Drawing']
         SetDrawingDefaults(drawingData)
         cx,ct,cs,ci = drawingData['atomPtrs']
@@ -11989,7 +11993,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         wx.CallAfter(G2frame.dataWindow.SetDataSize)
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        SetupDrawingData()
+        SetupDrawingData(G2frame,data)
         drawingData = data['Drawing']
         SetDrawingDefaults(drawingData)
 
@@ -15553,7 +15557,7 @@ of the crystal structure.
         data['MCSA']['showLabels'] = data['MCSA'].get('showLabels',False)
         #end patch
         if not data['Drawing']:                 #if new drawing - no drawing data!
-            SetupDrawingData()
+            SetupDrawingData(G2frame,data)
         general = data['General']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies')
@@ -16534,7 +16538,7 @@ tab, use Operations->"Pawley create")''')
         mapData['Flip'] = False
         mapSig = np.std(mapData['rho'])
         if not data['Drawing']:                 #if new drawing - no drawing data!
-            SetupDrawingData()
+            SetupDrawingData(G2frame,data)
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
         data['Drawing']['showMap'] = True
@@ -16639,7 +16643,7 @@ tab, use Operations->"Pawley create")''')
         mapData['Flip'] = True
         mapSig = np.std(mapData['rho'])
         if not data['Drawing']:                 #if new drawing - no drawing data!
-            SetupDrawingData()
+            SetupDrawingData(G2frame,data)
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
         print (' 4D Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
@@ -16684,7 +16688,7 @@ tab, use Operations->"Pawley create")''')
         mapData['Flip'] = True
         mapSig = np.std(mapData['rho'])
         if not data['Drawing']:                 #if new drawing - no drawing data!
-            SetupDrawingData()
+            SetupDrawingData(G2frame,data)
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
         data['Drawing']['showMap'] = True
@@ -16807,7 +16811,7 @@ tab, use Operations->"Pawley create")''')
             UpdateWavesData()
         elif text == 'Dysnomia':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MEMMenu)
-            UpdateDysnomia()
+            G2phsG2.UpdateDysnomia(G2frame,data)
         elif text == 'RMC':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.FRMCMenu)
             UpdateRMC()
@@ -16924,9 +16928,9 @@ tab, use Operations->"Pawley create")''')
         # Dysnomia (MEM)
         if data['General']['doDysnomia']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MEMMenu)
-            G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
-            G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
-            G2frame.Bind(wx.EVT_MENU, OnRunDysnomia, id=G2G.wxID_RUNDYSNOMIA)
+            G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnLoadDysnomia(event,G2frame,data), id=G2G.wxID_LOADDYSNOMIA)
+            G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnSaveDysnomia(event,G2frame,data), id=G2G.wxID_SAVEDYSNOMIA)
+            G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnRunDysnomia(event,G2frame,data), id=G2G.wxID_RUNDYSNOMIA)
         # Stacking faults
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.LayerData)
         G2frame.Bind(wx.EVT_MENU, OnCopyPhase, id=G2G.wxID_COPYPHASE)
@@ -17260,6 +17264,48 @@ tab, use Operations->"Pawley create")''')
             G2frame.phaseDisplay.SetSelection(ind)
             return
     ChangePage(0)
+    
+def DoFourierMaps(G2frame,data):
+    generalData = data['General']
+    mapData = generalData['Map']
+    reflNames = mapData['RefList']
+    if not generalData['Map']['MapType']:
+        G2frame.ErrorDialog('Fourier map error','Fourier map type not defined')
+        return
+    if not reflNames[0]:
+        G2frame.ErrorDialog('Fourier map error','No reflections defined for Fourier map')
+        return
+    phaseName = generalData['Name']
+    ReflData = GetReflData(G2frame,phaseName,reflNames)
+    if ReflData == None:
+        G2frame.ErrorDialog('Fourier map error','No reflections defined for Fourier map')
+        return
+    if 'Omit' in mapData['MapType']:
+        dim = '3D '
+        pgbar = wx.ProgressDialog('Omit map','Blocks done',65,
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        mapData.update(G2mth.OmitMap(data,ReflData,pgbar))
+        pgbar.Destroy()
+    else:
+        if generalData['Modulated']:
+            dim = '4D '
+            G2mth.Fourier4DMap(data,ReflData)
+        else:
+            dim = '3D '
+            G2mth.FourierMap(data,ReflData)
+    mapData['Flip'] = False
+    mapSig = np.std(mapData['rho'])
+    if not data['Drawing']:                 #if new drawing - no drawing data!
+        SetupDrawingData(G2frame,data)
+    data['Drawing']['contourLevel'] = 1.
+    data['Drawing']['mapSize'] = 10.
+    data['Drawing']['showMap'] = True
+    ftext = dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+    print (ftext)
+    G2frame.AddToNotebook('Fourier '+ftext,'FM')
+    UpdateDrawAtoms()
+    G2plt.PlotStructure(G2frame,data)
+
 
 def CheckAddHKLF(G2frame,data):
     '''GUI actions associated with linking a Phase to a HKLF histogram.

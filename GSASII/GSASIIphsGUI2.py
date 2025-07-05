@@ -90,7 +90,7 @@ RMCmisc = {}
 ranDrwDict = {}
 ranDrwDict['atomList'] = []
 DrawStyleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','polyhedra']
-
+#### UpdateDynsomia GUI
 def UpdateDysnomia(G2frame,data):
     ''' Present the controls for running Dysnomia
     '''
@@ -217,7 +217,7 @@ def UpdateDysnomia(G2frame,data):
     G2phsG.SetPhaseWindow(G2frame.MEMData,mainSizer)
 
 
-# #### RMC Data page ################################################################################
+#### UpdateRMC GUI ################################################################################
 # # fullrmc stuff TODO:
 # #  1) need to implement swapping in scripts
 # #  2) fullrmc tutorials
@@ -1911,7 +1911,7 @@ def UpdateRMC(G2frame,data,event=None):
         else:
             RMCmisc['RMCnote'].SetLabel('Note that fullrmc is not installed or was not located')
 
-# #### ISODISTORT tab ###############################################################################
+#### UpdateISODISTORT ###############################################################################
 
 def UpdateISODISTORT(G2frame,data,Scroll=0):
     ''' Setup ISODISTORT and present the results. Allow selection of a distortion model for PDFfit or
@@ -2266,7 +2266,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         mainSizer.Add(displayRadio())
     G2phsG.SetPhaseWindow(G2frame.ISODIST,mainSizer,Scroll=Scroll)
 
-# #### DIFFax Layer Data page ################################################################################
+#### UpdateLayerData GUI for DIFFax Layer Data ################################################################################
 def UpdateLayerData(G2frame,data,Scroll=0):
     '''Present the contents of the Phase/Layers tab for stacking fault simulation
     '''
@@ -2879,7 +2879,7 @@ def UpdateLayerData(G2frame,data,Scroll=0):
     bottomSizer.Add(StackSizer())
     mainSizer.Add(bottomSizer)
     G2phsG.SetPhaseWindow(G2frame.layerData,mainSizer,Scroll=Scroll)
-
+#### UpdateTexture GUI
 def UpdateTexture(G2frame,data):
 
     def SetSHCoef():
@@ -3323,7 +3323,8 @@ def UpdateTexture(G2frame,data):
     mainSizer.Add(angSizer,0,wx.LEFT,5)
 #        mainSizer.Add(SHPenalty(textureData['Penalty']),0,wx.LEFT,5)  for future
     G2phsG.SetPhaseWindow(Texture,mainSizer)
-    
+
+#### UpdateWavesData GUI   
 def UpdateWavesData(G2frame,data,Scroll=0):
 
     generalData = data['General']
@@ -3559,238 +3560,3 @@ def UpdateWavesData(G2frame,data,Scroll=0):
     mainSizer.Add(G2frame.bottomSizer)
     G2phsG.SetPhaseWindow(G2frame.waveData,mainSizer,Scroll=Scroll)
 
-##### Draw Atom routines ################################################################################
-def UpdateDrawAtoms(G2frame,data,atomStyle=''):
-    drawAtoms = G2frame.drawAtoms
-    def RefreshDrawAtomGrid(event):
-        def SetChoice(name,c,n=0):
-            choice = []
-            for r in range(len(atomData)):
-                if n:
-                    srchStr = str(atomData[r][c][:n])
-                else:
-                    srchStr = str(atomData[r][c])
-                if srchStr not in choice:
-                    if n:
-                        choice.append(str(atomData[r][c][:n]))
-                    else:
-                        choice.append(str(atomData[r][c]))
-            choice.sort()
-
-            dlg = wx.MultiChoiceDialog(G2frame,'Select',name,choice)
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelections()
-                parms = []
-                for x in sel:
-                    parms.append(choice[x])
-                drawAtoms.ClearSelection()
-                drawingData['selectedAtoms'] = []
-                for row in range(len(atomData)):
-                    test = atomData[row][c]
-                    if n:
-                        test = test[:n]
-                    if  test in parms:
-                        drawAtoms.SelectRow(row,True)
-                        drawingData['selectedAtoms'].append(row)
-                G2plt.PlotStructure(G2frame,data)
-            dlg.Destroy()
-
-        r,c =  event.GetRow(),event.GetCol()
-        if r < 0 and c < 0:
-            for row in range(drawAtoms.GetNumberRows()):
-                drawingData['selectedAtoms'].append(row)
-                drawAtoms.SelectRow(row,True)
-        elif r < 0:                          #dclick on col label
-            sel = -1
-            if drawAtoms.GetColLabelValue(c) == 'Style':
-                G2phsG.DrawAtomStyle(event)
-            elif drawAtoms.GetColLabelValue(c) == 'Label':
-                G2phsG.DrawAtomLabel(event)
-            elif drawAtoms.GetColLabelValue(c) == 'Color':
-                G2phsG.DrawAtomColor(event)
-            elif drawAtoms.GetColLabelValue(c) == 'Residue':
-                SetChoice('Residue',c,3)
-            elif drawAtoms.GetColLabelValue(c) == '1-letter':
-                SetChoice('1-letter',c,1)
-            elif drawAtoms.GetColLabelValue(c) == 'Chain':
-                SetChoice('Chain',c)
-            elif drawAtoms.GetColLabelValue(c) == 'Name':
-                SetChoice('Name',c)
-            elif drawAtoms.GetColLabelValue(c) == 'Sym Op':
-                SetChoice('Name',c)
-            elif drawAtoms.GetColLabelValue(c) == 'Type':
-                SetChoice('Type',c)
-            elif drawAtoms.GetColLabelValue(c) in ['x','y','z','I/A']:
-                drawAtoms.ClearSelection()
-        else:
-            if drawAtoms.GetColLabelValue(c) in ['Style','Label']:
-                atomData[r][c] = drawAtoms.GetCellValue(r,c)
-                G2phsG.FindBondsDraw(data)
-            elif drawAtoms.GetColLabelValue(c) == 'Color':
-                colors = wx.ColourData()
-                colors.SetChooseFull(True)
-                dlg = wx.ColourDialog(G2frame.GetParent(),colors)
-                if dlg.ShowModal() == wx.ID_OK:
-                    color = dlg.GetColourData().GetColour()[:3]
-                    attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
-                    attr.SetReadOnly(True)
-                    attr.SetBackgroundColour(color)
-                    atomData[r][c] = color
-                    drawingData['Atoms'][r][c] = color
-                    drawAtoms.SetAttr(i,cs+2,attr)
-                dlg.Destroy()
-                UpdateDrawAtoms()
-        G2plt.PlotStructure(G2frame,data)
-
-    def NextAtom(event):
-        'respond to a tab by cycling through the atoms'
-        next = 0
-        for r in drawAtoms.GetSelectedRows():
-            next = r + 1
-            break
-        if next >= drawAtoms.GetNumberRows():
-            next = 0
-        drawAtoms.ClearSelection()
-        drawAtoms.SelectRow(next,True)
-        drawAtoms.MakeCellVisible(next,0)
-        drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
-        G2plt.PlotStructure(G2frame,data)
-        G2frame.Raise()
-
-    def RowSelect(event):
-        r,c =  event.GetRow(),event.GetCol()
-        if r < 0 and c < 0:
-            if drawAtoms.IsSelection():
-                drawAtoms.ClearSelection()
-        elif c < 0:                   #only row clicks
-            if event.ControlDown():
-                if r in drawAtoms.GetSelectedRows():
-                    drawAtoms.DeselectRow(r)
-                else:
-                    drawAtoms.SelectRow(r,True)
-            elif event.ShiftDown():
-                indxs = drawAtoms.GetSelectedRows()
-                drawAtoms.ClearSelection()
-                ibeg = 0
-                if indxs:
-                    ibeg = indxs[-1]
-                for row in range(ibeg,r+1):
-                    drawAtoms.SelectRow(row,True)
-            else:
-                G2frame.GetStatusBar().SetStatusText('Use right mouse click to brng up Draw Atom editing options',1)
-                drawAtoms.ClearSelection()
-                drawAtoms.SelectRow(r,True)
-        drawingData['selectedAtoms'] = []
-        drawingData['selectedAtoms'] = drawAtoms.GetSelectedRows()
-        G2plt.PlotStructure(G2frame,data)
-
-#### UpdateDrawAtoms executable code starts here
-    topSizer = G2frame.dataWindow.topBox
-    topSizer.Clear(True)
-    parent = G2frame.dataWindow.topPanel
-    lbl= f"Draw Atom list for {data['General']['Name']!r}"[:60]
-    topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
-    topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
-    wx.CallAfter(G2frame.dataWindow.SetDataSize)
-    G2frame.GetStatusBar().SetStatusText('',1)
-    oldSizer = G2frame.drawAtomsList.GetSizer()
-    if oldSizer: # 2nd+ use, clear out old entries
-        for i in oldSizer.GetChildren(): # look for grids in sizer
-            if type(i.GetWindow()) is G2G.GSGrid:
-                oldSizer.Detach(i.GetWindow())  # don't delete them
-        oldSizer.Clear(True)
-    generalData = data['General']
-    G2phsG.SetupDrawingData()
-    drawingData = data['Drawing']
-    G2phsG.SetDrawingDefaults(drawingData)
-    cx,ct,cs,ci = drawingData['atomPtrs']
-    atomData = drawingData['Atoms']
-    if atomStyle:
-        for atom in atomData:
-            atom[cs] = atomStyle
-    Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
-        [wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,polyhedra",
-        wg.GRID_VALUE_CHOICE+": ,type,name,number",wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]
-    styleChoice = DrawStyleChoice
-    labelChoice = [' ','type','name','number']
-    colLabels = ['Name','Type','x','y','z','Sym Op','Style','Label','Color','I/A']
-    if generalData['Type'] == 'macromolecular':
-        colLabels = ['Residue','1-letter','Chain'] + colLabels
-        Types = 3*[wg.GRID_VALUE_STRING,]+Types
-        Types[8] = wg.GRID_VALUE_CHOICE+": ,lines,vdW balls,sticks,balls & sticks,ellipsoids,backbone,ribbons,schematic"
-        styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','backbone','ribbons','schematic']
-        labelChoice = [' ','type','name','number','residue','1-letter','chain']
-        Types[9] = wg.GRID_VALUE_CHOICE+": ,type,name,number,residue,1-letter,chain"
-    elif generalData['Type'] == 'magnetic':
-        colLabels = colLabels[:5]+['Mx','My','Mz']+colLabels[5:]
-        Types = Types[:5]+3*[wg.GRID_VALUE_FLOAT+':10,4',]+Types[5:]
-    table = []
-    rowLabels = []
-    for i,atom in enumerate(drawingData['Atoms']):
-        table.append(atom[:colLabels.index('I/A')+1])
-        rowLabels.append(str(i))
-
-    G2frame.atomTable = None
-    G2frame.atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    drawAtoms.SetTable(G2frame.atomTable, True)
-    drawAtoms.SetMargins(0,0)
-    drawAtoms.AutoSizeColumns(True)
-    drawAtoms.SetColSize(colLabels.index('Style'),80)
-    drawAtoms.SetColSize(colLabels.index('Color'),50)
-    drawAtoms.SetRowLabelSize(45)
-    if 'phoenix' in wx.version():
-        drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGED)
-        drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshDrawAtomGrid)
-    else:
-        drawAtoms.Unbind(wg.EVT_GRID_CELL_CHANGE)
-        drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshDrawAtomGrid)
-    drawAtoms.Unbind(wg.EVT_GRID_LABEL_LEFT_DCLICK)
-    drawAtoms.Unbind(wg.EVT_GRID_CELL_LEFT_DCLICK)
-    drawAtoms.Unbind(wg.EVT_GRID_LABEL_LEFT_CLICK)
-    drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshDrawAtomGrid)
-    drawAtoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, RefreshDrawAtomGrid)
-    drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
-
-    lblList = ('Delete','Set atom style','Set atom label',
-                       'Set atom color','Set view point','Generate copy',
-                       'Generate surrounding sphere','Transform atoms',
-                       'Generate bonded','Select from list')
-    callList = (G2phsG.DrawAtomsDelete,G2phsG.DrawAtomStyle, G2phsG.DrawAtomLabel,
-                        G2phsG.DrawAtomColor,G2phsG.SetViewPoint,G2phsG.AddSymEquiv,
-                        G2phsG.AddSphere,G2phsG.AddBox,G2phsG.TransformSymEquiv,
-                        G2phsG.FillCoordSphere,G2phsG.SelDrawList)
-    onRightClick = drawAtoms.setupPopup(lblList,callList)
-    drawAtoms.Bind(wg.EVT_GRID_CELL_RIGHT_CLICK, onRightClick)
-    drawAtoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, onRightClick)
-
-    try:
-        drawAtoms.Bind(wg.EVT_GRID_TABBING, NextAtom)
-    except: # patch: for pre-2.9.5 wx
-        pass
-    for i,atom in enumerate(drawingData['Atoms']):
-        attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
-        attr.SetReadOnly(True)
-        attr.SetBackgroundColour(atom[cs+2])
-        drawAtoms.SetAttr(i,cs+2,attr)
-        drawAtoms.SetCellValue(i,cs+2,'')
-    indx = drawingData['selectedAtoms']
-    if indx:
-        for r in range(len(atomData)):
-            if r in indx:
-                drawAtoms.SelectRow(r)
-    for c in range(len(colLabels)):
-       attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
-       attr.SetReadOnly(True)
-       attr.SetBackgroundColour(VERY_LIGHT_GREY)
-       if colLabels[c] not in ['Style','Label','Color']:
-            drawAtoms.SetColAttr(c,attr)
-
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(drawAtoms,1,wx.EXPAND)
-    drawAtoms.SetScrollRate(10,10) # allow grid to scroll
-    G2phsG.SetPhaseWindow(G2frame.drawAtomsList,mainSizer)
-
-    G2phsG.FindBondsDraw(data)
-    drawAtoms.ClearSelection()
-    G2frame.drawAtoms = drawAtoms

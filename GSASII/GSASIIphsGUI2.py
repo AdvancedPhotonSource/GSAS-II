@@ -6,7 +6,7 @@ Routines for Phase dataframes follow. Only Update routines are here
 all others are in GSASIIphsGUI.py
 '''
 from __future__ import division, print_function
-#import platform
+import platform
 import os
 import wx
 import wx.grid as wg

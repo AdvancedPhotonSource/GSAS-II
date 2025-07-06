@@ -41,6 +41,7 @@ from . import GSASIIddataGUI as G2ddG
 from . import GSASIIplot as G2plt
 from . import GSASIIpwdplot as G2pwpl
 from . import GSASIIphsGUI2 as G2phsG2
+from . import GSASIIrmcGUI as G2rmcG
 # if GSASIIpath.GetConfigValue('debug'):
 #     print('Debug reloading',G2plt)
 #     import imp
@@ -5862,7 +5863,7 @@ program; Please cite:
                 if reset:
                     wx.MessageDialog(G2frame,' Vacancies found & "Va" atoms added to list. '+ \
                         'You may need to revise RMCProfile setup parameters.','Repeat Setup RMC',wx.OK).ShowModal()
-                    wx.CallAfter(G2phsG2.UpdateRMC,G2frame,data)
+                    wx.CallAfter(G2rmcG.UpdateRMC,G2frame,data)
             else:
                 print('RMCProfile file build failed - no histogram selected')
                 G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
@@ -6121,7 +6122,7 @@ program; Please cite:
                 Error =  G2pwd.UpdatePDFfit(data,RMCPdict)
                 if Error:
                     wx.MessageBox('PDFfit failed',caption='%s not found'%Error[0],style=wx.ICON_EXCLAMATION)
-            G2phsG2.UpdateRMC(G2frame,data)
+            G2rmcG.UpdateRMC(G2frame,data)
 
     def Runfullrmc(event):
         fullrmc_exec = G2pwd.findfullrmc()
@@ -6196,7 +6197,7 @@ program; Please cite:
             else:
                 Proc = subp.Popen(['/bin/bash','fullrmc.sh'])
 #                Proc.wait()     #for it to finish before continuing on
-        G2phsG2.UpdateRMC(G2frame,data)
+        G2rmcG.UpdateRMC(G2frame,data)
 
     def RunRMCProfile(event):
         generalData = data['General']
@@ -6270,7 +6271,7 @@ program; Please cite:
                 batch.close()
             subp.Popen(script_file,creationflags=subp.CREATE_NEW_CONSOLE)
 #        Proc.wait()     #for it to finish before continuing on
-        G2phsG2.UpdateRMC(G2frame,data)
+        G2rmcG.UpdateRMC(G2frame,data)
 
 
     def OnRunRMC(event):
@@ -13225,7 +13226,7 @@ tab, use Operations->"Pawley create")''')
             G2phsG2.UpdateDysnomia(G2frame,data)
         elif text == 'RMC':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.FRMCMenu)
-            G2phsG2.UpdateRMC(G2frame,data)
+            G2rmcG.UpdateRMC(G2frame,data)
         elif text == 'ISODISTORT':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ISODData)
             G2phsG2.UpdateISODISTORT(G2frame,data)

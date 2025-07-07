@@ -2860,9 +2860,9 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        self.mainPanel.SplitVertically(self.treePanel,
-                                           self.dataWindow.outer, 400)
-        self.Status.SetStatusWidths([200,-1])   # make these match?
+        sash = min(max(100,GSASIIpath.GetConfigValue('Split_Loc',250)),500)
+        self.mainPanel.SplitVertically(self.treePanel, self.dataWindow.outer, sash)
+        self.Status.SetStatusWidths([sash,-1])   # make these match?
 
         G2G.wxID_GPXTREE = wx.NewId()
         treeSizer = wx.BoxSizer(wx.VERTICAL)
@@ -4534,7 +4534,8 @@ If you continue from this point, it is quite likely that all intensity computati
                      'Main_Size':tuple(self.GetSize()),
                      'Plot_Pos':tuple(self.plotFrame.GetPosition()),
                      'Plot_Size':tuple(self.plotFrame.GetSize())}
-            GSASIIpath.SetConfigValue(FrameInfo)
+            GSASIIpath.AddConfigValue(FrameInfo)
+            GSASIIpath.AddConfigValue({'Split_Loc':self.mainPanel.GetSashPosition()})
             config = G2G.GetConfigValsDocs()
             G2G.SaveConfigVars(config)
         except:

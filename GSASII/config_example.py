@@ -145,6 +145,10 @@ Plot_Pos = (200,200)
 these widows. If position is outside screen then it will be repositioned to default.
 This is used internally by GSAS-II and would not normally be changed by a user. 
 '''
+Split_Loc = 250
+'''Location of the splitter bar between the data tree and the data window. 
+Can be dragged by user. Is saved automatically with the window size and position
+'''
 
 Tick_length = 8.0
 '''Specifies the length of phase tick marks in pixels. Default is 8.'''

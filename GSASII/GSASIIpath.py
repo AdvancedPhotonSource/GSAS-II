@@ -60,7 +60,7 @@ def GetConfigValue(key,default=None,getDefault=False):
 def SetConfigValue(parmdict):
     '''Set configuration variables. Note that parmdict is a dictionary
     from :func:`GSASIIctrlGUI.GetConfigValsDocs` where each element is a
-    lists. The first item in list is the default value, the second is
+    list. The first item in list is the default value, the second is
     the value to use for that configuration variable. Most of the
     information gathered in GetConfigValsDocs is no longer used.
     '''
@@ -75,6 +75,15 @@ def SetConfigValue(parmdict):
             if parmdict[var][1] == '': continue
             if parmdict[var][0] == parmdict[var][1]: continue
             configDict[var] = parmdict[var][1]
+
+def AddConfigValue(valsdict):
+    '''Set configuration variables. 
+
+    :param dict valsdict: a dictionary of values that are added
+      directly to configDict.
+    '''
+    global configDict
+    configDict.update(valsdict)
 
 def GetConfigDefault(key):
     '''Return the default value for a config value
@@ -2168,7 +2177,11 @@ to update/regress repository from git repository:
         # allows this to be done in the background.
         import requests
         url='https://github.com/AdvancedPhotonSource/GSAS-II/tags'
-        releases = requests.get(url=url)
+        try:
+            releases = requests.get(url=url)
+        except:
+            print('background get tags failed')
+            sys.exit()
         taglist = [tag.split('"')[0] for tag in releases.text.split('AdvancedPhotonSource/GSAS-II/releases/tag/')[1:]]
         lastver = sorted([t for t in taglist if 'v' in t])[-1]
         lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]

@@ -24,7 +24,7 @@ def _path_discovery(printInfo=False):
     binseapath = [os.path.abspath(sys.path[0])]  # where Python is installed
     binseapath += [os.path.abspath(os.path.dirname(__file__))]  # directory where this file is found
     binseapath += [os.path.dirname(binseapath[-1])]  # parent of above directory
-    binseapath += [os.path.expanduser('~/.GSASII')]       # directory in user's home
+    binseapath += [os.path.expanduser(os.path.join('~','.GSASII'))]       # directory in user's home
     searched = []
     for loc in binseapath:
         if loc in searched: continue

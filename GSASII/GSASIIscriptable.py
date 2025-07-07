@@ -82,7 +82,7 @@ def SetDebugMode(mode):
     This will provide some additional output that may help with 
     tracking down problems in the code.
     '''
-    GSASIIpath.SetConfigValue({'debug':bool(mode)})
+    GSASIIpath.AddConfigValue({'debug':bool(mode)})
 
 def installScriptingShortcut():
     '''Creates a file named G2script in the current Python site-packages directory.

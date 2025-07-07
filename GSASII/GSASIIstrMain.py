@@ -199,7 +199,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
 #        raise G2obj.G2Exception('ERROR - nan found in LS parameters - use Calculate/View LS parms to locate')
     latIgnoreLst,latCopyDict = IgnoredLatticePrms(Phases)
     HistoPhases = [Histograms,Phases,restraintDict,rigidbodyDict]
-    origDiffs = G2stMth.errRefine([],HistoPhases,parmDict,[],calcControls,pawleyLookup,None)
+    origDiffs = G2stMth.errRefine([],HistoPhases,parmDict,{},[],calcControls,pawleyLookup,None)
     chiStart = rms(origDiffs)
     origParms = copy.deepcopy(parmDict)
     #print('after 1st calc',time.time()-begin)
@@ -245,7 +245,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
                 parmDict[i] = parmDict[dprm]
         #for i in parmDict:
         #    if origParms[i] != parmDict[i]: print('changed',i,origParms[i],parmDict[i])
-        chiLow = rms(G2stMth.errRefine([],HistoPhases,parmDict,[],calcControls,pawleyLookup,None))
+        chiLow = rms(G2stMth.errRefine([],HistoPhases,parmDict,{},[],calcControls,pawleyLookup,None))
         parmDict[dprm] += 2*delta
         G2mv.Dict2Map(parmDict)
         if dprm in latCopyDict:         # apply contraints on lattice parameters
@@ -253,7 +253,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
                 parmDict[i] = parmDict[dprm]
         #for i in parmDict:
         #    if origParms[i] != parmDict[i]: print('changed',i,origParms[i],parmDict[i])
-        chiHigh = rms(G2stMth.errRefine([],HistoPhases,parmDict,[],calcControls,pawleyLookup,None))
+        chiHigh = rms(G2stMth.errRefine([],HistoPhases,parmDict,{},[],calcControls,pawleyLookup,None))
         #print('===>',prm,parmDict[dprm],delta)
         #print(chiLow,chiStart,chiHigh)
         #print((chiLow-chiStart)/delta,0.5*(chiLow-chiHigh)/delta,(chiStart-chiHigh)/delta)
@@ -749,7 +749,7 @@ def DoNoFit(GPXfile,key):
     parmDict.update(histDict)
     G2stIO.GetFprime(calcControls,Histograms)
 
-    G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],parmDict,[],calcControls,pawleyLookup,None)
+    G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],parmDict,{},[],calcControls,pawleyLookup,None)
     return Histograms[key]['Data'][3]
 
 def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
@@ -817,7 +817,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     G2stIO.GetFprime(calcControls,Histograms)
     try:
         for i in range(cycles):
-            M = G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],parmDict,[],calcControls,pawleyLookup,dlg)
+            M = G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],parmDict,{},[],calcControls,pawleyLookup,dlg)
             G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
             if refPlotUpdate is not None: refPlotUpdate(Histograms,i)
         Rvals = {}

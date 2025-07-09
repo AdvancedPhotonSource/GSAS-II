@@ -119,14 +119,14 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             w = np.where(y>0,1/y,0.)
             for j in sorted(tcols): # show all columns with temperature
                 if T[f'{j}c'] > 0:
-                    print(f'Column {j} T min {T[f'{j}min']:.2f}'
-                              f' max {T[f'{j}max']:.2f}'
-                              f' avg {T[f'{j}sum']/T[f'{j}c']:.2f} (C assumed)')
+                    print(f"Column {j} T min {T[f'{j}min']:.2f}"
+                              f" max {T[f'{j}max']:.2f}"
+                              f" avg {T[f'{j}sum']/T[f'{j}c']:.2f} (C assumed)")
             for j in tcols: # take 1st column with non-zero temperatures
                 if T[f'{j}c'] > 0:
                     self.Sample['Temperature'] = 273.15 + T[f'{j}sum']/T[f'{j}c']
                     if len(tcols) > 1:
-                        print(f'Using column {j}, T={self.Sample['Temperature']:.3f} K')
+                        print(f"Using column {j}, T={self.Sample['Temperature']:.3f} K")
                     break
             self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
             return True

@@ -4415,7 +4415,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     G2mv.InitVars()
                     constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList,'auto-wildcard',hId)
                     G2mv.EvaluateMultipliers(constrDict,self.parmDict)
-                    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)
+                    errmsg,conswarnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)
                     WriteCIFitem(self.fp, '_refine_ls_number_constraints',
                                 str(G2mv.CountUserConstraints()))
 

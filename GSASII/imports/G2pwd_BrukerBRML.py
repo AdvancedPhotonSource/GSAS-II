@@ -78,7 +78,15 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             # Extract 2-theta angle and counts from the XML document
             i=0
             T = {}
-            for j in (5,6,8): # columns with temperature?
+            tcol = GSASIIpath.GetConfigValue('BRML_T_col',-1)
+            if tcol >= 0:
+                tcols = (tcol,)
+            else:
+                tcols = (8,6,5)  # columns to use for temperature
+
+            for j in tcols:
+                T[f'{j}max'] = -1
+                T[f'{j}min'] = 9999
                 T[f'{j}sum'] = 0
                 T[f'{j}c'] = 0
             # data appears to be in column 4 most of the time
@@ -93,13 +101,12 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                 y[i] = float(entry[4])*float(entry[0])/effTime
                 y3.append(float(entry[3]))
                 i = i + 1
-                # both entry 6 & 8 seem to have a temperature in the multi-scan file
-                # these columns are not present in the single-scan file.
-                # Try column 8 first
-                for j in (5,6,8): # columns with temperature?
+                for j in tcols: # columns with temperature?
                     try:
                         t = float(entry[j])
                         if t > 0:
+                            T[f'{j}max'] = max(T[f'{j}max'],t)
+                            T[f'{j}min'] = min(T[f'{j}min'],t)
                             T[f'{j}sum'] += t
                             T[f'{j}c'] += 1
                     except:
@@ -110,9 +117,16 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             except:
                 y = np.array(y3)
             w = np.where(y>0,1/y,0.)
-            for j in (8,6,5): # columns with temperature?
+            for j in sorted(tcols): # show all columns with temperature
                 if T[f'{j}c'] > 0:
-                    self.Sample['Temperature'] = 273. + T[f'{j}sum']/T[f'{j}c']
+                    print(f'Column {j} T min {T[f'{j}min']:.2f}'
+                              f' max {T[f'{j}max']:.2f}'
+                              f' avg {T[f'{j}sum']/T[f'{j}c']:.2f} (C assumed)')
+            for j in tcols: # take 1st column with non-zero temperatures
+                if T[f'{j}c'] > 0:
+                    self.Sample['Temperature'] = 273.15 + T[f'{j}sum']/T[f'{j}c']
+                    if len(tcols) > 1:
+                        print(f'Using column {j}, T={self.Sample['Temperature']:.3f} K')
                     break
             self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
             return True

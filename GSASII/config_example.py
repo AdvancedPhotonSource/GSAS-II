@@ -331,3 +331,9 @@ G2FileBrowser = False
 files when files are imported. For Linux the default is True, but
 for Windows and Mac, the default is False
 '''
+
+BRML_T_col = -1
+'''When zero or positive, this indicates a column where the temperature
+is stored in a Bruker BRML file. With the default value (-1), the columns 
+8, 6, and 5 are tried, in that order.
+'''

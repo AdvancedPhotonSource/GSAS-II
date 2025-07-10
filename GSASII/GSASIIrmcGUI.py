@@ -75,13 +75,13 @@ DrawStyleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids
 # #  1) need to implement swapping in scripts
 # #  2) fullrmc tutorials
 
-def UpdateRMC(G2frame,data,event=None):
+def UpdateRMC(G2frame,data):
     ''' Present the controls for running fullrmc, RMCProfile or PDFfit
     '''
     global runFile
     def OnRMCselect(event):
         G2frame.RMCchoice = RMCsel.GetStringSelection()
-        wx.CallLater(200,UpdateRMC,G2frame,data,event)
+        wx.CallLater(200,UpdateRMC,G2frame,data)
 
     def GetAtmChoice(pnl,RMCPdict):
 
@@ -106,13 +106,13 @@ def UpdateRMC(G2frame,data,event=None):
                 for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)]:
                     BVSpairs += pair
                 RMCPdict['BVS'] = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnValSel(event):
             Obj = event.GetEventObject()
             itype = Indx[Obj.GetId()]
             RMCPdict['Oxid'][itype][0] = Obj.GetStringSelection()
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         nTypes = len(RMCPdict['aTypes'])
         atmChoice = wx.FlexGridSizer(nTypes+1,5,5)
@@ -160,7 +160,7 @@ def UpdateRMC(G2frame,data,event=None):
             Obj = event.GetEventObject()
             swap = Indx[Obj.GetId()]
             del RMCPdict['Swaps'][swap]
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         Indx = {}
         atChoice = RMCPdict['atSeq']
@@ -262,7 +262,7 @@ def UpdateRMC(G2frame,data,event=None):
             else:
                 dlg.Destroy()
 
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnFileFormat(event):
             Obj = event.GetEventObject()
@@ -301,7 +301,7 @@ def UpdateRMC(G2frame,data,event=None):
             fil = Indx[Obj.GetId()]
             RMCPdict['files'][fil][0] = 'Select'
             RMCPdict['ReStart'][0] = True
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnRef(event):
             Obj = event.GetEventObject()
@@ -310,7 +310,7 @@ def UpdateRMC(G2frame,data,event=None):
 
         def OnRefSel(event):
             RMCPdict['refinement'] = reftype.GetStringSelection()
-            wx.CallLater(100,UpdateRMC,G2frame,data,event)
+            wx.CallLater(100,UpdateRMC,G2frame,data)
 
         def OnDataSel(event):
             RMCPdict['SeqDataType'] = dataType.GetStringSelection()
@@ -437,7 +437,7 @@ def UpdateRMC(G2frame,data,event=None):
                         except ValueError:
                             RMCPdict['seqfiles'].append([PDFnames[item],data])
                 dlg.Destroy()
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             def OnDelPDF(event):
                 usedList = [item[0] for item in RMCPdict['seqfiles']]
@@ -449,7 +449,7 @@ def UpdateRMC(G2frame,data,event=None):
                     for item in PDFdel:
                         del RMCPdict['seqfiles'][item]
                 dlg.Destroy()
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             def OnSetColVal(event):
                 parms = {'Rmin':[0.01,5.0],'Rmax':[5.,30.],'dscale':[0.5,2.0],
@@ -484,7 +484,7 @@ def UpdateRMC(G2frame,data,event=None):
                                 for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1][parm] = value
                             else:
                                 for row in range(seqGrid.GetNumberRows()): RMCPdict['seqfiles'][row][1]['Fitrange'][c] = value
-                    wx.CallAfter(UpdateRMC,G2frame,data,event)
+                    wx.CallAfter(UpdateRMC,G2frame,data)
 
             def OnSetVal(event):
                 r,c= event.GetRow(),event.GetCol()
@@ -690,7 +690,7 @@ def UpdateRMC(G2frame,data,event=None):
 
         def OnAddSwap(event):
             RMCPdict['Swaps'].append(['','',0.0,])
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnPdbButton(event):
             dlg = wx.FileDialog(G2frame.FRMC, 'Choose molecule pdb file',G2frame.LastGPXdir,
@@ -702,7 +702,7 @@ def UpdateRMC(G2frame,data,event=None):
 
         def OnAddAngle(event):
             RMCPdict['Angles'].append(['','','',0.,0.,0.,0.])
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         # def OnAddTorsion(event):
         #     RMCPdict['Torsions'].append(['','','','',0.,0.,0.,0.,0.,0.])
@@ -714,7 +714,7 @@ def UpdateRMC(G2frame,data,event=None):
                 Obj = event.GetEventObject()
                 angle = Indx[Obj.GetId()]
                 del RMCPdict['Angles'][angle]
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             # def OnAngleAtSel(event):
             #     Obj = event.GetEventObject()
@@ -769,7 +769,7 @@ def UpdateRMC(G2frame,data,event=None):
         #         Obj = event.GetEventObject()
         #         angle = Indx[Obj.GetId()]
         #         del RMCPdict['Torsions'][angle]
-        #         wx.CallAfter(UpdateRMC,G2frame,data,event)
+        #         wx.CallAfter(UpdateRMC,G2frame,data)
 
         #     def OnTorsionAtSel(event):
         #         Obj = event.GetEventObject()
@@ -882,7 +882,7 @@ def UpdateRMC(G2frame,data,event=None):
         RMCPdict['useBondConstraints'] = RMCPdict.get('useBondConstraints',True)
         distBox.Add(wx.StaticText(G2frame.FRMC,label='  Use bond constraints? '),0,WACV)
         distBox.Add(G2G.G2CheckBox(G2frame.FRMC,'',RMCPdict,'useBondConstraints',
-            OnChange=lambda event:UpdateRMC(G2frame,data,event)),0,WACV)
+            OnChange=lambda event:UpdateRMC(G2frame,data)),0,WACV)
         mainSizer.Add(distBox,0)
 
         if RMCPdict['useBondConstraints']:
@@ -908,7 +908,7 @@ def UpdateRMC(G2frame,data,event=None):
         def OnDelGroup(event):
             index = event.EventObject.index
             del RMCPdict['Groups'][index]
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
         def OnEdtGroup(event):
             index = event.EventObject.index
             GroupEditor(index)
@@ -922,7 +922,7 @@ def UpdateRMC(G2frame,data,event=None):
             dlg.Destroy()
             if len(RMCPdict['Groups'][index]) == 0:
                 del RMCPdict['Groups'][index]
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
         if len(RMCPdict['Groups']) == 0:
             grpAdd = wx.Button(G2frame.FRMC,label='Define atom group',style=wx.BU_EXACTFIT)
             grpAdd.Bind(wx.EVT_BUTTON,OnAddGroup)
@@ -968,7 +968,7 @@ def UpdateRMC(G2frame,data,event=None):
         distBox = wx.BoxSizer(wx.HORIZONTAL)
         distBox.Add(wx.StaticText(G2frame.FRMC,label=' Add thermal broadening? '),0,WACV)
         distBox.Add(G2G.G2CheckBox(G2frame.FRMC,'',RMCPdict,'addThermalBroadening',
-            OnChange=lambda event:UpdateRMC(G2frame,data,event)),0,WACV)
+            OnChange=lambda event:UpdateRMC(G2frame,data)),0,WACV)
         if RMCPdict['addThermalBroadening']:
             distBox.Add((15,-1))
             distBox.Add(wx.StaticText(G2frame.FRMC,label='Uiso equiv.'),0,WACV)
@@ -1096,27 +1096,27 @@ def UpdateRMC(G2frame,data,event=None):
 
         def OnUseBVS(event):
             RMCPdict['useBVS'] = not RMCPdict['useBVS']
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnAddSwap(event):
             RMCPdict['Swaps'].append(['','',0.0,])
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnAddFxCN(event):
             RMCPdict['FxCN'].append(['','',0.5,2.0,6,1.0,0.00001])
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnAddAveCN(event):
             RMCPdict['AveCN'].append(['','',0.5,2.0,6.,0.00001])
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnAddAnglePot(event):
             RMCPdict['Potentials']['Angles'].append(['','','',0.,0.,0.,0.])
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def OnAddBondPot(event):
             RMCPdict['Potentials']['Stretch'].append(['','',0.,0.])
-            wx.CallAfter(UpdateRMC,G2frame,data,event)
+            wx.CallAfter(UpdateRMC,G2frame,data)
 
         def GetTimeSizer():
 
@@ -1186,7 +1186,7 @@ def UpdateRMC(G2frame,data,event=None):
                 Obj = event.GetEventObject()
                 fxCN = Indx[Obj.GetId()]
                 del RMCPdict['FxCN'][fxCN]
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             def OnFxcnAtSel(event):
                 Obj = event.GetEventObject()
@@ -1222,7 +1222,7 @@ def UpdateRMC(G2frame,data,event=None):
                 Obj = event.GetEventObject()
                 fxCN = Indx[Obj.GetId()]
                 del RMCPdict['AveCN'][fxCN]
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             def OnAvcnAtSel(event):
                 Obj = event.GetEventObject()
@@ -1257,7 +1257,7 @@ def UpdateRMC(G2frame,data,event=None):
                 Obj = event.GetEventObject()
                 angle = Indx[Obj.GetId()]
                 del RMCPdict['Potentials']['Angles'][angle]
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             def OnAngleAtSel(event):
                 Obj = event.GetEventObject()
@@ -1295,7 +1295,7 @@ def UpdateRMC(G2frame,data,event=None):
                 Obj = event.GetEventObject()
                 bond = Indx[Obj.GetId()]
                 del RMCPdict['Potentials']['Stretch'][bond]
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             def OnBondAtSel(event):
                 Obj = event.GetEventObject()
@@ -1458,7 +1458,7 @@ def UpdateRMC(G2frame,data,event=None):
 
             def OnShape(event):
                 RMCPdict['shape'] = shape.GetValue()
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             parmSizer = wx.FlexGridSizer(3,6,5,5)
             Names = ['delta1','delta2','sratio','rcut','spdiameter']
@@ -1533,7 +1533,7 @@ def UpdateRMC(G2frame,data,event=None):
                         atmGrid.SetCellValue(r,c,RMCPdict['AtomConstr'][r][c+1])
                         wx.MessageBox('ERROR - atom constraints must be blank or have "@n" with n >= 20',
                             style=wx.ICON_ERROR)
-                    wx.CallAfter(UpdateRMC,G2frame,data,event)
+                    wx.CallAfter(UpdateRMC,G2frame,data)
 
             def OnUisoRefine(event):
                 RMCPdict['UisoRefine'] = uiso.GetValue()
@@ -1558,7 +1558,7 @@ def UpdateRMC(G2frame,data,event=None):
                             nextP += 1
                         atom[6] = '@%d'%nextP
                         RMCPdict['AtomVar']['@%d'%nextP] = 0.005
-                wx.CallAfter(UpdateRMC,G2frame,data,event)
+                wx.CallAfter(UpdateRMC,G2frame,data)
 
             atmSizer = wx.BoxSizer(wx.VERTICAL)
             atmSizer.Add(wx.StaticText(G2frame.FRMC,label=' Atom Constraints; enter as e.g. "@n" or "0.5-@n"; n>=20 && "@n" should be at end'))

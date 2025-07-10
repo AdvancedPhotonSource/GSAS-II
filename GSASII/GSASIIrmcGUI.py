@@ -1724,15 +1724,21 @@ def UpdateRMC(G2frame,data,event=None):
         mainSizer.Add(RMCmisc['RMCnote'])
         G2G.HorizontalLine(mainSizer,G2frame.FRMC)
         if G2frame.RMCchoice == 'fullrmc':
+            time0 = time.time()
             RMCPdict = data['RMC']['fullrmc']
             mainSizer.Add(fullrmcSizer(RMCPdict))
+            print('fullrmc:',time.time()-time0)
 
         elif G2frame.RMCchoice ==  'RMCProfile':
+            time0 = time.time()
             RMCPdict = data['RMC']['RMCProfile']
             mainSizer.Add(RMCProfileSizer(RMCPdict))
+            print('RMCProfile:',time.time()-time0)
 
         else:       #PDFfit
+            time0 = time.time()
             mainSizer.Add(PDFfitSizer(data))
+            print('PDFfit:',time.time()-time0)
 
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)

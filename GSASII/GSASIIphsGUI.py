@@ -1604,7 +1604,7 @@ def UpdatePhaseData(G2frame,Item,data):
         except ValueError as msg:
             wx.MessageBox(msg,caption='Element symbol error')
 
-##### General phase routines ################################################################################
+#### General phase routines ################################################################################
     def UpdateGeneral(Scroll=0,SkipDraw=False):
         '''Draw the controls for the General phase data subpage
         '''
@@ -2385,12 +2385,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 if generalData['doDysnomia']:
                     if 'Dysnomia' not in pages:
                         G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
-                        G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnLoadDysnomia(event,G2frame,data), id=G2G.wxID_LOADDYSNOMIA)
-                        G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnSaveDysnomia(event,G2frame,data), id=G2G.wxID_SAVEDYSNOMIA)
-                        G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnRunDysnomia(event,G2frame,data), id=G2G.wxID_RUNDYSNOMIA)
-                        # G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
-                        # G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
-                        # G2frame.Bind(wx.EVT_MENU, OnRunDysnomia, id=G2G.wxID_RUNDYSNOMIA)
+                        # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnLoadDysnomia(event,G2frame,data), id=G2G.wxID_LOADDYSNOMIA)
+                        # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnSaveDysnomia(event,G2frame,data), id=G2G.wxID_SAVEDYSNOMIA)
+                        # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnRunDysnomia(event,G2frame,data), id=G2G.wxID_RUNDYSNOMIA)
+                        G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
+                        G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
+                        G2frame.Bind(wx.EVT_MENU, OnRunDysnomia, id=G2G.wxID_RUNDYSNOMIA)
                         G2frame.phaseDisplay.InsertPage(7,G2frame.MEMData,'Dysnomia')
                         Id = wx.NewId()
                         TabSelectionIdDict[Id] = 'Dysnomia'
@@ -4231,7 +4231,7 @@ program; Please cite:
             phId = G2gd.GetGPXtreeItemId(G2frame,phId,phsnam)
             G2frame.GPXtree.SelectItem(phId)
         wx.CallLater(100,_ShowPhase)
-#####  Atom routines ################################################################################
+####  Atom routines ################################################################################
     def FillAtomsGrid(Atoms):
         '''Display the contents of the Atoms tab
         '''
@@ -4542,7 +4542,7 @@ program; Please cite:
                             Atoms.frm = -1
                             G2frame.GetStatusBar().SetStatusText('',1)
                             data['Drawing']['Atoms'] = []           #clear & rebuild Draw atoms table
-                            G2phsG2.UpdateDrawAtoms(G2frame,data)
+                            UpdateDrawAtoms(G2frame,data)
                             wx.CallAfter(Paint)
                 else:
                     G2frame.GetStatusBar().SetStatusText('Use right mouse click to brng up Atom editing options',1)
@@ -4790,7 +4790,7 @@ program; Please cite:
         FillAtomsGrid(Atoms)
         event.StopPropagation()
         data['Drawing']['Atoms'] = []
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2plt.PlotStructure(G2frame,data)
 
     def AtomAdd(x,y,z,El='H',Name='UNK',update=True):
@@ -4822,7 +4822,7 @@ program; Please cite:
 #        if 'Atoms' in data['Drawing']:
 #            DrawAtomAdd(data['Drawing'],atomData[-1])
         if update:
-            G2phsG2.UpdateDrawAtoms(G2frame,data)
+            UpdateDrawAtoms(G2frame,data)
             G2plt.PlotStructure(G2frame,data)
 
     def OnAtomInsert(event):
@@ -4835,7 +4835,7 @@ program; Please cite:
         event.StopPropagation()
         FillAtomsGrid(Atoms)
         data['Drawing']['Atoms'] = []
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2plt.PlotStructure(G2frame,data)
 
     def OnAtomViewInsert(event):
@@ -4936,7 +4936,7 @@ program; Please cite:
             data['General']['HydIds'].update(HydIds)
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,True)
             data['Drawing']['Atoms'] = []
-            G2phsG2.UpdateDrawAtoms(G2frame,data)
+            UpdateDrawAtoms(G2frame,data)
             FillAtomsGrid(Atoms)
             dlg.Destroy()
             G2plt.PlotStructure(G2frame,data)
@@ -4967,7 +4967,7 @@ program; Please cite:
         if not len(HydIds):
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,False)
         data['Drawing']['Atoms'] = []
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         FillAtomsGrid(Atoms)
         G2plt.PlotStructure(G2frame,data)
 
@@ -5015,7 +5015,7 @@ program; Please cite:
             else:
                 atomData.insert(indx,[Name,El,'',x,y,z,1.,0.,0.,0.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         data['Drawing']['Atoms'] = []
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2plt.PlotStructure(G2frame,data)
 
     def AtomDelete(event):
@@ -5058,7 +5058,7 @@ program; Please cite:
             Atoms.ClearSelection()
             DrawAtomsDeleteByIDs(IDs)
             data['Drawing']['Atoms'] = []
-            G2phsG2.UpdateDrawAtoms(G2frame,data)
+            UpdateDrawAtoms(G2frame,data)
             wx.CallAfter(FillAtomsGrid,Atoms)
             G2plt.PlotStructure(G2frame,data)
         SetupGeneral()
@@ -5225,7 +5225,7 @@ program; Please cite:
             dlg.Destroy()
 
         data['Drawing']['Atoms'] = []
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2plt.PlotStructure(G2frame,data)
 
     def AtomTransform(event):
@@ -5288,7 +5288,7 @@ program; Please cite:
         else:
             Atoms.ForceRefresh()
         data['Drawing']['Atoms'] = []
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2plt.PlotStructure(G2frame,data)
 
     def CollectAtoms(event):
@@ -5578,7 +5578,7 @@ program; Please cite:
             drawData = data['Drawing']
             resid = resIDs[resName]
             drawData['viewPoint'][0] = atomData[AtLookUp[resid]][cx:cx+3]
-            G2phsG2.UpdateDrawAtoms(G2frame,data)
+            UpdateDrawAtoms(G2frame,data)
             G2plt.PlotStructure(G2frame,data)
 
         atomData = data['Atoms']
@@ -7218,7 +7218,7 @@ program; Please cite:
         RBData['RBIds']['Residue'].append(rbId)
         G2frame.GetStatusBar().SetStatusText('New rigid body UNKRB added to set of Residue rigid bodies',1)
 
-##### Draw Atom routines ################################################################################
+#### Draw Atom routines ################################################################################
     def UpdateDrawAtoms(G2frame,data,atomStyle=''):
         drawAtoms = G2frame.drawAtoms
         def RefreshDrawAtomGrid(event):
@@ -7538,7 +7538,7 @@ program; Please cite:
         for atom in atomData:
             atNum = generalData['AtomTypes'].index(atom[ct])
             atom[cs+2] = list(generalData['Color'][atNum])
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 
@@ -7625,7 +7625,7 @@ program; Please cite:
                         atomData.append(atom[:cuij+9])  #not SS stuff
         finally:
             dlg.Destroy()
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
         
@@ -7714,7 +7714,7 @@ program; Please cite:
             if not GoOn[0]:
                 break
         pgbar.Destroy()
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 
@@ -7770,7 +7770,7 @@ program; Please cite:
                 data['Drawing']['Atoms'] = atomData
         finally:
             dlg.Destroy()
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 
@@ -7908,10 +7908,10 @@ program; Please cite:
                 rep = 0
                 added = 1
                 pgbar.Destroy()
-            # G2phsG2.UpdateDrawAtoms(G2frame,data)
+            # UpdateDrawAtoms(G2frame,data)
             # G2plt.PlotStructure(G2frame,data)
         pgbar.Destroy()
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 
@@ -7972,7 +7972,7 @@ program; Please cite:
             pgbar.Destroy()
             data['Drawing']['Atoms'] = atomData
             print('search time: %.3f'%(time.time()-time0))
-            G2phsG2.UpdateDrawAtoms(G2frame,data)
+            UpdateDrawAtoms(G2frame,data)
             G2frame.drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
         else:
@@ -8015,7 +8015,7 @@ program; Please cite:
         pgbar.Destroy()
         data['Drawing']['Atoms'] = atomData
         print('search time: %.3f'%(time.time()-time0))
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 
@@ -8078,7 +8078,7 @@ program; Please cite:
             if not GoOn[0]:
                 break
         pgbar.Destroy()
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
 
@@ -8090,7 +8090,7 @@ program; Please cite:
         indx.reverse()
         for ind in indx:
             del atomData[ind]
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
@@ -8144,7 +8144,7 @@ program; Please cite:
                     break
             if not found:
                 DrawAtomAdd(drawingData,data['Atoms'][i])
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
@@ -8155,7 +8155,7 @@ program; Please cite:
         for atom in atomData:
             ID = atom[ci+8]
             G2mth.DrawAtomsReplaceByID(data,ci+8,atom,ID)
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
         if event:
@@ -8398,7 +8398,7 @@ program; Please cite:
         siz.Fit(ranDrwDict['msgWin'])
         ranDrwDict['msgWin'].CentreOnParent()
         ranDrwDict['msgWin'].Show()
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
 
 # #### Draw Options page ################################################################################
     def UpdateDrawOptions(G2frame,data):
@@ -8964,7 +8964,7 @@ program; Please cite:
         G2phsG2.UpdateDeformation(G2frame,data,None)
         event.StopPropagation()
 
-##### DData routines - GUI stuff in GSASIIddataGUI.py. Used for Phase/data "Edit Phase" menu
+#### DData routines - GUI stuff in GSASIIddataGUI.py. Used for Phase/data "Edit Phase" menu
     def OnHklfAdd(event):
         '''Called to link a Single Xtal (HKLF) dataset to the current phase.
         Most commonly, the histogram and phase are linked when the latter
@@ -9418,7 +9418,7 @@ program; Please cite:
                     data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
                 data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                 data['Drawing']['Atoms'] = []
-                G2phsG2.UpdateDrawAtoms(G2frame,data)
+                UpdateDrawAtoms(G2frame,data)
                 G2plt.PlotStructure(G2frame,data)
 
             def OnOrien(*args, **kwargs):
@@ -9446,9 +9446,9 @@ program; Please cite:
                         data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                     data['Drawing']['Atoms'] = []
                     if 'mode' in kwargs:
-                        G2phsG2.UpdateDrawAtoms(G2frame,data,kwargs['mode'])
+                        UpdateDrawAtoms(G2frame,data,kwargs['mode'])
                     else:
-                        G2phsG2.UpdateDrawAtoms(G2frame,data)
+                        UpdateDrawAtoms(G2frame,data)
                     G2plt.PlotStructure(G2frame,data)
                 except ValueError:
                     pass
@@ -9623,7 +9623,6 @@ program; Please cite:
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
 
-
                 shSizer = wx.BoxSizer(wx.VERTICAL)
                 for iSh,nSh in enumerate(RBObj['nSH']):
                     #patch
@@ -9766,7 +9765,7 @@ program; Please cite:
                 for i,Id in enumerate(RBObj['Ids']):
                     data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
                 data['Drawing']['Atoms'] = []
-                G2phsG2.UpdateDrawAtoms(G2frame,data,atomStyle)
+                UpdateDrawAtoms(G2frame,data,atomStyle)
                 G2frame.drawAtoms.ClearSelection()
                 G2plt.PlotStructure(G2frame,data)
 
@@ -10344,7 +10343,7 @@ program; Please cite:
                     G2lat.RBsymCheck(atomData,ct,cx,cs,AtLookUp,Amat,Ids,SGData)
                 if updateNeeded:
                     SetupGeneral()
-                    G2phsG2.UpdateDrawAtoms(G2frame,data)
+                    UpdateDrawAtoms(G2frame,data)
                     G2plt.PlotStructure(G2frame,data)
 
                 rbNames = [[]]
@@ -11853,7 +11852,7 @@ of the crystal structure.
         data['MCSA']['Results'] = []
         UpdateMCSA()
 
-##### Pawley routines ################################################################################
+#### Pawley routines ################################################################################
     def FillPawleyReflectionsGrid():
 
         def onRefineDClick(event):
@@ -12266,7 +12265,7 @@ tab, use Operations->"Pawley create")''')
                 not G2frame.PawleyRefl.GetTable().GetValueAsBool(r,refcol))
         G2frame.PawleyRefl.ForceRefresh()
 
-##### Fourier routines ################################################################################
+#### Fourier routines ################################################################################
     def FillMapPeaksGrid():
 
         def RowSelect(event):
@@ -12595,7 +12594,7 @@ tab, use Operations->"Pawley create")''')
         ftext = dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
         print (ftext)
         G2frame.AddToNotebook('Fourier '+ftext,'FM')
-        G2phsG2.UpdateDrawAtoms(G2frame,data)
+        UpdateDrawAtoms(G2frame,data)
         G2plt.PlotStructure(G2frame,data)
 
     def OnFourClear(event):
@@ -12658,7 +12657,7 @@ tab, use Operations->"Pawley create")''')
             Page = G2frame.phaseDisplay.FindPage('Map peaks')
             G2frame.phaseDisplay.SetSelection(Page)
             wx.CallAfter(FillMapPeaksGrid)
-            G2phsG2.UpdateDrawAtoms(G2frame,data)
+            UpdateDrawAtoms(G2frame,data)
         else:
             print ('No map available')
 
@@ -12792,7 +12791,7 @@ tab, use Operations->"Pawley create")''')
     def OnTextureClear(event):
         print ('clear texture? - does nothing')
 
-##### Phase page routines ###############################################################################
+#### Phase page routines ###############################################################################
     def FillSelectPageMenu(TabSelectionIdDict, menuBar):
         '''Fill "Select tab" menu with menu items for each tab and assign
         bindings to the menu item to switch between phase tabs

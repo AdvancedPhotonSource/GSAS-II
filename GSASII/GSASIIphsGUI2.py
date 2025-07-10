@@ -1103,10 +1103,10 @@ def UpdateLayerData(G2frame,data,Scroll=0):
 
     def LayerSizer(il,Layer):
 
-        def OnNameChange(event):
-            event.Skip()
-            Layer['Name'] = layerName.GetValue()
-            wx.CallLater(100,UpdateLayerData,G2frame,data)
+        # def OnNameChange(event):
+        #     event.Skip()
+        #     Layer['Name'] = layerName.GetValue()
+        #     wx.CallLater(100,UpdateLayerData,G2frame,data)
 
         def OnAddAtom(event):
             Layer['Atoms'].append(['Unk','Unk',0.,0.,0.,1.,0.01])
@@ -1146,11 +1146,11 @@ def UpdateLayerData(G2frame,data,Scroll=0):
         layerSizer = wx.BoxSizer(wx.VERTICAL)
         nameSizer = wx.BoxSizer(wx.HORIZONTAL)
         nameSizer.Add(wx.StaticText(layerData,label=' Layer name: '),0,WACV)
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
-        layerName = wx.TextCtrl(layerData,value=Layer['Name'],style=wx.TE_PROCESS_ENTER)
-        layerName.Bind(wx.EVT_TEXT_ENTER,OnNameChange)
-        layerName.Bind(wx.EVT_KILL_FOCUS,OnNameChange)
-        layerName.Bind(wx.EVT_LEAVE_WINDOW,OnNameChange)
+        layerName = G2G.ValidatedTxtCtrl(layerData,Layer,'Name')
+        # layerName = wx.TextCtrl(layerData,value=Layer['Name'],style=wx.TE_PROCESS_ENTER)
+        # layerName.Bind(wx.EVT_TEXT_ENTER,OnNameChange)
+        # layerName.Bind(wx.EVT_KILL_FOCUS,OnNameChange)
+        # layerName.Bind(wx.EVT_LEAVE_WINDOW,OnNameChange)
         nameSizer.Add(layerName,0,WACV)
         if il:
             nameSizer.Add(wx.StaticText(layerData,label=' Same as: '),0,WACV)

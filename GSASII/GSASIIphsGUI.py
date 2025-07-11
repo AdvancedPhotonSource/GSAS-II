@@ -57,6 +57,7 @@ from . import GSASIIconstrGUI as G2cnstG
 from . import atmdata
 from . import ISODISTORT as ISO
 from . import SUBGROUPS
+from pathlib import Path
 
 try:
     wx.NewIdRef
@@ -6260,6 +6261,15 @@ program; Please cite:
                 f.write(f'  do script "bash {script_file}" in window 1\n')
                 f.write("end tell\n")
             subp.Popen(['osascript', ascript_file])
+        elif sys.platform.startswith("linux"):
+            script_file = os.path.join(os.getcwd(), "runrmc.sh")
+            with open(script_file, 'w') as frmc:
+                frmc.write("#!/bin/bash\n")
+                frmc.write(f"export LD_LIBRARY_PATH={Path(rmcfile).parent.parent}/exe/libs\n")
+                frmc.write(f"export LIBRARY_PATH={Path(rmcfile).parent.parent}/exe/libs\n")
+                frmc.write(f"export PATH=$PATH:{Path(rmcfile).parent.parent}/exe\n")
+                frmc.write(f'"rmcprofile" "{pName}"\n')
+            subp.Popen(['bash', script_file])
         else:
             script_file = os.path.join(os.getcwd(), "runrmc.bat")
             with open(script_file,'w') as batch:

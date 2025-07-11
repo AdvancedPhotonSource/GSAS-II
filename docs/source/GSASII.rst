@@ -1,19 +1,39 @@
-Main routine: GSASII.py
+*GSASII: GSAS-II GUI*
 ===========================
 
-*GSASII: GSAS-II GUI*
+Script G2.py 
 ----------------------------------------
 
-File GSASII.py is the script to start the GSAS-II graphical user 
-interface (GUI). 
-This script imports GSASIIpath, which does some minor initialization
+File `G2.py` can be used to start the GSAS-II graphical user 
+interface (GUI), particularly when GSAS-II has been installed
+in a location outside of Python and thus  requires changing the Python
+path. When GSAS-II is installed in a location that is on the
+default Python path, this command is
+sufficient to start the GSAS-II GUI:
+
+`python -c "from GSASII.GSASIIGUI import main; main()"`
+
+The `G2.py` script checks to see if GSAS-II is on the path. If not,
+the directory where the `G2.py` file is located is placed into the
+Python path. At this point the func:`GSASIIGUI.main` routine is
+called to start the GSAS-II GUI.
+
+Module GSASIIGUI.py
+----------------------------------------
+
+The `GSASIIGUI.py` script imports GSASIIpath, which does some minor initialization
 and then (before any wxPython calls can be made) creates a wx.App application. 
-A this point :func:`GSASIIpath.SetBinaryPath` is called to establish
+At this point :func:`GSASIIpath.SetBinaryPath` is called to establish
 the directory where GSAS-II binaries are found. If the binaries 
 are not installed or are incompatible with the OS/Python packages, 
 the user is asked if they should be updated from the subversion site. 
 The wxPython app is then passed to :func:`GSASIIdataGUI.GSASIImain`, 
 which creates the GSAS-II GUI and finally the event loop is started.
+
+.. automodule:: GSASII.GSASIIGUI
+    :members: 
+    :private-members:
+    :special-members:
 
 Keyboard Menu Shortcuts
 ----------------------------------------
@@ -59,12 +79,3 @@ vary depending on the type of plot.
  M           Minimize GSAS-II windows (MacOS Windows menu).
              This is system-assigned 
 ==========  ====================================================
-
-GSAS-II contents
-----------------------------------------
-
-
-.. automodule:: GSASII
-    :members: 
-    :private-members:
-    :special-members:

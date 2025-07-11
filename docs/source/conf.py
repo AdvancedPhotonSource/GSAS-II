@@ -21,6 +21,9 @@ sys.path.insert(1, os.path.abspath(os.path.join('..', '..','GSASII','exports')))
 sys.path.insert(1, os.path.abspath(os.path.join('..', '..','GSASII','imports')))
 sys.path.insert(1, os.path.abspath(os.path.join('..', '..','GSASII','install')))
 sys.path.insert(1, os.path.abspath(os.path.join('..', '..','tests')))
+#print('Sphinx paths:')
+#for i in sys.path: print('\t',i)
+
 # get version number tag from git
 version = '?'
 try: 
@@ -73,7 +76,8 @@ extensions = [
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+#source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext'}
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
 

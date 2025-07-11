@@ -14,14 +14,7 @@ import sys
 import os
 import platform
 import glob
-if '2' in platform.python_version_tuple()[0]:
-    import cPickle
-else:
-    try:
-        import _pickle as cPickle
-    except:
-        print('Warning: failed to import the optimized Py3 pickle (_pickle)')
-        import pickle as cPickle
+import pickle
 
 import wx
 import numpy as np
@@ -32,19 +25,19 @@ except ImportError:
     pass
 import scipy as sp
 
-import GSASIIpath
-import GSASIIfiles as G2fil
-import GSASIIplot as G2plt
-import GSASIIdataGUI as G2gd
-import GSASIIctrlGUI as G2G
-import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIfiles as G2fil
+from . import GSASIIplot as G2plt
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIobj as G2obj
 
 __version__ = '0.0.1'
 
-# math to do F-test 
+# math to do F-test
 def RC2Ftest(npts,RChiSq0,nvar0,RChiSq1,nvar1):
-    '''Compute the F-test probability that a model expanded with added 
-    parameters (relaxed model) is statistically more likely than the 
+    '''Compute the F-test probability that a model expanded with added
+    parameters (relaxed model) is statistically more likely than the
     constrained (base) model
     :param int npts: number of observed diffraction data points
     :param float RChiSq0: Reduced Chi**2 for the base model
@@ -65,8 +58,8 @@ def RC2Ftest(npts,RChiSq0,nvar0,RChiSq1,nvar1):
     return scipy.stats.f.cdf(F,nu1,nu2)
 
 def RwFtest(npts,Rwp0,nvar0,Rwp1,nvar1):
-    '''Compute the F-test probability that a model expanded with added 
-    parameters (relaxed model) is statistically more likely than the 
+    '''Compute the F-test probability that a model expanded with added
+    parameters (relaxed model) is statistically more likely than the
     constrained (base) model
     :param int npts: number of observed diffraction data points
     :param float Rwp0: Weighted profile R-factor or GOF for the base model
@@ -86,17 +79,14 @@ def RwFtest(npts,Rwp0,nvar0,Rwp1,nvar1):
     import scipy.stats
     return scipy.stats.f.cdf(F,nu1,nu2)
 
-def cPickleLoad(fp):
-    if '2' in platform.python_version_tuple()[0]:
-        return cPickle.load(fp)
-    else:
-       return cPickle.load(fp,encoding='latin-1')
-            
+def pickleLoad(fp):
+    return pickle.load(fp,encoding='latin-1')
+
 def main(application):
     '''Start up the GSAS-II GUI'''
     knownVersions = ['3.9','3.10','3.11','3.12']
-    if '.'.join(platform.python_version().split('.')[:2]) not in knownVersions: 
-        dlg = wx.MessageDialog(None, 
+    if '.'.join(platform.python_version().split('.')[:2]) not in knownVersions:
+        dlg = wx.MessageDialog(None,
                 f'GSAS-II Compare requires Python 3.9+\n Yours is {sys.version.split()[0]}',
                 'Python version error',  wx.OK)
         try:
@@ -104,7 +94,7 @@ def main(application):
         finally:
             dlg.Destroy()
         sys.exit()
-            
+
     application.main = MakeTopWindow(None)  # application.main is the main wx.Frame
     application.SetTopWindow(application.main)
     # save the current package versions
@@ -116,7 +106,7 @@ def main(application):
     #application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
     return application.GetTopWindow()
-    
+
 class MakeTopWindow(wx.Frame):
     '''Define the main frame and its associated menu items
     '''
@@ -125,7 +115,7 @@ class MakeTopWindow(wx.Frame):
         wx.Frame.__init__(self, name='dComp', parent=parent,
             size=size,style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II data/model comparison')
         # misc vars
-        self.VcovColor = 'RdYlGn'        
+        self.VcovColor = 'RdYlGn'
         # plot window
         try:
             size = GSASIIpath.GetConfigValue('Plot_Size')
@@ -136,7 +126,7 @@ class MakeTopWindow(wx.Frame):
             else:
                 raise Exception
         except:
-            size = wx.Size(700,600)                
+            size = wx.Size(700,600)
         self.plotFrame = wx.Frame(None,-1,'dComp Plots',size=size,
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.G2plotNB = G2plt.G2PlotNoteBook(self.plotFrame,G2frame=self)
@@ -147,11 +137,11 @@ class MakeTopWindow(wx.Frame):
         self.MenuBar = wx.MenuBar()
         File = wx.Menu(title='')
         self.MenuBar.Append(menu=File, title='&File')
-        item = File.Append(wx.ID_ANY,'&Import single project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
+        item = File.Append(wx.ID_ANY,'&Import single project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')
         self.Bind(wx.EVT_MENU, self.onLoadGPX, id=item.GetId())
         item = File.Append(wx.ID_ANY,'&Import multiple projects...\tCtrl+U','Open a GSAS-II project file (*.gpx)')
         self.Bind(wx.EVT_MENU, self.onLoadMultGPX, id=item.GetId())
-        item = File.Append(wx.ID_ANY,'&Wildcard import of projects...\tCtrl+W','Open a GSAS-II project file (*.gpx)')            
+        item = File.Append(wx.ID_ANY,'&Wildcard import of projects...\tCtrl+W','Open a GSAS-II project file (*.gpx)')
         self.Bind(wx.EVT_MENU, self.onLoadWildGPX, id=item.GetId())
 #        item = File.Append(wx.ID_ANY,'&Import selected...','Open a GSAS-II project file (*.gpx)')
 #        self.Bind(wx.EVT_MENU, self.onLoadSel, id=item.GetId())
@@ -169,7 +159,7 @@ class MakeTopWindow(wx.Frame):
         modeMenu = wx.Menu(title='')
         self.MenuBar.Append(menu=modeMenu, title='TBD')
         self.modeMenuPos = self.MenuBar.FindMenu('TBD')
-        
+
         Frame.SetMenuBar(self.MenuBar)
         # status bar
         self.Status = self.CreateStatusBar()
@@ -179,14 +169,14 @@ class MakeTopWindow(wx.Frame):
         self.mainPanel.SetMinimumPaneSize(100)
         self.treePanel = wx.Panel(self.mainPanel, wx.ID_ANY,
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        
+
 #        self.dataWindow = G2DataWindow(self.mainPanel)
         self.dataWindow = wx.ScrolledWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
         self.mainPanel.SplitVertically(self.treePanel, self.dataWindow, 200)
         self.Status.SetStatusWidths([200,-1])   # make these match?
-        
+
         treeSizer = wx.BoxSizer(wx.VERTICAL)
         self.treePanel.SetSizer(treeSizer)
         self.GPXtree = G2G.G2TreeCtrl(id=wx.ID_ANY,
@@ -206,10 +196,10 @@ class MakeTopWindow(wx.Frame):
         # self.GPXtree.Bind(wx.EVT_TREE_KEY_DOWN,
         #     self.OnGPXtreeKeyDown, id=TreeId)
         # self.GPXtree.Bind(wx.EVT_TREE_BEGIN_RDRAG,
-        #     self.OnGPXtreeBeginRDrag, id=TreeId)        
+        #     self.OnGPXtreeBeginRDrag, id=TreeId)
         # self.GPXtree.Bind(wx.EVT_TREE_END_DRAG,
-        #     self.OnGPXtreeEndDrag, id=TreeId)        
-        self.root = self.GPXtree.root        
+        #     self.OnGPXtreeEndDrag, id=TreeId)
+        self.root = self.GPXtree.root
         self.Bind(wx.EVT_CLOSE, lambda event: sys.exit())
 
         self.fileList = []  # list of files read for use in Reload
@@ -230,11 +220,11 @@ class MakeTopWindow(wx.Frame):
                     print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
                     win.Center()
         self.SetModeMenu()
-        
+
     def SelectGPX(self):
         '''Select a .GPX file to be read
         '''
-        dlg = wx.FileDialog(self, 'Choose GSAS-II project file', 
+        dlg = wx.FileDialog(self, 'Choose GSAS-II project file',
                 wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN)
         try:
             if dlg.ShowModal() != wx.ID_OK: return
@@ -251,7 +241,7 @@ class MakeTopWindow(wx.Frame):
     def SelectMultGPX(self):
         '''Select multiple .GPX files to be read
         '''
-        dlg = wx.FileDialog(self, 'Choose GSAS-II project file', 
+        dlg = wx.FileDialog(self, 'Choose GSAS-II project file',
                 wildcard='GSAS-II project file (*.gpx)|*.gpx',
                 style=wx.FD_OPEN|wx.FD_MULTIPLE)
         try:
@@ -268,7 +258,7 @@ class MakeTopWindow(wx.Frame):
             else:
                 print('File {} not found, skipping'.format(fil))
         return fileList
-        
+
     def getMode(self):
         '''returns the display mode (one of "Histogram","Phase","Project").
         Could return '?' in case of an error.
@@ -279,7 +269,7 @@ class MakeTopWindow(wx.Frame):
         else:
             m = '?'
         return m
-    
+
     def onRefresh(self,event):
         '''reread all files, in response to a change in mode, etc.
         '''
@@ -292,7 +282,7 @@ class MakeTopWindow(wx.Frame):
             self.loadFile(fil)
         self.doneLoad()
         self.SetModeMenu()
-            
+
     def SetModeMenu(self):
         '''Create the mode-specific menu and its contents
         '''
@@ -350,18 +340,18 @@ class MakeTopWindow(wx.Frame):
         '''Initial load of GPX file in response to a menu command
         '''
         home = os.path.abspath(os.getcwd())
-        hlp = '''Enter a wildcard version of a file name. 
+        hlp = '''Enter a wildcard version of a file name.
 The directory is assumed to be "{}" unless specified otherwise.
 Extensions will be set to .gpx and .bak files will be ignored unless
-the wildcard string includes "bak". For example, "*abc*" will match any 
+the wildcard string includes "bak". For example, "*abc*" will match any
 .gpx file in that directory containing "abc". String "/tmp/A*" will match
-files in "/tmp" beginning with "A". Supplying two strings, "A*" and "B*bak*" 
-will match files names beginning with "A" or "B", but ".bak" files will 
+files in "/tmp" beginning with "A". Supplying two strings, "A*" and "B*bak*"
+will match files names beginning with "A" or "B", but ".bak" files will
 be included for the files beginning with "B" only.
 '''.format(home)
         if wildcard is None:
-            dlg = G2G.MultiStringDialog(self, 'Enter wildcard file names', 
-                    ['wild-card 1'] , values=['*'], 
+            dlg = G2G.MultiStringDialog(self, 'Enter wildcard file names',
+                    ['wild-card 1'] , values=['*'],
                     lbl='Provide string(s) with "*" to find matching files',
                     addRows=True, hlp=hlp)
             res = dlg.Show()
@@ -374,7 +364,7 @@ be included for the files beginning with "B" only.
             if not os.path.split(w)[0]:
                 w = os.path.join(home,w)
             w = os.path.splitext(w)[0] + '.gpx'
-            for fil in glob.glob(w): 
+            for fil in glob.glob(w):
                 if not os.path.exists(fil): continue
                 if '.bak' in fil and 'bak' not in w: continue
                 if fil in [i for i,j in self.fileList]: continue
@@ -395,7 +385,7 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = cPickleLoad(filep)
+                    data = pickleLoad(filep)
                 except EOFError:
                     break
                 if not data[0][0].startswith('PWDR'): continue
@@ -406,7 +396,7 @@ be included for the files beginning with "B" only.
                 data[0][0] += shortname
                 data[0][0] += ')'
                 histLoadList.append(data)
-                        
+
         except Exception as errmsg:
             if GSASIIpath.GetConfigValue('debug'):
                 print('\nError reading GPX file:',errmsg)
@@ -446,7 +436,7 @@ be included for the files beginning with "B" only.
     #        G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
     #    G2frame.SetTitleByGPX()
         self.GPXtree.Expand(self.root)
-        
+
     def onHistFilter(self,event):
         'Load a filter string via a dialog in response to a menu event'
         defval = ''
@@ -479,7 +469,7 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = cPickleLoad(filep)
+                    data = pickleLoad(filep)
                 except EOFError:
                     break
                 if not data[0][0].startswith('Phase'): continue
@@ -490,12 +480,12 @@ be included for the files beginning with "B" only.
                 if Phases:
                     data[0][0] += shortname
                     data[0][0] += ')'
-                else: 
+                else:
                     data[0][0] += shortname
                     data[0][0] += 'has no phases)'
                 Phases = data
                 break
-                
+
         except Exception as errmsg:
             if GSASIIpath.GetConfigValue('debug'):
                 print('\nError reading GPX file:',errmsg)
@@ -549,10 +539,10 @@ be included for the files beginning with "B" only.
         try:
             while True:
                 try:
-                    data = cPickleLoad(filep)
+                    data = pickleLoad(filep)
                 except EOFError:
                     break
-                if data[0][0].startswith('PWDR'): 
+                if data[0][0].startswith('PWDR'):
                     self.histListOrg.append(data[0][0])
                     if self.PWDRfilter is not None: # implement filter
                         if self.PWDRfilter in data[0][0]: match = True
@@ -586,7 +576,7 @@ be included for the files beginning with "B" only.
         finally:
             filep.close()
             wx.EndBusyCursor()
-            
+
     def OnDataTreeSelChanged(self,event):
         def ClearData(self):
             '''Initializes the contents of the dataWindow panel
@@ -645,7 +635,7 @@ be included for the files beginning with "B" only.
         else:
             self.plotFrame.Show(False)
             ClearData(G2frame.dataWindow)
-        
+
         #print(self.GPXtree._getTreeItemsList(item))
         # pltNum = self.G2plotNB.nb.GetSelection()
         # print(pltNum)
@@ -657,7 +647,7 @@ be included for the files beginning with "B" only.
         #if self.getMode() == "Histogram":
         #self.PatternId = self.PickId  = item
         #G2plt.PlotPatterns(self,plotType='PWDR',newPlot=NewPlot)
-            
+
     # def OnGPXtreeItemExpanded(self,event):
     #     item = event.GetItem()
     #     print('expanded',item)
@@ -666,7 +656,7 @@ be included for the files beginning with "B" only.
     #         event.StopPropagation()
     #     else:
     #         event.Skip(False)
-    
+
     def onProjFtest(self,event):
         '''Compare two projects (selected here if more than two are present)
         using the statistical F-test (aka Hamilton R-factor test), see:
@@ -685,7 +675,7 @@ be included for the files beginning with "B" only.
         elif len(items) == 2:
             s0 = items[0]
             baseDict = self.GPXtree.GetItemPyData(s0)
-            s1 = items[1]            
+            s1 = items[1]
             relxDict = self.GPXtree.GetItemPyData(s1)
             # sort out the dicts in order of number of refined variables
             if len(baseDict['varyList']) > len(relxDict['varyList']):
@@ -732,8 +722,8 @@ be included for the files beginning with "B" only.
             G2G.G2MessageBox(self,'F-test requires same number of observations in each refinement','F-test not valid')
             return
         missingVars = []
-        for var in baseDict['varyList']: 
-            if var not in relxDict['varyList']: 
+        for var in baseDict['varyList']:
+            if var not in relxDict['varyList']:
                 missingVars.append(var)
         txt = ''
         postmsg = ''
@@ -751,8 +741,8 @@ be included for the files beginning with "B" only.
             postmsg += ('\nThese parameters are in the relaxed fit and not'+
                 ' in the constrained fit:\n*  ')
             i = 0
-            for var in relxDict['varyList']: 
-                if var not in baseDict['varyList']: 
+            for var in relxDict['varyList']:
+                if var not in baseDict['varyList']:
                     if i > 0: postmsg += ', '
                     i += 1
                     postmsg += var
@@ -778,11 +768,11 @@ be included for the files beginning with "B" only.
             msg += "The constrained model is statistically preferred to the relaxed model."
         msg += postmsg
         G2G.G2MessageBox(self,msg,'F-test result')
-        
+
     def onHistPrinceTest(self,event):
         '''Compare two histograms (selected here if more than two are present)
-        using the statistical test proposed by Ted Prince in 
-        Acta Cryst. B35 1099-1100. (1982). Also see Int. Tables Vol. C 
+        using the statistical test proposed by Ted Prince in
+        Acta Cryst. B35 1099-1100. (1982). Also see Int. Tables Vol. C
         (1st Ed.) chapter 8.4, 618-621 (1995).
         '''
         items = []
@@ -837,41 +827,41 @@ be included for the files beginning with "B" only.
         # Z = (data0[1] - (data0[3] + data1[3])/2) / np.sqrt(data0[1])
         # lam = np.sum(X*Z) / np.sum(X)
         # sig = np.sqrt(
-        #     (np.sum(Z*Z) - lam*lam*np.sum(X*X)) / 
+        #     (np.sum(Z*Z) - lam*lam*np.sum(X*X)) /
         #     ((len(data0[0]) - 1) * np.sum(X*X))
         #     )
-            
+
 #    0 the x-postions (two-theta in degrees),
 #    1 the intensity values (Yobs),
 #    2 the weights for each Yobs value
 #    3 the computed intensity values (Ycalc)
 #    4 the background values
 #    5 Yobs-Ycalc
-        
+
         GSASIIpath.IPyBreak_base()
-                
-#======================================================================    
+
+#======================================================================
 if __name__ == '__main__':
-    #if sys.platform == "darwin": 
+    #if sys.platform == "darwin":
     #    application = G2App(0) # create the GUI framework
     #else:
     application = wx.App(0) # create the GUI framework
     try:
         GSASIIpath.SetBinaryPath(True)
     except:
-        print('Unable to run with current setup, do you want to update to the')
-        try:
-#            if '2' in platform.python_version_tuple()[0]:            
-#                ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
-#            else:
-                ans = input("latest GSAS-II version? Update ([Yes]/no): ")                
-        except:
-            ans = 'no'
-        if ans.strip().lower() == "no":
-            print('Exiting')
-            sys.exit()
-        print('Updating...')
-        GSASIIpath.svnUpdateProcess()
+        print('Unable to run with current setup')# , do you want to update to the')
+#         try:
+# #            if '2' in platform.python_version_tuple()[0]:
+# #                ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
+# #            else:
+#                 ans = input("latest GSAS-II version? Update ([Yes]/no): ")
+#         except:
+#             ans = 'no'
+#         if ans.strip().lower() == "no":
+#             print('Exiting')
+#             sys.exit()
+#         print('Updating...')
+#         GSASIIpath.svnUpdateProcess()
     GSASIIpath.InvokeDebugOpts()
     Frame = main(application) # start the GUI
     loadall = False
@@ -902,5 +892,5 @@ if __name__ == '__main__':
         Frame.onLoadWildGPX(None,wildcard='*')
         Frame.Mode.FindItemById(Frame.wxID_Mode['Project']).Check(True)
         Frame.onRefresh(None)
-    
+
     application.MainLoop()

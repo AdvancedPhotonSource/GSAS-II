@@ -16,8 +16,8 @@ so that they can be resolved if the phase/histogram order changes.
 from __future__ import division, print_function
 import copy
 import numpy as np
-import GSASIIpath
-import GSASIIobj as G2obj 
+from . import GSASIIpath
+from . import GSASIIobj as G2obj 
 # data used for constraints; 
 debug = False # turns on printing as constraint input is processed
 

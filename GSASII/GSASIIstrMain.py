@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 '''
-:mod:`GSASIIstrMain` routines, used for refinement, or refinement-related 
-computations (e.g. distance & angle computations), are found below. 
+:mod:`GSASIIstrMain` routines, used for refinement, or refinement-related
+computations (e.g. distance & angle computations), are found below.
 
-These routines are most commonly called when working from a .gpx file, but 
-may sometimes be called from the GUI. These routines expect that all needed 
-input will have been read from the file/tree and are passed to thes 
+These routines are most commonly called when working from a .gpx file, but
+may sometimes be called from the GUI. These routines expect that all needed
+input will have been read from the file/tree and are passed to thes
 routines here as arguments. The data tree is never accessed directly in
 this module and no GUI modules should be imported here.
 '''
@@ -15,23 +15,30 @@ import os.path as ospath
 import time
 import math
 import copy
-import pickle as cPickle
+import pickle
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
 import scipy.optimize as so
-import GSASIIpath
+from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIImapvars as G2mv
-import GSASIImath as G2mth
-import GSASIIstrIO as G2stIO
-import GSASIIstrMath as G2stMth
-import GSASIIobj as G2obj
-import GSASIIfiles as G2fil
-import GSASIIElem as G2elem
-import atmdata
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIImapvars as G2mv
+from . import GSASIImath as G2mth
+from . import GSASIIstrIO as G2stIO
+from . import GSASIIstrMath as G2stMth
+from . import GSASIIobj as G2obj
+from . import GSASIIfiles as G2fil
+from . import GSASIIElem as G2elem
+from . import atmdata
+try:
+    if GSASIIpath.binaryPath:
+        import pytexture as ptx
+    else:
+        from . import pytexture as ptx
+except ImportError: # ignore; will report this as an error in GSASIIplot import
+    pass
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -77,9 +84,9 @@ def ReportProblems(result,Rvals,varyList):
                     msg += ', {}'.format(varyList[val])
         if m: G2fil.G2Print(m, mode='warn')
     SVD0 = result[2].get('SVD0',0)
-    if SVD0 == 1: 
+    if SVD0 == 1:
         msg += 'Warning: Soft (SVD) singularity in the Hessian'
-    elif SVD0 > 0: 
+    elif SVD0 > 0:
         msg += 'Warning: {} soft (SVD) Hessian singularities'.format(SVD0)
     SVDsing = result[2].get('SVDsing',[])
     if len(SVDsing):
@@ -108,7 +115,7 @@ def ReportProblems(result,Rvals,varyList):
         if m: G2fil.G2Print(m, mode='warn')
     #report on highly correlated variables
     Hcorr = result[2].get('Hcorr',[])
-    if len(Hcorr) > 0: 
+    if len(Hcorr) > 0:
         if msg: msg += '\n'
         m = 'Note highly correlated parameters:'
         G2fil.G2Print(m, mode='warn')
@@ -170,11 +177,11 @@ def IgnoredLatticePrms(Phases):
 
 def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
     parmDict,varyList,calcControls,pawleyLookup,symHold,dlg=None):
-    '''Computes the derivative of the fitting function (total Chi**2) with 
+    '''Computes the derivative of the fitting function (total Chi**2) with
     respect to every parameter in the parameter dictionary (parmDict)
-    by applying shift below the parameter value as well as above. 
-    
-    :returns: a dict with the derivatives keyed by variable number. 
+    by applying shift below the parameter value as well as above.
+
+    :returns: a dict with the derivatives keyed by variable number.
       Derivatives are a list with three values: evaluated over
       v-d to v; v-d to v+d; v to v+d where v is the current value for the
       variable and d is a small delta value chosen for that variable type.
@@ -209,7 +216,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
         if hId != '*' and h != '' and h != hId: continue
         if (type(parmDict[prm]) is bool or type(parmDict[prm]) is str or
                  type(parmDict[prm]) is int): continue
-        if type(parmDict[prm]) is not float and type(parmDict[prm]) is not np.float64: 
+        if type(parmDict[prm]) is not float and type(parmDict[prm]) is not np.float64:
             print('*** unexpected type for ',prm,parmDict[prm],type(parmDict[prm]))
             continue
         if prm in latIgnoreLst: continue # remove unvaried lattice params
@@ -221,7 +228,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
             delta = 0.1
         elif nam.startswith('AUiso'):
             delta = 1e-5
-        if nam[0] == 'A' and nam[1] in ['x','y','z']: 
+        if nam[0] == 'A' and nam[1] in ['x','y','z']:
             dprm = prm.replace('::A','::dA')
             if dprm in symHold: continue # held by symmetry
             delta = 1e-6
@@ -233,7 +240,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
         #origVal = parmDict[dprm]
         parmDict[dprm] -= delta
         G2mv.Dict2Map(parmDict)
-        if dprm in latCopyDict:         # apply contraints on lattice parameters 
+        if dprm in latCopyDict:         # apply contraints on lattice parameters
             for i in latCopyDict:
                 parmDict[i] = parmDict[dprm]
         #for i in parmDict:
@@ -241,7 +248,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
         chiLow = rms(G2stMth.errRefine([],HistoPhases,parmDict,[],calcControls,pawleyLookup,None))
         parmDict[dprm] += 2*delta
         G2mv.Dict2Map(parmDict)
-        if dprm in latCopyDict:         # apply contraints on lattice parameters 
+        if dprm in latCopyDict:         # apply contraints on lattice parameters
             for i in latCopyDict:
                 parmDict[i] = parmDict[dprm]
         #for i in parmDict:
@@ -282,8 +289,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         #args = ([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg)
         #print '*** before fit chi**2',np.sum(G2stMth.errRefine(values,*args)**2)
         #fl = open('beforeFit.cpickle','wb')
-        #cPickle.dump(values,fl,1)
-        #cPickle.dump(args[:-1],fl,1)
+        #pickle.dump(values,fl,1)
+        #pickle.dump(args[:-1],fl,1)
         #fl.close()
         Ftol = Controls['min dM/M']
         Xtol = Controls['SVDtol']
@@ -436,15 +443,15 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['GOF0'] = np.sqrt(chisq0/(Histograms['Nobs']-len(varyList)))
     return IfOK,Rvals,result,covMatrix,sig,Lastshft
 
-def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
-    '''Global refinement -- refines to minimize against all histograms. 
-    This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an 
-    interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from 
+def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,allDerivs=False):
+    '''Global refinement -- refines to minimize against all histograms.
+    This can be called in one of three ways, from :meth:`GSASIIdataGUI.GSASII.OnRefine` in an
+    interactive refinement, where dlg will be a wx.ProgressDialog, or non-interactively from
     :meth:`GSASIIscriptable.G2Project.refine` or from :func:`do_refine`, where dlg will be None.
     '''
-    import GSASIImpsubs as G2mp
+    from . import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+#    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     if allDerivs:
@@ -456,7 +463,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     parmDict = {}
     G2mv.InitVars()
     Controls = G2stIO.GetControls(GPXfile)
-    Controls['newLeBail'] = Controls.get('newLeBail',False)
+    Controls['newLeBail'] = newLeBail  # override value from file
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)
@@ -519,7 +526,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     # remove frozen vars from refinement
     if 'parmFrozen' not in Controls:
         Controls['parmFrozen'] = {}
-    if 'FrozenList' not in Controls['parmFrozen']: 
+    if 'FrozenList' not in Controls['parmFrozen']:
         Controls['parmFrozen']['FrozenList'] = []
     if varyList is not None:
         parmFrozenList = Controls['parmFrozen']['FrozenList']
@@ -529,8 +536,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
             G2fil.G2Print(
                 'Frozen refined variables (due to exceeding limits)\n\t:{}'
                 .format(frozenList))
-        
-    ifSeq = False    
+
+    ifSeq = False
     printFile.write('\n Refinement results:\n')
     printFile.write(135*'-'+'\n')
     Rvals = {}
@@ -588,7 +595,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
                         )
                     G2fil.G2Print('Note: ',msg)
                     Rvals['msg'] += msg
-            G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
+            # save refinement results into .gpx file
+            G2stIO.SaveUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,parmFrozenList,makeBack)
             printFile.close()
             G2fil.G2Print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
             G2fil.G2Print (' ***** Refinement successful *****')
@@ -615,7 +623,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     except Exception as Msg:  # cell metric error, others?
         if GSASIIpath.GetConfigValue('debug'):
             import traceback
-            print(traceback.format_exc())        
+            print(traceback.format_exc())
         if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
         printFile.close()
         G2fil.G2Print (' ***** Refinement error *****')
@@ -632,13 +640,13 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
     # document the refinement further: RB, constraints, restraints, what's varied
     Rvals['varyList'] = 'Varied: ' + ', '.join(varyList)
     s = G2mv.VarRemapSumm()
-    if s: Rvals['contrSumm'] = f'Constraints: {s}' 
+    if s: Rvals['contrSumm'] = f'Constraints: {s}'
     Rvals['restrSumm'] = G2stIO.SummRestraints(restraintDict)
     Rvals['RBsumm'] = ''
     for ph in Phases:
         s = ''
         for i in 'Vector','Residue':
-            try: 
+            try:
                 l = len(Phases[ph]['RBModels'][i])
                 if s: s += '; '
                 s += f'{l} {i} bodies'
@@ -647,18 +655,18 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,allDerivs=False):
         if s:
             if not Rvals['RBsumm']: Rvals['RBsumm'] += 'Rigid Bodies: '
             Rvals['RBsumm'] += f'{ph}: {s}'
-    
+
 #for testing purposes, create a file for testderiv
     if GSASIIpath.GetConfigValue('debug'):   # and IfOK:
 #needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
         fl = open(ospath.splitext(GPXfile)[0]+'.testDeriv','wb')
-        cPickle.dump(result[0],fl,1)
-        cPickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
-        cPickle.dump([constrDict,fixedList,G2mv.GetDependentVars()],fl,1)
-        cPickle.dump(parmDict,fl,1)
-        cPickle.dump(varyList,fl,1)
-        cPickle.dump(calcControls,fl,1)
-        cPickle.dump(pawleyLookup,fl,1)
+        pickle.dump(result[0],fl,1)
+        pickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
+        pickle.dump([constrDict,fixedList,G2mv.GetDependentVars()],fl,1)
+        pickle.dump(parmDict,fl,1)
+        pickle.dump(varyList,fl,1)
+        pickle.dump(calcControls,fl,1)
+        pickle.dump(pawleyLookup,fl,1)
         fl.close()
     if dlg:
         return True,Rvals
@@ -694,9 +702,9 @@ def DoNoFit(GPXfile,key):
     :param str key: name of histogram to be computed
     :returns: the computed diffraction pattern for the selected histogram
     '''
-    import GSASIImpsubs as G2mp
+    from . import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+#    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     parmDict = {}
@@ -738,27 +746,27 @@ def DoNoFit(GPXfile,key):
     parmDict.update(hapDict)
     parmDict.update(histDict)
     G2stIO.GetFprime(calcControls,Histograms)
-    
+
     G2stMth.errRefine([],[Histograms,Phases,restraintDict,rigidbodyDict],parmDict,[],calcControls,pawleyLookup,None)
     return Histograms[key]['Data'][3]
 
 def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
     '''Fit LeBail intensities without changes to any other refined parameters.
-    This is a stripped-down version of :func:`Refine` that does not perform 
+    This is a stripped-down version of :func:`Refine` that does not perform
     any refinement cycles
 
     :param str GPXfile: G2 .gpx file name
-    :param wx.ProgressDialog dlg: optional progress window to update. 
-      Default is None, which means no calls are made to this. 
+    :param wx.ProgressDialog dlg: optional progress window to update.
+      Default is None, which means no calls are made to this.
     :param int cycles: Number of LeBail cycles to perform
-    :param function refPlotUpdate: Optional routine used to plot results. 
-      Default is None, which means no calls are made to this. 
-    :param list seqList: List of histograms to be processed. Default 
+    :param function refPlotUpdate: Optional routine used to plot results.
+      Default is None, which means no calls are made to this.
+    :param list seqList: List of histograms to be processed. Default
       is None which means that all used histograms in .gpx file are processed.
     '''
-    import GSASIImpsubs as G2mp
+    from . import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+#    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     #varyList = []
@@ -819,8 +827,8 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
         covData = {'variables':0,'varyList':[],'sig':[],'Rvals':Rvals,'varyListStart':[],
             'covMatrix':None,'title':GPXfile,'freshCOV':True}   #np.zeros([0,0])?
           # ??  'newAtomDict':newAtomDict,'newCellDict':newCellDict,
-        
-        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,[],True)
+
+        G2stIO.SaveUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,[],True)
         G2fil.G2Print (' ***** LeBail fit completed *****')
         return True,Rvals
     except Exception as Msg:
@@ -828,7 +836,7 @@ def DoLeBail(GPXfile,dlg=None,cycles=10,refPlotUpdate=None,seqList=None):
         if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
         if GSASIIpath.GetConfigValue('debug'):
             import traceback
-            print(traceback.format_exc())        
+            print(traceback.format_exc())
         return False,{'msg':Msg.msg}
 
 def phaseCheck(phaseVary,Phases,histogram):
@@ -860,9 +868,9 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     '''Perform a sequential refinement -- cycles through all selected histgrams,
     one at a time
     '''
-    import GSASIImpsubs as G2mp
+    from . import GSASIImpsubs as G2mp
     G2mp.InitMP()
-    import pytexture as ptx
+#    from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     msgs = {}
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
@@ -873,7 +881,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     for h in Controls['parmFrozen']:
         if h == 'FrozenList':
             continue
-        preFrozenCount += len(Controls['parmFrozen'][h])    
+        preFrozenCount += len(Controls['parmFrozen'][h])
     G2stIO.ShowControls(Controls,printFile,SeqRef=True,preFrozenCount=preFrozenCount)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
@@ -902,7 +910,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             return False,'Phase texture refinement error - see console message'
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
-    else: # patch from before Controls['Seq Data'] was implemented? 
+    else: # patch from before Controls['Seq Data'] was implemented?
         histNames = G2stIO.GetHistogramNames(GPXfile,['PWDR',])
     if Controls.get('Reverse Seq'):
         histNames.reverse()
@@ -982,7 +990,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             for parm in NewparmDict:
                 if '::' in parm and parm in parmDict:
                     parmDict[parm] = NewparmDict[parm]
-            
+
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing (again, if called from GSASIIdataGUI.GSASII.OnSeqRefine)
         constrDict,fixedList = G2stIO.ReadConstraints(GPXfile,seqHist=hId)
@@ -991,7 +999,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
         if msg:
             return False,'Unable to interpret multiplier(s): '+msg
-      
+
         try:
             errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,
                 seqHistNum=hId,raiseException=True)
@@ -1049,11 +1057,11 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         # remove frozen vars
         if 'parmFrozen' not in Controls:
             Controls['parmFrozen'] = {}
-        if histogram not in Controls['parmFrozen']: 
+        if histogram not in Controls['parmFrozen']:
             Controls['parmFrozen'][histogram] = []
         parmFrozenList = Controls['parmFrozen'][histogram]
         frozenList = [i for i in varyList if i in parmFrozenList]
-        if len(frozenList) != 0: 
+        if len(frozenList) != 0:
            varyList = [i for i in varyList if i not in parmFrozenList]
            s = ''
            for a in frozenList:
@@ -1085,7 +1093,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             sigDict = dict(zip(varyList,sig))
             # add indirectly computed uncertainties into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
-        
+
             newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
             newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
             SeqResult[histogram] = {
@@ -1121,11 +1129,11 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                    sig[i] = -0.1
             # a dict with values & esds for dependent (constrained) parameters - avoid extraneous holds
             SeqResult[histogram]['depParmDict'] = {i:(parmDict[i],sigDict[i]) for i in sigDict if i not in varyList}
-            
-            
+
+
             G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,
                 rigidbodyDict,SeqResult[histogram],Controls['parmFrozen'])
-            if msg: 
+            if msg:
                 printFile.write(msg+'\n')
             NewparmDict = {}
             # make dict of varied parameters in current histogram, renamed to
@@ -1135,16 +1143,16 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 nexthId = Histograms[histNames[ihst+1]]['hId']
                 for parm in set(list(varyList)+list(varyListStart)):
                     items = parm.split(':')
-                    if len(items) < 3: 
+                    if len(items) < 3:
                         continue
                     if str(hId) in items[1]:
                         items[1] = str(nexthId)
                         newparm = ':'.join(items)
                         NewparmDict[newparm] = parmDict[parm]
                     else:
-                        if items[2].startswith('dA'): parm = parm.replace(':dA',':A') 
+                        if items[2].startswith('dA'): parm = parm.replace(':dA',':A')
                         NewparmDict[parm] = parmDict[parm]
-                    
+
         except G2obj.G2RefineCancel as Msg:
             if not hasattr(Msg,'msg'): Msg.msg = str(Msg)
             printFile.close()
@@ -1166,7 +1174,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         print('Error reading Sequential results\n',str(msg))
         if GSASIIpath.GetConfigValue('debug'):
             import traceback
-            print(traceback.format_exc())        
+            print(traceback.format_exc())
     postFrozenCount = 0
     for h in Controls['parmFrozen']:
         if h == 'FrozenList': continue
@@ -1180,9 +1188,9 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     return True,msgs
 
 def dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList):
-    '''Find variables in the parameters dict that are outside the ranges 
-    (in parmMinDict and parmMaxDict) and set them to the limits values. 
-    Add any such variables into the list of frozen variable 
+    '''Find variables in the parameters dict that are outside the ranges
+    (in parmMinDict and parmMaxDict) and set them to the limits values.
+    Add any such variables into the list of frozen variable
     (parmFrozenList). Returns a list of newly frozen variables, if any.
     '''
     parmMinDict = Controls.get('parmMinDict',{})
@@ -1225,9 +1233,9 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
     :param dict DisAglData: contains phase & refinement data:
 
        * 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
-         for distance/angle origins and atoms to be used as targets. 
+         for distance/angle origins and atoms to be used as targets.
        * 'OrigIndx' contains the index numbers for the Origin atoms.
-       * 'SGData' has the space group information (see 
+       * 'SGData' has the space group information (see
          :ref:`Space Group object<SGData_table>`)
        * 'pId' has the phase id
        * 'Cell' has the unit cell parameters and cell volume
@@ -1237,7 +1245,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
 
        * 'RBlist' has the index numbers for atoms in a rigid body
        * 'rigidbodyDict' the contents of the main Rigid Body data tree item
-       * 'Phases' has the phase information for all used phases in the 
+       * 'Phases' has the phase information for all used phases in the
          data tree. Only the current phase is needed, but this is easy.
        * 'parmDict' is the GSAS-II parameter dict
 
@@ -1250,7 +1258,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
 
         0) the target atom number (int);
         1) the unit cell offsets added to x,y & z (tuple of int values);
-        2) the symmetry transformation, which includes the symmetry operator 
+        2) the symmetry transformation, which includes the symmetry operator
            number, any centering, if a center of symmetry was applied;
         3) an interatomic distance in A (float);
         4) an uncertainty on the distance in A or 0.0 (float).
@@ -1261,7 +1269,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
 
         0) a distance item reference for one neighbor atom (int);
         1) a distance item reference for the second neighbor atom (int);
-        2) a angle, uncertainty pair; the s.u. may be zero (degrees, tuple of 
+        2) a angle, uncertainty pair; the s.u. may be zero (degrees, tuple of
            two floats).
 
       The AngArray distance reference items refer directly to the index of the items in the
@@ -1411,7 +1419,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
         covData = DisAglData['covData']
         pfx = str(DisAglData['pId'])+'::'
         A = G2lat.cell2A(Cell[:6])
-        cellSig = G2stIO.getCellEsd(pfx,SGData,A,covData)
+        cellSig = G2lat.getCellEsd(pfx,SGData,A,covData)
         names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
         valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
         line = '\n Unit cell:'
@@ -1470,7 +1478,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
                 Tatm = G2elem.FixValence(DisAglData['TargAtoms'][dist[0]][2]).split('-')[0]
                 if Tatm in ['O','F','Cl']:
                     for BV in BVox:
-                        BVS[BV] += np.exp((BVdat[BV][Tatm]-dist[3])/0.37)                
+                        BVS[BV] += np.exp((BVdat[BV][Tatm]-dist[3])/0.37)
             tunit = '[%2d%2d%2d]'% dist[1]
             MyPrint(('  %8s%10s+(%4d) %12s'%(AtomLabels[dist[0]].ljust(8),tunit.ljust(10),dist[2],val.center(12)))+line.rstrip())
         if len(BVox):
@@ -1578,7 +1586,7 @@ def do_refine(*args):
         # TODO: test below
         # figure out if this is a sequential refinement and call SeqRefine(GPXfile,None)
         #Controls = G2stIO.GetControls(GPXfile)
-        #if Controls.get('Seq Data',[]): 
+        #if Controls.get('Seq Data',[]):
             Refine(GPXfile,None)
         #else:
         #    SeqRefine(GPXfile,None)

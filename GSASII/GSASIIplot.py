@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Classes and routines defined in :mod:`GSASIIplot` follow. 
+Classes and routines defined in :mod:`GSASIIplot` follow.
 '''
 # Note that documentation for GSASIIplot.py has been moved
 # to file docs/source/GSASIIplot.rst
@@ -13,7 +13,7 @@ import os.path
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
-import GSASIIpath
+from . import GSASIIpath
 # Don't depend on wx/matplotlib/scipy for scriptable; or for Sphinx docs
 try:
     import wx
@@ -33,28 +33,32 @@ except (ImportError, ValueError) as err:
     print('GSASIIplot: matplotlib not imported')
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
 
-import GSASIIdataGUI as G2gd
-import GSASIIimage as G2img
-import GSASIIpwd as G2pwd
-import GSASIImiscGUI as G2IO
-import GSASIIpwdGUI as G2pdG
-import GSASIIimgGUI as G2imG
-import GSASIIphsGUI as G2phG
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIImath as G2mth
-import GSASIIctrlGUI as G2G
-import GSASIIobj as G2obj
-import GSASIIpwdplot as G2pwpl
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIimage as G2img
+from . import GSASIIpwd as G2pwd
+from . import GSASIImiscGUI as G2IO
+from . import GSASIIpwdGUI as G2pdG
+from . import GSASIIimgGUI as G2imG
+from . import GSASIIphsGUI as G2phG
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+from . import GSASIImath as G2mth
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIobj as G2obj
+from . import GSASIIpwdplot as G2pwpl
+from . import GSASIIfiles as G2fil
 try:
-    import pytexture as ptx
+    if GSASIIpath.binaryPath:    # TODO: I think this may use a fair amount of memory; delay import?
+        import pytexture as ptx
+    else:
+        import GSASII.pytexture as ptx
     ptx.pyqlmninit()
 except ImportError:
     print('binary load error: pytexture not found')
 #import  scipy.special as spsp
 import OpenGL.GL as GL
 import OpenGL.GLU as GLU
-import gltext
+from . import gltext
 import matplotlib.colors as mpcls
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -70,6 +74,10 @@ except ImportError:
     from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
 except RuntimeError:  # happens during doc builds
     pass
+try:
+    import imageio
+except ImportError:
+    G2fil.NeededPackage({'Saving movies':['imageio']})
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -100,7 +108,7 @@ Pwrm1 = chr(0x207b)+chr(0x0b9)
 nxs = np.newaxis
 plotDebug = False
 
-#matplotlib 2.0.x dumbed down Paired to 16 colors - 
+#matplotlib 2.0.x dumbed down Paired to 16 colors -
 #   this restores the pre 2.0 Paired color map found in matplotlib._cm.py
 try:
     _Old_Paired_data = {'blue': [(0.0, 0.89019608497619629,
@@ -140,12 +148,12 @@ try:
         0.7921568751335144, 0.7921568751335144), (0.81818181818181823,
         0.41568627953529358, 0.41568627953529358), (0.90909090909090906,
         1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
-    '''In matplotlib 2.0.x+ the Paired color map was dumbed down to 16 colors. 
-    _Old_Paired_data is the pre-2.0 Paired color map found in 
+    '''In matplotlib 2.0.x+ the Paired color map was dumbed down to 16 colors.
+    _Old_Paired_data is the pre-2.0 Paired color map found in
     matplotlib._cm.py and is used to creat color map GSPaired.
 
-    This can be done on request for other color maps. N.B. any new names 
-    must be explicitly added to the color list obtained from 
+    This can be done on request for other color maps. N.B. any new names
+    must be explicitly added to the color list obtained from
     mpl.cm.datad.keys() (currently 10 places in GSAS-II code).
     '''
     oldpaired = mpl.colors.LinearSegmentedColormap('GSPaired',_Old_Paired_data,N=256)
@@ -167,13 +175,13 @@ try:
         mpl.cm.register_cmap(cmap=oldpaired_r,name='GSPaired_r')   #deprecated
 except Exception as err:
     if GSASIIpath.GetConfigValue('debug'): print('\nMPL CM setup error: {}\n'.format(err))
-    
+
 def GetColorMap(color):
     try:
         return mpl.colormaps[color]
     except:
         return mpl.cm.get_cmap(color)
- 
+
 def Write2csv(fil,dataItems,header=False):
     '''Write a line to a CSV file
 
@@ -191,7 +199,7 @@ def Write2csv(fil,dataItems,header=False):
             line += item
     fil.write(line+'\n')
 
-class _tabPlotWin(wx.Panel):    
+class _tabPlotWin(wx.Panel):
     'Creates a basic tabbed plot window for GSAS-II graphics'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         self.replotFunction = None
@@ -200,8 +208,8 @@ class _tabPlotWin(wx.Panel):
         self.plotInvalid = False # valid
         self.plotRequiresRedraw = True # delete plot if not updated
         wx.Panel.__init__(self,parent,id=id,**kwargs)
-            
-class G2PlotMpl(_tabPlotWin):    
+
+class G2PlotMpl(_tabPlotWin):
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,publish=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
@@ -213,7 +221,7 @@ class G2PlotMpl(_tabPlotWin):
         self.toolbar.Realize()
         self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,
             'logPlot':False,'exclude':False,'partials':True,'chanPlot':False}
-        
+
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
         sizer.Add(self.toolbar,0,)
@@ -224,14 +232,13 @@ class G2PlotMpl(_tabPlotWin):
             return self.canvas.SetToolTip(text)
         else:
             return self.canvas.SetToolTipString(text)
-        
+
     def ToolBarDraw(self):
-        mplv = eval(mpl.__version__.replace('.',','))
-        if mplv[0] >= 3 and mplv[1] >= 3:
+        try:
             self.toolbar.canvas.draw_idle()
-        else:
+        except:
             self.toolbar.draw()
-        
+
 class G2PlotOgl(_tabPlotWin):
     'Creates an OpenGL plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -253,13 +260,13 @@ class G2PlotOgl(_tabPlotWin):
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
         self.SetSizer(sizer)
-        
+
     def SetToolTipString(self,text):
         if 'phoenix' in wx.version():
             self.canvas.SetToolTip(wx.ToolTip(text))
         else:
             self.canvas.SetToolTipString(text)
-        
+
 class G2Plot3D(_tabPlotWin):
     'Creates a 3D Matplotlib plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -269,30 +276,24 @@ class G2Plot3D(_tabPlotWin):
         self.toolbar = GSASIItoolbar(self.canvas,Arrows=False)
 
         self.toolbar.Realize()
-        
+
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
         sizer.Add(self.toolbar,)
         self.SetSizer(sizer)
-                              
+
     def SetToolTipString(self,text):
         if 'phoenix' in wx.version():
             self.canvas.SetToolTip(wx.ToolTip(text))
         else:
             self.canvas.SetToolTipString(text)
-            
+
     def ToolBarDraw(self):
-        mplv = eval(mpl.__version__.replace('.',','))
-        if mplv[0] >= 3 and mplv[1] >= 3:
+        try:
             self.toolbar.canvas.draw_idle()
-        else:
+        except:
             self.toolbar.draw()
-        # mplv = eval(mpl.__version__.replace('.',','))
-        # if mplv[0] >= 3 and mplv[1] >= 3:
-        #     self.toolbar.draw_idle()
-        # else:
-        #     self.toolbar.draw()
-        
+
 class G2PlotNoteBook(wx.Panel):
     'create a tabbed panel to hold a GSAS-II graphics window'
     def __init__(self,parent,id=-1,G2frame=None):
@@ -303,24 +304,24 @@ class G2PlotNoteBook(wx.Panel):
         sizer = wx.BoxSizer()
         sizer.Add(self.nb,1,wx.EXPAND)
         self.SetSizer(sizer)
-        self.status = parent.CreateStatusBar()        
+        self.status = parent.CreateStatusBar()
         # self.status.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)) # unneeded
         # self.status.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)) # ignored, alas
         self.status.SetFieldsCount(2)
         self.status.firstLen = 150
-        self.status.SetStatusWidths([self.status.firstLen,-1])            
+        self.status.SetStatusWidths([self.status.firstLen,-1])
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         self.nb.Bind(wx.EVT_KEY_UP,self.OnNotebookKey)
         self.G2frame = G2frame
         self.MPLwarn = False
-        
+
         self.plotList = []   # contains the tab label for each plot
         self.panelList = []   # contains the panel object for each plot
         #self.skipPageChange = False # set to True when no plot update is needed
         self.allowZoomReset = True # this indicates plot should be updated not initialized
                                    # (BHT: should this be in tabbed panel rather than here?)
         self.lastRaisedPlotTab = None
-        
+
     def OnNotebookKey(self,event):
         '''Called when a keystroke event gets picked up by the notebook window
         rather the child. This is not expected, but somehow it does sometimes
@@ -369,7 +370,7 @@ class G2PlotNoteBook(wx.Panel):
         independent to the order it is dragged to -- at least in Windows) as well as
         the associated wx.Panel
 
-        An exception is raised if the label is not found     
+        An exception is raised if the label is not found
         '''
         for i in range(self.nb.GetPageCount()):
             if label == self.nb.GetPageText(i):
@@ -395,7 +396,7 @@ class G2PlotNoteBook(wx.Panel):
         Record the name of the this plot in self.lastRaisedPlotTab
 
         :param str label: title of plot
-        :param str Type: determines the type of plot that will be opened. 
+        :param str Type: determines the type of plot that will be opened.
 
           'mpl' for 2D graphs in matplotlib
           'ogl' for openGL
@@ -403,16 +404,16 @@ class G2PlotNoteBook(wx.Panel):
 
         :param bool newImage: forces creation of a new graph for matplotlib
           plots only (defaults as True)
-        :param function publish: reference to routine used to create a 
-          publication version of the current mpl plot (default is None, 
+        :param function publish: reference to routine used to create a
+          publication version of the current mpl plot (default is None,
           which prevents use of this).
-        :returns: new,plotNum,Page,Plot,limits where 
+        :returns: new,plotNum,Page,Plot,limits where
 
           * new: will be True if the tab was just created
-          * plotNum: is the tab number 
-          * Page: is the subclassed wx.Panel (:class:`G2PlotMpl`, etc.) where 
+          * plotNum: is the tab number
+          * Page: is the subclassed wx.Panel (:class:`G2PlotMpl`, etc.) where
             the plot appears
-          * Plot: the mpl.Axes object for the graphic (mpl) or the figure for 
+          * Plot: the mpl.Axes object for the graphic (mpl) or the figure for
             openGL.
           * limits: for mpl plots, when a plot already exists, this will be a tuple
             with plot scaling. None otherwise.
@@ -456,15 +457,15 @@ class G2PlotNoteBook(wx.Panel):
         self.lastRaisedPlotTab = label
         self.RaisePageNoRefresh(Page)
         # Save the help name from the DataItem that has created the plot in Tabbed page object
-        # so we can use it in self.OnHelp(). 
+        # so we can use it in self.OnHelp().
         # Are there any cases where plot tabs are created that are not tied to Data Tree entries?
-        # One example is GSASII.SumDialog, where a test plot is created. Are there others? 
+        # One example is GSASII.SumDialog, where a test plot is created. Are there others?
         try:
             Page.helpKey = self.G2frame.dataWindow.helpKey
         except AttributeError:
             Page.helpKey = 'Data tree'
         return new,plotNum,Page,Plot,limits
-    
+
     def _addPage(self,name,page):
         '''Add the newly created page to the notebook and associated lists.
         :param name: the label placed on the tab, which should be unique
@@ -476,7 +477,7 @@ class G2PlotNoteBook(wx.Panel):
         self.nb.AddPage(page,name)
         self.plotList.append(name) # used to lookup plot in self.panelList
         # Note that order in lists make not agree with actual tab order; use self.nb.GetPageText(i)
-        #    where (self=G2plotNB) for latter 
+        #    where (self=G2plotNB) for latter
         self.panelList.append(page) # panel object for plot
         self.lastRaisedPlotTab = name
         #page.plotInvalid = False # plot has just been drawn
@@ -485,13 +486,13 @@ class G2PlotNoteBook(wx.Panel):
         #page.replotArgs = []
         #page.replotKWargs = {}
         #self.skipPageChange = False
-                
+
     def addMpl(self,name="",publish=None):
         'Add a tabbed page with a matplotlib plot'
         page = G2PlotMpl(self.nb,publish=publish)
         self._addPage(name,page)
         return page.figure
-        
+
     def add3D(self,name=""):
         'Add a tabbed page with a 3D plot'
         page = G2Plot3D(self.nb)
@@ -503,16 +504,16 @@ class G2PlotNoteBook(wx.Panel):
             elif not self.MPLwarn: # patch for bad MPL 3D
                 self.MPLwarn = True
                 G2G.G2MessageBox(self,'3D plots with Matplotlib 3.1.x and 3.2.x are distorted, use MPL 3.0.3 or 3.3. You have '+mpl.__version__,
-                                     'Avoid Matplotlib 3.1 & 3.2')       
+                                     'Avoid Matplotlib 3.1 & 3.2')
         return page.figure
-        
+
     def addOgl(self,name=""):
         'Add a tabbed page with an openGL plot'
         page = G2PlotOgl(self.nb)
         self._addPage(name,page)
         self.RaisePageNoRefresh(page)   # need to give window focus before GL use
         return page.figure
-        
+
     def Delete(self,name):
         'delete a tabbed page'
         try:
@@ -521,8 +522,8 @@ class G2PlotNoteBook(wx.Panel):
             del self.panelList[item]
             self.nb.DeletePage(item)
         except ValueError:          #no plot of this name - do nothing
-            return      
-                
+            return
+
     def clear(self):
         'clear all pages from plot window'
         for i in range(self.nb.GetPageCount()-1,-1,-1):
@@ -530,7 +531,7 @@ class G2PlotNoteBook(wx.Panel):
         self.plotList = []
         self.panelList = []
         self.status.DestroyChildren() #get rid of special stuff on status bar
-        
+
     def Rename(self,oldName,newName):
         'rename a tab'
         try:
@@ -538,20 +539,20 @@ class G2PlotNoteBook(wx.Panel):
             self.plotList[item] = newName
             self.nb.SetPageText(item,newName)
         except ValueError:          #no plot of this name - do nothing
-            return      
-        
+            return
+
     def RaisePageNoRefresh(self,Page):
         'Raises a plot tab without triggering a refresh via OnPageChanged'
         if plotDebug: print ('Raise'+str(self).split('0x')[1])
         #self.skipPageChange = True
         Page.SetFocus()
         #self.skipPageChange = False
-        
-    def SetSelectionNoRefresh(self,plotNum): 
-        'Raises a plot tab without triggering a refresh via OnPageChanged' 
+
+    def SetSelectionNoRefresh(self,plotNum):
+        'Raises a plot tab without triggering a refresh via OnPageChanged'
         if plotDebug: print ('Select'+str(self).split('0x')[1])
         #self.skipPageChange = True
-        self.nb.SetSelection(plotNum) # raises plot tab 
+        self.nb.SetSelection(plotNum) # raises plot tab
         Page = self.G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.SetFocus()
         #self.skipPageChange = False
@@ -566,7 +567,7 @@ class G2PlotNoteBook(wx.Panel):
         '''
         tabLabel = event.GetEventObject().GetPageText(event.GetSelection())
         self.lastRaisedPlotTab = tabLabel
-        if plotDebug: 
+        if plotDebug:
             print ('PageChanged, self='+str(self).split('0x')[1]+tabLabel)
             print ('event type=',event.GetEventType())
         self.status.DestroyChildren()    #get rid of special stuff on status bar
@@ -575,10 +576,10 @@ class G2PlotNoteBook(wx.Panel):
 
     def SetHelpButton(self,help):
         '''Adds a Help button to the status bar on plots.
-        
-        TODO: This has a problem with G2pwpl.PlotPatterns where creation of the 
-        HelpButton causes the notebook tabs to be duplicated. A manual 
-        resize fixes that, but the SendSizeEvent has not worked. 
+
+        TODO: This has a problem with G2pwpl.PlotPatterns where creation of the
+        HelpButton causes the notebook tabs to be duplicated. A manual
+        resize fixes that, but the SendSizeEvent has not worked.
         '''
         hlp = G2G.HelpButton(self.status,helpIndex=help)
         rect = self.status.GetFieldRect(1)
@@ -587,16 +588,16 @@ class G2PlotNoteBook(wx.Panel):
         rect.y += 1
         hlp.SetRect(rect)
         #wx.CallLater(100,self.TopLevelParent.SendSizeEvent)
-            
+
     def InvokeTreeItem(self,pid):
         '''This is called to select an item from the tree using the self.allowZoomReset
         flag to prevent a reset to the zoom of the plot (where implemented)
         '''
-        self.allowZoomReset = False 
+        self.allowZoomReset = False
         if pid: self.G2frame.GPXtree.SelectItem(pid)
         self.allowZoomReset = True
         if plotDebug: print ('invoke'+str(self).split('0x')[1]+str(pid))
-            
+
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
     def __init__(self,plotCanvas,publish=None,Arrows=True):
@@ -627,12 +628,12 @@ class GSASIItoolbar(Toolbar):
         if publish:
             self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',publish)
         self.Realize()
-        
+
     def set_message(self,s):
         ''' this removes spurious text messages from the tool bar
         '''
         pass
-            
+
     def AddToolBarTool(self,label,title,filename,callback):
         bmpFilename = GSASIIpath.getIconFile(filename)
         if bmpFilename is None:
@@ -654,13 +655,13 @@ class GSASIItoolbar(Toolbar):
         if self.updateActions:
             wx.CallAfter(*self.updateActions)
         Toolbar._update_view(self)
-        
+
     def AnyActive(self):
         for Itool in range(self.GetToolsCount()):
             if self.GetToolState(self.GetToolByPos(Itool).GetId()):
                 return True
         return False
-    
+
     def GetActive(self):
         for Itool in range(self.GetToolsCount()):
             tool = self.GetToolByPos(Itool)
@@ -727,13 +728,13 @@ class GSASIItoolbar(Toolbar):
 #        self.parent.toolbar.push_current()
         if self.updateActions:
             wx.CallAfter(*self.updateActions)
-        
+
     def OnHelp(self,event):
         'Respond to press of help button on plot toolbar'
         bookmark = self.Parent.helpKey  # get help category used to create plot
         #if GSASIIpath.GetConfigValue('debug'): print 'plot help: key=',bookmark
         G2G.ShowHelp(bookmark,self.TopLevelParent)
-        
+
     def OnKey(self,event):
         '''Provide user with list of keystrokes defined for plot as well as an
         alternate way to access the same functionality
@@ -809,7 +810,7 @@ class GSASIItoolbar(Toolbar):
     #             self.ToggleTool(self.wx_ids['Pan'], False)
     #         else:
     #             print('Unable to reset Pan button, please report this with matplotlib version')
-                
+
 def SetCursor(page):
     mode = page.toolbar.GetActive()
     if mode == 'Pan':
@@ -827,7 +828,7 @@ def SetCursor(page):
             page.canvas.Cursor = wx.Cursor(wx.CURSOR_CROSS)
         else:
             page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
-            
+
 def PlotFPAconvolutors(G2frame,NISTpk,conv2T=None,convI=None,convList=None):
     '''Plot the convolutions used for the current peak computed with
     :func:`GSASIIfpaGUI.doFPAcalc`
@@ -890,7 +891,7 @@ def SetupLegendPick(legend,new,delay=5):
             txt.set_pickradius(4)
     if new:
         legend.figure.canvas.mpl_connect('pick_event',onLegendPick)
-        
+
 def onLegendPick(event):
     '''When a line in the legend is selected, find the matching line
     in the plot and then highlight it by adding/enlarging markers.
@@ -922,7 +923,7 @@ def onLegendPick(event):
     else:
         #GSASIIpath.IPyBreak()
         return
-    
+
     for l in plot.get_lines():
         if lbl == l.get_label():
             canvas.timer = wx.Timer()
@@ -941,8 +942,8 @@ def onLegendPick(event):
             break
     else:
             print('Warning: artist matching ',lbl,' not found')
-    
-#### PlotSngl ################################################################     
+
+#### PlotSngl ################################################################
 def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     '''Structure factor plotting package - displays zone of reflections as rings proportional
         to F, F**2, etc. as requested via matpltlib; plots are not geometrically correct
@@ -950,7 +951,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     from matplotlib.patches import Circle
     global HKL,HKLF,HKLref
     HKLref = hklRef
-    
+
     def OnSCKeyPress(event):
         i = zones.index(Data['Zone'])
         newPlot = False
@@ -977,11 +978,11 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             Data['Layer'] = 0
             Data['Scale'] = 1.0
         elif event.key in hklfChoice and 'HKLF' in Name:
-            Data['Type'] = hklfChoice[event.key]            
+            Data['Type'] = hklfChoice[event.key]
             newPlot = True
         elif event.key in pwdrChoice and 'PWDR' in Name:
-            Data['Type'] = pwdrChoice[event.key]            
-            newPlot = True       
+            Data['Type'] = pwdrChoice[event.key]
+            newPlot = True
         PlotSngl(G2frame,newPlot,Data,HKLref,Title)
 
     def OnSCMotion(event):
@@ -998,7 +999,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 HKLtxt = '(%d,%d,%d)'%(xpos,ypos,zpos)
             Page.SetToolTipString(HKLtxt)
             G2frame.G2plotNB.status.SetStatusText('HKL = '+HKLtxt,0)
-                
+
     def OnSCPress(event):
         zpos = Data['Layer']
         xpos = event.xdata
@@ -1016,15 +1017,15 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 Fosq,sig,Fcsq = hklf[0]
                 HKLtxt = '( %.2f %.3f %.2f %.2f)'%(Fosq,sig,Fcsq,(Fosq-Fcsq)/(scale*sig))
                 G2frame.G2plotNB.status.SetStatusText('Fosq, sig, Fcsq, delFsq/sig = '+HKLtxt,1)
-                
+
     def OnPick(event):
         pick = event.artist
         HKLtext = pick.get_gid()
         Page.SetToolTipString(HKLtext)
         G2frame.G2plotNB.status.SetStatusText('H = '+HKLtext,0)
-    
+
     if not G2frame.PatternId:
-        return                             
+        return
     Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     if not Title:
         Title = Name
@@ -1048,8 +1049,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Plot.set_aspect(aspect='equal')
     except: #broken in mpl 3.1.1; worked in mpl 3.0.3
         pass
-    
-    Type = Data['Type']            
+
+    Type = Data['Type']
     scale = Data['Scale']
     HKLmax = Data['HKLmax']
     HKLmin = Data['HKLmin']
@@ -1110,7 +1111,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 if sig > 0.:
                     A = scale*(Fosq-Fcsq)/(3*sig)
                 if abs(A) < 1.0: A = 0
-                B = 0                    
+                B = 0
             elif Type == '|DFsq|>3sig':
                 if sig > 0.:
                     A = scale*(Fosq-Fcsq)/(3*sig)
@@ -1121,10 +1122,10 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 if refl[3]:
                     hid = '(%d,%d,%d,%d)'%(refl[0],refl[1],refl[2],refl[3])
                 else:
-                    hid = '(%d,%d,%d)'%(refl[0],refl[1],refl[2])                
+                    hid = '(%d,%d,%d)'%(refl[0],refl[1],refl[2])
             else:
                 h = H
-                hid = '(%d,%d,%d)'%(refl[0],refl[1],refl[2])                
+                hid = '(%d,%d,%d)'%(refl[0],refl[1],refl[2])
             xy = (h[pzone[izone][0]],h[pzone[izone][1]])
             if Type in ['|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']:
                 if A > 0.0:
@@ -1145,10 +1146,10 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                     if radius > 0:
                         if A > B:
                             if refl[3+Super] < 0:
-                                Plot.add_artist(Circle(xy,radius=radius,ec=(0.,1,.0,.1),fc='g'))                                
+                                Plot.add_artist(Circle(xy,radius=radius,ec=(0.,1,.0,.1),fc='g'))
                             else:
                                 Plot.add_artist(Circle(xy,radius=radius,fc='g',ec='g'))
-                        else:                    
+                        else:
                             if refl[3+Super] < 0:
                                 Plot.add_artist(Circle(xy,radius=radius,fc=(1.,0.,0.,.1),ec='r'))
                             else:
@@ -1174,7 +1175,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
         Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
         Page.canvas.draw()
-        
+
 #### Plot1DSngl ################################################################################
 def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     '''1D Structure factor plotting package - displays reflections as sticks proportional
@@ -1190,7 +1191,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         elif event.key == 'v':
             Page.vaxis = not Page.vaxis
         Draw()
-        
+
     def OnPick(event):
         H = hkl[:,event.ind[0]]
         Page.SetToolTipString('#%d: %d,%d,%d'%(event.ind[0],H[0],H[1],H[2]))
@@ -1235,7 +1236,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+Name+' pattern first',1)
             Page.SetToolTipString(s)
-                
+
     def Draw():
         global xylim,hkl
         Plot.clear()
@@ -1258,7 +1259,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
                 X = np.nan_to_num(np.sqrt(Fcsq))
                 Y = np.sqrt(Fosq)
                 Z = 0.5*sig/np.sqrt(Fosq)
-            else:     
+            else:
                 Plot.set_xlabel(r'Fc'+super2,fontsize=14)
                 Plot.set_ylabel(r'Fo'+super2,fontsize=14)
                 X = Fcsq.copy()
@@ -1267,17 +1268,17 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         elif Page.qaxis:
             Plot.set_xlabel(r'q, '+Angstr+Pwrm1,fontsize=14)
             X = 2.*np.pi/d   #q
-        else:            
+        else:
             X = d  #d
         if Page.faxis and not Page.vaxis:
             Plot.set_ylabel(r'F',fontsize=14)
             Y = np.nan_to_num(np.sqrt(Fcsq))
             Z = np.nan_to_num(np.sqrt(Fosq))
-        elif not Page.vaxis:            
+        elif not Page.vaxis:
             Y = Fcsq.copy()
             Z = Fosq.copy()
         Ymax = np.max(Y)
-        
+
         if not Page.vaxis:
             XY = np.vstack((X,X,np.zeros_like(X),Y)).reshape((2,2,-1)).T
             XZ = np.vstack((X,X,np.zeros_like(X),Z)).reshape((2,2,-1)).T
@@ -1326,10 +1327,10 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.Offset = [0,0]
-    
+
     Page.Choice = (' key press','g: toggle grid','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot','v: toggle Fo/Fc plot')
     Draw()
-    
+
 #### Plot3DSngl ################################################################################
 def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     '''3D Structure factor plotting package - displays reflections as spots proportional
@@ -1370,7 +1371,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             cb.SetValue(' save as/key:')
             wx.CallAfter(OnKey,event)
         Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
-        
+
     def OnKey(event):           #on key UP!!
         global ifBox
         Choice = {'F':'Fo','S':'Fosq','U':'Unit','D':'dFsq','W':'dFsq/sig'}
@@ -1384,7 +1385,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             key = str(event.key).upper()
         if key in ['C','H','K','L']:
             if key == 'C':
-                Data['Zone'] = False 
+                Data['Zone'] = False
                 key = 'L'
             Data['viewKey'] = key
             drawingData['viewPoint'][0] = np.array(drawingData['default'])
@@ -1447,7 +1448,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         elif key in Choice:
             Data['Type'] = Choice[key]
         Draw('key')
-            
+
     Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     if Title and Title in G2frame.GetPhaseData(): #NB: save image as e.g. jpeg will fail if False; MyDir is unknown
         generalData = G2frame.GetPhaseData()[Title]['General']
@@ -1474,11 +1475,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Bl = np.array([0,0,255])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
-        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
-        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
+        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]],
+        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]],
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     uColors = [Rd,Gr,Bl, Wt,Wt,Wt, Wt,Wt,Wt, Wt,Wt,Wt]
-    
+
     def FillHKLRC():
         sumFo2 = 0.
         sumDF2 = 0.
@@ -1552,7 +1553,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         RF2 = 100.
         if sumFo and sumDF:
             RF = 100.*sumDF/sumFo
-            RF2 = 100.*sumDF2/sumFo2  
+            RF2 = 100.*sumDF2/sumFo2
         return HKL,zip(list(R),C),RF,RF2
 
     def GetTruePosition(xy):
@@ -1571,16 +1572,16 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                     return [int(h),int(k),int(l)]
             except ValueError:
                 return [int(h),int(k),int(l)]
-                
-                        
+
+
     def SetTranslation(newxy):
-#first get translation vector in screen coords.       
+#first get translation vector in screen coords.
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         drawingData['oldxy'] = list(newxy)
         V = np.array([-dxy[0],dxy[1],0.])
-#then transform to rotated crystal coordinates & apply to view point        
+#then transform to rotated crystal coordinates & apply to view point
         Q = drawingData['Quaternion']
         V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
         Tx,Ty,Tz = drawingData['viewPoint'][0]
@@ -1588,10 +1589,10 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         Ty += V[1]*0.1
         Tz += V[2]*0.1
         drawingData['viewPoint'][0] =  np.array([Tx,Ty,Tz])
-        
+
     def SetRotation(newxy):
         'Perform a rotation in x-y space due to a left-mouse drag'
-    #first get rotation vector in screen coords. & angle increment        
+    #first get rotation vector in screen coords. & angle increment
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
@@ -1611,9 +1612,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         VD = np.inner(Bmat,G2mth.Q2Mat(Q)[2])
         VD /= np.sqrt(np.sum(VD**2))
         drawingData['viewDir'] = VD
-        
-    def SetRotationZ(newxy):                        
-#first get rotation vector (= view vector) in screen coords. & angle increment        
+
+    def SetRotationZ(newxy):
+#first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = drawingData['oldxy']
@@ -1628,7 +1629,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         if newxy[0] > cent[0]:
             A[0] *= -1
         if newxy[1] < cent[1]:
-            A[1] *= -1        
+            A[1] *= -1
 # next transform vector back to xtal coordinates & make new quaternion
         Q = drawingData['Quaternion']
         V = np.inner(Amat,V)
@@ -1641,12 +1642,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     def OnMouseDown(event):
         xy = event.GetPosition()
         drawingData['oldxy'] = list(xy)
-        
+
     def OnMouseMove(event):
         if event.ShiftDown():           #don't want any inadvertant moves when picking
             return
         newxy = event.GetPosition()
-                                
+
         if event.Dragging():
             if event.LeftIsDown():
                 SetRotation(newxy)
@@ -1662,19 +1663,19 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 h,k,l = hkl
                 Page.SetToolTipString('%d,%d,%d'%(h,k,l))
                 G2frame.G2plotNB.status.SetStatusText('hkl = %d,%d,%d'%(h,k,l),1)
-        
+
     def OnMouseWheel(event):
         if event.ShiftDown():
             return
         drawingData['cameraPos'] += event.GetWheelRotation()/120.
         drawingData['cameraPos'] = max(0.1,min(20.00,drawingData['cameraPos']))
         Draw('wheel')
-        
+
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
         GL.glClearColor(R,G,B,A)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        
+
     def SetLights():
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
@@ -1687,7 +1688,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,1])
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
-        
+
     def RenderBox(x,y,z):
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         GL.glLineWidth(1)
@@ -1703,7 +1704,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_COLOR_MATERIAL)
-        
+
     def RenderUnitVectors(x,y,z,labxyz=['','','']):
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         GL.glLineWidth(1)
@@ -1727,7 +1728,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_COLOR_MATERIAL)
-                
+
     def RenderDots(XYZ,RC):
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         XYZ = np.array(XYZ)
@@ -1743,9 +1744,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_COLOR_MATERIAL)
-        
+
     def Draw(caller=''):
-#useful debug?        
+#useful debug?
 #        if caller:
 #            print caller
 # end of useful debug
@@ -1762,7 +1763,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         GS[0][1] = GS[1][0] = math.sqrt(GS[0][0]*GS[1][1])
         GS[0][2] = GS[2][0] = math.sqrt(GS[0][0]*GS[2][2])
         GS[1][2] = GS[2][1] = math.sqrt(GS[1][1]*GS[2][2])
-        
+
         HKL,RC,RF,RF2 = FillHKLRC()
         if Data['Zone']:
             G2frame.G2plotNB.status.SetStatusText   \
@@ -1776,11 +1777,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             G2frame.G2plotNB.status.SetStatusText   \
                 ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%%'%     \
                 (Data['Type'],Name,len(HKL),RF,super2,RF2),1)
-        
+
         SetBackground()
         GL.glInitNames()
         GL.glPushName(0)
-        
+
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
         if sys.platform == "darwin":
@@ -1790,8 +1791,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
-        SetLights()            
-            
+        SetLights()
+
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
@@ -1922,10 +1923,10 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
     Plot.legend(loc='upper left')
     np.seterr(invalid='warn')
     Page.canvas.draw()
-       
+
 #### PlotISFG ################################################################
 def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
-    ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single 
+    ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single
     or multiple plots with waterfall and contour plots as options
     '''
     global Peaks
@@ -1935,12 +1936,12 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         plotType = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
     if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)','g(r)','delt-G(R)']:
         return
-    
-    def OnPlotKeyUp(event):    
+
+    def OnPlotKeyUp(event):
         if event.key == 'shift':
             G2frame.ShiftDown = False
             return
-        
+
     def OnPlotKeyPress(event):
         if event.key == 'shift':
             G2frame.ShiftDown = True
@@ -1977,7 +1978,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 G2frame.Cmin = 0.0
                 G2frame.Cmax = 1.0
             else:
-                Page.Offset = [0,0]            
+                Page.Offset = [0,0]
         elif event.key == 'm':
             G2frame.SinglePlot = not G2frame.SinglePlot
         elif event.key == 'c':
@@ -1993,7 +1994,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         elif event.key == 'f' and not G2frame.SinglePlot:
             choices = G2gd.GetGPXtreeDataNames(G2frame,'PDF ')
             dlg = G2G.G2MultiChoiceDialog(G2frame,
-                'Select PDF(s) to plot\n(select all or none to reset)', 
+                'Select PDF(s) to plot\n(select all or none to reset)',
                 'Multidata plot selection',choices)
             if dlg.ShowModal() == wx.ID_OK:
                 G2frame.PDFselections = []
@@ -2030,7 +2031,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         elif event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         PlotISFG(G2frame,data,newPlot=newPlot,plotType=plotType)
-        
+
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -2040,10 +2041,10 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 if G2frame.Contour:
                     G2frame.G2plotNB.status.SetStatusText('R =%.3fA pattern ID =%5d'%(xpos,int(ypos)),1)
                 else:
-                    G2frame.G2plotNB.status.SetStatusText('R =%.3fA %s =%.2f'%(xpos,plotType,ypos),1)                   
+                    G2frame.G2plotNB.status.SetStatusText('R =%.3fA %s =%.2f'%(xpos,plotType,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+plotType+' pattern first',1)
-                
+
     def OnPick(event):
 
         def OnDragLine(event):
@@ -2082,7 +2083,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 Peaks['Peaks'] = G2mth.sortArray(Peaks['Peaks'],0,reverse=False)
                 PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
                 G2pdG.UpdatePDFPeaks(G2frame,Peaks,data)
-        
+
     def OnRelease(event):
         if Peaks == None: return
         if G2frame.itemPicked == None: return
@@ -2095,7 +2096,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
             return
         lines = []
-        for line in G2frame.Lines: 
+        for line in G2frame.Lines:
             lines.append(line.get_xdata()[0])
         try:
             lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
@@ -2125,7 +2126,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.Offset = [0,0]
-    
+
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     if Peaks == None:
         if G2frame.Contour:
@@ -2192,12 +2193,12 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         ContourZ = []
         ContourY = []
         Nseq = 0
-        
+
     for N,Pattern in enumerate(PlotList):
         xye = np.array(Pattern[1])
         X = xye[0]
         if not lenX:
-            lenX = len(X)           
+            lenX = len(X)
         if G2frame.Contour and len(PlotList)>1:
             Y = xye[1]
             if lenX == len(X):
@@ -2231,7 +2232,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         acolor = GetColorMap(G2frame.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,
                     vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,
-                    interpolation=G2frame.Interpolate, 
+                    interpolation=G2frame.Interpolate,
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         Page.figure.colorbar(Img)
     else:
@@ -2241,7 +2242,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             Xmax = np.amax(XYlist[0][0])
             Ymax = np.amax(XYlist[0][1])
             Ymin = np.amin(XYlist[2][1])
-        else:    
+        else:
             Xmin = np.amin(XYlist.T[0])
             Xmax = np.amax(XYlist.T[0])
             Ymin = np.amin(XYlist.T[1][1:])
@@ -2259,7 +2260,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             wx.BeginBusyCursor()
             if XYlist.shape[0]>1:
                 if G2frame.Waterfall:
-                    for xylist in XYlist:            
+                    for xylist in XYlist:
                         ymin = np.amin(xylist.T[1])
                         ymax = np.amax(xylist.T[1])
                         normcl = mpcls.Normalize(ymin,ymax)
@@ -2275,7 +2276,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                         Plot.plot(XYlist[0][0],XYlist[0][1],color='b',marker='+',linewidth=0)
                         Plot.plot(XYlist[1][0][ibeg:ifin],XYlist[1][1][ibeg:ifin],color='g')
                         Plot.plot(XYlist[2][0][ibeg:ifin],XYlist[2][1][ibeg:ifin],color='r')
-                    else:    
+                    else:
                         lines = mplC.LineCollection(XYlist,cmap=acolor)
                         lines.set_array(np.arange(XYlist.shape[0]))
                         Plot.add_collection(lines)
@@ -2335,7 +2336,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                                 picker=True,pickradius=2.))
             Xb = [0.,peaks['Limits'][1]]
             Yb = [0.,Xb[1]*peaks['Background'][1][1]]
-            Plot.plot(Xb,Yb,color='k',dashes=(5,5))             
+            Plot.plot(Xb,Yb,color='k',dashes=(5,5))
 #    elif G2frame.Legend:
 #        Plot.legend(loc='best')
     if not newPlot:
@@ -2352,7 +2353,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
 def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     '''plot of CW or TOF peak calibration
     '''
-    
+
     global Plot
     def OnMotion(event):
         xpos = event.xdata
@@ -2360,7 +2361,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3g'%(xpos,Title,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3g'%(xpos,Title,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
             found = []
@@ -2369,7 +2370,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             found = XY[np.where(np.fabs(XY.T[0]-xpos) < 0.005*wid)]
             if len(found):
                 pos = found[0][1]
-                if 'C' in Inst['Type'][0]: 
+                if 'C' in Inst['Type'][0]:
                     Page.SetToolTipString('position=%.4f'%(pos))
                 else:
                     Page.SetToolTipString('position=%.2f'%(pos))
@@ -2385,7 +2386,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     else:
         newPlot = True
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-    
+
     Page.Choice = None
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Plot.set_title(Title,fontsize=14)
@@ -2439,7 +2440,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     Title='',lines=False,names=[],names2=[],vertLines=[]):
     '''simple plot of xy data
-    
+
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param list XY: a list of X,Y array pairs; len(X) = len(Y)
     :param list XY2: a secondary list of X,Y pairs
@@ -2450,9 +2451,9 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     :param bool lines: = True if lines desired for XY plot; XY2 always plotted as lines
     :param list names: legend names for each XY plot as list a of str values
     :param list names2: legend names for each XY2 plot as list a of str values
-    :param list vertLines: lists of vertical line x-positions; can be one for each XY 
+    :param list vertLines: lists of vertical line x-positions; can be one for each XY
     :returns: nothing
-    
+
     '''
     global xylim
     def OnKeyPress(event):
@@ -2483,10 +2484,10 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
-                
+
     def Draw():
         global xylim
         Plot.clear()
@@ -2498,7 +2499,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
         NC = len(colors)
         Page.keyPress = OnKeyPress
         Xmax = 0.
-        Ymax = 0.    
+        Ymax = 0.
         for ixy,xy in enumerate(XY):
             X,Y = XY[ixy]
             Xmax = max(Xmax,max(X))
@@ -2549,19 +2550,19 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.Offset = [0,0]
-    
+
     if lines:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
             'u: offset up','o: reset offset','g: toggle grid','s: save data as csv file')
     else:
         Page.Choice = ('g: toggle grid','s: save data as csv file')
     Draw()
-    
-        
+
+
 #### PlotXYZ ################################################################################
 def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=None,color=None,buttonHandler=None):
     '''simple contour plot of xyz data
-    
+
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param list XY: a list of X,Y arrays
     :param list Z: a list of Z values for each X,Y pair
@@ -2572,16 +2573,16 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
     :param list zrange: [zmin,zmax]; default=None to use limits in Z
     :param str color: one of mpl.cm.dated.keys(); default=None to use G2frame.ContourColor
     :returns: nothing
-    
+
     '''
     def OnKeyPress(event):
         if event.key == 'u':
-            G2frame.Cmax = min(1.0,G2frame.Cmax*1.2) 
+            G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
         elif event.key == 'd':
             G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
         elif event.key == 'o':
             G2frame.Cmax = 1.0
-            
+
         elif event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
 
@@ -2596,7 +2597,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
             else:
                 G2frame.Interpolate = 'nearest'
             dlg.Destroy()
-            
+
         elif event.key == 's':
             choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
             choice.sort()
@@ -2608,7 +2609,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
                 G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','RdYlGn')
             dlg.Destroy()
         wx.CallAfter(PlotXYZ,G2frame,XY,Z,labelX,labelY,False,Title)
-    
+
     def OnMotion(event):
         xpos = event.xdata
         if xpos and Xmin<xpos<Xmax:                                        #avoid out of frame mouse position
@@ -2621,17 +2622,17 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
                 iy = int(Nxy[1]*(ypos-Ymin)/Ywd)
                 try:
                     G2frame.G2plotNB.status.SetStatusText('%s =%9.3f %s =%9.3f val =%9.3f'% \
-                        (labelX,xpos,labelY,ypos,Z[ix,iy]),1)                   
+                        (labelX,xpos,labelY,ypos,Z[ix,iy]),1)
                 except TypeError:
                     G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
-                    
+
     def OnPress(event):
         if Page.toolbar.AnyActive():    # prevent ops. if a toolbar zoom button pressed
-            return 
+            return
         xpos,ypos = event.xdata,event.ydata
         if xpos and buttonHandler:
             buttonHandler(xpos,ypos)
-                    
+
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
     if not new:
         if not newPlot:
@@ -2641,7 +2642,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('button_press_event',OnPress)
-    
+
     Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
         'g: toggle grid','i: interpolation method','s: color scheme')
     Page.keyPress = OnKeyPress
@@ -2682,7 +2683,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
         Page.ToolBarDraw()
     else:
         Page.canvas.draw()
-        
+
 #### PlotXYZvect ################################################################################
 def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotName=None):
     ''' To plot a quiver of quaternion vectors colored by the rotation
@@ -2693,10 +2694,10 @@ def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',Plo
     :param str Title: plot title
     :param str PlotName: plot tab name
     '''
-    
+
     def OnMotion(event):
         G2frame.G2plotNB.status.SetStatusText('',1)
-    
+
     if PlotName is None or not len(X):
         return
     G2frame.G2plotNB.Delete(PlotName)       #A cluge: to avoid AccessExceptions on replot
@@ -2725,10 +2726,10 @@ def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',Plo
     Plot.set_title(Title)
     try:
         Page.figure.colorbar(mcolors,shrink=0.75,label='Rotation',boundaries=range(91))
-    except TypeError:
+    except:
         print('mpl error - no colorbar shown')
     Page.canvas.draw()
-        
+
 #### Plot3dXYZ ################################################################################
 def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=False,Title='',Centro=False):
     '''Creates a surface Plot for 3D vectors'''
@@ -2736,8 +2737,8 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            G2frame.G2plotNB.status.SetStatusText('X =%.3f Y =%.4f'%(xpos,ypos),1)                   
-            
+            G2frame.G2plotNB.status.SetStatusText('X =%.3f Y =%.4f'%(xpos,ypos),1)
+
     def OnKeyPress(event):
         if event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
@@ -2758,7 +2759,7 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
     X = Zmul*np.outer(npcosd(PHI),npsind(PSI))/2.
     Y = Zmul*np.outer(npsind(PHI),npsind(PSI))/2.
     Z = Zmul*np.outer(np.ones(np.size(PHI)),npcosd(PSI))/2.
-    
+
     if np.any(X) and np.any(Y) and np.any(Z):
         np.seterr(all='ignore')
         if True:
@@ -2781,7 +2782,7 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
         #     print('Plot3dXYZ failure')
         #     pass
         Page.canvas.draw()
-        
+
 #### PlotAAProb ################################################################################
 def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=None):
     'Needs a description'
@@ -2799,7 +2800,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
                     G2frame.G2plotNB.status.SetStatusText('Residue: %s score: %.2f'%(resName,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select AA error plot first',1)
-                
+
     def OnPick(event):
         xpos = event.mouseevent.xdata
         if xpos and pickHandler:
@@ -2809,7 +2810,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
             else:
                 resName = ''
             pickHandler(resName)
-    
+
     def Draw():
         global Plot1,Plot2
         Plot.clear()
@@ -2826,7 +2827,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
                 Plot1.axhline(item,dashes=(5,5),picker=False)
         Plot2 = Page.figure.add_subplot(212,sharex=Plot1)
         Plot2.set_ylabel(r'Error score 2',fontsize=14)
-        Plot2.set_xlabel(r'Residue',fontsize=14)        
+        Plot2.set_xlabel(r'Residue',fontsize=14)
         colors = list(np.where(np.array(Probs2)>thresh[1][1],'r','b'))
         Plot2.bar(resNums,Probs2,color=colors,linewidth=0,picker=True)
         if thresh is not None:
@@ -2834,7 +2835,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
                 Plot2.axhline(item,dashes=(5,5),picker=False)
         Page.xylim = [Plot1.get_xlim(),Plot1.get_ylim(),Plot2.get_ylim()]
         Page.canvas.draw()
-    
+
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
     Page.canvas.mpl_connect('pick_event', OnPick)
     Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -2850,7 +2851,7 @@ def PlotStrain(G2frame,data,newPlot=False):
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('d-spacing =%9.5f Azimuth =%9.3f'%(ypos,xpos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('d-spacing =%9.5f Azimuth =%9.3f'%(ypos,xpos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select Strain pattern first',1)
 
@@ -2861,7 +2862,7 @@ def PlotStrain(G2frame,data,newPlot=False):
     else:
         newPlot = True
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-    
+
     Page.Choice = None
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Plot.set_title('Strain')
@@ -2886,24 +2887,24 @@ def PlotStrain(G2frame,data,newPlot=False):
         Page.ToolBarDraw()
     else:
         Page.canvas.draw()
-        
+
 #### PlotBarGraph ################################################################################
 def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,ifBinned=False,maxBins=None):
     ''' does a vertical bar graph
     '''
-    
+
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if PlotText == PlotName:
             PlotBarGraph(G2frame,Xarray,Xname,Title,PlotText)
-    
+
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f Number =%9.3g'%(xpos,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f Number =%9.3g'%(xpos,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select %s first'%PlotName,1)
 
@@ -2935,12 +2936,12 @@ def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,i
 def PlotNamedFloatHBarGraph(G2frame,Xvals,Ynames,Xlabel='Value',Ylabel='',Title='',PlotName=None):
     ''' does a horizintal bar graph
     '''
-    
+
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if PlotText == PlotName:
             PlotNamedFloatHBarGraph(G2frame,Xvals,Ynames,Xlabel,Ylabel,Title,PlotText)
-    
+
     def OnMotion(event):
         if event.ydata is None:
             return
@@ -2948,7 +2949,7 @@ def PlotNamedFloatHBarGraph(G2frame,Xvals,Ynames,Xlabel='Value',Ylabel='',Title=
         if ypos and ypos < len(Ynames):                                        #avoid out of frame mouse position
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%s %s = %9.3g'%(Ynames[ypos],Xlabel,Xvals[ypos]),1)                   
+                G2frame.G2plotNB.status.SetStatusText('X =%s %s = %9.3g'%(Ynames[ypos],Xlabel,Xvals[ypos]),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select %s first'%PlotName,1)
 
@@ -2966,11 +2967,11 @@ def PlotNamedFloatHBarGraph(G2frame,Xvals,Ynames,Xlabel='Value',Ylabel='',Title=
     Plot.set_ylabel(Ylabel,fontsize=14)
     Plot.barh(Yvals,Xvals,height=0.8,align='center',color=colors,edgecolor='black',tick_label=Ynames)
     Page.canvas.draw()
-    
+
 #### PlotSASDSizeDist ################################################################################
 def PlotSASDSizeDist(G2frame):
     'Needs a description'
-    
+
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
@@ -2979,14 +2980,14 @@ def PlotSASDSizeDist(G2frame):
             PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
             PlotSASDPairDist(G2frame)
-    
+
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('diameter =%9.3f f(D) =%9.3g'%(xpos,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('diameter =%9.3f f(D) =%9.3g'%(xpos,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select Size pattern first',1)
 
@@ -3022,7 +3023,7 @@ def PlotSASDSizeDist(G2frame):
 #### PlotSASDPairDist ################################################################################
 def PlotSASDPairDist(G2frame):
     'Needs a description'
-    
+
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
@@ -3031,14 +3032,14 @@ def PlotSASDPairDist(G2frame):
             PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
             PlotSASDPairDist(G2frame)
-    
+
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('pair dist =%9.3f f(D) =%9.3g'%(xpos,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('pair dist =%9.3f f(D) =%9.3g'%(xpos,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select Pair pattern first',1)
 
@@ -3080,7 +3081,7 @@ def PlotPowderLines(G2frame,indexFrom=''):
                     findx = np.where(np.fabs(G2frame.HKL.T[-2]-xpos) < 0.002*wid)
                     found = G2frame.HKL[findx]
                 if len(found):
-                    h,k,l = found[0][:3] 
+                    h,k,l = found[0][:3]
                     Page.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))
                 else:
                     Page.SetToolTipString('')
@@ -3107,12 +3108,12 @@ def PlotPowderLines(G2frame,indexFrom=''):
     Page.canvas.draw()
     Page.toolbar.push_current()
 
-##### PlotPeakWidths            
+##### PlotPeakWidths
 def PlotPeakWidths(G2frame,PatternName=None):
     ''' Plotting of instrument broadening terms as function of Q
     Seen when "Instrument Parameters" chosen from powder pattern data tree.
     Parameter PatternName allows the PWDR to be referenced as a string rather than
-    a wx tree item, defined in G2frame.PatternId. 
+    a wx tree item, defined in G2frame.PatternId.
     '''
 #    sig = lambda Th,U,V,W: 1.17741*math.sqrt(U*tand(Th)**2+V*tand(Th)+W)*math.pi/18000.
 #    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
@@ -3122,8 +3123,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            G2frame.G2plotNB.status.SetStatusText('Q =%.3f%s %sQ/Q =%.4f'%(xpos,Angstr+Pwrm1,GkDelta,ypos),1)                   
-            
+            G2frame.G2plotNB.status.SetStatusText('Q =%.3f%s %sQ/Q =%.4f'%(xpos,Angstr+Pwrm1,GkDelta,ypos),1)
+
     def OnKeyPress(event):
         if event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
@@ -3174,7 +3175,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
     except TypeError:
         print ("Your peak list needs reformatting...",end='')
         item = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List')
-        G2frame.GPXtree.SelectItem(item)  
+        G2frame.GPXtree.SelectItem(item)
         item = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters')
         G2frame.GPXtree.SelectItem(item)
         print ("done")
@@ -3182,14 +3183,14 @@ def PlotPeakWidths(G2frame,PatternName=None):
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Peak Widths','mpl')
     Page.Choice = (' key press','g: toggle grid','s: save as .csv file')
-    Page.keyPress = OnKeyPress    
+    Page.keyPress = OnKeyPress
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
             xylim = copy.copy(lim)
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
-    G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)        
+    G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)
     # save information needed to reload from tree and redraw
     G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,
             PlotPeakWidths,(G2frame,G2frame.GPXtree.GetItemText(G2frame.PatternId)))
@@ -3243,7 +3244,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
         Plot.plot(Q,Gf,color='m',label='Lorentzian fit')
         Plot.plot(Q,Wf,color='g',dashes=(5,5),label='FWHM fit (GL+ab)')
-        
+
         Tp = []
         Ap = []
         Bp = []
@@ -3258,8 +3259,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Qp.append(2.*np.pi*difC/peak[0])
             Sp.append(1.17741*np.sqrt(peak[8])/peak[0])
             Gp.append(peak[10]/peak[0])
-            
-        if Qp: 
+
+        if Qp:
             Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
             Plot.plot(Qp,Bp,'+',color='orange',label='Beta peak')
             Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
@@ -3284,7 +3285,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,Y,color='r',label='Gaussian')
         Plot.plot(Q,Z,color='g',label='Lorentzian')
         Plot.plot(Q,W,color='b',label='G+L')
-        
+
         fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
         for did in [isig,igam]:
             if np.any(fit[did] < 0.):
@@ -3321,7 +3322,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         legend = Plot.legend(loc='best')
         SetupLegendPick(legend,new)
         Page.canvas.draw()
-        
+
     else:       #'A', 'C' & 'B'
         isig = 4
         igam = 6
@@ -3343,7 +3344,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,Y,color='r',label='Gaussian')
         Plot.plot(Q,Z,color='g',label='Lorentzian')
         Plot.plot(Q,W,color='b',label='G+L')
-        
+
         fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
         for did in [isig,igam]:
             if np.any(fit[did] < 0.):
@@ -3357,7 +3358,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
         Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
         Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
-        
+
         Xp = []
         Yp = []
         Zp = []
@@ -3382,7 +3383,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Page.canvas.draw()
     if negWarn:
         Plot.set_title('WARNING: profile coefficients yield negative peak widths; peaks may be skipped in calcuations')
-        
+
     if xylim and not G2frame.G2plotNB.allowZoomReset:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()
@@ -3392,7 +3393,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Page.ToolBarDraw()
     else:
         Page.canvas.draw()
-        
+
 #### PlotDeform ######################################################################################
 def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
     ''' Plot deformation atoms & neighbors
@@ -3451,16 +3452,16 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
         Plot.set_aspect('equal')
     except NotImplementedError:
         pass
-    
-    
+
+
     Page.canvas.draw()
 
-    
+
 #### PlotSizeStrainPO ################################################################################
 def PlotSizeStrainPO(G2frame,data,hist=''):
     '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
-    
+
     def OnPick(event):
         if 'Inv. pole figure' not in plotType:
             return
@@ -3473,7 +3474,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
         z = npcosd(r)
         xy = np.sqrt(1.-z**2)
         return xy*npcosd(p),xy*npsind(p),z
-        
+
     def OnMotion(event):
         if 'Inv. pole figure' not in plotType:
             return
@@ -3496,7 +3497,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
                 y,x,z = list(xyz/np.max(np.abs(xyz)))
                 G2frame.G2plotNB.status.SetStatusText(
                     'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z),1)
-    
+
     import scipy.interpolate as si
     generalData = data['General']
     SGData = generalData['SGData']
@@ -3510,7 +3511,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
     for ptype in plotDict:
         G2frame.G2plotNB.Delete(ptype)
     if plotType in ['None'] or not useList:
-        return        
+        return
     if hist == '':
         hist = list(useList.keys())[0]
 
@@ -3526,7 +3527,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Page.Choice = None
     G2frame.G2plotNB.status.SetStatusText('',1)
-    
+
     PHI = np.linspace(0.,360.,40,True)
     PSI = np.linspace(0.,180.,40,True)
     X = np.outer(npcosd(PHI),npsind(PSI))
@@ -3544,16 +3545,16 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
         if coeff[0] == 'isotropic':
             X *= diam*coeff[1][0]
             Y *= diam*coeff[1][0]
-            Z *= diam*coeff[1][0]                                
+            Z *= diam*coeff[1][0]
         elif coeff[0] == 'uniaxial':
-            
+
             def uniaxCalc(xyz,iso,aniso,axes):
                 Z = np.array(axes)
                 cp = abs(np.dot(xyz,Z))
                 sp = np.sqrt(1.-cp**2)
                 R = iso*aniso/np.sqrt((iso*cp)**2+(aniso*sp)**2)
                 return R*xyz*diam
-                
+
             iso,aniso = coeff[1][:2]
             axes = np.inner(Amat,np.array(coeff[3]))
             axes /= nl.norm(axes)
@@ -3564,13 +3565,13 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
             X = X[:,:,0]
             Y = Y[:,:,0]
             Z = Z[:,:,0]
-        
+
         elif coeff[0] == 'ellipsoidal':
-            
+
             def ellipseCalc(xyz,E,R):
                 XYZ = xyz*E.T
                 return np.inner(XYZ.T,R)*diam
-                
+
             S6 = coeff[4]
             Sij = G2lat.U6toUij(S6)
             E,R = nl.eigh(Sij)
@@ -3580,9 +3581,9 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
             X = X[:,:,0]
             Y = Y[:,:,0]
             Z = Z[:,:,0]
-            
+
         elif coeff[0] == 'generalized':
-            
+
             def genMustrain(xyz,SGData,A,Shkl):
                 uvw = np.inner(Amat.T,xyz)
                 Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
@@ -3590,7 +3591,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
                 Sum = np.where(Sum > 0.01,Sum,0.01)
                 Sum = np.sqrt(Sum)
                 return Sum*xyz
-                
+
             Shkl = np.array(coeff[4])
             if np.any(Shkl):
                 XYZ = np.dstack((X,Y,Z))
@@ -3599,7 +3600,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
                 X = X[:,:,0]
                 Y = Y[:,:,0]
                 Z = Z[:,:,0]
-                    
+
         if np.any(X) and np.any(Y) and np.any(Z):
             np.seterr(all='ignore')
             Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
@@ -3620,7 +3621,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
             Plot.set_xlabel(r'X, $\mu$m')
             Plot.set_ylabel(r'Y, $\mu$m')
             Plot.set_zlabel(r'Z, $\mu$m')
-        else:    
+        else:
             Plot.set_title(r'$\mu$strain for '+phase+'; '+coeff[0]+' model')
             Plot.set_xlabel(r'X, $\mu$strain')
             Plot.set_ylabel(r'Y, $\mu$strain')
@@ -3629,14 +3630,14 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
         h,k,l = generalData['POhkl']
         if coeff[0] == 'MD':
             print ('March-Dollase preferred orientation plot')
-        
+
         else:
             PH = np.array(generalData['POhkl'])
             phi,beta = G2lat.CrsAng(PH,cell[:6],SGData)
             SHCoef = {}
             for item in coeff[5]:
                 L,N = eval(item.strip('C'))
-                SHCoef['C%d,0,%d'%(L,N)] = coeff[5][item]                        
+                SHCoef['C%d,0,%d'%(L,N)] = coeff[5][item]
             ODFln = G2lat.Flnh(SHCoef,phi,beta,SGData)
             X = np.linspace(0,90.0,26)
             Y = G2lat.polfcal(ODFln,'0',X,0.0)
@@ -3691,9 +3692,9 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
         Rmd = np.array(Rmd)
         Rmd = np.where(Rmd<0.,0.,Rmd)
         if 'Eq. area' in plotType:
-            x,y = np.sin(Beta/2.)*np.cos(Phi)/sq2,np.sin(Beta/2.)*np.sin(Phi)/sq2        
+            x,y = np.sin(Beta/2.)*np.cos(Phi)/sq2,np.sin(Beta/2.)*np.sin(Phi)/sq2
         else:
-            x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
+            x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)
         npts = 101
         X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
         R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(Y,X).flatten()
@@ -3717,7 +3718,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
             G2frame.G2plotNB.Delete(plotType)
             G2G.G2MessageBox(G2frame,'IVP interpolate error: scipy needs to be 0.11.0 or newer',
                     'IVP error')
-            return        
+            return
         Z = np.reshape(Z,(npts,npts))
         try:
             CS = Plot.contour(Y,X,Z)
@@ -3730,9 +3731,9 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
         Page.figure.colorbar(Img)
         Plot.axis('off')
         Plot.set_title('0 0 1 Inverse pole figure for %s\n%s'%(phase,hist))
-        
+
     Page.canvas.draw()
-    
+
 #### PlotTexture ################################################################################
 def PlotTexture(G2frame,data,Start=False):
     '''Pole figure, inverse pole figure plotting.
@@ -3754,12 +3755,12 @@ def PlotTexture(G2frame,data,Start=False):
     cell = generalData['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(cell)
     sq2 = 1.0/math.sqrt(2.0)
-    
+
     def rp2xyz(r,p):
         z = npcosd(r)
         xy = np.sqrt(1.-z**2)
         return xy*npsind(p),xy*npcosd(p),z
-            
+
     def OnMotion(event):
         SHData = data['General']['SH Texture']
         if event.xdata and event.ydata:                 #avoid out of frame errors
@@ -3768,31 +3769,31 @@ def PlotTexture(G2frame,data,Start=False):
             if 'Inverse' in SHData['PlotType']:
                 r = xpos**2+ypos**2
                 if r <= 1.0:
-                    if 'equal' in G2frame.Projection: 
+                    if 'equal' in G2frame.Projection:
                         r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(xpos,ypos)
                     else:
                         r,p = 2.*npatand(np.sqrt(r)),npatan2d(xpos,ypos)
                     ipf = G2lat.invpolfcal(IODFln,SGData,np.array([r,]),np.array([p,]))
                     xyz = np.inner(Amat,np.array([rp2xyz(r,p)]))
                     y,x,z = list(xyz/np.max(np.abs(xyz)))
-                    
+
                     G2frame.G2plotNB.status.SetStatusText(
                         'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z),1)
-                
+
             elif 'Axial' in SHData['PlotType']:
                 pass
-                
+
             else:                       #ordinary pole figure
                 z = xpos**2+ypos**2
                 if z <= 1.0:
                     z = np.sqrt(z)
-                    if 'equal' in G2frame.Projection: 
+                    if 'equal' in G2frame.Projection:
                         r,p = 2.*npasind(z*sq2),npatan2d(ypos,xpos)
                     else:
                         r,p = 2.*npatand(z),npatan2d(ypos,xpos)
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
                     G2frame.G2plotNB.status.SetStatusText('phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf),1)
-                    
+
     def OnPick(event):
         pick = event.artist
         Dettext = pick.get_gid()
@@ -3809,7 +3810,7 @@ def PlotTexture(G2frame,data,Start=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('pick_event', OnPick)
     Page.Choice = None
-    G2frame.G2plotNB.status.SetStatusText('')    
+    G2frame.G2plotNB.status.SetStatusText('')
     G2frame.G2plotNB.status.SetStatusWidths([G2frame.G2plotNB.status.firstLen,-1])
     PH = np.array(SHData['PFhkl'])
     phi,beta = G2lat.CrsAng(PH,cell,SGData)
@@ -3831,8 +3832,8 @@ def PlotTexture(G2frame,data,Start=False):
         Plot.set_title('%d %d %d Axial distribution for %s'%(h,k,l,pName))
         Plot.set_xlabel(r'$\psi$',fontsize=16)
         Plot.set_ylabel('MRD',fontsize=14)
-        
-    else:       
+
+    else:
         npts = 101
         if 'Inverse' in SHData['PlotType']:
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
@@ -3856,19 +3857,19 @@ def PlotTexture(G2frame,data,Start=False):
             Plot.axis('off')
             Plot.set_title('%d %d %d Inverse pole figure for %s'%(int(x),int(y),int(z),pName))
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
-            
+
         elif '3D' in SHData['PlotType']:
             PSI,GAM = np.mgrid[0:31,0:31]
             PSI = PSI.flatten()*6.
             GAM = GAM.flatten()*12.
-            P = G2lat.polfcal(ODFln,SamSym[textureData['Model']],PSI,GAM).reshape((31,31))            
+            P = G2lat.polfcal(ODFln,SamSym[textureData['Model']],PSI,GAM).reshape((31,31))
             GAM = np.linspace(0.,360.,31,True)
             PSI = np.linspace(0.,180.,31,True)
             X = np.outer(npsind(GAM),npsind(PSI))*P.T
             Y = np.outer(npcosd(GAM),npsind(PSI))*P.T
             Z = np.outer(np.ones(np.size(GAM)),npcosd(PSI))*P.T
             h,k,l = SHData['PFhkl']
-            
+
             if np.any(X) and np.any(Y) and np.any(Z):
                 np.seterr(all='ignore')
                 Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
@@ -3931,7 +3932,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Off = off
     Atom = atom
     Ax = ax
-    
+
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -3940,11 +3941,11 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             iy = int(round((Slab.shape[0]-1)*(ypos+0.5-Off*0.005)))
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('t =%9.3f %s =%9.3f %s=%9.3f'%(xpos,GkDelta+Ax,ypos,Gkrho,Slab[iy,ix]/8.),1)                   
-#                GSASIIpath.IPyBreak()                  
+                G2frame.G2plotNB.status.SetStatusText('t =%9.3f %s =%9.3f %s=%9.3f'%(xpos,GkDelta+Ax,ypos,Gkrho,Slab[iy,ix]/8.),1)
+#                GSASIIpath.IPyBreak()
             except (TypeError,IndexError):
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
-    
+
     def OnPlotKeyPress(event):
         global Off,Atom,Ax
         if event.key == '0':
@@ -4028,7 +4029,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Plot.set_title(Title)
     Plot.set_xlabel('t')
     Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
-    Slab = np.hstack((slab,slab,slab))   
+    Slab = np.hstack((slab,slab,slab))
     acolor = GetColorMap('RdYlGn')
     if 'delt' in MapType:
         Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Doff,.5+Doff),cmap=acolor)
@@ -4036,11 +4037,11 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Doff,.5+Doff))
     Plot.set_ylim([-0.25,0.25])
     Page.canvas.draw()
-   
+
 #### PlotCovariance ################################################################################
 def PlotCovariance(G2frame,Data,Cube=False):
-    '''Plots the covariance matrix. Also shows values for parameters 
-    and their standard uncertainties (esd's) or the correlation between 
+    '''Plots the covariance matrix. Also shows values for parameters
+    and their standard uncertainties (esd's) or the correlation between
     variables.
     '''
     def OnPlotKeyPress(event):
@@ -4101,13 +4102,13 @@ def PlotCovariance(G2frame,Data,Cube=False):
                     value = Page.values[xpos]
                     name = Page.varyList[xpos]
                     if Page.varyList[xpos] in Page.newAtomDict:
-                        name,value = Page.newAtomDict[name]                        
+                        name,value = Page.newAtomDict[name]
                     msg = '%s value = %.4g, esd = %.4g'%(name,value,Page.sig[xpos])
                 else:
                     msg = '%s - %s: %5.3f'%(Page.varyList[xpos],Page.varyList[ypos],Page.covArray[xpos][ypos])
                 Page.SetToolTipString(msg)
                 G2frame.G2plotNB.status.SetStatusText(msg,1)
-                
+
     #==== PlotCovariance(G2frame,Data) starts here =========================
     if not Data:
         print ('No covariance matrix available')
@@ -4159,11 +4160,11 @@ def PlotCovariance(G2frame,Data,Cube=False):
         Plot.set_xlabel('Variable number')
         Plot.set_ylabel('Variable name')
     Page.canvas.draw()
-    
+
 #### PlotTorsion ################################################################################
 def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
     'needs a doc string'
-    
+
     global names
     names = Names
     sum = np.sum(Torsion)
@@ -4172,7 +4173,7 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
     tMax = np.max(torsion)
     torsion = 3.*(torsion-tMin)/(tMax-tMin)
     X = np.linspace(0.,360.,num=45)
-    
+
     def OnPick(event):
         ind = event.ind[0]
         msg = 'atoms:'+names[ind]
@@ -4188,7 +4189,7 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
                 if names[ind] in torGrid.GetCellValue(row,0):
                     torGrid.SelectRow(row)
             torGrid.ForceRefresh()
-                
+
     def OnMotion(event):
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = event.xdata
@@ -4218,7 +4219,7 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
     Plot.set_xlabel('angle',fontsize=16)
     Plot.set_ylabel('Energy',fontsize=16)
     Page.canvas.draw()
-    
+
 #### PlotRama ################################################################################
 def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
     'needs a doc string'
@@ -4243,7 +4244,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
                 G2frame.RamaColor = 'RdYlGn'
             dlg.Destroy()
         PlotRama(G2frame,phaseName,Rama,RamaName,Names,PhiPsi,Coeff)
-        
+
     def OnPick(event):
         ind = event.ind[0]
         msg = 'atoms:'+names[ind]
@@ -4266,7 +4267,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
             ypos = event.ydata
             msg = 'phi/psi: %5.3f %5.3f'%(xpos,ypos)
             Page.SetToolTipString(msg)
-            
+
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Ramachandran','mpl')
     if not new:
         if not Page.IsShown():
@@ -4281,7 +4282,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
     G2frame.G2plotNB.status.SetStatusText('Use mouse LB to identify phi/psi atoms',1)
     acolor = GetColorMap(G2frame.RamaColor)
     if RamaName == 'All' or '-1' in RamaName:
-        if len(Coeff): 
+        if len(Coeff):
             X,Y = np.meshgrid(np.linspace(-180.,180.,45),np.linspace(-180.,180.,45))
             Z = np.array([-G2mth.calcRamaEnergy(x,y,Coeff)[1] for x,y in zip(X.flatten(),Y.flatten())])
             Plot.contour(X,Y,np.reshape(Z,(45,45)))
@@ -4294,7 +4295,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
         Plot.set_xlim((-180.,180.))
         Plot.set_ylim((-180.,180.))
     else:
-        if len(Coeff): 
+        if len(Coeff):
             X,Y = np.meshgrid(np.linspace(0.,360.,45),np.linspace(0.,360.,45))
             Z = np.array([-G2mth.calcRamaEnergy(x,y,Coeff)[1] for x,y in zip(X.flatten(),Y.flatten())])
             Plot.contour(X,Y,np.reshape(Z,(45,45)))
@@ -4404,7 +4405,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                 Page.fitvals = Page.fitvals[::-1]
             Plot.plot(X,Page.fitvals,label='Fit',color=colors[(ic+2)%NC])
 
-        #### Begin self.testSeqRefineMode() ===================== 
+        #### Begin self.testSeqRefineMode() =====================
         Plot.legend(loc='best')
         if Title:
             Plot.set_title(Title)
@@ -4442,9 +4443,9 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
     Page.seqYaxisList = ColumnList
     Page.seqTableGet = TableGet
     Page.fitvals = fitvals
-        
+
     SeqDraw()
-                
+
 #### PlotExposedImage & PlotImage ################################################################################
 def PlotExposedImage(G2frame,newPlot=False,event=None):
     '''General access module for 2D image plotting
@@ -4458,9 +4459,9 @@ def PlotExposedImage(G2frame,newPlot=False,event=None):
 
 def OnStartMask(G2frame):
     '''Initiate the start of a Frame or Polygon map, etc.
-    Called from a menu command (GSASIIimgGUI) or from OnImPlotKeyPress. 
+    Called from a menu command (GSASIIimgGUI) or from OnImPlotKeyPress.
     Variable G2frame.MaskKey contains a single letter ('f' or 'p', etc.) that
-    determines what type of mask is created.    
+    determines what type of mask is created.
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     '''
@@ -4501,13 +4502,13 @@ def OnStartMask(G2frame):
         Page.canvas.draw()
 
     G2imG.UpdateMasks(G2frame,Masks)
-    
+
 def OnStartNewDzero(G2frame):
     '''Initiate the start of adding a new d-zero to a strain data set
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param str eventkey: a single letter ('a') that
-      triggers the addition of a d-zero.    
+      triggers the addition of a d-zero.
     '''
     G2frame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value',0)
     G2frame.PickId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Stress/Strain')
@@ -4592,8 +4593,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     G2frame.ShiftDown = False
     G2frame.cid = None
     #Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
-    global Data,Masks,StrSta,Plot1,Page  # RVD: these are needed for multiple image controls/masks 
-#    colors=['b','g','r','c','m','k'] 
+    global Data,Masks,StrSta,Plot1,Page  # RVD: these are needed for multiple image controls/masks
+#    colors=['b','g','r','c','m','k']
     colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
         'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
     NC = len(colors)
@@ -4700,7 +4701,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     G2frame.spotSize = dlg.GetValue()
                     print('Spot size set to {} mm'.format(G2frame.spotSize))
                     ShowSpotMaskInfo(G2frame,Page)
-                dlg.Destroy()    
+                dlg.Destroy()
             elif event.key == 't':
                 try: # called from menu?
                     Xpos,Ypos = event.xdata,event.ydata
@@ -4719,7 +4720,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 artist.itemType = 'Spot'
                 G2imG.UpdateMasks(G2frame,Masks)
                 Page.canvas.draw()
-                return 
+                return
             elif event.key in ['l','p','f','a','r','x','y']:
                 G2frame.MaskKey = event.key
                 OnStartMask(G2frame)
@@ -4728,13 +4729,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 OnStartMask(G2frame)
             elif event.key == 'shift':
                 G2frame.ShiftDown = True
-                
+
         elif treeItem == 'Stress/Strain':
             if event.key in ['a',]:
                 G2frame.StrainKey = event.key
                 OnStartNewDzero(G2frame)
                 wx.CallAfter(PlotImage,G2frame,newImage=False)
-                
+
         elif treeItem == 'Image Controls':
             if event.key in ['c',]:
                 Xpos = event.xdata
@@ -4785,16 +4786,16 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 np.seterr(invalid=olderr['invalid'])
                 Plot1.plot(xy[0],xy[1])
                 Plot1.set_xlim(xlim)
-                Plot1.set_xscale("linear")                                                  
+                Plot1.set_xscale("linear")
                 Plot1.set_title('Line scan at azm= %6.1f'%(azm+AzmthOff))
                 Page.canvas.draw()
             else:
                 return
             wx.CallAfter(PlotImage,G2frame,newPlot=True)
-            
+
     def OnImPick(event):
         'A object has been picked'
-        
+
         def OnDragIntBound(event):
             'Respond to the dragging of one of the integration boundaries'
             if event.xdata is None or event.ydata is None:
@@ -4848,7 +4849,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         xyO.append(xy)
                 if len(xyO):
                     xyO = np.array(xyO)
-                    arcxO,arcyO = xyO.T                
+                    arcxO,arcyO = xyO.T
 
             Page.canvas.restore_region(savedplot)
             if 'Itth' in itemPicked:
@@ -4877,13 +4878,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 np.seterr(invalid=olderr['invalid'])
                 Plot1.plot(xy[0],xy[1])
                 Plot1.set_xlim(xlim)
-                Plot1.set_xscale("linear")                                                  
+                Plot1.set_xscale("linear")
                 Plot1.set_title('Line scan at azm= %6.1f'%(azm+AzmthOff))
                 Page.canvas.draw()
-                
+
             Page.figure.gca().draw_artist(pick)
             Page.canvas.blit(Page.figure.gca().bbox)
-            
+
         def OnDragMask(event):
             'Respond to the dragging of a mask'
             if event.xdata is None or event.ydata is None:
@@ -4973,7 +4974,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         angI = tth - thick/2
                         off = azmN - azm[1]
                     newRange = azm[1] - azm[0] - 2*off
-                    if newRange < 2 or newRange > 358: 
+                    if newRange < 2 or newRange > 358:
                         return # don't let the azimuthal range get too small or large
                     azm[0] += off
                     azm[1] -= off
@@ -5163,22 +5164,22 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     artist.itemType = 'Spot'
                     G2imG.UpdateMasks(G2frame,Masks)
                     Page.canvas.draw()
-                return 
+                return
             elif G2frame.MaskKey == 'r':
                 if event.button == 1:
                     tth = G2img.GetTth(Xpos,Ypos,Data)
-                    t = GSASIIpath.GetConfigValue('Ring_mask_thickness',0.1)                
+                    t = GSASIIpath.GetConfigValue('Ring_mask_thickness',0.1)
                     Masks['Rings'].append([tth,t])
                     G2imG.UpdateMasks(G2frame,Masks)
-                G2frame.MaskKey = ''                
+                G2frame.MaskKey = ''
                 wx.CallAfter(PlotImage,G2frame,newImage=True)
                 return
             elif G2frame.MaskKey == 'a':
                 if event.button == 1:
                     tth,azm = G2img.GetTthAzm(Xpos,Ypos,Data)
-                    azm = int(azm)                
-                    t = GSASIIpath.GetConfigValue('Ring_mask_thickness',0.1)                
-                    a = GSASIIpath.GetConfigValue('Arc_mask_azimuth',10.0)                
+                    azm = int(azm)
+                    t = GSASIIpath.GetConfigValue('Ring_mask_thickness',0.1)
+                    a = GSASIIpath.GetConfigValue('Arc_mask_azimuth',10.0)
                     Masks['Arcs'].append([tth,[azm-a/2.,azm+a/2.],t])
                     G2imG.UpdateMasks(G2frame,Masks)
                 G2frame.MaskKey = ''
@@ -5249,7 +5250,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             StrSta['d-zero'] = G2mth.sortArray(StrSta['d-zero'],'Dset',reverse=True)
             G2frame.StrainKey = ''
             G2imG.UpdateStressStrain(G2frame,StrSta)
-            wx.CallAfter(PlotImage,G2frame,newPlot=False)            
+            wx.CallAfter(PlotImage,G2frame,newPlot=False)
         else:   # start here after dragging of integration range lines or a mask
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar.AnyActive():  #got point out of frame or zoom/pan selected
@@ -5259,7 +5260,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             try:
                 pickType = G2frame.itemPicked.itemType
             except:
-                pickType = '?'            
+                pickType = '?'
             if G2frame.ifGetRing:                          #delete a calibration ring pick
                 xypos = [Xpos,Ypos]
                 rings = Data['ring']
@@ -5279,7 +5280,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Data['LRazimuth'][0] %= 360
                 Data['LRazimuth'][1] %= 360
                 if Data['LRazimuth'][0] > Data['LRazimuth'][1]:
-                    Data['LRazimuth'][1] += 360                        
+                    Data['LRazimuth'][1] += 360
                 if Data['fullIntegrate']:
                     Data['LRazimuth'][1] = Data['LRazimuth'][0]+360
 
@@ -5328,16 +5329,16 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2imG.UpdateMasks(G2frame,Masks)
             else: # nothing was done, nothing was changed, don't replot
                 G2frame.itemPicked = None
-                return 
+                return
             wx.CallAfter(PlotImage,G2frame,newImage=True)
             G2frame.itemPicked = None
-            
+
 #### PlotImage execution starts here
     if not len(G2frame.ImageZ):
         return
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=newImage)
-    
+
     if Data.get('linescan',[False,0.])[0]:
         Plot.set_visible(False)
         GS_kw = {'width_ratios':[1,2],}
@@ -5437,7 +5438,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Ymax,0])
             Page.ImgObj = Plot.imshow(A,aspect='equal',cmap=acolor,
                 interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
-            
+
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']: # draw integration range arc/circles/lines
             LRAzim = Data['LRazimuth']                  #NB: integers
@@ -5470,7 +5471,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         xyO.append(xy)
                 if len(xyO):
                     xyO = np.array(xyO)
-                    arcxO,arcyO = xyO.T                
+                    arcxO,arcyO = xyO.T
                     Plot.plot(arcxO,arcyO,picker=True,pickradius=3,label='Otth')
             if ellO and ellI and len(arcxO):
                 Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],
@@ -5495,7 +5496,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],
 #                picker=True,pickradius=3,label='linescan')
                 picker=False,label='linescan')
-                    
+
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             for xring,yring in Data['ring']:
                 Plot.plot(xring,yring,'r+',picker=True,pickradius=3)
@@ -5545,14 +5546,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ring:
                 tth,thick = ring
                 (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,Data['wavelength'])
-                artistO, = Plot.plot(x1,y1,'r',picker=True,pickradius=3)  
+                artistO, = Plot.plot(x1,y1,'r',picker=True,pickradius=3)
                 artistO.itemNumber = iring
                 artistO.itemType = 'RingOuter'
                 artistI, = Plot.plot(x2,y2,'r',picker=True,pickradius=3)
                 artistI.itemNumber = iring
                 artistI.itemType = 'RingInner'
                 G2frame.ringList.append([artistI,artistO])
-                
+
         G2frame.arcList = []
         for iarc,arc in enumerate(Masks['Arcs']):      # drawing arc masks
             if arc:
@@ -5563,9 +5564,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 arcList.append(Plot.plot(x2,y2,'r',picker=True,pickradius=3)[0]) # 'inner'
                 arcList[-1].itemNumber = iarc
                 arcList[-1].itemType = 'ArcInner'
-                arcList.append(Plot.plot(x1,y1,'r',picker=True,pickradius=3)[0]) # 'outer'            
+                arcList.append(Plot.plot(x1,y1,'r',picker=True,pickradius=3)[0]) # 'outer'
                 arcList[-1].itemNumber = iarc
-                arcList[-1].itemType = 'ArcOuter'          
+                arcList[-1].itemType = 'ArcOuter'
                 arcList.append(Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',
                     picker=True,pickradius=3)[0]) # 'lower'
                 arcList[-1].itemNumber = iarc
@@ -5575,10 +5576,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 arcList[-1].itemNumber = iarc
                 arcList[-1].itemType = 'ArcUpper'
                 G2frame.arcList.append(arcList)
-                
+
         G2frame.polyList = []
         for ipoly,polygon in enumerate(Masks['Polygons']):
-            if not polygon: continue # ignore if empty 
+            if not polygon: continue # ignore if empty
             if polygon[0] != polygon[-1]:
                 print('Closing polygon {}'.format(ipoly))
                 polygon.append(polygon[0][:])
@@ -5589,7 +5590,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 artist.itemNumber = ipoly
                 artist.itemType = 'Polygon'
                 artist.pointNumber = i
-                    
+
         G2frame.frameArtist = []
         if Masks['Frames']:
             polygon = Masks['Frames']
@@ -5646,12 +5647,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.canvas.draw()
     finally:
         wx.EndBusyCursor()
-    
+
 #### PlotIntegration ################################################################################
 def PlotIntegration(G2frame,newPlot=False,event=None):
     '''Plot of 2D image after image integration with 2-theta and azimuth as coordinates
     '''
-            
+
     def OnMotion(event):
         Page.SetToolTipString('')
         SetCursor(Page)
@@ -5660,7 +5661,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
         if azm and tth:
             G2frame.G2plotNB.status.SetStatusText(\
                 'Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),1)
-                                
+
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Integration','mpl')
     if not new:
         if not newPlot:
@@ -5669,7 +5670,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
     Page.Choice = None
-        
+
     Data = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))
     image = G2frame.Integrate[0]
@@ -5683,7 +5684,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     Img = Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
         extent=[ysc[0],ysc[-1],xsc[-1],xsc[0]],aspect='auto')
     Page.figure.colorbar(Img)
-#    if Data['ellipses']:            
+#    if Data['ellipses']:
 #        for ellipse in Data['ellipses']:
 #            x,y = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color
 #            tth,azm = G2img.GetTthAzm(x,y,Data)
@@ -5698,10 +5699,10 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
         Page.ToolBarDraw()
     else:
         Page.canvas.draw()
-                
+
 #### PlotRawImage ################################################################################
 def PlotRawImage(G2frame,image,label,newPlot=False):
-    '''Plot an image without axes etc. 
+    '''Plot an image without axes etc.
     '''
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(label,'mpl')
     Plot.remove() # delete original axes
@@ -5709,12 +5710,12 @@ def PlotRawImage(G2frame,image,label,newPlot=False):
     Plot.axis('off')
     Plot.imshow(image)
     Page.canvas.draw()
-    
+
 #### PlotTRImage ################################################################################
 def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     '''a test plot routine - not normally used
-    ''' 
-            
+    '''
+
     def OnMotion(event):
         Page.SetToolTipString('')
         SetCursor(Page)
@@ -5723,7 +5724,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
         if azm and tth:
             G2frame.G2plotNB.status.SetStatusText(\
                 'Detector 2-th =%9.3fdeg, azm = %7.2fdeg'%(tth,azm),1)
-                                
+
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Transformed Powder Image','mpl')
     if not new:
         if not newPlot:
@@ -5757,8 +5758,8 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
         rings = np.concatenate((Data['rings']),axis=0)
         for xring,yring,dsp in rings:
             x,y = G2img.GetTthAzm(xring,yring,Data)
-            Plot.plot(y,x,'r+')            
-    if Data['ellipses']:            
+            Plot.plot(y,x,'r+')
+    if Data['ellipses']:
         for ellipse in Data['ellipses']:
             ring = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color
             x,y = np.hsplit(ring,2)
@@ -5773,11 +5774,11 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
         Page.ToolBarDraw()
     else:
         Page.canvas.draw()
-        
+
 #### PlotStructure ################################################################################
 def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
-    thermal motion ellipsoids and polyhedra. Magnetic moments shown as black/red 
+    thermal motion ellipsoids and polyhedra. Magnetic moments shown as black/red
     arrows according to spin state
 
     :param wx.Frame G2frame: main GSAS-II window
@@ -5785,7 +5786,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
       (see :ref:`Phase Tree object<Phase_table>`)
     :param bool firstCall: If True, this is the initial call and causes
       the plot to be shown twice (needed for Mac and possibly linux)
-    :param function pageCallback: a callback function to 
+    :param function pageCallback: a callback function to
       update items on the parent page. Currently implemented for
       RB Models tab only
     '''
@@ -5801,12 +5802,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Bonds[i].append(Dx[j]/2.)
                 Bonds[j].append(-Dx[j]/2.)
         return Bonds
-    
+
     def SetCursorStatus(newxy,contours=False):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
-        Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
+        try:
+            Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
+        except:   # not sure why this happens, pyOpenGL 3.1.6 bug on MacOS? (3.1.9 OK)
+            G2frame.G2plotNB.status.SetStatusText('Cursor position calc failed',1)
+            return
         rho = G2mth.getRho([Cx,Cy,Cz],mapData)
         if contours:
             try:
@@ -5817,7 +5822,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
         else:
             G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
-    
+
     def OnKeyBox(event):
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
@@ -5833,13 +5838,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if projFile:
                 Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
             else:
-                dlg = wx.FileDialog(G2frame, 'Choose graphics save file',G2G.GetExportPath(G2frame),  
+                dlg = wx.FileDialog(G2frame, 'Choose graphics save file',G2G.GetExportPath(G2frame),
                     wildcard='Graphics file (*.'+mode+')|*.'+mode,style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         Fname = dlg.GetPath()
                 finally:
-                    dlg.Destroy()            
+                    dlg.Destroy()
             size = Page.canvas.GetSize()
             if Fname:
                 GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
@@ -5904,7 +5909,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     G2phG.ranDrwDict['delAtomsList'].append(i)
                     data['Drawing']['Atoms'][i][cx+6] = (0,0,0) # mark atoms to be deleted in black & delete later
                 elif G2phG.ranDrwDict['opt'] == 2:
-                    cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)      
+                    cx,ct,cs,ci = G2mth.getAtomPtrs(data,draw=True)
                     data['Drawing']['Atoms'][i][cs] = G2phG.ranDrwDict['style']
                 elif G2phG.ranDrwDict['opt'] == 3:
                     G2phG.ranDrwDict['2call'](
@@ -5954,7 +5959,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 atoms = drawingData['Atoms']
             elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Atoms':
                 cx,ct = data['General']['AtomPtrs'][:2]
-                atoms = data['Atoms'] 
+                atoms = data['Atoms']
             else:
                 return
             if not len(atoms):      #no atoms
@@ -5965,7 +5970,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if key in ['N',]:
                 pI[1] += 1
             else:
-                pI[1] -= 1                    
+                pI[1] -= 1
             pI[1] %= len(atoms)
             Tx,Ty,Tz = atoms[pI[1]][cx:cx+3]
             rho = G2mth.getRho([Tx,Ty,Tz],mapData)
@@ -5979,11 +5984,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     line += ', density = %.2f'%rho
                 G2frame.G2plotNB.status.SetStatusText(line,1)
             NPkey = True
-            
+
         elif key in ['K'] and generalData['Map']['MapType']:
             drawingData['showSlice'] = (drawingData['showSlice']+1)%4
             SetShowCS(drawingData['showSlice'])
-            
+
         elif key in ['S']:
             choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
             choice.sort()
@@ -5992,7 +5997,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 sel = dlg.GetSelection()
                 drawingData['contourColor'] = choice[sel]
             dlg.Destroy()
-                
+
         elif key in ['U','D','L','R'] and mapData['Flip'] == True:
             dirDict = {'U':[0,1],'D':[0,-1],'L':[-1,0],'R':[1,0]}
             SetMapRoll(dirDict[key])
@@ -6012,7 +6017,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             Fname = generalData['Name']+'.gif'
             size = Page.canvas.GetSize()
             G2frame.tau = 0.0
-            data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
+            data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!
             SetDrawAtomsText(data['Drawing']['Atoms'])
             G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
             Draw('key down',Fade)
@@ -6024,7 +6029,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 G2frame.tau = 0.
                 for i in range(steps):
                     G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
-                    data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
+                    data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!
                     SetDrawAtomsText(data['Drawing']['Atoms'])
                     G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
                     Draw('key down',Fade)
@@ -6036,7 +6041,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     except AttributeError:
                         im.fromstring(Pix)
                     im = im.transpose(Im.FLIP_TOP_BOTTOM)
-                    writer.append_data(np.array(im))            
+                    writer.append_data(np.array(im))
                     G2frame.tau += delt
                 return
         elif key in ['+','-','=','0']:
@@ -6044,7 +6049,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 OnKeyPressed(event)
             return
         Draw('key up',NPkey=NPkey)
-        
+
     def OnKeyPressed(event):    #On key down for repeating operation - used to change tau...
         try:
             keyCode = event.GetKeyCode()
@@ -6064,7 +6069,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     G2frame.tau -= tstep
                 G2frame.tau %= 1.   #force 0-1 range; makes loop
                 G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.4f'%(G2frame.tau),1)
-                data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
+                data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!
                 SetDrawAtomsText(data['Drawing']['Atoms'])
                 G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
                 if not np.any(Fade):
@@ -6110,7 +6115,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     data['Drawing']['Atoms'] = G2mth.ApplySeqData(data,seqData,PF2)
                     SetDrawAtomsText(data['Drawing']['Atoms'])
                     G2phG.FindBondsDrawCell(data,cell)           #rebuild bonds & polygons
-                    Draw('key down')                    
+                    Draw('key down')
                 except:     #no useful sequential data; do Z-displacement instead
                     if key in ['=','-']:    #meaning '+','-'
                         if key == '=':      #'+'
@@ -6123,11 +6128,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         VP += Zstep*VD
                         VP = np.inner(Bmat,VP)
                         drawingData['viewPoint'][0] = VP
-                        SetViewPointText(VP)                           
+                        SetViewPointText(VP)
                         Draw('key down')
                         newxy = event.GetPosition()
-                        SetCursorStatus(newxy,drawingData.get('showSlice',False) in [1,3])                        
-            
+                        SetCursorStatus(newxy,drawingData.get('showSlice',False) in [1,3])
+
     def GetTruePosition(xy,Add=False):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         Proj = GL.glGetDoublev(GL.GL_PROJECTION_MATRIX)
@@ -6158,7 +6163,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         elif G2frame.phaseDisplay.GetPageText(getSelection()) == 'Draw Atoms':
             atomList = drawAtoms
             cx,ct,cs,cia = G2mth.getAtomPtrs(data,True)
-            cs -= 1  #cs points at style for drawings; want sytsym         
+            cs -= 1  #cs points at style for drawings; want sytsym
         else:
             atomList = data['Atoms']
             cx,ct,cs,ciax = G2mth.getAtomPtrs(data)
@@ -6182,7 +6187,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     lbl += ' ' + atom[cs]
                     G2frame.G2plotNB.status.SetStatusText('    Selected atom: {}'.format(lbl),1)
         return
-                                       
+
     def OnMouseDown(event):
         xy = event.GetPosition()
         if event.ShiftDown():
@@ -6193,9 +6198,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             Draw('Shift atom select')
         else:
             drawingData['oldxy'] = list(xy)
-            
+
     def OnMouseUp(event):
-        '''This is used to initiate a FillCell action after a rigid body has been 
+        '''This is used to initiate a FillCell action after a rigid body has been
         "dragged" if selected. Flags are used to try to make sure that this is only done
         once, even if multiple mouse up/down actions are made.
         '''
@@ -6206,12 +6211,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             rbObj['FillInProgress'] = True
             G2frame.testRBObjSizers['FillUnitCell'](None,selectAll=True)
             rbObj['FillInProgress'] = False
-        
+
     def OnMouseMove(event):
         if event.ShiftDown():           #don't want any inadvertant moves when picking
             return
         newxy = event.GetPosition()
-                                
+
         if event.Dragging():
             if event.AltDown() and rbObj:  # dragging of a rigid body
                 if event.CmdDown(): # Mac middlebutton workaround
@@ -6256,7 +6261,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Draw('move')
         elif drawingData.get('showSlice',False):
             SetCursorStatus(newxy,drawingData.get('showSlice',False) in [1,3])
-        
+
     def OnMouseWheel(event):
         if event.ShiftDown():
             return
@@ -6276,26 +6281,26 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 G2frame.phaseDisplay.cameraPosTxt.ChangeValue(drawingData['cameraPos'])
                 G2frame.phaseDisplay.cameraSlider.SetScaledValue(drawingData['cameraPos'])
         Draw('wheel')
-        
+
     def getSelection():
         try:
             return G2frame.phaseDisplay.GetSelection()
         except:
             G2frame.G2plotNB.status.SetStatusText('Select this from Phase data window!',1)
             return 0
-            
+
     def SetViewPointText(VP):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
                 G2frame.phaseDisplay.viewPoint.ChangeValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
-                
+
     def SetShowCS(CS):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
                 G2frame.phaseDisplay.showCS.SetSelection(CS)
-                                            
+
     def SetRBText():
         '''Called w/Locate & Insert Rigid Body to update text in DataWindow
         when the RB orientation/origin is changed via a mouse drag
@@ -6309,13 +6314,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 pageCallback()
             except:
                 pass
-                
+
     def SetViewDirText(VD):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
                 G2frame.phaseDisplay.viewDir.ChangeValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
-                
+
     def SetMapPeaksText(mapPeaks):
         data['Map Peaks'] = mapPeaks
         page = getSelection()
@@ -6323,7 +6328,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if G2frame.phaseDisplay.GetPageText(page) == 'Map peaks':
                 G2frame.MapPeaksTable.SetData(data['Map Peaks'])
                 G2frame.MapPeaks.Refresh()
-            
+
     def SetDrawAtomsText(drawAtoms):
         page = getSelection()
         if page:
@@ -6336,7 +6341,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         table[i][2:5] = atom[2:5]
                 G2frame.atomTable.SetData(table)
                 G2frame.drawAtoms.Refresh()
-            
+
     def ClearSelectedAtoms():
         page = getSelection()
         if page:
@@ -6347,8 +6352,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         widget.ClearSelection()      # this is a grid
                         break
                     except AttributeError:
-                        pass                
-                    
+                        pass
+
     def SetSelectedAtoms(ind,Add=False):
         page = getSelection()
         if page:
@@ -6365,7 +6370,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             widget.SelectRow(i,Add)      #this is the Atoms grid in Atoms
                 else:
                     widget.SelectRow(ind,Add)      # this is a grid
-                  
+
     def GetSelectedAtoms():
         page = getSelection()
         Ind = []
@@ -6382,12 +6387,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if 'testRBObj' not in data: return []
                 Ind = data['testRBObj'].get('CRYhighLight',[])
         return Ind
-                                       
+
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
         GL.glClearColor(R,G,B,A)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        
+
     def SetLights():
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
@@ -6402,26 +6407,26 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[.7,.7,.7,1])
 #        glLightfv(GL_LIGHT0,GL_SPECULAR,[1,1,1,1])
 #        glLightfv(GL_LIGHT0,GL_POSITION,[0,0,1,1])
-        
+
     def GetRoll(newxy,rhoshape):
         Q = drawingData['Quaternion']
         dxy = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,newxy+[0,]))
-        dxy = np.array(dxy*rhoshape)        
+        dxy = np.array(dxy*rhoshape)
         roll = np.where(dxy>0.5,1,np.where(dxy<-.5,-1,0))
         return roll
-                
+
     def SetMapRoll(newxy):
         rho = generalData['Map']['rho']
         roll = GetRoll(newxy,rho.shape)
         generalData['Map']['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
         drawingData['oldxy'] = list(newxy)
-        
+
     def Set4DMapRoll(newxy):
         rho = generalData['4DmapData']['rho']
         if len(rho):
             roll = GetRoll(newxy,rho.shape[:3])
             generalData['4DmapData']['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
-        
+
     def SetPeakRoll(newxy):
         rho = generalData['Map']['rho']
         roll = GetRoll(newxy,rho.shape)
@@ -6431,15 +6436,15 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             peak[1:4] += dxy
             peak[1:4] %= 1.
             peak[4] = np.sqrt(np.sum(np.inner(Amat,peak[1:4])**2))
-                
+
     def SetTranslation(newxy):
-#first get translation vector in screen coords.       
+#first get translation vector in screen coords.
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         drawingData['oldxy'] = list(newxy)
         V = np.array([-dxy[0],dxy[1],0.])
-#then transform to rotated crystal coordinates & apply to view point        
+#then transform to rotated crystal coordinates & apply to view point
         Q = drawingData['Quaternion']
         V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
         Tx,Ty,Tz = drawingData['viewPoint'][0]
@@ -6448,7 +6453,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Tz += V[2]*0.01
         drawingData['viewPoint'][0] =  np.array([Tx,Ty,Tz])
         SetViewPointText([Tx,Ty,Tz])
-        
+
     def SetRBTranslation(newxy):
 #first get translation vector in screen coords.
         if 'fixOrig' in rbObj:
@@ -6458,7 +6463,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         dxy = newxy-oldxy
         drawingData['oldxy'] = list(newxy)
         V = np.array([-dxy[0],dxy[1],0.])
-#then transform to rotated crystal coordinates & apply to RB origin        
+#then transform to rotated crystal coordinates & apply to RB origin
         Q = drawingData['Quaternion']
         V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
         Tx,Ty,Tz = rbObj['Orig'][0]
@@ -6467,10 +6472,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Tz -= V[2]*0.01
         rbObj['Orig'][0][:] =  Tx,Ty,Tz
         SetRBText()
-        
+
     def SetRotation(newxy):
         'Perform a rotation in x-y space due to a left-mouse drag'
-    #first get rotation vector in screen coords. & angle increment        
+    #first get rotation vector in screen coords. & angle increment
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
@@ -6491,9 +6496,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         VD /= np.sqrt(np.sum(VD**2))
         drawingData['viewDir'] = VD
         SetViewDirText(VD)
-        
-    def SetRotationZ(newxy):                        
-#first get rotation vector (= view vector) in screen coords. & angle increment        
+
+    def SetRotationZ(newxy):
+#first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = drawingData['oldxy']
@@ -6508,7 +6513,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if newxy[0] > cent[0]:
             A[0] *= -1
         if newxy[1] < cent[1]:
-            A[1] *= -1        
+            A[1] *= -1
 # next transform vector back to xtal coordinates & make new quaternion
         Q = drawingData['Quaternion']
         V = np.inner(Amat,V)
@@ -6519,7 +6524,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['Quaternion'] = Q
 
     def SetRBRotation(newxy):
-#first get rotation vector in screen coords. & angle increment        
+#first get rotation vector in screen coords. & angle increment
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
@@ -6537,9 +6542,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Q = G2mth.prodQQ(Q,DQ)
         rbObj['Orient'][0][:] = Q
         SetRBText()
-        
-    def SetRBRotationZ(newxy):                        
-#first get rotation vector (= view vector) in screen coords. & angle increment        
+
+    def SetRBRotationZ(newxy):
+#first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = drawingData['oldxy']
@@ -6554,7 +6559,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if newxy[0] < cent[0]:
             A[0] *= -1
         if newxy[1] > cent[1]:
-            A[1] *= -1        
+            A[1] *= -1
 # next transform vector back to RB coordinates & make new quaternion
         Q = rbObj['Orient'][0]              #rotate RB to cart
         V = np.inner(Amat,V)
@@ -6584,7 +6589,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
-        
+
     def RenderUnitVectors(x,y,z):
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.7,.7,.7,1])
         GL.glEnable(GL.GL_COLOR_MATERIAL)
@@ -6610,7 +6615,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 
     def RenderRBtriplet(orig,Q,Bmat,symAxis=None):
         '''draw an axes triplet located at the origin of a rigid body
-        and with the x, y & z axes drawn as red, green and blue. 
+        and with the x, y & z axes drawn as red, green and blue.
         '''
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.7,.7,.7,1])
         GL.glEnable(GL.GL_COLOR_MATERIAL)
@@ -6658,7 +6663,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPopMatrix()
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
-                
+
     def RenderViewPlane(plane,Z,width,height):
         global txID
         GL.glShadeModel(GL.GL_FLAT)
@@ -6695,10 +6700,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
 
-    def RenderTextureSphere(x,y,z,radius,color,shape=[20,10],Fade=None):
-        SpFade = np.zeros(list(Fade.shape)+[4,],dtype=np.dtype('B'))
-        SpFade[:,:,:3] = Fade[:,:,nxs]*list(color)
-        SpFade[:,:,3] = 60
+    def RenderTextureSphere(x,y,z,radius,ATcolor=None,shape=[20,10],Texture=None,ifFade=True):
+        SpFade = np.zeros(list(Texture.shape)+[4,],dtype=np.dtype('B'))
+        if ATcolor is None:
+            acolor = GetColorMap('RdYlGn')
+            SpFade = acolor(Texture)*255
+        else:
+            SpFade[:,:,:3] = Texture[:,:,nxs]*list(ATcolor)
+            SpFade[:,:,3] = 255
+        if ifFade:
+            SpFade[:,:,3] = 60
         spID = GL.glGenTextures(1)
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
         GL.glEnable(GL.GL_BLEND)
@@ -6730,7 +6741,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         if fade:
             Fade = list(color) + [0.2,]
-            GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,Fade)     #GL.GL_AMBIENT_AND_DIFFUSE causes striping      
+            GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,Fade)     #GL.GL_AMBIENT_AND_DIFFUSE causes striping
             GL.glShadeModel(GL.GL_FLAT)
             GL.glFrontFace(GL.GL_CCW)       #shows outside
             GL.glEnable(GL.GL_CULL_FACE)    #removes striping
@@ -6746,7 +6757,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             GL.glDisable(GL.GL_CULL_FACE)
             GL.glDisable(GL.GL_BLEND)
             GL.glShadeModel(GL.GL_SMOOTH)
-        
+
     def RenderFadeSphere(x,y,z,radius,color):
         fade = list(color) + [1.0,]
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,fade)
@@ -6777,7 +6788,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_COLOR_MATERIAL)
-        
+
     def RenderSmallSphere(x,y,z,radius,color):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         GL.glPushMatrix()
@@ -6786,7 +6797,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         q = GLU.gluNewQuadric()
         GLU.gluSphere(q,radius,4,2)
         GL.glPopMatrix()
-                
+
     def RenderEllipsoid(x,y,z,ellipseProb,E,R4,color):
         s1,s2,s3 = E
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
@@ -6800,7 +6811,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GLU.gluSphere(q,ellipseProb,20,10)
         GL.glDisable(GL.GL_NORMALIZE)
         GL.glPopMatrix()
-        
+
     def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
         if not len(Bonds):
             return
@@ -6819,9 +6830,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 GL.glRotate(phi,1,0,0)
                 q = GLU.gluNewQuadric()
                 GLU.gluCylinder(q,radius,radius,Z,slice,2)
-            GL.glPopMatrix()            
+            GL.glPopMatrix()
         GL.glPopMatrix()
-        
+
     def RenderMoment(x,y,z,Moment,color,slice=20):
         Dx = np.inner(Amat,Moment/ABC)/2.
         Z = np.sqrt(np.sum(Dx**2))
@@ -6845,8 +6856,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             GLU.gluDisk(q,.1,.2,slice,1)
             GLU.gluQuadricOrientation(q,GLU.GLU_OUTSIDE)
             GLU.gluCylinder(q,.2,0.,.4,slice,2)
-            GL.glPopMatrix()            
-                
+            GL.glPopMatrix()
+
     def RenderLines(x,y,z,Bonds,color):
         GL.glShadeModel(GL.GL_FLAT)
         xyz = np.array([x,y,z])
@@ -6863,7 +6874,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPopMatrix()
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glShadeModel(GL.GL_SMOOTH)
-        
+
     def RenderPolyhedra(x,y,z,Faces,color):
         GL.glShadeModel(GL.GL_FLAT)
         GL.glPushMatrix()
@@ -6898,7 +6909,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPopMatrix()
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glShadeModel(GL.GL_SMOOTH)
-        
+
     def RenderBackbone(Backbone,BackboneColor,radius):
         GL.glPushMatrix()
         GL.glMultMatrixf(B4mat.T)
@@ -6906,13 +6917,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glShadeModel(GL.GL_SMOOTH)
 #        gle.gleSetJoinStyle(TUBE_NORM_EDGE | TUBE_JN_ANGLE | TUBE_JN_CAP)
 #        gle.glePolyCylinder(Backbone,BackboneColor,radius)
-        GL.glPopMatrix()        
+        GL.glPopMatrix()
         GL.glDisable(GL.GL_COLOR_MATERIAL)
-        
+
     def RenderLabel(x,y,z,label,r,color,matRot,offset=wx.RealPoint(0.,0.)):
         '''
         color wx.Colour object
-        '''       
+        '''
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
@@ -6923,11 +6934,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         text.draw_text(scale=0.025,position=offset)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glPopMatrix()
-        
+
     def RenderLabel2(x,y,z,label,r,color,matRot,offset=wx.RealPoint(0.,0.)):
         '''
         color wx.Colour object - doesn't work
-        '''                     
+        '''
         figure = mplfig.Figure(figsize=(1.,1.),facecolor=(0.,0.,0.,0.))
         figure.clf()
         canvas = hcCanvas(figure)
@@ -6940,8 +6951,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         img, (width, height) = agg.print_to_buffer()
         Timg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
         RenderViewPlane(1.0*eplane,Timg,width,height)
-        
-        
+
+
     def RenderMap(rho,rhoXYZ,indx,Rok):
         GL.glShadeModel(GL.GL_FLAT)
         cLevel = drawingData['contourLevel']
@@ -6962,7 +6973,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     RC.append([0.2*alpha,2*Gr])
         RenderDots(XYZ,RC)
         GL.glShadeModel(GL.GL_SMOOTH)
-                            
+
     def distances2Peaks(x,y,z,PeakDistRadius,mapPeaks,peakMax,radius,Amat,matRot):
         ''' show distances to other peaks within PeakDistRadius A
         '''
@@ -6989,7 +7000,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         vdwScale = drawingData['vdwScale']
         ballScale = drawingData['ballScale']
         xyzA = np.array((x,y,z))
-        cx,ct,cs,ci = G2mth.getAtomPtrs(data)      
+        cx,ct,cs,ci = G2mth.getAtomPtrs(data)
         cellArray = G2lat.CellBlock(1)
         radDict = dict(zip(*G2phG.getAtomRadii(data)))
         Names = []
@@ -7042,7 +7053,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             ax,ay,az = xyz
             if len(bondData[i]):
                 RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
-                
+
     def Draw(caller='',Fade=[],NPkey=False):
         #reinitialize geometry stuff - needed after tab change
         global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
@@ -7109,11 +7120,11 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GS[0][2] = GS[2][0] = math.sqrt(GS[0][0]*GS[2][2])
         GS[1][2] = GS[2][1] = math.sqrt(GS[1][1]*GS[2][2])
         ellipseProb = G2lat.criticalEllipse(drawingData['ellipseProb']/100.)
-        
+
         SetBackground()
         GL.glInitNames()
         GL.glPushName(0)
-            
+
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
         if sys.platform == "darwin":
@@ -7124,7 +7135,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()
-            
+
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
@@ -7186,13 +7197,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             radius = ballScale*drawingData['sizeH']
                     else:
                         radius = 0.0
-                # elif 'Q' in atom[ct]:       #spinning rigid body - set shell color
-                #     for Srb in RBdata.get('Spin',[]):
-                #         if Srb == generalData['SpnIds'][atom[ci]]:
-                #             fade = True
-                #             Info = G2elem.GetAtomInfo(RBdata['Spin'][Srb]['atType'])
-                #             atColor = [Info['Color'],]
-                #             break
                 else:
                     if 'vdW' in atom[cs]:
                         radius = vdwScale*vdWRadii[atNum]
@@ -7208,8 +7212,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
                         radius = SpnData.get('Radius',[[1.0,False],])   #patch for missing Radius
                         atColor = SpnData['atColor']
+                        ifFade = SpnData.get('fadeSh',True)
+                        useAtColor = SpnData.get('useAtColor',True)
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
-                        Npsi,Ngam = 60,30       #seems acceptable - don't use smaller!
+                        Npsi,Ngam = 90,45 
                         QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
                         QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
                         QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel
@@ -7222,21 +7228,49 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         SpnData['hide'] = SpnData.get('hide',[False for i in range(len(SpnData['atType']))])
                         for ish,nSH in enumerate(SpnData['nSH']):
                             if not SpnData['hide'][ish]:
-                                if nSH > 0: 
+                                if nSH > 0:
                                     SHC = SpnData['SHC'][ish]
+                                    atcolor = None
+                                    if useAtColor:
+                                        atcolor = atColor[ish]
                                     P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                                     if np.min(P) < np.max(P):
                                         P = (P-np.min(P))/(np.max(P)-np.min(P))
-                                    RenderTextureSphere(x,y,z,radius[ish][0],atColor[ish],shape=[Npsi,Ngam],Fade=P.T)
+                                    RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:
-                    RenderSphere(x,y,z,radius,atColor)
+                    #### put deformation texture on sphere here
+                    if atom[ci] in deformationData:
+                        defCtrls = deformationData[-atom[ci]]
+                        defParms = deformationData[atom[ci]]
+                        SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
+                        if defCtrls.get('showDef',False) and defCtrls['Radial'] == 'Slater':
+                            useAtColor = defCtrls.get('atColor',True) 
+                            atcolor = None
+                            if useAtColor:
+                                atcolor = atColor*255
+                            SHC = defParms[0][1]
+                            SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
+                            UVMat = defCtrls['UVmat']
+                            Npsi,Ngam = 90,45 
+                            PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
+                            PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
+                            GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
+                            Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat)
+                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
+                            if np.min(P) < np.max(P):
+                                P = (P-np.min(P))/(np.max(P)-np.min(P))
+                            RenderTextureSphere(x,y,z,radius,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
+                        else:
+                            RenderSphere(x,y,z,radius,atColor)
+                    else:
+                        RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:
                     RenderBonds(x,y,z,Bonds,bondR,bndColor)
             elif 'ellipsoids' in atom[cs]:
                 RenderBonds(x,y,z,Bonds,bondR,bndColor)
-                if atom[cs+3] == 'A':                    
+                if atom[cs+3] == 'A':
                     Uij = atom[cs+5:cs+11]
                     U = np.multiply(G2spc.Uij2U(Uij),GS)
                     U = np.inner(Amat,np.inner(U,Amat).T)
@@ -7246,7 +7280,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     if atom[ct] == 'H' and not drawingData['showHydrogen']:
                         pass
                     else:
-                        RenderEllipsoid(x,y,z,ellipseProb,E,R4,atColor)                    
+                        RenderEllipsoid(x,y,z,ellipseProb,E,R4,atColor)
                 else:
                     if atom[ct] == 'H' and not drawingData['showHydrogen']:
                         pass
@@ -7267,7 +7301,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         Backbones[atom[2]] = []
                     Backbones[atom[2]].append(list(np.inner(Amat,np.array([x,y,z]))))
                     BackboneColor.append(list(atColor))
-                    
+
             if generalData['Type'] == 'magnetic':
                 magMult = drawingData.get('magMult',1.0)
                 SymOp = int(atom[cs-1].split('+')[0])
@@ -7278,7 +7312,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     color = Rd/255.
                 if SymFade and atom[cs-1] != '1':
                     color *= .5
-                RenderMoment(x,y,z,Moment,color)                    
+                RenderMoment(x,y,z,Moment,color)
 
             if atom[cs+1] == 'type':
                 RenderLabel(x,y,z,'  '+atom[ct],radius,wxGreen,matRot)
@@ -7294,10 +7328,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 RenderLabel(x,y,z,'  '+atom[ct-2],radius,wxGreen,matRot)
         if not FourD and len(rhoXYZ) and drawingData['showMap']:       #no green dot map for 4D - it's wrong!
             RenderMap(rho,rhoXYZ,indx,Rok)
-        if (pageName == 'Draw Atoms' or pageName == 'Draw Options') and (
-                drawingData['VPPeakDistRad'] + drawingData['VPatomsExpandRad']
-                 + drawingData['VPatomsDistRad']
-                ) > 0:
+        try:
+            disSum = (drawingData['VPPeakDistRad'] +
+                          drawingData['VPatomsExpandRad'] +
+                          drawingData['VPatomsDistRad'])
+        except:
+            disSum = 0
+        if (pageName == 'Draw Atoms' or pageName == 'Draw Options') and disSum > 0:
             PeakDistRadius = drawingData['VPPeakDistRad']
             atomsExpandRadius = drawingData['VPatomsExpandRad']
             atomsdistRadius = drawingData['VPatomsDistRad']
@@ -7374,8 +7411,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
         if drawingData['showVoids']:
-            for x,y,z in drawingData['Voids']:
-                RenderSphere(x,y,z,.05,(0.,0.,1.),True)
+            RC = len(drawingData['Voids'])*[[0.05,2*Bl]]
+            RenderDots(drawingData['Voids'],RC)
+            # for x,y,z in drawingData['Voids']:
+            #     RenderSphere(x,y,z,.05,(0.,0.,1.),True)
         if drawingData['unitCellBox']:
             RenderBox()
             if drawingData['Plane'][1]:
@@ -7416,15 +7455,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             if drawingData.get('showSlice') in [1,]:
                 contourSet = ax0.contour(Z,colors='k',linewidths=1)
             if drawingData.get('showSlice') in [2,3]:
-                acolor = GetColorMap(drawingData.get('contourColor','Paired'))                    
+                acolor = GetColorMap(drawingData.get('contourColor','GSPaired'))
                 ax0.imshow(ZU,aspect='equal',cmap=acolor,alpha=0.7,interpolation='bilinear')
                 if drawingData.get('showSlice') in [3,]:
                     contourSet = ax0.contour(ZU,colors='k',linewidths=1)
             ax0.axis("off")
             figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-            agg = canvas.switch_backends(hcCanvas)
-            agg.draw()
-            img, (width, height) = agg.print_to_buffer()
+            img, (width,height) = canvas.print_to_buffer()
             Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
             RenderViewPlane(msize*eplane,Zimg,width,height)
         try:
@@ -7432,14 +7469,14 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         except:
             pass
         Page.canvas.SwapBuffers()
-        
+
     def OnSize(event):
         Draw('size')
-        
+
     def OnFocus(event):
-        Draw('focus')            
-        Draw('focus')     #to get correct drawing after tab change       
-        
+        Draw('focus')
+        Draw('focus')     #to get correct drawing after tab change
+
     #### PlotStructure starts here
     global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet
     global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
@@ -7470,7 +7507,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     drawingData = data['Drawing']
     if not drawingData:
         return          #nothing setup, nothing to draw
-        
+
     G2phG.SetDrawingDefaults(drawingData)
     if 'Map Peaks' in data:
         mapPeaks = np.array(data['Map Peaks'])
@@ -7501,7 +7538,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=False))
             neqv = max(neqv,len(equiv))
             for item in equiv:
-                mcsaXYZ.append(item[0]) 
+                mcsaXYZ.append(item[0])
                 mcsaTypes.append(atyp)
         mcsaXYZ = np.array(mcsaXYZ)
         mcsaTypes = np.array(mcsaTypes)
@@ -7513,10 +7550,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         mcsaXYZ = np.swapaxes(mcsaXYZ,0,1)-cent[:,np.newaxis,:]
         mcsaTypes = np.swapaxes(mcsaTypes,0,1)
         mcsaXYZ = np.reshape(mcsaXYZ,(nuniq*neqv,3))
-        mcsaTypes = np.reshape(mcsaTypes,(nuniq*neqv))                        
-        mcsaBonds = FindPeaksBonds(mcsaXYZ)        
+        mcsaTypes = np.reshape(mcsaTypes,(nuniq*neqv))
+        mcsaBonds = FindPeaksBonds(mcsaXYZ)
     drawAtoms = drawingData.get('Atoms',[])
-
+    deformationData = data.get('Deformations',{})
     mapData = {'MapType':False, 'rho':[]}
     showBonds = False
     if 'Map' in generalData:
@@ -7533,8 +7570,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     eBox = np.array([[0,1],[0,0],[1,0],[1,1],])
     eplane = np.array([[-1,-1,0],[-1,1,0],[1,1,0],[1,-1,0]])
     uEdges = np.array([
-        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
-        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
+        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]],
+        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]],
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     mD = 0.1
     mV = np.array([[[-mD,0,0],[mD,0,0]],[[0,-mD,0],[0,mD,0]],[[0,0,-mD],[0,0,mD]]])
@@ -7545,7 +7582,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
     G2frame.tau = 0.
     G2frame.seq = 0
-    
+
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(generalData['Name'],'ogl')
     if new:
         Page.views = False
@@ -7607,7 +7644,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
 
     def OnMouseMove(event):
         newxy = event.GetPosition()
-                                
+
         if event.Dragging():
             if event.LeftIsDown():
                 SetRotation(newxy)
@@ -7618,18 +7655,18 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
                 Q = defaults['Quaternion']
                 G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
             Draw('move')
-        
+
     def OnMouseWheel(event):
         defaults['cameraPos'] += event.GetWheelRotation()/24
         defaults['cameraPos'] = max(10,min(500,defaults['cameraPos']))
         G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(defaults['cameraPos']),1)
         Draw('wheel')
-        
+
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
         GL.glClearColor(R,G,B,A)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        
+
     def SetLights():
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
@@ -7642,9 +7679,9 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,.8])
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
-        
+
     def SetRotation(newxy):
-#first get rotation vector in screen coords. & angle increment        
+#first get rotation vector in screen coords. & angle increment
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
@@ -7663,9 +7700,9 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         VD = G2mth.Q2Mat(Q)[2]
         VD /= np.sqrt(np.sum(VD**2))
         defaults['viewDir'] = VD
-        
-    def SetRotationZ(newxy):                        
-#first get rotation vector (= view vector) in screen coords. & angle increment        
+
+    def SetRotationZ(newxy):
+#first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
@@ -7680,7 +7717,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         if newxy[0] > cent[0]:
             A[0] *= -1
         if newxy[1] < cent[1]:
-            A[1] *= -1        
+            A[1] *= -1
 # next transform vector back to xtal coordinates & make new quaternion
         Q = defaults['Quaternion']
         Qx = G2mth.AVdeg2Q(A[0],V)
@@ -7703,7 +7740,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_COLOR_MATERIAL)
-                
+
     def RenderSphere(x,y,z,radius,color,fade=False):
         if fade:
             Fade = list(color) + [0.5,]
@@ -7714,7 +7751,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         q = GLU.gluNewQuadric()
         GLU.gluSphere(q,radius,40,20)
         GL.glPopMatrix()
-        
+
     def Draw(caller=''):
         cPos = defaults['cameraPos']
         VS = np.array(Page.canvas.GetSize())
@@ -7723,7 +7760,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
         SetBackground()
         GL.glInitNames()
         GL.glPushName(0)
-        
+
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
         if sys.platform == "darwin":
@@ -7733,8 +7770,8 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
             GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(50.,aspect,1.,500.)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
-        SetLights()            
-            
+        SetLights()
+
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
@@ -7754,10 +7791,10 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
 
     def OnSize(event):
         Draw('size')
-        
+
     def OnFocus(event):
         Draw('focus')
-        
+
     def OnKeyBox(event):
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
@@ -7769,7 +7806,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
                 except ImportError:
                     print ("PIL/pillow Image module not present. Cannot save images without this")
                     raise Exception("PIL/pillow Image module not found")
-            
+
             Fname = os.path.join(Mydir,Page.name+'.'+mode)
             print (Fname+' saved')
             size = Page.canvas.GetSize()
@@ -7792,7 +7829,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
                 PDB.write('ATOM   %4d  CA  ALA A%4d    %8.3f%8.3f%8.3f  1.00  0.00\n'%(iatm+1,iatm+1,xyz[0],xyz[1],xyz[2]))
             PDB.close()
             G2frame.G2plotNB.status.SetStatusText('PDB model saved to: '+Fname,1)
-            
+
     # PlotBeadModel execution starts here
     Mydir = G2frame.dirname
     Rd = np.array([255,0,0])
@@ -7812,7 +7849,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
                          size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')
-    
+
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
@@ -7851,14 +7888,14 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 Bonds[i].append(Dx[j]*Radii[i]/sumR[j])
                 Bonds[j].append(-Dx[j]*Radii[j]/sumR[j])
         return Bonds
-                        
+
     def OnMouseDown(event):
         xy = event.GetPosition()
         defaults['oldxy'] = list(xy)
 
     def OnMouseMove(event):
         newxy = event.GetPosition()
-                                
+
         if event.Dragging():
             if event.LeftIsDown():
                 SetRotation(newxy)
@@ -7869,18 +7906,18 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 Q = defaults['Quaternion']
                 G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
             Draw('move')
-        
+
     def OnMouseWheel(event):
         defaults['cameraPos'] += event.GetWheelRotation()/24
         defaults['cameraPos'] = max(10,min(500,defaults['cameraPos']))
         G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(defaults['cameraPos']),1)
         Draw('wheel')
-        
+
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
         GL.glClearColor(R,G,B,A)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        
+
     def SetLights():
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
@@ -7893,9 +7930,9 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,.8])
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
-        
+
     def SetRotation(newxy):
-#first get rotation vector in screen coords. & angle increment        
+#first get rotation vector in screen coords. & angle increment
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
@@ -7914,9 +7951,9 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         VD = G2mth.Q2Mat(Q)[2]
         VD /= np.sqrt(np.sum(VD**2))
         defaults['viewDir'] = VD
-        
-    def SetRotationZ(newxy):                        
-#first get rotation vector (= view vector) in screen coords. & angle increment        
+
+    def SetRotationZ(newxy):
+#first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
@@ -7931,7 +7968,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         if newxy[0] > cent[0]:
             A[0] *= -1
         if newxy[1] < cent[1]:
-            A[1] *= -1        
+            A[1] *= -1
 # next transform vector back to xtal coordinates & make new quaternion
         Q = defaults['Quaternion']
         Qx = G2mth.AVdeg2Q(A[0],V)
@@ -7954,7 +7991,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_COLOR_MATERIAL)
-                
+
     def RenderSphere(x,y,z,radius,color):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         GL.glPushMatrix()
@@ -7962,7 +7999,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         q = GLU.gluNewQuadric()
         GLU.gluSphere(q,radius,20,10)
         GL.glPopMatrix()
-        
+
     def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         GL.glPushMatrix()
@@ -7977,10 +8014,10 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 GL.glRotate(phi,1,0,0)
                 q = GLU.gluNewQuadric()
                 GLU.gluCylinder(q,radius,radius,Z,slice,2)
-            GL.glPopMatrix()            
+            GL.glPopMatrix()
         GL.glPopMatrix()
-                
-    def RenderLabel(x,y,z,label,matRot):       
+
+    def RenderLabel(x,y,z,label,matRot):
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         GL.glDisable(GL.GL_LIGHTING)
@@ -7991,9 +8028,9 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         text.draw_text(scale=0.025)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glPopMatrix()
-        
+
     def Draw(caller=''):
-#useful debug?        
+#useful debug?
 #        if caller:
 #            print caller
 # end of useful debug
@@ -8004,7 +8041,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         SetBackground()
         GL.glInitNames()
         GL.glPushName(0)
-        
+
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
         if sys.platform == "darwin":
@@ -8014,8 +8051,8 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(20.,aspect,1.,500.)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
-        SetLights()            
-            
+        SetLights()
+
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
@@ -8047,10 +8084,10 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
 
     def OnSize(event):
         Draw('size')
-        
+
     def OnFocus(event):
         Draw('focus')
-        
+
     def OnKeyBox(event):
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
@@ -8062,7 +8099,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 except ImportError:
                     print ("PIL/pillow Image module not present. Cannot save images without this")
                     raise Exception("PIL/pillow Image module not found")
-            
+
             Fname = os.path.join(Mydir,Page.name+'.'+mode)
             print (Fname+' saved')
             size = Page.canvas.GetSize()
@@ -8092,7 +8129,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             Bonds[i] = newBonds[i]
         Draw() # drawing twice seems needed sometimes at least on mac
         Draw()
-        
+
     # PlotRigidBody execution starts here
     Mydir = G2frame.dirname
     Rd = np.array([255,0,0])
@@ -8136,7 +8173,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                          size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')
-    
+
     Font = Page.GetFont()
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
@@ -8154,11 +8191,11 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     Draw('main')
     Draw('main')    #to fill both buffers so save works
     if rbType == 'Vector': return UpdateDraw
+
 #### Plot Layers ################################################################################
-def PlotLayers(G2frame,Layers,laySeq,defaults):
+def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
     '''Layer plotting package. Can show layer structures as balls & sticks
     '''
-
     global AtNames,AtTypes,XYZ,Bonds,Faces
 
     def FindBonds(atTypes,XYZ):
@@ -8196,8 +8233,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                             norm /= np.sqrt(np.sum(norm**2))
                             faces.append([face,norm])
             Faces.append(faces)
-        return Faces    
-        
+        return Faces
+
     def getAtoms():
         global AtNames,AtTypes,XYZ,Bonds,Faces
         AtNames = []
@@ -8205,7 +8242,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         newXYZ = np.zeros((0,3))
         TX = np.zeros(3)
         for il in range(len(laySeq)):
-            layer = laySeq[il]     
+            layer = laySeq[il]
             if Layers['Layers'][layer]['SameAs']:
                 layer = Names.index(Layers['Layers'][layer]['SameAs'])
             atNames = [atom[0] for atom in Layers['Layers'][layer]['Atoms']]
@@ -8237,10 +8274,10 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             AtTypes *= len(Units)
         XYZ = newXYZ
 #        GSASIIpath.IPyBreak()
-        
+
         Bonds = FindBonds(AtTypes,XYZ)
         Faces = FindFaces(Bonds)
-                        
+
     def OnKeyBox(event):
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
@@ -8315,20 +8352,20 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             SetTransText(Yi,Xi,Trans[Yi][Xi],3)
         getAtoms()
         Draw('shift')
-        
+
     def SetTransText(Yi,Xi,XYZ,id):
         page = G2frame.phaseDisplay.GetSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'Layers':
                 G2frame.phaseDisplay.GetPage(page).transGrids[Yi].Refresh()
-            
+
     def OnMouseDown(event):
         xy = event.GetPosition()
         defaults['oldxy'] = list(xy)
 
     def OnMouseMove(event):
         newxy = event.GetPosition()
-                                
+
         if event.Dragging():
             if event.LeftIsDown():
                 SetRotation(newxy)
@@ -8338,17 +8375,17 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
             Draw('move')
-        
+
     def OnMouseWheel(event):
         defaults['cameraPos'] += event.GetWheelRotation()/24
         defaults['cameraPos'] = max(10,min(500,defaults['cameraPos']))
         Draw('wheel')
-        
+
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
         GL.glClearColor(R,G,B,A)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
-        
+
     def SetLights():
         try:
             GL.glEnable(GL.GL_DEPTH_TEST)
@@ -8361,15 +8398,15 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,.8])
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
-        
+
     def SetTranslation(newxy):
-#first get translation vector in screen coords.       
+#first get translation vector in screen coords.
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         defaults['oldxy'] = list(newxy)
         V = np.array([-dxy[0],dxy[1],0.])
-#then transform to rotated crystal coordinates & apply to view point        
+#then transform to rotated crystal coordinates & apply to view point
         Q = defaults['Quaternion']
         V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
         Tx,Ty,Tz = defaults['viewPoint'][0]
@@ -8378,9 +8415,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         Ty += V[1]*delt
         Tz += V[2]*delt
         defaults['viewPoint'][0] =  np.array([Tx,Ty,Tz])
-        
+
     def SetRotation(newxy):
-#first get rotation vector in screen coords. & angle increment        
+#first get rotation vector in screen coords. & angle increment
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
@@ -8399,9 +8436,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         VD = G2mth.Q2Mat(Q)[2]
         VD /= np.sqrt(np.sum(VD**2))
         defaults['viewDir'] = VD
-        
-    def SetRotationZ(newxy):                        
-#first get rotation vector (= view vector) in screen coords. & angle increment        
+
+    def SetRotationZ(newxy):
+#first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
@@ -8416,7 +8453,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         if newxy[0] > cent[0]:
             A[0] *= -1
         if newxy[1] < cent[1]:
-            A[1] *= -1        
+            A[1] *= -1
 # next transform vector back to xtal coordinates & make new quaternion
         Q = defaults['Quaternion']
         Qx = G2mth.AVdeg2Q(A[0],V)
@@ -8439,7 +8476,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_COLOR_MATERIAL)
-                
+
     def RenderSphere(x,y,z,radius,color):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         GL.glPushMatrix()
@@ -8448,7 +8485,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         q = GLU.gluNewQuadric()
         GLU.gluSphere(q,radius,20,10)
         GL.glPopMatrix()
-        
+
     def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
         GL.glPushMatrix()
@@ -8464,9 +8501,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                 GL.glRotate(phi,1,0,0)
                 q = GLU.gluNewQuadric()
                 GLU.gluCylinder(q,radius,radius,Z,slice,2)
-            GL.glPopMatrix()            
+            GL.glPopMatrix()
         GL.glPopMatrix()
-                
+
     def RenderPolyhedra(x,y,z,Faces,color):
         GL.glShadeModel(GL.GL_FLAT)
         GL.glPushMatrix()
@@ -8485,7 +8522,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         GL.glPopMatrix()
         GL.glShadeModel(GL.GL_SMOOTH)
 
-    def RenderLabel(x,y,z,label,matRot):       
+    def RenderLabel(x,y,z,label,matRot):
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
@@ -8497,9 +8534,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         text.draw_text(scale=0.025)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glPopMatrix()
-        
+
     def Draw(caller=''):
-#useful debug?        
+#useful debug?
 #        if caller:
 #            print caller
 # end of useful debug
@@ -8512,7 +8549,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         SetBackground()
         GL.glInitNames()
         GL.glPushName(0)
-        
+
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
         if sys.platform == "darwin":
@@ -8522,8 +8559,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(20.,aspect,1.,500.)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
-        SetLights()            
-            
+        SetLights()
+
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
@@ -8560,10 +8597,10 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
 
     def OnSize(event):
         Draw('size')
-        
+
     def OnFocus(event):
         Draw('focus')
-        
+
     # PlotLayers execution starts here
     cell = Layers['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
@@ -8577,15 +8614,15 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Bc = np.array([0,0,0])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
-        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
-        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
+        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]],
+        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]],
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
     uEdges[2][1][2] = len(laySeq)
     AtInfo = Layers['AtInfo']
     Names = [layer['Name'] for layer in Layers['Layers']]
     getAtoms()
-    
+
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Layer','ogl')
     if new:
         Page.views = False
@@ -8615,8 +8652,10 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Page.camera['backColor'] = np.array([0,0,0,0])
     Page.context = wx.glcanvas.GLContext(Page.canvas)
     Page.canvas.SetCurrent(Page.context)
+    if firstCall: # on Mac need to draw twice, but needs to be delayed
+        wx.CallAfter(Draw,'main')
     wx.CallAfter(Draw,'main')
-    
+
 #### Plot Cluster Analysis ####################################################
 
 def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
@@ -8629,16 +8668,16 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
     :param str PlotName: plot tab name
     '''
     import scipy.cluster.hierarchy as SCH
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes 
-    
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
     global SetPick
     SetPick = True
     def OnMotion(event):
         global SetPick
-        if event.xdata and event.ydata:        
+        if event.xdata and event.ydata:
             G2frame.G2plotNB.status.SetStatusText('x=%.3f y=%.3f'%(event.xdata,event.ydata),1)
             SetPick = True
-            
+
     def OnPick(event):
         global SetPick
         if SetPick:
@@ -8648,8 +8687,8 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
             G2frame.G2plotNB.status.SetStatusText(text,1)
             SetPick = False
             print(text)
-            
-    Colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan', 
+
+    Colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan',
               'xkcd:magenta','xkcd:black','xkcd:pink','xkcd:brown',
               'xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',
               'xkcd:aqua','xkcd:blueberry','xkcd:bordeaux'] #need 15 colors!
@@ -8664,7 +8703,7 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Page.canvas.mpl_connect('pick_event', OnPick)
     Page.Choice = None
     np.seterr(all='ignore')
-        
+
     if YM is not None:
         Imin = np.min(YM)
         Imax = np.max(YM)
@@ -8724,7 +8763,7 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         Plot.set_xlabel('PCA axis-1',fontsize=12)
         Plot.set_ylabel('PCA axis-2',fontsize=12)
         Plot.set_zlabel('PCA axis-3',fontsize=12)
-    else:          
+    else:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         gs = mpl.gridspec.GridSpec(2,2,figure=Page.figure)
         ax1 = Page.figure.add_subplot(gs[0,0])
@@ -8760,4 +8799,3 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
             ax3.set_xlabel('PCA index',fontsize=12)
             ax3.set_ylabel('% of total',fontsize=12)
     Page.canvas.draw()
-        

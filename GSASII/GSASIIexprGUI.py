@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #GSASIIexprGUI - Expression Definition and Evaluation
-'''Routines for users to input Python expressions used within 
+'''Routines for users to input Python expressions used within
 GSAS-II computations follow.
 '''
 from __future__ import division, print_function
@@ -10,11 +10,11 @@ import copy
 import wx
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
-import GSASIIpath
-import GSASIIctrlGUI as G2G
-import GSASIIobj as G2obj
-import GSASIImath as G2mth
-import GSASIIfiles as G2fil
+from . import GSASIIpath
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIobj as G2obj
+from . import GSASIImath as G2mth
+from . import GSASIIfiles as G2fil
 
 # Define a short name for convenience
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -22,15 +22,15 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 def IndexParmDict(parmDict,wildcard):
     '''Separate the parameters in parmDict into list of keys by parameter
     type.
-    
+
     :param dict parmDict: a dict with GSAS-II parameters
     :param bool wildcard: True if wildcard versions of parameters should
       be generated and added to the lists
     :returns: a dict of lists where key 1 is a list of phase parameters,
       2 is histogram/phase parms, 3 is histogram parms and 4 are global parameters
     '''
-    prex = re.compile('[0-9]+::.*')
-    hrex = re.compile(':[0-9\*]+:.*')
+    prex = re.compile(r'[0-9]+::.*')
+    hrex = re.compile(r':[0-9\*]+:.*')
     parmLists = {}
     for i in (1,2,3,4):
         parmLists[i] = []
@@ -60,7 +60,7 @@ def LoadDefaultExpressions():
     global defaultExpressions
     if defaultExpressions is not None: return # run this routine only once
     defaultExpressions = sorted(list(set(GSASIIpath.LoadConfigFile('DefaultExpressions.txt'))))
-    
+
 #==========================================================================
 class ExpressionDialog(wx.Dialog):
     '''A wx.Dialog that allows a user to input an arbitrary expression
@@ -68,7 +68,7 @@ class ExpressionDialog(wx.Dialog):
 
     To do this, the user assigns a new (free) or existing
     GSAS-II parameter to each parameter label used in the expression.
-    The free parameters can optionally be designated to be refined. 
+    The free parameters can optionally be designated to be refined.
     For example, is an expression is used such as::
 
     'A*np.exp(-B/C)'
@@ -89,7 +89,7 @@ class ExpressionDialog(wx.Dialog):
       the parameter value (non-float/int values in dict are ignored)
     :param exprObj: a :class:`GSASIIobj.ExpressionObj` object with an expression and
       label assignments or None (default)
-    :param str wintitle: String placed on title bar of dialog; 
+    :param str wintitle: String placed on title bar of dialog;
       defaults to "Expression Editor"
     :param str header: String placed at top of dialog to tell the user
       what they will do here; default is "Enter restraint expression here"
@@ -107,7 +107,7 @@ class ExpressionDialog(wx.Dialog):
       will not be used.
     :param list usedVars: defines a list of previously used variable names. These names
       will not be reused as defaults for new free variables.
-      (The default is an empty list). 
+      (The default is an empty list).
     :param bool wildCard: If True (default), histogram names are converted to wildcard
       values, as is appropriate for the sequential refinement table
     '''
@@ -138,7 +138,7 @@ class ExpressionDialog(wx.Dialog):
         * If the value is 0, then the varible is "free" -- a new refineable
           parameter.
         * Values above 1 determine what variables will be shown
-          when the option is selected. 
+          when the option is selected.
         '''
         self.varName = {}
         'Name assigned to each variable'
@@ -164,11 +164,7 @@ class ExpressionDialog(wx.Dialog):
                 continue # there were dicts in parmDict (should be gone now)
             except (TypeError,IndexError):
                 val = parmDict[key]
-            if '2' in platform.python_version_tuple()[0]: 
-                basestr = basestring
-            else:
-                basestr = str
-            if isinstance(val, basestr): continue
+            if isinstance(val, str): continue
             try:
                 self.parmDict[key] = float(val)
             except:
@@ -268,10 +264,10 @@ class ExpressionDialog(wx.Dialog):
                 if var in self.depVarDict:
                     self.depLabel.SetLabel(var)
                     self.dependentVar = var
-                    
+
         self.exCtrl.SetValue(self.expr)
         self.OnValidate(None)
-        self.SetMinSize(defSize) 
+        self.SetMinSize(defSize)
         #self.errbox.SetAutoLayout(1)
         #self.errbox.SetupScrolling()
         #self.varbox.SetAutoLayout(1)
@@ -324,7 +320,7 @@ class ExpressionDialog(wx.Dialog):
             return exprObj
         else:
             return None
-        
+
     def setEvalResult(self,msg):
         'Show a string in the expression result area'
         self.result.SetLabel(msg)
@@ -337,7 +333,7 @@ class ExpressionDialog(wx.Dialog):
         if self.timer.IsRunning():
             self.timer.Stop()
         self.timer.Start(2000,oneShot=True)
-        
+
     def OnChar(self,event):
         '''Called as each character is entered. Cancels any running timer
         and starts a new one. The timer causes a check of syntax after 2 seconds
@@ -349,12 +345,12 @@ class ExpressionDialog(wx.Dialog):
         if self.ExtraBtn: self.ExtraBtn.Disable()
         event.Skip()
         return
-    
+
     def CheckVars(self):
         '''Check that appropriate variables are defined for each
         symbol used in :data:`self.expr`
 
-        :returns: a text error message or None if all needed input is present       
+        :returns: a text error message or None if all needed input is present
         '''
         invalid = 0
         for v in self.exprVarLst:
@@ -363,14 +359,14 @@ class ExpressionDialog(wx.Dialog):
         if invalid==1:
             return '(a variable is not assigned)'
         elif invalid:
-            return '('+str(invalid)+' variables are not assigned)'
+            return f'({invalid} variables are not assigned)'
         msg = ''
         for v in self.exprVarLst:
             varname = self.varName.get(v)
             if not varname:
                 invalid += 1
                 if msg: msg += "; "
-                msg += 'No variable for '+str(v)
+                msg += f'No variable for {v}'
             elif self.varSelect.get(v,0) > 0:
                 if varname in self.parmDict:
                     pass
@@ -379,11 +375,11 @@ class ExpressionDialog(wx.Dialog):
                    if len(l) == 0:
                        invalid += 1
                        if msg: msg += "; "
-                       msg += 'No variables match '+str(varname)
+                       msg += f'No variables match {varname}'
                 elif varname not in self.parmDict:
                    invalid += 1
                    if msg: msg += "; "
-                   msg += 'No variables match '+str(varname)
+                   msg += f'No variables match {varname}'
             else:
                 # value assignment: this check is likely unneeded
                 val = self.varValue.get(v)
@@ -393,11 +389,11 @@ class ExpressionDialog(wx.Dialog):
                     invalid += 1
                     if msg: msg += "; "
                     if val is None:
-                        msg += 'No value for '+str(v)
+                        msg += f'No value for {v}'
                     else:
-                        msg += 'Value '+str(val)+' invalid for '+str(v)
+                        msg += f'Value {val} invalid for {v}'
         if invalid:
-            return '('+msg+')'        
+            return f'({msg})'
         return
 
     def OnDepChoice(self,event):
@@ -421,7 +417,7 @@ class ExpressionDialog(wx.Dialog):
         '''Returns the name of the dependent variable, when depVarDict is used.
         '''
         return self.dependentVar
-        
+
     def OnChoice(self,event):
         '''Respond to a selection of a variable type for a label in
         an expression
@@ -444,7 +440,7 @@ class ExpressionDialog(wx.Dialog):
         self.OnValidate(None)
 
     def SelectG2var(self,sel,var,parmList):
-        '''Offer a selection of a GSAS-II variable. 
+        '''Offer a selection of a GSAS-II variable.
 
         :param int sel: Determines the type of variable to be selected.
           where 1 is used for Phase variables, and 2 for Histogram/Phase vars,
@@ -474,7 +470,7 @@ class ExpressionDialog(wx.Dialog):
         fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in wildList]
         dlg = G2G.G2SingleChoiceDialog(
-            self,'Select GSAS-II parameter for variable "'+str(var)+'":',
+            self,f'Select GSAS-II parameter for variable "{var}":',
             'Select parameter',
             varListlbl,monoFont=True)
         dlg.SetSize((625,250))
@@ -488,8 +484,8 @@ class ExpressionDialog(wx.Dialog):
 
     def showError(self,msg1,msg2='',msg3=''):
         '''Show an error message of 1 to 3 sections. The second
-        section is shown in an equally-spaced font. 
-        
+        section is shown in an equally-spaced font.
+
         :param str msg1: msg1 is shown in a the standard font
         :param str msg2: msg2 is shown in a equally-spaced (wx.MODERN) font
         :param str msg3: msg3 is shown in a the standard font
@@ -514,7 +510,7 @@ class ExpressionDialog(wx.Dialog):
         self.errbox.SetSizer(Siz,True)
         Siz.Fit(self.errbox)
         errMsg1.SetLabel(msg1)
-        errMsg2.SetLabel("  "+msg2)
+        errMsg2.SetLabel(f'  {msg2}')
         errMsg2.Wrap(-1)
         errMsg3.SetLabel(msg3)
         self.Layout()
@@ -527,7 +523,7 @@ class ExpressionDialog(wx.Dialog):
         self.setEvalResult('(expression cannot be evaluated)')
         self.timer.Stop()
         self.expr = self.exCtrl.GetValue().strip()
-        if not self.expr: 
+        if not self.expr:
             wx.CallAfter(self.showError,
                 "Invalid Expression:","","      (an expression must be entered)")
             return
@@ -614,7 +610,7 @@ class ExpressionDialog(wx.Dialog):
                     s = G2fil.FormatSigFigs(val).rstrip('0')
                 elif '*' in var:
                     vs = G2obj.LookupWildCard(var,self.parmDict.keys())
-                    s = '('+str(len(vs))+' values)'
+                    s = f'({len(vs)} values)'
                 else:
                     s = '?'
                 wid = wx.StaticText(self.varbox,wx.ID_ANY,s)
@@ -634,7 +630,7 @@ class ExpressionDialog(wx.Dialog):
 
         # evaluate the expression, displaying errors or the expression value
         try:
-            msg = self.CheckVars() 
+            msg = self.CheckVars()
             if msg:
                 self.setEvalResult(msg)
                 return
@@ -651,7 +647,7 @@ class ExpressionDialog(wx.Dialog):
                 calcobj.SetupCalc(self.parmDict)
                 val = calcobj.EvalExpression()
             except Exception as msg:
-                self.setEvalResult("Error in evaluation: "+str(msg))
+                self.setEvalResult(f'Error in evaluation: {msg}')
                 return
             if not np.isfinite(val):
                 self.setEvalResult("Expression value is infinite or out-of-bounds")
@@ -672,7 +668,7 @@ class ExpressionDialog(wx.Dialog):
             self.setEvalResult(f"Expression evaluates to: {s}{depVal}{msg}")
             self.OKbtn.Enable()
             if self.ExtraBtn: self.ExtraBtn.Enable()
-        finally:  
+        finally:
             xwid,yhgt = Siz.Fit(self.varbox)
             self.varbox.SetMinSize((xwid,130))
             self.varbox.SetAutoLayout(1)
@@ -680,7 +676,7 @@ class ExpressionDialog(wx.Dialog):
             self.varbox.Refresh()
             self.Layout()
             self.SendSizeEvent() # force repaint
-            
+
 #==========================================================================
 class BondDialog(wx.Dialog):
     '''A wx.Dialog that allows a user to select a bond length to be evaluated.
@@ -688,7 +684,7 @@ class BondDialog(wx.Dialog):
     0. Select phase
     1. Select 1st atom from dialog
     2. Find neighbors & select one from dialog
-    3. Set up distance equation & save it - has to look like result from Show in above ExpressionDialog        
+    3. Set up distance equation & save it - has to look like result from Show in above ExpressionDialog
     Use existing bond & esd calculate routines
     '''
     def __init__(self, parent, Phases, parmDict, exprObj=None,
@@ -696,7 +692,7 @@ class BondDialog(wx.Dialog):
                  wintitle='Select bond',
                  VarLabel=None,depVarDict=None,
                  ExtraButton=None,usedVars=[]):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle, 
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle,
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.parent = parent
@@ -710,7 +706,7 @@ class BondDialog(wx.Dialog):
             self.OnSetRadii(None)
         else:
             self.Draw()
-        
+
     def OnSetRadii(self,event):
         if 'DisAglCtls' in self.Phases[self.pName]['General']:
             DisAglCtls = copy.deepcopy(self.Phases[self.pName]['General']['DisAglCtls'])
@@ -721,7 +717,7 @@ class BondDialog(wx.Dialog):
             self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
         dlg.Destroy()
         wx.CallAfter(self.Draw)
-        
+
     def Draw(self):
         'paints the distance dialog window'
         def OnPhase(event):
@@ -732,12 +728,12 @@ class BondDialog(wx.Dialog):
                 self.OnSetRadii(None)
             else:
                 wx.CallAfter(self.Draw)
-            
+
         def OnOrigAtom(event):
             Obj = event.GetEventObject()
             self.Oatom = Obj.GetValue()
             wx.CallAfter(self.Draw)
-            
+
         def OnTargAtom(event):
             Obj = event.GetEventObject()
             self.Tatom = Obj.GetValue()
@@ -784,7 +780,7 @@ class BondDialog(wx.Dialog):
             targAtom.Bind(wx.EVT_COMBOBOX,OnTargAtom)
         else:
             targAtom = wx.StaticText(self.panel,label='(none in search range)')
-        atomSizer.Add(targAtom,0,WACV)            
+        atomSizer.Add(targAtom,0,WACV)
         mainSizer.Add(atomSizer)
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
@@ -798,7 +794,7 @@ class BondDialog(wx.Dialog):
         btnSizer.Add((20,20),1)
         btnSizer.Add(cancelBtn)
         btnSizer.Add((20,20),1)
-        
+
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
         self.panel.SetSizer(mainSizer)
         self.panel.Fit()
@@ -816,8 +812,8 @@ class BondDialog(wx.Dialog):
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
-        self.EndModal(wx.ID_CANCEL)        
-            
+        self.EndModal(wx.ID_CANCEL)
+
 #==========================================================================
 class AngleDialog(wx.Dialog):
     '''A wx.Dialog that allows a user to select a bond angle to be evaluated.
@@ -825,7 +821,7 @@ class AngleDialog(wx.Dialog):
     0. Select phase
     1. Select 1st atom from dialog
     2. Find neighbors & select two from dialog
-    3. Set up angle equation & save it - has to look like result from Show in above ExpressionDialog        
+    3. Set up angle equation & save it - has to look like result from Show in above ExpressionDialog
     Use existing angle & esd calculate routines
     '''
     def __init__(self, parent, Phases, parmDict, exprObj=None,
@@ -833,7 +829,7 @@ class AngleDialog(wx.Dialog):
                  wintitle='Select angle',
                  VarLabel=None,depVarDict=None,
                  ExtraButton=None,usedVars=[]):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle, 
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle,
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.parent = parent
@@ -858,7 +854,7 @@ class AngleDialog(wx.Dialog):
             self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
         dlg.Destroy()
         wx.CallAfter(self.Draw)
-        
+
     def Draw(self):
         'paints the angle dialog window'
         def OnPhase(event):
@@ -869,11 +865,11 @@ class AngleDialog(wx.Dialog):
                 self.OnSetRadii(None)
             else:
                 wx.CallAfter(self.Draw)
-            
+
         def OnOrigAtom(event):
             Obj = event.GetEventObject()
             self.Oatom = Obj.GetValue()
-            wx.CallAfter(self.Draw)            
+            wx.CallAfter(self.Draw)
 
         def OnTargAtoms(event):
             Obj = event.GetEventObject()
@@ -907,7 +903,7 @@ class AngleDialog(wx.Dialog):
         origAtom = wx.ComboBox(self.panel,value=self.Oatom,choices=aNames,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         origAtom.Bind(wx.EVT_COMBOBOX,OnOrigAtom)
-        atomSizer.Add(origAtom,0,WACV)        
+        atomSizer.Add(origAtom,0,WACV)
         mainSizer.Add(atomSizer)
         atomSizer = wx.BoxSizer(wx.HORIZONTAL)
         atomSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0,WACV)
@@ -946,7 +942,7 @@ class AngleDialog(wx.Dialog):
         btnSizer.Add((20,20),1)
         btnSizer.Add(cancelBtn)
         btnSizer.Add((20,20),1)
-        
+
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
         self.panel.SetSizer(mainSizer)
         self.panel.Fit()
@@ -964,9 +960,9 @@ class AngleDialog(wx.Dialog):
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
-        self.EndModal(wx.ID_CANCEL)        
-                    
-        
+        self.EndModal(wx.ID_CANCEL)
+
+
 if __name__ == "__main__":
     app = wx.PySimpleApp() # create the App
     frm = wx.Frame(None)
@@ -978,14 +974,14 @@ if __name__ == "__main__":
                            header="Edit the PseudoVar expression",
                            fit=False,
                            depVarDict=PSvarDict,
-                           #VarLabel="New PseudoVar",                           
+                           #VarLabel="New PseudoVar",
                            )
     newobj = dlg.Show(True)
     dlg = ExpressionDialog(frm,indepvarDict,newobj,
                            header="Edit the PseudoVar expression",
                            fit=False,
                            depVarDict=PSvarDict,
-                           #VarLabel="New PseudoVar",                           
+                           #VarLabel="New PseudoVar",
                            )
     newobj = dlg.Show(True)
     print (dlg.GetDepVar())
@@ -997,10 +993,7 @@ if __name__ == "__main__":
 
     #app.MainLoop()
 
-    if '2' in platform.python_version_tuple()[0]:
-        import cPickle
-    else:
-        import pickle as cPickle
+    import pickle
     def showEQ(calcobj):
         print
         print (calcobj.eObj.expression)
@@ -1018,9 +1011,9 @@ if __name__ == "__main__":
     calcobj.SetupCalc(parmDict2)
     showEQ(calcobj)
     fp = open('/tmp/obj.pickle','w')
-    cPickle.dump(obj,fp)
+    pickle.dump(obj,fp)
     fp.close()
-    
+
     obj.expression = "A*np.exp(-2/B)"
     obj.assgnVars =  {'A': '0::Afrac:0', 'B': '0::Afrac:1'}
     obj.freeVars =  {}
@@ -1030,7 +1023,7 @@ if __name__ == "__main__":
     showEQ(calcobj)
 
     fp = open('/tmp/obj.pickle','r')
-    obj = cPickle.load(fp)
+    obj = pickle.load(fp)
     fp.close()
     parmDict2 = {'0::Afrac:0':0.0, '0::Afrac:1': 1.0}
     calcobj = G2obj.ExpressionCalcObj(obj)
@@ -1041,4 +1034,3 @@ if __name__ == "__main__":
     calcobj = G2obj.ExpressionCalcObj(obj)
     calcobj.SetupCalc(parmDict2)
     showEQ(calcobj)
-    

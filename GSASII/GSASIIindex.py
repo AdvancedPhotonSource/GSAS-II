@@ -9,10 +9,10 @@ from __future__ import division, print_function
 import math
 import time
 import numpy as np
-import GSASIIlattice as G2lat
-import GSASIIpwd as G2pwd
-import GSASIIspc as G2spc
-import GSASIImath as G2mth
+from . import GSASIIlattice as G2lat
+from . import GSASIIpwd as G2pwd
+from . import GSASIIspc as G2spc
+from . import GSASIImath as G2mth
 import scipy.optimize as so
 
 # trig functions in degrees

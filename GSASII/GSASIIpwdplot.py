@@ -10,7 +10,7 @@ import sys
 import os.path
 import numpy as np
 import numpy.ma as ma
-import GSASIIpath
+from . import GSASIIpath
 # Don't depend on wx/matplotlib/scipy for scriptable; or for Sphinx docs
 try:
     import wx
@@ -26,13 +26,13 @@ try:
 except (ImportError, ValueError) as err:
     print('GSASIIpwdplot: matplotlib not imported')
     if GSASIIpath.GetConfigValue('debug'): print('error msg:',err)
-import GSASIIdataGUI as G2gd
-import GSASIIpwdGUI as G2pdG
-import GSASIIlattice as G2lat
-import GSASIImath as G2mth
-import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIpwdGUI as G2pdG
+from . import GSASIIlattice as G2lat
+from . import GSASIImath as G2mth
+from . import GSASIIctrlGUI as G2G
 #import GSASIIobj as G2obj
-import GSASIIplot as G2plt
+from . import GSASIIplot as G2plt
 import matplotlib.colors as mpcls
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -1433,8 +1433,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
         DifLine[0].set_xdata(X[Ibeg:Ifin])
         DifLine[0].set_ydata(DZ[Ibeg:Ifin])
-        lims = [min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])]
-        if all(np.isfinite(lims)): Plot1.set_ylim(lims)
+        try:
+            lims = [min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])]
+            if all(np.isfinite(lims)): Plot1.set_ylim(lims)
+        except:
+            pass
         CalcLine[0].set_xdata(X)
         ObsLine[0].set_xdata(X)
         BackLine[0].set_xdata(X)
@@ -1706,7 +1709,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.dataWindow.moveDiffCurve.Enable(False)
         G2frame.dataWindow.moveTickLoc.Enable(False)
         G2frame.dataWindow.moveTickSpc.Enable(False)
-    elif 'SAS' in plottype:
+    elif plottype in ['SASD','REFD']:
         Page.phaseList = Phases = []
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Reflection Lists','Limits']:
         # get reflection positions for other places where they are displayed
@@ -2426,13 +2429,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             for i,item in enumerate(tbl):
                                 if type(item) is dict: continue
                                 if i in selectedPeaks:
-                                    Ni = N+1
+                                    #Ni = N+1
                                     plotVline(Page,Plot,Lines,Parms,item[0],'yellow',False,'-')
                                     Lines[-1].set_lw(Lines[-1].get_lw()+1)
                                     plotVline(Page,Plot,Lines,Parms,item[0],color,True)
                                     Lines[-1].set_lw(Lines[-1].get_lw()+1)
                                 else:
-                                    Ni = N
+                                    #Ni = N
                                     plotVline(Page,Plot,Lines,Parms,item[0],color,True)
                         except:
                             pass
@@ -3606,7 +3609,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         DZ = (Pattern[1][1]-Pattern[1][3])*np.sqrt(wtFactor*Pattern[1][2])
         valueList.append(DZ)
 
-        if sum(Pattern[1][0].mask): # are there are excluded points? If so, add them too
+        if hasattr(Pattern[1][0],'mask') and sum(Pattern[1][0].mask): # are there are excluded points? If so, add them too
             lblList.append('excluded')
             valueList.append(1*Pattern[1][0].mask)
         lblList.append('Axis-limits')

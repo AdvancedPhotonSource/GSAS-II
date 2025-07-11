@@ -27,7 +27,7 @@ left corner.
 ------------------------------------
 
 
-.. automodule:: GSASIIimage
+.. automodule:: GSASII.GSASIIimage
     :members: 
     :private-members:
     :special-members:

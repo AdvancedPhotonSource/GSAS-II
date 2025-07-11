@@ -3,7 +3,7 @@
 '''
 
 from __future__ import division, print_function
-import GSASIIobj as G2obj
+from .. import GSASIIobj as G2obj
 import numpy as np
 class ADSC_ReaderClass(G2obj.ImportImage):
     '''Reads an ADSC .img file

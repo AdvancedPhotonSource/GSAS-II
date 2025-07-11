@@ -2,16 +2,28 @@
 '''Class to read single-crystal data from a CIF
 '''
 # routines to read in structure factors from a CIF
-# 
+#
 from __future__ import division, print_function
 import numpy as np
 import os.path
-import GSASIIobj as G2obj
-import CifFile as cif # PyCifRW from James Hester
+from .. import GSASIIpath
+from .. import GSASIIobj as G2obj
+from .. import GSASIIfiles as G2fil
+try:
+    import CifFile as cif # PyCifRW from James Hester as a package
+except ImportError:
+    try:
+        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+    except ImportError:
+        cif = None
 
 class CIFhklReader(G2obj.ImportStructFactor):
     'Routines to import Phase information from a CIF file'
     def __init__(self):
+        if cif is None:
+            self.UseReader = False
+            msg = 'CIF Xtal Reader skipped because PyCifRW (CifFile) module is not installed.'
+            G2fil.ImportErrorMsg(msg,{'CIF HKLF importer':['pycifrw']})
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist = ('.CIF','.cif','.FCF','.fcf','.HKL','.hkl'),
             strictExtension = False,
@@ -39,7 +51,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
 
         Fdatanames = ('_refln_f_meas','_refln.f_meas','_refln.f_meas_au',
                       )
-        
+
         F2datanames = ('_refln_f_squared_meas','_refln.f_squared_meas',
             '_refln_intensity_meas','_refln.intensity_meas',
                       )
@@ -52,14 +64,14 @@ class CIFhklReader(G2obj.ImportStructFactor):
 
         Fcalcnames = ('_refln_f_calc','_refln.f_calc','_refln.f_calc_au',
                       )
-        
+
         F2calcnames = ('_refln_f_squared_calc','_refln.f_squared_calc',
                       )
 
         Fsignames = ('_refln_f_meas_sigma','_refln.f_meas_sigma','_refln.f_meas_sigma_au',
                     '_refln_f_sigma',
                       )
-        
+
         F2signames = ('_refln_f_squared_meas_sigma','_refln.f_squared_meas_sigma',
                       '_refln_f_squared_sigma','_refln.f_squared_sigma',
                       '_refln_intensity_meas_sigma','_refln.intensity_meas_sigma',
@@ -70,7 +82,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
 
 
         SGdataname = ('_symmetry_space_group_name_H-M', '_symmetry.space_group_name_H-M')
-                     
+
         phasenamefields = (
             '_chemical_name_common',
             '_pd_phase_name',
@@ -99,13 +111,13 @@ class CIFhklReader(G2obj.ImportStructFactor):
                     break
             else:
                 break # no reflections
-            for dn in Fdatanames: 
+            for dn in Fdatanames:
                 if dn in blkkeys:
                     blklist.append(blk)
                     gotFo = True
                     break
             if gotFo: break
-            for dn in F2datanames: 
+            for dn in F2datanames:
                 if dn in blkkeys:
                     blklist.append(blk)
                     break
@@ -139,7 +151,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 if s: choice[-1] += ', cell: ' + s
                 for dn in SGdataname:
                     sg = cf[blknm].get(dn)
-                    if sg: 
+                    if sg:
                         choice[-1] += ', (' + sg.strip() + ')'
                         break
             choice.append('Import all of the above')
@@ -148,7 +160,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 self.repeatcount += 1
                 if self.repeatcount >= len(blklist): self.repeat = False
             else:
-                import GSASIIctrlGUI as G2G
+                from .. import GSASIIctrlGUI as G2G
                 selblk = G2G.BlockSelector(
                     choice,
                     ParentFrame=ParentFrame,
@@ -183,7 +195,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
         # prepare an index to the CIF reflection loop
         for i,key in enumerate(refloop.keys()):
             itemkeys[key.lower()] = i
-            
+
         # scan for obs & sig data names:
         F2dn = None
         Fdn = None
@@ -214,9 +226,9 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 msg += "A CIF reflection file needs to have at least one of\n"
                 for dn in F2datanames+Fdatanames:
                     msg += dn + ', '
-                self.errors += msg                        
+                self.errors += msg
                 return False
-        
+
         # scan for calc data names - might be different!
         for dm in F2calcnames:
             if dm in itemkeys:
@@ -231,7 +243,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
             if dn in itemkeys:
                 Phdn = dn
                 break
-            
+
         # loop over all reflections
         for item in refloop:
             F2c = 0.0
@@ -246,9 +258,9 @@ class CIFhklReader(G2obj.ImportStructFactor):
                         HKL.append('.')
                 #h,k,l,tw,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,Ext
                 if im:
-                    ref = HKL+[1,0,0,0,1, 0,0,0,0,0, 0,0] 
+                    ref = HKL+[1,0,0,0,1, 0,0,0,0,0, 0,0]
                 else:
-                    ref = HKL+[1,0,0,1,0, 0,0,0,0,0, 0] 
+                    ref = HKL+[1,0,0,1,0, 0,0,0,0,0, 0]
                 if F2dn:
                     F2 = item[itemkeys[F2dn]]
                     if '(' in F2:
@@ -272,7 +284,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                         sig = 0.0
                     F2 = F**2
                     sigF2 = 2.0*F*sig
-                    
+
                 try:
                     if F2cdn:
                         F2c = float(item[itemkeys[F2cdn]])
@@ -284,7 +296,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                         F2c = Fc*Fc
                 except:
                     pass
-                            
+
                 ref[8+im] = F2
                 ref[5+im] = F2
                 ref[6+im] = sigF2

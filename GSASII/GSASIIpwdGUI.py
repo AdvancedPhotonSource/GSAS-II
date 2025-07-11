@@ -5252,6 +5252,108 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 dict: New entries and those need to be corrected in the data
                 to be used in the post request.
             """
+            from itertools import product
+
+            def extract_coeff_and_var(s):
+                """Extract coefficient and var from strings like '2/3a', '1/3b', '1/2', 'a', etc.
+                """
+                s = s.strip()
+
+                if not s:
+                    return Fraction(1), ''
+
+                # Split into coefficient and character parts
+                # Find the last alphabetic character
+                char_match = re.search(r'[a-zA-Z]', s)
+
+                if char_match:
+                    # There's a character
+                    char_pos = char_match.start()
+                    coeff_part = s[:char_pos]
+                    char_part = s[char_pos:]
+
+                    # Validate that character part is just one letter
+                    if not re.match(r'^[a-zA-Z]$', char_part):
+                        print(f"Error: Invalid character part: {char_part}")
+                else:
+                    # No character
+                    coeff_part = s
+                    char_part = ''
+
+                # Parse coefficient
+                if not coeff_part or coeff_part in ['+', '']:
+                    coefficient = Fraction(1)
+                elif coeff_part == '-':
+                    coefficient = Fraction(-1)
+                else:
+                    try:
+                        coefficient = Fraction(coeff_part)
+                    except ValueError:
+                        try:
+                            coefficient = Fraction(float(coeff_part)).limit_denominator()
+                        except ValueError as e:
+                            print(f"Error converting coefficient: {e}")
+
+                return coefficient, char_part
+
+            def generate_all_combinations(expressions, max_var_value=100):
+                """Generate all possible combinations of variable assignments and calculate sums.
+
+                Args:
+                    expressions (list): List of strings like ['2/3a', '1/3b', '1/2', 'a']
+                    max_var_value (int): Maximum value to assign to variables (1 to max_var_value)
+
+                Returns:
+                    list: List of tuples (sum_value, variable_assignments)
+                """
+                parsed_terms = []
+                variables = set()
+
+                for expr in expressions:
+                    coeff, var = extract_coeff_and_var(expr)
+                    parsed_terms.append((coeff, var))
+                    if var:
+                        variables.add(var)
+
+                variables = sorted(list(variables))
+
+                if not variables:
+                    total_sum = sum(coeff for coeff, var in parsed_terms if not var)
+                    yield (total_sum, {})
+                    return
+
+                # Generate combinations one at a time
+                var_ranges = [range(1, max_var_value + 1) for _ in variables]
+
+                for var_values in product(*var_ranges):
+                    var_assignment = dict(zip(variables, var_values))
+
+                    total_sum = Fraction(0)
+                    for coeff, var in parsed_terms:
+                        if var:
+                            total_sum += coeff * var_assignment[var]
+                        else:
+                            total_sum += coeff
+
+                    yield (total_sum, var_assignment)
+
+            def get_unique_sums(expressions, max_var_value=100):
+                """
+                Get unique sum values and count their occurrences
+
+                Returns:
+                    dict: {sum_value: count}
+                """
+                sum_counts = {}
+
+                for total_sum, var_assignment in generate_all_combinations(expressions, max_var_value):
+                    if total_sum in sum_counts:
+                        sum_counts[total_sum] += 1
+                    else:
+                        sum_counts[total_sum] = 1
+
+                return sum_counts
+
             def match_vector_pattern(k_vec, k_vec_dict, symmetry=None):
                 """Check the k-vector against the standard form in isodistort.
 
@@ -5264,61 +5366,24 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     str: The standard k-vector form in isodistort.
                 """
                 from itertools import permutations
-                
-                all_matches = list()
-                
+
+                all_matches = {}
+
                 for desc, pattern in k_vec_dict.items():
                     if len(pattern) != len(k_vec):
                         continue
-                        
-                    # Generate sequences to check based on symmetry
-                    if symmetry == 'cubic':
-                        # For cubic symmetry, check all permutations of k_vec
+
+                    if symmetry in ['cubic', 'rhombohedral']:
                         k_vec_sequences = list(permutations(k_vec))
+                    elif symmetry in ['hexagonal', 'trigonal', 'tetragonal']:
+                        k_vec_sequences = [k_vec, (k_vec[1], k_vec[0], k_vec[2])]
                     else:
-                        # For other symmetries, maintain original order
                         k_vec_sequences = [k_vec]
 
-                    # Check if any permutation matches the pattern
-                    pattern_matched = False
                     for k_vec_seq in k_vec_sequences:
-                        placeholders = {}
-                        match = True
-                        for p_val, k_val in zip(pattern, k_vec_seq):
-                            if isinstance(p_val, str):
-                                if p_val.isalpha():
-                                    if p_val not in placeholders:
-                                        placeholders[p_val] = k_val
-                                    elif placeholders[p_val] != k_val:
-                                        match = False
-                                        break
-                                else:
-                                    match = False
-                                    break
-                            else:
-                                if p_val != k_val:
-                                    match = False
-                                    break
-                        
-                        if match:
-                            pattern_matched = True
-                            break
-                    
-                    if pattern_matched:
-                        all_matches.append(desc)
+                        pass
 
-                idp_params_num = 3
-                for match in all_matches:
-                    params = list()
-                    for item in k_vec_dict[match]:
-                        if isinstance(item, str):
-                            params.append(item)
-                    idp_params = list(set(params))
-                    if len(idp_params) <= idp_params_num:
-                        idp_params_num = len(idp_params)
-                        final_match = match
-
-                return final_match
+                return
 
             k_vec_form = match_vector_pattern(k_vec, k_vec_dict, symmetry="cubic")
 
@@ -5489,7 +5554,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         kvec_dict = grab_all_kvecs(out2)
 
-        data_update = setup_kvec_input(kpoint_frac, kvec_dict)
+        data_update = setup_kvec_input(kpoint_frac, kvec_dict, symmetry=lat_sym)
         for key, value in data_update.items():
             data[key] = value
 

@@ -4493,7 +4493,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
     # TODO: I think this used to work, but this needs to be revisited due to
     # AttributeError: 'G2DataWindow' object has no attribute 'ReImportMenuId'
-    # from: 
+    # from:
     #    reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
     #
     # def ImportUnitCell(event):
@@ -5163,7 +5163,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             txt = event.GetEventObject().page
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
             with open(tmp.name,'w') as fp:
-                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/iso/">',))
+                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
@@ -5171,7 +5171,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             import tempfile
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
             with open(tmp.name,'w') as fp:
-                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/iso/">',))
+                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
@@ -5180,82 +5180,131 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             opt_match = re.search(opt_pattern, out)
 
             return opt_match.group(1)
-        
-        def setup_kvec_input(k_vec):
+
+        def grab_all_kvecs(out_html):
+            """Extract all k-vectors from the ISODISTORT output HTML."""
+            from fractions import Fraction
+            import re
+
+            kvec1_pattern = r'<SELECT NAME="kvec1">(.*?)</SELECT>'
+            kvec1_match = re.search(kvec1_pattern, out_html, re.DOTALL)
+
+            if kvec1_match:
+                select_content = kvec1_match.group(1)
+
+                # Extract option values
+                option_pattern = r'<OPTION VALUE="([^"]*)"[^>]*>([^<]*)</OPTION>'
+                options = re.findall(option_pattern, select_content)
+
+                final_kvec_keys = []
+                for value, _ in options:
+                    final_kvec_keys.append(value)
+
+                all_kvecs = {}
+                for key in final_kvec_keys:
+                    pattern_str = key.split("(")[1].split(")")[0]
+                    a_val = pattern_str.split(",")[0]
+                    b_val = pattern_str.split(",")[1]
+                    c_val = pattern_str.split(",")[2]
+                    if a_val == "1/2":
+                        a_val = Fraction(1, 2)
+                    elif a_val == "1/3":
+                        a_val = Fraction(1, 3)
+                    elif a_val == "1":
+                        a_val = 1
+                    elif a_val == "0":
+                        a_val = 0
+
+                    if b_val == "1/2":
+                        b_val = Fraction(1, 2)
+                    elif b_val == "1/3":
+                        b_val = Fraction(1, 3)
+                    elif b_val == "1":
+                        b_val = 1
+                    elif b_val == "0":
+                        b_val = 0
+
+                    if c_val == "1/2":
+                        c_val = Fraction(1, 2)
+                    elif c_val == "1/3":
+                        c_val = Fraction(1, 3)
+                    elif c_val == "1":
+                        c_val = 1
+                    elif c_val == "0":
+                        c_val = 0
+
+                    all_kvecs[key] = (a_val, b_val, c_val)
+
+                return all_kvecs
+            else:
+                return None
+
+        def setup_kvec_input(k_vec, k_vec_dict, symmetry=None):
             """Set up the input for isodistort post request
 
             Args:
                 k_vec (str): The k-vector to use for the isodistort request.
+                k_vec_dict (dict): The dictionary containing the k-vector
+                form extracted from isodistort.
+                symmetry (str, optional): The crystal system.
 
             Returns:
                 dict: New entries and those need to be corrected in the data
                 to be used in the post request.
             """
-            from fractions import Fraction
-
-            k_vec_dict = {
-                " 1 *GM, k16 (0,0,0)": (0, 0, 0),
-                " 2 *DT, k11 (0,0,g)": (0, 0, "a"),
-                " 3 *LD, k6 (a,a,0)": ("a", "a", 0),
-                " 4 *SM, k5 (a,0,0)": ("a", 0, 0),
-                " 5 *A, k17 (0,0,1/2)": (0, 0, Fraction(1, 2)),
-                " 6 *H, k15 (1/3,1/3,1/2)": (
-                    Fraction(1, 3),
-                    Fraction(1, 3),
-                    Fraction(1, 2)
-                ),
-                " 7 *K, k13 (1/3,1/3,0)": (Fraction(1, 3), Fraction(1, 3), 0),
-                " 8 *L, k14 (1/2,0,1/2)": (Fraction(1, 2), 0, Fraction(1, 2)),
-                " 9 *M, k12 (1/2,0,0)": (Fraction(1, 2), 0, 0),
-                "10 *P, k10 (1/3,1/3,g)": (
-                    Fraction(1, 3),
-                    Fraction(1, 3),
-                    "g"
-                ),
-                "11 *Q, k8 (a,a,1/2)": ("a", "a", Fraction(1, 2)),
-                "12 *R, k7 (a,0,1/2)": ("a", 0, Fraction(1, 2)),
-                "13 *U, k9 (1/2,0,g)": (Fraction(1, 2), 0, "g"),
-                "14 *B, k1 (a,b,0)": ("a", "b", 0),
-                "15 *C, k4 (a,a,g)": ("a", "a", "g"),
-                "16 *D, k3 (a,0,g)": ("a", 0, "g"),
-                "17 *E, k2 (a,b,1/2)": ("a", "b", Fraction(1, 2)),
-                "18 *GP, k0 (a,b,g)": ("a", "b", "g")
-            }
-
-            def match_vector_pattern(k_vec, k_vec_dict):
+            def match_vector_pattern(k_vec, k_vec_dict, symmetry=None):
                 """Check the k-vector against the standard form in isodistort.
 
                 Args:
-                    k_vec (str): The k-vector to use for the isodistort
-                    request.
-                    k_vec_dict (dict): The standard k-vector form in
-                    isodistort.
+                    k_vec (str): The k-vector to use for the isodistort request.
+                    k_vec_dict (dict): The standard k-vector form in isodistort.
+                    symmetry (str, optional): The crystal system.
 
                 Returns:
                     str: The standard k-vector form in isodistort.
                 """
+                from itertools import permutations
+                
                 all_matches = list()
+                
                 for desc, pattern in k_vec_dict.items():
                     if len(pattern) != len(k_vec):
                         continue
-                    placeholders = {}
-                    match = True
-                    for p_val, k_val in zip(pattern, k_vec):
-                        if isinstance(p_val, str):
-                            if p_val.isalpha():
-                                if p_val not in placeholders:
-                                    placeholders[p_val] = k_val
-                                elif placeholders[p_val] != k_val:
+                        
+                    # Generate sequences to check based on symmetry
+                    if symmetry == 'cubic':
+                        # For cubic symmetry, check all permutations of k_vec
+                        k_vec_sequences = list(permutations(k_vec))
+                    else:
+                        # For other symmetries, maintain original order
+                        k_vec_sequences = [k_vec]
+
+                    # Check if any permutation matches the pattern
+                    pattern_matched = False
+                    for k_vec_seq in k_vec_sequences:
+                        placeholders = {}
+                        match = True
+                        for p_val, k_val in zip(pattern, k_vec_seq):
+                            if isinstance(p_val, str):
+                                if p_val.isalpha():
+                                    if p_val not in placeholders:
+                                        placeholders[p_val] = k_val
+                                    elif placeholders[p_val] != k_val:
+                                        match = False
+                                        break
+                                else:
                                     match = False
                                     break
                             else:
-                                match = False
-                                break
-                        else:
-                            if p_val != k_val:
-                                match = False
-                                break
-                    if match:
+                                if p_val != k_val:
+                                    match = False
+                                    break
+                        
+                        if match:
+                            pattern_matched = True
+                            break
+                    
+                    if pattern_matched:
                         all_matches.append(desc)
 
                 idp_params_num = 3
@@ -5271,7 +5320,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
                 return final_match
 
-            k_vec_form = match_vector_pattern(k_vec, k_vec_dict)
+            k_vec_form = match_vector_pattern(k_vec, k_vec_dict, symmetry="cubic")
 
             data_update = dict()
             data_update['kvec1'] = k_vec_form
@@ -5298,7 +5347,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         from fractions import Fraction
         from GSASII.exports import G2export_CIF
         from . import ISODISTORT as ISO
-        isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
+        isoformsite = 'https://iso.byu.edu/isodistortform.php'
 
         if not G2frame.kvecSearch['mode']:
             return
@@ -5313,7 +5362,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         if kpoint is None:
             wx.MessageBox(
-                "Please select a k-vector from the table.", 
+                "Please select a k-vector from the table.",
                 style=wx.ICON_INFORMATION,
                 caption='Isotropic Subgroup Generation'
             )
@@ -5329,7 +5378,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             This can take up to a few minutes. Check the terminal for progress.
         '''
         wx.MessageBox(
-            f"{isoCite}\n\n{info_str}", 
+            f"{isoCite}\n\n{info_str}",
             style=wx.ICON_INFORMATION,
             caption='Isotropic Subgroup Generation'
         )
@@ -5438,7 +5487,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         data['input'] = 'kvector'
         data['irrepcount'] = '1'
 
-        data_update = setup_kvec_input(kpoint_frac)
+        kvec_dict = grab_all_kvecs(out2)
+
+        data_update = setup_kvec_input(kpoint_frac, kvec_dict)
         for key, value in data_update.items():
             data[key] = value
 
@@ -5552,7 +5603,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         # reopen tree to the original phase
         def _ShowPhase():
             phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
-            G2frame.GPXtree.Expand(phId)        
+            G2frame.GPXtree.Expand(phId)
             phId = G2gd.GetGPXtreeItemId(G2frame, phId, phsnam)
             G2frame.GPXtree.SelectItem(phId)
 
@@ -5563,7 +5614,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             {os.getcwd()}
         '''
         wx.MessageBox(
-            info_msg, 
+            info_msg,
             style=wx.ICON_INFORMATION,
             caption='Isotropic Subgroup Generation'
         )
@@ -7470,7 +7521,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     def OnToggleExt(event):
         G2frame.Hide = not G2frame.Hide
         UpdateReflectionGrid(G2frame,data,HKLF=True,Name=Name)
-        
+
     def OnPageChanged(event):
         '''Respond to a press on a phase tab by displaying the reflections. This
         routine is needed because the reflection table may not have been created yet.

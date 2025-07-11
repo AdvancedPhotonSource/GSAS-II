@@ -11,8 +11,8 @@ import copy
 from . import GSASIIscriptable as G2sc
 from . import GSASIIctrlGUI as G2G
 #import tempfile
-isouploadsite = 'https://stokes.byu.edu/iso/isodistortuploadfile.php'
-isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
+isouploadsite = 'https://iso.byu.edu/isodistortuploadfile.php'
+isoformsite = 'https://iso.byu.edu/isodistortform.php'
 
 def HandleError(out):
     with open('out.html','wb') as fp:

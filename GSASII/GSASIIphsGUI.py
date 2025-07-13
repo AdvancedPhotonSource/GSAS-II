@@ -1110,7 +1110,10 @@ def getPawleydRange(G2frame,data):
     dmaxAll = dminAll = None
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     nhist = 0
+    chist = 0
     for item in data['Histograms']:
+        if 'HKLF' in item: #count single crystal histograms
+            chist += 1
         if 'PWDR' not in item: continue
         if not data['Histograms'][item]['Use']: continue
         nhist += 1
@@ -1132,7 +1135,7 @@ def getPawleydRange(G2frame,data):
         fmtd(dminAll),fmtd(dmaxAll),Angstr,nhist)
     if dmaxAll is None: dmaxAll = 100.
     if dminAll is None: dminAll = 0.25
-    return dminAll,dmaxAll,nhist,lbl
+    return dminAll,dmaxAll,nhist,lbl,chist
 
 def getAtomSelections(AtmTbl,cn=0,action='action',includeView=False,ask=True):
     '''get selected atoms from table or ask user if none are selected
@@ -2313,7 +2316,7 @@ def UpdatePhaseData(G2frame,Item,data):
                             msg='Use Pawley Create in Operations menu of Pawley'+
                             ' Reflections tab to complete the Pawley setup')
 
-            dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
+            dmin,dmax,nhist,lbl,chist = getPawleydRange(G2frame,data)
 
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
@@ -2861,7 +2864,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_MULTIMCSA,True)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,False)
             
-        dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
+        dmin,dmax,nhist,lbl,chist = getPawleydRange(G2frame,data)
         if nhist > 0:
             mainSizer.Add(PawleySizer())
             G2G.HorizontalLine(mainSizer,General)
@@ -11980,7 +11983,7 @@ tab, use Operations->"Pawley create")''')
                 c.Enable(generalData['doPawley'])
 
         PawleyCtrlsList = []
-        dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
+        dmin,dmax,nhist,lbl,chist = getPawleydRange(G2frame,data)
         generalData = data['General']
         prevPawleySetting = generalData['doPawley']
         generalData['doPawley'] = True  # make Pawley extraction the default if window is opened
@@ -13234,13 +13237,14 @@ tab, use Operations->"Pawley create")''')
     G2frame.phaseDisplay.AddPage(G2frame.drawAtomsList,'Draw Atoms')
     Pages.append('Draw Atoms')
 
+    dmin,dmax,nhist,lbl,chist = getPawleydRange(G2frame,data)
+    dataGeneral = data['General']
     if any('X' in item for item in G2frame.GetHistogramTypes()):
         G2frame.deformation = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.deformation,'Deformation')
-
         Pages.append('Deformation')
-
-    if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
+        
+    if dataGeneral['Type'] not in ['faulted',] and not dataGeneral['Modulated']:
         RigidBodies = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(RigidBodies,'RB Models')
         # note the bind is here so that it is only done once, but
@@ -13248,30 +13252,30 @@ tab, use Operations->"Pawley create")''')
         RigidBodies.Bind(wx.EVT_CHAR,rbKeyPress)
         Pages.append('RB Models')
 
-    dmin,dmax,nhist,lbl = getPawleydRange(G2frame,data)
-    if nhist > 0:            
+    if dataGeneral['Map']['MapType'] or 'Flip' in dataGeneral:
         MapPeakList = wx.Panel(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
         # create the grid once; N.B. need to reference at this scope
         G2frame.MapPeaks = G2G.GSGrid(MapPeakList)
         G2frame.phaseDisplay.gridList.append(G2frame.MapPeaks)
+        Pages.append('Map peaks')
 
         if data['General']['doDysnomia']:
             G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
             G2frame.phaseDisplay.AddPage(G2frame.MEMData,'Dysnomia')
             Pages.append('Dysnomia')
-        Pages.append('Map peaks')
         
-    if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated'] and nhist > 0:
+    if dataGeneral['Type'] not in ['faulted',] and not dataGeneral['Modulated']:
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')
         
-    G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
-    G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
-    Pages.append('RMC')
+    if nhist:   
+        G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
+        Pages.append('RMC')
 
-    if data['General']['Type'] == 'nuclear':
+    if dataGeneral['Type'] == 'nuclear':
         G2frame.ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.ISODIST,'ISODISTORT')
         Pages.append('ISODISTORT')
@@ -13282,9 +13286,6 @@ tab, use Operations->"Pawley create")''')
         Pages.append('Texture')
         PawleyRefList = wx.Panel(G2frame.phaseDisplay)
         G2frame.PawleyRefl = None  # grid now created when needed
-#    G2frame.PawleyRefl = G2G.GSGrid(PawleyRefList)  
-#    G2frame.PawleyRefl.SetScrollRate(0,0)
-#    G2frame.phaseDisplay.gridList.append(G2frame.PawleyRefl)
         G2frame.phaseDisplay.AddPage(PawleyRefList,'Pawley reflections')
         Pages.append('Pawley reflections')
     G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_ISODISP,'ISODISTORT' in data)

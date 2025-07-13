@@ -300,11 +300,20 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
             sellist = [vs.index(v) if v is not None else None for v in varsellist]
             #sellist = [i if G2fil.striphist(v,'*') in varsellist else None for i,v in enumerate(seqData[name]['varyList'])]
         if not varsellist: raise Exception()
-        vals.append([seqData[name]['variables'][s] if s is not None else None for s in sellist])
+        vallist = []
+        # lookup values: For coordinates (::dA[xyz]) get actual val, but use dA su
+        for v,s in zip(varlbls,sellist):
+            if s is None:
+                vallist.append(None)
+            elif v in seqData[name]['newAtomDict']:
+                vallist.append(seqData[name]['newAtomDict'][v][1])
+            else:
+                vallist.append(seqData[name]['variables'][s])
+        vals.append(vallist)
         esds.append([seqData[name]['sig'][s] if s is not None else None for s in sellist])
     tblValues += zip(*vals)
     tblSigs += zip(*esds)
-    tblLabels += varlbls
+    tblLabels += [s.replace('::dA','::A') for s in varlbls]
     tblTypes += ['float' for i in varlbls]
 
     # tabulate constrained variables, removing histogram numbers if needed
@@ -322,22 +331,26 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
                depValDict[svar].append(val)
                depSigDict[svar].append(sig)
 
-    # add the dependent constrained variables to the table
+    # add the dependent constrained variables to the table, except coordinates
     for var in sorted(depValDict):
+        if '::dA' in var: continue
         if len(depValDict[var]) != len(histNames): continue
         tblLabels.append(var)
         tblTypes.append('10,5')
         tblSigs += [depSigDict[var]]
         tblValues += [depValDict[var]]
 
-    # add refined atom parameters to table
+    # add unrefined atom parameters to table. Expect constrained values only
     for parm in sorted(atomLookup):
+        if parm in tblLabels: continue   # skip if already present
         tblLabels.append(parm)
         tblTypes.append('10,5')
         tblValues += [[seqData[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
-        if atomLookup[parm] in seqData[histNames[0]]['varyList']:
+        if atomLookup[parm] in seqData[histNames[0]]['varyList']: # refined
             col = seqData[histNames[0]]['varyList'].index(atomLookup[parm])
             tblSigs += [[seqData[name]['sig'][col] for name in histNames]]
+        elif atomLookup[parm] in depSigDict:  # constrained
+            tblSigs += [depSigDict[atomLookup[parm]]]
         else:
             tblSigs += [None]
 
@@ -4280,7 +4293,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 # setup and show sequential results table
                 tblLabels,tblValues,tblSigs,tblTypes = mkSeqResTable('cif',seqHistList,self.seqData,
                                                     self.Phases,self.Histograms,self.Controls)
-                WriteCIFitem(self.fp, '\n# Sequential results table') # (in case anyone can make sense of it)
+                WriteCIFitem(self.fp, '\n# Sequential results table') # (in case anyone can make use of it)
                 WriteCIFitem(self.fp, 'loop_   _gsas_seq_results_col_num _gsas_seq_results_col_label')
                 for i,lbl in enumerate(tblLabels):
                     s = PutInCol(str(i),5)

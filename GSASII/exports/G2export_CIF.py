@@ -1414,7 +1414,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         # data collection T value
         for h in phasedict['Histograms']:
             if not phasedict['Histograms'][h]['Use']: continue
-            if phasedict['Histograms'][h].get('Type','').startswith('HKL'):
+            if h.startswith('HKL'):
                 return False
             T = self.Histograms[h]['Sample Parameters']['Temperature']
             if np.any(abs(np.array(phasedict['Histograms'][h]['HStrain'][0])) > 1e-8):
@@ -1446,7 +1446,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         # data collection T value
         for h in phasedict['Histograms']:
             if not phasedict['Histograms'][h]['Use']: continue
-            if phasedict['Histograms'][h].get('Type','').startswith('HKL'):
+            if h.startswith('HKL'):
                 return ( # TODO Is temperature in HKLF datasets?
                     self.Histograms[h]['Instrument Parameters'].get('Temperature',295),
                     self.Histograms[h]['ranId']

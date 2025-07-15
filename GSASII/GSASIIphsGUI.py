@@ -13262,7 +13262,7 @@ tab, use Operations->"Pawley create")''')
         RigidBodies.Bind(wx.EVT_CHAR,rbKeyPress)
         Pages.append('RB Models')
 
-    if dataGeneral['Map']['MapType'] or 'Flip' in dataGeneral:
+    if ('Map' in dataGeneral and dataGeneral['Map']['MapType']) or 'Flip' in dataGeneral:
         MapPeakList = wx.Panel(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(MapPeakList,'Map peaks')
         # create the grid once; N.B. need to reference at this scope

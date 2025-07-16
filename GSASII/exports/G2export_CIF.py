@@ -3862,7 +3862,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         # write quick CIFs
         #=================================================================
         if phaseOnly: #====Phase only CIF ================================
-            print('Writing CIF output to file '+self.filename)
+            print('Writing CIF output to file '+self.fullpath)
             oneblock = True
             self.quickmode = True
             self.Write(' ')
@@ -4922,30 +4922,34 @@ class ExportPhaseCIF(ExportCIF):
         self.loadParmDict()
         self.multiple = True
         self.currentExportType = 'phase'
-        if self.ExportSelect('ask'): return
-        self.OpenFile(delayOpen=True)
-        MagPhase = None
-        ChemPhase = None
+        if self.ExportSelect('ask'):
+            return
+        else:
+            baseFileName, ext=os.path.splitext(self.filename)
+            for nameOfPhase in self.phasenam:
+                self.filename = f"{baseFileName}{'_'}{nameOfPhase}{ext}"
+                self.OpenFile(delayOpen=True)
+                MagPhase = None
+                ChemPhase = None
 
-        if len(self.phasenam) == 2:
-            for name in self.phasenam:
-                if self.Phases[name]['General']['Type'] == 'nuclear':
-                    ChemPhase = name
-                if self.Phases[name]['General']['Type'] == 'magnetic':
-                    MagPhase = name
-            if MagPhase and ChemPhase:
-                newPhase = self.mergeMag(self.G2frame,ChemPhase,MagPhase)
-                if newPhase is not None:
-                    self.openDelayed()
-                    newName = ChemPhase + '_merged'
-                    self.Phases = {newName:newPhase}
-                    self.MasterExporter(event=event,phaseOnly=newName)
-                    self.CloseFile()
-                    return
-        for name in self.phasenam:
-            self.openDelayed()
-            self.MasterExporter(event=event,phaseOnly=name)
-        self.CloseFile()
+                if len(self.phasenam) == 2:
+                    for name in self.phasenam:
+                        if self.Phases[name]['General']['Type'] == 'nuclear':
+                            ChemPhase = name
+                        if self.Phases[name]['General']['Type'] == 'magnetic':
+                            MagPhase = name
+                    if MagPhase and ChemPhase:
+                        newPhase = self.mergeMag(self.G2frame,ChemPhase,MagPhase)
+                        if newPhase is not None:
+                            self.openDelayed()
+                            newName = ChemPhase + '_merged'
+                            self.Phases = {newName:newPhase}
+                            self.MasterExporter(event=event,phaseOnly=newName)
+                            self.CloseFile()
+                            return
+                self.openDelayed()
+                self.MasterExporter(event=event,phaseOnly=nameOfPhase)
+                self.CloseFile()
 
     def Writer(self,hist,phasenam,mode='w'):
         # set the project file name

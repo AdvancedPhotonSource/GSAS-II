@@ -3110,7 +3110,12 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
         fp.write('@{}axis tick major {}\n'.format('x',xticks[1]-xticks[0]))
         fp.write('@{}axis tick major {}\n'.format('y',ytick))
         fp.write("@type xy\n")
-        for x,y,m in zip(savedX,ysig,savedX.mask):
+        try:  # new behavior: .mask can return a single np.False_ value
+            savedX_mask = savedX.mask
+            len(savedX_mask)
+        except TypeError:
+            savedX_mask = len(savedX)*[False]
+        for x,y,m in zip(savedX,ysig,savedX_mask):
             if not m: fp.write("{} {}\n".format(x,y))
         fp.write("&\n")
         fp.write(linedef3.format("s1",'',1,0,1.0,0,0,1))

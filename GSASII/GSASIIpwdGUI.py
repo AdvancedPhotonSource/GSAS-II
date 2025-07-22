@@ -3440,7 +3440,7 @@ def UpdateInstrumentGrid(G2frame,data):
             MakeMultiParameterWindow()
         else:
             MakeParameterWindow()
-    elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD & REFD data menu commands
+    elif 'L' in insVal['Type'] or 'R' in insVal['Type'] or 'S' in insVal['Type']:                   #SASD & REFD data menu commands
         MakeParameterWindow()
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)

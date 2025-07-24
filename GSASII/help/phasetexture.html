@@ -1,0 +1,1451 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="phaseRB.html">
+      
+      
+        <link rel="next" href="phasemappeaks.html">
+      
+      
+      <link rel="icon" href="images/gsas2.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
+    
+    
+      
+        <title>Texture tab - GSAS-II Help</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#texture-phase-tab" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="GSAS-II Help" class="md-header__button md-logo" aria-label="GSAS-II Help" data-md-component="logo">
+      
+  <img src="images/gsas2.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSAS-II Help
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Texture tab
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="GSAS-II Help" class="md-nav__button md-logo" aria-label="GSAS-II Help" data-md-component="logo">
+      
+  <img src="images/gsas2.png" alt="logo">
+
+    </a>
+    GSAS-II Help
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="preface.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Getting started
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="applicationwindow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GUI components
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="mainmenu.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Main menu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Data tree items
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Data tree items
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="datatree.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data tree overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="commontreeitems.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Universal items
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sequential.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sequential results
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cluster.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Cluster Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Phases
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            Phases
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseoverview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Phase overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasegeneral.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    General tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedata.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseatoms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Atoms tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedrawopts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Draw Options tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedrawatoms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Draw Atoms tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseRB.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    RB Models tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="phasetexture.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Texture tab
+    
+  </span>
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasemappeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Map Peaks tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasepawley.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pawley tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaselayers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Layers tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasewave.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Wave Data tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasemcsa.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MC/SA tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseRMC.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    RMC tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseisodistort.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ISODISTORT tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedysnomia.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Dysnomia tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="image.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Images (IMG)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Powder (PWDR)
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            Powder (PWDR)
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powder.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderparent.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Main PWDR entry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdercomments.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Comments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderlimits.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Limits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderbkg.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Background
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderinst.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Instrument Parameters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdersample.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sample Parameters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderpeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Peak List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderindexppeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Index Peak List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdercells.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Unit Cells List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderrefs.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Reflection Lists
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="singlecrystal.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Single Crystal (HKLF)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pairdistribution.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PDF
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="smallanglescattering.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Small Angle (SASD)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reflectometry.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Reflectometry (REFD)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="peaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Powder Peaks (PKS)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="others.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Other info
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<!--- Don't change the HTML version of this file; edit the .md version -->
+<p><a name="Phase-Texture"></a></p>
+<h1 id="texture-phase-tab"><strong>Texture</strong> phase tab</h1>
+<p>This tab is used to control settings used for a texture study of a material. This type of characterization usually requires diffraction data recorded with multiple detector orientations (the number of orientations will depend on sample and material symmetry). Do not confuse this with applying a <a href="phasedata.html#preferred_orientation">preferred orientation correction</a> (found in the <a href="phasedata.html">"Data" tab</a>) in a structural study. The sample orientation relative to the detector axes is specified here and the detector orientation is specified for each histogram as goniometer omega, chi, phi and azimuth values (details below). These values must be specified.</p>
+<p>Texture analysis using GSAS-II employs spherical harmonics modeling, as described by Bunge, "Texture Analysis in Materials Science" (1982), and implemented by Von Dreele, J. Appl. Cryst., <strong>30</strong>, 517-525 (1997) in the original GSAS program. The even part of the orientation distribution function (ODF) via the general axis equation</p>
+<div class="arithmatex">\[
+A(x,y) = 1 + \sum_{L=2}^{N_L}{\frac{4\pi}{2L+1}} \sum_{m=-L}^{L} \sum_{n=-L}^{L} C_L^{mn} k_L^m(y) k_L^n(h)
+\]</div>
+<p>is used to give the intensity corrections due to texture. The two harmonic terms, <span class="arithmatex">\(k_L^m(y)\)</span> and <span class="arithmatex">\(k_L^n(h)\)</span> , take on values according to the sample and crystal symmetries, respectively, and thus the two inner summations are over only the resulting unique, nonzero harmonic terms. These unique terms are automatically selected by GSAS-II according to the space group symmetry and the user chosen sample symmetry. The available sample symmetries are cylindrical, 2/m, mmm and no symmetry. The choice of sample symmetry profoundly affects the selection of harmonic coefficients. For example, in the case of cylindrical sample symmetry (fiber texture) only <span class="arithmatex">\(k_L^0(y)\)</span> terms are nonzero so the rest are excluded from the summations and the set of <span class="arithmatex">\(C_L^{0n}\)</span> coefficients is sufficient to describe the effect on the diffraction pattern due to texture. The crystal harmonic factor, <span class="arithmatex">\(k_L^n(h)\)</span>, is defined for each reflection, h, <em>via</em> polar and azimuthal coordinates <span class="arithmatex">\((\phi, \beta)\)</span> of a unit vector coincident with h relative to the reciprocal lattice. For most crystal symmetries, <span class="arithmatex">\(\phi\)</span> is the angle between h and the n-th order major rotation axis of the space group (usually the c-axis) and <span class="arithmatex">\(\beta\)</span> is the angle between the projections of h and any secondary axis (usually the a-axis) onto the normal plane.  In a similar way the sample harmonic factor, <span class="arithmatex">\(k_L^m(y)\)</span>, is defined according to polar and azimuthal coordinates <span class="arithmatex">\((\psi, \gamma)\)</span> of a unit vector coincident with the diffraction vector relative to a coordinate system attached to the external form of the sample. For example, in the case of a rolled steel plate having mmm symmetry, the polar angle, <span class="arithmatex">\(\Psi\)</span>, is frequently measured from the normal direction (ND, parallel to K<sub>s</sub>) and g is then measured from the rolling direction (RD, parallel to I<sub>s</sub>) in the TD (transverse direction, parallel to J<sub>s</sub>) - RD plane.  Thus, the general axis equation becomes</p>
+<div class="arithmatex">\[
+A(\phi,\beta,\psi,\gamma) = 1 + \sum_{L=2}^{N_L}{\frac{4\pi}{2L+1}} \sum_{m=-L}^{L} \sum_{n=-L}^{L} C_L^{mn} k_L^m(\psi, \gamma) k_L^n(\phi, \beta)
+\]</div>
+<p>Note that this version of the general axis equation differs from that shown in Von Dreele (1997) in that the assignment of m and n are reversed.</p>
+<p>In a diffraction experiment the crystal reflection coordinates <span class="arithmatex">\((\phi, \beta)\)</span> are determined by the choice of reflection index (hkl) while the sample coordinates <span class="arithmatex">\((\Psi, \gamma)\)</span> are determined by the sample orientation on the diffractometer. To define the sample coordinates <span class="arithmatex">\((\psi, \gamma)\)</span>, we have defined an instrument coordinate system (I, J, K) such that K is normal to the diffraction plane and J is coincident with the direction of the incident radiation beam toward the source. We further define a standard set of right-handed eulerian goniometer angles <span class="arithmatex">\((\omega, \chi, \phi)\)</span> so that <span class="arithmatex">\(\omega\)</span> and <span class="arithmatex">\(\phi\)</span> are rotations about K and <span class="arithmatex">\(\chi\)</span> is a rotation about J when <span class="arithmatex">\(\omega = 0\)</span>. Finally, as the sample may be mounted so that the sample coordinate system (<span class="arithmatex">\(I_s, J_s, K_s\)</span>) does not coincide with the instrument coordinate system (I, J, K), we define three eulerian sample rotation offset angles <span class="arithmatex">\((\omega_s, \chi_s, \phi_s)\)</span> that describe the rotation from (<span class="arithmatex">\(I_s, J_s, K_s\)</span>) to (I, J, K).  The sample rotation angles are defined so that with the goniometer angles at zero <span class="arithmatex">\(\omega_s\)</span> and <span class="arithmatex">\(\phi_s\)</span> are rotations about K and <span class="arithmatex">\(\chi_s\)</span> is a rotation about J.  The zeros of these three sample rotation angles can be refined as part of the Rietveld analysis to accommodate any angular offset in sample mounting. For the specific case of cylindrical sample symmetry, the cylinder axis is coincident with Ks as is the 2-fold in 2/m sample symmetry. After including the diffraction angle, <span class="arithmatex">\(2\theta\)</span>, and a detector azimuthal angle, A, the full rotation matrix, <span class="arithmatex">\(M\)</span>, is</p>
+<div class="arithmatex">\[
+M = - \theta A \omega \chi (\phi + \phi_s) \chi_s \omega_s
+\]</div>
+<p>By transformation of unit Cartesian vectors (100, 010 and 001) with this rotation matrix, the sample orientation coordinates <span class="arithmatex">\((\psi, \gamma)\)</span> are given by</p>
+<div class="arithmatex">\[
+cos(y) = M \begin{pmatrix}
+0 \\
+0 \\
+1
+\end{pmatrix}
+\]</div>
+<p>and</p>
+<div class="arithmatex">\[
+tan(\gamma) = M \begin{pmatrix}
+0 \\
+1 \\
+0
+\end{pmatrix}/ M
+\begin{pmatrix}
+1 \\
+0 \\
+0
+\end{pmatrix} 
+\]</div>
+<p>The harmonic terms, <span class="arithmatex">\(k_L^m(\psi, \gamma)\)</span> and <span class="arithmatex">\(k_L^n(\phi, \beta)\)</span>, are developed from (those for <span class="arithmatex">\(k_L^m(\psi, \gamma)\)</span> are similar)</p>
+<div class="arithmatex">\[
+k_L^n(\phi, \beta) = \frac{1}{\sqrt{2\pi}} e^{in\beta} \bar{P}_L^n(cos\phi)
+\]</div>
+<p>where the normalized associated Legendre functions, <span class="arithmatex">\(\bar{P}_L^n(x)\)</span>, are defined via a Fourier expansion as</p>
+<div class="arithmatex">\[
+\bar{P}_L^n(cos\phi) = \sum_{s=0}^L {a'}_L^{ns} sin(s \phi)
+\]</div>
+<p>for n even and</p>
+<div class="arithmatex">\[
+\bar{P}_L^{ns}(cos\phi) = \sum_{s=0}^L {a'}_L^{ns} sin(s \phi)
+\]</div>
+<p>for n odd.  Each sum is only over either the even or odd values of s, respectively, because of the properties of the Fourier coefficients, <span class="arithmatex">\({a'}_{L}^{ns}\)</span>. These Fourier coefficients are determined so that the definition</p>
+<div class="arithmatex">\[
+\bar{P}_L^{n}(cos\phi) = \bar{P}_L^{n}(x) = \sqrt{\frac{(L+n)!}{(L-n)!}} \sqrt{\frac{2L+1}{2}} \frac{(-1)^{L-n}}{2^L L!} (1-x^2)^{-n/2} \frac {d^{L-n}}{dx^{L-n}} (1-x^2)^L
+\]</div>
+<p>is satisfied. Terms of the form <span class="arithmatex">\( cos(n\beta) \bar{P}_L^n(cos{n\beta})\)</span> and <span class="arithmatex">\(sin(n\beta) \bar{P}_L^n(cos{\phi})\)</span> are combined depending on the symmetry and the value of n (or m) along with appropriate normalization coefficients to give the harmonic terms <span class="arithmatex">\(k_L^n(\phi,\beta)\)</span> and <span class="arithmatex">\(k_L^m(\psi,\gamma)\)</span>. For cubic crystal symmetry, the term <span class="arithmatex">\(k_L^n(\phi,\beta)\)</span> is obtained directly from the Fourier expansion</p>
+<div class="arithmatex">\[
+k_L^n(\phi, \beta) = \sum_{j=0}^L B_L^{nj} \bar{P}_L^n (cos{\phi}) cos{n\beta}
+\]</div>
+<p>using the coefficients, <span class="arithmatex">\(B_L^{nj}\)</span> , as tabulated by Bunge (1982).</p>
+<p>The Rietveld refinement of texture then proceeds by constructing derivatives of the profile intensities with respect to the allowed harmonic coefficients, <span class="arithmatex">\(C_L^{mn}\)</span>, and the three sample orientation angles, <span class="arithmatex">\(\omega_s, \chi_s, \phi_s\)</span> Ws, Cs, Fs, all of which can be adjustable parameters of the refinement. Once the refinement is complete, pole figures for any reflection may be constructed by use of the general axis equation, the refined values for <span class="arithmatex">\(C_L^{mn}\)</span> and the sample orientation angles <span class="arithmatex">\(\omega_s, \chi_s, \phi_s\)</span>.</p>
+<div class="arithmatex">\[
+J = 1 + \sum_{L=2}^{N_L} \frac{1}{2L+1} \sum_{m=-L}^{L} \sum_{n=-L}^{L} |C_L^{mn}|^2
+\]</div>
+<p>The magnitude of the texture is evaluated from the texture index by</p>
+<p>If the texture is random then J = 1, otherwise J &gt; 1; for a single crystal J = <span class="arithmatex">\(\infty\)</span>.</p>
+<p>In GSAS-II the texture is defined in two ways to accommodate the two possible uses of this correction. In one, a suite of spherical harmonics coefficients is defined for the texture of a phase in the sample; this can have any of the possible sample symmetries and is the usual result desired for texture analysis. The other is the suite of spherical harmonics terms for cylindrical sample symmetry for each phase in each powder pattern ("histogram") and is usually used to accommodate preferred orientation effects in a Rietveld refinement. The former description allows refinement of the sample orientation zeros, <span class="arithmatex">\(\omega_s, \chi_s, \phi_s\)</span>, but the latter description does not (they are assumed to be zero and not refinable). The sample orientation angles, <span class="arithmatex">\(\omega, \chi, \phi\)</span> are specified in the Sample Parameters table in the GSAS-II data tree structure and are applied for either description.</p>
+<p>Some useful examples:</p>
+<p><strong>1. Bragg-Brentano laboratory powder diffractometer</strong></p>
+<p>The conventional arrangement of this experiment is to have a flat sample with incident and diffracted beams at equal angles (theta) on opposite sides of the sample. The sample is frequently spun about its normal to improve powder statistics and impose cylindrical symmetry on any preferred orientation (texture). Thus, the diffraction plane (source, diffraction vector &amp; detector) contains the K-vector which is parallel to the diffraction vector and <span class="arithmatex">\(\omega, \chi, \phi = 0\)</span>.</p>
+<p><strong>2. Debye-Scherrer diffractometer with point detector(s)</strong></p>
+<p>The usual arrangement here is to have a capillary sample perpendicular to the diffraction plane. The capillary may be spun about its cylinder axis for powder averaging and to impose cylindrical symmetry on the texture which is perpendicular to the diffraction plane. Thus, <span class="arithmatex">\(\omega,\phi = 0\)</span> and <span class="arithmatex">\(\chi = 90\)</span>.</p>
+<p><strong>3. Debye-Scherrer diffractometer with 2D area detector</strong></p>
+<p>The area detector is presumed to be directly behind the sample with the incident beam somewhere near the center of the detector. The detector axes are defined (for a synchrotron) with the X-axis toward the synchrotron ring and the Y-axis vertical "up"; one views the detector image as if looking from the x-ray source. The sample is assumed to be a capillary (which may be spun to impose cylindrical symmetry), although other sample shapes may be used, and is aligned with the cylinder axis horizontal. Integration of the image from a series of "caked" slices gives a set of powder patterns, each assigned an azimuthal angle where zero is along the X-axis. Thus, at azimuth=0 the diffraction plane is horizontal and contains the cylinder axis so <span class="arithmatex">\(\omega\)</span>, \chi, <span class="arithmatex">\(\phi\)</span> = 0.</p>
+<H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
+
+<ol>
+<li>Menu '<strong>Texture/Refine </strong>texture' – refines the spherical harmonics texture model using the previously determined values of Prfo for all histogram reflection sets as demonstrated in 2DTexture tutorial.</li>
+<li>
+<p><strong>Texture settings</strong> - The texture index, J is shown on the 1st line.</p>
+<ul>
+<li>The Texture model can be chosen from ['cylindrical', 'none', 'shear - 2/m', or 'rolling – mmm'].</li>
+<li>The Harmonic order (even integer 0-34), refine flag &amp; show coefficients flag are next.</li>
+<li>The Texture plot type is one of:<ul>
+<li><strong>Axial pole distribution</strong> which simulates the intensity of a reflection during a phi scan.</li>
+<li><strong>pole figure</strong> where a projection of the probability of finding a pole (hkl) is plotted as a function of sample orientation.</li>
+<li><strong>inverse pole figure</strong> where a projection of the probability of finding all poles (hkls) is plotted for a selected sample orientation.</li>
+<li><strong>3D pole distribution</strong> that shows the probability of finding a pole (hkl) is plotted as a function of sample orientation.</li>
+</ul>
+</li>
+</ul>
+<p>For Axial distribution, pole figure and 3D pole distribution one must next select the hkl of the desired pole, for Inverse pole figure one must select a sample direction (typically 0 0 1).</p>
+<p>One can choose the contour (pole &amp; inverse pole figures) color scheme (default "Paired") and make a CSV file of the image for import into other software.</p>
+<ul>
+<li>The spherical harmonics coefficients are shown next; they may be edited. They may be cleared by setting harmonic order to zero and then back to desired value.</li>
+<li>The sample orientation angle zeros <span class="arithmatex">\((\omega_s, \chi_s, \phi_s)\)</span> are shown with their individual refinement flags.</li>
+</ul>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.56ea9cef.min.js"></script>
+      
+        <script src="javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

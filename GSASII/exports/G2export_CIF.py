@@ -4927,7 +4927,11 @@ class ExportPhaseCIF(ExportCIF):
         else:
             baseFileName, ext=os.path.splitext(self.filename)
             for nameOfPhase in self.phasenam:
-                self.filename = f"{baseFileName}{'_'}{nameOfPhase}{ext}"
+                # strip non-ascii characters & replace white space in filename
+                fn = '_'.join(nameOfPhase.encode('ascii','ignore').decode().split())
+                # remove characters that should not be in a path
+                fn = fn.replace('\\','-').replace('/','-').replace(':','-')
+                self.filename = f"{baseFileName}{'_'}{fn}{ext}"
                 self.OpenFile(delayOpen=True)
                 MagPhase = None
                 ChemPhase = None

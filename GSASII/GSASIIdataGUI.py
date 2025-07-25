@@ -680,6 +680,7 @@ class GSASII(wx.Frame):
     def _Add_DataMenuItems(self,parent):
         '''Add items to Data menu
         '''
+        #(7/2025) next duplicated in Import menu; patch: remove this someday
         item = parent.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Sum or Average powder data','')
@@ -2759,6 +2760,8 @@ If you continue from this point, it is quite likely that all intensity computati
         self._Add_ImportMenu_smallangle(Import)
         self._Add_ImportMenu_reflectometry(Import)
         self._Add_ImportMenu_PDF(Import)
+        item = Import.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
+        self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
 
         item = Import.Append(wx.ID_ANY,'Column metadata test','Test Column (.par) metadata import')
         self.Bind(wx.EVT_MENU, self.OnColMetaTest, id=item.GetId())

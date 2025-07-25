@@ -3,7 +3,7 @@ cluster.html: Cluster_Analysis, Cluster-PlotSel
 commontreeitems.html: Notebook, Controls, RefinementControls, RefineType, SingleXtlSettings, SequentialSettings, Covariance, Constraints, Constraints-SeqRef, Restraints, Rigidbodies, Rigid_bodies
 datatree.html: DataTreeOverview
 image.html: IMG, IMG_parent, IMG_Comments, IMG_Image_Controls, IMG_Masks, makemask, IMG_StressStrain, IMG_Stress/Strain
-index.html: Index
+index.html: HelpIntro, Index
 mainmenu.html: main_menu, File_menu, openproject, Data_menu, Calculate_menu, Import_menu, FPA_menuitem, Export_menu, Help_menu, Help_addpkgs
 others.html: Mac, MacOS, config, Preferences, RTFM, Origin_1, _Origin_1, Origin1, FPA, FPAinput, CorrectionCode
 pairdistribution.html: PDF, PDF_Controls, PDF_I_Q, PDF_S_Q, PDF_F_Q, PDF_G_R
@@ -24,14 +24,14 @@ phaseoverview.html: Phase, PhaseTabList
 phasepawley.html: Phase-Pawley_reflections
 phasetexture.html: Phase-Texture
 phasewave.html: Phase-Wave_Data
-powder.html: PWDR
+powder.html: PWDR_overview
 powderbkg.html: PWDR_Background
 powdercells.html: PWDR_Unit_Cells_List, CellDisplay, Laue_List
 powdercomments.html: PWDR_Comments
 powderindexppeaks.html: PWDR_Index_Peak_List
 powderinst.html: PWDR_Instrument_Parameters
 powderlimits.html: PWDR_Limits
-powderparent.html: PWDR_parent, PWDR_plot_actions, PWDR_dragticks, PWDR_keylist, PWDR_publication, PublicationPlots
+powderparent.html: PWDR_parent, PWDR, PWDR_plot_actions, PWDR_dragticks, PWDR_keylist, PWDR_publication, PublicationPlots
 powderpeaks.html: PWDR_Peak_List, GenUnvariedWidths
 powderrefs.html: PWDR_Reflection_Lists
 powdersample.html: PWDR_Sample_Parameters

@@ -8561,7 +8561,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     parentID = G2frame.root
     if item == G2frame.root:
         G2frame.dataWindow.ClearData()
-        G2frame.helpKey = "Data tree"
+        G2frame.dataWindow.helpKey = "Data tree"
         mainSizer =  wx.BoxSizer(wx.VERTICAL)
         G2frame.dataWindow.SetSizer(mainSizer)
         mainSizer.Add(wx.StaticText(G2frame.dataWindow, wx.ID_ANY,

@@ -463,7 +463,7 @@ class G2PlotNoteBook(wx.Panel):
         try:
             Page.helpKey = self.G2frame.dataWindow.helpKey
         except AttributeError:
-            Page.helpKey = 'Data tree'
+            Page.helpKey = 'HelpIntro'
         return new,plotNum,Page,Plot,limits
 
     def _addPage(self,name,page):

@@ -909,11 +909,16 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
                 print(f'skipping file {f.name} -- how did this happen?')
                 continue
             newfil = os.path.normpath(os.path.join(install2dir,f.name))
-            tarobj.extract(f, path=install2dir, set_attrs=False)
+            if os.path.exists(newfil):
+                os.chmod(newfil,0o666)
+            try:
+                tarobj.extract(f, path=install2dir, set_attrs=False)
+                if verbose: print(f'Created GSAS-II binary file {os.path.split(newfil)[1]}')
+            except:
+                print(f'Failed to create GSAS-II binary file {os.path.split(newfil)[1]}')
             # set file mode and mod/access times (but not ownership)
             os.chmod(newfil,f.mode)
             os.utime(newfil,(f.mtime,f.mtime))
-            if verbose: print(f'Created GSAS-II binary file {os.path.split(newfil)[1]}')
         if verbose: print(f'Binary files created in {os.path.split(newfil)[0]}')
 
     finally:
@@ -1385,7 +1390,10 @@ def LoadConfig(printInfo=True):
     if not os.path.exists(cfgfile):
         print(f'N.B. Configuration file {cfgfile} does not exist')
         # patch 2/7/25: transform GSAS-II config.py contents to config.ini
-        XferConfigIni()
+        try:
+            XferConfigIni()
+        except:
+            print('transfer of config.py failed')
     try:
         from . import config_example
     except ImportError:

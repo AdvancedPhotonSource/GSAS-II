@@ -5900,7 +5900,7 @@ class MyHelp(wx.Menu):
             helpobj = self.Append(wx.ID_ANY,lbl,'')
             frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
             self.HelpById[helpobj.GetId()] = indx
-        # add help lookup(s) in gsasii.html
+        # add help lookup(s) in GSAS-II Help
         self.AppendSeparator()
         if includeTree:
             helpobj = self.Append(wx.ID_ANY,'Help on GSAS-II',
@@ -6032,7 +6032,7 @@ cite some of the following works as well:'''
 class HelpButton(wx.Button):
     '''Create a help button that displays help information.
     The text can be displayed in a modal message window or it can be
-    a reference to a location in the gsasII.html (etc.) help web page, in which
+    a reference to a location in the gsasII help web pages, in which
     case that page is opened in a web browser.
 
     TODO: it might be nice if it were non-modal: e.g. it stays around until
@@ -6043,9 +6043,12 @@ class HelpButton(wx.Button):
     :param str msg: the help text to be displayed. Indentation on
        multiline help text is stripped (see :func:`StripIndents`). If wrap
        is set as non-zero, all new lines are
-    :param str helpIndex: location of the help information in the gsasII.html
-      help file in the form of an anchor string. The URL will be
-      constructed from: location + gsasII.html + "#" + helpIndex
+    :param str helpIndex: selection for the help information in the GSAS-II
+      help files, in the form of an anchor string. That anchor is looked 
+      up to find the file name and the URL is constructed from: 
+
+         <location> + <filename> + "#" + helpIndex
+
     :param int wrap: if specified, the text displayed is reformatted by
       wrapping it to fit in wrap pixels. Default is None which prevents
       wrapping.

@@ -1,0 +1,1493 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="phasemcsa.html">
+      
+      
+        <link rel="next" href="phaseisodistort.html">
+      
+      
+      <link rel="icon" href="images/gsas2.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
+    
+    
+      
+        <title>RMC tab - GSAS-II Help</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#rmc-phase-tab" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="GSAS-II Help" class="md-header__button md-logo" aria-label="GSAS-II Help" data-md-component="logo">
+      
+  <img src="images/gsas2.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSAS-II Help
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              RMC tab
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="GSAS-II Help" class="md-nav__button md-logo" aria-label="GSAS-II Help" data-md-component="logo">
+      
+  <img src="images/gsas2.png" alt="logo">
+
+    </a>
+    GSAS-II Help
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="preface.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Getting started
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="applicationwindow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GUI components
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="mainmenu.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Main menu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Data tree items
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Data tree items
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="datatree.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data tree overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="commontreeitems.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Universal items
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sequential.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sequential results
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cluster.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Cluster Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Phases
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            Phases
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseoverview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Phase overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasegeneral.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    General tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedata.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseatoms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Atoms tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedrawopts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Draw Options tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedrawatoms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Draw Atoms tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseRB.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    RB Models tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasetexture.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Texture tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasemappeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Map Peaks tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasepawley.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pawley tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaselayers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Layers tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasewave.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Wave Data tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasemcsa.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MC/SA tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    RMC tab
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="phaseRMC.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    RMC tab
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fullrmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      fullrmc
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rmcprofile" class="md-nav__link">
+    <span class="md-ellipsis">
+      RMCProfile
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pdffit2" class="md-nav__link">
+    <span class="md-ellipsis">
+      PDFfit2
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseisodistort.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ISODISTORT tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedysnomia.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Dysnomia tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="image.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Images (IMG)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Powder (PWDR)
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            Powder (PWDR)
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powder.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderparent.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Main PWDR entry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdercomments.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Comments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderlimits.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Limits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderbkg.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Background
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderinst.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Instrument Parameters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdersample.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sample Parameters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderpeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Peak List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderindexppeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Index Peak List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdercells.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Unit Cells List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderrefs.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Reflection Lists
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="singlecrystal.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Single Crystal (HKLF)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pairdistribution.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PDF
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="smallanglescattering.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Small Angle (SASD)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reflectometry.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Reflectometry (REFD)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="peaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Powder Peaks (PKS)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="others.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Other info
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fullrmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      fullrmc
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rmcprofile" class="md-nav__link">
+    <span class="md-ellipsis">
+      RMCProfile
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pdffit2" class="md-nav__link">
+    <span class="md-ellipsis">
+      PDFfit2
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<!--- Don't change the HTML version of this file; edit the .md version -->
+<p><a name="Phase-RMC"></a></p>
+<h1 id="rmc-phase-tab"><strong>RMC</strong> phase tab</h1>
+<p>This tab is used for access to three different programs, <a href="#rmcprofile">RMCProfile</a>, <a href="#fullrmc">fullrmc</a> and <a href="#pdffit">PDFfit</a>,
+that are used for fitting structural models to pair distribution functions (PDF).
+RMCProfile and fullrmc are "big box" modelling routines and PDFfit is a "small box" modelling routine. 
+Select the program you wish to use from radio button at the top of the window. Three
+different windows are displayed depending on that selection. </p>
+<p><a href="https://advancedphotonsource.github.io/GSAS-II-tutorials/tutorials.html">Tutorials</a> for using RMCProfile and PDFfit can be accessed from the Tutorials menu item in the GSAS-II Help menu. These routines all run as stand-alone applications which are initiated by GSAS-II. When finished, GSAS-II processes their output files to update parameters that are within the GSAS-II project. The two big box routines can have very long running times; they run as separate console programs. GSAS-II is active while they are running and can "interrogate" them for intermediate results. PDFfit has a short running time and GSAS-II is "locked out" until it finishes; its result can be examined after.</p>
+<H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
+
+<p><strong>Operations</strong> Menu –</p>
+<ul>
+<li><strong>Setup RMC</strong> – this builds the input files and python script (if needed) for running the selected PDF modeling program.</li>
+<li><strong>Execute</strong> – this executes the chosen program in a new console which will vanish when finishes (after a "press any key" command). When finished, GSAS-II will extract results and place them in appropriate places in the project.</li>
+<li><strong>Stop run</strong> – only valid for fullrmc; stops the RMC run &amp; saves progress so it can be continued later.</li>
+<li><strong>Plot</strong> – this displays the resulting graphical output from the PDF modeling run. For RMCProfile and fullrmc this can be 5 or more plots, for PDFfit it is only the observed and calculated G(r) plot with a difference curve.</li>
+</ul>
+<p>For each program, the setup page is similar. There is a block for "metadata" items for your convenience; they have no impact on the calculations. Next is timing controls for the big box programs (PDFfit has none). Then is structural information and finally the data section for the patterns to be fitted. The big box programs are for only single runs while PDFfit can be used to process a sequence of G(r) data collected as a function of, e.g., temperature (giving Sequential PDFfit2 results).</p>
+<p><a name="fullrmc"></a></p>
+<h3 id="fullrmc">fullrmc</h3>
+<p>The fullrmc program is a large-box pair distribution function modeling library developed by Bachir Aoun [Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with Machine Learning and Artificial Intelligence", B. Aoun, Jour. Comp. Chem. (2016), 37, 1102-1111. <a href="https://doi.org/10.1002/jcc.24304">DOI: 10.1002/jcc.24304</a>]. Extensive information about fullrmc is found, including a number of explanatory videos, along with older source code on GitHub: <a href="https://bachiraoun.github.io/fullrmc/">https://bachiraoun.github.io/fullrmc/</a>. Note that the GSAS-II implementation is not compatible with the open-source version of fullrmc, but rather the new version 5.0 must be used, which is distributed as a compiled versions for 64-bit Intel-compatible processors running Windows, Linux and MacOS from website <a href="https://github.com/bachiraoun/fullrmc/tree/master/standalones">https://github.com/bachiraoun/fullrmc/tree/master/standalones</a>. Note that an even newer and more powerful version of fullrmc is available for cloud computing by subscription at <a href="https://fullrmc.com">https://fullrmc.com</a>. </p>
+<p>When fullrmc is selected in this tab, GSAS-II will locate an executable for fullrmc using the <a href="others.html#config">GSAS-II configuration variable</a>  <code>fullrmc_exec</code>, which if defined points to a Python image with fullrmc. Otherwise GSAS-II will look in the following places, in the order specified, for a Python image for a file named <code>fullrmc5*64bit</code> (MacOS or Linux) or <code>fullrmc5*.exe</code> (Windows):</p>
+<ol>
+<li>The location where GSAS-II is installed,</li>
+<li>The location where Python is installed,</li>
+<li>The location where the GSAS-II binaries are found,</li>
+<li>the current default location</li>
+<li>and all directories in the system path. </li>
+</ol>
+<p><a name="rmcprofile"></a></p>
+<h3 id="rmcprofile">RMCProfile</h3>
+<p>The <a href="http://rmcprofile.org/">RMCProfile program</a> fits large-box atomic models to x-ray &amp; neutron PDF and S(Q) "data" as well as other types of observations. 
+When RMCProfile is selected in this tab, GSAS-II will see if an RMCProfile
+executable can located using the <a href="others.html#config">GSAS-II configuration variable</a>  <code>rmcprofile_exec</code>, which if defined should have the name of the RMCProfile program. If that is not defined, the following locations are searched:</p>
+<ol>
+<li>The location where GSAS-II is installed,</li>
+<li>The location where Python is installed,</li>
+<li>The location where the GSAS-II binaries are found,</li>
+<li>the current default location</li>
+<li>and all directories in the system path. </li>
+</ol>
+<p><a name="pdffit"></a></p>
+<h3 id="pdffit2">PDFfit2</h3>
+<p>The <a href="https://www.diffpy.org/diffpy.pdffit2/">PDFfit2</a> program fits small-box atomic models to x-ray &amp; neutron PDFs.
+When PDFfitis selected in this tab, GSAS-II will see if PDFfit2 can be loaded as a package in the current Python installation (use of PDFfit2 in this manner is not recommended as this invites conflicts in the packages used by GSAS-II and PDFfit2) if that fails, GSAS-II will attempt to use a Python executable for PDFfit2 using the <a href="others.html#config">GSAS-II configuration variable</a>  <code>pdffit_exec</code>, which if defined points to a Python image with PDFfit2fullrmc. Optionally, if the Python installation used with GSAS-II uses conda (which is the case for the <a href="https://advancedphotonsource.github.io/GSAS-II-tutorials/install.html#gsas2main-installer">gsas2main installer</a>), GSAS-II can download and install a separate conda environment with PDFfit2 installed. </p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.56ea9cef.min.js"></script>
+      
+        <script src="javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

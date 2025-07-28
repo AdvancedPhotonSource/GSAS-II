@@ -5743,8 +5743,14 @@ program; Please cite:
             wx.MessageBox('You must prepare a Fourier map before running Dysnomia','Dysnomia Error',
                 style=wx.ICON_ERROR)
             return
-        reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
-        reflData = reflSets[generalData['Name']]['RefList']
+        treeId = G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists')
+        if treeId:
+            reflSets = G2frame.GPXtree.GetItemPyData(treeId)    
+            reflData = reflSets[generalData['Name']]['RefList']
+        else:
+            wx.MessageBox('You must have PWDR reflections before running Dysnomia','Dysnomia Error',
+                style=wx.ICON_ERROR)
+            return
         if 'Type' not in Map:
             wx.MessageBox('You must prepare a Fourier map before running Dysnomia','Dysnomia Error',
                 style=wx.ICON_ERROR)
@@ -5764,9 +5770,8 @@ program; Please cite:
             wx.MessageBox('Non standard space group '+SpGrp+' not permitted in Dysnomia','Dysnomia Error',
                 style=wx.ICON_ERROR)
             return
-        wx.MessageBox(' For use of Dysnomia, please cite:\n\n'+
-                          G2G.GetCite('Dysnomia'),
-                          caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
+        wx.MessageBox(' For use of Dysnomia, please cite:\n\n'+G2G.GetCite('Dysnomia'),
+            caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
 
         print('Run '+DYSNOMIA)
         subp.call([DYSNOMIA,prfName])

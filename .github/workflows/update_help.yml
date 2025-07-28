@@ -26,6 +26,7 @@ jobs:
         with:
             repository: AdvancedPhotonSource/GSAS-II-tutorials.git
             path: _docs
+            ref: main
 
       - name: Python setup
         uses: actions/setup-python@v3

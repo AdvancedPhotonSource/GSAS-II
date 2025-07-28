@@ -1,11 +1,11 @@
 name: xfer help info from GSAS-II docs repo
+# This updates the help file to match the contents of the MDhelp directory
+# in the GSAS-II-tutorials repo. It is triggered from the builddocsite.yml
+# workflow in the GSAS-II-tutorials repo.
 
 on:
-  workflow_dispatch:
-  
-  push:
-    branches:  
-      - newhelp
+  repository_dispatch: # run from Web API
+  #workflow_dispatch:
 
 permissions:
   contents: write
@@ -34,13 +34,10 @@ jobs:
         with:
             repository: AdvancedPhotonSource/GSAS-II-tutorials.git
             path: _docs
-            ref: newhelp
-#            token: ''
 
       # MD help conversion
       - name: convert MDhelp
         run: |
-          pwd
           cd _docs/MDhelp
           mkdocs build
           python findMDanchors.py  # create an anchor index
@@ -48,18 +45,17 @@ jobs:
           rm -rf ../../GSASII/help/assets/stylesheets/
           cp -vr site/* ../../GSASII/help
 
-      - name: git diagnostics
-        run: |
-          pwd 
-          git status
-          git diff
-          git add GSASII/help
-          echo "After add"
-          git status
+      # - name: git diagnostics
+      #   run: |
+      #     pwd 
+      #     git status
+      #     git diff
+      #     git add GSASII/help
+      #     echo "After add"
+      #     git status
 
       - name: commit changes
         run: |
-          pwd 
           git add GSASII/help
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

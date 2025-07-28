@@ -50,7 +50,7 @@ jobs:
           pwd
           ls -lt
 
-      # - name: git diagnostics
+      - name: git diagnostics
         run: |
           pwd 
           git status

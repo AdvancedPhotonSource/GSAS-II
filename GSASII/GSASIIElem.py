@@ -89,7 +89,6 @@ def GetFFtable(atomTypes):
 
 def GetEFFtable(atomTypes):
     ''' returns a dictionary of electron form factor data for atom types found in atomTypes
-    might not be needed?
 
     :param list atomTypes: list of atom types
     :return: FFtable, dictionary of form factor data; key is atom type
@@ -906,12 +905,16 @@ def SetupGeneral(data, dirname):
 
     F000X = 0.
     F000N = 0.
+    F000E = 0.
+    EFFtables = GetEFFtable(generalData['AtomTypes'])
     for i,elem in enumerate(generalData['AtomTypes']):
         F000X += generalData['NoAtoms'][elem]*generalData['Z']
         isotope = generalData['Isotope'][elem]
         F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope]['SL'][0]
+        F000E += generalData['NoAtoms'][elem]*ScatFac(EFFtables[elem],0.)[0]
     generalData['F000X'] = F000X
     generalData['F000N'] = F000N
+    generalData['F000E'] = F000E
     generalData['Mass'] = G2mth.getMass(generalData)
 
     if badList:

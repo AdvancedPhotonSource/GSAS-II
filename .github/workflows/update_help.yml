@@ -5,7 +5,7 @@ name: xfer help info from GSAS-II docs repo
 
 on:
   repository_dispatch: # run from Web API
-  #workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,6 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout
+        # get the help pages from GSAS-II docs repo
+        uses: actions/checkout@v4
+        with:
+            repository: AdvancedPhotonSource/GSAS-II-tutorials.git
+            path: _docs
+
       - name: Python setup
         uses: actions/setup-python@v3
 
@@ -27,13 +34,6 @@ jobs:
         run: |
           pip install mkdocs mkdocs-material python-markdown-math mkdocs-static-i18n
           pip install mkdocs-to-pdf pymdown-extensions
-
-      # get the new help pages from GSAS-II docs
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-            repository: AdvancedPhotonSource/GSAS-II-tutorials.git
-            path: _docs
 
       # MD help conversion
       - name: convert MDhelp

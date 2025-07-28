@@ -44,9 +44,9 @@ jobs:
           cd _docs/MDhelp
           mkdocs build
           python findMDanchors.py  # create an anchor index
-          #rm -rf ../../GSASII/help/assets/javascripts/
+          rm -rf ../../GSASII/help/assets/javascripts/
           rm -rf ../../GSASII/help/assets/stylesheets/
-          cp -vr site ../../GSASII/help
+          cp -vr site/* ../../GSASII/help
 
       - name: git diagnostics
         run: |

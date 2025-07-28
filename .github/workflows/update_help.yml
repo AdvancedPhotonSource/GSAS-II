@@ -39,21 +39,25 @@ jobs:
       # MD help conversion
       - name: convert MDhelp
         run: |
+          pwd
           cd _docs/MDhelp
           mkdocs build
           python findMDanchors.py  # create an anchor index
           rm -rf ../../GSASII/help/assets/javascripts/
           rm -rf ../../GSASII/help/assets/stylesheets/
           cp -vr site/* ../../GSASII/help
+          cd ../../GSASII/help
+          pwd
+          ls -lt
 
       # - name: git diagnostics
-      #   run: |
-      #     pwd 
-      #     git status
-      #     git diff
-      #     git add GSASII/help
-      #     echo "After add"
-      #     git status
+        run: |
+          pwd 
+          git status
+          git diff
+          git add GSASII/help
+          echo "After add"
+          git status
 
       - name: commit changes
         run: |

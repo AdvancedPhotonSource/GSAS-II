@@ -906,12 +906,13 @@ def SetupGeneral(data, dirname):
     F000X = 0.
     F000N = 0.
     F000E = 0.
-    EFFtables = GetEFFtable(generalData['AtomTypes'])
+    EFFtables = GetEFFtable(generalData['AtomTypes']) # broken for charged species
     for i,elem in enumerate(generalData['AtomTypes']):
         F000X += generalData['NoAtoms'][elem]*generalData['Z']
         isotope = generalData['Isotope'][elem]
         F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope]['SL'][0]
-        F000E += generalData['NoAtoms'][elem]*ScatFac(EFFtables[elem],0.)[0]
+        if elem in EFFtables:
+            F000E += generalData['NoAtoms'][elem]*ScatFac(EFFtables[elem],0.)[0]
     generalData['F000X'] = F000X
     generalData['F000N'] = F000N
     generalData['F000E'] = F000E

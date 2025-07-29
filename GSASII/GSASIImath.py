@@ -4246,16 +4246,26 @@ def ChargeFlip(data,reflDict,pgbar):
     :returns: type name: description
 
     '''
+    print('Charge flip data type: ',reflDict['Type'])
     generalData = data['General']
     mapData = generalData['Map']
     flipData = generalData['Flip']
     FFtable = {}
-    if 'None' not in flipData['Norm element']:
+    if 'None' not in flipData['Norm element'] and 'N' not in reflDict['Type']:
         normElem = flipData['Norm element'].upper()
-        FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
+        if 'X' in reflDict['Type']:
+            FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
+        else: 
+            FFs = G2el.GetEFormFactorCoeff(normElem)
         for ff in FFs:
             if ff['Symbol'] == normElem:
                 FFtable.update(ff)
+        if 'X' in reflDict['Type']:
+            print('%s normalizing form factor: fa: %s, fb: %s, fc: %s'%(FFtable['Symbol'],
+                str(FFtable['fa']),str(FFtable['fb']),str(FFtable['fc'])))
+        else:
+            print('%s normalizing form factor: fa: %s, fb: %s'%(FFtable['Symbol'],
+                str(FFtable['fa']),str(FFtable['fb'])))
     dmin = flipData['GridStep']*2.
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])

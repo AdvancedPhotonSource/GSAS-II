@@ -915,7 +915,7 @@ def SetupGeneral(data, dirname):
     F000N = 0.
     F000E = 0.
     ElTypes = [StripValence(elem) for elem in generalData['AtomTypes']]
-    EFFtables = GetEFFtable(ElTypes) # broken for charged species
+    EFFtables = GetEFFtable(ElTypes) 
     for i,elem in enumerate(generalData['AtomTypes']):
         F000X += generalData['NoAtoms'][elem]*generalData['Z']
         isotope = generalData['Isotope'][elem]

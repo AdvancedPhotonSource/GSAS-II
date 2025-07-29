@@ -3404,7 +3404,8 @@ def UpdateInstrumentGrid(G2frame,data):
     RefObj = {}
     Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[1]
-    G2gd.SetDataMenuBar(G2frame)
+    RefData = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1]
+    RefData['Type'] = data['Type'][0]
     #patch
     if 'P' in insVal['Type']:                   #powder data
         if 'C' in insVal['Type']:               #constant wavelength

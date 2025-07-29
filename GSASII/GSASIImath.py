@@ -786,8 +786,8 @@ def MakeDrawAtom(data,atom,oldatom=None):
             oneLetter = AA3letter.index(atom[1])
         except ValueError:
             oneLetter = -1
-        atomInfo = [[atom[1].strip()+atom[0],]+
-            [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
+        atomInfo = [[atom[1].strip()+str(atom[0]),]+
+            [AA1letter[oneLetter]+str(atom[0]),]+atom[2:5]+
             atom[6:9]+['1',]+[deftype]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
         ct,cs = [4,11]         #type & color
     atNum = generalData['AtomTypes'].index(atom[ct])

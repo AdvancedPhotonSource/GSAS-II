@@ -145,6 +145,10 @@ Plot_Pos = (200,200)
 these widows. If position is outside screen then it will be repositioned to default.
 This is used internally by GSAS-II and would not normally be changed by a user. 
 '''
+Split_Loc = 250
+'''Location of the splitter bar between the data tree and the data window. 
+Can be dragged by user. Is saved automatically with the window size and position
+'''
 
 Tick_length = 8.0
 '''Specifies the length of phase tick marks in pixels. Default is 8.'''
@@ -326,4 +330,10 @@ G2FileBrowser = False
 '''When set to True, the GSAS-II provided file browser is used to find
 files when files are imported. For Linux the default is True, but
 for Windows and Mac, the default is False
+'''
+
+BRML_T_col = -1
+'''When zero or positive, this indicates a column where the temperature
+is stored in a Bruker BRML file. With the default value (-1), the columns 
+8, 6, and 5 are tried, in that order.
 '''

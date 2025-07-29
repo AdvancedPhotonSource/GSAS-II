@@ -66,10 +66,15 @@ def main():
         application = wx.App(0) # create the GUI framework
     try:
         GSASIIpath.SetBinaryPath(True)
-    except:
-        print('Unable to run with current installation, please reset or reinstall')
+    except Exception as msg:
+        print(
+'''Unable to run with current installation due to lack of binary (compiled) 
+files, please reset or reinstall''')
+        print('\nError:')
+        print(msg)
         # if GSASIIpath.HowIsG2Installed().startswith('git'):
         #     print('use this command w/gitstrap')
+        
         sys.exit()
         # print('Unable to run with current setup, do you want to update to the')
         # try:

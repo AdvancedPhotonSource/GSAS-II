@@ -680,6 +680,7 @@ class GSASII(wx.Frame):
     def _Add_DataMenuItems(self,parent):
         '''Add items to Data menu
         '''
+        #(7/2025) next duplicated in Import menu; patch: remove this someday
         item = parent.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Sum or Average powder data','')
@@ -2759,6 +2760,8 @@ If you continue from this point, it is quite likely that all intensity computati
         self._Add_ImportMenu_smallangle(Import)
         self._Add_ImportMenu_reflectometry(Import)
         self._Add_ImportMenu_PDF(Import)
+        item = Import.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
+        self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
 
         item = Import.Append(wx.ID_ANY,'Column metadata test','Test Column (.par) metadata import')
         self.Bind(wx.EVT_MENU, self.OnColMetaTest, id=item.GetId())
@@ -2860,9 +2863,9 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        self.mainPanel.SplitVertically(self.treePanel,
-                                           self.dataWindow.outer, 400)
-        self.Status.SetStatusWidths([200,-1])   # make these match?
+        sash = min(max(100,GSASIIpath.GetConfigValue('Split_Loc',250)),500)
+        self.mainPanel.SplitVertically(self.treePanel, self.dataWindow.outer, sash)
+        self.Status.SetStatusWidths([sash,-1])   # make these match?
 
         G2G.wxID_GPXTREE = wx.NewId()
         treeSizer = wx.BoxSizer(wx.VERTICAL)
@@ -4534,7 +4537,8 @@ If you continue from this point, it is quite likely that all intensity computati
                      'Main_Size':tuple(self.GetSize()),
                      'Plot_Pos':tuple(self.plotFrame.GetPosition()),
                      'Plot_Size':tuple(self.plotFrame.GetSize())}
-            GSASIIpath.SetConfigValue(FrameInfo)
+            GSASIIpath.AddConfigValue(FrameInfo)
+            GSASIIpath.AddConfigValue({'Split_Loc':self.mainPanel.GetSashPosition()})
             config = G2G.GetConfigValsDocs()
             G2G.SaveConfigVars(config)
         except:
@@ -8560,7 +8564,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     parentID = G2frame.root
     if item == G2frame.root:
         G2frame.dataWindow.ClearData()
-        G2frame.helpKey = "Data tree"
+        G2frame.dataWindow.helpKey = "Data tree"
         mainSizer =  wx.BoxSizer(wx.VERTICAL)
         G2frame.dataWindow.SetSizer(mainSizer)
         mainSizer.Add(wx.StaticText(G2frame.dataWindow, wx.ID_ANY,

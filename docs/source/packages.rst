@@ -1,5 +1,5 @@
-GSAS-II Requirements, Python Packages and External Software
-==============================================================
+GSAS-II Execution Environment
+======================================================
 
 Supported Platforms
 --------------------------------
@@ -170,7 +170,8 @@ Far fewer packages are required to run GSAS-II on a
 compute server via the scripting interface
 and without a GUI.
 
-GUI Requirements
+----------------
+ GUI Requirements
 ----------------
 
 When using the GSAS-II graphical user interface (GUI), the following
@@ -275,7 +276,8 @@ Note that binaries for Python 3.12 and 3.13 using numpy 2.2 are also now supplie
 .. _ScriptingRequirements:
 
 
-Scripting Requirements
+-----------------------
+ Scripting Requirements
 -----------------------
 
 The GSAS-II scripting interface (:mod:`GSASIIscriptable`) will not
@@ -349,7 +351,8 @@ Notes on these commands:
 * the 2nd command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
 
 
-Optional Python Packages
+---------------------------
+ Optional Python Packages
 ---------------------------
 
 * Sphinx (https://www.sphinx-doc.org) is used to generate the

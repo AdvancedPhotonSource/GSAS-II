@@ -60,7 +60,7 @@ def GetConfigValue(key,default=None,getDefault=False):
 def SetConfigValue(parmdict):
     '''Set configuration variables. Note that parmdict is a dictionary
     from :func:`GSASIIctrlGUI.GetConfigValsDocs` where each element is a
-    lists. The first item in list is the default value, the second is
+    list. The first item in list is the default value, the second is
     the value to use for that configuration variable. Most of the
     information gathered in GetConfigValsDocs is no longer used.
     '''
@@ -75,6 +75,15 @@ def SetConfigValue(parmdict):
             if parmdict[var][1] == '': continue
             if parmdict[var][0] == parmdict[var][1]: continue
             configDict[var] = parmdict[var][1]
+
+def AddConfigValue(valsdict):
+    '''Set configuration variables. 
+
+    :param dict valsdict: a dictionary of values that are added
+      directly to configDict.
+    '''
+    global configDict
+    configDict.update(valsdict)
 
 def GetConfigDefault(key):
     '''Return the default value for a config value
@@ -900,11 +909,16 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
                 print(f'skipping file {f.name} -- how did this happen?')
                 continue
             newfil = os.path.normpath(os.path.join(install2dir,f.name))
-            tarobj.extract(f, path=install2dir, set_attrs=False)
+            if os.path.exists(newfil):
+                os.chmod(newfil,0o666)
+            try:
+                tarobj.extract(f, path=install2dir, set_attrs=False)
+                if verbose: print(f'Created GSAS-II binary file {os.path.split(newfil)[1]}')
+            except:
+                print(f'Failed to create GSAS-II binary file {os.path.split(newfil)[1]}')
             # set file mode and mod/access times (but not ownership)
             os.chmod(newfil,f.mode)
             os.utime(newfil,(f.mtime,f.mtime))
-            if verbose: print(f'Created GSAS-II binary file {os.path.split(newfil)[1]}')
         if verbose: print(f'Binary files created in {os.path.split(newfil)[0]}')
 
     finally:
@@ -1376,7 +1390,10 @@ def LoadConfig(printInfo=True):
     if not os.path.exists(cfgfile):
         print(f'N.B. Configuration file {cfgfile} does not exist')
         # patch 2/7/25: transform GSAS-II config.py contents to config.ini
-        XferConfigIni()
+        try:
+            XferConfigIni()
+        except:
+            print('transfer of config.py failed')
     try:
         from . import config_example
     except ImportError:
@@ -2168,7 +2185,11 @@ to update/regress repository from git repository:
         # allows this to be done in the background.
         import requests
         url='https://github.com/AdvancedPhotonSource/GSAS-II/tags'
-        releases = requests.get(url=url)
+        try:
+            releases = requests.get(url=url)
+        except:
+            print('background get tags failed')
+            sys.exit()
         taglist = [tag.split('"')[0] for tag in releases.text.split('AdvancedPhotonSource/GSAS-II/releases/tag/')[1:]]
         lastver = sorted([t for t in taglist if 'v' in t])[-1]
         lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]

@@ -1277,7 +1277,7 @@ def MakeMaskMap(data,masks,iLim,jLim):
     poly = np.zeros(data['size'],dtype='uint8')
     if iLim[0] == jLim[0] == 0:
         if masks['Frames']:
-            frame = np.abs(polymask(data,masks['Frames'])-255) #turn inner to outer mask
+            frame = np.abs(polymask(data,[masks['Frames'],])-255) #turn inner to outer mask
         if masks['Polygons'] or masks['Points']:
             poly = polymask(data,masks['Polygons'],masks['Points'])
         masks['Pmask'] =  frame+poly

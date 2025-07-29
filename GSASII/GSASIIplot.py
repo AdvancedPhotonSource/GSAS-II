@@ -463,7 +463,7 @@ class G2PlotNoteBook(wx.Panel):
         try:
             Page.helpKey = self.G2frame.dataWindow.helpKey
         except AttributeError:
-            Page.helpKey = 'Data tree'
+            Page.helpKey = 'HelpIntro'
         return new,plotNum,Page,Plot,limits
 
     def _addPage(self,name,page):
@@ -1815,7 +1815,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 
     # Plot3DSngl execution starts here (N.B. initialization above)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('3D Structure Factors','ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
@@ -7580,7 +7582,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     G2frame.seq = 0
 
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(generalData['Name'],'ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
@@ -7836,7 +7840,9 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
     uColors = [Rd,Gr,Bl]
     XYZ = np.array(Atoms[1:]).T      #don't mess with original!
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Bead model','ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
     Page.name = Atoms[0]
     Page.Choice = None
@@ -8160,7 +8166,9 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         if GSASIIpath.GetConfigValue('debug'): raise Exception('Should not happen')
 
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Rigid body','ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
     Page.name = rbData['RBname']
     Page.Choice = None
@@ -8620,7 +8628,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
     getAtoms()
 
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Layer','ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
         Page.labels = False
         Page.fade = False

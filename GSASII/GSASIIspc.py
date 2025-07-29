@@ -4090,8 +4090,8 @@ spg2origins = {}
 ''' A dictionary of all spacegroups that have 2nd settings; the value is the
 1st --> 2nd setting transformation vector as X(2nd) = X(1st)-V, nonstandard ones are included.
 '''
-if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
-    spg2origins = {
+#if 'sphinx' not in sys.modules: # skip if generating sphinx docs to unclutter
+spg2origins = {
         'P n n n':[-.25,-.25,-.25],
         'P b a n':[-.25,-.25,0],'P n c b':[0,-.25,-.25],'P c n a':[-.25,0,-.25],
         'P m m n':[-.25,-.25,0],'P n m m':[0,-.25,-.25],'P m n m':[-.25,0,-.25],

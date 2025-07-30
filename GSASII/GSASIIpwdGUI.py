@@ -3404,8 +3404,11 @@ def UpdateInstrumentGrid(G2frame,data):
     RefObj = {}
     Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[1]
-    RefData = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1]
-    RefData['Type'] = data['Type'][0]
+    G2gd.SetDataMenuBar(G2frame)  # this was removed in 12ec78f Why? (BHT)
+    #RefData = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1]
+    #RefData['Type'] = data['Type'][0]
+    # The above was added but RefData would need to be ...PatternId)[0]
+    # for this to work. Not sure what is going on, so I am commenting the new code (BHT)
     #patch
     if 'P' in insVal['Type']:                   #powder data
         if 'C' in insVal['Type']:               #constant wavelength

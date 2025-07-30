@@ -6642,7 +6642,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PWDRMenu = _makemenu
 
         # HKLF - many wxIDs defined in PWDR & SASD above
-        G2G.Define_wxId('wxID_3DALLHKLPLOT','wxID_MERGEHKL','wxID_FIXFSQSQDATA')
+        G2G.Define_wxId('wxID_3DALLHKLPLOT','wxID_MERGEHKL','wxID_FIXFSQSQDATA','wxID_FOVSFCPLOT')
         def _makemenu():     # routine to create menu when first used
             self.HKLFMenu = wx.MenuBar()
             self.PrefillDataMenu(self.HKLFMenu)
@@ -6651,7 +6651,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.ErrorAnal.Append(G2G.wxID_PWDANALYSIS,'Error Analysis','Error analysis on single crystal data')
             self.ErrorAnal.Append(G2G.wxID_MERGEHKL,'Merge HKLs','Transform & merge HKLF data to new histogram')
             self.ErrorAnal.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs from single crystal data in 1D')
-            self.ErrorAnal.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs from single crystal data in 3D')
+            self.ErrorAnal.Append(G2G.wxID_FOVSFCPLOT,'Plot Fo vs Fc','Plot Fo vs Fc from single crystal data')
             self.ErrorAnal.Append(G2G.wxID_3DALLHKLPLOT,'Plot all 3D HKLs','Plot HKLs from all single crystal data in 3D')
             self.ErrorAnal.Append(G2G.wxID_FIXFSQSQDATA,'Fix (F^2)^2 data','Fix F^2 data imported as F')
     #        self.ErrorAnal.Append(G2G.wxID_PWDCOPY,'Copy params','Copy of HKLF parameters') #unused
@@ -7500,10 +7500,7 @@ other than being included in the Notebook section of the project file.''')
             elif '[' not in ls[0] or '[REF]' in ls[0]:
                 if target not in l: continue
                 try:
-                    vals.append(
-                        float(l.split(target)[1].split(',')[0]
-                                  .replace('=','').replace('%',''))
-                        )
+                    vals.append(float(l.split(target)[1].split(',')[0].replace('=','').replace('%','')))
                 except:
                     continue
         Y = np.array(vals)
@@ -8056,6 +8053,15 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+        
+    def OnPlotFoVsFc(event):
+        ''' Plots Fo vs Fc for single crystal data '''
+        Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        refList = data[1]['RefList']
+        XY = np.sqrt(np.abs(refList.T[8+Super:10+Super]))
+        FoMax = np.max(XY[0])
+        G2plt.PlotXY(G2frame,[[XY[1],XY[0]],],XY2=[[[0.,FoMax],[0.,FoMax]],],labelX='|Fc|',labelY='|Fo|',newPlot=False,
+           Title='|Fo| vs |Fc| for %s'%Name,lines=False,names=['|Fo| vs |Fc|',],names2=['Fo=Fc',])
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''
@@ -8269,6 +8275,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnPlotFoVsFc, id=G2G.wxID_FOVSFCPLOT)
         G2frame.Bind(wx.EVT_MENU, OnFixFsqFsq, id=G2G.wxID_FIXFSQSQDATA)
     if kind == 'PWDR':
         lbl = 'Powder'

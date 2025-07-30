@@ -213,7 +213,7 @@ class G2PlotMpl(_tabPlotWin):
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,publish=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
-        mpl.rcParams['legend.fontsize'] = 10
+        mpl.rcParams['legend.fontsize'] = 12
         mpl.rcParams['axes.grid'] = False
         self.figure = mplfig.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
@@ -2494,8 +2494,8 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
         global xylim
         Plot.clear()
         Plot.set_title(Title)
-        Plot.set_xlabel(r''+labelX,fontsize=14)
-        Plot.set_ylabel(r''+labelY,fontsize=14)
+        Plot.set_xlabel(r''+labelX,fontsize=16)
+        Plot.set_ylabel(r''+labelY,fontsize=16)
         colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
             'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
         NC = len(colors)

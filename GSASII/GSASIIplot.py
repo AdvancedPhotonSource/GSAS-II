@@ -2496,6 +2496,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
         Plot.set_title(Title)
         Plot.set_xlabel(r''+labelX,fontsize=16)
         Plot.set_ylabel(r''+labelY,fontsize=16)
+        Plot.tick_params(labelsize=14)
         colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
             'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
         NC = len(colors)

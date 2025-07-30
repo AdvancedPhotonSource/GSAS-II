@@ -8059,9 +8059,11 @@ def UpdatePWHKPlot(G2frame,kind,item):
         Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         refList = data[1]['RefList']
         XY = np.sqrt(np.abs(refList.T[8+Super:10+Super]))
-        FoMax = np.max(XY[0])
-        G2plt.PlotXY(G2frame,[[XY[1],XY[0]],],XY2=[[[0.,FoMax],[0.,FoMax]],],labelX='|Fc|',labelY='|Fo|',newPlot=False,
-           Title='|Fo| vs |Fc| for %s'%Name,lines=False,names=['|Fo| vs |Fc|',],names2=['Fo=Fc',])
+        FcMax = np.max(XY[1])
+        # G2plt.PlotXY(G2frame,[[XY[1],XY[0]],],XY2=[[[0.,FcMax],[0.,FcMax]],],labelX='|Fc|',labelY='|Fo|',newPlot=False,
+        #    Title='|Fo| vs |Fc| for %s'%Name,lines=False)
+        G2plt.PlotXY(G2frame,[[XY[1],XY[0]-XY[1]],],XY2=[[[0.,FcMax],[0.,0.]],],labelX='|Fc|',labelY='|Fo|-|Fc|',newPlot=False,
+           Title='|Fo|-|Fc| vs |Fc| for %s'%Name,lines=False)
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''

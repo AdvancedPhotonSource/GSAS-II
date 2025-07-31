@@ -643,59 +643,62 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Image integration controls','Select images to integrate:',Names)
         try:
-            if dlg.ShowModal() == wx.ID_OK:
-                items = dlg.GetSelections()
-                G2frame.EnablePlot = False
-                dlgp = wx.ProgressDialog("Elapsed time","2D image integrations",len(items)+1,
-                    style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,parent=G2frame)
-                try:
-                    pId = 0
-                    oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.,'det2theta':0.}
-                    oldMhash = 0
-                    for icnt,item in enumerate(items):
-                        dlgp.Raise()
-                        GoOn = dlgp.Update(icnt)
-                        if not GoOn[0]:
-                            break
-                        name = Names[item]
-                        G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
-                        CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
-                        Data = G2frame.GPXtree.GetItemPyData(CId)
-                        same = True
-                        for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta']:
-                            if Data[item] != oldData[item]:
-                                same = False
-                        if (Data['center'][0] != oldData['center'][0] or
-                            Data['center'][1] != oldData['center'][1]):
-                                same = False
-                        if not same:
-                            t0 = time.time()
-                            useTA = G2img.MakeUseTA(Data,blkSize)
-                            print(' Use new image controls; new xy -> th,azm time %.3f'%(time.time()-t0))
-                        Masks = G2frame.GPXtree.GetItemPyData(
-                            G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks'))
-                        Mhash = copy.deepcopy(Masks)
-                        Mhash.pop('Thresholds')
-                        Mhash = hash(str(Mhash))
-                        if  Mhash != oldMhash:
-                            t0 = time.time()
-                            useMask = G2img.MakeUseMask(Data,Masks,blkSize)
-                            print(' Use new mask; make mask time: %.3f'%(time.time()-t0))
-                            oldMhash = Mhash
-                        image = GetImageZ(G2frame,Data)
-                        if not Masks['SpotMask']['spotMask'] is None:
-                            image = ma.array(image,mask=Masks['SpotMask']['spotMask'])
-                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,useTA=useTA,useMask=useMask)
-                        del image   #force cleanup
-                        pId = G2IO.SaveIntegration(G2frame,CId,Data)
-                        oldData = Data
-                finally:
-                    dlgp.Destroy()
-                    G2frame.EnablePlot = True
-                    if pId:
-                        G2frame.GPXtree.SelectItem(pId)
-                        G2frame.GPXtree.Expand(pId)
-                        G2frame.PatternId = pId
+            if dlg.ShowModal() != wx.ID_OK: return
+            items = dlg.GetSelections()
+            G2frame.EnablePlot = False
+            dlgp = wx.ProgressDialog("Elapsed time","2D image integrations",len(items)+1,
+                style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,parent=G2frame)
+            try:
+                pId = 0
+                oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.,'det2theta':0.}
+                oldMhash = 0
+                for icnt,item in enumerate(items):
+                    dlgp.Raise()
+                    GoOn = dlgp.Update(icnt)
+                    if not GoOn[0]:
+                        break
+                    name = Names[item]
+                    G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                    CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
+                    Data = G2frame.GPXtree.GetItemPyData(CId)
+                    same = True
+                    for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta']:
+                        if Data[item] != oldData[item]:
+                            same = False
+                    if (Data['center'][0] != oldData['center'][0] or
+                        Data['center'][1] != oldData['center'][1]):
+                            same = False
+                    if not same:
+                        t0 = time.time()
+                        useTA = G2img.MakeUseTA(Data,blkSize)
+                        print(' Use new image controls; new xy -> th,azm time %.3f'%(time.time()-t0))
+                    Masks = G2frame.GPXtree.GetItemPyData(
+                        G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks'))
+                    Mhash = copy.deepcopy(Masks)
+                    Mhash.pop('Thresholds')
+                    Mhash = hash(str(Mhash))
+                    if Mhash != oldMhash:
+                        t0 = time.time()
+                        useMask = G2img.MakeUseMask(Data,Masks,blkSize)
+                        savedMask = copy.deepcopy(useMask)
+                        print(' Use new mask; make mask time: %.3f'%(time.time()-t0))
+                        oldMhash = Mhash
+                    else:
+                        useMask = copy.deepcopy(savedMask)
+                    image = GetImageZ(G2frame,Data)
+                    if not Masks['SpotMask']['spotMask'] is None:
+                        image = ma.array(image,mask=Masks['SpotMask']['spotMask'])
+                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,useTA=useTA,useMask=useMask)
+                    del image   #force cleanup
+                    pId = G2IO.SaveIntegration(G2frame,CId,Data)
+                    oldData = Data
+            finally:
+                dlgp.Destroy()
+                G2frame.EnablePlot = True
+                if pId:
+                    G2frame.GPXtree.SelectItem(pId)
+                    G2frame.GPXtree.Expand(pId)
+                    G2frame.PatternId = pId
         finally:
             dlg.Destroy()
 

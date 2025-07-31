@@ -576,6 +576,18 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         def OnExtRef(event):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Extinction'][1] = Obj.GetValue()
+            
+        def ExtVal(Ekey,valSizer):
+            for ekey in Ekey:
+                Eref = wx.CheckBox(DData,wx.ID_ANY,label=ekey+' : ')
+                Eref.SetValue(UseList[G2frame.hist]['Extinction'][2][ekey][1])
+                Indx[Eref.GetId()] = [G2frame.hist,ekey]
+                Eref.Bind(wx.EVT_CHECKBOX, OnEref)
+                valSizer.Add(Eref,0,WACV|wx.LEFT,5)
+                Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,
+                    xmin=0.,nDig=(10,3,'g'),typeHint=float)
+                valSizer.Add(Eval,0,WACV)
+            return valSizer
 
         if Type == 'HKLF':
             extSizer = wx.BoxSizer(wx.VERTICAL)
@@ -618,16 +630,16 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     Ekey = ['Eg',]
                 else:
                     Ekey = ['Eg','Es']
-                for ekey in Ekey:
-                    Eref = wx.CheckBox(DData,wx.ID_ANY,label=ekey+' : ')
-                    Eref.SetValue(UseList[G2frame.hist]['Extinction'][2][ekey][1])
-                    Indx[Eref.GetId()] = [G2frame.hist,ekey]
-                    Eref.Bind(wx.EVT_CHECKBOX, OnEref)
-                    val2Sizer.Add(Eref,0,WACV|wx.LEFT,5)
-                    Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,
-                        xmin=0.,nDig=(10,3,'g'),typeHint=float)
-                    val2Sizer.Add(Eval,0,WACV)
-                extSizer.Add(val2Sizer,0)
+                extSizer.Add(ExtVal(Ekey,val2Sizer),0)
+                #if UseList[G2frame.hist]['Type'] == 'SEC': #Should be only for microED data, but Type is wrong = 'SXC'
+                if 'Ma' not in UseList[G2frame.hist]['Extinction'][2]:
+                    UseList[G2frame.hist]['Extinction'][2].update({'Ma':[0.0,False]})
+                if 'Mb' not in UseList[G2frame.hist]['Extinction'][2]:
+                    UseList[G2frame.hist]['Extinction'][2].update({'Mb':[1.0,False]})
+                extSizer.Add(wx.StaticText(DData,label=' Small F dynamical scattering correction:'))
+                val3Sizer =wx.BoxSizer(wx.HORIZONTAL)
+                Ekey = ['Ma','Mb']
+                extSizer.Add(ExtVal(Ekey,val3Sizer),0)
         else:   #PWDR
             extSizer = wx.BoxSizer(wx.HORIZONTAL)
             extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')

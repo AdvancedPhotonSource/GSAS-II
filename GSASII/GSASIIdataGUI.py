@@ -8059,6 +8059,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         refList = data[1]['RefList']
         XY = np.sqrt(np.abs(refList.T[8+Super:10+Super]))
+#        Ext = refList.T[11+Super]
+#        XY[1] /= Ext
         FcMax = np.max(XY[1])
         # G2plt.PlotXY(G2frame,[[XY[1],XY[0]],],XY2=[[[0.,FcMax],[0.,FcMax]],],labelX='|Fc|',labelY='|Fo|',newPlot=False,
         #    Title='|Fo| vs |Fc| for %s'%Name,lines=False)

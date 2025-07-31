@@ -6651,7 +6651,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.ErrorAnal.Append(G2G.wxID_PWDANALYSIS,'Error Analysis','Error analysis on single crystal data')
             self.ErrorAnal.Append(G2G.wxID_MERGEHKL,'Merge HKLs','Transform & merge HKLF data to new histogram')
             self.ErrorAnal.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs from single crystal data in 1D')
-            self.ErrorAnal.Append(G2G.wxID_FOVSFCPLOT,'Plot Fo vs Fc','Plot Fo vs Fc from single crystal data')
+            self.ErrorAnal.Append(G2G.wxID_FOVSFCPLOT,'Plot Fo-Fc vs Fc','Plot Fo-Fc vs Fc from single crystal data')
             self.ErrorAnal.Append(G2G.wxID_3DALLHKLPLOT,'Plot all 3D HKLs','Plot HKLs from all single crystal data in 3D')
             self.ErrorAnal.Append(G2G.wxID_FIXFSQSQDATA,'Fix (F^2)^2 data','Fix F^2 data imported as F')
     #        self.ErrorAnal.Append(G2G.wxID_PWDCOPY,'Copy params','Copy of HKLF parameters') #unused
@@ -8055,15 +8055,11 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
     def OnPlotFoVsFc(event):
-        ''' Plots Fo vs Fc for single crystal data '''
+        ''' Plots Fo-Fc vs Fc for single crystal data '''
         Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         refList = data[1]['RefList']
         XY = np.sqrt(np.abs(refList.T[8+Super:10+Super]))
-#        Ext = refList.T[11+Super]
-#        XY[1] /= Ext
         FcMax = np.max(XY[1])
-        # G2plt.PlotXY(G2frame,[[XY[1],XY[0]],],XY2=[[[0.,FcMax],[0.,FcMax]],],labelX='|Fc|',labelY='|Fo|',newPlot=False,
-        #    Title='|Fo| vs |Fc| for %s'%Name,lines=False)
         G2plt.PlotXY(G2frame,[[XY[1],XY[0]-XY[1]],],XY2=[[[0.,FcMax],[0.,0.]],],labelX='|Fc|',labelY='|Fo|-|Fc|',newPlot=False,
            Title='|Fo|-|Fc| vs |Fc| for %s'%Name,lines=False)
 

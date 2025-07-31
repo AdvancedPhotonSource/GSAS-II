@@ -44,7 +44,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
     Any parameters placed in that file will override values set in the HDF5
     file. 
     '''
-    mode = None
+    #mode = None
     def __init__(self):
         if h5py is None:
             self.UseReader = False
@@ -58,9 +58,12 @@ class HDF5_Reader(G2obj.ImportPowderData):
 
     def ShowH5Element(self,obj,keylist):
         '''Format the contents of an HDF5 entry as a single line. Not used for 
-        reading files, only for use in :meth:`HDF5list`
+        reading files, only used in :meth:`HDF5list`
         '''
         k = '/'.join(keylist)
+        l = obj.get(k, getlink=True)
+        if isinstance(l, h5py.ExternalLink): 
+            return f'link to file {l.filename}'
         try:
             typ = str(type(obj[k]))
         except:
@@ -75,7 +78,8 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 return f'value={bool(obj[k][()])}'
             elif datfmt in ('<f8', 'uint8', 'int64', '<f4'): # scalar value or array of values
                 try:
-                    return f'length {len(obj[k][()])}'
+                    len(obj[k][()])
+                    return f'array {obj[k].shape}'
                 except:
                     return f'value={obj[k][()]}'
             else:
@@ -83,7 +87,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
         elif ".Group'" in typ:
             return "(group)"
         else:
-            return f'{prefix}/{i} is {type(obj[k])}'
+            return f'type is {type(obj[k])}'
 
     def RecurseH5Element(self,obj,prefix=[]):
         '''Returns a list of entries of all keys in the HDF5 file
@@ -94,7 +98,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
           * entry 0 is the top-level keys (/a, /b,...),
           * entry 1 has the first level keys (/a/c /a/d, /b/d, /b/e,...)
           * ...
-        Not used for reading files, only for use in :meth:`HDF5list`
+        Not used for reading files, used only in :meth:`HDF5list`
         '''
         try:
             self.HDF5entries
@@ -106,13 +110,16 @@ class HDF5_Reader(G2obj.ImportPowderData):
         for i in obj:
             nextprefix = prefix+[i]
             self.HDF5entries[depth].append(nextprefix)
+            # check for link objects
+            l = obj.get(i, getlink=True)
+            if isinstance(l, h5py.ExternalLink): continue
             try:
                 typ = str(type(obj[i]))
             except:
                 print(f'**Error** with key {prefix}/{i}')
                 continue
             if ".Group'" in typ:
-                t = f'{prefix}/{i}'
+                #t = f'{prefix}/{i}'
                 #print(f'\n{nextprefix} contents {(60-len(t))*'='}')
                 self.RecurseH5Element(obj[i],nextprefix)
         return self.HDF5entries
@@ -137,10 +144,12 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 m = max(m,len('/'.join(k)))
             for k in j:
                 lbl = self.ShowH5Element(fp,k)
+                if '\n' in lbl:
+                    lbl = '; '.join(lbl.split('\n'))
                 if len(lbl) > 50:
                     lbl = lbl[:50] + '...'
-                if '\n' in lbl:
-                    lbl = lbl.split()[0] + '...'
+                # if '\n' in lbl:
+                #     lbl = lbl.split()[0] + '...'
                 if lbl != '(group)': strings.append(f"{'/'.join(k):{m}s} {lbl}")
         with open(filename+'_contents.txt', 'w') as fp:
             for i in strings: fp.write(f'{i}\n')
@@ -149,17 +158,19 @@ class HDF5_Reader(G2obj.ImportPowderData):
         '''Test if valid by seeing if the HDF5 library recognizes the file. 
         Then get file type (currently MAX IV NeXus/NXazint[12]d only)
         '''
-        from .. import GSASIIpath
+        #from .. import GSASIIpath
         try:
             fp = h5py.File(filename, 'r')
             if 'entry' in fp: # NeXus
+                #self.HDF5entries = []
+                #self.HDF5list(filename)
                 if 'definition' in fp['/entry']:
                     # MAX IV NXazint1d file
                     if fp['/entry/definition'][()].decode() == 'NXazint1d':
                         return True
                     # MAX IV NXazint1d file
-                    if fp['/entry/definition'][()].decode() == 'NXazint2d':
-                        return True
+                    #if fp['/entry/definition'][()].decode() == 'NXazint2d':
+                    #    return True
         except IOError:
             return False
         finally:
@@ -182,9 +193,6 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 self.blknum = 0
             else:
                 self.blknum = min(self.selections)
-        try:
-            self.mode = None
-            fp = h5py.File(filename, 'r')
         try:
             fp = h5py.File(filename, 'r')
             if 'entry' in fp: # NeXus
@@ -211,103 +219,95 @@ class HDF5_Reader(G2obj.ImportPowderData):
         '''Read HDF5 file in NeXus as produced by MAX IV as a NXazint1d
         see https://nxazint-hdf5-nexus-3229ecbd09ba8a773fbbd8beb72cace6216dfd5063e1.gitlab-pages.esrf.fr/classes/contributed_definitions/NXazint1d.html
         '''
-        self.instmsg = 'HDF file'
+        #self.instmsg = 'HDF file'
         doread = False # has the file already been read into a buffer?
-        for i in ('blkmap','intenArr_blknum')+self.midassections:
+        arrays = ('entry/data/radial_axis','entry/data/I')
+        floats = ('entry/instrument/monochromator/wavelength',
+                  'entry/reduction/input/polarization_factor')
+        strings = ('entry/instrument/source/name','entry/reduction/input/unit')
+        for i in arrays+floats+strings:
             if i not in fpbuffer:
                 doread = True
                 break
-        else: # do we have the right section buffered?
-            doread = fpbuffer['intenArr_blknum'] != self.blknum
-        
         if doread:   # read into buffer
             try:
                 fp = h5py.File(filename, 'r')
-                if 'blkmap' not in fpbuffer:
-                    fpbuffer['blkmap'] = list(fp.get('OmegaSumFrame').keys())
-                if 'REtaMap' not in fpbuffer:
-                    fpbuffer['REtaMap'] = np.array(fp.get('REtaMap'))
-                if 'intenArr' not in fpbuffer or fpbuffer.get('intenArr_blknum',-1) != self.blknum:
-                    fpbuffer['intenArr'] = np.array(fp.get('OmegaSumFrame').get(
-                            fpbuffer['blkmap'][self.blknum]))
-                    fpbuffer['intenArr_blknum'] = self.blknum
-                    self.azmcnt = -1
-                if 'Omegas' not in fpbuffer:
-                    fpbuffer['Omegas'] = np.array(fp.get('Omegas'))
+                for i in arrays:
+                    fpbuffer[i] = np.array(fp.get(i))
+                for i in floats:
+                    fpbuffer[i] = float(fp[i][()])
+                for i in strings:
+                    fpbuffer[i] = fp[i][()].decode()
+                if fpbuffer['entry/reduction/input/unit'] != '2th':
+                    print('NXazint1d HDF5 file has units',fpbuffer['entry/reduction/input/unit'])
+                    self.errors = 'NXazint1d only can be read with 2th units'
+                    return False
+                if self.selections is None or len(self.selections) == 0:
+                    self.blknum = 0
+                else:
+                    self.blknum = min(self.selections)
             except IOError:
                 print ('cannot open file '+ filename)
                 return False
             finally:
                 fp.close()
-            # get overriding sample & instrument parameters 
-            fpbuffer['sampleprm'] = {}
-            samplefile = os.path.splitext(filename)[0] + '.samprm'
-            if os.path.exists(samplefile):
-                fp = open(samplefile,'r')
-                S = fp.readline()
-                while S:
-                    if not S.strip().startswith('#'):
-                        [item,val] = S[:-1].split(':')
-                        fpbuffer['sampleprm'][item.strip("'")] = eval(val)
-                    S = fp.readline()
-                fp.close()
-            fpbuffer['instprm'] = {}
-            instfile = os.path.splitext(filename)[0] + '.instprm'
-            if os.path.exists(instfile):
-                self.instmsg = 'HDF and .instprm files'
-                fp = open(instfile,'r')
-                S = fp.readline()
-                while S:
-                    if not S.strip().startswith('#'):
-                        [item,val] = S[:-1].split(':')
-                        fpbuffer['instprm'][item.strip("'")] = eval(val)
-                    S = fp.readline()
-                fp.close()
-        # look for a non-empty scan (lineout)
-        use = [0]
-        while sum(use) == 0 and self.azmcnt < fpbuffer['intenArr'].shape[1]:
-            self.azmcnt += 1
-            if self.azmcnt >= fpbuffer['intenArr'].shape[1]:
-                return False
-            use = fpbuffer['REtaMap'][3,:,self.azmcnt] != 0
-
+            self.numbanks=len(fpbuffer['entry/data/I'])
+            # # get overriding sample & instrument parameters
+            # fpbuffer['sampleprm'] = {}
+            # samplefile = os.path.splitext(filename)[0] + '.samprm'
+            # if os.path.exists(samplefile):
+            #     fp = open(samplefile,'r')
+            #     S = fp.readline()
+            #     while S:
+            #         if not S.strip().startswith('#'):
+            #             [item,val] = S[:-1].split(':')
+            #             fpbuffer['sampleprm'][item.strip("'")] = eval(val)
+            #         S = fp.readline()
+            #     fp.close()
+            # fpbuffer['instprm'] = {}
+            # instfile = os.path.splitext(filename)[0] + '.instprm'
+            # if os.path.exists(instfile):
+            #     self.instmsg = 'HDF and .instprm files'
+            #     fp = open(instfile,'r')
+            #     S = fp.readline()
+            #     while S:
+            #         if not S.strip().startswith('#'):
+            #             [item,val] = S[:-1].split(':')
+            #             fpbuffer['instprm'][item.strip("'")] = eval(val)
+            #         S = fp.readline()
+            #     fp.close()
         # now transfer information into current histogram 
-        self.pwdparms['Instrument Parameters'] = [
-            {'Type': ['PXC', 'PXC', False]},
-            {}]
-        inst = {}
-        inst.update(instprmList)
-        inst.update(fpbuffer['instprm'])
-        for key,val in inst.items():
-            self.pwdparms['Instrument Parameters'][0][key] = [val,val,False]
-        samp = {}
-        samp.update(sampleprmList)
-        samp.update(fpbuffer['sampleprm'])
-        for key,val in samp.items():
-            self.Sample[key] = val
-        self.numbanks=len(fpbuffer['blkmap'])
-        x = fpbuffer['REtaMap'][1,:,self.azmcnt][use]
-        y = fpbuffer['intenArr'][:,self.azmcnt][use]
-        w = np.nan_to_num(1/y)    # this is probably not correct
-        eta = np.average(fpbuffer['REtaMap'][2,:,self.azmcnt][use])
-        self.pwdparms['Instrument Parameters'][0]['Azimuth'] = [90-eta,90-eta,False]
-        self.pwdparms['Instrument Parameters'][0]['Bank'] = [self.azmcnt,self.azmcnt,False]
+        #self.pwdparms['Instrument Parameters'] = [
+        #    {'Type': ['PXC', 'PXC', False]},
+        #    {}]
+        # inst = {}
+        # inst.update(instprmList)
+        # inst.update(fpbuffer['instprm'])
+        # for key,val in inst.items():
+        #     self.pwdparms['Instrument Parameters'][0][key] = [val,val,False]
+        # samp = {}
+        # samp.update(sampleprmList)
+        # samp.update(fpbuffer['sampleprm'])
+        # for key,val in samp.items():
+        #     self.Sample[key] = val
+        x = fpbuffer['entry/data/radial_axis']
+        y = fpbuffer['entry/data/I'][self.blknum]
+        w = np.nan_to_num(1/y)    # this is not correct
+        #self.pwdparms['Instrument Parameters'][0]['Azimuth'] = [90-eta,90-eta,False]
+        #self.pwdparms['Instrument Parameters'][0]['Bank'] = [self.blknum,self.blknum,False]
 #        self.Sample['Gonio. radius'] = float(S.split('=')[1])
 #        self.Sample['Omega'] = float(S.split('=')[1])
 #        self.Sample['Chi'] = float(S.split('=')[1])
-        self.Sample['Phi'] = Omega = fpbuffer['Omegas'][self.blknum]
+        #self.Sample['Phi'] = Omega = fpbuffer['Omegas'][self.blknum]
         self.powderdata = [x,y,w,np.zeros_like(x),np.zeros_like(x),np.zeros_like(x)]
         #self.comments = comments[selblk]
         self.powderentry[0] = filename
         #self.powderentry[1] = Pos # position offset (never used, I hope)
         self.powderentry[2] = self.blknum  # bank number
-        self.idstring = f'{os.path.split(filename)[1][:10]} omega={Omega} eta={eta}'
-#        if GSASIIpath.GetConfigValue('debug'): print(
-#                f'Read entry #{self.azmcnt} img# {self.blknum} from file {filename}')
-        # are there more lineouts after this one in current image to read?
-        self.repeat = sum(sum(fpbuffer['REtaMap'][3,:,self.azmcnt+1:])) != 0
-        if self.repeat: return True
+        self.idstring = f'#{self.blknum} {os.path.split(filename)[1][:60]}'
+        self.instdict['wave'] = fpbuffer['entry/instrument/monochromator/wavelength']
         # if not, are there more [selected] images that after this to be read?
+        self.repeat = False
         if self.blknum < self.numbanks-1:
             if self.selections is None or len(self.selections) == 0:
                 self.blknum += 1

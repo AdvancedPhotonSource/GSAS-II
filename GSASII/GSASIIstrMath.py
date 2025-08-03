@@ -2748,15 +2748,17 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
             PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
             PLZ = AV*ref[9+im]*parmDict[hfx+'Lam']**2
 
+        DScorr = 1.0
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
+            DScorr = parmDict[phfx+'Ma']*np.exp(-np.sqrt(ref[9+im])*parmDict[phfx+'Mb'])+1.0
         else:
             if 'C' in parmDict[hfx+'Type']:
                 PLZ *= calcControls[phfx+'Tbar']
             else: #'T'
                 PLZ *= ref[13+im]      #t-bar
         if 'Primary' in calcControls[phfx+'EType']:
-            PLZ *= 1.5
+            PLZ *= 1.5      #why?
             PSIG = parmDict[phfx+'Ep']
         elif 'I & II' in calcControls[phfx+'EType']:
             PSIG = parmDict[phfx+'Eg']/np.sqrt(1.+(parmDict[phfx+'Es']*PL/parmDict[phfx+'Eg'])**2)
@@ -2785,8 +2787,10 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
             PF3 = 0.5*(CL+2.*AL*PF/(1.+BL*PF)-AL*PF**2*BL/(1.+BL*PF)**2)/(PF4*extCor)
 
         dervCor = (1.+PF)*PF3   #extinction corr for other derivatives
-        if 'Primary' in calcControls[phfx+'EType'] and phfx+'Ep' in varyList:
-            dervDict[phfx+'Ep'] = -ref[7+im]*PLZ*PF3
+        if 'Primary' in calcControls[phfx+'EType']:
+            extCor  *= DScorr
+            if phfx+'Ep' in varyList:
+                dervDict[phfx+'Ep'] = -ref[7+im]*PLZ*PF3
         if 'II' in calcControls[phfx+'EType'] and phfx+'Es' in varyList:
             dervDict[phfx+'Es'] = -ref[7+im]*PLZ*PF3*(PSIG/parmDict[phfx+'Es'])**3
         if 'I' in calcControls[phfx+'EType'] and phfx+'Eg' in varyList:
@@ -4591,7 +4595,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']  #OK
                     elif phfx+'Scale' in dependentVars:
                         depDerivDict[phfx+'Scale'][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']   #OK
-                    for item in ['Ep','Es','Eg']:
+                    for item in ['Ep','Es','Eg','Ma','Mb']:
                         if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11+im]  #OK
                         elif phfx+item in dependentVars and phfx+item in dervDict:
@@ -4620,7 +4624,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']  #OK
                     elif phfx+'Scale' in dependentVars:
                         depDerivDict[phfx+'Scale'][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']   #OK
-                    for item in ['Ep','Es','Eg']:   #OK!
+                    for item in ['Ep','Es','Eg','Ma','Mb']:   #OK!
                         if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11+im]
                         elif phfx+item in dependentVars and phfx+item in dervDict:

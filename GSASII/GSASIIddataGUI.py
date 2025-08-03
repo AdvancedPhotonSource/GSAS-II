@@ -577,15 +577,15 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Extinction'][1] = Obj.GetValue()
             
-        def ExtVal(Ekey,valSizer):
+        def ExtVal(Ekey,valSizer,fmt,lim):
             for ekey in Ekey:
                 Eref = wx.CheckBox(DData,wx.ID_ANY,label=ekey+' : ')
                 Eref.SetValue(UseList[G2frame.hist]['Extinction'][2][ekey][1])
                 Indx[Eref.GetId()] = [G2frame.hist,ekey]
                 Eref.Bind(wx.EVT_CHECKBOX, OnEref)
                 valSizer.Add(Eref,0,WACV|wx.LEFT,5)
-                Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,
-                    xmin=0.,nDig=(10,3,'g'),typeHint=float)
+                Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,xmax=lim[1],
+                    xmin=lim[0],nDig=(10,4,fmt),typeHint=float)
                 valSizer.Add(Eval,0,WACV)
             return valSizer
 
@@ -630,16 +630,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     Ekey = ['Eg',]
                 else:
                     Ekey = ['Eg','Es']
-                extSizer.Add(ExtVal(Ekey,val2Sizer),0)
-                #if UseList[G2frame.hist]['Type'] == 'SEC': #Should be only for microED data, but Type is wrong = 'SXC'
-                if 'Ma' not in UseList[G2frame.hist]['Extinction'][2]:
-                    UseList[G2frame.hist]['Extinction'][2].update({'Ma':[0.0,False]})
-                if 'Mb' not in UseList[G2frame.hist]['Extinction'][2]:
-                    UseList[G2frame.hist]['Extinction'][2].update({'Mb':[1.0,False]})
+                extSizer.Add(ExtVal(Ekey,val2Sizer,'g',[0.,1.]),0)
                 extSizer.Add(wx.StaticText(DData,label=' Small F dynamical scattering correction:'))
                 val3Sizer =wx.BoxSizer(wx.HORIZONTAL)
                 Ekey = ['Ma','Mb']
-                extSizer.Add(ExtVal(Ekey,val3Sizer),0)
+                extSizer.Add(ExtVal(Ekey,val3Sizer,'f',[-100.,100.]),0,)
         else:   #PWDR
             extSizer = wx.BoxSizer(wx.HORIZONTAL)
             extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
@@ -937,6 +932,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
         if 'Layer Disp' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Layer Disp'] = [0.0,False]
+        if 'Ma' not in UseList[G2frame.hist]['Extinction'][2]:
+            UseList[G2frame.hist]['Extinction'][2].update({'Ma':[1.0,False]})
+            UseList[G2frame.hist]['Extinction'][2].update({'Mb':[0.0,False]})
 #end patch
         ifkeV = 'E' in UseList[G2frame.hist].get('Type','')
         offMsg = ''

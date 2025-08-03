@@ -8056,12 +8056,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
         
     def OnPlotFoVsFc(event):
         ''' Plots Fo-Fc vs Fc for single crystal data '''
-        Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         refList = data[1]['RefList']
-        XY = np.sqrt(np.abs(refList.T[8+Super:10+Super]))
+        XY = np.array([xy[8+Super:10+Super] for xy in refList if xy[3+Super]>0])
+        XY = np.sqrt(np.abs(XY)).T
         FcMax = np.max(XY[1])
         G2plt.PlotXY(G2frame,[[XY[1],XY[0]-XY[1]],],XY2=[[[0.,FcMax],[0.,0.]],],labelX='|Fc|',labelY='|Fo|-|Fc|',newPlot=False,
-           Title='|Fo|-|Fc| vs |Fc| for %s'%Name,lines=False)
+           Title='|Fo|-|Fc| vs |Fc|',lines=False)
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''

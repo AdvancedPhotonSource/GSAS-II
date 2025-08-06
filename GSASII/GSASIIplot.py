@@ -2440,7 +2440,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 
 #### PlotXY ##################################################################
 def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
-    Title='',lines=False,names=[],names2=[],vertLines=[]):
+    Title='',lines=False,points2=False,names=[],names2=[],vertLines=[]):
     '''simple plot of xy data
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
@@ -2451,6 +2451,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     :param bool newPlot: =True if new plot is to be made
     :param str Title: title for plot
     :param bool lines: = True if lines desired for XY plot; XY2 always plotted as lines
+    :param bool points2: = False if XY2 is plotted as points despite lines
     :param list names: legend names for each XY plot as list a of str values
     :param list names2: legend names for each XY2 plot as list a of str values
     :param list vertLines: lists of vertical line x-positions; can be one for each XY
@@ -2526,12 +2527,18 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 X,Y = XY2[ixy]
                 dX = Page.Offset[0]*(ixy+1)*Xmax/500.
                 dY = Page.Offset[1]*(ixy+1)*Ymax/100.
-                if len(names2):
-                    Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False,label=names2[ixy])
-                else:
-                    Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False)
-        if len(names):
-            Plot.legend(names,loc='best')
+                if points2:
+                    if len(names2):
+                        Plot.scatter(X,Y,marker='+',color=colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                    else:
+                        Plot.scatter(X,Y,marker='+',color=colors[(ixy+1)%NC],picker=False)
+                else:    
+                    if len(names2):
+                        Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                    else:
+                        Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False)
+        if len(names)+len(names2):
+            Plot.legend(names+names2,loc='best')
         if not newPlot:
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])

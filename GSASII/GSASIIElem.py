@@ -920,6 +920,8 @@ def SetupGeneral(data, dirname):
         F000X += generalData['NoAtoms'][elem]*generalData['Z']
         isotope = generalData['Isotope'][elem]
         F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope]['SL'][0]
+        if elem.strip() in ['D','T']:
+            elem = 'H'
         F000E += generalData['NoAtoms'][elem]*ScatFac(EFFtables[StripValence(elem)],0.)[0]
     generalData['F000X'] = F000X
     generalData['F000N'] = F000N

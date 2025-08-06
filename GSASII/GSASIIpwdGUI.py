@@ -2505,7 +2505,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
 ################################################################################
 
 def UpdateInstrumentGrid(G2frame,data):
-    '''respond to selection of PWDR/SASD/REFD Instrument Parameters
+    '''respond to selection of PWDR/SASD/REFD/HKLF Instrument Parameters
     data tree item.
     '''
     if 'Bank' not in data:  #get it from name; absent for default parms selection
@@ -2692,7 +2692,7 @@ def UpdateInstrumentGrid(G2frame,data):
         item: writes current parameters to a .instprm file
         It does not write Bank n: on # line & thus can be used any time w/o clash of bank nos.
 
-        note: doesn't currently write extedened instrument parameters i.e. pdabc dictionary
+        note: doesn't currently write extended instrument parameters i.e. pdabc dictionary
         '''
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(G2frame, 'Set name to save GSAS-II instrument parameters file', pth, '',
@@ -2700,8 +2700,7 @@ def UpdateInstrumentGrid(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 Sample = G2frame.GPXtree.GetItemPyData(
-                    G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId,
-                                              'Sample Parameters'))
+                    G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId,'Sample Parameters'))
                 filename = dlg.GetPath()
                 # make sure extension is .instprm
                 filename = os.path.splitext(filename)[0]+'.instprm'
@@ -2841,7 +2840,7 @@ def UpdateInstrumentGrid(G2frame,data):
         G2plt.PlotPeakWidths(G2frame)
 
     def AfterChangeEC(invalid,value,tc):
-        '''for SEC data only; converts electrn energy in keV to wavelength
+        '''for SEC data only; converts electron energy in keV to wavelength
         '''
         if invalid: return
         if value > 10.:
@@ -2902,13 +2901,15 @@ def UpdateInstrumentGrid(G2frame,data):
                 insVal['Type'] = 'SXC'
             except KeyError:
                 if 'synch' in lamType:
-                    insVal['Lam'] = 1.0  #typical?
+                    insVal['Lam'] = 1.0  #obvious incorrect default
                     data['Type'][0] = 'SXC'
                     insVal['Type'] = 'SXC'
                 elif 'micro' in lamType:
-                    insVal['Lam'] = 0.0251 # @200keV
-                    data['Type'][0] = 'SEC'
-                    insVal['Type'] = 'SEC'      #change to electron diffraction
+                    insVal['Lam'] = 0.025079 # @200keV
+                    data['Type'][0] = 'SEC'      #change to electron diffraction
+                    insVal['Type'] = 'SEC'      # in 3 places!
+                    Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId) 
+                    Pattern[0]['Type'] = 'SEC'
         updateData(insVal,insRef)
         wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
 

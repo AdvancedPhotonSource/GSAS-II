@@ -8055,13 +8055,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
     def OnPlotFoVsFc(event):
-        ''' Plots Fo-Fc vs Fc for single crystal data '''
+        ''' Plots Fo-Fc & 1/ExtC vs Fc for single crystal data '''
         refList = data[1]['RefList']
         XY = np.array([xy[8+Super:10+Super] for xy in refList if xy[3+Super]>0])
+        XE = np.array([[np.sqrt(xy[9+Super]),1./xy[11+Super]] for xy in refList if xy[3+Super]>0]).T
         XY = np.sqrt(np.abs(XY)).T
-        FcMax = np.max(XY[1])
-        G2plt.PlotXY(G2frame,[[XY[1],XY[0]-XY[1]],],XY2=[[[0.,FcMax],[0.,0.]],],labelX='|Fc|',labelY='|Fo|-|Fc|',newPlot=False,
-           Title='|Fo|-|Fc| vs |Fc|',lines=False)
+        G2plt.PlotXY(G2frame,[[XY[1],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fc|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
+           Title='|Fo|-|Fc| vs |Fc|',lines=False,points2=True,names=['|Fo|-|Fc|',],names2=['1/ExtC',])
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''

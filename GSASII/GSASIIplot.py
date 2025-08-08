@@ -2494,7 +2494,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     def Draw():
         global xylim
         Plot.clear()
-        Plot.set_title(Title)
+        Plot.set_title(Title,fontsize=16)
         Plot.set_xlabel(r''+labelX,fontsize=16)
         Plot.set_ylabel(r''+labelY,fontsize=16)
         Plot.tick_params(labelsize=14)

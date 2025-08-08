@@ -2751,14 +2751,14 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         DScorr = 1.0
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
-            DScorr = 1.+parmDict[phfx+'Ma']*ref[4+im]+parmDict[phfx+'Mb']*ref[4+im]**2
+            DScorr = 1.+parmDict[phfx+'Ma']/ref[4+im]+parmDict[phfx+'Mb']/ref[4+im]**2
         else:
             if 'C' in parmDict[hfx+'Type']:
                 PLZ *= calcControls[phfx+'Tbar']
             else: #'T'
                 PLZ *= ref[13+im]      #t-bar
         if 'Primary' in calcControls[phfx+'EType']:
-            PLZ *= 1.5      #why?
+            PLZ *= 1.5
             PSIG = parmDict[phfx+'Ep']
         elif 'I & II' in calcControls[phfx+'EType']:
             PSIG = parmDict[phfx+'Eg']/np.sqrt(1.+(parmDict[phfx+'Es']*PL/parmDict[phfx+'Eg'])**2)
@@ -2786,15 +2786,15 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
             extCor = np.sqrt(PF4)
             PF3 = 0.5*(CL+2.*AL*PF/(1.+BL*PF)-AL*PF**2*BL/(1.+BL*PF)**2)/(PF4*extCor)
 
-        dervCor = (1.+PF)*PF3   #extinction corr for other derivatives
+        dervCor = (1.+PF)*PF3/DScorr   #extinction corr for other derivatives
         if 'Primary' in calcControls[phfx+'EType']:
             if phfx+'Ep' in varyList:
-                dervDict[phfx+'Ep'] = -ref[7+im]*PLZ*PF3*DScorr
+                dervDict[phfx+'Ep'] = -ref[7+im]*PLZ*PF3/DScorr
             if phfx+'Ma' in varyList:
-                dervDict[phfx+'Ma'] = -extCor*ref[4+im]
+                dervDict[phfx+'Ma'] = -extCor/ref[4+im]
             if phfx+'Mb' in varyList:
-                dervDict[phfx+'Mb'] = -extCor*ref[4+im]**2
-            extCor  *= DScorr
+                dervDict[phfx+'Mb'] = -extCor/ref[4+im]**2
+            extCor  /= DScorr
         if 'II' in calcControls[phfx+'EType'] and phfx+'Es' in varyList:
             dervDict[phfx+'Es'] = -ref[7+im]*PLZ*PF3*(PSIG/parmDict[phfx+'Es'])**3
         if 'I' in calcControls[phfx+'EType'] and phfx+'Eg' in varyList:

@@ -6642,7 +6642,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PWDRMenu = _makemenu
 
         # HKLF - many wxIDs defined in PWDR & SASD above
-        G2G.Define_wxId('wxID_3DALLHKLPLOT','wxID_MERGEHKL','wxID_FIXFSQSQDATA','wxID_FOVSFCPLOT')
+        G2G.Define_wxId('wxID_3DALLHKLPLOT','wxID_MERGEHKL','wxID_FIXFSQSQDATA')
         def _makemenu():     # routine to create menu when first used
             self.HKLFMenu = wx.MenuBar()
             self.PrefillDataMenu(self.HKLFMenu)
@@ -6651,7 +6651,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.ErrorAnal.Append(G2G.wxID_PWDANALYSIS,'Error Analysis','Error analysis on single crystal data')
             self.ErrorAnal.Append(G2G.wxID_MERGEHKL,'Merge HKLs','Transform & merge HKLF data to new histogram')
             self.ErrorAnal.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs from single crystal data in 1D')
-            self.ErrorAnal.Append(G2G.wxID_FOVSFCPLOT,'Plot Fo-Fc vs Fc','Plot Fo-Fc vs Fc from single crystal data')
             self.ErrorAnal.Append(G2G.wxID_3DALLHKLPLOT,'Plot all 3D HKLs','Plot HKLs from all single crystal data in 3D')
             self.ErrorAnal.Append(G2G.wxID_FIXFSQSQDATA,'Fix (F^2)^2 data','Fix F^2 data imported as F')
     #        self.ErrorAnal.Append(G2G.wxID_PWDCOPY,'Copy params','Copy of HKLF parameters') #unused
@@ -8054,14 +8053,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
-    def OnPlotFoVsFc(event):
-        ''' Plots Fo-Fc & 1/ExtC vs Fc for single crystal data '''
-        refList = data[1]['RefList']
-        XY = np.array([xy[8+Super:10+Super] for xy in refList if xy[3+Super]>0])
-        XE = np.array([[np.sqrt(xy[9+Super]),1./xy[11+Super]] for xy in refList if xy[3+Super]>0]).T
-        XY = np.sqrt(np.abs(XY)).T
-        G2plt.PlotXY(G2frame,[[XY[1],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fc|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
-           Title='|Fo|-|Fc| vs |Fc|',lines=False,points2=True,names=['|Fo|-|Fc|',],names2=['1/ExtC',])
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''
@@ -8207,8 +8198,19 @@ def UpdatePWHKPlot(G2frame,kind,item):
     def OnErrorAnalysis(event):
         '''Plots an "Abrams" plot - sorted delta/sig across data set.
         Should be straight line of slope 1 - never is'''
+        def OnPlotFoFcVsFc(kind):
+            ''' Extinction check, plots Fo-Fc & 1/ExtC vs Fc for single crystal data '''
+            iFo,iFc,iExt = 8,9,11
+            refList = data[1]['RefList']
+            XY = np.array([xy[iFo+Super:1+iFc+Super] for xy in refList if xy[3+Super]>0])
+            XE = np.array([[np.sqrt(xy[iFc+Super]),1./xy[iExt+Super]] for xy in refList if xy[3+Super]>0]).T
+            XY = np.sqrt(np.abs(XY)).T
+            G2plt.PlotXY(G2frame,[[XY[1],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fc|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
+               Title='Extinction check',lines=False,points2=True,names=['|Fo|-|Fc|',],names2=['1/ExtC',])
         G2plt.PlotDeltSig(G2frame,kind)
-
+        if kind in ['HKLF',]:
+            OnPlotFoFcVsFc(kind)
+        
 #    def OnCompression(event):
 #        data[0] = int(comp.GetValue())
 
@@ -8265,7 +8267,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #end patches
     if kind in ['PWDR','SASD','REFD']:
         SetDataMenuBar(G2frame,G2frame.dataWindow.PWDRMenu)
-        G2frame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=G2G.wxID_PWDANALYSIS)
+        if kind in ['PWDR',]:
+            G2frame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=G2G.wxID_PWDANALYSIS)
         G2frame.Bind(wx.EVT_MENU, onCopySelectedItems, id=G2G.wxID_PWDCOPY)
         G2frame.Bind(wx.EVT_MENU, onCopyPlotCtrls, id=G2G.wxID_PLOTCTRLCOPY)
     elif kind in ['HKLF',]:
@@ -8275,7 +8278,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
-        G2frame.Bind(wx.EVT_MENU, OnPlotFoVsFc, id=G2G.wxID_FOVSFCPLOT)
+#        G2frame.Bind(wx.EVT_MENU, OnPlotFoVsFc, id=G2G.wxID_FOVSFCPLOT)
         G2frame.Bind(wx.EVT_MENU, OnFixFsqFsq, id=G2G.wxID_FIXFSQSQDATA)
     if kind == 'PWDR':
         lbl = 'Powder'

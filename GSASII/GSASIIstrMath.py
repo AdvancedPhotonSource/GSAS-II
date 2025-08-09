@@ -2751,7 +2751,7 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         DScorr = 1.0
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
-            DScorr = 1.+parmDict[phfx+'Ma']/ref[4+im]+parmDict[phfx+'Mb']/ref[4+im]**2
+#            DScorr = 1.+parmDict[phfx+'Ma']/ref[4+im]+parmDict[phfx+'Mb']/ref[4+im]**2
         else:
             if 'C' in parmDict[hfx+'Type']:
                 PLZ *= calcControls[phfx+'Tbar']
@@ -2790,10 +2790,10 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         if 'Primary' in calcControls[phfx+'EType']:
             if phfx+'Ep' in varyList:
                 dervDict[phfx+'Ep'] = -ref[7+im]*PLZ*PF3/DScorr
-            if phfx+'Ma' in varyList:
-                dervDict[phfx+'Ma'] = -extCor/ref[4+im]
-            if phfx+'Mb' in varyList:
-                dervDict[phfx+'Mb'] = -extCor/ref[4+im]**2
+            # if phfx+'Ma' in varyList:
+            #     dervDict[phfx+'Ma'] = -extCor/ref[4+im]
+            # if phfx+'Mb' in varyList:
+            #     dervDict[phfx+'Mb'] = -extCor/ref[4+im]**2
             extCor  /= DScorr
         if 'II' in calcControls[phfx+'EType'] and phfx+'Es' in varyList:
             dervDict[phfx+'Es'] = -ref[7+im]*PLZ*PF3*(PSIG/parmDict[phfx+'Es'])**3

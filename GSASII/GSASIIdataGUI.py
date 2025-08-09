@@ -8199,13 +8199,14 @@ def UpdatePWHKPlot(G2frame,kind,item):
         '''Plots an "Abrams" plot - sorted delta/sig across data set.
         Should be straight line of slope 1 - never is'''
         def OnPlotFoFcVsFc(kind):
-            ''' Extinction check, plots Fo-Fc & 1/ExtC vs Fc for single crystal data '''
-            iFo,iFc,iExt = 8,9,11
+            ''' Extinction check, plots Fo-Fc & 1/ExtC vs Fo for single crystal data '''
+            iFo,iFc,iExt = 5,7,11
             refList = data[1]['RefList']
-            XY = np.array([xy[iFo+Super:1+iFc+Super] for xy in refList if xy[3+Super]>0])
-            XE = np.array([[np.sqrt(xy[iFc+Super]),1./xy[iExt+Super]] for xy in refList if xy[3+Super]>0]).T
+            XY = np.array([[xy[iFo+Super],xy[iFo+Super]-xy[iFc+Super]] for xy in refList if xy[3+Super]>0])
             XY = np.sqrt(np.abs(XY)).T
-            G2plt.PlotXY(G2frame,[[XY[1],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fc|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
+            XE = [[xy[iFo+Super],xy[iExt+Super]] for xy in refList if xy[3+Super]>0]
+            XE = np.array([[np.sqrt(xe[0]),1./xe[1]] for xe in XE]).T
+            G2plt.PlotXY(G2frame,[[XY[0],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fo|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
                Title='Extinction check',lines=False,points2=True,names=['|Fo|-|Fc|',],names2=['1/ExtC',])
         G2plt.PlotDeltSig(G2frame,kind)
         if kind in ['HKLF',]:

@@ -631,11 +631,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 else:
                     Ekey = ['Eg','Es']
                 extSizer.Add(ExtVal(Ekey,val2Sizer,'g',[0.,100.]),0)
-                extSizer.Add(wx.StaticText(DData,label=' Small F dynamical scattering correction:'))
-                val3Sizer =wx.BoxSizer(wx.HORIZONTAL)
-                if 'Primary' in UseList[G2frame.hist]['Extinction'][1]:
-                    Ekey = ['Ma','Mb',]
-                    extSizer.Add(ExtVal(Ekey,val3Sizer,'f',[-1.,10.]),0,)
+                # extSizer.Add(wx.StaticText(DData,label=' Small F dynamical scattering correction:'))
+                # val3Sizer =wx.BoxSizer(wx.HORIZONTAL)
+                # if 'Primary' in UseList[G2frame.hist]['Extinction'][1]:
+                #     Ekey = ['Ma','Mb',]
+                #     extSizer.Add(ExtVal(Ekey,val3Sizer,'f',[-1.,10.]),0,)
         else:   #PWDR
             extSizer = wx.BoxSizer(wx.HORIZONTAL)
             extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')

@@ -1572,6 +1572,11 @@ def GetReflData(G2frame,phaseName,reflNames):
             if not PatternId:       #got 0
                 return None
             reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
+            if phaseName not in reflSets:
+                G2G.G2MessageBox(G2frame,
+                        f'No reflections found for {phaseName}\n'+
+                        'Did you perform a Pawley extraction?')
+                return
             reflData = reflSets[phaseName]
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)

@@ -5447,16 +5447,16 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
 
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']: # draw integration range arc/circles/lines
-            LRAzim = Data['LRazimuth']                  #NB: integers
+            LRAzim = Data['LRazimuth']
             Nazm = Data['outAzimuths']
             delAzm = float(LRAzim[1]-LRAzim[0])/Nazm
             AzmthOff = Data['azmthOff']
             IOtth = Data['IOtth']
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
-            ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
+            ellI = G2img.GetEllipse(dspI,Data)           
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
-            ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
+            ellO = G2img.GetEllipse(dspO,Data)
             Azm = np.arange(LRAzim[0],LRAzim[1]+1.)-AzmthOff
             if ellI:
                 xyI = []

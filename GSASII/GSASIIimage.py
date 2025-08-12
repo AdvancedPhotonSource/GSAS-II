@@ -530,13 +530,13 @@ def GetDetectorXY2(dsp,azm,data):
         v = dist*(tanb+tand(tth-abs(tilt)))
         delt = dist*stth*(1+stth*cosb)/(sinb*cosb*(stth+cosb))
         ecc = (v-f)/(delt-v)
-        R = radii[1]*(ecc**2-1)/(1-ecc*cosd(azm))
+        R = radii[1]*(ecc**2-1)/(1-ecc*cosd(azm-phi))
         if tilt > 0.:
             offset = 2.*radii[1]*ecc+f      #select other branch
-            xy = [-R*cosd(azm)-offset,-R*sind(azm)]
+            xy = [-R*cosd(azm-phi)-offset,-R*sind(azm-phi)]
         else:
             offset = -f
-            xy = [-R*cosd(azm)-offset,R*sind(azm)]
+            xy = [-R*cosd(azm-phi)-offset,R*sind(azm-phi)]
         xy = -np.array([xy[0]*cosd(phi)+xy[1]*sind(phi),xy[0]*sind(phi)-xy[1]*cosd(phi)])
         xy += cent
     if data['det2theta']:
@@ -586,7 +586,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     Use for detector 2-theta != 0.
 
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
-        and dsp is the d-space - not used in integration
+        and dsp is the d-space - only used for non-zero detector 2-thetas
     '''
 
     def costth(xyz):
@@ -666,8 +666,7 @@ def GetTthAzmG2(x,y,data):
     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
 # G-calculation - use Law of sines
     distm = data['distance']/1000.0
-    sinB2 = np.minimum(np.ones_like(tth),
-                    (data['distance']*npsind(tth))**2/(dx**2+dy**2))
+    sinB2 = np.minimum(np.ones_like(tth),(data['distance']*npsind(tth))**2/(dx**2+dy**2))
     #sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
     G = distm**2*sinB2/npsind(C)**2
@@ -1638,8 +1637,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         H1 = LRazm
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
-    if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
-        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
+    # if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
+    #     H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:

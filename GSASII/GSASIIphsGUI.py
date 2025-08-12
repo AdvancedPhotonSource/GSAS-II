@@ -1886,14 +1886,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 if laue in ['m3','m3m']:
                     cell[1] = cell[2] = cell[3] = value
                     cell[4] = cell[5] = cell[6] = 90.0
-                    Obj.SetValue(cell[1])
+                    Obj.ChangeValue(cell[1])
                 elif laue in ['3R','3mR']:
                     if ObjId == 0:
                         cell[1] = cell[2] = cell[3] = value
-                        Obj.SetValue(cell[1])
+                        Obj.ChangeValue(cell[1])
                     else:
                         cell[4] = cell[5] = cell[6] = value
-                        Obj.SetValue(cell[4])
+                        Obj.ChangeValue(cell[4])
                 elif laue in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:
                     cell[4] = cell[5] = 90.
                     cell[6] = 120.
@@ -1901,19 +1901,19 @@ def UpdatePhaseData(G2frame,Item,data):
                         cell[6] = 90.
                     if ObjId == 0:
                         cell[1] = cell[2] = value
-                        Obj.SetValue(cell[1])
+                        Obj.ChangeValue(cell[1])
                     else:
                         cell[3] = value
-                        Obj.SetValue(cell[3])
+                        Obj.ChangeValue(cell[3])
                 elif laue in ['mmm']:
                     cell[ObjId+1] = value
                     cell[4] = cell[5] = cell[6] = 90.
-                    Obj.SetValue(cell[ObjId+1])
+                    Obj.ChangeValue(cell[ObjId+1])
                 elif laue in ['2/m'+'a']:
                     cell[5] = cell[6] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue(cell[ObjId+1])
+                        Obj.ChangeValue(cell[ObjId+1])
                     else:
                         cell[4] = value
                         Obj.SetValue(cell[4])
@@ -1921,28 +1921,28 @@ def UpdatePhaseData(G2frame,Item,data):
                     cell[4] = cell[6] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue(cell[ObjId+1])
+                        Obj.ChangeValue(cell[ObjId+1])
                     else:
                         cell[5] = value
-                        Obj.SetValue(cell[5])
+                        Obj.ChangeValue(cell[5])
                 elif laue in ['2/m'+'c']:
                     cell[4] = cell[5] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue(cell[ObjId+1])
+                        Obj.ChangeValue(cell[ObjId+1])
                     else:
                         cell[6] = value
-                        Obj.SetValue(cell[6])
+                        Obj.ChangeValue(cell[6])
                 else:
                     cell[ObjId+1] = value
-                    Obj.SetValue(cell[1+ObjId])
+                    Obj.ChangeValue(cell[1+ObjId])
                 cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
-                volVal.SetValue("%.3f"%(cell[7]))
+                volVal.ChangeValue("%.3f"%(cell[7]))
                 density,mattCoeff = G2mth.getDensity(generalData)
                 if denSizer:
-                    denSizer[1].SetValue('%.3f'%(density))
+                    denSizer[1].ChangeValue('%.3f'%(density))
                     if denSizer[2]:
-                        denSizer[2].SetValue('%.3f'%(mattCoeff))
+                        denSizer[2].ChangeValue('%.3f'%(mattCoeff))
 
             cell = generalData['Cell']
             laue = generalData['SGData']['SGLaue']
@@ -1983,12 +1983,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 data['General']['Isotope'][item] = isotope
                 indx = generalData['AtomTypes'].index(item)
                 wt = generalData['Isotopes'][item][isotope]['Mass']
-                elemSizer.GetChildren()[indx+3*nCols+1].Window.SetValue('%.3f'%(wt))    #tricky
+                elemSizer.GetChildren()[indx+3*nCols+1].Window.ChangeValue('%.3f'%(wt))    #tricky
                 data['General']['AtomMass'][indx] = wt
                 density,mattCoeff = G2mth.getDensity(generalData)
-                denSizer[1].SetValue('%.3f'%(density))
+                denSizer[1].ChangeValue('%.3f'%(density))
                 if denSizer[2]:
-                    denSizer[2].SetValue('%.3f'%(mattCoeff))
+                    denSizer[2].ChangeValue('%.3f'%(mattCoeff))
 
             def onDefColor(event):
                 '''Called when a color bar in elements table is clicked on.

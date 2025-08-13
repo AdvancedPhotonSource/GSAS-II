@@ -1679,10 +1679,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             # current plotted item is not in refinement
             histoList = [i for i in Histograms.keys() if i.startswith('PWDR ')]
             if len(histoList) != 0:
-                plottingItem = histoList[0]
-                G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
-                data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
-                G2frame.GPXtree.SelectItem(G2frame.PatternId)
+                # Check if the originally selected histogram is available in the full list
+                allHistograms = G2frame.GetHistogramNames(['PWDR'])
+                if plottingItem in allHistograms:
+                    # Keep the originally selected histogram for initial plot setup
+                    # The data will be loaded when needed during the plot update
+                    pass  # plottingItem already set correctly
+                else:
+                    # Originally selected histogram doesn't exist, use first available
+                    plottingItem = histoList[0]
+                    G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
+                    data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+                    G2frame.GPXtree.SelectItem(G2frame.PatternId)
                 PlotPatterns(G2frame,True,plotType,None,extraKeys)
     #=====================================================================================
     if not new:

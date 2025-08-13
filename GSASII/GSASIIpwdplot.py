@@ -1398,7 +1398,27 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if len(histoList) == 0:
                 print('Skipping plot, no PWDR item found!')
                 return
-            plotItem = histoList[0]
+            # Check if the originally selected histogram is available in the full list
+            allHistograms = G2frame.GetHistogramNames(['PWDR'])
+            if plottingItem in allHistograms:
+                # Try to get the originally selected histogram data from the tree
+                try:
+                    plotItemId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
+                    if plotItemId:
+                        plotItemData = G2frame.GetPWDRdatafromTree(plotItemId)
+                        if plotItemData and 'Data' in plotItemData:
+                            # Use the originally selected histogram for plotting
+                            plotItem = plottingItem
+                            # Create a temporary dict with the selected histogram for plotting
+                            Histograms = {plottingItem: plotItemData}
+                        else:
+                            plotItem = histoList[0]
+                    else:
+                        plotItem = histoList[0]
+                except:
+                    plotItem = histoList[0]
+            else:
+                plotItem = histoList[0]
         else:
             plotItem = plottingItem
         xye = np.array(ma.getdata(Histograms[plotItem]['Data'])) # strips mask

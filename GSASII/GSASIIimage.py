@@ -1638,7 +1638,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     # if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
-    #     H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
+        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:

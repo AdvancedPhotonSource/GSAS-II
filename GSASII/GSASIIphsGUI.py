@@ -1916,7 +1916,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         Obj.ChangeValue(cell[ObjId+1])
                     else:
                         cell[4] = value
-                        Obj.SetValue(cell[4])
+                        Obj.ChangeValue(cell[4])
                 elif laue in ['2/m'+'b']:
                     cell[4] = cell[6] = 90.
                     if ObjId != 3:

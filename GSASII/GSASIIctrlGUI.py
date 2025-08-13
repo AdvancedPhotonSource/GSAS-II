@@ -475,7 +475,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
         if GSASIIpath.GetConfigValue('debug') and warn:
-            print('ValidatedTxtCtrl.SetValue using in callback?')
+            print('ValidatedTxtCtrl.SetValue used in callback?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val

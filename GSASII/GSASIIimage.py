@@ -26,11 +26,13 @@ from . import ImageCalibrants as calFile
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
+sinhd = lambda x: math.sinh(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
 atand = lambda x: 180.*math.atan(x)/math.pi
 atan2d = lambda y,x: 180.*math.atan2(y,x)/math.pi
 cosd = lambda x: math.cos(x*math.pi/180.)
 acosd = lambda x: 180.*math.acos(x)/math.pi
+coshd = lambda x: math.cosh(x*math.pi/180.)
 rdsq2d = lambda x,p: round(1.0/math.sqrt(x),p)
 #numpy versions
 npsind = lambda x: np.sin(x*np.pi/180.)
@@ -41,7 +43,7 @@ nptand = lambda x: np.tan(x*np.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 nxs = np.newaxis
-debug = False
+debug = True
 
 def pointInPolygon(pXY,xy):
     'Needs a doc string'
@@ -60,8 +62,19 @@ def pointInPolygon(pXY,xy):
     return Inside
 
 def peneCorr(tth,dep,dist):
-    'Needs a doc string'
+    'Compute empirical position correction due to detector absorption'
     return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
+
+def SamAbs(data,tax,tay,muT):
+    'Compute sample absorption correction for images'
+    if 'Cylind' in data['SampleShape']:
+        muR = muT*(1.+npsind(tay)**2/2.)/(npcosd(tax))      #adjust for additional thickness off sample normal
+        tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
+    elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
+        tabs = G2pwd.Absorb('Fixed',muT,tay)
+    else:
+        tabs = np.ones_like(tax)
+    return tabs
 
 def makeMat(Angle,Axis):
     '''Make rotation matrix from Angle and Axis
@@ -372,9 +385,10 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     def ellipseC():
         'compute estimate of ellipse circumference'
         if radii[0] < 0:        #hyperbola
-#            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
-#            print (theta)
-            return 0
+            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
+            if debug: 
+                print ('hyperbola:',theta)
+            return 200.*np.pi
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
         return np.pi*apb*(1+3*(amb/apb)**2/(10+np.sqrt(4-3*(amb/apb)**2)))
@@ -387,8 +401,12 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     azm = []
     for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
-        x = radii[1]*cosd(a-phi+90.)        #major axis
-        y = radii[0]*sind(a-phi+90.)
+        if radii[1] < 0:
+            x = radii[1]*coshd(a-phi+90.)        #major axis
+            y = radii[0]*sinhd(a-phi+90.)
+        else:
+            x = radii[1]*cosd(a-phi+90.)        #major axis
+            y = radii[0]*sind(a-phi+90.)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
         Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)
@@ -834,9 +852,9 @@ def CalcRings(G2frame,ImageZ,data,masks):
         if debug:   print (H)
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
-        if tth+abs(data['tilt']) > 90.:
-            G2fil.G2Print ('next line is a hyperbola - search stopped')
-            break
+        # if tth+abs(data['tilt']) > 90.:
+        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
+        #     break
         ellipse = GetEllipse(dsp,data)
         if iH not in absent and iH >= skip:
             Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
@@ -912,9 +930,9 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         if debug:   print (H)
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
-        if tth+abs(data['tilt']) > 90.:
-            G2fil.G2Print ('next line is a hyperbola - search stopped')
-            break
+        # if tth+abs(data['tilt']) > 90.:
+        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
+        #     break
         ellipse = GetEllipse(dsp,data)
         if iH not in absent and iH >= skip:
             Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
@@ -924,6 +942,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
             if iH not in absent and iH >= skip:
                 data['rings'].append(np.array(Ring))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
+            if debug: print('added ellipse:',ellipse)
             Found = True
         elif not Found:         #skipping inner rings, keep looking until ring found
             continue
@@ -1127,9 +1146,9 @@ def ImageCalibrate(G2frame,data):
     for i,H in enumerate(HKL):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
-        if tth+abs(data['tilt']) > 90.:
-            G2fil.G2Print ('next line is a hyperbola - search stopped')
-            break
+        # if tth+abs(data['tilt']) > 90.:
+        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
+        #     break
         if debug:   print ('HKLD:'+str(H[:4])+'2-theta: %.4f'%(tth))
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
@@ -1480,13 +1499,7 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
             Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
             tax,tay,taz,tad = Fill2ThetaAzimuthMap(AMasks,TAr,tam,Block,ringMask=True)    #applies Ring masks only & returns contents
             if data.get('SampleAbs',[0.0,''])[1]:
-                if 'Cylind' in data['SampleShape']:
-                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
-                    tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
-                elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
-                    tabs = G2pwd.Absorb('Fixed',muT,tay)
-                else:
-                    tabs = np.ones_like(taz)
+                tabs = SamAbs(data,tax,tay,muT)
             else:
                 tabs = np.ones_like(taz)
             taz = np.array((taz*tad*tabs),dtype='float32')
@@ -1586,13 +1599,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)                 #are these really needed?
             if data.get('SampleAbs',[0.0,''])[1]:
-                if 'Cylind' in data['SampleShape']:
-                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
-                    tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
-                elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
-                    tabs = G2pwd.Absorb('Fixed',muT,tay)
-                else:
-                    tabs = np.ones_like(taz)
+                tabs = SamAbs(data,tax,tay,muT)
             else:
                 tabs = np.ones_like(taz)
             if 'log(q)' in data.get('binType',''):
@@ -1730,6 +1737,10 @@ def IntStrSta(Image,StrSta,Controls):
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
+            if Controls.get('SampleAbs',[0.0,''])[1]:
+                muT = Controls.get('SampleAbs',[0.0,''])[0]
+                tabs = SamAbs(Controls,Th,Azm,muT)
+                ringint *= tabs
             ringint /= pola[0]      #just 1st column
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
             RingsAI.append(np.array(list(zip(ringazm,ringint))).T)

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-'''Defines a routine to read from MARCCD files
-'''
+"""Defines a routine to read from MARCCD files"""
 
 """ 
 from /opt/marccd/documentation/header.txt
@@ -256,205 +255,460 @@ typedef struct frame_header_type {
 import array as ar
 import struct as st
 
-MAXIMAGES=9
+MAXIMAGES = 9
+
 
 class marFrame:
-    '''A class to extract correct mar header and image info from a MarCCD file
+    """A class to extract correct mar header and image info from a MarCCD file
 
     :param str File: file object [from open()]
-    :param byteOrd: '<' (default) or '>'  
+    :param byteOrd: '<' (default) or '>'
     :param dict IFD: ?
-    '''
-    def __init__(self,File,byteOrd='<',IFD={}):
+    """
+
+    def __init__(self, File, byteOrd="<", IFD={}):
         # simple TIFF header info
         self.TIFFsizeX = IFD[256][2][0]
         self.TIFFsizeY = IFD[257][2][0]
         self.TIFFbitDepth = IFD[258][2][0]
-        self.TIFFcompression = IFD[259][2][0] # 1 = no compression
-        self.TIFFphotometricInterpretation = IFD[262][2][0] # 1 = bilevel or grayscale where 0 is imaged as black
-        self.TIFFstripOffsets = IFD[273][2][0] # seems to be 4096 for marCCD
-        self.TIFForientation = IFD[274][2][0] # 1 = 0th row it top, 0th column is left
-        self.TIFFrowsPerStrip = IFD[278][2][0] # varies based on image size
-        self.TIFFstripByteCounts = IFD[279][2][0] # number of bytes in a strip also varies based on size
-        self.TIFFxResolution = IFD[282][2][0] # pixels per resolutionUnit in X direction (ImageWidth direction)
-        self.TIFFyResolution = IFD[283][2][0] # pixels per resolutionUnit in Y direction (ImageLength direction
-        self.TIFFresolutionUnit = IFD[296][2][0] # 3 = centimeter
-        self.byteDepth = self.TIFFbitDepth//8
-        self.arrayTypeCode = ['','B','H','I','I'][self.byteDepth]
+        self.TIFFcompression = IFD[259][2][0]  # 1 = no compression
+        self.TIFFphotometricInterpretation = IFD[262][2][
+            0
+        ]  # 1 = bilevel or grayscale where 0 is imaged as black
+        self.TIFFstripOffsets = IFD[273][2][0]  # seems to be 4096 for marCCD
+        self.TIFForientation = IFD[274][2][0]  # 1 = 0th row it top, 0th column is left
+        self.TIFFrowsPerStrip = IFD[278][2][0]  # varies based on image size
+        self.TIFFstripByteCounts = IFD[279][2][
+            0
+        ]  # number of bytes in a strip also varies based on size
+        self.TIFFxResolution = IFD[282][2][
+            0
+        ]  # pixels per resolutionUnit in X direction (ImageWidth direction)
+        self.TIFFyResolution = IFD[283][2][
+            0
+        ]  # pixels per resolutionUnit in Y direction (ImageLength direction
+        self.TIFFresolutionUnit = IFD[296][2][0]  # 3 = centimeter
+        self.byteDepth = self.TIFFbitDepth // 8
+        self.arrayTypeCode = ["", "B", "H", "I", "I"][self.byteDepth]
         # MarCCD specific header info
         File.seek(IFD[34710][2][0])
-        self.headerType = st.unpack(byteOrd+'I',File.read(4))[0] #/* flag for header type  (can be used as magic number) */
-        self.headerName = b''.join(st.unpack(byteOrd+16*'s',File.read(16))).replace(b'\x00',b'')
-        self.headerMajorVersion = st.unpack(byteOrd+'I',File.read(4))[0] #/* header_major_version (n.) */
-        self.headerMinorVersion = st.unpack(byteOrd+'I',File.read(4))[0] #/* header_minor_version (.n) */
-        self.headerByteOrder = st.unpack(byteOrd+'I',File.read(4))[0] #/* BIG_ENDIAN (Motorola,MIPS); LITTLE_ENDIAN (DEC, Intel) */
-        self.dataByteOrder = st.unpack(byteOrd+'I',File.read(4))[0] #/* BIG_ENDIAN (Motorola,MIPS); LITTLE_ENDIAN (DEC, Intel) */
-        self.headerSize = st.unpack(byteOrd+'I',File.read(4))[0] #/* in bytes			*/
-        self.frameType = st.unpack(byteOrd+'I',File.read(4))[0] #/* flag for frame type */
-        self.magicNumber = st.unpack(byteOrd+'I',File.read(4))[0] #/* to be used as a flag - usually to indicate new file */
-        self.compressionType = st.unpack(byteOrd+'I',File.read(4))[0] #/* type of image compression    */
-        self.compression1 = st.unpack(byteOrd+'I',File.read(4))[0] #/* compression parameter 1 */
-        self.compression2 = st.unpack(byteOrd+'I',File.read(4))[0] #/* compression parameter 2 */
-        self.compression3 = st.unpack(byteOrd+'I',File.read(4))[0] #/* compression parameter 3 */
-        self.compression4 = st.unpack(byteOrd+'I',File.read(4))[0] #/* compression parameter 4 */
-        self.compression5 = st.unpack(byteOrd+'I',File.read(4))[0] #/* compression parameter 4 */
-        self.compression6 = st.unpack(byteOrd+'I',File.read(4))[0] #/* compression parameter 4 */
-        self.nheaders = st.unpack(byteOrd+'I',File.read(4))[0] #/* total number of headers 	*/
-        self.nfast = st.unpack(byteOrd+'I',File.read(4))[0] #/* number of pixels in one line */
-        self.nslow = st.unpack(byteOrd+'I',File.read(4))[0] #/* number of lines in image     */
-        self.depth = st.unpack(byteOrd+'I',File.read(4))[0] #/* number of bytes per pixel    */
-        self.recordLength = st.unpack(byteOrd+'I',File.read(4))[0] #/* number of pixels between succesive rows */
-        self.signifBits = st.unpack(byteOrd+'I',File.read(4))[0] #/* true depth of data, in bits  */
-        self.dataType = st.unpack(byteOrd+'I',File.read(4))[0] #/* (signed,unsigned,float...) */
-        self.saturatedValue = st.unpack(byteOrd+'I',File.read(4))[0] #/* value marks pixel as saturated */
-        self.sequence = st.unpack(byteOrd+'I',File.read(4))[0] #/* TRUE or FALSE */
-        self.nimages = st.unpack(byteOrd+'I',File.read(4))[0] #/* total number of images - size of each is nfast*(nslow/nimages) */
-        self.origin = st.unpack(byteOrd+'I',File.read(4))[0] #/* corner of origin 		*/
-        self.orientation = st.unpack(byteOrd+'I',File.read(4))[0] #/* direction of fast axis 	*/
-        self.viewDirection = st.unpack(byteOrd+'I',File.read(4))[0] #/* direction to view frame      */
-        self.overflowLocation = st.unpack(byteOrd+'I',File.read(4))[0] #/* FOLLOWING_HEADER, FOLLOWING_DATA */
-        self.over8Bits = st.unpack(byteOrd+'I',File.read(4))[0] #/* # of pixels with counts > 255 */
-        self.over16Bits = st.unpack(byteOrd+'I',File.read(4))[0] #/* # of pixels with count > 65535 */
-        self.multiplexed = st.unpack(byteOrd+'I',File.read(4))[0] #/* multiplex flag */
-        self.nfastimages = st.unpack(byteOrd+'I',File.read(4))[0] #/* # of images in fast direction */
-        self.nslowimages = st.unpack(byteOrd+'I',File.read(4))[0] #/* # of images in slow direction */
-        self.darkcurrentApplied = st.unpack(byteOrd+'I',File.read(4))[0] #/* flags correction has been applied - hold magic number ? */
-        self.biasApplied = st.unpack(byteOrd+'I',File.read(4))[0] #/* flags correction has been applied - hold magic number ? */
-        self.flatfieldApplied = st.unpack(byteOrd+'I',File.read(4))[0] #/* flags correction has been applied - hold magic number ? */
-        self.distortionApplied = st.unpack(byteOrd+'I',File.read(4))[0] #/* flags correction has been applied - hold magic number ? */
-        self.originalHeaderType = st.unpack(byteOrd+'I',File.read(4))[0] #/* Header/frame type from file that frame is read from */
-        self.fileSaved = st.unpack(byteOrd+'I',File.read(4))[0] #/* Flag that file has been saved, should be zeroed if modified */
-        self.nValidPixels = st.unpack(byteOrd+'I',File.read(4))[0] #/* Number of pixels holding valid data - first N pixels */
-        self.defectmapApplied = st.unpack(byteOrd+'I',File.read(4))[0] #/* flags correction has been applied - hold magic number ? */
-        self.subimageNfast = st.unpack(byteOrd+'I',File.read(4))[0] #/* when divided into subimages (eg. frameshifted) */
-        self.subimageNslow = st.unpack(byteOrd+'I',File.read(4))[0] #/* when divided into subimages (eg. frameshifted) */
-        self.subimageOriginFast = st.unpack(byteOrd+'I',File.read(4))[0] #/* when divided into subimages (eg. frameshifted) */
-        self.subimageOriginSlow = st.unpack(byteOrd+'I',File.read(4))[0] #/* when divided into subimages (eg. frameshifted) */
-        self.readoutPattern = st.unpack(byteOrd+'I',File.read(4))[0] #/* BIT Code - 1 = A, 2 = B, 4 = C, 8 = D */
-        self.saturationLevel = st.unpack(byteOrd+'I',File.read(4))[0] #/* at this value and above, data are not reliable */
-        self.orientationCode = st.unpack(byteOrd+'I',File.read(4))[0] #/* Describes how this frame needs to be rotated to make it "right" */
-        self.frameshiftMultiplexed = st.unpack(byteOrd+'I',File.read(4))[0] #/* frameshift multiplex flag */
-        self.prescanNfast = st.unpack(byteOrd+'I',File.read(4))[0] #/* Number of non-image pixels preceeding imaging pixels - fast direction */
-        self.prescanNslow = st.unpack(byteOrd+'I',File.read(4))[0] #/* Number of non-image pixels preceeding imaging pixels - slow direction */
-        self.postscanNfast = st.unpack(byteOrd+'I',File.read(4))[0] #/* Number of non-image pixels followng imaging pixels - fast direction */
-        self.postscanNslow = st.unpack(byteOrd+'I',File.read(4))[0] #/* Number of non-image pixels followng imaging pixels - slow direction */
-        self.prepostTrimmed = st.unpack(byteOrd+'I',File.read(4))[0] #/* trimmed==1 means pre and post scan pixels have been removed */
+        self.headerType = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* flag for header type  (can be used as magic number) */
+        self.headerName = b"".join(
+            st.unpack(byteOrd + 16 * "s", File.read(16))
+        ).replace(b"\x00", b"")
+        self.headerMajorVersion = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* header_major_version (n.) */
+        self.headerMinorVersion = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* header_minor_version (.n) */
+        self.headerByteOrder = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* BIG_ENDIAN (Motorola,MIPS); LITTLE_ENDIAN (DEC, Intel) */
+        self.dataByteOrder = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* BIG_ENDIAN (Motorola,MIPS); LITTLE_ENDIAN (DEC, Intel) */
+        self.headerSize = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* in bytes			*/
+        self.frameType = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* flag for frame type */
+        self.magicNumber = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* to be used as a flag - usually to indicate new file */
+        self.compressionType = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* type of image compression    */
+        self.compression1 = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* compression parameter 1 */
+        self.compression2 = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* compression parameter 2 */
+        self.compression3 = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* compression parameter 3 */
+        self.compression4 = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* compression parameter 4 */
+        self.compression5 = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* compression parameter 4 */
+        self.compression6 = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* compression parameter 4 */
+        self.nheaders = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* total number of headers 	*/
+        self.nfast = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* number of pixels in one line */
+        self.nslow = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* number of lines in image     */
+        self.depth = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* number of bytes per pixel    */
+        self.recordLength = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* number of pixels between succesive rows */
+        self.signifBits = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* true depth of data, in bits  */
+        self.dataType = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* (signed,unsigned,float...) */
+        self.saturatedValue = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* value marks pixel as saturated */
+        self.sequence = st.unpack(byteOrd + "I", File.read(4))[0]  # /* TRUE or FALSE */
+        self.nimages = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* total number of images - size of each is nfast*(nslow/nimages) */
+        self.origin = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* corner of origin 		*/
+        self.orientation = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* direction of fast axis 	*/
+        self.viewDirection = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* direction to view frame      */
+        self.overflowLocation = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* FOLLOWING_HEADER, FOLLOWING_DATA */
+        self.over8Bits = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* # of pixels with counts > 255 */
+        self.over16Bits = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* # of pixels with count > 65535 */
+        self.multiplexed = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* multiplex flag */
+        self.nfastimages = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* # of images in fast direction */
+        self.nslowimages = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* # of images in slow direction */
+        self.darkcurrentApplied = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* flags correction has been applied - hold magic number ? */
+        self.biasApplied = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* flags correction has been applied - hold magic number ? */
+        self.flatfieldApplied = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* flags correction has been applied - hold magic number ? */
+        self.distortionApplied = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* flags correction has been applied - hold magic number ? */
+        self.originalHeaderType = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Header/frame type from file that frame is read from */
+        self.fileSaved = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Flag that file has been saved, should be zeroed if modified */
+        self.nValidPixels = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Number of pixels holding valid data - first N pixels */
+        self.defectmapApplied = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* flags correction has been applied - hold magic number ? */
+        self.subimageNfast = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* when divided into subimages (eg. frameshifted) */
+        self.subimageNslow = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* when divided into subimages (eg. frameshifted) */
+        self.subimageOriginFast = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* when divided into subimages (eg. frameshifted) */
+        self.subimageOriginSlow = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* when divided into subimages (eg. frameshifted) */
+        self.readoutPattern = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* BIT Code - 1 = A, 2 = B, 4 = C, 8 = D */
+        self.saturationLevel = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* at this value and above, data are not reliable */
+        self.orientationCode = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Describes how this frame needs to be rotated to make it "right" */
+        self.frameshiftMultiplexed = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* frameshift multiplex flag */
+        self.prescanNfast = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Number of non-image pixels preceeding imaging pixels - fast direction */
+        self.prescanNslow = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Number of non-image pixels preceeding imaging pixels - slow direction */
+        self.postscanNfast = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Number of non-image pixels followng imaging pixels - fast direction */
+        self.postscanNslow = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Number of non-image pixels followng imaging pixels - slow direction */
+        self.prepostTrimmed = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* trimmed==1 means pre and post scan pixels have been removed */
 
-        File.seek(IFD[34710][2][0]+256)
-        #self.totalCounts = st.unpack(byteOrd+'Q',File.read(8))[0] # /* 64 bit integer range = 1.85E19*/
-        #self.specialCounts1 = st.unpack(byteOrd+'Q',File.read(8))[0]
-        #self.specialCounts2 = st.unpack(byteOrd+'Q',File.read(8))[0]
-        self.totalCounts = st.unpack(byteOrd+'II',File.read(8))
-        self.specialCounts1 = st.unpack(byteOrd+'II',File.read(8))
-        self.specialCounts2 = st.unpack(byteOrd+'II',File.read(8))
-        self.min = st.unpack(byteOrd+'I',File.read(4))[0]
-        self.max = st.unpack(byteOrd+'I',File.read(4))[0]
-        self.mean = st.unpack(byteOrd+'i',File.read(4))[0] # /* mean * 1000 */
-        self.rms = st.unpack(byteOrd+'I',File.read(4))[0] #/* rms * 1000 */
-        self.nZeros = st.unpack(byteOrd+'I',File.read(4))[0] #/* number of pixels with 0 value  - not included in stats in unsigned data */
-        self.nSaturated = st.unpack(byteOrd+'I',File.read(4))[0] #/* number of pixels with saturated value - not included in stats */
-        self.statsUptodate = st.unpack(byteOrd+'I',File.read(4))[0] #/* Flag that stats OK - ie data not changed since last calculation */
-        self.pixelNoise = st.unpack(byteOrd+'I'*MAXIMAGES,File.read(4*MAXIMAGES)) # /* 1000*base noise value (ADUs) */
+        File.seek(IFD[34710][2][0] + 256)
+        # self.totalCounts = st.unpack(byteOrd+'Q',File.read(8))[0] # /* 64 bit integer range = 1.85E19*/
+        # self.specialCounts1 = st.unpack(byteOrd+'Q',File.read(8))[0]
+        # self.specialCounts2 = st.unpack(byteOrd+'Q',File.read(8))[0]
+        self.totalCounts = st.unpack(byteOrd + "II", File.read(8))
+        self.specialCounts1 = st.unpack(byteOrd + "II", File.read(8))
+        self.specialCounts2 = st.unpack(byteOrd + "II", File.read(8))
+        self.min = st.unpack(byteOrd + "I", File.read(4))[0]
+        self.max = st.unpack(byteOrd + "I", File.read(4))[0]
+        self.mean = st.unpack(byteOrd + "i", File.read(4))[0]  # /* mean * 1000 */
+        self.rms = st.unpack(byteOrd + "I", File.read(4))[0]  # /* rms * 1000 */
+        self.nZeros = st.unpack(
+            byteOrd + "I", File.read(4)
+        )[
+            0
+        ]  # /* number of pixels with 0 value  - not included in stats in unsigned data */
+        self.nSaturated = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* number of pixels with saturated value - not included in stats */
+        self.statsUptodate = st.unpack(byteOrd + "I", File.read(4))[
+            0
+        ]  # /* Flag that stats OK - ie data not changed since last calculation */
+        self.pixelNoise = st.unpack(
+            byteOrd + "I" * MAXIMAGES, File.read(4 * MAXIMAGES)
+        )  # /* 1000*base noise value (ADUs) */
 
-        File.seek(IFD[34710][2][0]+256+128)
-        self.barcode = b''.join(st.unpack(byteOrd+16*'s',File.read(16))).replace(b'\x00',b'')
-        self.barcodeAngle = st.unpack(byteOrd+'I',File.read(4))[0]
-        self.barcodeStatus = st.unpack(byteOrd+'I',File.read(4))[0]
+        File.seek(IFD[34710][2][0] + 256 + 128)
+        self.barcode = b"".join(st.unpack(byteOrd + 16 * "s", File.read(16))).replace(
+            b"\x00", b""
+        )
+        self.barcodeAngle = st.unpack(byteOrd + "I", File.read(4))[0]
+        self.barcodeStatus = st.unpack(byteOrd + "I", File.read(4))[0]
 
-        File.seek(IFD[34710][2][0]+256+128+256)
-        self.xtalToDetector = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*distance in millimeters */
-        self.beamX = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*x beam position (pixels) */
-        self.beamY = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*y beam position (pixels) */
-        self.integrationTime = st.unpack(byteOrd+'i',File.read(4))[0] #/* integration time in milliseconds */
-        self.exposureTime = st.unpack(byteOrd+'i',File.read(4))[0] #/* exposure time in milliseconds */
-        self.readoutTime = st.unpack(byteOrd+'i',File.read(4))[0] #/* readout time in milliseconds */
-        self.nreads = st.unpack(byteOrd+'i',File.read(4))[0] #/* number of readouts to get this image */
-        self.startTwotheta = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*two_theta angle */
-        self.startOmega = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*omega angle */
-        self.startChi = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*chi angle */
-        self.startKappa = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*kappa angle */
-        self.startPhi = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*phi angle */
-        self.startDelta = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*delta angle */
-        self.startGamma = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*gamma angle */
-        self.startXtalToDetector = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*distance in mm (dist in um)*/
-        self.endTwotheta = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*two_theta angle */
-        self.endOmega = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*omega angle */
-        self.endChi = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*chi angle */
-        self.endKappa = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*kappa angle */
-        self.endPhi = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*phi angle */
-        self.endDelta = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*delta angle */
-        self.endGamma = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*gamma angle */
-        self.endXtalToDetector = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*distance in mm (dist in um)*/
-        self.rotationAxis = st.unpack(byteOrd+'i',File.read(4))[0] #/* active rotation axis (index into above ie. 0=twotheta,1=omega...) */
-        self.rotationRange = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*rotation angle */
-        self.detectorRotx = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*rotation of detector around X */
-        self.detectorRoty = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*rotation of detector around Y */
-        self.detectorRotz = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*rotation of detector around Z */
-        self.totalDose = st.unpack(byteOrd+'i',File.read(4))[0] #/* Hz-sec (counts) integrated over full exposure */
+        File.seek(IFD[34710][2][0] + 256 + 128 + 256)
+        self.xtalToDetector = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*distance in millimeters */
+        self.beamX = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*x beam position (pixels) */
+        self.beamY = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*y beam position (pixels) */
+        self.integrationTime = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* integration time in milliseconds */
+        self.exposureTime = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* exposure time in milliseconds */
+        self.readoutTime = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* readout time in milliseconds */
+        self.nreads = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* number of readouts to get this image */
+        self.startTwotheta = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*two_theta angle */
+        self.startOmega = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*omega angle */
+        self.startChi = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*chi angle */
+        self.startKappa = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*kappa angle */
+        self.startPhi = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*phi angle */
+        self.startDelta = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*delta angle */
+        self.startGamma = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*gamma angle */
+        self.startXtalToDetector = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*distance in mm (dist in um)*/
+        self.endTwotheta = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*two_theta angle */
+        self.endOmega = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*omega angle */
+        self.endChi = st.unpack(byteOrd + "i", File.read(4))[0]  # /* 1000*chi angle */
+        self.endKappa = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*kappa angle */
+        self.endPhi = st.unpack(byteOrd + "i", File.read(4))[0]  # /* 1000*phi angle */
+        self.endDelta = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*delta angle */
+        self.endGamma = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*gamma angle */
+        self.endXtalToDetector = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*distance in mm (dist in um)*/
+        self.rotationAxis = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* active rotation axis (index into above ie. 0=twotheta,1=omega...) */
+        self.rotationRange = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*rotation angle */
+        self.detectorRotx = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*rotation of detector around X */
+        self.detectorRoty = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*rotation of detector around Y */
+        self.detectorRotz = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*rotation of detector around Z */
+        self.totalDose = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Hz-sec (counts) integrated over full exposure */
 
-        File.seek(IFD[34710][2][0]+256+128+256+128)
-        self.detectorType = st.unpack(byteOrd+'i',File.read(4))[0] #/* detector type */
-        self.pixelsizeX = st.unpack(byteOrd+'i',File.read(4))[0] #/* pixel size (nanometers) */
-        self.pixelsizeY = st.unpack(byteOrd+'i',File.read(4))[0] #/* pixel size (nanometers) */
-        self.meanBias = st.unpack(byteOrd+'i',File.read(4))[0] #/* 1000*mean bias value */
-        self.photonsPer100adu = st.unpack(byteOrd+'i',File.read(4))[0] #/* photons / 100 ADUs */
-        self.measuredBias = st.unpack(byteOrd+'i'*MAXIMAGES,File.read(4*MAXIMAGES)) # /* 1000*mean bias value for each image*/
-        self.measuredTemperature = st.unpack(byteOrd+'i'*MAXIMAGES,File.read(4*MAXIMAGES)) # /* Temperature of each detector in milliKelvins */
-        self.measuredPressure = st.unpack(byteOrd+'i'*MAXIMAGES,File.read(4*MAXIMAGES)) # /* Pressure of each chamber in microTorr */
+        File.seek(IFD[34710][2][0] + 256 + 128 + 256 + 128)
+        self.detectorType = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* detector type */
+        self.pixelsizeX = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* pixel size (nanometers) */
+        self.pixelsizeY = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* pixel size (nanometers) */
+        self.meanBias = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* 1000*mean bias value */
+        self.photonsPer100adu = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* photons / 100 ADUs */
+        self.measuredBias = st.unpack(
+            byteOrd + "i" * MAXIMAGES, File.read(4 * MAXIMAGES)
+        )  # /* 1000*mean bias value for each image*/
+        self.measuredTemperature = st.unpack(
+            byteOrd + "i" * MAXIMAGES, File.read(4 * MAXIMAGES)
+        )  # /* Temperature of each detector in milliKelvins */
+        self.measuredPressure = st.unpack(
+            byteOrd + "i" * MAXIMAGES, File.read(4 * MAXIMAGES)
+        )  # /* Pressure of each chamber in microTorr */
 
-        File.seek(IFD[34710][2][0]+256+128+256+128+128)
-        self.sourceType = st.unpack(byteOrd+'i',File.read(4))[0] #/* (code) - target, synch. etc */
-        self.sourceDx = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (size microns) */
-        self.sourceDy = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (size microns) */
-        self.sourceWavelength = st.unpack(byteOrd+'i',File.read(4))[0] #/* wavelength (femtoMeters) */
-        self.sourcePower = st.unpack(byteOrd+'i',File.read(4))[0] #/* (Watts) */
-        self.sourceVoltage = st.unpack(byteOrd+'i',File.read(4))[0] #/* (Volts) */
-        self.sourceCurrent = st.unpack(byteOrd+'i',File.read(4))[0] #/* (microAmps) */
-        self.sourceBias = st.unpack(byteOrd+'i',File.read(4))[0] #/* (Volts) */
-        self.sourcePolarizationX = st.unpack(byteOrd+'i',File.read(4))[0] #/* () */
-        self.sourcePolarizationY = st.unpack(byteOrd+'i',File.read(4))[0] #/* () */
-        self.sourceIntensity0 = st.unpack(byteOrd+'i',File.read(4))[0] #/* (arbitrary units) */
-        self.sourceIntensity1 = st.unpack(byteOrd+'i',File.read(4))[0] #/* (arbitrary units) */
+        File.seek(IFD[34710][2][0] + 256 + 128 + 256 + 128 + 128)
+        self.sourceType = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* (code) - target, synch. etc */
+        self.sourceDx = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (size microns) */
+        self.sourceDy = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (size microns) */
+        self.sourceWavelength = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* wavelength (femtoMeters) */
+        self.sourcePower = st.unpack(byteOrd + "i", File.read(4))[0]  # /* (Watts) */
+        self.sourceVoltage = st.unpack(byteOrd + "i", File.read(4))[0]  # /* (Volts) */
+        self.sourceCurrent = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* (microAmps) */
+        self.sourceBias = st.unpack(byteOrd + "i", File.read(4))[0]  # /* (Volts) */
+        self.sourcePolarizationX = st.unpack(byteOrd + "i", File.read(4))[0]  # /* () */
+        self.sourcePolarizationY = st.unpack(byteOrd + "i", File.read(4))[0]  # /* () */
+        self.sourceIntensity0 = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* (arbitrary units) */
+        self.sourceIntensity1 = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* (arbitrary units) */
 
-        File.seek(IFD[34710][2][0]+256+128+256+128+128+14*4)
-        self.opticsType = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics type (code)*/
-        self.opticsDx = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (size microns) */
-        self.opticsDy = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (size microns) */
-        self.opticsWavelength = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (size microns) */
-        self.opticsDispersion = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (*10E6) */
-        self.opticsCrossfireX = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (microRadians) */
-        self.opticsCrossfireY = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (microRadians) */
-        self.opticsAngle = st.unpack(byteOrd+'i',File.read(4))[0] #/* Optics param. - (monoch. 2theta - microradians) */
-        self.opticsPolarizationX = st.unpack(byteOrd+'i',File.read(4))[0] #/* () */
-        self.opticsPolarizationY = st.unpack(byteOrd+'i',File.read(4))[0] #/* () */
+        File.seek(IFD[34710][2][0] + 256 + 128 + 256 + 128 + 128 + 14 * 4)
+        self.opticsType = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics type (code)*/
+        self.opticsDx = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (size microns) */
+        self.opticsDy = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (size microns) */
+        self.opticsWavelength = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (size microns) */
+        self.opticsDispersion = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (*10E6) */
+        self.opticsCrossfireX = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (microRadians) */
+        self.opticsCrossfireY = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (microRadians) */
+        self.opticsAngle = st.unpack(byteOrd + "i", File.read(4))[
+            0
+        ]  # /* Optics param. - (monoch. 2theta - microradians) */
+        self.opticsPolarizationX = st.unpack(byteOrd + "i", File.read(4))[0]  # /* () */
+        self.opticsPolarizationY = st.unpack(byteOrd + "i", File.read(4))[0]  # /* () */
 
-        File.seek(IFD[34710][2][0]+256+128+256+128+128+128)
-        self.filetitle = b''.join(st.unpack(byteOrd+128*'s',File.read(128))).replace(b'\x00',b'')
-        self.filepath = b''.join(st.unpack(byteOrd+'s'*128,File.read(128))).replace(b'\x00',b'') #/* path name for data file*/
-        self.filename = b''.join(st.unpack(byteOrd+'s'*64,File.read(64))).replace(b'\x00',b'') #/* name of data file*/
-        self.acquireTimestamp = b''.join(st.unpack(byteOrd+'s'*32,File.read(32))).replace(b'\x00',b'') #/* date and time of acquisition*/
-        self.headerTimestamp = b''.join(st.unpack(byteOrd+'s'*32,File.read(32))).replace(b'\x00',b'') #/* date and time of header update*/
-        self.saveTimestamp = b''.join(st.unpack(byteOrd+'s'*32,File.read(32))).replace(b'\x00',b'') #/* date and time file saved */
-        self.fileComment = b''.join(st.unpack(byteOrd+'s'*512,File.read(512))).replace(b'\x00',b'') #/* comments  - can be used as desired */
-        self.datasetComment = b''.join(st.unpack(byteOrd+'s'*512,File.read(512))).replace(b'\x00',b'') #/* comments  - can be used as desired */
+        File.seek(IFD[34710][2][0] + 256 + 128 + 256 + 128 + 128 + 128)
+        self.filetitle = b"".join(
+            st.unpack(byteOrd + 128 * "s", File.read(128))
+        ).replace(b"\x00", b"")
+        self.filepath = b"".join(
+            st.unpack(byteOrd + "s" * 128, File.read(128))
+        ).replace(b"\x00", b"")  # /* path name for data file*/
+        self.filename = b"".join(st.unpack(byteOrd + "s" * 64, File.read(64))).replace(
+            b"\x00", b""
+        )  # /* name of data file*/
+        self.acquireTimestamp = b"".join(
+            st.unpack(byteOrd + "s" * 32, File.read(32))
+        ).replace(b"\x00", b"")  # /* date and time of acquisition*/
+        self.headerTimestamp = b"".join(
+            st.unpack(byteOrd + "s" * 32, File.read(32))
+        ).replace(b"\x00", b"")  # /* date and time of header update*/
+        self.saveTimestamp = b"".join(
+            st.unpack(byteOrd + "s" * 32, File.read(32))
+        ).replace(b"\x00", b"")  # /* date and time file saved */
+        self.fileComment = b"".join(
+            st.unpack(byteOrd + "s" * 512, File.read(512))
+        ).replace(b"\x00", b"")  # /* comments  - can be used as desired */
+        self.datasetComment = b"".join(
+            st.unpack(byteOrd + "s" * 512, File.read(512))
+        ).replace(b"\x00", b"")  # /* comments  - can be used as desired */
 
-        self.userData = b''.join(st.unpack(byteOrd+'s'*512,File.read(512))).replace(b'\x00',b'')
+        self.userData = b"".join(
+            st.unpack(byteOrd + "s" * 512, File.read(512))
+        ).replace(b"\x00", b"")
 
         File.seek(4096)
-        self.image = ar.array(self.arrayTypeCode,File.read(self.byteDepth*self.TIFFsizeX*self.TIFFsizeY))
-    # reverse the array so if can have the same view as is read in marccd
-    # also switch the view direction 
+        self.image = ar.array(
+            self.arrayTypeCode,
+            File.read(self.byteDepth * self.TIFFsizeX * self.TIFFsizeY),
+        )
+        # reverse the array so if can have the same view as is read in marccd
+        # also switch the view direction
         self.image.reverse()
         self.viewDirection = abs(self.viewDirection - 1)
 
     def outputHead(self):
         myHead = []
         for curAttr in dir(self):
-            if ( curAttr != '__doc__' and \
-                 curAttr != '__init__' and \
-                 curAttr != '__module__' and \
-                 curAttr != 'outputHead' and \
-                 curAttr != 'image' ):
-                if '__' not in str(curAttr):
-                    myHead.append(" %s = %s" % (curAttr,getattr(self,curAttr)))
+            if (
+                curAttr != "__doc__"
+                and curAttr != "__init__"
+                and curAttr != "__module__"
+                and curAttr != "outputHead"
+                and curAttr != "image"
+            ):
+                if "__" not in str(curAttr):
+                    myHead.append(" %s = %s" % (curAttr, getattr(self, curAttr)))
         return myHead

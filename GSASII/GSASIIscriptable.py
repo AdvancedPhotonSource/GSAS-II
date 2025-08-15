@@ -15,7 +15,7 @@ methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
 # Note that documentation for GSASIIscriptable.py has been moved
 # to file docs/source/GSASIIscriptable.rst
 
-#============================================================================
+# ============================================================================
 # Notes for adding a new object type
 # 1) add a new object class (e.g. G2PDF)
 # 2) add the wrapper into G2Project (e.g. _pdfs, pdf, pdfs)
@@ -23,7 +23,7 @@ methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
 # Document: (in ../docs/source/GSASIIscriptable.rst)
 # 4) add to documentation in section :class:`G2Project`
 # 5) add a new documentation section for the new class
-#============================================================================
+# ============================================================================
 
 import argparse
 import copy
@@ -39,7 +39,9 @@ from numpy import ma
 
 from . import GSASIIpath
 
-GSASIIpath.SetBinaryPath(True)  # for now, this is needed before some of these modules can be imported
+GSASIIpath.SetBinaryPath(
+    True
+)  # for now, this is needed before some of these modules can be imported
 from . import GSASIIElem as G2elem
 from . import GSASIIfiles as G2fil
 from . import GSASIIimage as G2img
@@ -53,14 +55,15 @@ from . import GSASIIstrIO as G2stIO
 from . import GSASIIstrMain as G2strMain
 
 # Delay imports loading to not slow down small scripts that don't need them
-Readers = {'Pwdr': [], 'Phase': [], 'Image': [], 'importErrpkgs': []}
-'''Readers by reader type'''
+Readers = {"Pwdr": [], "Phase": [], "Image": [], "importErrpkgs": []}
+"""Readers by reader type"""
 exportersByExtension = {}
-'''Specifies the list of extensions that are supported for Powder data export'''
-npsind = lambda x: np.sin(x*np.pi/180.)
+"""Specifies the list of extensions that are supported for Powder data export"""
+npsind = lambda x: np.sin(x * np.pi / 180.0)
+
 
 def SetPrintLevel(level):
-    '''Set the level of output from calls to :func:`GSASIIfiles.G2Print`,
+    """Set the level of output from calls to :func:`GSASIIfiles.G2Print`,
     which should be used in place of print() where possible. This is a
     wrapper for :func:`GSASIIfiles.G2SetPrintLevel` so that this routine is
     documented here.
@@ -69,22 +72,25 @@ def SetPrintLevel(level):
       'all', 'warn', 'error' or 'none'.
       Note that capitalization and extra letters in level are ignored, so
       'Warn', 'warnings', etc. will all set the mode to 'warn'
-    '''
+    """
     G2fil.G2SetPrintLevel(level)
     global printLevel
-    for mode in  'all', 'warn', 'error', 'none':
+    for mode in "all", "warn", "error", "none":
         if mode in level.lower():
             printLevel = mode
             return
+
+
 def SetDebugMode(mode):
-    '''Set the debug configuration mode on (mode=True) or off (mode=False).
-    This will provide some additional output that may help with 
+    """Set the debug configuration mode on (mode=True) or off (mode=False).
+    This will provide some additional output that may help with
     tracking down problems in the code.
-    '''
-    GSASIIpath.AddConfigValue({'debug':bool(mode)})
+    """
+    GSASIIpath.AddConfigValue({"debug": bool(mode)})
+
 
 def installScriptingShortcut():
-    '''Creates a file named G2script in the current Python site-packages directory.
+    """Creates a file named G2script in the current Python site-packages directory.
     This is equivalent to the "Install GSASIIscriptable shortcut" command in the GUI's
     File menu. Once this is done, a shortcut for calling GSASIIscriptable is created,
     where the command:
@@ -101,37 +107,39 @@ def installScriptingShortcut():
 
     If more than one GSAS-II installation will be used with a Python installation,
     this shortcut can only be used with one of them.
-    '''
+    """
     f = GSASIIpath.makeScriptShortcut()
     if f:
-        G2fil.G2Print(f'success creating {f}')
+        G2fil.G2Print(f"success creating {f}")
     else:
-        raise G2ScriptException('error creating G2script')
+        raise G2ScriptException("error creating G2script")
+
 
 def ShowVersions():
-    '''Show the versions all of required Python packages, etc.
-    '''
-    out = ''
-    pkgList = [('Python',None), ('numpy',np)]
+    """Show the versions all of required Python packages, etc."""
+    out = ""
+    pkgList = [("Python", None), ("numpy", np)]
     try:
         import scipy
-        pkgList.append(('scipy',scipy))
+
+        pkgList.append(("scipy", scipy))
     except:
         pass
     try:
         import IPython
-        pkgList.append(('IPython',IPython))
+
+        pkgList.append(("IPython", IPython))
     except:
         pass
-    for s,m in pkgList:
-        msg = ''
-        if s == 'Python':
+    for s, m in pkgList:
+        msg = ""
+        if s == "Python":
             pkgver = platform.python_version()
-            #prefix = ''
+            # prefix = ''
             msg = f"from {format(sys.executable)}"
         else:
             pkgver = m.__version__
-            #prefix = 'Package '
+            # prefix = 'Package '
         out += f"  {s:12s}{pkgver}:  {msg}\n"
     out += GSASIIpath.getG2VersionInfo()
     out += "\n\n"
@@ -142,37 +150,41 @@ def ShowVersions():
     try:
         if GSASIIpath.binaryPath is None:
             from . import pyspg
+
             loc = os.path.dirname(pyspg.__file__)
         else:
             loc = GSASIIpath.binaryPath
         try:
-            f = os.path.join(loc,'GSASIIversion.txt')
+            f = os.path.join(loc, "GSASIIversion.txt")
             with open(f) as fp:
                 version = fp.readline().strip()
                 vnum = fp.readline().strip()
-            dated = f'{vnum}, {version}'
+            dated = f"{vnum}, {version}"
         except:
-            dated = 'undated'
+            dated = "undated"
         out += f"Binary location:  {loc} ({dated})\n"
     except:
         out += "Binary location:  not found\n"
     return out
 
+
 def LoadG2fil():
-    '''Setup GSAS-II importers.
+    """Setup GSAS-II importers.
     Delay importing this module when possible, it is slow.
     Multiple calls are not. Only the first does anything.
-    '''
-    if len(Readers['Pwdr']) > 0: return
+    """
+    if len(Readers["Pwdr"]) > 0:
+        return
     # initialize imports
     before = list(G2fil.condaRequestList.keys())
-    Readers['Pwdr'] = G2fil.LoadImportRoutines("pwd", "Powder_Data")
-    Readers['Phase'] = G2fil.LoadImportRoutines("phase", "Phase")
-    Readers['Image'] = G2fil.LoadImportRoutines("img", "Image")
-    Readers['HKLF'] = G2fil.LoadImportRoutines('sfact','Struct_Factor')
+    Readers["Pwdr"] = G2fil.LoadImportRoutines("pwd", "Powder_Data")
+    Readers["Phase"] = G2fil.LoadImportRoutines("phase", "Phase")
+    Readers["Image"] = G2fil.LoadImportRoutines("img", "Image")
+    Readers["HKLF"] = G2fil.LoadImportRoutines("sfact", "Struct_Factor")
     # save list of importers that could not be loaded
-    Readers['importErrpkgs'] = [i for i in G2fil.condaRequestList.keys()
-                                if i not in before]
+    Readers["importErrpkgs"] = [
+        i for i in G2fil.condaRequestList.keys() if i not in before
+    ]
 
     # initialize exports
     for obj in G2fil.LoadExportRoutines(None):
@@ -182,19 +194,21 @@ def LoadG2fil():
             continue
         for typ in obj.exporttype:
             if typ not in exportersByExtension:
-                exportersByExtension[typ] = {obj.extension:obj}
+                exportersByExtension[typ] = {obj.extension: obj}
             elif obj.extension in exportersByExtension[typ]:
                 if type(exportersByExtension[typ][obj.extension]) is list:
                     exportersByExtension[typ][obj.extension].append(obj)
                 else:
                     exportersByExtension[typ][obj.extension] = [
                         exportersByExtension[typ][obj.extension],
-                        obj]
+                        obj,
+                    ]
             else:
                 exportersByExtension[typ][obj.extension] = obj
 
+
 def LoadDictFromProjFile(ProjFile):
-    '''Read a GSAS-II project file and load items to dictionary
+    """Read a GSAS-II project file and load items to dictionary
 
     :param str ProjFile: GSAS-II project (name.gpx) full file name
     :returns: Project,nameList, where
@@ -235,69 +249,91 @@ def LoadDictFromProjFile(ProjFile):
              'Reflection Lists'],
         ['Phases', 'fap']
         ]
-    '''
+    """
     # Let IOError be thrown if file does not exist
     if not ospath.exists(ProjFile):
-        G2fil.G2Print (f'\n*** Error attempt to open project file that does not exist: \n    {ProjFile}')
-        raise OSError(f'GPX file {ProjFile} does not exist')
-    errmsg = ''
+        G2fil.G2Print(
+            f"\n*** Error attempt to open project file that does not exist: \n    {ProjFile}"
+        )
+        raise OSError(f"GPX file {ProjFile} does not exist")
+    errmsg = ""
     try:
         Project, nameList = G2stIO.GetFullGPX(ProjFile)
     except Exception as msg:
         errmsg = msg
-    if errmsg: raise OSError(errmsg)
-    return Project,nameList
+    if errmsg:
+        raise OSError(errmsg)
+    return Project, nameList
 
-def SaveDictToProjFile(Project,nameList,ProjFile):
-    '''Save a GSAS-II project file from dictionary/nameList created by LoadDictFromProjFile
+
+def SaveDictToProjFile(Project, nameList, ProjFile):
+    """Save a GSAS-II project file from dictionary/nameList created by LoadDictFromProjFile
 
     :param dict Project: representation of gpx file following the GSAS-II
         tree structure as described for LoadDictFromProjFile
     :param list nameList: names of main tree entries & subentries used to reconstruct project file
     :param str ProjFile: full file name for output project.gpx file (including extension)
-    '''
-    file = open(ProjFile,'wb')
+    """
+    file = open(ProjFile, "wb")
     try:
         for name in nameList:
             data = []
             item = Project[name[0]]
-            data.append([name[0],item['data']])
+            data.append([name[0], item["data"]])
             for item2 in name[1:]:
-                data.append([item2,item[item2]])
-            pickle.dump(data,file,1)
+                data.append([item2, item[item2]])
+            pickle.dump(data, file, 1)
     finally:
         file.close()
-    G2fil.G2Print('gpx file saved as %s'%ProjFile)
+    G2fil.G2Print("gpx file saved as %s" % ProjFile)
+
 
 def PreSetup(data):
-    '''Create part of an initial (empty) phase dictionary
+    """Create part of an initial (empty) phase dictionary
 
     from GSASIIphsGUI.py, near end of UpdatePhaseData
 
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
-    '''
-    if 'RBModels' not in data:
-        data['RBModels'] = {}
-    if 'MCSA' not in data:
-        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[.8,1.2],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
-    if 'dict' in str(type(data['MCSA']['Results'])):
-        data['MCSA']['Results'] = []
-    if 'Modulated' not in data['General']:
-        data['General']['Modulated'] = False
+    """
+    if "RBModels" not in data:
+        data["RBModels"] = {}
+    if "MCSA" not in data:
+        data["MCSA"] = {
+            "Models": [
+                {
+                    "Type": "MD",
+                    "Coef": [
+                        1.0,
+                        False,
+                        [0.8, 1.2],
+                    ],
+                    "axis": [0, 0, 1],
+                }
+            ],
+            "Results": [],
+            "AtInfo": {},
+        }
+    if "dict" in str(type(data["MCSA"]["Results"])):
+        data["MCSA"]["Results"] = []
+    if "Modulated" not in data["General"]:
+        data["General"]["Modulated"] = False
+
+
 #    if 'modulated' in data['General']['Type']:
 #        data['General']['Modulated'] = True
 #        data['General']['Type'] = 'nuclear'
 
 
 def SetupGeneral(data, dirname):
-    '''Initialize phase data.
-    '''
-    errmsg = ''
+    """Initialize phase data."""
+    errmsg = ""
     try:
-        G2elem.SetupGeneral(data,dirname)
+        G2elem.SetupGeneral(data, dirname)
     except ValueError as msg:
         errmsg = msg
-    if errmsg: raise G2ScriptException(errmsg)
+    if errmsg:
+        raise G2ScriptException(errmsg)
+
 
 def make_empty_project(author=None, filename=None):
     """Creates an dictionary in the style of GSASIIscriptable, for an empty
@@ -311,33 +347,51 @@ def make_empty_project(author=None, filename=None):
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     if not filename:
-        filename = 'test_output.gpx'
+        filename = "test_output.gpx"
     filename = os.path.abspath(filename)
     LoadG2fil()
 
     controls_data = dict(G2obj.DefaultControls)
     if author:
-        controls_data['Author'] = author
+        controls_data["Author"] = author
 
-    output = {'Constraints': {'data': {'Hist': [], 'HAP': [], 'Phase': [],
-                                       'Global': [],
-                                       '_seqmode':'auto-wildcard',
-                                       '_seqhist':0}},
-              'Controls': {'data': controls_data},
-              'Covariance': {'data': {}},
-              'Notebook': {'data': ['']},
-              'Restraints': {'data': {}},
-              'Rigid bodies': {'data':
-                    {'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},
-                         "Spin": {},
-                         'RBIds':{'Vector':[], 'Residue':[],'Spin':[]}}}
-             }
-    names = [['Notebook'], ['Controls'], ['Covariance'],
-             ['Constraints'], ['Restraints'], ['Rigid bodies']]
+    output = {
+        "Constraints": {
+            "data": {
+                "Hist": [],
+                "HAP": [],
+                "Phase": [],
+                "Global": [],
+                "_seqmode": "auto-wildcard",
+                "_seqhist": 0,
+            }
+        },
+        "Controls": {"data": controls_data},
+        "Covariance": {"data": {}},
+        "Notebook": {"data": [""]},
+        "Restraints": {"data": {}},
+        "Rigid bodies": {
+            "data": {
+                "Vector": {"AtInfo": {}},
+                "Residue": {"AtInfo": {}},
+                "Spin": {},
+                "RBIds": {"Vector": [], "Residue": [], "Spin": []},
+            }
+        },
+    }
+    names = [
+        ["Notebook"],
+        ["Controls"],
+        ["Covariance"],
+        ["Constraints"],
+        ["Restraints"],
+        ["Rigid bodies"],
+    ]
 
     return output, names
 
-def GenerateReflections(spcGrp,cell,Qmax=None,dmin=None,TTmax=None,wave=None):
+
+def GenerateReflections(spcGrp, cell, Qmax=None, dmin=None, TTmax=None, wave=None):
     """Generates the crystallographically unique powder diffraction reflections
     for a lattice and space group (see :func:`GSASIIlattice.GenHLaue`).
 
@@ -383,62 +437,71 @@ def GenerateReflections(spcGrp,cell,Qmax=None,dmin=None,TTmax=None,wave=None):
     opts = (Qmax is not None) + (dmin is not None) + (TTmax is not None)
     if Qmax:
         dmin = 2 * np.pi / Qmax
-        #print('Q,d',Qmax,dmin)
+        # print('Q,d',Qmax,dmin)
     elif TTmax and wave is None:
         raise G2ScriptException("GenerateReflections: specify a wavelength with TTmax")
     elif TTmax:
-        dmin = wave / (2.0 * np.sin(np.pi*TTmax/360.))
-        #print('2theta,d',TTmax,dmin)
+        dmin = wave / (2.0 * np.sin(np.pi * TTmax / 360.0))
+        # print('2theta,d',TTmax,dmin)
     if opts != 1:
         raise G2ScriptException("GenerateReflections: specify one Qmax, dmin or TTmax")
-    err,SGData = G2spc.SpcGroup(spcGrp)
+    err, SGData = G2spc.SpcGroup(spcGrp)
     if err != 0:
-        print('GenerateReflections space group error:',G2spc.SGErrors(err))
-        raise G2ScriptException("GenerateReflections: Invalid space group: " + str(spcGrp))
+        print("GenerateReflections space group error:", G2spc.SGErrors(err))
+        raise G2ScriptException(
+            "GenerateReflections: Invalid space group: " + str(spcGrp)
+        )
     A = G2lat.cell2A(cell)
-    return G2lat.GenHLaue(dmin,SGData,A)
+    return G2lat.GenHLaue(dmin, SGData, A)
+
 
 class G2ImportException(Exception):
     pass
 
+
 class G2ScriptException(Exception):
     pass
 
-def downloadFile(URL,download_loc=None):
-    '''Download the URL 
-    '''
-        
+
+def downloadFile(URL, download_loc=None):
+    """Download the URL"""
+
     import requests
+
     fname = os.path.split(URL)[1]
     if download_loc is None:
-       import tempfile
-       download_loc = tempfile.gettempdir()
+        import tempfile
+
+        download_loc = tempfile.gettempdir()
     elif os.path.isdir(download_loc) and os.path.exists(download_loc):
         pass
     elif os.path.exists(os.path.dirname(download_loc)):
-        download_loc,fname = os.path.split(download_loc)
+        download_loc, fname = os.path.split(download_loc)
     else:
         raise G2ScriptException(f"Import error: Cannot download to {download_loc}")
-    G2fil.G2Print(f'Preparing to download {URL}')
+    G2fil.G2Print(f"Preparing to download {URL}")
     response = requests.get(URL)
-    filename = os.path.join(download_loc,fname)
-    with open(filename,'wb') as fp:
+    filename = os.path.join(download_loc, fname)
+    with open(filename, "wb") as fp:
         fp.write(response.content)
-    G2fil.G2Print(f'File {filename} written')
+    G2fil.G2Print(f"File {filename} written")
     return filename
 
-def import_generic(filename, readerlist, fmthint=None, bank=None,
-                       URL=False, download_loc=None):
+
+def import_generic(
+    filename, readerlist, fmthint=None, bank=None, URL=False, download_loc=None
+):
     """Attempt to import a filename, using a list of reader objects.
 
     Returns the first reader object which worked."""
     if URL is True:
-        filename = downloadFile(filename,download_loc)
+        filename = downloadFile(filename, download_loc)
     # Translated from OnImportGeneric method in GSASII.py
     primaryReaders, secondaryReaders = [], []
     hintcount = 0
     for reader in readerlist:
-        if fmthint is not None and fmthint not in reader.formatName: continue
+        if fmthint is not None and fmthint not in reader.formatName:
+            continue
         hintcount += 1
         flag = reader.ExtensionValidator(filename)
         if flag is None:
@@ -448,21 +511,26 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
     if not secondaryReaders and not primaryReaders:
         # common reason for read error -- package needed?
         l = []
-        for i in Readers['importErrpkgs']:
+        for i in Readers["importErrpkgs"]:
             for j in G2fil.condaRequestList[i]:
-                if j not in l: l.append(j)
-        print(f'\nReading of file {filename!r} failed.')
+                if j not in l:
+                    l.append(j)
+        print(f"\nReading of file {filename!r} failed.")
         if fmthint is not None and hintcount == 0:
-            print(f'\nNo readers matched hint {fmthint!r}\n')
-        if Readers['importErrpkgs']: 
-            print('Not all importers are available due to uninstalled Python packages.')
-            print('The following importer(s) are not available:\n'+
-                  f'\t{", ".join(Readers["importErrpkgs"])}')
-            print('because the following optional Python package(s) are not installed:\n'+
-                  f'\t{", ".join(l)}\n')
-        print('Available importers:')
+            print(f"\nNo readers matched hint {fmthint!r}\n")
+        if Readers["importErrpkgs"]:
+            print("Not all importers are available due to uninstalled Python packages.")
+            print(
+                "The following importer(s) are not available:\n"
+                + f"\t{', '.join(Readers['importErrpkgs'])}"
+            )
+            print(
+                "because the following optional Python package(s) are not installed:\n"
+                + f"\t{', '.join(l)}\n"
+            )
+        print("Available importers:")
         for reader in readerlist:
-            print(f'\t{reader.longFormatName}')
+            print(f"\t{reader.longFormatName}")
         raise G2ImportException(f"Could not read file: {filename}")
 
     with open(filename):
@@ -475,17 +543,19 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 rd.selections = []
             else:
                 try:
-                    rd.selections = [i-1 for i in bank]
+                    rd.selections = [i - 1 for i in bank]
                 except TypeError:
-                    rd.selections = [bank-1]
+                    rd.selections = [bank - 1]
             rd.dnames = []
             rd.ReInitialize()
             # Rewind file
             rd.errors = ""
             if not rd.ContentsValidator(filename):
                 # Report error
-                G2fil.G2Print(f"Warning: File {filename} has a validation error, continuing")
-            #if len(rd.selections) > 1:
+                G2fil.G2Print(
+                    f"Warning: File {filename} has a validation error, continuing"
+                )
+            # if len(rd.selections) > 1:
             #    raise G2ImportException("File {} has {} banks. Specify which bank to read with databank param."
             #                    .format(filename,len(rd.selections)))
 
@@ -497,10 +567,10 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 block += 1
                 rd.objname = os.path.basename(filename)
                 try:
-                    flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
+                    flag = rd.Reader(filename, buffer=rdbuffer, blocknum=block)
                 except Exception as msg:
-                    if GSASIIpath.GetConfigValue('debug'):
-                        print('Reader exception',msg)
+                    if GSASIIpath.GetConfigValue("debug"):
+                        print("Reader exception", msg)
                     flag = False
                 if flag:
                     # Omitting image loading special cases
@@ -508,17 +578,20 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                     rd_list.append(copy.deepcopy(rd))
                     repeat = rd.repeat
                 else:
-                    G2fil.G2Print(f"Warning: {rd.formatName} Reader failed to read {filename}")
+                    G2fil.G2Print(
+                        f"Warning: {rd.formatName} Reader failed to read {filename}"
+                    )
             if rd_list:
                 if rd.warnings:
-                    G2fil.G2Print("Read warning by", rd.formatName, "reader:",
-                          rd.warnings)
+                    G2fil.G2Print(
+                        "Read warning by", rd.formatName, "reader:", rd.warnings
+                    )
                 elif bank is None:
-                    G2fil.G2Print(f"{filename} read by Reader {rd.formatName}"
-                              )
+                    G2fil.G2Print(f"{filename} read by Reader {rd.formatName}")
                 else:
-                    G2fil.G2Print(f"{filename} block # {bank} read by Reader {rd.formatName}"
-                              )
+                    G2fil.G2Print(
+                        f"{filename} block # {bank} read by Reader {rd.formatName}"
+                    )
                 return rd_list
     raise G2ImportException(f"No reader could read file: {filename}")
 
@@ -532,115 +605,127 @@ def load_iprms(instfile, reader, bank=None):
     LoadG2fil()
     ext = os.path.splitext(instfile)[1]
 
-    if ext.lower() == '.instprm':
+    if ext.lower() == ".instprm":
         # New GSAS File, load appropriate bank
         with open(instfile) as f:
             lines = f.readlines()
         if bank is None:
             bank = reader.powderentry[2]
-        nbank,iparms = G2fil.ReadInstprm(lines, bank, reader.Sample)
+        nbank, iparms = G2fil.ReadInstprm(lines, bank, reader.Sample)
 
         reader.instfile = instfile
-        reader.instmsg = f'{instfile} (G2 fmt) bank {bank}'
+        reader.instmsg = f"{instfile} (G2 fmt) bank {bank}"
         return iparms
-    elif ext.lower() not in ('.prm', '.inst', '.ins'):
-        raise ValueError('Expected .prm file, found: ', instfile)
+    elif ext.lower() not in (".prm", ".inst", ".ins"):
+        raise ValueError("Expected .prm file, found: ", instfile)
 
     # It's an old GSAS file, load appropriately
     Iparm = {}
     with open(instfile) as fp:
         for line in fp:
-            if '#' in line:
+            if "#" in line:
                 continue
             Iparm[line[:12]] = line[12:-1]
-    ibanks = int(Iparm.get('INS   BANK  ', '1').strip())
+    ibanks = int(Iparm.get("INS   BANK  ", "1").strip())
     if bank is not None:
         # pull out requested bank # bank from the data, and change the bank to 1
-        Iparm,IparmC = {},Iparm
+        Iparm, IparmC = {}, Iparm
         for key in IparmC:
-            if 'INS' not in key[:3]: continue   #skip around rubbish lines in some old iparm
+            if "INS" not in key[:3]:
+                continue  # skip around rubbish lines in some old iparm
             if key[4:6] == "  ":
                 Iparm[key] = IparmC[key]
             elif int(key[4:6].strip()) == bank:
-                Iparm[key[:4]+' 1'+key[6:]] = IparmC[key]
+                Iparm[key[:4] + " 1" + key[6:]] = IparmC[key]
         reader.instbank = bank
     elif ibanks == 1:
         reader.instbank = 1
     else:
-        raise G2ImportException(f"Instrument parameter file has {ibanks} banks, select one with instbank param.")
+        raise G2ImportException(
+            f"Instrument parameter file has {ibanks} banks, select one with instbank param."
+        )
     reader.powderentry[2] = 1
     reader.instfile = instfile
-    reader.instmsg = f'{instfile} bank {reader.instbank}'
+    reader.instmsg = f"{instfile} bank {reader.instbank}"
     return G2fil.SetPowderInstParms(Iparm, reader)
 
-def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
+
+def load_pwd_from_reader(reader, instprm, existingnames=[], bank=None):
     """Loads powder data from a reader object, and assembles it into a GSASII data tree.
 
     :returns: (name, tree) - 2-tuple of the histogram name (str), and data
 
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
-    HistName = 'PWDR ' + G2obj.StripUnicode(reader.idstring, '_')
+    HistName = "PWDR " + G2obj.StripUnicode(reader.idstring, "_")
     HistName = G2obj.MakeUniqueLabel(HistName, existingnames)
 
     try:
         Iparm1, Iparm2 = instprm
     except ValueError:
         Iparm1, Iparm2 = load_iprms(instprm, reader, bank=bank)
-        G2fil.G2Print('Instrument parameters read:',reader.instmsg)
+        G2fil.G2Print("Instrument parameters read:", reader.instmsg)
     except TypeError:  # instprm is None, get iparms from reader
-        Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
+        Iparm1, Iparm2 = reader.pwdparms["Instrument Parameters"]
 
-    if 'T' in Iparm1['Type'][0]:
+    if "T" in Iparm1["Type"][0]:
         if not reader.clockWd and reader.GSAS:
-            reader.powderdata[0] *= 100.        #put back the CW centideg correction
+            reader.powderdata[0] *= 100.0  # put back the CW centideg correction
         cw = np.diff(reader.powderdata[0])
-        reader.powderdata[0] = reader.powderdata[0][:-1]+cw/2.
-        if reader.GSAS:     #NB: old GSAS wanted intensities*CW even if normalized!
-            npts = min(len(reader.powderdata[0]),len(reader.powderdata[1]),len(cw))
-            reader.powderdata[1] = reader.powderdata[1][:npts]/cw[:npts]
-            reader.powderdata[2] = reader.powderdata[2][:npts]*cw[:npts]**2  #1/var=w at this point
-        else:       #NB: from topas/fullprof type files
+        reader.powderdata[0] = reader.powderdata[0][:-1] + cw / 2.0
+        if reader.GSAS:  # NB: old GSAS wanted intensities*CW even if normalized!
+            npts = min(len(reader.powderdata[0]), len(reader.powderdata[1]), len(cw))
+            reader.powderdata[1] = reader.powderdata[1][:npts] / cw[:npts]
+            reader.powderdata[2] = (
+                reader.powderdata[2][:npts] * cw[:npts] ** 2
+            )  # 1/var=w at this point
+        else:  # NB: from topas/fullprof type files
             reader.powderdata[1] = reader.powderdata[1][:-1]
             reader.powderdata[2] = reader.powderdata[2][:-1]
-        if 'Itype' in Iparm2:
-            Ibeg = np.searchsorted(reader.powderdata[0],Iparm2['Tminmax'][0])
-            Ifin = np.searchsorted(reader.powderdata[0],Iparm2['Tminmax'][1])
+        if "Itype" in Iparm2:
+            Ibeg = np.searchsorted(reader.powderdata[0], Iparm2["Tminmax"][0])
+            Ifin = np.searchsorted(reader.powderdata[0], Iparm2["Tminmax"][1])
             reader.powderdata[0] = reader.powderdata[0][Ibeg:Ifin]
-            YI,WYI = G2pwd.calcIncident(Iparm2,reader.powderdata[0])
-            reader.powderdata[1] = reader.powderdata[1][Ibeg:Ifin]/YI
-            var = 1./reader.powderdata[2][Ibeg:Ifin]
-            var += WYI*reader.powderdata[1]**2
+            YI, WYI = G2pwd.calcIncident(Iparm2, reader.powderdata[0])
+            reader.powderdata[1] = reader.powderdata[1][Ibeg:Ifin] / YI
+            var = 1.0 / reader.powderdata[2][Ibeg:Ifin]
+            var += WYI * reader.powderdata[1] ** 2
             var /= YI**2
-            reader.powderdata[2] = 1./var
-        reader.powderdata[1] = np.where(np.isinf(reader.powderdata[1]),0.,reader.powderdata[1])
+            reader.powderdata[2] = 1.0 / var
+        reader.powderdata[1] = np.where(
+            np.isinf(reader.powderdata[1]), 0.0, reader.powderdata[1]
+        )
         reader.powderdata[3] = np.zeros_like(reader.powderdata[0])
         reader.powderdata[4] = np.zeros_like(reader.powderdata[0])
         reader.powderdata[5] = np.zeros_like(reader.powderdata[0])
 
     Ymin = np.min(reader.powderdata[1])
     Ymax = np.max(reader.powderdata[1])
-    valuesdict = {'wtFactor': 1.0,
-                  'Dummy': False,
-                  'ranId': ran.randint(0, sys.maxsize),
-                  'Offset': [0.0, 0.0], 'delOffset': 0.02*Ymax,
-                  'refOffset': -0.1*Ymax, 'refDelt': 0.1*Ymax,
-                  'Yminmax': [Ymin, Ymax]}
+    valuesdict = {
+        "wtFactor": 1.0,
+        "Dummy": False,
+        "ranId": ran.randint(0, sys.maxsize),
+        "Offset": [0.0, 0.0],
+        "delOffset": 0.02 * Ymax,
+        "refOffset": -0.1 * Ymax,
+        "refDelt": 0.1 * Ymax,
+        "Yminmax": [Ymin, Ymax],
+    }
     # apply user-supplied corrections to powder data
-    if 'CorrectionCode' in Iparm1:
-        G2fil.G2Print('Applying corrections from instprm file')
-        corr = Iparm1['CorrectionCode'][0]
+    if "CorrectionCode" in Iparm1:
+        G2fil.G2Print("Applying corrections from instprm file")
+        corr = Iparm1["CorrectionCode"][0]
         try:
             exec(corr)
-            G2fil.G2Print('done')
+            G2fil.G2Print("done")
         except Exception as err:
-            print(f'error: {err}')
-            print('with commands -------------------')
+            print(f"error: {err}")
+            print("with commands -------------------")
             print(corr)
-            print('---------------------------------')
+            print("---------------------------------")
         finally:
-            del Iparm1['CorrectionCode']
-    reader.Sample['ranId'] = valuesdict['ranId']
+            del Iparm1["CorrectionCode"]
+    reader.Sample["ranId"] = valuesdict["ranId"]
 
     # Ending keys:
     # ['Reflection Lists',
@@ -656,38 +741,49 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     Tmin = np.min(reader.powderdata[0])
     Tmax = np.max(reader.powderdata[0])
     Tmin1 = Tmin
-    if 'NT' in Iparm1['Type'][0] and G2lat.Pos2dsp(Iparm1,Tmin) < 0.4:
-        Tmin1 = G2lat.Dsp2pos(Iparm1,0.4)
+    if "NT" in Iparm1["Type"][0] and G2lat.Pos2dsp(Iparm1, Tmin) < 0.4:
+        Tmin1 = G2lat.Dsp2pos(Iparm1, 0.4)
 
-    default_background = [['chebyschev-1', False, 3, 1.0, 0.0, 0.0],
-        {'nDebye': 0, 'debyeTerms': [], 'nPeaks': 0,
-        'peaksList': [],'background PWDR':['',1.0,False]}]
+    default_background = [
+        ["chebyschev-1", False, 3, 1.0, 0.0, 0.0],
+        {
+            "nDebye": 0,
+            "debyeTerms": [],
+            "nPeaks": 0,
+            "peaksList": [],
+            "background PWDR": ["", 1.0, False],
+        },
+    ]
 
-    output_dict = {'Reflection Lists': {},
-                   'Limits': reader.pwdparms.get('Limits', [(Tmin, Tmax), [Tmin1, Tmax]]),
-                   'data': [valuesdict, reader.powderdata, HistName],
-                   'Index Peak List': [[], []],
-                   'Comments': reader.comments,
-                   'Unit Cells List': [],
-                   'Sample Parameters': reader.Sample,
-                   'Peak List': {'peaks': [], 'sigDict': {}},
-                   'Background': reader.pwdparms.get('Background', default_background),
-                   'Instrument Parameters': [Iparm1, Iparm2],
-                   }
+    output_dict = {
+        "Reflection Lists": {},
+        "Limits": reader.pwdparms.get("Limits", [(Tmin, Tmax), [Tmin1, Tmax]]),
+        "data": [valuesdict, reader.powderdata, HistName],
+        "Index Peak List": [[], []],
+        "Comments": reader.comments,
+        "Unit Cells List": [],
+        "Sample Parameters": reader.Sample,
+        "Peak List": {"peaks": [], "sigDict": {}},
+        "Background": reader.pwdparms.get("Background", default_background),
+        "Instrument Parameters": [Iparm1, Iparm2],
+    }
 
-    names = ['Comments',
-             'Limits',
-             'Background',
-             'Instrument Parameters',
-             'Sample Parameters',
-             'Peak List',
-             'Index Peak List',
-             'Unit Cells List',
-             'Reflection Lists']
+    names = [
+        "Comments",
+        "Limits",
+        "Background",
+        "Instrument Parameters",
+        "Sample Parameters",
+        "Peak List",
+        "Index Peak List",
+        "Unit Cells List",
+        "Reflection Lists",
+    ]
 
     # TODO controls?? GSASII.py:1664-7
 
     return HistName, [HistName] + names, output_dict
+
 
 def _deep_copy_into(from_, into):
     """Helper function for reloading .gpx file. See G2Project.reload()
@@ -698,10 +794,12 @@ def _deep_copy_into(from_, into):
         combined_keys = set(from_.keys()).union(into.keys())
         for key in combined_keys:
             if key in from_ and key in into:
-                both_dicts = (isinstance(from_[key], dict)
-                              and isinstance(into[key], dict))
-                both_lists = (isinstance(from_[key], list)
-                              and isinstance(into[key], list))
+                both_dicts = isinstance(from_[key], dict) and isinstance(
+                    into[key], dict
+                )
+                both_lists = isinstance(from_[key], list) and isinstance(
+                    into[key], list
+                )
                 if both_dicts or both_lists:
                     _deep_copy_into(from_[key], into[key])
                 else:
@@ -713,10 +811,8 @@ def _deep_copy_into(from_, into):
     elif isinstance(from_, list) and isinstance(into, list):
         if len(from_) == len(into):
             for i in range(len(from_)):
-                both_dicts = (isinstance(from_[i], dict)
-                              and isinstance(into[i], dict))
-                both_lists = (isinstance(from_[i], list)
-                              and isinstance(into[i], list))
+                both_dicts = isinstance(from_[i], dict) and isinstance(into[i], dict)
+                both_lists = isinstance(from_[i], list) and isinstance(into[i], list)
                 if both_dicts or both_lists:
                     _deep_copy_into(from_[i], into[i])
                 else:
@@ -724,8 +820,9 @@ def _deep_copy_into(from_, into):
         else:
             into[:] = from_
 
-def _getCorrImage(ImageReaderlist,proj,imageRef):
-    '''Gets image & applies dark, background & flat background corrections.
+
+def _getCorrImage(ImageReaderlist, proj, imageRef):
+    """Gets image & applies dark, background & flat background corrections.
     based on :func:`GSASIIimgGUI.GetImageZ`. Expected to be for internal
     use only.
 
@@ -736,74 +833,84 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
       a image object (:class:`G2Image`)
 
     :return: array sumImg: corrected image for background/dark/flat back
-    '''
+    """
     ImgObj = proj.image(imageRef)
-    Controls = ImgObj.data['Image Controls']
-    formatName = Controls.get('formatName','')
-    imagefile = ImgObj.data['data'][1]
+    Controls = ImgObj.data["Image Controls"]
+    formatName = Controls.get("formatName", "")
+    imagefile = ImgObj.data["data"][1]
     if isinstance(imagefile, tuple) or isinstance(imagefile, list):
-        imagefile, ImageTag =  imagefile # fix for multiimage files
+        imagefile, ImageTag = imagefile  # fix for multiimage files
     else:
-        ImageTag = None # single-image file
-    sumImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+        ImageTag = None  # single-image file
+    sumImg = G2fil.RereadImageData(
+        ImageReaderlist, imagefile, ImageTag=ImageTag, FormatName=formatName
+    )
     if sumImg is None:
         return []
-    sumImg = np.array(sumImg,dtype=np.int32)
+    sumImg = np.array(sumImg, dtype=np.int32)
     darkImg = False
-    if 'dark image' in Controls:
-        darkImg,darkScale = Controls['dark image']
+    if "dark image" in Controls:
+        darkImg, darkScale = Controls["dark image"]
         if darkImg:
             dImgObj = proj.image(darkImg)
-            formatName = dImgObj.data['Image Controls'].get('formatName','')
-            imagefile = dImgObj.data['data'][1]
+            formatName = dImgObj.data["Image Controls"].get("formatName", "")
+            imagefile = dImgObj.data["data"][1]
             if type(imagefile) is tuple:
-                imagefile,ImageTag  = imagefile
-            darkImage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+                imagefile, ImageTag = imagefile
+            darkImage = G2fil.RereadImageData(
+                ImageReaderlist, imagefile, ImageTag=ImageTag, FormatName=formatName
+            )
             if darkImg is None:
-                raise Exception(f'Error reading dark image {imagefile}')
-            sumImg += np.array(darkImage*darkScale,dtype=np.int32)
-    if 'background image' in Controls:
-        backImg,backScale = Controls['background image']
-        if backImg:     #ignores any transmission effect in the background image
+                raise Exception(f"Error reading dark image {imagefile}")
+            sumImg += np.array(darkImage * darkScale, dtype=np.int32)
+    if "background image" in Controls:
+        backImg, backScale = Controls["background image"]
+        if backImg:  # ignores any transmission effect in the background image
             bImgObj = proj.image(backImg)
-            formatName = bImgObj.data['Image Controls'].get('formatName','')
-            imagefile = bImgObj.data['data'][1]
-            ImageTag = None # fix this for multiimage files
-            backImage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+            formatName = bImgObj.data["Image Controls"].get("formatName", "")
+            imagefile = bImgObj.data["data"][1]
+            ImageTag = None  # fix this for multiimage files
+            backImage = G2fil.RereadImageData(
+                ImageReaderlist, imagefile, ImageTag=ImageTag, FormatName=formatName
+            )
             if backImage is None:
-                raise Exception(f'Error reading background image {imagefile}')
+                raise Exception(f"Error reading background image {imagefile}")
             if darkImg:
-                backImage += np.array(darkImage*darkScale/backScale,dtype=np.int32)
+                backImage += np.array(darkImage * darkScale / backScale, dtype=np.int32)
             else:
-                sumImg += np.array(backImage*backScale,dtype=np.int32)
-    if 'Gain map' in Controls:
-        gainMap = Controls['Gain map']
+                sumImg += np.array(backImage * backScale, dtype=np.int32)
+    if "Gain map" in Controls:
+        gainMap = Controls["Gain map"]
         if gainMap:
             gImgObj = proj.image(gainMap)
-            formatName = gImgObj.data['Image Controls'].get('formatName','')
-            imagefile = gImgObj.data['data'][1]
-            ImageTag = None # fix this for multiimage files
-            GMimage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+            formatName = gImgObj.data["Image Controls"].get("formatName", "")
+            imagefile = gImgObj.data["data"][1]
+            ImageTag = None  # fix this for multiimage files
+            GMimage = G2fil.RereadImageData(
+                ImageReaderlist, imagefile, ImageTag=ImageTag, FormatName=formatName
+            )
             if GMimage is None:
-                raise Exception(f'Error reading Gain map image {imagefile}')
-            sumImg = sumImg*GMimage/1000
-    sumImg -= int(Controls.get('Flat Bkg',0))
+                raise Exception(f"Error reading Gain map image {imagefile}")
+            sumImg = sumImg * GMimage / 1000
+    sumImg -= int(Controls.get("Flat Bkg", 0))
     Imax = np.max(sumImg)
-    Controls['range'] = [(0,Imax),[0,Imax]]
-    return np.asarray(sumImg,dtype=np.int32)
+    Controls["range"] = [(0, Imax), [0, Imax]]
+    return np.asarray(sumImg, dtype=np.int32)
+
 
 def _constr_type(var):
-    '''returns the constraint type based on phase/histogram use
+    """returns the constraint type based on phase/histogram use
     in a variable
-    '''
+    """
     if var.histogram and var.phase:
-        return 'HAP'
+        return "HAP"
     elif var.phase:
-        return 'Phase'
+        return "Phase"
     elif var.histogram:
-        return 'Hist'
+        return "Hist"
     else:
-        return 'Global'
+        return "Global"
+
 
 class G2ObjectWrapper:
     """Base class for all GSAS-II object wrappers.
@@ -813,6 +920,7 @@ class G2ObjectWrapper:
 
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
+
     def __init__(self, datadict):
         self.data = datadict
 
@@ -906,11 +1014,14 @@ class G2Project(G2ObjectWrapper):
     :meth:`~G2Project.set_refinement`, :meth:`~G2Project.iter_refinements` and
     :meth:`~G2Project.do_refinements`.
     """
+
     def __init__(self, gpxfile=None, author=None, filename=None, newgpx=None):
         if filename is not None and newgpx is not None:
-            raise G2ScriptException('Do not use filename and newgpx together')
+            raise G2ScriptException("Do not use filename and newgpx together")
         if filename is not None:
-            G2fil.G2Print("Warning - recommending use of parameter newgpx rather than filename\n\twhen creating a G2Project")
+            G2fil.G2Print(
+                "Warning - recommending use of parameter newgpx rather than filename\n\twhen creating a G2Project"
+            )
         elif newgpx:
             filename = newgpx
         if not gpxfile:
@@ -925,12 +1036,16 @@ class G2Project(G2ObjectWrapper):
                 filename = os.path.abspath(os.path.expanduser(filename))
                 dr = os.path.split(filename)[0]
                 if not os.path.exists(dr):
-                    raise Exception(f"Directory {dr} for filename/newgpx does not exist")
+                    raise Exception(
+                        f"Directory {dr} for filename/newgpx does not exist"
+                    )
                 self.filename = filename
             else:
                 self.filename = os.path.abspath(os.path.expanduser(gpxfile))
         else:
-            raise ValueError(f"Not sure what to do with gpxfile {gpxfile}. Does not exist?")
+            raise ValueError(
+                f"Not sure what to do with gpxfile {gpxfile}. Does not exist?"
+            )
 
     @classmethod
     def from_dict_and_names(cls, gpxdict, names, filename=None):
@@ -943,10 +1058,10 @@ class G2Project(G2ObjectWrapper):
         if filename:
             filename = os.path.abspath(os.path.expanduser(filename))
             out.filename = filename
-            gpxdict['Controls']['data']['LastSavedAs'] = filename
+            gpxdict["Controls"]["data"]["LastSavedAs"] = filename
         else:
             try:
-                out.filename = gpxdict['Controls']['data']['LastSavedAs']
+                out.filename = gpxdict["Controls"]["data"]["LastSavedAs"]
             except KeyError:
                 out.filename = None
         out.data = gpxdict
@@ -956,7 +1071,7 @@ class G2Project(G2ObjectWrapper):
         """Saves the project, either to the current filename, or to a new file.
 
         Updates self.filename if a new filename provided"""
-        controls_data = self.data['Controls']['data']
+        controls_data = self.data["Controls"]["data"]
         # place info in .gpx about GSAS-II
         #  report versions of modules; ignore what has not been used
         modList = [np]
@@ -968,32 +1083,40 @@ class G2Project(G2ObjectWrapper):
             modList += [sp]
         except NameError:
             pass
-        controls_data['PythonVersions'] = G2fil.get_python_versions(modList)
+        controls_data["PythonVersions"] = G2fil.get_python_versions(modList)
         #    G2 version info
-        controls_data['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
+        controls_data["LastSavedUsing"] = str(GSASIIpath.GetVersionNumber())
         try:
-            if GSASIIpath.HowIsG2Installed().startswith('git'):
+            if GSASIIpath.HowIsG2Installed().startswith("git"):
                 g2repo = GSASIIpath.openGitRepo(GSASIIpath.path2GSAS2)
                 commit = g2repo.head.commit
-                controls_data['LastSavedUsing'] += f" git {commit.hexsha[:8]} script"
+                controls_data["LastSavedUsing"] += f" git {commit.hexsha[:8]} script"
             else:
                 gv = getSavedVersionInfo()
                 if gv is not None:
-                    Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
+                    Controls["LastSavedUsing"] += f" static {gv.git_version[:8]}"
         except:
             pass
         #    .gpx name
         if filename:
             filename = os.path.abspath(os.path.expanduser(filename))
-            controls_data['LastSavedAs'] = filename
+            controls_data["LastSavedAs"] = filename
             self.filename = filename
         elif not self.filename:
             raise AttributeError("No file name to save to")
         SaveDictToProjFile(self.data, self.names, self.filename)
 
-    def add_powder_histogram(self, datafile, iparams=None, phases=[],
-                    fmthint=None, databank=None, instbank=None,
-                    multiple=False, URL=False):
+    def add_powder_histogram(
+        self,
+        datafile,
+        iparams=None,
+        phases=[],
+        fmthint=None,
+        databank=None,
+        instbank=None,
+        multiple=False,
+        URL=False,
+    ):
         """Loads a powder data histogram or multiple powder histograms
         into the project.
 
@@ -1034,10 +1157,10 @@ class G2Project(G2ObjectWrapper):
           are read in.
         :param bool URL: if True, the contents of datafile is a URL and
           if not a dict, the contents of iparams is also a URL.
-          both files will be downloaded to a temporary location 
-          and read. The downloaded files will not be saved. 
-          If URL is specified and the Python requests package is 
-          not installed, a `ModuleNotFoundError` Exception will occur. 
+          both files will be downloaded to a temporary location
+          and read. The downloaded files will not be saved.
+          If URL is specified and the Python requests package is
+          not installed, a `ModuleNotFoundError` Exception will occur.
           will occur.
         :returns: A :class:`G2PwdrData` object representing
             the histogram, or if multiple is True, a list of :class:`G2PwdrData`
@@ -1046,9 +1169,11 @@ class G2Project(G2ObjectWrapper):
         LoadG2fil()
         if not URL:
             datafile = os.path.abspath(os.path.expanduser(datafile))
-        pwdrreaders = import_generic(datafile, Readers['Pwdr'],fmthint=fmthint,
-                                         bank=databank, URL=URL)
-        if not multiple: pwdrreaders = pwdrreaders[0:1]
+        pwdrreaders = import_generic(
+            datafile, Readers["Pwdr"], fmthint=fmthint, bank=databank, URL=URL
+        )
+        if not multiple:
+            pwdrreaders = pwdrreaders[0:1]
         histlist = []
         if URL:
             iparmfile = downloadFile(iparams)
@@ -1058,18 +1183,19 @@ class G2Project(G2ObjectWrapper):
             except:
                 pass
         for r in pwdrreaders:
-            histname, new_names, pwdrdata = load_pwd_from_reader(r, iparmfile,
-                                          [h.name for h in self.histograms()],bank=instbank)
+            histname, new_names, pwdrdata = load_pwd_from_reader(
+                r, iparmfile, [h.name for h in self.histograms()], bank=instbank
+            )
             if histname in self.data:
                 G2fil.G2Print("Warning - redefining histogram", histname)
-            elif self.names[-1][0] == 'Phases':
+            elif self.names[-1][0] == "Phases":
                 self.names.insert(-1, new_names)
             else:
                 self.names.append(new_names)
             self.data[histname] = pwdrdata
             self.update_ids()
 
-            if phases == 'all':
+            if phases == "all":
                 phases = self.phases()
             for phase in phases:
                 phase = self.phase(phase)
@@ -1082,7 +1208,7 @@ class G2Project(G2ObjectWrapper):
             return histlist[0]
 
     def clone_powder_histogram(self, histref, newname, Y, Yerr=None):
-        '''Creates a copy of a powder diffraction histogram with new Y values.
+        """Creates a copy of a powder diffraction histogram with new Y values.
         The X values are not changed. The number of Y values must match the
         number of X values.
 
@@ -1093,7 +1219,7 @@ class G2Project(G2ObjectWrapper):
         :param list Yerr: A set of uncertainties for the intensity values (may be None,
            sets all weights to unity)
         :returns: the new histogram object (type G2PwdrData)
-        '''
+        """
         hist = self.histogram(histref)
         for i in self.names:
             if i[0] == hist.name:
@@ -1102,44 +1228,67 @@ class G2Project(G2ObjectWrapper):
         else:
             raise Exception("error in self.names, hist not found")
         orighist = hist.name
-        newhist = 'PWDR '+newname
-        if len(Y) != len(self[orighist]['data'][1][0]):
-            raise Exception("clone error: length of Y does not match number of X values ({})"
-                                .format(len(self[orighist]['data'][1][0])))
-        if Yerr is not None and len(Yerr) != len(self[orighist]['data'][1][0]):
-            raise Exception("clone error: length of Yerr does not match number of X values ({})"
-                                .format(len(self[orighist]['data'][1][0])))
+        newhist = "PWDR " + newname
+        if len(Y) != len(self[orighist]["data"][1][0]):
+            raise Exception(
+                "clone error: length of Y does not match number of X values ({})".format(
+                    len(self[orighist]["data"][1][0])
+                )
+            )
+        if Yerr is not None and len(Yerr) != len(self[orighist]["data"][1][0]):
+            raise Exception(
+                "clone error: length of Yerr does not match number of X values ({})".format(
+                    len(self[orighist]["data"][1][0])
+                )
+            )
 
         self[newhist] = copy.deepcopy(self[orighist])
         # intensities
-        yo = self[newhist]['data'][1][1] = ma.MaskedArray(Y,mask=self[orighist]['data'][1][1].mask)
+        yo = self[newhist]["data"][1][1] = ma.MaskedArray(
+            Y, mask=self[orighist]["data"][1][1].mask
+        )
 
-        Ymin,Ymax = yo.min(),yo.max()
+        Ymin, Ymax = yo.min(), yo.max()
         # set to zero: weights, calc, bkg, obs-calc
-        for i in [2,3,4,5]:
-            self[newhist]['data'][1][i] *= 0
+        for i in [2, 3, 4, 5]:
+            self[newhist]["data"][1][i] *= 0
         # weights
         if Yerr is not None:
-            self[newhist]['data'][1][2] += 1./np.array(Yerr)**2
+            self[newhist]["data"][1][2] += 1.0 / np.array(Yerr) ** 2
         else:
-            self[newhist]['data'][1][2] += 1            # set all weights to 1
-        self[newhist]['data'][0] = {'wtFactor': 1.0, 'Dummy': False,
-                  'ranId': ran.randint(0, sys.maxsize),
-                  'Offset': [0.0, 0.0], 'delOffset': 0.02*Ymax,
-                  'refOffset': -0.1*Ymax, 'refDelt': 0.1*Ymax,
-                  'Yminmax': [Ymin, Ymax]}
-        self[newhist]['Comments'].insert(0,'Cloned from '+orighist)
-        self[newhist]['Reflection Lists'] = {}
-        self[newhist]['Index Peak List'] = [[], []]
-        self[newhist]['Unit Cells List'] = []
-        self[newhist]['Peak List'] = {'peaks': [], 'sigDict': {}}
-        self.names.append([newhist]+subkeys)
+            self[newhist]["data"][1][2] += 1  # set all weights to 1
+        self[newhist]["data"][0] = {
+            "wtFactor": 1.0,
+            "Dummy": False,
+            "ranId": ran.randint(0, sys.maxsize),
+            "Offset": [0.0, 0.0],
+            "delOffset": 0.02 * Ymax,
+            "refOffset": -0.1 * Ymax,
+            "refDelt": 0.1 * Ymax,
+            "Yminmax": [Ymin, Ymax],
+        }
+        self[newhist]["Comments"].insert(0, "Cloned from " + orighist)
+        self[newhist]["Reflection Lists"] = {}
+        self[newhist]["Index Peak List"] = [[], []]
+        self[newhist]["Unit Cells List"] = []
+        self[newhist]["Peak List"] = {"peaks": [], "sigDict": {}}
+        self.names.append([newhist] + subkeys)
         self.update_ids()
         return self.histogram(newhist)
 
-    def add_simulated_powder_histogram(self, histname, iparams, Tmin, Tmax, Tstep=None,
-                                       wavelength=None, scale=None, phases=[], ibank=None,
-                                           Npoints=None):
+    def add_simulated_powder_histogram(
+        self,
+        histname,
+        iparams,
+        Tmin,
+        Tmax,
+        Tstep=None,
+        wavelength=None,
+        scale=None,
+        phases=[],
+        ibank=None,
+        Npoints=None,
+    ):
         """Create a simulated powder data histogram for the project.
 
         Requires an instrument parameter file.
@@ -1178,19 +1327,20 @@ class G2Project(G2ObjectWrapper):
         LoadG2fil()
         iparams = os.path.abspath(os.path.expanduser(iparams))
         if not os.path.exists(iparams):
-            raise G2ScriptException("File does not exist:"+iparams)
-        rd = G2obj.ImportPowderData( # Initialize a base class reader
+            raise G2ScriptException("File does not exist:" + iparams)
+        rd = G2obj.ImportPowderData(  # Initialize a base class reader
             extensionlist=tuple(),
             strictExtension=False,
-            formatName = 'Simulate dataset',
-            longFormatName = 'Compute a simulated pattern')
-        rd.powderentry[0] = '' # no filename
-        rd.powderentry[2] = 1 # only one bank
-        rd.comments.append('This is a dummy dataset for powder pattern simulation')
+            formatName="Simulate dataset",
+            longFormatName="Compute a simulated pattern",
+        )
+        rd.powderentry[0] = ""  # no filename
+        rd.powderentry[2] = 1  # only one bank
+        rd.comments.append("This is a dummy dataset for powder pattern simulation")
         rd.idstring = histname
-        #Iparm1, Iparm2 = load_iprms(iparams, rd)
+        # Iparm1, Iparm2 = load_iprms(iparams, rd)
         if Tmax < Tmin:
-            Tmin,Tmax = Tmax,Tmin
+            Tmin, Tmax = Tmax, Tmin
         if Tstep is not None and Npoints is not None:
             raise G2ScriptException("Error: Tstep and Npoints both specified")
         if Tstep is not None:
@@ -1198,82 +1348,105 @@ class G2Project(G2ObjectWrapper):
         elif Npoints is None:
             Npoints = 2500
         Iparm1, Iparm2 = load_iprms(iparams, rd, bank=ibank)
-        #G2fil.G2Print('Instrument parameters read:',reader.instmsg)
-        if 'T' in Iparm1['Type'][0]:
+        # G2fil.G2Print('Instrument parameters read:',reader.instmsg)
+        if "T" in Iparm1["Type"][0]:
             # patch -- anticipate TOF values in microsec from buggy version
-            if Tmax > 200.:
-                print('Error: Tmax is too large. Note that input for TOF Tmin & Tmax has changed.')
-                print('       Tmin & Tmax are now in milliseconds not microsec. Step is now deltaT/T.')
+            if Tmax > 200.0:
+                print(
+                    "Error: Tmax is too large. Note that input for TOF Tmin & Tmax has changed."
+                )
+                print(
+                    "       Tmin & Tmax are now in milliseconds not microsec. Step is now deltaT/T."
+                )
                 raise G2ScriptException("Error: Tmax is too large")
             if Npoints:
                 N = Npoints
-                Tstep = (np.log(Tmax)-np.log(Tmin))/N
+                Tstep = (np.log(Tmax) - np.log(Tmin)) / N
             else:
-                N = (np.log(Tmax)-np.log(Tmin))/Tstep
+                N = (np.log(Tmax) - np.log(Tmin)) / Tstep
             if N > 25000:
-                raise G2ScriptException("Error: Tstep is too small. Would need "+str(N)+" points.")
-            x = np.exp((np.arange(0,N))*Tstep+np.log(Tmin*1000.))
+                raise G2ScriptException(
+                    "Error: Tstep is too small. Would need " + str(N) + " points."
+                )
+            x = np.exp((np.arange(0, N)) * Tstep + np.log(Tmin * 1000.0))
             N = len(x)
-            unit = 'millisec'
+            unit = "millisec"
         else:
             if Npoints:
                 N = Npoints
             else:
-                N = int((Tmax-Tmin)/Tstep)+1
+                N = int((Tmax - Tmin) / Tstep) + 1
             if N > 25000:
-                raise G2ScriptException("Error: Tstep is too small. Would need "+str(N)+" points.")
-            x = np.linspace(Tmin,Tmax,N,True)
+                raise G2ScriptException(
+                    "Error: Tstep is too small. Would need " + str(N) + " points."
+                )
+            x = np.linspace(Tmin, Tmax, N, True)
             N = len(x)
-            unit = 'degrees 2theta'
+            unit = "degrees 2theta"
         if N < 3:
-            raise G2ScriptException("Error: Range is too small or step is too large, <3 points")
-        G2fil.G2Print(f'Simulating {N} points from {Tmin} to {Tmax} {unit}')
+            raise G2ScriptException(
+                "Error: Range is too small or step is too large, <3 points"
+            )
+        G2fil.G2Print(f"Simulating {N} points from {Tmin} to {Tmax} {unit}")
         rd.powderdata = [
-            np.array(x), # x-axis values
-            np.zeros_like(x), # powder pattern intensities
-            np.ones_like(x), # 1/sig(intensity)^2 values (weights)
-            np.zeros_like(x), # calc. intensities (zero)
-            np.zeros_like(x), # calc. background (zero)
-            np.zeros_like(x), # obs-calc profiles
-            ]
+            np.array(x),  # x-axis values
+            np.zeros_like(x),  # powder pattern intensities
+            np.ones_like(x),  # 1/sig(intensity)^2 values (weights)
+            np.zeros_like(x),  # calc. intensities (zero)
+            np.zeros_like(x),  # calc. background (zero)
+            np.zeros_like(x),  # obs-calc profiles
+        ]
         Tmin = rd.powderdata[0][0]
         Tmax = rd.powderdata[0][-1]
-        histname, new_names, pwdrdata = load_pwd_from_reader(rd, iparams,
-                                            [h.name for h in self.histograms()],ibank)
+        histname, new_names, pwdrdata = load_pwd_from_reader(
+            rd, iparams, [h.name for h in self.histograms()], ibank
+        )
         if histname in self.data:
             G2fil.G2Print("Warning - redefining histogram", histname)
-        elif self.names[-1][0] == 'Phases':
+        elif self.names[-1][0] == "Phases":
             self.names.insert(-1, new_names)
         else:
             self.names.append(new_names)
         if scale is not None:
-            pwdrdata['Sample Parameters']['Scale'][0] = scale
-        elif pwdrdata['Instrument Parameters'][0]['Type'][0].startswith('PNC'):
-            pwdrdata['Sample Parameters']['Scale'][0] = 10000.
-        elif pwdrdata['Instrument Parameters'][0]['Type'][0].startswith('PNT'):
-            pwdrdata['Sample Parameters']['Scale'][0] = 100000.
+            pwdrdata["Sample Parameters"]["Scale"][0] = scale
+        elif pwdrdata["Instrument Parameters"][0]["Type"][0].startswith("PNC"):
+            pwdrdata["Sample Parameters"]["Scale"][0] = 10000.0
+        elif pwdrdata["Instrument Parameters"][0]["Type"][0].startswith("PNT"):
+            pwdrdata["Sample Parameters"]["Scale"][0] = 100000.0
         if wavelength is not None:
-            if 'Lam1' in pwdrdata['Instrument Parameters'][0]:
+            if "Lam1" in pwdrdata["Instrument Parameters"][0]:
                 # have alpha 1,2 here
-                errmsg = ''
+                errmsg = ""
                 try:
-                    pwdrdata['Instrument Parameters'][0]['Lam1'][0] = float(wavelength[0])
-                    pwdrdata['Instrument Parameters'][0]['Lam1'][1] = float(wavelength[0])
-                    pwdrdata['Instrument Parameters'][0]['Lam2'][0] = float(wavelength[1])
-                    pwdrdata['Instrument Parameters'][0]['Lam2'][1] = float(wavelength[1])
+                    pwdrdata["Instrument Parameters"][0]["Lam1"][0] = float(
+                        wavelength[0]
+                    )
+                    pwdrdata["Instrument Parameters"][0]["Lam1"][1] = float(
+                        wavelength[0]
+                    )
+                    pwdrdata["Instrument Parameters"][0]["Lam2"][0] = float(
+                        wavelength[1]
+                    )
+                    pwdrdata["Instrument Parameters"][0]["Lam2"][1] = float(
+                        wavelength[1]
+                    )
                 except:
                     errmsg = "add_simulated_powder_histogram Error: only one wavelength with alpha 1+2 histogram?"
-                if errmsg: raise G2ScriptException(errmsg)
-            elif 'Lam' in pwdrdata['Instrument Parameters'][0]:
-                errmsg = ''
+                if errmsg:
+                    raise G2ScriptException(errmsg)
+            elif "Lam" in pwdrdata["Instrument Parameters"][0]:
+                errmsg = ""
                 try:
-                    pwdrdata['Instrument Parameters'][0]['Lam'][0] = float(wavelength)
-                    pwdrdata['Instrument Parameters'][0]['Lam'][1] = float(wavelength)
+                    pwdrdata["Instrument Parameters"][0]["Lam"][0] = float(wavelength)
+                    pwdrdata["Instrument Parameters"][0]["Lam"][1] = float(wavelength)
                 except:
                     errmsg = "add_simulated_powder_histogram Error: invalid wavelength?"
-                if errmsg: raise G2ScriptException(errmsg)
+                if errmsg:
+                    raise G2ScriptException(errmsg)
             else:
-                raise G2ScriptException("add_simulated_powder_histogram Error: can't set a wavelength for a non-CW dataset")
+                raise G2ScriptException(
+                    "add_simulated_powder_histogram Error: can't set a wavelength for a non-CW dataset"
+                )
         self.data[histname] = pwdrdata
         self.update_ids()
 
@@ -1281,13 +1454,21 @@ class G2Project(G2ObjectWrapper):
             phase = self.phase(phase)
             self.link_histogram_phase(histname, phase)
 
-        self.set_Controls('cycles', 0)
-        self.data[histname]['data'][0]['Dummy'] = True
+        self.set_Controls("cycles", 0)
+        self.data[histname]["data"][0]["Dummy"] = True
         return self.histogram(histname)
 
-    def add_phase(self, phasefile=None, phasename=None, histograms=[],
-                      fmthint=None, mag=False,
-                      spacegroup='P 1',cell=None, URL=False):
+    def add_phase(
+        self,
+        phasefile=None,
+        phasename=None,
+        histograms=[],
+        fmthint=None,
+        mag=False,
+        spacegroup="P 1",
+        cell=None,
+        URL=False,
+    ):
         """Loads a phase into the project, usually from a .cif file
 
         :param str phasefile: The CIF file (or other file type, see fmthint)
@@ -1311,12 +1492,12 @@ class G2Project(G2ObjectWrapper):
           this is only used when phasefile is None.
         :param list cell: a list with six unit cell constants
             (a, b, c, alpha, beta and gamma in Angstrom/degrees).
-        :param bool URL: if True, the contents of phasefile is a URL 
-          and the file will be downloaded to a temporary location 
-          and read. The downloaded file will not be saved. 
-          If URL is specified and the Python requests package is 
-          not installed, a `ModuleNotFoundError` Exception will occur. 
-          will occur. 
+        :param bool URL: if True, the contents of phasefile is a URL
+          and the file will be downloaded to a temporary location
+          and read. The downloaded file will not be saved.
+          If URL is specified and the Python requests package is
+          not installed, a `ModuleNotFoundError` Exception will occur.
+          will occur.
 
         :returns: A :class:`G2Phase` object representing the
             new phase.
@@ -1325,50 +1506,54 @@ class G2Project(G2ObjectWrapper):
         histograms = [self.histogram(h).name for h in histograms]
         if phasefile is None:  # create a phase, rather than reading it
             if phasename is None:
-                raise Exception('add_phase: phasefile and phasename cannot both be None')
+                raise Exception(
+                    "add_phase: phasefile and phasename cannot both be None"
+                )
             phaseNameList = [p.name for p in self.phases()]
             phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
-            self.data['Phases'] = self.data.get('Phases', {'data': None})
-            err,SGData=G2spc.SpcGroup(spacegroup)
+            self.data["Phases"] = self.data.get("Phases", {"data": None})
+            err, SGData = G2spc.SpcGroup(spacegroup)
             if err != 0:
-                print('Space group error:', G2spc.SGErrors(err))
-                raise Exception('Space group error')
-            self.data['Phases'][phasename] = G2obj.SetNewPhase(
-                Name=phasename,SGData=SGData)
-            self.data['Phases'][phasename]['General']['Name'] = phasename
+                print("Space group error:", G2spc.SGErrors(err))
+                raise Exception("Space group error")
+            self.data["Phases"][phasename] = G2obj.SetNewPhase(
+                Name=phasename, SGData=SGData
+            )
+            self.data["Phases"][phasename]["General"]["Name"] = phasename
             for hist in histograms:
                 self.link_histogram_phase(hist, phasename)
 
             for obj in self.names:
-                if obj[0] == 'Phases':
+                if obj[0] == "Phases":
                     phasenames = obj
                     break
             else:
-                phasenames = ['Phases']
+                phasenames = ["Phases"]
                 self.names.append(phasenames)
             phasenames.append(phasename)
 
-            data = self.data['Phases'][phasename]
+            data = self.data["Phases"][phasename]
             if cell:
                 if len(cell) != 6:
-                    raise Exception('Error: Unit cell must have 6 entries')
-                data['General']['Cell'][1:7] = cell
-                data['General']['Cell'][7] = G2lat.calc_V(G2lat.cell2A(cell))
+                    raise Exception("Error: Unit cell must have 6 entries")
+                data["General"]["Cell"][1:7] = cell
+                data["General"]["Cell"][7] = G2lat.calc_V(G2lat.cell2A(cell))
             SetupGeneral(data, None)
             self.index_ids()
 
             self.update_ids()
             return self.phase(phasename)
 
-        if not URL: 
+        if not URL:
             phasefile = os.path.abspath(os.path.expanduser(phasefile))
             if not os.path.exists(phasefile):
-                raise G2ImportException(f'File {phasefile} does not exist')
+                raise G2ImportException(f"File {phasefile} does not exist")
         else:
-            print(f'reading phase from URL {phasefile}')
+            print(f"reading phase from URL {phasefile}")
         # TODO: handle multiple phases in a file
-        phasereaders = import_generic(phasefile, Readers['Phase'],
-                                          fmthint=fmthint, URL=URL)
+        phasereaders = import_generic(
+            phasefile, Readers["Phase"], fmthint=fmthint, URL=URL
+        )
         phasereader = phasereaders[0]
 
         if phasereader.MPhase and mag:
@@ -1376,48 +1561,48 @@ class G2Project(G2ObjectWrapper):
         else:
             phObj = phasereader.Phase
 
-        phasename = phasename or phObj['General']['Name']
+        phasename = phasename or phObj["General"]["Name"]
         phaseNameList = [p.name for p in self.phases()]
         phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
-        phObj['General']['Name'] = phasename
+        phObj["General"]["Name"] = phasename
 
-        if 'Phases' not in self.data:
-            self.data['Phases'] = { 'data': None }
-        assert phasename not in self.data['Phases'], "phase names should be unique"
-        self.data['Phases'][phasename] = phObj
+        if "Phases" not in self.data:
+            self.data["Phases"] = {"data": None}
+        assert phasename not in self.data["Phases"], "phase names should be unique"
+        self.data["Phases"][phasename] = phObj
 
         # process constraints, currently generated only from ISODISTORT CIFs
         if phasereader.Constraints:
-            Constraints = self.data['Constraints']['data']
+            Constraints = self.data["Constraints"]["data"]
             for i in phasereader.Constraints:
                 if isinstance(i, dict):
-                    if '_Explain' not in Constraints:
-                        Constraints['_Explain'] = {}
-                    Constraints['_Explain'].update(i)
+                    if "_Explain" not in Constraints:
+                        Constraints["_Explain"] = {}
+                    Constraints["_Explain"].update(i)
                 else:
-                    Constraints['Phase'].append(i)
+                    Constraints["Phase"].append(i)
 
-        data = self.data['Phases'][phasename]
-#        generalData = data['General']
-#        SGData = generalData['SGData']
-#        NShkl = len(G2spc.MustrainNames(SGData))
-#        NDij = len(G2spc.HStrainNames(SGData))
-#        Super = generalData.get('Super', 0)
-#        if Super:
-#            SuperVec = np.array(generalData['SuperVec'][0])
-#        else:
-#            SuperVec = []
-#        UseList = data['Histograms']
+        data = self.data["Phases"][phasename]
+        #        generalData = data['General']
+        #        SGData = generalData['SGData']
+        #        NShkl = len(G2spc.MustrainNames(SGData))
+        #        NDij = len(G2spc.HStrainNames(SGData))
+        #        Super = generalData.get('Super', 0)
+        #        if Super:
+        #            SuperVec = np.array(generalData['SuperVec'][0])
+        #        else:
+        #            SuperVec = []
+        #        UseList = data['Histograms']
 
         for hist in histograms:
             self.link_histogram_phase(hist, phasename)
 
         for obj in self.names:
-            if obj[0] == 'Phases':
+            if obj[0] == "Phases":
                 phasenames = obj
                 break
         else:
-            phasenames = ['Phases']
+            phasenames = ["Phases"]
             self.names.append(phasenames)
         phasenames.append(phasename)
 
@@ -1449,34 +1634,42 @@ class G2Project(G2ObjectWrapper):
         LoadG2fil()
         datafile = os.path.abspath(os.path.expanduser(datafile))
         if fmthint is None:
-            choices = ', '.join(['"'+i.formatName+'"' for i in Readers['HKLF']])
-            raise ValueError("add_single_histogram: A value is required for the fmthint parameter"+
-                                 f'\n\nChoices are: {choices}')
-        readers = import_generic(datafile, Readers['HKLF'],fmthint=fmthint)
-        #histlist = []
+            choices = ", ".join(['"' + i.formatName + '"' for i in Readers["HKLF"]])
+            raise ValueError(
+                "add_single_histogram: A value is required for the fmthint parameter"
+                + f"\n\nChoices are: {choices}"
+            )
+        readers = import_generic(datafile, Readers["HKLF"], fmthint=fmthint)
+        # histlist = []
         for r in readers:  # only expect 1
-            histname = 'HKLF ' + G2obj.StripUnicode(
-                os.path.split(r.readfilename)[1],'_')
-            #HistName = G2obj.MakeUniqueLabel(HistName, existingnames)
-            newnames = [histname,'Instrument Parameters','Reflection List']
+            histname = "HKLF " + G2obj.StripUnicode(
+                os.path.split(r.readfilename)[1], "_"
+            )
+            # HistName = G2obj.MakeUniqueLabel(HistName, existingnames)
+            newnames = [histname, "Instrument Parameters", "Reflection List"]
             if histname in self.data:
                 G2fil.G2Print("Warning - redefining histogram", histname)
-            elif self.names[-1][0] == 'Phases':
+            elif self.names[-1][0] == "Phases":
                 self.names.insert(-1, newnames)  # add histogram into tree before phases
             else:
                 self.names.append(newnames)
-            data = [{
-                'wtFactor': 1.0,
-                'Dummy': False,
-                'ranId': ran.randint(0, sys.maxsize),
-                'histTitle': ''},r.RefDict]
+            data = [
+                {
+                    "wtFactor": 1.0,
+                    "Dummy": False,
+                    "ranId": ran.randint(0, sys.maxsize),
+                    "histTitle": "",
+                },
+                r.RefDict,
+            ]
             self.data[histname] = {
-                'data':data,
-                'Instrument Parameters':r.Parameters,
-                'Reflection List': {}
-                }
+                "data": data,
+                "Instrument Parameters": r.Parameters,
+                "Reflection List": {},
+            }
             self.update_ids()
-            if phase is None: return
+            if phase is None:
+                return
             self.link_histogram_phase(histname, phase)
 
     def link_histogram_phase(self, histogram, phase):
@@ -1489,22 +1682,25 @@ class G2Project(G2ObjectWrapper):
         hist = self.histogram(histogram)
         phase = self.phase(phase)
 
-        generalData = phase['General']
+        generalData = phase["General"]
 
-        if hist.name.startswith('HKLF '):
-            G2mth.UpdateHKLFvals(hist.name, phase, hist.data['data'][1])
-        elif hist.name.startswith('PWDR '):
-            hist['Reflection Lists'][generalData['Name']] = {}
-            UseList = phase['Histograms']
-            SGData = generalData['SGData']
+        if hist.name.startswith("HKLF "):
+            G2mth.UpdateHKLFvals(hist.name, phase, hist.data["data"][1])
+        elif hist.name.startswith("PWDR "):
+            hist["Reflection Lists"][generalData["Name"]] = {}
+            UseList = phase["Histograms"]
+            SGData = generalData["SGData"]
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
             UseList[hist.name] = G2mth.SetDefaultDData(
-                'PWDR', hist.name, NShkl=NShkl, NDij=NDij)
-            UseList[hist.name]['hId'] = hist.id
-            for key, val in [('Use', True), ('LeBail', False),
-                             ('Babinet', {'BabA': [0.0, False],
-                                          'BabU': [0.0, False]})]:
+                "PWDR", hist.name, NShkl=NShkl, NDij=NDij
+            )
+            UseList[hist.name]["hId"] = hist.id
+            for key, val in [
+                ("Use", True),
+                ("LeBail", False),
+                ("Babinet", {"BabA": [0.0, False], "BabU": [0.0, False]}),
+            ]:
                 if key not in UseList[hist.name]:
                     UseList[hist.name][key] = val
         else:
@@ -1520,14 +1716,14 @@ class G2Project(G2ObjectWrapper):
         _deep_copy_into(from_=data, into=self.data)
 
     def refine(self, newfile=None, printFile=None, makeBack=False):
-        '''Invoke a refinement for the project. The project is written to
+        """Invoke a refinement for the project. The project is written to
         the currently selected gpx file and then either a single or sequential refinement
         is performed depending on the setting of 'Seq Data' in Controls
         (set in :meth:`get_Controls`).
-        '''
-        seqSetting = self.data['Controls']['data'].get('Seq Data',[])
+        """
+        seqSetting = self.data["Controls"]["data"].get("Seq Data", [])
         if not seqSetting:
-            self.index_ids()    # index_ids will automatically save the project
+            self.index_ids()  # index_ids will automatically save the project
             # TODO: migrate to RefineCore G2strMain does not properly use printFile
             # G2strMain.RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
             #      calcControls,pawleyLookup,ifPrint,printFile,dlg)
@@ -1535,37 +1731,36 @@ class G2Project(G2ObjectWrapper):
             # check that constraints are OK
             errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.filename)
             if errmsg:
-                G2fil.G2Print('Constraint error',errmsg)
-                raise Exception('Constraint error')
+                G2fil.G2Print("Constraint error", errmsg)
+                raise Exception("Constraint error")
             if warnmsg:
-                G2fil.G2Print('\nNote these constraint warning(s):\n'+warnmsg)
-                G2fil.G2Print('Generated constraints\n'+G2mv.VarRemapShow([],True))
+                G2fil.G2Print("\nNote these constraint warning(s):\n" + warnmsg)
+                G2fil.G2Print("Generated constraints\n" + G2mv.VarRemapShow([], True))
             G2strMain.Refine(self.filename, makeBack=makeBack)
         else:
             self._seqrefine()
-        self.reload() # get file from GPX
+        self.reload()  # get file from GPX
 
     def _seqrefine(self):
-        '''Perform a sequential refinement.
-        '''
+        """Perform a sequential refinement."""
 
-        self.data['Controls']['data']['ShowCell'] = True
+        self.data["Controls"]["data"]["ShowCell"] = True
         # add to tree item to project, if not present
-        if 'Sequential results' not in self.data:
-            self.data['Sequential results'] = {'data':{}}
-            self.names.append(['Sequential results'])
-        self.index_ids()    # index_ids will automatically save the project
-        #GSASIIpath.IPyBreak_base()
+        if "Sequential results" not in self.data:
+            self.data["Sequential results"] = {"data": {}}
+            self.names.append(["Sequential results"])
+        self.index_ids()  # index_ids will automatically save the project
+        # GSASIIpath.IPyBreak_base()
 
         # check that constraints are OK
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.filename)
         if errmsg:
-            G2fil.G2Print('Constraint error',errmsg)
-            raise Exception('Constraint error')
+            G2fil.G2Print("Constraint error", errmsg)
+            raise Exception("Constraint error")
         if warnmsg:
-            G2fil.G2Print('\nNote these constraint warning(s):\n'+warnmsg)
-            G2fil.G2Print('Generated constraints\n'+G2mv.VarRemapShow([],True))
-        OK,Msg = G2strMain.SeqRefine(self.filename,None)
+            G2fil.G2Print("\nNote these constraint warning(s):\n" + warnmsg)
+            G2fil.G2Print("Generated constraints\n" + G2mv.VarRemapShow([], True))
+        OK, Msg = G2strMain.SeqRefine(self.filename, None)
 
     def histogram(self, histname):
         """Returns the histogram object associated with histname, or None
@@ -1585,11 +1780,13 @@ class G2Project(G2ObjectWrapper):
             if histname.proj == self:
                 return histname
             else:
-                raise Exception(f'Histogram object {histname} (type {type(histname)}) is project {histname.proj}')
+                raise Exception(
+                    f"Histogram object {histname} (type {type(histname)}) is project {histname.proj}"
+                )
         if histname in self.data:
-            if histname.startswith('HKLF '):
+            if histname.startswith("HKLF "):
                 return G2Single(self.data[histname], self, histname)
-            elif histname.startswith('PWDR '):
+            elif histname.startswith("PWDR "):
                 return G2PwdrData(self.data[histname], self, histname)
         try:
             # see if histname is an id or ranId
@@ -1597,10 +1794,10 @@ class G2Project(G2ObjectWrapper):
         except ValueError:
             return None
         for histogram in self.histograms():
-            if histogram.name.startswith('HKLF '):
-                if histogram.data['data'][0]['ranId'] == histname:
+            if histogram.name.startswith("HKLF "):
+                if histogram.data["data"][0]["ranId"] == histname:
                     return histogram
-            elif histogram.name.startswith('PWDR '):
+            elif histogram.name.startswith("PWDR "):
                 if histogram.id == histname or histogram.ranId == histname:
                     return histogram
 
@@ -1619,31 +1816,35 @@ class G2Project(G2ObjectWrapper):
         """
         if isinstance(histname, G2PwdrData):
             if histname.proj == self:
-                return 'PWDR'
+                return "PWDR"
             else:
-                raise Exception(f'Histogram object {histname} (type {type(histname)}) is project {histname.proj}')
+                raise Exception(
+                    f"Histogram object {histname} (type {type(histname)}) is project {histname.proj}"
+                )
         if isinstance(histname, G2Single):
             if histname.proj == self:
-                return 'HKLF'
+                return "HKLF"
             else:
-                raise Exception(f'Histogram object {histname} (type {type(histname)}) is project {histname.proj}')
+                raise Exception(
+                    f"Histogram object {histname} (type {type(histname)}) is project {histname.proj}"
+                )
         if histname in self.data:
-            if histname.startswith('HKLF '):
-                return 'HKLF'
-            elif histname.startswith('PWDR '):
-                return 'PWDR'
+            if histname.startswith("HKLF "):
+                return "HKLF"
+            elif histname.startswith("PWDR "):
+                return "PWDR"
         try:
             # see if histname is an id or ranId
             histname = int(histname)
         except ValueError:
             return None
         for histogram in self.histograms():
-            if histogram.name.startswith('HKLF '):
-                if histogram.data['data'][0]['ranId'] == histname:
-                    return 'HKLF'
-            elif histogram.name.startswith('PWDR '):
+            if histogram.name.startswith("HKLF "):
+                if histogram.data["data"][0]["ranId"] == histname:
+                    return "HKLF"
+            elif histogram.name.startswith("PWDR "):
                 if histogram.id == histname or histogram.ranId == histname:
-                    return 'PWDR'
+                    return "PWDR"
 
     def histograms(self, typ=None):
         """Return a list of all histograms, as :class:`G2PwdrData` objects
@@ -1666,7 +1867,7 @@ class G2Project(G2ObjectWrapper):
         # list of names). then it must be a histogram, unless labeled Phases or Restraints
         if typ is None:
             for obj in self.names:
-                if obj[0].startswith('PWDR ') or obj[0].startswith('HKLF '):
+                if obj[0].startswith("PWDR ") or obj[0].startswith("HKLF "):
                     output.append(self.histogram(obj[0]))
         else:
             for obj in self.names:
@@ -1688,11 +1889,11 @@ class G2Project(G2ObjectWrapper):
             :meth:`~G2Project.histograms`
             :meth:`~G2Project.phase`
             :meth:`~G2Project.phases`
-            """
+        """
         if isinstance(phasename, G2Phase):
             if phasename.proj == self:
                 return phasename
-        phases = self.data['Phases']
+        phases = self.data["Phases"]
         if phasename in phases:
             return G2Phase(phases[phasename], phasename, self)
 
@@ -1716,16 +1917,15 @@ class G2Project(G2ObjectWrapper):
             :meth:`~G2Project.histogram`
             :meth:`~G2Project.histograms`
             :meth:`~G2Project.phase`
-            """
+        """
         for obj in self.names:
-            if obj[0] == 'Phases':
+            if obj[0] == "Phases":
                 return [self.phase(p) for p in obj[1:]]
         return []
 
     def _images(self):
-        """Returns a list of all the images in the project.
-        """
-        return [i[0] for i in self.names if i[0].startswith('IMG ')]
+        """Returns a list of all the images in the project."""
+        return [i[0] for i in self.names if i[0].startswith("IMG ")]
 
     def image(self, imageRef):
         """
@@ -1744,11 +1944,13 @@ class G2Project(G2ObjectWrapper):
             if imageRef.proj == self:
                 return imageRef
             else:
-                raise Exception(f"Image {imageRef.name} not in current selected project")
+                raise Exception(
+                    f"Image {imageRef.name} not in current selected project"
+                )
         if imageRef in self._images():
             return G2Image(self.data[imageRef], imageRef, self)
 
-        errmsg = ''
+        errmsg = ""
         try:
             # imageRef should be an index
             num = int(imageRef)
@@ -1758,7 +1960,8 @@ class G2Project(G2ObjectWrapper):
             errmsg = "imageRef {imageRef} not an object, name or image index in current selected project"
         except IndexError:
             errmsg = "imageRef {imageRef} out of range (max={len(self._images())-1)}) in current selected project"
-        if errmsg: raise G2ScriptException(errmsg)
+        if errmsg:
+            raise G2ScriptException(errmsg)
 
     def images(self):
         """
@@ -1766,12 +1969,11 @@ class G2Project(G2ObjectWrapper):
 
         :returns: A list of :class:`G2Image` objects
         """
-        return [G2Image(self.data[i],i,self) for i in self._images()]
+        return [G2Image(self.data[i], i, self) for i in self._images()]
 
     def _pdfs(self):
-        """Returns a list of all the PDF entries in the project.
-        """
-        return [i[0] for i in self.names if i[0].startswith('PDF ')]
+        """Returns a list of all the PDF entries in the project."""
+        return [i[0] for i in self.names if i[0].startswith("PDF ")]
 
     def pdf(self, pdfRef):
         """
@@ -1795,7 +1997,7 @@ class G2Project(G2ObjectWrapper):
         if pdfRef in self._pdfs():
             return G2PDF(self.data[pdfRef], pdfRef, self)
 
-        errmsg = ''
+        errmsg = ""
         try:
             # pdfRef should be an index
             num = int(pdfRef)
@@ -1804,18 +2006,20 @@ class G2Project(G2ObjectWrapper):
         except ValueError:
             errmsg = f"pdfRef {pdfRef} not an object, name or PDF index in current selected project"
         except IndexError:
-            errmsg = f"pdfRef {pdfRef} out of range (max={len(G2SmallAngle)-1}) in current selected project"
-        if errmsg: raise Exception(errmsg)
+            errmsg = f"pdfRef {pdfRef} out of range (max={len(G2SmallAngle) - 1}) in current selected project"
+        if errmsg:
+            raise Exception(errmsg)
+
     def pdfs(self):
         """
         Returns a list of all the PDFs in the project.
 
         :returns: A list of :class:`G2PDF` objects
         """
-        return [G2PDF(self.data[i],i,self) for i in self._pdfs()]
+        return [G2PDF(self.data[i], i, self) for i in self._pdfs()]
 
     def copy_PDF(self, PDFobj, histogram):
-        '''Creates a PDF entry that can be used to compute a PDF
+        """Creates a PDF entry that can be used to compute a PDF
         as a copy of settings in an existing PDF (:class:`G2PDF`)
         object.
         This places an entry in the project but :meth:`G2PDF.calculate`
@@ -1827,21 +2031,21 @@ class G2Project(G2ObjectWrapper):
         :param histogram: A reference to a histogram,
           which can be reference by object, name, or number.
         :returns: A :class:`G2PDF` object for the PDF entry
-        '''
+        """
         LoadG2fil()
-        PDFname = 'PDF ' + self.histogram(histogram).name[4:]
-        PDFdict = {'data':None}
-        for i in 'PDF Controls', 'PDF Peaks':
+        PDFname = "PDF " + self.histogram(histogram).name[4:]
+        PDFdict = {"data": None}
+        for i in "PDF Controls", "PDF Peaks":
             PDFdict[i] = copy.deepcopy(PDFobj[i])
-        self.names.append([PDFname]+['PDF Controls', 'PDF Peaks'])
+        self.names.append([PDFname] + ["PDF Controls", "PDF Peaks"])
         self.data[PDFname] = PDFdict
-        for i in 'I(Q)','S(Q)','F(Q)','G(R)','g(r)':
-            self.data[PDFname]['PDF Controls'][i] = []
+        for i in "I(Q)", "S(Q)", "F(Q)", "G(R)", "g(r)":
+            self.data[PDFname]["PDF Controls"][i] = []
         G2fil.G2Print(f'Adding "{PDFname}" to project')
         return G2PDF(self.data[PDFname], PDFname, self)
 
     def add_PDF(self, prmfile, histogram):
-        '''Creates a PDF entry that can be used to compute a PDF.
+        """Creates a PDF entry that can be used to compute a PDF.
         Note that this command places an entry in the project,
         but :meth:`G2PDF.calculate` must be used to actually perform
         the computation.
@@ -1850,40 +2054,61 @@ class G2Project(G2ObjectWrapper):
         :param histogram: A reference to a histogram,
           which can be reference by object, name, or number.
         :returns: A :class:`G2PDF` object for the PDF entry
-        '''
+        """
 
         LoadG2fil()
-        PDFname = 'PDF ' + self.histogram(histogram).name[4:]
-        peaks = {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]}
+        PDFname = "PDF " + self.histogram(histogram).name[4:]
+        peaks = {
+            "Limits": [1.0, 5.0],
+            "Background": [2, [0.0, -0.2 * np.pi], False],
+            "Peaks": [],
+        }
         Controls = {
-            'Sample':{'Name':self.histogram(histogram).name,'Mult':1.0},
-            'Sample Bkg.':{'Name':'','Mult':-1.0,'Refine':False},
-            'Container':{'Name':'','Mult':-1.0,'Refine':False},
-            'Container Bkg.':{'Name':'','Mult':-1.0},
-            'ElList':{},
-            'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':0.0,'Flat Bkg':0,
-            'DetType':'Area detector','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':[20,25],
-            'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,'Rmin':1.0,
-            'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[],'g(r)':[]}
+            "Sample": {"Name": self.histogram(histogram).name, "Mult": 1.0},
+            "Sample Bkg.": {"Name": "", "Mult": -1.0, "Refine": False},
+            "Container": {"Name": "", "Mult": -1.0, "Refine": False},
+            "Container Bkg.": {"Name": "", "Mult": -1.0},
+            "ElList": {},
+            "Geometry": "Cylinder",
+            "Diam": 1.0,
+            "Pack": 0.50,
+            "Form Vol": 0.0,
+            "Flat Bkg": 0,
+            "DetType": "Area detector",
+            "ObliqCoeff": 0.2,
+            "Ruland": 0.025,
+            "QScaleLim": [20, 25],
+            "Lorch": False,
+            "BackRatio": 0.0,
+            "Rmax": 100.0,
+            "noRing": False,
+            "IofQmin": 1.0,
+            "Rmin": 1.0,
+            "I(Q)": [],
+            "S(Q)": [],
+            "F(Q)": [],
+            "G(R)": [],
+            "g(r)": [],
+        }
 
         fo = open(prmfile)
         S = fo.readline()
         while S:
-            if '#' in S:
+            if "#" in S:
                 S = fo.readline()
                 continue
-            key,val = S.split(':',1)
+            key, val = S.split(":", 1)
             try:
                 Controls[key] = eval(val)
             except:
                 Controls[key] = val.strip()
             S = fo.readline()
         fo.close()
-        Controls['Sample']['Name'] = self.histogram(histogram).name
-        for i in 'Sample Bkg.','Container','Container Bkg.':
-            Controls[i]['Name'] = ''
-        PDFdict = {'data':None,'PDF Controls':Controls, 'PDF Peaks':peaks}
-        self.names.append([PDFname]+['PDF Controls', 'PDF Peaks'])
+        Controls["Sample"]["Name"] = self.histogram(histogram).name
+        for i in "Sample Bkg.", "Container", "Container Bkg.":
+            Controls[i]["Name"] = ""
+        PDFdict = {"data": None, "PDF Controls": Controls, "PDF Peaks": peaks}
+        self.names.append([PDFname] + ["PDF Controls", "PDF Peaks"])
         self.data[PDFname] = PDFdict
         G2fil.G2Print(f'Adding "{PDFname}" to project')
         return G2PDF(self.data[PDFname], PDFname, self)
@@ -1894,8 +2119,9 @@ class G2Project(G2ObjectWrapper):
 
         :returns: A :class:`G2SeqRefRes` object or None if not present
         """
-        if 'Sequential results' not in self.data: return None
-        return G2SeqRefRes(self.data['Sequential results']['data'], self)
+        if "Sequential results" not in self.data:
+            return None
+        return G2SeqRefRes(self.data["Sequential results"]["data"], self)
 
     def update_ids(self):
         """Makes sure all phases and histograms have proper hId and pId"""
@@ -1906,8 +2132,14 @@ class G2Project(G2ObjectWrapper):
         for i, p in enumerate(self.phases()):
             p.id = i
 
-    def do_refinements(self, refinements=[{}], histogram='all', phase='all',
-                       outputnames=None, makeBack=False):
+    def do_refinements(
+        self,
+        refinements=[{}],
+        histogram="all",
+        phase="all",
+        outputnames=None,
+        makeBack=False,
+    ):
         """Conducts one or a series of refinements according to the
            input provided in parameter refinements. This is a wrapper
            around :meth:`iter_refinements`
@@ -1938,13 +2170,20 @@ class G2Project(G2ObjectWrapper):
             my_project.do_refinements([])
         """
 
-        for proj in self.iter_refinements(refinements, histogram, phase,
-                                          outputnames, makeBack):
+        for proj in self.iter_refinements(
+            refinements, histogram, phase, outputnames, makeBack
+        ):
             pass
         return self
 
-    def iter_refinements(self, refinements, histogram='all', phase='all',
-                         outputnames=None, makeBack=False):
+    def iter_refinements(
+        self,
+        refinements,
+        histogram="all",
+        phase="all",
+        outputnames=None,
+        makeBack=False,
+    ):
         """Conducts a series of refinements, iteratively. Stops after every
         refinement and yields this project, to allow error checking or
         logging of intermediate results. Parameter use is the same as for
@@ -1963,51 +2202,50 @@ class G2Project(G2ObjectWrapper):
         """
         if outputnames:
             if len(refinements) != len(outputnames):
-                raise ValueError("Should have same number of outputs to"
-                                 "refinements")
+                raise ValueError("Should have same number of outputs torefinements")
         else:
             outputnames = [None for r in refinements]
 
         for output, refinedict in zip(outputnames, refinements, strict=False):
-            if 'histograms' in refinedict:
-                hist = refinedict['histograms']
+            if "histograms" in refinedict:
+                hist = refinedict["histograms"]
             else:
                 hist = histogram
-            if 'phases' in refinedict:
-                ph = refinedict['phases']
+            if "phases" in refinedict:
+                ph = refinedict["phases"]
             else:
                 ph = phase
-            if 'output' in refinedict:
-                output = refinedict['output']
+            if "output" in refinedict:
+                output = refinedict["output"]
             self.set_refinement(refinedict, hist, ph)
             # Handle 'once' args - refinements that are disabled after this
             # refinement
-            if 'once' in refinedict:
-                temp = {'set': refinedict['once']}
+            if "once" in refinedict:
+                temp = {"set": refinedict["once"]}
                 self.set_refinement(temp, hist, ph)
 
             if output:
                 self.save(output)
 
-            if 'skip' not in refinedict:
+            if "skip" not in refinedict:
                 self.refine(makeBack=makeBack)
             yield self
 
             # Handle 'once' args - refinements that are disabled after this
             # refinement
-            if 'once' in refinedict:
-                temp = {'clear': refinedict['once']}
+            if "once" in refinedict:
+                temp = {"clear": refinedict["once"]}
                 self.set_refinement(temp, hist, ph)
-            if 'call' in refinedict:
-                fxn = refinedict['call']
+            if "call" in refinedict:
+                fxn = refinedict["call"]
                 if callable(fxn):
-                    fxn(*refinedict.get('callargs',[self]))
+                    fxn(*refinedict.get("callargs", [self]))
                 elif callable(eval(fxn)):
-                    eval(fxn)(*refinedict.get('callargs',[self]))
+                    eval(fxn)(*refinedict.get("callargs", [self]))
                 else:
                     raise G2ScriptException(f"Error: call value {fxn} is not callable")
 
-    def set_refinement(self, refinement, histogram='all', phase='all'):
+    def set_refinement(self, refinement, histogram="all", phase="all"):
         """Set refinment flags at the project level to specified histogram(s)
         or phase(s).
 
@@ -2041,7 +2279,7 @@ class G2Project(G2ObjectWrapper):
             :meth:`G2Single.set_refinements`
         """
 
-        if histogram == 'all':
+        if histogram == "all":
             hists = self.histograms()
         elif isinstance(histogram, list) or isinstance(histogram, tuple):
             hists = []
@@ -2055,7 +2293,7 @@ class G2Project(G2ObjectWrapper):
         else:
             hists = [histogram]
 
-        if phase == 'all':
+        if phase == "all":
             phases = self.phases()
         elif isinstance(phase, list) or isinstance(phase, tuple):
             phases = []
@@ -2074,13 +2312,14 @@ class G2Project(G2ObjectWrapper):
         hap_set = {}
         xtal_set = {}
         # divide the refinement set commands across the various objects
-        for key, val in refinement.get('set', {}).items():
+        for key, val in refinement.get("set", {}).items():
             if G2PwdrData.is_valid_refinement_key(key):
                 pwdr_set[key] = val
             elif G2Phase.is_valid_refinement_key(key):
                 phase_set[key] = val
             elif G2Phase.is_valid_HAP_refinement_key(key):
-                if key == 'PhaseFraction': key = 'Scale'
+                if key == "PhaseFraction":
+                    key = "Scale"
                 hap_set[key] = val
             elif G2Single.is_valid_refinement_key(key):
                 xtal_set[key] = val
@@ -2103,15 +2342,16 @@ class G2Project(G2ObjectWrapper):
         phase_clear = {}
         hap_clear = {}
         xtal_clear = {}
-        for key, val in refinement.get('clear', {}).items():
+        for key, val in refinement.get("clear", {}).items():
             # Clear refinement options
             if G2PwdrData.is_valid_refinement_key(key):
                 pwdr_clear[key] = val
             elif G2Phase.is_valid_refinement_key(key):
                 phase_clear[key] = val
             elif G2Phase.is_valid_HAP_refinement_key(key):
-                if key == 'PhaseFraction': key = 'Scale'
-                hap_clear[key] = val   # was _set, seems wrong
+                if key == "PhaseFraction":
+                    key = "Scale"
+                hap_clear[key] = val  # was _set, seems wrong
             elif G2Single.is_valid_refinement_key(key):
                 xtal_clear[key] = val
             else:
@@ -2132,9 +2372,8 @@ class G2Project(G2ObjectWrapper):
         return G2stIO.GetUsedHistogramsAndPhases(self.filename)
 
     def _sasd(self):
-        """Returns a list of all the SASD entries in the project.
-        """
-        return [i[0] for i in self.names if i[0].startswith('SASD ')]
+        """Returns a list of all the SASD entries in the project."""
+        return [i[0] for i in self.names if i[0].startswith("SASD ")]
 
     def SAS(self, sasRef):
         """
@@ -2158,7 +2397,7 @@ class G2Project(G2ObjectWrapper):
         if sasRef in self._sasd():
             return G2SmallAngle(self.data[sasRef], sasRef, self)
 
-        errmsg = ''
+        errmsg = ""
         try:
             # sasRef should be an index
             num = int(sasRef)
@@ -2168,7 +2407,8 @@ class G2Project(G2ObjectWrapper):
             errmsg = f"sasRef {sasRef} not an object, name or SAS index in current selected project"
         except IndexError:
             errmsg = "sasRef {sasRef} out of range (max={len(self._sasd())-1}) in current selected project"
-        if errmsg: raise Exception(errmsg)
+        if errmsg:
+            raise Exception(errmsg)
 
     def SASs(self):
         """
@@ -2176,36 +2416,39 @@ class G2Project(G2ObjectWrapper):
 
         :returns: A list of :class:`G2SmallAngle` objects
         """
-        return [G2SmallAngle(self.data[i],i,self) for i in self._sasd()]
+        return [G2SmallAngle(self.data[i], i, self) for i in self._sasd()]
 
     def add_SmallAngle(self, datafile):
-        '''Placeholder for an eventual routine that will read a small angle dataset
+        """Placeholder for an eventual routine that will read a small angle dataset
         from a file.
 
         :param str datafile: The SASD data file to read, a filename.
         :returns: A :class:`G2SmallAngle` object for the SASD entry
-        '''
+        """
         raise G2ScriptException("Error: add_SmallAngle not yet implemented.")
-        #return G2SmallAngle(self.data[PDFname], PDFname, self)
+        # return G2SmallAngle(self.data[PDFname], PDFname, self)
 
-    def get_Constraints(self,ctype):
-        '''Returns a list of constraints of the type selected.
+    def get_Constraints(self, ctype):
+        """Returns a list of constraints of the type selected.
 
         :param str ctype: one of the following keywords: 'Hist', 'HAP', 'Phase', 'Global'
         :returns: a list of constraints, see the
           :ref:`constraint definition descriptions <Constraint_definitions_table>`. Note that
           if this list is changed (for example by deleting elements or by changing them)
           the constraints in the project are changed.
-        '''
-        if ctype in ('Hist', 'HAP', 'Phase', 'Global'):
-            return self.data['Constraints']['data'][ctype]
+        """
+        if ctype in ("Hist", "HAP", "Phase", "Global"):
+            return self.data["Constraints"]["data"][ctype]
         else:
-            raise Exception(("get_Constraints error: value of ctype ({})"
-                    +" must be 'Hist', 'HAP', 'Phase', or 'Global'.")
-                                .format(ctype))
+            raise Exception(
+                (
+                    "get_Constraints error: value of ctype ({})"
+                    + " must be 'Hist', 'HAP', 'Phase', or 'Global'."
+                ).format(ctype)
+            )
 
-    def add_HoldConstr(self,varlist,reloadIdx=True,override=False):
-        '''Set a hold constraint on a list of variables.
+    def add_HoldConstr(self, varlist, reloadIdx=True, override=False):
+        """Set a hold constraint on a list of variables.
 
         Note that this will cause the project to be saved if not
         already done so. It will always save the .gpx file before
@@ -2228,26 +2471,30 @@ class G2Project(G2ObjectWrapper):
 
             gpx.add_HoldConstr(('0::A4','0:1:D12',':0:Lam'))
 
-        '''
+        """
         if reloadIdx or G2obj.TestIndexAll():
             self.index_ids()
         vardefwarn = False
         for var in varlist:
             # make var object
             if isinstance(var, str):
-                var = self.make_var_obj(var,reloadIdx=False)
+                var = self.make_var_obj(var, reloadIdx=False)
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var,reloadIdx=False)
+                var = self.make_var_obj(*var, reloadIdx=False)
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
-                print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
+                print(
+                    f"Constraint var warning: No definition for variable {var.name}. Name correct?"
+                )
             # make constraint
-            self.add_constraint_raw(_constr_type(var), [[1.0, var], None, None, 'h'])
+            self.add_constraint_raw(_constr_type(var), [[1.0, var], None, None, "h"])
         if vardefwarn and not override:
-            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
+            raise Exception(
+                "Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added."
+            )
 
-    def add_EquivConstr(self,varlist,multlist=[],reloadIdx=True,override=False):
-        '''Set a equivalence on a list of variables.
+    def add_EquivConstr(self, varlist, multlist=[], reloadIdx=True, override=False):
+        """Set a equivalence on a list of variables.
 
         Note that this will cause the project to be saved if not
         already done so. It will always save the .gpx file before
@@ -2276,46 +2523,54 @@ class G2Project(G2ObjectWrapper):
             gpx.add_EquivConstr(('0::AUiso:0','0::AUiso:1','0::AUiso:2'))
             gpx.add_EquivConstr(('0::dAx:0','0::dAx:1'),[1,-1])
 
-        '''
+        """
         if reloadIdx or G2obj.TestIndexAll():
             self.index_ids()
         if len(varlist) < 2:
-            raise Exception('add_EquivConstr Error: varlist must have at least 2 variables')
+            raise Exception(
+                "add_EquivConstr Error: varlist must have at least 2 variables"
+            )
         constr = []
         typ_prev = None
         vardefwarn = False
-        for i,var in enumerate(varlist):
-            m = 1.
+        for i, var in enumerate(varlist):
+            m = 1.0
             try:
                 m = float(multlist[i])
             except IndexError:
                 pass
             # make var object
             if isinstance(var, str):
-                var = self.make_var_obj(var,reloadIdx=False)
+                var = self.make_var_obj(var, reloadIdx=False)
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var,reloadIdx=False)
+                var = self.make_var_obj(*var, reloadIdx=False)
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
-                print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
+                print(
+                    f"Constraint var warning: No definition for variable {var.name}. Name correct?"
+                )
             # make constraint
-            constr.append([m,var])
+            constr.append([m, var])
             typ = _constr_type(var)
             if typ_prev is None:
                 typ_prev = typ
                 var_prev = var
             if typ_prev != typ:
-                msg = f'Type ({typ}) for var {var} is different from {var_prev} ({typ_prev})'
-                raise Exception('add_EquivConstr Error: '+msg)
+                msg = f"Type ({typ}) for var {var} is different from {var_prev} ({typ_prev})"
+                raise Exception("add_EquivConstr Error: " + msg)
             typ_prev = typ
             var_prev = var
         if vardefwarn and not override:
-            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
-        constr += [None, None, 'e']
+            raise Exception(
+                "Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added."
+            )
+        constr += [None, None, "e"]
         self.add_constraint_raw(typ, constr)
 
-    def add_EqnConstr(self,total,varlist,multlist=[],reloadIdx=True,override=False):
-        '''Set a constraint equation on a list of variables.
+    def add_EqnConstr(
+        self, total, varlist, multlist=[], reloadIdx=True, override=False
+    ):
+        """Set a constraint equation on a list of variables.
 
         Note that this will cause the project to be saved if not
         already done so. It will always save the .gpx file before
@@ -2343,51 +2598,64 @@ class G2Project(G2ObjectWrapper):
 
             gpx.add_EqnConstr(1.0,('0::Ax:0','0::Ax:1'),[1,1])
 
-        '''
+        """
         if reloadIdx or G2obj.TestIndexAll():
             self.index_ids()
         if len(varlist) < 2:
-            raise Exception('Constraint var error: varlist must have at least 2 variables')
+            raise Exception(
+                "Constraint var error: varlist must have at least 2 variables"
+            )
         try:
             float(total)
         except:
-            raise Exception('Constraint var error: total be a valid float')
+            raise Exception("Constraint var error: total be a valid float")
         constr = []
         typ_prev = None
         vardefwarn = False
-        for i,var in enumerate(varlist):
-            m = 1.
+        for i, var in enumerate(varlist):
+            m = 1.0
             try:
                 m = float(multlist[i])
             except IndexError:
                 pass
             # make var object
             if isinstance(var, str):
-                var = self.make_var_obj(var,reloadIdx=False)
+                var = self.make_var_obj(var, reloadIdx=False)
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var,reloadIdx=False)
+                var = self.make_var_obj(*var, reloadIdx=False)
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
-                print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
+                print(
+                    f"Constraint var warning: No definition for variable {var.name}. Name correct?"
+                )
             # make constraint
-            constr.append([m,var])
+            constr.append([m, var])
             typ = _constr_type(var)
             if typ_prev is None:
                 typ_prev = typ
                 var_prev = var
             if typ_prev != typ:
-                msg = f'Type ({typ}) for var {var} is different from {var_prev} ({typ_prev})'
-                raise Exception('add_EquivConstr Error: '+msg)
+                msg = f"Type ({typ}) for var {var} is different from {var_prev} ({typ_prev})"
+                raise Exception("add_EquivConstr Error: " + msg)
             typ_prev = typ
             var_prev = var
         if vardefwarn and not override:
-            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
-        constr += [float(total), None, 'c']
+            raise Exception(
+                "Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added."
+            )
+        constr += [float(total), None, "c"]
         self.add_constraint_raw(typ, constr)
 
-    def add_NewVarConstr(self,varlist,multlist=[],name=None,vary=False,
-                             reloadIdx=True,override=False):
-        '''Set a new-variable constraint from a list of variables to
+    def add_NewVarConstr(
+        self,
+        varlist,
+        multlist=[],
+        name=None,
+        vary=False,
+        reloadIdx=True,
+        override=False,
+    ):
+        """Set a new-variable constraint from a list of variables to
         create a new parameter from two or more predefined parameters.
 
         Note that this will cause the project to be saved, if not
@@ -2426,44 +2694,50 @@ class G2Project(G2ObjectWrapper):
         refinement only avg would be refined, but in the final stages, it might be possible
         to refine diff. The second False value in the second example prevents the
         .gpx file from being saved.
-        '''
+        """
         if reloadIdx or G2obj.TestIndexAll():
             self.index_ids()
         if len(varlist) < 2:
-            raise Exception('add_EquivEquation Error: varlist must have at least 2 variables')
+            raise Exception(
+                "add_EquivEquation Error: varlist must have at least 2 variables"
+            )
         constr = []
         if name is not None:
             name = str(name)
         typ_prev = None
         vardefwarn = False
-        for i,var in enumerate(varlist):
-            m = 1.
+        for i, var in enumerate(varlist):
+            m = 1.0
             try:
                 m = float(multlist[i])
             except IndexError:
                 pass
             # make var object
             if isinstance(var, str):
-                var = self.make_var_obj(var,reloadIdx=False)
+                var = self.make_var_obj(var, reloadIdx=False)
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var,reloadIdx=False)
+                var = self.make_var_obj(*var, reloadIdx=False)
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
-                print(f'Constraint var warning: No definition for variable {var.name}. Name correct?')
+                print(
+                    f"Constraint var warning: No definition for variable {var.name}. Name correct?"
+                )
             # make constraint
-            constr.append([m,var])
+            constr.append([m, var])
             typ = _constr_type(var)
             if typ_prev is None:
                 typ_prev = typ
                 var_prev = var
             if typ_prev != typ:
-                msg = f'Type ({typ}) for var {var} is different from {var_prev} ({typ_prev})'
-                raise Exception('add_EquivConstr Error: '+msg)
+                msg = f"Type ({typ}) for var {var} is different from {var_prev} ({typ_prev})"
+                raise Exception("add_EquivConstr Error: " + msg)
             typ_prev = typ
             var_prev = var
         if vardefwarn and not override:
-            raise Exception('Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added.')
-        constr += [name, bool(vary), 'f']
+            raise Exception(
+                "Constraint var error: undefined variables.\n\tIf correct, use override=True in call.\n\tAlso, please let GSAS-II developers know so definition can be added."
+            )
+        constr += [name, bool(vary), "f"]
         self.add_constraint_raw(typ, constr)
 
     def add_constraint_raw(self, cons_scope, constr):
@@ -2479,9 +2753,9 @@ class G2Project(G2ObjectWrapper):
         :meth:`G2Project.add_EquivConstr` (etc.) instead, unless you are really
         certain you know what you are doing.
         """
-        constrs = self.data['Constraints']['data']
-        if 'Global' not in constrs:
-            constrs['Global'] = []
+        constrs = self.data["Constraints"]["data"]
+        if "Global" not in constrs:
+            constrs["Global"] = []
         constrs[cons_scope].append(constr)
 
     def hold_many(self, vars, ctype):
@@ -2495,16 +2769,19 @@ class G2Project(G2ObjectWrapper):
           :meth:`add_constraint_raw` as consType. Should be one of "Hist", "Phase",
           or "HAP" ("Global" not implemented).
         """
-        G2fil.G2Print('G2Phase.hold_many Warning: replace calls to hold_many() with add_Hold()')
+        G2fil.G2Print(
+            "G2Phase.hold_many Warning: replace calls to hold_many() with add_Hold()"
+        )
         for var in vars:
             if isinstance(var, str):
                 var = self.make_var_obj(var)
             elif not isinstance(var, G2obj.G2VarObj):
                 var = self.make_var_obj(*var)
-            self.add_constraint_raw(ctype, [[1.0, var], None, None, 'h'])
+            self.add_constraint_raw(ctype, [[1.0, var], None, None, "h"])
 
-    def make_var_obj(self, phase=None, hist=None, varname=None, atomId=None,
-                     reloadIdx=True):
+    def make_var_obj(
+        self, phase=None, hist=None, varname=None, atomId=None, reloadIdx=True
+    ):
         """Wrapper to create a G2VarObj. Takes either a string representation ("p:h:name:a")
         or individual names of phase, histogram, varname, and atomId.
 
@@ -2520,7 +2797,7 @@ class G2Project(G2ObjectWrapper):
 
         # If string representation, short circuit
         if hist is None and varname is None and atomId is None:
-            if isinstance(phase, str) and ':' in phase:
+            if isinstance(phase, str) and ":" in phase:
                 return G2obj.G2VarObj(phase)
 
         # Get phase index
@@ -2528,7 +2805,7 @@ class G2Project(G2ObjectWrapper):
         if isinstance(phase, G2Phase):
             phaseObj = phase
             phase = G2obj.PhaseRanIdLookup[phase.ranId]
-        elif phase in self.data['Phases']:
+        elif phase in self.data["Phases"]:
             phaseObj = self.phase(phase)
             phaseRanId = phaseObj.ranId
             phase = G2obj.PhaseRanIdLookup[phaseRanId]
@@ -2551,9 +2828,16 @@ class G2Project(G2ObjectWrapper):
 
         return G2obj.G2VarObj(phase, hist, varname, atomId)
 
-    def add_image(self, imagefile, fmthint=None, defaultImage=None,
-                      indexList=None, cacheImage=False,
-                      URL=False, download_loc=None):
+    def add_image(
+        self,
+        imagefile,
+        fmthint=None,
+        defaultImage=None,
+        indexList=None,
+        cacheImage=False,
+        URL=False,
+        download_loc=None,
+    ):
         """Load an image into a project
 
         :param str imagefile: The image file to read, a filename.
@@ -2570,143 +2854,179 @@ class G2Project(G2ObjectWrapper):
           to be included in the project.
         :param bool cacheImage: When True, the image is cached to save
           in rereading it later. Default is False (no caching).
-        :param bool URL: if True, the contents of imagefile is a URL 
-          and the file will be downloaded and saved. The file will be 
+        :param bool URL: if True, the contents of imagefile is a URL
+          and the file will be downloaded and saved. The file will be
           written in the specified directory (see `download_loc`)
-          or a temporary location, if not specified. Note that 
-          if a temporary location, if the proiject (.gpx) file is 
+          or a temporary location, if not specified. Note that
+          if a temporary location, if the proiject (.gpx) file is
           saved, the image may not be accessible if the .gpx file
           is later reopened. Default is False.
-          If URL is specified and the Python requests package is 
-          not installed, a `ModuleNotFoundError` Exception will occur. 
-          will occur. 
-        :param str download_loc: a location or file name where the 
-          image will be saved. Note that for almost all image types, 
+          If URL is specified and the Python requests package is
+          not installed, a `ModuleNotFoundError` Exception will occur.
+          will occur.
+        :param str download_loc: a location or file name where the
+          image will be saved. Note that for almost all image types,
           the image cannot be read if the file extension does not
           match what is expected for the format. (This can be determined
-          by looking at the importer code; if `strictExtension=True`, 
+          by looking at the importer code; if `strictExtension=True`,
           the extension must be in the `extensionlist` list.)
-          If only a directory is specified, the file name will be taken 
+          If only a directory is specified, the file name will be taken
           from the URL, which will likely cause problems if it does
-          not match the needed extension. 
+          not match the needed extension.
           If URL is specified and the default download_loc
-          value is used (None), the image will be saved in a temporary 
+          value is used (None), the image will be saved in a temporary
           location that will persist until the OS removes it.
         :returns: a list of :class:`G2Image` object(s) for the added image(s)
         """
         LoadG2fil()
-        if not URL: imagefile = os.path.abspath(os.path.expanduser(imagefile))
-        readers = import_generic(imagefile, Readers['Image'],
-                    fmthint=fmthint, URL=URL, download_loc=download_loc)
+        if not URL:
+            imagefile = os.path.abspath(os.path.expanduser(imagefile))
+        readers = import_generic(
+            imagefile,
+            Readers["Image"],
+            fmthint=fmthint,
+            URL=URL,
+            download_loc=download_loc,
+        )
         objlist = []
-        for i,rd in enumerate(readers):
+        for i, rd in enumerate(readers):
             if indexList is not None and i not in indexList:
                 G2fil.G2Print(f"Image {i} skipped")
                 continue
-            if rd.SciPy:        #was default read by scipy; needs 1 time fixes
-                G2fil.G2Print(f'Warning: Image {imagefile} read by generic SciPy import. Image parameters likely wrong')
-                #see this: G2IO.EditImageParms(self,rd.Data,rd.Comments,rd.Image,imagefile)
+            if rd.SciPy:  # was default read by scipy; needs 1 time fixes
+                G2fil.G2Print(
+                    f"Warning: Image {imagefile} read by generic SciPy import. Image parameters likely wrong"
+                )
+                # see this: G2IO.EditImageParms(self,rd.Data,rd.Comments,rd.Image,imagefile)
                 rd.SciPy = False
             rd.readfilename = imagefile
-            if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
-                rd.Data['ImageTag'] = None
+            if (
+                rd.repeatcount == 1 and not rd.repeat
+            ):  # skip image number if only one in set
+                rd.Data["ImageTag"] = None
             else:
-                rd.Data['ImageTag'] = rd.repeatcount
-            rd.Data['formatName'] = rd.formatName
+                rd.Data["ImageTag"] = rd.repeatcount
+            rd.Data["formatName"] = rd.formatName
             if rd.sumfile:
                 rd.readfilename = rd.sumfile
             # Load generic metadata, as configured
             G2fil.GetColumnMetadata(rd)
             # Code from G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
             Imax = np.amax(rd.Image)
-            ImgNames = [i[0] for i in self.names if i[0].startswith('IMG ')]
-            TreeLbl = 'IMG '+os.path.basename(imagefile)
-            ImageTag = rd.Data.get('ImageTag')
+            ImgNames = [i[0] for i in self.names if i[0].startswith("IMG ")]
+            TreeLbl = "IMG " + os.path.basename(imagefile)
+            ImageTag = rd.Data.get("ImageTag")
             if ImageTag:
-                TreeLbl += ' #'+'%04d'%(ImageTag)
-                imageInfo = (imagefile,ImageTag)
+                TreeLbl += " #" + "%04d" % (ImageTag)
+                imageInfo = (imagefile, ImageTag)
             else:
                 imageInfo = imagefile
-            TreeName = G2obj.MakeUniqueLabel(TreeLbl,ImgNames)
+            TreeName = G2obj.MakeUniqueLabel(TreeLbl, ImgNames)
             # MT dict to contain image info
             ImgDict = {}
-            ImgDict['data'] = [rd.Npix,imageInfo]
-            ImgDict['Comments'] = rd.Comments
+            ImgDict["data"] = [rd.Npix, imageInfo]
+            ImgDict["Comments"] = rd.Comments
             if defaultImage:
                 if isinstance(defaultImage, G2Image):
                     if defaultImage.proj == self:
-                        defaultImage = self.data[defaultImage.name]['data']
+                        defaultImage = self.data[defaultImage.name]["data"]
                     else:
-                        raise Exception(f"Image {defaultImage.name} not in current selected project")
+                        raise Exception(
+                            f"Image {defaultImage.name} not in current selected project"
+                        )
                 elif defaultImage in self._images():
-                    defaultImage = self.data[defaultImage]['data']
+                    defaultImage = self.data[defaultImage]["data"]
                 else:
                     defaultImage = None
             Data = rd.Data
             if defaultImage:
                 Data = copy.copy(defaultImage)
-                Data['showLines'] = True
-                Data['ring'] = []
-                Data['rings'] = []
-                Data['cutoff'] = 10.
-                Data['pixLimit'] = 20
-                Data['edgemin'] = 100000000
-                Data['calibdmin'] = 0.5
-                Data['calibskip'] = 0
-                Data['ellipses'] = []
-                Data['calibrant'] = ''
-                Data['GonioAngles'] = [0.,0.,0.]
-                Data['DetDepthRef'] = False
+                Data["showLines"] = True
+                Data["ring"] = []
+                Data["rings"] = []
+                Data["cutoff"] = 10.0
+                Data["pixLimit"] = 20
+                Data["edgemin"] = 100000000
+                Data["calibdmin"] = 0.5
+                Data["calibskip"] = 0
+                Data["ellipses"] = []
+                Data["calibrant"] = ""
+                Data["GonioAngles"] = [0.0, 0.0, 0.0]
+                Data["DetDepthRef"] = False
             else:
-                Data['type'] = 'PWDR'
-                Data['color'] = GSASIIpath.GetConfigValue('Contour_color','Paired')
-                if 'tilt' not in Data:          #defaults if not preset in e.g. Bruker importer
-                    Data['tilt'] = 0.0
-                    Data['rotation'] = 0.0
-                    Data['pixLimit'] = 20
-                    Data['calibdmin'] = 0.5
-                    Data['cutoff'] = 10.
-                Data['showLines'] = False
-                Data['calibskip'] = 0
-                Data['ring'] = []
-                Data['rings'] = []
-                Data['edgemin'] = 100000000
-                Data['ellipses'] = []
-                Data['GonioAngles'] = [0.,0.,0.]
-                Data['DetDepth'] = 0.
-                Data['DetDepthRef'] = False
-                Data['calibrant'] = ''
-                Data['IOtth'] = [5.0,50.0]
-                Data['LRazimuth'] = [0.,180.]
-                Data['azmthOff'] = 0.0
-                Data['outChannels'] = 2500
-                Data['outAzimuths'] = 1
-                Data['centerAzm'] = False
-                Data['fullIntegrate'] = GSASIIpath.GetConfigValue('fullIntegrate',True)
-                Data['setRings'] = False
-                Data['background image'] = ['',-1.0]
-                Data['dark image'] = ['',-1.0]
-                Data['Flat Bkg'] = 0.0
-                Data['Oblique'] = [0.5,False]
-            Data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False}
-            Data['setDefault'] = False
-            Data['range'] = [(0,Imax),[0,Imax]]
-            ImgDict['Image Controls'] = Data
-            ImgDict['Masks'] = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],
-                'Frames':[],'Thresholds':[(0,Imax),[0,Imax]],'SpotMask':{'esdMul':3.,'spotMask':None},}
-            ImgDict['Stress/Strain']  = {'Type':'True','d-zero':[],'Sample phi':0.0,
-                'Sample z':0.0,'Sample load':0.0}
-            self.names.append([TreeName]+['Comments','Image Controls','Masks','Stress/Strain'])
+                Data["type"] = "PWDR"
+                Data["color"] = GSASIIpath.GetConfigValue("Contour_color", "Paired")
+                if "tilt" not in Data:  # defaults if not preset in e.g. Bruker importer
+                    Data["tilt"] = 0.0
+                    Data["rotation"] = 0.0
+                    Data["pixLimit"] = 20
+                    Data["calibdmin"] = 0.5
+                    Data["cutoff"] = 10.0
+                Data["showLines"] = False
+                Data["calibskip"] = 0
+                Data["ring"] = []
+                Data["rings"] = []
+                Data["edgemin"] = 100000000
+                Data["ellipses"] = []
+                Data["GonioAngles"] = [0.0, 0.0, 0.0]
+                Data["DetDepth"] = 0.0
+                Data["DetDepthRef"] = False
+                Data["calibrant"] = ""
+                Data["IOtth"] = [5.0, 50.0]
+                Data["LRazimuth"] = [0.0, 180.0]
+                Data["azmthOff"] = 0.0
+                Data["outChannels"] = 2500
+                Data["outAzimuths"] = 1
+                Data["centerAzm"] = False
+                Data["fullIntegrate"] = GSASIIpath.GetConfigValue("fullIntegrate", True)
+                Data["setRings"] = False
+                Data["background image"] = ["", -1.0]
+                Data["dark image"] = ["", -1.0]
+                Data["Flat Bkg"] = 0.0
+                Data["Oblique"] = [0.5, False]
+            Data["varyList"] = {
+                "dist": True,
+                "det-X": True,
+                "det-Y": True,
+                "tilt": True,
+                "phi": True,
+                "dep": False,
+                "wave": False,
+            }
+            Data["setDefault"] = False
+            Data["range"] = [(0, Imax), [0, Imax]]
+            ImgDict["Image Controls"] = Data
+            ImgDict["Masks"] = {
+                "Points": [],
+                "Rings": [],
+                "Arcs": [],
+                "Polygons": [],
+                "Frames": [],
+                "Thresholds": [(0, Imax), [0, Imax]],
+                "SpotMask": {"esdMul": 3.0, "spotMask": None},
+            }
+            ImgDict["Stress/Strain"] = {
+                "Type": "True",
+                "d-zero": [],
+                "Sample phi": 0.0,
+                "Sample z": 0.0,
+                "Sample load": 0.0,
+            }
+            self.names.append(
+                [TreeName] + ["Comments", "Image Controls", "Masks", "Stress/Strain"]
+            )
             self.data[TreeName] = ImgDict
             if cacheImage:
-                objlist.append(G2Image(self.data[TreeName], TreeName, self, image=rd.Image))
+                objlist.append(
+                    G2Image(self.data[TreeName], TreeName, self, image=rd.Image)
+                )
             else:
                 objlist.append(G2Image(self.data[TreeName], TreeName, self))
                 del rd.Image
         return objlist
 
-    def imageMultiDistCalib(self,imageList=None,verbose=False):
-        '''Invokes a global calibration fit (same as Image Controls/Calibration/Multi-distance Recalibrate
+    def imageMultiDistCalib(self, imageList=None, verbose=False):
+        """Invokes a global calibration fit (same as Image Controls/Calibration/Multi-distance Recalibrate
         menu command) with images as multiple distance settings.
         Note that for this to work properly, the initial calibration parameters
         (center, wavelength, distance & tilts) must be close enough to converge.
@@ -2721,102 +3041,118 @@ class G2Project(G2ObjectWrapper):
           and their values and covData is a dict containing the covariance matrix ('covMatrix'),
           the number of ring picks ('obs') the reduced Chi-squared ('chisq'),
           the names of the variables ('varyList') and their values ('variables')
-        '''
+        """
         if imageList is None:
             imageList = self.images()
 
         # code based on GSASIIimgGUI..OnDistRecalib
-        obsArr = np.array([]).reshape(0,4)
+        obsArr = np.array([]).reshape(0, 4)
         parmDict = {}
         varList = []
         HKL = {}
 
         for img in imageList:
             name = img.name
-            G2fil.G2Print ('getting rings for',name)
-            Data = img.data['Image Controls']
-            key = str(int(Data['setdist']))
+            G2fil.G2Print("getting rings for", name)
+            Data = img.data["Image Controls"]
+            key = str(int(Data["setdist"]))
             # create a parameter dict for combined fit
-            if 'wavelength' not in parmDict:
-                parmDict['wavelength'] = Data['wavelength']
-                if Data['varyList']['wave']:
-                    varList += ['wavelength']
-                if Data['varyList']['dist']:
+            if "wavelength" not in parmDict:
+                parmDict["wavelength"] = Data["wavelength"]
+                if Data["varyList"]["wave"]:
+                    varList += ["wavelength"]
+                if Data["varyList"]["dist"]:
                     raise Exception(
-                                'You cannot vary individual detector positions and the global wavelength.\n\nChange flags for 1st image.',
-                                'Conflicting vars')
-                parmDict['dep'] = Data['DetDepth']
-                if Data['varyList']['dep']:
-                    varList += ['dep']
+                        "You cannot vary individual detector positions and the global wavelength.\n\nChange flags for 1st image.",
+                        "Conflicting vars",
+                    )
+                parmDict["dep"] = Data["DetDepth"]
+                if Data["varyList"]["dep"]:
+                    varList += ["dep"]
                 # distance flag determines if individual values are refined
-                if not Data['varyList']['dist']:
+                if not Data["varyList"]["dist"]:
                     # starts as zero, single variable, always refined
-                    parmDict['deltaDist'] = 0.
-                    varList += ['deltaDist']
-                parmDict['phi'] = Data['rotation']
-                if Data['varyList']['phi']:
-                    varList += ['phi']
-                parmDict['tilt'] = Data['tilt']
-                if Data['varyList']['tilt']:
-                    varList += ['tilt']
+                    parmDict["deltaDist"] = 0.0
+                    varList += ["deltaDist"]
+                parmDict["phi"] = Data["rotation"]
+                if Data["varyList"]["phi"]:
+                    varList += ["phi"]
+                parmDict["tilt"] = Data["tilt"]
+                if Data["varyList"]["tilt"]:
+                    varList += ["tilt"]
 
-            ImageZ = _getCorrImage(Readers['Image'],self,img)
-            Data['setRings'] = True
-            Masks = img.data['Masks']
-            result = G2img.ImageRecalibrate(None,ImageZ,Data,Masks,getRingsOnly=True)
+            ImageZ = _getCorrImage(Readers["Image"], self, img)
+            Data["setRings"] = True
+            Masks = img.data["Masks"]
+            result = G2img.ImageRecalibrate(
+                None, ImageZ, Data, Masks, getRingsOnly=True
+            )
             if not len(result):
-                raise Exception('calibrant missing from local image calibrants files')
-            rings,HKL[key] = result
+                raise Exception("calibrant missing from local image calibrants files")
+            rings, HKL[key] = result
             # add detector set dist into data array, create a single really large array
-            distarr = np.zeros_like(rings[:,2:3])
-            if 'setdist' not in Data:
-                raise Exception('Distance (setdist) not in image metadata')
-            distarr += Data['setdist']
-            obsArr = np.concatenate((
-                        obsArr,
-                        np.concatenate((rings[:,0:2],distarr,rings[:,2:3]),axis=1)),axis=0)
-            if 'deltaDist' not in parmDict:
+            distarr = np.zeros_like(rings[:, 2:3])
+            if "setdist" not in Data:
+                raise Exception("Distance (setdist) not in image metadata")
+            distarr += Data["setdist"]
+            obsArr = np.concatenate(
+                (
+                    obsArr,
+                    np.concatenate((rings[:, 0:2], distarr, rings[:, 2:3]), axis=1),
+                ),
+                axis=0,
+            )
+            if "deltaDist" not in parmDict:
                 # starts as zero, variable refined for each image
-                parmDict['delta'+key] = 0
-                varList += ['delta'+key]
-            for i,z in enumerate(['X','Y']):
-                v = 'det-'+z
-                if v+key in parmDict:
-                    raise Exception('Error: two images with setdist ~=',key)
-                parmDict[v+key] = Data['center'][i]
-                if Data['varyList'][v]:
-                    varList += [v+key]
-        #GSASIIpath.IPyBreak()
-        G2fil.G2Print('\nFitting',obsArr.shape[0],'ring picks and',len(varList),'variables...')
-        result = G2img.FitMultiDist(obsArr,varList,parmDict,covar=True,Print=verbose)
+                parmDict["delta" + key] = 0
+                varList += ["delta" + key]
+            for i, z in enumerate(["X", "Y"]):
+                v = "det-" + z
+                if v + key in parmDict:
+                    raise Exception("Error: two images with setdist ~=", key)
+                parmDict[v + key] = Data["center"][i]
+                if Data["varyList"][v]:
+                    varList += [v + key]
+        # GSASIIpath.IPyBreak()
+        G2fil.G2Print(
+            "\nFitting", obsArr.shape[0], "ring picks and", len(varList), "variables..."
+        )
+        result = G2img.FitMultiDist(
+            obsArr, varList, parmDict, covar=True, Print=verbose
+        )
 
-        for img in imageList: # update GPX info with fit results
+        for img in imageList:  # update GPX info with fit results
             name = img.name
-            #print ('updating',name)
-            Data = img.data['Image Controls']
-            Data['wavelength'] = parmDict['wavelength']
-            key = str(int(Data['setdist']))
-            Data['center'] = [parmDict['det-X'+key],parmDict['det-Y'+key]]
-            if 'deltaDist' in parmDict:
-                Data['distance'] = Data['setdist'] - parmDict['deltaDist']
+            # print ('updating',name)
+            Data = img.data["Image Controls"]
+            Data["wavelength"] = parmDict["wavelength"]
+            key = str(int(Data["setdist"]))
+            Data["center"] = [parmDict["det-X" + key], parmDict["det-Y" + key]]
+            if "deltaDist" in parmDict:
+                Data["distance"] = Data["setdist"] - parmDict["deltaDist"]
             else:
-                Data['distance'] = Data['setdist'] - parmDict['delta'+key]
-            Data['rotation'] = np.mod(parmDict['phi'],360.0)
-            Data['tilt'] = parmDict['tilt']
-            Data['DetDepth'] = parmDict['dep']
-            N = len(Data['ellipses'])
-            Data['ellipses'] = []           #clear away individual ellipse fits
+                Data["distance"] = Data["setdist"] - parmDict["delta" + key]
+            Data["rotation"] = np.mod(parmDict["phi"], 360.0)
+            Data["tilt"] = parmDict["tilt"]
+            Data["DetDepth"] = parmDict["dep"]
+            N = len(Data["ellipses"])
+            Data["ellipses"] = []  # clear away individual ellipse fits
             for H in HKL[key][:N]:
-                ellipse = G2img.GetEllipse(H[3],Data)
-                Data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
+                ellipse = G2img.GetEllipse(H[3], Data)
+                Data["ellipses"].append(copy.deepcopy(ellipse + ("b",)))
 
-        covData = {'title':'Multi-distance recalibrate','covMatrix':result[3],
-                       'obs':obsArr.shape[0],'chisq':result[0],
-                       'varyList':varList,'variables':result[1]}
-        return parmDict,covData
+        covData = {
+            "title": "Multi-distance recalibrate",
+            "covMatrix": result[3],
+            "obs": obsArr.shape[0],
+            "chisq": result[0],
+            "varyList": varList,
+            "variables": result[1],
+        }
+        return parmDict, covData
 
-    def set_Frozen(self, variable=None, histogram=None, mode='remove'):
-        '''Removes one or more Frozen variables (or adds one)
+    def set_Frozen(self, variable=None, histogram=None, mode="remove"):
+        """Removes one or more Frozen variables (or adds one)
         (See :ref:`Parameter Limits<ParameterLimits>` description.)
         Note that use of this
         will cause the project to be saved if not already done so.
@@ -2836,60 +3172,64 @@ class G2Project(G2ObjectWrapper):
           list.
         :returns: True if the variable was added or removed, False
           otherwise. Exceptions are generated with invalid requests.
-        '''
-        Controls = self.data['Controls']['data']
-        for key in ('parmMinDict','parmMaxDict','parmFrozen'):
-            if key not in Controls: Controls[key] = {}
-        if G2obj.TestIndexAll(): self.index_ids()
+        """
+        Controls = self.data["Controls"]["data"]
+        for key in ("parmMinDict", "parmMaxDict", "parmFrozen"):
+            if key not in Controls:
+                Controls[key] = {}
+        if G2obj.TestIndexAll():
+            self.index_ids()
         G2obj.patchControls(Controls)
 
-        if mode == 'remove':
+        if mode == "remove":
             if variable is None and histogram is None:
-                Controls['parmFrozen'] = {}
+                Controls["parmFrozen"] = {}
                 return True
-        elif mode == 'add':
+        elif mode == "add":
             if variable is None:
-                raise Exception('set_Frozen error: variable must be specified')
+                raise Exception("set_Frozen error: variable must be specified")
         else:
-            raise Exception(f'Undefined mode ({mode}) in set_Frozen')
+            raise Exception(f"Undefined mode ({mode}) in set_Frozen")
 
         if histogram is None:
-            h = 'FrozenList'
+            h = "FrozenList"
         else:
             hist = self.histogram(histogram)
             if hist:
                 h = hist.name
-                if h not in Controls['parmFrozen']: # no such list, not found
+                if h not in Controls["parmFrozen"]:  # no such list, not found
                     return False
             else:
-                raise Exception(f'set_Frozen error: histogram {histogram} not found')
-        if mode == 'remove':
+                raise Exception(f"set_Frozen error: histogram {histogram} not found")
+        if mode == "remove":
             if variable is None:
-                Controls['parmFrozen'][h] = []
+                Controls["parmFrozen"][h] = []
                 return True
-            if h not in Controls['parmFrozen']:
+            if h not in Controls["parmFrozen"]:
                 return True
             delList = []
-            for i,v in enumerate(Controls['parmFrozen'][h]):
-                if v == variable: delList.append(i)
+            for i, v in enumerate(Controls["parmFrozen"][h]):
+                if v == variable:
+                    delList.append(i)
             if delList:
                 for i in reversed(delList):
-                    del Controls['parmFrozen'][h][i]
+                    del Controls["parmFrozen"][h][i]
                 return True
             return False
-        elif mode == 'add':
+        elif mode == "add":
             if type(variable) is str:
                 variable = G2obj.G2VarObj(variable)
             elif type(v) is not G2obj.G2VarObj:
                 raise Exception(
-                    f'set_Frozen error: variable {variable} wrong type ({type(variable)})'
-                    )
-            if h not in Controls['parmFrozen']: Controls['parmFrozen'][h] = []
-            Controls['parmFrozen'][h].append(variable)
+                    f"set_Frozen error: variable {variable} wrong type ({type(variable)})"
+                )
+            if h not in Controls["parmFrozen"]:
+                Controls["parmFrozen"][h] = []
+            Controls["parmFrozen"][h].append(variable)
             return True
 
     def get_Frozen(self, histogram=None):
-        '''Gets a list of Frozen variables.
+        """Gets a list of Frozen variables.
         (See :ref:`Parameter Limits<ParameterLimits>` description.)
         Note that use of this
         will cause the project to be saved if not already done so.
@@ -2900,32 +3240,37 @@ class G2Project(G2ObjectWrapper):
           for a sequential fit, all Frozen variables in all
           histograms are returned.
         :returns: a list containing variable names, as str values
-        '''
-        Controls = self.data['Controls']['data']
-        for key in ('parmMinDict','parmMaxDict','parmFrozen'):
-            if key not in Controls: Controls[key] = {}
-        if G2obj.TestIndexAll(): self.index_ids()
+        """
+        Controls = self.data["Controls"]["data"]
+        for key in ("parmMinDict", "parmMaxDict", "parmFrozen"):
+            if key not in Controls:
+                Controls[key] = {}
+        if G2obj.TestIndexAll():
+            self.index_ids()
         G2obj.patchControls(Controls)
         if histogram:
             hist = self.histogram(histogram)
             if hist:
                 h = hist.name
-                return [str(i) for i in Controls['parmFrozen'][h]]
-            elif histogram.lower() == 'all':
+                return [str(i) for i in Controls["parmFrozen"][h]]
+            elif histogram.lower() == "all":
                 names = set()
                 for h in self.histograms():
-                    if h.name not in Controls['parmFrozen']: continue
-                    names = names.union([str(i) for i in Controls['parmFrozen'][h.name]])
+                    if h.name not in Controls["parmFrozen"]:
+                        continue
+                    names = names.union(
+                        [str(i) for i in Controls["parmFrozen"][h.name]]
+                    )
                 return list(names)
             else:
-                raise Exception(f'histogram {histogram} not recognized')
-        elif 'FrozenList' in Controls['parmFrozen']:
-            return [str(i) for i in Controls['parmFrozen']['FrozenList']]
+                raise Exception(f"histogram {histogram} not recognized")
+        elif "FrozenList" in Controls["parmFrozen"]:
+            return [str(i) for i in Controls["parmFrozen"]["FrozenList"]]
         else:
             return []
 
     def get_Controls(self, control, variable=None):
-        '''Return project controls settings
+        """Return project controls settings
 
         :param str control: the item to be returned. See below for allowed values.
         :param str variable: a variable name as a str or
@@ -2953,35 +3298,39 @@ class G2Project(G2ObjectWrapper):
 
         .. seealso::
             :meth:`set_Controls`
-        '''
-        if control.startswith('parmM'):
+        """
+        if control.startswith("parmM"):
             if not variable:
-                raise Exception('set_Controls requires a value for variable for control=parmMin or parmMax')
-            for key in ('parmMinDict','parmMaxDict','parmFrozen'):
-                if key not in self.data['Controls']['data']: self.data['Controls']['data'][key] = {}
-            if G2obj.TestIndexAll(): self.index_ids()
-            G2obj.patchControls(self.data['Controls']['data'])
-        if control == 'cycles':
-            return self.data['Controls']['data']['max cyc']
-        elif control == 'sequential':
-            return self.data['Controls']['data']['Seq Data']
-        elif control == 'Reverse Seq':
-            return self.data['Controls']['data']['Reverse Seq']
-        elif control == 'seqCopy':
-            return self.data['Controls']['data']['Copy2Next']
-        elif control == 'parmMin' or control == 'parmMax':
+                raise Exception(
+                    "set_Controls requires a value for variable for control=parmMin or parmMax"
+                )
+            for key in ("parmMinDict", "parmMaxDict", "parmFrozen"):
+                if key not in self.data["Controls"]["data"]:
+                    self.data["Controls"]["data"][key] = {}
+            if G2obj.TestIndexAll():
+                self.index_ids()
+            G2obj.patchControls(self.data["Controls"]["data"])
+        if control == "cycles":
+            return self.data["Controls"]["data"]["max cyc"]
+        elif control == "sequential":
+            return self.data["Controls"]["data"]["Seq Data"]
+        elif control == "Reverse Seq":
+            return self.data["Controls"]["data"]["Reverse Seq"]
+        elif control == "seqCopy":
+            return self.data["Controls"]["data"]["Copy2Next"]
+        elif control == "parmMin" or control == "parmMax":
             key = G2obj.G2VarObj(variable)
             return G2obj.prmLookup(
-                variable,
-                self.data['Controls']['data'][control+'Dict'])[1]
-        elif control in self.data['Controls']['data']:
-            return self.data['Controls']['data'][control]
+                variable, self.data["Controls"]["data"][control + "Dict"]
+            )[1]
+        elif control in self.data["Controls"]["data"]:
+            return self.data["Controls"]["data"][control]
         else:
-            G2fil.G2Print('Defined Controls:',self.data['Controls']['data'].keys())
-            raise Exception(f'{control} is an invalid control value')
+            G2fil.G2Print("Defined Controls:", self.data["Controls"]["data"].keys())
+            raise Exception(f"{control} is an invalid control value")
 
     def set_Controls(self, control, value, variable=None):
-        '''Set project controls.
+        """Set project controls.
 
         Note that use of this with control set to parmMin or parmMax
         will cause the project to be saved if not already done so.
@@ -3010,38 +3359,41 @@ class G2Project(G2ObjectWrapper):
 
         .. seealso::
             :meth:`get_Controls`
-        '''
-        if control.startswith('parmM'):
+        """
+        if control.startswith("parmM"):
             if not variable:
-                raise Exception('set_Controls requires a value for variable for control=parmMin or parmMax')
-            for key in ('parmMinDict','parmMaxDict','parmFrozen'):
-                if key not in self.data['Controls']['data']: self.data['Controls']['data'][key] = {}
-            if G2obj.TestIndexAll(): self.index_ids()
-            G2obj.patchControls(self.data['Controls']['data'])
-        if control == 'cycles':
-            self.data['Controls']['data']['max cyc'] = int(value)
-        elif control == 'seqCopy':
-            self.data['Controls']['data']['Copy2Next'] = bool(value)
-        elif control == 'Reverse Seq':
-            self.data['Controls']['data']['Reverse Seq'] = bool(value)
-        elif control == 'sequential':
+                raise Exception(
+                    "set_Controls requires a value for variable for control=parmMin or parmMax"
+                )
+            for key in ("parmMinDict", "parmMaxDict", "parmFrozen"):
+                if key not in self.data["Controls"]["data"]:
+                    self.data["Controls"]["data"][key] = {}
+            if G2obj.TestIndexAll():
+                self.index_ids()
+            G2obj.patchControls(self.data["Controls"]["data"])
+        if control == "cycles":
+            self.data["Controls"]["data"]["max cyc"] = int(value)
+        elif control == "seqCopy":
+            self.data["Controls"]["data"]["Copy2Next"] = bool(value)
+        elif control == "Reverse Seq":
+            self.data["Controls"]["data"]["Reverse Seq"] = bool(value)
+        elif control == "sequential":
             histlist = []
-            for i,j in enumerate(value):
+            for i, j in enumerate(value):
                 h = self.histogram(j)
                 if h:
                     histlist.append(h.name)
                 else:
-                    raise Exception(f'item #{i} ({j}) is an invalid histogram value'
-                                        )
-            self.data['Controls']['data']['Seq Data'] = histlist
-        elif control == 'parmMin' or control == 'parmMax':
+                    raise Exception(f"item #{i} ({j}) is an invalid histogram value")
+            self.data["Controls"]["data"]["Seq Data"] = histlist
+        elif control == "parmMin" or control == "parmMax":
             key = G2obj.G2VarObj(variable)
-            self.data['Controls']['data'][control+'Dict'][key] = float(value)
+            self.data["Controls"]["data"][control + "Dict"][key] = float(value)
         else:
-            raise Exception(f'{control} is an invalid control value')
+            raise Exception(f"{control} is an invalid control value")
 
-    def copyHistParms(self,sourcehist,targethistlist='all',modelist='all'):
-        '''Copy histogram information from one histogram to others
+    def copyHistParms(self, sourcehist, targethistlist="all", modelist="all"):
+        """Copy histogram information from one histogram to others
 
         :param sourcehist: is a histogram object (:class:`G2PwdrData`) or
             a histogram name or the index number of the histogram
@@ -3056,15 +3408,19 @@ class G2Project(G2ObjectWrapper):
            capitalization is ignored, so ['b','i','L','s'] will work.)
            The default value, 'all' causes the listed sections to
 
-        '''
-        sections = ('Background','Instrument Parameters','Limits',
-                        'Sample Parameters')
+        """
+        sections = (
+            "Background",
+            "Instrument Parameters",
+            "Limits",
+            "Sample Parameters",
+        )
         hist_in = self.histogram(sourcehist)
         if not hist_in:
-            raise Exception(f'{sourcehist} is not a valid histogram')
+            raise Exception(f"{sourcehist} is not a valid histogram")
         if targethistlist == "all":
             targethistlist = self.histograms()
-        if 'all' in modelist:
+        if "all" in modelist:
             copysections = sections
         else:
             copysections = set()
@@ -3075,38 +3431,40 @@ class G2Project(G2ObjectWrapper):
         for h in targethistlist:
             hist_out = self.histogram(h)
             if not hist_out:
-                raise Exception(f'{h} is not a valid histogram')
+                raise Exception(f"{h} is not a valid histogram")
             for key in copysections:
                 hist_out[key] = copy.deepcopy(hist_in[key])
 
     def get_VaryList(self):
-        '''Returns a list of the refined variables in the
+        """Returns a list of the refined variables in the
         last refinement cycle
 
         :returns: a list of variables or None if no refinement has been
           performed.
-        '''
+        """
         try:
-            return self['Covariance']['data']['varyList']
+            return self["Covariance"]["data"]["varyList"]
         except:
             return None
 
     def get_ParmList(self):
-        '''Returns a list of all the parameters defined in the
+        """Returns a list of all the parameters defined in the
         last refinement cycle
 
         :returns: a list of parameters or None if no refinement has been
           performed.
-        '''
-        if 'parmDict' not in self['Covariance']['data']:
-            raise G2ScriptException('No parameters found in project, has a refinement been run?')
+        """
+        if "parmDict" not in self["Covariance"]["data"]:
+            raise G2ScriptException(
+                "No parameters found in project, has a refinement been run?"
+            )
         try:
-            return list(self['Covariance']['data']['parmDict'].keys())
+            return list(self["Covariance"]["data"]["parmDict"].keys())
         except:
             return None
 
-    def get_Variable(self,var):
-        '''Returns the value and standard uncertainty (esd) for a variable
+    def get_Variable(self, var):
+        """Returns the value and standard uncertainty (esd) for a variable
         parameters, as defined in the last refinement cycle
 
         :param str var: a variable name of form '<p>:<h>:<name>', such as
@@ -3114,21 +3472,23 @@ class G2Project(G2ObjectWrapper):
         :returns: (value,esd) if the parameter is refined or
           (value, None) if the variable is in a constraint or is not
           refined or None if the parameter is not found.
-        '''
-        if 'parmDict' not in self['Covariance']['data']:
-            raise G2ScriptException('No parameters found in project, has a refinement been run?')
-        if var not in self['Covariance']['data']['parmDict']:
+        """
+        if "parmDict" not in self["Covariance"]["data"]:
+            raise G2ScriptException(
+                "No parameters found in project, has a refinement been run?"
+            )
+        if var not in self["Covariance"]["data"]["parmDict"]:
             return None
-        val = self['Covariance']['data']['parmDict'][var]
+        val = self["Covariance"]["data"]["parmDict"][var]
         try:
-            pos = self['Covariance']['data']['varyList'].index(var)
-            esd = np.sqrt(self['Covariance']['data']['covMatrix'][pos,pos])
-            return (val,esd)
+            pos = self["Covariance"]["data"]["varyList"].index(var)
+            esd = np.sqrt(self["Covariance"]["data"]["covMatrix"][pos, pos])
+            return (val, esd)
         except ValueError:
-            return (val,None)
+            return (val, None)
 
-    def get_Covariance(self,varList):
-        '''Returns the values and covariance matrix for a series of variable
+    def get_Covariance(self, varList):
+        """Returns the values and covariance matrix for a series of variable
         parameters. as defined in the last refinement cycle
 
         :param tuple varList: a list of variable names of form '<p>:<h>:<name>'
@@ -3145,21 +3505,29 @@ class G2Project(G2ObjectWrapper):
             xvar = np.outer(sig,np.ones_like(sig))
             covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
 
-        '''
-        missing = [i for i in varList if i not in self['Covariance']['data']['varyList']]
+        """
+        missing = [
+            i for i in varList if i not in self["Covariance"]["data"]["varyList"]
+        ]
         if missing:
-            G2fil.G2Print(f'Warning: Variable(s) {missing} were not found in the varyList')
+            G2fil.G2Print(
+                f"Warning: Variable(s) {missing} were not found in the varyList"
+            )
             return None
-        if 'parmDict' not in self['Covariance']['data']:
-            raise G2ScriptException('No parameters found in project, has a refinement been run?')
-        vals = [self['Covariance']['data']['parmDict'][i] for i in varList]
-        cov = G2mth.getVCov(varList,
-                            self['Covariance']['data']['varyList'],
-                            self['Covariance']['data']['covMatrix'])
-        return (vals,cov)
+        if "parmDict" not in self["Covariance"]["data"]:
+            raise G2ScriptException(
+                "No parameters found in project, has a refinement been run?"
+            )
+        vals = [self["Covariance"]["data"]["parmDict"][i] for i in varList]
+        cov = G2mth.getVCov(
+            varList,
+            self["Covariance"]["data"]["varyList"],
+            self["Covariance"]["data"]["covMatrix"],
+        )
+        return (vals, cov)
 
     def ComputeWorstFit(self):
-        '''Computes the worst-fit parameters in a model.
+        """Computes the worst-fit parameters in a model.
 
         :returns: (keys, derivCalcs, varyList) where:
 
@@ -3177,11 +3545,12 @@ class G2Project(G2ObjectWrapper):
 
           * varyList is a list of the parameters that are currently set to
             be varied.
-        '''
+        """
         self.save()
-        derivCalcs,varyList = G2strMain.Refine(self.filename,None,allDerivs=True)
-        keys = sorted(derivCalcs,key=lambda x:abs(derivCalcs[x][1]),reverse=True)
-        return (keys,derivCalcs,varyList)
+        derivCalcs, varyList = G2strMain.Refine(self.filename, None, allDerivs=True)
+        keys = sorted(derivCalcs, key=lambda x: abs(derivCalcs[x][1]), reverse=True)
+        return (keys, derivCalcs, varyList)
+
 
 class G2AtomRecord(G2ObjectWrapper):
     """Wrapper for an atom record. Allows many atom properties to be access
@@ -3210,36 +3579,38 @@ class G2AtomRecord(G2ObjectWrapper):
     >>> atom.occupancy
     1.0
     """
+
     def __init__(self, data, indices, proj):
         self.data = data
         self.cx, self.ct, self.cs, self.cia = indices
         self.proj = proj
 
-#    @property
-#    def X(self):
-#        '''Get or set the associated atom's X.
-#        Use as ``x = atom.X`` to obtain the value and
-#        ``atom.X = x`` to set the value.
-#        '''
-#        pass
-#    @X.setter
-#    def X(self, val):
-#        pass
+    #    @property
+    #    def X(self):
+    #        '''Get or set the associated atom's X.
+    #        Use as ``x = atom.X`` to obtain the value and
+    #        ``atom.X = x`` to set the value.
+    #        '''
+    #        pass
+    #    @X.setter
+    #    def X(self, val):
+    #        pass
 
     @property
     def label(self):
-        '''Get the associated atom's label.
+        """Get the associated atom's label.
         Use as ``x = atom.label`` to obtain the value and
         ``atom.label = x`` to set the value.
-        '''
-        return self.data[self.ct-1]
+        """
+        return self.data[self.ct - 1]
+
     @label.setter
     def label(self, val):
-        self.data[self.ct-1] = str(val)
+        self.data[self.ct - 1] = str(val)
 
     @property
     def type(self):
-        '''Get or set the associated atom's type. Call as a variable
+        """Get or set the associated atom's type. Call as a variable
         (``x = atom.type``) to obtain the value or use
         ``atom.type = x`` to change the type. It is the user's
         responsibility to make sure that the atom type is valid;
@@ -3247,8 +3618,9 @@ class G2AtomRecord(G2ObjectWrapper):
 
         .. seealso::
             :meth:`element`
-        '''
+        """
         return self.data[self.ct]
+
     @type.setter
     def type(self, val):
         # TODO: should check if atom type is defined
@@ -3256,90 +3628,93 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def element(self):
-        '''Parses element symbol from the atom type symbol for the atom
+        """Parses element symbol from the atom type symbol for the atom
         associated with the current object.
 
         .. seealso::
             :meth:`type`
-        '''
+        """
         import re
+
         try:
-            return re.match('^([A-Z][a-z]?)',self.data[self.ct]).group(1)
+            return re.match("^([A-Z][a-z]?)", self.data[self.ct]).group(1)
         except:
             raise Exception(f"element parse error with type {self.data[self.ct]}")
 
     @property
     def refinement_flags(self):
-        '''Get or set refinement flags for the associated atom.
+        """Get or set refinement flags for the associated atom.
         Use as ``x = atom.refinement_flags`` to obtain the flags and
         ``atom.refinement_flags = "XU"`` (etc) to set the value.
-        '''
-        return self.data[self.ct+1]
+        """
+        return self.data[self.ct + 1]
+
     @refinement_flags.setter
     def refinement_flags(self, other):
         # Automatically check it is a valid refinement
         for c in other:
-            if c not in ' FXU':
+            if c not in " FXU":
                 raise ValueError("Invalid atom refinement: ", other)
-        self.data[self.ct+1] = other
+        self.data[self.ct + 1] = other
 
     @property
     def coordinates(self):
-        '''Get or set the associated atom's coordinates.
+        """Get or set the associated atom's coordinates.
         Use as ``x = atom.coordinates`` to obtain a tuple with
         the three (x,y,z) values and ``atom.coordinates = (x,y,z)``
         to set the values.
 
         Changes needed to adapt for changes in site symmetry have not yet been
         implemented:
-        '''
-        return tuple(self.data[self.cx:self.cx+3])
+        """
+        return tuple(self.data[self.cx : self.cx + 3])
+
     @coordinates.setter
     def coordinates(self, val):
         if len(val) != 3:
             raise ValueError(f"coordinates are of wrong length {val}")
         try:
-            self.data[self.cx:self.cx+3] = [float(i) for i in val]
+            self.data[self.cx : self.cx + 3] = [float(i) for i in val]
         except:
             raise ValueError(f"conversion error with coordinates {val}")
         # TODO: should recompute the atom site symmetries here
 
     @property
     def occupancy(self):
-        '''Get or set the associated atom's site fraction.
+        """Get or set the associated atom's site fraction.
         Use as ``x = atom.occupancy`` to obtain the value and
         ``atom.occupancy = x`` to set the value.
-        '''
-        return self.data[self.cx+3]
+        """
+        return self.data[self.cx + 3]
+
     @occupancy.setter
     def occupancy(self, val):
-        self.data[self.cx+3] = float(val)
+        self.data[self.cx + 3] = float(val)
 
     @property
     def mult(self):
-        '''Get the associated atom's multiplicity value. Should not be
+        """Get the associated atom's multiplicity value. Should not be
         changed by user.
-        '''
-        return self.data[self.cs+1]
+        """
+        return self.data[self.cs + 1]
 
     @property
     def ranId(self):
-        '''Get the associated atom's Random Id number. Don't change this.
-        '''
-        return self.data[self.cia+8]
+        """Get the associated atom's Random Id number. Don't change this."""
+        return self.data[self.cia + 8]
 
     @property
     def adp_flag(self):
-        '''Get the associated atom's iso/aniso setting. The value
+        """Get the associated atom's iso/aniso setting. The value
         will be 'I' or 'A'. No API provision is offered to change
         this.
-        '''
+        """
         # Either 'I' or 'A'
         return self.data[self.cia]
 
     @property
     def ADP(self):
-        '''Get or set the associated atom's Uiso or Uaniso value(s).
+        """Get or set the associated atom's Uiso or Uaniso value(s).
         Use as ``x = atom.ADP`` to obtain the value(s) and
         ``atom.ADP = x`` to set the value(s). For isotropic atoms
         a single float value is returned (or used to set). For
@@ -3348,22 +3723,23 @@ class G2AtomRecord(G2ObjectWrapper):
         .. seealso::
             :meth:`adp_flag`
             :meth:`uiso`
-        '''
-        if self.adp_flag == 'I':
-            return self.data[self.cia+1]
+        """
+        if self.adp_flag == "I":
+            return self.data[self.cia + 1]
         else:
-            return self.data[self.cia+2:self.cia+8]
+            return self.data[self.cia + 2 : self.cia + 8]
+
     @ADP.setter
     def ADP(self, value):
-        if self.adp_flag == 'I':
-            self.data[self.cia+1] = float(value)
+        if self.adp_flag == "I":
+            self.data[self.cia + 1] = float(value)
         else:
             assert len(value) == 6
-            self.data[self.cia+2:self.cia+8] = [float(v) for v in value]
+            self.data[self.cia + 2 : self.cia + 8] = [float(v) for v in value]
 
     @property
     def uiso(self):
-        '''A synonym for :meth:`ADP` to be used for Isotropic atoms.
+        """A synonym for :meth:`ADP` to be used for Isotropic atoms.
         Get or set the associated atom's Uiso value.
         Use as ``x = atom.uiso`` to obtain the value and
         ``atom.uiso = x`` to set the value. A
@@ -3372,15 +3748,17 @@ class G2AtomRecord(G2ObjectWrapper):
         .. seealso::
             :meth:`adp_flag`
             :meth:`ADP`
-        '''
-        if self.adp_flag != 'I':
+        """
+        if self.adp_flag != "I":
             raise G2ScriptException(f"Atom {self.label} is not isotropic")
         return self.ADP
+
     @uiso.setter
     def uiso(self, value):
-        if self.adp_flag != 'I':
+        if self.adp_flag != "I":
             raise G2ScriptException(f"Atom {self.label} is not isotropic")
         self.ADP = value
+
 
 class G2PwdrData(G2ObjectWrapper):
     """Wraps a Powder Data Histogram.
@@ -3398,6 +3776,7 @@ class G2PwdrData(G2ObjectWrapper):
     :meth:`G2PwdrData.__init__` should be invoked from inside :class:`G2Project`.
 
     """
+
     def __init__(self, data, proj, name):
         self.data = data
         self.proj = proj
@@ -3405,54 +3784,60 @@ class G2PwdrData(G2ObjectWrapper):
 
     @staticmethod
     def is_valid_refinement_key(key):
-        valid_keys = ['Limits', 'Sample Parameters', 'Background',
-                      'Instrument Parameters']
+        valid_keys = [
+            "Limits",
+            "Sample Parameters",
+            "Background",
+            "Instrument Parameters",
+        ]
         return key in valid_keys
 
-    #@property
-    #def name(self):
+    # @property
+    # def name(self):
     #    return self.data['data'][-1]
 
     @property
     def ranId(self):
-        return self.data['data'][0]['ranId']
+        return self.data["data"][0]["ranId"]
 
     @property
     def residuals(self):
-        '''Provides a dictionary with with the R-factors for this histogram.
+        """Provides a dictionary with with the R-factors for this histogram.
         Includes the weighted and unweighted profile terms (R, Rb, wR, wRb, wRmin)
         as well as the Bragg R-values for each phase (ph:H:Rf and ph:H:Rf^2).
-        '''
-        data = self.data['data'][0]
-        return {key: data[key] for key in data
-                if key in ['R', 'Rb', 'wR', 'wRb', 'wRmin']
-                   or ':' in key}
+        """
+        data = self.data["data"][0]
+        return {
+            key: data[key]
+            for key in data
+            if key in ["R", "Rb", "wR", "wRb", "wRmin"] or ":" in key
+        }
 
     @property
     def InstrumentParameters(self):
-        '''Provides a dictionary with with the Instrument Parameters
+        """Provides a dictionary with with the Instrument Parameters
         for this histogram.
-        '''
-        return self.data['Instrument Parameters'][0]
+        """
+        return self.data["Instrument Parameters"][0]
 
     @property
     def SampleParameters(self):
-        '''Provides a dictionary with with the Sample Parameters
+        """Provides a dictionary with with the Sample Parameters
         for this histogram.
-        '''
-        return self.data['Sample Parameters']
+        """
+        return self.data["Sample Parameters"]
 
     @property
     def Background(self):
-        '''Provides a list with with the Background parameters
+        """Provides a list with with the Background parameters
         for this histogram.
 
         :returns: list containing a list and dict with background values
-        '''
-        return self.data['Background']
+        """
+        return self.data["Background"]
 
-    def add_back_peak(self,pos,int,sig,gam,refflags=[]):
-        '''Adds a background peak to the Background parameters
+    def add_back_peak(self, pos, int, sig, gam, refflags=[]):
+        """Adds a background peak to the Background parameters
 
         :param float pos: position of peak, a 2theta or TOF value
         :param float int: integrated intensity of background peak, usually large
@@ -3461,60 +3846,62 @@ class G2PwdrData(G2ObjectWrapper):
         :param list refflags: a list of 1 to 4 boolean refinement flags for
             pos,int,sig & gam, respectively (use [0,1] to refine int only).
             Defaults to [] which means nothing is refined.
-        '''
-        if 'peaksList' not in self.Background[1]:
-            self.Background[1]['peaksList'] = []
-        flags = 4*[False]
-        for i,f in enumerate(refflags):
-            if i>3: break
+        """
+        if "peaksList" not in self.Background[1]:
+            self.Background[1]["peaksList"] = []
+        flags = 4 * [False]
+        for i, f in enumerate(refflags):
+            if i > 3:
+                break
             flags[i] = bool(f)
         bpk = []
-        for i,j in zip((pos,int,sig,gam),flags, strict=False):
-            bpk += [float(i),j]
-        self.Background[1]['peaksList'].append(bpk)
-        self.Background[1]['nPeaks'] = len(self.Background[1]['peaksList'])
+        for i, j in zip((pos, int, sig, gam), flags, strict=False):
+            bpk += [float(i), j]
+        self.Background[1]["peaksList"].append(bpk)
+        self.Background[1]["nPeaks"] = len(self.Background[1]["peaksList"])
 
-    def del_back_peak(self,peaknum):
-        '''Removes a background peak from the Background parameters
+    def del_back_peak(self, peaknum):
+        """Removes a background peak from the Background parameters
 
         :param int peaknum: the number of the peak (starting from 0)
-        '''
-        npks = self.Background[1].get('nPeaks',0)
+        """
+        npks = self.Background[1].get("nPeaks", 0)
         if peaknum >= npks:
-            raise Exception(f'peak {peaknum} not found in histogram {self.name}')
-        del self.Background[1]['peaksList'][peaknum]
-        self.Background[1]['nPeaks'] = len(self.Background[1]['peaksList'])
+            raise Exception(f"peak {peaknum} not found in histogram {self.name}")
+        del self.Background[1]["peaksList"][peaknum]
+        self.Background[1]["nPeaks"] = len(self.Background[1]["peaksList"])
 
-    def ref_back_peak(self,peaknum,refflags=[]):
-        '''Sets refinement flag for a background peak
+    def ref_back_peak(self, peaknum, refflags=[]):
+        """Sets refinement flag for a background peak
 
         :param int peaknum: the number of the peak (starting from 0)
         :param list refflags: a list of 1 to 4 boolean refinement flags for
             pos,int,sig & gam, respectively. If a flag is not specified
             it defaults to False (use [0,1] to refine int only).
             Defaults to [] which means nothing is refined.
-        '''
-        npks = self.Background[1].get('nPeaks',0)
+        """
+        npks = self.Background[1].get("nPeaks", 0)
         if peaknum >= npks:
-            raise Exception(f'peak {peaknum} not found in histogram {self.name}')
-        flags = 4*[False]
-        for i,f in enumerate(refflags):
-            if i>3: break
+            raise Exception(f"peak {peaknum} not found in histogram {self.name}")
+        flags = 4 * [False]
+        for i, f in enumerate(refflags):
+            if i > 3:
+                break
             flags[i] = bool(f)
-        for i,f in enumerate(flags):
-            self.Background[1]['peaksList'][peaknum][2*i+1] = f
+        for i, f in enumerate(flags):
+            self.Background[1]["peaksList"][peaknum][2 * i + 1] = f
 
     @property
     def id(self):
         self.proj.update_ids()
-        return self.data['data'][0]['hId']
+        return self.data["data"][0]["hId"]
 
     @id.setter
     def id(self, val):
-        self.data['data'][0]['hId'] = val
+        self.data["data"][0]["hId"] = val
 
-    def Limits(self,typ,value=None):
-        '''Used to obtain or set the histogram limits. When a value is
+    def Limits(self, typ, value=None):
+        """Used to obtain or set the histogram limits. When a value is
         specified, the appropriate limit is set. Otherwise, the value is
         returned. Note that this provides an alternative to setting
         histogram limits with the :meth:`G2Project:do_refinements` or
@@ -3535,24 +3922,24 @@ class G2PwdrData(G2ObjectWrapper):
           h = gpx.histogram(0)
           val = h.Limits('lower')
           h.Limits('upper',75)
-        '''
+        """
 
         if value == None:
-            if typ == 'lower':
-                return self.data['Limits'][1][0]
-            elif typ == 'upper':
-                return self.data['Limits'][1][1]
+            if typ == "lower":
+                return self.data["Limits"][1][0]
+            elif typ == "upper":
+                return self.data["Limits"][1][1]
             else:
                 raise G2ScriptException('Limit errr: must be "lower" or "upper"')
-        elif typ == 'lower':
-            self.data['Limits'][1][0] = float(value)
-        elif typ == 'upper':
-            self.data['Limits'][1][1] = float(value)
+        elif typ == "lower":
+            self.data["Limits"][1][0] = float(value)
+        elif typ == "upper":
+            self.data["Limits"][1][1] = float(value)
         else:
             raise G2ScriptException('G2PwdData.Limit error: must be "lower" or "upper"')
 
-    def Excluded(self,value=None):
-        '''Used to obtain or set the excluded regions for a histogram.
+    def Excluded(self, value=None):
+        """Used to obtain or set the excluded regions for a histogram.
         When a value is specified, the excluded regions are set.
         Otherwise, the list of excluded region pairs is returned.
         Note that excluded regions may be an empty list or a list
@@ -3599,58 +3986,84 @@ class G2PwdrData(G2ObjectWrapper):
 
           h = gpx.histogram(0)  # deletes all excluded regions
           h.Excluded([])
-        '''
+        """
         if value is None:
-            return self.data['Limits'][2:]
+            return self.data["Limits"][2:]
 
         # set up the excluded regions. Make sure we have a list of list pairs
-        s = ''
+        s = ""
         listValues = []
         try:
-            for i,(l,h) in enumerate(value): # quick bit of validation
-                listValues.append([
-                    min(float(l),float(h)),
-                    max(float(l),float(h)),
-                    ])
-                if float(l) < self.data['Limits'][0][0]:
-                    s += f'Lower limit {l} too low. '
-                if float(h) > self.data['Limits'][0][1]:
-                    s += f'Upper limit {h} too high. '
+            for i, (l, h) in enumerate(value):  # quick bit of validation
+                listValues.append(
+                    [
+                        min(float(l), float(h)),
+                        max(float(l), float(h)),
+                    ]
+                )
+                if float(l) < self.data["Limits"][0][0]:
+                    s += f"Lower limit {l} too low. "
+                if float(h) > self.data["Limits"][0][1]:
+                    s += f"Upper limit {h} too high. "
         except:
-            raise G2ScriptException(f'G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {value}')
+            raise G2ScriptException(
+                f"G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {value}"
+            )
         if s:
-            raise G2ScriptException(f'G2PwdData.Excluded error(s): {s}')
-        self.data['Limits'][2:] = listValues
+            raise G2ScriptException(f"G2PwdData.Excluded error(s): {s}")
+        self.data["Limits"][2:] = listValues
 
     def fit_fixed_points(self):
         """Attempts to apply a background fit to the fixed points currently specified."""
+
         def SetInstParms(Inst):
-            dataType = Inst['Type'][0]
+            dataType = Inst["Type"][0]
             insVary = []
             insNames = []
             insVals = []
             for parm in Inst:
                 insNames.append(parm)
                 insVals.append(Inst[parm][1])
-                if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
-                    'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
-                        Inst[parm][2] = False
+                if (
+                    parm
+                    in [
+                        "U",
+                        "V",
+                        "W",
+                        "X",
+                        "Y",
+                        "Z",
+                        "SH/L",
+                        "I(L2)/I(L1)",
+                        "alpha",
+                        "beta-0",
+                        "beta-1",
+                        "beta-q",
+                        "sig-0",
+                        "sig-1",
+                        "sig-2",
+                        "sig-q",
+                    ]
+                    and Inst[parm][2]
+                ):
+                    Inst[parm][2] = False
             instDict = dict(zip(insNames, insVals, strict=False))
-            instDict['X'] = max(instDict['X'], 0.01)
-            instDict['Y'] = max(instDict['Y'], 0.01)
-            if 'SH/L' in instDict:
-                instDict['SH/L'] = max(instDict['SH/L'], 0.002)
+            instDict["X"] = max(instDict["X"], 0.01)
+            instDict["Y"] = max(instDict["Y"], 0.01)
+            if "SH/L" in instDict:
+                instDict["SH/L"] = max(instDict["SH/L"], 0.002)
             return dataType, instDict, insVary
 
         import scipy.interpolate as si
-        bgrnd = self.data['Background']
+
+        bgrnd = self.data["Background"]
 
         # Need our fixed points in order
-        bgrnd[1]['FixedPoints'].sort(key=lambda pair: pair[0])
-        X = [x for x, y in bgrnd[1]['FixedPoints']]
-        Y = [y for x, y in bgrnd[1]['FixedPoints']]
+        bgrnd[1]["FixedPoints"].sort(key=lambda pair: pair[0])
+        X = [x for x, y in bgrnd[1]["FixedPoints"]]
+        Y = [y for x, y in bgrnd[1]["FixedPoints"]]
 
-        limits = self.data['Limits'][1]
+        limits = self.data["Limits"][1]
         if X[0] > limits[0]:
             X = [limits[0]] + X
             Y = [Y[0]] + Y
@@ -3659,26 +4072,35 @@ class G2PwdrData(G2ObjectWrapper):
             Y += [Y[-1]]
 
         # Some simple lookups
-        controls = self.proj['Controls']['data']
-        inst, inst2 = self.data['Instrument Parameters']
-        pwddata = self.data['data'][1]
+        controls = self.proj["Controls"]["data"]
+        inst, inst2 = self.data["Instrument Parameters"]
+        pwddata = self.data["data"][1]
 
         # Construct the data for background fitting
         xBeg = np.searchsorted(pwddata[0], limits[0])
         xFin = np.searchsorted(pwddata[0], limits[1])
         xdata = pwddata[0][xBeg:xFin]
-        ydata = si.interp1d(X,Y)(ma.getdata(xdata))
+        ydata = si.interp1d(X, Y)(ma.getdata(xdata))
 
-        W = [1]*len(xdata)
-        Z = [0]*len(xdata)
+        W = [1] * len(xdata)
+        Z = [0] * len(xdata)
 
         dataType, insDict, insVary = SetInstParms(inst)
         bakType, bakDict, bakVary = G2pwd.SetBackgroundParms(bgrnd)
 
         # Do the fit
         data = np.array([xdata, ydata, W, Z, Z, Z])
-        G2pwd.DoPeakFit('LSQ', [], bgrnd, limits, inst, inst2, data,
-                        prevVaryList=bakVary, controls=controls)
+        G2pwd.DoPeakFit(
+            "LSQ",
+            [],
+            bgrnd,
+            limits,
+            inst,
+            inst2,
+            data,
+            prevVaryList=bakVary,
+            controls=controls,
+        )
 
         # Post-fit
         parmDict = {}
@@ -3687,14 +4109,16 @@ class G2PwdrData(G2ObjectWrapper):
         parmDict.update(insDict)
         pwddata[3][xBeg:xFin] *= 0
         pwddata[5][xBeg:xFin] *= 0
-        pwddata[4][xBeg:xFin] = G2pwd.getBackground('', parmDict, bakType, dataType, xdata)[0]
+        pwddata[4][xBeg:xFin] = G2pwd.getBackground(
+            "", parmDict, bakType, dataType, xdata
+        )[0]
 
         # TODO adjust pwddata? GSASIIpwdGUI.py:1041
         # TODO update background
         self.proj.save()
 
-    def getdata(self,datatype):
-        '''Provides access to the histogram data of the selected data type
+    def getdata(self, datatype):
+        """Provides access to the histogram data of the selected data type
 
         :param str datatype: must be one of the following values
           (case is ignored):
@@ -3710,38 +4134,40 @@ class G2PwdrData(G2ObjectWrapper):
 
         :returns: an numpy MaskedArray with data values of the requested type
 
-        '''
-        enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual', 'q', 'd']
+        """
+        enums = ["x", "yobs", "yweight", "ycalc", "background", "residual", "q", "d"]
         if datatype.lower() not in enums:
-            raise G2ScriptException("Invalid datatype = "+datatype+" must be one of "+str(enums))
-        if datatype.lower() == 'q':
-            Inst,Inst2 = self.data['Instrument Parameters']
-            return  2 * np.pi / G2lat.Pos2dsp(Inst,self.data['data'][1][0])
-        elif datatype.lower() == 'd':
-            Inst,Inst2 = self.data['Instrument Parameters']
-            return G2lat.Pos2dsp(Inst,self.data['data'][1][0])
+            raise G2ScriptException(
+                "Invalid datatype = " + datatype + " must be one of " + str(enums)
+            )
+        if datatype.lower() == "q":
+            Inst, Inst2 = self.data["Instrument Parameters"]
+            return 2 * np.pi / G2lat.Pos2dsp(Inst, self.data["data"][1][0])
+        elif datatype.lower() == "d":
+            Inst, Inst2 = self.data["Instrument Parameters"]
+            return G2lat.Pos2dsp(Inst, self.data["data"][1][0])
         else:
-            return self.data['data'][1][enums.index(datatype.lower())]
+            return self.data["data"][1][enums.index(datatype.lower())]
 
     def y_calc(self):
-        '''Returns the calculated intensity values; better to
+        """Returns the calculated intensity values; better to
         use :meth:`getdata`
-        '''
-        return self.data['data'][1][3]
+        """
+        return self.data["data"][1][3]
 
     def reflections(self):
-        '''Returns a dict with an entry for every phase in the
+        """Returns a dict with an entry for every phase in the
         current histogram. Within each entry is a dict with keys
         'RefList' (reflection list, see
         :ref:`Powder Reflections <PowderRefl_table>`),
         'Type' (histogram type), 'FF'
         (form factor information), 'Super' (True if this is superspace
         group).
-        '''
-        return self.data['Reflection Lists']
+        """
+        return self.data["Reflection Lists"]
 
-    def Export(self,fileroot,extension,fmthint=None):
-        '''Write the histogram into a file. The path is specified by fileroot and
+    def Export(self, fileroot, extension, fmthint=None):
+        """Write the histogram into a file. The path is specified by fileroot and
         extension.
 
         :param str fileroot: name of the file, optionally with a path (extension is
@@ -3753,57 +4179,63 @@ class G2PwdrData(G2ObjectWrapper):
            supplied string will be used. If not specified, an error
            will be generated showing the possible choices.
         :returns: name of file that was written
-        '''
+        """
         LoadG2fil()
-        if extension not in exportersByExtension.get('powder',[]):
-            print('Defined exporters are:')
-            print('  ',list(exportersByExtension.get('powder',[])))
-            raise G2ScriptException('No Writer for file type = "'+extension+'"')
-        fil = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
-        obj = exportersByExtension['powder'][extension]
+        if extension not in exportersByExtension.get("powder", []):
+            print("Defined exporters are:")
+            print("  ", list(exportersByExtension.get("powder", [])))
+            raise G2ScriptException('No Writer for file type = "' + extension + '"')
+        fil = os.path.abspath(os.path.splitext(fileroot)[0] + extension)
+        obj = exportersByExtension["powder"][extension]
         if type(obj) is list:
             if fmthint is None:
-                print('Defined ',extension,'exporters are:')
+                print("Defined ", extension, "exporters are:")
                 for o in obj:
-                    print('\t',o.formatName)
-                raise G2ScriptException('No format hint for file type = "'+extension+'"')
+                    print("\t", o.formatName)
+                raise G2ScriptException(
+                    'No format hint for file type = "' + extension + '"'
+                )
             for o in obj:
-              if fmthint.lower() in o.formatName.lower():
-                  obj = o
-                  break
+                if fmthint.lower() in o.formatName.lower():
+                    obj = o
+                    break
             else:
-                print('Hint ',fmthint,'not found. Defined ',extension,'exporters are:')
+                print(
+                    "Hint ", fmthint, "not found. Defined ", extension, "exporters are:"
+                )
                 for o in obj:
-                    print('\t',o.formatName)
-                raise G2ScriptException('Bad format hint for file type = "'+extension+'"')
+                    print("\t", o.formatName)
+                raise G2ScriptException(
+                    'Bad format hint for file type = "' + extension + '"'
+                )
         self._SetFromArray(obj)
-        obj.Writer(self.name,fil)
+        obj.Writer(self.name, fil)
         return fil
 
-    def _SetFromArray(self,expObj):
-        '''Load a histogram into the exporter in preparation for use of
+    def _SetFromArray(self, expObj):
+        """Load a histogram into the exporter in preparation for use of
         the .Writer method in the object.
 
         :param Exporter expObj: Exporter object
-        '''
-        expObj.Histograms[self.name] =  {}
-        expObj.Histograms[self.name]['Data'] = self.data['data'][1]
-        for key in 'Instrument Parameters','Sample Parameters','Reflection Lists':
+        """
+        expObj.Histograms[self.name] = {}
+        expObj.Histograms[self.name]["Data"] = self.data["data"][1]
+        for key in "Instrument Parameters", "Sample Parameters", "Reflection Lists":
             expObj.Histograms[self.name][key] = self.data[key]
 
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:
             import matplotlib.pyplot as plt
         except ImportError:
-            G2fil.G2Print('Warning: Unable to import matplotlib, skipping plot')
+            G2fil.G2Print("Warning: Unable to import matplotlib, skipping plot")
             return
-        data = self.data['data'][1]
+        data = self.data["data"][1]
         if Yobs:
-            plt.plot(data[0], data[1], label='Yobs')
+            plt.plot(data[0], data[1], label="Yobs")
         if Ycalc:
-            plt.plot(data[0], data[3], label='Ycalc')
+            plt.plot(data[0], data[3], label="Ycalc")
         if Background:
-            plt.plot(data[0], data[4], label='Background')
+            plt.plot(data[0], data[4], label="Background")
         if Residual:
             plt.plot(data[0], data[5], label="Residual")
 
@@ -3812,11 +4244,10 @@ class G2PwdrData(G2ObjectWrapper):
 
         :returns: a wR value as a percentage or None if not defined
         """
-        return self['data'][0].get('wR')
+        return self["data"][0].get("wR")
 
-    def _decodeHist(self,hist):
-        '''Convert a histogram reference to a histogram name string
-        '''
+    def _decodeHist(self, hist):
+        """Convert a histogram reference to a histogram name string"""
         if isinstance(hist, G2PwdrData) or isinstance(hist, G2Single):
             return hist.name
         elif hist in [h.name for h in self.proj.histograms()]:
@@ -3824,10 +4255,10 @@ class G2PwdrData(G2ObjectWrapper):
         elif type(hist) is int:
             return self.proj.histograms()[hist].name
         else:
-            raise G2ScriptException("Invalid histogram reference: "+str(hist))
+            raise G2ScriptException("Invalid histogram reference: " + str(hist))
 
     def set_background(self, key, value):
-        '''Set background parameters (this serves a similar function as in
+        """Set background parameters (this serves a similar function as in
         :meth:`set_refinements`, but with a simplified interface).
 
         :param str key: a string that defines the background parameter that will
@@ -3848,15 +4279,15 @@ class G2PwdrData(G2ObjectWrapper):
         :param value: a value to set the selected background parameter. The meaning
            and type for this parameter is listed in the table above.
 
-        '''
-        bkgPrms, bkgDict = self.data['Background']
-        if key == 'fixedHist':
+        """
+        bkgPrms, bkgDict = self.data["Background"]
+        if key == "fixedHist":
             if value is None:
-                bkgDict['background PWDR'][0] = ''
+                bkgDict["background PWDR"][0] = ""
                 return
-            bkgDict['background PWDR'][0] = self._decodeHist(value)
-        elif key == 'fixedFileMult':
-            bkgDict['background PWDR'][1] = float(value)
+            bkgDict["background PWDR"][0] = self._decodeHist(value)
+        elif key == "fixedFileMult":
+            bkgDict["background PWDR"][1] = float(value)
         else:
             raise ValueError("Invalid key in set_background:", key)
 
@@ -3872,38 +4303,37 @@ class G2PwdrData(G2ObjectWrapper):
         """
         do_fit_fixed_points = False
         for key, value in refs.items():
-            if key == 'Limits':
-                old_limits = self.data['Limits'][1]
+            if key == "Limits":
+                old_limits = self.data["Limits"][1]
                 new_limits = value
                 if isinstance(new_limits, dict):
-                    if 'low' in new_limits:
-                        old_limits[0] = new_limits['low']
-                    if 'high' in new_limits:
-                        old_limits[1] = new_limits['high']
+                    if "low" in new_limits:
+                        old_limits[0] = new_limits["low"]
+                    if "high" in new_limits:
+                        old_limits[1] = new_limits["high"]
                 else:
                     old_limits[0], old_limits[1] = new_limits
-            elif key == 'Sample Parameters':
-                sample = self.data['Sample Parameters']
+            elif key == "Sample Parameters":
+                sample = self.data["Sample Parameters"]
                 for sparam in value:
                     if sparam not in sample:
-                        raise ValueError("Unknown refinement parameter, "
-                                         + str(sparam))
+                        raise ValueError("Unknown refinement parameter, " + str(sparam))
                     sample[sparam][1] = True
-            elif key == 'Background':
-                bkg, peaks = self.data['Background']
+            elif key == "Background":
+                bkg, peaks = self.data["Background"]
 
                 # If True or False, just set the refine parameter
                 if value in (True, False):
                     bkg[1] = value
                     return
 
-                if 'type' in value:
-                    bkg[0] = value['type']
-                if 'refine' in value:
-                    bkg[1] = value['refine']
-                if 'no. coeffs' in value:
+                if "type" in value:
+                    bkg[0] = value["type"]
+                if "refine" in value:
+                    bkg[1] = value["refine"]
+                if "no. coeffs" in value:
                     cur_coeffs = bkg[2]
-                    n_coeffs = value['no. coeffs']
+                    n_coeffs = value["no. coeffs"]
                     if n_coeffs > cur_coeffs:
                         for x in range(n_coeffs - cur_coeffs):
                             bkg.append(0.0)
@@ -3911,37 +4341,39 @@ class G2PwdrData(G2ObjectWrapper):
                         for _ in range(cur_coeffs - n_coeffs):
                             bkg.pop()
                     bkg[2] = n_coeffs
-                if 'coeffs' in value:
-                    bkg[3:] = value['coeffs']
-                if 'FixedPoints' in value:
-                    peaks['FixedPoints'] = [(float(a), float(b))
-                                            for a, b in value['FixedPoints']]
-                if value.get('fit fixed points', False):
+                if "coeffs" in value:
+                    bkg[3:] = value["coeffs"]
+                if "FixedPoints" in value:
+                    peaks["FixedPoints"] = [
+                        (float(a), float(b)) for a, b in value["FixedPoints"]
+                    ]
+                if value.get("fit fixed points", False):
                     do_fit_fixed_points = True
-                if 'peaks' in value:
-                    for i,flags in enumerate(value['peaks']):
-                        self.ref_back_peak(i,flags)
+                if "peaks" in value:
+                    for i, flags in enumerate(value["peaks"]):
+                        self.ref_back_peak(i, flags)
 
-            elif key == 'Instrument Parameters':
-                instrument, secondary = self.data['Instrument Parameters']
+            elif key == "Instrument Parameters":
+                instrument, secondary = self.data["Instrument Parameters"]
                 for iparam in value:
-                    errmsg = ''
+                    errmsg = ""
                     try:
                         instrument[iparam][2] = True
                     except IndexError:
                         errmsg = f"Invalid key: {iparam}"
-                    if errmsg: raise ValueError(errmsg)
+                    if errmsg:
+                        raise ValueError(errmsg)
             else:
                 raise ValueError("Unknown key:", key)
         # Fit fixed points after the fact - ensure they are after fixed points
         # are added
         if do_fit_fixed_points:
             # Background won't be fit if refinement flag not set
-            orig = self.data['Background'][0][1]
-            self.data['Background'][0][1] = True
+            orig = self.data["Background"][0][1]
+            self.data["Background"][0][1] = True
             self.fit_fixed_points()
             # Restore the previous value
-            self.data['Background'][0][1] = orig
+            self.data["Background"][0][1] = orig
 
     def clear_refinements(self, refs):
         """Clears the PWDR refinement parameter 'key' and its associated value.
@@ -3950,15 +4382,15 @@ class G2PwdrData(G2ObjectWrapper):
           See the :ref:`Histogram_parameters_table` table for what can be specified.
         """
         for key, value in refs.items():
-            if key == 'Limits':
-                old_limits, cur_limits = self.data['Limits']
+            if key == "Limits":
+                old_limits, cur_limits = self.data["Limits"]
                 cur_limits[0], cur_limits[1] = old_limits
-            elif key == 'Sample Parameters':
-                sample = self.data['Sample Parameters']
+            elif key == "Sample Parameters":
+                sample = self.data["Sample Parameters"]
                 for sparam in value:
                     sample[sparam][1] = False
-            elif key == 'Background':
-                bkg, peaks = self.data['Background']
+            elif key == "Background":
+                bkg, peaks = self.data["Background"]
 
                 # If True or False, just set the refine parameter
                 if value in (True, False):
@@ -3966,21 +4398,21 @@ class G2PwdrData(G2ObjectWrapper):
                     return
 
                 bkg[1] = False
-                if 'FixedPoints' in value:
-                    if 'FixedPoints' in peaks:
-                        del peaks['FixedPoints']
-                if 'peaks' in value:
-                    for i in range(len(self.Background[1]['peaksList'])):
-                        self.ref_back_peak(i,[])
-            elif key == 'Instrument Parameters':
-                instrument, secondary = self.data['Instrument Parameters']
+                if "FixedPoints" in value:
+                    if "FixedPoints" in peaks:
+                        del peaks["FixedPoints"]
+                if "peaks" in value:
+                    for i in range(len(self.Background[1]["peaksList"])):
+                        self.ref_back_peak(i, [])
+            elif key == "Instrument Parameters":
+                instrument, secondary = self.data["Instrument Parameters"]
                 for iparam in value:
                     instrument[iparam][2] = False
             else:
                 raise ValueError("Unknown key:", key)
 
-    def add_peak(self,area,dspace=None,Q=None,ttheta=None):
-        '''Adds a single peak to the peak list
+    def add_peak(self, area, dspace=None, Q=None, ttheta=None):
+        """Adds a single peak to the peak list
         :param float area: peak area
         :param float dspace: peak position as d-space (A)
         :param float Q: peak position as Q (A-1)
@@ -3988,23 +4420,24 @@ class G2PwdrData(G2ObjectWrapper):
 
         Note: only one of the parameters: dspace, Q or ttheta may be specified.
         See :ref:`PeakRefine` for an example.
-        '''
+        """
         if (not dspace) + (not Q) + (not ttheta) != 2:
-            G2fil.G2Print('add_peak error: too many or no peak position(s) specified')
+            G2fil.G2Print("add_peak error: too many or no peak position(s) specified")
             return
         pos = ttheta
-        Parms,Parms2 = self.data['Instrument Parameters']
+        Parms, Parms2 = self.data["Instrument Parameters"]
         if Q:
-            pos = G2lat.Dsp2pos(Parms,2.*np.pi/Q)
+            pos = G2lat.Dsp2pos(Parms, 2.0 * np.pi / Q)
         elif dspace:
-            pos = G2lat.Dsp2pos(Parms,dspace)
-        peaks = self.data['Peak List']
-        peaks['sigDict'] = {}        #no longer valid
-        peaks['peaks'].append(G2mth.setPeakparms(Parms,Parms2,pos,area))
+            pos = G2lat.Dsp2pos(Parms, dspace)
+        peaks = self.data["Peak List"]
+        peaks["sigDict"] = {}  # no longer valid
+        peaks["peaks"].append(G2mth.setPeakparms(Parms, Parms2, pos, area))
 
-    def set_peakFlags(self,peaklist=None,area=None,pos=None,sig=None,gam=None,
-                          alp=None,bet=None):
-        '''Set refinement flags for peaks
+    def set_peakFlags(
+        self, peaklist=None, area=None, pos=None, sig=None, gam=None, alp=None, bet=None
+    ):
+        """Set refinement flags for peaks
 
         :param list peaklist: a list of peaks to change flags. If None (default), changes
           are made to all peaks.
@@ -4030,22 +4463,29 @@ class G2PwdrData(G2ObjectWrapper):
 
         causes the sig refinement flag to be cleared and the gam flag to be set, in both cases for
         all peaks. The position and area flags are not changed from their previous values.
-        '''
-        peaks = self.data['Peak List']
+        """
+        peaks = self.data["Peak List"]
         if peaklist is None:
-            peaklist = range(len(peaks['peaks']))
+            peaklist = range(len(peaks["peaks"]))
         for i in peaklist:
-            if 'C' in self.data['Instrument Parameters'][0]['Type'][0]:
-                for var,j in [(area,3),(pos,1),(sig,5),(gam,7)]:
+            if "C" in self.data["Instrument Parameters"][0]["Type"][0]:
+                for var, j in [(area, 3), (pos, 1), (sig, 5), (gam, 7)]:
                     if var is not None:
-                        peaks['peaks'][i][j] = var
+                        peaks["peaks"][i][j] = var
             else:
-                for var,j in [(area,3),(pos,1),(alp,5),(bet,7),(sig,9),(gam,11)]:
+                for var, j in [
+                    (area, 3),
+                    (pos, 1),
+                    (alp, 5),
+                    (bet, 7),
+                    (sig, 9),
+                    (gam, 11),
+                ]:
                     if var is not None:
-                        peaks['peaks'][i][j] = var
+                        peaks["peaks"][i][j] = var
 
-    def refine_peaks(self,mode='useIP'):
-        '''Causes a refinement of peak position, background and instrument parameters
+    def refine_peaks(self, mode="useIP"):
+        """Causes a refinement of peak position, background and instrument parameters
 
         :param str mode: this determines how peak widths are determined. If
           the value is 'useIP' (the default) then the width parameter values (sigma, gamma,
@@ -4060,31 +4500,48 @@ class G2PwdrData(G2ObjectWrapper):
           element 1 has the peak fit result, element 2 has the peak fit uncertainties
           and element 3 has r-factors from the fit.
           (These are generated in :meth:`GSASIIpwd.DoPeakFit`).
-        '''
-        if mode == 'useIP':
+        """
+        if mode == "useIP":
             G2pwd.setPeakInstPrmMode(True)
-        elif mode == 'hold':
+        elif mode == "hold":
             G2pwd.setPeakInstPrmMode(False)
         else:
-            raise G2ScriptException('Error: invalid mode value in refine_peaks (allowed: "useIP" or "hold")')
-        controls = self.proj.data.get('Controls',{})
-        controls = controls.get('data',
-                            {'deriv type':'analytic','min dM/M':0.001,}     #fill in defaults if needed
-                            )
-        peaks = self.data['Peak List']
-        Parms,Parms2 = self.data['Instrument Parameters']
-        background = self.data['Background']
-        limits = self.data['Limits'][1]
-        bxye = np.zeros(len(self.data['data'][1][1]))
-        result = G2pwd.DoPeakFit('LSQ',peaks['peaks'],background,limits,
-                                           Parms,Parms2,self.data['data'][1],bxye,[],
-                                           oneCycle=False,controls=controls,dlg=None)
-        peaks['sigDict'] = result[0]
+            raise G2ScriptException(
+                'Error: invalid mode value in refine_peaks (allowed: "useIP" or "hold")'
+            )
+        controls = self.proj.data.get("Controls", {})
+        controls = controls.get(
+            "data",
+            {
+                "deriv type": "analytic",
+                "min dM/M": 0.001,
+            },  # fill in defaults if needed
+        )
+        peaks = self.data["Peak List"]
+        Parms, Parms2 = self.data["Instrument Parameters"]
+        background = self.data["Background"]
+        limits = self.data["Limits"][1]
+        bxye = np.zeros(len(self.data["data"][1][1]))
+        result = G2pwd.DoPeakFit(
+            "LSQ",
+            peaks["peaks"],
+            background,
+            limits,
+            Parms,
+            Parms2,
+            self.data["data"][1],
+            bxye,
+            [],
+            oneCycle=False,
+            controls=controls,
+            dlg=None,
+        )
+        peaks["sigDict"] = result[0]
         return result
 
     @property
     def Peaks(self):
-        '''Provides a dict with the Peak List parameters
+        """Provides a dict with the Peak List parameters
         for this histogram.
 
         :returns: dict with two elements where item
@@ -4093,119 +4550,162 @@ class G2PwdrData(G2ObjectWrapper):
           where the -ref items are refinement flags and item
           'sigDict' is a dict with possible items 'Back;#',
           'pos#', 'int#', 'sig#', 'gam#'
-        '''
-        return self.data['Peak List']
+        """
+        return self.data["Peak List"]
 
     @property
     def PeakList(self):
-        '''Provides a list of peaks parameters
+        """Provides a list of peaks parameters
         for this histogram.
 
         :returns: a list of peaks, where each peak is a list containing
           [pos,area,sig,gam]
           (position, peak area, Gaussian width, Lorentzian width)
 
-        '''
-        return [i[::2] for i in self.data['Peak List']['peaks']]
+        """
+        return [i[::2] for i in self.data["Peak List"]["peaks"]]
 
-    def Export_peaks(self,filename):
-        '''Write the peaks file. The path is specified by filename
+    def Export_peaks(self, filename):
+        """Write the peaks file. The path is specified by filename
         extension.
 
         :param str filename: name of the file, optionally with a path,
             includes an extension
         :returns: name of file that was written
-        '''
+        """
         import math
-        nptand = lambda x: np.tan(x*math.pi/180.)
+
+        nptand = lambda x: np.tan(x * math.pi / 180.0)
         fil = os.path.abspath(filename)
-        fp = open(filename,'w')
-        Inst,Inst2 = self.data['Instrument Parameters']
-        Type = Inst['Type'][0]
-        if 'T' not in Type:
+        fp = open(filename, "w")
+        Inst, Inst2 = self.data["Instrument Parameters"]
+        Type = Inst["Type"][0]
+        if "T" not in Type:
             wave = G2mth.getWave(Inst)
         else:
             wave = None
-        pkdata = self.data['Peak List']
-        peaks = pkdata['peaks']
-        sigDict = pkdata['sigDict']
+        pkdata = self.data["Peak List"]
+        peaks = pkdata["peaks"]
+        sigDict = pkdata["sigDict"]
         # code taken from GSASIIdataGUI OnExportPeakList
-        fp.write("#%s \n" % (self.name+' Peak List'))
+        fp.write("#%s \n" % (self.name + " Peak List"))
         if wave:
-            fp.write('#wavelength = %10.6f\n'%(wave))
-        if 'T' in Type:
-            fp.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','alp','bet','sig','gam','FWHM'))
+            fp.write("#wavelength = %10.6f\n" % (wave))
+        if "T" in Type:
+            fp.write(
+                "#%9s %10s %10s %12s %10s %10s %10s %10s %10s\n"
+                % ("pos", "dsp", "esd", "int", "alp", "bet", "sig", "gam", "FWHM")
+            )
         else:
-            fp.write('#%9s %10s %10s %12s %10s %10s %10s\n'%('pos','dsp','esd','int','sig','gam','FWHM'))
-        for ip,peak in enumerate(peaks):
-            dsp = G2lat.Pos2dsp(Inst,peak[0])
-            if 'T' in Type:  #TOF - more cols
-                esds = {'pos':0.,'int':0.,'alp':0.,'bet':0.,'sig':0.,'gam':0.}
+            fp.write(
+                "#%9s %10s %10s %12s %10s %10s %10s\n"
+                % ("pos", "dsp", "esd", "int", "sig", "gam", "FWHM")
+            )
+        for ip, peak in enumerate(peaks):
+            dsp = G2lat.Pos2dsp(Inst, peak[0])
+            if "T" in Type:  # TOF - more cols
+                esds = {
+                    "pos": 0.0,
+                    "int": 0.0,
+                    "alp": 0.0,
+                    "bet": 0.0,
+                    "sig": 0.0,
+                    "gam": 0.0,
+                }
                 for name in list(esds.keys()):
-                    esds[name] = sigDict.get('%s%d'%(name,ip),0.)
+                    esds[name] = sigDict.get("%s%d" % (name, ip), 0.0)
                 sig = np.sqrt(peak[8])
                 gam = peak[10]
-                esddsp = G2lat.Pos2dsp(Inst,esds['pos'])
-                FWHM = G2pwd.getgamFW(gam,sig) +(peak[4]+peak[6])*np.log(2.)/(peak[4]*peak[6])     #to get delta-TOF from Gam(peak)
-                fp.write("%10.2f %10.5f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
-                    (peak[0],dsp,esddsp,peak[2],peak[4],peak[6],peak[8],peak[10],FWHM))
-            else:               #CW
-                #get esds from sigDict for each peak & put in output - esds for sig & gam from UVWXY?
-                esds = {'pos':0.,'int':0.,'sig':0.,'gam':0.}
+                esddsp = G2lat.Pos2dsp(Inst, esds["pos"])
+                FWHM = G2pwd.getgamFW(gam, sig) + (peak[4] + peak[6]) * np.log(2.0) / (
+                    peak[4] * peak[6]
+                )  # to get delta-TOF from Gam(peak)
+                fp.write(
+                    "%10.2f %10.5f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n"
+                    % (
+                        peak[0],
+                        dsp,
+                        esddsp,
+                        peak[2],
+                        peak[4],
+                        peak[6],
+                        peak[8],
+                        peak[10],
+                        FWHM,
+                    )
+                )
+            else:  # CW
+                # get esds from sigDict for each peak & put in output - esds for sig & gam from UVWXY?
+                esds = {"pos": 0.0, "int": 0.0, "sig": 0.0, "gam": 0.0}
                 for name in list(esds.keys()):
-                    esds[name] = sigDict.get('%s%d'%(name,ip),0.)
-                sig = np.sqrt(peak[4]) #var -> sig
+                    esds[name] = sigDict.get("%s%d" % (name, ip), 0.0)
+                sig = np.sqrt(peak[4])  # var -> sig
                 gam = peak[6]
-                esddsp = 0.5*esds['pos']*dsp/nptand(peak[0]/2.)
-                FWHM = G2pwd.getgamFW(gam,sig)      #to get delta-2-theta in deg. from Gam(peak)
-                fp.write("%10.4f %10.5f %10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
-                    (peak[0],dsp,esddsp,peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
+                esddsp = 0.5 * esds["pos"] * dsp / nptand(peak[0] / 2.0)
+                FWHM = G2pwd.getgamFW(
+                    gam, sig
+                )  # to get delta-2-theta in deg. from Gam(peak)
+                fp.write(
+                    "%10.4f %10.5f %10.5f %12.2f %10.5f %10.5f %10.5f \n"
+                    % (
+                        peak[0],
+                        dsp,
+                        esddsp,
+                        peak[2],
+                        np.sqrt(max(0.0001, peak[4])) / 100.0,
+                        peak[6] / 100.0,
+                        FWHM / 100.0,
+                    )
+                )  # convert to deg
         fp.close()
         return fil
 
-    def SaveProfile(self,filename):
-        '''Writes a GSAS-II (new style) .instprm file
-        '''
-        data,Parms2 = self.data['Instrument Parameters']
-        filename = os.path.splitext(filename)[0]+'.instprm'         # make sure extension is .instprm
-        File = open(filename,'w')
+    def SaveProfile(self, filename):
+        """Writes a GSAS-II (new style) .instprm file"""
+        data, Parms2 = self.data["Instrument Parameters"]
+        filename = (
+            os.path.splitext(filename)[0] + ".instprm"
+        )  # make sure extension is .instprm
+        File = open(filename, "w")
         File.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
         for item in data:
-            File.write(item+':'+str(data[item][1])+'\n')
+            File.write(item + ":" + str(data[item][1]) + "\n")
         File.close()
-        G2fil.G2Print ('Instrument parameters saved to: '+filename)
+        G2fil.G2Print("Instrument parameters saved to: " + filename)
 
-    def LoadProfile(self,filename,bank=0):
-        '''Reads a GSAS-II (new style) .instprm file and overwrites the current
+    def LoadProfile(self, filename, bank=0):
+        """Reads a GSAS-II (new style) .instprm file and overwrites the current
         parameters
 
         :param str filename: instrument parameter file name, extension ignored if not
           .instprm
         :param int bank: bank number to read, defaults to zero
-        '''
-        filename = os.path.splitext(filename)[0]+'.instprm'         # make sure extension is .instprm
+        """
+        filename = (
+            os.path.splitext(filename)[0] + ".instprm"
+        )  # make sure extension is .instprm
         File = open(filename)
         S = File.readline()
         newItems = []
         newVals = []
         Found = False
         while S:
-            if S[0] == '#':
+            if S[0] == "#":
                 if Found:
                     break
-                if 'Bank' in S:
-                    if bank == int(S.split(':')[0].split()[1]):
+                if "Bank" in S:
+                    if bank == int(S.split(":")[0].split()[1]):
                         S = File.readline()
                         continue
                     S = File.readline()
-                    while S and '#Bank' not in S:
+                    while S and "#Bank" not in S:
                         S = File.readline()
                     continue
-                #a non #Bank file
+                # a non #Bank file
                 S = File.readline()
                 continue
             Found = True
-            [item,val] = S[:-1].split(':')
+            [item, val] = S[:-1].split(":")
             newItems.append(item)
             try:
                 newVals.append(float(val))
@@ -4214,10 +4714,17 @@ class G2PwdrData(G2ObjectWrapper):
             S = File.readline()
         File.close()
         LoadG2fil()
-        self.data['Instrument Parameters'][0] = G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,])
+        self.data["Instrument Parameters"][0] = G2fil.makeInstDict(
+            newItems,
+            newVals,
+            len(newVals)
+            * [
+                False,
+            ],
+        )
 
-    def EditSimulated(self,Tmin, Tmax, Tstep=None, Npoints=None):
-        '''Change the parameters for an existing simulated powder histogram.
+    def EditSimulated(self, Tmin, Tmax, Tstep=None, Npoints=None):
+        """Change the parameters for an existing simulated powder histogram.
         This will reset the previously computed "observed" pattern.
 
         :param float Tmin: Minimum 2theta or TOF (microsec) for dataset to be simulated
@@ -4228,11 +4735,13 @@ class G2PwdrData(G2ObjectWrapper):
             diffraction pattern. Defaults as None, which sets this to 2500. Do not specify
             both Npoints and Tstep. Due to roundoff the actual nuber of points used may differ
             by +-1 from Npoints. Must be below 25,000.
-         '''
-        if not self.data['data'][0]['Dummy']:
-            raise G2ScriptException("Error: histogram for G2PwdrData.EditSimulated is not simulated")
+        """
+        if not self.data["data"][0]["Dummy"]:
+            raise G2ScriptException(
+                "Error: histogram for G2PwdrData.EditSimulated is not simulated"
+            )
         if Tmax < Tmin:
-            Tmin,Tmax = Tmax,Tmin
+            Tmin, Tmax = Tmax, Tmin
         if Tstep is not None and Npoints is not None:
             raise G2ScriptException("Error: Tstep and Npoints both specified")
         if Tstep is not None:
@@ -4240,45 +4749,51 @@ class G2PwdrData(G2ObjectWrapper):
         elif Npoints is None:
             Npoints = 2500
 
-        if 'T' in self.data['Instrument Parameters'][0]['Type'][0]:
-            if Tmax > 200.:
+        if "T" in self.data["Instrument Parameters"][0]["Type"][0]:
+            if Tmax > 200.0:
                 raise G2ScriptException("Error: Tmax is too large")
             if Npoints:
                 N = Npoints
-                Tstep = (np.log(Tmax)-np.log(Tmin))/N
+                Tstep = (np.log(Tmax) - np.log(Tmin)) / N
             else:
-                N = (np.log(Tmax)-np.log(Tmin))/Tstep
+                N = (np.log(Tmax) - np.log(Tmin)) / Tstep
             if N > 25000:
-                raise G2ScriptException("Error: Tstep is too small. Would need "+str(N)+" points.")
-            x = np.exp((np.arange(0,N))*Tstep+np.log(Tmin*1000.))
+                raise G2ScriptException(
+                    "Error: Tstep is too small. Would need " + str(N) + " points."
+                )
+            x = np.exp((np.arange(0, N)) * Tstep + np.log(Tmin * 1000.0))
             N = len(x)
-            unit = 'millisec'
-            limits = [(1000*Tmin, 1000*Tmax), [1000*Tmin, 1000*Tmax]]
+            unit = "millisec"
+            limits = [(1000 * Tmin, 1000 * Tmax), [1000 * Tmin, 1000 * Tmax]]
         else:
             if Npoints:
                 N = Npoints
             else:
-                N = int((Tmax-Tmin)/Tstep)+1
+                N = int((Tmax - Tmin) / Tstep) + 1
             if N > 25000:
-                raise G2ScriptException("Error: Tstep is too small. Would need "+str(N)+" points.")
-            x = np.linspace(Tmin,Tmax,N,True)
+                raise G2ScriptException(
+                    "Error: Tstep is too small. Would need " + str(N) + " points."
+                )
+            x = np.linspace(Tmin, Tmax, N, True)
             N = len(x)
-            unit = 'degrees 2theta'
+            unit = "degrees 2theta"
             limits = [(Tmin, Tmax), [Tmin, Tmax]]
         if N < 3:
-            raise G2ScriptException("Error: Range is too small or step is too large, <3 points")
-        G2fil.G2Print(f'Simulating {N} points from {Tmin} to {Tmax} {unit}')
-        self.data['data'][1] = [
-            np.array(x), # x-axis values
-            np.zeros_like(x), # powder pattern intensities
-            np.ones_like(x), # 1/sig(intensity)^2 values (weights)
-            np.zeros_like(x), # calc. intensities (zero)
-            np.zeros_like(x), # calc. background (zero)
-            np.zeros_like(x), # obs-calc profiles
-            ]
-        self.data['Limits'] = limits
+            raise G2ScriptException(
+                "Error: Range is too small or step is too large, <3 points"
+            )
+        G2fil.G2Print(f"Simulating {N} points from {Tmin} to {Tmax} {unit}")
+        self.data["data"][1] = [
+            np.array(x),  # x-axis values
+            np.zeros_like(x),  # powder pattern intensities
+            np.ones_like(x),  # 1/sig(intensity)^2 values (weights)
+            np.zeros_like(x),  # calc. intensities (zero)
+            np.zeros_like(x),  # calc. background (zero)
+            np.zeros_like(x),  # obs-calc profiles
+        ]
+        self.data["Limits"] = limits
 
-    def getHistEntryList(self, keyname=''):
+    def getHistEntryList(self, keyname=""):
         """Returns a dict with histogram setting values.
 
         :param str keyname: an optional string. When supplied only entries
@@ -4294,7 +4809,7 @@ class G2PwdrData(G2ObjectWrapper):
             :meth:`setHistEntryValue`
 
         """
-        return [i for i in dictDive(self.data,keyname) if i[0] != ['Histograms']]
+        return [i for i in dictDive(self.data, keyname) if i[0] != ["Histograms"]]
 
     def getHistEntryValue(self, keylist):
         """Returns the histogram control value associated with a list of keys.
@@ -4319,60 +4834,72 @@ class G2PwdrData(G2ObjectWrapper):
     def setHistEntryValue(self, keylist, newvalue):
         """Sets a histogram control value associated with a list of keys.
 
-        See :meth:`G2Phase.setHAPentryValue` for a related example.
+         See :meth:`G2Phase.setHAPentryValue` for a related example.
 
-       :param list keylist: a list of dict keys, typically as returned by
-          :meth:`getHistEntryList`.
+        :param list keylist: a list of dict keys, typically as returned by
+           :meth:`getHistEntryList`.
 
-        :param newvalue: a new value for the hist setting. The type must be
-          the same as the initial value, but if the value is a container
-          (list, tuple, np.array,...) the elements inside are not checked.
+         :param newvalue: a new value for the hist setting. The type must be
+           the same as the initial value, but if the value is a container
+           (list, tuple, np.array,...) the elements inside are not checked.
 
         """
         oldvalue = self.getHistEntryValue(keylist)
         if type(oldvalue) is not type(newvalue):
-            raise G2ScriptException(f"getHistEntryValue error: types do not agree for keys {keylist}")
+            raise G2ScriptException(
+                f"getHistEntryValue error: types do not agree for keys {keylist}"
+            )
         d = self.data
         for key in keylist:
             dlast = d
             d = d[key]
         dlast[key] = newvalue
 
-    def calc_autobkg(self,opt=0,logLam=None):
+    def calc_autobkg(self, opt=0, logLam=None):
         """Sets fixed background points using the pybaselines Whittaker
-        algorithm.
+         algorithm.
 
-       :param int opt: 0 for 'arpls' or 1 for 'iarpls'. Default is 0.
+        :param int opt: 0 for 'arpls' or 1 for 'iarpls'. Default is 0.
 
-       :param float logLam: log_10 of the Lambda value used in the
-         pybaselines.whittaker.arpls/.iarpls computation. If None (default)
-         is provided, a guess is taken for an appropriate value based
-         on the number of points.
+        :param float logLam: log_10 of the Lambda value used in the
+          pybaselines.whittaker.arpls/.iarpls computation. If None (default)
+          is provided, a guess is taken for an appropriate value based
+          on the number of points.
 
-       :returns: the array of computed background points
-       """
-        bkgDict = self.data['Background'][1]
-        xydata = self.data['data'][1]
+        :returns: the array of computed background points
+        """
+        bkgDict = self.data["Background"][1]
+        xydata = self.data["data"][1]
         npts = len(xydata[1])
-        bkgDict['autoPrms'] = bkgDict.get('autoPrms',{})
+        bkgDict["autoPrms"] = bkgDict.get("autoPrms", {})
         try:
             opt = int(opt)
         except:
             opt = 0
-        bkgDict['autoPrms']['opt'] = opt
+        bkgDict["autoPrms"]["opt"] = opt
         try:
             logLam = float(logLam)
         except:
-            logLam =  min(10,float(int(10*np.log10(npts)**1.5)-9.5)/10.)
-            print('Using default value of',logLam,'for pybaselines.whittaker.[i]arpls background computation')
-        bkgDict['autoPrms']['logLam'] = logLam
-        bkgDict['autoPrms']['Mode'] = None
-        bkgdata = G2pwd.autoBkgCalc(bkgDict,xydata[1])
-        bkgDict['FixedPoints'] = [i for i in zip(
-                xydata[0].data[::npts//100],
-                bkgdata.data[::npts//100], strict=False)]
-        bkgDict['autoPrms']['Mode'] = 'fixed'
+            logLam = min(10, float(int(10 * np.log10(npts) ** 1.5) - 9.5) / 10.0)
+            print(
+                "Using default value of",
+                logLam,
+                "for pybaselines.whittaker.[i]arpls background computation",
+            )
+        bkgDict["autoPrms"]["logLam"] = logLam
+        bkgDict["autoPrms"]["Mode"] = None
+        bkgdata = G2pwd.autoBkgCalc(bkgDict, xydata[1])
+        bkgDict["FixedPoints"] = [
+            i
+            for i in zip(
+                xydata[0].data[:: npts // 100],
+                bkgdata.data[:: npts // 100],
+                strict=False,
+            )
+        ]
+        bkgDict["autoPrms"]["Mode"] = "fixed"
         return bkgdata
+
 
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
@@ -4389,6 +4916,7 @@ class G2Phase(G2ObjectWrapper):
 
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
+
     def __init__(self, data, name, proj):
         self.data = data
         self.name = name
@@ -4401,8 +4929,18 @@ class G2Phase(G2ObjectWrapper):
 
     @staticmethod
     def is_valid_HAP_refinement_key(key):
-        valid_keys = ["Babinet", "Extinction", "HStrain", "Mustrain",
-                      "Pref.Ori.", "Show", "Size", "Use", "Scale", "PhaseFraction"]
+        valid_keys = [
+            "Babinet",
+            "Extinction",
+            "HStrain",
+            "Mustrain",
+            "Pref.Ori.",
+            "Show",
+            "Size",
+            "Use",
+            "Scale",
+            "PhaseFraction",
+        ]
         return key in valid_keys
 
     def atom(self, atomlabel):
@@ -4414,11 +4952,11 @@ class G2Phase(G2ObjectWrapper):
             representing the atom.
         """
         # Consult GSASIIobj.py for the meaning of this
-        cx, ct, cs, cia = self.data['General']['AtomPtrs']
+        cx, ct, cs, cia = self.data["General"]["AtomPtrs"]
         ptrs = [cx, ct, cs, cia]
-        atoms = self.data['Atoms']
+        atoms = self.data["Atoms"]
         for atom in atoms:
-            if atom[ct-1] == atomlabel:
+            if atom[ct - 1] == atomlabel:
                 return G2AtomRecord(atom, ptrs, self.proj)
 
     def atoms(self):
@@ -4430,67 +4968,71 @@ class G2Phase(G2ObjectWrapper):
             :meth:`~G2Phase.atom`
             :class:`G2AtomRecord`
         """
-        ptrs = self.data['General']['AtomPtrs']
-        return [G2AtomRecord(atom, ptrs, self.proj) for atom in self.data['Atoms']]
+        ptrs = self.data["General"]["AtomPtrs"]
+        return [G2AtomRecord(atom, ptrs, self.proj) for atom in self.data["Atoms"]]
 
     def histograms(self):
-        '''Returns a list of histogram names associated with the current phase ordered
+        """Returns a list of histogram names associated with the current phase ordered
         as they appear in the tree (see :meth:`G2Project.histograms`).
-        '''
-        return [i.name for i in self.proj.histograms() if i.name in self.data.get('Histograms', {})]
+        """
+        return [
+            i.name
+            for i in self.proj.histograms()
+            if i.name in self.data.get("Histograms", {})
+        ]
 
     @property
     def composition(self):
-        '''Provides a dict where keys are atom types and values are the number of
+        """Provides a dict where keys are atom types and values are the number of
         atoms of that type in cell (such as {'H': 2.0, 'O': 1.0})
-        '''
+        """
         out = {}
         for a in self.atoms():
             typ = a.element
             if typ in out:
-                out[typ] += a.mult*a.occupancy
+                out[typ] += a.mult * a.occupancy
             else:
-                out[typ] = a.mult*a.occupancy
+                out[typ] = a.mult * a.occupancy
         return out
 
-    def mu(self,wave):
-        '''Provides mu values for a phase at the supplied wavelength in A.
+    def mu(self, wave):
+        """Provides mu values for a phase at the supplied wavelength in A.
         Uses GSASIImath.XScattDen which seems to be off by an order of
         magnitude, which has been corrected here.
-        '''
-        vol = self.data['General']['Cell'][7]
+        """
+        vol = self.data["General"]["Cell"][7]
         out = {}
-        for typ in self.data['General']['NoAtoms']:
+        for typ in self.data["General"]["NoAtoms"]:
             if typ in out:
-                out[typ]['Num'] += self.data['General']['NoAtoms'][typ]
+                out[typ]["Num"] += self.data["General"]["NoAtoms"][typ]
             else:
                 out[typ] = {}
-                out[typ]['Num'] = self.data['General']['NoAtoms'][typ]
-                out[typ]['Z'] = 0 # wrong but not needed
-        return 10*G2mth.XScattDen(out,vol,wave)[1]
+                out[typ]["Num"] = self.data["General"]["NoAtoms"][typ]
+                out[typ]["Z"] = 0  # wrong but not needed
+        return 10 * G2mth.XScattDen(out, vol, wave)[1]
 
     @property
     def density(self):
-        '''Provides a scalar with the density of the phase. In case of a
+        """Provides a scalar with the density of the phase. In case of a
         powder this assumes a 100% packing fraction.
-        '''
-        density,mattCoeff = G2mth.getDensity(self.data['General'])
+        """
+        density, mattCoeff = G2mth.getDensity(self.data["General"])
         return density
 
     @property
     def ranId(self):
-        return self.data['ranId']
+        return self.data["ranId"]
 
     @property
     def id(self):
-        return self.data['pId']
+        return self.data["pId"]
 
     @id.setter
     def id(self, val):
-        self.data['pId'] = val
+        self.data["pId"] = val
 
-    def add_atom(self,x,y,z,element,lbl,occ=1.,uiso=0.01):
-        '''Adds an atom to the current phase
+    def add_atom(self, x, y, z, element, lbl, occ=1.0, uiso=0.01):
+        """Adds an atom to the current phase
 
         :param float x: atom fractional x coordinate
         :param float y: atom fractional y coordinate
@@ -4502,38 +5044,175 @@ class G2Phase(G2ObjectWrapper):
         :param float uiso: A Uiso value for this atom (defaults to 0.01).
 
         :returns: the :class:`~GSASIIscriptable.G2AtomRecord` atom object for the new atom
-        '''
+        """
         x = float(x)
         y = float(y)
         z = float(z)
         occ = float(occ)
         uiso = float(uiso)
 
-        generalData = self.data['General']
-        atomData = self.data['Atoms']
-        SGData = generalData['SGData']
+        generalData = self.data["General"]
+        atomData = self.data["Atoms"]
+        SGData = generalData["SGData"]
 
-        atId = ran.randint(0,sys.maxsize)
-        Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
+        atId = ran.randint(0, sys.maxsize)
+        Sytsym, Mult = G2spc.SytSym([x, y, z], SGData)[:2]
 
-        if generalData['Type'] == 'macromolecular':
-            atomData.append([0,lbl,'',lbl,element,'',x,y,z,occ,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId])
-        elif generalData['Type'] in ['nuclear','faulted',]:
-            if generalData['Modulated']:
-                atomData.append([lbl,element,'',x,y,z,occ,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId,[],[],
-                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+        if generalData["Type"] == "macromolecular":
+            atomData.append(
+                [
+                    0,
+                    lbl,
+                    "",
+                    lbl,
+                    element,
+                    "",
+                    x,
+                    y,
+                    z,
+                    occ,
+                    Sytsym,
+                    Mult,
+                    "I",
+                    uiso,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    atId,
+                ]
+            )
+        elif generalData["Type"] in [
+            "nuclear",
+            "faulted",
+        ]:
+            if generalData["Modulated"]:
+                atomData.append(
+                    [
+                        lbl,
+                        element,
+                        "",
+                        x,
+                        y,
+                        z,
+                        occ,
+                        Sytsym,
+                        Mult,
+                        "I",
+                        uiso,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        atId,
+                        [],
+                        [],
+                        {
+                            "SS1": {
+                                "waveType": "Fourier",
+                                "Sfrac": [],
+                                "Spos": [],
+                                "Sadp": [],
+                                "Smag": [],
+                            }
+                        },
+                    ]
+                )
             else:
-                atomData.append([lbl,element,'',x,y,z,occ,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId])
-        elif generalData['Type'] == 'magnetic':
-            if generalData['Modulated']:
-                atomData.append([lbl,element,'',x,y,z,occ,0.,0.,0.,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId,[],[],
-                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+                atomData.append(
+                    [
+                        lbl,
+                        element,
+                        "",
+                        x,
+                        y,
+                        z,
+                        occ,
+                        Sytsym,
+                        Mult,
+                        "I",
+                        uiso,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        atId,
+                    ]
+                )
+        elif generalData["Type"] == "magnetic":
+            if generalData["Modulated"]:
+                atomData.append(
+                    [
+                        lbl,
+                        element,
+                        "",
+                        x,
+                        y,
+                        z,
+                        occ,
+                        0.0,
+                        0.0,
+                        0.0,
+                        Sytsym,
+                        Mult,
+                        "I",
+                        uiso,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        atId,
+                        [],
+                        [],
+                        {
+                            "SS1": {
+                                "waveType": "Fourier",
+                                "Sfrac": [],
+                                "Spos": [],
+                                "Sadp": [],
+                                "Smag": [],
+                            }
+                        },
+                    ]
+                )
             else:
-                atomData.append([lbl,element,'',x,y,z,occ,0.,0.,0.,Sytsym,Mult,'I',uiso,0,0,0,0,0,0,atId])
+                atomData.append(
+                    [
+                        lbl,
+                        element,
+                        "",
+                        x,
+                        y,
+                        z,
+                        occ,
+                        0.0,
+                        0.0,
+                        0.0,
+                        Sytsym,
+                        Mult,
+                        "I",
+                        uiso,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        atId,
+                    ]
+                )
 
         SetupGeneral(self.data, None)
-        #self.proj.index_ids()  # needed?
-        #self.proj.update_ids()  # needed?
+        # self.proj.index_ids()  # needed?
+        # self.proj.update_ids()  # needed?
         return self.atom(lbl)
 
     def get_cell(self):
@@ -4546,10 +5225,16 @@ class G2Phase(G2ObjectWrapper):
            :meth:`~G2Phase.get_cell_and_esd`
 
         """
-        cell = self.data['General']['Cell']
-        return {'length_a': cell[1], 'length_b': cell[2], 'length_c': cell[3],
-                'angle_alpha': cell[4], 'angle_beta': cell[5], 'angle_gamma': cell[6],
-                'volume': cell[7]}
+        cell = self.data["General"]["Cell"]
+        return {
+            "length_a": cell[1],
+            "length_b": cell[2],
+            "length_c": cell[3],
+            "angle_alpha": cell[4],
+            "angle_beta": cell[5],
+            "angle_gamma": cell[6],
+            "volume": cell[7],
+        }
 
     def get_cell_and_esd(self):
         """
@@ -4564,25 +5249,41 @@ class G2Phase(G2ObjectWrapper):
         """
         # translated from GSASIIfiles.ExportBaseclass.GetCell
         try:
-            pfx = str(self.id) + '::'
-            sgdata = self['General']['SGData']
-            covDict = self.proj['Covariance']['data']
+            pfx = str(self.id) + "::"
+            sgdata = self["General"]["SGData"]
+            covDict = self.proj["Covariance"]["data"]
 
-            parmDict = dict(zip(covDict.get('varyList',[]),
-                                covDict.get('variables',[]), strict=False))
-            sigDict = dict(zip(covDict.get('varyList',[]),
-                               covDict.get('sig',[]), strict=False))
+            parmDict = dict(
+                zip(
+                    covDict.get("varyList", []),
+                    covDict.get("variables", []),
+                    strict=False,
+                )
+            )
+            sigDict = dict(
+                zip(covDict.get("varyList", []), covDict.get("sig", []), strict=False)
+            )
 
-            if covDict.get('covMatrix') is not None:
-                sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList']))
+            if covDict.get("covMatrix") is not None:
+                sigDict.update(
+                    G2mv.ComputeDepESD(covDict["covMatrix"], covDict["varyList"])
+                )
 
             A, sigA = G2stIO.cellFill(pfx, sgdata, parmDict, sigDict)
-            cellSig = G2lat.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
+            cellSig = G2lat.getCellEsd(pfx, sgdata, A, self.proj["Covariance"]["data"])
             cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
             cellDict, cellSigDict = {}, {}
-            for i, key in enumerate(['length_a', 'length_b', 'length_c',
-                                     'angle_alpha', 'angle_beta', 'angle_gamma',
-                                     'volume']):
+            for i, key in enumerate(
+                [
+                    "length_a",
+                    "length_b",
+                    "length_c",
+                    "angle_alpha",
+                    "angle_beta",
+                    "angle_gamma",
+                    "volume",
+                ]
+            ):
                 cellDict[key] = cellList[i]
                 cellSigDict[key] = cellSig[i]
             return cellDict, cellSigDict
@@ -4599,75 +5300,103 @@ class G2Phase(G2ObjectWrapper):
         # Functions copied have the same names
 
         from GSASII.exports import G2export_CIF as cif  # delay as only needed here
-#        CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
+
+        #        CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
         CIFname = os.path.splitext(self.proj.filename)[0]
         CIFname = os.path.split(CIFname)[1]
-        CIFname = ''.join([c if ord(c) < 128 else ''
-                           for c in CIFname.replace(' ', '_')])
+        CIFname = "".join(
+            [c if ord(c) < 128 else "" for c in CIFname.replace(" ", "_")]
+        )
         # try:
         #     author = self.proj['Controls']['data'].get('Author','').strip()
         # except KeyError:
         #     pass
         # oneblock = True
 
-        covDict = self.proj['Covariance']['data']
-        parmDict = dict(zip(covDict.get('varyList',[]),
-                            covDict.get('variables',[]), strict=False))
-        sigDict = dict(zip(covDict.get('varyList',[]),
-                           covDict.get('sig',[]), strict=False))
+        covDict = self.proj["Covariance"]["data"]
+        parmDict = dict(
+            zip(covDict.get("varyList", []), covDict.get("variables", []), strict=False)
+        )
+        sigDict = dict(
+            zip(covDict.get("varyList", []), covDict.get("sig", []), strict=False)
+        )
 
-        if covDict.get('covMatrix') is not None:
-            sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],covDict['varyList'],noSym=True))
+        if covDict.get("covMatrix") is not None:
+            sigDict.update(
+                G2mv.ComputeDepESD(
+                    covDict["covMatrix"], covDict["varyList"], noSym=True
+                )
+            )
 
-        with open(outputname, 'w') as fp:
-            fp.write(' \n' + 70*'#' + '\n')
-            cif.WriteCIFitem(fp, 'data_' + CIFname)
+        with open(outputname, "w") as fp:
+            fp.write(" \n" + 70 * "#" + "\n")
+            cif.WriteCIFitem(fp, "data_" + CIFname)
             # from exports.G2export_CIF.WritePhaseInfo
-            cif.WriteCIFitem(fp, '\n# phase info for '+str(self.name) + ' follows')
-            cif.WriteCIFitem(fp, '_pd_phase_name', self.name)
+            cif.WriteCIFitem(fp, "\n# phase info for " + str(self.name) + " follows")
+            cif.WriteCIFitem(fp, "_pd_phase_name", self.name)
             # TODO get esds
             cellDict = self.get_cell()
-#            defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
-#            names = ['length_a','length_b','length_c',
-#                     'angle_alpha','angle_beta ','angle_gamma',
-#                     'volume']
+            #            defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
+            #            names = ['length_a','length_b','length_c',
+            #                     'angle_alpha','angle_beta ','angle_gamma',
+            #                     'volume']
             for key, val in cellDict.items():
-                cif.WriteCIFitem(fp, '_cell_' + key, G2mth.ValEsd(val))
+                cif.WriteCIFitem(fp, "_cell_" + key, G2mth.ValEsd(val))
 
-            cif.WriteCIFitem(fp, '_symmetry_cell_setting',
-                         self.data['General']['SGData']['SGSys'])
+            cif.WriteCIFitem(
+                fp, "_symmetry_cell_setting", self.data["General"]["SGData"]["SGSys"]
+            )
 
-            spacegroup = self.data['General']['SGData']['SpGrp'].strip()
+            spacegroup = self.data["General"]["SGData"]["SpGrp"].strip()
             # regularize capitalization and remove trailing H/R
-            spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
-            cif.WriteCIFitem(fp, '_symmetry_space_group_name_H-M', spacegroup)
+            spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip("rh ")
+            cif.WriteCIFitem(fp, "_symmetry_space_group_name_H-M", spacegroup)
 
             # generate symmetry operations including centering and center of symmetry
             SymOpList, offsetList, symOpList, G2oprList, G2opcodes = G2spc.AllOps(
-                self.data['General']['SGData'])
-            cif.WriteCIFitem(fp, 'loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz')
-            for i, op in enumerate(SymOpList,start=1):
-                cif.WriteCIFitem(fp, f'   {i:3d}  {op.lower()}')
+                self.data["General"]["SGData"]
+            )
+            cif.WriteCIFitem(
+                fp,
+                "loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz",
+            )
+            for i, op in enumerate(SymOpList, start=1):
+                cif.WriteCIFitem(fp, f"   {i:3d}  {op.lower()}")
 
             # TODO skipped histograms, exports/G2export_CIF.py:880
 
             # report atom params
-            if self.data['General']['Type'] in ['nuclear','macromolecular']:        #this needs macromolecular variant, etc!
+            if self.data["General"]["Type"] in [
+                "nuclear",
+                "macromolecular",
+            ]:  # this needs macromolecular variant, etc!
                 cif.WriteAtomsNuclear(fp, self.data, self.name, parmDict, sigDict, [])
                 # self._WriteAtomsNuclear(fp, parmDict, sigDict)
             else:
-                raise G2ScriptException("no export for "+str(self.data['General']['Type'])+" coordinates implemented")
+                raise G2ScriptException(
+                    "no export for "
+                    + str(self.data["General"]["Type"])
+                    + " coordinates implemented"
+                )
             # report cell contents
             cif.WriteComposition(fp, self.data, self.name, parmDict)
-            if not quickmode and self.data['General']['Type'] == 'nuclear':      # report distances and angles
+            if (
+                not quickmode and self.data["General"]["Type"] == "nuclear"
+            ):  # report distances and angles
                 # WriteDistances(fp,self.name,SymOpList,offsetList,symOpList,G2oprList)
                 raise NotImplementedError("only quickmode currently supported")
-            if 'Map' in self.data['General'] and 'minmax' in self.data['General']['Map']:
-                cif.WriteCIFitem(fp,'\n# Difference density results')
-                MinMax = self.data['General']['Map']['minmax']
-                cif.WriteCIFitem(fp,'_refine_diff_density_max',G2mth.ValEsd(MinMax[0],-0.009))
-                cif.WriteCIFitem(fp,'_refine_diff_density_min',G2mth.ValEsd(MinMax[1],-0.009))
-
+            if (
+                "Map" in self.data["General"]
+                and "minmax" in self.data["General"]["Map"]
+            ):
+                cif.WriteCIFitem(fp, "\n# Difference density results")
+                MinMax = self.data["General"]["Map"]["minmax"]
+                cif.WriteCIFitem(
+                    fp, "_refine_diff_density_max", G2mth.ValEsd(MinMax[0], -0.009)
+                )
+                cif.WriteCIFitem(
+                    fp, "_refine_diff_density_min", G2mth.ValEsd(MinMax[1], -0.009)
+                )
 
     def set_refinements(self, refs):
         """Sets the phase refinement parameter 'key' to the specification 'value'
@@ -4679,11 +5408,11 @@ class G2Phase(G2ObjectWrapper):
         :returns: None"""
         for key, value in refs.items():
             if key == "Cell":
-                self.data['General']['Cell'][0] = value
+                self.data["General"]["Cell"][0] = value
 
             elif key == "Atoms":
                 for atomlabel, atomrefinement in value.items():
-                    if atomlabel == 'all':
+                    if atomlabel == "all":
                         for atom in self.atoms():
                             atom.refinement_flags = atomrefinement
                     else:
@@ -4693,9 +5422,9 @@ class G2Phase(G2ObjectWrapper):
                         atom.refinement_flags = atomrefinement
 
             elif key == "LeBail":
-                hists = self.data['Histograms']
+                hists = self.data["Histograms"]
                 for hname, hoptions in hists.items():
-                    hoptions['LeBail'] = bool(value)
+                    hoptions["LeBail"] = bool(value)
             else:
                 raise ValueError("Unknown key:", key)
 
@@ -4707,22 +5436,22 @@ class G2Phase(G2ObjectWrapper):
         """
         for key, value in refs.items():
             if key == "Cell":
-                self.data['General']['Cell'][0] = False
+                self.data["General"]["Cell"][0] = False
             elif key == "Atoms":
-                cx, ct, cs, cia = self.data['General']['AtomPtrs']
+                cx, ct, cs, cia = self.data["General"]["AtomPtrs"]
 
                 for atomlabel in value:
                     atom = self.atom(atomlabel)
                     # Set refinement to none
-                    atom.refinement_flags = ' '
+                    atom.refinement_flags = " "
             elif key == "LeBail":
-                hists = self.data['Histograms']
+                hists = self.data["Histograms"]
                 for hname, hoptions in hists.items():
-                    hoptions['LeBail'] = False
+                    hoptions["LeBail"] = False
             else:
                 raise ValueError("Unknown key:", key)
 
-    def set_HAP_refinements(self, refs, histograms='all'):
+    def set_HAP_refinements(self, refs, histograms="all"):
         """Sets the given HAP refinement parameters between the current phase and
         the specified histograms.
 
@@ -4737,151 +5466,168 @@ class G2Phase(G2ObjectWrapper):
             must already be associated.
         :returns: None
         """
-        if not self.data.get('Histograms',[]):
+        if not self.data.get("Histograms", []):
             G2fil.G2Print(f"Error likely: Phase {self.name} has no linked histograms")
             return
 
-        if histograms == 'all':
-            histograms = self.data['Histograms'].keys()
+        if histograms == "all":
+            histograms = self.data["Histograms"].keys()
         else:
-            histograms = [self._decodeHist(h) for h in histograms
-                          if self._decodeHist(h) in self.data['Histograms']]
+            histograms = [
+                self._decodeHist(h)
+                for h in histograms
+                if self._decodeHist(h) in self.data["Histograms"]
+            ]
         if not histograms:
-            G2fil.G2Print(f"Warning: Skipping HAP set for phase {self.name}, no selected histograms")
+            G2fil.G2Print(
+                f"Warning: Skipping HAP set for phase {self.name}, no selected histograms"
+            )
             return
         # remove non-PWDR (HKLF) histograms
-        histograms = [i for i in histograms if self.proj.histType(i) == 'PWDR']
-        if not histograms: return
+        histograms = [i for i in histograms if self.proj.histType(i) == "PWDR"]
+        if not histograms:
+            return
         for key, val in refs.items():
-            if key == 'Babinet':
+            if key == "Babinet":
                 try:
                     sets = list(val)
                 except ValueError:
-                    sets = ['BabA', 'BabU']
+                    sets = ["BabA", "BabU"]
                 for param in sets:
-                    if param not in ['BabA', 'BabU']:
+                    if param not in ["BabA", "BabU"]:
                         raise ValueError("Not sure what to do with" + param)
                     for h in histograms:
-                        self.data['Histograms'][h]['Babinet'][param][1] = True
-            elif key == 'Extinction':
+                        self.data["Histograms"][h]["Babinet"][param][1] = True
+            elif key == "Extinction":
                 for h in histograms:
-                    self.data['Histograms'][h]['Extinction'][1] = bool(val)
-            elif key == 'HStrain':
-                if isinstance(val,list) or isinstance(val,tuple):
+                    self.data["Histograms"][h]["Extinction"][1] = bool(val)
+            elif key == "HStrain":
+                if isinstance(val, list) or isinstance(val, tuple):
                     for h in histograms:
-                        if len(self.data['Histograms'][h]['HStrain'][1]) != len(val):
-                            raise Exception('Need {} HStrain terms for phase {} hist {}'
-                                .format(len(self.data['Histograms'][h]['HStrain'][1]),self.name,h))
-                        for i,v in enumerate(val):
-                            self.data['Histograms'][h]['HStrain'][1][i] = bool(v)
+                        if len(self.data["Histograms"][h]["HStrain"][1]) != len(val):
+                            raise Exception(
+                                "Need {} HStrain terms for phase {} hist {}".format(
+                                    len(self.data["Histograms"][h]["HStrain"][1]),
+                                    self.name,
+                                    h,
+                                )
+                            )
+                        for i, v in enumerate(val):
+                            self.data["Histograms"][h]["HStrain"][1][i] = bool(v)
                 else:
                     for h in histograms:
-                        self.data['Histograms'][h]['HStrain'][1] = [bool(val) for p in self.data['Histograms'][h]['HStrain'][1]]
-            elif key == 'Mustrain':
+                        self.data["Histograms"][h]["HStrain"][1] = [
+                            bool(val) for p in self.data["Histograms"][h]["HStrain"][1]
+                        ]
+            elif key == "Mustrain":
                 for h in histograms:
-                    mustrain = self.data['Histograms'][h]['Mustrain']
+                    mustrain = self.data["Histograms"][h]["Mustrain"]
                     newType = mustrain[0]
                     direction = None
-                    if isinstance(val, (str,bytes)):
-                        if val in ['isotropic', 'uniaxial', 'generalized']:
+                    if isinstance(val, (str, bytes)):
+                        if val in ["isotropic", "uniaxial", "generalized"]:
                             newType = val
                         else:
                             raise ValueError("Not a Mustrain type: " + val)
                     elif isinstance(val, dict):
-                        newType = val.get('type', newType)
-                        direction = val.get('direction', None)
+                        newType = val.get("type", newType)
+                        direction = val.get("direction", None)
 
                     if newType:
                         mustrain[0] = newType
-                        if newType == 'isotropic':
-                            mustrain[2][0] = val.get('refine',False) == True
+                        if newType == "isotropic":
+                            mustrain[2][0] = val.get("refine", False) == True
                             mustrain[5] = [False for p in mustrain[4]]
-                        elif newType == 'uniaxial':
-                            if 'refine' in val:
+                        elif newType == "uniaxial":
+                            if "refine" in val:
                                 mustrain[2][0] = False
-                                types = val['refine']
-                                if isinstance(types, (str,bytes)):
+                                types = val["refine"]
+                                if isinstance(types, (str, bytes)):
                                     types = [types]
                                 elif isinstance(types, bool):
                                     mustrain[2][1] = types
                                     mustrain[2][2] = types
                                     types = []
                                 else:
-                                    raise ValueError("Not sure what to do with: "
-                                                     + str(types))
+                                    raise ValueError(
+                                        "Not sure what to do with: " + str(types)
+                                    )
                             else:
                                 types = []
 
                             for unitype in types:
-                                if unitype == 'equatorial':
+                                if unitype == "equatorial":
                                     mustrain[2][0] = True
-                                elif unitype == 'axial':
+                                elif unitype == "axial":
                                     mustrain[2][1] = True
                                 else:
-                                    msg = 'Invalid uniaxial mustrain type'
-                                    raise ValueError(msg + ': ' + unitype)
+                                    msg = "Invalid uniaxial mustrain type"
+                                    raise ValueError(msg + ": " + unitype)
                         else:  # newtype == 'generalized'
                             mustrain[2] = [False for p in mustrain[1]]
-                            if 'refine' in val:
-                                mustrain[5] = [val['refine'] == True]*len(mustrain[5])
+                            if "refine" in val:
+                                mustrain[5] = [val["refine"] == True] * len(mustrain[5])
 
                     if direction:
                         if len(direction) != 3:
                             raise ValueError("Expected hkl, found", direction)
                         direction = [int(n) for n in direction]
                         mustrain[3] = direction
-            elif key == 'Size':
+            elif key == "Size":
                 newSize = None
-                if 'value' in val:
-                    newSize = float(val['value'])
+                if "value" in val:
+                    newSize = float(val["value"])
                 for h in histograms:
-                    size = self.data['Histograms'][h]['Size']
+                    size = self.data["Histograms"][h]["Size"]
                     newType = size[0]
                     direction = None
-                    if isinstance(val, (str,bytes)):
-                        if val in ['isotropic', 'uniaxial', 'ellipsoidal']:
+                    if isinstance(val, (str, bytes)):
+                        if val in ["isotropic", "uniaxial", "ellipsoidal"]:
                             newType = val
                         else:
                             raise ValueError("Not a valid Size type: " + val)
                     elif isinstance(val, dict):
-                        newType = val.get('type', size[0])
-                        direction = val.get('direction', None)
+                        newType = val.get("type", size[0])
+                        direction = val.get("direction", None)
 
                     if newType:
                         size[0] = newType
-                        refine = bool(val.get('refine'))
-                        if newType == 'isotropic' and refine is not None:
+                        refine = bool(val.get("refine"))
+                        if newType == "isotropic" and refine is not None:
                             size[2][0] = bool(refine)
-                            if newSize: size[1][0] = newSize
-                        elif newType == 'uniaxial' and refine is not None:
+                            if newSize:
+                                size[1][0] = newSize
+                        elif newType == "uniaxial" and refine is not None:
                             size[2][1] = bool(refine)
                             size[2][2] = bool(refine)
-                            if newSize: size[1][1] = size[1][2] =newSize
-                        elif newType == 'ellipsoidal' and refine is not None:
+                            if newSize:
+                                size[1][1] = size[1][2] = newSize
+                        elif newType == "ellipsoidal" and refine is not None:
                             size[5] = [bool(refine) for p in size[5]]
-                            if newSize: size[4] = [newSize for p in size[4]]
+                            if newSize:
+                                size[4] = [newSize for p in size[4]]
 
                     if direction:
                         if len(direction) != 3:
                             raise ValueError("Expected hkl, found", direction)
                         direction = [int(n) for n in direction]
                         size[3] = direction
-            elif key == 'Pref.Ori.':
+            elif key == "Pref.Ori.":
                 for h in histograms:
-                    self.data['Histograms'][h]['Pref.Ori.'][2] = bool(val)
-            elif key == 'Show':
+                    self.data["Histograms"][h]["Pref.Ori."][2] = bool(val)
+            elif key == "Show":
                 for h in histograms:
-                    self.data['Histograms'][h]['Show'] = bool(val)
-            elif key == 'Use':
+                    self.data["Histograms"][h]["Show"] = bool(val)
+            elif key == "Use":
                 for h in histograms:
-                    self.data['Histograms'][h]['Use'] = bool(val)
-            elif key == 'Scale' or key == 'PhaseFraction':
+                    self.data["Histograms"][h]["Use"] = bool(val)
+            elif key == "Scale" or key == "PhaseFraction":
                 for h in histograms:
-                    self.data['Histograms'][h]['Scale'][1] = bool(val)
+                    self.data["Histograms"][h]["Scale"][1] = bool(val)
             else:
-                G2fil.G2Print('Warning: Unknown HAP key: '+key)
+                G2fil.G2Print("Warning: Unknown HAP key: " + key)
 
-    def clear_HAP_refinements(self, refs, histograms='all'):
+    def clear_HAP_refinements(self, refs, histograms="all"):
         """Clears the given HAP refinement parameters between this phase and
         the given histograms.
 
@@ -4896,66 +5642,70 @@ class G2Phase(G2ObjectWrapper):
             must already be associated
         :returns: None
         """
-        if histograms == 'all':
-            histograms = self.data['Histograms'].keys()
+        if histograms == "all":
+            histograms = self.data["Histograms"].keys()
         else:
-            histograms = [self._decodeHist(h) for h in histograms
-                          if self._decodeHist(h) in self.data['Histograms']]
+            histograms = [
+                self._decodeHist(h)
+                for h in histograms
+                if self._decodeHist(h) in self.data["Histograms"]
+            ]
 
         for key, val in refs.items():
             for h in histograms:
-                if key == 'Babinet':
+                if key == "Babinet":
                     try:
                         sets = list(val)
                     except ValueError:
-                        sets = ['BabA', 'BabU']
+                        sets = ["BabA", "BabU"]
                     for param in sets:
-                        if param not in ['BabA', 'BabU']:
+                        if param not in ["BabA", "BabU"]:
                             raise ValueError("Not sure what to do with" + param)
                         for h in histograms:
-                            self.data['Histograms'][h]['Babinet'][param][1] = False
-                elif key == 'Extinction':
+                            self.data["Histograms"][h]["Babinet"][param][1] = False
+                elif key == "Extinction":
                     for h in histograms:
-                        self.data['Histograms'][h]['Extinction'][1] = False
-                elif key == 'HStrain':
+                        self.data["Histograms"][h]["Extinction"][1] = False
+                elif key == "HStrain":
                     for h in histograms:
-                        self.data['Histograms'][h]['HStrain'][1] = [False for p in self.data['Histograms'][h]['HStrain'][1]]
-                elif key == 'Mustrain':
+                        self.data["Histograms"][h]["HStrain"][1] = [
+                            False for p in self.data["Histograms"][h]["HStrain"][1]
+                        ]
+                elif key == "Mustrain":
                     for h in histograms:
-                        mustrain = self.data['Histograms'][h]['Mustrain']
+                        mustrain = self.data["Histograms"][h]["Mustrain"]
                         mustrain[2] = [False for p in mustrain[2]]
                         mustrain[5] = [False for p in mustrain[4]]
-                elif key == 'Pref.Ori.':
+                elif key == "Pref.Ori.":
                     for h in histograms:
-                        self.data['Histograms'][h]['Pref.Ori.'][2] = False
-                elif key == 'Show':
+                        self.data["Histograms"][h]["Pref.Ori."][2] = False
+                elif key == "Show":
                     for h in histograms:
-                        self.data['Histograms'][h]['Show'] = False
-                elif key == 'Size':
+                        self.data["Histograms"][h]["Show"] = False
+                elif key == "Size":
                     for h in histograms:
-                        size = self.data['Histograms'][h]['Size']
+                        size = self.data["Histograms"][h]["Size"]
                         size[2] = [False for p in size[2]]
                         size[5] = [False for p in size[5]]
-                elif key == 'Use':
+                elif key == "Use":
                     for h in histograms:
-                        self.data['Histograms'][h]['Use'] = False
-                elif key == 'Scale' or key == 'PhaseFraction':
+                        self.data["Histograms"][h]["Use"] = False
+                elif key == "Scale" or key == "PhaseFraction":
                     for h in histograms:
-                        self.data['Histograms'][h]['Scale'][1] = False
+                        self.data["Histograms"][h]["Scale"][1] = False
                 else:
-                    G2fil.G2Print('Warning: Unknown HAP key: '+key)
+                    G2fil.G2Print("Warning: Unknown HAP key: " + key)
 
-    def _decodeHist(self,hist):
-        '''Convert a histogram reference to a histogram name string
-        '''
+    def _decodeHist(self, hist):
+        """Convert a histogram reference to a histogram name string"""
         if isinstance(hist, G2PwdrData) or isinstance(hist, G2Single):
             return hist.name
-        elif hist in self.data['Histograms']:
+        elif hist in self.data["Histograms"]:
             return hist
         elif type(hist) is int:
             return self.proj.histograms()[hist].name
         else:
-            raise G2ScriptException("Invalid histogram reference: "+str(hist))
+            raise G2ScriptException("Invalid histogram reference: " + str(hist))
 
     def getHAPvalues(self, histname):
         """Returns a dict with HAP values for the selected histogram
@@ -4966,9 +5716,9 @@ class G2Phase(G2ObjectWrapper):
             those in the phase.
         :returns: HAP value dict
         """
-        return self.data['Histograms'][self._decodeHist(histname)]
+        return self.data["Histograms"][self._decodeHist(histname)]
 
-    def copyHAPvalues(self, sourcehist, targethistlist='all', skip=[], use=None):
+    def copyHAPvalues(self, sourcehist, targethistlist="all", skip=[], use=None):
         """Copies HAP parameters for one histogram to a list of other histograms.
         Use skip or use to select specific entries to be copied or not used.
 
@@ -5004,36 +5754,45 @@ class G2Phase(G2ObjectWrapper):
         and refinement flags) from the first histogram to all histograms.
         """
         sourcehist = self._decodeHist(sourcehist)
-        if targethistlist == 'all':
+        if targethistlist == "all":
             targethistlist = self.histograms()
 
-        copydict = copy.deepcopy(self.data['Histograms'][sourcehist])
+        copydict = copy.deepcopy(self.data["Histograms"][sourcehist])
         for item in skip:
-            if item == 'PhaseFraction': item = 'Scale'
+            if item == "PhaseFraction":
+                item = "Scale"
             if item in list(copydict.keys()):
                 del copydict[item]
             else:
-                G2fil.G2Print('items in HAP dict are: {}'.format(
-                    list(self.data['Histograms'][sourcehist])))
-                raise Exception(f'HAP skip list entry {item} invalid')
+                G2fil.G2Print(
+                    "items in HAP dict are: {}".format(
+                        list(self.data["Histograms"][sourcehist])
+                    )
+                )
+                raise Exception(f"HAP skip list entry {item} invalid")
         if use:
             for item in list(copydict.keys()):
-                if item == 'PhaseFraction': item = 'Scale'
+                if item == "PhaseFraction":
+                    item = "Scale"
                 if item not in use:
                     del copydict[item]
-        txt = ', '.join(copydict.keys())
-        G2fil.G2Print(f'copyHAPvalues for phase {self.name}')
-        G2fil.G2Print(f'Copying item(s): {txt}\n from histogram: {sourcehist}')
-        txt = '\n\t'.join([self._decodeHist(h) for h in targethistlist])
-        G2fil.G2Print(f' to histogram(s):\n\t{txt}')
+        txt = ", ".join(copydict.keys())
+        G2fil.G2Print(f"copyHAPvalues for phase {self.name}")
+        G2fil.G2Print(f"Copying item(s): {txt}\n from histogram: {sourcehist}")
+        txt = "\n\t".join([self._decodeHist(h) for h in targethistlist])
+        G2fil.G2Print(f" to histogram(s):\n\t{txt}")
         for h in targethistlist:
             h = self._decodeHist(h)
-            if h not in self.data['Histograms']:
-                G2fil.G2Print(f'Unexpected Warning: histogram {h} not in phase {self.name}')
+            if h not in self.data["Histograms"]:
+                G2fil.G2Print(
+                    f"Unexpected Warning: histogram {h} not in phase {self.name}"
+                )
                 continue
-            self.data['Histograms'][h].update(copy.deepcopy(copydict))
+            self.data["Histograms"][h].update(copy.deepcopy(copydict))
 
-    def setSampleProfile(self, histname, parmType, mode, val1, val2=None, axis=None, LGmix=None):
+    def setSampleProfile(
+        self, histname, parmType, mode, val1, val2=None, axis=None, LGmix=None
+    ):
         """Sets sample broadening parameters for a histogram associated with the
         current phase. This currently supports isotropic and uniaxial broadening
         modes only.
@@ -5061,52 +5820,62 @@ class G2Phase(G2ObjectWrapper):
             phase0.setSampleProfile(0,'m','u',1234,4567,[1,1,1],.5)
             phase0.setSampleProfile(0,'s','uni',1.2,2.3,[0,0,1])
         """
-        if parmType.lower().startswith('s'):
-            key = 'Size'
-        elif parmType.lower().startswith('m'):
-            key = 'Mustrain'
+        if parmType.lower().startswith("s"):
+            key = "Size"
+        elif parmType.lower().startswith("m"):
+            key = "Mustrain"
         else:
-            G2fil.G2Print(f'setSampleProfile Error: value for parmType of {parmType} is not size or microstrain')
-            raise Exception('Invalid parameter in setSampleProfile')
-        if mode.lower().startswith('i'):
+            G2fil.G2Print(
+                f"setSampleProfile Error: value for parmType of {parmType} is not size or microstrain"
+            )
+            raise Exception("Invalid parameter in setSampleProfile")
+        if mode.lower().startswith("i"):
             iso = True
-        elif mode.lower().startswith('u'):
+        elif mode.lower().startswith("u"):
             iso = False
             if val2 is None:
-                G2fil.G2Print('setSampleProfile Error: value for val2 is required with mode of uniaxial')
-                raise Exception('Invalid val2 parameter in setSampleProfile')
+                G2fil.G2Print(
+                    "setSampleProfile Error: value for val2 is required with mode of uniaxial"
+                )
+                raise Exception("Invalid val2 parameter in setSampleProfile")
             if axis is None:
-                G2fil.G2Print('setSampleProfile Error: value for axis is required with mode of uniaxial')
-                raise Exception('Invalid axis parameter in setSampleProfile')
+                G2fil.G2Print(
+                    "setSampleProfile Error: value for axis is required with mode of uniaxial"
+                )
+                raise Exception("Invalid axis parameter in setSampleProfile")
         else:
-            G2fil.G2Print(f'setSampleProfile Error: value for mode of {mode} is not isotropic or uniaxial')
-            raise Exception('Invalid parameter in setSampleProfile')
+            G2fil.G2Print(
+                f"setSampleProfile Error: value for mode of {mode} is not isotropic or uniaxial"
+            )
+            raise Exception("Invalid parameter in setSampleProfile")
 
-        d = self.data['Histograms'][self._decodeHist(histname)][key]
+        d = self.data["Histograms"][self._decodeHist(histname)][key]
         if iso:
-            d[0] = 'isotropic'
+            d[0] = "isotropic"
             d[1][0] = float(val1)
-            if LGmix is not None: d[1][2] = float(LGmix)
+            if LGmix is not None:
+                d[1][2] = float(LGmix)
         else:
-            d[3] = [int(axis[0]),int(axis[1]),int(axis[2])]
-            d[0] = 'uniaxial'
+            d[3] = [int(axis[0]), int(axis[1]), int(axis[2])]
+            d[0] = "uniaxial"
             d[1][0] = float(val1)
             d[1][1] = float(val2)
-            if LGmix is not None: d[1][2] = float(LGmix)
+            if LGmix is not None:
+                d[1][2] = float(LGmix)
 
-    def HAPvalue(self, param=None, newValue=None, targethistlist='all'):
+    def HAPvalue(self, param=None, newValue=None, targethistlist="all"):
         """Retrieves or sets individual HAP parameters for one histogram or
         multiple histograms.
 
         :param str param: is a parameter name, which can be 'Scale' or
           'PhaseFraction' (either can be used for phase
-          fraction), 'Use', 'Extinction', 'LeBail', 'PO' 
+          fraction), 'Use', 'Extinction', 'LeBail', 'PO'
           (for Preferred Orientation).
           If not specified or invalid
           an exception is generated showing the list of valid parameters.
-          At present, only these HAP parameters cannot be accessed with 
-          this function: 'Size', 'Mustrain', 'HStrain', 'Babinet'. 
-          This might be addressed in the future. 
+          At present, only these HAP parameters cannot be accessed with
+          this function: 'Size', 'Mustrain', 'HStrain', 'Babinet'.
+          This might be addressed in the future.
           Some of these values can be set via
           :meth:`G2Phase.set_HAP_refinements`.
         :param newValue: the value to use when setting the HAP parameter for the
@@ -5116,8 +5885,8 @@ class G2Phase(G2ObjectWrapper):
           returned.
           When param='PO' then this value is interpreted as the following:
 
-            if the value is 0 or an even integer, then the preferred 
-            orientation model is set to "Spherical harmonics". If the value is 
+            if the value is 0 or an even integer, then the preferred
+            orientation model is set to "Spherical harmonics". If the value is
             1, then "March-Dollase" is used. Any other value generates an error.
 
         :param list targethistlist: a list of histograms where each item in the
@@ -5151,67 +5920,75 @@ class G2Phase(G2ObjectWrapper):
         """
         doSet = newValue is not None
 
-        if targethistlist == 'all':
+        if targethistlist == "all":
             targethistlist = self.histograms()
-        boolParam = ('Use','LeBail')
-        refFloatParam = ('Scale','Extinction')
+        boolParam = ("Use", "LeBail")
+        refFloatParam = ("Scale", "Extinction")
         useBool = False
         useFloat = False
         useInt = False
-        if param == 'PhaseFraction': param = 'Scale'
+        if param == "PhaseFraction":
+            param = "Scale"
         if param in boolParam:
             useBool = True
         elif param in refFloatParam:
             useFloat = True
-        elif param in ['PO']:
+        elif param in ["PO"]:
             useInt = True
         else:
-            s = ''
-            for i in boolParam+refFloatParam+['PhaseFraction','PO']:
-                if s != '': s += ', '
+            s = ""
+            for i in boolParam + refFloatParam + ["PhaseFraction", "PO"]:
+                if s != "":
+                    s += ", "
                 s += f'"{i}"'
-            raise G2ScriptException(f'Invalid parameter. Valid choices are: {s}')
+            raise G2ScriptException(f"Invalid parameter. Valid choices are: {s}")
         if not doSet and len(targethistlist) > 1:
-            raise G2ScriptException(f'Unable to report value from {len(targethistlist)} histograms')
+            raise G2ScriptException(
+                f"Unable to report value from {len(targethistlist)} histograms"
+            )
         for h in targethistlist:
             h = self._decodeHist(h)
-            if h not in self.data['Histograms']:
-                G2fil.G2Print(f'Warning: histogram {h} not in phase {self.name}')
+            if h not in self.data["Histograms"]:
+                G2fil.G2Print(f"Warning: histogram {h} not in phase {self.name}")
                 continue
             if not doSet and useBool:
-                return self.data['Histograms'][h][param]
+                return self.data["Histograms"][h][param]
             elif not doSet and useFloat:
-                return self.data['Histograms'][h][param][0]
+                return self.data["Histograms"][h][param][0]
             elif useBool:
-                self.data['Histograms'][h][param] = bool(newValue)
+                self.data["Histograms"][h][param] = bool(newValue)
             elif useFloat:
-                self.data['Histograms'][h][param][0] = float(newValue)
+                self.data["Histograms"][h][param][0] = float(newValue)
             elif useInt:
                 if newValue is None:
-                    return self.data['Histograms'][h]['Pref.Ori.']
+                    return self.data["Histograms"][h]["Pref.Ori."]
                 try:
                     intval = int(newValue)
                 except:
                     intval = None
                 if intval == 1:
-                    self.data['Histograms'][h]['Pref.Ori.'][0] = 'MD'
-                elif intval is not None and 2*int(intval//2) == intval:
-                    SGData = self.data['General']['SGData']
-                    cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',intval,False)     #cylindrical & no M
+                    self.data["Histograms"][h]["Pref.Ori."][0] = "MD"
+                elif intval is not None and 2 * int(intval // 2) == intval:
+                    SGData = self.data["General"]["SGData"]
+                    cofNames = G2lat.GenSHCoeff(
+                        SGData["SGLaue"], "0", intval, False
+                    )  # cylindrical & no M
 
-                    self.data['Histograms'][h]['Pref.Ori.'][0] = 'SH'
-                    self.data['Histograms'][h]['Pref.Ori.'][4] = intval
-                    olddict = self.data['Histograms'][h]['Pref.Ori.'][5]
-                    newdict = dict(zip(cofNames,len(cofNames)*[0.], strict=False))
+                    self.data["Histograms"][h]["Pref.Ori."][0] = "SH"
+                    self.data["Histograms"][h]["Pref.Ori."][4] = intval
+                    olddict = self.data["Histograms"][h]["Pref.Ori."][5]
+                    newdict = dict(zip(cofNames, len(cofNames) * [0.0], strict=False))
                     # retain any old values in existing dict
-                    newdict.update({i:olddict[i] for i in olddict if i in newdict})
-                    self.data['Histograms'][h]['Pref.Ori.'][5] = newdict
+                    newdict.update({i: olddict[i] for i in olddict if i in newdict})
+                    self.data["Histograms"][h]["Pref.Ori."][5] = newdict
                 else:
-                    raise G2ScriptException(f'Preferred orientation value of {newValue} is invalid')
+                    raise G2ScriptException(
+                        f"Preferred orientation value of {newValue} is invalid"
+                    )
             else:
-                print('unexpected action')
+                print("unexpected action")
 
-    def setHAPvalues(self, HAPdict, targethistlist='all', skip=[], use=None):
+    def setHAPvalues(self, HAPdict, targethistlist="all", skip=[], use=None):
         """Copies HAP parameters for one histogram to a list of other histograms.
         Use skip or use to select specific entries to be copied or not used.
         Note that ``HStrain`` and sometimes ``Mustrain`` values can be specific to
@@ -5245,11 +6022,12 @@ class G2Phase(G2ObjectWrapper):
         crystallite size broadening terms from the first histogram in
         phase ``ph0`` to all histograms in phase ``ph1``.
         """
-        if targethistlist == 'all':
+        if targethistlist == "all":
             targethistlist = self.histograms()
         copydict = copy.deepcopy(HAPdict)
         for item in skip:
-            if item == 'PhaseFraction': item = 'Scale'
+            if item == "PhaseFraction":
+                item = "Scale"
             if item in list(copydict.keys()):
                 del copydict[item]
             # else:
@@ -5258,29 +6036,38 @@ class G2Phase(G2ObjectWrapper):
             #     raise Exception('HAP skip list entry {} invalid'.format(item))
         if use:
             for item in list(copydict.keys()):
-                if item == 'PhaseFraction': item = 'Scale'
+                if item == "PhaseFraction":
+                    item = "Scale"
                 if item not in use:
                     del copydict[item]
 
         first = True
         for h in targethistlist:
             h = self._decodeHist(h)
-            if h not in self.data['Histograms']:
-                G2fil.G2Print(f'Warning: histogram {h} not in phase {self.name}')
+            if h not in self.data["Histograms"]:
+                G2fil.G2Print(f"Warning: histogram {h} not in phase {self.name}")
                 continue
             if first:
                 first = False
-                if 'HStrain' in self.data['Histograms'][h] and 'HStrain' in copydict:
-                    if len(copydict['HStrain'][0]) != len(self.data['Histograms'][h]['HStrain'][0]):
-                        G2fil.G2Print('Error: HStrain has differing numbers of terms. Input: {}, phase {}: {}'.
-                                  format(len(copydict['HStrain'][0]),
-                                        self.name,len(self.data['Histograms'][h]['HStrain'][0])))
-                        raise Exception('HStrain has differing numbers of terms.')
-            self.data['Histograms'][h].update(copy.deepcopy(copydict))
-        G2fil.G2Print(f'Copied item(s) {list(copydict.keys())} from dict')
-        G2fil.G2Print(f' to histogram(s) {[self._decodeHist(h) for h in targethistlist]}')
+                if "HStrain" in self.data["Histograms"][h] and "HStrain" in copydict:
+                    if len(copydict["HStrain"][0]) != len(
+                        self.data["Histograms"][h]["HStrain"][0]
+                    ):
+                        G2fil.G2Print(
+                            "Error: HStrain has differing numbers of terms. Input: {}, phase {}: {}".format(
+                                len(copydict["HStrain"][0]),
+                                self.name,
+                                len(self.data["Histograms"][h]["HStrain"][0]),
+                            )
+                        )
+                        raise Exception("HStrain has differing numbers of terms.")
+            self.data["Histograms"][h].update(copy.deepcopy(copydict))
+        G2fil.G2Print(f"Copied item(s) {list(copydict.keys())} from dict")
+        G2fil.G2Print(
+            f" to histogram(s) {[self._decodeHist(h) for h in targethistlist]}"
+        )
 
-    def getPhaseEntryList(self, keyname=''):
+    def getPhaseEntryList(self, keyname=""):
         """Returns a dict with control values.
 
         :param str keyname: an optional string. When supplied only entries
@@ -5297,7 +6084,7 @@ class G2Phase(G2ObjectWrapper):
             :meth:`setPhaseEntryValue`
 
         """
-        return [i for i in dictDive(self.data,keyname) if i[0] != ['Histograms']]
+        return [i for i in dictDive(self.data, keyname) if i[0] != ["Histograms"]]
 
     def getPhaseEntryValue(self, keylist):
         """Returns the value associated with a list of keys.
@@ -5334,14 +6121,16 @@ class G2Phase(G2ObjectWrapper):
         """
         oldvalue = self.getPhaseEntryValue(keylist)
         if type(oldvalue) is not type(newvalue):
-            raise G2ScriptException(f"getPhaseEntryValue error: types do not agree for keys {keylist}")
+            raise G2ScriptException(
+                f"getPhaseEntryValue error: types do not agree for keys {keylist}"
+            )
         d = self.data
         for key in keylist:
             dlast = d
             d = d[key]
         dlast[key] = newvalue
 
-    def getHAPentryList(self, histname=None, keyname=''):
+    def getHAPentryList(self, histname=None, keyname=""):
         """Returns a dict with HAP values. Optionally a histogram
         may be selected.
 
@@ -5370,7 +6159,7 @@ class G2Phase(G2ObjectWrapper):
             h = [self._decodeHist(histname)]
         else:
             h = []
-        return dictDive(self.data['Histograms'],keyname,h)
+        return dictDive(self.data["Histograms"], keyname, h)
 
     def getHAPentryValue(self, keylist):
         """Returns the HAP value associated with a list of keys. Where the
@@ -5397,7 +6186,7 @@ class G2Phase(G2ObjectWrapper):
         [1.0, True]
 
         """
-        d = self.data['Histograms']
+        d = self.data["Histograms"]
         for key in keylist:
             d = d[key]
         return d
@@ -5427,46 +6216,48 @@ class G2Phase(G2ObjectWrapper):
         """
         oldvalue = self.getHAPentryValue(keylist)
         if type(oldvalue) is not type(newvalue):
-            raise G2ScriptException(f"setHAPentryValue error: types do not agree for keys {keylist}")
-        d = self.data['Histograms']
+            raise G2ScriptException(
+                f"setHAPentryValue error: types do not agree for keys {keylist}"
+            )
+        d = self.data["Histograms"]
         for key in keylist:
             dlast = d
             d = d[key]
         dlast[key] = newvalue
 
-    def _getBondRest(self,nam):
-        if 'Restraints' not in self.proj.data:
+    def _getBondRest(self, nam):
+        if "Restraints" not in self.proj.data:
             raise G2ScriptException(f"{nam} error: Restraints entry not in data tree")
-        errmsg = ''
+        errmsg = ""
         try:
-            return self.proj.data['Restraints']['data'][self.name]['Bond']
+            return self.proj.data["Restraints"]["data"][self.name]["Bond"]
         except:
             raise G2ScriptException(f"{nam} error: Bonds for phase not in Restraints")
 
     def setDistRestraintWeight(self, factor=1):
-        '''Sets the weight for the bond distance restraint(s) to factor
+        """Sets the weight for the bond distance restraint(s) to factor
 
         :param float factor: the weighting factor for this phase's restraints. Defaults
           to 1 but this value is typically much larger (10**2 to 10**4)
 
         .. seealso::
            :meth:`G2Phase.addDistRestraint`
-        '''
-        bondRestData = self._getBondRest('setDistRestraintWeight')
-        bondRestData['wtFactor'] = float(factor)
+        """
+        bondRestData = self._getBondRest("setDistRestraintWeight")
+        bondRestData["wtFactor"] = float(factor)
 
     def clearDistRestraint(self):
-        '''Deletes any previously defined bond distance restraint(s) for the selected phase
+        """Deletes any previously defined bond distance restraint(s) for the selected phase
 
         .. seealso::
            :meth:`G2Phase.addDistRestraint`
 
-        '''
-        bondRestData = self._getBondRest('clearDistRestraint')
-        bondRestData['Bonds'] = []
+        """
+        bondRestData = self._getBondRest("clearDistRestraint")
+        bondRestData["Bonds"] = []
 
     def addDistRestraint(self, origin, target, bond, factor=1.1, ESD=0.01):
-        '''Adds bond distance restraint(s) for the selected phase
+        """Adds bond distance restraint(s) for the selected phase
 
         This works by search for interatomic distances between atoms in the
         origin list and the target list (the two lists may be the same but most
@@ -5509,8 +6300,8 @@ class G2Phase(G2ObjectWrapper):
 
         would also work identically.
 
-        '''
-        bondRestData = self._getBondRest('addDistRestraint')
+        """
+        bondRestData = self._getBondRest("addDistRestraint")
         originList = []
         for a in origin:
             if type(a) is G2AtomRecord:
@@ -5521,10 +6312,12 @@ class G2Phase(G2ObjectWrapper):
                 ao = self.atom(a)
                 if ao is None:
                     raise G2ScriptException(
-                        f'addDistRestraint error: Origin atom matching label "{a}" not found')
+                        f'addDistRestraint error: Origin atom matching label "{a}" not found'
+                    )
             else:
                 raise G2ScriptException(
-                    f'addDistRestraint error: Origin atom input {a} has unknown type ({type(a)})')
+                    f"addDistRestraint error: Origin atom input {a} has unknown type ({type(a)})"
+                )
             originList.append([ao.ranId, ao.element, list(ao.coordinates)])
         targetList = []
         for a in target:
@@ -5536,25 +6329,30 @@ class G2Phase(G2ObjectWrapper):
                 ao = self.atom(a)
                 if ao is None:
                     raise G2ScriptException(
-                        f'addDistRestraint error: Target atom matching label "{a}" not found')
+                        f'addDistRestraint error: Target atom matching label "{a}" not found'
+                    )
             else:
                 raise G2ScriptException(
-                    f'addDistRestraint error: Target atom input {a} has unknown type ({type(a)})')
+                    f"addDistRestraint error: Target atom input {a} has unknown type ({type(a)})"
+                )
             targetList.append([ao.ranId, ao.element, list(ao.coordinates)])
 
-        GType = self.data['General']['Type']
-        SGData = self.data['General']['SGData']
-        Amat,Bmat = G2lat.cell2AB(self.data['General']['Cell'][1:7])
-        bondlst = G2mth.searchBondRestr(originList,targetList,bond,factor,GType,SGData,Amat,ESD)
+        GType = self.data["General"]["Type"]
+        SGData = self.data["General"]["SGData"]
+        Amat, Bmat = G2lat.cell2AB(self.data["General"]["Cell"][1:7])
+        bondlst = G2mth.searchBondRestr(
+            originList, targetList, bond, factor, GType, SGData, Amat, ESD
+        )
         count = 0
         for newBond in bondlst:
-            if newBond not in bondRestData['Bonds']:
+            if newBond not in bondRestData["Bonds"]:
                 count += 1
-                bondRestData['Bonds'].append(newBond)
+                bondRestData["Bonds"].append(newBond)
         return count
 
+
 class G2SeqRefRes(G2ObjectWrapper):
-    '''Wrapper for a Sequential Refinement Results tree entry, containing the
+    """Wrapper for a Sequential Refinement Results tree entry, containing the
     results for a refinement
 
     Scripts should not try to create a :class:`G2SeqRefRes` object directly as
@@ -5577,30 +6375,30 @@ class G2SeqRefRes(G2ObjectWrapper):
 
     .. seealso::
         :meth:`G2Project.seqref`
-    '''
+    """
+
     def __init__(self, data, proj):
         self.data = data
         self.proj = proj
-        self.newCellDict = {} # dict with recp. cell tensor & Dij name
+        self.newCellDict = {}  # dict with recp. cell tensor & Dij name
         # newAtomDict = {} # dict with atom positions; relative & absolute
-        for name in self.data['histNames']:
-            self.newCellDict.update(self.data[name].get('newCellDict',{}))
-            #newAtomDict.update(self.data[name].get('newAtomDict',{}) # dict with atom positions; relative & absolute
-        #ESDlookup = {self.newCellDict[item][0]:item for item in self.newCellDict}
-        #Dlookup = {item:self.newCellDict[item][0] for item in self.newCellDict}
+        for name in self.data["histNames"]:
+            self.newCellDict.update(self.data[name].get("newCellDict", {}))
+            # newAtomDict.update(self.data[name].get('newAtomDict',{}) # dict with atom positions; relative & absolute
+        # ESDlookup = {self.newCellDict[item][0]:item for item in self.newCellDict}
+        # Dlookup = {item:self.newCellDict[item][0] for item in self.newCellDict}
         # Possible error: the next might need to be data[histNames[0]]['varyList']
-        #atomLookup = {newAtomDict[item][0]:item for item in newAtomDict if item in self.data['varyList']}
-        #Dlookup.update({atomLookup[parm]:parm for parm in atomLookup}
-        #ESDlookup.update({parm:atomLookup[parm] for parm in atomLookup})
+        # atomLookup = {newAtomDict[item][0]:item for item in newAtomDict if item in self.data['varyList']}
+        # Dlookup.update({atomLookup[parm]:parm for parm in atomLookup}
+        # ESDlookup.update({parm:atomLookup[parm] for parm in atomLookup})
 
-#    @property
+    #    @property
     def histograms(self):
-        '''returns a list of histograms in the squential fit
-        '''
-        return self.data['histNames']
+        """returns a list of histograms in the squential fit"""
+        return self.data["histNames"]
 
-    def get_cell_and_esd(self,phase,hist):
-        '''Returns a vector of cell lengths and esd values
+    def get_cell_and_esd(self, phase, hist):
+        """Returns a vector of cell lengths and esd values
 
         :param phase: A phase, which may be specified as a phase object
           (see :class:`G2Phase`), the phase name (str) or the index number (int)
@@ -5615,87 +6413,90 @@ class G2SeqRefRes(G2ObjectWrapper):
           parameters; and uniqCellIndx is a tuple with indicies for the
           unique (non-symmetry determined) unit parameters (e.g.
           [0,2] for a,c in a tetragonal cell)
-        '''
-        def striphist(var,insChar=''):
-            'strip a histogram number from a var name'
-            sv = var.split(':')
-            if len(sv) <= 1: return var
+        """
+
+        def striphist(var, insChar=""):
+            "strip a histogram number from a var name"
+            sv = var.split(":")
+            if len(sv) <= 1:
+                return var
             if sv[1]:
                 sv[1] = insChar
-            return ':'.join(sv)
+            return ":".join(sv)
 
         uniqCellLookup = [
-        [['m3','m3m'],(0,)],
-        [['3R','3mR'],(0,3)],
-        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],(0,2)],
-        [['mmm'],(0,1,2)],
-        [['2/m'+'a'],(0,1,2,3)],
-        [['2/m'+'b'],(0,1,2,4)],
-        [['2/m'+'c'],(0,1,2,5)],
-        [['-1'],(0,1,2,3,4,5)],
+            [["m3", "m3m"], (0,)],
+            [["3R", "3mR"], (0, 3)],
+            [["3", "3m1", "31m", "6/m", "6/mmm", "4/m", "4/mmm"], (0, 2)],
+            [["mmm"], (0, 1, 2)],
+            [["2/m" + "a"], (0, 1, 2, 3)],
+            [["2/m" + "b"], (0, 1, 2, 4)],
+            [["2/m" + "c"], (0, 1, 2, 5)],
+            [["-1"], (0, 1, 2, 3, 4, 5)],
         ]
 
-        seqData,histData = self.RefData(hist)
-        hId = histData['data'][0]['hId']
+        seqData, histData = self.RefData(hist)
+        hId = histData["data"][0]["hId"]
         phasedict = self.proj.phase(phase).data
-        pId = phasedict['pId']
-        pfx = str(pId)+'::' # prefix for A values from phase
-        phfx = '%d:%d:'%(pId,hId) # Dij prefix
+        pId = phasedict["pId"]
+        pfx = str(pId) + "::"  # prefix for A values from phase
+        phfx = "%d:%d:" % (pId, hId)  # Dij prefix
         # get unit cell & symmetry for phase
-        RecpCellTerms = G2lat.cell2A(phasedict['General']['Cell'][1:7])
-        zeroDict = {pfx+'A'+str(i):0.0 for i in range(6)}
-        SGdata = phasedict['General']['SGData']
+        RecpCellTerms = G2lat.cell2A(phasedict["General"]["Cell"][1:7])
+        zeroDict = {pfx + "A" + str(i): 0.0 for i in range(6)}
+        SGdata = phasedict["General"]["SGData"]
         # determine the cell items not defined by symmetry
-        laue = SGdata['SGLaue'][:]
-        if laue == '2/m':
-            laue += SGdata['SGUniq']
-        for symlist,celllist in uniqCellLookup:
+        laue = SGdata["SGLaue"][:]
+        if laue == "2/m":
+            laue += SGdata["SGUniq"]
+        for symlist, celllist in uniqCellLookup:
             if laue in symlist:
                 uniqCellIndx = celllist
                 break
-        else: # should not happen
+        else:  # should not happen
             uniqCellIndx = list(range(6))
         initialCell = {}
         for i in uniqCellIndx:
-            initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[i]
+            initialCell[str(pId) + "::A" + str(i)] = RecpCellTerms[i]
 
         esdLookUp = {}
         dLookup = {}
         # note that varyList keys are p:h:Dij while newCellDict keys are p::Dij
-        for nKey in seqData['newCellDict']:
-            p = nKey.find('::')+1
+        for nKey in seqData["newCellDict"]:
+            p = nKey.find("::") + 1
             vKey = nKey[:p] + str(hId) + nKey[p:]
-            if vKey in seqData['varyList']:
+            if vKey in seqData["varyList"]:
                 esdLookUp[self.newCellDict[nKey][0]] = nKey
                 dLookup[nKey] = self.newCellDict[nKey][0]
-        covData = {'varyList': [dLookup.get(striphist(v),v) for v in seqData['varyList']],
-                'covMatrix': seqData['covMatrix']}
-        A = RecpCellTerms[:] # make copy of starting A values
+        covData = {
+            "varyList": [dLookup.get(striphist(v), v) for v in seqData["varyList"]],
+            "covMatrix": seqData["covMatrix"],
+        }
+        A = RecpCellTerms[:]  # make copy of starting A values
 
-        for i,j in enumerate(('D11','D22','D33','D12','D13','D23')):
-            var = pfx+'A'+str(i)
-            Dvar = phfx+j
+        for i, j in enumerate(("D11", "D22", "D33", "D12", "D13", "D23")):
+            var = pfx + "A" + str(i)
+            Dvar = phfx + j
             # apply Dij value if non-zero
-            if Dvar in seqData['parmDict']:
-                A[i] += seqData['parmDict'][Dvar]
+            if Dvar in seqData["parmDict"]:
+                A[i] += seqData["parmDict"][Dvar]
             # override with fit result if is Dij varied
             try:
-                A[i] = seqData['newCellDict'][esdLookUp[var]][1] # get refined value
+                A[i] = seqData["newCellDict"][esdLookUp[var]][1]  # get refined value
             except KeyError:
                 pass
-        Albls = [pfx+'A'+str(i) for i in range(6)]
-        cellDict = dict(zip(Albls,A, strict=False))
+        Albls = [pfx + "A" + str(i) for i in range(6)]
+        cellDict = dict(zip(Albls, A, strict=False))
 
-
-        A,zeros = G2stIO.cellFill(pfx,SGdata,cellDict,zeroDict)
+        A, zeros = G2stIO.cellFill(pfx, SGdata, cellDict, zeroDict)
         # convert to direct cell
         c = G2lat.A2cell(A)
         vol = G2lat.calc_V(A)
-        cE = G2lat.getCellEsd(pfx,SGdata,A,covData)
-        return list(c)+[vol],cE,uniqCellIndx
+        cE = G2lat.getCellEsd(pfx, SGdata, A, covData)
+        return list(c) + [vol], cE, uniqCellIndx
 
-    def get_VaryList(self,hist):
-        '''Returns a list of the refined variables in the
+    def get_VaryList(self, hist):
+        """Returns a list of the refined variables in the
         last refinement cycle for the selected histogram
 
         :param hist: Specify a histogram or using the histogram name (str)
@@ -5703,15 +6504,15 @@ class G2SeqRefRes(G2ObjectWrapper):
           refinement (not the project), numbered starting from 0.
         :returns: a list of variables or None if no refinement has been
           performed.
-        '''
+        """
         try:
-            seqData,histData = self.RefData(hist)
-            return seqData['varyList']
+            seqData, histData = self.RefData(hist)
+            return seqData["varyList"]
         except:
             return None
 
-    def get_ParmList(self,hist):
-        '''Returns a list of all the parameters defined in the
+    def get_ParmList(self, hist):
+        """Returns a list of all the parameters defined in the
         last refinement cycle for the selected histogram
 
         :param hist: Specify a histogram or using the histogram name (str)
@@ -5720,15 +6521,15 @@ class G2SeqRefRes(G2ObjectWrapper):
           starting from 0.
         :returns: a list of parameters or None if no refinement has been
           performed.
-        '''
+        """
         try:
-            seqData,histData = self.RefData(hist)
-            return list(seqData['parmDict'].keys())
+            seqData, histData = self.RefData(hist)
+            return list(seqData["parmDict"].keys())
         except:
             return None
 
-    def get_Variable(self,hist,var):
-        '''Returns the value and standard uncertainty (esd) for a variable
+    def get_Variable(self, hist, var):
+        """Returns the value and standard uncertainty (esd) for a variable
         parameters, as defined for the selected histogram
         in the last sequential refinement cycle
 
@@ -5741,21 +6542,21 @@ class G2SeqRefRes(G2ObjectWrapper):
         :returns: (value,esd) if the parameter is refined or
           (value, None) if the variable is in a constraint or is not
           refined or None if the parameter is not found.
-        '''
+        """
         try:
-            seqData,histData = self.RefData(hist)
-            val = seqData['parmDict'][var]
+            seqData, histData = self.RefData(hist)
+            val = seqData["parmDict"][var]
         except:
             return None
         try:
-            pos = seqData['varyList'].index(var)
-            esd = np.sqrt(seqData['covMatrix'][pos,pos])
-            return (val,esd)
+            pos = seqData["varyList"].index(var)
+            esd = np.sqrt(seqData["covMatrix"][pos, pos])
+            return (val, esd)
         except ValueError:
-            return (val,None)
+            return (val, None)
 
-    def get_Covariance(self,hist,varList):
-        '''Returns the values and covariance matrix for a series of variable
+    def get_Covariance(self, hist, varList):
+        """Returns the values and covariance matrix for a series of variable
         parameters, as defined for the selected histogram
         in the last sequential refinement cycle
 
@@ -5777,22 +6578,24 @@ class G2SeqRefRes(G2ObjectWrapper):
             xvar = np.outer(sig,np.ones_like(sig))
             covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
 
-        '''
+        """
         try:
-            seqData,histData = self.RefData(hist)
+            seqData, histData = self.RefData(hist)
         except:
-            G2fil.G2Print(f'Warning: Histogram {hist} not found in the sequential fit')
+            G2fil.G2Print(f"Warning: Histogram {hist} not found in the sequential fit")
             return None
-        missing = [i for i in varList if i not in seqData['varyList']]
+        missing = [i for i in varList if i not in seqData["varyList"]]
         if missing:
-            G2fil.G2Print(f'Warning: Variable(s) {missing} were not found in the varyList')
+            G2fil.G2Print(
+                f"Warning: Variable(s) {missing} were not found in the varyList"
+            )
             return None
-        vals = [seqData['parmDict'][i] for i in varList]
-        cov = G2mth.getVCov(varList,seqData['varyList'],seqData['covMatrix'])
-        return (vals,cov)
+        vals = [seqData["parmDict"][i] for i in varList]
+        cov = G2mth.getVCov(varList, seqData["varyList"], seqData["covMatrix"])
+        return (vals, cov)
 
-    def RefData(self,hist):
-        '''Provides access to the output from a particular histogram
+    def RefData(self, hist):
+        """Provides access to the output from a particular histogram
 
         :param hist: Specify a histogram or using the histogram name (str)
           or the index number (int) of the histogram in the sequential
@@ -5801,19 +6604,22 @@ class G2SeqRefRes(G2ObjectWrapper):
         :returns: a list of dicts where the first element has sequential
           refinement results and the second element has the contents of
           the histogram tree items.
-        '''
-        errmsg = ''
+        """
+        errmsg = ""
         try:
-            hist = self.data['histNames'][hist]
+            hist = self.data["histNames"][hist]
         except IndexError:
-            errmsg = 'Histogram #{hist} is out of range from the Sequential Refinement'
+            errmsg = "Histogram #{hist} is out of range from the Sequential Refinement"
         except TypeError:
             pass
-        if errmsg: raise Exception(errmsg)
-        if hist not in self.data['histNames']:
-            raise Exception(f'Histogram {hist} is not included in the Sequential Refinement'
-                                )
-        return self.data[hist],self.proj.histogram(hist).data
+        if errmsg:
+            raise Exception(errmsg)
+        if hist not in self.data["histNames"]:
+            raise Exception(
+                f"Histogram {hist} is not included in the Sequential Refinement"
+            )
+        return self.data[hist], self.proj.histogram(hist).data
+
 
 class G2PDF(G2ObjectWrapper):
     """Wrapper for a PDF tree entry, containing the information needed to
@@ -5837,12 +6643,14 @@ class G2PDF(G2ObjectWrapper):
         :meth:`G2Project.pdf`
         :meth:`G2Project.pdfs`
     """
+
     def __init__(self, data, name, proj):
         self.data = data
         self.name = name
         self.proj = proj
-    def set_background(self,btype,histogram,mult=-1.,refine=False):
-        '''Sets a histogram to be used as the 'Sample Background',
+
+    def set_background(self, btype, histogram, mult=-1.0, refine=False):
+        """Sets a histogram to be used as the 'Sample Background',
         the 'Container' or the 'Container Background.'
 
         :param str btype: Type of background to set, must contain
@@ -5858,42 +6666,42 @@ class G2PDF(G2ObjectWrapper):
           to -1.0
         :param bool refine: a flag to enable refinement (only
           implemented for 'Sample Background'); defaults to False
-        '''
-        if 'samp' in btype.lower():
-            key = 'Sample Bkg.'
-        elif 'cont' in btype.lower() and 'back' in btype.lower():
-            key = 'Container Bkg.'
-        elif 'cont' in btype.lower():
-            key = 'Container'
+        """
+        if "samp" in btype.lower():
+            key = "Sample Bkg."
+        elif "cont" in btype.lower() and "back" in btype.lower():
+            key = "Container Bkg."
+        elif "cont" in btype.lower():
+            key = "Container"
         else:
-            raise Exception(f'btype = {btype} is invalid')
-        self.data['PDF Controls'][key]['Name'] = self.proj.histogram(histogram).name
-        self.data['PDF Controls'][key]['Mult'] = mult
-        self.data['PDF Controls'][key]['Refine'] = refine
+            raise Exception(f"btype = {btype} is invalid")
+        self.data["PDF Controls"][key]["Name"] = self.proj.histogram(histogram).name
+        self.data["PDF Controls"][key]["Mult"] = mult
+        self.data["PDF Controls"][key]["Refine"] = refine
 
-    def set_formula(self,*args):
-        '''Set the chemical formula for the PDF computation.
+    def set_formula(self, *args):
+        """Set the chemical formula for the PDF computation.
         Use pdf.set_formula(['Si',1],['O',2]) for SiO2.
 
         :param list item1: The element symbol and number of atoms in formula for first element
         :param list item2: The element symbol and number of atoms in formula for second element,...
 
         repeat parameters as needed for all elements in the formula.
-        '''
-        powderHist = self.proj.histogram(self.data['PDF Controls']['Sample']['Name'])
-        inst = powderHist.data['Instrument Parameters'][0]
-        ElList = self.data['PDF Controls']['ElList']
+        """
+        powderHist = self.proj.histogram(self.data["PDF Controls"]["Sample"]["Name"])
+        inst = powderHist.data["Instrument Parameters"][0]
+        ElList = self.data["PDF Controls"]["ElList"]
         ElList.clear()
-        sumVol = 0.
-        for elem,mult in args:
-            ElList[elem] = G2elem.GetElInfo(elem,inst)
-            ElList[elem]['FormulaNo'] = mult
-            Avol = (4.*np.pi/3.)*ElList[elem]['Drad']**3
-            sumVol += Avol*ElList[elem]['FormulaNo']
-        self.data['PDF Controls']['Form Vol'] = max(10.0,sumVol)
+        sumVol = 0.0
+        for elem, mult in args:
+            ElList[elem] = G2elem.GetElInfo(elem, inst)
+            ElList[elem]["FormulaNo"] = mult
+            Avol = (4.0 * np.pi / 3.0) * ElList[elem]["Drad"] ** 3
+            sumVol += Avol * ElList[elem]["FormulaNo"]
+        self.data["PDF Controls"]["Form Vol"] = max(10.0, sumVol)
 
-    def calculate(self,xydata=None,limits=None,inst=None):
-        '''Compute the PDF using the current parameters. Results are set
+    def calculate(self, xydata=None, limits=None, inst=None):
+        """Compute the PDF using the current parameters. Results are set
         in the PDF object arrays (self.data['PDF Controls']['G(R)'] etc.).
         Note that if ``xydata``, is specified, the background histograms(s)
         will not be accessed from the project file associated with the current
@@ -5915,30 +6723,29 @@ class G2PDF(G2ObjectWrapper):
           to be used for PDF computation. If None (default), the values are
           taken from the Sample histogram's .data['Instrument Parameters'][0]
           values.
-        '''
-        data = self.data['PDF Controls']
+        """
+        data = self.data["PDF Controls"]
         if xydata is None:
             xydata = {}
-            for key in 'Sample Bkg.','Container Bkg.','Container','Sample':
-                name = data[key]['Name'].strip()
+            for key in "Sample Bkg.", "Container Bkg.", "Container", "Sample":
+                name = data[key]["Name"].strip()
                 if name:
-                    xydata[key] = self.proj.histogram(name).data['data']
+                    xydata[key] = self.proj.histogram(name).data["data"]
         if limits is None:
-            name = data['Sample']['Name'].strip()
-            limits = self.proj.histogram(name).data['Limits'][1]
+            name = data["Sample"]["Name"].strip()
+            limits = self.proj.histogram(name).data["Limits"][1]
         if inst is None:
-            name = data['Sample']['Name'].strip()
-            inst = self.proj.histogram(name).data['Instrument Parameters'][0]
-        G2pwd.CalcPDF(data,inst,limits,xydata)
-        data['I(Q)'] = xydata['IofQ']
-        data['S(Q)'] = xydata['SofQ']
-        data['F(Q)'] = xydata['FofQ']
-        data['G(R)'] = xydata['GofR']
-        data['g(r)'] = xydata['gofr']
+            name = data["Sample"]["Name"].strip()
+            inst = self.proj.histogram(name).data["Instrument Parameters"][0]
+        G2pwd.CalcPDF(data, inst, limits, xydata)
+        data["I(Q)"] = xydata["IofQ"]
+        data["S(Q)"] = xydata["SofQ"]
+        data["F(Q)"] = xydata["FofQ"]
+        data["G(R)"] = xydata["GofR"]
+        data["g(r)"] = xydata["gofr"]
 
-    def optimize(self,showFit=True,maxCycles=5,
-                     xydata=None,limits=None,inst=None):
-        '''Optimize the low R portion of G(R) to minimize selected
+    def optimize(self, showFit=True, maxCycles=5, xydata=None, limits=None, inst=None):
+        """Optimize the low R portion of G(R) to minimize selected
         parameters. Note that this updates the parameters in the settings
         (self.data['PDF Controls']) but does not update the PDF object
         arrays (self.data['PDF Controls']['G(R)'] etc.) with the computed
@@ -5964,26 +6771,26 @@ class G2PDF(G2ObjectWrapper):
           to be used for PDF computation. If None (default), the values are
           taken from the Sample histogram's .data['Instrument Parameters'][0]
           values.
-        '''
-        data = self.data['PDF Controls']
+        """
+        data = self.data["PDF Controls"]
         if xydata is None:
             xydata = {}
-            for key in 'Sample Bkg.','Container Bkg.','Container','Sample':
-                name = data[key]['Name'].strip()
+            for key in "Sample Bkg.", "Container Bkg.", "Container", "Sample":
+                name = data[key]["Name"].strip()
                 if name:
-                    xydata[key] = self.proj.histogram(name).data['data']
+                    xydata[key] = self.proj.histogram(name).data["data"]
         if limits is None:
-            name = data['Sample']['Name'].strip()
-            limits = self.proj.histogram(name).data['Limits'][1]
+            name = data["Sample"]["Name"].strip()
+            limits = self.proj.histogram(name).data["Limits"][1]
         if inst is None:
-            name = data['Sample']['Name'].strip()
-            inst = self.proj.histogram(name).data['Instrument Parameters'][0]
+            name = data["Sample"]["Name"].strip()
+            inst = self.proj.histogram(name).data["Instrument Parameters"][0]
 
-        res = G2pwd.OptimizePDF(data,xydata,limits,inst,showFit,maxCycles)
-        return res['success']
+        res = G2pwd.OptimizePDF(data, xydata, limits, inst, showFit, maxCycles)
+        return res["success"]
 
-    def export(self,fileroot,formats):
-        '''Write out the PDF-related data (G(r), S(Q),...) into files
+    def export(self, fileroot, formats):
+        """Write out the PDF-related data (G(r), S(Q),...) into files
 
         :param str fileroot: name of file(s) to be written. The extension
           will be ignored and set to .iq, .sq, .fq or .gr depending
@@ -5993,15 +6800,18 @@ class G2PDF(G2ObjectWrapper):
           I(Q), S(Q), F(Q), G(r) and/or PDFgui (capitalization and
           punctuation is ignored). Note that G(r) and PDFgui should not
           be specifed together.
-        '''
-        PDFsaves = 5*[False]
+        """
+        PDFsaves = 5 * [False]
         PDFentry = self.name
-        name = self.data['PDF Controls']['Sample']['Name'].strip()
-        limits = self.proj.histogram(name).data['Limits']
-        inst = self.proj.histogram(name).data['Instrument Parameters'][0]
-        for i,lbl in enumerate(['I(Q)', 'S(Q)', 'F(Q)', 'G(r)', 'PDFgui']):
+        name = self.data["PDF Controls"]["Sample"]["Name"].strip()
+        limits = self.proj.histogram(name).data["Limits"]
+        inst = self.proj.histogram(name).data["Instrument Parameters"][0]
+        for i, lbl in enumerate(["I(Q)", "S(Q)", "F(Q)", "G(r)", "PDFgui"]):
             PDFsaves[i] = lbl.lower() in formats.lower()
-        G2fil.PDFWrite(PDFentry,fileroot,PDFsaves,self.data['PDF Controls'],inst,limits)
+        G2fil.PDFWrite(
+            PDFentry, fileroot, PDFsaves, self.data["PDF Controls"], inst, limits
+        )
+
 
 class G2Single(G2ObjectWrapper):
     """Wrapper for a HKLF tree entry, containing a single crystal histogram
@@ -6034,6 +6844,7 @@ class G2Single(G2ObjectWrapper):
         :meth:`~G2Project.histograms`
         :meth:`~G2Project.link_histogram_phase`
     """
+
     def __init__(self, data, proj, name):
         self.data = data
         self.name = name
@@ -6058,21 +6869,21 @@ class G2Single(G2ObjectWrapper):
         """
         # find the phase associated with this histogram (there is at most one)
         for p in self.proj.phases():
-            if self.name in p.data['Histograms']:
+            if self.name in p.data["Histograms"]:
                 phase = p
                 break
         else:  # no phase matches
-            raise ValueError(f'set_refinements error: no phase found for {self.name!r}')
-        d = phase.data['Histograms'][self.name]
+            raise ValueError(f"set_refinements error: no phase found for {self.name!r}")
+        d = phase.data["Histograms"][self.name]
         for key, value in refs.items():
             if key in d:  # Scale & Flack
                 d[key][1] = value
-            elif key in d['Babinet']:  # BabA & BabU
-                d['Babinet'][key][1] = value
-            elif key in d['Extinction'][2]:  # Eg, Es, Ep
-                d['Extinction'][2][key][1] = value
+            elif key in d["Babinet"]:  # BabA & BabU
+                d["Babinet"][key][1] = value
+            elif key in d["Extinction"][2]:  # Eg, Es, Ep
+                d["Extinction"][2][key][1] = value
             else:
-                raise ValueError(f'set_refinements: {key} is unknown')
+                raise ValueError(f"set_refinements: {key} is unknown")
 
     def clear_refinements(self, refs):
         """Clears the HKLF refinement parameter 'key' and its associated value.
@@ -6090,24 +6901,26 @@ class G2Single(G2ObjectWrapper):
         """
         # find the phase associated with this histogram (there is at most one)
         for p in self.proj.phases():
-            if self.name in p.data['Histograms']:
+            if self.name in p.data["Histograms"]:
                 phase = p
                 break
         else:  # no phase matches
-            raise ValueError(f'clear_refinements error: no phase found for {self.name!r}')
-        d = phase.data['Histograms'][self.name]
+            raise ValueError(
+                f"clear_refinements error: no phase found for {self.name!r}"
+            )
+        d = phase.data["Histograms"][self.name]
         for key in refs:
             if key in d:  # Scale & Flack
                 d[key][1] = False
-            elif key in d['Babinet']:  # BabA & BabU
-                d['Babinet'][key][1] = False
-            elif key in d['Extinction'][2]:  # Eg, Es, Ep
-                d['Extinction'][2][key][1] = False
+            elif key in d["Babinet"]:  # BabA & BabU
+                d["Babinet"][key][1] = False
+            elif key in d["Extinction"][2]:  # Eg, Es, Ep
+                d["Extinction"][2][key][1] = False
             else:
-                raise ValueError(f'clear_refinements: {key} is unknown')
+                raise ValueError(f"clear_refinements: {key} is unknown")
 
-    def Export(self,fileroot,extension,fmthint=None):
-        '''Write the HKLF histogram into a file. The path is specified by
+    def Export(self, fileroot, extension, fmthint=None):
+        """Write the HKLF histogram into a file. The path is specified by
         fileroot and extension.
 
         :param str fileroot: name of the file, optionally with a path (extension is
@@ -6119,54 +6932,64 @@ class G2Single(G2ObjectWrapper):
            supplied string will be used. If not specified, an error
            will be generated showing the possible choices.
         :returns: name of file that was written
-        '''
+        """
         LoadG2fil()
-        if extension not in exportersByExtension.get('single',[]):
-            print('Defined exporters are:')
-            print('  ',list(exportersByExtension.get('single',[])))
-            raise G2ScriptException('No Writer for file type = "'+extension+'"')
-        fil = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
-        obj = exportersByExtension['single'][extension]
+        if extension not in exportersByExtension.get("single", []):
+            print("Defined exporters are:")
+            print("  ", list(exportersByExtension.get("single", [])))
+            raise G2ScriptException('No Writer for file type = "' + extension + '"')
+        fil = os.path.abspath(os.path.splitext(fileroot)[0] + extension)
+        obj = exportersByExtension["single"][extension]
         if type(obj) is list:
             if fmthint is None:
-                print('Defined ',extension,'exporters are:')
+                print("Defined ", extension, "exporters are:")
                 for o in obj:
-                    print('\t',o.formatName)
-                raise G2ScriptException('No format hint for file type = "'+extension+'"')
+                    print("\t", o.formatName)
+                raise G2ScriptException(
+                    'No format hint for file type = "' + extension + '"'
+                )
             for o in obj:
-              if fmthint.lower() in o.formatName.lower():
-                  obj = o
-                  break
+                if fmthint.lower() in o.formatName.lower():
+                    obj = o
+                    break
             else:
-                print('Hint ',fmthint,'not found. Defined ',extension,'exporters are:')
+                print(
+                    "Hint ", fmthint, "not found. Defined ", extension, "exporters are:"
+                )
                 for o in obj:
-                    print('\t',o.formatName)
-                raise G2ScriptException('Bad format hint for file type = "'+extension+'"')
-        #self._SetFromArray(obj)
-        obj.Writer(self,fil)
+                    print("\t", o.formatName)
+                raise G2ScriptException(
+                    'Bad format hint for file type = "' + extension + '"'
+                )
+        # self._SetFromArray(obj)
+        obj.Writer(self, fil)
         return fil
 
-blkSize = 128
-'''Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses
-less memory, must be <=1024 (for histogram3d)
-'''
 
-def calcMaskMap(imgprms,mskprms):
-    '''Computes a set of blocked mask arrays for a set of image controls and mask parameters.
+blkSize = 128
+"""Integration block size; 128 or 256 seems to be optimal for CPU use, but 128 uses
+less memory, must be <=1024 (for histogram3d)
+"""
+
+
+def calcMaskMap(imgprms, mskprms):
+    """Computes a set of blocked mask arrays for a set of image controls and mask parameters.
     This capability is also provided with :meth:`G2Image.IntMaskMap`.
-    '''
-    return G2img.MakeUseMask(imgprms,mskprms,blkSize)
+    """
+    return G2img.MakeUseMask(imgprms, mskprms, blkSize)
+
 
 def calcThetaAzimMap(imgprms):
-    '''Computes the set of blocked arrays for theta-azimuth mapping from
+    """Computes the set of blocked arrays for theta-azimuth mapping from
     a set of image controls, which can be cached and reused for
     integration of multiple images with the same calibration parameters.
     This capability is also provided with :meth:`G2Image.IntThetaAzMap`.
-    '''
-    return G2img.MakeUseTA(imgprms,blkSize)
+    """
+    return G2img.MakeUseTA(imgprms, blkSize)
+
 
 class G2Image(G2ObjectWrapper):
-    '''Wrapper for an IMG tree entry, containing an image and associated metadata.
+    """Wrapper for an IMG tree entry, containing an image and associated metadata.
 
     Note that in a GSASIIscriptable script, instances of G2Image will be created by
     calls to :meth:`G2Project.add_image` or :meth:`G2Project.images`.
@@ -6198,30 +7021,63 @@ class G2Image(G2ObjectWrapper):
     More detailed image processing examples are shown in the
     :ref:`ImageProc` section of this chapter.
 
-    '''
+    """
+
     # parameters in that can be accessed via setControl. This may need future attention
     ControlList = {
-        'int': ['calibskip', 'pixLimit', 'edgemin', 'outChannels',
-                    'outAzimuths'],
-        'float': ['cutoff', 'setdist', 'wavelength', 'Flat Bkg',
-                      'azmthOff', 'tilt', 'calibdmin', 'rotation',
-                      'distance', 'DetDepth'],
-        'bool': ['setRings', 'setDefault', 'centerAzm', 'fullIntegrate',
-                     'DetDepthRef', 'showLines'],
-        'str': ['SampleShape', 'binType', 'formatName', 'color',
-                    'type', ],
-        'list': ['GonioAngles', 'IOtth', 'LRazimuth', 'Oblique', 'PolaVal',
-                   'SampleAbs', 'center', 'ellipses', 'linescan',
-                    'pixelSize', 'range', 'ring', 'rings', 'size', ],
-        'dict': ['varyList'],
-        }
-    '''Defines the items known to exist in the Image Controls tree section
+        "int": ["calibskip", "pixLimit", "edgemin", "outChannels", "outAzimuths"],
+        "float": [
+            "cutoff",
+            "setdist",
+            "wavelength",
+            "Flat Bkg",
+            "azmthOff",
+            "tilt",
+            "calibdmin",
+            "rotation",
+            "distance",
+            "DetDepth",
+        ],
+        "bool": [
+            "setRings",
+            "setDefault",
+            "centerAzm",
+            "fullIntegrate",
+            "DetDepthRef",
+            "showLines",
+        ],
+        "str": [
+            "SampleShape",
+            "binType",
+            "formatName",
+            "color",
+            "type",
+        ],
+        "list": [
+            "GonioAngles",
+            "IOtth",
+            "LRazimuth",
+            "Oblique",
+            "PolaVal",
+            "SampleAbs",
+            "center",
+            "ellipses",
+            "linescan",
+            "pixelSize",
+            "range",
+            "ring",
+            "rings",
+            "size",
+        ],
+        "dict": ["varyList"],
+    }
+    """Defines the items known to exist in the Image Controls tree section
     and the item's data types. A few are not included here
     ('background image', 'dark image', 'Gain map', and 'calibrant') because
     these items have special set routines,
     where references to entries are checked to make sure their values are
     correct.
-    '''
+    """
 
     def __init__(self, data, name, proj, image=None):
         self.data = data
@@ -6230,12 +7086,11 @@ class G2Image(G2ObjectWrapper):
         self.image = image
 
     def clearImageCache(self):
-        '''Clears a cached image, if one is present
-        '''
+        """Clears a cached image, if one is present"""
         self.image = None
 
-    def setControl(self,arg,value):
-        '''Set an Image Controls parameter in the current image.
+    def setControl(self, arg, value):
+        """Set an Image Controls parameter in the current image.
         If the parameter is not found an exception is raised.
 
         :param str arg: the name of a parameter (dict entry) in the
@@ -6243,50 +7098,52 @@ class G2Image(G2ObjectWrapper):
           or an exception is raised.
         :param value: the value to set the parameter. The value is
           cast as the appropriate type from :data:`ControlList`.
-        '''
+        """
         for typ in self.ControlList:
-            if arg in self.ControlList[typ]: break
+            if arg in self.ControlList[typ]:
+                break
         else:
-            G2fil.G2Print('Allowed args:\n',[nam for nam,typ in self.findControl('')])
-            raise Exception(f'arg {arg} not defined in G2Image.setControl'
-                                )
-        errmsg = ''
+            G2fil.G2Print("Allowed args:\n", [nam for nam, typ in self.findControl("")])
+            raise Exception(f"arg {arg} not defined in G2Image.setControl")
+        errmsg = ""
         try:
-            if typ == 'int':
-                self.data['Image Controls'][arg] = int(value)
-            elif typ == 'float':
-                self.data['Image Controls'][arg] = float(value)
-            elif typ == 'bool':
-                self.data['Image Controls'][arg] = bool(value)
-            elif typ == 'str':
-                self.data['Image Controls'][arg] = str(value)
-            elif typ == 'list':
-                self.data['Image Controls'][arg] = list(value)
-            elif typ == 'dict':
-                self.data['Image Controls'][arg] = dict(value)
+            if typ == "int":
+                self.data["Image Controls"][arg] = int(value)
+            elif typ == "float":
+                self.data["Image Controls"][arg] = float(value)
+            elif typ == "bool":
+                self.data["Image Controls"][arg] = bool(value)
+            elif typ == "str":
+                self.data["Image Controls"][arg] = str(value)
+            elif typ == "list":
+                self.data["Image Controls"][arg] = list(value)
+            elif typ == "dict":
+                self.data["Image Controls"][arg] = dict(value)
             else:
-                raise Exception(f'Unknown type {typ} for arg {arg} in  G2Image.setControl'
-                                    )
+                raise Exception(
+                    f"Unknown type {typ} for arg {arg} in  G2Image.setControl"
+                )
         except:
-            errmsg = 'Error formatting value {value} as type {typ} for arg {arg} in  G2Image.setControl'
+            errmsg = "Error formatting value {value} as type {typ} for arg {arg} in  G2Image.setControl"
 
-        if errmsg: raise Exception(errmsg)
+        if errmsg:
+            raise Exception(errmsg)
 
-    def getControl(self,arg):
-        '''Return an Image Controls parameter in the current image.
+    def getControl(self, arg):
+        """Return an Image Controls parameter in the current image.
         If the parameter is not found an exception is raised.
 
         :param str arg: the name of a parameter (dict entry) in the
           image.
         :returns: the value as a int, float, list,...
-        '''
-        if arg in self.data['Image Controls']:
-            return self.data['Image Controls'][arg]
-        G2fil.G2Print(self.findControl(''))
-        raise Exception(f'arg {arg} not defined in G2Image.getControl')
+        """
+        if arg in self.data["Image Controls"]:
+            return self.data["Image Controls"][arg]
+        G2fil.G2Print(self.findControl(""))
+        raise Exception(f"arg {arg} not defined in G2Image.getControl")
 
-    def findControl(self,arg=''):
-        '''Finds the Image Controls parameter(s) in the current image
+    def findControl(self, arg=""):
+        """Finds the Image Controls parameter(s) in the current image
         that match the string in arg. Default is '' which returns all
         parameters.
 
@@ -6300,31 +7157,33 @@ class G2Image(G2ObjectWrapper):
         :returns: a list of matching entries in form
           [['item','type'], ['item','type'],...] where each 'item' string
           contains the sting in arg.
-        '''
+        """
         matchList = []
         for typ in self.ControlList:
             for item in self.ControlList[typ]:
                 if arg in item:
-                    matchList.append([item,typ])
+                    matchList.append([item, typ])
         return matchList
 
-    def setCalibrant(self,calib):
-        '''Set a calibrant for the current image
+    def setCalibrant(self, calib):
+        """Set a calibrant for the current image
 
         :param str calib: specifies a calibrant name which must be one of
           the entries in file ImageCalibrants.py. This is validated and
           an error provides a list of valid choices.
-        '''
+        """
         from . import ImageCalibrants as calFile
-        if calib in calFile.Calibrants.keys():
-            self.data['Image Controls']['calibrant'] = calib
-            return
-        G2fil.G2Print(f'Calibrant {calib} is not valid. Valid calibrants')
-        for i in calFile.Calibrants.keys():
-            if i: G2fil.G2Print(f'\t"{i}"')
 
-    def setControlFile(self,typ,imageRef,mult=None):
-        '''Set a image to be used as a background/dark/gain map image
+        if calib in calFile.Calibrants.keys():
+            self.data["Image Controls"]["calibrant"] = calib
+            return
+        G2fil.G2Print(f"Calibrant {calib} is not valid. Valid calibrants")
+        for i in calFile.Calibrants.keys():
+            if i:
+                G2fil.G2Print(f'\t"{i}"')
+
+    def setControlFile(self, typ, imageRef, mult=None):
+        """Set a image to be used as a background/dark/gain map image
 
         :param str typ: specifies image type, which must be one of:
            'background image', 'dark image', 'gain map'; N.B. only the first
@@ -6334,128 +7193,131 @@ class G2Image(G2ObjectWrapper):
           a image object (:class:`G2Image`)
         :param float mult: a multiplier to be applied to the image (not used
           for 'Gain map'; required for 'background image', 'dark image'
-        '''
-        if 'back' in typ.lower():
-            key = 'background image'
+        """
+        if "back" in typ.lower():
+            key = "background image"
             mult = float(mult)
-        elif 'dark' in typ.lower():
-            key = 'dark image'
+        elif "dark" in typ.lower():
+            key = "dark image"
             mult = float(mult)
-        elif 'gain' in typ.lower():
-            #key = 'Gain map'
+        elif "gain" in typ.lower():
+            # key = 'Gain map'
             if mult is not None:
-                G2fil.G2Print('Warning: Ignoring multiplier for Gain map')
+                G2fil.G2Print("Warning: Ignoring multiplier for Gain map")
             mult = None
         else:
             raise Exception(f"Invalid typ {typ} for setControlFile")
         imgNam = self.proj.image(imageRef).name
         if mult is None:
-            self.data['Image Controls']['Gain map'] = imgNam
+            self.data["Image Controls"]["Gain map"] = imgNam
         else:
-            self.data['Image Controls'][key] = [imgNam,mult]
+            self.data["Image Controls"][key] = [imgNam, mult]
 
-    def loadControls(self,filename=None,imgDict=None):
-        '''load controls from a .imctrl file
+    def loadControls(self, filename=None, imgDict=None):
+        """load controls from a .imctrl file
 
         :param str filename: specifies a file to be read, which should end
           with .imctrl (defaults to None, meaning parameters are input
           with imgDict.)
         :param dict imgDict: contains a set of image parameters (defaults to
           None, meaning parameters are input with filename.)
-        '''
+        """
         if filename:
             File = open(filename)
             Slines = File.readlines()
             File.close()
-            G2fil.LoadControls(Slines,self.data['Image Controls'])
-            G2fil.G2Print(f'file {filename} read into {self.name}')
+            G2fil.LoadControls(Slines, self.data["Image Controls"])
+            G2fil.G2Print(f"file {filename} read into {self.name}")
         elif imgDict:
-            self.data['Image Controls'].update(imgDict)
-            G2fil.G2Print('Image controls set')
+            self.data["Image Controls"].update(imgDict)
+            G2fil.G2Print("Image controls set")
         else:
             raise Exception("loadControls called without imgDict or filename specified")
 
-    def saveControls(self,filename):
-        '''write current controls values to a .imctrl file
+    def saveControls(self, filename):
+        """write current controls values to a .imctrl file
 
         :param str filename: specifies a file to write, which should end
           with .imctrl
-        '''
-        G2fil.WriteControls(filename,self.data['Image Controls'])
-        G2fil.G2Print(f'file {filename} written from {self.name}')
+        """
+        G2fil.WriteControls(filename, self.data["Image Controls"])
+        G2fil.G2Print(f"file {filename} written from {self.name}")
 
-    def getControls(self,clean=False):
-        '''returns current Image Controls as a dict
+    def getControls(self, clean=False):
+        """returns current Image Controls as a dict
 
         :param bool clean: causes the calbration information to be deleted
-        '''
-        ImageControls = copy.deepcopy(self.data['Image Controls'])
+        """
+        ImageControls = copy.deepcopy(self.data["Image Controls"])
         if clean:
-            ImageControls['showLines'] = True
-            ImageControls['ring'] = []
-            ImageControls['rings'] = []
-            ImageControls['ellipses'] = []
-            ImageControls['setDefault'] = False
-            for i in 'range','size','GonioAngles':
-                if i in ImageControls: del ImageControls[i]
+            ImageControls["showLines"] = True
+            ImageControls["ring"] = []
+            ImageControls["rings"] = []
+            ImageControls["ellipses"] = []
+            ImageControls["setDefault"] = False
+            for i in "range", "size", "GonioAngles":
+                if i in ImageControls:
+                    del ImageControls[i]
         return ImageControls
 
-    def setControls(self,controlsDict):
-        '''uses dict from :meth:`getControls` to set Image Controls for current image
-        '''
-        self.data['Image Controls'].update(copy.deepcopy(controlsDict))
+    def setControls(self, controlsDict):
+        """uses dict from :meth:`getControls` to set Image Controls for current image"""
+        self.data["Image Controls"].update(copy.deepcopy(controlsDict))
 
-
-    def loadMasks(self,filename,ignoreThreshold=False):
-        '''load masks from a .immask file
+    def loadMasks(self, filename, ignoreThreshold=False):
+        """load masks from a .immask file
 
         :param str filename: specifies a file to be read, which should end
           with .immask
         :param bool ignoreThreshold: If True, masks are loaded with
           threshold masks. Default is False which means any Thresholds
           in the file are ignored.
-        '''
-        G2fil.readMasks(filename,self.data['Masks'],ignoreThreshold)
-        G2fil.G2Print(f'file {filename} read into {self.name}')
+        """
+        G2fil.readMasks(filename, self.data["Masks"], ignoreThreshold)
+        G2fil.G2Print(f"file {filename} read into {self.name}")
 
     def initMasks(self):
-        '''Initialize Masks, including resetting the Thresholds values
-        '''
-        self.data['Masks'] = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
+        """Initialize Masks, including resetting the Thresholds values"""
+        self.data["Masks"] = {
+            "Points": [],
+            "Rings": [],
+            "Arcs": [],
+            "Polygons": [],
+            "Frames": [],
+        }
         if self.image is not None:
             ImageZ = self.image
         else:
-            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
-        Imin = max(0.,np.min(ImageZ))
+            ImageZ = _getCorrImage(Readers["Image"], self.proj, self)
+        Imin = max(0.0, np.min(ImageZ))
         Imax = np.max(ImageZ)
-        self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]
+        self.data["Masks"]["Thresholds"] = [(0, Imax), [Imin, Imax]]
 
     def getMasks(self):
-        '''load masks from an IMG tree entry
-        '''
-        return self.data['Masks']
+        """load masks from an IMG tree entry"""
+        return self.data["Masks"]
 
-    def setMasks(self,maskDict,resetThresholds=False):
-        '''load masks dict (from :meth:`getMasks`) into current IMG record
+    def setMasks(self, maskDict, resetThresholds=False):
+        """load masks dict (from :meth:`getMasks`) into current IMG record
 
         :param dict maskDict: specifies a dict with image parameters,
           from :meth:`getMasks`
         :param bool resetThresholds: If True, Threshold Masks in the
           dict are ignored. The default is False which means Threshold
           Masks are retained.
-        '''
-        self.data['Masks'] = copy.deepcopy(maskDict)
+        """
+        self.data["Masks"] = copy.deepcopy(maskDict)
         if resetThresholds:
             if self.image is not None:
                 ImageZ = self.image
             else:
-                ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
-            Imin = max(0.,np.min(ImageZ))
+                ImageZ = _getCorrImage(Readers["Image"], self.proj, self)
+            Imin = max(0.0, np.min(ImageZ))
             Imax = np.max(ImageZ)
-            self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]
+            self.data["Masks"]["Thresholds"] = [(0, Imax), [Imin, Imax]]
 
     def IntThetaAzMap(self):
-        '''Computes the set of blocked arrays for 2theta-azimuth mapping from
+        """Computes the set of blocked arrays for 2theta-azimuth mapping from
         the controls settings of the current image for image integration.
         The output from this is optionally supplied as input to
         :meth:`~G2Image.Integrate`. Note that if not supplied, image
@@ -6463,55 +7325,59 @@ class G2Image(G2ObjectWrapper):
         is a relatively slow computation so time can be saved by caching and
         reusing this computation for other images that have the
         same calibration parameters as the current image.
-        '''
-        return G2img.MakeUseTA(self.getControls(),blkSize)
+        """
+        return G2img.MakeUseTA(self.getControls(), blkSize)
 
     def IntMaskMap(self):
-        '''Computes a series of masking arrays for the current image (based on
+        """Computes a series of masking arrays for the current image (based on
         mask input, but not calibration parameters or the image intensities).
         See :meth:`GSASIIimage.MakeMaskMap` for more details. The output from
         this is optionally supplied as input to :meth:`~G2Image.Integrate`).
 
         Note this is not the same as pixel mask
         searching (:meth:`~G2Image.GeneratePixelMask`).
-        '''
-        return G2img.MakeUseMask(self.getControls(),self.getMasks(),blkSize)
+        """
+        return G2img.MakeUseMask(self.getControls(), self.getMasks(), blkSize)
 
     def MaskThetaMap(self):
-        '''Computes the theta mapping matrix from the controls settings
+        """Computes the theta mapping matrix from the controls settings
         of the current image to be used for pixel mask computation
         in :meth:`~G2Image.GeneratePixelMask`.
         This is optional, as if not supplied, mask computation will compute
         this, but this is a relatively slow computation and the
         results computed here can be reused for other images that have the
         same calibration parameters.
-        '''
-        ImShape = self.getControls()['size']
-        return G2img.Make2ThetaAzimuthMap(self.getControls(), (0, ImShape[0]), (0, ImShape[1]))[0]
+        """
+        ImShape = self.getControls()["size"]
+        return G2img.Make2ThetaAzimuthMap(
+            self.getControls(), (0, ImShape[0]), (0, ImShape[1])
+        )[0]
 
     def MaskFrameMask(self):
-        '''Computes a Frame mask from map input for the current image to be
+        """Computes a Frame mask from map input for the current image to be
         used for a pixel mask computation in
         :meth:`~G2Image.GeneratePixelMask`.
         This is optional, as if not supplied, mask computation will compute
         this, but this is a relatively slow computation and the
         results computed here can be reused for other images that have the
         same calibration parameters.
-        '''
+        """
         Controls = self.getControls()
         Masks = self.getMasks()
-        frame = Masks['Frames']
+        frame = Masks["Frames"]
         if self.image is not None:
             ImageZ = self.image
         else:
-            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
+            ImageZ = _getCorrImage(Readers["Image"], self.proj, self)
         tam = ma.make_mask_none(ImageZ.shape)
         if frame:
-            tam = ma.mask_or(tam,ma.make_mask(np.abs(G2img.polymask(Controls,frame)-255)))
+            tam = ma.mask_or(
+                tam, ma.make_mask(np.abs(G2img.polymask(Controls, frame) - 255))
+            )
         return tam
 
-    def getVary(self,*args):
-        '''Return the refinement flag(s) for calibration of
+    def getVary(self, *args):
+        """Return the refinement flag(s) for calibration of
         Image Controls parameter(s) in the current image.
         If the parameter is not found, an exception is raised.
 
@@ -6522,17 +7388,17 @@ class G2Image(G2ObjectWrapper):
           optional
 
         :returns: a list of bool value(s)
-        '''
+        """
         res = []
         for arg in args:
-            if arg in self.data['Image Controls']['varyList']:
-                res.append(self.data['Image Controls']['varyList'][arg])
+            if arg in self.data["Image Controls"]["varyList"]:
+                res.append(self.data["Image Controls"]["varyList"][arg])
             else:
-                raise Exception(f'arg {arg} not defined in G2Image.getVary')
+                raise Exception(f"arg {arg} not defined in G2Image.getVary")
         return res
 
-    def setVary(self,arg,value):
-        '''Set a refinement flag for Image Controls parameter in the
+    def setVary(self, arg, value):
+        """Set a refinement flag for Image Controls parameter in the
         current image that is used for fitting calibration parameters.
         If the parameter is not '*' or found, an exception is raised.
 
@@ -6543,34 +7409,36 @@ class G2Image(G2ObjectWrapper):
           or it may be '*' in which all parameters are set accordingly.
         :param value: the value to set the parameter. The value is
           cast as bool.
-        '''
-        if arg == '*':
-            for a in self.data['Image Controls']['varyList']:
-                self.data['Image Controls']['varyList'][a] = bool(value)
+        """
+        if arg == "*":
+            for a in self.data["Image Controls"]["varyList"]:
+                self.data["Image Controls"]["varyList"][a] = bool(value)
             return
-        if not isinstance(arg,tuple) and not isinstance(arg,list):
+        if not isinstance(arg, tuple) and not isinstance(arg, list):
             arg = [arg]
         for a in arg:
-            if a in self.data['Image Controls']['varyList']:
-                self.data['Image Controls']['varyList'][a] = bool(value)
+            if a in self.data["Image Controls"]["varyList"]:
+                self.data["Image Controls"]["varyList"][a] = bool(value)
             else:
-                raise Exception(f'arg {a} not defined in G2Image.setVary')
+                raise Exception(f"arg {a} not defined in G2Image.setVary")
 
     def Recalibrate(self):
-        '''Invokes a recalibration fit (same as Image Controls/Calibration/Recalibrate
+        """Invokes a recalibration fit (same as Image Controls/Calibration/Recalibrate
         menu command). Note that for this to work properly, the calibration
         coefficients (center, wavelength, distance & tilts) must be fairly close.
         This may produce a better result if run more than once.
-        '''
+        """
         LoadG2fil()
         if self.image is not None:
             ImageZ = self.image
         else:
-            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
-        G2img.ImageRecalibrate(None,ImageZ,self.data['Image Controls'],self.data['Masks'])
+            ImageZ = _getCorrImage(Readers["Image"], self.proj, self)
+        G2img.ImageRecalibrate(
+            None, ImageZ, self.data["Image Controls"], self.data["Masks"]
+        )
 
-    def Integrate(self,name=None,MaskMap=None,ThetaAzimMap=None):
-        '''Invokes an image integration (same as Image Controls/Integration/Integrate
+    def Integrate(self, name=None, MaskMap=None, ThetaAzimMap=None):
+        """Invokes an image integration (same as Image Controls/Integration/Integrate
         menu command). All parameters will have previously been set with Image Controls
         so no input is needed here. However, the optional parameters MaskMap
         and ThetaAzimMap may be supplied to save computing these items more than
@@ -6586,148 +7454,238 @@ class G2Image(G2ObjectWrapper):
         :param list MaskMap: from :func:`IntMaskMap`
         :param list ThetaAzimMap: from :meth:`G2Image.IntThetaAzMap`
         :returns: a list of created histogram (:class:`G2PwdrData` or :class:`G2SmallAngle`) objects.
-        '''
+        """
         if self.image is not None:
             ImageZ = self.image
         else:
-            ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
+            ImageZ = _getCorrImage(Readers["Image"], self.proj, self)
         # Apply a Pixel Mask to image, if present
         Masks = self.getMasks()
-        if Masks.get('SpotMask',{'spotMask':None})['spotMask'] is not None:
-            ImageZ = ma.array(ImageZ,mask=Masks['SpotMask']['spotMask'])
+        if Masks.get("SpotMask", {"spotMask": None})["spotMask"] is not None:
+            ImageZ = ma.array(ImageZ, mask=Masks["SpotMask"]["spotMask"])
         # do integration
-        ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,
-                self.data['Image Controls'],self.data['Masks'],blkSize=blkSize,
-                useMask=MaskMap,useTA=ThetaAzimMap)
+        ints, azms, Xvals, cancel = G2img.ImageIntegrate(
+            ImageZ,
+            self.data["Image Controls"],
+            self.data["Masks"],
+            blkSize=blkSize,
+            useMask=MaskMap,
+            useTA=ThetaAzimMap,
+        )
         # code from here on based on G2IO.SaveIntegration, but places results in the current
         # project rather than tree
         X = Xvals[:-1]
         N = len(X)
 
-        data = self.data['Image Controls']
-        Comments = self.data['Comments']
+        data = self.data["Image Controls"]
+        Comments = self.data["Comments"]
         # make name from image, unless overridden
         if name:
-            if not name.startswith(data['type']+' '):
-                name = data['type']+' '+name
+            if not name.startswith(data["type"] + " "):
+                name = data["type"] + " " + name
         else:
-            name = self.name.replace('IMG ',data['type']+' ')
-        if 'PWDR' in name:
-            if 'target' in data:
-                names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
+            name = self.name.replace("IMG ", data["type"] + " ")
+        if "PWDR" in name:
+            if "target" in data:
+                names = [
+                    "Type",
+                    "Lam1",
+                    "Lam2",
+                    "I(L2)/I(L1)",
+                    "Zero",
+                    "Polariz.",
+                    "U",
+                    "V",
+                    "W",
+                    "X",
+                    "Y",
+                    "Z",
+                    "SH/L",
+                    "Azimuth",
+                ]
                 codes = [0 for i in range(14)]
             else:
-                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
+                names = [
+                    "Type",
+                    "Lam",
+                    "Zero",
+                    "Polariz.",
+                    "U",
+                    "V",
+                    "W",
+                    "X",
+                    "Y",
+                    "Z",
+                    "SH/L",
+                    "Azimuth",
+                ]
                 codes = [0 for i in range(12)]
-        elif 'SASD' in name:
-            names = ['Type','Lam','Zero','Azimuth']
+        elif "SASD" in name:
+            names = ["Type", "Lam", "Zero", "Azimuth"]
             codes = [0 for i in range(4)]
-            X = 4.*np.pi*npsind(X/2.)/data['wavelength']    #convert to q
-        Xminmax = [X[0],X[-1]]
+            X = 4.0 * np.pi * npsind(X / 2.0) / data["wavelength"]  # convert to q
+        Xminmax = [X[0], X[-1]]
         Azms = []
-        dazm = 0.
-        if data['fullIntegrate'] and data['outAzimuths'] == 1:
-            Azms = [45.0,]                              #a poor man's average?
+        dazm = 0.0
+        if data["fullIntegrate"] and data["outAzimuths"] == 1:
+            Azms = [
+                45.0,
+            ]  # a poor man's average?
         else:
-            for i,azm in enumerate(azms[:-1]):
-                if azm > 360. and azms[i+1] > 360.:
-                    Azms.append(G2img.meanAzm(azm%360.,azms[i+1]%360.))
+            for i, azm in enumerate(azms[:-1]):
+                if azm > 360.0 and azms[i + 1] > 360.0:
+                    Azms.append(G2img.meanAzm(azm % 360.0, azms[i + 1] % 360.0))
                 else:
-                    Azms.append(G2img.meanAzm(azm,azms[i+1]))
-            dazm = np.min(np.abs(np.diff(azms)))/2.
+                    Azms.append(G2img.meanAzm(azm, azms[i + 1]))
+            dazm = np.min(np.abs(np.diff(azms))) / 2.0
         # pull out integration results and make histograms for each
         IntgOutList = []
-        for i,azm in enumerate(azms[:-1]):
-            Aname = name+" Azm= %.2f"%((azm+dazm)%360.)
+        for i, azm in enumerate(azms[:-1]):
+            Aname = name + " Azm= %.2f" % ((azm + dazm) % 360.0)
             # MT dict to contain histogram
             HistDict = {}
             histItems = [Aname]
-            Sample = G2obj.SetDefaultSample()       #set as Debye-Scherrer
-            Sample['Gonio. radius'] = data['distance']
-            Sample['Omega'] = data['GonioAngles'][0]
-            Sample['Chi'] = data['GonioAngles'][1]
-            Sample['Phi'] = data['GonioAngles'][2]
-            Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center
-            polariz = 0.99    #set default polarization for synchrotron radiation!
+            Sample = G2obj.SetDefaultSample()  # set as Debye-Scherrer
+            Sample["Gonio. radius"] = data["distance"]
+            Sample["Omega"] = data["GonioAngles"][0]
+            Sample["Chi"] = data["GonioAngles"][1]
+            Sample["Phi"] = data["GonioAngles"][2]
+            Sample["Azimuth"] = (azm + dazm) % 360.0  # put here as bin center
+            polariz = 0.99  # set default polarization for synchrotron radiation!
             for item in Comments:
-                if 'polariz' in item:
+                if "polariz" in item:
                     try:
-                        polariz = float(item.split('=')[1])
+                        polariz = float(item.split("=")[1])
                     except:
                         polariz = 0.99
-                for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2','FreePrm3','Omega',
-                    'Chi','Phi'):
+                for key in (
+                    "Temperature",
+                    "Pressure",
+                    "Time",
+                    "FreePrm1",
+                    "FreePrm2",
+                    "FreePrm3",
+                    "Omega",
+                    "Chi",
+                    "Phi",
+                ):
                     if key.lower() in item.lower():
                         try:
-                            Sample[key] = float(item.split('=')[1])
+                            Sample[key] = float(item.split("=")[1])
                         except:
                             pass
                 # if 'label_prm' in item.lower():
                 #     for num in ('1','2','3'):
                 #         if 'label_prm'+num in item.lower():
                 #             Controls['FreePrm'+num] = item.split('=')[1].strip()
-            if 'PWDR' in Aname:
-                if 'target' in data:    #from lab x-ray 2D imaging data
-                    waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
-                                 'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
-                                 'AgKa':[0.559363,0.563775]}
-                    wave1,wave2 = waves[data['target']]
-                    parms = ['PXC',wave1,wave2,0.5,0.0,polariz,290.,-40.,30.,6.,-14.,0.0,0.0001,Azms[i]]
+            if "PWDR" in Aname:
+                if "target" in data:  # from lab x-ray 2D imaging data
+                    waves = {
+                        "CuKa": [1.54051, 1.54433],
+                        "TiKa": [2.74841, 2.75207],
+                        "CrKa": [2.28962, 2.29351],
+                        "FeKa": [1.93597, 1.93991],
+                        "CoKa": [1.78892, 1.79278],
+                        "MoKa": [0.70926, 0.713543],
+                        "AgKa": [0.559363, 0.563775],
+                    }
+                    wave1, wave2 = waves[data["target"]]
+                    parms = [
+                        "PXC",
+                        wave1,
+                        wave2,
+                        0.5,
+                        0.0,
+                        polariz,
+                        290.0,
+                        -40.0,
+                        30.0,
+                        6.0,
+                        -14.0,
+                        0.0,
+                        0.0001,
+                        Azms[i],
+                    ]
                 else:
-                    parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
-            elif 'SASD' in Aname:
-                Sample['Trans'] = data['SampleAbs'][0]
-                parms = ['LXC',data['wavelength'],0.0,Azms[i]]
+                    parms = [
+                        "PXC",
+                        data["wavelength"],
+                        0.0,
+                        polariz,
+                        1.0,
+                        -0.10,
+                        0.4,
+                        0.30,
+                        1.0,
+                        0.0,
+                        0.0001,
+                        Azms[i],
+                    ]
+            elif "SASD" in Aname:
+                Sample["Trans"] = data["SampleAbs"][0]
+                parms = ["LXC", data["wavelength"], 0.0, Azms[i]]
             Y = ints[i]
             Ymin = np.min(Y)
             Ymax = np.max(Y)
-            W = np.where(Y>0.,1./Y,1.e-6)                    #probably not true
-            section = 'Comments'
+            W = np.where(Y > 0.0, 1.0 / Y, 1.0e-6)  # probably not true
+            section = "Comments"
             histItems += [section]
             HistDict[section] = Comments
-            section = 'Limits'
+            section = "Limits"
             histItems += [section]
-            HistDict[section] = copy.deepcopy([tuple(Xminmax),Xminmax])
-            if 'PWDR' in Aname:
-                section = 'Background'
+            HistDict[section] = copy.deepcopy([tuple(Xminmax), Xminmax])
+            if "PWDR" in Aname:
+                section = "Background"
                 histItems += [section]
-                HistDict[section] = [['chebyschev-1',1,3,1.0,0.0,0.0],
-                    {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}]
-            inst = [dict(zip(names,zip(parms,parms,codes, strict=False), strict=False)),{}]
+                HistDict[section] = [
+                    ["chebyschev-1", 1, 3, 1.0, 0.0, 0.0],
+                    {"nDebye": 0, "debyeTerms": [], "nPeaks": 0, "peaksList": []},
+                ]
+            inst = [
+                dict(zip(names, zip(parms, parms, codes, strict=False), strict=False)),
+                {},
+            ]
             for item in inst[0]:
                 inst[0][item] = list(inst[0][item])
-            section = 'Instrument Parameters'
+            section = "Instrument Parameters"
             histItems += [section]
             HistDict[section] = inst
-            if 'PWDR' in Aname:
-                section = 'Sample Parameters'
+            if "PWDR" in Aname:
+                section = "Sample Parameters"
                 histItems += [section]
                 HistDict[section] = Sample
-                section = 'Peak List'
+                section = "Peak List"
                 histItems += [section]
-                HistDict[section] = {'sigDict':{},'peaks':[]}
-                section = 'Index Peak List'
+                HistDict[section] = {"sigDict": {}, "peaks": []}
+                section = "Index Peak List"
                 histItems += [section]
-                HistDict[section] = [[],[]]
-                section = 'Unit Cells List'
+                HistDict[section] = [[], []]
+                section = "Unit Cells List"
                 histItems += [section]
                 HistDict[section] = []
-                section = 'Reflection Lists'
+                section = "Reflection Lists"
                 histItems += [section]
                 HistDict[section] = {}
-            elif 'SASD' in Aname:
-                section = 'Substances'
+            elif "SASD" in Aname:
+                section = "Substances"
                 histItems += [section]
                 HistDict[section] = G2pwd.SetDefaultSubstances()
-                section = 'Sample Parameters'
+                section = "Sample Parameters"
                 histItems += [section]
                 HistDict[section] = Sample
-                section = 'Models'
+                section = "Models"
                 histItems += [section]
                 HistDict[section] = G2pwd.SetDefaultSASDModel()
-            valuesdict = { # same for SASD and PWDR
-                'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
-                'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}
+            valuesdict = {  # same for SASD and PWDR
+                "wtFactor": 1.0,
+                "Dummy": False,
+                "ranId": ran.randint(0, sys.maxsize),
+                "Offset": [0.0, 0.0],
+                "delOffset": 0.02 * Ymax,
+                "refOffset": -0.1 * Ymax,
+                "refDelt": 0.1 * Ymax,
+                "Yminmax": [Ymin, Ymax],
+            }
             # if Aname is already in the project replace it
             for j in self.proj.names:
                 if j[0] == Aname:
@@ -6736,29 +7694,45 @@ class G2Image(G2ObjectWrapper):
             else:
                 G2fil.G2Print(f'Adding "{Aname}" to project')
                 self.proj.names.append(histItems)
-            HistDict['data'] = [valuesdict,
-                [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]]
+            HistDict["data"] = [
+                valuesdict,
+                [
+                    np.array(X),
+                    np.array(Y),
+                    np.array(W),
+                    np.zeros(N),
+                    np.zeros(N),
+                    np.zeros(N),
+                ],
+            ]
             self.proj.data[Aname] = HistDict
-            if 'PWDR' in Aname:
+            if "PWDR" in Aname:
                 IntgOutList.append(self.proj.histogram(Aname))
-            elif 'SASD' in Aname:
+            elif "SASD" in Aname:
                 IntgOutList.append(self.proj.SAS(Aname))
             else:
-                print(f'Created histogram of unknown type {Aname}')
+                print(f"Created histogram of unknown type {Aname}")
         return IntgOutList
 
     def TestFastPixelMask(self):
-        '''Tests to see if the fast (C) code for pixel masking is installed.
+        """Tests to see if the fast (C) code for pixel masking is installed.
 
         :returns: A value of True is returned if fast pixel masking is
           available. Otherwise False is returned.
-        '''
+        """
         return G2img.TestFastPixelMask()
 
-    def GeneratePixelMask(self,esdMul=3.0,ttmin=0.,ttmax=180.,
-                              FrameMask=None,ThetaMap=None,
-                              fastmode=True,combineMasks=False):
-        '''Generate a Pixel mask with True at the location of pixels that are
+    def GeneratePixelMask(
+        self,
+        esdMul=3.0,
+        ttmin=0.0,
+        ttmax=180.0,
+        FrameMask=None,
+        ThetaMap=None,
+        fastmode=True,
+        combineMasks=False,
+    ):
+        """Generate a Pixel mask with True at the location of pixels that are
         statistical outliers (in comparison with others with the same 2theta
         value.) The process for this is that a median is computed for pixels
         within a small 2theta window and then the median difference is computed
@@ -6808,67 +7782,83 @@ class G2Image(G2ObjectWrapper):
           used for different regions of the image (by setting
           :attr:`ttmin` & :attr:`ttmax`) so that the outlier level
           can be tuned by combining different searches.
-        '''
+        """
         import math
-        sind = lambda x: math.sin(x*math.pi/180.)
+
+        sind = lambda x: math.sin(x * math.pi / 180.0)
         if self.image is not None:
             Image = self.image
         else:
-            Image = _getCorrImage(Readers['Image'],self.proj,self)
+            Image = _getCorrImage(Readers["Image"], self.proj, self)
         Controls = self.getControls()
         Masks = self.getMasks()
         if FrameMask is None:
-            frame = Masks['Frames']
+            frame = Masks["Frames"]
             tam = ma.make_mask_none(Image.shape)
             if frame:
-                tam = ma.mask_or(tam,ma.make_mask(np.abs(G2img.polymask(Controls,frame)-255)))
+                tam = ma.mask_or(
+                    tam, ma.make_mask(np.abs(G2img.polymask(Controls, frame) - 255))
+                )
         else:
             tam = FrameMask
         if ThetaMap is None:
-            TA = G2img.Make2ThetaAzimuthMap(Controls, (0, Image.shape[0]), (0, Image.shape[1]))[0]
+            TA = G2img.Make2ThetaAzimuthMap(
+                Controls, (0, Image.shape[0]), (0, Image.shape[1])
+            )[0]
         else:
             TA = ThetaMap
-        LUtth = np.array(Controls['IOtth'])
-        wave = Controls['wavelength']
-        dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
-        dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
-        x0 = G2img.GetDetectorXY2(dsp0,0.0,Controls)[0]
-        x1 = G2img.GetDetectorXY2(dsp1,0.0,Controls)[0]
+        LUtth = np.array(Controls["IOtth"])
+        wave = Controls["wavelength"]
+        dsp0 = wave / (2.0 * sind(LUtth[0] / 2.0))
+        dsp1 = wave / (2.0 * sind(LUtth[1] / 2.0))
+        x0 = G2img.GetDetectorXY2(dsp0, 0.0, Controls)[0]
+        x1 = G2img.GetDetectorXY2(dsp1, 0.0, Controls)[0]
         if not np.any(x0) or not np.any(x1):
             raise Exception
-        numChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
+        numChans = int(1000 * (x1 - x0) / Controls["pixelSize"][0]) // 2
         if G2img.TestFastPixelMask() and fastmode:
             if GSASIIpath.binaryPath:
                 import fmask
             else:
                 from . import fmask
-            G2fil.G2Print(f'Fast mask: Spots greater or less than {esdMul:.1f} of median abs deviation are masked')
-            outMask = np.zeros_like(tam,dtype=bool).ravel()
+            G2fil.G2Print(
+                f"Fast mask: Spots greater or less than {esdMul:.1f} of median abs deviation are masked"
+            )
+            outMask = np.zeros_like(tam, dtype=bool).ravel()
             TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
-            errmsg = ''
+            errmsg = ""
             try:
-                fmask.mask(esdMul, tam.ravel(), TA.ravel(),
-                                        Image.ravel(), TThs, outMask, ttmin, ttmax)
+                fmask.mask(
+                    esdMul,
+                    tam.ravel(),
+                    TA.ravel(),
+                    Image.ravel(),
+                    TThs,
+                    outMask,
+                    ttmin,
+                    ttmax,
+                )
             except Exception as msg:
                 errmsg = msg
             if errmsg:
-                print('Exception in fmask.mask\n\t',errmsg)
+                print("Exception in fmask.mask\n\t", errmsg)
                 raise Exception(errmsg)
             outMask = outMask.reshape(Image.shape)
-        else: # slow search, no sense using cache to save time
-            Masks['SpotMask']['SearchMin'] = ttmin
-            Masks['SpotMask']['SearchMax'] = ttmax
+        else:  # slow search, no sense using cache to save time
+            Masks["SpotMask"]["SearchMin"] = ttmin
+            Masks["SpotMask"]["SearchMax"] = ttmax
             outMask = G2img.AutoPixelMask(Image, Masks, Controls, numChans)
-        if Masks['SpotMask'].get('spotMask') is not None and combineMasks:
-            Masks['SpotMask']['spotMask'] |= outMask
+        if Masks["SpotMask"].get("spotMask") is not None and combineMasks:
+            Masks["SpotMask"]["spotMask"] |= outMask
         else:
-            Masks['SpotMask']['spotMask'] = outMask
+            Masks["SpotMask"]["spotMask"] = outMask
 
     def clearPixelMask(self):
-        '''Removes a pixel map from an image, to reduce the .gpx file
+        """Removes a pixel map from an image, to reduce the .gpx file
         size & memory use
-        '''
-        self.getMasks()['SpotMask']['spotMask'] = None
+        """
+        self.getMasks()["SpotMask"]["spotMask"] = None
+
 
 class G2SmallAngle(G2ObjectWrapper):
     """Wrapper for SASD histograms (and hopefully, in the future, other
@@ -6896,10 +7886,12 @@ class G2SmallAngle(G2ObjectWrapper):
         :meth:`~G2Project.SASs`
         :meth:`~G2Project.Integrate`
     """
+
     def __init__(self, data, proj, name):
         self.data = data
         self.name = name
         self.proj = proj
+
 
 ##########################
 # Command Line Interface #
@@ -6909,94 +7901,101 @@ class G2SmallAngle(G2ObjectWrapper):
 # The argument specification for each is in the subcommands dictionary (see
 # below)
 
-commandhelp={}
-commandhelp["create"] = "creates a GSAS-II project, optionally adding histograms and/or phases"
+commandhelp = {}
+commandhelp["create"] = (
+    "creates a GSAS-II project, optionally adding histograms and/or phases"
+)
+
+
 def create(args):
     """Implements the create command-line subcommand. This creates a GSAS-II project, optionally adding histograms and/or phases::
 
-  usage: GSASIIscriptable.py create [-h] [-d HISTOGRAMS [HISTOGRAMS ...]]
-                                  [-i IPARAMS [IPARAMS ...]]
-                                  [-p PHASES [PHASES ...]]
-                                  filename
+      usage: GSASIIscriptable.py create [-h] [-d HISTOGRAMS [HISTOGRAMS ...]]
+                                      [-i IPARAMS [IPARAMS ...]]
+                                      [-p PHASES [PHASES ...]]
+                                      filename
 
-positional arguments::
+    positional arguments::
 
-  filename              the project file to create. should end in .gpx
+      filename              the project file to create. should end in .gpx
 
-optional arguments::
+    optional arguments::
 
-  -h, --help            show this help message and exit
-  -d HISTOGRAMS [HISTOGRAMS ...], --histograms HISTOGRAMS [HISTOGRAMS ...]
-                        list of datafiles to add as histograms
-  -i IPARAMS [IPARAMS ...], --iparams IPARAMS [IPARAMS ...]
-                        instrument parameter file, must be one for every
-                        histogram
-  -p PHASES [PHASES ...], --phases PHASES [PHASES ...]
-                        list of phases to add. phases are automatically
-                        associated with all histograms given.
+      -h, --help            show this help message and exit
+      -d HISTOGRAMS [HISTOGRAMS ...], --histograms HISTOGRAMS [HISTOGRAMS ...]
+                            list of datafiles to add as histograms
+      -i IPARAMS [IPARAMS ...], --iparams IPARAMS [IPARAMS ...]
+                            instrument parameter file, must be one for every
+                            histogram
+      -p PHASES [PHASES ...], --phases PHASES [PHASES ...]
+                            list of phases to add. phases are automatically
+                            associated with all histograms given.
 
     """
     proj = G2Project(gpxfile=args.filename)
 
     hist_objs = []
     if args.histograms:
-        for h,i in zip(args.histograms,args.iparams, strict=False):
-            G2fil.G2Print("Adding histogram from",h,"with instparm ",i)
+        for h, i in zip(args.histograms, args.iparams, strict=False):
+            G2fil.G2Print("Adding histogram from", h, "with instparm ", i)
             hist_objs.append(proj.add_powder_histogram(h, i))
 
     if args.phases:
         for p in args.phases:
-            G2fil.G2Print("Adding phase from",p)
+            G2fil.G2Print("Adding phase from", p)
             proj.add_phase(p, histograms=hist_objs)
-        G2fil.G2Print('Linking phase(s) to histogram(s):')
+        G2fil.G2Print("Linking phase(s) to histogram(s):")
         for h in hist_objs:
-            G2fil.G2Print ('   '+h.name)
+            G2fil.G2Print("   " + h.name)
 
     proj.save()
 
+
 commandhelp["add"] = "adds histograms and/or phases to GSAS-II project"
+
+
 def add(args):
     """Implements the add command-line subcommand. This adds histograms and/or phases to GSAS-II project::
 
-  usage: GSASIIscriptable.py add [-h] [-d HISTOGRAMS [HISTOGRAMS ...]]
-                               [-i IPARAMS [IPARAMS ...]]
-                               [-hf HISTOGRAMFORMAT] [-p PHASES [PHASES ...]]
-                               [-pf PHASEFORMAT] [-l HISTLIST [HISTLIST ...]]
-                               filename
+      usage: GSASIIscriptable.py add [-h] [-d HISTOGRAMS [HISTOGRAMS ...]]
+                                   [-i IPARAMS [IPARAMS ...]]
+                                   [-hf HISTOGRAMFORMAT] [-p PHASES [PHASES ...]]
+                                   [-pf PHASEFORMAT] [-l HISTLIST [HISTLIST ...]]
+                                   filename
 
 
-positional arguments::
+    positional arguments::
 
-  filename              the project file to open. Should end in .gpx
+      filename              the project file to open. Should end in .gpx
 
-optional arguments::
+    optional arguments::
 
-  -h, --help            show this help message and exit
-  -d HISTOGRAMS [HISTOGRAMS ...], --histograms HISTOGRAMS [HISTOGRAMS ...]
-                        list of datafiles to add as histograms
-  -i IPARAMS [IPARAMS ...], --iparams IPARAMS [IPARAMS ...]
-                        instrument parameter file, must be one for every
-                        histogram
-  -hf HISTOGRAMFORMAT, --histogramformat HISTOGRAMFORMAT
-                        format hint for histogram import. Applies to all
-                        histograms
-  -p PHASES [PHASES ...], --phases PHASES [PHASES ...]
-                        list of phases to add. phases are automatically
-                        associated with all histograms given.
-  -pf PHASEFORMAT, --phaseformat PHASEFORMAT
-                        format hint for phase import. Applies to all phases.
-                        Example: -pf CIF
-  -l HISTLIST [HISTLIST ...], --histlist HISTLIST [HISTLIST ...]
-                        list of histgram indices to associate with added
-                        phases. If not specified, phases are associated with
-                        all previously loaded histograms. Example: -l 2 3 4
+      -h, --help            show this help message and exit
+      -d HISTOGRAMS [HISTOGRAMS ...], --histograms HISTOGRAMS [HISTOGRAMS ...]
+                            list of datafiles to add as histograms
+      -i IPARAMS [IPARAMS ...], --iparams IPARAMS [IPARAMS ...]
+                            instrument parameter file, must be one for every
+                            histogram
+      -hf HISTOGRAMFORMAT, --histogramformat HISTOGRAMFORMAT
+                            format hint for histogram import. Applies to all
+                            histograms
+      -p PHASES [PHASES ...], --phases PHASES [PHASES ...]
+                            list of phases to add. phases are automatically
+                            associated with all histograms given.
+      -pf PHASEFORMAT, --phaseformat PHASEFORMAT
+                            format hint for phase import. Applies to all phases.
+                            Example: -pf CIF
+      -l HISTLIST [HISTLIST ...], --histlist HISTLIST [HISTLIST ...]
+                            list of histgram indices to associate with added
+                            phases. If not specified, phases are associated with
+                            all previously loaded histograms. Example: -l 2 3 4
 
     """
     proj = G2Project(args.filename)
 
     if args.histograms:
-        for h,i in zip(args.histograms,args.iparams, strict=False):
-            G2fil.G2Print("Adding histogram from",h,"with instparm ",i)
+        for h, i in zip(args.histograms, args.iparams, strict=False):
+            G2fil.G2Print("Adding histogram from", h, "with instparm ", i)
             proj.add_powder_histogram(h, i, fmthint=args.histogramformat)
 
     if args.phases:
@@ -7006,34 +8005,36 @@ optional arguments::
             histlist = [proj.histogram(i) for i in args.histlist]
 
         for p in args.phases:
-            G2fil.G2Print("Adding phase from",p)
+            G2fil.G2Print("Adding phase from", p)
             proj.add_phase(p, histograms=histlist, fmthint=args.phaseformat)
 
         if not args.histlist:
-            G2fil.G2Print('Linking phase(s) to all histogram(s)')
+            G2fil.G2Print("Linking phase(s) to all histogram(s)")
         else:
-            G2fil.G2Print('Linking phase(s) to histogram(s):')
+            G2fil.G2Print("Linking phase(s) to histogram(s):")
             for h in histlist:
-                G2fil.G2Print('   '+h.name)
+                G2fil.G2Print("   " + h.name)
     proj.save()
 
 
 commandhelp["dump"] = "Shows the contents of a GSAS-II project"
+
+
 def dump(args):
     """Implements the dump command-line subcommand, which shows the contents of a GSAS-II project::
 
-       usage: GSASIIscriptable.py dump [-h] [-d] [-p] [-r] files [files ...]
+           usage: GSASIIscriptable.py dump [-h] [-d] [-p] [-r] files [files ...]
 
-positional arguments::
+    positional arguments::
 
-  files
+      files
 
-optional arguments::
+    optional arguments::
 
-  -h, --help        show this help message and exit
-  -d, --histograms  list histograms in files, overrides --raw
-  -p, --phases      list phases in files, overrides --raw
-  -r, --raw         dump raw file contents, default
+      -h, --help        show this help message and exit
+      -d, --histograms  list histograms in files, overrides --raw
+      -p, --phases      list phases in files, overrides --raw
+      -r, --raw         dump raw file contents, default
 
     """
     if not args.histograms and not args.phases:
@@ -7061,19 +8062,23 @@ optional arguments::
                     print(fname, "phase", p.id, p.name)
 
 
-commandhelp["browse"] = "Load a GSAS-II project and then open a IPython shell to browse it"
+commandhelp["browse"] = (
+    "Load a GSAS-II project and then open a IPython shell to browse it"
+)
+
+
 def IPyBrowse(args):
     """Load a .gpx file and then open a IPython shell to browse it::
 
-  usage: GSASIIscriptable.py browse [-h] files [files ...]
+      usage: GSASIIscriptable.py browse [-h] files [files ...]
 
-positional arguments::
+    positional arguments::
 
-  files       list of files to browse
+      files       list of files to browse
 
-optional arguments::
+    optional arguments::
 
-  -h, --help  show this help message and exit
+      -h, --help  show this help message and exit
 
     """
     for fname in args.files:
@@ -7083,25 +8088,27 @@ optional arguments::
         break
 
 
-commandhelp["refine"] = '''
+commandhelp["refine"] = """
 Conducts refinements on GSAS-II projects according to a list of refinement
 steps in a JSON dict
-'''
+"""
+
+
 def refine(args):
     """Implements the refine command-line subcommand:
-    conducts refinements on GSAS-II projects according to a JSON refinement dict::
+        conducts refinements on GSAS-II projects according to a JSON refinement dict::
 
-        usage: GSASIIscriptable.py refine [-h] gpxfile [refinements]
+            usage: GSASIIscriptable.py refine [-h] gpxfile [refinements]
 
-positional arguments::
+    positional arguments::
 
-  gpxfile      the project file to refine
-  refinements  json file of refinements to apply. if not present refines file
-               as-is
+      gpxfile      the project file to refine
+      refinements  json file of refinements to apply. if not present refines file
+                   as-is
 
-optional arguments::
+    optional arguments::
 
-  -h, --help   show this help message and exit
+      -h, --help   show this help message and exit
 
     """
     proj = G2Project(args.gpxfile)
@@ -7109,31 +8116,34 @@ optional arguments::
         proj.refine()
     else:
         import json
+
         with open(args.refinements) as refs:
             refs = json.load(refs)
         if type(refs) is not dict:
             raise G2ScriptException("Error: JSON object must be a dict.")
         if "code" in refs:
-            print("executing code:\n|  ",'\n|  '.join(refs['code']))
-            exec('\n'.join(refs['code']))
-        proj.do_refinements(refs['refinements'])
+            print("executing code:\n|  ", "\n|  ".join(refs["code"]))
+            exec("\n".join(refs["code"]))
+        proj.do_refinements(refs["refinements"])
 
 
 commandhelp["export"] = "Export phase as CIF"
+
+
 def export(args):
     """Implements the export command-line subcommand: Exports phase as CIF::
 
-      usage: GSASIIscriptable.py export [-h] gpxfile phase exportfile
+          usage: GSASIIscriptable.py export [-h] gpxfile phase exportfile
 
-positional arguments::
+    positional arguments::
 
-  gpxfile     the project file from which to export
-  phase       identifier of phase to export
-  exportfile  the .cif file to export to
+      gpxfile     the project file from which to export
+      phase       identifier of phase to export
+      exportfile  the .cif file to export to
 
-optional arguments::
+    optional arguments::
 
-  -h, --help  show this help message and exit
+      -h, --help  show this help message and exit
 
     """
     proj = G2Project(args.gpxfile)
@@ -7144,97 +8154,143 @@ optional arguments::
 def _args_kwargs(*args, **kwargs):
     return args, kwargs
 
+
 # A dictionary of the name of each subcommand, and a tuple
 # of its associated function and a list of its arguments
 # The arguments are passed directly to the add_argument() method
 # of an argparse.ArgumentParser
 
-subcommands = {"create":
-               (create, [_args_kwargs('filename',
-                                      help='the project file to create. should end in .gpx'),
-
-                         _args_kwargs('-d', '--histograms',
-                                      nargs='+',
-                                      help='list of datafiles to add as histograms'),
-
-                         _args_kwargs('-i', '--iparams',
-                                      nargs='+',
-                                      help='instrument parameter file, must be one'
-                                           ' for every histogram'
-                                      ),
-
-                         _args_kwargs('-p', '--phases',
-                                      nargs='+',
-                                      help='list of phases to add. phases are '
-                                           'automatically associated with all '
-                                           'histograms given.')]),
-               "add": (add, [_args_kwargs('filename',
-                                      help='the project file to open. Should end in .gpx'),
-
-                         _args_kwargs('-d', '--histograms',
-                                      nargs='+',
-                                      help='list of datafiles to add as histograms'),
-
-                         _args_kwargs('-i', '--iparams',
-                                      nargs='+',
-                                      help='instrument parameter file, must be one'
-                                           ' for every histogram'
-                                      ),
-
-                         _args_kwargs('-hf', '--histogramformat',
-                                      help='format hint for histogram import. Applies to all'
-                                           ' histograms'
-                                      ),
-
-                         _args_kwargs('-p', '--phases',
-                                      nargs='+',
-                                      help='list of phases to add. phases are '
-                                           'automatically associated with all '
-                                           'histograms given.'),
-
-                         _args_kwargs('-pf', '--phaseformat',
-                                      help='format hint for phase import. Applies to all'
-                                           ' phases. Example: -pf CIF'
-                                      ),
-
-                         _args_kwargs('-l', '--histlist',
-                                      nargs='+',
-                                      help='list of histgram indices to associate with added'
-                                           ' phases. If not specified, phases are'
-                                           ' associated with all previously loaded'
-                                           ' histograms. Example: -l 2 3 4')]),
-
-               "dump": (dump, [_args_kwargs('-d', '--histograms',
-                                     action='store_true',
-                                     help='list histograms in files, overrides --raw'),
-
-                               _args_kwargs('-p', '--phases',
-                                            action='store_true',
-                                            help='list phases in files, overrides --raw'),
-
-                               _args_kwargs('-r', '--raw',
-                                      action='store_true', help='dump raw file contents, default'),
-
-                               _args_kwargs('files', nargs='+')]),
-
-               "refine":
-               (refine, [_args_kwargs('gpxfile', help='the project file to refine'),
-                         _args_kwargs('refinements',
-                                      help='JSON file of refinements to apply. if not present'
-                                           ' refines file as-is',
-                                      default=None,
-                                      nargs='?')]),
-
-               "export": (export, [_args_kwargs('gpxfile',
-                                                help='the project file from which to export'),
-                                   _args_kwargs('phase', help='identifier of phase to export'),
-                                   _args_kwargs('exportfile', help='the .cif file to export to')]),
-               "browse": (IPyBrowse, [_args_kwargs('files', nargs='+',
-                                                   help='list of files to browse')])}
+subcommands = {
+    "create": (
+        create,
+        [
+            _args_kwargs(
+                "filename", help="the project file to create. should end in .gpx"
+            ),
+            _args_kwargs(
+                "-d",
+                "--histograms",
+                nargs="+",
+                help="list of datafiles to add as histograms",
+            ),
+            _args_kwargs(
+                "-i",
+                "--iparams",
+                nargs="+",
+                help="instrument parameter file, must be one for every histogram",
+            ),
+            _args_kwargs(
+                "-p",
+                "--phases",
+                nargs="+",
+                help="list of phases to add. phases are "
+                "automatically associated with all "
+                "histograms given.",
+            ),
+        ],
+    ),
+    "add": (
+        add,
+        [
+            _args_kwargs(
+                "filename", help="the project file to open. Should end in .gpx"
+            ),
+            _args_kwargs(
+                "-d",
+                "--histograms",
+                nargs="+",
+                help="list of datafiles to add as histograms",
+            ),
+            _args_kwargs(
+                "-i",
+                "--iparams",
+                nargs="+",
+                help="instrument parameter file, must be one for every histogram",
+            ),
+            _args_kwargs(
+                "-hf",
+                "--histogramformat",
+                help="format hint for histogram import. Applies to all histograms",
+            ),
+            _args_kwargs(
+                "-p",
+                "--phases",
+                nargs="+",
+                help="list of phases to add. phases are "
+                "automatically associated with all "
+                "histograms given.",
+            ),
+            _args_kwargs(
+                "-pf",
+                "--phaseformat",
+                help="format hint for phase import. Applies to all"
+                " phases. Example: -pf CIF",
+            ),
+            _args_kwargs(
+                "-l",
+                "--histlist",
+                nargs="+",
+                help="list of histgram indices to associate with added"
+                " phases. If not specified, phases are"
+                " associated with all previously loaded"
+                " histograms. Example: -l 2 3 4",
+            ),
+        ],
+    ),
+    "dump": (
+        dump,
+        [
+            _args_kwargs(
+                "-d",
+                "--histograms",
+                action="store_true",
+                help="list histograms in files, overrides --raw",
+            ),
+            _args_kwargs(
+                "-p",
+                "--phases",
+                action="store_true",
+                help="list phases in files, overrides --raw",
+            ),
+            _args_kwargs(
+                "-r",
+                "--raw",
+                action="store_true",
+                help="dump raw file contents, default",
+            ),
+            _args_kwargs("files", nargs="+"),
+        ],
+    ),
+    "refine": (
+        refine,
+        [
+            _args_kwargs("gpxfile", help="the project file to refine"),
+            _args_kwargs(
+                "refinements",
+                help="JSON file of refinements to apply. if not present"
+                " refines file as-is",
+                default=None,
+                nargs="?",
+            ),
+        ],
+    ),
+    "export": (
+        export,
+        [
+            _args_kwargs("gpxfile", help="the project file from which to export"),
+            _args_kwargs("phase", help="identifier of phase to export"),
+            _args_kwargs("exportfile", help="the .cif file to export to"),
+        ],
+    ),
+    "browse": (
+        IPyBrowse,
+        [_args_kwargs("files", nargs="+", help="list of files to browse")],
+    ),
+}
 
 
 def main():
-    '''The command-line interface for calling GSASIIscriptable as a shell command,
+    """The command-line interface for calling GSASIIscriptable as a shell command,
     where it is expected to be called as::
 
        python GSASIIscriptable.py <subcommand> <file.gpx> <options>
@@ -7255,16 +8311,21 @@ def main():
         :func:`refine`
         :func:`export`
         :func:`IPyBrowse`
-    '''
-    parser = argparse.ArgumentParser(description=
-        "Use of "+os.path.split(__file__)[1]+" Allows GSAS-II actions from command line."
-        )
+    """
+    parser = argparse.ArgumentParser(
+        description="Use of "
+        + os.path.split(__file__)[1]
+        + " Allows GSAS-II actions from command line."
+    )
     subs = parser.add_subparsers()
 
     # Create all of the specified subparsers
     for name, (func, args) in subcommands.items():
-        new_parser = subs.add_parser(name,help=commandhelp.get(name),
-                                     description='Command "'+name+'" '+commandhelp.get(name))
+        new_parser = subs.add_parser(
+            name,
+            help=commandhelp.get(name),
+            description='Command "' + name + '" ' + commandhelp.get(name),
+        )
         for listargs, kwds in args:
             new_parser.add_argument(*listargs, **kwds)
         new_parser.set_defaults(func=func)
@@ -7274,10 +8335,11 @@ def main():
     try:
         result.func(result)
     except:
-        print(f'Use {sys.argv[0]} -h or --help')
+        print(f"Use {sys.argv[0]} -h or --help")
 
-def dictDive(d,search="",keylist=[],firstcall=True,l=None):
-    '''Recursive routine to scan a nested dict. Reports a list of keys
+
+def dictDive(d, search="", keylist=[], firstcall=True, l=None):
+    """Recursive routine to scan a nested dict. Reports a list of keys
     and the associated type and value for that key.
 
     :param dict d: a dict that will be scanned
@@ -7312,26 +8374,27 @@ def dictDive(d,search="",keylist=[],firstcall=True,l=None):
     ...
     (['General', 'doPawley'], <class 'bool'>, False)
 
-    '''
+    """
     if firstcall:
         for k in keylist:
             d = d[k]
         l = []
-#        first = True
+    #        first = True
     if type(d) is dict:
-        [dictDive(d[key],search,keylist+[key],False,l) for key in d]
+        [dictDive(d[key], search, keylist + [key], False, l) for key in d]
     elif search:
         for key in keylist:
             if search.lower() in key.lower():
-                l.append((keylist,type(d),d))
+                l.append((keylist, type(d), d))
                 break
         return None
     else:
-        l.append((keylist,type(d),d))
+        l.append((keylist, type(d), d))
     if firstcall:
         return l
 
-if __name__ == '__main__':
-    #fname='/tmp/corundum-template.gpx'
-    #prj = G2Project(fname)
+
+if __name__ == "__main__":
+    # fname='/tmp/corundum-template.gpx'
+    # prj = G2Project(fname)
     main()

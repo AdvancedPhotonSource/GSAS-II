@@ -1,7 +1,7 @@
-'''
-Importer for various two/three column formats with 2theta vs intensity 
+"""
+Importer for various two/three column formats with 2theta vs intensity
 or Q vs intensity with an optional 3rd column for s.u.(I)
-'''
+"""
 
 import os.path
 
@@ -10,27 +10,34 @@ import numpy as np
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
 
-asind = lambda x: 180.*np.arcsin(x)/np.pi
+asind = lambda x: 180.0 * np.arcsin(x) / np.pi
+
 
 class xye_ReaderClass(G2obj.ImportPowderData):
-    'Routines to import powder data from a .xye/.chi file'
+    "Routines to import powder data from a .xye/.chi file"
+
     def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.xye','.qye','.chi','.qchi',),
+        super(self.__class__, self).__init__(  # fancy way to self-reference
+            extensionlist=(
+                ".xye",
+                ".qye",
+                ".chi",
+                ".qchi",
+            ),
             strictExtension=False,
-            formatName = 'Topas xye/qye or 2th Fit2D chi/qchi',
-            longFormatName = 'Topas .xye/.qye or 2th Fit2D .chi/.qchi powder data file'
-            )
+            formatName="Topas xye/qye or 2th Fit2D chi/qchi",
+            longFormatName="Topas .xye/.qye or 2th Fit2D .chi/.qchi powder data file",
+        )
         self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
-        '''Look through the file for expected types of lines in a valid Topas 
-        Fit2D or BNL/pyFAI file. Alas the latter two formats are somewhat in 
-        conflict. 
-        '''
+        """Look through the file for expected types of lines in a valid Topas
+        Fit2D or BNL/pyFAI file. Alas the latter two formats are somewhat in
+        conflict.
+        """
         gotCcomment = False
-        self.minimalHeader = False   # indicates a .chi file from BNL's pyFAI 
+        self.minimalHeader = False  # indicates a .chi file from BNL's pyFAI
         # which has less header info than from Fit2D
         begin = True
         self.GSAS = False
@@ -39,98 +46,103 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         self.Wave = None
         fp = open(filename)
         ext = os.path.splitext(filename)[1]
-        if ext == '.chi':
+        if ext == ".chi":
             self.Chi = True
-        if ext == '.qchi':
+        if ext == ".qchi":
             Qchi = True
         if2theta = False
         ifQ = False
-        for i,S in enumerate(fp):
-            if not S:     # may not start with a blank line
+        for i, S in enumerate(fp):
+            if not S:  # may not start with a blank line
                 break
-            if i > 1000: break
+            if i > 1000:
+                break
             if begin:
                 if self.Chi or Qchi:
                     if i < 4:
-                        if  '2-theta' in S.lower():
+                        if "2-theta" in S.lower():
                             if2theta = True
-                        elif  'chi_2theta' in S.lower(): # probably pyFAI w/o data type, assume 2theta
+                        elif (
+                            "chi_2theta" in S.lower()
+                        ):  # probably pyFAI w/o data type, assume 2theta
                             if2theta = True
                             self.minimalHeader = True
-                        elif  'q ' in S.lower():
+                        elif "q " in S.lower():
                             ifQ = True
-                            wave = ''
+                            wave = ""
                             wave = S.split()[1:]
-                            if wave: 
+                            if wave:
                                 try:
                                     self.Wave = float(wave[0])
                                 except:
                                     pass
                             if not self.Wave:
-                                self.errors = 'No wavelength in a Q chi file'
+                                self.errors = "No wavelength in a Q chi file"
                                 fp.close()
                                 return False
                         continue
                     begin = False
                 else:
                     if2theta = True
-                    if  i == 0 and 'xydata' in S.lower():
-                        continue   # fullprof header
-                    if gotCcomment and S.find('*/') > -1:
+                    if i == 0 and "xydata" in S.lower():
+                        continue  # fullprof header
+                    if gotCcomment and S.find("*/") > -1:
                         begin = False
                         continue
-                    if S.strip().startswith('/*'):
+                    if S.strip().startswith("/*"):
                         gotCcomment = True
-                        continue   
-                    if S[0] in ["'",'#','!']:
-                        if 'wavelength' in S and not self.Wave and '.q' in ext:
+                        continue
+                    if S[0] in ["'", "#", "!"]:
+                        if "wavelength" in S and not self.Wave and ".q" in ext:
                             wave = S.split()[2]
-                            if wave: 
+                            if wave:
                                 try:
                                     self.Wave = float(wave)
                                 except:
-                                    self.Wave = 1.0   #special for POWGEN 1A-2A frame "pink" CW data
-                        continue       #ignore comments, if any
-                    if S.startswith('TITLE'):
+                                    self.Wave = 1.0  # special for POWGEN 1A-2A frame "pink" CW data
+                        continue  # ignore comments, if any
+                    if S.startswith("TITLE"):
                         continue
                     begin = False
-                # valid line to read? 
-            #vals = S.split()
+                # valid line to read?
+            # vals = S.split()
             if ifQ:
                 pass
             elif not if2theta:
-                self.errors = 'Not a 2-theta chi file'
+                self.errors = "Not a 2-theta chi file"
                 fp.close()
                 return False
-            vals = S.replace(',',' ').replace(';',' ').split()
+            vals = S.replace(",", " ").replace(";", " ").split()
             if len(vals) == 2 or len(vals) == 3:
                 continue
-            self.errors = 'Unexpected information in line: '+str(i+1)
-            if all([ord(c) < 128 and ord(c) != 0 for c in str(S)]): # show only if ASCII
-                self.errors += '  '+str(S)
-            else: 
-                self.errors += '  (binary)'
+            self.errors = "Unexpected information in line: " + str(i + 1)
+            if all(
+                [ord(c) < 128 and ord(c) != 0 for c in str(S)]
+            ):  # show only if ASCII
+                self.errors += "  " + str(S)
+            else:
+                self.errors += "  (binary)"
             fp.close()
             return False
         fp.close()
-        return True # no errors encountered
+        return True  # no errors encountered
 
-    def Reader(self,filename, ParentFrame=None, **unused):
-        'Read a Topas file'
+    def Reader(self, filename, ParentFrame=None, **unused):
+        "Read a Topas file"
         x = []
         y = []
         w = []
         gotCcomment = False
         begin = True
         fp = open(filename)
-        for i,S in enumerate(fp):
-            self.errors = 'Error reading line: '+str(i+1)
+        for i, S in enumerate(fp):
+            self.errors = "Error reading line: " + str(i + 1)
             # or a block of comments delimited by /* and */
             # or (GSAS style) each line can begin with '#'
             # or WinPLOTR style, a '!'
             if begin:
                 if self.Chi:
-                    if self.minimalHeader and S.strip().startswith('#') and i < 6:
+                    if self.minimalHeader and S.strip().startswith("#") and i < 6:
                         self.comments.append(S[:-1])
                         continue
                     if self.minimalHeader:
@@ -140,28 +152,28 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     else:
                         begin = False
                 else:
-                    if gotCcomment and S.find('*/') > -1:
+                    if gotCcomment and S.find("*/") > -1:
                         self.comments.append(S[:-1])
                         begin = False
                         continue
-                    if S.strip().startswith('/*'):
+                    if S.strip().startswith("/*"):
                         self.comments.append(S[:-1])
                         gotCcomment = True
-                        continue   
-                    if S[0] in ["'",'#','!']:
+                        continue
+                    if S[0] in ["'", "#", "!"]:
                         self.comments.append(S[:-1])
-                        continue       #ignore comments, if any
-                    if  i == 0 and 'xydata' in S.lower():
-                        continue   # fullprof header
-                    if S.startswith('TITLE'):
+                        continue  # ignore comments, if any
+                    if i == 0 and "xydata" in S.lower():
+                        continue  # fullprof header
+                    if S.startswith("TITLE"):
                         self.comments = [S]
                         continue
                     begin = False
             # valid line to read
-            #vals = S.split()
-            vals = S.replace(',',' ').replace(';',' ').split()
+            # vals = S.split()
+            vals = S.replace(",", " ").replace(";", " ").split()
             if len(vals) < 2:
-                print ('Line '+str(i+1)+' cannot be read:\n\t'+S)
+                print("Line " + str(i + 1) + " cannot be read:\n\t" + S)
                 continue
             try:
                 x.append(float(vals[0]))
@@ -171,58 +183,59 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     w.append(0.0)
                 elif len(vals) == 3:
                     y.append(float(vals[1]))
-                    w.append(1.0/float(vals[2])**2)
+                    w.append(1.0 / float(vals[2]) ** 2)
                 else:
                     y.append(float(vals[1]))
-                    w.append(1.0/float(vals[1]))
+                    w.append(1.0 / float(vals[1]))
             except ValueError:
-                msg = 'Error parsing number in line '+str(i+1)
-                if GSASIIpath.GetConfigValue('debug'):
-                    print (msg)
-                    print (S.strip())
+                msg = "Error parsing number in line " + str(i + 1)
+                if GSASIIpath.GetConfigValue("debug"):
+                    print(msg)
+                    print(S.strip())
                 break
             except:
-                msg = 'Error in line '+str(i+1)
-                if GSASIIpath.GetConfigValue('debug'):
-                    print (msg)
-                    print (S.strip())
+                msg = "Error in line " + str(i + 1)
+                if GSASIIpath.GetConfigValue("debug"):
+                    print(msg)
+                    print(S.strip())
                 break
         N = len(x)
-        if N == 0: return False
+        if N == 0:
+            return False
         x = np.array(x)
         y = np.nan_to_num(np.array(y))
         w = np.nan_to_num(np.array(w))
-        if self.Wave:       #for q data
-            val = self.Wave/(4.*np.pi/x)
-            x = 2.0*asind(val)
-            y *= 100.
+        if self.Wave:  # for q data
+            val = self.Wave / (4.0 * np.pi / x)
+            x = 2.0 * asind(val)
+            y *= 100.0
             w /= 100**2
-        
+
         self.powderdata = [
-            x, # x-axis values
-            y, # powder pattern intensities
-            w, # 1/sig(intensity)^2 values (weights)
-            np.zeros(N), # calc. intensities (zero)
-            np.zeros(N), # calc. background (zero)
-            np.zeros(N), # obs-calc profiles
-            ]
+            x,  # x-axis values
+            y,  # powder pattern intensities
+            w,  # 1/sig(intensity)^2 values (weights)
+            np.zeros(N),  # calc. intensities (zero)
+            np.zeros(N),  # calc. background (zero)
+            np.zeros(N),  # obs-calc profiles
+        ]
         self.powderentry[0] = filename
-        #self.powderentry[1] = pos # bank offset (N/A here)
-        #self.powderentry[2] = 1 # xye file only has one bank
+        # self.powderentry[1] = pos # bank offset (N/A here)
+        # self.powderentry[2] = 1 # xye file only has one bank
         self.idstring = os.path.basename(filename)
         # scan comments for temperature
-        Temperature = 300.
+        Temperature = 300.0
         for S in self.comments:
-            if 'temp' in S.lower().split('=')[0]:
+            if "temp" in S.lower().split("=")[0]:
                 try:
-                    Temperature = float(S.split('=')[1])
+                    Temperature = float(S.split("=")[1])
                 except:
                     pass
-            if 'pressure' in S.lower().split('=')[0]:
+            if "pressure" in S.lower().split("=")[0]:
                 try:
-                    self.Sample['Pressure'] = float(S.split('=')[1])
+                    self.Sample["Pressure"] = float(S.split("=")[1])
                 except:
                     pass
-        self.Sample['Temperature'] = Temperature
+        self.Sample["Temperature"] = Temperature
         fp.close()
         return True

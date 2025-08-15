@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-#------------------------------------------------------------
+# ------------------------------------------------------------
 # this version intended for use with git installations
-#------------------------------------------------------------
+# ------------------------------------------------------------
 # TODO: clean up use of args: installLoc will always be the parent of path2GSAS
-'''
+"""
 This routine creates an app bundle named GSAS-II.app. Inside the
 bundle is a symbolic link to the Python executable named "GSAS-II"
 that will be used to run GSAS-II. Having this link named that
@@ -35,7 +35,7 @@ Under normal circumstances, the locations for all of these paths
 can be determined from the location of the makeMacApp.py file.
 Note that when GSAS-II is installed from git using gitstrap.py,
 the git repository is placed at <loc>/GSAS-II and the GSAS-II
-Python scripts are placed in the <loc>/GSAS-II/GSASII child directory. 
+Python scripts are placed in the <loc>/GSAS-II/GSASII child directory.
 GSAS-II is started from the <loc>/GSAS-II/GSAS-II.py script created here
 and the current script (makeMacApp.py) will be found in
 <loc>/GSAS-II/GSASII/install/.
@@ -73,7 +73,7 @@ supplied, and Python exists at installLoc/../bin/python, that will be used.
 If that does not exist, then the location of the current Python executable
 (from sys.executable) will be used.
 
-'''
+"""
 
 import os
 import os.path
@@ -82,23 +82,26 @@ import sys
 
 
 def Usage():
-    print(f"\nUsage:\n\tpython {os.path.abspath(sys.argv[0])} [install_path] [<GSAS-II_script>] [Python_loc]\n")
+    print(
+        f"\nUsage:\n\tpython {os.path.abspath(sys.argv[0])} [install_path] [<GSAS-II_script>] [Python_loc]\n"
+    )
     sys.exit()
 
-AppleScript = ''
-'''Will be set to contain an AppleScript to start GSAS-II by launching
-Python and the GSAS-II Python script. Not currently used.
-'''
 
-if __name__ == '__main__':
+AppleScript = ""
+"""Will be set to contain an AppleScript to start GSAS-II by launching
+Python and the GSAS-II Python script. Not currently used.
+"""
+
+if __name__ == "__main__":
     # set defaults
-    project="GSAS-II"  # name of app
+    project = "GSAS-II"  # name of app
     makePath = os.path.dirname(__file__)  # location of this script
     path2GSAS = os.path.dirname(makePath)
     installLoc = os.path.dirname(path2GSAS)
     pythonLoc = None
     # use command line args, if any
-    if len(sys.argv) > 4: # too many
+    if len(sys.argv) > 4:  # too many
         Usage()
     if len(sys.argv) >= 2:
         installLoc = os.path.abspath(sys.argv[1])
@@ -117,41 +120,41 @@ if __name__ == '__main__':
     if not os.path.exists(installLoc):
         print(f"\nERROR: directory {installLoc!r} not found")
         Usage()
-    tarLoc = os.path.join(path2GSAS,'install',"g2app.tar.gz")
+    tarLoc = os.path.join(path2GSAS, "install", "g2app.tar.gz")
     if not os.path.exists(tarLoc):
         print(f"\nERROR: file {tarLoc!r} not found")
         Usage()
     if pythonLoc is None:
-        pythonLoc = os.path.join(installLoc,'../bin',"python")
+        pythonLoc = os.path.join(installLoc, "../bin", "python")
         if not os.path.exists(pythonLoc):
             pythonLoc = sys.executable
     if not os.path.exists(pythonLoc):
         print(f"\nERROR: Python not found at {pythonLoc!r}")
         Usage()
 
-    print(f'Using Python: {pythonLoc}')
-    #print(f'Using GSAS-II script: {G2script}')
-    print(f'Install location: {installLoc}')
+    print(f"Using Python: {pythonLoc}")
+    # print(f'Using GSAS-II script: {G2script}')
+    print(f"Install location: {installLoc}")
 
     # files to be created
-    appName = os.path.abspath(os.path.join(installLoc,project+".app"))
-    g2Name = os.path.abspath(os.path.join(installLoc,project+'.py'))
+    appName = os.path.abspath(os.path.join(installLoc, project + ".app"))
+    g2Name = os.path.abspath(os.path.join(installLoc, project + ".py"))
 
 # new approach, use previously created tar (.tgz) file
 # with pre-built startup app. See macStartScript.py
-if __name__ == '__main__' and sys.platform == "darwin":
+if __name__ == "__main__" and sys.platform == "darwin":
     if os.path.exists(appName):
         print(f"\nRemoving old Mac app {appName!r}")
-        subprocess.call(["rm","-rf",appName])
-    subprocess.call(["mkdir","-p",appName])
-    subprocess.call(["tar","xzvf",tarLoc,'-C',appName])
+        subprocess.call(["rm", "-rf", appName])
+    subprocess.call(["mkdir", "-p", appName])
+    subprocess.call(["tar", "xzvf", tarLoc, "-C", appName])
     # create a script named GSAS-II.py to be run by the AppleScript
-    if os.path.exists(g2Name): # cleanup
+    if os.path.exists(g2Name):  # cleanup
         print(f"\nRemoving {g2Name!r}")
         os.remove(g2Name)
-    #os.symlink(G2script,g2Name)
-    with open(g2Name,'w') as fp:
-        fp.write('''# this script starts GSAS-II when not installed into Python
+    # os.symlink(G2script,g2Name)
+    with open(g2Name, "w") as fp:
+        fp.write("""# this script starts GSAS-II when not installed into Python
 # it will be called from the GSAS-II.app AppleScript
 # it should be not be renamed or moved
 import sys,os
@@ -159,18 +162,20 @@ print('Hacking sys.path to provide access to GSAS-II')
 sys.path.insert(0,os.path.dirname(__file__))
 from GSASII.GSASIIGUI import main
 main()
-''')
-    if pythonLoc != os.path.join(installLoc,'../bin',"python"):
-        link = os.path.join(appName,'Contents','MacOS','GSAS-II')
+""")
+    if pythonLoc != os.path.join(installLoc, "../bin", "python"):
+        link = os.path.join(appName, "Contents", "MacOS", "GSAS-II")
         try:
             os.remove(link)
             print(f"\nRemoved sym link {link!r}")
         except FileNotFoundError:
             pass
         print(f"\nOverriding {link!r} with Python location {pythonLoc!r}")
-        os.symlink(pythonLoc,link)
-    print(f"\nCreated app {appName!r} and {g2Name!r}" +
-    "\nViewing app in Finder so you can drag it to the dock if, you wish.")
-    subprocess.call(["open","-R",appName])
+        os.symlink(pythonLoc, link)
+    print(
+        f"\nCreated app {appName!r} and {g2Name!r}"
+        + "\nViewing app in Finder so you can drag it to the dock if, you wish."
+    )
+    subprocess.call(["open", "-R", appName])
 
     sys.exit()

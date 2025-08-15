@@ -1,4 +1,4 @@
-'''
+"""
 Read TIF files using the PIL/Pillow module.
 
 The metadata can be specified in a file with the same name and path as
@@ -28,7 +28,7 @@ CenterPixelX                     Location of beam center as a pixel number (in X
 CenterPixelY                     Location of beam center as a pixel number (in X)
 ==============================  ====================================================
 
-'''
+"""
 
 from .. import GSASIIfiles as G2fil
 from .. import GSASIIobj as G2obj
@@ -36,72 +36,83 @@ from . import G2img_1TIF
 
 DEBUG = False
 
+
 class TIF_LibraryReader(G2obj.ImportImage):
-    '''Reads TIF files using a standard library routine. Metadata (such as pixel
+    """Reads TIF files using a standard library routine. Metadata (such as pixel
     size) must be specified by user, either in GUI or via a metadata file.
     The library TIF reader can handle compression and other things that are not
     commonly used at beamlines.
-    '''
+    """
+
     def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.tif','.tiff'),
+        super(self.__class__, self).__init__(  # fancy way to self-reference
+            extensionlist=(".tif", ".tiff"),
             strictExtension=True,
-            formatName = 'Standard TIF image; metadata req.',
-            longFormatName = 'TIFF images read with standard library (metadata must be supplied)'
-            )
+            formatName="Standard TIF image; metadata req.",
+            longFormatName="TIFF images read with standard library (metadata must be supplied)",
+        )
         self.scriptable = True
 
     def ContentsValidator(self, filename):
-        '''Does the header match the required TIF header?
-        '''
+        """Does the header match the required TIF header?"""
         return G2img_1TIF.TIFValidator(filename)
 
-    def Reader(self,filename, ParentFrame=None, **unused):
-        '''Read the TIF file using the PIL/Pillow reader and give the
+    def Reader(self, filename, ParentFrame=None, **unused):
+        """Read the TIF file using the PIL/Pillow reader and give the
         user a chance to edit the likely wrong default image parameters.
-        '''
+        """
         import PIL.Image as PI
-        self.Image = PI.open(filename,mode='r')
+
+        self.Image = PI.open(filename, mode="r")
         self.Npix = self.Image.size
         if ParentFrame:
             self.SciPy = True
-            self.Comments = ['no metadata']
-            self.Data = {'wavelength': 0.1, 'pixelSize': [200., 200.], 'distance': 100.0}
-            self.Data['size'] = list(self.Image.size)
-            self.Data['center'] = [int(i/2) for i in self.Image.size]
+            self.Comments = ["no metadata"]
+            self.Data = {
+                "wavelength": 0.1,
+                "pixelSize": [200.0, 200.0],
+                "distance": 100.0,
+            }
+            self.Data["size"] = list(self.Image.size)
+            self.Data["center"] = [int(i / 2) for i in self.Image.size]
             try:
-                Meta = open(filename+'.metadata')
+                Meta = open(filename + ".metadata")
                 head = Meta.readlines()
                 for line in head:
                     line = line.strip()
                     try:
-                        if '=' not in line: continue
-                        keyword = line.split('=')[0].strip()
-                        if keyword.lower() == 'wavelength':
-                            self.Data['wavelength'] = float(line.split('=')[1])
-                        elif keyword.lower() == 'distance':
-                            self.Data['distance'] = float(line.split('=')[1])
-                        elif keyword.lower() == 'polarization':
-                            polarization = float(line.split('=')[1])
-                            self.Data['PolaVal'] = [polarization,False]
-                        elif keyword.lower() == 'samplechangercoordinate':
-                            self.Data['samplechangerpos'] = float(line.split('=')[1])
-                        elif keyword.lower() == 'pixelsizex':
-                            self.Data['pixelSize'][0] = float(line.split('=')[1])
-                        elif keyword.lower() == 'pixelsizey':
-                            self.Data['pixelSize'][1] = float(line.split('=')[1])
-                        elif keyword.lower() == 'centerpixelx':
-                            self.Data['center'][0] = float(line.split('=')[1])
-                        elif keyword.lower() == 'centerpixely':
-                            self.Data['center'][1] = float(line.split('=')[1])
+                        if "=" not in line:
+                            continue
+                        keyword = line.split("=")[0].strip()
+                        if keyword.lower() == "wavelength":
+                            self.Data["wavelength"] = float(line.split("=")[1])
+                        elif keyword.lower() == "distance":
+                            self.Data["distance"] = float(line.split("=")[1])
+                        elif keyword.lower() == "polarization":
+                            polarization = float(line.split("=")[1])
+                            self.Data["PolaVal"] = [polarization, False]
+                        elif keyword.lower() == "samplechangercoordinate":
+                            self.Data["samplechangerpos"] = float(line.split("=")[1])
+                        elif keyword.lower() == "pixelsizex":
+                            self.Data["pixelSize"][0] = float(line.split("=")[1])
+                        elif keyword.lower() == "pixelsizey":
+                            self.Data["pixelSize"][1] = float(line.split("=")[1])
+                        elif keyword.lower() == "centerpixelx":
+                            self.Data["center"][0] = float(line.split("=")[1])
+                        elif keyword.lower() == "centerpixely":
+                            self.Data["center"][1] = float(line.split("=")[1])
                     except:
-                        G2fil.G2Print('error reading metadata: '+line)
+                        G2fil.G2Print("error reading metadata: " + line)
                 Meta.close()
                 self.SciPy = False
             except OSError:
-                G2fil.G2Print ('no metadata file found - image params must be set manually')
-                head = ['no metadata file found',]
+                G2fil.G2Print(
+                    "no metadata file found - image params must be set manually"
+                )
+                head = [
+                    "no metadata file found",
+                ]
         if self.Npix == 0:
             return False
-        self.LoadImage(ParentFrame,filename)
+        self.LoadImage(ParentFrame, filename)
         return True

@@ -1,38 +1,37 @@
-'''
-'''
-
 import os.path as ospath
 
 import numpy as np
 
 from .. import GSASIIobj as G2obj
 
-npasind = lambda x: 180.*np.arcsin(x)/np.pi
-npsind = lambda x: np.sin(np.pi*x/180.)
+npasind = lambda x: 180.0 * np.arcsin(x) / np.pi
+npsind = lambda x: np.sin(np.pi * x / 180.0)
 try:  # fails on doc build
-    fourpi = 4.0*np.pi
+    fourpi = 4.0 * np.pi
     _double_min = np.finfo(float).min
     _double_max = np.finfo(float).max
 except TypeError:
     pass
 
+
 class txt_XRayReaderClass(G2obj.ImportReflectometryData):
-    'Routines to import X-ray q REFD data from a .xrfd or .xdat file'
+    "Routines to import X-ray q REFD data from a .xrfd or .xdat file"
+
     def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.xrfd','.xdat'),
+        super(self.__class__, self).__init__(  # fancy way to self-reference
+            extensionlist=(".xrfd", ".xdat"),
             strictExtension=False,
-            formatName = 'q (A-1) step X-ray QRE data',
-            longFormatName = 'q (A-1) stepped X-ray text data file in Q,R,E order; E optional'
-            )
+            formatName="q (A-1) step X-ray QRE data",
+            longFormatName="q (A-1) stepped X-ray text data file in Q,R,E order; E optional",
+        )
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
-        'Look through the file for expected types of lines in a valid q-step file'
+        "Look through the file for expected types of lines in a valid q-step file"
         fp = open(filename)
         Ndata = 0
-        for i,S in enumerate(fp):
-            if '#' in S[0]:
+        for i, S in enumerate(fp):
+            if "#" in S[0]:
                 continue
             vals = S.split()
             if len(vals) >= 2:
@@ -42,32 +41,32 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
                 except ValueError:
                     pass
         fp.close()
-        if not Ndata:     
-            self.errors = 'No 2 or more column numeric data found'
+        if not Ndata:
+            self.errors = "No 2 or more column numeric data found"
             return False
-        return True # no errors encountered
+        return True  # no errors encountered
 
-    def Reader(self,filename, ParentFrame=None, **unused):
-        print ('Read a q-step text file')
+    def Reader(self, filename, ParentFrame=None, **unused):
+        print("Read a q-step text file")
         x = []
         y = []
         w = []
         sq = []
-        wave = 1.5428   #Cuka default
+        wave = 1.5428  # Cuka default
         Temperature = 300
         fp = open(filename)
-        for i,S in enumerate(fp):
-            if len(S) == 1:     #skip blank line
+        for i, S in enumerate(fp):
+            if len(S) == 1:  # skip blank line
                 continue
-            if '=' in S:
+            if "=" in S:
                 self.comments.append(S[:-1])
-                if 'wave' in S.split('=')[0].lower():
+                if "wave" in S.split("=")[0].lower():
                     try:
-                        wave = float(S.split('=')[1])
+                        wave = float(S.split("=")[1])
                     except:
                         pass
                 continue
-            if '#' in S[0]:
+            if "#" in S[0]:
                 continue
             vals = S.split()
             if len(vals) >= 2:
@@ -80,62 +79,64 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
                         continue
                     if len(vals) > 2:
                         y.append(float(data[1]))
-                        w.append(1.0/float(data[2])**2)
+                        w.append(1.0 / float(data[2]) ** 2)
                         if len(vals) == 4:
                             sq.append(float(data[3]))
                         else:
-                            sq.append(0.)
+                            sq.append(0.0)
                     else:
                         y.append(float(data[1]))
-                        w.append(1.0/(0.02*float(data[1]))**2)
-                        sq.append(0.)
+                        w.append(1.0 / (0.02 * float(data[1])) ** 2)
+                        sq.append(0.0)
                 except ValueError:
-                    msg = 'Error in line '+str(i+1)
-                    print (msg)
+                    msg = "Error in line " + str(i + 1)
+                    print(msg)
                     continue
         fp.close()
         N = len(x)
         for S in self.comments:
-            if 'Temp' in S.split('=')[0]:
+            if "Temp" in S.split("=")[0]:
                 try:
-                    Temperature = float(S.split('=')[1])
+                    Temperature = float(S.split("=")[1])
                 except:
                     pass
-        self.instdict['wave'] = wave
-        self.instdict['type'] = 'RXC'
+        self.instdict["wave"] = wave
+        self.instdict["type"] = "RXC"
         x = np.array(x)
         self.reflectometrydata = [
-            x, # x-axis values q
-            np.array(y), # small angle pattern intensities
-            np.array(w), # 1/sig(intensity)^2 values (weights)
-            np.zeros(N), # calc. intensities (zero)
-            np.zeros(N), # obs-calc profiles
-            np.array(sq), # fix bkg
-            ]
+            x,  # x-axis values q
+            np.array(y),  # small angle pattern intensities
+            np.array(w),  # 1/sig(intensity)^2 values (weights)
+            np.zeros(N),  # calc. intensities (zero)
+            np.zeros(N),  # obs-calc profiles
+            np.array(sq),  # fix bkg
+        ]
         self.reflectometryentry[0] = filename
-        self.reflectometryentry[2] = 1 # xye file only has one bank
+        self.reflectometryentry[2] = 1  # xye file only has one bank
         self.idstring = ospath.basename(filename)
         # scan comments for temperature
-        self.Sample['Temperature'] = Temperature
+        self.Sample["Temperature"] = Temperature
         return True
+
 
 class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
-    'Routines to import neutron q REFD data from a .nrfd or .ndat file'
+    "Routines to import neutron q REFD data from a .nrfd or .ndat file"
+
     def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.nrfd','.ndat'),
+        super(self.__class__, self).__init__(  # fancy way to self-reference
+            extensionlist=(".nrfd", ".ndat"),
             strictExtension=False,
-            formatName = 'q (A-1) step neutron QRE data',
-            longFormatName = 'q (A-1) stepped neutron text data file in Q,R,E order; E optional'
-            )
+            formatName="q (A-1) step neutron QRE data",
+            longFormatName="q (A-1) stepped neutron text data file in Q,R,E order; E optional",
+        )
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
-        'Look through the file for expected types of lines in a valid q-step file'
+        "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
         fp = open(filename)
-        for i,S in enumerate(fp):
-            if '#' in S[0]:
+        for i, S in enumerate(fp):
+            if "#" in S[0]:
                 continue
             vals = S.split()
             if len(vals) >= 2:
@@ -145,32 +146,32 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
                 except ValueError:
                     pass
         fp.close()
-        if not Ndata:     
-            self.errors = 'No 2 or more column numeric data found'
+        if not Ndata:
+            self.errors = "No 2 or more column numeric data found"
             return False
-        return True # no errors encountered
+        return True  # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print ('Read a q-step text file')
+    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+        print("Read a q-step text file")
         x = []
         y = []
         w = []
         sq = []
-        wave = 1.5428   #Cuka default
+        wave = 1.5428  # Cuka default
         Temperature = 300
         fp = open(filename)
-        for i,S in enumerate(fp):
-            if len(S) == 1:     #skip blank line
+        for i, S in enumerate(fp):
+            if len(S) == 1:  # skip blank line
                 continue
-            if '=' in S:
+            if "=" in S:
                 self.comments.append(S[:-1])
-                if 'wave' in S.split('=')[0].lower():
+                if "wave" in S.split("=")[0].lower():
                     try:
-                        wave = float(S.split('=')[1])
+                        wave = float(S.split("=")[1])
                     except:
                         pass
                 continue
-            if '#' in S[0]:
+            if "#" in S[0]:
                 continue
             vals = S.split()
             if len(vals) >= 2:
@@ -183,67 +184,69 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
                         continue
                     if len(vals) > 2:
                         y.append(float(data[1]))
-                        w.append(1.0/float(data[2])**2)
+                        w.append(1.0 / float(data[2]) ** 2)
                         if len(vals) == 4:
                             sq.append(float(data[3]))
                         else:
-                            sq.append(0.)
+                            sq.append(0.0)
                     else:
                         y.append(float(data[1]))
-                        w.append(1.0/(0.02*float(data[1]))**2)
-                        sq.append(0.)
+                        w.append(1.0 / (0.02 * float(data[1])) ** 2)
+                        sq.append(0.0)
                 except ValueError:
-                    msg = 'Error in line '+str(i+1)
-                    print (msg)
+                    msg = "Error in line " + str(i + 1)
+                    print(msg)
                     continue
         fp.close()
         N = len(x)
         for S in self.comments:
-            if 'Temp' in S.split('=')[0]:
+            if "Temp" in S.split("=")[0]:
                 try:
-                    Temperature = float(S.split('=')[1])
+                    Temperature = float(S.split("=")[1])
                 except:
                     pass
-        self.instdict['wave'] = wave
-        self.instdict['type'] = 'RNC'
+        self.instdict["wave"] = wave
+        self.instdict["type"] = "RNC"
         x = np.array(x)
         self.reflectometrydata = [
-            x, # x-axis values q
-            np.array(y), # small angle pattern intensities
-            np.array(w), # 1/sig(intensity)^2 values (weights)
-            np.zeros(N), # calc. intensities (zero)
-            np.zeros(N), # obs-calc profiles
-            np.array(sq), # Q FWHM
-            ]
+            x,  # x-axis values q
+            np.array(y),  # small angle pattern intensities
+            np.array(w),  # 1/sig(intensity)^2 values (weights)
+            np.zeros(N),  # calc. intensities (zero)
+            np.zeros(N),  # obs-calc profiles
+            np.array(sq),  # Q FWHM
+        ]
         self.reflectometryentry[0] = filename
-        self.reflectometryentry[2] = 1 # xye file only has one bank
+        self.reflectometryentry[2] = 1  # xye file only has one bank
         self.idstring = ospath.basename(filename)
         # scan comments for temperature
-        self.Sample['Temperature'] = Temperature
+        self.Sample["Temperature"] = Temperature
         return True
 
+
 class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
-    'Routines to import X-ray theta REFD data from a .xtrfd or .xtdat file'
+    "Routines to import X-ray theta REFD data from a .xtrfd or .xtdat file"
+
     def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.xtrfd','.xtdat'),
+        super(self.__class__, self).__init__(  # fancy way to self-reference
+            extensionlist=(".xtrfd", ".xtdat"),
             strictExtension=False,
-            formatName = 'theta step X-ray QRE data',
-            longFormatName = 'theta stepped X-ray text data file in Q,R,E order; E optional'
-            )
+            formatName="theta step X-ray QRE data",
+            longFormatName="theta stepped X-ray text data file in Q,R,E order; E optional",
+        )
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
-        'Look through the file for expected types of lines in a valid q-step file'
+        "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
-        self.wavelength = 0.
+        self.wavelength = 0.0
         fp = open(filename)
-        for i,S in enumerate(fp):
-            if '#' in S[0]:
-                if 'wavelength' in S[:-1].lower():
-                    self.wavelength = float(S[:-1].split('=')[1])
-                elif 'energy' in S[:-1].lower():
-                    self.wavelength = 12.39842*1000./float(S[:-1].split('=')[1])
+        for i, S in enumerate(fp):
+            if "#" in S[0]:
+                if "wavelength" in S[:-1].lower():
+                    self.wavelength = float(S[:-1].split("=")[1])
+                elif "energy" in S[:-1].lower():
+                    self.wavelength = 12.39842 * 1000.0 / float(S[:-1].split("=")[1])
                 continue
             vals = S.split()
             if len(vals) >= 2:
@@ -253,16 +256,16 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
                 except ValueError:
                     pass
         fp.close()
-        if not Ndata:     
-            self.errors = 'No 2 or more column numeric data found'
+        if not Ndata:
+            self.errors = "No 2 or more column numeric data found"
             return False
         elif not self.wavelength:
-            self.errors = 'Missing wavelength or energy in header'
+            self.errors = "Missing wavelength or energy in header"
             return False
-        return True # no errors encountered
+        return True  # no errors encountered
 
-    def Reader(self,filename, ParentFrame=None, **unused):
-        print ('Read a q-step text file')
+    def Reader(self, filename, ParentFrame=None, **unused):
+        print("Read a q-step text file")
         x = []
         y = []
         w = []
@@ -270,67 +273,66 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
         wave = self.wavelength
         Temperature = 300
         fp = open(filename)
-        for i,S in enumerate(fp):
-            if len(S) == 1:     #skip blank line
+        for i, S in enumerate(fp):
+            if len(S) == 1:  # skip blank line
                 continue
-            if '=' in S:
+            if "=" in S:
                 self.comments.append(S[:-1])
-                if 'wave' in S.split('=')[0].lower():
+                if "wave" in S.split("=")[0].lower():
                     try:
-                        wave = float(S.split('=')[1])
+                        wave = float(S.split("=")[1])
                     except:
                         pass
                 continue
-            if '#' in S[0]:
+            if "#" in S[0]:
                 continue
             vals = S.split()
             if len(vals) >= 2:
                 try:
                     data = [float(val) for val in vals]
-                    x.append(fourpi*npsind(float(data[0]))/wave)
+                    x.append(fourpi * npsind(float(data[0])) / wave)
                     f = float(data[1])
                     if f <= 0.0:
                         del x[-1]
                         continue
                     if len(vals) > 2:
                         y.append(float(data[1]))
-                        w.append(1.0/float(data[2])**2)
+                        w.append(1.0 / float(data[2]) ** 2)
                         if len(vals) == 4:
                             sq.append(float(data[3]))
                         else:
-                            sq.append(0.)
+                            sq.append(0.0)
                     else:
                         y.append(float(data[1]))
-                        w.append(1.0/(0.02*float(data[1]))**2)
-                        sq.append(0.)
+                        w.append(1.0 / (0.02 * float(data[1])) ** 2)
+                        sq.append(0.0)
                 except ValueError:
-                    msg = 'Error in line '+str(i+1)
-                    print (msg)
+                    msg = "Error in line " + str(i + 1)
+                    print(msg)
                     continue
         fp.close()
         N = len(x)
         for S in self.comments:
-            if 'Temp' in S.split('=')[0]:
+            if "Temp" in S.split("=")[0]:
                 try:
-                    Temperature = float(S.split('=')[1])
+                    Temperature = float(S.split("=")[1])
                 except:
                     pass
-        self.instdict['wave'] = wave
-        self.instdict['type'] = 'RXC'
+        self.instdict["wave"] = wave
+        self.instdict["type"] = "RXC"
         x = np.array(x)
         self.reflectometrydata = [
-            x, # x-axis values q
-            np.array(y), # small angle pattern intensities
-            np.array(w), # 1/sig(intensity)^2 values (weights)
-            np.zeros(N), # calc. intensities (zero)
-            np.zeros(N), # obs-calc profiles
-            np.array(sq), # fix bkg
-            ]
+            x,  # x-axis values q
+            np.array(y),  # small angle pattern intensities
+            np.array(w),  # 1/sig(intensity)^2 values (weights)
+            np.zeros(N),  # calc. intensities (zero)
+            np.zeros(N),  # obs-calc profiles
+            np.array(sq),  # fix bkg
+        ]
         self.reflectometryentry[0] = filename
-        self.reflectometryentry[2] = 1 # xye file only has one bank
+        self.reflectometryentry[2] = 1  # xye file only has one bank
         self.idstring = ospath.basename(filename)
         # scan comments for temperature
-        self.Sample['Temperature'] = Temperature
+        self.Sample["Temperature"] = Temperature
 
         return True
-

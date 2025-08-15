@@ -11,21 +11,22 @@ import os
 import sys
 
 # patch 4/25: cleanup old GSASII.py script if still around (replaced by this file)
-oldg2script = os.path.join(os.path.dirname(__file__),'GSASII.py')
+oldg2script = os.path.join(os.path.dirname(__file__), "GSASII.py")
 if os.path.exists(oldg2script):
     os.remove(oldg2script)
-    print(f'Cleanup: removing old {oldg2script!r} file')
+    print(f"Cleanup: removing old {oldg2script!r} file")
 # end patch
 import importlib.util
 
 try:
-    pkginfo = importlib.util.find_spec('GSASII.GSASIIGUI')
+    pkginfo = importlib.util.find_spec("GSASII.GSASIIGUI")
 except ModuleNotFoundError:
     pkginfo = None
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if pkginfo is None:  # hack path if GSASII not installed into Python
-        print('Adding GSAS-II location to Python system path')
-        sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+        print("Adding GSAS-II location to Python system path")
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
     from GSASII.GSASIIGUI import main
+
     main()

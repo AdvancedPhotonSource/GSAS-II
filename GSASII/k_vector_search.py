@@ -41,8 +41,8 @@ gen_option_avail = True
 try:
     import seekpath
 except ModuleNotFoundError:
-    G2fil.NeededPackage({'magnetic k-vector search':['seekpath']})
-    print('k_vector_search: seekpath could not be imported')
+    G2fil.NeededPackage({"magnetic k-vector search": ["seekpath"]})
+    print("k_vector_search: seekpath could not be imported")
     gen_option_avail = False
 
 try:
@@ -51,11 +51,12 @@ try:
     else:
         from . import kvec_general
 except ImportError:
-    print('binary load error: kvec_general not found')
+    print("binary load error: kvec_general not found")
     gen_option_avail = False
 except ModuleNotFoundError:
-    print('k_vector_search: kvec_general could not be imported')
+    print("k_vector_search: kvec_general could not be imported")
     gen_option_avail = False
+
 
 def unique_id_gen(string_list: list) -> list:
     """Generate unique IDs for strings included in the string list and the same
@@ -97,12 +98,8 @@ def lat_params_to_vec(lat_params: list) -> list:
     beta = np.deg2rad(lat_params[4])
     gamma = np.deg2rad(lat_params[5])
 
-    c = [0., 0., c_norm]
-    b = [
-        0.,
-        b_norm * np.sin(alpha),
-        b_norm * np.cos(alpha)
-    ]
+    c = [0.0, 0.0, c_norm]
+    b = [0.0, b_norm * np.sin(alpha), b_norm * np.cos(alpha)]
     az = a_norm * np.cos(beta)
     cos_al = np.cos(alpha)
     cos_be = np.cos(beta)
@@ -111,7 +108,7 @@ def lat_params_to_vec(lat_params: list) -> list:
     top = a_norm * (cos_ga - cos_al * cos_be)
     bottom = sin_al
     ay = top / bottom
-    ax = np.sqrt(a_norm**2. - ay**2. - az**2.)
+    ax = np.sqrt(a_norm**2.0 - ay**2.0 - az**2.0)
     a = [ax, ay, az]
 
     return [a, b, c]
@@ -153,84 +150,33 @@ class kVector:
                       processing.
                       Default: 1
     """
+
     transMatrix = {
-        "P": np.array(
-            [
-                [1, 0, 0],
-                [0, 1, 0],
-                [0, 0, 1]
-            ]
-        ),
-        "cF": 1 / 2 * np.array(
-            [
-                [0, 1, 1],
-                [1, 0, 1],
-                [1, 1, 0]
-            ]
-        ),
-        "oF": 1 / 2 * np.array(
-            [
-                [0, 1, 1],
-                [1, 0, 1],
-                [1, 1, 0]
-            ]
-        ),
-        "cI": 1 / 2 * np.array(
-            [
-                [-1, 1, 1],
-                [1, -1, 1],
-                [1, 1, -1]
-            ]
-        ),
-        "tI": 1 / 2 * np.array(
-            [
-                [-1, 1, 1],
-                [1, -1, 1],
-                [1, 1, -1]
-            ]
-        ),
-        "oI": 1 / 2 * np.array(
-            [
-                [-1, 1, 1],
-                [1, -1, 1],
-                [1, 1, -1]
-            ]
-        ),
-        "hR": 1 / 3 * np.array(
-            [
-                [2, -1, -1],
-                [1, 1, -2],
-                [1, 1, 1]
-            ]
-        ),
-        "oC": 1 / 2 * np.array(
-            [
-                [1, 1, 0],
-                [-1, 1, 0],
-                [0, 0, 2]
-            ]
-        ),
-        "oA": 1 / 2 * np.array(
-            [
-                [0, 0, 2],
-                [1, 1, 0],
-                [-1, 1, 0]
-            ]
-        ),
-        "mC": 1 / 2 * np.array(
-            [
-                [1, -1, 0],
-                [1, -1, 1],
-                [1, 1, -1]
-            ]
-        )
+        "P": np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]),
+        "cF": 1 / 2 * np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]),
+        "oF": 1 / 2 * np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]),
+        "cI": 1 / 2 * np.array([[-1, 1, 1], [1, -1, 1], [1, 1, -1]]),
+        "tI": 1 / 2 * np.array([[-1, 1, 1], [1, -1, 1], [1, 1, -1]]),
+        "oI": 1 / 2 * np.array([[-1, 1, 1], [1, -1, 1], [1, 1, -1]]),
+        "hR": 1 / 3 * np.array([[2, -1, -1], [1, 1, -2], [1, 1, 1]]),
+        "oC": 1 / 2 * np.array([[1, 1, 0], [-1, 1, 0], [0, 0, 2]]),
+        "oA": 1 / 2 * np.array([[0, 0, 2], [1, 1, 0], [-1, 1, 0]]),
+        "mC": 1 / 2 * np.array([[1, -1, 0], [1, -1, 1], [1, 1, -1]]),
     }
 
-    def __init__(self, bravfSym: str, cell: list, positions: list,
-                 numbers: list, nucPeaks: list, superPeaks: list,
-                 threshold: float, option: int = 0,
-                 kstep: list = None,
-                 processes: int = 1):
+    def __init__(
+        self,
+        bravfSym: str,
+        cell: list,
+        positions: list,
+        numbers: list,
+        nucPeaks: list,
+        superPeaks: list,
+        threshold: float,
+        option: int = 0,
+        kstep: list = None,
+        processes: int = 1,
+    ):
         self.bravfSym = bravfSym
         self.cell = cell
         self.positions = positions
@@ -248,17 +194,14 @@ class kVector:
             raise ModuleNotFoundError(err_msg)
 
         if kstep is None:
-            self.kstep = [.01, .01, .01]
+            self.kstep = [0.01, 0.01, 0.01]
 
         rep_prim_latt = self.kpathFinder()["reciprocal_primitive_lattice"]
         if "P" in bravfSym:
             self.bs_tmp = "P"
         else:
             self.bs_tmp = bravfSym
-        self.rep_conv_latt = np.matmul(
-            kVector.transMatrix[self.bs_tmp],
-            rep_prim_latt
-        )
+        self.rep_conv_latt = np.matmul(kVector.transMatrix[self.bs_tmp], rep_prim_latt)
 
     def kpathFinder(self) -> dict:
         """Provided the structure inputs, the routine will be collecting the
@@ -279,19 +222,17 @@ class kVector:
         # the symmetry is for our input structure, we were to tune the
         # tolerance value until the expected Bravais lattice type is
         # identified.
-        sym_tol = 1.E-5
+        sym_tol = 1.0e-5
         while True:
             k_info_tmp = seekpath.get_path(structure, True, symprec=sym_tol)
             if k_info_tmp["bravais_lattice"] == self.bravfSym:
                 break
-            sym_tol *= 2.
+            sym_tol *= 2.0
 
         k_info = {
             "point_coords": k_info_tmp["point_coords"],
             "path": k_info_tmp["path"],
-            "reciprocal_primitive_lattice": k_info_tmp[
-                "reciprocal_primitive_lattice"
-            ]
+            "reciprocal_primitive_lattice": k_info_tmp["reciprocal_primitive_lattice"],
         }
 
         return k_info
@@ -304,10 +245,7 @@ class kVector:
         :return: a list containing the hkl indeces in the primitive cell
                  setting.
         """
-        prim_hkl = np.matmul(
-            np.array(hkl),
-            kVector.transMatrix[self.bs_tmp]
-        )
+        prim_hkl = np.matmul(np.array(hkl), kVector.transMatrix[self.bs_tmp])
 
         return prim_hkl
 
@@ -318,19 +256,13 @@ class kVector:
         :param k_vec: the k vector in the reciprocal primitive lattice setting
         :return: the k vector in the conventional cell setting
         """
-        inv_trans_matrix = np.linalg.inv(
-            kVector.transMatrix[self.bs_tmp]
-        )
+        inv_trans_matrix = np.linalg.inv(kVector.transMatrix[self.bs_tmp])
 
-        k_vec_conv = np.matmul(
-            np.array(k_vec),
-            inv_trans_matrix
-        )
+        k_vec_conv = np.matmul(np.array(k_vec), inv_trans_matrix)
 
         return k_vec_conv
 
-    def pointOnVector(self, s_point: list, e_point: list,
-                      distance: float) -> list:
+    def pointOnVector(self, s_point: list, e_point: list, distance: float) -> list:
         """Grab the coordinate of a point on a vector specified by the starting
         and ending points. The distance from the point on the vector to the
         starting point should be given as the parameter.
@@ -340,7 +272,9 @@ class kVector:
         :param distance: the distance away from the starting point
         :return: the coordinate of the point on the vector
         """
-        vec_length = np.sqrt(sum((x - y)**2 for x, y in zip(s_point, e_point, strict=False)))
+        vec_length = np.sqrt(
+            sum((x - y) ** 2 for x, y in zip(s_point, e_point, strict=False))
+        )
 
         xp = s_point[0] + distance / vec_length * (e_point[0] - s_point[0])
         yp = s_point[1] + distance / vec_length * (e_point[1] - s_point[1])
@@ -388,33 +322,28 @@ class kVector:
             err_msg += "to the second list."
             raise ValueError(err_msg)
 
-        cost_matrix = np.array(
-            [[((i - j) / j)**2. for i in list1] for j in list2]
-        )
-        cost_matrix_dd = np.array(
-            [[(i - j)**2. for i in list1] for j in list2]
-        )
+        cost_matrix = np.array([[((i - j) / j) ** 2.0 for i in list1] for j in list2])
+        cost_matrix_dd = np.array([[(i - j) ** 2.0 for i in list1] for j in list2])
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
         mapping = {list2[i]: list1[j] for i, j in zip(row_ind, col_ind, strict=False)}
 
-        sum_of_squares = np.sqrt(
-            cost_matrix[row_ind, col_ind].sum()
-        ) / float(len(list2))
-        ave_dd = np.sqrt(
-            cost_matrix_dd[row_ind, col_ind].sum()
-        ) / float(len(list2))
-        max_dd = np.sqrt(
-            cost_matrix_dd[row_ind, col_ind].max()
+        sum_of_squares = np.sqrt(cost_matrix[row_ind, col_ind].sum()) / float(
+            len(list2)
         )
+        ave_dd = np.sqrt(cost_matrix_dd[row_ind, col_ind].sum()) / float(len(list2))
+        max_dd = np.sqrt(cost_matrix_dd[row_ind, col_ind].max())
 
         return (mapping, sum_of_squares, ave_dd, max_dd)
 
-    def updateCandidateList(self, kpoint: list,
-                            k_opt_list: list,
-                            k_opt_dist: list,
-                            ave_dd: list,
-                            max_dd: list,
-                            try_neg: bool) -> tuple:
+    def updateCandidateList(
+        self,
+        kpoint: list,
+        k_opt_list: list,
+        k_opt_dist: list,
+        ave_dd: list,
+        max_dd: list,
+        try_neg: bool,
+    ) -> tuple:
         """For a given k point, we want to find out such a one-to-one matching
         between the calculated satellite peaks and those observed ones that
         gives the minimal overall distance. The optimized overall distance will
@@ -452,20 +381,14 @@ class kVector:
 
             hkl_prim = np.array(nucp)
             hkl_p_k = hkl_prim + np.array(kpoint)
-            k_cart = np.matmul(
-                hkl_p_k,
-                rep_prim_latt
-            )
-            d_hkl_p_k = 2. * np.pi / np.linalg.norm(k_cart)
+            k_cart = np.matmul(hkl_p_k, rep_prim_latt)
+            d_hkl_p_k = 2.0 * np.pi / np.linalg.norm(k_cart)
             satellite_peaks.append(d_hkl_p_k)
 
             if try_neg:
                 hkl_m_k = hkl_prim - np.array(kpoint)
-                k_cart = np.matmul(
-                    hkl_m_k,
-                    rep_prim_latt
-                )
-                d_hkl_m_k = 2. * np.pi / np.linalg.norm(k_cart)
+                k_cart = np.matmul(hkl_m_k, rep_prim_latt)
+                d_hkl_m_k = 2.0 * np.pi / np.linalg.norm(k_cart)
                 satellite_peaks.append(d_hkl_m_k)
 
         satellite_peaks = list(set(satellite_peaks))
@@ -482,22 +405,14 @@ class kVector:
             return (k_opt_list, k_opt_dist, ave_dd, max_dd)
         else:
             if len(k_opt_list) < 10 or indicator_dist < k_opt_dist[9]:
-                k_opt_new = self.insIntoSortedList(
-                    k_opt_dist,
-                    indicator_dist
-                )
+                k_opt_new = self.insIntoSortedList(k_opt_dist, indicator_dist)
                 k_opt_list.insert(k_opt_new[1], kpoint)
                 ave_dd.insert(k_opt_new[1], ave_dd_v)
                 max_dd.insert(k_opt_new[1], max_dd_v)
             else:
                 return (k_opt_list, k_opt_dist, ave_dd, max_dd)
 
-            return (
-                k_opt_list[:10],
-                k_opt_new[0][:10],
-                ave_dd,
-                max_dd
-            )
+            return (k_opt_list[:10], k_opt_new[0][:10], ave_dd, max_dd)
 
     def kOptFinder(self) -> list:
         """This is the kernel of the class, defining the method for searching
@@ -532,12 +447,7 @@ class kVector:
             print("[Info] Searching over high symmetry points ...")
             for name, kpoint in hs_points.items():
                 k_opt_tmp = self.updateCandidateList(
-                    kpoint,
-                    k_opt_list,
-                    k_opt_dist,
-                    k_opt_ad,
-                    k_opt_md,
-                    True
+                    kpoint, k_opt_list, k_opt_dist, k_opt_ad, k_opt_md, True
                 )
                 k_opt_list = k_opt_tmp[0]
                 k_opt_dist = k_opt_tmp[1]
@@ -546,7 +456,9 @@ class kVector:
                 found_opt = k_opt_dist[0] <= self.threshold
 
                 msg = "[Info] k point (primitive setting): "
-                msg += f"{name:s} => [{kpoint[0]:.5F}, {kpoint[1]:.5F}, {kpoint[2]:.5F}], "
+                msg += (
+                    f"{name:s} => [{kpoint[0]:.5F}, {kpoint[1]:.5F}, {kpoint[2]:.5F}], "
+                )
                 msg += "Indicator distance: "
                 msg += f"{k_opt_dist[0]:.5F}, "
                 msg += f"Threshold: {self.threshold}"
@@ -569,28 +481,14 @@ class kVector:
                     k_path_s = k_paths["point_coords"][k_path[0]]
                     k_path_e = k_paths["point_coords"][k_path[1]]
                     k_path_vec = np.array(
-                        [
-                            y - x for y, x in zip(k_path_e, k_path_s, strict=False)
-                        ]
+                        [y - x for y, x in zip(k_path_e, k_path_s, strict=False)]
                     )
-                    k_path_vec_cart = np.matmul(
-                        k_path_vec,
-                        rep_prim_latt
-                    )
+                    k_path_vec_cart = np.matmul(k_path_vec, rep_prim_latt)
                     k_path_len = np.linalg.norm(k_path_vec_cart)
                     while seg_len < k_path_len:
-                        kpoint = self.pointOnVector(
-                            k_path_s,
-                            k_path_e,
-                            seg_len
-                        )
+                        kpoint = self.pointOnVector(k_path_s, k_path_e, seg_len)
                         k_opt_tmp = self.updateCandidateList(
-                            kpoint,
-                            k_opt_list,
-                            k_opt_dist,
-                            k_opt_ad,
-                            k_opt_md,
-                            True
+                            kpoint, k_opt_list, k_opt_dist, k_opt_ad, k_opt_md, True
                         )
                         k_opt_list = k_opt_tmp[0]
                         k_opt_dist = k_opt_tmp[1]
@@ -617,11 +515,11 @@ class kVector:
 
                 kpa_len = np.linalg.norm(rep_prim_latt[0])
                 kpb_len = np.linalg.norm(rep_prim_latt[1])
-                kpc_len = .5 * np.linalg.norm(rep_prim_latt[2])
+                kpc_len = 0.5 * np.linalg.norm(rep_prim_latt[2])
 
                 a_array = -0.5 + np.arange(0, kpa_len, ka_step) / kpa_len
                 b_array = -0.5 + np.arange(0, kpb_len, kb_step) / kpb_len
-                c_array = np.arange(0, kpc_len / 2., kc_step) / kpc_len
+                c_array = np.arange(0, kpc_len / 2.0, kc_step) / kpc_len
 
                 points = np.array(np.meshgrid(a_array, b_array, c_array))
                 points = points.T.reshape(-1, 3)
@@ -631,21 +529,13 @@ class kVector:
                     self.nucPeaks,
                     self.superPeaks,
                     rep_prim_latt,
-                    processes=self.processes
+                    processes=self.processes,
                 )
 
-                k_opt_list = [
-                    item[0] for item in results
-                ]
-                k_opt_dist = [
-                    item[1] for item in results
-                ]
-                k_opt_ad = [
-                    item[2] for item in results
-                ]
-                k_opt_md = [
-                    item[3] for item in results
-                ]
+                k_opt_list = [item[0] for item in results]
+                k_opt_dist = [item[1] for item in results]
+                k_opt_ad = [item[2] for item in results]
+                k_opt_md = [item[3] for item in results]
 
             stop_search = time.time()
             te = stop_search - start_search

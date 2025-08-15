@@ -16,18 +16,18 @@ import wx.grid as wg
 import wx.lib.mixins.listctrl as listmix
 from numpy import ma
 
+from .. import GSASIIElem as G2elem
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIimage as G2img
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+from .. import GSASIIplot as G2plt
+from .. import ImageCalibrants as calFile
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIElem as G2elem
-from . import GSASIIfiles as G2fil
-from . import GSASIIimage as G2img
-from . import GSASIImath as G2mth
 from . import GSASIImiscGUI as G2IO
-from . import GSASIIobj as G2obj
-from . import GSASIIpath
-from . import GSASIIplot as G2plt
 from . import GSASIIpwdGUI as G2pdG
-from . import ImageCalibrants as calFile
 
 # documentation build kludge. This prevents an error with sphinx 1.8.5 (fixed by 2.3) where all mock objects are of type _MockObject
 if (

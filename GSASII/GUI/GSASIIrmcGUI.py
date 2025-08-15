@@ -20,16 +20,16 @@ import numpy as np
 import wx
 import wx.grid as wg
 
+from .. import GSASIIElem as G2elem
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImath as G2mth
+from .. import GSASIIplot as G2plt
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIspc as G2spc
+from .. import atmdata
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIElem as G2elem
-from . import GSASIIlattice as G2lat
-from . import GSASIImath as G2mth
 from . import GSASIIphsGUI as G2phsG
-from . import GSASIIplot as G2plt
-from . import GSASIIpwd as G2pwd
-from . import GSASIIspc as G2spc
-from . import atmdata
 
 try:
     wx.NewIdRef

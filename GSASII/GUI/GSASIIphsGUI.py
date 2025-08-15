@@ -33,31 +33,26 @@ import wx.grid as wg
 import wx.lib.scrolledpanel as wxscroll
 from numpy import ma
 
-from . import ISODISTORT as ISO
-from . import SUBGROUPS, GSASIIpath, atmdata
+from .. import ISODISTORT as ISO
+from .. import SUBGROUPS, GSASIIpath, atmdata
+from .. import GSASIIElem as G2elem
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIplot as G2plt
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIpwdplot as G2pwpl
+from .. import GSASIIspc as G2spc
+from .. import GSASIIstrIO as G2stIO
+from .. import GSASIIstrMain as G2stMn
 from . import GSASIIconstrGUI as G2cnstG
 from . import GSASIIctrlGUI as G2G
-
-# if GSASIIpath.GetConfigValue('debug'):
-#     print('Debug reloading',G2plt)
-#     import imp
-#     imp.reload(G2plt)
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIddataGUI as G2ddG
-from . import GSASIIElem as G2elem
 from . import GSASIIElemGUI as G2elemGUI
-from . import GSASIIlattice as G2lat
-from . import GSASIImath as G2mth
 from . import GSASIImiscGUI as G2IO
-from . import GSASIIobj as G2obj
 from . import GSASIIphsGUI2 as G2phsG2
-from . import GSASIIplot as G2plt
-from . import GSASIIpwd as G2pwd
-from . import GSASIIpwdplot as G2pwpl
 from . import GSASIIrmcGUI as G2rmcG
-from . import GSASIIspc as G2spc
-from . import GSASIIstrIO as G2stIO
-from . import GSASIIstrMain as G2stMn
 
 try:
     wx.NewIdRef
@@ -4442,7 +4437,7 @@ def UpdatePhaseData(G2frame, Item, data):
                 wx.StaticText(
                     dlg,
                     wx.ID_ANY,
-                    f"""Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+                    f"""Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO)
 program; Please cite:
 {G2G.GetCite("Bilbao: PSEUDO", wrap=70, indent=5)}""",
                 )
@@ -4540,7 +4535,7 @@ program; Please cite:
                 wx.StaticText(
                     dlg,
                     wx.ID_ANY,
-                    f"""Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+                    f"""Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO)
 program; Please cite:
 {G2G.GetCite("Bilbao: PSEUDO", wrap=70, indent=5)}""",
                 )
@@ -4686,7 +4681,7 @@ program; Please cite:
                 wx.StaticText(
                     dlg,
                     wx.ID_ANY,
-                    f"""Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+                    f"""Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO)
 program; Please cite:
 {G2G.GetCite("Bilbao: PSEUDO", wrap=70, indent=5)}""",
                 )
@@ -4814,7 +4809,7 @@ program; Please cite:
                 wx.StaticText(
                     dlg,
                     wx.ID_ANY,
-                    f"""Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+                    f"""Using the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO)
 program; Please cite:
 {G2G.GetCite("Bilbao: PSEUDO", wrap=70, indent=5)}""",
                 )
@@ -8519,9 +8514,9 @@ program; Please cite:
         if rmcfile is None:
             wx.MessageBox(
                 """RMCProfile is not correctly installed for use in GSAS-II
-        This software must be downloaded separately (from 
-        https://rmcprofile.ornl.gov/download). Install the rmcprofile or 
-        rmcprofile.exe file in a location where GSAS-II can find it 
+        This software must be downloaded separately (from
+        https://rmcprofile.ornl.gov/download). Install the rmcprofile or
+        rmcprofile.exe file in a location where GSAS-II can find it
         (see config variable rmcprofile_exec in preferences.)""",
                 caption="RMCProfile",
                 style=wx.ICON_INFORMATION,

@@ -5,9 +5,28 @@ follows.
 
 # Documentation moved to doc/source/GSASIIGUIr.rst
 #
+import copy
+import glob
 import os
 import platform
+import random as ran
 import sys
+import time
+
+import numpy as np
+
+from .. import GSASIIElem as G2elem
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIspc as G2spc
+from ..tutorialIndex import tutorialIndex
+from . import GSASIIdataGUI as G2gd
+from . import GSASIImiscGUI as G2IO
+from . import GSASIIpwdGUI as G2pdG
 
 try:
     import matplotlib as mpl
@@ -25,35 +44,11 @@ try:
 except ImportError:
     print("ImportError for wx/mpl in GSASIIctrlGUI: ignore if docs build")
 
-import copy
-import glob
-
-# import ast
-import random as ran
-import time
-
-import numpy as np
-
-# import matplotlib as mpl
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIElem as G2elem
-from . import GSASIIfiles as G2fil
-from . import GSASIIlattice as G2lat
-from . import GSASIImath as G2mth
-
-# from . import GSASIIstrMain as G2stMn
-from . import GSASIImiscGUI as G2IO
-from . import GSASIIobj as G2obj
-from . import GSASIIpath
-from . import GSASIIpwd as G2pwd
-from . import GSASIIpwdGUI as G2pdG
-from . import GSASIIspc as G2spc
-from .tutorialIndex import tutorialIndex
 
 if sys.version_info[0] >= 3:
     unicode = str

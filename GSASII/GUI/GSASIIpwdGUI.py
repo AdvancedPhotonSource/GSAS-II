@@ -21,24 +21,24 @@ import numpy.linalg as nl
 import scipy.interpolate as si
 from numpy import ma
 
-from . import SUBGROUPS as kSUB
-from . import G2shapes, GSASIIpath
+from .. import SUBGROUPS as kSUB
+from .. import G2shapes, GSASIIpath
+from .. import GSASIIElem as G2elem
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIindex as G2indx
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIplot as G2plt
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIpwdplot as G2pwpl
+from .. import GSASIIsasd as G2sasd
+from .. import GSASIIspc as G2spc
+from .. import k_vector_search as kvs
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIElem as G2elem
 from . import GSASIIElemGUI as G2elemGUI
-from . import GSASIIfiles as G2fil
-from . import GSASIIindex as G2indx
-from . import GSASIIlattice as G2lat
-from . import GSASIImath as G2mth
-from . import GSASIIobj as G2obj
 from . import GSASIIphsGUI as G2phsG
-from . import GSASIIplot as G2plt
-from . import GSASIIpwd as G2pwd
-from . import GSASIIpwdplot as G2pwpl
-from . import GSASIIsasd as G2sasd
-from . import GSASIIspc as G2spc
-from . import k_vector_search as kvs
 
 try:
     VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)

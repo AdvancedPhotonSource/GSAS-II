@@ -12,12 +12,39 @@ import platform
 import random as ran
 import re
 import shutil
+import struct as st
 import sys
 import time
 
 import matplotlib as mpl
 import numpy as np
+import scipy as sp
 from numpy import ma
+
+from .. import GSASIIElem as G2elem
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImapvars as G2mv
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+from .. import GSASIIplot as G2plt
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIpwdplot as G2pwpl
+from .. import GSASIIspc as G2spc
+from .. import GSASIIstrIO as G2stIO
+from .. import GSASIIstrMain as G2stMn
+from .. import defaultIparms as dI
+from . import GSASIIconstrGUI as G2cnstG
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIddataGUI as G2ddG
+from . import GSASIIfpaGUI as G2fpa
+from . import GSASIIimgGUI as G2imG
+from . import GSASIImiscGUI as G2IO
+from . import GSASIIphsGUI as G2phG
+from . import GSASIIpwdGUI as G2pdG
+from . import GSASIIrestrGUI as G2restG
+from . import GSASIIseqGUI as G2seq
 
 try:
     import OpenGL as ogl
@@ -39,9 +66,7 @@ try:
         util.find_library = new_util_find_library
 except ImportError:
     pass
-import struct as st
 
-import scipy as sp
 
 try:
     import wx
@@ -52,30 +77,6 @@ try:
     import wx.lib.scrolledpanel as wxscroll
 except ImportError:
     pass
-from . import GSASIIconstrGUI as G2cnstG
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIddataGUI as G2ddG
-from . import GSASIIElem as G2elem
-from . import GSASIIfiles as G2fil
-from . import GSASIIfpaGUI as G2fpa
-from . import GSASIIimgGUI as G2imG
-from . import GSASIIlattice as G2lat
-from . import GSASIImapvars as G2mv
-from . import GSASIImath as G2mth
-from . import GSASIImiscGUI as G2IO
-from . import GSASIIobj as G2obj
-from . import GSASIIpath
-from . import GSASIIphsGUI as G2phG
-from . import GSASIIplot as G2plt
-from . import GSASIIpwd as G2pwd
-from . import GSASIIpwdGUI as G2pdG
-from . import GSASIIpwdplot as G2pwpl
-from . import GSASIIrestrGUI as G2restG
-from . import GSASIIseqGUI as G2seq
-from . import GSASIIspc as G2spc
-from . import GSASIIstrIO as G2stIO
-from . import GSASIIstrMain as G2stMn
-from . import defaultIparms as dI
 
 try:
     wx.NewIdRef

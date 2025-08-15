@@ -25,8 +25,8 @@ except ImportError:
     pass
 import scipy as sp
 
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIdataGUI as G2gd
+from .GUI import GSASIIctrlGUI as G2G
+from .GUI import GSASIIdataGUI as G2gd
 from . import GSASIIfiles as G2fil
 from . import GSASIIobj as G2obj
 from . import GSASIIpath

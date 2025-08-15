@@ -5,7 +5,7 @@ import os
 import wx
 import wx.lib.colourselect as wscs
 
-from . import GSASIIpath
+from .. import GSASIIpath
 
 
 # for Python 3.10+, define a version of wxPoint that accepts float params

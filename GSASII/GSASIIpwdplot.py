@@ -32,8 +32,8 @@ except (ImportError, ValueError) as err:
         print("error msg:", err)
 import matplotlib.colors as mpcls
 
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIdataGUI as G2gd
+from .GUI import GSASIIctrlGUI as G2G
+from .GUI import GSASIIdataGUI as G2gd
 from . import GSASIIlattice as G2lat
 from . import GSASIImath as G2mth
 
@@ -4221,8 +4221,8 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
             except:
                 pass
             msg = f"""Use of the OriginPro exporter requires that OriginPro be
-installed on your computer as well as a communication 
-module (originpro) via pip. 
+installed on your computer as well as a communication
+module (originpro) via pip.
 {note1}
 Use command
 
@@ -4501,9 +4501,9 @@ in a cmd.exe window to do this.
         fp = open(filename, "w")
         fp.write(f'''IGOR
 X setDataFolder root:
-X //   ***   Replace GSAS2Data with name of current project in GSAS. 
-X //   ***   this name will get "order" number (0,1,2...) to be unique and data will be stored there. 
-X //   ***   and the graph will also be named using this base name. 
+X //   ***   Replace GSAS2Data with name of current project in GSAS.
+X //   ***   this name will get "order" number (0,1,2...) to be unique and data will be stored there.
+X //   ***   and the graph will also be named using this base name.
 X NewDataFolder/O/S $(UniqueName(CleanupName("{proj}",0),11, 0))
 X string GSAXSProjectName = GetDataFolder(0)
 WAVES /D/O TwoTheta, Intensity, FitIntensity, Background, Difference, NormResidual
@@ -4517,7 +4517,7 @@ X //  ***   static part of the code, NB reflection tickmarks later ****
 X SetScale d 0,0, "degree", TwoTheta
 X //  ***   this is where graph is created and data added
 X string G_Name=CleanupName(GSAXSProjectName,0)
-X Display/K=1/W=(50,40,850,640) Intensity vs twoTheta; DoWindow/C $(G_Name) 
+X Display/K=1/W=(50,40,850,640) Intensity vs twoTheta; DoWindow/C $(G_Name)
 X DoWindow/T $(G_Name), G_Name
 X AppendToGraph FitIntensity vs TwoTheta
 X AppendToGraph Background vs TwoTheta
@@ -4561,7 +4561,7 @@ X ModifyGraph lblPosMode=0,lblPos(Res_left)=84
 """.format("2Θ", ylabel, "∆/σ")
         )
         fp.write(
-            """X //  ***   set display limits. 
+            """X //  ***   set display limits.
 X SetAxis left {2}, {3}
 X SetAxis bottom {0}, {1}
 X SetAxis Res_bot {0}, {1}
@@ -4894,16 +4894,16 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
     sizebox.Add((1, 1), 1, wx.EXPAND, 1)
     helpinfo = """----   Help on creating hard copy   ----
     Select options such as the size of text and colors for plot contents here.
-    
+
     Tricks:
     * Use a color of pure white to remove an element from the plot (light
     gray is plotted)
     * LaTeX-like coding can be used for phase labels such as
     $\\rm FeO_2$ (for a subscript 2) or $\\gamma$-Ti for a Greek "gamma"
-    
+
     Note that the dpi value is ignored for svg and pdf files, which are
-    drawn with vector graphics (infinite resolution). Likewise, the agr and 
-    itx options create input files for programs Grace (QtGrace) and Igor 
+    drawn with vector graphics (infinite resolution). Likewise, the agr and
+    itx options create input files for programs Grace (QtGrace) and Igor
     Pro, that largely duplicate the displayed plot. Once read into Grace
     or Igor the graphs can then be customized.
     """

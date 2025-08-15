@@ -18,21 +18,21 @@ import wx.lib.scrolledpanel as wxscroll
 from numpy import ma
 from wx.lib import gridmovers
 
+from .. import GSASIIElem as G2elem
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImapvars as G2mv
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+from .. import GSASIIplot as G2plt
+from .. import GSASIIscriptable as G2sc
+from .. import GSASIIspc as G2spc
+from .. import GSASIIstrIO as G2stIO
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIElem as G2elem
 from . import GSASIIElemGUI as G2elemGUI
-from . import GSASIIfiles as G2fil
-from . import GSASIIlattice as G2lat
-from . import GSASIImapvars as G2mv
-from . import GSASIImath as G2mth
-from . import GSASIIobj as G2obj
-from . import GSASIIpath
 from . import GSASIIphsGUI as G2phG
-from . import GSASIIplot as G2plt
-from . import GSASIIscriptable as G2sc
-from . import GSASIIspc as G2spc
-from . import GSASIIstrIO as G2stIO
 
 VERY_LIGHT_GREY = wx.Colour(235, 235, 235)
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -2924,11 +2924,11 @@ def UpdateRigidBodies(G2frame, data):
             G2frame.rbBook.SetSelection(G2frame.rbBook.FindPage(pagename))
 
             HelpInfo = """
-This window shows all the atoms that were read from the 
+This window shows all the atoms that were read from the
 selected phase file. Select the atoms that will be used in the
-rigid body processing (this may include atoms needed to 
-define an axis or origin that will not be included in the 
-eventual rigid body.) Note that in the plot window, 
+rigid body processing (this may include atoms needed to
+define an axis or origin that will not be included in the
+eventual rigid body.) Note that in the plot window,
 unselected atoms appear much darker than selected atoms.
 """
             mainSizer = G2G.G2MultiChoiceWindow(
@@ -3220,12 +3220,12 @@ unselected atoms appear much darker than selected atoms.
             helpText = """
 In this window, if wanted,
 one can select one or more atoms and use them
-to define an origin, a specified axis or place the selected atoms into 
+to define an origin, a specified axis or place the selected atoms into
 a selected plane. (Different sets of atoms can be used for each
 operation.)
 %%Once that is done, atoms can be selected and can be exported in a
-"XYZ" file for use in a program such as Avogadro or can be used to 
-create a Vector or Residue rigid body. 
+"XYZ" file for use in a program such as Avogadro or can be used to
+create a Vector or Residue rigid body.
 """
             btnSizer.Add(
                 G2G.HelpButton(RBImpPnl, helpText, wrap=400), 0, wx.ALIGN_RIGHT
@@ -4021,8 +4021,8 @@ create a Vector or Residue rigid body.
                     refAtmSizer.Add(refSel, 0, WACV)
                 refHelpInfo = """
 * The "Orientation Reference" control defines the Cartesian
-axes for rigid bodies with the three atoms, A, B and C. 
-The vector from B to A defines the x-axis and the y axis is placed 
+axes for rigid bodies with the three atoms, A, B and C.
+The vector from B to A defines the x-axis and the y axis is placed
 in the plane defined by B to A and C to A. A,B,C must not be collinear.
 """
                 hlp = G2G.HelpButton(VectorRBDisplay, refHelpInfo, wrap=400)
@@ -4694,16 +4694,16 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             rbRef = rbData["rbRef"]
             refHelpInfo = """
 * The "Orientation Reference" control defines the Cartesian
-axes for rigid bodies with the three atoms, A, B and C. 
-The vector from B to A defines the x-axis and the y axis is placed 
+axes for rigid bodies with the three atoms, A, B and C.
+The vector from B to A defines the x-axis and the y axis is placed
 in the plane defined by B to A and C to A. A,B,C must not be collinear.
- 
+
 %%* The origin is at A unless the "Center RB?" button is pressed.
 
 %%* The 'Cycle XYZ' button will permute the rigid body XYZ coordinates so
 XYZ --> ZXY. Repeat if needed.
 
-%%* The "Center RB?" button will shift the origin of the 
+%%* The "Center RB?" button will shift the origin of the
 rigid body to be the midpoint of all atoms in the body (not mass weighted).
 """
             refAtmSizer2 = None

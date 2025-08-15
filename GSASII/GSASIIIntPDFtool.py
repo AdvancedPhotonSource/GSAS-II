@@ -18,8 +18,8 @@ from . import GSASIIpath
 GSASIIpath.SetBinaryPath(True)
 import multiprocessing as mp
 
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIimgGUI as G2imG
+from .GUI import GSASIIctrlGUI as G2G
+from .GUI import GSASIIimgGUI as G2imG
 from . import GSASIIscriptable as G2sc
 
 try:  # fails during doc build

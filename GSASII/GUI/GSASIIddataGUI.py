@@ -6,15 +6,15 @@ import copy
 import numpy as np
 import numpy.linalg as nl
 
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIlattice as G2lat
+from .. import GSASIIpath
+from .. import GSASIIplot as G2plt
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIspc as G2spc
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIfiles as G2fil
-from . import GSASIIlattice as G2lat
-from . import GSASIIpath
 from . import GSASIIphsGUI as G2phG
-from . import GSASIIplot as G2plt
-from . import GSASIIpwd as G2pwd
-from . import GSASIIspc as G2spc
 
 try:
     import wx
@@ -28,6 +28,7 @@ try:
     BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
 except:
     pass
+
 mapDefault = {
     "MapType": "",
     "RefList": "",

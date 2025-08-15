@@ -12,22 +12,23 @@ import numpy.linalg as nl
 import scipy.optimize as so
 from numpy import ma
 
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImapvars as G2mv
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIplot as G2plt
+from .. import GSASIIpwdplot as G2pwpl
+from .. import GSASIIstrIO as G2stIO
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIexprGUI as G2exG
+from . import GSASIImiscGUI as G2IO
+
 try:
     import wx
     import wx.grid as wg
 except ImportError:
     pass
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIexprGUI as G2exG
-from . import GSASIIlattice as G2lat
-from . import GSASIImapvars as G2mv
-from . import GSASIImath as G2mth
-from . import GSASIImiscGUI as G2IO
-from . import GSASIIobj as G2obj
-from . import GSASIIplot as G2plt
-from . import GSASIIpwdplot as G2pwpl
-from . import GSASIIstrIO as G2stIO
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 

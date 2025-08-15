@@ -7,14 +7,14 @@ import numpy as np
 import wx
 import wx.lib.scrolledpanel as wxscroll
 
+from .. import GSASIIfiles as G2fil
+from .. import GSASIImath as G2mth
+from .. import GSASIIpath
+from .. import GSASIIplot as G2plt
+from .. import GSASIIpwd as G2pwd
+from .. import NIST_profile as FP
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIfiles as G2fil
-from . import GSASIImath as G2mth
-from . import GSASIIpath
-from . import GSASIIplot as G2plt
-from . import GSASIIpwd as G2pwd
-from . import NIST_profile as FP
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 

@@ -10,7 +10,7 @@ a wxPython application. For other platforms ``wx.App()`` is called directly.
 
 import sys
 
-from . import GSASIIpath
+from .. import GSASIIpath
 
 __version__ = "5.0.0"
 gv = GSASIIpath.getSavedVersionInfo()
@@ -82,7 +82,7 @@ def main():
         GSASIIpath.SetBinaryPath(True)
     except Exception as msg:
         print(
-            """Unable to run with current installation due to lack of binary (compiled) 
+            """Unable to run with current installation due to lack of binary (compiled)
 files, please reset or reinstall"""
         )
         print("\nError:")

@@ -7,16 +7,6 @@ which is why most modules reference it as G2IO.
 
 """
 
-# # Allow this to be imported without wx present.
-# try:
-#     import wx
-# except ImportError:
-#     print('wx failed')
-#     # was needed by sphinx, but probably not anymore
-#     class Placeholder(object):
-#         def __init__(self):
-#             self.Dialog = object
-#     wx = Placeholder()
 import copy
 import math
 import os
@@ -29,20 +19,18 @@ import numpy as np
 import wx
 from numpy import ma
 
+from .. import GSASIIElem as G2el
+from .. import GSASIIElem as G2elem
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+from .. import GSASIIpwd as G2pwd
+from .. import GSASIIspc as G2spc
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIElem as G2el
-from . import GSASIIElem as G2elem
-from . import GSASIIfiles as G2fil
-
-# import GSASIIpwdGUI as G2pdG
 from . import GSASIIimgGUI as G2imG
-from . import GSASIIlattice as G2lat
-from . import GSASIImath as G2mth
-from . import GSASIIobj as G2obj
-from . import GSASIIpath
-from . import GSASIIpwd as G2pwd
-from . import GSASIIspc as G2spc
 
 DEBUG = False  # =True for various prints
 TRANSP = False  # =true to transpose images for testing

@@ -30,6 +30,8 @@
 import time
 
 import numpy as np
+from frozendict import frozendict
+from numpy.typing import NDArray
 from scipy.optimize import linear_sum_assignment
 
 from . import GSASIIfiles as G2fil
@@ -80,7 +82,7 @@ def unique_id_gen(string_list: list) -> list:
     return output_list
 
 
-def lat_params_to_vec(lat_params: list) -> list:
+def lat_params_to_vec(lat_params: list[float]) -> list[list[float]]:
     """Construct lattice vectors from lattice parameters, according to the
     convention as detailed in the following post,
 
@@ -151,7 +153,7 @@ class kVector:
                       Default: 1
     """
 
-    transMatrix = {
+    transMatrix: frozendict[str, NDArray[np.int_]] = frozendict({
         "P": np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]),
         "cF": 1 / 2 * np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]),
         "oF": 1 / 2 * np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]),
@@ -162,19 +164,19 @@ class kVector:
         "oC": 1 / 2 * np.array([[1, 1, 0], [-1, 1, 0], [0, 0, 2]]),
         "oA": 1 / 2 * np.array([[0, 0, 2], [1, 1, 0], [-1, 1, 0]]),
         "mC": 1 / 2 * np.array([[1, -1, 0], [1, -1, 1], [1, 1, -1]]),
-    }
+    })
 
     def __init__(
         self,
         bravfSym: str,
-        cell: list,
-        positions: list,
-        numbers: list,
-        nucPeaks: list,
-        superPeaks: list,
+        cell: list[list[float]],
+        positions: list[list[float]],
+        numbers: list[int],
+        nucPeaks: list[list[int]],
+        superPeaks: list[float],
         threshold: float,
         option: int = 0,
-        kstep: list = None,
+        kstep: list[float] | None = None,
         processes: int = 1,
     ):
         self.bravfSym = bravfSym

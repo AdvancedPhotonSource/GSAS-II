@@ -8,7 +8,7 @@ Also tests the imports that require GSAS-II-compiled binaries.
 import os
 import sys
 import tempfile
-import numpy.testing as npt
+
 home = os.path.dirname(__file__)
 work = tempfile.gettempdir()
 import importlib.util
@@ -23,8 +23,8 @@ if G2loc is None: # fixup path if GSASII not installed into Python
     print('GSAS-II not installed in Python; Hacking sys.path')
     sys.path.append(os.path.dirname(home))
 
-import GSASII
 import GSASII.GSASIIscriptable as G2sc
+
 
 def test_image():
     '''Read in a MAR image (tests pack_f binary module) and then

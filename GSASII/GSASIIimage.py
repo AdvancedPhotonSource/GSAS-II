@@ -1,26 +1,26 @@
-# -*- coding: utf-8 -*-
 #GSASII image calculations: Image calibration, masking & integration routines.
 '''
 Classes and routines defined in :mod:`GSASIIimage` follow.
 '''
 
-from __future__ import division, print_function
+import copy
 import math
 import time
-import copy
+
 import numpy as np
 import numpy.linalg as nl
-import numpy.ma as ma
-from scipy.optimize import leastsq
 import scipy.interpolate as scint
-import scipy.special as sc
+from numpy import ma
+from scipy.optimize import leastsq
+
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
+#import GSASIImath as G2mth
+from . import GSASIIfiles as G2fil
 from . import GSASIIlattice as G2lat
 from . import GSASIIpwd as G2pwd
 from . import GSASIIspc as G2spc
-#import GSASIImath as G2mth
-from . import GSASIIfiles as G2fil
 from . import ImageCalibrants as calFile
 
 # trig functions in degrees
@@ -169,7 +169,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     def ellipseCalcD(B,xyd,varyList,parmDict):
 
         x,y,dsp = xyd
-        varyDict = dict(zip(varyList,B))
+        varyDict = dict(zip(varyList,B, strict=False))
         parms = {}
         for parm in parmDict:
             if parm in varyList:
@@ -205,11 +205,11 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
 
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
     fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f']
-    Fmt = dict(zip(names,fmt))
+    Fmt = dict(zip(names,fmt, strict=False))
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
-    parmDict.update(zip(varyList,result[0]))
+    parmDict.update(zip(varyList,result[0], strict=False))
     vals = list(result[0])
     if not len(vals):
         sig = []
@@ -220,7 +220,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         sigList = np.zeros(7)
         for i,name in enumerate(varyList):
             sigList[i] = sig[varyList.index(name)]
-        ValSig = zip(varyList,vals,sig)
+        ValSig = zip(varyList,vals,sig, strict=False)
     if Print:
         if len(sig):
             CalibPrint(ValSig,chisq,rings.shape[0])
@@ -302,7 +302,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
 
     def ellipseCalcD(B,xyd,varyList,parmDict):
         x,y,dist,dsp = xyd
-        varyDict = dict(zip(varyList,B))
+        varyDict = dict(zip(varyList,B, strict=False))
         parms = {}
         for parm in parmDict:
             if parm in varyList:
@@ -346,13 +346,13 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
-    parmDict.update(zip(varyList,result[0]))
+    parmDict.update(zip(varyList,result[0], strict=False))
     vals = list(result[0])
     if chisq > 1:
         sig = list(np.sqrt(chisq*np.diag(result[1])))
     else:
         sig = list(np.sqrt(np.diag(result[1])))
-    sigDict = {name:s for name,s in zip(varyList,sig)}
+    sigDict = {name:s for name,s in zip(varyList,sig, strict=False)}
     if Print:
         CalibPrint(parmDict,sigDict,chisq,rings.shape[0])
     if covar:
@@ -798,7 +798,7 @@ def EdgeFinder(image,data):
     '''this makes list of all x,y where I>edgeMin suitable for an ellipse search?
     Not currently used but might be useful in future?
     '''
-    import numpy.ma as ma
+    from numpy import ma
     Nx,Ny = data['size']
     pixelSize = data['pixelSize']
     edgemin = data['edgemin']
@@ -810,7 +810,7 @@ def EdgeFinder(image,data):
     tam = ma.getmask(ma.masked_less(image.flatten(),edgemin))
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
-    return zip(tax,tay)
+    return zip(tax,tay, strict=False)
     
 def CalcRings(G2frame,ImageZ,data,masks):
     pixelSize = data['pixelSize']
@@ -829,7 +829,7 @@ def CalcRings(G2frame,ImageZ,data,masks):
     calibrant = calFile.Calibrants[data['calibrant']]
     Bravais,SGs,Cells = calibrant[:3]
     HKL = []
-    for bravais,sg,cell in zip(Bravais,SGs,Cells):
+    for bravais,sg,cell in zip(Bravais,SGs,Cells, strict=False):
         A = G2lat.cell2A(cell)
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
@@ -902,7 +902,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     calibrant = calFile.Calibrants[data['calibrant']]
     Bravais,SGs,Cells = calibrant[:3]
     HKL = []
-    for bravais,sg,cell in zip(Bravais,SGs,Cells):
+    for bravais,sg,cell in zip(Bravais,SGs,Cells, strict=False):
         A = G2lat.cell2A(cell)
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
@@ -1041,7 +1041,7 @@ def ImageCalibrate(G2frame,data):
     calibrant = calFile.Calibrants[data['calibrant']]
     Bravais,SGs,Cells = calibrant[:3]
     HKL = []
-    for bravais,sg,cell in zip(Bravais,SGs,Cells):
+    for bravais,sg,cell in zip(Bravais,SGs,Cells, strict=False):
         A = G2lat.cell2A(cell)
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
@@ -1169,8 +1169,7 @@ def ImageCalibrate(G2frame,data):
                 if debug:   print (fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings)))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
 #            G2plt.PlotImage(G2frame,newImage=True)
-        else:
-            if debug:   print ('insufficient number of points in this ellipse to fit')
+        elif debug:   print ('insufficient number of points in this ellipse to fit')
 #            break
     G2plt.PlotImage(G2frame,newImage=True)
     fullSize = len(G2frame.ImageZ)/scalex
@@ -1243,7 +1242,9 @@ def polymask(data,Poly,Spots=[]):
     try:
         from matplotlib.backends.backend_agg import FigureCanvasAgg as hcCanvas
     except ImportError:
-        from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
+        from matplotlib.backends.backend_agg import (
+            FigureCanvas as hcCanvas,  # standard name
+        )
     
     if not Poly and not Spots:
         return []
@@ -1305,7 +1306,7 @@ def MakeMaskMap(data,masks,iLim,jLim):
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     #make position masks here
-    tam = ma.make_mask_none((nI*nJ))
+    tam = ma.make_mask_none(nI*nJ)
     if len(masks['Pmask']):
         tam = ma.mask_or(tam,ma.make_mask(masks['Pmask'][iLim[0]:iLim[1],jLim[0]:jLim[1]].flatten()))
     if tam.shape:
@@ -1553,7 +1554,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         lutth = LUtth
     elif 'log(q)' in data['binType']:
         lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
-    elif 'q' == data['binType'].lower():
+    elif data['binType'].lower() == 'q':
         lutth = 4.*np.pi*npsind(LUtth/2.)/data['wavelength']
     dtth = (lutth[1]-lutth[0])/numChans
     muT = data.get('SampleAbs',[0.0,''])[0]
@@ -1604,7 +1605,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                 tabs = np.ones_like(taz)
             if 'log(q)' in data.get('binType',''):
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
-            elif 'q' == data.get('binType','').lower():
+            elif data.get('binType','').lower() == 'q':
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
             times[2] += time.time()-t0          #fill map
 
@@ -1620,11 +1621,11 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     #prepare masked arrays of bins with pixels for interpolation setup
     H2msk = [ma.array(H2[:-1],mask=np.logical_not(nst)) for nst in NST]
 #    H0msk = [ma.array(np.divide(h0,nst),mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
-    H0msk = [ma.array(h0/nst,mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
+    H0msk = [ma.array(h0/nst,mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0, strict=False)]
     #make linear interpolators; outside limits give NaN
     H0 = []
     problemEntries = []
-    for i,(h0msk,h2msk) in enumerate(zip(H0msk,H2msk)):
+    for i,(h0msk,h2msk) in enumerate(zip(H0msk,H2msk, strict=False)):
         try:
             h0int = scint.interp1d(h2msk.compressed(),h0msk.compressed(),bounds_error=False)
             #do interpolation on all points - fills in the empty bins; leaves others the same
@@ -1636,7 +1637,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     H0 = np.nan_to_num(np.array(H0))
     if 'log(q)' in data.get('binType',''):
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
-    elif 'q' == data.get('binType','').lower():
+    elif data.get('binType','').lower() == 'q':
         H2 = 2.*npasind(H2*data['wavelength']/(4.*np.pi))
     if Dazm:
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
@@ -1659,7 +1660,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         msg = ""
         for i in problemEntries:
             if msg: msg += ', '
-            msg += "{:.2f}".format((H1[i+1]+H1[i])/2.)
+            msg += f"{(H1[i+1]+H1[i])/2.:.2f}"
         print('\nWarning, integrations have no pixels at these azimuth(s)\n\t',msg,'\n')
     if returnN:     #As requested by Steven Weigand
         return H0,H1,H2,NST,CancelPressed
@@ -1743,7 +1744,7 @@ def IntStrSta(Image,StrSta,Controls):
                 ringint *= tabs
             ringint /= pola[0]      #just 1st column
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
-            RingsAI.append(np.array(list(zip(ringazm,ringint))).T)
+            RingsAI.append(np.array(list(zip(ringazm,ringint, strict=False))).T)
     return RingsAI
 
 def CalcStrSta(StrSta,Controls):
@@ -1828,7 +1829,7 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
     covM = result[1]
     covMatrix = covM*chisq
     sig = list(np.sqrt(chisq*np.diag(result[1])))
-    ValSig = zip(names,fmt,vals,sig)
+    ValSig = zip(names,fmt,vals,sig, strict=False)
     StrainPrint(ValSig,dset)
     return vals,sig,covMatrix
 
@@ -1990,7 +1991,7 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     '''
     #if GSASIIpath.GetConfigValue('debug'): print('faster all-Python AutoPixelMask')
     try:
-        from scipy.stats import median_abs_deviation as newMAD # new in 1.5.0
+        from scipy.stats import median_abs_deviation as newMAD  # new in 1.5.0
         def MAD(args,**kwargs):
             kwargs['scale'] = 1.4826
             return newMAD(args,**kwargs)
@@ -2014,10 +2015,10 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     band = np.array(Image)
     TA = Make2ThetaAzimuthMap(Controls, (0, Image.shape[0]), (0, Image.shape[1]))[0]
     TThs = np.linspace(LUtth[0], LUtth[1], numChans, False)
-    mask = (TA >= LUtth[1]) | (TA < LUtth[0]) | tam
+    mask = (LUtth[1] <= TA) | (LUtth[0] > TA) | tam
 
     for it in range(len(TThs)):
-        masker = (TA >= TThs[it]) & (TA < TThs[it]+dtth) & ~tam
+        masker = (TThs[it] <= TA) & (TThs[it]+dtth > TA) & ~tam
         if (TThs[it] < Masks['SpotMask'].get('SearchMin',0.0) or
             TThs[it] > Masks['SpotMask'].get('SearchMax',180.0)):
             mask |= masker
@@ -2032,7 +2033,7 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
         anom = np.abs(band-median)/mad <= esdMul
         mask |= (anom & masker)
         #print(TThs[it],sum(sum(masker))- sum(sum(anom & masker)))
-        if not dlg is None:
+        if dlg is not None:
             GoOn = dlg.Update(it,newmsg='Processed 2-theta rings = %d'%(it))
             if not GoOn[0]:
                 return None

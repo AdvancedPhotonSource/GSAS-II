@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 The routines here are called either directly when GSAS-II is used without multiprocessing
 or in separate cores when multiprocessing is used.
@@ -14,13 +13,14 @@ These routines are designed to be used in one of two ways:
 Note that :func:`GSASIImpsubs.InitMP` should be called before any of the other routines
 in this module are used. 
 '''
-from __future__ import division, print_function
 import multiprocessing as mp
+
 import numpy as np
-import numpy.ma as ma
+from numpy import ma
+
+from . import GSASIIfiles as G2fil
 from . import GSASIIpath
 from . import GSASIIpwd as G2pwd
-from . import GSASIIfiles as G2fil
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -53,7 +53,7 @@ def InitMP(allowMP=True):
     if ncores > 1:
         useMP = True
     if useMP:
-        G2fil.G2Print('Multiprocessing with {} cores enabled'.format(ncores))
+        G2fil.G2Print(f'Multiprocessing with {ncores} cores enabled')
     return useMP,ncores
 
 ################################################################################

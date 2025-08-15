@@ -1,12 +1,14 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import time
+
+import numpy as np
+
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
-import numpy as np
+
+
 class CBF_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read cif image data .cbf file.
     This is used by Pilatus. 

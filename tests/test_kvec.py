@@ -4,12 +4,13 @@ test_kvec.py
 Performs a series of tests on the k-vector search code.
 '''
 
+import importlib.util
 import os
 import sys
+
 import numpy as np
 import pytest
 
-import importlib.util
 if importlib.util.find_spec('GSASII') is None:
     home = os.path.dirname(__file__)
     sys.path.append(os.path.dirname(home))

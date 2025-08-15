@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
-#
 '''
 '''
 
-from __future__ import division, print_function
-import sys
 import os.path
 import random as ran
-from .. import GSASIIobj as G2obj
+import sys
+
 from .. import GSASIIlattice as G2lat
+from .. import GSASIIobj as G2obj
+
 
 class XYZ_ReaderClass(G2obj.ImportPhase):
     'Routine to import Phase information from a XYZ file'
@@ -22,7 +21,7 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
     def ContentsValidator(self, filename):
         '''Taking a stab a validating: 1st line should be a number
         '''
-        fp = open(filename,'r')
+        fp = open(filename)
         try:
             int(fp.readline().strip())
         except:
@@ -34,7 +33,7 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
     def Reader(self,filename, ParentFrame=None, **unused):
         'Read a phase from an XYZ file.'
         self.errors = 'Error opening file'
-        fp = open(filename, 'r')
+        fp = open(filename)
         self.Phase = {}
         natom = int(fp.readline().strip())
         Title = os.path.basename(filename)

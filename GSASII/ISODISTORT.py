@@ -1,15 +1,16 @@
-# -*- coding: utf-8 -*-
-from __future__ import division, print_function
-import subprocess as subp
 import os
 import os.path
+import subprocess as subp
+
 try:
     import requests
 except:
     print('Module requests not installed, access to ISODISTORT not possible')
 import copy
-from . import GSASIIscriptable as G2sc
+
 from . import GSASIIctrlGUI as G2G
+from . import GSASIIscriptable as G2sc
+
 #import tempfile
 isouploadsite = 'https://stokes.byu.edu/iso/isodistortuploadfile.php'
 isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
@@ -195,7 +196,7 @@ def GetISOcif(out4,method):
                 data3[name] = ''
                 pos = posF
                 continue
-            elif 'atomsfile' in name:
+            if 'atomsfile' in name:
                 data3[name] = ' '
                 pos = posF
                 continue

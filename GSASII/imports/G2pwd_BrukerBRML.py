@@ -1,16 +1,19 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 import os
 import shutil
+
 import numpy as np
+
 from .. import GSASIIpath
+
 try:
     import xmltodict as xml
 except Exception as msg:
     #if GSASIIpath.GetConfigValue('debug'): print(f'Debug: xmltodict error = {msg}')
     xml = None
 from .. import GSASIIobj as G2obj
+
 
 class brml_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a zip Bruker .brml file'
@@ -144,8 +147,8 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             self.comments = []
             try:
                 scandata = data['RawData']['DataRoutes']['DataRoute']['ScanInformation']['ScaleAxes']
-                if not scandata: return
-                if 'ScaleAxisInfo' not in scandata: return
+                if not scandata: return None
+                if 'ScaleAxisInfo' not in scandata: return None
             except:
                 return False
             try:
@@ -160,7 +163,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
             try:
                 self.Sample['Temperature'] = 273. + float(xyT[2])  # seems to be temperature
             except:
-                return
+                return None
             y = np.array([float(y) for y in xyT[3:3+nSteps]])
             x = np.array([start + i * incr for i in range(len(y))])
             w = np.where(y>0,1/y,0.)

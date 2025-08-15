@@ -1,12 +1,14 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import os.path as ospath
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
+
+
 class fp_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a FullProf 1-10 column .dat file'
     def __init__(self):
@@ -24,22 +26,21 @@ class fp_ReaderClass(G2obj.ImportPowderData):
         gotCcomment = False
         begin = True
         self.GSAS = False
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if i > 50: break
             if begin:
                 if gotCcomment and S.find('*/') > -1:
                     begin = False
                     continue
-                elif S.strip().startswith('/*'):
+                if S.strip().startswith('/*'):
                     gotCcomment = True
                     continue   
-                elif not S.strip(): # ignore blank lines
+                if not S.strip(): # ignore blank lines
                     continue   
-                elif S.lstrip()[0] in ["'",'#','!',]:
+                if S.lstrip()[0] in ["'",'#','!',]:
                     continue       #ignore comments, if any
-                else:
-                    begin = False
+                begin = False
                 # valid line to read? 
             vals = S.split()
             try:    #look for start,step,stop card
@@ -69,14 +70,14 @@ class fp_ReaderClass(G2obj.ImportPowderData):
         steps = False
         Stop = False
         N = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             self.errors = 'Error reading line: '+str(i+1)
             # Allow a block of comments delimited by /* and */
             # or (GSAS style) each comment line can begin with '#' or '!'
             if not S.strip(): # ignore blank lines
                 continue   
-            elif S.lstrip()[0] in ["'",'#','!',]:
+            if S.lstrip()[0] in ["'",'#','!',]:
                 self.comments.append(S[:-1])
                 continue       # store comments, if any
             if begin:
@@ -94,7 +95,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
                 if 'lambda' in S:
                     self.instdict['wave'] = float(vals[1])
                     continue
-                elif len(vals) >= 3:
+                if len(vals) >= 3:
                     try:
                         start = float(vals[0])
                         step = float(vals[1])
@@ -106,7 +107,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
                     except:
                         print('Skipping line ',S)
                     continue
-                elif i<3:
+                if i<3:
                     print('Skipping header line ',S)
                     continue
             # should be a valid line to read

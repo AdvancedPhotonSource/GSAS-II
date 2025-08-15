@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #GSASIIGUI
 '''
 GSASIIGUI provides a short file that is used to start the GSAS-II GUI. 
@@ -24,7 +23,7 @@ if gv is not None:
 def main():
     '''This routine is called to start the GSAS-II GUI
     '''
-    import scipy.optimize # loading here addresses problem with build for wx on Pi
+    import scipy.optimize  # loading here addresses problem with build for wx on Pi
     import wx
     # the next line removes the need for pythonw. Thanks to Matt Newville!
     # appears unneeded from wx 4.2.1 on
@@ -33,12 +32,12 @@ def main():
     # importing the following wx modules at the same time as wx seems to
     # eliminate the "Debug: Adding duplicate image handler for 'Windows bitmap
     # file'" error message
-    import wx.grid as wg
     import wx.aui
-    import wx.lib.scrolledpanel as wxscroll
-    import wx.lib.mixins.listctrl  as  listmix
-    import wx.richtext as wxrt
+    import wx.grid as wg
     import wx.lib.filebrowsebutton as wxfilebrowse
+    import wx.lib.mixins.listctrl as listmix
+    import wx.lib.scrolledpanel as wxscroll
+    import wx.richtext as wxrt
     wg,wx.aui,wxscroll,listmix,wxrt,wxfilebrowse,scipy.optimize # avoid unused warning
 
     if sys.platform == "darwin":

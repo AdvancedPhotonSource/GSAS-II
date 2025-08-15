@@ -1,37 +1,38 @@
-# -*- coding: utf-8 -*-
 #GSASIIconstrGUI - constraint GUI routines
 '''
 Constraints and rigid bodies GUI routines follow.
 
 '''
-from __future__ import division, print_function
-import platform
-import sys
 import copy
 import os.path
+import platform
+import random as ran
+import sys
+
+import numpy as np
+import numpy.linalg as nl
 import wx
 import wx.grid as wg
 import wx.lib.scrolledpanel as wxscroll
-import wx.lib.gridmovers as gridmovers
-import random as ran
-import numpy as np
-import numpy.ma as ma
-import numpy.linalg as nl
-from . import GSASIIpath
+from numpy import ma
+from wx.lib import gridmovers
+
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
 from . import GSASIIElem as G2elem
 from . import GSASIIElemGUI as G2elemGUI
-from . import GSASIIstrIO as G2stIO
+from . import GSASIIfiles as G2fil
+from . import GSASIIlattice as G2lat
 from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
-from . import GSASIIlattice as G2lat
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIfiles as G2fil
-from . import GSASIIplot as G2plt
 from . import GSASIIobj as G2obj
-from . import GSASIIspc as G2spc
+from . import GSASIIpath
 from . import GSASIIphsGUI as G2phG
+from . import GSASIIplot as G2plt
 from . import GSASIIscriptable as G2sc
+from . import GSASIIspc as G2spc
+from . import GSASIIstrIO as G2stIO
+
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 
@@ -118,7 +119,6 @@ class G2BoolEditor(wg.GridCellBoolEditor):
 
     def StartingClick(self):
         '''This seems to be needed for BeginEdit to work properly'''
-        pass
 
     def Destroy(self):
         "final cleanup"
@@ -201,7 +201,7 @@ class RBDataTable(wg.GridTableBase):
         elif col == 2:
             return self.types[row]
         else:
-            return '{:.5f}'.format(self.coords[row][col-3])
+            return f'{self.coords[row][col-3]:.5f}'
     def SetValue(self, row, col, value):
         row = self.index[row]
         try:
@@ -562,7 +562,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 pass
             elif FrstVarb.atom is None:
                 for nam in nameList:
-                    for ph,plbl in zip(phaselist,phaselbl):
+                    for ph,plbl in zip(phaselist,phaselbl, strict=False):
                         if plbl: plbl = 'For ' + plbl
                         var = ph+"::"+nam
                         if var == str(FrstVarb) or var in varList: continue
@@ -570,7 +570,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         choices.append([var,plbl,meaning])
             else:
                 for nam in nameList:
-                    for ph,plbl in zip(phaselist,phaselbl):
+                    for ph,plbl in zip(phaselist,phaselbl, strict=False):
                         if plbl: plbl = ' in ' + plbl
                         for atype in ['']+TypeList:
                             if atype:
@@ -587,9 +587,9 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             if FrstVarb.name == "Scale":
                 meaning = "Phase fraction"
             for nam in nameList:
-                for ph,plbl in zip(phaselist,phaselbl):
+                for ph,plbl in zip(phaselist,phaselbl, strict=False):
                     if plbl: plbl = 'For ' + plbl
-                    for hst,hlbl in zip(histlist,histlbl):
+                    for hst,hlbl in zip(histlist,histlbl, strict=False):
                         if hlbl:
                             if plbl:
                                 hlbl = ' in ' + hlbl
@@ -603,7 +603,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             if FrstVarb.name == "Scale":
                 meaning = "Scale factor"
             for nam in nameList:
-                for hst,hlbl in zip(histlist,histlbl):
+                for hst,hlbl in zip(histlist,histlbl, strict=False):
                     if hlbl:
                         hlbl = 'For ' + hlbl                                
                         var = ":"+hst+":"+nam
@@ -673,37 +673,36 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         var = ph + ":" + hst + ":" + l[2]
                         if var in varbs: continue
                         varbs.append(var)
-            else: # constraints with atoms or rigid bodies
-                if len(l) == 5: # rigid body parameter
-                    var = ':'.join(l)
-                    if var in varbs: continue
-                    varbs.append(var)
-                elif l[3] == "all":
-                    for ph in phlist:
-                        key = G2obj.LookupPhaseName(ph)[0]
-                        for hst in hstlist: # should be blank
-                            for iatm,at in enumerate(Phases[key]['Atoms']):
-                                var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
-                                if var in varbs: continue
-                                varbs.append(var)
-                elif '=' in l[3]:
-                    for ph in phlist:
-                        key = G2obj.LookupPhaseName(ph)[0]
-                        cx,ct,cs,cia = Phases[key]['General']['AtomPtrs']
-                        for hst in hstlist: # should be blank
-                            atyp = l[3].split('=')[1]
-                            for iatm,at in enumerate(Phases[key]['Atoms']):
-                                if at[ct] != atyp: continue
-                                var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
-                                if var in varbs: continue
-                                varbs.append(var)
-                else:
-                    for ph in phlist:
-                        key = G2obj.LookupPhaseName(ph)[0]
-                        for hst in hstlist: # should be blank
-                            var = ph + ":" + hst + ":" + l[2] + ":" + l[3]
+            elif len(l) == 5: # rigid body parameter
+                var = ':'.join(l)
+                if var in varbs: continue
+                varbs.append(var)
+            elif l[3] == "all":
+                for ph in phlist:
+                    key = G2obj.LookupPhaseName(ph)[0]
+                    for hst in hstlist: # should be blank
+                        for iatm,at in enumerate(Phases[key]['Atoms']):
+                            var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
                             if var in varbs: continue
                             varbs.append(var)
+            elif '=' in l[3]:
+                for ph in phlist:
+                    key = G2obj.LookupPhaseName(ph)[0]
+                    cx,ct,cs,cia = Phases[key]['General']['AtomPtrs']
+                    for hst in hstlist: # should be blank
+                        atyp = l[3].split('=')[1]
+                        for iatm,at in enumerate(Phases[key]['Atoms']):
+                            if at[ct] != atyp: continue
+                            var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
+                            if var in varbs: continue
+                            varbs.append(var)
+            else:
+                for ph in phlist:
+                    key = G2obj.LookupPhaseName(ph)[0]
+                    for hst in hstlist: # should be blank
+                        var = ph + ":" + hst + ":" + l[2] + ":" + l[3]
+                        if var in varbs: continue
+                        varbs.append(var)
         if len(varbs) >= 1 or 'constraint' in constType:
             constr = [[1.0,FrstVarb]]
             for item in varbs[1:]:
@@ -977,7 +976,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         Amat,Bmat = G2lat.cell2AB(Cell)
         atTypes = General['AtomTypes']
         Radii = np.array(General['BondRadii'])
-        AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
+        AtInfo = dict(zip(atTypes,Radii, strict=False)) #or General['BondRadii']
         Orig = atNames.index(FrstName.split()[1])
         OType = Atoms[Orig][ct]
         XYZ = G2mth.getAtomXYZ(Atoms,cx)        
@@ -1107,7 +1106,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             Sizer = wx.FlexGridSizer(0,5,0,0)
             Sizer1.Add(Sizer)
             helptext = ''
-            for sym,(warnmsg,note),helptext in zip(symGen,SymErr,SymHelp):
+            for sym,(warnmsg,note),helptext in zip(symGen,SymErr,SymHelp, strict=False):
                 if warnmsg:
                     if helptext: helptext += '\n\n'
                     helptext += warnmsg
@@ -1124,7 +1123,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 else:
                     Sizer.Add((-1,-1))
                 Sizer.Add((-1,-1))
-            for sym,(warnmsg,note),helptext in zip(symGenD,SymErrD,SymHelpD):
+            for sym,(warnmsg,note),helptext in zip(symGenD,SymErrD,SymHelpD, strict=False):
                 if warnmsg:
                     if helptext: helptext += '\n\n'
                     helptext += warnmsg
@@ -1187,11 +1186,11 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                                 eqString[-1] += ' - '
                                 m = abs(m)
                         if m == 1:
-                            eqString[-1] += '{:} '.format(var)
+                            eqString[-1] += f'{var} '
                         else:
-                            eqString[-1] += '{:.3g}*{:} '.format(m,var)
+                            eqString[-1] += f'{m:.3g}*{var} '
                         varMean = G2obj.fmtVarDescr(var)
-                        helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
+                        helptext += f'\n  {m:.5g} * {var} ' + " ("+ varMean + ")"
                     # Add extra notes about this constraint (such as from ISODISTORT)
                     if '_Explain' in data:
                         hlptxt = None
@@ -1227,11 +1226,11 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                                 eqString[-1] += ' - '
                                 m = -term[0]
                         if m == 1:
-                            eqString[-1] += '{:} '.format(var)
+                            eqString[-1] += f'{var} '
                         else:
-                            eqString[-1] += '{:.3g}*{:} '.format(m,var)
+                            eqString[-1] += f'{m:.3g}*{var} '
                         varMean = G2obj.fmtVarDescr(var)
-                        helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
+                        helptext += f'\n  {m:.5g} * {var} ' + " ("+ varMean + ")"
                         helptext += explain
                     typeString = 'CONST '
                     eqString[-1] += ' = '+str(item[-3])
@@ -1241,13 +1240,13 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     #var = str(item[0][1])
                     var,explain,note,warnmsg = item[0][1].fmtVarByMode(seqmode,note,warnmsg)
                     #if '?' in var: badVar = True
-                    helptext = 'Variable {:} '.format(var) + " ("+ G2obj.fmtVarDescr(var) + ")"
+                    helptext = f'Variable {var} ' + " ("+ G2obj.fmtVarDescr(var) + ")"
                     helptext += "\n\nis equivalent to "
                     m = item[0][0]/item[1][0]
                     #var1 = str(item[1][1])
                     var1,explain,note,warnmsg = item[1][1].fmtVarByMode(seqmode,note,warnmsg)
-                    helptext += '\n  {:.5g} * {:} '.format(m,var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
-                    eqString[-1] += '{:} = {:}'.format(var1,var)
+                    helptext += f'\n  {m:.5g} * {var1} ' + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                    eqString[-1] += f'{var1} = {var}'
                     if m != 1:
                         eqString[-1] += ' / ' + str(m)
                     typeString = 'EQUIV '
@@ -1264,19 +1263,19 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                             eqString.append(' ')
                         varMean = G2obj.fmtVarDescr(var)
                         if i == 0: # move independent variable to end, as requested by Bob
-                            helptext += '\n{:} '.format(var) + " ("+ varMean + ")"
+                            helptext += f'\n{var} ' + " ("+ varMean + ")"
                             helptext += "\n\nis equivalent to the following, noting multipliers:"
                             continue
-                        elif eqString[-1] != '':
+                        if eqString[-1] != '':
                             eqString[-1] += ' = '
                         #m = normval/term[0]
                         m = term[0]/normval
                         if m == 1:
-                            eqString[-1] += '{:}'.format(var)
+                            eqString[-1] += f'{var}'
                         else:
-                            eqString[-1] += '{:.3g}*{:} '.format(m,var)
-                        helptext += '\n  {:.5g} * {:} '.format(m,var) + " ("+ varMean + ")"
-                    eqString[-1] += ' = {:} '.format(indepterm)
+                            eqString[-1] += f'{m:.3g}*{var} '
+                        helptext += f'\n  {m:.5g} * {var} ' + " ("+ varMean + ")"
+                    eqString[-1] += f' = {indepterm} '
                     typeString = 'EQUIV '
                 else:
                     print ('Unexpected constraint'+item)
@@ -1525,7 +1524,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             G2frame.Page = [page,'sym']
             UpdateConstraintPanel(SymConstr,'Sym-Generated')
         # remove menu items when not allowed
-        for obj,flag in zip(G2frame.dataWindow.ConstraintEdit.GetMenuItems(),enableEditCons): 
+        for obj,flag in zip(G2frame.dataWindow.ConstraintEdit.GetMenuItems(),enableEditCons, strict=False): 
             obj.Enable(flag)
         G2frame.dataWindow.SetDataSize()
 
@@ -1732,7 +1731,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         if seqhistnum is None:
             print ('\nError message(s):\n',errmsg)
         else:
-            print ('\nError message(s) for histogram #{}:\n{}'.format(seqhistnum,errmsg))
+            print (f'\nError message(s) for histogram #{seqhistnum}:\n{errmsg}')
         if warnmsg: print ('\nAlso note these constraint warning(s):\n'+warnmsg)
     #elif GSASIIpath.GetConfigValue('debug'):
     #    print ('Generated constraints\n',G2mv.VarRemapShow())
@@ -1753,7 +1752,7 @@ def CheckAllScalePhaseFractions(G2frame,refine=True):
     for h,hist in enumerate(histograms):
         if CheckScalePhaseFractions(G2frame,hist,histograms,phases,Constraints):
             problems.append((h,hist))
-    if len(problems) == 0: return
+    if len(problems) == 0: return None
     msg = 'You are refining the scale factor and all phase fractions for histogram(s) #'
     for i,(h,hist) in enumerate(problems):
         if i: msg += ', '
@@ -1861,13 +1860,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             else:
                 parm = None
         elif SGLaue == '2/m':
-            if iA in [0,1,2]:
-                parm = '%d::A%s'%(pId,iA)
-            elif iA == 3 and SGUniq == 'c':
-                parm = '%d::A%s'%(pId,iA)
-            elif iA == 4 and SGUniq == 'b':
-                parm = '%d::A%s'%(pId,iA)
-            elif iA == 5 and SGUniq == 'a':
+            if iA in [0,1,2] or (iA == 3 and SGUniq == 'c') or (iA == 4 and SGUniq == 'b') or (iA == 5 and SGUniq == 'a'):
                 parm = '%d::A%s'%(pId,iA)
             else:
                 parm = None            
@@ -2048,7 +2041,7 @@ def UpdateRigidBodies(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 macfile = dlg.GetPath()
-                macro = open(macfile,'r')
+                macro = open(macfile)
                 head = macro.readline()
                 if macName not in head:
                     print (head)
@@ -2069,7 +2062,7 @@ def UpdateRigidBodies(G2frame,data):
             if dlg.ShowModal() == wx.ID_OK:
                 txtfile = dlg.GetPath()
                 ext = os.path.splitext(txtfile)[1]
-                text = open(txtfile,'r')
+                text = open(txtfile)
             else: # cancel was pressed
                 ext = ''
                 text = []
@@ -2122,10 +2115,10 @@ def UpdateRigidBodies(G2frame,data):
                     fp.write('rbSeq: ') 
                     fp.write('{:d} {:d} {:.1f}: '.format(*item[:3]))
                     for num in item[3]:
-                        fp.write('{:d} '.format(num))
+                        fp.write(f'{num:d} ')
                     fp.write('\n')
                 for i,sym in enumerate(rbData['rbTypes']):
-                    fp.write("{:3s}".format(sym))
+                    fp.write(f"{sym:3s}")
                     fp.write('{:8.5f}{:9.5f}{:9.5f}   '
                             .format(*rbData['rbXYZ'][i]))
                     fp.write('\n')
@@ -2145,7 +2138,7 @@ def UpdateRigidBodies(G2frame,data):
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0]+'.resbody'  # set extension
-                fp = open(filename,'r')
+                fp = open(filename)
                 l = fp.readline().strip()
                 if 'Name' not in l:
                     fp.close()
@@ -2163,7 +2156,7 @@ def UpdateRigidBodies(G2frame,data):
                 while 'rbSeq' in l:
                     tag,vals,lst = l.split(':')
                     seq = []
-                    for t,v in zip((int,int,float),vals.split()): 
+                    for t,v in zip((int,int,float),vals.split(), strict=False): 
                         seq.append(t(v))
                     seq.append([])
                     for num in lst.split():
@@ -2309,7 +2302,7 @@ def UpdateRigidBodies(G2frame,data):
                 GetCoords(atmsel)
                 Page2()
 
-            if 'macromolecular' == rd.Phase['General']['Type']:
+            if rd.Phase['General']['Type'] == 'macromolecular':
                 # for PDB imports, lets see if a quick reformat of atoms list will work
                 rd.Phase['Atoms'] = [a[3:] for a in rd.Phase['Atoms']]
                 rd.Phase['General']['AtomPtrs']  = [i-3 for i in rd.Phase['General']['AtomPtrs']]
@@ -2761,23 +2754,22 @@ create a Vector or Residue rigid body.
         # read in the phase file
         filename = filelist[0]
         rd = reader
-        with open(filename, 'r'):
+        with open(filename):
             rd.ReInitialize()
             rd.errors = ""
             if not rd.ContentsValidator(filename):   # Report error
-                G2fil.G2Print("Warning: File {} has a validation error".format(filename))
+                G2fil.G2Print(f"Warning: File {filename} has a validation error")
                 return
             if len(rd.selections) > 1:
-                print("File {} has {} phases. This is unexpected."
-                                    .format(filename,len(rd.selections)))
+                print(f"File {filename} has {len(rd.selections)} phases. This is unexpected."
+                                    )
                 return
 
             rd.objname = os.path.basename(filename)
             try:
                 rd.Reader(filename)
             except Exception as msg:
-                G2fil.G2Print("Warning: read of file {} failed\n{}".format(
-                    filename,rd.errors))
+                G2fil.G2Print(f"Warning: read of file {filename} failed\n{rd.errors}")
                 if GSASIIpath.GetConfigValue('debug'):
                     print(msg)
                     import traceback
@@ -2859,7 +2851,7 @@ create a Vector or Residue rigid body.
                 fp.write('\n')
                 ntrans = len(data['Vector'][rbid]['VectMag'])
                 for i,sym in enumerate(data['Vector'][rbid]['rbTypes']):
-                    fp.write("{:3s}".format(sym))
+                    fp.write(f"{sym:3s}")
                     for j in range(ntrans):
                         fp.write('{:8.5f}{:9.5f}{:9.5f}   '
                             .format(*data['Vector'][rbid]['rbVect'][j][i]))
@@ -2879,7 +2871,7 @@ create a Vector or Residue rigid body.
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0]+'.vecbody'  # set extension
-                fp = open(filename,'r')
+                fp = open(filename)
                 l = fp.readline().strip()
                 if 'Name' not in l:
                     fp.close()
@@ -2932,7 +2924,7 @@ create a Vector or Residue rigid body.
         macStr = macro.readline()
         while macStr:
             items = macStr.split()
-            if 'I' == items[0]:
+            if items[0] == 'I':
                 resRBsel = ran.randint(0,sys.maxsize)
                 rbName = items[1]
                 rbTypes = []
@@ -4102,7 +4094,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
         for (lbl,xyz,xyzsig,G2var,
              var,mval,msig,G2mode) in zip(
                 ISO['IsoVarList'],dispVals,dispSUs,ISO['G2VarList'],
-                ISO['IsoModeList'],modeVals,modeSUs,ISO['G2ModeList'] ):
+                ISO['IsoModeList'],modeVals,modeSUs,ISO['G2ModeList'], strict=False ):
             if str(G2mode) in constrDict:
                 ch = G2G.HelpButton(panel2,fmtHelp(constrDict[str(G2mode)],var))
                 subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
@@ -4128,7 +4120,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     if 'G2OccVarList' in ISO:
         deltaList = []
         parmDict,varyList = G2frame.MakeLSParmDict()
-        for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
+        for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList'], strict=False):
             var = gv.varname()
             albl = Ilbl[:Ilbl.rfind('_')]
             pval = ISO['BaseOcc'][albl]
@@ -4142,7 +4134,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
         modeVals = np.inner(ISO['Var2OccMatrix'],deltaList)
         for lbl,delocc,var,val,norm,G2mode in zip(
                 ISO['OccVarList'],deltaList,
-                ISO['OccModeList'],modeVals,ISO['OccNormList'],ISO['G2OccModeList']):
+                ISO['OccModeList'],modeVals,ISO['OccNormList'],ISO['G2OccModeList'], strict=False):
             if str(G2mode) in constrDict:
                 ch = G2G.HelpButton(panel2,fmtHelp(constrDict[str(G2mode)],var))
                 subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
@@ -4241,9 +4233,9 @@ def ShowIsoModes(G2frame,phase):
             modeExp[str(ISO['G2ModeList'][i])] = line
 
         crdExp = {}
-        for i,(lbl,row) in enumerate(zip(ISO['IsoVarList'],ISO['Mode2VarMatrix'])):
+        for i,(lbl,row) in enumerate(zip(ISO['IsoVarList'],ISO['Mode2VarMatrix'], strict=False)):
             l = ''
-            for j,(k,n) in enumerate(zip(row,ISO['NormList'])):
+            for j,(k,n) in enumerate(zip(row,ISO['NormList'], strict=False)):
                 if np.isclose(k,0): continue
                 l1 = ''
                 if j > 0 and k < 0:
@@ -4283,7 +4275,7 @@ def ShowIsoModes(G2frame,phase):
         for i,lbl in enumerate(ISO['IsoVarList']):
             var = str(ISO['G2VarList'][i]).replace('::dA','::A')
             if np.isclose(ISO['G2coordOffset'][i],0):
-                G2var = '{:}'.format(var)
+                G2var = f'{var}'
             elif ISO['G2coordOffset'][i] < 0:
                 G2var = '({:} + {:.3g})'.format(var,-ISO['G2coordOffset'][i])
             else:
@@ -4294,7 +4286,7 @@ def ShowIsoModes(G2frame,phase):
             subSizer1.Add((-1,-1)) # spacer
             subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,crdExp[lbl]),0,WACV)
             
-        for (isomode,G2mode) in zip(ISO['IsoModeList'],ISO['G2ModeList']):
+        for (isomode,G2mode) in zip(ISO['IsoModeList'],ISO['G2ModeList'], strict=False):
             if str(G2mode) in constrDict:
                 ch = G2G.HelpButton(panel2,fmtHelp(constrDict[str(G2mode)],isomode))
                 subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)

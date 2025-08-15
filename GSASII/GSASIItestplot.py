@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 #GSASIItestplot.py
 '''
 '''
+import matplotlib.figure as mplfig
 import wx
 import wx.aui
-import matplotlib.figure as mplfig
+
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 except ImportError:
@@ -12,7 +12,9 @@ except ImportError:
 try:
     from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
 except ImportError:
-    from matplotlib.backends.backend_wxagg import Toolbar as Toolbar # name changes in wx4.0.1
+    from matplotlib.backends.backend_wxagg import (
+        Toolbar as Toolbar,  # name changes in wx4.0.1
+    )
 
 class Plot(wx.Panel):
     'Creates a plotting window'

@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
 
-from __future__ import division, print_function
 import os
 import os.path as ospath
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
 npsind = lambda x: np.sin(np.pi*x/180.)
 class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
@@ -36,7 +37,7 @@ class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
         prevAngle = None
         header = True
         self.skip = -1
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,line in enumerate(fp):
             sline = line.split()
             vals = len(sline)
@@ -94,7 +95,7 @@ class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
         x = []
         y = []
         w = []
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,line in enumerate(fp):
             if i < self.skip: continue
             sline = line.split()
@@ -149,12 +150,12 @@ class Rigaku_rasReaderClass(G2obj.ImportReflectometryData):
     #    Should not count on ContentsValidator being called before Reader
 
     def ContentsValidator(self, filename):
-        fp = open(filename,'r',encoding='latin-1')
+        fp = open(filename,encoding='latin-1')
         self.vals = None
         self.stepsize = None
         if '.rasx' in filename:
             try:
-                import zipfile as ZF        
+                import zipfile as ZF
                 with ZF.ZipFile(filename, 'r') as zipObj:
                     zipObj.extract('Data0/Profile0.txt')
                     zipObj.extract('Data0/MesurementConditions0.xml')
@@ -216,7 +217,7 @@ class Rigaku_rasReaderClass(G2obj.ImportReflectometryData):
                 
             
         else:    #.ras file
-            fp = open(filename,'r',encoding='latin-1')
+            fp = open(filename,encoding='latin-1')
             blockNum = self.selections[0]
             x = []
             y = []

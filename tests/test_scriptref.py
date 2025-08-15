@@ -8,11 +8,14 @@ data. Tests texture code as well.
 import os
 import sys
 import tempfile
+
 import numpy.testing as npt
+
 home = os.path.dirname(__file__)
 work = tempfile.gettempdir()
 
 import importlib.util
+
 G2loc = None
 try: 
     G2loc = importlib.util.find_spec('GSASII.GSASIIscriptable')
@@ -23,8 +26,8 @@ if G2loc is None: # fixup path if GSASII not installed into Python
     print('GSAS-II not installed in Python; Hacking sys.path')
     sys.path.append(os.path.dirname(home))
 
-import GSASII
 import GSASII.GSASIIscriptable as G2sc
+
 
 def test_refine():
     'Performs a GSAS-II refinement using GSASIIscriptable and tutorial data'
@@ -59,12 +62,10 @@ def test_refine():
     h2.set_refinements({"Background": { "no. coeffs": 3, "refine": True }})
     gpx.refine()
     testR('Fit scale & bkg',45.811562,17.864834)
-    #
     phase0.set_refinements({'Cell':True})
     phase0.set_HAP_refinements({'HStrain':True},[h2])
     gpx.refine()
     testR('Fit cells',32.475886, 15.02412)
-    #
     phase0.set_HAP_refinements({'Mustrain':{'refine':True}},[h1])
     #phase0.set_HAP_refinements({'Size':{'refine':True}},[h1])
     h1.set_refinements({"Sample Parameters": {"Shift": True}})
@@ -87,7 +88,6 @@ def test_refine():
     npt.assert_allclose((POdict['C(2,0)'],POdict['C(2,2)']),
                             [0.127404, 0.09406], rtol=0.001)
     testR('add PO',13.166705,  6.381183)
-    #
     print('OK')
     
 if __name__ == '__main__':

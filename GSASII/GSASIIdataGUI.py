@@ -1,27 +1,27 @@
-# -*- coding: utf-8 -*-
 #GSASIIdataGUI - Main GUI routines
 '''
 Routines for main GUI wx.Frame follow.
 '''
-from __future__ import division, print_function
-import platform
-import pickle
-import time
-import math
-import random as ran
 import copy
-import sys
-import shutil
-import os
 import inspect
+import math
+import os
+import pickle
+import platform
+import random as ran
 import re
-import numpy as np
-import numpy.ma as ma
+import shutil
+import sys
+import time
+
 import matplotlib as mpl
+import numpy as np
+from numpy import ma
+
 try:
     import OpenGL as ogl
     try:
-        import OpenGL.GL   # this fails in <=2020 versions of Python on OS X 11.x
+        import OpenGL.GL  # this fails in <=2020 versions of Python on OS X 11.x
     except ImportError:
         print('Drat, patching for Big Sur')
         from ctypes import util
@@ -33,40 +33,43 @@ try:
         util.find_library = new_util_find_library
 except ImportError:
     pass
-import scipy as sp
 import struct as st
+
+import scipy as sp
+
 try:
     import wx
     import wx.grid as wg
+
     #import wx.wizard as wz
     #import wx.aui
     import wx.lib.scrolledpanel as wxscroll
 except ImportError:
     pass
-from . import GSASIIpath
+from . import GSASIIconstrGUI as G2cnstG
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIddataGUI as G2ddG
+from . import GSASIIElem as G2elem
+from . import GSASIIfiles as G2fil
+from . import GSASIIfpaGUI as G2fpa
+from . import GSASIIimgGUI as G2imG
+from . import GSASIIlattice as G2lat
+from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
 from . import GSASIImiscGUI as G2IO
-from . import GSASIIfiles as G2fil
-from . import GSASIIstrIO as G2stIO
-from . import GSASIIlattice as G2lat
-from . import GSASIIplot as G2plt
-from . import GSASIIpwdplot as G2pwpl
-from . import GSASIIpwdGUI as G2pdG
-from . import GSASIIimgGUI as G2imG
-from . import GSASIIphsGUI as G2phG
-from . import GSASIIspc as G2spc
-from . import GSASIImapvars as G2mv
-from . import GSASIIconstrGUI as G2cnstG
-from . import GSASIIrestrGUI as G2restG
 from . import GSASIIobj as G2obj
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIElem as G2elem
+from . import GSASIIpath
+from . import GSASIIphsGUI as G2phG
+from . import GSASIIplot as G2plt
 from . import GSASIIpwd as G2pwd
+from . import GSASIIpwdGUI as G2pdG
+from . import GSASIIpwdplot as G2pwpl
+from . import GSASIIrestrGUI as G2restG
+from . import GSASIIseqGUI as G2seq
+from . import GSASIIspc as G2spc
+from . import GSASIIstrIO as G2stIO
 from . import GSASIIstrMain as G2stMn
 from . import defaultIparms as dI
-from . import GSASIIfpaGUI as G2fpa
-from . import GSASIIseqGUI as G2seq
-from . import GSASIIddataGUI as G2ddG
 
 try:
     wx.NewIdRef
@@ -285,7 +288,7 @@ def compareVersions(version1,version2):
     :returns: 0 if the versions match, -1 if version1 < version2,
        or 1 if version1 > version2
     '''
-    for v1,v2 in zip(convVersion(version1),convVersion(version2)):
+    for v1,v2 in zip(convVersion(version1),convVersion(version2), strict=False):
         if v1 is None or v2 is None:
             return 0
         if v1 < v2: return -1
@@ -368,11 +371,11 @@ versionDict['tooNewUntested'] = {'Python':'3.14','wx': '4.2.4'}
 def ShowVersions():
     '''Show the versions of all GUI-required Python packages, etc.
     '''
+    import matplotlib as mpl
     import numpy as np
+    import OpenGL as ogl
     import scipy as sp
     import wx
-    import matplotlib as mpl
-    import OpenGL as ogl
     pkgList = [('Python',None), ('wx',wx), ('matplotlib', mpl), ('numpy',np),
                    ('scipy',sp), ('OpenGL',ogl)]
     if GSASIIpath.GetConfigValue('debug'):
@@ -390,7 +393,7 @@ def ShowVersions():
         if s == 'Python':
             pkgver = platform.python_version()
             prefix = ''
-            msg = "from {}. ".format(sys.executable)
+            msg = f"from {sys.executable}. "
         else:
             pkgver = m.__version__
             prefix = 'Package '
@@ -401,7 +404,7 @@ def ShowVersions():
                 msg += "Too old, problems are likely"
                 warn = True
                 if versionDict['errors']: versionDict['errors'] += '\n'
-                versionDict['errors'] += prefix + '{} version {} is too old for GSAS-II. An update is required. '.format(s,pkgver)
+                versionDict['errors'] += prefix + f'{s} version {pkgver} is too old for GSAS-II. An update is required. '
         if s in versionDict['tooOldWarn']:
             match = compareVersions(pkgver,versionDict['tooOldWarn'][s])
             if match <= 0:
@@ -480,7 +483,7 @@ def ShowVersions():
               ' GSAS-II to access web pages or self-install binary modules)')
         G2fil.NeededPackage({'Accessing web resources':['requests']})
     try:
-        import pybaselines.whittaker
+        pass
     except:
         G2fil.NeededPackage({'Auto background capability':['pybaselines']})
 
@@ -543,11 +546,11 @@ def TestOldVersions():
     '''Test the versions of required Python packages, etc.
     Returns a non-empty text string if there are problems.
     '''
+    import matplotlib as mpl
     import numpy as np
+    import OpenGL as ogl
     import scipy as sp
     import wx
-    import matplotlib as mpl
-    import OpenGL as ogl
     warnmsg = ''
     errmsg = ''
     for s,m in [('Python',None), ('wx',wx), ('matplotlib', mpl), ('numpy',np),
@@ -562,17 +565,17 @@ def TestOldVersions():
             match = compareVersions(pkgver,versionDict['tooOld'][s])
             if match <= 0:
                 if errmsg: errmsg += '\n'
-                errmsg += prefix + '{} version {} is too old to run GSAS-II.'.format(s,pkgver)
+                errmsg += prefix + f'{s} version {pkgver} is too old to run GSAS-II.'
         if s in versionDict['tooOldWarn']:
             match = compareVersions(pkgver,versionDict['tooOldWarn'][s])
             if match <= 0:
                 if warnmsg: warnmsg += '\n'
-                warnmsg += prefix + '{} version {} is likely too old for GSAS-II.'.format(s,pkgver)
+                warnmsg += prefix + f'{s} version {pkgver} is likely too old for GSAS-II.'
         if s in versionDict['badVersionWarn']:
             for v in versionDict['badVersionWarn'][s]:
                 if compareVersions(pkgver,v) == 0:
                     if errmsg: errmsg += '\n'
-                    errmsg += prefix + '{} version {} causes problems with GSAS-II.'.format(s,pkgver)
+                    errmsg += prefix + f'{s} version {pkgver} causes problems with GSAS-II.'
                     break
     return errmsg,warnmsg
 
@@ -810,8 +813,8 @@ class GSASII(wx.Frame):
 
     def PreviewFile(self,filename):
         'utility to confirm we have the right file'
-        fp = open(filename,'r')
-        rdmsg = u'File '+ filename +u' begins:\n\n'
+        fp = open(filename)
+        rdmsg = 'File '+ filename +' begins:\n\n'
         try:
             rdmsg += fp.read(80)
             rdmsg += '\n\nDo you want to read this file?'
@@ -819,7 +822,7 @@ class GSASII(wx.Frame):
             rdmsg = None
         fp.close()
         if rdmsg is None or not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
-            rdmsg = u'File '+ filename +u' is a binary file. Do you want to read this file?'
+            rdmsg = 'File '+ filename +' is a binary file. Do you want to read this file?'
         # it would be better to use something that
         # would resize better, but this will do for now
         dlg = wx.MessageDialog(self, rdmsg,'Is this the file you want?',wx.YES_NO|wx.ICON_QUESTION)
@@ -976,7 +979,7 @@ class GSASII(wx.Frame):
             if len(secondaryReaders) + len(primaryReaders) == 0 and reader:
                 self.ErrorDialog('Not supported','The selected reader cannot read file '+filename)
                 continue
-            elif len(secondaryReaders) + len(primaryReaders) == 0:
+            if len(secondaryReaders) + len(primaryReaders) == 0:
                 self.ErrorDialog('No Format','No matching format for file '+filename)
                 continue
 
@@ -1071,9 +1074,9 @@ class GSASII(wx.Frame):
             else:
                 if singlereader:
                     msg += '\n'+rd.warnings
-                    print(u'The '+ rd.formatName+u' reader was not able to read file '+filename+msg)
+                    print('The '+ rd.formatName+' reader was not able to read file '+filename+msg)
                     try:
-                        print(u'\n\nError message(s):\n\t'+errorReport)
+                        print('\n\nError message(s):\n\t'+errorReport)
                     except:
                         pass
                     self.ErrorDialog('Read Error','The '+ rd.formatName+
@@ -1095,7 +1098,7 @@ class GSASII(wx.Frame):
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Phase','Import phase data')
         for reader in self.ImportPhaseReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,'from '+reader.formatName+' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import phase data, use file to try to determine format')
@@ -1169,7 +1172,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     print('ChooseOrigin failed. Check your atom types')
             PhaseName = rd.Phase['General']['Name'][:]
             newPhaseList.append(PhaseName)
-            print(u'Read phase {} from file {}'.format(PhaseName,self.lastimport))
+            print(f'Read phase {PhaseName} from file {self.lastimport}')
             sub = FindPhaseItem(self)
             psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
             self.GPXtree.SetItemPyData(psub,rd.Phase)
@@ -1282,7 +1285,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu, 'Image','Import image file')
         for reader in self.ImportImageReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,'from '+reader.formatName+' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import image data, use file to try to determine format')
@@ -1312,7 +1315,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Structure Factor','Import Structure Factor data')
         for reader in self.ImportSfactReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,'from '+reader.formatName+' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import Structure Factor, use file to try to determine format')
@@ -1359,7 +1362,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 for Bank in rd.Banks:
                     valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),}
                     HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-                    print (u'Read structure factor table '+HistName+u' from file '+self.lastimport)
+                    print ('Read structure factor table '+HistName+' from file '+self.lastimport)
                     Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
                     if not Bank['RefDict'].get('FF'):
                         Bank['RefDict']['FF'] = {}
@@ -1372,7 +1375,7 @@ If you continue from this point, it is quite likely that all intensity computati
             else:
                 valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),}
                 HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-                print (u'Read structure factor table '+HistName+u' from file '+self.lastimport)
+                print ('Read structure factor table '+HistName+' from file '+self.lastimport)
                 if not rd.RefDict.get('FF'):
                     rd.RefDict['FF'] = {}
                 Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
@@ -1428,7 +1431,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Powder Data','Import Powder data')
         for reader in self.ImportPowderReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,'from '+reader.formatName+' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import powder data, use file to try to determine format')
@@ -1448,7 +1451,7 @@ If you continue from this point, it is quite likely that all intensity computati
         :param str instfile: name of instrument parameter file
 
         '''
-        File = open(instfile,'r')
+        File = open(instfile)
         lines = File.readlines()
         File.close()
         return lines
@@ -1507,14 +1510,14 @@ If you continue from this point, it is quite likely that all intensity computati
             return {}
         fp = 0
         try:
-            fp = open(instfile,'r')
+            fp = open(instfile)
             Iparm = {}
             for S in fp:
                 if '#' in S[0]:
                     continue
                 Iparm[S[:12]] = S[12:-1]
-        except IOError:
-            print(u'Error reading file: {}'.format(instfile))
+        except OSError:
+            print(f'Error reading file: {instfile}')
         if fp:
             fp.close()
 
@@ -1531,9 +1534,9 @@ If you continue from this point, it is quite likely that all intensity computati
                 choices.append('Bank '+str(i))
             bank = 1 + G2G.BlockSelector(
                 choices, self,
-                title=u'Select an instrument parameter bank for '+
-                os.path.split(rd.powderentry[0])[1]+u' BANK '+str(bank)+
-                u'\nOr use Cancel to select from the default parameter sets',
+                title='Select an instrument parameter bank for '+
+                os.path.split(rd.powderentry[0])[1]+' BANK '+str(bank)+
+                '\nOr use Cancel to select from the default parameter sets',
                 header='Block Selector')
         if bank is None: return {}
         # pull out requested bank # bank from the data, and change the bank to 1
@@ -1688,8 +1691,8 @@ If you continue from this point, it is quite likely that all intensity computati
                     rd.instmsg = instParmList   #an error message
                     return GetDefaultParms(self,rd)
             else:
-                self.ErrorDialog('Open Error',u'Error opening instrument parameter file '
-                    +u'{} requested by file {}'.format(instfile,filename))
+                self.ErrorDialog('Open Error','Error opening instrument parameter file '
+                    +f'{instfile} requested by file {filename}')
         #-- No other choice: ask the User for an instrument file -----------------------
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
@@ -1709,7 +1712,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     extOrd = [1,0]
                 extList = ['GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins;*.PRM|','GSAS-II iparm file (*.instprm)|*.instprm|']
                 dlg = wx.FileDialog(self,
-                    u'Choose inst. param file for "'+rd.idstring+u'" (or Cancel for default)',
+                    'Choose inst. param file for "'+rd.idstring+'" (or Cancel for default)',
                     pth, '',extList[extOrd[0]]+extList[extOrd[1]]+'All files (*.*)|*.*', wx.FD_OPEN)
                 if os.path.exists(lastIparmfile):
                     dlg.SetFilename(os.path.split(lastIparmfile)[-1])
@@ -1738,7 +1741,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     return G2fil.SetPowderInstParms(Iparm,rd)
                 else:
                     self.ErrorDialog('Read Error',
-                                     u'Error opening/reading file {}'.format(instfile))
+                                     f'Error opening/reading file {instfile}')
 
     def EnableRefineCommand(self):
         '''Check that phases are connected to histograms - if so then
@@ -1830,13 +1833,13 @@ If you continue from this point, it is quite likely that all intensity computati
                                      'Invalid file')
                 Id = 0
                 continue
-            elif len(rd.powderdata[0]) != len(rd.powderdata[1]):
+            if len(rd.powderdata[0]) != len(rd.powderdata[1]):
                 G2G.G2MessageBox(self,
                     f'Unequal X and Y lengths in file {rd.powderentry[0]} skipping',
                                      'Invalid file')
                 Id = 0
                 continue
-            elif HistName in PWDRlist:
+            if HistName in PWDRlist:
                 dlg = wx.MessageDialog(self,'Skip %s?'%(HistName),'Duplicate data name',wx.YES_NO)
                 try:
                     if dlg.ShowModal() == wx.ID_YES:
@@ -1900,7 +1903,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     exec(corr)
                     print('done')
                 except Exception as err:
-                    print(u'error: {}'.format(err))
+                    print(f'error: {err}')
                     print('with commands -------------------')
                     print(corr)
                     print('---------------------------------')
@@ -1949,11 +1952,10 @@ If you continue from this point, it is quite likely that all intensity computati
             Controls.update(rd.Controls)
             newHistList.append(HistName)
             rd.repeat_instparm = False  #clear the iparm reuse flag
-        else:
-            self.EnablePlot = True
-            if Id:
-                self.GPXtree.Expand(Id)
-                self.GPXtree.SelectItem(Id)
+        self.EnablePlot = True
+        if Id:
+            self.GPXtree.Expand(Id)
+            self.GPXtree.SelectItem(Id)
 
         G2fil.CleanupFromZip('instprm',self.cleanupList)
         if not newHistList: return # somehow, no new histograms
@@ -2025,7 +2027,7 @@ If you continue from this point, it is quite likely that all intensity computati
         # get instrument parameters for it
         Iparm = self.GetPowderIparm(rd, Iparm, '', lastdatafile)
         if Iparm is None:
-            return
+            return None
         Iparm1, Iparm2 = Iparm
         if 'T' in Iparm1['Type'][0]:
             rd.idstring = 'TOF neutron simulation'
@@ -2143,16 +2145,16 @@ If you continue from this point, it is quite likely that all intensity computati
             {})
         self.GPXtree.Expand(Id)
         self.GPXtree.SelectItem(Id)
-        print(u'Added simulation powder data {}'.format(HistName)+
-              ' with parameters from {}'.format(rd.instmsg))
+        print(f'Added simulation powder data {HistName}'+
+              f' with parameters from {rd.instmsg}')
 
         # make a list of phase names
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
         phaseNameList = list(usedHistograms.keys()) # phase names in use
-        if not phaseNameList: return # no phases yet, nothing to do
+        if not phaseNameList: return None # no phases yet, nothing to do
         header = 'Select phase(s) to add the new\npowder simulation (dummy) dataset to:'
         result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
-        if not result: return
+        if not result: return None
         # connect new phases to histograms
         sub = GetGPXtreeItemId(self,self.root,'Phases')
         if not sub:
@@ -2179,7 +2181,7 @@ If you continue from this point, it is quite likely that all intensity computati
         Controls['max cyc'] = 0
         self.EnableRefineCommand()
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
-        return # success
+        return None # success
 
     def AddSimulatedPowder(self,ttArr,intArr,HistName,Lam1,Lam2):
         '''Create a PWDR entry for a computed powder pattern
@@ -2276,7 +2278,7 @@ If you continue from this point, it is quite likely that all intensity computati
             {})
         self.GPXtree.Expand(Id)
         self.GPXtree.SelectItem(Id)
-        print(u'Added simulation powder data {}'.format(HistName))
+        print(f'Added simulation powder data {HistName}')
         return Id
 
     def OnPreferences(self,event):
@@ -2322,7 +2324,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Small Angle Data','Import small angle data')
         for reader in self.ImportSmallAngleReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,'from '+reader.formatName+' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2401,10 +2403,9 @@ If you continue from this point, it is quite likely that all intensity computati
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Models'),G2pwd.SetDefaultSASDModel())
             newHistList.append(HistName)
-        else:
-            self.EnablePlot = True
-            self.GPXtree.Expand(Id)
-            self.GPXtree.SelectItem(Id)
+        self.EnablePlot = True
+        self.GPXtree.Expand(Id)
+        self.GPXtree.SelectItem(Id)
 
         if not newHistList: return # somehow, no new histograms
         return # success
@@ -2415,7 +2416,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Reflectometry Data','Import reflectometry data')
         for reader in self.ImportReflectometryReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,'from '+reader.formatName+' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2496,10 +2497,9 @@ If you continue from this point, it is quite likely that all intensity computati
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Models'),G2pwd.SetDefaultREFDModel())
             newHistList.append(HistName)
-        else:
-            self.EnablePlot = True
-            self.GPXtree.Expand(Id)
-            self.GPXtree.SelectItem(Id)
+        self.EnablePlot = True
+        self.GPXtree.Expand(Id)
+        self.GPXtree.SelectItem(Id)
 
         if not newHistList: return # somehow, no new histograms
         return # success
@@ -2510,7 +2510,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'PDF G(R) Data','Import PDF G(R) data')
         for reader in self.ImportPDFReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,'from '+reader.formatName+' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPDF, id=item.GetId())
         submenu.AppendSeparator()
@@ -2572,10 +2572,9 @@ If you continue from this point, it is quite likely that all intensity computati
                  'dscale':[1.0,False],'Fitrange':[Rmin,Rmax],'qdamp':[0.03,False],'qbroad':[0,False],'Temp':300.})
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='PDF Peaks'),
                 {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
-        else:
-            self.EnablePlot = True
-            self.GPXtree.Expand(Id)
-            self.GPXtree.SelectItem(Id)
+        self.EnablePlot = True
+        self.GPXtree.Expand(Id)
+        self.GPXtree.SelectItem(Id)
 
         if not newHistList: return # somehow, no new histograms
         return # success
@@ -2687,10 +2686,9 @@ If you continue from this point, it is quite likely that all intensity computati
                         if 'mode' in inspect.getargspec(obj.Writer)[0]:
                             item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                             self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
-                    else:
-                        if 'mode' in inspect.getfullargspec(obj.Writer)[0]:
-                            item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
-                            self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
+                    elif 'mode' in inspect.getfullargspec(obj.Writer)[0]:
+                        item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
+                        self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
 
         item = imagemenu.Append(wx.ID_ANY,'Multiple image controls and masks',
             'Export image controls and masks for multiple images')
@@ -2847,7 +2845,6 @@ If you continue from this point, it is quite likely that all intensity computati
         self.ExportPhase = []
         self.ExportCIF = []
         self.ExportMTZ = []
-        #
         self.MacroStatusList = []  # logging
         self.Status = self.CreateStatusBar()
         self.Status.SetFieldsCount(2)
@@ -2912,10 +2909,10 @@ If you continue from this point, it is quite likely that all intensity computati
                 if GetDisplay(pos) is None: win.Center()
             except:
                 if GSASIIpath.GetConfigValue(var):
-                    print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
+                    print(f'Value for config {var} {GSASIIpath.GetConfigValue(var)} is invalid')
                     win.Center()
         # create a stand-in for a menu until it is created
-        class dummymenu(object):
+        class dummymenu:
             def Enable(*args, **kwargs): pass
         self.CancelSetLimitsMode = dummymenu()
 
@@ -3478,7 +3475,7 @@ If you continue from this point, it is quite likely that all intensity computati
                             self.GetParent().ErrorDialog('Data length error','Data to be summed must have same number of points'+
                                 '\nExpected:'+str(lenX)+
                                 '\nFound:   '+str(len(x))+'\nfor '+name)
-                            return
+                            return None
 #                            self.OnCancel(event)
                     else:
                         lenX = len(x)
@@ -3487,7 +3484,7 @@ If you continue from this point, it is quite likely that all intensity computati
                             self.GetParent().ErrorDialog('Data range error','Data to be summed must span same range'+
                                 '\nExpected:'+str(Xminmax[0])+' '+str(Xminmax[1])+
                                 '\nFound:   '+str(x[0])+' '+str(x[-1])+'\nfor '+name)
-                            return
+                            return None
 #                            self.OnCancel(event)
                     else:
                         Xminmax = [x[0],x[-1]]
@@ -3642,7 +3639,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     result,scales = dlg.GetData()
                     First = True
                     Found = False
-                    for item,name,scale in zip(Items,result,scales):
+                    for item,name,scale in zip(Items,result,scales, strict=False):
                         if scale:
                             if not Found:
                                 Data = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,item,'Image Controls'))
@@ -3993,7 +3990,7 @@ If you continue from this point, it is quite likely that all intensity computati
             try:
                 TextList.remove('PWDR'+pdfName[4:])
             except ValueError:
-                print (u'PWDR'+pdfName[4:]+u' for '+pdfName+u' not found')
+                print ('PWDR'+pdfName[4:]+' for '+pdfName+' not found')
         if len(TextList) == 0:
             if used:
                 msg = 'All histograms are associated with at least one phase. You must unset a histogram "use" flag in all phase(s) where it is referenced before it can be deleted'
@@ -4112,7 +4109,7 @@ If you continue from this point, it is quite likely that all intensity computati
             for f in files:
                 dirname,filroot = os.path.split(f)
                 if os.path.exists(f) and '.gpx' in f:
-                    sellist.append("{} from {}".format(filroot,dirname))
+                    sellist.append(f"{filroot} from {dirname}")
                     keeplist.append(f)
         except:
             print('Error processing previous project list:',files)
@@ -4180,11 +4177,8 @@ If you continue from this point, it is quite likely that all intensity computati
                 dlg.Destroy()
             if result == wx.ID_NO:
                 result = True
-            elif result == wx.ID_CANCEL:
+            elif result == wx.ID_CANCEL or not self.OnFileSave(None):
                 return False
-            else:
-                if not self.OnFileSave(None):
-                    return False
         self.GPXtree.DeleteChildren(self.root)
         self.GSASprojectfile = ''
         self.HKL = np.array([])
@@ -4223,7 +4217,7 @@ If you continue from this point, it is quite likely that all intensity computati
             filename = self.GSASprojectfile
         else:
             try:
-                self.GSASprojectfile = os.path.splitext(filename)[0]+u'.gpx'
+                self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             except:
                 self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
@@ -4250,7 +4244,7 @@ If you continue from this point, it is quite likely that all intensity computati
 
         try:
             dlg = G2G.gpxFileSelector(parent=self,startdir=pth)
-            if wx.ID_OK == dlg.ShowModal():
+            if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.Selection
             else:
                 return
@@ -4332,7 +4326,7 @@ If you continue from this point, it is quite likely that all intensity computati
             cmdfile = os.path.join(GSASIIpath.path2GSAS2,'debug_setup.py')
             if os.path.exists(cmdfile):
                 print(f'executing debug commands from {cmdfile}')
-                txt = open(cmdfile,'r').read()
+                txt = open(cmdfile).read()
                 def exectxt():
 #                    print(txt)
                     exec(txt)
@@ -4410,9 +4404,9 @@ If you continue from this point, it is quite likely that all intensity computati
         projName = os.path.split(self.GSASprojectfile)[1]
         if not projName: projName = "<unnamed project>"
         if self.testSeqRefineMode():
-            s = u' (sequential refinement)'
+            s = ' (sequential refinement)'
         else:
-            s = u''
+            s = ''
         self.SetTitle("GSAS-II project: "+projName + s)
         self.plotFrame.SetTitle("GSAS-II plots: "+projName)
 
@@ -4898,7 +4892,7 @@ If you continue from this point, it is quite likely that all intensity computati
                                     raise ValueError
                                 elems = formula[::2]
                                 nums = formula[1::2]
-                                Formula = zip(elems,nums)
+                                Formula = zip(elems,nums, strict=False)
                                 sumnum = 0.
                                 for [elem,num] in Formula:
                                     ElData = copy.deepcopy(G2elem.GetElInfo(elem,Parms))
@@ -5139,7 +5133,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     if (hist not in Histograms) and Phase['Histograms'][hist]['Use']:
                         if hist not in histIdList:
                             if badnum == 0:
-                                print('Error: hist {} not found in histIdList. Deleted?'.format(hist))
+                                print(f'Error: hist {hist} not found in histIdList. Deleted?')
                             badnum += 1
                             continue
                         item = histIdList[hist]
@@ -5151,9 +5145,9 @@ If you continue from this point, it is quite likely that all intensity computati
                             hId = histoList.index(hist)
                             Histograms[hist]['hId'] = hId
                         else: # would happen if a referenced histogram were renamed or deleted
-                            print(u'For phase "'+phase+
-                                  u'" unresolved reference to histogram "'+hist+u'"')
-        if badnum > 1: print('  ...hist not in histIdList error occured {} times'.format(badnum))
+                            print('For phase "'+phase+
+                                  '" unresolved reference to histogram "'+hist+'"')
+        if badnum > 1: print(f'  ...hist not in histIdList error occured {badnum} times')
         G2obj.IndexAllIds(Histograms=Histograms,Phases=phaseData)
         return Histograms,Phases
 
@@ -5202,9 +5196,7 @@ If you continue from this point, it is quite likely that all intensity computati
         parmDict.update(histDict)
         for parm in parmDict:
             if parm.split(':')[-1] in ['Azimuth','Gonio. radius','Lam1','Lam2',
-                'Omega','Chi','Phi','nDebye','nPeaks']:
-                parmDict[parm] = [parmDict[parm],'-']
-            elif parm.split(':')[-2] in ['Ax','Ay','Az','SHmodel','SHord']:
+                'Omega','Chi','Phi','nDebye','nPeaks'] or parm.split(':')[-2] in ['Ax','Ay','Az','SHmodel','SHord']:
                 parmDict[parm] = [parmDict[parm],'-']
             elif parm in varyList:
                 parmDict[parm] = [parmDict[parm],'T']
@@ -5246,7 +5238,6 @@ If you continue from this point, it is quite likely that all intensity computati
             errmsg,warnmsg = G2cnstG.CheckConstraints(self,Phases,Histograms,Constraints,[],reqVaryList)
         except G2mv.ConstraintException:
             print('Error in Constraint Processing')
-            pass
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         for key in ('parmMinDict','parmMaxDict','parmFrozen'):
             if key not in Controls: Controls[key] = {}
@@ -5338,7 +5329,7 @@ If you continue from this point, it is quite likely that all intensity computati
             G2stMth.ApplyRBModels(prms,Phases,rigidbodyDict)
             # apply shifts to atoms
             for dk in prms:
-                if not '::dA' in dk: continue
+                if '::dA' not in dk: continue
                 if prms[dk] == 0: continue
                 k = dk.replace('::dA','::A')
                 prms[k] += prms[dk]
@@ -5415,7 +5406,7 @@ If you continue from this point, it is quite likely that all intensity computati
             # the varied parameters
             if len(covMatrix) > 0:
                 derivs = []
-                for var,sig in zip(CvaryList,Csig):
+                for var,sig in zip(CvaryList,Csig, strict=False):
                     prms = copy.copy(parmValDict)
                     if sig == 0:
                         derivs.append(0.0)
@@ -5596,7 +5587,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
                 text += txt
                 rtext += txt
             text += '\nLoad new result & continue refinement?'
-            dlg2 = wx.MessageDialog(self,text,'LeBail-only fit: Rwp={:.3f}'.format(Rwp),wx.OK|wx.CANCEL)
+            dlg2 = wx.MessageDialog(self,text,f'LeBail-only fit: Rwp={Rwp:.3f}',wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
@@ -5670,7 +5661,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
             G2G.G2MessageBox(self,
                 'Phase partials cannot be computed for sequential fits',
                 'Sequential not allowed')
-            return
+            return None
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         savCyc,Controls['max cyc'] = Controls['max cyc'],0
         saveDervtype,Controls['deriv type'] = Controls['deriv type'],'analytic Hessian'
@@ -5710,7 +5701,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
             G2G.G2MessageBox(self,
                 'Phase partials cannot be saved - partials file does not exist',
                 'No partials file')
-            return
+            return None
         # savCyc,Controls['max cyc'] = Controls['max cyc'],0
         # saveDervtype,Controls['deriv type'] = Controls['deriv type'],'analytic Hessian'
         while True: # loop until we get a name or the user says no to export
@@ -5729,8 +5720,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
                     if not filename.endswith('_part_N'):
                         filename += '_part_N'
                     break
-                else:
-                    return False
+                return False
             finally:
                 dlg.Destroy()
         # write the .csv file(s)
@@ -5754,7 +5744,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
                     # Controls['max cyc'] = savCyc
                     Controls['PhasePartials'] = None
                     self.OnFileSave(event)
-                    return
+                    return None
                 Limits = histograms[h]['Limits'][1]
                 x = histograms[h]['Data'][0]
                 xB = np.searchsorted(x,Limits[0])
@@ -5781,7 +5771,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
                 fp1 = open(phPartialFile,'w')
                 fp1.write(', '.join(lblList))
                 fp1.write('\n')
-                for l in zip(*valList):
+                for l in zip(*valList, strict=False):
                     fp1.write(', '.join([str(i) for i in l])+'\n')
                 fp1.close()
                 print('File',phPartialFile,'written')
@@ -5832,7 +5822,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
             self.AddToNotebook(rtext,'REF')
             for tag,entry in (['VARS','varyList'],['CNSTR','contrSumm'],
                                   ['RSTR','restrSumm'],['RB','RBsumm']):
-                if entry in Rvals and Rvals[entry]:
+                if Rvals.get(entry):
                     self.AddToNotebook(Rvals[entry],tag,TimeStamp=False)
 
     def SaveTreeSetting(self):
@@ -5847,7 +5837,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
         (see G2plotNB.RegisterRedrawRoutine) and deletes all plots that
         have not been refreshed and require one (see G2plotNB.SetNoDelete).
         '''
-        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList, strict=False):
             win.plotInvalid = True  # mark all current plots as invalid so we can tell what has been updated
 
         oldPath = self.lastTreeSetting  # reload last selected tree item, triggers window and possibly plot redraw
@@ -5869,7 +5859,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
             else:
                 pltText = None
         # update plots where a routine is supplied
-        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList, strict=False):
             if win.plotInvalid and win.replotFunction:
                 if GSASIIpath.GetConfigValue('debug'):
                     print('updating',lbl,'by calling',str(win.replotFunction))
@@ -5885,7 +5875,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
         # delete any remaining plots unless they have been
         # updated (win.plotInvalid is False) or are tagged as not
         # needing a refresh (win.plotRequiresRedraw is False)
-        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList, strict=False):
             if win.plotInvalid and win.plotRequiresRedraw:
                 if GSASIIpath.GetConfigValue('debug'):
                     print('Closing out-of-date plot',lbl)
@@ -5968,7 +5958,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
             errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,
                                                           h,Histograms,Phases)
             if warnmsg or errmsg:
-                print ('\nConstraint warnings/errors for histogram "{}":'.format(h))
+                print (f'\nConstraint warnings/errors for histogram "{h}":')
             if warnmsg:
                 allwarnings[h] = warnmsg
                 print ('warning:',warnmsg)
@@ -5983,7 +5973,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
             else:
                 l = str(len(allerrors)) + ' histograms'
             self.ErrorDialog('Error in Constraints',
-                             'There were constraint errors in {}. Refinement is not possible. See console output or visit Constraints data tree item for more details.'.format(l))
+                             f'There were constraint errors in {l}. Refinement is not possible. See console output or visit Constraints data tree item for more details.')
             return
         elif allwarnings:
             if len(allwarnings) == len(seqList):
@@ -5992,7 +5982,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
                 l = 'one histogram'
             else:
                 l = str(len(allwarnings)) + ' histograms'
-            msg = 'There were constraint warnings generated in {}. See console output or visit the Constraints data tree item for more details. Continue with refinement?'.format(l)
+            msg = f'There were constraint warnings generated in {l}. See console output or visit the Constraints data tree item for more details. Continue with refinement?'
             dlg = wx.MessageDialog(self,msg,caption='Constraint warnings',style=wx.YES_NO)
             dlg.CenterOnParent()
             result = wx.ID_NO
@@ -6050,7 +6040,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
             if len(Msg.get('maxshift/sigma',[])) > 0:
                 avg = np.average(Msg['maxshift/sigma'])
                 mx = np.max(Msg['maxshift/sigma'])
-                text += '\nBiggest Max shft/sig was {:.3f} (average across histograms {:.3f})\n'.format(mx,avg)
+                text += f'\nBiggest Max shft/sig was {mx:.3f} (average across histograms {avg:.3f})\n'
             text += '\nLoad new result?'
             dlg = wx.MessageDialog(self,text,'Refinement results',wx.OK|wx.CANCEL)
             dlg.CenterOnParent()
@@ -6070,10 +6060,9 @@ Do you want to transfer the cell refinement flag to the Dij terms?
                     if refPlotUpdate:
                         refPlotUpdate({},restore=True)
                         refPlotUpdate = None
-                else:
-                    if refPlotUpdate:
-                        refPlotUpdate({},restore=True)
-                        refPlotUpdate = None
+                elif refPlotUpdate:
+                    refPlotUpdate({},restore=True)
+                    refPlotUpdate = None
             finally:
                 dlg.Destroy()
 
@@ -6588,9 +6577,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                         if '2' in platform.python_version_tuple()[0]:
                             if 'mode' in inspect.getargspec(obj.Writer)[0]:
                                 objlist.append(obj)
-                        else:
-                            if 'mode' in inspect.getfullargspec(obj.Writer)[0]:
-                                objlist.append(obj)
+                        elif 'mode' in inspect.getfullargspec(obj.Writer)[0]:
+                            objlist.append(obj)
                 if objlist or lbl == 'Project':
                     submenu = wx.Menu()
                     item = self.SequentialEx.AppendSubMenu(submenu,lbl+' as',txt)
@@ -7496,7 +7484,7 @@ other than being included in the Notebook section of the project file.''')
             ls = l.split()
             if len(ls) < 1: # empty line
                 continue
-            elif '[' not in ls[0] or '[REF]' in ls[0]:
+            if '[' not in ls[0] or '[REF]' in ls[0]:
                 if target not in l: continue
                 try:
                     vals.append(float(l.split(target)[1].split(',')[0].replace('=','').replace('%','')))
@@ -7564,7 +7552,7 @@ other than being included in the Notebook section of the project file.''')
     Btn = wx.Button(parent,label='Save')
     botSizer.Add(Btn,0,WACV)
     Btn.Bind(wx.EVT_BUTTON,OnSaveNotebook)
-    import wx.stc as stc
+    from wx import stc
     textBox = stc.StyledTextCtrl(G2frame.dataWindow,wx.ID_ANY)
     textBox.SetScrollWidthTracking(True)    # does not seem to do anything
     if controls['Notebook']['order']:
@@ -7576,7 +7564,7 @@ other than being included in the Notebook section of the project file.''')
             ls = l.split()
             if len(ls) < 1: # empty line
                 continue
-            elif '[' not in ls[0]:
+            if '[' not in ls[0]:
                 pos = 0 # old untagged NB entry
             elif '[TS]' in ls[0]:
                 pos = 0 # Move time stamp to top
@@ -7594,9 +7582,7 @@ other than being included in the Notebook section of the project file.''')
         if line[0] == '[' and ']' in line:
             prefix, line = line[1:].split(']',1)
         show = False
-        if controls['Notebook']['filterSel'][0] or prefix == '':
-            show = True
-        elif prefix in selLbl:
+        if controls['Notebook']['filterSel'][0] or prefix == '' or prefix in selLbl:
             show = True
         if show:
             if prefix == 'TS':
@@ -7933,7 +7919,7 @@ def UpdateControls(G2frame,data):
     if count > 0:
         subSizer = wx.BoxSizer(wx.HORIZONTAL)
         subSizer.Add(wx.StaticText(G2frame.dataWindow,
-            label='There are {} frozen variables (values refined outside limits)'.format(count)),0,WACV)
+            label=f'There are {count} frozen variables (values refined outside limits)'),0,WACV)
         subSizer.Add((5,-1))
         btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear All Frozen')
         btn.Bind(wx.EVT_BUTTON,ClearFrozen)
@@ -8130,7 +8116,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         else:
             print( 'nothing to merge for %s reflections'%(mergeRef.shape[0]))
         HKLFlist = []
-        newName = Name+u' '+Laue
+        newName = Name+' '+Laue
         if G2frame.GPXtree.GetCount():
             item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
             while item:
@@ -8331,13 +8317,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
         num = len(data[1][0])
         if 'TOF' in data[0].get('simType','CW'):
             step = (np.log(Tmax) - np.log(Tmin))/(num-1.)
-            t = u'\u00b5s'
-            lbl =  u'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} resolution ({:d} points)'
+            t = '\u00b5s'
+            lbl =  'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} resolution ({:d} points)'
         else:
             step = (Tmax - Tmin)/(num-1)
-            t = u'2\u03b8' # 2theta
-            lbl =  u'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} steps ({:d} points)'
-        lbl += u'\n(Edit range resets observed intensities).'
+            t = '2\u03b8' # 2theta
+            lbl =  'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} steps ({:d} points)'
+        lbl += '\n(Edit range resets observed intensities).'
         lbl = lbl.format(Tmin,Tmax,t,step,num)
         simSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lbl),0,WACV)
         but = wx.Button(G2frame.dataWindow,wx.ID_ANY,"Edit range")
@@ -8367,15 +8353,15 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 name = data[0].get(pfx.split(':')[0]+'::Name','?')
                 if 'SS' in value:
                     mainSizer.Add((5,5),)
-                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' For incommensurate phase '+name+u':'))
-                    for m,(Rf2,Rf,Nobs) in enumerate(zip(data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])):
+                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' For incommensurate phase '+name+':'))
+                    for m,(Rf2,Rf,Nobs) in enumerate(zip(data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value], strict=False)):
                         mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
-                            u' m = +/- %d: RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '%(m,Rf2,Rf,Nobs)))
+                            ' m = +/- %d: RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '%(m,Rf2,Rf,Nobs)))
                 else:
                     mainSizer.Add((5,5),)
-                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' For phase '+name+u':'))
+                    mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' For phase '+name+':'))
                     mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
-                        u' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
+                        ' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
                         (data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])))
 
     # Draw edit box for Magnification factors/positions
@@ -8519,7 +8505,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     def OnShowShift(event):
         if 'cycle' in event.EventObject.GetLabel():
             shftesd = [data['Rvals']['lastShifts'].get(k,0)/s for k,s in
-                           zip(data['varyList'],data['sig'])]
+                           zip(data['varyList'],data['sig'], strict=False)]
             lbl = 'Total shift/esd for last refinement cycle'
         else:
             if 'Lastshft' not in data:
@@ -8670,7 +8656,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=lbl))
                 plotSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-                if 'Lastshft' in data and not data['Lastshft'] is None:
+                if 'Lastshft' in data and data['Lastshft'] is not None:
                     showShift = wx.Button(G2frame.dataWindow,label='Plot shift/esd -- last refinement')
                     showShift.Bind(wx.EVT_BUTTON,OnShowShift)
                     plotSizer.Add(showShift)

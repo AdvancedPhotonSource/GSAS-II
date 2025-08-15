@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 Code for accessing files, including support for reading and writing
 instrument parameter files and exporting various types of data files.
@@ -8,21 +7,22 @@ for wx and GSAS-II GUI routines is done on a per-function basis so
 that this module can be imported for GSASIIscriptable use when
 wx is not installed.
 '''
-from __future__ import division, print_function
-import platform
-import os
-import sys
 import glob
+import os
+import platform
+
 #import inspect
 import re
+import sys
 
 import numpy as np
 
-from . import GSASIIpath
 from . import GSASIIlattice as G2lat
-from . import GSASIIstrIO as G2stIO
 from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
+from . import GSASIIpath
+from . import GSASIIstrIO as G2stIO
+
 #from . import GSASIIlattice as G2lat
 
 #if not sys.platform.startswith('win'):
@@ -74,9 +74,8 @@ def G2SetPrintLevel(level):
         if mode in level.lower():
             G2printLevel = mode
             return
-    else:
-        G2Print('G2SetPrintLevel Error: level={} cannot be interpreted.',
-                    'Use all, warn, error or none.')
+    G2Print('G2SetPrintLevel Error: level={} cannot be interpreted.',
+                'Use all, warn, error or none.')
 
 def find(name, path):
     '''find 1st occurance of file in path
@@ -164,7 +163,7 @@ def NeededPackage(pkgDict):
     condaRequestList.update(pkgDict)
 
 def makeInstDict(names,data,codes):
-    inst = dict(zip(names,zip(data,data,codes)))
+    inst = dict(zip(names,zip(data,data,codes, strict=False), strict=False))
     for item in inst:
         inst[item] = list(inst[item])
     return inst
@@ -451,7 +450,7 @@ def ReadInstprm(instLines, bank, Sample={}):
                     while il < len(instLines) and '#Bank' not in S:
                         il += 1
                         if il == len(instLines):
-                            raise ValueError("Bank {} not found in instprm file".format(bank))
+                            raise ValueError(f"Bank {bank} not found in instprm file")
                         S = instLines[il]
                     continue
             else:
@@ -498,9 +497,8 @@ def ReadInstprm(instLines, bank, Sample={}):
                 val += S.replace(delim, '').rstrip()
                 val += '\n'
                 break
-            else:
-                val += S.rstrip()
-                val += '\n'
+            val += S.rstrip()
+            val += '\n'
         newItems.append(item)
         newVals.append(val)
         il += 1
@@ -730,15 +728,14 @@ def LoadExportRoutines(parent, usetraceback=False):
             if parent is None:
                 if not hasattr(member, 'Writer'):
                     continue
-            else:
-                if not hasattr(member, 'loadParmDict'):
-                    continue
+            elif not hasattr(member, 'loadParmDict'):
+                continue
             try:
                 exporter = member(parent)
                 exporterlist.append(exporter)
             except Exception as exc:
                 G2Print ('\nExport init: Error substantiating class ' + member_name)
-                G2Print ('Error message: {}\n'.format(exc))
+                G2Print (f'Error message: {exc}\n')
                 if usetraceback:
                     import traceback
                     traceback.print_exc(file=sys.stdout)
@@ -878,7 +875,7 @@ def readColMetadata(imagefile):
     '''
     dir,fil = os.path.split(os.path.abspath(imagefile))
     imageName,ext = os.path.splitext(fil)
-    if not GSASIIpath.GetConfigValue('Column_Metadata_directory'): return
+    if not GSASIIpath.GetConfigValue('Column_Metadata_directory'): return None
     parfiles = glob.glob(os.path.join(GSASIIpath.GetConfigValue('Column_Metadata_directory'),'*.par'))
     if len(parfiles) == 0:
         G2Print('Sorry, No Column metadata (.par) file found in '+
@@ -898,10 +895,9 @@ def readColMetadata(imagefile):
             print('Errors in labels file '+lblFil)
             for i in errors: print('  '+i)
             continue
-        else:
-            G2Print('Read '+lblFil)
+        G2Print('Read '+lblFil)
         # scan through each line in this .par file, looking for the matching image rootname
-        fp = open(parFil,'r')
+        fp = open(parFil)
         for iline,line in enumerate(fp):
             items = line.strip().split(' ')
             nameList = keyExp['filename'](*[items[j] for j in keyCols['filename']])
@@ -917,17 +913,15 @@ def readColMetadata(imagefile):
             metadata = evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp)
             metadata['par file'] = parFil
             metadata['lbls file'] = lblFil
-            G2Print("Metadata read from {} line {}".format(parFil,iline+1))
+            G2Print(f"Metadata read from {parFil} line {iline+1}")
             fp.close()
             return metadata
-        else:
-            G2Print("Image {} not found in {}".format(imageName,parFil))
-            fp.close()
-            continue
+        G2Print(f"Image {imageName} not found in {parFil}")
         fp.close()
-    else:
-        G2Print("Warning: No .par metadata for image {}".format(imageName))
-        return {}
+        continue
+        fp.close()
+    G2Print(f"Warning: No .par metadata for image {imageName}")
+    return {}
 
 def readColMetadataLabels(lblFil):
     '''Read the .*lbls file and setup for metadata assignments
@@ -937,7 +931,7 @@ def readColMetadataLabels(lblFil):
     keyCols = {}
     labels = {}
     errors = []
-    fp = open(lblFil,'r')         # read column labels
+    fp = open(lblFil)         # read column labels
     for iline,line in enumerate(fp): # read label definitions
         line = line.strip()
         if not line or line[0] == '#': continue # comments
@@ -952,13 +946,11 @@ def readColMetadataLabels(lblFil):
             try:
                 f = eval(items[0]) # compile the expression
                 if not callable(f):
-                    errors += ['Expression "{}" for key {} is not a function (line {})'.
-                           format(items[0],key,iline)]
+                    errors += [f'Expression "{items[0]}" for key {key} is not a function (line {iline})']
                     continue
                 keyExp[key] = f
             except Exception as msg:
-                errors += ['Expression "{}" for key {} is not valid (line {})'.
-                           format(items[0],key,iline)]
+                errors += [f'Expression "{items[0]}" for key {key} is not valid (line {iline})']
                 errors += [str(msg)]
                 continue
             keyCols[key] = [int(i) for i in items[1].strip().split(',')]
@@ -969,7 +961,7 @@ def readColMetadataLabels(lblFil):
             lbldict[int(items[0])] = items[1]
     fp.close()
     if 'filename' not in keyExp:
-        errors += ["File {} is invalid. No valid filename expression.".format(lblFil)]
+        errors += [f"File {lblFil} is invalid. No valid filename expression."]
     return labels,lbldict,keyCols,keyExp,errors
 
 def evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp,ShowError=False):
@@ -1005,7 +997,7 @@ def GetColumnMetadata(reader):
     reader.Comments = ['Metadata from {} assigned by {}'.format(parParms['par file'],parParms['lbls file'])]
     for key in parParms:
         if key in specialKeys+('par file','lbls file'): continue
-        reader.Comments += ["{} = {}".format(key,parParms[key])]
+        reader.Comments += [f"{key} = {parParms[key]}"]
     if "polarization" in parParms:
         reader.Data['PolaVal'][0] = parParms["polarization"]
     else:
@@ -1091,16 +1083,14 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
         if flag is None:
             secondaryReaders.append(rd)
         elif flag:
-            if not FormatName:
-                primaryReaders.append(rd)
-            elif FormatName in rd.formatName:       #This is a kluge because the rd.formatName was changed!
+            if not FormatName or FormatName in rd.formatName:
                 primaryReaders.append(rd)
     if len(secondaryReaders) + len(primaryReaders) == 0:
         print('Error: No matching format for file '+imagefile)
         raise Exception('No image read')
     errorReport = ''
     if not imagefile:
-        return
+        return None
     for rd in primaryReaders+secondaryReaders:
         rd.ReInitialize() # purge anything from a previous read
         rd.errors = "" # clear out any old errors
@@ -1137,10 +1127,9 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
             else:
                 raise Exception('GetImageData must be called with imageOnly=True')
                 #return rd.Comments,rd.Data,rd.Npix,rd.Image
-    else:
-        print('Error reading file '+imagefile)
-        print('Error messages(s)\n'+errorReport)
-        raise Exception('No image read')
+    print('Error reading file '+imagefile)
+    print('Error messages(s)\n'+errorReport)
+    raise Exception('No image read')
 
 def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
     '''Read a single image with an image importer. This is called to
@@ -1166,16 +1155,14 @@ def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
         if flag is None:
             secondaryReaders.append(rd)
         elif flag:
-            if not FormatName:
-                primaryReaders.append(rd)
-            elif FormatName == rd.formatName:
+            if not FormatName or FormatName == rd.formatName:
                 primaryReaders.append(rd)
     if len(secondaryReaders) + len(primaryReaders) == 0:
         G2Print('Error: No matching format for file '+imagefile)
         raise Exception('No image read')
     errorReport = ''
     if not imagefile:
-        return
+        return None
     for rd in primaryReaders+secondaryReaders:
         rd.ReInitialize() # purge anything from a previous read
         rd.errors = "" # clear out any old errors
@@ -1193,14 +1180,13 @@ def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
                 rd.Image = rd.Image.T
             #rd.readfilename = imagefile
             return rd.Image
-    else:
-        G2Print('Error reading file '+imagefile)
-        G2Print('Error messages(s)\n'+errorReport)
-        raise Exception('No image read')
+    G2Print('Error reading file '+imagefile)
+    G2Print('Error messages(s)\n'+errorReport)
+    raise Exception('No image read')
 
 def readMasks(filename,masks,ignoreThreshold):
     '''Read a GSAS-II masks file'''
-    File = open(filename,'r')
+    File = open(filename)
     save = {}
     oldThreshold = masks['Thresholds'][0]
     S = File.readline()
@@ -1261,7 +1247,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         iqfile.write('#T I(Q) %s\n'%(PDFentry))
         iqfile.write('#L Q     I(Q)\n')
         qnew = np.arange(iqdata[0][0],iqdata[0][-1],0.005)
-        iqnew = zip(qnew,iqfxn(qnew))
+        iqnew = zip(qnew,iqfxn(qnew), strict=False)
         for q,iq in iqnew:
             iqfile.write("%15.6g %15.6g\n" % (q,iq))
         iqfile.close()
@@ -1275,7 +1261,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         sqfile.write('#T S(Q) %s\n'%(PDFentry))
         sqfile.write('#L Q     S(Q)\n')
         qnew = np.arange(sqdata[0][0],sqdata[0][-1],0.005)
-        sqnew = zip(qnew,sqfxn(qnew))
+        sqnew = zip(qnew,sqfxn(qnew), strict=False)
         for q,sq in sqnew:
             sqfile.write("%15.6g %15.6g\n" % (q,sq))
         sqfile.close()
@@ -1289,7 +1275,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         fqfile.write('#T F(Q) %s\n'%(PDFentry))
         fqfile.write('#L Q     F(Q)\n')
         qnew = np.arange(fqdata[0][0],fqdata[0][-1],0.005)
-        fqnew = zip(qnew,fqfxn(qnew))
+        fqnew = zip(qnew,fqfxn(qnew), strict=False)
         for q,fq in fqnew:
             fqfile.write("%15.6g %15.6g\n" % (q,fq))
         fqfile.close()
@@ -1303,7 +1289,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         grfile.write('#T G(R) %s\n'%(PDFentry))
         grfile.write('#L R     G(R)\n')
         rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
-        grnew = zip(rnew,grfxn(rnew))
+        grnew = zip(rnew,grfxn(rnew), strict=False)
         for r,gr in grnew:
             grfile.write("%15.6g %15.6g\n" % (r,gr))
         grfile.close()
@@ -1316,7 +1302,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
         grfile = open(grfilename,'w')
         rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
-        grnew = zip(rnew,grfxn(rnew))
+        grnew = zip(rnew,grfxn(rnew), strict=False)
 
         grfile.write('[DEFAULT]\n')
         grfile.write('\n')
@@ -1373,7 +1359,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         nq = qnew.shape[0]
         fqfile.write('%20d\n'%(nq-1))
         fqfile.write(fqfilename+'\n')
-        fqnew = zip(qnew,fqfxn(qnew))
+        fqnew = zip(qnew,fqfxn(qnew), strict=False)
         for q,fq in fqnew:
             if not q:
                 continue
@@ -1389,7 +1375,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         nr = rnew.shape[0]
         grfile.write('%20d\n'%(nr-1))
         grfile.write(grfilename+'\n')
-        grnew = zip(rnew,grfxn(rnew))
+        grnew = zip(rnew,grfxn(rnew), strict=False)
         for r,gr in grnew:
             if not r:
                 continue
@@ -1403,17 +1389,17 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
 # formatting for unique cell parameters by Laue type
 cellGUIlist = [
     [['m3','m3m'],4,[" Unit cell: a = "],["{:.5f}"],[True],[0]],
-    [['3R','3mR'],6,[" a = ",u" \u03B1 = "],["{:.5f}","{:.3f}"],[True,True],[0,3]],
+    [['3R','3mR'],6,[" a = "," \u03B1 = "],["{:.5f}","{:.3f}"],[True,True],[0,3]],
     [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],6,[" a = "," c = "],["{:.5f}","{:.5f}"],[True,True],[0,2]],
     [['mmm'],8,[" a = "," b = "," c = "],["{:.5f}","{:.5f}","{:.5f}"],
         [True,True,True],[0,1,2]],
-    [['2/m'+'a'],10,[" a = "," b = "," c = ",u" \u03B1 = "],
+    [['2/m'+'a'],10,[" a = "," b = "," c = "," \u03B1 = "],
         ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[True,True,True,True,],[0,1,2,3]],
-    [['2/m'+'b'],10,[" a = "," b = "," c = ",u" \u03B2 = "],
+    [['2/m'+'b'],10,[" a = "," b = "," c = "," \u03B2 = "],
         ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[True,True,True,True,],[0,1,2,4]],
-    [['2/m'+'c'],10,[" a = "," b = "," c = ",u" \u03B3 = "],
+    [['2/m'+'c'],10,[" a = "," b = "," c = "," \u03B3 = "],
         ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[True,True,True,True,],[0,1,2,5]],
-    [['-1'],7,[" a = "," b = "," c = ",u" \u03B1 = ",u" \u03B2 = ",u" \u03B3 = "],
+    [['-1'],7,[" a = "," b = "," c = "," \u03B1 = "," \u03B2 = "," \u03B3 = "],
          ["{:.5f}","{:.5f}","{:.5f}","{:.3f}","{:.3f}","{:.3f}"],
          [True,True,True,True,True,True],[0,1,2,3,4,5]]
     ]
@@ -1488,31 +1474,31 @@ def FormatValue(val,maxdigits=None):
     if len(string) <= digits[0]:
         if ':' in string: # deal with weird bug where a colon pops up in a number when formatting (EPD 7.3.2!)
             string = str(val)
-        if digits[1] > 0 and not 'e' in string.lower(): # strip off extra zeros on right side
+        if digits[1] > 0 and 'e' not in string.lower(): # strip off extra zeros on right side
             string = string.rstrip('0')
             if string[-1] == '.': string += "0"
         return string
     if val < 0: digits[0] -= 1 # negative numbers, reserve space for the sign
     decimals = digits[0] - digits[1]
     if abs(val) > 1e99: # for very large numbers, use scientific notation and use all digits
-        fmt = "{" + (":{:d}.{:d}g".format(digits[0],digits[0]-6))+"}"
+        fmt = "{" + (f":{digits[0]:d}.{digits[0]-6:d}g")+"}"
     elif abs(val) > 1e9:
-        fmt = "{" + (":{:d}.{:d}g".format(digits[0],digits[0]-5))+"}"
+        fmt = "{" + (f":{digits[0]:d}.{digits[0]-5:d}g")+"}"
     elif abs(val) < 10**(4-decimals): # make sure at least 4 decimals show
         # this clause is probably no longer needed since the number probably shows as 0.0
         decimals = min(digits[0]-5,digits[1])
-        fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
+        fmt = "{" + (f":{digits[0]:d}.{decimals:d}g")+"}"
     elif abs(val) >= 10**(decimals-1): # deal with large numbers in smaller spaces
         decimals = max(0,digits[0]-5)
-        fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
+        fmt = "{" + (f":{digits[0]:d}.{decimals:d}g")+"}"
     elif abs(val) < 1: # use f format for small numbers
         # this clause is probably no longer needed since the number probably shows as 0.0
         decimals = min(digits[0]-3,digits[1])
-        fmt = "{" + (":{:d}.{:d}f".format(digits[0],decimals))+"}"
+        fmt = "{" + (f":{digits[0]:d}.{decimals:d}f")+"}"
     else: # in range where g formatting should do what I want
         # used?
         decimals = digits[0] - 6
-        fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
+        fmt = "{" + (f":{digits[0]:d}.{decimals:d}g")+"}"
     try:
         return fmt.format(float(val)).strip()
     except ValueError:
@@ -1547,25 +1533,19 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
     if val < 0: maxdigits -= 1
     if abs(val) < 1e-99 or abs(val) > 9.999e99:
         decimals = min(maxdigits-6,sigfigs)
-        fmt = "{" + (":{:d}.{:d}g".format(maxdigits,decimals))+"}" # create format string
-    elif abs(val) < 1e-9 or abs(val) > 9.999e9:
+        fmt = "{" + (f":{maxdigits:d}.{decimals:d}g")+"}" # create format string
+    elif abs(val) < 1e-9 or abs(val) > 9.999e9 or abs(val) < 9.9999999*10**(sigfigs-maxdigits) or abs(val) >= 10**sigfigs:
         decimals = min(maxdigits-5,sigfigs)
-        fmt = "{" + (":{:d}.{:d}g".format(maxdigits,decimals))+"}"
-    elif abs(val) < 9.9999999*10**(sigfigs-maxdigits):
-        decimals = min(maxdigits-5,sigfigs)
-        fmt = "{" + (":{:d}.{:d}g".format(maxdigits,decimals))+"}"
-    elif abs(val) >= 10**sigfigs: # deal with large numbers in smaller spaces
-        decimals = min(maxdigits-5,sigfigs)
-        fmt = "{" + (":{:d}.{:d}g".format(maxdigits,decimals))+"}"
+        fmt = "{" + (f":{maxdigits:d}.{decimals:d}g")+"}"
     elif abs(val) < 1: # small numbers, add to decimal places
         decimals = sigfigs - int(np.log10(np.abs(val)))
-        fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
+        fmt = "{" + (f":{maxdigits:d}.{decimals:d}f")+"}"
     else: # larger numbers, remove decimal places
         decimals = sigfigs - 1 - int(np.log10(np.abs(val)))
         if decimals <= 0:
-            fmt = "{" + (":{:d}.0f".format(maxdigits))+"}."
+            fmt = "{" + (f":{maxdigits:d}.0f")+"}."
         else:
-            fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
+            fmt = "{" + (f":{maxdigits:d}.{decimals:d}f")+"}"
     try:
         return fmt.format(float(val)).strip()
     except ValueError:
@@ -1643,29 +1623,29 @@ end tell
                 cmds = [term,'--title','"GSAS-II console"','--']
                 script = "echo; echo Press Enter to close window; read line"
                 break
-            elif term == "lxterminal":
+            if term == "lxterminal":
                #terminal = 'lxterminal -t "GSAS-II console" -e'
                cmds = [term,'-t','"GSAS-II console"','-e']
                script = "echo;echo Press Enter to close window; read line"
                break
-            elif term == "xterm":
+            if term == "xterm":
                 #terminal = 'xterm -title "GSAS-II console" -hold -e'
                 cmds = [term,'-title','"GSAS-II console"','-hold','-e']
                 script = "echo; echo This window can now be closed"
                 break
-            elif term == "terminator":
+            if term == "terminator":
                 cmds = [term,'-T','"GSAS-II console"','-x']
                 script = "echo;echo Press Enter to close window; read line"
                 break
-            elif term == "konsole":
+            if term == "konsole":
                 cmds = [term,'-p','tabtitle="GSAS-II console"','--hold','-e']
                 script = "echo; echo This window can now be closed"
                 break
-            elif term == "tilix":
+            if term == "tilix":
                 cmds = [term,'-t','"GSAS-II console"','-e']
                 script = "echo;echo Press Enter to close window; read line"
                 break
-            elif term == "terminology":
+            if term == "terminology":
                 cmds = [term,'-T="GSAS-II console"','--hold','-e']
                 script = "echo; echo This window can now be closed"
                 break
@@ -1736,7 +1716,7 @@ def trim(val):
 # base class for reading various types of data files
 #   not used directly, only by subclassing
 ######################################################################
-class ExportBaseclass(object):
+class ExportBaseclass:
     '''Defines a base class for the exporting of GSAS-II results.
 
     This class is subclassed in the various exports/G2export_*.py files. Those files
@@ -2059,10 +2039,10 @@ class ExportBaseclass(object):
         self.parmDict.update(histDict)
         self.parmDict.update(zip(
             covDict.get('varyList',[]),
-            covDict.get('variables',[])))
+            covDict.get('variables',[]), strict=False))
         self.sigDict = dict(zip(
             covDict.get('varyList',[]),
-            covDict.get('sig',[])))
+            covDict.get('sig',[]), strict=False))
         # expand to include constraints: first compile a list of constraints
         self.constList = []
         for item in consDict:
@@ -2135,7 +2115,7 @@ class ExportBaseclass(object):
         self.SeqRefdata = None
         self.SeqRefhist = None
         self.DelayOpen = False
-        if self.G2frame.GPXtree.IsEmpty(): return # nothing to do
+        if self.G2frame.GPXtree.IsEmpty(): return None # nothing to do
         histType = None
         if self.currentExportType == 'phase':
             # if exporting phases load them here
@@ -2154,7 +2134,7 @@ class ExportBaseclass(object):
                 if item:
                     self.OverallParms[key] = self.G2frame.GPXtree.GetItemPyData(item)
                 item, cookie = self.G2frame.GPXtree.GetNextChild(sub, cookie)
-            return
+            return None
         elif self.currentExportType == 'single':
             histType = 'HKLF'
         elif self.currentExportType == 'powder':
@@ -2202,14 +2182,14 @@ class ExportBaseclass(object):
                 elif hist.startswith("REFD"):
                     d = self.refdDict
                 else:
-                    return
+                    return None
                 i = self.Histograms[hist].get('hId')
                 if i is None and not d.keys():
                     i = 0
                 elif i is None or i in d.keys():
                     i = max(d.keys())+1
                 d[i] = hist
-            return
+            return None
         # else standard load: using all interlinked phases and histograms
         self.Histograms,self.Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
         item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
@@ -2286,6 +2266,7 @@ class ExportBaseclass(object):
         TODO: Can this be replaced with G2G.askSaveDirectory?
         '''
         import wx
+
         from . import GSASIIctrlGUI as G2G
         pth = G2G.GetExportPath(self.G2frame)
         dlg = wx.DirDialog(
@@ -2318,7 +2299,7 @@ class ExportBaseclass(object):
         if mode == 'd': # debug mode
             self.fullpath = '(stdout)'
             self.fp = sys.stdout
-            return
+            return None
         if not fil:
             if not os.path.splitext(self.filename)[1]:
                 self.filename += self.extension
@@ -2328,7 +2309,7 @@ class ExportBaseclass(object):
         if delayOpen:
             self.DelayOpen = True
             self.fp = None
-            return
+            return None
         self.fp = open(self.fullpath,mode)
         return self.fp
 
@@ -2359,9 +2340,8 @@ class ExportBaseclass(object):
         if self.fp is None:
             if GSASIIpath.GetConfigValue('debug'):
                 raise Exception('Attempt to CloseFile without use of OpenFile')
-            else:
-                print('Attempt to CloseFile without use of OpenFile')
-                return
+            print('Attempt to CloseFile without use of OpenFile')
+            return
         if self.fp == sys.stdout: return # debug mode
         if fp is None:
             fp = self.fp
@@ -2375,7 +2355,7 @@ class ExportBaseclass(object):
         self.SeqRefdata = data
         self.SeqRefhist = hist
         data_name = data[hist]
-        for i,val in zip(data_name['varyList'],data_name['sig']):
+        for i,val in zip(data_name['varyList'],data_name['sig'], strict=False):
             self.sigDict[i] = val
             self.sigDict[striphist(i)] = val
         for i in data_name['parmDict']:
@@ -2443,7 +2423,7 @@ class ExportBaseclass(object):
             var = str(pId)+'::A'+str(i)
             if var in ESDlookup:
                 A[i] = data_name['newCellDict'][ESDlookup[var]][1] # override with refined value
-        cellDict = dict(zip([str(pId)+'::A'+str(i) for i in range(6)],A))
+        cellDict = dict(zip([str(pId)+'::A'+str(i) for i in range(6)],A, strict=False))
         zeroDict = {i:0.0 for i in cellDict}
         A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata,cellDict,zeroDict)
         covData = {

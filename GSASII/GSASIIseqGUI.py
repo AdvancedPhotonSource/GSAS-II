@@ -1,33 +1,33 @@
-# -*- coding: utf-8 -*-
 #GSASIIseqGUI - Sequential Results Display routines
 '''
 Routines for Sequential Results & Cluster Analysis dataframes follow.
 '''
-from __future__ import division, print_function
-import platform
 import copy
+import platform
 import re
+
 import numpy as np
-import numpy.ma as ma
 import numpy.linalg as nl
 import scipy.optimize as so
+from numpy import ma
+
 try:
     import wx
     import wx.grid as wg
 except ImportError:
     pass
-from . import GSASIIpath
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIexprGUI as G2exG
+from . import GSASIIlattice as G2lat
+from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
 from . import GSASIImiscGUI as G2IO
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIstrIO as G2stIO
-from . import GSASIIlattice as G2lat
+from . import GSASIIobj as G2obj
 from . import GSASIIplot as G2plt
 from . import GSASIIpwdplot as G2pwpl
-from . import GSASIImapvars as G2mv
-from . import GSASIIobj as G2obj
-from . import GSASIIexprGUI as G2exG
-from . import GSASIIctrlGUI as G2G
+from . import GSASIIstrIO as G2stIO
+
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 #####  Display of Sequential Results ##########################################
@@ -169,7 +169,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         var = colLabels[col]
         lbl = variableLabels.get(var,G2obj.fmtVarDescr(var))
-        head = u'Set a new name for variable {} (column {})'.format(var,col)
+        head = f'Set a new name for variable {var} (column {col})'
         dlg = G2G.SingleStringDialog(G2frame,'Set variable label',
                                  head,lbl,size=(400,-1))
         if dlg.Show():
@@ -212,7 +212,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 info = ma.array(items,mask=useCol+noneMask)
                 ave = ma.mean(ma.compressed(info))
                 sig = ma.std(ma.compressed(info))
-                print (u' Average for '+G2frame.SeqTable.GetColLabelValue(col)+u': '+'%.6g'%(ave)+u' +/- '+u'%.6g'%(sig))
+                print (' Average for '+G2frame.SeqTable.GetColLabelValue(col)+': '+'%.6g'%(ave)+' +/- '+'%.6g'%(sig))
         else:
             G2frame.ErrorDialog('Select columns',
                 'No columns selected in table. Click on column labels to select fields for averaging.')
@@ -246,7 +246,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         dlg = G2G.MultiStringDialog(G2frame.dataDisplay,'Set column names',colNames,newNames)
         if dlg.Show():
             newNames = dlg.GetValues()
-            variableLabels.update(dict(zip(colNames,newNames)))
+            variableLabels.update(dict(zip(colNames,newNames, strict=False)))
         data['variableLabels'] = variableLabels
         dlg.Destroy()
         UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
@@ -285,7 +285,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     head += [item]
             WriteLine(WriteList(head)+'\n')
             for row,name in enumerate(saveNames):
-                line = '"'+saveNames[row]+'"'
+                line = '"'+name+'"'
                 for col in cols:
                     if saveData[col][row] is None:
                         if col in havesig:
@@ -294,11 +294,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         else:
 #                            line += ',0.0'
                             line += ','
+                    elif col in havesig:
+                        line += ','+str(saveData[col][row])+','+str(saveSigs[col][row])
                     else:
-                        if col in havesig:
-                            line += ','+str(saveData[col][row])+','+str(saveSigs[col][row])
-                        else:
-                            line += ','+str(saveData[col][row])
+                        line += ','+str(saveData[col][row])
                 WriteLine(line+'\n')
         def WriteSeq():
             lenName = len(saveNames[0])
@@ -311,7 +310,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     line += ' %12s '%(item.center(12))
             WriteLine(line+'\n')
             for row,name in enumerate(saveNames):
-                line = " '%s' "%(saveNames[row])
+                line = " '%s' "%(name)
                 for col in cols:
                     if col in havesig:
                         try:
@@ -388,10 +387,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def plotSpCharFix(lbl):
         'Change selected unicode characters to their matplotlib equivalent'
         for u,p in [
-            (u'\u03B1',r'$\alpha$'),
-            (u'\u03B2',r'$\beta$'),
-            (u'\u03B3',r'$\gamma$'),
-            (u'\u0394\u03C7',r'$\Delta\chi$'),
+            ('\u03B1',r'$\alpha$'),
+            ('\u03B2',r'$\beta$'),
+            ('\u03B3',r'$\gamma$'),
+            ('\u0394\u03C7',r'$\Delta\chi$'),
             ]:
             lbl = lbl.replace(u,p)
         return lbl
@@ -538,7 +537,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         #TODO - effect of ISO modes?
         '''
         Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
-                         ['A'+str(i) for i in range(6)])
+                         ['A'+str(i) for i in range(6)], strict=False)
                      )
         delList = []
         phaselist = []
@@ -589,7 +588,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return 0.
         step = ESD/10
         Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
-                         ['A'+str(i) for i in range(6)])
+                         ['A'+str(i) for i in range(6)], strict=False)
                      )
         results = []
         phaselist = []
@@ -686,7 +685,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # assemble a list of the independent variables
             indepVars = obj.GetIndependentVars()
             # loop over each datapoint
-            for j,row in enumerate(zip(*G2frame.colList)):
+            for j,row in enumerate(zip(*G2frame.colList, strict=False)):
                 if not UseFlags[j]: continue
                 # assemble equations to fit
                 calcobj = G2obj.ExpressionCalcObj(obj)
@@ -727,16 +726,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         for obj in eqObjList:
             obj.UpdateVariedVars(varyList,values)
             ind = '      '
-            print(u'  '+obj.GetDepVar()+u' = '+obj.expression)
+            print('  '+obj.GetDepVar()+' = '+obj.expression)
             for var in obj.assgnVars:
-                print(ind+var+u' = '+obj.assgnVars[var])
+                print(ind+var+' = '+obj.assgnVars[var])
             for var in obj.freeVars:
                 avar = "::"+obj.freeVars[var][0]
                 val = obj.freeVars[var][1]
                 if obj.freeVars[var][2]:
-                    print(ind+var+u' = '+avar + " = " + G2mth.ValEsd(val,esdDict[avar]))
+                    print(ind+var+' = '+avar + " = " + G2mth.ValEsd(val,esdDict[avar]))
                 else:
-                    print(ind+var+u' = '+avar + u" =" + G2mth.ValEsd(val,0))
+                    print(ind+var+' = '+avar + " =" + G2mth.ValEsd(val,0))
         # create a plot for each parametric variable
         for fitnum,obj in enumerate(eqObjList):
             calcobj = G2obj.ExpressionCalcObj(obj)
@@ -746,7 +745,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             indepVars = obj.GetIndependentVars()
             # loop over each datapoint
             fitvals = []
-            for j,row in enumerate(zip(*G2frame.colList)):
+            for j,row in enumerate(zip(*G2frame.colList, strict=False)):
                 calcobj.SetupCalc({var:row[i] for i,var in enumerate(colLabels) if var in indepVars})
                 fitvals.append(calcobj.EvalExpression())
             G2plt.PlotSelectedSequence(G2frame,[indx],GetColumnInfo,SelectXaxis,fitnum,fitvals)
@@ -844,7 +843,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         '''
         if G2frame.colSigs[col]:
             if G2frame.colSigs[col][row] == -0.1: return 'frozen'
-            return u'\u03c3 = '+str(G2frame.colSigs[col][row])
+            return '\u03c3 = '+str(G2frame.colSigs[col][row])
         return ''
 
     def GridColLblToolTip(col):
@@ -853,7 +852,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         '''
         if col < 0 or col > len(colLabels):
             print ('Illegal column #%d'%col)
-            return
+            return None
         var = colLabels[col]
         return variableLabels.get(var,G2obj.fmtVarDescr(var))
 
@@ -913,7 +912,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         parmDict = data[histNames[sel]]['parmDict']
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         for phase in Phases:
-            print('Updating {} from Seq. Ref. row {}'.format(phase,histNames[sel]))
+            print(f'Updating {phase} from Seq. Ref. row {histNames[sel]}')
             Phase = Phases[phase]
             General = Phase['General']
             SGData = General['SGData']
@@ -1016,9 +1015,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         phaseKeys = [i for i in parmDict if ':' in i and i.split(':')[1] == '']
         phaseKeys = [i for i in phaseKeys if type(parmDict[i]) not in (int,str,bool)]
         if len(selRows) == 1:
-            lbl = "\nin {}      ".format(histNames[selRows[0]])
+            lbl = f"\nin {histNames[selRows[0]]}      "
         else:
-            lbl = "\nin {} histograms".format(len(selRows))
+            lbl = f"\nin {len(selRows)} histograms"
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase parmDict item(s) to set'+lbl,
                                       'Choose items to edit', phaseKeys)
         if dlg.ShowModal() == wx.ID_OK:
@@ -1083,7 +1082,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         pfx = str(pId)+'::' # prefix for A values from phase
         RcellLbls[pId] = [pfx+'A'+str(i) for i in range(6)]
         RecpCellTerms[pId] = G2lat.cell2A(phasedict['General']['Cell'][1:7])
-        zeroDict[pId] = dict(zip(RcellLbls[pId],6*[0.,]))
+        zeroDict[pId] = dict(zip(RcellLbls[pId],6*[0.,], strict=False))
         SGdata[pId] = phasedict['General']['SGData']
         laue = SGdata[pId]['SGLaue']
         if laue == '2/m':
@@ -1151,7 +1150,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             missing += 1
             continue
         foundHistNames.append(name)
-        for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
+        for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig'], strict=False):
             svar = striphist(var,'*') # wild-carded
             if 'PWL' in svar:
                 if int(svar.split(':')[-1]) > maxPWL:
@@ -1232,7 +1231,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     if histNames[0][:4] not in ['SASD','IMG ','REFD'] and Controls.get('ShowCell'):
         G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
         G2frame.colSigs += [None]
-        colLabels += [u'\u0394\u03C7\u00B2 (%)']
+        colLabels += ['\u0394\u03C7\u00B2 (%)']
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
     deltaChiCol = len(colLabels)-1
     # frozen variables?
@@ -1251,7 +1250,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         Types += [wg.GRID_VALUE_FLOAT,]
     sampleDict = {}
     for i,name in enumerate(histNames):
-        sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()]))
+        sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()], strict=False))
     # add unique cell parameters
     if Controls.get('ShowCell',False) and len(newCellDict):
         phaseLookup = {Phases[phase]['pId']:phase for phase in Phases}
@@ -1292,7 +1291,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         except KeyError:
                             pass
                 # apply symmetry
-                cellDict = dict(zip(Albls,A))
+                cellDict = dict(zip(Albls,A, strict=False))
                 try:    # convert to direct cell
                     A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
                     c = G2lat.A2cell(A)
@@ -1308,14 +1307,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
                     # add in direct cell terms to PseudoVar dict
                     tmp = dict(zip([pfx+G2lat.cellUlbl[i] for i in uniqCellIndx[pId]]+[pfx+'Vol'],
-                                     [c[i] for i in uniqCellIndx[pId]]+[vol]))
+                                     [c[i] for i in uniqCellIndx[pId]]+[vol], strict=False))
                     tmp.update(PSvarDict)
                     PSvarDict = tmp
                 else:
                     cells += [[None for i in uniqCellIndx[pId]]+[None]]
                     cellESDs += [[None for i in uniqCellIndx[pId]]+[None]]
-            G2frame.colList += zip(*cells)
-            G2frame.colSigs += zip(*cellESDs)
+            G2frame.colList += zip(*cells, strict=False)
+            G2frame.colSigs += zip(*cellESDs, strict=False)
 
     # get ISODISTORT labels
     ISOlist = []
@@ -1350,8 +1349,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if pname in data[name]['parmDict']:
                 vals[ih][ISOcols[pname]] = data[name]['parmDict'][pname]
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
-    G2frame.colList += zip(*vals)
-    G2frame.colSigs += zip(*esds)
+    G2frame.colList += zip(*vals, strict=False)
+    G2frame.colSigs += zip(*esds, strict=False)
 
     # add refined atom parameters to table
     for parm in sorted(atomsVaryList):
@@ -1441,7 +1440,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             else:
                 derivs = np.array(  # TODO: this needs to be reworked
                     [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
-                     for var,ESD in zip(varyList,sigs)])
+                     for var,ESD in zip(varyList,sigs, strict=False)])
                 # needs work: calls calcobj.SetupCalc each call time
                 # integrate into G2obj.ExpressionCalcObj
                 if None in list(derivs):
@@ -1481,7 +1480,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # create a set of values for example evaluation of parametric equation fitting
     VarDict = {}
     for i,var in enumerate(colLabels):
-        if var in ['Use','Rwp',u'\u0394\u03C7\u00B2 (%)']: continue
+        if var in ['Use','Rwp','\u0394\u03C7\u00B2 (%)']: continue
         if G2frame.colList[i][0] is None:
             val,sig = firstValueDict.get(var,[None,None])
         elif G2frame.colSigs[i]:
@@ -1528,7 +1527,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         rowLabels = [l[5:] for i,l in enumerate(histNames)]
     else:
         rowLabels = histNames
-    G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
+    G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList, strict=False)],     # convert from columns to rows
         colLabels=displayLabels,rowLabels=rowLabels,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
     # make all Use editable all others ReadOnly
@@ -1570,15 +1569,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 ###############################################################################################################
 
 def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
-    import scipy.spatial.distance as SSD
     import scipy.cluster.hierarchy as SCH
     import scipy.cluster.vq as SCV
+    import scipy.spatial.distance as SSD
     try:
         import sklearn.cluster as SKC
         import sklearn.ensemble as SKE
+        import sklearn.metrics as SKM
         import sklearn.neighbors as SKN
         import sklearn.svm as SKVM
-        import sklearn.metrics as SKM
         ClusData['SKLearn'] = True
     except:
         ClusData['SKLearn'] = False

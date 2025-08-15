@@ -19,9 +19,9 @@ defined:
 The path to Python is determined from the version of Python used to
 run this script.
 '''
-#
-import os, sys
 import datetime
+import os
+import sys
 
 Script = '''@REM Script to start GSAS-II on Windows
 @echo =========================================================================
@@ -74,8 +74,7 @@ if __name__ == '__main__':
 
     # create a GSAS-II script
     fp = open(G2bat,'w')
-    fp.write("@REM created by run of makeBat.py on {:%d %b %Y %H:%M}\n".format(
-        datetime.datetime.now()))
+    fp.write(f"@REM created by run of makeBat.py on {datetime.datetime.now():%d %b %Y %H:%M}\n")
     activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
     print("Looking for",activate)
     # for a non-base conda install, it might be better to use the activate in
@@ -106,8 +105,7 @@ if __name__ == '__main__':
     else:
         G2reset = os.path.normpath(os.path.join(path2repo,'..','Reset2FreshGSASII.bat'))
         fp = open(G2reset,'w')
-        fp.write("@REM created by run of makeBat.py on {:%d %b %Y %H:%M}\n".format(
-            datetime.datetime.now()))
+        fp.write(f"@REM created by run of makeBat.py on {datetime.datetime.now():%d %b %Y %H:%M}\n")
         fp.write("REM This script will reset GSAS-II to the latest version, even if the program can't be started\n")
         pexe = pythonexe
         if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
@@ -115,11 +113,11 @@ if __name__ == '__main__':
         if ' ' in G2s: G2s = '"'+gitstrap+'"'
         if activate: fp.write(f"{activate}")
         fp.write('choice /c yn /n /m "Reset any local changes and install latest GSAS-II version? (y/n)"\n')
-        fp.write(f"goto %ERRORLEVEL%\n")
-        fp.write(f":1\n")
+        fp.write("goto %ERRORLEVEL%\n")
+        fp.write(":1\n")
         fp.write(f"{pexe} {G2s} --reset\n")
-        fp.write(f":2\n")
-        fp.write(f"pause\n")
+        fp.write(":2\n")
+        fp.write("pause\n")
         fp.close()
         print(f'\nCreated GSAS-II reset script {G2reset}')
 
@@ -179,7 +177,8 @@ if __name__ == '__main__':
         print('old assignment of icon and batch file in registery is retained')
 
     try:
-        import win32com.shell.shell, win32com.shell.shellcon
+        import win32com.shell.shell
+        import win32com.shell.shellcon
         win32com.shell.shell.SHChangeNotify(
             win32com.shell.shellcon.SHCNE_ASSOCCHANGED, 0, None, None)
     except ImportError:
@@ -191,7 +190,9 @@ if __name__ == '__main__':
 
     # make a desktop shortcut to GSAS-II
     try:
-        import win32com.shell.shell, win32com.shell.shellcon, win32com.client
+        import win32com.client
+        import win32com.shell.shell
+        import win32com.shell.shellcon
         desktop = win32com.shell.shell.SHGetFolderPath(
             0, win32com.shell.shellcon.CSIDL_DESKTOP, None, 0)
         shortbase = "GSAS-II.lnk"

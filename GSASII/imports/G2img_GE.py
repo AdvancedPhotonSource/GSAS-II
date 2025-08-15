@@ -1,12 +1,14 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import os
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
+
+
 class GE_ReaderClass(G2obj.ImportImage):
     '''Routine to read a GE image, typically from APS Sector 1.
         
@@ -105,9 +107,8 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     '''Read G.E. detector images from various files as produced at 1-ID and
     with Detector Pool detector. Also sums multiple image files if desired
     '''
-    import struct as st
-    import platform
     import pickle
+    import struct as st
     import time
     more = False
     time0 = time.time()

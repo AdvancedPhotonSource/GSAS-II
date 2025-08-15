@@ -1,19 +1,20 @@
-# -*- coding: utf-8 -*-
 '''
 :mod:`GSASIIlattice` Classes & routines follow
 '''
-from __future__ import division, print_function
-import math
 import copy
-import sys
+import math
 import random as ran
+import sys
+
 import numpy as np
 import numpy.linalg as nl
 import scipy.special as spsp
-from . import GSASIImath as G2mth
-from . import GSASIIspc as G2spc
+
 from . import GSASIIElem as G2elem
+from . import GSASIImath as G2mth
 from . import GSASIIpath as GSASIIpath
+from . import GSASIIspc as G2spc
+
 try:
     if GSASIIpath.binaryPath:
         import pytexture as ptx
@@ -343,7 +344,7 @@ def showCellSU(cellList,cellSig,SGData,cellNames=None):
         uniqCellIndx = list(range(6))
     prevsig = 0
     s = ''
-    for i,(lbl,defsig,val,sig) in enumerate(zip(cellNames,defsigL,cellList,cellSig)):
+    for i,(lbl,defsig,val,sig) in enumerate(zip(cellNames,defsigL,cellList,cellSig, strict=False)):
         if i != 6 and i not in uniqCellIndx: continue
         if sig:
             txt = G2mth.ValEsd(val,sig)
@@ -574,8 +575,8 @@ def subVals(expr,A,T):
     # transformation matrix
     T00, T10, T20, T01, T11, T21, T02, T12, T22 = sym.symbols(
         'T00, T10, T20, T01, T11, T21, T02, T12, T22')
-    vals = dict(zip([T00, T10, T20, T01, T11, T21, T02, T12, T22],T.ravel()))
-    vals.update(dict(zip([A0, A1, A2, A3, A4, A5],A)))
+    vals = dict(zip([T00, T10, T20, T01, T11, T21, T02, T12, T22],T.ravel(), strict=False))
+    vals.update(dict(zip([A0, A1, A2, A3, A4, A5],A, strict=False)))
     return float(expr.subs(vals))
 
 # some sample test code using the routines above follows::
@@ -606,6 +607,7 @@ def fmtCellConstraints(cellConstr):
     cell relationships. It is not used normally in GSAS-II.
     '''
     import re
+
     import sympy as sym
     A3, A4, A5 = sym.symbols('A3, A4, A5')
     consDict = {}
@@ -618,7 +620,7 @@ def fmtCellConstraints(cellConstr):
                 l[-1] += ' + ' + i.strip()
             else:
                 l.append(i.strip())
-        print("\nA'{} = ".format(num),str(cons))
+        print(f"\nA'{num} = ",str(cons))
         consDict[num] = l
     return consDict
 
@@ -688,7 +690,7 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=Fals
     uniqueAnew = cellUnique(nSGLaue)
     zeroAorig = cellZeros(oSGLaue)
     for i in range(6):
-        constr = [[-1.0,G2obj.G2VarObj('{}::A{}'.format(newPhase,i))]]
+        constr = [[-1.0,G2obj.G2VarObj(f'{newPhase}::A{i}')]]
         mult = []
         for j,item in enumerate(cellXformRelations[i]):
             const, aTerm, tTerm = item.split('*',2)
@@ -701,7 +703,7 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=Fals
             # but since it will not change there is no reason to include that
             # term in any case
             if abs(const) < 1e-8: continue
-            constr.append([const,G2obj.G2VarObj('{}::{}'.format(origPhase,aTerm))])
+            constr.append([const,G2obj.G2VarObj(f'{origPhase}::{aTerm}')])
         if i in uniqueAnew:
             constrList.append(constr + [0.0,None,'c'])
         if debug: Anew.append(np.dot(origA,mult))
@@ -729,9 +731,7 @@ def cellUnique(SGData):
             return [0,1,2,3]
     elif SGData['SGLaue'] in ['mmm',]:
         return [0,1,2]
-    elif SGData['SGLaue'] in ['4/m','4/mmm']:
-        return [0,2]
-    elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+    elif SGData['SGLaue'] in ['4/m','4/mmm'] or SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
         return [0,2]
     elif SGData['SGLaue'] in ['3R', '3mR']:
         return [0,3]
@@ -754,9 +754,7 @@ def cellZeros(SGData):
             return [False,False,False,True,False,True]
         else:
             return [False,False,False,False,True,True]
-    elif SGData['SGLaue'] in ['mmm',]:
-        return [False,False,False,True,True,True]
-    elif SGData['SGLaue'] in ['4/m','4/mmm']:
+    elif SGData['SGLaue'] in ['mmm',] or SGData['SGLaue'] in ['4/m','4/mmm']:
         return [False,False,False,True,True,True]
     elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
         return [False,False,False,False,True,True]
@@ -1197,7 +1195,6 @@ def Uij2betaij(Uij,G):
     :param G: reciprocal metric tensor
     :returns: beta-ij - numpy array [beta-ij]
     """
-    pass
 
 def cell2GS(cell):
     ''' returns Uij to betaij conversion matrix'''
@@ -1505,7 +1502,7 @@ def sortHKLd(HKLd,ifreverse,ifdup,ifSS=False):
             T.append((H[N],i))
         else:
             T.append(H[N])
-    D = dict(zip(T,HKLd))
+    D = dict(zip(T,HKLd, strict=False))
     T.sort()
     if ifreverse:
         T.reverse()
@@ -1560,17 +1557,7 @@ def Hx2Rh(Hx):
 def CentCheck(Cent,H):
     'checks individual hkl for centering extinction; returns True for allowed, False otherwise - slow'
     h,k,l = H
-    if Cent == 'A' and (k+l)%2:
-        return False
-    elif Cent == 'B' and (h+l)%2:
-        return False
-    elif Cent == 'C' and (h+k)%2:
-        return False
-    elif Cent == 'I' and (h+k+l)%2:
-        return False
-    elif Cent == 'F' and ((h+k)%2 or (h+l)%2 or (k+l)%2):
-        return False
-    elif Cent == 'R' and (-h+k+l)%3:
+    if (Cent == 'A' and (k+l)%2) or (Cent == 'B' and (h+l)%2) or (Cent == 'C' and (h+k)%2) or (Cent == 'I' and (h+k+l)%2) or (Cent == 'F' and ((h+k)%2 or (h+l)%2 or (k+l)%2)) or (Cent == 'R' and (-h+k+l)%3):
         return False
     else:
         return True
@@ -1990,7 +1977,7 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
     dvec = 1./(maxH*vstar+1./dmin)
     HKL = GenHLaue(dvec,SGData,A)
     SSdH = [vec*h for h in range(-maxH,maxH+1)]
-    SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
+    SSdH = dict(zip(range(-maxH,maxH+1),SSdH, strict=False))
     for h,k,l,d in HKL:
         ext = G2spc.GenHKLf([h,k,l],SGData)[0]  #h,k,l must be integral values here
         if not ext and d >= dmin:
@@ -2338,8 +2325,7 @@ def RBChk(sytsym,L,M):
                 if L in [6,10,12,16,18]:
                     if L%12 == 2:
                         if M <= L//12: return True,1.0
-                    else:
-                        if M <= L//12+1: return True,1.0
+                    elif M <= L//12+1: return True,1.0
         elif sytsym == '23':   #cubics use different Fourier expansion than those below
             if 2 < L < 11 and [L,M] in [[3,1],[4,1],[6,1],[6,2],[7,1],[8,1],[9,1],[9,2],[10,1],[10,2]]:
                 return True,1.0
@@ -2356,14 +2342,12 @@ def RBChk(sytsym,L,M):
             if not L%2 and M > 0:
                 if L%12 == 2:
                     if M <= L//12: return True,1.0
-                else:
-                    if M <= L//12+1: return True,1.0
+                elif M <= L//12+1: return True,1.0
         elif sytsym == '6':
             if not M%6: return True,1.0     #P?
         elif sytsym == '-6':    #L=M+2J
             if L != 1 and not M%3:          #P?
-                if not L%2 and not M%6: return True,1.0
-                elif L%2 and (M//3)%2: return True,1.0
+                if (not L%2 and not M%6) or (L%2 and (M//3)%2): return True,1.0
         elif sytsym == '6/m':
             if not L%2 and not M%6: return True,1.0   #P?
         elif sytsym == '622':
@@ -2372,8 +2356,7 @@ def RBChk(sytsym,L,M):
             if not M%6: return True,1.0
         elif sytsym in ['-6m2(100)','-6m2']:   #L=M+2J
             if L != 1 and not M%3:
-                if not L%2 and not M%6: return True,1.0
-                elif L%2 and (M//3)%2: return True,1.0
+                if (not L%2 and not M%6) or (L%2 and (M//3)%2): return True,1.0
         elif sytsym == '-6m2(120)':   #L=M+2J
             if L != 1 and not M%3:
                 if not L%2 and not M%6: return True,1.0
@@ -2403,9 +2386,7 @@ def RBChk(sytsym,L,M):
             if not M%3: return True,1.0     #P?
         elif sytsym in ['-3','-3(111)']:
             if not L%2 and not M%3: return True,1.0    #P?
-        elif sytsym in ['32','32(100)','32(111)']:
-            if not M%3: return True,-1.0**(L-M)
-        elif sytsym == '32(120)':
+        elif sytsym in ['32','32(100)','32(111)'] or sytsym == '32(120)':
             if not M%3: return True,-1.0**(L-M)
         elif sytsym in ['3m','3m(100)','3m(111)']:
             if not M%3: return True,-1.0**M
@@ -2491,19 +2472,18 @@ def RBsymChk(RBsym,cubic,coefNames,L=18):
                     if rbChk:
                         newNames.append('C(%d,%d)'%(LM[0],m))
                         newSgns.append(sgn)
+    elif RBsym in ['m3m','-43m','53m']:   #force mol. sym. here
+        for L in range(L+1):
+            cubNames,cubSgns = GenShCoeff(RBsym,L)
+            newNames += cubNames
+            newSgns += cubSgns
     else:
-        if RBsym in ['m3m','-43m','53m']:   #force mol. sym. here
-            for L in range(L+1):
-                cubNames,cubSgns = GenShCoeff(RBsym,L)
-                newNames += cubNames
-                newSgns += cubSgns
-        else:
-            for name in coefNames:
-                LM = eval(name[1:])
-                rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
-                if rbChk:
-                    newNames.append(name)
-                    newSgns.append(sgn)
+        for name in coefNames:
+            LM = eval(name[1:])
+            rbChk,sgn = RBChk(RBsym,LM[0],LM[1])
+            if rbChk:
+                newNames.append(name)
+                newSgns.append(sgn)
     return newNames,newSgns
 
 def GenRBCoeff(sytsym,RBsym,L):
@@ -2585,18 +2565,11 @@ def OdfChk(SGLaue,L,M):
             if not abs(M)%6: return True
         elif SGLaue == '6/mmm':
             if not abs(M)%6 and M >= 0: return True
-        elif SGLaue in ['m3']:   #cubics use different Fourier expansion than those above
+        elif SGLaue in ['m3'] or SGLaue in ['m3m']:   #cubics use different Fourier expansion than those above
             if M > 0:
                 if L%12 == 2:
                     if M <= L//12: return True
-                else:
-                    if M <= L//12+1: return True
-        elif SGLaue in ['m3m']:
-            if M > 0:
-                if L%12 == 2:
-                    if M <= L//12: return True
-                else:
-                    if M <= L//12+1: return True
+                elif M <= L//12+1: return True
     return False
 
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
@@ -3149,7 +3122,7 @@ def Glnh(SHCoef,psi,gam,SamSym):
         else:
             Ksl = pcrs*(cosd(m*gam)+sind(m*gam))
         Fln[i] = SHCoef[term]*Ksl*Lnorm(l)
-    ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
+    ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln, strict=False)), strict=False))
     return ODFln
 
 def Flnh(SHCoef,phi,beta,SGData):
@@ -3181,7 +3154,7 @@ def Flnh(SHCoef,phi,beta,SGData):
             else:
                 Kcl = pcrs*(cosd(n*beta)+sind(n*beta))
         Fln[i] = SHCoef[term]*Kcl*Lnorm(l)
-    ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln))))
+    ODFln = dict(zip(SHCoef.keys(),list(zip(SHCoef.values(),Fln, strict=False)), strict=False))
     return ODFln
 
 def polfcal(ODFln,SamSym,psi,gam):
@@ -3200,11 +3173,10 @@ def polfcal(ODFln,SamSym,psi,gam):
                     Ksl = RSQPI*psrs*(cosd(m*gam)+sind(m*gam))
                 else:
                     Ksl = RSQPI*psrs/SQ2
+            elif m:
+                Ksl = RSQPI*psrs*cosd(m*gam)
             else:
-                if m:
-                    Ksl = RSQPI*psrs*cosd(m*gam)
-                else:
-                    Ksl = RSQPI*psrs/SQ2
+                Ksl = RSQPI*psrs/SQ2
             PolVal += ODFln[term][1]*Ksl
     return PolVal
 
@@ -3264,5 +3236,5 @@ UniqueCellByLaue = [
 cellAlbl = ('a','b','c', 'alpha', 'beta', 'gamma')
 'ASCII labels for a, b, c, alpha, beta, gamma'
 
-cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3')
+cellUlbl = ('a','b','c','\u03B1','\u03B2','\u03B3')
 'unicode labels for a, b, c, alpha, beta, gamma'

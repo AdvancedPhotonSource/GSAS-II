@@ -1,5 +1,7 @@
 #!/usr/bin/env /Users/toby/build/cctbx_build/bin/python
-import sys, datetime
+import datetime
+import sys
+
 from cctbx import sgtbx
 
 # generate input for test 7 in GSASIIlattice

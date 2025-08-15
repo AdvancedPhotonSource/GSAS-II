@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 Element table data for building periodic table with valences & JMOL colors.
 Need these in case we go back to this periodic table coloring scheme.

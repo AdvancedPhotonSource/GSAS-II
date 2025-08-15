@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 Read TIF files using the PIL/Pillow module.
 
@@ -31,10 +30,10 @@ CenterPixelY                     Location of beam center as a pixel number (in X
 
 '''
 
-from __future__ import division, print_function
-from .. import GSASIIobj as G2obj
 from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
 from . import G2img_1TIF
+
 DEBUG = False
 
 class TIF_LibraryReader(G2obj.ImportImage):
@@ -71,35 +70,35 @@ class TIF_LibraryReader(G2obj.ImportImage):
             self.Data['size'] = list(self.Image.size)
             self.Data['center'] = [int(i/2) for i in self.Image.size]
             try:
-                Meta = open(filename+'.metadata','r')
+                Meta = open(filename+'.metadata')
                 head = Meta.readlines()
                 for line in head:
                     line = line.strip()
                     try:
                         if '=' not in line: continue
                         keyword = line.split('=')[0].strip()
-                        if 'wavelength' == keyword.lower():
+                        if keyword.lower() == 'wavelength':
                             self.Data['wavelength'] = float(line.split('=')[1])
-                        elif 'distance' == keyword.lower():
+                        elif keyword.lower() == 'distance':
                             self.Data['distance'] = float(line.split('=')[1])
-                        elif 'polarization' == keyword.lower():
+                        elif keyword.lower() == 'polarization':
                             polarization = float(line.split('=')[1])
                             self.Data['PolaVal'] = [polarization,False]
-                        elif 'samplechangercoordinate' == keyword.lower():
+                        elif keyword.lower() == 'samplechangercoordinate':
                             self.Data['samplechangerpos'] = float(line.split('=')[1])
-                        elif 'pixelsizex' == keyword.lower():
+                        elif keyword.lower() == 'pixelsizex':
                             self.Data['pixelSize'][0] = float(line.split('=')[1])
-                        elif 'pixelsizey' == keyword.lower():
+                        elif keyword.lower() == 'pixelsizey':
                             self.Data['pixelSize'][1] = float(line.split('=')[1])
-                        elif 'centerpixelx' == keyword.lower():
+                        elif keyword.lower() == 'centerpixelx':
                             self.Data['center'][0] = float(line.split('=')[1])
-                        elif 'centerpixely' == keyword.lower():
+                        elif keyword.lower() == 'centerpixely':
                             self.Data['center'][1] = float(line.split('=')[1])
                     except:
                         G2fil.G2Print('error reading metadata: '+line)
                 Meta.close()
                 self.SciPy = False
-            except IOError:
+            except OSError:
                 G2fil.G2Print ('no metadata file found - image params must be set manually')
                 head = ['no metadata file found',]
         if self.Npix == 0:

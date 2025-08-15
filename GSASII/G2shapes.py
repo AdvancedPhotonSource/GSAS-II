@@ -20,16 +20,18 @@
 #
 # this version modified by R B. Von Dreele for inclusion in GSAS-II
 
-from __future__ import division, print_function
-import math
-import sys
-import os
 import copy
-import random
-import time
-import cProfile,pstats
+import cProfile
 import io as StringIO
+import math
+import os
+import pstats
+import random
+import sys
+import time
+
 import numpy as np
+
 nxs = np.newaxis
 
 def G2shapes(Profile,ProfDict,Limits,data,dlg=None):    
@@ -65,7 +67,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
             count_q = count_q + 1
     
-        return;
+        
     
     # NEW 1.1 Scale and Compare I and Ic. Includes a baseline correction 
     
@@ -127,7 +129,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         rvalue = 2.0*idif/isum
         chi_sq = chi_sq/num_q
     
-        return (chi_sq,rvalue);
+        return (chi_sq,rvalue)
     
     # NEW 1.1 Write original and calculated data.
     
@@ -154,7 +156,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
         file.close()
     
-        return;    
+            
     
     # NEW 1.1 Read intensity data from GNOM output file
     
@@ -202,7 +204,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
 #            if eachLine.find('S          J EXP       ERROR       J REG       I REG') > -1:
 #                parse_data = 'yes'
 #                    
-        return;
+        
     
     # Read PDB for starting point
     
@@ -213,7 +215,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         zmean = 0.0
         nbeads = 0
     
-        file = open(pdbfile_in,'r')
+        file = open(pdbfile_in)
         allLines = file.readlines()
         file.close()
     
@@ -262,7 +264,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                     aList_beads_y.append(y)
                     aList_beads_z.append(z)           
     
-        return;
+        
     
 #    # Write P(r) with SD and calculated value.
 #    
@@ -333,7 +335,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
         file.close()
     
-        return;
+        
     
     # Evaluate local bead densities and point density on a notional grid
     
@@ -377,7 +379,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                 count_y = count_y + box_step
             count_x = count_x + box_step
     
-        return;
+        
     
      # Evaluate local bead densities and point density on a notional grid - fast version
     
@@ -402,7 +404,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                 aList_box_y_all.append(XYZi[1])
                 aList_box_z_all.append(XYZi[2])
                 aList_box_score.append(count)
-        return;
+        
     
    # Establish a volume
     
@@ -433,7 +435,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
      
             i = i + 1
     
-        #
     
         num_box_pts1 = 0.0
         num_box_pts2 = 0.0
@@ -469,7 +470,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                     
             i = i + 1
     
-        return;
+        
     
     # Find beads that are not in allowed volume
     
@@ -507,7 +508,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
             count = count + 1
     
-        return;
+        
     
     # Compute a P(r)
     
@@ -550,7 +551,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                 j = j + 1
             i = i + 1    
     
-        return;
+        
     
     # Score for rms difference between observed and model histograms
     
@@ -578,7 +579,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         delta_hist_sum_sq = delta_hist_sum_sq/(num_hist - skip)
         delta_hist_sum_sq = math.sqrt(delta_hist_sum_sq)/mean_hist_sum    
     
-        return delta_hist_sum_sq;
+        return delta_hist_sum_sq
     
     # Statistics for fractional difference between observed and model histograms
     
@@ -601,7 +602,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
         delta_hist_sum = delta_hist_sum/hist_sum
         
-        return delta_hist_sum;
+        return delta_hist_sum
     
     # Compute the VDW energy for a interaction
     
@@ -615,7 +616,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
             vdw = econ12/dr_e12 - 2.0*econ6/dr_e6
             vdw = max(vdw,e_width)  
     
-        return vdw;
+        return vdw
     
     def vdw_energies(econ12,econ6,e_width,drs,bead_sep3):
 
@@ -674,7 +675,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
             i = i + num_symm
     
-        return;
+        
     
     # Read experimentalal P(r) from GNOM output file
     
@@ -767,7 +768,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
             aList_pr_model_test2.append(0.0)
             i = i + 1
     
-        return (dmax,hist_grid,num_hist,angstrom_scale);
+        return (dmax,hist_grid,num_hist,angstrom_scale)
     
     # Scale P(r) onto model P(r) assuming same grid
     
@@ -791,7 +792,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
             aList_pr_sd[i] = scale * float(aList_pr_sd[i])
             i = i + 1
     
-        return;
+        
     
     # Return a non-zero distance between two coordinates
     
@@ -807,7 +808,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         dr = max(dr,0.1)
         dr = math.sqrt(dr)
     
-        return dr;
+        return dr
     
     # Return non-zero distances one coordinate & the rest
     
@@ -858,7 +859,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         if count_beads:
             delta = np.sqrt(np.sum(((np.sum(sumXYZ,axis=0)/count_beads)-xyz)**2))
             
-        return delta;
+        return delta
     
     # Obtain mean of total VDW energy 
     
@@ -890,7 +891,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
             
         vdw_all = vdw_all/float(nbeads)
     
-        return vdw_all;
+        return vdw_all
     
     # Energy minimize
     
@@ -979,7 +980,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
                     j = j + 1
     
-                #
                 xstep = scale*fx
                 ystep = scale*fy
                 zstep = scale*fz
@@ -1025,7 +1025,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
                     l = l + 1
                 
-                #
     
                 k = k + num_ops + 1
     
@@ -1039,7 +1038,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                     aList_beads_z[m] =  aList_beads_z_new[m]
                     m = m + 1
     
-            #
     
             mean_force = (num_ops+1)*sum_forces_scale/(nbeads*3.0)
             scale = bead_sep/mean_force
@@ -1056,7 +1054,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
             i = i + 1
     
-        return;
+        
     
     # Set up symmetry operators for rotational symmetry
     
@@ -1074,7 +1072,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
             aList_symm.append(aList_s)
             i = i + 1
     
-        return aList_symm;
+        return aList_symm
     
     # Set up a shift vector in P(r) for a change in bead position
     
@@ -1130,7 +1128,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
 #    
 #            i = i + 1
 #    
-        return;
+        
     
     # Recenter set of beads to origin
     
@@ -1159,7 +1157,7 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
             aList_beads_z[i] = float(aList_beads_z[i]) - zmean
             i = i + 1
     
-        return;
+        
     
     #############
     # EXECUTION #
@@ -1272,7 +1270,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         time.sleep(4)
         sys.exit(1)
     
-    #
     if nbeads == 0:
         if os.path.exists(pdbfile_in):
             aString = 'Will use CA atoms from ' + str(pdbfile_in) + ' as the initial bead distribution.'
@@ -1287,7 +1284,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         aString = 'Number of amino acids: ' + str(nbeads)
         print (aString)
     
-    #
 #    if os.path.exists(inFile):
 #        aString = 'Input P(r) file name: ' + str(inFile)
 #        print (aString)
@@ -1297,7 +1293,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
 #        time.sleep(4)
 #        sys.exit(1)
     
-    #
     if num_aa == 0.0:
         aString = 'Scale for amino acid count to particle number cannot be zero! Exiting'
         print (aString)
@@ -1307,7 +1302,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         aString = 'Scale aa to bead count: ' + str(num_aa)
         print (aString)
         
-    #
     if num_symm == 0:
         aString = 'Rotational symmetry cannot be zero! Set to 1 for no symmetry. Exiting'
         print (aString)
@@ -1317,7 +1311,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         aString = 'Point symmetry: ' + str(num_symm)
         print (aString)
     
-    #
     if bias_z > 0.2:
         aString = 'Max bias on Z axis for initial particle distribution is 0.2 (rods). Reset to 0.2.'
         print (aString)
@@ -1330,7 +1323,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         aString = 'Z-axis bias: ' + str(bias_z)
         print (aString)
     
-    #
     if inflate < 0.0:
         aString = 'Inflation of PSV cannot be less than zero! Exiting'
         print (aString)
@@ -1345,7 +1337,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         aString = 'PSV inflation factor: ' + str(inflate)
         print (aString)
     
-    #
     if surface_scale > 0.0:
         aString = 'Cavity weight: ' + str(surface_scale)
         print (aString)
@@ -1847,7 +1838,6 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                         aList_beads_y[ipt] = aList_temp_save_y[l]
                         aList_beads_z[ipt] = aList_temp_save_z[l]              
                         l = l + 1     
-                #
     
                 ii = ii + num_symm
     

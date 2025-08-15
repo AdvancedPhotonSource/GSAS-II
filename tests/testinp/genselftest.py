@@ -7,8 +7,9 @@
  SGdat and SGlist that can be used for testing.
 
 '''
-import sys
 import datetime
+import sys
+
 sys.path.append('..')
 from . import GSASIIspc
 
@@ -327,6 +328,7 @@ GenSGdat('a 2 2 2')   # dup: non-standard
 
 # do a bit of internal consistency checking
 import numpy as np
+
 array = np.array
 float32=np.float32
 # check for internal agreement with duplicates
@@ -335,12 +337,7 @@ for key1,key2 in duplist:
     keys = sgdat[key1].keys()
     assert len(keys) == len(sgdat[key2].keys()), msg
     for key in keys:
-        if key == 'SGOps':
-            assert len(sgdat[key2][key]) == len(sgdat[key1][key]), msg
-            for i in range(len(sgdat[key2][key])):
-                assert np.allclose(sgdat[key1][key][i][0],sgdat[key2][key][i][0]), msg
-                assert np.allclose(sgdat[key1][key][i][1],sgdat[key2][key][i][1]), msg
-        elif key == 'SGCen':
+        if key == 'SGOps' or key == 'SGCen':
             assert len(sgdat[key2][key]) == len(sgdat[key1][key]), msg
             for i in range(len(sgdat[key2][key])):
                 assert np.allclose(sgdat[key1][key][i][0],sgdat[key2][key][i][0]), msg

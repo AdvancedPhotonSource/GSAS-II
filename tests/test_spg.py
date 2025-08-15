@@ -4,15 +4,15 @@ test_spg.py
 Unit tests for code in GSASIIspc.py. Also exercises the pyspg
 Fortran routine.
 '''
+import importlib.util
 import os
 import sys
+
 import numpy as np
 
 # TODO: not sure if this is how Tom wants to handle imports
-import testinp.spctestinp as spctestinp
-import testinp.sgtbxtestinp as sgtbxtestinp
+from testinp import sgtbxtestinp, spctestinp
 
-import importlib.util
 if importlib.util.find_spec('GSASII') is None: # hack path if GSASII not installed into Python
     home = os.path.dirname(__file__)
     sys.path.append(os.path.dirname(home))

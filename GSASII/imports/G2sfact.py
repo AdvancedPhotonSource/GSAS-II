@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 '''Classes to read single crystal reflection files in formats used by:
 Shelx, Jana, REMOS, TOPAS (SNS), HB-3A (HIFR)
 '''
-from __future__ import division, print_function
 import sys
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
 
 def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'
@@ -42,7 +43,7 @@ class HKLF_ReaderClass(G2obj.ImportStructFactor):
 
     def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers'
-        fp = open(filename,'r')
+        fp = open(filename)
         valid = ColumnValidator(self, fp)
         fp.close()
         return valid
@@ -50,7 +51,7 @@ class HKLF_ReaderClass(G2obj.ImportStructFactor):
     def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
@@ -85,7 +86,7 @@ class HKLMF_ReaderClass(G2obj.ImportStructFactor):
 
     def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers'
-        fp = open(filename,'r')
+        fp = open(filename)
         valid = ColumnValidator(self, fp)
         fp.close()
         return valid
@@ -93,7 +94,7 @@ class HKLMF_ReaderClass(G2obj.ImportStructFactor):
     def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
@@ -124,8 +125,8 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'HKLF 4'
             longFormatName = 'Shelx HKLF 4 [hkl, Fo2, sig(Fo2)] Structure factor text file'
         else:
-            formatName = u'Shelx HKLF 4 F\u00b2'
-            longFormatName = u'Shelx HKLF 4 [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
+            formatName = 'Shelx HKLF 4 F\u00b2'
+            longFormatName = 'Shelx HKLF 4 [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -140,7 +141,7 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
     def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
@@ -177,8 +178,8 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'Shelx HKLF 5 F2 Tw/Incom'
             longFormatName = 'Shelx HKLF 5 [hklm, Fo2, sig(Fo2), Tind] Twin/incommensurate structure factor text file'
         else:
-            formatName = u'Shelx HKLF 5 F\u00b2 Tw/Incom'
-            longFormatName = u'Shelx HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
+            formatName = 'Shelx HKLF 5 F\u00b2 Tw/Incom'
+            longFormatName = 'Shelx HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -190,7 +191,7 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
         '''Discover how many columns before F^2 are in the SHELX HKL5 file 
         - could be 3-6 depending on satellites'''
         numCols = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,line in enumerate(fp):
             for j,item in enumerate(line.split()):  #find 1st col with '.'; has F^2
                 if '.' in item:
@@ -211,7 +212,7 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
         TwMax = [-1,[]]
         first = True
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             m1 = 0
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
@@ -275,8 +276,8 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'Shelx HKLF 6 F2 Tw/Incom'
             longFormatName = 'Shelx HKLF 6 [hklm, Fo2, sig(Fo2), Tind] Twin/incommensurate structure factor text file'
         else:
-            formatName = u'Shelx HKLF 6 F\u00b2 Tw/Incom'
-            longFormatName = u'Shelx HKLF 6 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
+            formatName = 'Shelx HKLF 6 F\u00b2 Tw/Incom'
+            longFormatName = 'Shelx HKLF 6 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hk6','.HK6'),
             strictExtension=False,
@@ -288,7 +289,7 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
         '''Discover how many columns before F^2 are in the SHELX HKL6 file 
         - could be 3-6 depending on satellites'''
         numCols = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,line in enumerate(fp):
             for j,item in enumerate(line.split()):  #find 1st col with '.'; has F^2
                 if '.' in item:
@@ -311,7 +312,7 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
         TwMax = [-1,[]]
         first = True
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
                 h,k,l,m1,m2,m3,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:20],S[20:24],S[24:32],S[32:40],S[40:44]
@@ -367,11 +368,11 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
             longFormatName = 'JANA [hkl, Fo2, sig(Fo2)] Structure factor text file'
         else:
-            longFormatName = u'JANA [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
+            longFormatName = 'JANA [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.m90','.m91'),
             strictExtension=False,
-            formatName = u'JANA M90/1',
+            formatName = 'JANA M90/1',
             longFormatName = longFormatName
             )
         self.Super = 0
@@ -379,7 +380,7 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
     def ContentsValidator(self, filename):
         'Discover how many columns are in the m90 file - could be 9-12 depending on satellites'
         numCols = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         startData = -1
         if 'm90' in filename.lower():
             for i,line in enumerate(fp):
@@ -403,7 +404,7 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read the file'
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
@@ -458,8 +459,8 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'Neutron SNS TOF HKL F2'
             longFormatName = 'Neutron SNS TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
         else:
-            formatName = u'Neutron SNS TOF HKL F\u00b2'
-            longFormatName = u'Neutron SNS TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            formatName = 'Neutron SNS TOF HKL F\u00b2'
+            longFormatName = 'Neutron SNS TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -470,7 +471,7 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
         oldNo = -1
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 if not S:   #empty line terminates read
                     break
@@ -494,7 +495,7 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
     def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 if not S:
                     break
@@ -538,8 +539,8 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'Neutron TOF JANA2000 F2'
             longFormatName = 'Neutron TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
         else:
-            formatName = u'Neutron TOF JANA2000 F\u00b2'
-            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            formatName = 'Neutron TOF JANA2000 F\u00b2'
+            longFormatName = 'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,
@@ -550,7 +551,7 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
         oldNo = -1
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 if not S:   #empty line terminates read
                     break
@@ -569,7 +570,7 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read the file'
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] in ['#','(']: continue       #ignore comments & fortran format line
@@ -608,11 +609,11 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import neutron CW F**2, sig(F**2) reflections from a NIST hb3a int file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = u'Neutron HFIR HB-3A  CW HKL F2'
-            longFormatName = u'Neutron HIFR HB-3A  CW HKL [hkl, Fo2, sig(Fo2),...] 5 column Structure factor text file'
+            formatName = 'Neutron HFIR HB-3A  CW HKL F2'
+            longFormatName = 'Neutron HIFR HB-3A  CW HKL [hkl, Fo2, sig(Fo2),...] 5 column Structure factor text file'
         else:
-            formatName = u'Neutron NIST HIFR  CW HKL F\u00b2'
-            longFormatName = u'Neutron HFIR HB-3A  CW HKL [hkl, Fo\u00b2, sig(Fo\u00b2),...] 5 column Structure factor text file'
+            formatName = 'Neutron NIST HIFR  CW HKL F\u00b2'
+            longFormatName = 'Neutron HFIR HB-3A  CW HKL [hkl, Fo\u00b2, sig(Fo\u00b2),...] 5 column Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,
@@ -621,7 +622,7 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
 
     def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
-        fp = open(filename,'r')
+        fp = open(filename)
         for line,S in enumerate(fp):
             if not S:   #empty line terminates read
                 break
@@ -634,7 +635,7 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read the file'
         try:
-            fp = open(filename,'r')
+            fp = open(filename)
             for line,S in enumerate(fp):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any

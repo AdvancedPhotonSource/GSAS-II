@@ -112,7 +112,7 @@ report.exclude_also = [
 
 [tool.mypy]
 files = ["src", "tests"]
-python_version = "3.8"
+python_version = "3.10"
 warn_unused_configs = true
 strict = false
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -188,7 +188,7 @@ unfixable = [
 
 
 [tool.pylint]
-py-version = "3.8"
+py-version = "3.10"
 ignore-paths = [".*/_version.py"]
 extension-pkg-allow-list = ["gsas_ii._core"]
 reports.output-format = "colorized"

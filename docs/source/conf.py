@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # sphinx documentation build configuration file based on one built by sphinx-quickstart
 #
@@ -10,7 +9,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -35,6 +35,7 @@ try:
 except:
     print('error importing git_verinfo.py')
 import git
+
 g2repo = git.Repo(os.path.abspath(os.path.join('..', '..')))
 git_version = g2repo.head.commit.hexsha[:6]
 version_date = g2repo.head.commit.committed_datetime.strftime('%d-%b-%Y %H:%M')
@@ -85,8 +86,8 @@ source_suffix = {'.rst': 'restructuredtext'}
 master_doc = 'index'
 
 # General information about the project.
-project = u'GSAS-II'
-copyright = u'2013-2024, R. B. Von Dreele and B. H. Toby for Argonne National Laboratory'
+project = 'GSAS-II'
+copyright = '2013-2024, R. B. Von Dreele and B. H. Toby for Argonne National Laboratory'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -184,7 +185,7 @@ html_css_files = [
 
 # from https://github.com/spacetelescope/pysynphot/issues/116 (tnx Paul)
 # converts LaTeX Angstrom symbol to Unicode symbol in HTML output
-rst_prolog = u"""\
+rst_prolog = """\
 
 .. only:: html
 
@@ -258,8 +259,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'GSASIIdoc.tex', u'GSAS-II Developers Documentation',
-   u'Robert B. Von Dreele and Brian H. Toby', 'manual'),
+  ('index', 'GSASIIdoc.tex', 'GSAS-II Developers Documentation',
+   'Robert B. Von Dreele and Brian H. Toby', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -290,8 +291,8 @@ latex_engine = 'xelatex'
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'GSASIIdoc', u'GSAS-II Developers Documentation',
-     [u'Robert B. Von Dreele',u'Brian H. Toby'], 1)
+    ('index', 'GSASIIdoc', 'GSAS-II Developers Documentation',
+     ['Robert B. Von Dreele','Brian H. Toby'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -304,8 +305,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'GSASIIdoc', u'GSAS-II Developers Documentation',
-   u'Robert B. Von Dreele and Brian H. Toby', 'GSASIIdoc', 'GSAS-II Developers Manual',
+    ('index', 'GSASIIdoc', 'GSAS-II Developers Documentation',
+   'Robert B. Von Dreele and Brian H. Toby', 'GSASIIdoc', 'GSAS-II Developers Manual',
    'Miscellaneous'),
 ]
 

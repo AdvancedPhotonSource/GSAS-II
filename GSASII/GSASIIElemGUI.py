@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 '''Routines for Periodic table wx.Frame follow.
 '''
-from __future__ import division, print_function
-from . import GSASIIpath
-import wx
 import os
+
+import wx
 import wx.lib.colourselect as wscs
+
+from . import GSASIIpath
+
+
 # for Python 3.10+, define a version of wxPoint that accepts float params
 def wxPoint(x,y): return wx.Point(int(x),int(y))
 class PickElement(wx.Dialog):

@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
 
-from __future__ import division, print_function
 import os.path as ospath
 import xml.etree.ElementTree as ET
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
 sind = lambda x: np.sin(x*np.pi/180.)
 class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
     '''Routines to import reflectivity data from a Panalytical.xrdm (xml) file. 
@@ -26,7 +27,7 @@ class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
     def ContentsValidator(self, filename):
-        fp = open(filename,'r')
+        fp = open(filename)
         self.vals = None
         self.stepsize = None
         fp.seek(0)

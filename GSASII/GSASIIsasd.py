@@ -1,16 +1,14 @@
-# -*- coding: utf-8 -*-
 '''
 Classes and routines defined in :mod:`GSASIIsasd` follow. 
 '''
-from __future__ import division, print_function
-import os
 import math
+import os
 
 import numpy as np
-import scipy.special as scsp
 import scipy.optimize as so
-#import pdb
+import scipy.special as scsp
 
+#import pdb
 from . import GSASIIpwd as G2pwd
 
 # trig functions in degrees
@@ -57,8 +55,7 @@ def SphericalShellFF(Q,R,args=()):
 	Contributed by: L.A. Avakyan, Southern Federal University, Russia
     '''
     r = args[0]
-    if r < 0: # truncate to positive value
-        r = 0
+    r = max(r, 0)
     if r < 1:  # r controls inner sphere radius
         return SphereFF(Q,R) - SphereFF(Q,R*r)
     else:      # r controls outer sphere radius
@@ -230,8 +227,7 @@ def SphericalShellVol(R,args):
     returns float: volume
     '''
     r = args[0]
-    if r < 0:
-        r = 0
+    r = max(r, 0)
     if r < 1:
         return SphereVol(R) - SphereVol(R*r)
     else:
@@ -630,7 +626,6 @@ References:
 
 class MaxEntException(Exception): 
     '''Any exception from this module'''
-    pass
 
 def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=None, report=False):
     '''
@@ -754,7 +749,7 @@ def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=
         #print_vec("ChoSol: bl", bl)
     
         # last, compute beta from bl and fl
-        beta = np.empty((n))
+        beta = np.empty(n)
         beta[-1] = bl[-1] / fl[-1][-1]
         for i in (1, 0):
             z = 0.0
@@ -800,7 +795,7 @@ def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=
             msg += '  No convergence in alpha chop'
             raise MaxEntException(msg)
     
-        w = Dist (s2, beta);
+        w = Dist (s2, beta)
         m = SEARCH_DIRECTIONS
         if (w > DISTANCE_LIMIT_FACTOR*fSum/blank):        # invoke the distance penalty, SB eq. 17
             for k in range(m):
@@ -824,7 +819,7 @@ def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=
     # as vectors to "image_to_data" and "data_to_image".
     xi      = np.zeros((SEARCH_DIRECTIONS, n))
     eta     = np.zeros((SEARCH_DIRECTIONS, npt))
-    beta    = np.zeros((SEARCH_DIRECTIONS))
+    beta    = np.zeros(SEARCH_DIRECTIONS)
     # s1      = np.zeros((SEARCH_DIRECTIONS))
     # c1      = np.zeros((SEARCH_DIRECTIONS))
     s2      = np.zeros((SEARCH_DIRECTIONS, SEARCH_DIRECTIONS))
@@ -860,10 +855,10 @@ def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=
         xi[0] = f * cgrad / cnorm
         xi[1] = f * (a * sgrad - b * cgrad)
 
-        eta[0] = image_to_data (xi[0], G);          # image --> data
-        eta[1] = image_to_data (xi[1], G);          # image --> data
+        eta[0] = image_to_data (xi[0], G)          # image --> data
+        eta[1] = image_to_data (xi[1], G)          # image --> data
         ox = eta[1] / (sigma * sigma)
-        xi[2] = data_to_image (ox, G);              # data --> image
+        xi[2] = data_to_image (ox, G)              # data --> image
         a = 1.0 / math.sqrt(sum(f * xi[2]*xi[2]))
         xi[2] = f * xi[2] * a
         eta[2] = image_to_data (xi[2], G)           # image --> data
@@ -1053,11 +1048,11 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
     BinMag = np.zeros_like(Bins)
     Ic[:] = 0.
     Gmat = G_matrix(Q[Ibeg:Ifin],Bins,Contrast,shapes[Shape][0],shapes[Shape][1],args=Parms)
-    if 'MaxEnt' == data['Size']['Method']:
+    if data['Size']['Method'] == 'MaxEnt':
         chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Scale*Io[Ibeg:Ifin]-Back[0],
             Scale/np.sqrt(wtFactor*wt[Ibeg:Ifin]),Gmat,BinsBack,
             data['Size']['MaxEnt']['Niter'],report=True)
-    elif 'IPG' == data['Size']['Method']:
+    elif data['Size']['Method'] == 'IPG':
         chisq,BinMag,Ic[Ibeg:Ifin] = IPG(Scale*Io[Ibeg:Ifin]-Back[0],Scale/np.sqrt(wtFactor*wt[Ibeg:Ifin]),
             Gmat,Bins,Dbins,data['Size']['IPG']['Niter'],Q[Ibeg:Ifin],approach=0.8,
             Power=data['Size']['IPG']['Power'],report=True)
@@ -1143,7 +1138,7 @@ def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
         print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF))
         if len(covM):
             sig = np.sqrt(np.diag(covM)*GOF)
-            for val,esd in zip(result[0],sig):
+            for val,esd in zip(result[0],sig, strict=False):
                 print(' parameter: %.4g esd: %.4g'%(val,esd))            
         BinMag = MoorePOR(MPVR,Bins,dmax)/2.
         return Bins,Dbins,BinMag
@@ -1264,7 +1259,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
                     print (' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item]))
                     
     def calcSASD(values,Q,Io,wt,Ifb,levelTypes,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+        parmDict.update(zip(varyList,values, strict=False))
         M = np.sqrt(wt)*(getSASD(Q,levelTypes,parmDict)+Ifb-parmDict['Scale']*Io)
         return M
         
@@ -1340,7 +1335,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     if varyList:
         result = so.leastsq(calcSASD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
             args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Ifb[Ibeg:Ifin],levelTypes,parmDict,varyList))
-        parmDict.update(zip(varyList,result[0]))
+        parmDict.update(zip(varyList,result[0], strict=False))
         chisq = np.sum(result[2]['fvec']**2)
         ncalc = result[2]['nfev']
         covM = result[1]
@@ -1370,7 +1365,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
             raise ValueError
         if len(covM):
             sig = np.sqrt(np.diag(covM)*Rvals['GOF'])
-            sigDict = dict(zip(varyList,sig))
+            sigDict = dict(zip(varyList,sig, strict=False))
         print (' Results of small angle data modelling fit:')
         print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,len(varyList)))
         print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
@@ -1410,7 +1405,7 @@ def RgFit(Profile,ProfDict,Limits,Sample,Model):
         return parmDict,varyList,values
 
     def calcSASD(values,Q,Io,wt,Ifb,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+        parmDict.update(zip(varyList,values, strict=False))
         M = np.sqrt(wt)*(getSASDRg(Q,parmDict)-Io)
         return M
     
@@ -1443,7 +1438,7 @@ def RgFit(Profile,ProfDict,Limits,Sample,Model):
     parmDict,varyList,values = GetModelParms()
     result = so.leastsq(calcSASD,values,full_output=True,epsfcn=1.e-12,factor=0.1,  #ftol=Ftol,
         args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*Wt,Ifb[Ibeg:Ifin],parmDict,varyList))
-    parmDict.update(dict(zip(varyList,result[0])))
+    parmDict.update(dict(zip(varyList,result[0], strict=False)))
     chisq = np.sum(result[2]['fvec']**2)
     ncalc = result[2]['nfev']
     covM = result[1]
@@ -1465,7 +1460,7 @@ def RgFit(Profile,ProfDict,Limits,Sample,Model):
             raise ValueError
         if len(covM):
             sig = np.sqrt(np.diag(covM)*Rvals['GOF'])
-            sigDict = dict(zip(varyList,sig))
+            sigDict = dict(zip(varyList,sig, strict=False))
         print (' Results of Rg fit:')
         print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,len(varyList)))
         print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
@@ -1645,8 +1640,8 @@ def test_MaxEnt_SB(report=True):
         '''return q, I, dI from a 3-column text file'''
         if not os.path.exists(filename):
             raise Exception("file not found: " + filename)
-        buf = [line.split() for line in open(filename, 'r').readlines()]
-        buf = zip(*buf)         # transpose rows and columns
+        buf = [line.split() for line in open(filename).readlines()]
+        buf = zip(*buf, strict=False)         # transpose rows and columns
         q  = np.array(buf[0], dtype=np.float64)
         I  = np.array(buf[1], dtype=np.float64)
         dI = np.array(buf[2], dtype=np.float64)
@@ -1662,8 +1657,8 @@ def test_MaxEnt_SB(report=True):
     
     r    = np.logspace(math.log10(dMin), math.log10(dMax), nRadii)/2
     dr   = r * (r[1]/r[0] - 1)          # step size
-    f_dr = np.ndarray((nRadii)) * 0  # volume fraction histogram
-    b    = np.ndarray((nRadii)) * 0 + defaultDistLevel  # MaxEnt "sky background"
+    f_dr = np.ndarray(nRadii) * 0  # volume fraction histogram
+    b    = np.ndarray(nRadii) * 0 + defaultDistLevel  # MaxEnt "sky background"
     
     qVec, I, dI = readTextData(test_data_file)
     G = G_matrix(qVec,r,rhosq,SphereFF,SphereVol,args=())
@@ -1674,7 +1669,7 @@ def test_MaxEnt_SB(report=True):
         return
     
     print ("solution reached")
-    for a,b,c in zip(r.tolist(), dr.tolist(), f_dr.tolist()):
+    for a,b,c in zip(r.tolist(), dr.tolist(), f_dr.tolist(), strict=False):
         print ('%10.4f %10.4f %12.4g'%(a,b,c))
 
 def tests():

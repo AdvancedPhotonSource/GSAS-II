@@ -1,27 +1,28 @@
-# -*- coding: utf-8 -*-
 #GSASIImath - major mathematics routines
 '''
 Routines defined in :mod:`GSASIImath` follow.
 '''
 
-from __future__ import division, print_function
+import copy
+import math
 import random as rn
+import time
+
 import numpy as np
 import numpy.linalg as nl
-import numpy.ma as ma
-import numpy.fft as fft
 import scipy.optimize as so
-import time
-import math
-import copy
+from numpy import fft, ma
+
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
 from . import GSASIIElem as G2el
-from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
-from . import GSASIIpwd as G2pwd
-from . import GSASIIobj as G2obj
 from . import GSASIIfiles as G2fil
+from . import GSASIIlattice as G2lat
+from . import GSASIIobj as G2obj
+from . import GSASIIpwd as G2pwd
+from . import GSASIIspc as G2spc
+
 try:
     if GSASIIpath.binaryPath:
         import pypowder as pwd
@@ -142,7 +143,7 @@ def setHcorr(info,Amat,xtol,problem=False):
         m = min(0.99,0.99*np.amax(AcovUp))
     else:
         m = max(0.95,0.99*np.amax(AcovUp))
-    info['Hcorr'] = [(i,j,AcovUp[i,j]) for i,j in zip(*np.where(AcovUp > m))]
+    info['Hcorr'] = [(i,j,AcovUp[i,j]) for i,j in zip(*np.where(AcovUp > m), strict=False)]
     return Bmat,Nzeros
 
 def setSVDwarn(info,Amat,Nzeros,indices):
@@ -261,8 +262,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Adiag = np.sqrt(np.diag(Amat))
         psing = np.where(np.abs(Adiag) < 1.e-14)[0]       # find any hard singularities
         if len(psing):
-            G2fil.G2Print('ouch #1 dropping singularities for variable(s) #{}'.format(
-                psing), mode='warn')
+            G2fil.G2Print(f'ouch #1 dropping singularities for variable(s) #{psing}', mode='warn')
             Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,Amat, indices, Xvec, Yvec, Adiag)
         Anorm = np.outer(Adiag,Adiag)        # normalize matrix & vector
         Yvec /= Adiag
@@ -282,8 +282,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 psing = list(np.where(d < 1.e-14)[0])
                 if not len(psing): # make sure at least the worst term is removed
                     psing = [np.argmin(d)]
-                G2fil.G2Print('ouch #2 bad SVD inversion; dropping terms for for variable(s) #{}'.
-                    format(psing), mode='warn')
+                G2fil.G2Print(f'ouch #2 bad SVD inversion; dropping terms for for variable(s) #{psing}', mode='warn')
                 Amat, indices, Xvec, Yvec, Adiag = dropTerms(psing,Amat, indices, Xvec, Yvec, Adiag)
                 if loops < maxdrop: continue # try again, same lam but fewer vars
                 G2fil.G2Print('giving up with ouch #2', mode='error')
@@ -626,7 +625,7 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
         sumR = Radii+radius
         return set(ma.nonzero(ma.masked_greater(dist-factor*sumR,0.))[0])                #get indices of bonded atoms
 
-    import numpy.ma as ma
+    from numpy import ma
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices],dtype='f')
     cx,ct,cs,ci = generalData['AtomPtrs']
@@ -715,9 +714,7 @@ def FindAtomIndexByIDs(atomData,loc,IDs,Draw=True):
     '''
     indx = []
     for i,atom in enumerate(atomData):
-        if Draw and atom[loc] in IDs:
-            indx.append(i)
-        elif atom[loc] in IDs:
+        if (Draw and atom[loc] in IDs) or atom[loc] in IDs:
             indx.append(i)
     return indx
 
@@ -849,7 +846,7 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
     for ind in indx:
         names = [pfx[i]+str(AtLookup[ind]) for i in range(3)]
         dnames = [dpfx[i]+str(AtLookup[ind]) for i in range(3)]
-        XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
+        XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames, strict=False)])
     return XYZ
 
 def GetAtomFracByID(pId,parmDict,AtLookup,indx):
@@ -1024,7 +1021,7 @@ def FindNeighbors(phase,FrstName,AtNames,notName=''):
         radiusFactor = DisAglCtls['Factors'][0]
     except:
         radiusFactor = 0.85
-    AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
+    AtInfo = dict(zip(atTypes,Radii, strict=False)) #or General['BondRadii']
     Orig = atNames.index(FrstName)
     OId = Atoms[Orig][cia+8]
     OType = Atoms[Orig][ct]
@@ -1070,7 +1067,7 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName='',Orig=None,Short=False,sea
         Radii = DisAglCtls[skey]
     except:
         radiusFactor = 0.85
-    AtInfo = dict(zip(AtTypes,Radii)) #or General['BondRadii']
+    AtInfo = dict(zip(AtTypes,Radii, strict=False)) #or General['BondRadii']
     if Orig is None:
         Orig = atNames.index(FrstName)
     OId = Atoms[Orig][cia+8]
@@ -1190,28 +1187,27 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             HU = 1.2*Uiso*np.ones(2)
             return Hpos,HU
-    else:   #2 bonds
-        if 'C' in Oatom[ct]:
-            Vec = TXYZ[0]-OXYZ
-            Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
-            Vec = -0.93*Vec/Len
-            Hpos = OXYZ+Vec
-            HU = 1.1*Uiso
-            return [Hpos,],[HU,]
-        elif 'O' in Oatom[ct]:
-            mapData = General['Map']
-            Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
-            RXYZ = np.array(Ratom[cx:cx+3])
-            iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
-            a = 0.82*cosd(70.5)
-            b = 0.82*sind(70.5)
-            azm = np.arange(0.,360.,5.)
-            Hpos = np.array([[a,b*cosd(x),b*sind(x)] for x in azm])
-            Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
-            Rhos = np.array([getRho(pos,mapData) for pos in Hpos])
-            imax = np.argmax(Rhos)
-            HU = 1.5*Uiso
-            return [Hpos[imax],],[HU,]
+    elif 'C' in Oatom[ct]:
+        Vec = TXYZ[0]-OXYZ
+        Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
+        Vec = -0.93*Vec/Len
+        Hpos = OXYZ+Vec
+        HU = 1.1*Uiso
+        return [Hpos,],[HU,]
+    elif 'O' in Oatom[ct]:
+        mapData = General['Map']
+        Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
+        RXYZ = np.array(Ratom[cx:cx+3])
+        iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
+        a = 0.82*cosd(70.5)
+        b = 0.82*sind(70.5)
+        azm = np.arange(0.,360.,5.)
+        Hpos = np.array([[a,b*cosd(x),b*sind(x)] for x in azm])
+        Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
+        Rhos = np.array([getRho(pos,mapData) for pos in Hpos])
+        imax = np.argmax(Rhos)
+        HU = 1.5*Uiso
+        return [Hpos[imax],],[HU,]
     return [],[]
 
 #def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
@@ -1374,12 +1370,12 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         vecs = RBRes['rbVect']
         mags = RBRes['VectMag']
         Cart = np.zeros_like(vecs[0])
-        for vec,mag in zip(vecs,mags):
+        for vec,mag in zip(vecs,mags, strict=False):
             Cart += vec*mag
     elif RBType == 'Residue':
         RBRes = RBData[RBType][RBObj['RBId']]
         Cart = np.array(RBRes['rbXYZ'])
-        for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
+        for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq'], strict=False):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
             Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
     elif RBType == 'Spin':
@@ -1431,7 +1427,7 @@ def UpdateMCSAxyz(Bmat,MCSA):
                 vecs = RBRes['rbVect']
                 mags = RBRes['VectMag']
                 Cart = np.zeros_like(vecs[0])
-                for vec,mag in zip(vecs,mags):
+                for vec,mag in zip(vecs,mags, strict=False):
                     Cart += vec*mag
             elif model['Type'] == 'Residue':
                 Cart = np.array(RBRes['rbXYZ'])
@@ -1461,7 +1457,7 @@ def SetMolCent(model,RBData):
         vecs = RBRes['rbVect']
         mags = RBRes['VectMag']
         Cart = np.zeros_like(vecs[0])
-        for vec,mag in zip(vecs,mags):
+        for vec,mag in zip(vecs,mags, strict=False):
             Cart += vec*mag
     elif model['Type'] == 'Residue':
         Cart = np.array(RBRes['rbXYZ'])
@@ -1506,7 +1502,7 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
         X = prodQVQ(Q,X)
         if 'U' in TLStype:
             Uout.append(['I',TLS[0],0,0,0,0,0,0])
-        elif not 'N' in TLStype:
+        elif 'N' not in TLStype:
             U = [0,0,0,0,0,0]
             U[0] = T[0]+L[1]*X[2]**2+L[2]*X[1]**2-2.0*L[5]*X[1]*X[2]+2.0*(S[2]*X[2]-S[4]*X[1])
             U[1] = T[1]+L[0]*X[2]**2+L[2]*X[0]**2-2.0*L[4]*X[0]*X[2]+2.0*(S[5]*X[0]-S[0]*X[2])
@@ -1967,9 +1963,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
     ZtauXx = np.zeros((Ax.shape[0],3,ngl))               #atoms x XYZmax x ngl
     for iatm in range(Ax.shape[0]):
         nx = 0
-        if 'ZigZag' in waveTypes[iatm]:
-            nx = 1
-        elif 'Block' in waveTypes[iatm]:
+        if 'ZigZag' in waveTypes[iatm] or 'Block' in waveTypes[iatm]:
             nx = 1
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x ngl
         if nx:
@@ -2230,7 +2224,7 @@ def CalcIsoDisp(Phase,parmDict={},covdata={}):
     # get uncertainties on modes and compute them for displacements
     if 'varyList' in covdata:
         modes = [i.name for i in ISO['G2ModeList']]
-        covDict = dict(zip(covdata.get('varyList',[]),covdata.get('sig',[])))
+        covDict = dict(zip(covdata.get('varyList',[]),covdata.get('sig',[]), strict=False))
         modeEsds = [covDict.get(str(g2),-1) for g2 in modes]
         vcov = getVCov(modes,covdata['varyList'],covdata['covMatrix'])
         normMode2Var = ISO['Mode2VarMatrix']*ISO['NormList']
@@ -2243,7 +2237,7 @@ def CalcIsoDisp(Phase,parmDict={},covdata={}):
         modeEsds = len(ISO['G2ModeList'])*[-0.0001]
 
     dispValues = []
-    for iso,g2,off in zip(ISO['IsoVarList'],ISO['G2VarList'],ISO['G2coordOffset']):
+    for iso,g2,off in zip(ISO['IsoVarList'],ISO['G2VarList'],ISO['G2coordOffset'], strict=False):
         if g2.atom not in atmIndex:
             print('Atom not found in atom list',g2)
             return [],[],[],[]
@@ -2283,7 +2277,7 @@ def CalcIsoCoords(Phase,parmDict,covdata={}):
         except:
             modeVals.append(float(parmDict[i]))
     if 'varyList' in covdata:
-        covDict = dict(zip(covdata.get('varyList',[]),covdata.get('sig',[])))
+        covDict = dict(zip(covdata.get('varyList',[]),covdata.get('sig',[]), strict=False))
         modeEsds = [covDict.get(str(g2),-1) for g2 in modes]
         vcov = getVCov(modes,covdata['varyList'],covdata['covMatrix'])
         sigMat = np.inner(normMode2Var,np.inner(normMode2Var,vcov))
@@ -2294,9 +2288,9 @@ def CalcIsoCoords(Phase,parmDict,covdata={}):
         dispEsds = len(ISO['G2VarList'])*[-0.0001]
     dispValues =   np.dot(normMode2Var,modeVals)
     modeDict = {str(g2):([val,esd]) for val,g2,esd in
-                        zip(modeVals,ISO['G2ModeList'],modeEsds)}
+                        zip(modeVals,ISO['G2ModeList'],modeEsds, strict=False)}
     posDict = {str(g2).replace('::dA','::A'):([dsp,esd]) for dsp,g2,off,esd in
-                        zip(dispValues,ISO['G2VarList'],ISO['G2coordOffset'],dispEsds)}
+                        zip(dispValues,ISO['G2VarList'],ISO['G2coordOffset'],dispEsds, strict=False)}
     return modeDict,posDict
 
 def ApplyModeDisp(data):
@@ -2314,7 +2308,7 @@ def ApplyModeDisp(data):
     modeDisp = np.array(ISOdata['modeDispl'])*np.array(ISOdata['NormList'])
     mode2var = np.array(ISOdata['Mode2VarMatrix'])
     varDisp = np.sum(mode2var*modeDisp,axis=1)
-    vardict = dict(zip(ISOdata['IsoVarList'],varDisp))
+    vardict = dict(zip(ISOdata['IsoVarList'],varDisp, strict=False))
     cell = generalData['Cell'][1:7]
     G,g = G2lat.cell2Gmat(cell)
     SGData = generalData['SGData']
@@ -2534,7 +2528,7 @@ def getSyXYZ(XYZ,ops,SGData):
 
     '''
     XYZout = np.zeros_like(XYZ)
-    for i,[xyz,op] in enumerate(zip(XYZ,ops)):
+    for i,[xyz,op] in enumerate(zip(XYZ,ops, strict=False)):
         if op == '1':
             XYZout[i] = xyz
         else:
@@ -2802,7 +2796,6 @@ def getRestPolefigDerv(HKL,Grid,SHCoeff):
     :returns: type name: description
 
     '''
-    pass
 
 def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     '''computes the numerical derivative of the distance between two atoms.
@@ -2868,7 +2861,7 @@ def setupRBDistDerv(parmDict,varyList,sigList,rigidbodyDict,Phases):
         G2stMth.ApplyRBModels(prms,Phases,RBData)
         # apply shifts to atoms
         for dk in prms:
-            if not '::dA' in dk: continue
+            if '::dA' not in dk: continue
             if prms[dk] == 0: continue
             k = dk.replace('::dA','::A')
             prms[k] += prms[dk]
@@ -2876,7 +2869,7 @@ def setupRBDistDerv(parmDict,varyList,sigList,rigidbodyDict,Phases):
     multiParmDict = {None:copy.copy(parmDict)}
     changedParmDict = {}
     RBData = copy.deepcopy(rigidbodyDict)
-    for p,s in zip(varyList,sigList):
+    for p,s in zip(varyList,sigList, strict=False):
         multiParmDict[p] = copy.copy(parmDict)
         if p not in multiParmDict[p]:
             print(f'setupRBDistDerv warning: parameter {p} not in parmDict')
@@ -2936,7 +2929,7 @@ def getRBDistDerv(OdxyzNames,TdxyzNames,Amat,Tunit,Top,SGData,
     Txyz = [multiParmDict[None][k] for k in TxyzNames]
     d0 = calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)
     deriv = np.zeros(len(varyList))
-    for i,(var,sig) in enumerate(zip(varyList,sigList)):
+    for i,(var,sig) in enumerate(zip(varyList,sigList, strict=False)):
         if var not in multiParmDict or sig == 0: continue
         # are any of the coordinates changed by changing the value for var?
         #if not any([k in changedParmDict[var] for k in OxyzNames+TxyzNames]): continue
@@ -3117,7 +3110,7 @@ def getRBAngSig(VA,VB,Amat,SGData,covData,multiParmDict,changedParmDict):
     TxBN = [k.replace('::dA','::A') for k in TxBdN]
     Ang0 = calcAngle(OxA,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat)
     deriv = np.zeros(len(varyList))
-    for i,(var,sig) in enumerate(zip(varyList,sigList)):
+    for i,(var,sig) in enumerate(zip(varyList,sigList, strict=False)):
         if var not in multiParmDict or sig == 0: continue
         # are any of the coordinates changed by changing the var value?
         if not any(True for x in changedParmDict[var] if x in OxAN+TxAN+TxBN):
@@ -3398,8 +3391,7 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
         varyList = covData['varyList']
         Vcov = getVCov(names,varyList,covMatrix)
         sig = np.sqrt(np.inner(dadx,np.inner(Vcov,dadx)))
-        if sig < sigVals[M-3]:
-            sig = sigVals[M-3]
+        sig = max(sig, sigVals[M-3])
 
     return Val,sig
 
@@ -3547,12 +3539,12 @@ def ValEsd(value,esd=0,nTZ=False):
         if extra > 0: extra += 1
         out = ("{:."+str(max(0,esdoff+int(extra)))+"f}").format(value) # format the value
     if esd > 0:
-        out += ("({:d})").format(intesd)  # add the esd
+        out += (f"({intesd:d})")  # add the esd
     elif nTZ and '.' in out:
         out = out.rstrip('0')  # strip zeros to right of decimal
         out = out.rstrip('.')  # and decimal place when not needed
     if valoff != 0:
-        out += ("e{:d}").format(valoff) # add an exponent, when needed
+        out += (f"e{valoff:d}") # add an exponent, when needed
     return out
 
 ###############################################################################
@@ -3681,7 +3673,7 @@ def validProtein(Phase,old):
             elif atom[3].strip() == 'CA':
                 tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
         else:
-            tgts = [tgt for tgt in tgts if not int(cartAtoms[tgt][0]) in [ires+1,ires+2,ires+3,ires+4,ires+5,ires+6,ires+7,ires+8]]
+            tgts = [tgt for tgt in tgts if int(cartAtoms[tgt][0]) not in [ires+1,ires+2,ires+3,ires+4,ires+5,ires+6,ires+7,ires+8]]
             if atom[3].strip() == 'C':
                 tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) == ires+1)]
             elif atom[3].strip() == 'N':
@@ -3805,10 +3797,10 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
     def Values2Dict(parmdict, varylist, values):
         ''' Use after call to leastsq to update the parameter dictionary with
         values corresponding to keys in varylist'''
-        parmdict.update(list(zip(varylist,values)))
+        parmdict.update(list(zip(varylist,values, strict=False)))
 
     def errSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList,pgbar):
-        parmDict.update(list(zip(varyList,values)))
+        parmDict.update(list(zip(varyList,values, strict=False)))
         Mat = np.empty(0)
         sumObs = 0
         Sangls = [parmDict['Sample '+'omega'],parmDict['Sample '+'chi'],parmDict['Sample '+'phi']]
@@ -3913,7 +3905,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
                 Texture['SH Coeff'][1][parm] = parmDict[parm]
             else:
                 Texture[parm][1] = parmDict[parm]
-        sigDict = dict(zip(varyList,sig))
+        sigDict = dict(zip(varyList,sig, strict=False))
         printSpHarm(Texture,sigDict)
 
     return None
@@ -3950,7 +3942,7 @@ def OmitMap(data,reflDict,pgbar=None):
     generalData = data['General']
     if not generalData['Map']['MapType']:
         G2fil.G2Print ('**** ERROR - Fourier map not defined')
-        return
+        return None
     mapData = generalData['Map']
     dmin = mapData['GridStep']*2.
     SGData = generalData['SGData']
@@ -3984,12 +3976,12 @@ def OmitMap(data,reflDict,pgbar=None):
                 Fhkl[h,k,l] = F*phasem
     rho0 = fft.fftn(fft.fftshift(Fhkl))/cell[6]
     M = np.mgrid[0:4,0:4,0:4]
-    blkIds = np.array(list(zip(M[0].flatten(),M[1].flatten(),M[2].flatten())))
+    blkIds = np.array(list(zip(M[0].flatten(),M[1].flatten(),M[2].flatten(), strict=False)))
     iBeg = blkIds*rho0.shape//4
     iFin = (blkIds+1)*rho0.shape//4
     rho_omit = np.zeros_like(rho0)
     nBlk = 0
-    for iB,iF in zip(iBeg,iFin):
+    for iB,iF in zip(iBeg,iFin, strict=False):
         rho1 = np.copy(rho0)
         rho1[iB[0]:iF[0],iB[1]:iF[1],iB[2]:iF[2]] = 0.
         Fnew = fft.ifftshift(fft.ifftn(rho1))
@@ -4214,7 +4206,7 @@ def findOffset(SGData,A,Fhkl):
         Phi = np.concatenate((Phi,-Phi))                      # and their phase shifts
         Fh0 = Fhkl[hkl[0],hkl[1],hkl[2]]
         ang0 = np.angle(Fh0,deg=True)/360.
-        for H,phi in list(zip(Uniq,Phi))[1:]:
+        for H,phi in list(zip(Uniq,Phi, strict=False))[1:]:
             ang = (np.angle(Fhkl[int(H[0]),int(H[1]),int(H[2])],deg=True)/360.-phi)
             dH = H-hkl
             dang = ang-ang0
@@ -4228,7 +4220,7 @@ def findOffset(SGData,A,Fhkl):
     Dphi = np.array(Dphi)
     steps = np.array(hklShape)
     X,Y,Z = np.meshgrid(np.linspace(0,1,steps[0]),np.linspace(0,1,steps[1]),np.linspace(0,1,steps[2]))
-    XYZ = np.array(list(zip(X.flatten(),Y.flatten(),Z.flatten())))
+    XYZ = np.array(list(zip(X.flatten(),Y.flatten(),Z.flatten(), strict=False)))
     Dang = (np.dot(XYZ,DH.T)+.5)%1.-Dphi
     Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)
     hist,bins = np.histogram(Mmap,bins=1000)
@@ -4388,7 +4380,7 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
         Phi = np.concatenate((Phi,-Phi))                      # and their phase shifts
         Fh0 = Fhklm[hklm[0],hklm[1],hklm[2],hklm[3]]
         ang0 = np.angle(Fh0,deg=True)/360.
-        for H,phi in list(zip(Uniq,Phi))[1:]:
+        for H,phi in list(zip(Uniq,Phi, strict=False))[1:]:
             H = np.array(H,dtype=int)
             ang = (np.angle(Fhklm[H[0],H[1],H[2],H[3]],deg=True)/360.-phi)
             dH = H-hklm
@@ -4403,7 +4395,7 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
     Dphi = np.array(Dphi)
     steps = np.array(hklmShape)
     X,Y,Z,T = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2],0:1:1./steps[3]]
-    XYZT = np.array(list(zip(X.flatten(),Y.flatten(),Z.flatten(),T.flatten())))
+    XYZT = np.array(list(zip(X.flatten(),Y.flatten(),Z.flatten(),T.flatten(), strict=False)))
     Dang = (np.dot(XYZT,DH.T)+.5)%1.-Dphi
     Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)
     hist,bins = np.histogram(Mmap,bins=1000)
@@ -4636,7 +4628,7 @@ def SearchMap(generalData,drawingData,Neg=False):
 
     def peakHess(parms,rX,rY,rZ,rho,res,SGLaue):
         Mag,x0,y0,z0,sig = parms
-        dMdv = np.zeros(([5,]+list(rX.shape)))
+        dMdv = np.zeros([5,]+list(rX.shape))
         delt = .01
         for i in range(5):
             parms[i] -= delt
@@ -4682,7 +4674,7 @@ def SearchMap(generalData,drawingData,Neg=False):
     indx = np.transpose(rhoMask.nonzero())
     peaks = indx/incre
     mags = rhoMask[rhoMask.nonzero()]
-    for i,[ind,peak,mag] in enumerate(zip(indx,peaks,mags)):
+    for i,[ind,peak,mag] in enumerate(zip(indx,peaks,mags, strict=False)):
         rho = rollMap(rho,ind)
         rMM = mapHalf-steps
         rMP = mapHalf+steps+1
@@ -4715,7 +4707,7 @@ def sortArray(data,pos,reverse=False):
             T.append((M[pos],i))
         except IndexError:
             return data
-    D = dict(zip(T,data))
+    D = dict(zip(T,data, strict=False))
     T.sort()
     if reverse:
         T.reverse()
@@ -4870,7 +4862,7 @@ def DoWilsonStat(refList,Super,normEle,Inst):
     SQbins += step/2.
     E2bins = np.zeros_like(SQbins)
     nE2bins = np.zeros_like(SQbins)
-    for sq,e in zip(list(SQ2),list(Esq)):
+    for sq,e in zip(list(SQ2),list(Esq), strict=False):
         i = np.searchsorted(SQbins,sq)
         E2bins[i] += e
         nE2bins[i] += 1
@@ -5184,13 +5176,11 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
 
 
 import numpy
-from numpy import asarray, exp, squeeze, sign, \
-     all, shape, array, where
-from numpy import random
+from numpy import all, array, asarray, exp, random, shape, sign, squeeze, where
 
 #__all__ = ['anneal']
 
-class base_schedule(object):
+class base_schedule:
     def __init__(self):
         self.dwell = 20
         self.lower = 0.
@@ -5205,9 +5195,9 @@ class base_schedule(object):
     def init(self, **options):
         self.__dict__.update(options)
         self.lower = asarray(self.lower)
-        self.lower = where(self.lower == numpy.NINF, -_double_max, self.lower)
+        self.lower = where(self.lower == -np.inf, -_double_max, self.lower)
         self.upper = asarray(self.upper)
-        self.upper = where(self.upper == numpy.PINF, _double_max, self.upper)
+        self.upper = where(self.upper == numpy.inf, _double_max, self.upper)
         self.k = 0
         self.accepted = 0
         self.feval = 0
@@ -5224,7 +5214,7 @@ class base_schedule(object):
             The starting parameters vector.
         '''
 
-        assert(not self.dims is None)
+        assert(self.dims is not None)
         lrange = self.lower
         urange = self.upper
         fmax = _double_min
@@ -5233,8 +5223,7 @@ class base_schedule(object):
             x0 = random.uniform(size=self.dims)*(urange-lrange) + lrange
             fval = self.func(x0, *self.args)
             self.feval += 1
-            if fval > fmax:
-                fmax = fval
+            fmax = max(fmax, fval)
             if fval < fmin:
                 fmin = fval
                 best_state.cost = fval
@@ -5281,7 +5270,6 @@ class fast_sa(base_schedule):
     def update_temp(self):
         self.T = self.T0*exp(-self.c * self.k**(self.quench))
         self.k += 1
-        return
 
 class log_sa(base_schedule):        #OK
 
@@ -5299,7 +5287,7 @@ class log_sa(base_schedule):        #OK
         self.k += 1
         self.T = self.T0*self.slope**self.k
 
-class _state(object):
+class _state:
     def __init__(self):
         self.x = None
         self.cost = None
@@ -5523,7 +5511,7 @@ def anneal(func, x0, args=(), schedule='fast',
                 retval = 5
                 G2fil.G2Print (" Warning: Cooled to %.4f > selected Tmin %.4f in %d steps"%(squeeze(last_state.cost),Tf,iters-1))
             break
-        if (Tf is not None) and (schedule.T < Tf):
+        if (Tf is not None) and (Tf > schedule.T):
 #            print ' Minimum T reached in %d steps'%(iters-1)
             retval = 1
             break
@@ -5589,7 +5577,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     :returns: type name: description
     '''
 
-    class RandomDisplacementBounds(object):
+    class RandomDisplacementBounds:
         '''random displacement with bounds'''
         def __init__(self, xmin, xmax, stepsize=0.5):
             self.xmin = xmin
@@ -5657,12 +5645,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                 parmDict[name] = V[i-1]
             else:
                 parmDict[name] = A
-            if item['Ovar'] == 'AV':
-                varyList += [name,]
-                limits = item['Ori'][2][i]
-                lower.append(limits[0])
-                upper.append(limits[1])
-            elif item['Ovar'] == 'A' and not i:
+            if item['Ovar'] == 'AV' or (item['Ovar'] == 'A' and not i):
                 varyList += [name,]
                 limits = item['Ori'][2][i]
                 lower.append(limits[0])
@@ -5740,7 +5723,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                     vecs = RBRes['rbVect']
                     mags = RBRes['VectMag']
                     Cart = np.zeros_like(vecs[0])
-                    for vec,mag in zip(vecs,mags):
+                    for vec,mag in zip(vecs,mags, strict=False):
                         Cart += vec*mag
                 elif parmDict[pfx+'Type'] == 'Residue':
                     RBRes = RBdata['Residue'][parmDict[pfx+'RBId']]
@@ -5806,7 +5789,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
 
         global tsum,nsum
         t0 = time.time()
-        parmDict.update(dict(zip(varyList,values)))             #update parameter tables
+        parmDict.update(dict(zip(varyList,values, strict=False)))             #update parameter tables
         Xdata = GetAtomX(RBdata,parmDict)                       #get new atom coords from RB
         allX = getAllX(Xdata,SGM,SGT)                           #fill unit cell - dups. OK
         MDval = parmDict['0:MDval']                             #get March-Dollase coeff
@@ -5963,7 +5946,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']
-    bounds = np.array(list(zip(lower,upper)))
+    bounds = np.array(list(zip(lower,upper, strict=False)))
     if MCSA['Algorithm'] == 'Basin Hopping':
 #        import basinhopping as bs
         take_step = RandomDisplacementBounds(np.array(lower), np.array(upper))
@@ -5991,8 +5974,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
 ###############################################################################
 #### Cluster Analysis math
 ###############################################################################
-import scipy.spatial.distance as SSD
-import scipy.cluster.hierarchy as SCH
 
 
 

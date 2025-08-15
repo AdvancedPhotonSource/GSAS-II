@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import os
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
+
 class EDF_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read European detector data .edf file.
     This is a particularly nice standard. 
@@ -59,17 +61,17 @@ def GetEdfData(filename,imageOnly=False):
             wave = float(fields[2])
         elif 'Wavelength' in line:
             wave = float(fields[2])*1.e10
-        elif 'Size' == fields[0]:
+        elif fields[0] == 'Size':
             imSize = int(fields[2])
 #        elif 'DataType' in lines:
 #            dType = fields[2]
         elif 'pixel_size_x' in line:
             pixSize[0] = float(fields[2])
-        elif 'PSize_1' == fields[0]:
+        elif fields[0] == 'PSize_1':
             pixSize[0] = float(fields[2])*1.e6
         elif 'pixel_size_y' in line:
             pixSize[1] = float(fields[2])
-        elif 'PSize_2' == fields[0]:
+        elif fields[0] == 'PSize_2':
             pixSize[1] = float(fields[2])*1.e6
         elif 'beam_center_x' in line: 
             cent[0] = float(fields[2])

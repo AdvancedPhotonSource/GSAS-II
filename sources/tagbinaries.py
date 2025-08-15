@@ -1,10 +1,11 @@
 # this routine is intended to be run from inside meson and creates a
 # file named GSASIIversion.txt with that information
-import sys
+import datetime
 import os
 import shutil
 import subprocess
-import datetime
+import sys
+
 source = os.environ.get('MESON_SOURCE_ROOT',
                     os.path.dirname(os.path.dirname(__file__)))
 build = os.environ.get('MESON_BUILD_ROOT',
@@ -12,13 +13,13 @@ build = os.environ.get('MESON_BUILD_ROOT',
 
 if shutil.which('git'):
     out = subprocess.run(['git','tag','-l','--sort=-authordate','v*'],
-                             stdout=subprocess.PIPE,cwd=source)
+                             stdout=subprocess.PIPE,cwd=source, check=False)
     version = out.stdout.decode('latin-1').split('\n')[0].strip()
     out = subprocess.run(['git','tag','-l','--sort=-authordate','[0-9]*'],
-                             stdout=subprocess.PIPE,cwd=source)
+                             stdout=subprocess.PIPE,cwd=source, check=False)
     number = out.stdout.decode('latin-1').split('\n')[0].strip()
     out = subprocess.run(['git','log','HEAD','-1'],
-                             stdout=subprocess.PIPE,cwd=source)
+                             stdout=subprocess.PIPE,cwd=source, check=False)
     githash = out.stdout.decode('latin-1').split('commit')[1].split('\n')[0].strip()
     how = 'git'
 else:

@@ -1,69 +1,90 @@
-# -*- coding: utf-8 -*-
-#
-'''
-'''
-
-from __future__ import division, print_function
-import sys
 import os.path
 import random as ran
-from .. import GSASIIobj as G2obj
+import sys
+
 from .. import GSASIIlattice as G2lat
+from .. import GSASIIobj as G2obj
+
 
 class XYZ_ReaderClass(G2obj.ImportPhase):
-    'Routine to import Phase information from a XYZ file'
+    "Routine to import Phase information from a XYZ file"
+
     def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
-            extensionlist=('.xyz','.XYZ'),
+        super(self.__class__, self).__init__(  # fancy way to say ImportPhase.__init__
+            extensionlist=(".xyz", ".XYZ"),
             strictExtension=True,
-            formatName = 'XYZ',
-            longFormatName = 'XYZ Cartesian coordinate file import'
-            )
+            formatName="XYZ",
+            longFormatName="XYZ Cartesian coordinate file import",
+        )
+
     def ContentsValidator(self, filename):
-        '''Taking a stab a validating: 1st line should be a number
-        '''
-        fp = open(filename,'r')
+        """Taking a stab a validating: 1st line should be a number"""
+        fp = open(filename)  # noqa: SIM115
         try:
             int(fp.readline().strip())
-        except:
+        except:  # noqa: E722
             fp.close()
             return False
         fp.close()
         return True
 
-    def Reader(self,filename, ParentFrame=None, **unused):
-        'Read a phase from an XYZ file.'
-        self.errors = 'Error opening file'
-        fp = open(filename, 'r')
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
+        "Read a phase from an XYZ file."
+        self.errors = "Error opening file"
+        fp = open(filename)  # noqa: SIM115
         self.Phase = {}
         natom = int(fp.readline().strip())
         Title = os.path.basename(filename)
-        skip = fp.readline()
+        skip = fp.readline()  # noqa: F841
         line = 2
-        SGData = G2obj.P1SGData # P 1
+        SGData = G2obj.P1SGData  # P 1
         self.warnings += '\nNo space group in file, set to "P 1".'
         self.warnings += "Change this in phase's General tab."
-        cell = [10.,10.,10.,90.,90.,90.]
+        cell = [10.0, 10.0, 10.0, 90.0, 90.0, 90.0]
         Volume = G2lat.calc_V(G2lat.cell2A(cell))
 
         counts = {}
         Atoms = []
-        for i in range(natom):
+        for _i in range(natom):
             line += 1
-            self.errors = 'Error reading at line '+str(line)
-            l = fp.readline()
+            self.errors = "Error reading at line " + str(line)
+            l = fp.readline()  # noqa: E741
             Type = l.split()[0]
-            XYZ = [float(x)/10. for x in l.split()[1:4]]
+            XYZ = [float(x) / 10.0 for x in l.split()[1:4]]
             if Type not in counts:
                 counts[Type] = 0
             counts[Type] += 1
             Aname = Type + str(counts[Type])
-            Atoms.append([Aname,Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
-                    1.0,'1',1,'I',0.0,0,0,0,0,0,0,ran.randint(0,sys.maxsize)])
+            Atoms.append(
+                [
+                    Aname,
+                    Type.strip().capitalize(),
+                    "",
+                    XYZ[0],
+                    XYZ[1],
+                    XYZ[2],
+                    1.0,
+                    "1",
+                    1,
+                    "I",
+                    0.0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    ran.randint(0, sys.maxsize),
+                ]
+            )
         fp.close()
-        self.errors = 'Error after read complete'
-        self.Phase = G2obj.SetNewPhase(Name=Title,SGData=SGData,cell=cell+[Volume,])
-        self.Phase['General']['Type'] = 'nuclear'
-        self.Phase['General']['AtomPtrs'] = [3,1,7,9]    
-        self.Phase['Atoms'] = Atoms
+        self.errors = "Error after read complete"
+        self.Phase = G2obj.SetNewPhase(
+            Name=Title,
+            SGData=SGData,
+            cell=[*cell, Volume],
+        )
+        self.Phase["General"]["Type"] = "nuclear"
+        self.Phase["General"]["AtomPtrs"] = [3, 1, 7, 9]
+        self.Phase["Atoms"] = Atoms
         return True

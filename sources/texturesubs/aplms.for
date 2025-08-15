@@ -43,4 +43,3 @@
       IF ( ABS(AP).LT.1.0E-6 ) AP = 0.0
       RETURN                                
       END                   
-

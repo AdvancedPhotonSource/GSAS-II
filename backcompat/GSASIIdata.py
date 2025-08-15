@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.GSASIIdata import *
+from GSASII.GSASIIdata import *  # noqa: F403
 
 warn(
     "Importing GSASIIdata as a top level module is deprecated, please import "

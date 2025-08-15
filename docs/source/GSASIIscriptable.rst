@@ -1713,4 +1713,3 @@ API: Complete Documentation
 
 .. automodule:: GSASII.GSASIIscriptable
     :members: 
-

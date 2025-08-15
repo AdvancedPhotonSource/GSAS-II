@@ -615,4 +615,3 @@ file.
 
 .. automodule:: GSASII.imports.G2rfd_Panalytical
     :members: 
-

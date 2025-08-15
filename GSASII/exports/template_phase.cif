@@ -34,4 +34,3 @@ _computing_structure_solution     ?
 #==============================================================================
 
 # 8. Phase information from GSAS-II
-

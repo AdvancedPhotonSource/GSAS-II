@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.GSASIImpsubs import *
+from GSASII.GSASIImpsubs import *  # noqa: F403
 
 warn(
     "Importing GSASIImpsubs as a top level module is deprecated, please import "

@@ -23,5 +23,3 @@ Cf2py depend(NPHI) PHI,PCRS,DPDPS
       CALL QLMNINIT
       RETURN
       END
-
-

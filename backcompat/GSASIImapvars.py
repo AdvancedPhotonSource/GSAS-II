@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.GSASIImapvars import *
+from GSASII.GSASIImapvars import *  # noqa: F403
 
 warn(
     "Importing GSASIImapvars as a top level module is deprecated, please import "

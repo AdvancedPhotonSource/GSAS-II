@@ -4,13 +4,13 @@ import sys
 import numpy as np
 import wx
 
-from . import GSASIIpath
+from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIlattice as G2lat
-from . import GSASIIphsGUI as G2phsGUI
-from . import GSASIIspc as G2spc
+from GSASII import GSASIIctrlGUI as G2G
+from GSASII import GSASIIlattice as G2lat
+from GSASII import GSASIIphsGUI as G2phsGUI
+from GSASII import GSASIIspc as G2spc
 
 try:
     wx.NewId

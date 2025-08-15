@@ -12,14 +12,14 @@ import sys
 import numpy as np
 import wx
 
-from . import GSASIIpath
+from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIElem as G2el
-from . import GSASIIElemGUI as G2elG
-from . import GSASIItestplot as plot
-from . import atmdata
-
+from GSASII import GSASIIElem as G2el
+from GSASII import GSASIIElemGUI as G2elG
+from GSASII import GSASIItestplot as plot
+from GSASII import atmdata
+2
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 try:

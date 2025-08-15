@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.GSASIImath import *
+from GSASII.GSASIImath import *  # noqa: F403
 
 warn(
     "Importing GSASIImath as a top level module is deprecated, please import "

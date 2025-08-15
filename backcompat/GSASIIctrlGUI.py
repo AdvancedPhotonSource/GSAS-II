@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.GSASIIctrlGUI import *
+from GSASII.GSASIIctrlGUI import *  # noqa: F403
 
 warn(
     "Importing GSASIIctrlGUI as a top level module is deprecated, please import "

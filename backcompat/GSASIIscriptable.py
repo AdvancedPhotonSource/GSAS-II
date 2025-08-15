@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.GSASIIscriptable import *
+from GSASII.GSASIIscriptable import *  # noqa: F403
 
 warn(
     "Importing GSASIIscriptable as a top level module is deprecated, please import "

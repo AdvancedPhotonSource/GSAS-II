@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.GSASIIpwdplot import *
+from GSASII.GSASIIpwdplot import *  # noqa: F403
 
 warn(
     "Importing GSASIIpwdplot as a top level module is deprecated, please import "

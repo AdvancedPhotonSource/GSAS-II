@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.GSASIIimgGUI import *
+from GSASII.GSASIIimgGUI import *  # noqa: F403
 
 warn(
     "Importing GSASIIimgGUI as a top level module is deprecated, please import "

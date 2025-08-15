@@ -51,11 +51,10 @@ for h in list(g2repo.iter_commits("HEAD"))[:50]:  # (don't go too far back)
 print(f"Found highest version as {version}")
 # put the version into the docs
 print(os.path.split(__file__)[0])
-fp = open(os.path.join(os.path.split(__file__)[0], "version.rst"), "w")
-fp.write(
-    f"This documentation was prepared from GSAS-II version {git_version} dated {version_date} with the most recent tag as version #{version}\n"
-)
-fp.close()
+with open(os.path.join(os.path.split(__file__)[0], "version.rst"), "w") as fp:
+    fp.write(
+        f"This documentation was prepared from GSAS-II version {git_version} dated {version_date} with the most recent tag as version #{version}\n"
+    )
 # update to use the most recent variables list
 fil = os.path.normpath(
     os.path.join(

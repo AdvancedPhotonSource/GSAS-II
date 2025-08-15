@@ -15,9 +15,10 @@ G2loc = os.path.join(loc, "..")
 # look for a reference in the .rst files
 documented = []
 for fil in glob.glob(os.path.join(loc, "source/*.rst")):
-    for line in open(fil).readlines():
-        if line.strip().startswith(".. automodule::"):
-            documented.append(line.strip().split("::")[1].strip())
+    with open(fil) as file:
+        for line in file.readlines():
+            if line.strip().startswith(".. automodule::"):
+                documented.append(line.strip().split("::")[1].strip())
 
 undoc = []
 G2repo = git.Repo(G2loc)

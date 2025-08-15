@@ -6,6 +6,7 @@ Copyright: 2009, Robert B. Von Dreele (Argonne National Laboratory)
 
 import math
 import sys
+from wx.core import Menu
 
 import wx
 
@@ -118,16 +119,16 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     muT = 0.0
     muR = 0.0
 
-    def _init_coll_ABOUT_Items(self, parent):
+    def _init_coll_ABOUT_Items(self, parent: wx.Menu) -> None:
         parent.Append(wxID_ABSORBABOUT, "About")
         self.Bind(wx.EVT_MENU, self.OnABOUTItems0Menu, id=wxID_ABSORBABOUT)
 
-    def _init_coll_menuBar1_Menus(self, parent):
+    def _init_coll_menuBar1_Menus(self, parent: wx.MenuBar) -> None:
         parent.Append(menu=self.ABSORB, title="Absorb")
         parent.Append(menu=self.KALPHA, title="Kalpha")
         parent.Append(menu=self.ABOUT, title="About")
 
-    def _init_coll_KALPHA_Items(self, parent):
+    def _init_coll_KALPHA_Items(self, parent: wx.Menu) -> None:
         "Set of characteristic radiation from sealed tube sources"
 
         def OnCrkaMenu(event):
@@ -186,7 +187,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Bind(wx.EVT_MENU, OnAgkaMenu, id=wxID_KALPHAAGKA)
         self.Bind(wx.EVT_MENU, OnInkaMenu, id=wxID_KALPHAINKA)
 
-    def _init_coll_ABSORB_Items(self, parent):
+    def _init_coll_ABSORB_Items(self, parent: wx.Menu) -> None:
         parent.Append(wxID_NEW, "&New Element", "Add new element")
         self.Delete = parent.Append(wxID_DELETE, "&Delete Element", "Delete an element")
         self.Delete.Enable(False)
@@ -210,7 +211,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self._init_coll_ABOUT_Items(self.ABOUT)
         self._init_coll_menuBar1_Menus(self.menuBar1)
 
-    def _init_ctrls(self, parent):
+    def _init_ctrls(self, parent: wx.Window):
         wx.Frame.__init__(
             self,
             parent=parent,
@@ -407,7 +408,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.panel.Fit()
         self.panel.GetParent().SetSize()
 
-    def __init__(self, parent):
+    def __init__(self, parent: wx.Window):
         self._init_ctrls(parent)
         self.parent = parent
         self.Lines = []

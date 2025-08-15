@@ -12,6 +12,8 @@ import os
 import pickle
 import platform
 import sys
+from typing import TextIO
+
 
 import matplotlib as mpl
 import numpy as np
@@ -34,7 +36,7 @@ __version__ = "0.0.1"
 
 
 # math to do F-test
-def RC2Ftest(npts, RChiSq0, nvar0, RChiSq1, nvar1):
+def RC2Ftest(npts: int, RChiSq0: float, nvar0: int, RChiSq1: float, nvar1: int):
     """Compute the F-test probability that a model expanded with added
     parameters (relaxed model) is statistically more likely than the
     constrained (base) model
@@ -58,7 +60,7 @@ def RC2Ftest(npts, RChiSq0, nvar0, RChiSq1, nvar1):
     return scipy.stats.f.cdf(F, nu1, nu2)
 
 
-def RwFtest(npts, Rwp0, nvar0, Rwp1, nvar1):
+def RwFtest(npts: int, Rwp0: float, nvar0: int, Rwp1: float, nvar1: int):
     """Compute the F-test probability that a model expanded with added
     parameters (relaxed model) is statistically more likely than the
     constrained (base) model
@@ -82,11 +84,11 @@ def RwFtest(npts, Rwp0, nvar0, Rwp1, nvar1):
     return scipy.stats.f.cdf(F, nu1, nu2)
 
 
-def pickleLoad(fp):
+def pickleLoad(fp: TextIO):
     return pickle.load(fp, encoding="latin-1")
 
 
-def main(application):
+def main(application: wx.App):
     """Start up the GSAS-II GUI"""
     knownVersions = ["3.9", "3.10", "3.11", "3.12"]
     if ".".join(platform.python_version().split(".")[:2]) not in knownVersions:
@@ -118,7 +120,7 @@ def main(application):
 class MakeTopWindow(wx.Frame):
     """Define the main frame and its associated menu items"""
 
-    def __init__(self, parent):
+    def __init__(self, parent: wx.Window | None):
         size = wx.Size(700, 450)
         wx.Frame.__init__(
             self,
@@ -350,7 +352,7 @@ class MakeTopWindow(wx.Frame):
             item = modeMenu.Append(wx.ID_ANY, "F-test")
             self.Bind(wx.EVT_MENU, self.onProjFtest, id=item.GetId())
 
-    def loadFile(self, fil):
+    def loadFile(self, fil: str) -> None:
         """read or reread a file"""
         if self.getMode() == "Histogram":
             self.LoadPwdr(fil)
@@ -362,7 +364,7 @@ class MakeTopWindow(wx.Frame):
             print("mode not implemented")
             # raise Exception("mode not implemented")
 
-    def doneLoad(self):
+    def doneLoad(self) -> None:
         self.GPXtree.Expand(self.root)
         if self.getMode() == "Project":
             overId = self.GPXtree.InsertItem(
@@ -370,7 +372,7 @@ class MakeTopWindow(wx.Frame):
             )
             self.GPXtree.SelectItem(overId)
 
-    def onLoadGPX(self, event):
+    def onLoadGPX(self, event) -> None:
         """Initial load of GPX file in response to a menu command"""
         fil = self.SelectGPX()
         if not fil:
@@ -434,7 +436,7 @@ be included for the files beginning with "B" only.
                 self.loadFile(fil)
         self.doneLoad()
 
-    def LoadPwdr(self, fil):
+    def LoadPwdr(self, fil: str):
         """Load PWDR entries from a .GPX file to the tree.
         see :func:`GSASIImiscGUI.ProjFileOpen`
         """
@@ -556,7 +558,7 @@ be included for the files beginning with "B" only.
         else:
             dlg.Destroy()
 
-    def LoadPhase(self, fil):
+    def LoadPhase(self, fil: str) -> None:
         """Load Phase entries from a .GPX file to the tree.
         see :func:`GSASIImiscGUI.ProjFileOpen`
         """
@@ -625,7 +627,7 @@ be included for the files beginning with "B" only.
         #    G2frame.SetTitleByGPX()
         self.GPXtree.Expand(self.root)
 
-    def LoadProject(self, fil):
+    def LoadProject(self, fil: str) -> None:
         """Load the Covariance entry from a .GPX file to the tree.
         see :func:`GSASIImiscGUI.ProjFileOpen`
         """

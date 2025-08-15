@@ -102,29 +102,29 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     ifWave = True
     FFxaxis = "S"  # default form factor plot is vs sin(theta)/lambda
 
-    def _init_coll_ABOUT_Items(self, parent):
-        parent.Append(wxID_FPRIMEABOUT, "About")
+    def _init_coll_ABOUT_Items(self, parent: wx.Menu) -> None:
+        _ = parent.Append(wxID_FPRIMEABOUT, "About")
         self.Bind(wx.EVT_MENU, self.OnABOUTItems0Menu, id=wxID_FPRIMEABOUT)
 
-    def _init_coll_menuBar1_Menus(self, parent):
-        parent.Append(menu=self.FPRIME, title="Fprime")
-        parent.Append(menu=self.KALPHA, title="Kalpha")
-        parent.Append(menu=self.ABOUT, title="About")
+    def _init_coll_menuBar1_Menus(self, parent: wx.MenuBar) -> None:
+        _ = parent.Append(menu=self.FPRIME, title="Fprime")
+        _ = parent.Append(menu=self.KALPHA, title="Kalpha")
+        _ = parent.Append(menu=self.ABOUT, title="About")
 
-    def _init_coll_KALPHA_Items(self, parent):
+    def _init_coll_KALPHA_Items(self, parent: wx.Menu) -> None:
         "Set of characteristic radiation from sealed tube sources"
 
-        parent.Append(wxID_FPRIMEKALPHACRKA, "CrKa")
-        parent.Append(wxID_FPRIMEKALPHAMNKA, "MnKa")
-        parent.Append(wxID_FPRIMEKALPHAFEKA, "FeKa")
-        parent.Append(wxID_FPRIMEKALPHACOKA, "CoKa")
-        parent.Append(wxID_FPRIMEKALPHANIKA, "NiKa")
-        parent.Append(wxID_FPRIMEKALPHACUKA, "CuKa")
-        parent.Append(wxID_FPRIMEKALPHAZNKA, "ZnKa")
-        parent.Append(wxID_FPRIMEKALPHAGAKA, "GaKa")
-        parent.Append(wxID_FPRIMEKALPHAMOKA, "MoKa")
-        parent.Append(wxID_FPRIMEKALPHAAGKA, "AgKa")
-        parent.Append(wxID_FPRIMEKALPHAINKA, "InKa")
+        _ = parent.Append(wxID_FPRIMEKALPHACRKA, "CrKa")
+        _ = parent.Append(wxID_FPRIMEKALPHAMNKA, "MnKa")
+        _ = parent.Append(wxID_FPRIMEKALPHAFEKA, "FeKa")
+        _ = parent.Append(wxID_FPRIMEKALPHACOKA, "CoKa")
+        _ = parent.Append(wxID_FPRIMEKALPHANIKA, "NiKa")
+        _ = parent.Append(wxID_FPRIMEKALPHACUKA, "CuKa")
+        _ = parent.Append(wxID_FPRIMEKALPHAZNKA, "ZnKa")
+        _ = parent.Append(wxID_FPRIMEKALPHAGAKA, "GaKa")
+        _ = parent.Append(wxID_FPRIMEKALPHAMOKA, "MoKa")
+        _ = parent.Append(wxID_FPRIMEKALPHAAGKA, "AgKa")
+        _ = parent.Append(wxID_FPRIMEKALPHAINKA, "InKa")
         self.Bind(wx.EVT_MENU, self.OnKALPHACrkaMenu, id=wxID_FPRIMEKALPHACRKA)
         self.Bind(wx.EVT_MENU, self.OnKALPHAMnkaMenu, id=wxID_FPRIMEKALPHAMNKA)
         self.Bind(wx.EVT_MENU, self.OnKALPHAFekaMenu, id=wxID_FPRIMEKALPHAFEKA)
@@ -137,18 +137,18 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Bind(wx.EVT_MENU, self.OnKALPHAAgkaMenu, id=wxID_FPRIMEKALPHAAGKA)
         self.Bind(wx.EVT_MENU, self.OnKALPHAInkaMenu, id=wxID_FPRIMEKALPHAINKA)
 
-    def _init_coll_FPRIME_Items(self, parent):
-        parent.Append(wxID_FPRIMENEW, "&New Element", "Add new element")
+    def _init_coll_FPRIME_Items(self, parent: wx.Menu) -> None:
+        _ = parent.Append(wxID_FPRIMENEW, "&New Element", "Add new element")
         self.Delete = parent.Append(
             wxID_FPRIMEDELETE, "&Delete Element", "Delete an element"
         )
         self.Delete.Enable(False)
-        parent.Append(wxID_FPRIMEEXIT, "&Exit", "Exit Fprime")
+        _ = parent.Append(wxID_FPRIMEEXIT, "&Exit", "Exit Fprime")
         self.Bind(wx.EVT_MENU, self.OnFPRIMEExitMenu, id=wxID_FPRIMEEXIT)
         self.Bind(wx.EVT_MENU, self.OnFPRIMENewMenu, id=wxID_FPRIMENEW)
         self.Bind(wx.EVT_MENU, self.OnFPRIMEDeleteMenu, id=wxID_FPRIMEDELETE)
 
-    def _init_utils(self):
+    def _init_utils(self) -> None:
         self.FPRIME = wx.Menu(title="")
 
         self.KALPHA = wx.Menu(title="")
@@ -163,7 +163,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self._init_coll_ABOUT_Items(self.ABOUT)
         self._init_coll_menuBar1_Menus(self.menuBar1)
 
-    def _init_ctrls(self, parent):
+    def _init_ctrls(self, parent: wx.Window) -> None:
         wx.Frame.__init__(
             self,
             parent=parent,
@@ -281,7 +281,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         mainSizer.Add((10, 10), 0)
         panel.SetSizer(mainSizer)
 
-    def __init__(self, parent):
+    def __init__(self, parent: wx.Window) -> None:
         self._init_ctrls(parent)
         self.parent = parent
         self.Lines = []
@@ -289,12 +289,12 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.linePicked = None
         self.Norm = False
 
-    def OnFPRIMEExitMenu(self, event):
+    def OnFPRIMEExitMenu(self, event) -> None:
         self.parent.G2plotNB.Delete("Fprime")
         self.Close()
         self.Destroy()
 
-    def OnFPRIMENewMenu(self, event):
+    def OnFPRIMENewMenu(self, event) -> None:
         ElList = []
         for Elem in self.Elems:
             ElList.append(Elem[0])
@@ -320,7 +320,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.CalcFPPS()
             self.SetWaveEnergy(self.Wave)
 
-    def OnFPRIMEDeleteMenu(self, event):
+    def OnFPRIMEDeleteMenu(self, event) -> None:
         if len(self.Elems):
             ElList = []
             for Elem in self.Elems:
@@ -338,64 +338,64 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     self.Delete.Enable(False)
                 self.SetWaveEnergy(self.Wave)
 
-    def OnKALPHACrkaMenu(self, event):
+    def OnKALPHACrkaMenu(self, event) -> None:
         self.SetWaveEnergy(2.28962)
 
-    def OnKALPHAMnkaMenu(self, event):
+    def OnKALPHAMnkaMenu(self, event) -> None:
         self.SetWaveEnergy(2.10174)
 
-    def OnKALPHAFekaMenu(self, event):
+    def OnKALPHAFekaMenu(self, event) -> None:
         self.SetWaveEnergy(1.93597)
 
-    def OnKALPHACokaMenu(self, event):
+    def OnKALPHACokaMenu(self, event) -> None:
         self.SetWaveEnergy(1.78896)
 
-    def OnKALPHANikaMenu(self, event):
+    def OnKALPHANikaMenu(self, event) -> None:
         self.SetWaveEnergy(1.65784)
 
-    def OnKALPHACukaMenu(self, event):
+    def OnKALPHACukaMenu(self, event) -> None:
         self.SetWaveEnergy(1.54052)
 
-    def OnKALPHAZnkaMenu(self, event):
+    def OnKALPHAZnkaMenu(self, event) -> None:
         self.SetWaveEnergy(1.43510)
 
-    def OnKALPHAGakaMenu(self, event):
+    def OnKALPHAGakaMenu(self, event) -> None:
         self.SetWaveEnergy(1.34134)
 
-    def OnKALPHAMokaMenu(self, event):
+    def OnKALPHAMokaMenu(self, event) -> None:
         self.SetWaveEnergy(0.70926)
 
-    def OnKALPHAAgkaMenu(self, event):
+    def OnKALPHAAgkaMenu(self, event) -> None:
         self.SetWaveEnergy(0.55936)
 
-    def OnKALPHAInkaMenu(self, event):
+    def OnKALPHAInkaMenu(self, event) -> None:
         self.SetWaveEnergy(0.51357)
 
-    def OnSpinText1(self, event):
+    def OnSpinText1(self, event) -> None:
         self.SetWaveEnergy(float(self.SpinText1.GetValue()))
 
-    def OnSpinText2(self, event):
+    def OnSpinText2(self, event) -> None:
         self.SetWaveEnergy(self.Kev / (float(self.SpinText2.GetValue())))
 
-    def OnSpinButton(self, event):
+    def OnSpinButton(self, event) -> None:
         move = self.SpinButton.GetValue() / 10000.0
         self.Wave = min(max(self.Wave + move, self.Wmin), self.Wmax)
         self.SpinButton.SetValue(0)
         self.SetWaveEnergy(self.Wave)
 
-    def OnSlider1(self, event):
+    def OnSlider1(self, event) -> None:
         if self.ifWave:
             Wave = float(self.slider1.GetValue()) / 1000.0
         else:
             Wave = self.Kev / (float(self.slider1.GetValue()) / 1000.0)
         self.SetWaveEnergy(Wave)
 
-    def OnKeyPress(self, event):
+    def OnKeyPress(self, event) -> None:
         if event.key == "g":
             mpl.rcParams["axes.grid"] = not mpl.rcParams["axes.grid"]
             self.SetWaveEnergy(self.Wave)
 
-    def UpDateFPlot(self, Wave, rePlot=True):
+    def UpDateFPlot(self, Wave, rePlot:bool = True):
         """Plot f' & f" vs wavelength 0.05-3.0A"""
         "generate a set of form factor curves & plot them vs sin-theta/lambda or q or 2-theta"
         self.axylim = []

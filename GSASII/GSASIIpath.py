@@ -11,6 +11,7 @@ import platform
 # import pathlib
 import subprocess
 import sys
+from typing import Any
 
 try:
     import numpy as np
@@ -38,7 +39,7 @@ fmtver = lambda v: str(v // 1000) + "." + str(v % 1000)
 intver = lambda vs: sum([int(i) for i in vs.split(".")[0:2]] * np.array((1000, 1)))
 
 
-def GetConfigValue(key, default=None, getDefault=False):
+def GetConfigValue(key: str, default: Any | None =None, getDefault: bool = False):
     """Return the configuration file value for key or a default value
     if not specified.
 
@@ -61,7 +62,7 @@ def GetConfigValue(key, default=None, getDefault=False):
         return None
 
 
-def SetConfigValue(parmdict):
+def SetConfigValue(parmdict: dict) -> None:
     """Set configuration variables. Note that parmdict is a dictionary
     from :func:`GSASIIctrlGUI.GetConfigValsDocs` where each element is a
     list. The first item in list is the default value, the second is
@@ -84,7 +85,7 @@ def SetConfigValue(parmdict):
             configDict[var] = parmdict[var][1]
 
 
-def AddConfigValue(valsdict):
+def AddConfigValue(valsdict: dict) -> None:
     """Set configuration variables.
 
     :param dict valsdict: a dictionary of values that are added
@@ -94,7 +95,7 @@ def AddConfigValue(valsdict):
     configDict.update(valsdict)
 
 
-def GetConfigDefault(key):
+def GetConfigDefault(key: str) -> Any | None:
     """Return the default value for a config value
 
     :param str key: a value to be found in the configuration (config_example.py) file
@@ -2320,7 +2321,7 @@ end tell
 
 if __name__ == "__main__":
     """What follows is called to update (or downdate) GSAS-II in a
-    separate process. This is also called for background tasks such as 
+    separate process. This is also called for background tasks such as
     performing a "git fetch" task or getting current tag information from
     github.
     """

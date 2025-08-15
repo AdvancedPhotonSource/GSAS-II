@@ -280,64 +280,62 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
         dummy_b = 0
         num_atoms = len(aList_x_write)
 
-        file = open(out_file, "w")
-        file.write(aString)
-        file.write("\n")
+        with open(out_file, "w") as file:
+            file.write(aString)
+            file.write("\n")
 
-        i = 0
-        while i < num_atoms:
-            x = float(aList_x_write[i])
-            y = float(aList_y_write[i])
-            z = float(aList_z_write[i])
-            x = "%.3f" % (x)
-            y = "%.3f" % (y)
-            z = "%.3f" % (z)
-            x = x.rjust(8)
-            y = y.rjust(8)
-            z = z.rjust(8)
-            atom_number = atom_number + 1
-            res_number = res_number + 1
-            atom_number_str = str(atom_number)
-            atom_number_str = atom_number_str.rjust(5)
-            res_number_str = str(res_number)
-            res_number_str = res_number_str.rjust(4)
-            bfactor = str(dummy_b) + ".00"
-            bfactor = bfactor.rjust(6)
+            i = 0
+            while i < num_atoms:
+                x = float(aList_x_write[i])
+                y = float(aList_y_write[i])
+                z = float(aList_z_write[i])
+                x = "%.3f" % (x)
+                y = "%.3f" % (y)
+                z = "%.3f" % (z)
+                x = x.rjust(8)
+                y = y.rjust(8)
+                z = z.rjust(8)
+                atom_number = atom_number + 1
+                res_number = res_number + 1
+                atom_number_str = str(atom_number)
+                atom_number_str = atom_number_str.rjust(5)
+                res_number_str = str(res_number)
+                res_number_str = res_number_str.rjust(4)
+                bfactor = str(dummy_b) + ".00"
+                bfactor = bfactor.rjust(6)
 
-            if res_number < 10000:
-                aLine_out = (
-                    "ATOM  "
-                    + atom_number_str
-                    + "  CA  ALA A"
-                    + res_number_str
-                    + "    "
-                    + x
-                    + y
-                    + z
-                    + "  1.00"
-                    + bfactor
-                    + "\n"
-                )
-            else:
-                res_number_str = str(res_number - 9999)
-                aLine_out = (
-                    "ATOM  "
-                    + atom_number_str
-                    + "  CA  ALA B"
-                    + res_number_str
-                    + "    "
-                    + x
-                    + y
-                    + z
-                    + "  1.00"
-                    + bfactor
-                    + "\n"
-                )
-            file.write(aLine_out)
+                if res_number < 10000:
+                    aLine_out = (
+                        "ATOM  "
+                        + atom_number_str
+                        + "  CA  ALA A"
+                        + res_number_str
+                        + "    "
+                        + x
+                        + y
+                        + z
+                        + "  1.00"
+                        + bfactor
+                        + "\n"
+                    )
+                else:
+                    res_number_str = str(res_number - 9999)
+                    aLine_out = (
+                        "ATOM  "
+                        + atom_number_str
+                        + "  CA  ALA B"
+                        + res_number_str
+                        + "    "
+                        + x
+                        + y
+                        + z
+                        + "  1.00"
+                        + bfactor
+                        + "\n"
+                    )
+                file.write(aLine_out)
 
-            i = i + 1
-
-        file.close()
+                i = i + 1
 
     # Evaluate local bead densities and point density on a notional grid
 

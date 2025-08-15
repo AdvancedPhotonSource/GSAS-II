@@ -20,8 +20,8 @@ defaultIparms: defines a list of multiple strings with values for each set of de
 """
 # See examples below.
 
-defaultIparm_lbl = []
-defaultIparms = []
+defaultIparm_lbl: list[str] = []
+defaultIparms: list[list[str]] = []
 
 pass  # placed here so that the following is not processed by Sphinx as a doc string
 """ the phrase 'lab data' in the following makes the default goniometer type='Bragg-Brentano'

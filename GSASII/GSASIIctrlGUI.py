@@ -391,7 +391,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
 
     def __init__(
         self,
-        parent,
+        parent: wx.Panel,
         loc,
         key,
         nDig=None,
@@ -8973,7 +8973,7 @@ class SortableLstCtrl(wx.Panel):
         self.SetAutoLayout(True)
         # self.SortListItems(0, True)
 
-    def PopulateHeader(self, header, justify):
+    def PopulateHeader(self, header: list[str], justify: list[int]) -> None:
         """Defines the column labels
 
         :param list header: a list of strings with header labels
@@ -8995,7 +8995,7 @@ class SortableLstCtrl(wx.Panel):
         listmix.ColumnSorterMixin.__init__(self.list, len(header))
         self.list.itemDataMap = {}
 
-    def PopulateLine(self, key, data):
+    def PopulateLine(self, key: int, data: list[str]) -> None:
         """Enters each row into the table
 
         :param int key: a unique int value for each line, probably should
@@ -9008,9 +9008,10 @@ class SortableLstCtrl(wx.Panel):
         self.list.SetItemData(index, key)
         self.list.itemDataMap[key] = data
 
-    def SetColWidth(self, col, width=None, auto=True, minwidth=0, maxwidth=None):
+    def SetColWidth(self, col: int, width: int | None = None, auto: bool = True, minwidth: int = 0, maxwidth: int | None = None) -> None:
         """Sets the column width.
 
+        :param int col: the column number to set the width for
         :param int width: the column width in pixels
         :param bool auto: if True (default) and width is None (default) the
           width is set by the maximum width entry in the column
@@ -9019,7 +9020,7 @@ class SortableLstCtrl(wx.Panel):
         :param int maxwidth: used when auto is True, sets a maximum
           column width. Do not use with minwidth
         """
-        if width:
+        if width is not None:
             self.list.SetColumnWidth(col, width)
         elif auto:
             self.list.SetColumnWidth(col, wx.LIST_AUTOSIZE)
@@ -11693,29 +11694,29 @@ def gitSwitchMaster2Main():
         )
         return
     if not GSASIIpath.condaTest():
-        msg = """In April 2025, GSAS-II switched to a new branch ("main") 
-that has significant internal reorganization requested by several users. All 
-future updates will be on this branch. It appears you have installed Python 
+        msg = """In April 2025, GSAS-II switched to a new branch ("main")
+that has significant internal reorganization requested by several users. All
+future updates will be on this branch. It appears you have installed Python
 manually, so an automatic update is not possible.
 
-You can install the recommended Python packages and manually use git 
-commands to switch from the "master" branch to the "main" branch, but 
-it may be easier to simply reinstall GSAS-II. 
+You can install the recommended Python packages and manually use git
+commands to switch from the "master" branch to the "main" branch, but
+it may be easier to simply reinstall GSAS-II.
 
-See web page GSASII.github.io for information on how to install GSAS-II. 
+See web page GSASII.github.io for information on how to install GSAS-II.
 """
         ShowScrolledInfo(G2frame, msg, header="Please Note", height=250)
         return
 
     # all checks passed, check with user and then get started
-    msg = f"""In April 2025, GSAS-II GSAS-II switched to a new branch ("main") 
-that has significant internal reorganization requested by several users. All 
-future updates will be on this branch. If you continue here, GSAS-II will 
+    msg = f"""In April 2025, GSAS-II GSAS-II switched to a new branch ("main")
+that has significant internal reorganization requested by several users. All
+future updates will be on this branch. If you continue here, GSAS-II will
 make the changes needed to move your installation to the new branch:
 
-  1) Additional Python packages needed by GSAS-II will be installed. 
-  2) Git will be used to install the latest GSAS-II files 
-  3) Shortcuts to the latest GSAS-II version will be installed; shortcuts 
+  1) Additional Python packages needed by GSAS-II will be installed.
+  2) Git will be used to install the latest GSAS-II files
+  3) Shortcuts to the latest GSAS-II version will be installed; shortcuts
      previously installed will fail if not replaced.
 
 If the update fails, please reinstall GSAS-II from https://bit.ly/G2download
@@ -11969,11 +11970,11 @@ def SelectPkgInstall(event):
             return
     wx.EndBusyCursor()
     pdlg.Destroy()
-    msg = """You must restart GSAS-II to access the importer(s) 
+    msg = """You must restart GSAS-II to access the importer(s)
 requiring the package(s) just installed.
 
 Select "Yes" to save and restart, "No" to restart without
-the save, or "Cancel" to discontinue the restart process 
+the save, or "Cancel" to discontinue the restart process
 and continue use of GSAS-II without the importer(s).
 
 If "Yes", GSAS-II will reopen the project after the update.

@@ -18,7 +18,7 @@ import pickle
 import sys
 
 
-def dump2tmp(uselocals=True, useglobals=True, usefunctions=False):
+def dump2tmp(uselocals: bool = True, useglobals: bool = True, usefunctions: bool = False) -> None:
     """
     Places variables from current interpreter into a scratch pickle file
     that can be read into another Python interpreter.
@@ -45,41 +45,40 @@ def dump2tmp(uselocals=True, useglobals=True, usefunctions=False):
     """
     if sys.platform.startswith("win"):
         raise ImportError("Module dmp needs work for Windows")
-    fp = open("/tmp/pickledump.pickle", "wb")
-    if uselocals:  # get locals in caller
-        import inspect
 
-        frame = inspect.currentframe()
-        callerLocals = frame.f_back.f_locals
-        for o in callerLocals:
-            if o.startswith("_"):
-                continue
-            if (not usefunctions) and callable(callerLocals[o]):
-                continue
-            try:
-                pickle.dump((o, callerLocals[o]), fp)
-                print("dumpped", o)
-            except:
-                print("no dump for ", o, type(callerLocals[o]))
-        del frame
-    if useglobals:
-        for o in globals():
-            if o.startswith("_"):
-                continue
-            if (not usefunctions) and callable(globals()[o]):
-                continue
-            try:
-                pickle.dump((o, globals()[o]), fp)
-                print("dumpped", o)
-            except:
-                print("no dump for ", o, type(globals()[o]))
-    fp.close()
+    with open("/tmp/pickledump.pickle", "wb") as fp:
+        if uselocals:  # get locals in caller
+            import inspect
 
+            frame = inspect.currentframe()
+            callerLocals = frame.f_back.f_locals
+            for o in callerLocals:
+                if o.startswith("_"):
+                    continue
+                if (not usefunctions) and callable(callerLocals[o]):
+                    continue
+                try:
+                    pickle.dump((o, callerLocals[o]), fp)
+                    print("dumpped", o)
+                except:
+                    print("no dump for ", o, type(callerLocals[o]))
+            del frame
+        if useglobals:
+            for o in globals():
+                if o.startswith("_"):
+                    continue
+                if (not usefunctions) and callable(globals()[o]):
+                    continue
+                try:
+                    pickle.dump((o, globals()[o]), fp)
+                    print("dumpped", o)
+                except:
+                    print("no dump for ", o, type(globals()[o]))
 
 # dumpStuff()
 
 
-def undumptmp(setglobals=True):
+def undumptmp(setglobals: bool = True) -> dict:
     """
     Reads variables saved from another Python interpreter via a
     scratch pickle file into the current Python interpreter.
@@ -99,21 +98,20 @@ def undumptmp(setglobals=True):
 
     frame = inspect.currentframe().f_back
     vars = {}
-    fp = open("/tmp/pickledump.pickle", "rb")
-    while True:
-        try:
-            nam, obj = pickle.load(fp)
-            vars[nam] = obj
-            if setglobals:
-                frame.f_globals[nam] = obj
-                # exec(f'global {nam}; {nam} = obj')
-        #                print('global loaded',nam)
-        except EOFError:
-            break
-        except ModuleNotFoundError:
-            print("Ending read due to ModuleNotFoundError")
-            break
-        except Exception as msg:
-            print(nam, "error", msg)
-    fp.close()
+    with open("/tmp/pickledump.pickle", "rb") as fp:
+        while True:
+            try:
+                nam, obj = pickle.load(fp)
+                vars[nam] = obj
+                if setglobals:
+                    frame.f_globals[nam] = obj
+                    # exec(f'global {nam}; {nam} = obj')
+            #                print('global loaded',nam)
+            except EOFError:
+                break
+            except ModuleNotFoundError:
+                print("Ending read due to ModuleNotFoundError")
+                break
+            except Exception as msg:
+                print(nam, "error", msg)
     return vars

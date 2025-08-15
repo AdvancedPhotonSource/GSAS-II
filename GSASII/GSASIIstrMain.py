@@ -33,7 +33,7 @@ from . import GSASIIobj as G2obj
 from . import GSASIIspc as G2spc
 from . import GSASIIstrIO as G2stIO
 from . import GSASIIstrMath as G2stMth
-from . import atmdata
+from .config import atmdata
 
 try:
     if GSASIIpath.binaryPath:

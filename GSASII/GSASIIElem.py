@@ -10,9 +10,10 @@ import sys
 
 import numpy as np
 
-from . import ElementTable as ET
 from . import GSASIImath as G2mth
-from . import GSASIIpath, atmdata
+from . import GSASIIpath
+from .config import ElementTable as ET
+from .config import atmdata
 
 nxs = np.newaxis
 Bohr = 0.529177

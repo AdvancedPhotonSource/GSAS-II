@@ -6,7 +6,6 @@ Copyright: 2009, Robert B. Von Dreele (Argonne National Laboratory)
 
 import math
 import sys
-from wx.core import Menu
 
 import wx
 

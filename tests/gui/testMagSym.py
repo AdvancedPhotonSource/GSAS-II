@@ -15,9 +15,9 @@ except ModuleNotFoundError:
 from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
+from GSASII import GSASIIspc as G2spc
 from GSASII.GUI import GSASIIctrlGUI as G2G
 from GSASII.GUI import GSASIIphsGUI as G2phsGUI
-from GSASII import GSASIIspc as G2spc
 
 try:
     wx.NewId

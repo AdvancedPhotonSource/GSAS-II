@@ -6292,7 +6292,7 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
 
     Note that parameters all updated in place
     """
-    from . import atmdata
+    from .config import atmdata
 
     path = sys.path
     for name in path:

@@ -3,7 +3,6 @@ import sys
 
 import numpy as np
 import wx
-
 from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()

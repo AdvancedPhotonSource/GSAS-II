@@ -18,9 +18,9 @@ from . import GSASIIpath
 GSASIIpath.SetBinaryPath(True)
 import multiprocessing as mp
 
+from . import GSASIIscriptable as G2sc
 from .GUI import GSASIIctrlGUI as G2G
 from .GUI import GSASIIimgGUI as G2imG
-from . import GSASIIscriptable as G2sc
 
 try:  # fails during doc build
     wxMainFrameStyle = wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX

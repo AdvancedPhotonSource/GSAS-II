@@ -14,7 +14,6 @@ import platform
 import sys
 from typing import TextIO
 
-
 import matplotlib as mpl
 import numpy as np
 import wx
@@ -25,12 +24,12 @@ except ImportError:
     pass
 import scipy as sp
 
-from .GUI import GSASIIctrlGUI as G2G
-from .GUI import GSASIIdataGUI as G2gd
 from . import GSASIIfiles as G2fil
 from . import GSASIIobj as G2obj
 from . import GSASIIpath
 from . import GSASIIplot as G2plt
+from .GUI import GSASIIctrlGUI as G2G
+from .GUI import GSASIIdataGUI as G2gd
 
 __version__ = "0.0.1"
 

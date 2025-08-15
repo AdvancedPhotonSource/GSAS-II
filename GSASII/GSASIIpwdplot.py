@@ -32,14 +32,14 @@ except (ImportError, ValueError) as err:
         print("error msg:", err)
 import matplotlib.colors as mpcls
 
-from .GUI import GSASIIctrlGUI as G2G
-from .GUI import GSASIIdataGUI as G2gd
 from . import GSASIIlattice as G2lat
 from . import GSASIImath as G2mth
 
 # import GSASIIobj as G2obj
 from . import GSASIIplot as G2plt
 from . import GSASIIpwdGUI as G2pdG
+from .GUI import GSASIIctrlGUI as G2G
+from .GUI import GSASIIdataGUI as G2gd
 
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas

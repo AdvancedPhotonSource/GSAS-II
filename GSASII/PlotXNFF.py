@@ -21,9 +21,9 @@ from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
 from . import GSASIIElem as G2el
-from . import GSASIIElemGUI as G2elG
 from . import GSASIItestplot as plot
-from . import atmdata
+from .config import atmdata
+from .GUI import GSASIIElemGUI as G2elG
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 

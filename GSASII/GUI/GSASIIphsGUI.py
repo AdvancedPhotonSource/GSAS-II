@@ -4135,7 +4135,6 @@ def UpdatePhaseData(G2frame, Item, data):
         import tempfile
 
         import requests
-
         from GSASII.exports import G2export_CIF
 
         isosite = "https://stokes.byu.edu/iso/"

@@ -19,23 +19,23 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
 
     def ContentsValidator(self, filename):
         """Taking a stab a validating: 1st line should be a number"""
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         try:
             int(fp.readline().strip())
-        except:
+        except:  # noqa: E722
             fp.close()
             return False
         fp.close()
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read a phase from an XYZ file."
         self.errors = "Error opening file"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         self.Phase = {}
         natom = int(fp.readline().strip())
         Title = os.path.basename(filename)
-        skip = fp.readline()
+        skip = fp.readline()  # noqa: F841
         line = 2
         SGData = G2obj.P1SGData  # P 1
         self.warnings += '\nNo space group in file, set to "P 1".'
@@ -48,7 +48,7 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
         for _i in range(natom):
             line += 1
             self.errors = "Error reading at line " + str(line)
-            l = fp.readline()
+            l = fp.readline()  # noqa: E741
             Type = l.split()[0]
             XYZ = [float(x) / 10.0 for x in l.split()[1:4]]
             if Type not in counts:

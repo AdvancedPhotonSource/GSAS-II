@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 """Defines a routine to read from MARCCD files"""
 
 """ 
@@ -252,8 +252,8 @@ typedef struct frame_header_type {
 	} frame_header;
 """
 
-import array as ar
-import struct as st
+import array as ar  # noqa: E402
+import struct as st  # noqa: E402
 
 MAXIMAGES = 9
 

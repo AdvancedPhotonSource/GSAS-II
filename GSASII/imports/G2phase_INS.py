@@ -21,8 +21,8 @@ class PhaseReaderClass(G2obj.ImportPhase):
 
     def ContentsValidator(self, filename):
         "Test if the ins file has a CELL record"
-        fp = open(filename)
-        for _i, l in enumerate(fp):
+        fp = open(filename)  # noqa: SIM115
+        for _i, l in enumerate(fp):  # noqa: E741
             if l.startswith("CELL"):
                 break
         else:
@@ -33,12 +33,12 @@ class PhaseReaderClass(G2obj.ImportPhase):
         fp.close()
         return True
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+    def Reader(self, filename, filepointer, ParentFrame=None, **unused):  # noqa: ARG002
         "Read a ins file using :meth:`ReadINSPhase`"
         self.Phase = self.ReadINSPhase(filename, ParentFrame)
         return True
 
-    def ReadINSPhase(self, filename, parent=None):
+    def ReadINSPhase(self, filename, parent=None):  # noqa: ARG002
         """Read a phase from a INS file."""
         Shelx = [
             "TITL",
@@ -115,7 +115,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
             "MOLE",
         ]
         self.errors = "Error opening file"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         Phase = {}
         Title = ""
         Atoms = []

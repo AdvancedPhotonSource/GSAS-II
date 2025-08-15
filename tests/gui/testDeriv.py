@@ -35,9 +35,9 @@ except ModuleNotFoundError:
 from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from GSASII import GSASIImapvars as G2mv
-from GSASII import GSASIIstrMath as G2stMth
-from GSASII import GSASIItestplot as plot
+from GSASII import GSASIImapvars as G2mv  # noqa: E402
+from GSASII import GSASIIstrMath as G2stMth  # noqa: E402
+from GSASII import GSASIItestplot as plot  # noqa: E402
 
 try:  # fails on doc build
     from . import pytexture as ptx
@@ -97,7 +97,7 @@ class testDeriv(wx.Frame):
         if len(arg) > 1 and arg[1]:
             try:
                 self.testFile = os.path.splitext(arg[1])[0] + ".testDeriv"
-            except:
+            except:  # noqa: E722
                 self.testFile = os.path.splitext(arg[1])[0] + ".testDeriv"
             self.TestRead()
             self.UpdateControls(None)
@@ -110,10 +110,10 @@ class testDeriv(wx.Frame):
         self.dataFrame = None
         self.timingOn = False
 
-    def ExitMain(self, event):
+    def ExitMain(self, event):  # noqa: ARG002
         sys.exit()
 
-    def OnFileExit(self, event):
+    def OnFileExit(self, event):  # noqa: ARG002
         if self.dataFrame:
             self.dataFrame.Clear()
             self.dataFrame.Destroy()
@@ -149,7 +149,7 @@ class testDeriv(wx.Frame):
             dlg.Destroy()
 
     def TestRead(self):
-        file = open(self.testFile, "rb")
+        file = open(self.testFile, "rb")  # noqa: SIM115
         self.values = pickle.load(file, encoding="Latin-1")
         self.HistoPhases = pickle.load(file, encoding="Latin-1")
         (self.constrDict, self.fixedList, self.depVarList) = pickle.load(
@@ -187,7 +187,7 @@ class testDeriv(wx.Frame):
         )  # compute independent params, N.B. changes varylist
         G2mv.Dict2Map(self.parmDict)  # imposes constraints on dependent values
 
-    def UpdateControls(self, event):
+    def UpdateControls(self, event):  # noqa: ARG002
         def OnItemCk(event):
             Obj = event.GetEventObject()
             item = ObjInd[Obj.GetId()]
@@ -239,7 +239,7 @@ class testDeriv(wx.Frame):
         Size[0] += 20
         self.SetSize(Size)
 
-    def OnMakePlots(self, event):
+    def OnMakePlots(self, event):  # noqa: ARG002
         def test1():
             fplot = self.plotNB.add("function test").gca()
             if self.timingOn:

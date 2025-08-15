@@ -23,25 +23,25 @@ class PhaseReaderClass(G2obj.ImportPhase):
     def ContentsValidator(self, filename):
         "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
         if True:
-            fp = open(filename, "rb")
+            fp = open(filename, "rb")  # noqa: SIM115
         try:
             if "2" in platform.python_version_tuple()[0]:
                 data = pickle.load(fp)
             else:
-                data = pickle.load(fp, encoding="latin-1")
-        except:
+                data = pickle.load(fp, encoding="latin-1")  # noqa: F841
+        except:  # noqa: E722
             self.errors = "This is not a valid .GPX file. Not recognized by pickle"
             fp.close()
             return False
         fp.close()
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         """Read a phase from a .GPX file. Does not (yet?) support selecting and reading
         more than one phase at a time."""
         try:
             phasenames = G2stIO.GetPhaseNames(filename)
-        except:
+        except:  # noqa: E722
             self.errors = "Reading of phase names failed"
             return False
         if not phasenames:

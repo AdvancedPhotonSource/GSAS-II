@@ -10,7 +10,7 @@ import numpy.testing as npt
 home = os.path.dirname(__file__)
 work = tempfile.gettempdir()
 
-import importlib.util
+import importlib.util  # noqa: E402
 
 G2loc = None
 try:
@@ -22,7 +22,7 @@ if G2loc is None:  # fixup path if GSASII not installed into Python
     print("GSAS-II not installed in Python; Hacking sys.path")
     sys.path.append(os.path.dirname(home))
 
-import GSASII.GSASIIscriptable as G2sc
+import GSASII.GSASIIscriptable as G2sc  # noqa: E402
 
 
 def test_refine():

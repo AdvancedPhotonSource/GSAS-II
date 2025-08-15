@@ -32,7 +32,7 @@ def npasind(x):
 
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -113,10 +113,10 @@ class scanCCD(wx.Frame):
         self.ImportImageReaderlist = G2fil.LoadImportRoutines("img", "Images")
         self.ImportMenuId = {}  # needed?
 
-    def ExitMain(self, event):
+    def ExitMain(self, event):  # noqa: ARG002
         sys.exit()
 
-    def OnFileExit(self, event):
+    def OnFileExit(self, event):  # noqa: ARG002
         if self.dataFrame:
             self.dataFrame.Clear()
             self.dataFrame.Destroy()
@@ -171,21 +171,21 @@ class scanCCD(wx.Frame):
         finally:
             dlg.Destroy()
 
-    def OnImageIntegrate(self, event):
+    def OnImageIntegrate(self, event):  # noqa: ARG002
         def Make2ThetaMap(data, iLim, jLim):
             # transforms scanCCD image from x,y space to 2-theta,y space
             pixelSize = data["pixel"]
             scalex = pixelSize[0] / 1000.0
             scaley = pixelSize[1] / 1000.0
-            vecA = np.asfarray([1.0, 0.0, 0.0], dtype=np.float32)
+            vecA = np.asfarray([1.0, 0.0, 0.0], dtype=np.float32)  # noqa: NPY201
 
             tay, tax = np.mgrid[
                 jLim[0] + 0.5 : jLim[1] + 0.5, iLim[0] + 0.5 : iLim[1] + 0.5
             ]  # bin centers not corners
-            tax = np.asfarray(
+            tax = np.asfarray(  # noqa: NPY201
                 (tax * scalex - data["Zeros"][0]) / data["mm/deg"], dtype=np.float32
             )  # scanCCD 2-thetas
-            tay = np.asfarray(tay * scaley - data["Zeros"][1], dtype=np.float32)
+            tay = np.asfarray(tay * scaley - data["Zeros"][1], dtype=np.float32)  # noqa: NPY201
             vecB = np.array(
                 [npcosd(tax) * data["radius"], npsind(tax) * data["radius"], tay]
             )
@@ -216,7 +216,7 @@ class scanCCD(wx.Frame):
         tthStart, tthEnd, tthStep = self.data["2thScan"]
         LUtth = [tthStart, tthEnd]
         TBlim = np.array(self.data["TBlimits"], dtype=np.float32)
-        nYpix = TBlim[1] - TBlim[0]
+        nYpix = TBlim[1] - TBlim[0]  # noqa: F841
         TBlim *= scaley
         TBdelt = TBlim[1] - TBlim[0]
         nTB = 1
@@ -225,7 +225,7 @@ class scanCCD(wx.Frame):
         H0 = np.zeros(shape=(numChans, 1), order="F", dtype=np.float32)
         Amat = np.zeros(shape=(numChans, 1), order="F", dtype=np.float32)
         Qmat = np.zeros(shape=(numChans, 1), order="F", dtype=np.float32)
-        imSize = np.array(self.data["size"]) * self.data["imScale"]
+        imSize = np.array(self.data["size"]) * self.data["imScale"]  # noqa: F841
         H1 = list(np.linspace(LUtth[0], LUtth[1], numChans))
         blkSize = 2048
         N = 4096 / blkSize
@@ -290,15 +290,16 @@ class scanCCD(wx.Frame):
                                 Amat,
                                 Qmat,
                             )
-                            H0temp = np.nan_to_num(np.divide(H0, NST))
-                            Qtemp = np.nan_to_num(np.divide(Qmat, NST))
+                            H0temp = np.nan_to_num(np.divide(H0, NST))  # noqa: F841
+                            Qtemp = np.nan_to_num(np.divide(Qmat, NST))  # noqa: F841
                             if self.data["showBlk"]:
                                 self.PlotBlock(
-                                    Block.T, "%s %d %d" % ("Block", iBlk, jBlk)
+                                    Block.T,
+                                    f"Block {iBlk} {jBlk}",
                                 )
                                 OKdlg = wx.MessageDialog(self, "", "Continue", wx.OK)
                                 try:
-                                    result = OKdlg.ShowModal()
+                                    result = OKdlg.ShowModal()  # noqa: F841
                                 finally:
                                     OKdlg.Destroy()
                             del tax, tay, taz
@@ -325,15 +326,15 @@ class scanCCD(wx.Frame):
         Scale = np.sum(Qmat) / np.sum(H0)
         print("SumI: ", np.sum(H0), " SumV: ", np.sum(Qmat), " Scale:", Scale)
         print("Integration complete")
-        print("Elapsed time:", "%8.3f" % (t1 - t0), "s")
+        print("Elapsed time:", f"{t1 - t0:8.3f}", "s")
         self.Hxyw = [H1, Scale * H0.T[0], np.sqrt(Qmat.T[0])]
         print()
         self.PlotXY(self.Hxyw, True, type="Integration result")
 
-    def OnOutput(self, event):
+    def OnOutput(self, event):  # noqa: ARG002
         def powderSave(self, powderfile, Fxye=False):
-            file = open(powderfile, "w")
-            file.write("#%s\n" % ("from scanCCD image " + self.imagefiles[0]))
+            file = open(powderfile, "w")  # noqa: SIM115
+            file.write(f"#{'from scanCCD image ' + self.imagefiles[0]}\n")
             print("save powder pattern to file: ", powderfile)
             wx.BeginBusyCursor()
             try:
@@ -341,8 +342,7 @@ class scanCCD(wx.Frame):
                 if Fxye:
                     file.write(powderfile + "\n")
                     file.write(
-                        "BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n"
-                        % (len(x), len(x), 100.0 * x[0], 100.0 * (x[1] - x[0]))
+                        f"BANK 1 {len(x)} {len(x)} CONS {100.0 * x[0]:.2f} {100.0 * (x[1] - x[0]):.2f} 0 0 FXYE\n"
                     )
                 XYE = zip(x, y, e, strict=False)
                 for X, Y, E in XYE:
@@ -379,7 +379,7 @@ class scanCCD(wx.Frame):
         finally:
             dlg.Destroy()
 
-    def UpdateControls(self, event):
+    def UpdateControls(self, event):  # noqa: ARG002
         ObjIndx = {}
         self.SCCDPanel.DestroyChildren()
 
@@ -389,10 +389,10 @@ class scanCCD(wx.Frame):
                 data["color"] = colSel.GetValue()
                 self.PlotImage()
 
-            def OnShowBlk(event):
+            def OnShowBlk(event):  # noqa: ARG001
                 data["showBlk"] = shoBlk.GetValue()
 
-            def OnSkipFiles(event):
+            def OnSkipFiles(event):  # noqa: ARG001
                 data["skip"] = int(skipFile.GetValue())
 
             colorList = [m for m in mpl.cm.datad if not m.endswith("_r")] + [
@@ -433,13 +433,13 @@ class scanCCD(wx.Frame):
             return colorSizer
 
         def MaxSizer(data):
-            def OnMaxSlider(event):
+            def OnMaxSlider(event):  # noqa: ARG001
                 imax = int(self.maxSel.GetValue()) * data["range"][0] / 100.0
                 data["range"][1] = imax
-                self.maxVal.SetValue("%d" % (data["range"][1]))
+                self.maxVal.SetValue(f"{data['range'][1]:d}")
                 self.PlotImage()
 
-            def OnMaxValue(event):
+            def OnMaxValue(event):  # noqa: ARG001
                 try:
                     value = int(self.maxVal.GetValue())
                     if value < 0 or value > data["range"][0]:
@@ -544,7 +544,7 @@ class scanCCD(wx.Frame):
             )
             zMax = wx.TextCtrl(
                 self.SCCDPanel,
-                value="{:.3f}".format(data["Zeros"][0]),
+                value=f"{data['Zeros'][0]:.3f}",
                 style=wx.TE_PROCESS_ENTER,
             )
             zMax.Bind(wx.EVT_TEXT_ENTER, OnZeroValue)
@@ -558,7 +558,7 @@ class scanCCD(wx.Frame):
             )
             zMin = wx.TextCtrl(
                 self.SCCDPanel,
-                value="{:.3f}".format(data["Zeros"][1]),
+                value=f"{data['Zeros'][1]:.3f}",
                 style=wx.TE_PROCESS_ENTER,
             )
             ObjIndx[zMin.GetId()] = ["Zeros", 1]
@@ -572,7 +572,7 @@ class scanCCD(wx.Frame):
             )
             zpdeg = wx.TextCtrl(
                 self.SCCDPanel,
-                value="{:.3f}".format(data["mm/deg"]),
+                value=f"{data['mm/deg']:.3f}",
                 style=wx.TE_PROCESS_ENTER,
             )
             ObjIndx[zpdeg.GetId()] = ["mm/deg"]
@@ -634,7 +634,7 @@ class scanCCD(wx.Frame):
                 scanSizer.Add(wx.StaticText(self.SCCDPanel, label=item + ":"))
                 scanParm = wx.TextCtrl(
                     self.SCCDPanel,
-                    value="{:.3f}".format(data["2thScan"][i]),
+                    value=f"{data['2thScan'][i]:.3f}",
                     style=wx.TE_PROCESS_ENTER,
                 )
                 scanParm.Bind(wx.EVT_TEXT_ENTER, OnScanValue)

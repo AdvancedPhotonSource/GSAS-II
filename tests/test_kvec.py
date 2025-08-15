@@ -74,7 +74,7 @@ threshold = 0.008
 brav_type = "hR"
 
 try:
-    import seekpath
+    import seekpath  # noqa: F401
 
     k_search = kvs.kVector(brav_type, pcell, ppos, nums, nuc_p, spos, threshold)
 except ModuleNotFoundError:

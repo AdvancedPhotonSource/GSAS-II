@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 # ------------------------------------------------------------
 # this version intended for use with git installations
 # ------------------------------------------------------------

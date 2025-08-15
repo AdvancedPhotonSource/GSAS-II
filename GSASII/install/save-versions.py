@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # create a file with GSAS-II version information
     try:
         g2repo = git.Repo(path2repo)
-    except:
+    except:  # noqa: E722
         print("Launch of gitpython for version file failed" + f" with path {path2repo}")
         sys.exit()
     commit = g2repo.head.commit
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     # create a file with GSAS-II version information
     pyfile = os.path.join(path2GSAS2, "git_verinfo.py")
     try:
-        fp = open(pyfile, "w")
-    except:
+        fp = open(pyfile, "w")  # noqa: SIM115
+    except:  # noqa: E722
         print(f"Creation of git version file {pyfile} failed")
         sys.exit()
     fp.write("# -*- coding: utf-8 -*-\n")

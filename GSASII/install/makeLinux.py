@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 """
 This script creates a menu entry and dektop shortcut for Gnome
 (and perhaps KDE) desktop managers. The most recent testing
@@ -110,7 +110,7 @@ if __name__ == "__main__" and sys.platform.startswith("linux"):
     )
     if os.path.exists(G2start):
         os.unlink(G2start)
-    fp = open(G2start, "w")
+    fp = open(G2start, "w")  # noqa: SIM115
     fp.write("#!/bin/bash\n")
     fp.write(
         f"# created by run of makeLinux.py on {datetime.datetime.now():%d %b %Y %H:%M}\n"
@@ -204,7 +204,7 @@ if __name__ == "__main__" and sys.platform.startswith("linux"):
     G2startterm = os.path.normpath(os.path.join(path2repo, "..", "RunG2inTerm.sh"))
     if os.path.exists(G2startterm):
         os.unlink(G2startterm)
-    fp = open(G2startterm, "w")
+    fp = open(G2startterm, "w")  # noqa: SIM115
     fp.write("#!/bin/bash\n")
     fp.write(
         f"# created by run of makeLinux.py on {datetime.datetime.now():%d %b %Y %H:%M}\n"
@@ -238,7 +238,7 @@ if __name__ == "__main__" and sys.platform.startswith("linux"):
         )
         if os.path.exists(G2reset):
             os.unlink(G2reset)
-        fp = open(G2reset, "w")
+        fp = open(G2reset, "w")  # noqa: SIM115
         fp.write("#!/bin/bash\n")
         fp.write(
             f"# created by run of makeLinux.py on {datetime.datetime.now():%d %b %Y %H:%M}\n"

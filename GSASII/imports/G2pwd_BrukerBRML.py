@@ -7,7 +7,7 @@ from .. import GSASIIpath
 
 try:
     import xmltodict as xml
-except Exception as msg:
+except Exception as msg:  # noqa: F841
     # if GSASIIpath.GetConfigValue('debug'): print(f'Debug: xmltodict error = {msg}')
     xml = None
 from .. import GSASIIobj as G2obj
@@ -47,10 +47,10 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                     if "RawData" in fil and ".xml" in fil:
                         return True
                 return False
-        except:
+        except:  # noqa: E722
             return False
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):  # noqa: ARG002
         "Read a Bruker brml file"
 
         def XtractXMLScan():
@@ -137,13 +137,13 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                             T[f"{j}min"] = min(T[f"{j}min"], t)
                             T[f"{j}sum"] += t
                             T[f"{j}c"] += 1
-                    except:
+                    except:  # noqa: E722
                         pass
             # breakpoint()
             try:  # is there some range in col 4 values?
                 if abs(1.0 - min(y) / max(y)) < 1e-4:
                     raise Exception
-            except:
+            except:  # noqa: E722
                 y = np.array(y3)
             w = np.where(y > 0, 1 / y, 0.0)
             for j in sorted(tcols):  # show all columns with temperature
@@ -188,7 +188,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                     return None
                 if "ScaleAxisInfo" not in scandata:
                     return None
-            except:
+            except:  # noqa: E722
                 return False
             try:
                 start = float(scandata["ScaleAxisInfo"]["Start"])
@@ -198,13 +198,13 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                 if nSteps <= 10:
                     return False  # too short
                 xyT = data["RawData"]["DataRoutes"]["DataRoute"]["Datum"].split(",")
-            except:
+            except:  # noqa: E722
                 return False
             try:
                 self.Sample["Temperature"] = 273.0 + float(
                     xyT[2]
                 )  # seems to be temperature
-            except:
+            except:  # noqa: E722
                 return None
             y = np.array([float(y) for y in xyT[3 : 3 + nSteps]])
             x = np.array([start + i * incr for i in range(len(y))])
@@ -239,7 +239,7 @@ class brml_ReaderClass(G2obj.ImportPowderData):
                                 self.buffer["maxNum"],
                                 int(fil.split("RawData")[1].split(".")[0]),
                             )
-                        except:
+                        except:  # noqa: E722
                             pass
             except Exception as msg:
                 self.errors = "Error with dir unzip:\n" + str(msg)

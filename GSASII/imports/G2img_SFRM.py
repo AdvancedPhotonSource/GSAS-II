@@ -25,19 +25,19 @@ class SFRM_ReaderClass(G2obj.ImportImage):
         """
         if os.path.splitext(filename)[1] == ".gfrm":
             try:
-                File = open(filename, "rb")
+                File = open(filename, "rb")  # noqa: SIM115
                 s = File.read(240).decode("latin-1")
                 File.close()
                 if s[:6] != "FORMAT":
                     return False
                 if s[80:87] != "VERSION":
                     return False
-            except:
+            except:  # noqa: E722
                 return False
 
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         """Read using Bob's routine :func:`GetSFRMData`"""
         if os.path.splitext(filename)[1] == ".gfrm":
             self.Comments, self.Data, self.Npix, self.Image = GetGFRMData(
@@ -53,12 +53,12 @@ class SFRM_ReaderClass(G2obj.ImportImage):
         return True
 
 
-def GetSFRMData(self, filename):
+def GetSFRMData(self, filename):  # noqa: ARG001
     "Read cbf compressed binarydetector data sfrm file"
 
     if GSASIIpath.GetConfigValue("debug"):
         print("Read cbf compressed binary detector data file: " + filename)
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     sizexy = [0, 0]
     pixSize = [135.3, 135.3]  # Pixium4700?
     cent = [0, 0]
@@ -83,7 +83,7 @@ def GetSFRMData(self, filename):
     lines = []
     mult = 1
     for line in head:
-        line = "".join(line)
+        line = "".join(line)  # noqa: PLW2901
         lines.append(line)
         fields = line.split(":")[1].split()
         if "TARGET" in line:
@@ -138,7 +138,7 @@ def GetSFRMData(self, filename):
             img[i] = img4byte[j]
     time0 = time.time()
     image = np.reshape(img, (sizexy[1], sizexy[0])) * mult
-    print("import time: %.3f" % (time.time() - time0))
+    print(f"import time: {time.time() - time0:.3f}")
     data = {
         "pixelSize": pixSize,
         "wavelength": wave,
@@ -159,12 +159,12 @@ def GetSFRMData(self, filename):
     return lines, data, Npix, image
 
 
-def GetGFRMData(self, filename):
+def GetGFRMData(self, filename):  # noqa: ARG001
     "Read Bruker compressed binary detector data gfrm file"
 
     if GSASIIpath.GetConfigValue("debug"):
         print("Read Bruker binary detector data file: " + filename)
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     sizexy = [0, 0]
     pixSize = [135.3, 135.3]  # Pixium4700?
     cent = [0, 0]
@@ -190,7 +190,7 @@ def GetGFRMData(self, filename):
     lines = []
     mult = 1
     for line in head:
-        line = "".join(line)
+        line = "".join(line)  # noqa: PLW2901
         lines.append(line)
         fields = line.split(":")[1].split()
         if "TARGET" in line:
@@ -258,7 +258,7 @@ def GetGFRMData(self, filename):
             img[i] = img4byte[j]
     time0 = time.time()
     image = np.reshape(img, (sizexy[1], sizexy[0])) * mult
-    print("import time: %.3f" % (time.time() - time0))
+    print(f"import time: {time.time() - time0:.3f}")
     data = {
         "pixelSize": pixSize,
         "wavelength": wave,

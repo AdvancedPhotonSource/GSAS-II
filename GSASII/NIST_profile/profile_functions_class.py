@@ -227,7 +227,7 @@ class FP_profile:
         ## the number of points in Fourier space to compute
         self.n_omega_points = nn = self.oversampling * twotheta_output_points // 2 + 1
         # build all the arrays
-        x = self._clean_on_pickle = (
+        x = self._clean_on_pickle = (  # noqa: F841
             set()
         )  # keep a record of things we don't keep when pickled
         b = self.add_buffer  # shortcut
@@ -356,7 +356,7 @@ class FP_profile:
                     0, history.pop(idx)
                 )  # move to front to mark recently used
                 if self.debug_cache:
-                    print >> sys.stderr, name, True
+                    print >> sys.stderr, name, True  # noqa: F633
                 return True, b  # True says we got a buffer with valid data
         if len(history) == self.max_history_length:
             buf = history.pop(-1)[1]  # re-use oldest buffer
@@ -365,7 +365,7 @@ class FP_profile:
             buf = np.zeros(self.n_omega_points, format)
         history.insert(0, (key, buf))
         if self.debug_cache:
-            print >> sys.stderr, name, False
+            print >> sys.stderr, name, False  # noqa: F633
         return False, buf  # False says buffer is empty, need to recompute
 
     ## @brief scan for functions named conv_xxx, and associated info_xxx entries.
@@ -383,7 +383,7 @@ class FP_profile:
 
     ## A dictionary of default parameters for the global namespace,
     #  used to seed a GUI which can harvest this for names, descriptions, and initial values
-    info_global = dict(
+    info_global = dict(  # noqa: RUF012
         group_name="Global parameters",
         help="this should be help information",
         param_info=dict(
@@ -775,7 +775,7 @@ class FP_profile:
         sollerIdeg=None,
         sollerDdeg=None,
         nsteps=10,
-        axDiv="",
+        axDiv="",  # noqa: ARG002
     ):
         from math import cos, pi, tan
 
@@ -969,7 +969,7 @@ class FP_profile:
 
     ## A dictionary of default parameters for conv_emissions,
     #  used to seed a GUI which can harvest this for names, descriptions, and initial values
-    info_emission = dict(
+    info_emission = dict(  # noqa: RUF012
         group_name="Incident beam and crystal size",
         help="this should be help information",
         param_info=dict(
@@ -1008,9 +1008,9 @@ class FP_profile:
         nm = 1e9 * self.length_scale_m
         items = ["emission and broadening:"]
         items.append("spectrum=\n" + str(spect.transpose()))
-        items.append("crystallite_size_lor (nm): %.5g" % (xx.crystallite_size_lor * nm))
+        items.append(f"crystallite_size_lor (nm): {xx.crystallite_size_lor * nm:.5g}")
         items.append(
-            "crystallite_size_gauss (nm): %.5g" % (xx.crystallite_size_gauss * nm)
+            f"crystallite_size_gauss (nm): {xx.crystallite_size_gauss * nm:.5g}"
         )
         items.append(f"strain_lor: {xx.strain_lor:.5g}")
         items.append(f"strain_gauss: {xx.strain_gauss:.5g}")
@@ -1367,7 +1367,7 @@ class FP_profile:
 
         # now, use the trick from Mendenhall JQSRT Voigt paper to remove periodic function correction
         # JQSRT 105 number 3 July 2007 p. 519 eq. 7
-        emiss_intensities = self.param_dicts["conv_emission"]["emiss_intensities"]
+        emiss_intensities = self.param_dicts["conv_emission"]["emiss_intensities"]  # noqa: F841
         correction_width = 2 * sum(
             self.lor_widths.values()
         )  # total lor widths, created by the various colvolvers
@@ -1507,9 +1507,9 @@ def fourier_line_profile(
     sample_thickness=None,
     specimen_displacement=None,
     zero_error_deg=None,
-    target_width=None,
-    specimen_tilt=None,
-    defocus_delta_omega_deg=None,
+    target_width=None,  # noqa: ARG001
+    specimen_tilt=None,  # noqa: ARG001
+    defocus_delta_omega_deg=None,  # noqa: ARG001
     mat_wavelengths=None,
     mat_lor_widths=None,
     mat_gauss_widths=None,
@@ -1619,7 +1619,7 @@ if __name__ == "__main__" and sys.argv.pop(-1) == "plot":
             pass
 
         useclass = FP_with_poly
-    except:
+    except:  # noqa: E722
         useclass = FP_profile
 
     p = useclass(

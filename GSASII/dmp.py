@@ -62,7 +62,7 @@ def dump2tmp(
                 try:
                     pickle.dump((o, callerLocals[o]), fp)
                     print("dumpped", o)
-                except:
+                except:  # noqa: E722
                     print("no dump for ", o, type(callerLocals[o]))
             del frame
         if useglobals:
@@ -74,7 +74,7 @@ def dump2tmp(
                 try:
                     pickle.dump((o, globals()[o]), fp)
                     print("dumpped", o)
-                except:
+                except:  # noqa: E722
                     print("no dump for ", o, type(globals()[o]))
 
 

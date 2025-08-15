@@ -19,11 +19,11 @@ class CBF_ReaderClass(G2obj.ImportImage):
             longFormatName="CIF Binary Data Format (CBF) image file (NB: Slow!)",
         )
 
-    def ContentsValidator(self, filename):
+    def ContentsValidator(self, filename):  # noqa: ARG002
         """no test used at this time"""
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         """Read using Bob's routine :func:`GetCbfData`"""
         self.Comments, self.Data, self.Npix, self.Image = GetCbfData(self, filename)
         if self.Npix == 0 or not self.Comments:
@@ -32,7 +32,7 @@ class CBF_ReaderClass(G2obj.ImportImage):
         return True
 
 
-def GetCbfData(self, filename):
+def GetCbfData(self, filename):  # noqa: ARG001
     "Read cif binary detector data cbf file"
 
     if GSASIIpath.binaryPath:
@@ -41,7 +41,7 @@ def GetCbfData(self, filename):
         from .. import unpack_cbf as cbf
     if GSASIIpath.GetConfigValue("debug"):
         print("Reading cif binary detector data cbf file: " + filename)
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     sizexy = [0, 0]
     pixSize = [172, 172]  # Pixium4700?
     cent = [0, 0]
@@ -75,7 +75,7 @@ def GetCbfData(self, filename):
         elif "X-Binary-Size:" in line:
             compImageSize = int(fields[1])
         elif "BIG_ENDIAN" in line:
-            byteOrd = ">"
+            byteOrd = ">"  # noqa: F841
         elif "Fastest-Dimension" in line:
             sizexy[0] = int(fields[1])
         elif "Second-Dimension" in line:
@@ -102,7 +102,7 @@ def GetCbfData(self, filename):
     else:
         image = cbf.unpack_cbf(nimg, img, nxy, image)
     image = np.reshape(image, (sizexy[1], sizexy[0]))
-    print("import time: %.3f" % (time.time() - time0))
+    print(f"import time: {time.time() - time0:.3f}")
     data = {
         "pixelSize": pixSize,
         "wavelength": wave,

@@ -23,8 +23,8 @@ if G2loc is None:  # fixup path if GSASII not installed into Python
     print("GSAS-II not installed in Python; Hacking sys.path")
     sys.path.append(os.path.dirname(home))
 
-import GSASII.GSASIIlattice as G2lat
-from GSASII import nistlat
+import GSASII.GSASIIlattice as G2lat  # noqa: E402
+from GSASII import nistlat  # noqa: E402
 
 
 def V(cell):
@@ -57,7 +57,7 @@ def test_CellSymSearch():
         rtol=0.001,
         err_msg=msg,
     )
-    assert res[0][2][1] == "R" and res[0][2][2] == "H", msg
+    assert res[0][2][1] == "R" and res[0][2][2] == "H", msg  # noqa: PT018
 
     # now test CellSymSearch in mode=3 (w/sub- & supercells)
     msg = "CellSymSearch #2 centered cell w/sub & supercells"
@@ -134,7 +134,7 @@ def test_ConvCell():
     ]
     cellout = nistlat.ConvCell(cellin)
     msg = "ConvCell rhomb->hex cell"
-    assert cellout[1] == "R" and cellout[2] == "H", msg
+    assert cellout[1] == "R" and cellout[2] == "H", msg  # noqa: PT018
     npt.assert_allclose(
         cellout[0], [6.7559, 6.7559, 9.3847, 90.0, 90.0, 120.0], rtol=0.001, err_msg=msg
     )

@@ -13,8 +13,8 @@ from .. import GSASIIpath
 from .. import GSASIIplot as G2plt
 from .. import GSASIIpwd as G2pwd
 from .. import NIST_profile as FP
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
+from .GUI import GSASIIctrlGUI as G2G
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 
@@ -182,7 +182,7 @@ def writeNIST(filename):
     if not filename:
         return
 
-    fp = open(filename, "w")
+    fp = open(filename, "w")  # noqa: SIM115
     fp.write("# parameters to be used in the NIST XRD Fundamental Parameters program\n")
     fp.write("{\n")
     for key in sorted(NISTparms):
@@ -262,16 +262,16 @@ def MakeTopasFPASizer(G2frame, FPdlg, SetButtonStatus):
     :returns: a sizer with the GUI controls
     """
 
-    def _onOK(event):
+    def _onOK(event):  # noqa: ARG001
         XferFPAsettings(parmDict)
         SetButtonStatus(done=True)  # done=True triggers the simulation
         FPdlg.Destroy()
 
-    def _onClose(event):
+    def _onClose(event):  # noqa: ARG001
         SetButtonStatus()
         FPdlg.Destroy()
 
-    def _onAddWave(event):
+    def _onAddWave(event):  # noqa: ARG001
         newkey = max(parmDict["wave"].keys()) + 1
         for key, defVal in zip(
             ("wave", "int", "lwidth"),
@@ -281,24 +281,24 @@ def MakeTopasFPASizer(G2frame, FPdlg, SetButtonStatus):
             parmDict[key][newkey] = defVal
         wx.CallAfter(MakeTopasFPASizer, G2frame, FPdlg, SetButtonStatus)
 
-    def _onRemWave(event):
+    def _onRemWave(event):  # noqa: ARG001
         lastkey = max(parmDict["wave"].keys())
         for key in ("wave", "int", "lwidth"):
             if lastkey in parmDict[key]:
                 del parmDict[key][lastkey]
         wx.CallAfter(MakeTopasFPASizer, G2frame, FPdlg, SetButtonStatus)
 
-    def _onSetCu6wave(event):
+    def _onSetCu6wave(event):  # noqa: ARG001
         SetCu6wave()
         SetMonoWave()
         wx.CallAfter(MakeTopasFPASizer, G2frame, FPdlg, SetButtonStatus)
 
-    def _onSetCu2Wave(event):
+    def _onSetCu2Wave(event):  # noqa: ARG001
         SetCu2Wave()
         wx.CallAfter(MakeTopasFPASizer, G2frame, FPdlg, SetButtonStatus)
 
-    def _onSetDetBtn(event):
-        global DetMode
+    def _onSetDetBtn(event):  # noqa: ARG001
+        global DetMode  # noqa: PLW0603
         if detBtn1.GetValue():
             DetMode = "BBpoint"
             wx.CallAfter(FillParmSizer)
@@ -306,14 +306,14 @@ def MakeTopasFPASizer(G2frame, FPdlg, SetButtonStatus):
             DetMode = "BBPSD"
             wx.CallAfter(FillParmSizer)
 
-    def _onSetMonoBtn(event):
-        global IBmono
+    def _onSetMonoBtn(event):  # noqa: ARG001
+        global IBmono  # noqa: PLW0603
         IBmono = not monoBtn1.GetValue()
         SetMonoWave()
         # wx.CallAfter(FillParmSizer)
         wx.CallAfter(MakeTopasFPASizer, G2frame, FPdlg, SetButtonStatus)
 
-    def PlotTopasFPA(event):
+    def PlotTopasFPA(event):  # noqa: ARG001
         XferFPAsettings(parmDict)
         ttArr = np.arange(
             max(0.5, simParms["plotpos"] - simParms["calcwid"]),
@@ -363,7 +363,7 @@ def MakeTopasFPASizer(G2frame, FPdlg, SetButtonStatus):
             lines=True,
         )
 
-    def _onSaveFPA(event):
+    def _onSaveFPA(event):  # noqa: ARG001
         XferFPAsettings(parmDict)
         filename = G2G.askSaveFile(
             G2frame, "", ".NISTfpa", "dict of NIST FPA values", FPdlg
@@ -451,7 +451,7 @@ def MakeTopasFPASizer(G2frame, FPdlg, SetButtonStatus):
     monoBtn2.Bind(wx.EVT_RADIOBUTTON, _onSetMonoBtn)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
 
-    global prmPnl
+    global prmPnl  # noqa: PLW0603
     prmPnl = wxscroll.ScrolledPanel(
         FPdlg,
         wx.ID_ANY,  # size=(200,200),
@@ -635,7 +635,7 @@ def setupFPAcalc():
 
     p.debug_cache = False
     # set parameters for each convolver
-    for key in NISTparms:
+    for key in NISTparms:  # noqa: PLC0206
         if key:
             p.set_parameters(convolver=key, **NISTparms[key])
         else:
@@ -675,7 +675,7 @@ def MakeSimSizer(G2frame, dlg):
 
     """
 
-    def _onOK(event):
+    def _onOK(event):  # noqa: ARG001
         msg = ""
         if simParms["minTT"] - simParms["calcwid"] / 1.5 < 0.1:
             msg += "First peak minus half the calc width is too low"
@@ -820,7 +820,7 @@ def MakeSimSizer(G2frame, dlg):
                 )
                 / NISTparms[""]["diffractometer_radius"]
             )
-        except:
+        except:  # noqa: E722
             pass
         pgbar.Update(5, newmsg="Creating peak list")
         pgbar.Raise()
@@ -918,7 +918,7 @@ def MakeSimSizer(G2frame, dlg):
                 filename = fldlg.GetPath()
                 # make sure extension is .instprm
                 filename = os.path.splitext(filename)[0] + ".instprm"
-                File = open(filename, "w")
+                File = open(filename, "w")  # noqa: SIM115
                 G2fil.WriteInstprm(File, Parms)
                 File.close()
                 print("Instrument parameters saved to: " + filename)
@@ -926,7 +926,7 @@ def MakeSimSizer(G2frame, dlg):
             fldlg.Destroy()
         # GSASIIpath.IPyBreak()
 
-    def _onClose(event):
+    def _onClose(event):  # noqa: ARG001
         dlg.Destroy()
 
     def SetButtonStatus(done=False):
@@ -935,7 +935,7 @@ def MakeSimSizer(G2frame, dlg):
         if done:
             _onOK(None)
 
-    def _onSetFPA(event):
+    def _onSetFPA(event):  # noqa: ARG001
         # Create a non-modal dialog for Topas-style FP input.
         FPdlg = wx.Dialog(
             dlg,
@@ -948,13 +948,13 @@ def MakeSimSizer(G2frame, dlg):
         FPdlg.Raise()
         FPdlg.Show()
 
-    def _onSaveFPA(event):
+    def _onSaveFPA(event):  # noqa: ARG001
         filename = G2G.askSaveFile(
             G2frame, "", ".NISTfpa", "dict of NIST FPA values", dlg
         )
         writeNIST(filename)
 
-    def _onReadFPA(event):
+    def _onReadFPA(event):  # noqa: ARG001
         filename = G2G.GetImportFile(
             G2frame,
             message="Read file with dict of values for NIST Fundamental Parameters",
@@ -966,7 +966,7 @@ def MakeSimSizer(G2frame, dlg):
         if not filename[0]:
             return
         try:
-            txt = open(filename[0]).read()
+            txt = open(filename[0]).read()  # noqa: SIM115
             NISTparms.clear()
             d = eval(txt)
             NISTparms.update(d)

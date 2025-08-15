@@ -246,5 +246,5 @@ try:
     import UserCalibrants as userFile
 
     Calibrants.update(userFile.Calibrants)
-except:
+except:  # noqa: E722
     pass

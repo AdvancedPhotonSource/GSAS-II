@@ -16,12 +16,12 @@ from numpy import fft, ma
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIElem as G2el
-from . import GSASIIfiles as G2fil
-from . import GSASIIlattice as G2lat
-from . import GSASIIobj as G2obj
-from . import GSASIIpwd as G2pwd
-from . import GSASIIspc as G2spc
+from . import GSASIIElem as G2el  # noqa: E402
+from . import GSASIIfiles as G2fil  # noqa: E402
+from . import GSASIIlattice as G2lat  # noqa: E402
+from . import GSASIIobj as G2obj  # noqa: E402
+from . import GSASIIpwd as G2pwd  # noqa: E402
+from . import GSASIIspc as G2spc  # noqa: E402
 
 try:
     if GSASIIpath.binaryPath:
@@ -259,7 +259,7 @@ def HessianLSQ(
     x0 = np.array(x0, ndmin=1, dtype=np.float64)  # make sure that x0 float 1-D
     # array (in case any parameters were set to int)
     n = len(x0)
-    if type(args) != type(()):
+    if type(args) != type(()):  # noqa: E721
         args = (args,)
     dlg = None
     if hasattr(args[-1], "Update"):
@@ -293,7 +293,7 @@ def HessianLSQ(
             import traceback
 
             print(traceback.format_exc())
-        raise G2obj.G2Exception(
+        raise G2obj.G2Exception(  # noqa: B904
             "HessianLSQ -- ouch #0: look for invalid parameter (see console)"
         )
     chisq00 = np.sum(M2**2)  # starting Chi**2
@@ -662,7 +662,7 @@ def HessianSVD(
     ftol=1.49012e-8,
     xtol=1.0e-6,
     maxcyc=0,
-    lamda=-3,
+    lamda=-3,  # noqa: ARG001
     Print=False,
     refPlotUpdate=None,
 ):
@@ -713,7 +713,7 @@ def HessianSVD(
     deltaChi2 = -10.0
     x0 = np.array(x0, ndmin=1)  # might be redundant?
     n = len(x0)
-    if type(args) != type(()):
+    if type(args) != type(()):  # noqa: E721
         args = (args,)
 
     icycle = 0
@@ -901,7 +901,8 @@ def FindMolecule(
 
     indices = (-1, 0, 1)
     Units = np.array(
-        [[h, k, l] for h in indices for k in indices for l in indices], dtype="f"
+        [[h, k, l] for h in indices for k in indices for l in indices],
+        dtype="f",
     )
     cx, ct, cs, ci = generalData["AtomPtrs"]
     DisAglCtls = generalData["DisAglCtls"]
@@ -914,7 +915,7 @@ def FindMolecule(
     try:
         indH = atomTypes.index("H")
         radii[indH] = 0.5
-    except:
+    except:  # noqa: E722
         pass
     nAtom = len(atomData)
     Indx = list(range(nAtom))
@@ -962,7 +963,7 @@ def FindMolecule(
             try:
                 jndb = IndB.index(indb)
                 IndB.remove(jndb)
-            except:
+            except:  # noqa: E722
                 break
         newAtom = copy.copy(atomData[Indx[indb]])
         newAtom[cx : cx + 3] = UAtoms[indb]  # NB: thermal Uij, etc. not transformed!
@@ -1495,7 +1496,7 @@ def FindNeighbors(phase, FrstName, AtNames, notName=""):
     try:
         DisAglCtls = General["DisAglCtls"]
         radiusFactor = DisAglCtls["Factors"][0]
-    except:
+    except:  # noqa: E722
         radiusFactor = 0.85
     AtInfo = dict(zip(atTypes, Radii, strict=False))  # or General['BondRadii']
     Orig = atNames.index(FrstName)
@@ -1537,14 +1538,14 @@ def FindAllNeighbors(
     Amat, Bmat = G2lat.cell2AB(Cell)
     SGData = General["SGData"]
     indices = (-1, 0, 1)
-    Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])
+    Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])  # noqa: E741
     AtTypes = General["AtomTypes"]
     Radii = copy.copy(np.array(General[skey]))
     try:
         DisAglCtls = General["DisAglCtls"]
         radiusFactor = DisAglCtls["Factors"][sindex]
         Radii = DisAglCtls[skey]
-    except:
+    except:  # noqa: E722
         radiusFactor = 0.85
     AtInfo = dict(zip(AtTypes, Radii, strict=False))  # or General['BondRadii']
     if Orig is None:
@@ -2103,7 +2104,7 @@ def UpdateRBUIJ(Bmat, Cart, RBObj):
     Uout = []
     Q = RBObj["Orient"][0]
     for X in Cart:
-        X = prodQVQ(Q, X)
+        X = prodQVQ(Q, X)  # noqa: PLW2901
         if "U" in TLStype:
             Uout.append(["I", TLS[0], 0, 0, 0, 0, 0, 0])
         elif "N" not in TLStype:
@@ -2745,7 +2746,7 @@ def ModulationDerv(
     Fmod,
     Xmod,
     UmodAB,
-    SCtauF,
+    SCtauF,  # noqa: ARG001
     SCtauX,
     SCtauU,
     glTau,
@@ -2758,17 +2759,17 @@ def ModulationDerv(
     Hij: array 2pi^2[a*^2h^2 b*^2k^2 c*^2l^2 a*b*hk a*c*hl b*c*kl] of projected hklm to hkl space
     """
 
-    Mf = [
+    Mf = [  # noqa: RUF005
         H.shape[0],
     ] + list(waveShapes[0])  # =[ops,atoms,waves,2] (sin+cos frac mods)
     dGdMfC = np.zeros(Mf)
     dGdMfS = np.zeros(Mf)
-    Mx = [
+    Mx = [  # noqa: RUF005
         H.shape[0],
     ] + list(waveShapes[1])  # =[ops,atoms,waves,6] (sin+cos pos mods)
     dGdMxC = np.zeros(Mx)
     dGdMxS = np.zeros(Mx)
-    Mu = [
+    Mu = [  # noqa: RUF005
         H.shape[0],
     ] + list(waveShapes[2])  # =[ops,atoms,waves,12] (sin+cos Uij mods)
     dGdMuC = np.zeros(Mu)
@@ -3052,7 +3053,7 @@ def ApplyModulation(data, tau):
                 scof = []
                 ccof = []
                 waveType = Smag[0]
-                for i, spos in enumerate(Smag[1:]):
+                for i, spos in enumerate(Smag[1:]):  # noqa: B007
                     scof.append(spos[0][:3])
                     ccof.append(spos[0][3:])
                 if scof:
@@ -3063,7 +3064,7 @@ def ApplyModulation(data, tau):
                 scof = []
                 ccof = []
                 waveType = Sadp[0]
-                for i, sadp in enumerate(Sadp[1:]):
+                for i, sadp in enumerate(Sadp[1:]):  # noqa: B007
                     scof.append(sadp[0][:6])
                     ccof.append(sadp[0][6:])
                 ures = posFourier(tauT, np.array(scof), np.array(ccof))
@@ -3177,7 +3178,7 @@ def CalcIsoCoords(Phase, parmDict, covdata=None):
             return {}, {}
         try:
             modeVals.append(float(parmDict[i][0]))
-        except:
+        except:  # noqa: E722
             modeVals.append(float(parmDict[i]))
     if "varyList" in covdata:
         covDict = dict(
@@ -3864,7 +3865,7 @@ def setupRBDistDerv(parmDict, varyList, sigList, rigidbodyDict, Phases):
             try:
                 if abs(multiParmDict[p][v] - parmDict[v]) > 1e-8:
                     changedParmDict[p].append(v)
-            except:
+            except:  # noqa: E722
                 pass
     return multiParmDict, changedParmDict
 
@@ -4550,10 +4551,10 @@ def searchBondRestr(
     """Search for bond distance restraints."""
     foundBonds = []
     indices = (-2, -1, 0, 1, 2)
-    Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])
+    Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])  # noqa: E741
     Norig = 0
     for Oid, _Otype, Ocoord in origAtoms:
-        Norig += 1
+        Norig += 1  # noqa: SIM113
         if dlg:
             dlg.Update(Norig)
         for Tid, _Ttype, Tcoord in targAtoms:
@@ -4621,9 +4622,9 @@ def ValEsd(value, esd=0, nTZ=False):
     #        esdoff = 5
     elif esd != 0:
         # transform the esd to a one or two digit integer
-        l = math.log10(abs(esd)) % 1.0
+        l = math.log10(abs(esd)) % 1.0  # noqa: E741
         if l < math.log10(cutoff):
-            l += 1.0
+            l += 1.0  # noqa: E741
         intesd = int(round(10**l))  # esd as integer
         # determine the number of digits offset for the esd
         esdoff = int(round(math.log10(intesd * 1.0 / abs(esd))))
@@ -4811,7 +4812,7 @@ def validProtein(Phase, old):
             continue
     # Box content checks with errat.f $ erratv2.cpp ibox1 arrays
     indices = (-1, 0, 1)
-    Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])
+    Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])  # noqa: E741
     dsmax = 3.75**2
     if old:
         dsmax = 3.5**2
@@ -5044,7 +5045,7 @@ def validProtein(Phase, old):
 ################################################################################
 
 
-def FitTexture(General, Gangls, refData, keyList, pgbar):
+def FitTexture(General, Gangls, refData, keyList, pgbar):  # noqa: ARG001
     #    if GSASIIpath.binaryPath:
     #        import pytexture as ptx
     #    else:
@@ -5062,9 +5063,9 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
         sigstr = "  esds  :"
         for name in names:
             namstr += "%12s" % ("Sample " + name)
-            ptstr += "{:12.3f}".format(textureData["Sample " + name][1])
+            ptstr += f"{textureData['Sample ' + name][1]:12.3f}"
             if "Sample " + name in SHtextureSig:
-                sigstr += "{:12.3f}".format(SHtextureSig["Sample " + name])
+                sigstr += f"{SHtextureSig['Sample ' + name]:12.3f}"
             else:
                 sigstr += 12 * " "
         print(namstr)
@@ -5077,13 +5078,13 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
         nBlock = nCoeff // 10 + 1
         iBeg = 0
         iFin = min(iBeg + 10, nCoeff)
-        for block in range(nBlock):
+        for block in range(nBlock):  # noqa: B007
             namstr = "  names :"
             ptstr = "  values:"
             sigstr = "  esds  :"
             for name in SHkeys[iBeg:iFin]:
                 if "C" in name:
-                    l = 2.0 * eval(name.strip("C"))[0] + 1
+                    l = 2.0 * eval(name.strip("C"))[0] + 1  # noqa: E741
                     Tindx += SHcoeff[name] ** 2 / l
                     namstr += "%12s" % (name)
                     ptstr += f"{SHcoeff[name]:12.3f}"
@@ -5097,7 +5098,7 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
             print(sigstr)
             iBeg += 10
             iFin = min(iBeg + 10, nCoeff)
-        print(" Texture index J = %.3f(%d)" % (Tindx, int(1000 * np.sqrt(Tvar))))
+        print(f" Texture index J = {Tindx:.3f}({int(1000 * np.sqrt(Tvar))})")
 
     def Dict2Values(parmdict, varylist):
         """Use before call to leastsq to setup list of values for the parameters
@@ -5129,14 +5130,14 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
             Refs[:, 6] = 1.0
             H = Refs[:, :3]
             phi, beta = G2lat.CrsAng(H, cell, SGData)
-            psi, gam, x, x = G2lat.SamAng(
+            psi, gam, x, x = G2lat.SamAng(  # noqa: PLW0128
                 Refs[:, 3] / 2.0, Gangls[hist], Sangls, False
             )  # assume not Bragg-Brentano!
             for item in parmDict:
                 if "C" in item:
                     L, M, N = eval(item.strip("C"))
                     Kcl = G2lat.GetKcl(L, N, SGData["SGLaue"], phi, beta)
-                    Ksl, x, x = G2lat.GetKsl(L, M, shModel, psi, gam)
+                    Ksl, x, x = G2lat.GetKsl(L, M, shModel, psi, gam)  # noqa: PLW0128
                     Lnorm = G2lat.Lnorm(L)
                     Refs[:, 6] += parmDict[item] * Lnorm * Kcl * Ksl
             mat = wt * (Refs[:, 5] - Refs[:, 6])
@@ -5149,7 +5150,15 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
         return Mat
 
     def dervSpHarm(
-        values, SGData, cell, Gangls, shModel, refData, parmDict, varyList, pgbar
+        values,
+        SGData,
+        cell,
+        Gangls,
+        shModel,
+        refData,
+        parmDict,
+        varyList,
+        pgbar,  # noqa: ARG001
     ):
         Mat = np.empty(0)
         Sangls = [
@@ -5178,7 +5187,7 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
                         ["Sample omega", "Sample chi", "Sample phi"]
                     ):
                         try:
-                            l = varyList.index(itema)
+                            l = varyList.index(itema)  # noqa: E741
                             mat[l] -= (
                                 parmDict[item]
                                 * wt
@@ -5322,7 +5331,7 @@ def OmitMap(data, reflDict, pgbar=None):
             Uniq = np.inner(ref[:3], SGMT)
             Phi = np.inner(ref[:3], SGT)
             for i, hkl in enumerate(Uniq):  # uses uniq
-                hkl = np.asarray(hkl, dtype="i")
+                hkl = np.asarray(hkl, dtype="i")  # noqa: PLW2901
                 dp = 360.0 * Phi[i]  # and phi
                 a = cosd(ph + dp)
                 b = sind(ph + dp)
@@ -5332,9 +5341,9 @@ def OmitMap(data, reflDict, pgbar=None):
                     F = 2.0 * np.sqrt(Fosq) - np.sqrt(Fcsq)
                 else:
                     F = np.sqrt(Fosq)
-                h, k, l = hkl + Hmax
+                h, k, l = hkl + Hmax  # noqa: E741
                 Fhkl[h, k, l] = F * phasep
-                h, k, l = -hkl + Hmax
+                h, k, l = -hkl + Hmax  # noqa: E741
                 Fhkl[h, k, l] = F * phasem
     rho0 = fft.fftn(fft.fftshift(Fhkl)) / cell[6]
     M = np.mgrid[0:4, 0:4, 0:4]
@@ -5356,7 +5365,7 @@ def OmitMap(data, reflDict, pgbar=None):
         rho_omit[iB[0] : iF[0], iB[1] : iF[1], iB[2] : iF[2]] = np.copy(
             rho1[iB[0] : iF[0], iB[1] : iF[1], iB[2] : iF[2]]
         )
-        nBlk += 1
+        nBlk += 1  # noqa: SIM113
         pgbar.Raise()
         pgbar.Update(nBlk)
     mapData["rho"] = np.real(rho_omit) / cell[6]
@@ -5396,7 +5405,7 @@ def FourierMap(data, reflDict):
             Uniq = np.inner(ref[:3], SGMT)
             Phi = np.inner(ref[:3], SGT)
             for i, hkl in enumerate(Uniq):  # uses uniq
-                hkl = np.asarray(hkl, dtype="i")
+                hkl = np.asarray(hkl, dtype="i")  # noqa: PLW2901
                 dp = 360.0 * Phi[i]  # and phi
                 a = cosd(ph + dp)
                 b = sind(ph + dp)
@@ -5404,32 +5413,32 @@ def FourierMap(data, reflDict):
                 phasem = complex(a, -b)
                 if "Fobs" in mapData["MapType"]:
                     F = np.where(Fosq > 0.0, np.sqrt(Fosq), 0.0)
-                    h, k, l = hkl + Hmax
+                    h, k, l = hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = F * phasep
-                    h, k, l = -hkl + Hmax
+                    h, k, l = -hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = F * phasem
                 elif "Fcalc" in mapData["MapType"]:
                     F = np.sqrt(Fcsq)
-                    h, k, l = hkl + Hmax
+                    h, k, l = hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = F * phasep
-                    h, k, l = -hkl + Hmax
+                    h, k, l = -hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = F * phasem
                 elif "delt-F" in mapData["MapType"]:
                     dF = np.where(Fosq > 0.0, np.sqrt(Fosq), 0.0) - np.sqrt(Fcsq)
-                    h, k, l = hkl + Hmax
+                    h, k, l = hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = dF * phasep
-                    h, k, l = -hkl + Hmax
+                    h, k, l = -hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = dF * phasem
                 elif "2*Fo-Fc" in mapData["MapType"]:
                     F = 2.0 * np.where(Fosq > 0.0, np.sqrt(Fosq), 0.0) - np.sqrt(Fcsq)
-                    h, k, l = hkl + Hmax
+                    h, k, l = hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = F * phasep
-                    h, k, l = -hkl + Hmax
+                    h, k, l = -hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = F * phasem
                 elif "Patterson" in mapData["MapType"]:
-                    h, k, l = hkl + Hmax
+                    h, k, l = hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = complex(Fosq, 0.0)
-                    h, k, l = -hkl + Hmax
+                    h, k, l = -hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l] = complex(Fosq, 0.0)
     rho = fft.fftn(fft.fftshift(Fhkl)) / cell[6]
     G2fil.G2Print(
@@ -5473,7 +5482,7 @@ def Fourier4DMap(data, reflDict):
             Uniq = np.inner(ref[:4], SSGMT)
             Phi = np.inner(ref[:4], SSGT)
             for i, hkl in enumerate(Uniq):  # uses uniq
-                hkl = np.asarray(hkl, dtype="i")
+                hkl = np.asarray(hkl, dtype="i")  # noqa: PLW2901
                 dp = 360.0 * Phi[i]  # and phi
                 a = cosd(ph + dp)
                 b = sind(ph + dp)
@@ -5481,21 +5490,21 @@ def Fourier4DMap(data, reflDict):
                 phasem = complex(a, -b)
                 if "Fobs" in mapData["MapType"]:
                     F = np.sqrt(Fosq)
-                    h, k, l, m = hkl + Hmax
+                    h, k, l, m = hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l, m] = F * phasep
-                    h, k, l, m = -hkl + Hmax
+                    h, k, l, m = -hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l, m] = F * phasem
                 elif "Fcalc" in mapData["MapType"]:
                     F = np.sqrt(Fcsq)
-                    h, k, l, m = hkl + Hmax
+                    h, k, l, m = hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l, m] = F * phasep
-                    h, k, l, m = -hkl + Hmax
+                    h, k, l, m = -hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l, m] = F * phasem
                 elif "delt-F" in mapData["MapType"]:
                     dF = np.sqrt(Fosq) - np.sqrt(Fcsq)
-                    h, k, l, m = hkl + Hmax
+                    h, k, l, m = hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l, m] = dF * phasep
-                    h, k, l, m = -hkl + Hmax
+                    h, k, l, m = -hkl + Hmax  # noqa: E741
                     Fhkl[h, k, l, m] = dF * phasem
     SSrho = fft.fftn(fft.fftshift(Fhkl)) / cell[6]  # 4D map
     rho = fft.fftn(fft.fftshift(Fhkl[:, :, :, maxM + 1])) / cell[6]  # 3D map
@@ -5601,9 +5610,7 @@ def findOffset(SGData, A, Fhkl):
             break
         i += 1
     DH = np.array(DH)
-    G2fil.G2Print(
-        " map offset no.of terms: %d from %d reflections" % (len(DH), len(Flist))
-    )
+    G2fil.G2Print(f" map offset no.of terms: {len(DH)} from {len(Flist)} reflections")
     Dphi = np.array(Dphi)
     steps = np.array(hklShape)
     X, Y, Z = np.meshgrid(
@@ -5696,15 +5703,15 @@ def ChargeFlip(data, reflDict, pgbar):
             Uniq = np.inner(ref[:3], SGMT)
             Phi = np.inner(ref[:3], SGT)
             for i, hkl in enumerate(Uniq):  # uses uniq
-                hkl = np.asarray(hkl, dtype="i")
+                hkl = np.asarray(hkl, dtype="i")  # noqa: PLW2901
                 dp = 360.0 * Phi[i]  # and phi
                 a = cosd(ph + dp)
                 b = sind(ph + dp)
                 phasep = complex(a, b)
                 phasem = complex(a, -b)
-                h, k, l = hkl + Hmax
+                h, k, l = hkl + Hmax  # noqa: E741
                 Ehkl[h, k, l] = E * phasep
-                h, k, l = -hkl + Hmax
+                h, k, l = -hkl + Hmax  # noqa: E741
                 Ehkl[h, k, l] = E * phasem
     #    Ehkl[Hmax] = 0.00001           #this to preserve F[0,0,0]
     testHKL = np.array(flipData["testHKL"]) + Hmax
@@ -5725,7 +5732,7 @@ def ChargeFlip(data, reflDict, pgbar):
         CFhkl = fft.ifftshift(fft.ifftn(CFrho))
         CFhkl = np.where(CFhkl, CFhkl, 1.0)  # avoid divide by zero
         phase = CFhkl / np.absolute(CFhkl)
-        twophases.append([np.angle(phase[h, k, l]) for h, k, l in testHKL])
+        twophases.append([np.angle(phase[h, k, l]) for h, k, l in testHKL])  # noqa: E741
         CEhkl = np.absolute(Ehkl) * phase
         Ncyc += 1
         sumCF = np.sum(ma.array(np.absolute(CFhkl), mask=Emask))
@@ -5742,7 +5749,7 @@ def ChargeFlip(data, reflDict, pgbar):
             break
     np.seterr(**old)
     G2fil.G2Print(
-        " Charge flip time: %.4f" % (time.time() - time0),
+        f" Charge flip time: {time.time() - time0:.4f}",
         "no. elements: %d" % (Ehkl.size),
     )
     CErho = (
@@ -5810,7 +5817,7 @@ def findSSOffset(SGData, SSGData, A, Fhklm):
         Fh0 = Fhklm[hklm[0], hklm[1], hklm[2], hklm[3]]
         ang0 = np.angle(Fh0, deg=True) / 360.0
         for H, phi in list(zip(Uniq, Phi, strict=False))[1:]:
-            H = np.array(H, dtype=int)
+            H = np.array(H, dtype=int)  # noqa: PLW2901
             ang = np.angle(Fhklm[H[0], H[1], H[2], H[3]], deg=True) / 360.0 - phi
             dH = H - hklm
             dang = ang - ang0
@@ -5820,9 +5827,7 @@ def findSSOffset(SGData, SSGData, A, Fhklm):
             break
         i += 1
     DH = np.array(DH)
-    G2fil.G2Print(
-        " map offset no.of terms: %d from %d reflections" % (len(DH), len(Flist))
-    )
+    G2fil.G2Print(f" map offset no.of terms: {len(DH)} from {len(Flist)} reflections")
     Dphi = np.array(Dphi)
     steps = np.array(hklmShape)
     X, Y, Z, T = np.mgrid[
@@ -5904,15 +5909,15 @@ def SSChargeFlip(data, reflDict, pgbar):
             Uniq = np.inner(ref[:4], SSGMT)
             Phi = np.inner(ref[:4], SSGT)
             for i, hklm in enumerate(Uniq):  # uses uniq
-                hklm = np.asarray(hklm, dtype="i")
+                hklm = np.asarray(hklm, dtype="i")  # noqa: PLW2901
                 dp = 360.0 * Phi[i]  # and phi
                 a = cosd(ph + dp)
                 b = sind(ph + dp)
                 phasep = complex(a, b)
                 phasem = complex(a, -b)
-                h, k, l, m = hklm + Hmax
+                h, k, l, m = hklm + Hmax  # noqa: E741
                 Ehkl[h, k, l, m] = E * phasep
-                h, k, l, m = -hklm + Hmax  # Friedel pair refl.
+                h, k, l, m = -hklm + Hmax  # Friedel pair refl.  # noqa: E741
                 Ehkl[h, k, l, m] = E * phasem
     #    Ehkl[Hmax] = 0.00001           #this to preserve F[0,0,0]
     CEhkl = copy.copy(Ehkl)
@@ -6011,7 +6016,7 @@ def getRho(xyz, mapData):
     mapShape = np.array(rho.shape)
     mapStep = 1.0 / mapShape
     X = np.array(xyz) % 1.0  # get into unit cell
-    I = np.array(X * mapShape, dtype="int")
+    I = np.array(X * mapShape, dtype="int")  # noqa: E741
     D = X - I * mapStep  # position inside map cell
     D12 = D[0] * D[1]
     D13 = D[0] * D[2]
@@ -6046,7 +6051,7 @@ def getRhos(XYZ, rho):
     :returns: density at xyz
     """
 
-    def getBoxes(rho, I):
+    def getBoxes(rho, I):  # noqa: E741
         Rhos = np.zeros((2, 2, 2))
         Mx, My, Mz = rho.shape
         Ix, Iy, Iz = I
@@ -6087,7 +6092,7 @@ def getRhos(XYZ, rho):
     for _iblk in range(nBlk):
         iFin = iBeg + Blk
         Xs = X[iBeg:iFin]
-        I = np.array(np.rint(Xs * mapShape), dtype="int")
+        I = np.array(np.rint(Xs * mapShape), dtype="int")  # noqa: E741
         Rhos = np.array([getBoxes(rho, i) for i in I])
         Ds = Xs - I * mapStep
         RIJs = Rhos[:, 0, :2, :2] * (1.0 - Ds[:, 0][:, nxs, nxs])
@@ -6097,7 +6102,7 @@ def getRhos(XYZ, rho):
     return R
 
 
-def SearchMap(generalData, drawingData, Neg=False):
+def SearchMap(generalData, drawingData, Neg=False):  # noqa: ARG001
     """Does a search of a density map for peaks meeting the criterion of peak
     height is greater than mapData['cutOff']/100 of mapData['rhoMax'] where
     mapData is data['General']['mapData']; the map is also in mapData.
@@ -6138,7 +6143,7 @@ def SearchMap(generalData, drawingData, Neg=False):
         else:
             return xyz
 
-    def rhoCalc(parms, rX, rY, rZ, res, SGLaue):
+    def rhoCalc(parms, rX, rY, rZ, res, SGLaue):  # noqa: ARG001
         Mag, x0, y0, z0, sig = parms
         z = -((x0 - rX) ** 2 + (y0 - rY) ** 2 + (z0 - rZ) ** 2) / (2.0 * sig**2)
         #        return norm*Mag*np.exp(z)/(sig*res**3)     #not slower but some faults in LS
@@ -6198,7 +6203,7 @@ def SearchMap(generalData, drawingData, Neg=False):
         return peaks, mags
     rhoMask = ma.array(rho, mask=(rho < contLevel))
     indices = (-1, 0, 1)
-    rolls = np.array([[h, k, l] for h in indices for k in indices for l in indices])
+    rolls = np.array([[h, k, l] for h in indices for k in indices for l in indices])  # noqa: E741
     for roll in rolls:
         if np.any(roll):
             rhoMask = ma.array(rhoMask, mask=(rhoMask - rollMap(rho, roll) <= 0.0))
@@ -6237,8 +6242,8 @@ def SearchMap(generalData, drawingData, Neg=False):
         )
         x1 = result[0]
         if not np.any(x1 < 0):
-            peak = (np.array(x1[1:4]) - ind) / incre
-        peak = fixSpecialPos(peak, SGData, Amat)
+            peak = (np.array(x1[1:4]) - ind) / incre  # noqa: PLW2901
+        peak = fixSpecialPos(peak, SGData, Amat)  # noqa: PLW2901
         rho = rollMap(rho, -ind)
     cent = np.ones(3) * 0.5
     dzeros = np.sqrt(np.sum(np.inner(Amat, peaks) ** 2, axis=0))
@@ -6332,7 +6337,7 @@ def PeaksEquiv(data, Ind):
         for jnd, xyz in enumerate(XYZ):
             Indx[jnd] = Duplicate(xyz, xyzs, Amat)
     Ind = []
-    for ind in Indx:
+    for ind in Indx:  # noqa: PLC0206
         if Indx[ind]:
             Ind.append(ind)
     return Ind
@@ -6539,7 +6544,7 @@ def getEDsig(ins, pos):
     return ins["A"] * pos**2 + ins["B"] * pos + ins["C"]
 
 
-def getEDsigDeriv(ins, pos):
+def getEDsigDeriv(ins, pos):  # noqa: ARG001
     """get derivatives of ED peak profile sig wrt A, B & C
 
     :param float pos: energy of peak in keV
@@ -6562,7 +6567,7 @@ def getEDgam(ins, pos):
     return ins["X"] * pos**2 + ins["Y"] * pos + ins["Z"]
 
 
-def getEDgamDeriv(ins, pos):
+def getEDgamDeriv(ins, pos):  # noqa: ARG001
     """get derivatives of ED peak profile gam wrt X, Y & Z
 
     :param float pos: energy of peak in keV
@@ -6836,9 +6841,6 @@ def setPeakparms(Parms, Parms2, pos, mag, ifQ=False, useFit=False):
 # Bug-fixes in 2006 by Tim Leslie
 
 
-import numpy
-from numpy import all, array, asarray, exp, random, shape, sign, squeeze, where
-
 # __all__ = ['anneal']
 
 
@@ -6856,10 +6858,10 @@ class base_schedule:
 
     def init(self, **options):
         self.__dict__.update(options)
-        self.lower = asarray(self.lower)
-        self.lower = where(self.lower == -np.inf, -_double_max, self.lower)
-        self.upper = asarray(self.upper)
-        self.upper = where(self.upper == numpy.inf, _double_max, self.upper)
+        self.lower = np.asarray(self.lower)
+        self.lower = np.where(self.lower == -np.inf, -_double_max, self.lower)
+        self.upper = np.asarray(self.upper)
+        self.upper = np.where(self.upper == np.inf, _double_max, self.upper)
         self.k = 0
         self.accepted = 0
         self.feval = 0
@@ -6882,14 +6884,14 @@ class base_schedule:
         fmax = _double_min
         fmin = _double_max
         for _ in range(self.Ninit):
-            x0 = random.uniform(size=self.dims) * (urange - lrange) + lrange
+            x0 = np.random.uniform(size=self.dims) * (urange - lrange) + lrange
             fval = self.func(x0, *self.args)
             self.feval += 1
             fmax = max(fmax, fval)
             if fval < fmin:
                 fmin = fval
                 best_state.cost = fval
-                best_state.x = array(x0)
+                best_state.x = np.array(x0)
 
         self.T0 = (fmax - fmin) * 1.5
         return best_state.x
@@ -6905,13 +6907,13 @@ class base_schedule:
         if dE < 0:
             self.accepted += 1
             return 1
-        p = exp(-dE * 1.0 / T)
-        if p > random.uniform(0.0, 1.0):
+        p = np.exp(-dE * 1.0 / T)
+        if p > np.random.uniform(0.0, 1.0):
             self.accepted += 1
             return 1
         return 0
 
-    def update_guess(self, x0):
+    def update_guess(self, x0):  # noqa: ARG002
         return (
             np.squeeze(np.random.uniform(0.0, 1.0, size=self.dims))
             * (self.upper - self.lower)
@@ -6927,15 +6929,17 @@ class fast_sa(base_schedule):
         self.__dict__.update(options)
 
     def update_guess(self, x0):
-        x0 = asarray(x0)
-        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
+        x0 = np.asarray(x0)
+        u = np.squeeze(np.random.uniform(0.0, 1.0, size=self.dims))
         T = self.T
-        xc = (sign(u - 0.5) * T * ((1 + 1.0 / T) ** abs(2 * u - 1) - 1.0) + 1.0) / 2.0
+        xc = (
+            np.sign(u - 0.5) * T * ((1 + 1.0 / T) ** np.abs(2 * u - 1) - 1.0) + 1.0
+        ) / 2.0
         xnew = xc * (self.upper - self.lower) + self.lower
         return xnew
 
     def update_temp(self):
-        self.T = self.T0 * exp(-self.c * self.k ** (self.quench))
+        self.T = self.T0 * np.exp(-self.c * self.k ** (self.quench))
         self.k += 1
 
 
@@ -6944,11 +6948,14 @@ class log_sa(base_schedule):  # OK
         self.__dict__.update(options)
 
     def update_guess(
-        self, x0
+        self,
+        x0,  # noqa: ARG002
     ):  # same as default #TODO - is this a reasonable update procedure?
-        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
+        u = np.squeeze(np.random.uniform(0.0, 1.0, size=self.dims))
         T = self.T
-        xc = (sign(u - 0.5) * T * ((1 + 1.0 / T) ** abs(2 * u - 1) - 1.0) + 1.0) / 2.0
+        xc = (
+            np.sign(u - 0.5) * T * ((1 + 1.0 / T) ** np.abs(2 * u - 1) - 1.0) + 1.0
+        ) / 2.0
         xnew = xc * (self.upper - self.lower) + self.lower
         return xnew
 
@@ -7120,14 +7127,14 @@ def anneal(
          may be used to endorse or promote products derived from this software
          without specific prior written permission.
     """
-    x0 = asarray(x0)
-    lower = asarray(lower)
-    upper = asarray(upper)
+    x0 = np.asarray(x0)
+    lower = np.asarray(lower)
+    upper = np.asarray(upper)
 
     schedule = eval(schedule + "_sa()")
     #   initialize the schedule
     schedule.init(
-        dims=shape(x0),
+        dims=x0.shape,
         func=func,
         args=args,
         T0=T0,
@@ -7145,17 +7152,17 @@ def anneal(
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
-        x0 = random.uniform(size=len(x0)) * (upper - lower) + lower
+        x0 = np.random.uniform(size=len(x0)) * (upper - lower) + lower
         best_state.x = None
-        best_state.cost = numpy.inf
+        best_state.cost = np.inf
 
-    last_state.x = asarray(x0).copy()
+    last_state.x = np.asarray(x0).copy()
     fval = func(x0, *args)
     schedule.feval += 1
     last_state.cost = fval
     if last_state.cost < best_state.cost:
         best_state.cost = fval
-        best_state.x = asarray(x0).copy()
+        best_state.x = np.asarray(x0).copy()
     schedule.T = schedule.T0
     fqueue = [100, 300, 500, 700]
     iters = 1
@@ -7207,20 +7214,20 @@ def anneal(
         # 4) maxaccept is set and we are past it
         # 5) user canceled run via progress bar
 
-        fqueue.append(squeeze(last_state.cost))
+        fqueue.append(np.squeeze(last_state.cost))
         fqueue.pop(0)
-        af = asarray(fqueue) * 1.0
+        af = np.asarray(fqueue) * 1.0
         if retval == 5:
             G2fil.G2Print("Error: User terminated run; incomplete MC/SA")
             keepGoing = False
             break
-        if all(abs((af - af[0]) / af[0]) < feps):
+        if np.all(np.abs((af - af[0]) / af[0]) < feps):
             retval = 0
-            if abs(af[-1] - best_state.cost) > feps * 10:
+            if np.abs(af[-1] - best_state.cost) > feps * 10:
                 retval = 5
                 G2fil.G2Print(
                     " Warning: Cooled to %.4f > selected Tmin %.4f in %d steps"
-                    % (squeeze(last_state.cost), Tf, iters - 1)
+                    % (np.squeeze(last_state.cost), Tf, iters - 1)
                 )
             break
         if (Tf is not None) and (Tf > schedule.T):
@@ -7255,7 +7262,7 @@ def worker(
     outlist = []
     timelist = []
     nsflist = []
-    random.seed(
+    np.random.seed(
         int(time.time()) % 100000 + nprocess
     )  # make sure each process has a different random start
     for _n in range(iCyc):
@@ -7304,7 +7311,7 @@ def MPmcsaSearch(nCyc, data, RBdata, reflType, reflData, covData, nprocs):
         procs.append(p)
         p.start()
     resultlist = []
-    for i in range(nprocs):
+    for i in range(nprocs):  # noqa: B007
         resultlist += out_q.get()
         totsftime += np.sum(out_t.get())
         totnsf += np.sum(out_n.get())
@@ -7313,7 +7320,7 @@ def MPmcsaSearch(nCyc, data, RBdata, reflType, reflData, covData, nprocs):
     return resultlist, totsftime, totnsf
 
 
-def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
+def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):  # noqa: ARG001
     """default doc string
 
     :param type name: description
@@ -7341,7 +7348,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
                     break
             return xnew
 
-    global tsum, nsum
+    global tsum, nsum  # noqa: PLW0603
     tsum = 0.0
     nsum = 0
 
@@ -7376,7 +7383,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
                 upper.append(limits[1])
         parmDict[pfx + "Amul"] = len(list(G2spc.GenAtom(XYZ, SGData)))
 
-    def getRBparms(item, mfx, aTypes, RBdata, SGData, atNo, parmDict, varyList):
+    def getRBparms(item, mfx, aTypes, RBdata, SGData, atNo, parmDict, varyList):  # noqa: ARG001
         parmDict[mfx + "MolCent"] = item["MolCent"]
         parmDict[mfx + "RBId"] = item["RBId"]
         pstr = ["Px", "Py", "Pz"]
@@ -7471,7 +7478,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
         Xdata = np.zeros((3, atNo))
         keys = {":Ax": Xdata[0], ":Ay": Xdata[1], ":Az": Xdata[2]}
         for iatm in range(nfixAt):
-            for key in keys:
+            for key in keys:  # noqa: PLC0206
                 parm = ":" + str(iatm) + key
                 if parm in parmDict:
                     keys[key][iatm] = parmDict[parm]
@@ -7512,7 +7519,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
                 iatm += len(Cart)
             elif parmDict[pfx + "Type"] == "Atom":
                 atNo = parmDict[pfx + "atNo"]
-                for key in keys:
+                for key in keys:  # noqa: PLC0206
                     parm = pfx + key[1:]  # remove extra ':'
                     if parm in parmDict:
                         keys[key][atNo] = parmDict[parm]
@@ -7533,7 +7540,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
         allX = np.reshape(allX, (-1, 3))
         return allX
 
-    def normQuaternions(RBdata, parmDict, varyList, values):
+    def normQuaternions(RBdata, parmDict, varyList, values):  # noqa: ARG001
         for iObj in range(parmDict["nObj"]):
             pfx = str(iObj) + ":"
             if parmDict[pfx + "Type"] in ["Vector", "Residue"]:
@@ -7565,7 +7572,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
             delt-F*rcov*delt-F/sum(Fo^2)
         """
 
-        global tsum, nsum
+        global tsum, nsum  # noqa: PLW0603
         t0 = time.time()
         parmDict.update(
             dict(zip(varyList, values, strict=False))
@@ -7600,10 +7607,10 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
         nsum += 1
         return np.sqrt(M / np.sum(refList[4] ** 2))
 
-    def MCSAcallback(x, f, accept):
+    def MCSAcallback(x, f, accept):  # noqa: ARG001
         return not pgbar.Update(
             int(min(100, f * 100)),
-            newmsg="{}{:8.4f}{}".format("MC/SA Residual:", int(f * 100), "%"),
+            newmsg=f"MC/SA Residual:{int(f * 100):8.4f}%",
         )[0]
 
     sq2pi = np.sqrt(2 * np.pi)
@@ -7668,7 +7675,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
     sumFosq = 0
     if "PWDR" in reflName:
         for ref in reflData:
-            h, k, l, m, d, pos, sig, gam, f = ref[:9]
+            h, k, l, m, d, pos, sig, gam, f = ref[:9]  # noqa: E741
             if d >= MCSA["dmin"]:
                 sig = np.sqrt(sig)  # var -> sig in centideg
                 sig = 0.01 * G2pwd.getgamFW(gam, sig)  # sig,gam -> FWHM in deg
@@ -7702,7 +7709,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
         vNames = []
         pfx = str(data["pId"]) + "::PWLref:"
         for iref, refI in enumerate(reflData):  # Pawley reflection set
-            h, k, l, m, d, v, f, s = refI
+            h, k, l, m, d, v, f, s = refI  # noqa: E741
             if d >= MCSA["dmin"] and v:  # skip unrefined ones
                 vNames.append(pfx + str(iref))
                 SQ = 0.25 / d**2
@@ -7734,7 +7741,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
             rcov = MCSA["rcov"]
     elif "HKLF" in reflName:
         for ref in reflData:
-            [h, k, l, m, d], f = ref[:5], ref[6]
+            [h, k, l, m, d], f = ref[:5], ref[6]  # noqa: E741
             if d >= MCSA["dmin"]:
                 SQ = 0.25 / d**2
                 allFF.append(
@@ -7753,7 +7760,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
             " Minimum d-spacing used: %.2f No. reflections used: %d"
             % (MCSA["dmin"], nRef)
         )
-        G2fil.G2Print(" Number of parameters varied: %d" % (len(varyList)))
+        G2fil.G2Print(f" Number of parameters varied: {len(varyList)}")
         start = False
     parmDict["sumFosq"] = sumFosq
     x0 = [parmDict[val] for val in varyList]

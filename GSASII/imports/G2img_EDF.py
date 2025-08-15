@@ -18,11 +18,11 @@ class EDF_ReaderClass(G2obj.ImportImage):
             longFormatName="European Data Format image file",
         )
 
-    def ContentsValidator(self, filename):
+    def ContentsValidator(self, filename):  # noqa: ARG002
         """no test used at this time"""
         return True
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+    def Reader(self, filename, filepointer, ParentFrame=None, **unused):  # noqa: ARG002
         self.Comments, self.Data, self.Npix, self.Image = GetEdfData(filename)
         if self.Npix == 0 or not self.Comments:
             return False
@@ -34,7 +34,7 @@ def GetEdfData(filename, imageOnly=False):
     "Read European detector data edf file"
     if not imageOnly:
         print("Read European detector data edf file: " + filename)
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     fileSize = os.stat(filename).st_size
     head = File.read(3072).decode(encoding="latin-1")
     lines = head.split("\n")
@@ -49,7 +49,7 @@ def GetEdfData(filename, imageOnly=False):
         "European detector data",
     ]
     for line in lines:
-        line = line.replace(";", " ").strip()
+        line = line.replace(";", " ").strip()  # noqa: PLW2901
         fields = line.split()
         if "Dim_1" in line:
             sizexy[0] = int(fields[2])

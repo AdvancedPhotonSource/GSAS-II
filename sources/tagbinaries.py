@@ -42,7 +42,7 @@ else:
             if item.isnumeric():
                 number = item
                 break
-    except:
+    except:  # noqa: E722
         sys.exit()
 outfile = os.path.join(build, "sources", "GSASIIversion.txt")
 with open(outfile, "w") as fp:

@@ -40,7 +40,7 @@ def main():
     import wx.lib.scrolledpanel as wxscroll
     import wx.richtext as wxrt
 
-    (
+    (  # noqa: B018
         wg,
         wx.aui,
         wxscroll,

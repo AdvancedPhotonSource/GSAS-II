@@ -6,13 +6,13 @@ import wx
 from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from GSASII import GSASIIctrlGUI as G2G
-from GSASII import GSASIIlattice as G2lat
-from GSASII import GSASIIphsGUI as G2phsGUI
-from GSASII import GSASIIspc as G2spc
+from GSASII import GSASIIctrlGUI as G2G  # noqa: E402
+from GSASII import GSASIIlattice as G2lat  # noqa: E402
+from GSASII import GSASIIphsGUI as G2phsGUI  # noqa: E402
+from GSASII import GSASIIspc as G2spc  # noqa: E402
 
 try:
-    wx.NewId
+    wx.NewId  # noqa: B018
 except AttributeError:
     wx.NewId = wx.NewIdRef
 
@@ -52,17 +52,17 @@ class testSytSym(wx.Frame):
         self.XYZ = "0,0,0"
         self.UpdateData(Data)
 
-    def ExitMain(self, event):
+    def ExitMain(self, event):  # noqa: ARG002
         sys.exit()
 
-    def OnFileExit(self, event):
+    def OnFileExit(self, event):  # noqa: ARG002
         if self.dataFrame:
             self.dataFrame.Clear()
             self.dataFrame.Destroy()
         self.Close()
 
     def UpdateData(self, Data):
-        def OnSpaceGroup(event):
+        def OnSpaceGroup(event):  # noqa: ARG001
             SpGrp = "P 1"
             SpcGp = G2phsGUI.GetSpGrpfromUser(self, SpGrp)
             SGErr, SGData = G2spc.SpcGroup(SpcGp)
@@ -118,12 +118,12 @@ class testSytSym(wx.Frame):
                 else:
                     StrRBSh = list(ShRBTerms)
                 ShRBtxt.SetLabel(f" Sp. Harm coeff:  {StrRBSh}")
-            except:
+            except:  # noqa: E722
                 print("Bad X,Y,Z entry: ", Obj.GetValue())
                 self.XYZ = "0,0,0"
                 Obj.SetValue(self.XYZ)
 
-        def OnShowOps(event):
+        def OnShowOps(event):  # noqa: ARG001
             text, table = G2spc.SGPrint(SGData)
             msg = "Space Group Information"
             SgNo = G2spc.SpaceGroupNumber(SGData["SpGrp"])
@@ -131,13 +131,13 @@ class testSytSym(wx.Frame):
                 text[0] += ", No. " + str(SgNo)
             G2G.SGMessageBox(self, msg, text, table).Show()
 
-        def OnShowGen(event):
+        def OnShowGen(event):  # noqa: ARG001
             GenText = G2spc.TextGen(SGData, reverse=True)
             print(" Symmetry generators for {}:".format(text[0].split(":")[1]))
             for item in GenText:
                 print(item)
 
-        def OnTestHKL(event):
+        def OnTestHKL(event):  # noqa: ARG001
             print("Extinctions for " + Data["SGData"]["MagSpGrp"])
             hkls = np.mgrid[-6:6, -6:6, -6:6]
             HKLs = hkls.reshape((3, -1)).T
@@ -146,7 +146,7 @@ class testSytSym(wx.Frame):
                 if ext:
                     print(hkl)
 
-        def OnRBSymSel(event):
+        def OnRBSymSel(event):  # noqa: ARG001
             self.RBsym = simsel.GetStringSelection()
             ShRBTerms, ShRBSigns = G2lat.GenRBCoeff(SytSym, self.RBsym, 21)
             if len(ShRBTerms) > 12:

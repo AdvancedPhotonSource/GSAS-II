@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 """Classes in :mod:`~GSASII.exports.G2export_Bracket` follow."""
 
 # This module initially written by Conrad Gillard. For any enquiries please contact conrad.gillard@gmail.com
@@ -30,7 +30,7 @@ class Exportbracket(G2fil.ExportBaseclass):
                 param_index = self.OverallParms["Covariance"]["varyList"].index(
                     phase_num + ":" + hist_num + keyword
                 )
-            except:
+            except:  # noqa: E722
                 pass
             if param_index is not None:
                 param = self.OverallParms["Covariance"]["variables"][param_index]
@@ -48,7 +48,7 @@ class Exportbracket(G2fil.ExportBaseclass):
             import wx
 
             wx.BeginBusyCursor()
-        except:
+        except:  # noqa: E722
             pass
 
         # Export model parameters in bracket notation
@@ -114,7 +114,7 @@ class Exportbracket(G2fil.ExportBaseclass):
                             model_parameters[phasenam + " Phase Fraction"] = ValEsd(
                                 phasefrac, phasefrac_unc
                             )
-                    except:
+                    except:  # noqa: E722
                         pass
 
                     try:
@@ -135,7 +135,7 @@ class Exportbracket(G2fil.ExportBaseclass):
                             model_parameters[phasenam + " Weight Fraction"] = ValEsd(
                                 weight_frac, weight_frac_unc
                             )
-                    except:
+                    except:  # noqa: E722
                         pass
 
                     # Get preferred orientation details for phase, if refined
@@ -159,13 +159,13 @@ class Exportbracket(G2fil.ExportBaseclass):
                             model_parameters[phasenam + " March Dollase Ratio"] = (
                                 MD_bracket
                             )
-                    except:
+                    except:  # noqa: E722
                         pass
                 # Increment phase number counter
-                phase_num += 1
+                phase_num += 1  # noqa: SIM113
 
             # Extract sample displacements, zero offset and D(ij)s (if refined)
-            for i, hist_name in enumerate(self.Histograms):
+            for i, hist_name in enumerate(self.Histograms):  # noqa: B007
                 hist_num = str(i)
                 # Extract zero offset, if refined
                 GetParamSig("", hist_num, ":Zero", "Zero Offset")
@@ -251,7 +251,7 @@ class Exportbracket(G2fil.ExportBaseclass):
                                 model_parameters[
                                     phase_name + " " + atom[0] + " " + atom_axis
                                 ] = ValEsd(atom_axis_val, atom_axis_sig)
-                            except:
+                            except:  # noqa: E722
                                 pass
 
             # Extract rWp
@@ -278,7 +278,7 @@ class Exportbracket(G2fil.ExportBaseclass):
                 import wx
 
                 wx.EndBusyCursor()
-            except:
+            except:  # noqa: E722
                 pass
         self.CloseFile()
 
@@ -316,7 +316,7 @@ class Export3col(G2fil.ExportBaseclass):
                 param_index = self.OverallParms["Covariance"]["varyList"].index(
                     phase_num + ":" + hist_num + keyword
                 )
-            except:
+            except:  # noqa: E722
                 pass
             if param_index is not None:
                 param = self.OverallParms["Covariance"]["variables"][param_index]
@@ -334,7 +334,7 @@ class Export3col(G2fil.ExportBaseclass):
             import wx
 
             wx.BeginBusyCursor()
-        except:
+        except:  # noqa: E722
             pass
 
         # Export model parameters in bracket notation
@@ -388,7 +388,7 @@ class Export3col(G2fil.ExportBaseclass):
                             model_parameters[phasenam + " Phase Fraction"] = (
                                 self.ValEsd2col(phasefrac, phasefrac_unc)
                             )
-                    except:
+                    except:  # noqa: E722
                         pass
 
                     try:
@@ -409,7 +409,7 @@ class Export3col(G2fil.ExportBaseclass):
                             model_parameters[phasenam + " Weight Fraction"] = (
                                 self.ValEsd2col(weight_frac, weight_frac_unc)
                             )
-                    except:
+                    except:  # noqa: E722
                         pass
 
                     # Get preferred orientation details for phase, if refined
@@ -437,13 +437,13 @@ class Export3col(G2fil.ExportBaseclass):
                                 MD_bracket,
                                 "",
                             )
-                    except:
+                    except:  # noqa: E722
                         pass
                 # Increment phase number counter
-                phase_num += 1
+                phase_num += 1  # noqa: SIM113
 
             # Extract sample displacements, zero offset and D(ij)s (if refined)
-            for i, hist_name in enumerate(self.Histograms):
+            for i, hist_name in enumerate(self.Histograms):  # noqa: B007
                 hist_num = str(i)
                 # Extract zero offset, if refined
                 GetParamSig("", hist_num, ":Zero", "Zero Offset")
@@ -529,7 +529,7 @@ class Export3col(G2fil.ExportBaseclass):
                                 model_parameters[
                                     phase_name + " " + atom[0] + " " + atom_axis
                                 ] = self.ValEsd2col(atom_axis_val, atom_axis_sig)
-                            except:
+                            except:  # noqa: E722
                                 pass
 
             # Extract rWp
@@ -546,6 +546,6 @@ class Export3col(G2fil.ExportBaseclass):
                 import wx
 
                 wx.EndBusyCursor()
-            except:
+            except:  # noqa: E722
                 pass
         self.CloseFile()

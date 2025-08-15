@@ -37,9 +37,9 @@ from . import GSASIImath as G2mth
 
 # import GSASIIobj as G2obj
 from . import GSASIIplot as G2plt
-from . import GSASIIpwdGUI as G2pdG
 from .GUI import GSASIIctrlGUI as G2G
 from .GUI import GSASIIdataGUI as G2gd
+from .GUI import GSASIIpwdGUI as G2pdG
 
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -147,7 +147,7 @@ savedX = None  # contains the X values in plot units for "master" pattern, with 
 
 
 #### PlotPatterns ################################################################################
-def ReplotPattern(G2frame, newPlot, plotType, PatternName=None, PickName=None):
+def ReplotPattern(G2frame, newPlot, plotType, PatternName=None, PickName=None):  # noqa: ARG001
     """This does the same as PlotPatterns except that it expects the information
     to be plotted (pattern name, item picked in tree + eventually the reflection list)
     to be passed as names rather than references to wx tree items, defined as class entries
@@ -236,10 +236,10 @@ def PlotPatterns(
     """
     if extraKeys is None:
         extraKeys = []
-    global PlotList, IndxFrom
+    global PlotList, IndxFrom  # noqa: PLW0603
     IndxFrom = indexFrom
 
-    def PublishPlot(event):
+    def PublishPlot(event):  # noqa: ARG001
         msg = ""
         if "PWDR" not in plottype:
             msg += " * only PWDR histograms can be used"
@@ -336,7 +336,7 @@ def PlotPatterns(
                 Page.plotStyle["refDelt"] = 0.1 * YmaxS
             newPlot = True
         elif event.key == "S" and "PWDR" in plottype:
-            choice = list(mpl.cm.datad.keys()) + [
+            choice = list(mpl.cm.datad.keys()) + [  # noqa: RUF005
                 "GSPaired",
                 "GSPaired_r",
             ]  # if not m.endswith("_r")
@@ -407,7 +407,7 @@ def PlotPatterns(
             Page.plotStyle["Offset"][1] += 1.0
         elif event.key == "o":
             if G2frame.SinglePlot and not G2frame.Contour:
-                global obsInCaption  # include the observed, calc,... items in the plot caption (PlotPatterns)
+                global obsInCaption  # include the observed, calc,... items in the plot caption (PlotPatterns)  # noqa: PLW0603
                 obsInCaption = not obsInCaption
             elif not G2frame.SinglePlot:
                 G2frame.Cmax = 1.0
@@ -609,7 +609,7 @@ def PlotPatterns(
         will be updated with info based on the mouse position.
         Also displays reflection labels as tooltips when mouse is over tickmarks
         """
-        global PlotList
+        global PlotList  # noqa: PLW0602
         G2plt.SetCursor(Page)
         # excluded region animation
         if Page.excludeMode and Page.savedplot:
@@ -691,7 +691,7 @@ def PlotPatterns(
                 try:
                     dsp = G2lat.Pos2dsp(Parms, xpos)
                     q = 2.0 * np.pi / dsp
-                except:
+                except:  # noqa: E722
                     dsp = -1
                     q = -1
             elif plottype in ["SASD", "REFD"]:
@@ -814,11 +814,11 @@ def PlotPatterns(
             )
 
     def OnPress(
-        event,
+        event,  # noqa: ARG001
     ):  # ugh - this removes a matplotlib error for mouse clicks in log plots
         np.seterr(invalid="ignore")
 
-    def onMoveDiffCurve(event):
+    def onMoveDiffCurve(event):  # noqa: ARG001
         """Respond to a menu command to move the difference curve."""
         if not DifLine[0]:
             print("No difference curve!")
@@ -827,7 +827,7 @@ def PlotPatterns(
         G2frame.G2plotNB.Parent.Raise()
         OnPickPwd(None)
 
-    def onMoveTopTick(event):
+    def onMoveTopTick(event):  # noqa: ARG001
         """Respond to a menu command to move the tick locations."""
         if len(Page.phaseList) == 0:
             print("there are tick marks (no phases)")
@@ -836,7 +836,7 @@ def PlotPatterns(
         G2frame.G2plotNB.Parent.Raise()
         OnPickPwd(None)
 
-    def onMoveTickSpace(event):
+    def onMoveTickSpace(event):  # noqa: ARG001
         """Respond to a menu command to move the tick spacing."""
         if len(Page.phaseList) == 0:
             print("there are tick marks (no phases)")
@@ -845,7 +845,7 @@ def PlotPatterns(
         G2frame.G2plotNB.Parent.Raise()
         OnPickPwd(None)
 
-    def onMovePeak(event):
+    def onMovePeak(event):  # noqa: ARG001
         reflGrid = G2frame.reflGrid
         selectedPeaks = list(
             set(
@@ -936,7 +936,7 @@ def PlotPatterns(
                     axis = Page.figure.gca()
                 axis.draw_artist(G2frame.itemPicked)
                 Page.canvas.blit(axis.bbox)
-            except:
+            except:  # noqa: E722
                 pass
 
         def OnDragTickmarks(event):
@@ -993,9 +993,9 @@ def PlotPatterns(
         inXtraPeakMode = False  # Ignore if peak list menubar is not yet created
         try:
             inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
-        except:
+        except:  # noqa: E722
             pass
-        global Page
+        global Page  # noqa: PLW0603
         try:
             Parms, Parms2 = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(
@@ -1066,7 +1066,7 @@ def PlotPatterns(
             phname = ""
             try:
                 phname = str(pick).split("(", 1)[1][:-1]
-            except:
+            except:  # noqa: E722
                 pass
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):
                 # picked a data point, add a new peak
@@ -1447,7 +1447,7 @@ def PlotPatterns(
                     xy[0] = G2lat.Dsp2pos(Parms, 2 * np.pi / xy[0])
                 elif Page.plotStyle["dPlot"]:  # dplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms, xy[0])
-            except:
+            except:  # noqa: E722
                 return
             if Page.plotStyle["sqrtPlot"]:
                 xy[1] = xy[1] ** 2
@@ -1503,7 +1503,7 @@ def PlotPatterns(
                     xpos = G2lat.Dsp2pos(Parms, 2 * np.pi / xpos)
                 elif Page.plotStyle["dPlot"]:  # dplot - convert back to 2-theta
                     xpos = G2lat.Dsp2pos(Parms, xpos)
-            except:
+            except:  # noqa: E722
                 return
             magIndex = G2frame.MagLines.index(G2frame.itemPicked)
             data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
@@ -1519,7 +1519,7 @@ def PlotPatterns(
             Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, "Reflection Lists")
             pickPhase = str(G2frame.itemPicked).split("(", 1)[1][:-1]
             phNum = Page.phaseList.index(pickPhase)
-        except:
+        except:  # noqa: E722
             pass
         if (
             G2frame.GPXtree.GetItemText(G2frame.PickId) == "Peak List"
@@ -1569,7 +1569,7 @@ def PlotPatterns(
                 inXtraPeakMode = False  # Ignore if peak list menubar is not yet created
                 try:
                     inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
-                except:
+                except:  # noqa: E722
                     pass
                 if inXtraPeakMode:
                     tbl = peaks["xtraPeaks"]
@@ -1630,14 +1630,14 @@ def PlotPatterns(
         wx.CallAfter(PlotPatterns, G2frame, plotType=plottype, extraKeys=extraKeys)
         G2frame.itemPicked = None
 
-    def onSetPlotLim(event):
+    def onSetPlotLim(event):  # noqa: ARG001
         """Specify plot limits manually"""
 
         def onChecked(event):
             try:
                 i = cbox.index(event.EventObject)
                 showChecked(i)
-            except:
+            except:  # noqa: E722
                 pass
 
         def showChecked(i):
@@ -1650,7 +1650,7 @@ def PlotPatterns(
                 dbox[i].ChangeValue(dbox[i].GetValue())
             dbox[i].Enable(checked)
 
-        def applyLims(event):
+        def applyLims(event):  # noqa: ARG001
             Page.toolbar.push_current()
             CurLims = {}
             CurLims["xlims"] = list(Plot.get_xlim())
@@ -1670,7 +1670,7 @@ def PlotPatterns(
                     try:
                         CurLims[var][i] = float(G2frame.FixedLimits[var][i])
                         CurLims[var][i] = float(G2frame.FixedLimits[var][i])
-                    except:
+                    except:  # noqa: E722
                         pass
             Plot.set_xlim(CurLims["xlims"])
             if G2frame.Weight:
@@ -1731,7 +1731,7 @@ def PlotPatterns(
         btn.Bind(wx.EVT_BUTTON, applyLims)
         hbox.Add(btn)
         OKbtn = wx.Button(dlg, wx.ID_OK)
-        OKbtn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))
+        OKbtn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))  # noqa: ARG005
         hbox.Add(OKbtn)
         hbox.Add((-1, -1), 1, wx.ALL | wx.EXPAND, 1)
         vbox.Add(hbox, 1, wx.ALL | wx.EXPAND, 1)
@@ -1741,7 +1741,7 @@ def PlotPatterns(
         dlg.Destroy()
         applyLims(None)  # apply limits
 
-    def onPlotFormat(event):
+    def onPlotFormat(event):  # noqa: ARG001
         """Change the appearance of the current plot"""
         changePlotSettings(G2frame, Plot)
 
@@ -1806,7 +1806,7 @@ def PlotPatterns(
             lims = [min(DZ[Ibeg:Ifin]), max(DZ[Ibeg:Ifin])]
             if all(np.isfinite(lims)):
                 Plot1.set_ylim(lims)
-        except:
+        except:  # noqa: E722
             pass
         CalcLine[0].set_xdata(X)
         ObsLine[0].set_xdata(X)
@@ -1834,13 +1834,13 @@ def PlotPatterns(
         else:
             return "_" + string
 
-    def Replot(*args):
+    def Replot(*args):  # noqa: ARG001
         PlotPatterns(G2frame, plotType=plottype, extraKeys=extraKeys)
 
-    def onHKLabelConfig(event):
+    def onHKLabelConfig(event):  # noqa: ARG001
         """Configure all HKL markers in all phases"""
 
-        def onDelAll(event):
+        def onDelAll(event):  # noqa: ARG001
             """Delete all HKL markers in all phases"""
             data[0]["HKLmarkers"] = {}
             dlg.EndModal(wx.ID_OK)
@@ -1897,7 +1897,7 @@ def PlotPatterns(
         btnsizer = wx.StdDialogButtonSizer()
         btn = wx.Button(dlg, wx.ID_OK)
         btn.SetDefault()
-        btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+        btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))  # noqa: ARG005
         btnsizer.AddButton(btn)
         btnsizer.Realize()
         sizer.Add(btnsizer, 0, wx.EXPAND | wx.ALL, 5)
@@ -1906,7 +1906,7 @@ def PlotPatterns(
         dlg.CenterOnParent()
         dlg.ShowModal()
 
-    def onPartialConfig(event):
+    def onPartialConfig(event):  # noqa: ARG001
         """respond to Phase partials config menu command.
         Computes partials if needed and then displays a window with options
         for each phase. Plot is refreshed each time a setting is changed.
@@ -1935,16 +1935,16 @@ def PlotPatterns(
         configPartialDisplay(G2frame, Page.phaseColors, Replot)
 
     #### beginning PlotPatterns execution
-    global exclLines, Page
-    global DifLine  # BHT: probably does not need to be global
-    global Ymax
-    global Pattern, mcolors, Plot, Page, imgAx, Temps
-    global savedX
+    global exclLines, Page  # noqa: PLW0603
+    global DifLine  # BHT: probably does not need to be global  # noqa: PLW0603
+    global Ymax  # noqa: PLW0603
+    global Pattern, mcolors, Plot, Page, imgAx, Temps  # noqa: PLW0603
+    global savedX  # noqa: PLW0603
     plottype = plotType
     inXtraPeakMode = False  # Ignore if peak list menubar is not yet created
     try:
         inXtraPeakMode = G2frame.dataWindow.XtraPeakMode.IsChecked()
-    except:
+    except:  # noqa: E722
         pass
 
     # get powder pattern colors from config settings
@@ -2007,8 +2007,8 @@ def PlotPatterns(
         Page.plotStyle["Normalize"] = False
     # reset plot when changing between different data types
     try:
-        G2frame.lastPlotType
-    except:
+        G2frame.lastPlotType  # noqa: B018
+    except:  # noqa: E722
         G2frame.lastPlotType = None
     if plotType == "PWDR":
         try:
@@ -2035,14 +2035,14 @@ def PlotPatterns(
             pass
 
     try:
-        G2frame.FixedLimits
-    except:
+        G2frame.FixedLimits  # noqa: B018
+    except:  # noqa: E722
         G2frame.FixedLimits = {
             i: ["", ""] for i in ("xlims", "ylims", "dylims", "cylims")
         }
     try:
-        G2frame.UseLimits
-    except:
+        G2frame.UseLimits  # noqa: B018
+    except:  # noqa: E722
         G2frame.UseLimits = {
             i: [False, False] for i in ("xlims", "ylims", "dylims", "cylims")
         }
@@ -2174,7 +2174,7 @@ def PlotPatterns(
                 valid_colors.append(color)
             else:
                 invalid_colors.append(color)
-        except:
+        except:  # noqa: E722
             pass
     if invalid_colors and not hasattr(Page, "phaseColors"):  # show error once
         print(
@@ -2202,7 +2202,7 @@ def PlotPatterns(
                     kwargs,
                 )
             )
-    except:  # skip a C++ error
+    except:  # skip a C++ error  # noqa: E722
         pass
     # now start plotting
     G2frame.G2plotNB.status.DestroyChildren()  # get rid of special stuff on status bar
@@ -2441,7 +2441,7 @@ def PlotPatterns(
                     G2gd.GetGPXtreeItemId(G2frame, pid, "Limits")
                 )
             )
-            Temps.append("{:.1f}K".format(SampleList[-1]["Temperature"]))
+            Temps.append(f"{SampleList[-1]['Temperature']:.1f}K")
         if not G2frame.Contour:
             PlotList.reverse()
             ParmList.reverse()
@@ -2560,7 +2560,7 @@ def PlotPatterns(
     unequalArrays = False  # set to True for contour plots with unequal pixels
     avgStep = None
     if G2frame.Contour:  # detect unequally spaced points in a contour plot
-        for N, Pattern in enumerate(PlotList):
+        for N, Pattern in enumerate(PlotList):  # noqa: B007
             xye = np.array(ma.getdata(Pattern[1]))  # strips mask = X,Yo,W,Yc,Yb,Yd
             if Page.plotStyle["qPlot"] and "PWDR" in plottype and not ifLimits:
                 X = 2.0 * np.pi / G2lat.Pos2dsp(Parms, xye[0])
@@ -2675,9 +2675,9 @@ def PlotPatterns(
                     continue
                 multArray[Pattern[1][0] > x] = m
                 if Page.plotStyle["qPlot"]:
-                    x = 2.0 * np.pi / G2lat.Pos2dsp(Parms, x)
+                    x = 2.0 * np.pi / G2lat.Pos2dsp(Parms, x)  # noqa: PLW2901
                 elif Page.plotStyle["dPlot"]:
-                    x = G2lat.Pos2dsp(Parms, x)
+                    x = G2lat.Pos2dsp(Parms, x)  # noqa: PLW2901
                 # is range in displayed range (defined after newplot)?
                 if not newPlot:
                     (xmin, xmax), ylim = G2frame.xylim
@@ -2893,7 +2893,7 @@ def PlotPatterns(
                         ZB = Z + B
                     try:
                         Plot.set_yscale("log", nonpositive="mask")  # >=3.3
-                    except:
+                    except:  # noqa: E722
                         Plot.set_yscale("log", nonpositive="mask")
                     if np.any(W > 0.0):
                         lims = [np.min(np.trim_zeros(W)) / 2.0, np.max(Y) * 2.0]
@@ -2948,7 +2948,7 @@ def PlotPatterns(
                     if "PWDR" in plottype:
                         try:
                             Plot.set_yscale("log", nonpositive="mask")  # >=3.3
-                        except:
+                        except:  # noqa: E722
                             Plot.set_yscale("log", nonpositive="mask")
                         Plot.plot(
                             X,
@@ -2983,7 +2983,7 @@ def PlotPatterns(
                         try:
                             Plot.set_xscale("log", nonpositive="mask")  # >=3.3
                             Plot.set_yscale("log", nonpositive="mask")
-                        except:
+                        except:  # noqa: E722
                             Plot.set_xscale("log", nonpositive="mask")
                             Plot.set_yscale("log", nonpositive="mask")
                         if G2frame.ErrorBars:
@@ -3153,9 +3153,9 @@ def PlotPatterns(
                     # write a .csv file; not fully tested, but probably works where allowed
                     if "PWDR" in plottype and G2frame.SinglePlot and plotOpt["saveCSV"]:
                         plotOpt["saveCSV"] = False
-                        fp = open(plotOpt["CSVfile"], "w")
+                        fp = open(plotOpt["CSVfile"], "w")  # noqa: SIM115
                         G2plt.Write2csv(fp, ['"limits"', lims[0][0], lims[0][1]])
-                        l = []
+                        l = []  # noqa: E741
                         PeakId = G2gd.GetGPXtreeItemId(
                             G2frame, G2frame.PatternId, "Peak List"
                         )
@@ -3164,7 +3164,7 @@ def PlotPatterns(
                             tbl = peaks["xtraPeaks"]
                         else:
                             tbl = peaks["peaks"]
-                        for i, item in enumerate(tbl):
+                        for i, item in enumerate(tbl):  # noqa: B007
                             if type(item) is dict:
                                 continue
                             pos = item[0]
@@ -3177,7 +3177,7 @@ def PlotPatterns(
                         if l:
                             G2plt.Write2csv(fp, ['"peaks"', *l])
                         peaks["LaueFringe"] = peaks.get("LaueFringe", {})
-                        l = []
+                        l = []  # noqa: E741
                         for pos in peaks["LaueFringe"].get("satellites", []):
                             if Page.plotStyle["qPlot"]:
                                 l.append(2.0 * np.pi / G2lat.Pos2dsp(Parms, pos))
@@ -3256,7 +3256,7 @@ def PlotPatterns(
                                     plotVline(
                                         Page, Plot, Lines, Parms, item[0], color, True
                                     )
-                        except:
+                        except:  # noqa: E722
                             pass
                         peaks["LaueFringe"] = peaks.get("LaueFringe", {})
                         SatLines = []
@@ -3287,7 +3287,7 @@ def PlotPatterns(
                                 nonpositive="mask",
                                 linewidth=1.5,
                             )
-                        except:
+                        except:  # noqa: E722
                             Plot.semilogy(
                                 X,
                                 Y,
@@ -3305,7 +3305,7 @@ def PlotPatterns(
                                 nonpositive="mask",
                                 linewidth=1.5,
                             )
-                        except:
+                        except:  # noqa: E722
                             Plot.semilogy(
                                 X,
                                 Y,
@@ -3325,7 +3325,7 @@ def PlotPatterns(
                             nonpositive="mask",
                             linewidth=1.5,
                         )
-                    except:
+                    except:  # noqa: E722
                         Plot.loglog(
                             X, Y, mcolors.cmap(icolor), picker=False, nonpositive="mask"
                         )
@@ -3387,7 +3387,7 @@ def PlotPatterns(
             elif Page.plotStyle["dPlot"]:
                 xpos = G2lat.Pos2dsp(Parms, xpos)
             if Page.plotStyle["sqrtPlot"]:
-                ypos = np.sqrt(abs(ypos)) * np.sign(ypos)
+                ypos = np.sqrt(abs(ypos)) * np.sign(ypos)  # noqa: PLW2901
             artist = Plot.text(
                 xpos,
                 ypos,
@@ -3404,7 +3404,7 @@ def PlotPatterns(
             artist.key = (ph, key)
     # ============================================================
     if timeDebug:
-        print("plot fill time: %.3f" % (time.time() - time0))
+        print(f"plot fill time: {time.time() - time0:.3f}")
     if Page.plotStyle.get("title", True) and not magLineList:
         Plot.set_title(Title)
 
@@ -3500,7 +3500,7 @@ def PlotPatterns(
                 and G2frame.GPXtree.GetItemText(G2frame.PickId) == "Peak List"
             )
         ):
-            l = GSASIIpath.GetConfigValue("Tick_length", 8.0)
+            l = GSASIIpath.GetConfigValue("Tick_length", 8.0)  # noqa: E741
             w = GSASIIpath.GetConfigValue("Tick_width", 1.0)
             for pId, phase in enumerate(Page.phaseList):
                 if "list" in str(type(Phases[phase])):
@@ -3636,7 +3636,7 @@ def PlotPatterns(
                 imgAx.set_yticklabels(ylabs)
             Page.figure.colorbar(Page.Img)
         if timeDebug:
-            print("Contour display time: %.3f" % (time.time() - time0))
+            print(f"Contour display time: {time.time() - time0:.3f}")
     else:
         G2frame.Lines = Lines
         G2frame.MagLines = magMarkers
@@ -3675,15 +3675,15 @@ def PlotPatterns(
             if y < 0 and (Page.plotStyle["sqrtPlot"] or Page.plotStyle["logPlot"]):
                 y = axis.get_ylim()[0]  # put out of range point at bottom of plot
             elif Page.plotStyle["sqrtPlot"]:
-                y = math.sqrt(y)
+                y = math.sqrt(y)  # noqa: PLW2901
             if Page.plotStyle["qPlot"]:  # Q - convert from 2-theta
                 if Parms:
-                    x = 2 * np.pi / G2lat.Pos2dsp(Parms, x)
+                    x = 2 * np.pi / G2lat.Pos2dsp(Parms, x)  # noqa: PLW2901
                 else:
                     break
             elif Page.plotStyle["dPlot"]:  # d - convert from 2-theta
                 if Parms:
-                    x = G2lat.Dsp2pos(Parms, x)
+                    x = G2lat.Dsp2pos(Parms, x)  # noqa: PLW2901
                 else:
                     break
             Plot.plot(x, y * mult, "rD", clip_on=Clip_on, picker=True, pickradius=10.0)
@@ -3814,7 +3814,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
             MPL2rgba = mpcls.to_rgba
         else:
             MPL2rgba = mpcls.ColorConverter().to_rgba
-        for _i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):  # noqa: E741
             lbl = l.get_label()
             if "magline" in lbl:
                 pass
@@ -3829,14 +3829,14 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
                 plotOpt["colors"][lbl] = MPL2rgba(l.get_color())
                 plotOpt["legend"][lbl] = True
         plotWidgets["phaseList"].clear()
-        for ph, l in Page.tickDict.items():
+        for ph, l in Page.tickDict.items():  # noqa: E741
             plotWidgets["phaseList"].append(ph)
             if lbl in plotOpt["colors"]:
                 continue
             plotOpt["colors"][ph] = MPL2rgba(l.get_color())
             plotOpt["legend"][ph] = True
 
-    def RefreshPlot(*args, **kwargs):
+    def RefreshPlot(*args, **kwargs):  # noqa: ARG001
         """Update the plot on the dialog"""
         figure.clear()
         CopyRietveldPlot(G2frame, Pattern, Plot, Page, figure, plotWidgets["phaseList"])
@@ -3954,7 +3954,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
             ".": 11,
         }
 
-        fp = open(filename, "w")
+        fp = open(filename, "w")  # noqa: SIM115
         fp.write("# Grace project file\n#\n@version 50010\n")
         # size of plots on page
         xmar = (0.15, 1.2)
@@ -3975,12 +3975,10 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
             f"@view ymin {(1.0 / top2bottom) * (ymar[1] - ymar[0]) + ymar[0]}\n@view ymax {ymar[1]}\n"
         )
         xticks = Plot.get_xaxis().get_majorticklocs()
-        fp.write("@{}axis tick major {}\n".format("x", xticks[1] - xticks[0]))
+        fp.write(f"@xaxis tick major {xticks[1] - xticks[0]}\n")
         yticks = Plot.get_yaxis().get_majorticklocs()
-        fp.write("@{}axis tick major {}\n".format("y", yticks[1] - yticks[0]))
-        fp.write(
-            "@{}axis ticklabel char size {}\n".format("x", 0)
-        )  # turns off axis labels
+        fp.write(f"@yaxis tick major {yticks[1] - yticks[0]}\n")
+        fp.write(f"@xaxis ticklabel char size {0}\n")  # turns off axis labels
         if "sqrt" in Plot.yaxis.get_label().get_text():
             # ylbl = 'sqrt(Intensity)' # perhaps there is a way to get the symbol in xmgrace but I did not find it
             ylbl = r"\x\#{d6}\f{}\oIntensity\O"  # from Carlo Segre
@@ -3998,7 +3996,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
         )
         # ======================================================================
         # plot magnification lines and labels (first, so "under" data)
-        for _i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):  # noqa: E741
             lbl = l.get_label()
             if "magline" not in lbl:
                 continue
@@ -4012,7 +4010,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
             )
             s = "@ line linewidth 2\n@ line linestyle 2\n@ line color 1\n@ line arrow 0\n@line def\n"
             fp.write(s)
-        for l in Plot.texts:
+        for l in Plot.texts:  # noqa: E741
             if "magline" not in l.get_label():
                 continue
             if l.xycoords[0] == "data":
@@ -4032,7 +4030,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
         datnum = -1
         # ======================================================================
         # plot data
-        for l in Plot.lines:
+        for l in Plot.lines:  # noqa: E741
             if l.get_label() in ("obs", "calc", "bkg", "zero", "diff"):
                 lbl = l.get_label()
             elif l.get_label()[1:] in ("obs", "calc", "bkg", "zero", "diff"):
@@ -4088,7 +4086,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
         # ======================================================================
         # reflection markers. Create a single hidden entry for the legend
         # and use error bars for the vertical lines
-        for l in Plot.lines:
+        for l in Plot.lines:  # noqa: E741
             glbl = lbl = l.get_label()
             if l not in Page.tickDict.values():
                 continue
@@ -4173,8 +4171,8 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
         elif yti > 5:
             yti = 5
         ytick = yti * 10 ** int(np.log10(ytick / yti) + 0.5)
-        fp.write("@{}axis tick major {}\n".format("x", xticks[1] - xticks[0]))
-        fp.write("@{}axis tick major {}\n".format("y", ytick))
+        fp.write(f"@xaxis tick major {xticks[1] - xticks[0]}\n")
+        fp.write(f"@yaxis tick major {ytick}\n")
         fp.write("@type xy\n")
         try:  # new behavior: .mask can return a single np.False_ value
             savedX_mask = savedX.mask
@@ -4196,7 +4194,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
             """Ensures Origin gets shut down if an uncaught exception"""
             try:
                 op.exit()
-            except:
+            except:  # noqa: E722
                 pass
             print("\n****OriginPro error****")
             import traceback
@@ -4219,7 +4217,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
 
         try:
             import originpro as op
-        except:
+        except:  # noqa: E722
             note1, note2 = "", ""
             # get pip location
             pyPath = os.path.split(os.path.realpath(sys.executable))[0]
@@ -4242,7 +4240,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
                 win32clipboard.SetClipboardText(f"{pip} install originpro")
                 win32clipboard.CloseClipboard()
                 note2 = "\nNote: command copied to clipboard (use control-V to paste in cmd.exe window)"
-            except:
+            except:  # noqa: E722
                 pass
             msg = f"""Use of the OriginPro exporter requires that OriginPro be
 installed on your computer as well as a communication
@@ -4265,7 +4263,7 @@ in a cmd.exe window to do this.
 
         tickpos = {}
 
-        for i, l in enumerate(Plot.lines):
+        for i, l in enumerate(Plot.lines):  # noqa: B007, E741
             lbl = l.get_label()
             if lbl[1:] in ("obs", "calc", "bkg", "zero", "diff"):
                 lbl = lbl[1:]
@@ -4290,7 +4288,7 @@ in a cmd.exe window to do this.
         if tickpos:
             lblList.append("tick-pos")
             valueList.append([])
-            for i in tickpos:
+            for i in tickpos:  # noqa: PLC0206
                 valueList[-1].append(i)
                 valueList[-1].append(tickpos[i])
         # add (obs-calc)/sigma [=(obs-calc)*sqrt(weight)]
@@ -4302,7 +4300,7 @@ in a cmd.exe window to do this.
             lblList.append("excluded")
             valueList.append(1 * Pattern[1][0].mask)
         # magnifcation values
-        for l in Plot.texts:
+        for l in Plot.texts:  # noqa: E741
             lbl = l.get_label()
             if "magline" not in lbl:
                 continue
@@ -4469,7 +4467,7 @@ in a cmd.exe window to do this.
                     return
                 if line:
                     line += " "
-                item = str(item)
+                item = str(item)  # noqa: PLW2901
                 if " " in item:
                     line += '"' + item + '"'
                 else:
@@ -4486,7 +4484,7 @@ in a cmd.exe window to do this.
         legends = []
         zerovals = None
         fontsize = 18 * float(plotOpt["labelSize"]) / 12.0
-        for _i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):  # noqa: E741
             lbl = l.get_label()
             if not plotOpt["Show"].get(lbl[1:], True):
                 continue
@@ -4522,7 +4520,7 @@ in a cmd.exe window to do this.
             if lbl != "zero":
                 valueList.append(l.get_ydata())
         valueList.append(Pattern[1][5] * np.sqrt(Pattern[1][2]))
-        fp = open(filename, "w")
+        fp = open(filename, "w")  # noqa: SIM115
         fp.write(f'''IGOR
 X setDataFolder root:
 X //   ***   Replace GSAS2Data with name of current project in GSAS.
@@ -4577,12 +4575,12 @@ X ModifyGraph btLen=5
         else:
             ylabel = "Intensity"
         fp.write(
-            """X //  ***   add axis labels and position them
-X Label left "{}"
-X Label Res_left "{}"
-X Label bottom "{}"
+            f"""X //  ***   add axis labels and position them
+X Label left "{ylabel}"
+X Label Res_left "∆/σ"
+X Label bottom "2Θ"
 X ModifyGraph lblPosMode=0,lblPos(Res_left)=84
-""".format(ylabel, "∆/σ", "2Θ")
+"""  # noqa: RUF001
         )
         fp.write(
             """X //  ***   set display limits.
@@ -4608,7 +4606,7 @@ X SetAxis Res_bot {0}, {1}
         # ''')
         for m in markerSettings:
             fp.write(f"X ModifyGraph {m}\n")
-        for lbl in Icolor:
+        for lbl in Icolor:  # noqa: PLC0206
             fp.write(
                 "X ModifyGraph rgb({})=({:.0f},{:.0f},{:.0f})\n".format(
                     lbl, *Icolor[lbl]
@@ -4620,7 +4618,7 @@ X SetAxis Res_bot {0}, {1}
         fp.write("X //  ***   End modify how data are displayed ****\n")
         # loop over reflections
         ticknum = 0
-        for _i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):  # noqa: E741
             lbl = l.get_label()
             if not plotOpt["Show"].get(lbl, True):
                 continue
@@ -4652,7 +4650,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
 
         # plot magnification lines and labels
         j = 0
-        for _i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):  # noqa: E741
             lbl = l.get_label()
             if "magline" not in lbl:
                 continue
@@ -4665,7 +4663,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
             )
             fp.write(f"END\nX AppendToGraph mag{j} vs mag{j}X\n")
             fp.write(f"X ModifyGraph lstyle(mag{j})=3,rgb(mag{j})=(0,0,0)\n")
-        for l in Plot.texts:
+        for l in Plot.texts:  # noqa: E741
             if "magline" not in l.get_label():
                 continue
             if l.xycoords[0] == "data":
@@ -4701,7 +4699,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         lblList.append("used")
         try:
             valueList.append([0 if i else 1 for i in savedX.mask])
-        except:
+        except:  # noqa: E722
             pass
         if "TOF" in Plot.xaxis.get_label_text():
             lblList.append("x, TOF (msec)")
@@ -4716,7 +4714,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         else:
             lblList.append("x, ?")
         valueList.append(savedX.data)
-        for i, l in enumerate(Plot.lines):
+        for i, l in enumerate(Plot.lines):  # noqa: B007, E741
             lbl = l.get_label()
             if lbl[1:] in ("obs", "calc", "bkg", "zero", "diff"):
                 lbl = l.get_label()[1:]
@@ -4744,7 +4742,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         if tickpos:
             lblList.append("tick-pos")
             valueList.append([])
-            for i in tickpos:
+            for i in tickpos:  # noqa: PLC0206
                 valueList[-1].append(i)
                 valueList[-1].append(tickpos[i])
         # add (obs-calc)/sigma [=(obs-calc)*sqrt(weight)]
@@ -4761,7 +4759,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         lblList.append("Axis-limits")
         valueList.append(list(Plot.get_xlim()) + list(Plot.get_ylim()))
         # magnification values
-        for l in Plot.texts:
+        for l in Plot.texts:  # noqa: E741
             lbl = l.get_label()
             if "magline" not in lbl:
                 continue
@@ -4773,14 +4771,14 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
                 lbl = "mag"
                 lblList.append(lbl)
                 valueList.append([l.get_text(), l.get_position()[0]])
-        fp = open(filename, "w")
+        fp = open(filename, "w")  # noqa: SIM115
         G2plt.Write2csv(fp, lblList, header=True)
         # invert lists into columns, use iterator for all values
         for row in itertools.zip_longest(*valueList, fillvalue=" "):
             G2plt.Write2csv(fp, row)
         fp.close()
 
-    def onSave(event):
+    def onSave(event):  # noqa: ARG001
         """Write the current plot to a file"""
         hcfigure = mplfig.Figure(
             dpi=plotOpt["dpi"], figsize=(plotOpt["width"], plotOpt["height"])
@@ -4824,17 +4822,17 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         )
         RefreshPlot()
 
-    def OnSavePlotOpt(event):
+    def OnSavePlotOpt(event):  # noqa: ARG001
         'Save current "publish" settings to a JSON file with extension .pltopts'
         import json
 
         filroot = os.path.splitext(G2frame.GSASprojectfile)[0] + ".pltopts"
         saveFile = G2G.askSaveFile(G2frame, filroot, ".pltopts", "Saved plot options")
         if saveFile:
-            json.dump(plotOpt, open(saveFile, "w"))
+            json.dump(plotOpt, open(saveFile, "w"))  # noqa: SIM115
             print(f"Plot options written to {saveFile!r}")
 
-    def OnLoadPlotOpt(event):
+    def OnLoadPlotOpt(event):  # noqa: ARG001
         'Set current "publish" settings from saved settings in a JSON file (extension .pltopts)'
         import json
 
@@ -4848,7 +4846,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         )
         if fdlg.ShowModal() == wx.ID_OK:
             filroot = fdlg.GetPath()
-            plotOpt.update(json.load(open(filroot)))
+            plotOpt.update(json.load(open(filroot)))  # noqa: SIM115
             wx.CallAfter(PublishRietveldPlot, G2frame, Pattern, Plot, Page, reuse=dlg)
         fdlg.Destroy()
 
@@ -5090,7 +5088,7 @@ Note that the OriginPro connection export requires Origin 2021 or later."""
     fmtval.SetFocus()  # move focus off from pixel size
 
 
-def CopyRietveldPlot(G2frame, Pattern, Plot, Page, figure, phaseList):
+def CopyRietveldPlot(G2frame, Pattern, Plot, Page, figure, phaseList):  # noqa: ARG001
     """Copy the contents of the Rietveld graph from the plot window to another
     mpl figure which can be on screen or can be a file for hard copy.
     Uses values from Pattern to also generate a delta/sigma plot below the
@@ -5142,7 +5140,7 @@ def CopyRietveldPlot(G2frame, Pattern, Plot, Page, figure, phaseList):
     legLbl = []
     legLine = []
     # get the obs/calc... & magnification lines and xfer them
-    for _i, l in enumerate(Plot.lines):
+    for _i, l in enumerate(Plot.lines):  # noqa: E741
         lbl = l.get_label()
         if lbl[1:] in ("obs", "calc", "bkg", "zero", "diff"):
             lbl = lbl[1:]
@@ -5247,7 +5245,7 @@ def CopyRietveldPlot(G2frame, Pattern, Plot, Page, figure, phaseList):
     #            print('other line:',lbl)
 
     # copy text items: magnification labels and reflection markers
-    for l in Plot.texts:
+    for l in Plot.texts:  # noqa: E741
         lbl = l.get_label()
         if lbl[1:] in phaseList:  # reflection markers
             if not plotOpt["Show"].get(lbl[1:], True):
@@ -5297,7 +5295,7 @@ def changePlotSettings(G2frame, Plot):
     prior to export of plot with "floppy disk" button
     """
 
-    def RefreshPlot(*args, **kwargs):
+    def RefreshPlot(*args, **kwargs):  # noqa: ARG001
         """Apply settings to the plot"""
         Plot.figure.subplots_adjust(
             left=int(plotOpt["labelSize"]) / 100.0,
@@ -5309,15 +5307,15 @@ def changePlotSettings(G2frame, Plot):
         for P in Plot.figure.axes:
             P.get_xaxis().get_label().set_fontsize(plotOpt["labelSize"])
             P.get_yaxis().get_label().set_fontsize(plotOpt["labelSize"])
-            for l in P.get_xaxis().get_ticklabels():
+            for l in P.get_xaxis().get_ticklabels():  # noqa: E741
                 l.set_fontsize(plotOpt["labelSize"])
-            for l in P.get_yaxis().get_ticklabels():
+            for l in P.get_yaxis().get_ticklabels():  # noqa: E741
                 l.set_fontsize(plotOpt["labelSize"])
-            for l in P.lines:
+            for l in P.lines:  # noqa: E741
                 l.set_linewidth(float(plotOpt["lineWid"]))
             P.get_xaxis().set_tick_params(width=float(plotOpt["lineWid"]))
             P.get_yaxis().set_tick_params(width=float(plotOpt["lineWid"]))
-            for l in P.spines.values():
+            for l in P.spines.values():  # noqa: E741
                 l.set_linewidth(float(plotOpt["lineWid"]))
         if Page.plotStyle.get("title", True):
             Plot.set_title(plotOpt["title"], fontsize=plotOpt["labelSize"])
@@ -5403,7 +5401,7 @@ def changePlotSettings(G2frame, Plot):
     vbox.Add((1, 10), 1, wx.ALL | wx.EXPAND, 1)
     hbox = wx.BoxSizer(wx.HORIZONTAL)
     OKbtn = wx.Button(dlg, wx.ID_OK)
-    OKbtn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))
+    OKbtn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))  # noqa: ARG005
     hbox.Add((-1, -1), 1, wx.ALL | wx.EXPAND, 1)
     hbox.Add(OKbtn)
     hbox.Add((-1, -1), 1, wx.ALL | wx.EXPAND, 1)
@@ -5509,12 +5507,12 @@ def configPartialDisplay(G2frame, phaseColors, RefreshPlot):
         phaseColors[p] = partialOpts[p]["color"]
         RefreshPlot()
 
-    def StyleChange(*args):
+    def StyleChange(*args):  # noqa: ARG001
         "define MPL line style from line style index"
-        for p in partialOpts:
+        for p in partialOpts:  # noqa: PLC0206
             try:
                 partialOpts[p]["MPLstyle"] = ltypeMPLname[partialOpts[p]["style"]]
-            except:
+            except:  # noqa: E722
                 partialOpts[p]["MPLstyle"] = "-"
         RefreshPlot()
 

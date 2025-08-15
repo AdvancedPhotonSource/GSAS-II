@@ -42,7 +42,7 @@ class ExportPhaseText(G2fil.ExportBaseclass):
         # if more than one format is selected, put them into a single file
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam]  # pointer to current phase info
-            i = self.Phases[phasenam]["pId"]
+            i = self.Phases[phasenam]["pId"]  # noqa: F841
             self.Write("\n" + 80 * "=")
             self.Write(
                 "Phase " + str(phasenam) + " from " + str(self.G2frame.GSASprojectfile)
@@ -101,7 +101,7 @@ class ExportPhaseText(G2fil.ExportBaseclass):
                     )
                 )
                 self.Write(80 * "-")
-                for lbl, typ, mult, xyz, td in AtomsList:
+                for lbl, typ, mult, xyz, td in AtomsList:  # noqa: B007
                     if len(td) == 1:
                         continue
                     if xyz[3][0] == 0:
@@ -238,7 +238,7 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             m,
                             mult,
                             dsp,
@@ -249,9 +249,9 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                             Fcalc,
                             phase,
                             x,
-                            x,
-                            x,
-                            x,
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
                             prfo,
                         ) = refItem[:17]
                         FWHM = G2pwd.getgamFW(gam, sig)
@@ -273,7 +273,7 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             m,
                             mult,
                             dsp,
@@ -307,7 +307,7 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             m,
                             mult,
                             dsp,
@@ -318,9 +318,9 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                             Fcalc,
                             phase,
                             x,
-                            x,
-                            x,
-                            x,
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
                             prfo,
                         ) = refItem[:17]
                         g = gam / 100.0  # centideg -> deg
@@ -369,7 +369,7 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             mult,
                             dsp,
                             pos,
@@ -379,9 +379,9 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                             Fcalc,
                             phase,
                             x,
-                            x,
-                            x,
-                            x,
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
                             prfo,
                         ) = refItem[:16]
                         FWHM = G2pwd.getgamFW(gam, sig)
@@ -403,7 +403,7 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             mult,
                             dsp,
                             pos,
@@ -436,7 +436,7 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             mult,
                             dsp,
                             pos,
@@ -446,9 +446,9 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
                             Fcalc,
                             phase,
                             x,
-                            x,
-                            x,
-                            x,
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
                             prfo,
                         ) = refItem[:16]
                         g = gam / 100.0  # centideg -> deg
@@ -504,7 +504,7 @@ class ExportSingleText(G2fil.ExportBaseclass):
         for (
             h,
             k,
-            l,
+            l,  # noqa: E741
             twin,
             dsp,
             Fobs,
@@ -552,7 +552,7 @@ class ExportSingleText(G2fil.ExportBaseclass):
         for (
             h,
             k,
-            l,
+            l,  # noqa: E741
             twin,
             dsp,
             Fobs,

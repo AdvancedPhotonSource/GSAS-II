@@ -13,11 +13,11 @@ except ModuleNotFoundError:
 from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from GSASII import GSASIIctrlGUI as G2G
-from GSASII import GSASIIspc as G2spc
+from GSASII import GSASIIctrlGUI as G2G  # noqa: E402
+from GSASII import GSASIIspc as G2spc  # noqa: E402
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -98,25 +98,25 @@ class testSSymbols(wx.Frame):
         }
         self.UpdateData(Data)
 
-    def ExitMain(self, event):
+    def ExitMain(self, event):  # noqa: ARG002
         sys.exit()
 
-    def OnFileExit(self, event):
+    def OnFileExit(self, event):  # noqa: ARG002
         if self.dataFrame:
             self.dataFrame.Clear()
             self.dataFrame.Destroy()
         self.Close()
 
     def UpdateData(self, Data):
-        def OnExhaustive(event):
+        def OnExhaustive(event):  # noqa: ARG001
             SSList = G2spc.SSChoice(Data["SGData"])
             print(SSList)
 
-        def OnSpaceGroup(event):
+        def OnSpaceGroup(event):  # noqa: ARG001
             Flds = SGTxt.GetValue().split()
             # get rid of extra spaces between fields first
             for fld in Flds:
-                fld = fld.strip()
+                fld = fld.strip()  # noqa: PLW2901
             SpcGp = " ".join(Flds)
             # try a lookup on the user-supplied name
             SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
@@ -141,7 +141,7 @@ class testSSymbols(wx.Frame):
             Data["SuperSg"] = SSChoice[0]
             self.UpdateData(Data)
 
-        def OnSuperGp(event):
+        def OnSuperGp(event):  # noqa: ARG001
             SSymbol = superGp.GetValue()
             SpGrp = Data["SGData"]["SpGrp"]
             if Data["SGData"]["SGGray"]:
@@ -159,7 +159,7 @@ class testSSymbols(wx.Frame):
                     print(G2spc.SSMT2text(Op).replace(" ", ""))
                 if SGData["SGInv"]:
                     for Op in SSGData["SSGOps"]:
-                        Op = [-Op[0], -Op[1] % 1.0]
+                        Op = [-Op[0], -Op[1] % 1.0]  # noqa: PLW2901
                         print(G2spc.SSMT2text(Op).replace(" ", ""))
             else:
                 text = [E + "\nSuperspace Group set to previous"]

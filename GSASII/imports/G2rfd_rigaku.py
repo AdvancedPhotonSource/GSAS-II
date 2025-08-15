@@ -41,7 +41,7 @@ class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
         prevAngle = None
         header = True
         self.skip = -1
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, line in enumerate(fp):
             sline = line.split()
             vals = len(sline)
@@ -53,7 +53,7 @@ class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
                 for item in sline:
                     try:
                         float(item)
-                    except:
+                    except:  # noqa: E722
                         err = True
                         break
                 if err:
@@ -78,7 +78,7 @@ class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
                 j += 1
             try:
                 angle = float(sline[0])
-            except:
+            except:  # noqa: E722
                 print("Unable to read angle on line " + str(i + 1))
                 fp.close()
                 return False
@@ -109,19 +109,19 @@ class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
         fp.close()
         return False
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):  # noqa: ARG002
         "Read a Rigaku .txt file"
         x = []
         y = []
         w = []
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, line in enumerate(fp):
             if i < self.skip:
                 continue
             sline = line.split()
             try:
                 angle = float(sline[0])
-            except:
+            except:  # noqa: E722
                 print("Unable to read angle on line " + str(i + 1))
                 self.errors = "Error reading line: " + str(i + 1)
                 return False
@@ -130,7 +130,7 @@ class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
                 angle += self.stepsize
                 try:
                     y.append(float(j))
-                except:
+                except:  # noqa: E722
                     print("Unable to read intensity on line " + str(i + 1))
                     self.errors = "Error reading line: " + str(i + 1)
                     return False
@@ -177,7 +177,7 @@ class Rigaku_rasReaderClass(G2obj.ImportReflectometryData):
     #    Should not count on ContentsValidator being called before Reader
 
     def ContentsValidator(self, filename):
-        fp = open(filename, encoding="latin-1")
+        fp = open(filename, encoding="latin-1")  # noqa: SIM115
         self.vals = None
         self.stepsize = None
         if ".rasx" in filename:
@@ -200,7 +200,7 @@ class Rigaku_rasReaderClass(G2obj.ImportReflectometryData):
                 self.powderentry[0] = filename
                 self.comments = []
                 return True
-            except:
+            except:  # noqa: E722
                 return False
         else:
             fp.seek(0)
@@ -222,7 +222,7 @@ class Rigaku_rasReaderClass(G2obj.ImportReflectometryData):
             fp.close()
         return True
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):  # noqa: ARG002
         "Read a Rigaku .ras/.rasx file"
         if ".rasx" in filename:
             x = []
@@ -246,7 +246,7 @@ class Rigaku_rasReaderClass(G2obj.ImportReflectometryData):
             return True
 
         else:  # .ras file
-            fp = open(filename, encoding="latin-1")
+            fp = open(filename, encoding="latin-1")  # noqa: SIM115
             blockNum = self.selections[0]
             x = []
             y = []

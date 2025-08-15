@@ -18,11 +18,11 @@ class MAR_ReaderClass(G2obj.ImportImage):
             longFormatName="MAR Research 345, 230 and 256 image files",
         )
 
-    def ContentsValidator(self, filename):
+    def ContentsValidator(self, filename):  # noqa: ARG002
         """no test at this time"""
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         self.Comments, self.Data, self.Npix, self.Image = GetMAR345Data(filename)
         if self.Npix == 0 or not self.Comments:
             return False
@@ -43,12 +43,12 @@ def GetMAR345Data(filename, imageOnly=False):
 
     if not imageOnly:
         print("Read Mar345 file: " + filename)
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     head = File.read(4095).decode(encoding="latin-1")
     lines = head[128:].split("\n")
     head = []
     for line in lines:
-        line = line.strip()
+        line = line.strip()  # noqa: PLW2901
         if "PIXEL" in line:
             values = line.split()
             pixel = (int(values[2]), int(values[4]))  # in microns
@@ -101,7 +101,7 @@ def GetMAR345Data(filename, imageOnly=False):
             pf.pack_f3(len(raw), raw, sizex, sizey, image).T
         )  # transpose to get it right way around & flip
     if GSASIIpath.GetConfigValue("debug"):
-        print("image read time: %.3f" % (time.time() - time0))
+        print(f"image read time: {time.time() - time0:.3f}")
     File.close()
     if imageOnly:
         return image

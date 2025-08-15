@@ -24,7 +24,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
         gotCcomment = False
         begin = True
         self.GSAS = False
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, S in enumerate(fp):
             if i > 50:
                 break
@@ -65,7 +65,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
         fp.close()
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read a FullProf file"
         x = []
         y = []
@@ -75,7 +75,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
         steps = False
         Stop = False
         N = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, S in enumerate(fp):
             self.errors = "Error reading line: " + str(i + 1)
             # Allow a block of comments delimited by /* and */
@@ -113,7 +113,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
                         begin = False
                         if len(vals) > 3:
                             self.comments.append(vals[3][:-1])
-                    except:
+                    except:  # noqa: E722
                         print("Skipping line ", S)
                     continue
                 if i < 3:
@@ -143,7 +143,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
                     print(msg)
                     print(S.strip())
                 break
-            except:
+            except:  # noqa: E722
                 msg = "Error in line " + str(i + 1)
                 if GSASIIpath.GetConfigValue("debug"):
                     print(msg)
@@ -171,7 +171,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.Sample["Temperature"] = Temperature
 

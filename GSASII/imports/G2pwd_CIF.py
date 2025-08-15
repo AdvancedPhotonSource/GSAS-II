@@ -39,7 +39,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
     # Validate the contents
     def ContentsValidator(self, filename):
         "Use standard CIF validator"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         return self.CIFValidator(fp)
         fp.close()
         return None
@@ -132,13 +132,13 @@ class CIFpwdReader(G2obj.ImportPowderData):
                             continue
                         try:
                             items = [float(cf[blk][xi]) for xi in x]
-                            l = 1 + int(0.5 + (items[1] - items[0]) / items[2])
-                        except:
+                            l = 1 + int(0.5 + (items[1] - items[0]) / items[2])  # noqa: E741
+                        except:  # noqa: E722
                             continue
                     else:
                         if x not in blkkeys:
                             continue
-                        l = len(cf[blk][x])
+                        l = len(cf[blk][x])  # noqa: E741
                     if xldict.get(l) is None:
                         xldict[l] = [x]
                     else:
@@ -148,7 +148,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 suldict = {}
                 for y in intDataItems:
                     if y in blkkeys:
-                        l = len(cf[blk][y])
+                        l = len(cf[blk][y])  # noqa: E741
                         if yldict.get(l) is None:
                             yldict[l] = [y]
                         else:
@@ -162,7 +162,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                             suldict[l].append(y)
                 for y in ESDDataItems:
                     if y in blkkeys:
-                        l = len(cf[blk][y])
+                        l = len(cf[blk][y])  # noqa: E741
                         if suldict.get(l) is None:
                             suldict[l] = [y]
                         else:
@@ -170,12 +170,12 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 modldict = {}
                 for y in ModDataItems:
                     if y in blkkeys:
-                        l = len(cf[blk][y])
+                        l = len(cf[blk][y])  # noqa: E741
                         if modldict.get(l) is None:
                             modldict[l] = [y]
                         else:
                             modldict[l].append(y)
-                for l in xldict:
+                for l in xldict:  # noqa: E741, PLC0206
                     if yldict.get(l) is None:
                         continue
                     choicelist.append(
@@ -211,7 +211,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
         else:  # choose from options
             # compile a list of choices for the user
             choices = []
-            for blk, l, x, y, _su, _mod in choicelist:
+            for blk, l, x, y, _su, _mod in choicelist:  # noqa: E741
                 sx = x[0]
                 if len(x) > 1:
                     sx += "..."
@@ -253,7 +253,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
 
         # got a selection, now read it
         # do we need to ask which fields to read?
-        blk, l, xch, ych, such, modch = choicelist[selblk]
+        blk, l, xch, ych, such, modch = choicelist[selblk]  # noqa: E741
         xi, yi, sui, modi = 0, 0, 0, 0
         if len(xch) > 1 or len(ych) > 1 or len(such) > 1 or len(modch) > 0:
             choices = []

@@ -10,10 +10,10 @@ import numpy.linalg as nl
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIElem as G2elem
-from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
-from .GUI import GSASIIctrlGUI as G2G
+from . import GSASIIElem as G2elem  # noqa: E402
+from . import GSASIIlattice as G2lat  # noqa: E402
+from . import GSASIIspc as G2spc  # noqa: E402
+from .GUI import GSASIIctrlGUI as G2G  # noqa: E402
 
 bilbaoSite = "https://www.cryst.ehu.es/cgi-bin/cryst/programs/"
 submagSite = bilbaoSite + "subgrmag1_general_GSAS.pl?"
@@ -81,7 +81,7 @@ def GetNonStdSubgroups(SGData, kvec, star=False, landau=False, maximal=False):
     OpList = G2spc.TextOps(text, table, reverse=True)
     #    GenList = G2spc.TextGen(SGData,reverse=True)
     for item in OpList:
-        item += "\n"
+        item += "\n"  # noqa: PLW2901
     sym = ""
     for i in OpList:
         if sym:
@@ -115,7 +115,7 @@ def GetNonStdSubgroups(SGData, kvec, star=False, landau=False, maximal=False):
     for line in result[start:]:
         if "GGG" in line:
             lines = line.split("GGG")
-            line = lines[0]
+            line = lines[0]  # noqa: PLW2901
             alts = []
             beg = True
             for sline in lines:
@@ -130,7 +130,7 @@ def GetNonStdSubgroups(SGData, kvec, star=False, landau=False, maximal=False):
                 SPGPs.append(getSpGrp(items[4]))
                 MVs.append([getMatVec(items[5]), getMatVec(items[6])])
             altList.append(alts)
-            for sline in lines[1:]:
+            for sline in lines[1:]:  # noqa: B007
                 altList.append([])
         else:
             items = line.split("z")
@@ -218,7 +218,7 @@ def GetNonStdSubgroupsmag(SGData, kvec, star=False, landau=False, maximal=False)
     OpList = G2spc.TextOps(text, table, reverse=True)
     #    OpList = G2spc.TextGen(SGData,reverse=True)
     for item in OpList:
-        item += "\n"
+        item += "\n"  # noqa: PLW2901
     sym = ""
     for i in OpList:
         if sym:
@@ -269,7 +269,7 @@ def GetNonStdSubgroupsmag(SGData, kvec, star=False, landau=False, maximal=False)
                 BNSs.append(bns)
                 MVs.append([getMatVec(items[5]), getMatVec(items[6])])
             altList.append(alts)
-            for sline in lines[1:]:
+            for sline in lines[1:]:  # noqa: B007
                 altList.append([])
         else:
             items = line.split("z")
@@ -316,7 +316,7 @@ def parseBilbaoCheckLattice(page):
             xmatA = [c.split("[")[i].split("]")[0].split() for i in (1, 2, 3)]
             xmat = np.array([[eval(i) for i in j] for j in xmatA])
             cellmat = nl.inv(xmat).T
-        except:
+        except:  # noqa: E722
             print("Error processing cell in", c)
             continue
         found.append((acell, cellmat))
@@ -419,18 +419,18 @@ def GetSupergroup(SGnum, dlg=None):
         dlg.Update(1, newmsg="Initial table of supergroups returned")
     lines = out.split("HM symbol")[1].split("/table")[0].split("<tr")
     xforms = []
-    for l in lines[1:]:
+    for l in lines[1:]:  # noqa: E741
         ls = l.split("<td>")
         if len(ls) < 8:
             continue
         spg = re.sub(r"</?[a-zA-Z]+>", "", ls[3])
         try:
             spgnum = int(ls[4].split(">")[1].split("<")[0])
-        except:
+        except:  # noqa: E722
             spgnum = 0
         try:
             index = int(re.sub(r"</?[a-zA-Z]+>", "", ls[5]))
-        except:
+        except:  # noqa: E722
             index = 0
         xformtype = re.sub(r"</?[a-zA-Z]+>", "", ls[6])
         click = l.split("click")[1].split('value="')[1].split('"')[0]
@@ -459,11 +459,11 @@ def GetSupergroup(SGnum, dlg=None):
             # cast as float if possible
             try:
                 m = np.array([float(eval(i)) for i in mc.flatten()]).reshape(3, 3)
-            except:
+            except:  # noqa: E722
                 m = mc
             try:
                 v = np.array([float(eval(i)) for i in vc.flatten()])
-            except:
+            except:  # noqa: E722
                 v = vc
             mvlist.append((m, v))
         line.append(mvlist)
@@ -775,7 +775,7 @@ def BilbaoLowSymSea1(valsdict, row, savedcookies, pagelist=None):
     ):
         valsdict[key] = form.split(f"name={key}")[1].split('"')[1]
     tbl = []
-    for l in form.split("<tr"):
+    for l in form.split("<tr"):  # noqa: E741
         line = l.split("</tr")[0]
         if "super_numind" not in line:
             continue
@@ -938,7 +938,7 @@ def createStdSetting(cifFile, rd):
     """
     try:
         import requests  # delay this until now, since rarely needed
-    except:
+    except:  # noqa: E722
         # this import seems to fail with the Anaconda pythonw on
         # macs; it should not!
         print("Warning: failed to import requests. Python config error")
@@ -947,7 +947,7 @@ def createStdSetting(cifFile, rd):
     if not os.path.exists(cifFile):
         print(f"createStdSetting error: file {cifFile} not found")
         return False
-    files = {"cifile": open(cifFile, "rb")}
+    files = {"cifile": open(cifFile, "rb")}  # noqa: SIM115
     values = {"strtidy": ""}
     print(f"""Submitting structure to Bilbao "CIF to Standard Setting" (strtidy)
 web service. Please cite:

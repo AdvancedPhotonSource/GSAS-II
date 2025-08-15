@@ -57,7 +57,7 @@ class TIF_LibraryReader(G2obj.ImportImage):
         """Does the header match the required TIF header?"""
         return G2img_1TIF.TIFValidator(filename)
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         """Read the TIF file using the PIL/Pillow reader and give the
         user a chance to edit the likely wrong default image parameters.
         """
@@ -76,10 +76,10 @@ class TIF_LibraryReader(G2obj.ImportImage):
             self.Data["size"] = list(self.Image.size)
             self.Data["center"] = [int(i / 2) for i in self.Image.size]
             try:
-                Meta = open(filename + ".metadata")
+                Meta = open(filename + ".metadata")  # noqa: SIM115
                 head = Meta.readlines()
                 for line in head:
-                    line = line.strip()
+                    line = line.strip()  # noqa: PLW2901
                     try:
                         if "=" not in line:
                             continue
@@ -101,7 +101,7 @@ class TIF_LibraryReader(G2obj.ImportImage):
                             self.Data["center"][0] = float(line.split("=")[1])
                         elif keyword.lower() == "centerpixely":
                             self.Data["center"][1] = float(line.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         G2fil.G2Print("error reading metadata: " + line)
                 Meta.close()
                 self.SciPy = False

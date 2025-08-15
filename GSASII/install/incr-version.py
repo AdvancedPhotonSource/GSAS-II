@@ -39,14 +39,14 @@ path2repo = os.path.dirname(path2GSAS2)
 if __name__ == "__main__":
     try:
         g2repo = git.Repo(path2repo)
-    except:
+    except:  # noqa: E722
         print("Launch of gitpython for version file failed" + f" with path {path2repo}")
         sys.exit()
     if g2repo.active_branch.name != "main":
         print("Not on main branch")
         sys.exit()
     if g2repo.head.is_detached:
-        print(f"Detached head {commit0[:7]!r}")
+        print(f"Detached head {commit0[:7]!r}")  # noqa: F821
         sys.exit()
     # make a list of tags without a v; get the largest numeric tag
     # someday use the packaging module (but no more dependencies for now)
@@ -131,8 +131,8 @@ if __name__ == "__main__":
     # create a file with GSAS-II version information
     pyfile = os.path.join(path2GSAS2, "git_verinfo.py")
     try:
-        fp = open(pyfile, "w")
-    except:
+        fp = open(pyfile, "w")  # noqa: SIM115
+    except:  # noqa: E722
         print(f"Creation of git version file {pyfile} failed")
         sys.exit()
     fp.write("# -*- coding: utf-8 -*-\n")

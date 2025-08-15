@@ -23,7 +23,7 @@ sglist = {}
 def GenSGdat(spc):
     (E, D) = GSASIIspc.SpcGroup(spc)
     if E:
-        print >> sys.stderr, "error on: ", spc
+        print >> sys.stderr, "error on: ", spc  # noqa: F633
     else:
         sgdat[spc] = D
         sglist[spc] = GSASIIspc.SGPrint(D)

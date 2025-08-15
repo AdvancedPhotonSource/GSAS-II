@@ -74,8 +74,8 @@ def SetConfigValue(parmdict: dict) -> None:
     the value to use for that configuration variable. Most of the
     information gathered in GetConfigValsDocs is no longer used.
     """
-    global configDict
-    for var in parmdict:
+    global configDict  # noqa: PLW0602
+    for var in parmdict:  # noqa: PLC0206
         if var in configDict:
             del configDict[var]
         if isinstance(parmdict[var], tuple):
@@ -96,7 +96,7 @@ def AddConfigValue(valsdict: dict) -> None:
     :param dict valsdict: a dictionary of values that are added
       directly to configDict.
     """
-    global configDict
+    global configDict  # noqa: PLW0602
     configDict.update(valsdict)
 
 
@@ -108,7 +108,7 @@ def GetConfigDefault(key: str) -> Any | None:
     """
     try:
         from . import config_example
-    except:
+    except:  # noqa: E722
         return None
     return config_example.__dict__.get(key)
 
@@ -117,7 +117,7 @@ def addPrevGPX(fil, cDict):
     """Add a GPX file to the list of previous files.
     Move previous names to start of list. Keep most recent five files
     """
-    global configDict
+    global configDict  # noqa: PLW0602
     fil = os.path.abspath(os.path.expanduser(fil))
     if "previous_GPX_files" not in cDict:
         cDict["previous_GPX_files"] = [[], [], [], "Previous .gpx files"]  # unexpected
@@ -154,7 +154,7 @@ def LoadConfigFile(filename):
             continue
         try:
             i = 0
-            fp = open(fil)
+            fp = open(fil)  # noqa: SIM115
             for line in fp:
                 expr = line.split("#")[0].strip()
                 if expr:
@@ -219,7 +219,7 @@ def HowIsG2Installed():
         in use '-rev' is appended.
       * or 'noVCS' if installed without a connection to a version control system
     """
-    global G2_installed_result
+    global G2_installed_result  # noqa: PLW0603
     if G2_installed_result is not None:
         return G2_installed_result
     try:
@@ -236,7 +236,7 @@ def HowIsG2Installed():
             return "github" + rev
         G2_installed_result = "git" + rev
         return G2_installed_result
-    except:
+    except:  # noqa: E722
         pass
     G2_installed_result = "noVCS"
     return G2_installed_result
@@ -265,7 +265,7 @@ def getSavedVersionInfo():
         from . import git_verinfo as gv
 
         return gv
-    except:
+    except:  # noqa: E722
         pass
     return None  # this is unexpected as all dists should have git_verinfo.py
 
@@ -295,7 +295,7 @@ def GetVersionNumber():
             ).split("-")
             if tag.isnumeric():
                 return int(tag)
-        except:
+        except:  # noqa: E722
             pass
         return "unknown"
 
@@ -326,7 +326,7 @@ def GetVersionTag():
                 "-"
             )
             return tag
-        except:
+        except:  # noqa: E722
             pass
         return "?.?.?"
 
@@ -393,7 +393,7 @@ def getG2VersionInfo():
             if gv.git_versiontag:
                 vt = gv.git_versiontag
                 cvt, cvn = getGitHubVersion()
-        except:
+        except:  # noqa: E722
             pass
 
         for item in gv.git_tags + gv.git_prevtags:
@@ -422,8 +422,8 @@ def saveGitHubVersion():
     try:
         import requests
 
-        requests
-    except:
+        requests  # noqa: B018
+    except:  # noqa: E722
         print("Unable to use requests module")
         return None
     return subprocess.Popen([sys.executable, __file__, "--github-tags"])
@@ -468,10 +468,10 @@ BASE_HEADER = {
 }
 
 
-def openGitRepo(repo_path):
+def openGitRepo(repo_path):  # noqa: ARG001
     try:
         import git
-    except:
+    except:  # noqa: E722
         return None
     try:  # patch 3/2024 for svn dir organization
         return git.Repo(path2GSAS2)
@@ -499,7 +499,7 @@ def gitLookup(repo_path, gittag=None, githash=None):
     """
     try:
         import git
-    except:
+    except:  # noqa: E722
         return None
     g2repo = openGitRepo(repo_path)
     if gittag is not None and githash is not None:
@@ -637,7 +637,7 @@ def gitCheckForUpdates(fetch=True, g2repo=None):
     """
     try:
         import git
-    except:
+    except:  # noqa: E722
         print("Failed to import git in gitCheckForUpdates()")
         return (None, None, None)
     fetched = False
@@ -678,7 +678,7 @@ def gitCheckForUpdates(fetch=True, g2repo=None):
         elif fetch and GetConfigValue("debug"):
             print("Updates fetched; nothing new")
         return remotecommits, localcommits, fetched
-    except:
+    except:  # noqa: E722
         return (None, None, None)
 
 
@@ -734,7 +734,7 @@ def gitCountRegressions(g2repo=None):
     for h in g2repo.iter_commits("main"):
         if h == parent:
             return maincount, detachedcount
-        maincount += 1
+        maincount += 1  # noqa: SIM113
     return None, detachedcount
 
 
@@ -833,7 +833,7 @@ def getGitBinaryReleases(cache=False):
     """
     try:
         import requests
-    except:
+    except:  # noqa: E722
         print(
             "Unable to install binaries in getGitBinaryReleases():\n requests module not available"
         )
@@ -857,13 +857,13 @@ def getGitBinaryReleases(cache=False):
             # Cache the binary releases for later use in case GitHub
             # prevents us from using a query to get them
             if cache and count > 4:
-                fp = open(os.path.join(path2GSAS2, "inputs", "BinariesCache.txt"), "w")
+                fp = open(os.path.join(path2GSAS2, "inputs", "BinariesCache.txt"), "w")  # noqa: SIM115
                 res = dict(zip(versions, URLs, strict=False))
-                for key in res:
+                for key in res:  # noqa: PLC0206
                     fp.write(f"{key} : {res[key]}\n")
                 fp.close()
             return dict(zip(versions, URLs, strict=False))
-        except:
+        except:  # noqa: E722
             print(
                 "Attempt to get GSAS-II binary releases/assets failed, sleeping for 10 sec and then retrying"
             )
@@ -876,14 +876,14 @@ def getGitBinaryReleases(cache=False):
     print(f"Could not get releases from {G2binURL}. Using cache")
     res = {}
     try:
-        fp = open(os.path.join(path2GSAS2, "inputs", "BinariesCache.txt"))
+        fp = open(os.path.join(path2GSAS2, "inputs", "BinariesCache.txt"))  # noqa: SIM115
         for line in fp.readlines():
             key, val = line.split(":", 1)[:2]
             res[key.strip()] = val.strip()
         fp.close()
         return res
-    except:
-        raise OSError("Cache read of releases failed too.")
+    except:  # noqa: E722
+        raise OSError("Cache read of releases failed too.")  # noqa: B904
 
 
 def getGitBinaryLoc(npver=None, pyver=None, verbose=True, debug=False):
@@ -978,14 +978,14 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
 
     try:
         import requests
-    except:
+    except:  # noqa: E722
         print(
             "Unable to install binaries in InstallGitBinary():\n requests module not available"
         )
         return
     # download to scratch
     tarobj = None
-    tar = tempfile.NamedTemporaryFile(suffix=".tgz", delete=False)
+    tar = tempfile.NamedTemporaryFile(suffix=".tgz", delete=False)  # noqa: SIM115
     try:
         tar.close()
         if verbose:
@@ -994,7 +994,7 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
         with open(tar.name, "wb") as fp:
             fp.write(r.content)
         # open in tar
-        tarobj = tarfile.open(name=tar.name)
+        tarobj = tarfile.open(name=tar.name)  # noqa: SIM115
         if nameByVersion:
             binnam = os.path.splitext(os.path.split(tarURL)[1])[0]
             install2dir = os.path.join(instDir, binnam)
@@ -1018,7 +1018,7 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
                 tarobj.extract(f, path=install2dir, set_attrs=False)
                 if verbose:
                     print(f"Created GSAS-II binary file {os.path.split(newfil)[1]}")
-            except:
+            except:  # noqa: E722
                 print(
                     f"Failed to create GSAS-II binary file {os.path.split(newfil)[1]}"
                 )
@@ -1087,7 +1087,7 @@ def dirGitHub(dirlist, orgName=gitTutorialOwn, repoName=gitTutorialRepo):
     """
     try:
         import requests
-    except:
+    except:  # noqa: E722
         print("Unable to search GitHub in dirGitHub():\n requests module not available")
         return None
     dirname = ""
@@ -1097,7 +1097,7 @@ def dirGitHub(dirlist, orgName=gitTutorialOwn, repoName=gitTutorialRepo):
     r = requests.get(URL, allow_redirects=True)
     try:
         return [rec["name"] for rec in r.json()]
-    except:
+    except:  # noqa: E722
         return None
 
 
@@ -1139,7 +1139,7 @@ def downloadDirContents(
     """
     try:
         import requests
-    except:
+    except:  # noqa: E722
         print(
             "Unable to download Tutorial data in downloadDirContents():\n requests module not available"
         )
@@ -1194,7 +1194,7 @@ def runScript(cmds=None, wait=False, G2frame=None):
     else:
         suffix = ".bat"
 
-    fp = tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False)
+    fp = tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False)  # noqa: SIM115
     shellname = fp.name
     for line in cmds:
         fp.write(line)
@@ -1275,7 +1275,7 @@ def exceptHook(*args):
     try:
         # from IPython.core import ultratb
         import IPython.core.ultratb
-    except:
+    except:  # noqa: E722
         pass
 
     try:
@@ -1330,7 +1330,7 @@ def exceptHook(*args):
             InteractiveShellEmbed(banner1=msg)(
                 module=pseudomod, global_ns=frame.f_globals
             )
-        except:  # 'IPython <5
+        except:  # 'IPython <5  # noqa: E722
             InteractiveShellEmbed(banner1=msg)(
                 local_ns=frame.f_locals, global_ns=frame.f_globals
             )
@@ -1353,19 +1353,19 @@ def InvokeDebugOpts():
         try:
             import pdb
 
-            global pdbBreak
+            global pdbBreak  # noqa: PLW0603
             pdbBreak = pdb.set_trace
             import IPython
 
-            IPython
-            global IPyBreak
+            IPython  # noqa: B018
+            global IPyBreak  # noqa: PLW0603
             IPyBreak = IPyBreak_base
             sys.excepthook = exceptHook
             os.environ["PYTHONBREAKPOINT"] = "GSASIIpath.IPyBreak_base"
             print(
                 "Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()"
             )
-        except:
+        except:  # noqa: E722
             print("Debug on failed. IPython not installed?")
     else:  # not in spyder or debug enabled, hide breakpoints
         os.environ["PYTHONBREAKPOINT"] = "0"
@@ -1383,14 +1383,14 @@ def TestSPG():
                 version = fp.readline().strip()
                 vnum = fp.readline().strip()
             print(f"  Binary ver: {vnum}, {version}")
-        except:
+        except:  # noqa: E722
             if GetConfigValue("debug"):
                 print("  Binaries:   undated")
 
     try:
         from . import pyspg
 
-        pyspg
+        pyspg  # noqa: B018
         showVersion()
         return True
     except ImportError:
@@ -1398,7 +1398,7 @@ def TestSPG():
     try:
         import pyspg
 
-        pyspg
+        pyspg  # noqa: B018
     except ImportError:
         return False
     try:
@@ -1421,7 +1421,7 @@ def pathhack_TestSPG(fpth):
             return False
         if not glob.glob(os.path.join(fpth, "pyspg.*")):
             return False
-    except:
+    except:  # noqa: E722
         return False
     savpath = sys.path[:]
     sys.path = [fpth]
@@ -1472,7 +1472,7 @@ def SetBinaryPath(showConfigMsg=False):
     """
     # cache the results of this routine so that repeated calls
     # only search for binary routines once
-    global BinaryPathLoaded, binaryPath, BinaryPathFailed
+    global BinaryPathLoaded, binaryPath, BinaryPathFailed  # noqa: PLW0603
     if BinaryPathLoaded or BinaryPathFailed:
         return
     try:
@@ -1482,7 +1482,7 @@ def SetBinaryPath(showConfigMsg=False):
     try:
         from GSASII import pypowder
 
-        pypowder
+        pypowder  # noqa: B018
         binaryPath = None  # special value to indicate that binaries have been installed into package
         if showConfigMsg:
             print(
@@ -1570,7 +1570,7 @@ def LoadConfig(printInfo=True):
 
     import configparser
 
-    global configDict
+    global configDict  # noqa: PLW0603
     configDict = {}
     cfgfile = os.path.expanduser(os.path.normpath("~/.GSASII/config.ini"))
     if not os.path.exists(cfgfile):
@@ -1578,7 +1578,7 @@ def LoadConfig(printInfo=True):
         # patch 2/7/25: transform GSAS-II config.py contents to config.ini
         try:
             XferConfigIni()
-        except:
+        except:  # noqa: E722
             print("transfer of config.py failed")
     try:
         from . import config_example
@@ -1645,7 +1645,7 @@ def LoadConfig(printInfo=True):
             else:
                 print("*** problem with", type(config_example.__dict__[capKey]))
                 continue
-        except:
+        except:  # noqa: E722
             continue
     if printInfo:
         print(f"{len(configDict)} values read from {cfgfile}")
@@ -1717,8 +1717,8 @@ def condaTest(requireAPI=False):
         try:
             import conda.cli.python_api
 
-            conda.cli.python_api
-        except:
+            conda.cli.python_api  # noqa: B018
+        except:  # noqa: E722
             print(
                 "You do not have the conda package installed in this environment",
                 '\nConsider using the "conda install conda" command',
@@ -1733,7 +1733,7 @@ def condaTest(requireAPI=False):
         try:
             if os.path.samefile(os.environ["CONDA_PYTHON_EXE"], sys.executable):
                 return True
-        except:
+        except:  # noqa: E722
             return False
 
     # ...If not in the base environment, what we can do is check if the
@@ -1765,7 +1765,7 @@ def condaInstall(packageList):
     """
     try:
         import conda.cli.python_api
-    except:
+    except:  # noqa: E722
         print(
             "You do not have the conda package installed in this environment",
             '\nConsider using the "conda install conda" command',
@@ -1893,7 +1893,7 @@ def condaEnvCreate(envname, packageList, force=False):
         p = os.path.dirname(os.path.dirname(os.environ["CONDA_EXE"]))
     try:
         import conda.cli.python_api
-    except:
+    except:  # noqa: E722
         return True, "conda package not available (in environment)"
     if not os.path.exists(os.path.join(p, "envs")):
         msg = "Error derived installation path not found: " + os.path.join(p, "envs")
@@ -2049,7 +2049,7 @@ else:
     try:
         import G2script
 
-        G2script
+        G2script  # noqa: B018
     except ImportError:
         print("Unexpected error: import of G2script failed!")
         return None
@@ -2063,7 +2063,7 @@ if os.path.exists(os.path.expanduser("~/.G2local/")):
     files = ""
     prev = None
     for f in sorted(fl):  # make a list of files, dropping .pyc files where a .py exists
-        f = os.path.split(f)[1]
+        f = os.path.split(f)[1]  # noqa: PLW2901
         if os.path.splitext(f)[0] == prev:
             continue
         prev = os.path.splitext(f)[0]
@@ -2116,7 +2116,7 @@ def postURL(
     """
     try:
         import requests  # delay this until now, since rarely needed
-    except:
+    except:  # noqa: E722
         # this import seems to fail with the Anaconda pythonw on
         # macs; it should not!
         print("Warning: failed to import requests. Python config error")
@@ -2310,7 +2310,7 @@ end tell
 
         fil = "/tmp/GSAS2-launch.sh"
         cmds += ["/bin/sh", fil]
-        fp = open(fil, "w")
+        fp = open(fil, "w")  # noqa: SIM115
         if project:
             fp.write(f"{pythonapp} {g2script} {project}\n")
         else:
@@ -2396,7 +2396,7 @@ if __name__ == "__main__":
                 break
             try:
                 import git
-            except:
+            except:  # noqa: E722
                 print("Import of git failed for --git-regress")
                 sys.exit()
             gitversion = argsplit[1]
@@ -2466,7 +2466,7 @@ to update/regress repository from git repository:
         url = "https://github.com/AdvancedPhotonSource/GSAS-II/tags"
         try:
             releases = requests.get(url=url)
-        except:
+        except:  # noqa: E722
             print("background get tags failed")
             sys.exit()
         taglist = [
@@ -2504,13 +2504,13 @@ to update/regress repository from git repository:
             mode = "w"
         # if file open fails, there is probably a concurent update process
         try:
-            fp = open(logfile, mode)
-        except:
+            fp = open(logfile, mode)  # noqa: SIM115
+        except:  # noqa: E722
             print("background git update was unable to open log file")
             sys.exit()
         try:
             import git
-        except:
+        except:  # noqa: E722
             fp.write("Git background import failed")
             fp.write(dt.datetime.strftime(dt.datetime.now(), " at %Y-%m-%dT%H:%M\n"))
             fp.close()
@@ -2568,7 +2568,7 @@ to update/regress repository from git repository:
 
     try:
         import git
-    except:
+    except:  # noqa: E722
         print(f"Import of git failed. {updateType} update mode {preupdateType}")
         sys.exit()
 

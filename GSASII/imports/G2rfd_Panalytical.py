@@ -29,7 +29,7 @@ class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
     def ContentsValidator(self, filename):
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         self.vals = None
         self.stepsize = None
         fp.seek(0)
@@ -38,14 +38,14 @@ class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
             tag = self.root.tag
             tag = tag.split("}")[0] + "}"
             self.root.find(tag + "comment")
-        except:
+        except:  # noqa: E722
             self.errors = "Bad xml file"
             fp.close()
             return False
         fp.close()
         return True
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):  # noqa: ARG002
         "Read a Panalytical .xrdml (.xml) file; already in self.root"
         blockNum = kwarg.get("blocknum", 0)
         self.idstring = ospath.basename(filename) + " Scan " + str(blockNum)
@@ -87,12 +87,10 @@ class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
             self.comments.append("xray tube=" + tube.attrib["name"])
         except AttributeError:
             pass
-        self.comments.append("Ka1={}".format(wave.find(tag + "kAlpha1").text))
-        self.comments.append("Ka2={}".format(wave.find(tag + "kAlpha2").text))
-        self.comments.append(
-            "Ka2/Ka1={}".format(wave.find(tag + "ratioKAlpha2KAlpha1").text)
-        )
-        self.comments.append("Kb={}".format(wave.find(tag + "kBeta").text))
+        self.comments.append(f"Ka1={wave.find(tag + 'kAlpha1').text}")
+        self.comments.append(f"Ka2={wave.find(tag + 'kAlpha2').text}")
+        self.comments.append(f"Ka2/Ka1={wave.find(tag + 'ratioKAlpha2KAlpha1').text}")
+        self.comments.append(f"Kb={wave.find(tag + 'kBeta').text}")
         self.comments.append("Voltage=" + tube.find(tag + "tension").text)
         self.comments.append("Current=" + tube.find(tag + "current").text)
         limits = dataPoints.find(tag + "positions")

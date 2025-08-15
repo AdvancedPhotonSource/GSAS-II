@@ -5,7 +5,7 @@ Code written by Christian Brugger & Stefan Hacker and
 distributed under GNU General Public License.
 """
 
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001, EXE005
 # -*- coding: utf-8
 #
 #    Provides some text display functions for wx + ogl
@@ -93,7 +93,7 @@ class TextElement:
 
     # ---Functions
 
-    def draw_text(self, position=wx.RealPoint(0.0, 0.0), scale=1.0, rotation=0):
+    def draw_text(self, position=wx.RealPoint(0.0, 0.0), scale=1.0, rotation=0):  # noqa: B008
         """
         position (wx.RealPoint)    - x/y Position to draw in scene
         scale    (float)       - Scale
@@ -190,7 +190,7 @@ class TextElement:
         centered = self.centered
         for line in self._lines:
             if not line:
-                line = " "
+                line = " "  # noqa: PLW2901
             tw, th = dc.GetTextExtent(line)
             if centered:
                 x = int(round((w - tw) // 2))
@@ -216,12 +216,12 @@ class TextElement:
 
             #        if isinstance(self._foreground, wx.Colour):
             """
-            If we have a static color...  
+            If we have a static color...
             """
         r, g, b = self._foreground.Get()[:3]
 
         if "2" in platform.python_version_tuple()[0]:
-            color = "%c%c%c" % (chr(r), chr(g), chr(b))
+            color = f"{chr(r):c}{chr(g):c}{chr(b):c}"
         else:
             color = st.pack("3B", r, g, b)
 
@@ -351,7 +351,7 @@ class Text:
     so you can save some memory and increase speed
     """
 
-    _texts = []  # Global cache for TextElements
+    _texts = []  # Global cache for TextElements  # noqa: RUF012
 
     def __init__(
         self, text="Text", font=None, font_size=8, foreground=wx.WHITE, centered=False
@@ -434,7 +434,7 @@ class Text:
 
     # ---Functions
 
-    def draw_text(self, position=wx.RealPoint(0.0, 0.0), scale=1.0, rotation=0):
+    def draw_text(self, position=wx.RealPoint(0.0, 0.0), scale=1.0, rotation=0):  # noqa: B008
         """
         position (wx.RealPoint)    - x/y Position to draw in scene
         scale    (float)       - Scale

@@ -40,7 +40,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
 
     # NEW 1.1 Calculate intensity from P(r) dropping all scaling factors
 
-    def ft_to_intensity(aList_q, aList_i_calc, aList_r, aList_pr_model, nbeads):
+    def ft_to_intensity(aList_q, aList_i_calc, aList_r, aList_pr_model, nbeads):  # noqa: ARG001
         num_q = len(aList_q)
         num_r = len(aList_r)
 
@@ -130,7 +130,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
     def write_all_data(file_intensity, aList_q, aList_i, aList_i_calc, aString):
         num_q = len(aList_q)
 
-        file = open(
+        file = open(  # noqa: SIM115
             file_intensity,
             "w",
         )
@@ -153,7 +153,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
 
     # NEW 1.1 Read intensity data from GNOM output file
 
-    def read_i(aList_q, aList_i, aList_i_sd, inFile, angstrom_scale):
+    def read_i(aList_q, aList_i, aList_i_sd, inFile, angstrom_scale):  # noqa: ARG001
         scale_units = 1.0 / angstrom_scale
 
         Q, Io, wt, Ic, Ib, Ifb = Profile[:6]
@@ -205,7 +205,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
         zmean = 0.0
         nbeads = 0
 
-        file = open(pdbfile_in)
+        file = open(pdbfile_in)  # noqa: SIM115
         allLines = file.readlines()
         file.close()
 
@@ -605,7 +605,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
 
     # Statistics for fractional difference between observed and model histograms
 
-    def pr_rfactor(aList_pr, aList_pr_sd, aList_pr_model, skip):
+    def pr_rfactor(aList_pr, aList_pr_sd, aList_pr_model, skip):  # noqa: ARG001
         num_hist = len(aList_pr)
         delta_hist_sum = 0.0
         hist_sum = 0.0
@@ -701,7 +701,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
         aList_pr_model,
         aList_pr_model_test,
         aList_pr_model_test2,
-        inFile,
+        inFile,  # noqa: ARG001
     ):
         angstrom_scale = 1.0
         Bins, Dbins, BinMag = data["Pair"]["Distribution"]
@@ -1022,7 +1022,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                 aList_beads_z_new.append(ztest)
 
                 # Apply shifs to symm positions
-                l = 0
+                l = 0  # noqa: E741
                 while l < num_ops:
                     aList_s = aList_symm[l]
                     m11 = float(aList_s[0])
@@ -1038,7 +1038,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                     aList_beads_y_new.append(ys)
                     aList_beads_z_new.append(zs)
 
-                    l = l + 1
+                    l = l + 1  # noqa: E741
 
                 k = k + num_ops + 1
 
@@ -1096,7 +1096,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
         aList_beads_y,
         aList_beads_z,
         hist_grid,
-        ii,
+        ii,  # noqa: ARG001
     ):
         num_hist = len(aList_r)
         max_dr = (float(num_hist) - 1.0) * hist_grid
@@ -1683,7 +1683,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
 
                 aString = (
                     "Target volume: "
-                    + str("%4.2f" % (scale_vol * psv_ratio))
+                    + str(f"{scale_vol * psv_ratio:4.2f}")
                     + " Actual volume: "
                     + str(f"{fraction_psv:4.2f}")
                     + " Beads outside volume: "
@@ -1761,7 +1761,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                 aList_symm_y = []
                 aList_symm_z = []
 
-                l = 0
+                l = 0  # noqa: E741
                 while l < num_ops:
                     aList_s = aList_symm[l]
                     m11 = float(aList_s[0])
@@ -1782,7 +1782,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                     aList_temp_save_y.append(aList_beads_y[ipt])
                     aList_temp_save_z.append(aList_beads_z[ipt])
 
-                    l = l + 1
+                    l = l + 1  # noqa: E741
 
                 # Get initial VDW energy for interactions of this bead with all others
 
@@ -1821,13 +1821,13 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
 
                 # Get VDW energy for interactions of the shifted bead with all others
 
-                l = 0
+                l = 0  # noqa: E741
                 while l < num_ops:
                     ipt = ii + l + 1
                     aList_beads_x[ipt] = aList_symm_x[l]
                     aList_beads_y[ipt] = aList_symm_y[l]
                     aList_beads_z[ipt] = aList_symm_z[l]
-                    l = l + 1
+                    l = l + 1  # noqa: E741
 
                 i = 0
                 while i < nbeads:
@@ -1961,13 +1961,13 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                     aList_beads_y[ii] = yold
                     aList_beads_z[ii] = zold
 
-                    l = 0
+                    l = 0  # noqa: E741
                     while l < num_ops:
                         ipt = ii + l + 1
                         aList_beads_x[ipt] = aList_temp_save_x[l]
                         aList_beads_y[ipt] = aList_temp_save_y[l]
                         aList_beads_z[ipt] = aList_temp_save_z[l]
-                        l = l + 1
+                        l = l + 1  # noqa: E741
 
                 ii = ii + num_symm
 
@@ -2195,7 +2195,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
     print("Profiler of function calculation; top 50% of routines:")
     ps.print_stats(0.5)
     print(s.getvalue())
-    print("{}{:.3f}".format("Run time = ", time.time() - time0))
+    print(f"Run time = {time.time() - time0:.3f}")
 
     localtime = time.asctime(time.localtime(time.time()))
 

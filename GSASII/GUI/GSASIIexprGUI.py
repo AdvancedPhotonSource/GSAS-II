@@ -14,7 +14,7 @@ from .. import GSASIIfiles as G2fil
 from .. import GSASIImath as G2mth
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
-from . import GSASIIctrlGUI as G2G
+from .GUI import GSASIIctrlGUI as G2G
 
 # Define a short name for convenience
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -63,7 +63,7 @@ def LoadDefaultExpressions():
     DefaultExpressions.txt found in the path. Duplicates are removed and
     expressions are sorted alphabetically
     """
-    global defaultExpressions
+    global defaultExpressions  # noqa: PLW0603
     if defaultExpressions is not None:
         return  # run this routine only once
     defaultExpressions = sorted(
@@ -189,7 +189,7 @@ class ExpressionDialog(wx.Dialog):
                 continue
             try:
                 self.parmDict[key] = float(val)
-            except:
+            except:  # noqa: E722
                 pass
         # separate the variables by type
         self.parmLists = IndexParmDict(self.parmDict, self.fit)
@@ -267,12 +267,12 @@ class ExpressionDialog(wx.Dialog):
             self.ExtraBtn = None
         bSizer.Add((1, 1), 1, wx.ALL | wx.EXPAND, 0)
         self.OKbtn = wx.Button(self, wx.ID_OK)
-        self.OKbtn.Bind(wx.EVT_BUTTON, lambda event: self.EndModal(wx.ID_OK))
+        self.OKbtn.Bind(wx.EVT_BUTTON, lambda event: self.EndModal(wx.ID_OK))  # noqa: ARG005
         self.OKbtn.SetDefault()
         self.OKbtn.Disable()
         btnsizer.AddButton(self.OKbtn)
         btn = wx.Button(self, wx.ID_CANCEL)
-        btn.Bind(wx.EVT_BUTTON, lambda event: self.EndModal(wx.ID_CANCEL))
+        btn.Bind(wx.EVT_BUTTON, lambda event: self.EndModal(wx.ID_CANCEL))  # noqa: ARG005
         btnsizer.AddButton(btn)
         btnsizer.Realize()
         bSizer.Add(btnsizer, 0, WACV | wx.ALL, 5)
@@ -303,7 +303,7 @@ class ExpressionDialog(wx.Dialog):
         # self.varbox.SetupScrolling()
         # self.mainsizer.Fit(self)
 
-    def OnExtra(self, event):
+    def OnExtra(self, event):  # noqa: ARG002
         exprObj = G2obj.ExpressionObj()
         exprObj.LoadExpression(
             self.expr,
@@ -325,7 +325,7 @@ class ExpressionDialog(wx.Dialog):
                 self.varValue[v] = val
         wx.CallLater(100, self.Repaint, exprObj)
 
-    def Show(self, mode=True):
+    def Show(self, mode=True):  # noqa: ARG002
         """Call to use the dialog after it is created.
 
         :returns: None (On Cancel) or a new :class:`~GSASIIobj.ExpressionObj`
@@ -401,7 +401,7 @@ class ExpressionDialog(wx.Dialog):
                 if varname in self.parmDict:
                     pass
                 elif "*" in varname:
-                    l = G2obj.LookupWildCard(varname, list(self.parmDict.keys()))
+                    l = G2obj.LookupWildCard(varname, list(self.parmDict.keys()))  # noqa: E741
                     if len(l) == 0:
                         invalid += 1
                         if msg:
@@ -473,7 +473,7 @@ class ExpressionDialog(wx.Dialog):
             self.varName[v] = var
         self.OnValidate(None)
 
-    def SelectG2var(self, sel, var, parmList):
+    def SelectG2var(self, sel, var, parmList):  # noqa: ARG002
         """Offer a selection of a GSAS-II variable.
 
         :param int sel: Determines the type of variable to be selected.
@@ -748,12 +748,12 @@ class BondDialog(wx.Dialog):
         parent,
         Phases,
         parmDict,
-        exprObj=None,
+        exprObj=None,  # noqa: ARG002
         header="Select a bond for table",
         wintitle="Select bond",
-        VarLabel=None,
-        depVarDict=None,
-        ExtraButton=None,
+        VarLabel=None,  # noqa: ARG002
+        depVarDict=None,  # noqa: ARG002
+        ExtraButton=None,  # noqa: ARG002
         usedVars=None,
     ):
         if usedVars is None:
@@ -779,7 +779,7 @@ class BondDialog(wx.Dialog):
         else:
             self.Draw()
 
-    def OnSetRadii(self, event):
+    def OnSetRadii(self, event):  # noqa: ARG002
         if "DisAglCtls" in self.Phases[self.pName]["General"]:
             DisAglCtls = copy.deepcopy(self.Phases[self.pName]["General"]["DisAglCtls"])
         else:
@@ -893,12 +893,12 @@ class BondDialog(wx.Dialog):
     def GetSelection(self):
         return self.pName, self.Oatom, self.Tatom
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -920,12 +920,12 @@ class AngleDialog(wx.Dialog):
         parent,
         Phases,
         parmDict,
-        exprObj=None,
+        exprObj=None,  # noqa: ARG002
         header="Select an angle for table",
         wintitle="Select angle",
-        VarLabel=None,
-        depVarDict=None,
-        ExtraButton=None,
+        VarLabel=None,  # noqa: ARG002
+        depVarDict=None,  # noqa: ARG002
+        ExtraButton=None,  # noqa: ARG002
         usedVars=None,
     ):
         if usedVars is None:
@@ -951,7 +951,7 @@ class AngleDialog(wx.Dialog):
         else:
             self.Draw()
 
-    def OnSetRadii(self, event):
+    def OnSetRadii(self, event):  # noqa: ARG002
         if "DisAglCtls" in self.Phases[self.pName]["General"]:
             DisAglCtls = copy.deepcopy(self.Phases[self.pName]["General"]["DisAglCtls"])
         else:
@@ -1039,9 +1039,7 @@ class AngleDialog(wx.Dialog):
             for iA, aName in enumerate(neigh):
                 for cName in neigh[iA + 1 :]:
                     bNames.append(
-                        "{};{}".format(
-                            aName[0].replace(" ", ""), cName[0].replace(" ", "")
-                        )
+                        f"{aName[0].replace(' ', '')};{cName[0].replace(' ', '')}"
                     )
         if bNames:
             targAtoms = wx.ComboBox(
@@ -1090,12 +1088,12 @@ class AngleDialog(wx.Dialog):
     def GetSelection(self):
         return self.pName, self.Oatom, self.Tatoms
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -1144,7 +1142,7 @@ if __name__ == "__main__":
     import pickle
 
     def showEQ(calcobj):
-        print
+        print  # noqa: B018
         print(calcobj.eObj.expression)
         for v in sorted(calcobj.eObj.freeVars.keys() + calcobj.eObj.assgnVars.keys()):
             print("  ", v, "=", calcobj.exprDict[v])
@@ -1160,7 +1158,7 @@ if __name__ == "__main__":
     calcobj = G2obj.ExpressionCalcObj(obj)
     calcobj.SetupCalc(parmDict2)
     showEQ(calcobj)
-    fp = open("/tmp/obj.pickle", "w")
+    fp = open("/tmp/obj.pickle", "w")  # noqa: SIM115
     pickle.dump(obj, fp)
     fp.close()
 
@@ -1172,7 +1170,7 @@ if __name__ == "__main__":
     calcobj.SetupCalc(parmDict1)
     showEQ(calcobj)
 
-    fp = open("/tmp/obj.pickle")
+    fp = open("/tmp/obj.pickle")  # noqa: SIM115
     obj = pickle.load(fp)
     fp.close()
     parmDict2 = {"0::Afrac:0": 0.0, "0::Afrac:1": 1.0}

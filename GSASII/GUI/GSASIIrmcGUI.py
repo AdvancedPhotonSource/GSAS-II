@@ -11,28 +11,28 @@ Created on Sun Jul  6 14:27:24 2025
 Routines for Phase/RMC follow. Only Update routines are here
 all others are in GSASIIphsGUI.py
 """
-import copy
-import os
-import shutil
-import time
+import copy  # noqa: E402
+import os  # noqa: E402
+import shutil  # noqa: E402
+import time  # noqa: E402
 
-import numpy as np
-import wx
-import wx.grid as wg
+import numpy as np  # noqa: E402
+import wx  # noqa: E402
+import wx.grid as wg  # noqa: E402
 
-from .. import GSASIIElem as G2elem
-from .. import GSASIIlattice as G2lat
-from .. import GSASIImath as G2mth
-from .. import GSASIIplot as G2plt
-from .. import GSASIIpwd as G2pwd
-from .. import GSASIIspc as G2spc
-from ..data import atmdata
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIphsGUI as G2phsG
+from .. import GSASIIElem as G2elem  # noqa: E402
+from .. import GSASIIlattice as G2lat  # noqa: E402
+from .. import GSASIImath as G2mth  # noqa: E402
+from .. import GSASIIplot as G2plt  # noqa: E402
+from .. import GSASIIpwd as G2pwd  # noqa: E402
+from .. import GSASIIspc as G2spc  # noqa: E402
+from ..data import atmdata  # noqa: E402
+from . import GSASIIdataGUI as G2gd  # noqa: E402
+from . import GSASIIphsGUI as G2phsG  # noqa: E402
+from .GUI import GSASIIctrlGUI as G2G  # noqa: E402
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -43,7 +43,7 @@ try:
     BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
     RED = wx.Colour(255, 0, 0)
     WACV = wx.ALIGN_CENTER_VERTICAL
-except:
+except:  # noqa: E722
     pass
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
@@ -109,9 +109,9 @@ DrawStyleChoice = [
 
 def UpdateRMC(G2frame, data):
     """Present the controls for running fullrmc, RMCProfile or PDFfit"""
-    global runFile
+    global runFile  # noqa: PLW0603
 
-    def OnRMCselect(event):
+    def OnRMCselect(event):  # noqa: ARG001
         G2frame.RMCchoice = RMCsel.GetStringSelection()
         wx.CallLater(200, UpdateRMC, G2frame, data)
 
@@ -200,7 +200,7 @@ def UpdateRMC(G2frame, data):
                 atId = RMCPdict["atSeq"][iType]
                 try:
                     lbl = RMCPdict["Isotope"][atId]
-                except:
+                except:  # noqa: E722
                     lbl = "?"
                 atmChoice.Add(wx.StaticText(pnl, label=lbl), 0, WACV)
         return atmChoice
@@ -296,7 +296,7 @@ def UpdateRMC(G2frame, data):
             )
         return metaSizer
 
-    def SetRestart(invalid, value, tc):
+    def SetRestart(invalid, value, tc):  # noqa: ARG001
         RMCPdict["ReStart"] = [True, True]
 
     def GetSuperSizer(RMCPdict, Xmax):
@@ -422,17 +422,17 @@ def UpdateRMC(G2frame, data):
             name, item = Indx[Obj.GetId()]
             RMCPdict[name][item][1] = not RMCPdict[name][item][1]
 
-        def OnRefSel(event):
+        def OnRefSel(event):  # noqa: ARG001
             RMCPdict["refinement"] = reftype.GetStringSelection()
             wx.CallLater(100, UpdateRMC, G2frame, data)
 
-        def OnDataSel(event):
+        def OnDataSel(event):  # noqa: ARG001
             RMCPdict["SeqDataType"] = dataType.GetStringSelection()
 
-        def OnSeqCopy(event):
+        def OnSeqCopy(event):  # noqa: ARG001
             RMCPdict["SeqCopy"] = not RMCPdict["SeqCopy"]
 
-        def OnSeqReverse(event):
+        def OnSeqReverse(event):  # noqa: ARG001
             RMCPdict["SeqReverse"] = not RMCPdict["SeqReverse"]
 
         # --- FileSizer starts here
@@ -559,7 +559,7 @@ def UpdateRMC(G2frame, data):
 
         if G2frame.RMCchoice == "PDFfit" and RMCPdict["refinement"] == "sequential":
 
-            def OnAddPDF(event):
+            def OnAddPDF(event):  # noqa: ARG001
                 """Add PDF G(r)s while maintanining original sequence"""
                 usedList = RMCPdict["seqfiles"]
                 PDFlist = [item[1:][0] for item in G2frame.GetFileList("PDF")]
@@ -592,7 +592,7 @@ def UpdateRMC(G2frame, data):
                 dlg.Destroy()
                 wx.CallAfter(UpdateRMC, G2frame, data)
 
-            def OnDelPDF(event):
+            def OnDelPDF(event):  # noqa: ARG001
                 usedList = [item[0] for item in RMCPdict["seqfiles"]]
                 dlg = G2G.G2MultiChoiceDialog(
                     G2frame.FRMC,
@@ -779,7 +779,7 @@ def UpdateRMC(G2frame, data):
         for head in Heads:
             fileSizer.Add(wx.StaticText(G2frame.FRMC, label=head), 0, WACV)
         for fil in RMCPdict["files"]:
-            for head in Heads:
+            for head in Heads:  # noqa: B007
                 fileSizer.Add(wx.StaticText(G2frame.FRMC, label=20 * "-"), 0, WACV)
             fileSizer.Add(wx.StaticText(G2frame.FRMC, label=fil), 0, WACV)
             Rfile = RMCPdict["files"][fil][0]
@@ -1003,7 +1003,7 @@ def UpdateRMC(G2frame, data):
             RMCPdict[key] = RMCPdict.get(key, val)
 
         def GetSuperSizer():
-            def ShowRmax(*args, **kwargs):
+            def ShowRmax(*args, **kwargs):  # noqa: ARG001
                 cell = data["General"]["Cell"][1:7]
                 bigcell = np.array(cell) * np.array(RMCPdict["SuperCell"] + [1, 1, 1])
                 bigG = G2lat.cell2Gmat(bigcell)[0]
@@ -1057,10 +1057,10 @@ def UpdateRMC(G2frame, data):
                 )
             return boxSizer
 
-        def OnReStart(event):
+        def OnReStart(event):  # noqa: ARG001
             RMCPdict["ReStart"][0] = not RMCPdict["ReStart"][0]
 
-        def OnAddSwap(event):
+        def OnAddSwap(event):  # noqa: ARG001
             RMCPdict["Swaps"].append(
                 [
                     "",
@@ -1070,7 +1070,7 @@ def UpdateRMC(G2frame, data):
             )
             wx.CallAfter(UpdateRMC, G2frame, data)
 
-        def OnPdbButton(event):
+        def OnPdbButton(event):  # noqa: ARG001
             dlg = wx.FileDialog(
                 G2frame.FRMC,
                 "Choose molecule pdb file",
@@ -1083,7 +1083,7 @@ def UpdateRMC(G2frame, data):
                 RMCPdict["moleculePdb"] = fName
                 pdbButton.SetLabel(fName)
 
-        def OnAddAngle(event):
+        def OnAddAngle(event):  # noqa: ARG001
             RMCPdict["Angles"].append(["", "", "", 0.0, 0.0, 0.0, 0.0])
             wx.CallAfter(UpdateRMC, G2frame, data)
 
@@ -1103,7 +1103,7 @@ def UpdateRMC(G2frame, data):
             #     angle,i = Indx[Obj.GetId()]
             #     RMCPdict['Angles'][angle][i] = Obj.GetStringSelection()
 
-            def SetRestart1(invalid, value, tc):
+            def SetRestart1(invalid, value, tc):  # noqa: ARG001
                 RMCPdict["ReStart"][1] = True
 
             Indx = {}
@@ -1353,7 +1353,7 @@ def UpdateRMC(G2frame, data):
                 "",
                 RMCPdict,
                 "useBondConstraints",
-                OnChange=lambda event: UpdateRMC(G2frame, data),
+                OnChange=lambda event: UpdateRMC(G2frame, data),  # noqa: ARG005
             ),
             0,
             WACV,
@@ -1377,7 +1377,7 @@ def UpdateRMC(G2frame, data):
             mainSizer.Add(GetAngleSizer(), 0)
         RMCPdict["Groups"] = RMCPdict.get("Groups", [])
 
-        def OnAddGroup(event):
+        def OnAddGroup(event):  # noqa: ARG001
             index = len(RMCPdict["Groups"])
             RMCPdict["Groups"].append([])
             GroupEditor(index)
@@ -1452,7 +1452,7 @@ def UpdateRMC(G2frame, data):
                 grpadd.index = i
                 grpBox.Add(grpadd, 0, WACV)
                 msg = " Contains atoms: "
-                for i, _n in enumerate(g):
+                for i, _n in enumerate(g):  # noqa: PLW2901
                     if i + 1 == len(g):
                         msg += " && "
                     elif i > 0:
@@ -1473,7 +1473,7 @@ def UpdateRMC(G2frame, data):
                 "",
                 RMCPdict,
                 "addThermalBroadening",
-                OnChange=lambda event: UpdateRMC(G2frame, data),
+                OnChange=lambda event: UpdateRMC(G2frame, data),  # noqa: ARG005
             ),
             0,
             WACV,
@@ -1682,26 +1682,26 @@ def UpdateRMC(G2frame, data):
 
         # end patches
 
-        def OnHisto(event):
+        def OnHisto(event):  # noqa: ARG001
             RMCPdict["histogram"][0] = histo.GetStringSelection()
 
-        def OnSize(event):
+        def OnSize(event):  # noqa: ARG001
             RMCPdict["UseSampBrd"][0] = samSize.GetValue()
 
-        def OnStrain(event):
+        def OnStrain(event):  # noqa: ARG001
             RMCPdict["UseSampBrd"][1] = strain.GetValue()
 
-        def OnFitScale(event):
+        def OnFitScale(event):  # noqa: ARG001
             RMCPdict["FitScale"] = not RMCPdict["FitScale"]
 
-        def SetRestart(invalid, value, tc):
+        def SetRestart(invalid, value, tc):  # noqa: ARG001
             RMCPdict["ReStart"] = [True, True]
 
-        def OnUseBVS(event):
+        def OnUseBVS(event):  # noqa: ARG001
             RMCPdict["useBVS"] = not RMCPdict["useBVS"]
             wx.CallAfter(UpdateRMC, G2frame, data)
 
-        def OnAddSwap(event):
+        def OnAddSwap(event):  # noqa: ARG001
             RMCPdict["Swaps"].append(
                 [
                     "",
@@ -1711,24 +1711,24 @@ def UpdateRMC(G2frame, data):
             )
             wx.CallAfter(UpdateRMC, G2frame, data)
 
-        def OnAddFxCN(event):
+        def OnAddFxCN(event):  # noqa: ARG001
             RMCPdict["FxCN"].append(["", "", 0.5, 2.0, 6, 1.0, 0.00001])
             wx.CallAfter(UpdateRMC, G2frame, data)
 
-        def OnAddAveCN(event):
+        def OnAddAveCN(event):  # noqa: ARG001
             RMCPdict["AveCN"].append(["", "", 0.5, 2.0, 6.0, 0.00001])
             wx.CallAfter(UpdateRMC, G2frame, data)
 
-        def OnAddAnglePot(event):
+        def OnAddAnglePot(event):  # noqa: ARG001
             RMCPdict["Potentials"]["Angles"].append(["", "", "", 0.0, 0.0, 0.0, 0.0])
             wx.CallAfter(UpdateRMC, G2frame, data)
 
-        def OnAddBondPot(event):
+        def OnAddBondPot(event):  # noqa: ARG001
             RMCPdict["Potentials"]["Stretch"].append(["", "", 0.0, 0.0])
             wx.CallAfter(UpdateRMC, G2frame, data)
 
         def GetTimeSizer():
-            def OnUseGPU(event):
+            def OnUseGPU(event):  # noqa: ARG001
                 RMCPdict["useGPU"] = not RMCPdict["useGPU"]
 
             timeSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2005,7 +2005,7 @@ def UpdateRMC(G2frame, data):
                 angle, i = Indx[Obj.GetId()]
                 RMCPdict["Potentials"]["Angles"][angle][i] = Obj.GetStringSelection()
 
-            def SetRestart1(invalid, value, tc):
+            def SetRestart1(invalid, value, tc):  # noqa: ARG001
                 RMCPdict["ReStart"][1] = True
 
             atChoice = [atm for atm in RMCPdict["atSeq"] if "Va" not in atm]
@@ -2102,7 +2102,7 @@ def UpdateRMC(G2frame, data):
                 bond, i = Indx[Obj.GetId()]
                 RMCPdict["Potentials"]["Stretch"][bond][i] = Obj.GetStringSelection()
 
-            def SetRestart1(invalid, value, tc):
+            def SetRestart1(invalid, value, tc):  # noqa: ARG001
                 RMCPdict["ReStart"][1] = True
 
             atChoice = [atm for atm in RMCPdict["atSeq"] if "Va" not in atm]
@@ -2389,7 +2389,7 @@ def UpdateRMC(G2frame, data):
         Indx = {}
 
         def PDFParmSizer():
-            def OnShape(event):
+            def OnShape(event):  # noqa: ARG001
                 RMCPdict["shape"] = shape.GetValue()
                 wx.CallAfter(UpdateRMC, G2frame, data)
 
@@ -2453,7 +2453,7 @@ def UpdateRMC(G2frame, data):
 
             return parmSizer
 
-        def OnSpaceGroup(event):
+        def OnSpaceGroup(event):  # noqa: ARG001
             # try a lookup on the user-supplied name
             SpcGp = G2phsG.GetSpGrpfromUser(G2frame.FRMC, SpGrp)
             SGErr, SGData = G2spc.SpcGroup(SpcGp)
@@ -2471,7 +2471,7 @@ def UpdateRMC(G2frame, data):
                 G2G.SGMessageBox(G2frame.FRMC, msg, text, table).Show()
             G2spc.UpdateSytSym(data)
 
-        def OnCellRef(event):
+        def OnCellRef(event):  # noqa: ARG001
             RMCPdict["cellref"] = not RMCPdict["cellref"]
 
         def AtomSizer():
@@ -2493,7 +2493,7 @@ def UpdateRMC(G2frame, data):
                         )
                     wx.CallAfter(UpdateRMC, G2frame, data)
 
-            def OnUisoRefine(event):
+            def OnUisoRefine(event):  # noqa: ARG001
                 RMCPdict["UisoRefine"] = uiso.GetValue()
                 nextP = 80
                 oType = ""
@@ -2758,7 +2758,7 @@ def UpdateRMC(G2frame, data):
     try:
         if G2frame.FRMC.GetSizer():
             G2frame.FRMC.GetSizer().Clear(True)
-    except:  # wxAssertionError from C++
+    except:  # wxAssertionError from C++  # noqa: E722
         pass
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     if not len(data["Atoms"]):

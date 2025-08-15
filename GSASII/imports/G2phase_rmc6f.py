@@ -28,7 +28,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
 
     def ContentsValidator(self, filename):
         "Test if the rmc6f file has a CELL record"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         if fp.readline()[:-1] != "(Version 6f format configuration file)":
             self.errors = "This is not a valid .rmc6f file."
             fp.close()
@@ -36,17 +36,17 @@ class PhaseReaderClass(G2obj.ImportPhase):
         fp.close()
         return True
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+    def Reader(self, filename, filepointer, ParentFrame=None, **unused):  # noqa: ARG002
         """Read a rmc6f file using
         :meth:`~GSASII.imports.G2phase_rmc6f.PhaseReaderClass.Readrmc6fPhase`
         """
         self.Phase = self.Readrmc6fPhase(filename, ParentFrame)
         return True
 
-    def Readrmc6fPhase(self, filename, parent=None):
+    def Readrmc6fPhase(self, filename, parent=None):  # noqa: ARG002
         """Read a phase from a rmc6f file."""
         self.errors = "Error opening file"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         Phase = {}
         Title = os.path.split(filename)
         if G2G is not None:
@@ -81,7 +81,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
             elif "Atoms" in S[:5]:
                 S = fp.readline()[:-1]
                 AtRec = S.split()
-                for ix, s in enumerate(AtRec):
+                for ix, s in enumerate(AtRec):  # noqa: B007
                     if "." in s:
                         break  # is points at x
                 while S:

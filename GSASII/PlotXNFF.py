@@ -20,15 +20,15 @@ import numpy as np
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIElem as G2el
-from . import GSASIItestplot as plot
-from .data import atmdata
-from .GUI import GSASIIElemGUI as G2elG
+from . import GSASIIElem as G2el  # noqa: E402
+from . import GSASIItestplot as plot  # noqa: E402
+from .data import atmdata  # noqa: E402
+from .GUI import GSASIIElemGUI as G2elG  # noqa: E402
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -64,13 +64,13 @@ class PlotXNFF(wx.Frame):
         self._init_ctrls(parent)
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
 
-    def ExitMain(self, event):
+    def ExitMain(self, event):  # noqa: ARG002
         sys.exit()
 
-    def OnFileExit(self, event):
+    def OnFileExit(self, event):  # noqa: ARG002
         self.Close()
 
-    def OnPickElement(self, Parms):
+    def OnPickElement(self, Parms):  # noqa: ARG002
         PE = G2elG.PickElement(self.PlotFFPanel, oneOnly=True)
         if PE.ShowModal() == wx.ID_OK:
             self.xrayFFs = G2el.GetFormFactorCoeff(PE.Elem)
@@ -162,5 +162,5 @@ if __name__ == "__main__":
     frm.Show(False)
     win = PlotXNFF(frm)
     win.Show()
-    win.Bind(wx.EVT_WINDOW_DESTROY, lambda event: sys.exit())
+    win.Bind(wx.EVT_WINDOW_DESTROY, lambda event: sys.exit())  # noqa: ARG005
     app.MainLoop()

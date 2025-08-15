@@ -14,15 +14,15 @@ import wx
 from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from GSASII import GSASIIElem as G2el
-from GSASII import GSASIItestplot as plot
-from GSASII.data import atmdata
-from GSASII.GUI import GSASIIElemGUI as G2elG
+from GSASII import GSASIIElem as G2el  # noqa: E402
+from GSASII import GSASIItestplot as plot  # noqa: E402
+from GSASII.data import atmdata  # noqa: E402
+from GSASII.GUI import GSASIIElemGUI as G2elG  # noqa: E402
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -63,13 +63,13 @@ class testXNFF(wx.Frame):
         self._init_ctrls(parent)
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
 
-    def ExitMain(self, event):
+    def ExitMain(self, event):  # noqa: ARG002
         sys.exit()
 
-    def OnFileExit(self, event):
+    def OnFileExit(self, event):  # noqa: ARG002
         self.Close()
 
-    def OnPickElement(self, Parms):
+    def OnPickElement(self, Parms):  # noqa: ARG002
         PE = G2elG.PickElement(self.testFFPanel, oneOnly=True)
         if PE.ShowModal() == wx.ID_OK:
             self.xrayFFs = G2el.GetFormFactorCoeff(PE.Elem)

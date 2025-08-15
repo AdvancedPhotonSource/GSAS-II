@@ -105,8 +105,7 @@ class ExportPowderFXYE(G2fil.ExportBaseclass):
         s[s == 0] = np.max(s)
         s = 1.0 / s
         self.Write(
-            "BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE"
-            % (len(x), len(x), x[0], (x[1] - x[0]))
+            f"BANK 1 {len(x)} {len(x)} CONS {x[0]:.2f} {x[1] - x[0]:.2f} 0 0 FXYE"
         )
         #            for X,Y,S in zip(x,histblk['Data'][1],s):
         #                self.Write("{:15.6g} {:15.6g} {:15.6g}".format(X,Y,S))

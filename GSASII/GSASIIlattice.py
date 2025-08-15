@@ -816,9 +816,9 @@ def fmtCellConstraints(cellConstr):
     A3, A4, A5 = sym.symbols("A3, A4, A5")
     consDict = {}
     for num, cons in enumerate(cellConstr):
-        cons = str(cons.factor(A3, A4, A5, deep=True).simplify())
+        cons = str(cons.factor(A3, A4, A5, deep=True).simplify())  # noqa: PLW2901
         cons = re.sub("T([0-2]?)([0-2]?)", r"T[\2,\1]", cons)  # Tij to T[j,i]
-        l = []
+        l = []  # noqa: E741
         for i in str(cons).split("+"):
             if ")" in i:
                 l[-1] += " + " + i.strip()
@@ -889,7 +889,13 @@ cell generated from oldA[i] values.
 
 
 def GenCellConstraints(
-    Trans, origPhase, newPhase, origA, oSGLaue, nSGLaue, debug=False
+    Trans,
+    origPhase,
+    newPhase,
+    origA,
+    oSGLaue,
+    nSGLaue,
+    debug=False,
 ):
     """Generate the constraints between two unit cells constants for a phase transformed
     by matrix Trans.
@@ -915,7 +921,7 @@ def GenCellConstraints(
     for i in range(6):
         constr = [[-1.0, G2obj.G2VarObj(f"{newPhase}::A{i}")]]
         mult = []
-        for j, item in enumerate(cellXformRelations[i]):
+        for j, item in enumerate(cellXformRelations[i]):  # noqa: B007
             const, aTerm, tTerm = item.split("*", 2)
             const = float(const) * eval(tTerm)
             mult.append(const)
@@ -1281,7 +1287,7 @@ def FillUnitCell(Phase, Force=True):
             Uij = atom[cia + 2 : cia + 8]
             result = G2spc.GenAtom(xyz, SGData, False, Uij, Force)
             for item in result:
-                item = list(item)
+                item = list(item)  # noqa: PLW2901
                 item[2] += cellj
                 #                if item[0][2] >= .95: item[0][2] -= 1.
                 atom[cx : cx + 3] = item[0]
@@ -1299,7 +1305,7 @@ def FillUnitCell(Phase, Force=True):
         else:
             result = G2spc.GenAtom(xyz, SGData, False, Move=Force)
             for item in result:
-                item = list(item)
+                item = list(item)  # noqa: PLW2901
                 item[2] += cellj
                 #                if item[0][2] >= .95: item[0][2] -= 1.
                 atom[cx : cx + 3] = item[0]
@@ -1344,7 +1350,7 @@ def GetUnique(Phase, atCodes):
                         xyzs = np.array([equiv[0] for equiv in Equiv])
                         Indx[jnd] = noDuplicate(xyz, xyzs)
     Ind = []
-    for ind in Indx:
+    for ind in Indx:  # noqa: PLC0206
         if Indx[ind]:
             newAtoms.append(Atoms[ind])
             newAtCodes.append(atCodes[ind])
@@ -1439,7 +1445,7 @@ def cell2AB(cell, alt=False):
     return A, B
 
 
-def HKL2SpAng(H, cell, SGData):
+def HKL2SpAng(H, cell, SGData):  # noqa: ARG001
     """Computes spherical coords for hkls; view along 001
 
     :param array H: arrays of hkl
@@ -1649,7 +1655,7 @@ def uniqueCombinations(items, n):
 def selections(items, n):
     """take n (not necessarily distinct) items, order matters"""
 
-    def keepAllItems(items, i):
+    def keepAllItems(items, i):  # noqa: ARG001
         return items
 
     return _combinators(keepAllItems, items, n)
@@ -1756,7 +1762,7 @@ def calc_rDsqA(H, A):
     "calc array of 1/d^2 from array of hkl & A-terms"
     # B = np.array([H[0]**2,H[1]**2,H[2]**2,H[0]*H[1],H[0]*H[2],H[1]*H[2]])
     # return np.sum(np.array(A)[:,nxs]*B,axis=0)
-    h, k, l = H
+    h, k, l = H  # noqa: E741
     return (
         A[0] * h * h
         + A[1] * k * k
@@ -1793,13 +1799,13 @@ def calc_rDsqZSS(H, A, vec, Z, tth, lam):
     return rdsq
 
 
-def calc_rDsqT(H, A, Z, tof, difC):
+def calc_rDsqT(H, A, Z, tof, difC):  # noqa: ARG001
     "computes 1/d^2 from hkl array & reciprocal metric tensor A with TOF ZERO shift"
     rdsq = calc_rDsqA(H, A) + Z / difC
     return rdsq
 
 
-def calc_rDsqTSS(H, A, vec, Z, tof, difC):
+def calc_rDsqTSS(H, A, vec, Z, tof, difC):  # noqa: ARG001
     "computes 1/d^2 from hklm array, reciprocal metric tensor A & k-vector with TOF Z shift"
     rdsq = calc_rDsqA(H[:3] + (H[3][:, np.newaxis] * vec).T, A) + Z / difC
     return rdsq
@@ -1816,7 +1822,7 @@ def PlaneIntercepts(Amat, H, phase, stack):
         HX = []
         for i in [0, 1, 2]:
             if H[i]:
-                h, k, l = [(i + 1) % 3, (i + 2) % 3, (i + 3) % 3]
+                h, k, l = [(i + 1) % 3, (i + 2) % 3, (i + 3) % 3]  # noqa: E741
                 for j in [0, 1, 2, 3]:
                     hx = [0, 0, 0]
                     intcpt = (
@@ -1848,7 +1854,7 @@ def MaxIndex(dmin, A):
     Hmax = [0, 0, 0]
     try:
         cell = A2cell(A)
-    except:
+    except:  # noqa: E722
         cell = [1.0, 1.0, 1.0, 90.0, 90.0, 90.0]
     for i in range(3):
         Hmax[i] = int(np.round(cell[i] / dmin))
@@ -1950,7 +1956,7 @@ def Hx2Rh(Hx):
 
 def CentCheck(Cent, H):
     "checks individual hkl for centering extinction; returns True for allowed, False otherwise - slow"
-    h, k, l = H
+    h, k, l = H  # noqa: E741
     return not (
         (Cent == "A" and (k + l) % 2)
         or (Cent == "B" and (h + l) % 2)
@@ -2068,7 +2074,12 @@ def GetBraviasNum(center, system):
 
 
 def _GenHBravais_cctbx(
-    dmin, Bravais, A, sg_type, uctbx_unit_cell, miller_index_generator
+    dmin,
+    Bravais,
+    A,
+    sg_type,
+    uctbx_unit_cell,
+    miller_index_generator,
 ):
     """Alternate form of :func:`GenHBravais` that uses CCTBX internals"""
     g_inv = np.array(
@@ -2089,10 +2100,10 @@ def _GenHBravais_cctbx(
     #    sg_type = make_sgtype(Bravais)
     mig = miller_index_generator(uc, sg_type, 0, dmin)
     result = []
-    for h, k, l in mig:
+    for h, k, l in mig:  # noqa: E741
         d = uc.d((h, k, l))
         result.append([h, k, l, d, -1])
-    result.sort(key=lambda l: l[3], reverse=True)
+    result.sort(key=lambda l: l[3], reverse=True)  # noqa: E741
     return result
 
 
@@ -2199,7 +2210,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None, ifList=False):
 
     elif Bravais in [5, 6]:  # tetragonal
         H = []
-        for l in range(Hmax[2] + 1):
+        for l in range(Hmax[2] + 1):  # noqa: E741
             for k in range(Hmax[1] + 1):
                 for h in range(k, Hmax[0] + 1):
                     if [h, k, l] == [0, 0, 0]:
@@ -2212,7 +2223,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None, ifList=False):
         lmin = 0
         if Bravais == 3:
             lmin = -Hmax[2]
-        for l in range(lmin, Hmax[2] + 1):
+        for l in range(lmin, Hmax[2] + 1):  # noqa: E741
             for k in range(Hmax[1] + 1):
                 hmin = k
                 if l < 0:
@@ -2225,7 +2236,7 @@ def GenHBravais(dmin, Bravais, A, cctbx_args=None, ifList=False):
 
     else:  # cubic
         H = []
-        for l in range(Hmax[2] + 1):
+        for l in range(Hmax[2] + 1):  # noqa: E741
             for k in range(l, Hmax[1] + 1):
                 for h in range(k, Hmax[0] + 1):
                     if [h, k, l] == [0, 0, 0]:
@@ -2294,7 +2305,7 @@ def GenHLaue(dmin, SGData, A):
     dminsq = 1.0 / (dmin**2)
     HKL = []
     if SGLaue == "-1":  # triclinic
-        for l in range(-Hmax[2], Hmax[2] + 1):
+        for l in range(-Hmax[2], Hmax[2] + 1):  # noqa: E741
             for k in range(-Hmax[1], Hmax[1] + 1):
                 hmin = 0
                 if (k < 0) or (k == 0 and l < 0):
@@ -2315,8 +2326,8 @@ def GenHLaue(dmin, SGData, A):
                 lmin = 0
                 if k < 0:
                     lmin = 1
-                for l in range(lmin, Hmax[2] + 1):
-                    [h, k, l] = SwapIndx(-axisnum, [h, k, l])
+                for l in range(lmin, Hmax[2] + 1):  # noqa: E741
+                    [h, k, l] = SwapIndx(-axisnum, [h, k, l])  # noqa: E741, PLW2901
                     H = []
                     if CentCheck(SGLatt, [h, k, l]):
                         H = [h, k, l]
@@ -2324,9 +2335,9 @@ def GenHLaue(dmin, SGData, A):
                         rdsq = calc_rDsq(H, A)
                         if 0 < rdsq <= dminsq:
                             HKL.append([h, k, l, 1.0 / math.sqrt(rdsq)])
-                    [h, k, l] = SwapIndx(axisnum, [h, k, l])
+                    [h, k, l] = SwapIndx(axisnum, [h, k, l])  # noqa: E741, PLW2901
     elif SGLaue in ["mmm", "4/m", "6/m"]:  # orthorhombic
-        for l in range(Hmax[2] + 1):
+        for l in range(Hmax[2] + 1):  # noqa: E741
             for h in range(Hmax[0] + 1):
                 kmin = 1
                 if SGLaue == "mmm" or h == 0:
@@ -2340,7 +2351,7 @@ def GenHLaue(dmin, SGData, A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h, k, l, 1.0 / math.sqrt(rdsq)])
     elif SGLaue in ["4/mmm", "6/mmm"]:  # tetragonal & hexagonal
-        for l in range(Hmax[2] + 1):
+        for l in range(Hmax[2] + 1):  # noqa: E741
             for h in range(Hmax[0] + 1):
                 for k in range(h + 1):
                     H = []
@@ -2351,7 +2362,7 @@ def GenHLaue(dmin, SGData, A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h, k, l, 1.0 / math.sqrt(rdsq)])
     elif SGLaue in ["3m1", "31m", "3", "3R", "3mR"]:  # trigonals
-        for l in range(-Hmax[2], Hmax[2] + 1):
+        for l in range(-Hmax[2], Hmax[2] + 1):  # noqa: E741
             hmin = 0
             if l < 0:
                 hmin = 1
@@ -2385,7 +2396,7 @@ def GenHLaue(dmin, SGData, A):
                     lmax = h - 1
                     if h == k:
                         lmax += 1
-                for l in range(lmin, lmax + 1):
+                for l in range(lmin, lmax + 1):  # noqa: E741
                     H = []
                     if CentCheck(SGLatt, [h, k, l]):
                         H = [h, k, l]
@@ -2428,7 +2439,7 @@ def GenSSHLaue(dmin, SGData, SSGData, Vec, maxH, A):
     HKL = GenHLaue(dvec, SGData, A)
     SSdH = [vec * h for h in range(-maxH, maxH + 1)]
     SSdH = dict(zip(range(-maxH, maxH + 1), SSdH, strict=False))
-    for h, k, l, d in HKL:
+    for h, k, l, d in HKL:  # noqa: E741
         ext = G2spc.GenHKLf([h, k, l], SGData)[0]  # h,k,l must be integral values here
         if not ext and d >= dmin:
             HKLs.append([h, k, l, 0, d])
@@ -2436,7 +2447,7 @@ def GenSSHLaue(dmin, SGData, SSGData, Vec, maxH, A):
             if dH:
                 DH = SSdH[dH]
                 H = [h + DH[0], k + DH[1], l + DH[2]]
-                d = 1.0 / np.sqrt(calc_rDsq(H, A))
+                d = 1.0 / np.sqrt(calc_rDsq(H, A))  # noqa: PLW2901
                 if d >= dmin:
                     HKLM = np.array([h, k, l, dH])
                     if (
@@ -3654,7 +3665,7 @@ def RBsymChk(RBsym, cubic, coefNames, L=18):
                         newNames.append("C(%d,%d)" % (LM[0], m))
                         newSgns.append(sgn)
     elif RBsym in ["m3m", "-43m", "53m"]:  # force mol. sym. here
-        for L in range(L + 1):
+        for L in range(L + 1):  # noqa: B020, PLR1704
             cubNames, cubSgns = GenShCoeff(RBsym, L)
             newNames += cubNames
             newSgns += cubSgns
@@ -4345,7 +4356,7 @@ def SHarmcal(SytSym, SHFln, psi, gam):
     for term in SHFln:
         trm = term.strip("+").strip("-")  # patch
         if "C(" in term[:3]:
-            l, m = eval(trm.strip("C").strip("c"))
+            l, m = eval(trm.strip("C").strip("c"))  # noqa: E741
             if SytSym in ["m3m", "m3", "43m", "432", "23"] or "c" in trm:
                 Ksl = CubicSHarm(l, m, psi, gam)
             else:
@@ -4363,7 +4374,7 @@ def KslCalc(trm, psi, gam):
 
     :returns array Ksl: spherical harmonics angular part for psi,gam pairs
     """
-    l, m = eval(trm.strip("C").strip("c"))
+    l, m = eval(trm.strip("C").strip("c"))  # noqa: E741
     if "c" in trm:
         return CubicSHarm(l, m, psi, gam)
     else:
@@ -4509,7 +4520,7 @@ def Glnh(SHCoef, psi, gam, SamSym):
 
     Fln = np.zeros(len(SHCoef))
     for i, term in enumerate(SHCoef):
-        l, m, n = eval(term.strip("C"))
+        l, m, n = eval(term.strip("C"))  # noqa: E741
         pcrs, dum = ptx.pyplmpsi(l, m, 1, psi)
         pcrs *= RSQPI
         if m == 0:
@@ -4533,7 +4544,7 @@ def Flnh(SHCoef, phi, beta, SGData):
 
     Fln = np.zeros(len(SHCoef))
     for i, term in enumerate(SHCoef):
-        l, m, n = eval(term.strip("C"))
+        l, m, n = eval(term.strip("C"))  # noqa: E741
         if SGData["SGLaue"] in ["m3", "m3m"]:
             Kcl = 0.0
             for j in range(0, l + 1, 4):
@@ -4571,7 +4582,7 @@ def polfcal(ODFln, SamSym, psi, gam):
     PolVal = np.ones_like(psi)
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.0e-3:
-            l, m, n = eval(term.strip("C"))
+            l, m, n = eval(term.strip("C"))  # noqa: E741
             psrs, dum = ptx.pyplmpsi(l, m, len(psi), psi)
             if SamSym in ["-1", "2/m"]:
                 if m:
@@ -4593,7 +4604,7 @@ def invpolfcal(ODFln, SGData, phi, beta):
     invPolVal = np.ones_like(beta)
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.0e-3:
-            l, m, n = eval(term.strip("C"))
+            l, m, n = eval(term.strip("C"))  # noqa: E741
             if SGData["SGLaue"] in ["m3", "m3m"]:
                 Kcl = 0.0
                 for j in range(0, l + 1, 4):
@@ -4623,7 +4634,7 @@ def textureIndex(SHCoef):
     "needs doc string"
     Tindx = 1.0
     for term in SHCoef:
-        l = eval(term.strip("C"))[0]
+        l = eval(term.strip("C"))[0]  # noqa: E741
         Tindx += SHCoef[term] ** 2 / (2.0 * l + 1.0)
     return Tindx
 

@@ -25,7 +25,7 @@ import numpy as np
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIlattice as G2lat
+from . import GSASIIlattice as G2lat  # noqa: E402
 
 if GSASIIpath.binaryPath:
     nistlattice = os.path.join(GSASIIpath.binaryPath, "LATTIC")
@@ -49,7 +49,7 @@ centerLbl = {
 }
 
 
-def showCell(cell, center="P", setting=" ", *ignored):
+def showCell(cell, center="P", setting=" ", *ignored):  # noqa: ARG001
     """show unit cell input or output nicely formatted.
 
     :param list cell: six lattice constants as float values; a 7th volume value
@@ -181,10 +181,10 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
     line = "?"
     fp = None
     if output:
-        fp = open(output, "w")
+        fp = open(output, "w")  # noqa: SIM115
     try:
         for linenum, line in enumerate(cellout, 1):
-            linenum += 1
+            linenum += 1  # noqa: PLW2901
             _emulateLP(line, fp)
             pat = r"T 2= (.*)/ (.*)/ (.*)"  # transform matrix
             s = re.split(pat, line)
@@ -210,7 +210,7 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
                 celldict["output"].append(
                     (d, lat, vol, mat, "P", " ")
                 )  # note reduced cells are all primitive
-    except:
+    except:  # noqa: E722
         print(f"ReduceCell parse error at line {linenum}\n{line}")
         return celldict
     if len(celldict["output"]) == 0 or len(err) > 0:
@@ -277,7 +277,7 @@ def ConvCell(redcell):
                     setting = "H"
             if linenum == 2:
                 mat = np.array([float(i) for i in line.split()]).reshape(3, 3)
-    except:
+    except:  # noqa: E722
         print(f"ConvCell parse error at line {linenum}:\n{line}")
         if debug and out:
             print("\nUnprocessed convcell output:")
@@ -297,7 +297,7 @@ def CompareCell(
     tolerance=3 * [0.2] + 3 * [1],
     mode="I",
     vrange=8,
-    output=None,
+    output=None,  # noqa: ARG001
 ):
     """Search for matrices that relate two unit cells
 
@@ -487,7 +487,7 @@ def CellSymSearch(
     d = 1
     fp = None
     if output:
-        fp = open(output, "w")
+        fp = open(output, "w")  # noqa: SIM115
     if fp:
         for line in lines:
             _emulateLP(line, fp)

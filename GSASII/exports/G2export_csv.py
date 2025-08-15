@@ -48,7 +48,7 @@ class ExportPhaseCSV(G2fil.ExportBaseclass):
         # test for aniso atoms
         aniso = False
         AtomsList = self.GetAtoms(phasenam)
-        for lbl, typ, mult, xyz, td in AtomsList:
+        for lbl, typ, mult, xyz, td in AtomsList:  # noqa: B007
             if len(td) != 1:
                 aniso = True
                 break
@@ -153,7 +153,7 @@ class ExportPhaseCSV(G2fil.ExportBaseclass):
             AtomsList = self.GetAtoms(phasenam)
             # check for aniso atoms
             aniso = False
-            for lbl, typ, mult, xyz, td in AtomsList:
+            for lbl, typ, mult, xyz, td in AtomsList:  # noqa: B007
                 if len(td) != 1:
                     aniso = True
             lbllist = ["label", "elem", "mult", "x", "y", "z", "frac", "Uiso"]
@@ -434,7 +434,7 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             m,
                             mult,
                             dsp,
@@ -446,8 +446,8 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                             phase,
                             Icorr,
                             x,
-                            x,
-                            x,
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
                             Prfo,
                         ) = refItem[:17]
                         FWHM = G2pwd.getgamFW(gam, sig)
@@ -473,7 +473,7 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             m,
                             mult,
                             dsp,
@@ -511,7 +511,7 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             m,
                             mult,
                             dsp,
@@ -523,8 +523,8 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                             phase,
                             Icorr,
                             x,
-                            x,
-                            x,
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
                             Prfo,
                         ) = refItem[:17]
                         s = np.sqrt(max(sig, 0.0001)) / 100.0  # var -> sig in deg
@@ -578,7 +578,7 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             mult,
                             dsp,
                             pos,
@@ -589,8 +589,8 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                             phase,
                             Icorr,
                             x,
-                            x,
-                            x,
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
                             Prfo,
                         ) = refItem[:16]
                         FWHM = G2pwd.getgamFW(gam, sig)
@@ -616,7 +616,7 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             mult,
                             dsp,
                             pos,
@@ -653,7 +653,7 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                         (
                             h,
                             k,
-                            l,
+                            l,  # noqa: E741
                             mult,
                             dsp,
                             pos,
@@ -664,8 +664,8 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
                             phase,
                             Icorr,
                             x,
-                            x,
-                            x,
+                            x,  # noqa: PLW0128
+                            x,  # noqa: PLW0128
                             Prfo,
                         ) = refItem[:16]
                         g = gam / 100.0
@@ -762,7 +762,7 @@ class ExportSASDCSV(G2fil.ExportBaseclass):
             strict=False,
         ):
             line = ""
-            for val, digits in zip(vallist, digitList, strict=False):
+            for val, digits in zip(vallist, digitList, strict=False):  # noqa: B007
                 if line:
                     line += ","
                 line += f"{val:.6g}"
@@ -909,7 +909,7 @@ class ExportSingleCSV(G2fil.ExportBaseclass):
                 "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
             )
             for refItem in hist.data["data"][1]["RefList"]:
-                h, k, l, m, mult, dsp, Fobs, sig, Fcalc, FobsT, FcalcT, phase, Icorr = (
+                h, k, l, m, mult, dsp, Fobs, sig, Fcalc, FobsT, FcalcT, phase, Icorr = (  # noqa: E741
                     refItem[:13]
                 )
                 self.Write(fmt.format(h, k, l, m, dsp, Fobs, Fcalc, phase, mult, Icorr))
@@ -920,7 +920,7 @@ class ExportSingleCSV(G2fil.ExportBaseclass):
             )
             fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
             for refItem in hist.data["data"][1]["RefList"]:
-                h, k, l, mult, dsp, Fobs, sig, Fcalc, FobsT, FcalcT, phase, Icorr = (
+                h, k, l, mult, dsp, Fobs, sig, Fcalc, FobsT, FcalcT, phase, Icorr = (  # noqa: E741
                     refItem[:12]
                 )
                 self.Write(fmt.format(h, k, l, dsp, Fobs, Fcalc, phase, mult, Icorr))
@@ -962,7 +962,7 @@ class ExportSingleCSV(G2fil.ExportBaseclass):
                 "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
             )
             for refItem in phasDict["RefList"]:
-                h, k, l, m, mult, dsp, Fobs, sig, Fcalc, FobsT, FcalcT, phase, Icorr = (
+                h, k, l, m, mult, dsp, Fobs, sig, Fcalc, FobsT, FcalcT, phase, Icorr = (  # noqa: E741
                     refItem[:13]
                 )
                 self.Write(fmt.format(h, k, l, m, dsp, Fobs, Fcalc, phase, mult, Icorr))
@@ -973,7 +973,7 @@ class ExportSingleCSV(G2fil.ExportBaseclass):
             )
             fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.2f},{:.0f},{:.2f}"
             for refItem in phasDict["RefList"]:
-                h, k, l, mult, dsp, Fobs, sig, Fcalc, FobsT, FcalcT, phase, Icorr = (
+                h, k, l, mult, dsp, Fobs, sig, Fcalc, FobsT, FcalcT, phase, Icorr = (  # noqa: E741
                     refItem[:12]
                 )
                 self.Write(fmt.format(h, k, l, dsp, Fobs, Fcalc, phase, mult, Icorr))

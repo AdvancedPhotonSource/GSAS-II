@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 """Autointegration GSASIIimgGUI and GSASIIimage, hacked for stand-alone use"""
 
 #
@@ -6,6 +6,7 @@
 #
 import copy
 import glob
+import multiprocessing as mp
 import os
 import sys
 import time
@@ -16,15 +17,14 @@ import wx
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath(True)
-import multiprocessing as mp
 
-from . import GSASIIscriptable as G2sc
-from .GUI import GSASIIctrlGUI as G2G
-from .GUI import GSASIIimgGUI as G2imG
+from . import GSASIIscriptable as G2sc  # noqa: E402
+from .GUI import GSASIIctrlGUI as G2G  # noqa: E402
+from .GUI import GSASIIimgGUI as G2imG  # noqa: E402
 
 try:  # fails during doc build
     wxMainFrameStyle = wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX
-except:
+except:  # noqa: E722
     wxMainFrameStyle = None
 
 
@@ -42,7 +42,7 @@ class AutoIntFrame(wx.Frame):
     """
 
     def __init__(self, G2frame, PollTime=30.0):
-        def OnStart(event):
+        def OnStart(event):  # noqa: ARG001
             """Called when the start button is pressed. Changes button label
             to Pause. When Pause is pressed the label changes to Resume.
             When either Start or Resume is pressed, the processing loop
@@ -79,7 +79,7 @@ class AutoIntFrame(wx.Frame):
             # we will get to this point if Paused
             self.OnPause()
 
-        def OnReset(event):
+        def OnReset(event):  # noqa: ARG001
             """Called when Reset button is pressed. This stops the
             processing loop and resets the list of integrated files so
             all images can be reintegrated.
@@ -95,7 +95,7 @@ class AutoIntFrame(wx.Frame):
             self.ProcessedList = []
             self.ShowMatchingFiles(None)
 
-        def OnQuit(event):
+        def OnQuit(event):  # noqa: ARG001
             """Stop the processing loop and close the Frame"""
             if self.timer.IsRunning():
                 self.timer.Stop()  # make sure we stop first
@@ -123,7 +123,7 @@ class AutoIntFrame(wx.Frame):
                     dlg.Destroy()
                 return
 
-        def showPDFctrls(event):
+        def showPDFctrls(event):  # noqa: ARG001
             """Called to show or hide AutoPDF widgets. Note that TextCtrl's
             must be included in the sizer layout with .Show(True) before
             .Show(False) will work properly.
@@ -146,7 +146,7 @@ class AutoIntFrame(wx.Frame):
                 c = "black"
             else:
                 c = "gray"
-            for l in (
+            for l in (  # noqa: E741
                 [lbl4, lbl4a, lbl5, lbl5a, lbl5b]
                 + [self.pbkg[i][0] for i in (0, 1, 2)]
                 + [self.pbkg[i][5] for i in (0, 1, 2)]
@@ -194,7 +194,7 @@ class AutoIntFrame(wx.Frame):
             self.pdfSel.AppendItems([i.name for i in self.pdfList])
             showPDFctrls(None)
 
-        def TestInput(*args, **kwargs):
+        def TestInput(*args, **kwargs):  # noqa: ARG001
             """Determine if the start button should be enabled and
             ask for the exporter type with ambiguous extensions
             """
@@ -292,10 +292,10 @@ class AutoIntFrame(wx.Frame):
                 self.pbkg[i][4].SetValue(str(PDFobj.data["PDF Controls"][lbl]["Mult"]))
                 self.pbkg[i][6] = PDFobj.data["PDF Controls"][lbl]["Mult"]
                 try:
-                    i = 1 + histNames.index(PDFobj.data["PDF Controls"][lbl]["Name"])
+                    i = 1 + histNames.index(PDFobj.data["PDF Controls"][lbl]["Name"])  # noqa: PLW2901
                     self.pbkg[i][1].SetSelection(i)
                 except ValueError:
-                    i = 0
+                    i = 0  # noqa: PLW2901
                     self.pbkg[i][1].SetSelection(0)
                     if PDFobj.data["PDF Controls"][lbl]["Name"]:
                         print(
@@ -513,7 +513,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add((-1, -1), 1, wx.EXPAND, 1)
         intSizer.Add(sizer, 1, wx.EXPAND, 1)
 
-        def ontblModeBtn(event):
+        def ontblModeBtn(event):  # noqa: ARG001
             if tblModeBtn.GetValue():
                 self.params["TableMode"] = True
             else:
@@ -715,7 +715,7 @@ class AutoIntFrame(wx.Frame):
                 SetGPXInputFile()
         showPDFctrls(None)
 
-    def SetSourceDir(self, event):
+    def SetSourceDir(self, event):  # noqa: ARG002
         """Use a dialog to get a directory for image files"""
         dlg = wx.DirDialog(
             self,
@@ -732,7 +732,7 @@ class AutoIntFrame(wx.Frame):
         finally:
             dlg.Destroy()
 
-    def ShowMatchingFiles(self, value, invalid=False, **kwargs):
+    def ShowMatchingFiles(self, value, invalid=False, **kwargs):  # noqa: ARG002
         """Find and image files matching the image
         file directory (self.params['readdir']) and the image file filter
         (self.params['filter']) and add this information to the GUI list box
@@ -868,7 +868,7 @@ class AutoIntFrame(wx.Frame):
                 outputModes,
             )
 
-    def OnTimerLoop(self, event):
+    def OnTimerLoop(self, event):  # noqa: ARG002
         """A method that is called every :meth:`PollTime` seconds that is
         used to check for new files and process them. Integrates new images.
         Also optionally sets up and computes PDF.
@@ -984,7 +984,8 @@ def ProcessImage(
     # looped because a file can contain multiple images
     if TableMode:  # look up parameter values from table
         imgprms, mskprms = LookupFromTable(
-            im.data["Image Controls"].get("setdist"), InterpVals
+            im.data["Image Controls"].get("setdist"),
+            InterpVals,
         )
     for im in gpxout.add_image(newImage):
         # apply image parameters

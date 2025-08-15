@@ -595,8 +595,8 @@ def FitHKL(ibrav, peaks, A, Pwr):
         Qc = G2lat.calc_rDsqA(H, A)
         return (Qo - Qc) * d**Pwr
 
-    def dervFit(values, ibrav, d, H, Pwr):
-        h, k, l = H
+    def dervFit(values, ibrav, d, H, Pwr):  # noqa: ARG001
+        h, k, l = H  # noqa: E741
         if ibrav in [0, 1, 2]:
             derv = [
                 H[0] * H[0] + H[1] * H[1] + H[2] * H[2],
@@ -648,7 +648,7 @@ def FitHKLZ(wave, ibrav, peaks, A, Z, Zref):
         Qc = G2lat.calc_rDsqZ(H, A, Zero, tth, wave)
         return Qo - Qc
 
-    def dervFitZ(values, ibrav, d, H, tth, wave, Z, Zref):
+    def dervFitZ(values, ibrav, d, H, tth, wave, Z, Zref):  # noqa: ARG001
         if ibrav in [0, 1, 2]:
             derv = [
                 H[0] * H[0] + H[1] * H[1] + H[2] * H[2],
@@ -712,7 +712,7 @@ def FitHKLZSS(wave, ibrav, peaks, A, V, Vref, Z, Zref):
         Qc = G2lat.calc_rDsqZSS(H, A, Vec, Zero, tth, wave)
         return Qo - Qc
 
-    def dervFitZSS(values, ibrav, d, H, tth, wave, vec, Vref, Z, Zref):
+    def dervFitZSS(values, ibrav, d, H, tth, wave, vec, Vref, Z, Zref):  # noqa: ARG001
         A = Values2A(ibrav, values)
         Vec = Values2Vec(ibrav, vec, Vref, values)
         HM = H[:3] + (H[3][:, np.newaxis] * Vec).T
@@ -793,7 +793,7 @@ def FitHKLT(difC, ibrav, peaks, A, Z, Zref):
         Qc = G2lat.calc_rDsqT(H, A, Zero, tof, difC)
         return Qo - Qc
 
-    def dervFitT(values, ibrav, d, H, tof, difC, Z, Zref):
+    def dervFitT(values, ibrav, d, H, tof, difC, Z, Zref):  # noqa: ARG001
         if ibrav in [0, 1, 2]:
             derv = [
                 H[0] * H[0] + H[1] * H[1] + H[2] * H[2],
@@ -847,13 +847,13 @@ def FitHKLT(difC, ibrav, peaks, A, Z, Zref):
 def FitHKLE(tth, ibrav, peaks, A):
     "needs a doc string"
 
-    def errFitE(values, ibrav, d, H, keV, tth):
+    def errFitE(values, ibrav, d, H, keV, tth):  # noqa: ARG001
         A = Values2A(ibrav, values)
         Qo = 1.0 / d**2
         Qc = G2lat.calc_rDsq(H, A)
         return Qo - Qc
 
-    def dervFitE(values, ibrav, d, H, keV, tth):
+    def dervFitE(values, ibrav, d, H, keV, tth):  # noqa: ARG001
         if ibrav in [0, 1, 2]:
             derv = [
                 H[0] * H[0] + H[1] * H[1] + H[2] * H[2],
@@ -909,7 +909,7 @@ def FitHKLTSS(difC, ibrav, peaks, A, V, Vref, Z, Zref):
         Qc = G2lat.calc_rDsqTSS(H, A, Vec, Zero, tof, difC)
         return Qo - Qc
 
-    def dervFitTSS(values, ibrav, d, H, tof, difC, vec, Vref, Z, Zref):
+    def dervFitTSS(values, ibrav, d, H, tof, difC, vec, Vref, Z, Zref):  # noqa: ARG001
         A = Values2A(ibrav, values)
         Vec = Values2Vec(ibrav, vec, Vref, values)
         HM = H[:3] + (H[3][:, np.newaxis] * Vec).T
@@ -1340,7 +1340,7 @@ def DoIndexPeaks(
     Nobs = len(peaks) - notUse
     zero, ncno = controls[1:3]
     ncMax = Nobs * ncno
-    print("{} {:8.3f} {:8.3f}".format("lattice parameter range = ", amin, amax))
+    print(f"lattice parameter range =  {amin:8.3f} {amax:8.3f}")
     print(
         "%s %.4f %s %d %s %d"
         % ("Zero =", zero, "Nc/No max =", ncno, " Max Nc =", ncno * Nobs)
@@ -1529,11 +1529,11 @@ def DoIndexPeaks(
 NeedTestData = True
 
 
-def TestData():
+def TestData():  # noqa: F811
     "needs a doc string"
-    global NeedTestData
+    global NeedTestData  # noqa: PLW0603
     NeedTestData = False
-    global TestData
+    global TestData  # noqa: PLW0603
     TestData = [
         14,
         [7.0, 8.70, 10.86, 90.0, 102.95, 90.0],
@@ -1850,7 +1850,7 @@ def TestData():
             ],
         ],
     ]
-    global TestData2
+    global TestData2  # noqa: PLW0603
     TestData2 = [
         14,
         [

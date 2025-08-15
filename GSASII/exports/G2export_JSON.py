@@ -61,7 +61,7 @@ class ExportJSON(G2fil.ExportBaseclass):
             import wx
 
             wx.BeginBusyCursor()
-        except:
+        except:  # noqa: E722
             pass
         G2frame = self.G2frame
         # crawl through the tree, dumping as we go
@@ -103,7 +103,7 @@ class ExportJSON(G2fil.ExportBaseclass):
                 import wx
 
                 wx.EndBusyCursor()
-            except:
+            except:  # noqa: E722
                 pass
         self.Write("]\n")
         self.CloseFile()

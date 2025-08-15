@@ -41,9 +41,9 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         # print 'ContentsValidator: '+self.formatName
         nBanks = 0
         if "2" in platform.python_version_tuple()[0]:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
         else:
-            fp = open(filename, encoding="latin-1")
+            fp = open(filename, encoding="latin-1")  # noqa: SIM115
         fname = ospath.basename(fp.name)
         for i, line in enumerate(fp):
             self.GSAS = True
@@ -74,7 +74,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         fp.close()
         return False  # no bank records
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):  # noqa: ARG002
         """Read a GSAS (old formats) file of type FXY, FXYE, ESD or STD types.
         If multiple datasets are requested, use self.repeat and buffer caching.
 
@@ -86,7 +86,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         the Instrument parameters data.
         """
 
-        def GetFXYEdata(File, Pos, Bank):
+        def GetFXYEdata(File, Pos, Bank):  # noqa: ARG001
             File.seek(Pos)
             x = []
             y = []
@@ -114,7 +114,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 np.zeros(N),
             ]
 
-        def GetFXYdata(File, Pos, Bank):
+        def GetFXYdata(File, Pos, Bank):  # noqa: ARG001
             File.seek(Pos)
             x = []
             y = []
@@ -336,9 +336,9 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         title = ""
         comments = None
         if "2" in platform.python_version_tuple()[0]:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
         else:
-            fp = open(filename, encoding="latin-1")
+            fp = open(filename, encoding="latin-1")  # noqa: SIM115
         # reload previously saved values - used for multibank reads
         if self.repeat and rdbuffer is not None:
             Banks = rdbuffer.get("Banks")
@@ -465,34 +465,34 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
             if "pressure" in S.lower().split("=")[0]:
                 try:
                     self.Sample["Pressure"] = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
             elif "Gonio" in S.split("=")[0]:
                 try:
                     self.Sample["Gonio. radius"] = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
             elif (
                 "Omega" in S.split("=")[0] or "Theta" in S.split("=")[0]
             ):  # HIPD weirdness
                 try:
                     self.Sample["Omega"] = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
             elif "Chi" in S.split("=")[0]:
                 try:
                     self.Sample["Chi"] = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
             elif "Phi" in S.split("=")[0]:
                 try:
                     self.Sample["Phi"] = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         if "EDS" in Bank:
             S = self.comments[0].lower().split("theta")

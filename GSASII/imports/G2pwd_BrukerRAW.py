@@ -27,7 +27,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
 
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid Bruker RAW file"
-        fp = open(filename, "rb")
+        fp = open(filename, "rb")  # noqa: SIM115
         head = self.Read(fp, 7)
         if "bytes" in str(type(head)):
             head = head.decode("latin-1")
@@ -59,11 +59,11 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         fp.close()
         return True
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):  # noqa: ARG002
         "Read a Bruker RAW file"
         self.comments = []
         self.powderentry[0] = filename
-        fp = open(filename, "rb")
+        fp = open(filename, "rb")  # noqa: SIM115
         if "ver. 1" in self.fmtVer:
             raise Exception(
                 'Read of Bruker "RAW " (pre-version #) file not supported'
@@ -74,13 +74,11 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             fp.seek(168)
             self.comments.append("Date/Time=" + self.Read(fp, 20))
             self.comments.append("Anode=" + self.Read(fp, 2))
-            self.comments.append("Ka1={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
-            self.comments.append("Ka2={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
-            self.comments.append(
-                "Ka2/Ka1={:.5f}".format(st.unpack("<f", fp.read(4))[0])
-            )
+            self.comments.append(f"Ka1={st.unpack('<f', fp.read(4))[0]:.5f}")
+            self.comments.append(f"Ka2={st.unpack('<f', fp.read(4))[0]:.5f}")
+            self.comments.append(f"Ka2/Ka1={st.unpack('<f', fp.read(4))[0]:.5f}")
             fp.seek(206)
-            self.comments.append("Kb={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
+            self.comments.append(f"Kb={st.unpack('<f', fp.read(4))[0]:.5f}")
             pos = 256
             fp.seek(pos)
             blockNum = kwarg.get("blocknum", 0)
@@ -134,15 +132,11 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             fp.seek(608)
             self.comments.append("Anode=" + self.Read(fp, 4))
             fp.seek(616)
-            self.comments.append(
-                "Ka mean={:.5f}".format(st.unpack("<d", fp.read(8))[0])
-            )
-            self.comments.append("Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
-            self.comments.append("Ka2={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
-            self.comments.append("Kb={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
-            self.comments.append(
-                "Ka2/Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0])
-            )
+            self.comments.append(f"Ka mean={st.unpack('<d', fp.read(8))[0]:.5f}")
+            self.comments.append(f"Ka1={st.unpack('<d', fp.read(8))[0]:.5f}")
+            self.comments.append(f"Ka2={st.unpack('<d', fp.read(8))[0]:.5f}")
+            self.comments.append(f"Kb={st.unpack('<d', fp.read(8))[0]:.5f}")
+            self.comments.append(f"Ka2/Ka1={st.unpack('<d', fp.read(8))[0]:.5f}")
             pos = 712
             fp.seek(pos)  # position at 1st block header
             blockNum = kwarg.get("blocknum", 0)
@@ -178,7 +172,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                                     for i in range(nSteps)
                                 ]
                             )
-                        except:  # this is absurd
+                        except:  # this is absurd  # noqa: E722
                             fp.seek(pos - 40)
                             y = np.array(
                                 [
@@ -229,19 +223,17 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     elif segtype == 30:  # x-ray source info
                         fp.read(64)
                         self.comments.append(
-                            "Ka mean={:.5f}".format(st.unpack("<d", fp.read(8))[0])
+                            f"Ka mean={st.unpack('<d', fp.read(8))[0]:.5f}"
                         )
                         self.comments.append(
-                            "Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0])
+                            f"Ka1={st.unpack('<d', fp.read(8))[0]:.5f}"
                         )
                         self.comments.append(
-                            "Ka2={:.5f}".format(st.unpack("<d", fp.read(8))[0])
+                            f"Ka2={st.unpack('<d', fp.read(8))[0]:.5f}"
                         )
+                        self.comments.append(f"Kb={st.unpack('<d', fp.read(8))[0]:.5f}")
                         self.comments.append(
-                            "Kb={:.5f}".format(st.unpack("<d", fp.read(8))[0])
-                        )
-                        self.comments.append(
-                            "Ka2/Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0])
+                            f"Ka2/Ka1={st.unpack('<d', fp.read(8))[0]:.5f}"
                         )
                         fp.read(4)
                         self.comments.append("Anode=" + self.Read(fp, 4).strip("\x00"))
@@ -253,7 +245,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                         Delt = st.unpack("<d", fp.read(8))[0]
                         fp.read(seglen - 76)
                         self.comments.append(
-                            "Drive %s: align flag %d" % (driveName, alignFlag)
+                            f"Drive {driveName}: align flag {alignFlag}"
                         )
                         self.comments.append(f"Drive {driveName}: delta {Delt:f}")
                         driveNo += 1
@@ -276,7 +268,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     stepSize = st.unpack("<d", fp.read(8))[0]
                     meta["stepSize"] = f"{stepSize:.4f}"
                     Nsteps = st.unpack("<I", fp.read(4))[0]
-                    meta["Nsteps"] = "%d" % Nsteps
+                    meta["Nsteps"] = f"{Nsteps}"
                     meta["stepTime(ms)"] = st.unpack("<f", fp.read(4))[0]
                     fp.read(4)
                     meta["generatorVoltage(kV)"] = st.unpack("<f", fp.read(4))[0]
@@ -327,7 +319,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                             self.Sample["Temperature"] = meta["Temperature"]
                         try:
                             self.Sample["Omega"] = float(meta["start Theta"])
-                        except:
+                        except:  # noqa: E722
                             pass
                         fp.read(12)
                         x = np.array([startAngle + i * stepSize for i in range(Nsteps)])
@@ -347,7 +339,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                                 np.zeros(Nsteps),
                                 np.zeros(Nsteps),
                             ]
-                            for item in meta:
+                            for item in meta:  # noqa: PLC0206
                                 self.comments.append(f"{item} = {meta[item]!s}")
                             fp.close()
                             self.repeat = True

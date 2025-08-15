@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 #
 """
 Classes and routines defined in :mod:`~GSASII.GSASIIscriptable` follow.
@@ -42,17 +42,17 @@ from . import GSASIIpath
 GSASIIpath.SetBinaryPath(
     True
 )  # for now, this is needed before some of these modules can be imported
-from . import GSASIIElem as G2elem
-from . import GSASIIfiles as G2fil
-from . import GSASIIimage as G2img
-from . import GSASIIlattice as G2lat
-from . import GSASIImapvars as G2mv
-from . import GSASIImath as G2mth
-from . import GSASIIobj as G2obj
-from . import GSASIIpwd as G2pwd
-from . import GSASIIspc as G2spc
-from . import GSASIIstrIO as G2stIO
-from . import GSASIIstrMain as G2strMain
+from . import GSASIIElem as G2elem  # noqa: E402
+from . import GSASIIfiles as G2fil  # noqa: E402
+from . import GSASIIimage as G2img  # noqa: E402
+from . import GSASIIlattice as G2lat  # noqa: E402
+from . import GSASIImapvars as G2mv  # noqa: E402
+from . import GSASIImath as G2mth  # noqa: E402
+from . import GSASIIobj as G2obj  # noqa: E402
+from . import GSASIIpwd as G2pwd  # noqa: E402
+from . import GSASIIspc as G2spc  # noqa: E402
+from . import GSASIIstrIO as G2stIO  # noqa: E402
+from . import GSASIIstrMain as G2strMain  # noqa: E402
 
 # Delay imports loading to not slow down small scripts that don't need them
 Readers = {"Pwdr": [], "Phase": [], "Image": [], "importErrpkgs": []}
@@ -77,7 +77,7 @@ def SetPrintLevel(level):
       'Warn', 'warnings', etc. will all set the mode to 'warn'
     """
     G2fil.G2SetPrintLevel(level)
-    global printLevel
+    global printLevel  # noqa: PLW0603
     for mode in "all", "warn", "error", "none":
         if mode in level.lower():
             printLevel = mode
@@ -126,13 +126,13 @@ def ShowVersions():
         import scipy
 
         pkgList.append(("scipy", scipy))
-    except:
+    except:  # noqa: E722
         pass
     try:
         import IPython
 
         pkgList.append(("IPython", IPython))
-    except:
+    except:  # noqa: E722
         pass
     for s, m in pkgList:
         msg = ""
@@ -148,7 +148,7 @@ def ShowVersions():
     out += "\n\n"
     try:
         out += f"GSAS-II location: {GSASIIpath.path2GSAS2}\n"
-    except:
+    except:  # noqa: E722
         out += "GSAS-II location: not set\n"
     try:
         if GSASIIpath.binaryPath is None:
@@ -163,10 +163,10 @@ def ShowVersions():
                 version = fp.readline().strip()
                 vnum = fp.readline().strip()
             dated = f"{vnum}, {version}"
-        except:
+        except:  # noqa: E722
             dated = "undated"
         out += f"Binary location:  {loc} ({dated})\n"
-    except:
+    except:  # noqa: E722
         out += "Binary location:  not found\n"
     return out
 
@@ -190,7 +190,7 @@ def LoadG2fil():
     # initialize exports
     for obj in G2fil.LoadExportRoutines(None):
         try:
-            obj.Writer
+            obj.Writer  # noqa: B018
         except AttributeError:
             continue
         for typ in obj.exporttype:
@@ -276,7 +276,7 @@ def SaveDictToProjFile(Project, nameList, ProjFile):
     :param list nameList: names of main tree entries & subentries used to reconstruct project file
     :param str ProjFile: full file name for output project.gpx file (including extension)
     """
-    file = open(ProjFile, "wb")
+    file = open(ProjFile, "wb")  # noqa: SIM115
     try:
         for name in nameList:
             data = []
@@ -513,7 +513,7 @@ def import_generic(
             primaryReaders.append(reader)
     if not secondaryReaders and not primaryReaders:
         # common reason for read error -- package needed?
-        l = []
+        l = []  # noqa: E741
         for i in Readers["importErrpkgs"]:
             for j in G2fil.condaRequestList[i]:
                 if j not in l:
@@ -1099,10 +1099,10 @@ class G2Project(G2ObjectWrapper):
                 commit = g2repo.head.commit
                 controls_data["LastSavedUsing"] += f" git {commit.hexsha[:8]} script"
             else:
-                gv = getSavedVersionInfo()
+                gv = getSavedVersionInfo()  # noqa: F821
                 if gv is not None:
-                    Controls["LastSavedUsing"] += f" static {gv.git_version[:8]}"
-        except:
+                    Controls["LastSavedUsing"] += f" static {gv.git_version[:8]}"  # noqa: F821
+        except:  # noqa: E722
             pass
         #    .gpx name
         if filename:
@@ -1189,7 +1189,7 @@ class G2Project(G2ObjectWrapper):
         else:
             try:
                 iparmfile = os.path.abspath(os.path.expanduser(iparams))
-            except:
+            except:  # noqa: E722
                 pass
         for r in pwdrreaders:
             histname, new_names, pwdrdata = load_pwd_from_reader(
@@ -1207,7 +1207,7 @@ class G2Project(G2ObjectWrapper):
             if phases == "all":
                 phases = self.phases()
             for phase in phases:
-                phase = self.phase(phase)
+                phase = self.phase(phase)  # noqa: PLW2901
                 self.link_histogram_phase(histname, phase)
             histlist.append(self.histogram(histname))
 
@@ -1330,7 +1330,7 @@ class G2Project(G2ObjectWrapper):
             by +-1 from Npoints. Must be below 25,000.
 
         :returns: A :class:`G2PwdrData` object representing the histogram
-        """
+        """  # noqa: RUF002
         if phases is None:
             phases = []
         LoadG2fil()
@@ -1439,7 +1439,7 @@ class G2Project(G2ObjectWrapper):
                     pwdrdata["Instrument Parameters"][0]["Lam2"][1] = float(
                         wavelength[1]
                     )
-                except:
+                except:  # noqa: E722
                     errmsg = "add_simulated_powder_histogram Error: only one wavelength with alpha 1+2 histogram?"
                 if errmsg:
                     raise G2ScriptException(errmsg)
@@ -1448,7 +1448,7 @@ class G2Project(G2ObjectWrapper):
                 try:
                     pwdrdata["Instrument Parameters"][0]["Lam"][0] = float(wavelength)
                     pwdrdata["Instrument Parameters"][0]["Lam"][1] = float(wavelength)
-                except:
+                except:  # noqa: E722
                     errmsg = "add_simulated_powder_histogram Error: invalid wavelength?"
                 if errmsg:
                     raise G2ScriptException(errmsg)
@@ -1460,7 +1460,7 @@ class G2Project(G2ObjectWrapper):
         self.update_ids()
 
         for phase in phases:
-            phase = self.phase(phase)
+            phase = self.phase(phase)  # noqa: PLW2901
             self.link_histogram_phase(histname, phase)
 
         self.set_Controls("cycles", 0)
@@ -1727,7 +1727,7 @@ class G2Project(G2ObjectWrapper):
         # valid
         _deep_copy_into(from_=data, into=self.data)
 
-    def refine(self, newfile=None, printFile=None, makeBack=False):
+    def refine(self, newfile=None, printFile=None, makeBack=False):  # noqa: ARG002
         """Invoke a refinement for the project. The project is written to
         the currently selected gpx file and then either a single or sequential refinement
         is performed depending on the setting of 'Seq Data' in Controls
@@ -2105,7 +2105,7 @@ class G2Project(G2ObjectWrapper):
             "g(r)": [],
         }
 
-        fo = open(prmfile)
+        fo = open(prmfile)  # noqa: SIM115
         S = fo.readline()
         while S:
             if "#" in S:
@@ -2114,7 +2114,7 @@ class G2Project(G2ObjectWrapper):
             key, val = S.split(":", 1)
             try:
                 Controls[key] = eval(val)
-            except:
+            except:  # noqa: E722
                 Controls[key] = val.strip()
             S = fo.readline()
         fo.close()
@@ -2232,7 +2232,7 @@ class G2Project(G2ObjectWrapper):
             else:
                 ph = phase
             if "output" in refinedict:
-                output = refinedict["output"]
+                output = refinedict["output"]  # noqa: PLW2901
             self.set_refinement(refinedict, hist, ph)
             # Handle 'once' args - refinements that are disabled after this
             # refinement
@@ -2336,7 +2336,7 @@ class G2Project(G2ObjectWrapper):
                 phase_set[key] = val
             elif G2Phase.is_valid_HAP_refinement_key(key):
                 if key == "PhaseFraction":
-                    key = "Scale"
+                    key = "Scale"  # noqa: PLW2901
                 hap_set[key] = val
             elif G2Single.is_valid_refinement_key(key):
                 xtal_set[key] = val
@@ -2351,7 +2351,7 @@ class G2Project(G2ObjectWrapper):
             else:
                 msg = f"set_refinement error: unknown hist type {hist}"
                 raise KeyError(msg)
-        for phase in phases:
+        for phase in phases:  # noqa: PLR1704
             phase.set_refinements(phase_set)
         for phase in phases:
             phase.set_HAP_refinements(hap_set, hists)
@@ -2368,7 +2368,7 @@ class G2Project(G2ObjectWrapper):
                 phase_clear[key] = val
             elif G2Phase.is_valid_HAP_refinement_key(key):
                 if key == "PhaseFraction":
-                    key = "Scale"
+                    key = "Scale"  # noqa: PLW2901
                 hap_clear[key] = val  # was _set, seems wrong
             elif G2Single.is_valid_refinement_key(key):
                 xtal_clear[key] = val
@@ -2438,7 +2438,7 @@ class G2Project(G2ObjectWrapper):
         """
         return [G2SmallAngle(self.data[i], i, self) for i in self._sasd()]
 
-    def add_SmallAngle(self, datafile):
+    def add_SmallAngle(self, datafile):  # noqa: ARG002
         """Placeholder for an eventual routine that will read a small angle dataset
         from a file.
 
@@ -2498,9 +2498,9 @@ class G2Project(G2ObjectWrapper):
         for var in varlist:
             # make var object
             if isinstance(var, str):
-                var = self.make_var_obj(var, reloadIdx=False)
+                var = self.make_var_obj(var, reloadIdx=False)  # noqa: PLW2901
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var, reloadIdx=False)
+                var = self.make_var_obj(*var, reloadIdx=False)  # noqa: PLW2901
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
                 print(
@@ -2563,9 +2563,9 @@ class G2Project(G2ObjectWrapper):
                 pass
             # make var object
             if isinstance(var, str):
-                var = self.make_var_obj(var, reloadIdx=False)
+                var = self.make_var_obj(var, reloadIdx=False)  # noqa: PLW2901
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var, reloadIdx=False)
+                var = self.make_var_obj(*var, reloadIdx=False)  # noqa: PLW2901
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
                 print(
@@ -2631,8 +2631,8 @@ class G2Project(G2ObjectWrapper):
             )
         try:
             float(total)
-        except:
-            raise Exception("Constraint var error: total be a valid float")
+        except:  # noqa: E722
+            raise Exception("Constraint var error: total be a valid float")  # noqa: B904
         constr = []
         typ_prev = None
         vardefwarn = False
@@ -2644,9 +2644,9 @@ class G2Project(G2ObjectWrapper):
                 pass
             # make var object
             if isinstance(var, str):
-                var = self.make_var_obj(var, reloadIdx=False)
+                var = self.make_var_obj(var, reloadIdx=False)  # noqa: PLW2901
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var, reloadIdx=False)
+                var = self.make_var_obj(*var, reloadIdx=False)  # noqa: PLW2901
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
                 print(
@@ -2740,9 +2740,9 @@ class G2Project(G2ObjectWrapper):
                 pass
             # make var object
             if isinstance(var, str):
-                var = self.make_var_obj(var, reloadIdx=False)
+                var = self.make_var_obj(var, reloadIdx=False)  # noqa: PLW2901
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var, reloadIdx=False)
+                var = self.make_var_obj(*var, reloadIdx=False)  # noqa: PLW2901
             if G2obj.getDescr(var.name) is None:
                 vardefwarn = True
                 print(
@@ -2800,9 +2800,9 @@ class G2Project(G2ObjectWrapper):
         )
         for var in vars:
             if isinstance(var, str):
-                var = self.make_var_obj(var)
+                var = self.make_var_obj(var)  # noqa: PLW2901
             elif not isinstance(var, G2obj.G2VarObj):
-                var = self.make_var_obj(*var)
+                var = self.make_var_obj(*var)  # noqa: PLW2901
             self.add_constraint_raw(ctype, [[1.0, var], None, None, "h"])
 
     def make_var_obj(
@@ -3479,7 +3479,7 @@ class G2Project(G2ObjectWrapper):
         """
         try:
             return self["Covariance"]["data"]["varyList"]
-        except:
+        except:  # noqa: E722
             return None
 
     def get_ParmList(self):
@@ -3495,7 +3495,7 @@ class G2Project(G2ObjectWrapper):
             )
         try:
             return list(self["Covariance"]["data"]["parmDict"].keys())
-        except:
+        except:  # noqa: E722
             return None
 
     def get_Variable(self, var):
@@ -3673,9 +3673,9 @@ class G2AtomRecord(G2ObjectWrapper):
 
         try:
             return re.match("^([A-Z][a-z]?)", self.data[self.ct]).group(1)
-        except:
+        except:  # noqa: E722
             msg = f"element parse error with type {self.data[self.ct]}"
-            raise Exception(msg)
+            raise Exception(msg)  # noqa: B904
 
     @property
     def refinement_flags(self):
@@ -3712,9 +3712,9 @@ class G2AtomRecord(G2ObjectWrapper):
             raise ValueError(msg)
         try:
             self.data[self.cx : self.cx + 3] = [float(i) for i in val]
-        except:
+        except:  # noqa: E722
             msg = f"conversion error with coordinates {val}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: B904
         # TODO: should recompute the atom site symmetries here
 
     @property
@@ -4042,7 +4042,7 @@ class G2PwdrData(G2ObjectWrapper):
         s = ""
         listValues = []
         try:
-            for _i, (l, h) in enumerate(value):  # quick bit of validation
+            for _i, (l, h) in enumerate(value):  # quick bit of validation  # noqa: E741
                 listValues.append(
                     [
                         min(float(l), float(h)),
@@ -4053,9 +4053,9 @@ class G2PwdrData(G2ObjectWrapper):
                     s += f"Lower limit {l} too low. "
                 if float(h) > self.data["Limits"][0][1]:
                     s += f"Upper limit {h} too high. "
-        except:
+        except:  # noqa: E722
             msg = f"G2PwdData.Excluded error: incorrectly formatted list or\n\tinvalid value. In: {value}"
-            raise G2ScriptException(msg)
+            raise G2ScriptException(msg)  # noqa: B904
         if s:
             msg = f"G2PwdData.Excluded error(s): {s}"
             raise G2ScriptException(msg)
@@ -4628,7 +4628,7 @@ class G2PwdrData(G2ObjectWrapper):
             return np.tan(x * math.pi / 180.0)
 
         fil = os.path.abspath(filename)
-        fp = open(filename, "w")
+        fp = open(filename, "w")  # noqa: SIM115
         Inst, Inst2 = self.data["Instrument Parameters"]
         Type = Inst["Type"][0]
         if "T" not in Type:
@@ -4639,7 +4639,7 @@ class G2PwdrData(G2ObjectWrapper):
         peaks = pkdata["peaks"]
         sigDict = pkdata["sigDict"]
         # code taken from GSASIIdataGUI OnExportPeakList
-        fp.write("#%s \n" % (self.name + " Peak List"))
+        fp.write(f"#{self.name + ' Peak List'} \n")
         if wave:
             fp.write(f"#wavelength = {wave:10.6f}\n")
         if "T" in Type:
@@ -4697,7 +4697,7 @@ class G2PwdrData(G2ObjectWrapper):
         filename = (
             os.path.splitext(filename)[0] + ".instprm"
         )  # make sure extension is .instprm
-        File = open(filename, "w")
+        File = open(filename, "w")  # noqa: SIM115
         File.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
         for item in data:
             File.write(item + ":" + str(data[item][1]) + "\n")
@@ -4715,7 +4715,7 @@ class G2PwdrData(G2ObjectWrapper):
         filename = (
             os.path.splitext(filename)[0] + ".instprm"
         )  # make sure extension is .instprm
-        File = open(filename)
+        File = open(filename)  # noqa: SIM115
         S = File.readline()
         newItems = []
         newVals = []
@@ -4766,7 +4766,7 @@ class G2PwdrData(G2ObjectWrapper):
             diffraction pattern. Defaults as None, which sets this to 2500. Do not specify
             both Npoints and Tstep. Due to roundoff the actual nuber of points used may differ
             by +-1 from Npoints. Must be below 25,000.
-        """
+        """  # noqa: RUF002
         if not self.data["data"][0]["Dummy"]:
             raise G2ScriptException(
                 "Error: histogram for G2PwdrData.EditSimulated is not simulated"
@@ -4904,12 +4904,12 @@ class G2PwdrData(G2ObjectWrapper):
         bkgDict["autoPrms"] = bkgDict.get("autoPrms", {})
         try:
             opt = int(opt)
-        except:
+        except:  # noqa: E722
             opt = 0
         bkgDict["autoPrms"]["opt"] = opt
         try:
             logLam = float(logLam)
-        except:
+        except:  # noqa: E722
             logLam = min(10, float(int(10 * np.log10(npts) ** 1.5) - 9.5) / 10.0)
             print(
                 "Using default value of",
@@ -5690,37 +5690,37 @@ class G2Phase(G2ObjectWrapper):
                     for param in sets:
                         if param not in ["BabA", "BabU"]:
                             raise ValueError("Not sure what to do with" + param)
-                        for h in histograms:
+                        for h in histograms:  # noqa: PLW2901
                             self.data["Histograms"][h]["Babinet"][param][1] = False
                 elif key == "Extinction":
-                    for h in histograms:
+                    for h in histograms:  # noqa: PLW2901
                         self.data["Histograms"][h]["Extinction"][1] = False
                 elif key == "HStrain":
-                    for h in histograms:
+                    for h in histograms:  # noqa: PLW2901
                         self.data["Histograms"][h]["HStrain"][1] = [
                             False for p in self.data["Histograms"][h]["HStrain"][1]
                         ]
                 elif key == "Mustrain":
-                    for h in histograms:
+                    for h in histograms:  # noqa: PLW2901
                         mustrain = self.data["Histograms"][h]["Mustrain"]
                         mustrain[2] = [False for p in mustrain[2]]
                         mustrain[5] = [False for p in mustrain[4]]
                 elif key == "Pref.Ori.":
-                    for h in histograms:
+                    for h in histograms:  # noqa: PLW2901
                         self.data["Histograms"][h]["Pref.Ori."][2] = False
                 elif key == "Show":
-                    for h in histograms:
+                    for h in histograms:  # noqa: PLW2901
                         self.data["Histograms"][h]["Show"] = False
                 elif key == "Size":
-                    for h in histograms:
+                    for h in histograms:  # noqa: PLW2901
                         size = self.data["Histograms"][h]["Size"]
                         size[2] = [False for p in size[2]]
                         size[5] = [False for p in size[5]]
                 elif key == "Use":
-                    for h in histograms:
+                    for h in histograms:  # noqa: PLW2901
                         self.data["Histograms"][h]["Use"] = False
                 elif key in ("Scale", "PhaseFraction"):
-                    for h in histograms:
+                    for h in histograms:  # noqa: PLW2901
                         self.data["Histograms"][h]["Scale"][1] = False
                 else:
                     G2fil.G2Print("Warning: Unknown HAP key: " + key)
@@ -5791,7 +5791,7 @@ class G2Phase(G2ObjectWrapper):
         copydict = copy.deepcopy(self.data["Histograms"][sourcehist])
         for item in skip:
             if item == "PhaseFraction":
-                item = "Scale"
+                item = "Scale"  # noqa: PLW2901
             if item in list(copydict.keys()):
                 del copydict[item]
             else:
@@ -5805,7 +5805,7 @@ class G2Phase(G2ObjectWrapper):
         if use:
             for item in list(copydict.keys()):
                 if item == "PhaseFraction":
-                    item = "Scale"
+                    item = "Scale"  # noqa: PLW2901
                 if item not in use:
                     del copydict[item]
         txt = ", ".join(copydict.keys())
@@ -5814,7 +5814,7 @@ class G2Phase(G2ObjectWrapper):
         txt = "\n\t".join([self._decodeHist(h) for h in targethistlist])
         G2fil.G2Print(f" to histogram(s):\n\t{txt}")
         for h in targethistlist:
-            h = self._decodeHist(h)
+            h = self._decodeHist(h)  # noqa: PLW2901
             if h not in self.data["Histograms"]:
                 G2fil.G2Print(
                     f"Unexpected Warning: histogram {h} not in phase {self.name}"
@@ -5979,7 +5979,7 @@ class G2Phase(G2ObjectWrapper):
             msg = f"Unable to report value from {len(targethistlist)} histograms"
             raise G2ScriptException(msg)
         for h in targethistlist:
-            h = self._decodeHist(h)
+            h = self._decodeHist(h)  # noqa: PLW2901
             if h not in self.data["Histograms"]:
                 G2fil.G2Print(f"Warning: histogram {h} not in phase {self.name}")
                 continue
@@ -5996,7 +5996,7 @@ class G2Phase(G2ObjectWrapper):
                     return self.data["Histograms"][h]["Pref.Ori."]
                 try:
                     intval = int(newValue)
-                except:
+                except:  # noqa: E722
                     intval = None
                 if intval == 1:
                     self.data["Histograms"][h]["Pref.Ori."][0] = "MD"
@@ -6061,7 +6061,7 @@ class G2Phase(G2ObjectWrapper):
         copydict = copy.deepcopy(HAPdict)
         for item in skip:
             if item == "PhaseFraction":
-                item = "Scale"
+                item = "Scale"  # noqa: PLW2901
             if item in list(copydict.keys()):
                 del copydict[item]
             # else:
@@ -6071,13 +6071,13 @@ class G2Phase(G2ObjectWrapper):
         if use:
             for item in list(copydict.keys()):
                 if item == "PhaseFraction":
-                    item = "Scale"
+                    item = "Scale"  # noqa: PLW2901
                 if item not in use:
                     del copydict[item]
 
         first = True
         for h in targethistlist:
-            h = self._decodeHist(h)
+            h = self._decodeHist(h)  # noqa: PLW2901
             if h not in self.data["Histograms"]:
                 G2fil.G2Print(f"Warning: histogram {h} not in phase {self.name}")
                 continue
@@ -6261,12 +6261,12 @@ class G2Phase(G2ObjectWrapper):
         if "Restraints" not in self.proj.data:
             msg = f"{nam} error: Restraints entry not in data tree"
             raise G2ScriptException(msg)
-        errmsg = ""
+        errmsg = ""  # noqa: F841
         try:
             return self.proj.data["Restraints"]["data"][self.name]["Bond"]
-        except:
+        except:  # noqa: E722
             msg = f"{nam} error: Bonds for phase not in Restraints"
-            raise G2ScriptException(msg)
+            raise G2ScriptException(msg)  # noqa: B904
 
     def setDistRestraintWeight(self, factor=1):
         """Sets the weight for the bond distance restraint(s) to factor
@@ -6538,7 +6538,7 @@ class G2SeqRefRes(G2ObjectWrapper):
         try:
             seqData, histData = self.RefData(hist)
             return seqData["varyList"]
-        except:
+        except:  # noqa: E722
             return None
 
     def get_ParmList(self, hist):
@@ -6555,7 +6555,7 @@ class G2SeqRefRes(G2ObjectWrapper):
         try:
             seqData, histData = self.RefData(hist)
             return list(seqData["parmDict"].keys())
-        except:
+        except:  # noqa: E722
             return None
 
     def get_Variable(self, hist, var):
@@ -6576,7 +6576,7 @@ class G2SeqRefRes(G2ObjectWrapper):
         try:
             seqData, histData = self.RefData(hist)
             val = seqData["parmDict"][var]
-        except:
+        except:  # noqa: E722
             return None
         try:
             pos = seqData["varyList"].index(var)
@@ -6611,7 +6611,7 @@ class G2SeqRefRes(G2ObjectWrapper):
         """
         try:
             seqData, histData = self.RefData(hist)
-        except:
+        except:  # noqa: E722
             G2fil.G2Print(f"Warning: Histogram {hist} not found in the sequential fit")
             return None
         missing = [i for i in varList if i not in seqData["varyList"]]
@@ -7056,7 +7056,7 @@ class G2Image(G2ObjectWrapper):
     """
 
     # parameters in that can be accessed via setControl. This may need future attention
-    ControlList = {
+    ControlList = {  # noqa: RUF012
         "int": ["calibskip", "pixLimit", "edgemin", "outChannels", "outAzimuths"],
         "float": [
             "cutoff",
@@ -7155,7 +7155,7 @@ class G2Image(G2ObjectWrapper):
             else:
                 msg = f"Unknown type {typ} for arg {arg} in  G2Image.setControl"
                 raise Exception(msg)
-        except:
+        except:  # noqa: E722
             errmsg = "Error formatting value {value} as type {typ} for arg {arg} in  G2Image.setControl"
 
         if errmsg:
@@ -7257,7 +7257,7 @@ class G2Image(G2ObjectWrapper):
           None, meaning parameters are input with filename.)
         """
         if filename:
-            File = open(filename)
+            File = open(filename)  # noqa: SIM115
             Slines = File.readlines()
             File.close()
             G2fil.LoadControls(Slines, self.data["Image Controls"])
@@ -7577,7 +7577,7 @@ class G2Image(G2ObjectWrapper):
         # pull out integration results and make histograms for each
         IntgOutList = []
         for i, azm in enumerate(azms[:-1]):
-            Aname = name + " Azm= %.2f" % ((azm + dazm) % 360.0)
+            Aname = name + f" Azm= {(azm + dazm) % 360.0:.2f}"
             # MT dict to contain histogram
             HistDict = {}
             histItems = [Aname]
@@ -7592,7 +7592,7 @@ class G2Image(G2ObjectWrapper):
                 if "polariz" in item:
                     try:
                         polariz = float(item.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         polariz = 0.99
                 for key in (
                     "Temperature",
@@ -7608,7 +7608,7 @@ class G2Image(G2ObjectWrapper):
                     if key.lower() in item.lower():
                         try:
                             Sample[key] = float(item.split("=")[1])
-                        except:
+                        except:  # noqa: E722
                             pass
                 # if 'label_prm' in item.lower():
                 #     for num in ('1','2','3'):
@@ -8156,7 +8156,7 @@ def refine(args):
         import json
 
         with open(args.refinements) as refs:
-            refs = json.load(refs)
+            refs = json.load(refs)  # noqa: PLW2901
         if type(refs) is not dict:
             raise G2ScriptException("Error: JSON object must be a dict.")
         if "code" in refs:
@@ -8372,11 +8372,11 @@ def main():
     result = parser.parse_args()
     try:
         result.func(result)
-    except:
+    except:  # noqa: E722
         print(f"Use {sys.argv[0]} -h or --help")
 
 
-def dictDive(d, search="", keylist=None, firstcall=True, l=None):
+def dictDive(d, search="", keylist=None, firstcall=True, l=None):  # noqa: E741
     """Recursive routine to scan a nested dict. Reports a list of keys
     and the associated type and value for that key.
 
@@ -8418,7 +8418,7 @@ def dictDive(d, search="", keylist=None, firstcall=True, l=None):
     if firstcall:
         for k in keylist:
             d = d[k]
-        l = []
+        l = []  # noqa: E741
     #        first = True
     if type(d) is dict:
         [dictDive(d[key], search, [*keylist, key], False, l) for key in d]

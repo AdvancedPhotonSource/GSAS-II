@@ -20,11 +20,11 @@ class Rigaku_ReaderClass(G2obj.ImportImage):
         """Test by checking if the file size makes sense."""
         fileSize = os.stat(filename).st_size
         Npix = (fileSize - 6000) / 2
-        if Npix in (9000000, 2250000, 36000000):
+        if Npix in (9000000, 2250000, 36000000):  # noqa: SIM103
             return True
         return False  # not valid size
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         self.Comments, self.Data, self.Npix, self.Image = GetRigaku(filename)
         if self.Npix == 0 or not self.Comments:
             return False
@@ -38,7 +38,7 @@ def GetRigaku(filename, imageOnly=False):
 
     if not imageOnly:
         print("Read Rigaku R-Axis IV file: " + filename)
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     fileSize = os.stat(filename).st_size
     Npix = (fileSize - 6000) / 2
     File.read(6000)

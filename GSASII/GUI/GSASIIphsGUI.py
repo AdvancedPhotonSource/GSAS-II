@@ -46,16 +46,16 @@ from .. import GSASIIspc as G2spc
 from .. import GSASIIstrIO as G2stIO
 from .. import GSASIIstrMain as G2stMn
 from . import GSASIIconstrGUI as G2cnstG
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIddataGUI as G2ddG
 from . import GSASIIElemGUI as G2elemGUI
 from . import GSASIImiscGUI as G2IO
 from . import GSASIIphsGUI2 as G2phsG2
 from . import GSASIIrmcGUI as G2rmcG
+from .GUI import GSASIIctrlGUI as G2G
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -66,7 +66,7 @@ try:
     BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
     RED = wx.Colour(255, 0, 0)
     WACV = wx.ALIGN_CENTER_VERTICAL
-except:
+except:  # noqa: E722
     pass
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
@@ -209,7 +209,7 @@ class SymOpDialog(wx.Dialog):
         panel.Fit()
         self.Fit()
 
-    def OnOpSelect(self, event):
+    def OnOpSelect(self, event):  # noqa: ARG002
         self.OpSelected[0] = self.inv.GetSelection()
         if self.SGData["SGLatt"] != "P":
             self.OpSelected[1] = self.latt.GetSelection()
@@ -224,12 +224,12 @@ class SymOpDialog(wx.Dialog):
     def GetSelection(self):
         return self.OpSelected
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -357,12 +357,12 @@ class SphereEnclosure(wx.Dialog):
                 used.append(str(atm[0]))
         return self.centers, self.Sphere[0], used
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -382,9 +382,9 @@ class TransformDialog(wx.Dialog):
         self,
         parent,
         phase,
-        Trans=np.eye(3),
-        Uvec=np.zeros(3),
-        Vvec=np.zeros(3),
+        Trans=np.eye(3),  # noqa: B008
+        Uvec=np.zeros(3),  # noqa: B008
+        Vvec=np.zeros(3),  # noqa: B008
         ifMag=False,
         BNSlatt="",
     ):
@@ -485,7 +485,7 @@ class TransformDialog(wx.Dialog):
                 del self.oldSGdata["MAXMAGN"]
             wx.CallAfter(self.Draw)
 
-        def OnShowOps(event):
+        def OnShowOps(event):  # noqa: ARG001
             text, table = G2spc.SGPrint(self.SGData, AddInv=True)
             if self.ifMag:
                 msg = "Magnetic space group information"
@@ -508,7 +508,7 @@ class TransformDialog(wx.Dialog):
                 msg = "Space group information"
                 G2G.SGMessageBox(self.panel, msg, text, table).Show()
 
-        def OnTest(event):
+        def OnTest(event):  # noqa: ARG001
             if not self.TestMat():
                 return
             if self.Mtrans:
@@ -517,13 +517,13 @@ class TransformDialog(wx.Dialog):
                 self.newCell = G2lat.TransformCell(self.oldCell[:6], self.Trans)
             wx.CallAfter(self.Draw)
 
-        def OnMag(event):
+        def OnMag(event):  # noqa: ARG001
             self.ifMag = True
             self.BNSlatt = self.SGData["SGLatt"]
             G2spc.SetMagnetic(self.SGData)
             wx.CallAfter(self.Draw)
 
-        def OnConstr(event):
+        def OnConstr(event):  # noqa: ARG001
             self.ifConstr = constr.GetValue()
 
         def OnBNSlatt(event):
@@ -665,7 +665,7 @@ class TransformDialog(wx.Dialog):
                 try:  # this is an ugly kluge - bug in wx.ComboBox
                     if self.BNSlatt[2] in ["a", "b", "c"]:
                         BNSkeys.reverse()
-                except:
+                except:  # noqa: E722
                     pass
                 BNS = wx.ComboBox(
                     self.panel, choices=BNSkeys, style=wx.CB_READONLY | wx.CB_DROPDOWN
@@ -788,12 +788,12 @@ class TransformDialog(wx.Dialog):
                 self.Common,
             )
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -942,17 +942,17 @@ class UseMagAtomDialog(wx.Dialog):
                 useatCodes.append(code)
         return useAtoms, useatCodes
 
-    def OnYes(self, event):
+    def OnYes(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_YES)
 
-    def OnNo(self, event):
+    def OnNo(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_NO)
 
-    def OnDelete(self, event):
+    def OnDelete(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_DELETE)
@@ -984,7 +984,7 @@ class RotationDialog(wx.Dialog):
         self.Draw()
 
     def Draw(self):
-        def OnExpand(event):
+        def OnExpand(event):  # noqa: ARG001
             self.Expand = expand.GetValue()
 
         def OnRotAngle(event):
@@ -1094,12 +1094,12 @@ class RotationDialog(wx.Dialog):
     def GetSelection(self):
         return self.Trans, self.Vec, self.Expand
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -1140,20 +1140,20 @@ class DIFFaXcontrols(wx.Dialog):
         self.Draw()
 
     def Draw(self):
-        def OnCalcType(event):
+        def OnCalcType(event):  # noqa: ARG001
             self.calcType = calcType.GetValue()
             wx.CallAfter(self.Draw)
 
-        def OnPlane(event):
+        def OnPlane(event):  # noqa: ARG001
             self.plane = plane.GetValue()
 
-        def OnMaxL(event):
+        def OnMaxL(event):  # noqa: ARG001
             self.lmax = lmax.GetValue()
 
-        def OnParmSel(event):
+        def OnParmSel(event):  # noqa: ARG001
             self.Parm = parmsel.GetValue()
 
-        def OnNumStep(event):
+        def OnNumStep(event):  # noqa: ARG001
             self.parmStep = int(numStep.GetValue())
 
         def OnParmRange(event):
@@ -1166,7 +1166,7 @@ class DIFFaXcontrols(wx.Dialog):
             parmrange.SetValue(f"{vals[0]:.3f} {vals[1]:.3f}")
             self.parmRange = vals
 
-        def OnInstSel(event):
+        def OnInstSel(event):  # noqa: ARG001
             self.Inst = instsel.GetValue()
 
         self.panel.Destroy()
@@ -1297,12 +1297,12 @@ class DIFFaXcontrols(wx.Dialog):
             return "SADP", self.plane, self.lmax
         return None
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -1361,7 +1361,7 @@ class AddHatomDialog(wx.Dialog):
             wx.StaticText(
                 self.panel,
                 -1,
-                "H atom add controls for phase {}:".format(phase["General"]["Name"]),
+                f"H atom add controls for phase {phase['General']['Name']}:",
             ),
             0,
             wx.LEFT | wx.TOP,
@@ -1439,13 +1439,13 @@ class AddHatomDialog(wx.Dialog):
             neigh[1][1][1] = [a for a in neigh[1][1][1] if a]
         return self.Neigh  # has #Hs to add for each entry
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         "Called when the OK button is pressed"
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -1612,11 +1612,11 @@ entered the right symbol for your structure.
                     "Invalid space group number", caption=msg, style=wx.ICON_EXCLAMATION
                 )
                 return None
-        except:
+        except:  # noqa: E722
             # get rid of extra spaces between fields first
             Flds = dlg.GetValue().split()
             for fld in Flds:
-                fld = fld.strip()
+                fld = fld.strip()  # noqa: PLW2901
             SpcGp = " ".join(Flds).capitalize()
         finally:
             dlg.Destroy()
@@ -1790,7 +1790,7 @@ def FindBondsDrawCell(data, cell):
     try:
         indH = atomTypes.index("H")
         radii[indH] = 0.5
-    except:
+    except:  # noqa: E722
         pass
     for atom in atomData:
         atom[-2] = []  # clear out old bonds/polyhedra
@@ -1859,8 +1859,8 @@ def FindBondsDrawCell(data, cell):
                         vol = nl.det(face)
                         if abs(vol) > 1.0 or len(Bonds) == 3:
                             if vol < 0.0:
-                                face = [face[0], face[2], face[1]]
-                            face = np.array(face)
+                                face = [face[0], face[2], face[1]]  # noqa: PLW2901
+                            face = np.array(face)  # noqa: PLW2901
                             if not np.array(
                                 [
                                     np.array(nl.det(face - bond)) + 0.0001 < 0
@@ -2018,7 +2018,7 @@ def SetDrawingDefaults(drawingData):
         "VPatomsExpandRad": 0.0,
         "VPatomsDistRad": 0.0,
     }
-    for key in defaultDrawing:
+    for key in defaultDrawing:  # noqa: PLC0206
         if key not in drawingData:
             drawingData[key] = defaultDrawing[key]
 
@@ -2038,7 +2038,7 @@ def updateAddRBorientText(G2frame, testRBObj, Bmat):
         G2frame.testRBObjSizers["OrientVecSiz"][4].ChangeValue(
             int(10 * testRBObj["rbObj"]["OrientVec"][0])
         )
-    except:
+    except:  # noqa: E722
         pass
     for i, sizer in enumerate(G2frame.testRBObjSizers["Xsizers"]):
         sizer.ChangeValue(testRBObj["rbObj"]["Orig"][0][i])
@@ -2141,7 +2141,7 @@ def UpdatePhaseData(G2frame, Item, data):
                 renamePhaseName(Item, generalData, newName)
                 NameTxt.SetValue(newName)
 
-            def OnPhaseType(event):
+            def OnPhaseType(event):  # noqa: ARG001
                 if not len(generalData["AtomTypes"]):  # can change only if no atoms!
                     generalData["Type"] = TypeTxt.GetValue()
                     pages = [
@@ -2208,7 +2208,7 @@ def UpdatePhaseData(G2frame, Item, data):
                     )
                     TypeTxt.SetValue(generalData["Type"])
 
-            def OnSpaceGroup(event):
+            def OnSpaceGroup(event):  # noqa: ARG001
                 if generalData["SGData"]["SGFixed"]:
                     msg = "Fixed cif generated magnetic space group"
                     text = "space group can not be changed"
@@ -2296,7 +2296,7 @@ def UpdatePhaseData(G2frame, Item, data):
                     data["Drawing"]["Atoms"] = []
                 wx.CallAfter(UpdateGeneral)
 
-            def OnModulated(event):
+            def OnModulated(event):  # noqa: ARG001
                 if not len(generalData["AtomTypes"]):  # can change only if no atoms!
                     pages = [
                         G2frame.phaseDisplay.GetPageText(PageNum)
@@ -2365,7 +2365,7 @@ def UpdatePhaseData(G2frame, Item, data):
                             TabSelectionIdDict[Id] = "Wave Data"
                     Atoms = data["Atoms"]
                     for atom in Atoms:
-                        atom += [
+                        atom += [  # noqa: PLW2901
                             {
                                 "SS1": {
                                     "waveType": "Fourier",
@@ -2517,10 +2517,10 @@ def UpdatePhaseData(G2frame, Item, data):
                 ],
             ]
 
-            def OnCellRef(event):
+            def OnCellRef(event):  # noqa: ARG001
                 generalData["Cell"][0] = cellRef.GetValue()
 
-            def OnCellChange(invalid, value, tc):
+            def OnCellChange(invalid, value, tc):  # noqa: ARG001
                 SGData = generalData["SGData"]
                 laue = SGData["SGLaue"]
                 if laue == "2/m":
@@ -2698,7 +2698,7 @@ def UpdatePhaseData(G2frame, Item, data):
             elemSizer.Add(wx.StaticText(General, label=" No. per cell"), 0, WACV)
             for elem in generalData["AtomTypes"]:
                 numbTxt = G2G.ReadOnlyTextCtrl(
-                    General, value="{:.1f}".format(generalData["NoAtoms"][elem])
+                    General, value=f"{generalData['NoAtoms'][elem]:.1f}"
                 )
                 elemSizer.Add(numbTxt, 0, WACV)
             elemSizer.Add(wx.StaticText(General, label=" Atom weight"), 0, WACV)
@@ -2728,7 +2728,7 @@ def UpdatePhaseData(G2frame, Item, data):
                 elemSizer.Add(
                     wx.StaticText(General, label=" Lande g factor: "), 0, WACV
                 )
-                for ig, elem in enumerate(generalData["AtomTypes"]):
+                for ig, elem in enumerate(generalData["AtomTypes"]):  # noqa: B007
                     gfac = generalData["Lande g"][ig]
                     if gfac is None:
                         elemSizer.Add(
@@ -2799,7 +2799,7 @@ def UpdatePhaseData(G2frame, Item, data):
                 G2spc.UpdateSytSym(data)
                 wx.CallAfter(UpdateGeneral)
 
-            def OnShowSpins(event):
+            def OnShowSpins(event):  # noqa: ARG001
                 msg = "Magnetic space group information"
                 text, table = G2spc.SGPrint(SGData, AddInv=not SGData["SGFixed"])
                 text[0] = " Magnetic Space Group: " + SGData["MagSpGrp"]
@@ -2854,7 +2854,7 @@ def UpdatePhaseData(G2frame, Item, data):
                 try:  # this is an ugly kluge - bug in wx.ComboBox
                     if SGData["BNSlattsym"][0][2] in ["a", "b", "c"]:
                         BNSkeys.reverse()
-                except:
+                except:  # noqa: E722
                     pass
                 BNS = wx.ComboBox(
                     General, choices=BNSkeys, style=wx.CB_READONLY | wx.CB_DROPDOWN
@@ -2903,7 +2903,7 @@ def UpdatePhaseData(G2frame, Item, data):
             return magSizer
 
         def ModulatedSizer(name):
-            def OnShowSOps(event):
+            def OnShowSOps(event):  # noqa: ARG001
                 SSGData = generalData["SSGData"]
                 text, table = G2spc.SSGPrint(
                     generalData["SGData"], SSGData, not SGData["SGFixed"]
@@ -2960,7 +2960,7 @@ def UpdatePhaseData(G2frame, Item, data):
                 dlg.Destroy()
                 try:
                     E, SSGData = G2spc.SSpcGroup(generalData["SGData"], SSymbol)
-                except:
+                except:  # noqa: E722
                     E = "Invalid modulation group"
                     SSGData = None
                 if SSGData:
@@ -2976,10 +2976,10 @@ def UpdatePhaseData(G2frame, Item, data):
                     G2G.G2MessageBox(General, Text, "Superspace Group Error")
                 wx.CallAfter(UpdateGeneral)
 
-            def OnVecRef(event):
+            def OnVecRef(event):  # noqa: ARG001
                 generalData["SuperVec"][1] = Ref.GetValue()
 
-            def OnMax(event):
+            def OnMax(event):  # noqa: ARG001
                 generalData["SuperVec"][2] = int(Max.GetValue())
 
             Indx = {}
@@ -3062,7 +3062,7 @@ def UpdatePhaseData(G2frame, Item, data):
 
         def PawleySizer():
             # find d-space range in used histograms
-            def enablePawley(*args):
+            def enablePawley(*args):  # noqa: ARG001
                 for c in PawleyCtrlsList:
                     c.Enable(generalData["doPawley"])
                 # If Pawley is on, turn off Le Bail settings (since they will
@@ -3142,14 +3142,14 @@ def UpdatePhaseData(G2frame, Item, data):
             return pawleyOuter
 
         def MapSizer():
-            def OnMapType(event):
+            def OnMapType(event):  # noqa: ARG001
                 Map["MapType"] = mapType.GetValue()
                 if "delt-F" in Map["MapType"]:
                     data["Drawing"]["contourColor"] = "RdYlGn"
                 else:
                     data["Drawing"]["contourColor"] = "YlGnBu"
 
-            def OnRefList(event):
+            def OnRefList(event):  # noqa: ARG001
                 if not refsList:
                     G2G.G2MessageBox(G2frame, "No reflections")
                     return
@@ -3169,7 +3169,7 @@ def UpdatePhaseData(G2frame, Item, data):
                     dlg.Destroy()
                 wx.CallAfter(UpdateGeneral, General.GetScrollPos(wx.VERTICAL))
 
-            def OnDysnomia(event):
+            def OnDysnomia(event):  # noqa: ARG001
                 data["General"]["doDysnomia"] = not data["General"]["doDysnomia"]
                 pages = [
                     G2frame.phaseDisplay.GetPageText(PageNum)
@@ -3299,7 +3299,7 @@ def UpdatePhaseData(G2frame, Item, data):
             if "Resolution" in Flip:
                 Flip["GridStep"] = Flip["Resolution"]
 
-            def OnRefList(event):
+            def OnRefList(event):  # noqa: ARG001
                 dlg = G2G.G2MultiChoiceDialog(
                     G2frame, "Select reflection sets to use", "Use data", refsList
                 )
@@ -3316,7 +3316,7 @@ def UpdatePhaseData(G2frame, Item, data):
                     dlg.Destroy()
                 wx.CallAfter(UpdateGeneral, General.GetScrollPos(wx.VERTICAL))
 
-            def OnNormElem(event):
+            def OnNormElem(event):  # noqa: ARG001
                 PE = G2elemGUI.PickElement(G2frame, ifNone=True)
                 if PE.ShowModal() == wx.ID_OK:
                     Flip["Norm element"] = PE.Elem.strip()
@@ -3400,7 +3400,7 @@ def UpdatePhaseData(G2frame, Item, data):
             HKL = Flip["testHKL"]
             for ih, hkl in enumerate(Flip["testHKL"]):
                 #            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
-                hkl = wx.TextCtrl(
+                hkl = wx.TextCtrl(  # noqa: PLW2901
                     General,
                     value="%3d %3d %3d" % (HKL[ih][0], HKL[ih][1], HKL[ih][2]),
                     style=wx.TE_PROCESS_ENTER,
@@ -3413,18 +3413,18 @@ def UpdatePhaseData(G2frame, Item, data):
             return flipSizer
 
         def MCSASizer():
-            def OnRefList(event):
+            def OnRefList(event):  # noqa: ARG001
                 MCSAdata["Data source"] = refList.GetValue()
 
-            def OnCycles(event):
+            def OnCycles(event):  # noqa: ARG001
                 MCSAdata["Cycles"] = int(cycles.GetValue())
 
-            def OnAlist(event):
+            def OnAlist(event):  # noqa: ARG001
                 MCSAdata["Algorithm"] = Alist.GetValue()
                 OnShowTsched()
                 wx.CallAfter(UpdateGeneral, General.GetScrollPos(wx.VERTICAL))
 
-            def OnRanStart(event):
+            def OnRanStart(event):  # noqa: ARG001
                 MCSAdata["ranStart"] = ranStart.GetValue()
 
             #            def OnAutoRan(event):
@@ -3451,7 +3451,7 @@ def UpdatePhaseData(G2frame, Item, data):
                         MCSAdata["Annealing"][ind] = None
                         Obj.SetValue(str(MCSAdata["Annealing"][ind]))
 
-            def ShowTsched(invalid, value, tc):
+            def ShowTsched(invalid, value, tc):  # noqa: ARG001
                 OnShowTsched()
 
             def OnShowTsched():
@@ -3637,13 +3637,13 @@ def UpdatePhaseData(G2frame, Item, data):
             return mcsaSizer
 
         def compareSizer():
-            def OnOatmOsel(event):
+            def OnOatmOsel(event):  # noqa: ARG001
                 generalData["Compare"]["Oatoms"] = oatmsel.GetStringSelection()
 
-            def OnTatmOsel(event):
+            def OnTatmOsel(event):  # noqa: ARG001
                 generalData["Compare"]["Tatoms"] = tatmsel.GetStringSelection()
 
-            def OnCompPlots(event):
+            def OnCompPlots(event):  # noqa: ARG001
                 pName = generalData["Name"]
                 Oatoms = generalData["Compare"]["Oatoms"]
                 Tatoms = generalData["Compare"]["Tatoms"]
@@ -3766,12 +3766,12 @@ def UpdatePhaseData(G2frame, Item, data):
                     )
                     print(" %s tilt angle: %.2f(%d)" % (Oatoms, Tmean, Tstd * 100))
 
-            def OnSaveDist(event):
+            def OnSaveDist(event):  # noqa: ARG001
                 pName = generalData["Name"]
                 fName = os.path.abspath(
                     os.path.splitext(G2frame.GSASprojectfile)[0] + "_TOdist.csv"
                 )
-                fp = open(fName, "w")
+                fp = open(fName, "w")  # noqa: SIM115
                 fp.write(f"Phase name:  {pName},")
                 Oatoms = generalData["Compare"]["Oatoms"]
                 Tatoms = generalData["Compare"]["Tatoms"]
@@ -3965,7 +3965,7 @@ def UpdatePhaseData(G2frame, Item, data):
         G2frame.GetStatusBar().SetStatusText("", 1)
         SetPhaseWindow(General, mainSizer, Scroll=Scroll)
 
-    def OnTransform(event):
+    def OnTransform(event):  # noqa: ARG001
         Trans = np.eye(3)
         Uvec = np.zeros(3)
         Vvec = np.zeros(3)
@@ -4047,7 +4047,7 @@ def UpdatePhaseData(G2frame, Item, data):
                     atMxyz = []
                     for atom in Atoms:
                         if data["General"]["Super"]:
-                            atom += [
+                            atom += [  # noqa: PLW2901
                                 {
                                     "SS1": {
                                         "waveType": "Fourier",
@@ -4125,7 +4125,7 @@ def UpdatePhaseData(G2frame, Item, data):
             )  # data is old phase
         G2frame.GPXtree.SelectItem(sub)
 
-    def OnISOSearch(event):
+    def OnISOSearch(event):  # noqa: ARG001
         """Search for a higher symmetry structure consistent with the
         current phase using the ISOCIF web service
         """
@@ -4135,7 +4135,7 @@ def UpdatePhaseData(G2frame, Item, data):
             import tempfile
 
             txt = event.GetEventObject().page
-            tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False)
+            tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False)  # noqa: SIM115
             with open(tmp.name, "w") as fp:
                 fp.write(
                     txt.replace(
@@ -4167,13 +4167,13 @@ def UpdatePhaseData(G2frame, Item, data):
         obj.InitExport(None)
         obj.currentExportType = "phase"
         obj.loadTree()
-        tmp = tempfile.NamedTemporaryFile(suffix=".cif", delete=False)
+        tmp = tempfile.NamedTemporaryFile(suffix=".cif", delete=False)  # noqa: SIM115
         try:
             obj.dirname, obj.filename = os.path.split(tmp.name)
             obj.phasenam = data["General"]["Name"]
             obj.Writer("", data["General"]["Name"])
             # isocif upload
-            files = {"toProcess": open(tmp.name, "rb")}
+            files = {"toProcess": open(tmp.name, "rb")}  # noqa: SIM115
             values = {"submit": "OK", "input": "uploadcif"}
             r0 = requests.post(isosite + upscript, files=files, data=values)
             # get the filename out from the upload response
@@ -4207,7 +4207,7 @@ def UpdatePhaseData(G2frame, Item, data):
                 flags=re.IGNORECASE,
             )[0]
         except IndexError:
-            tmp1 = tempfile.NamedTemporaryFile(suffix=".html")
+            tmp1 = tempfile.NamedTemporaryFile(suffix=".html")  # noqa: SIM115
             with open(tmp1.name, "w") as fp:
                 fp.write(
                     r1.text.replace(
@@ -4265,8 +4265,8 @@ def UpdatePhaseData(G2frame, Item, data):
             structure = r2.text.split("</H1>")[1].split("<p>")[2]
             atomList = []
             change = True
-            for l in structure.split("\n")[1:]:
-                l = l.split("<")[0]
+            for l in structure.split("\n")[1:]:  # noqa: E741
+                l = l.split("<")[0]  # noqa: E741, PLW2901
                 if "No change in actual" in l:
                     change = False
                 elif "Space Group:" in l:
@@ -4283,7 +4283,7 @@ def UpdatePhaseData(G2frame, Item, data):
                         exec(l.split("),")[1].replace(",", ";").strip())
                         xyz = [float(i) for i in eval(l.split("(")[1].split(")")[0])]
                         atomList.append([nam, xyz])
-                    except:
+                    except:  # noqa: E722
                         if GSASIIpath.GetConfigValue("debug"):
                             print(f'could not parse "{l}"')
             if change:
@@ -4333,17 +4333,17 @@ def UpdatePhaseData(G2frame, Item, data):
                 mainSizer.Add((-1, 10))
                 btnsizer = wx.BoxSizer(wx.HORIZONTAL)
                 btn = wx.Button(dlg, wx.ID_CANCEL, label="Quit")
-                btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))
+                btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))  # noqa: B023, ARG005
                 btnsizer.Add(btn)
                 btnsizer.Add((5, 5))
                 btn = wx.Button(dlg, wx.ID_CLOSE, label="Change tolerances")
-                btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CLOSE))
+                btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CLOSE))  # noqa: B023, ARG005
                 btnsizer.Add(btn)
                 btnsizer.Add((5, 5))
                 btn = wx.Button(
                     dlg, wx.ID_OK, label="Create GSAS-II project\nwith this supergroup"
                 )
-                btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))
+                btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))  # noqa: B023, ARG005
                 btn.SetDefault()
                 btnsizer.Add(btn)
                 mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
@@ -4411,7 +4411,7 @@ def UpdatePhaseData(G2frame, Item, data):
 
         wx.CallLater(100, _GetPhase)
 
-    def OnSuperSearch(event):
+    def OnSuperSearch(event):  # noqa: ARG001
         """Search for a supergroup matching the current phase using the
         Bilbao Pseudosymmetry search (PSEUDO) program
         """
@@ -4421,7 +4421,7 @@ def UpdatePhaseData(G2frame, Item, data):
             import tempfile
 
             num = event.GetEventObject().IndexNum
-            tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False)
+            tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False)  # noqa: SIM115
             with open(tmp.name, "w") as fp:
                 fp.write(
                     pagelist[num].replace(
@@ -4503,7 +4503,7 @@ program; Please cite:
             txtSizer.Add(wx.StaticText(spanel, wx.ID_ANY, "Use"))
             txtSizer.Add(wx.StaticText(spanel, wx.ID_ANY, "Space group"))
             txtSizer.Add(wx.StaticText(spanel, wx.ID_ANY, "Unit Cell"))
-            for key in rowdict:
+            for key in rowdict:  # noqa: PLR1704
                 if key not in csdict:
                     continue
                 txtSizer.Add(G2G.G2CheckBox(spanel, key, csdict, key))
@@ -4515,11 +4515,11 @@ program; Please cite:
             mainSizer.Add(spanel, 1, wx.ALL | wx.EXPAND, 1)
             btnsizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(dlg, wx.ID_CANCEL, label="Quit")
-            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))
+            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))  # noqa: ARG005
             btnsizer.Add(btn)
             btnsizer.Add((5, 5))
             btn = wx.Button(dlg, wx.ID_CLOSE, label="Continue")
-            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))
+            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))  # noqa: ARG005
             btnsizer.Add(btn)
             mainSizer.Add((-1, 10))
             mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
@@ -4597,11 +4597,11 @@ program; Please cite:
             mainSizer.Add(spanel, 1, wx.ALL | wx.EXPAND, 1)
             btnsizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(dlg, wx.ID_CANCEL, label="Quit")
-            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))
+            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))  # noqa: ARG005
             btnsizer.Add(btn)
             btnsizer.Add((5, 5))
             btn = wx.Button(dlg, wx.ID_CLOSE, label="Continue")
-            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))
+            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_OK))  # noqa: ARG005
             btnsizer.Add(btn)
             mainSizer.Add((-1, 10))
             mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
@@ -4671,7 +4671,7 @@ program; Please cite:
                 import tempfile
 
                 f = event.GetEventObject().webFile
-                tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False)
+                tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False)  # noqa: SIM115
                 with open(tmp.name, "w") as fp:
                     fp.write(
                         f.replace(
@@ -4794,7 +4794,7 @@ program; Please cite:
             mainSizer.Add(spanel, 1, wx.ALL | wx.EXPAND, 1)
             btnsizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(dlg, wx.ID_CLOSE, label="Continue")
-            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))
+            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))  # noqa: ARG005
             btnsizer.Add(btn)
             mainSizer.Add((-1, 10))
             mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
@@ -4863,7 +4863,7 @@ program; Please cite:
             mainSizer.Add(spanel, 1, wx.ALL | wx.EXPAND, 1)
             btnsizer = wx.BoxSizer(wx.HORIZONTAL)
             btn = wx.Button(dlg, wx.ID_CLOSE, label="Continue")
-            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))
+            btn.Bind(wx.EVT_BUTTON, lambda event: dlg.EndModal(wx.ID_CANCEL))  # noqa: ARG005
             btnsizer.Add(btn)
             mainSizer.Add((-1, 10))
             mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
@@ -4959,7 +4959,7 @@ program; Please cite:
                     startSet += (
                         f". Space group {newPhase['General']['SGData']['SpGrp']}."
                     )
-            except:
+            except:  # noqa: E722
                 G2G.G2MessageBox(
                     G2frame,
                     "Standard setting check failed. Try again later.",
@@ -5181,7 +5181,7 @@ program; Please cite:
         # Restore the original saved project
         wx.CallLater(100, _GetPhase)
 
-    def OnTransform2Std(event):
+    def OnTransform2Std(event):  # noqa: ARG001
         """Uses the Bilbao web site to transform a space group and coordinates
         to a standard setting
         """
@@ -5327,10 +5327,10 @@ program; Please cite:
 
         wx.CallLater(100, _ShowPhase)
 
-    def OnCompareCells(event):
+    def OnCompareCells(event):  # noqa: ARG001
         G2G.Load2Cells(G2frame, data)
 
-    def OnCompare(event):
+    def OnCompare(event):  # noqa: ARG001
         generalData = data["General"]
         cx, ct, cs, cia = generalData["AtomPtrs"]
         atNames = [atm[ct - 1] for atm in data["Atoms"]]
@@ -5340,10 +5340,7 @@ program; Please cite:
                 "Select atoms for polygon comparison first",
             )
             return
-        bName = "{}-{}".format(
-            generalData["Compare"]["Oatoms"],
-            generalData["Compare"]["Tatoms"],
-        )
+        bName = f"{generalData['Compare']['Oatoms']}-{generalData['Compare']['Tatoms']}"
         DisAglCtls = generalData.get("DisAglCtls", {})
         dlg = G2G.DisAglDialog(G2frame, DisAglCtls, generalData)
         if dlg.ShowModal() == wx.ID_OK:
@@ -5397,8 +5394,7 @@ program; Please cite:
                     nOct += 1
                 else:
                     print(
-                        "%s is something else with %d vertices"
-                        % (atom[ct - 1], len(results))
+                        f"{atom[ct - 1]} is something else with {len(results)} vertices"
                     )
                     nElse += 1
             GoOn = pgbar.Update(iAtm, newmsg="Atoms done=%d" % (iAtm))
@@ -5595,7 +5591,7 @@ program; Please cite:
             G2frame.OnFileSaveas(event)
         G2frame.GPXtree.SelectItem(sub)
 
-    def OnApplySubgroups(event):
+    def OnApplySubgroups(event):  # noqa: ARG001
         """Select and apply a transformation matrix from the Bilbao web site
         to replace current phase with a subgroup
         """
@@ -5949,7 +5945,7 @@ program; Please cite:
                     wx.CallAfter(Paint)
 
         def ChangeAtomCell(event):
-            def chkUij(Uij, CSI):  # needs to do something!!!
+            def chkUij(Uij, CSI):  # needs to do something!!!  # noqa: ARG001
                 return Uij
 
             SGData = generalData["SGData"]
@@ -6154,7 +6150,7 @@ program; Please cite:
                 else:
                     Atoms.SelectCol(c, True)
 
-        def Paint(Scroll=0):
+        def Paint(Scroll=0):  # noqa: ARG001
             "Place atom info into the table"
             table = []
             rowLabels = []
@@ -6168,13 +6164,13 @@ program; Please cite:
                 Atoms.SetTable(
                     atomTable, True, useFracEdit=False
                 )  # Paint may be called after the Grid has been deleted
-            except:
+            except:  # noqa: E722
                 return
             Atoms.frm = -1
             colType = colLabels.index("Type")
             colR = colLabels.index("refine")
             colSS = colLabels.index("site sym")
-            colF = colLabels.index("frac")
+            colF = colLabels.index("frac")  # noqa: F841
             colX = colLabels.index("x")
             colIA = colLabels.index("I/A")
             colU11 = colLabels.index("U11")
@@ -6290,7 +6286,7 @@ program; Please cite:
         atomData = data["Atoms"]
         resRBData = data["RBModels"].get("Residue", [])
         vecRBData = data["RBModels"].get("Vector", [])
-        global rbAtmDict
+        global rbAtmDict  # noqa: PLW0603
         rbAtmDict = {}
         for rbObj in resRBData + vecRBData:
             exclList = ["FX" for i in range(len(rbObj["Ids"]))]
@@ -6461,7 +6457,7 @@ program; Please cite:
             drawData = data["Drawing"]
             x, y, z = drawData["viewPoint"][0]
             AtomAdd(x, y, z, El=Elem)
-        except:
+        except:  # noqa: E722
             AtomAdd(0.0, 0.0, 0.0, El=Elem)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
@@ -6658,7 +6654,7 @@ program; Please cite:
             FillAtomsGrid(Atoms)
         event.StopPropagation()
 
-    def OnHydAtomAdd(event):
+    def OnHydAtomAdd(event):  # noqa: ARG001
         """Adds H atoms to fill out coordination sphere for selected atoms"""
         cx, ct, cs, cia = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms, ct - 1)
@@ -6747,7 +6743,7 @@ program; Please cite:
                             X[1],
                             X[2],
                             "H",
-                            "H%s" % (neigh[0][1:] + letters[iX]),
+                            f"H{neigh[0][1:] + letters[iX]}",
                         )
                         data["Atoms"][loc + iX][cia + 1] = HU[iX]
                         Id = data["Atoms"][loc + iX][cia + 8]
@@ -6773,7 +6769,7 @@ program; Please cite:
                 style=wx.ICON_EXCLAMATION,
             )
 
-    def OnHydAtomUpdate(event):
+    def OnHydAtomUpdate(event):  # noqa: ARG001
         generalData = data["General"]
         cx, ct, cs, cia = generalData["AtomPtrs"]
         atomData = data["Atoms"]
@@ -7053,7 +7049,7 @@ program; Please cite:
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM, False)
         event.StopPropagation()
 
-    def AtomRefine(event):
+    def AtomRefine(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms, ct - 1)
         if not indx:
@@ -7090,7 +7086,7 @@ program; Please cite:
             Atoms.ForceRefresh()
         dlg.Destroy()
 
-    def AtomModify(event):
+    def AtomModify(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms, ct - 1)
         if not indx:
@@ -7260,7 +7256,7 @@ program; Please cite:
         UpdateDrawAtoms(G2frame, data)
         G2plt.PlotStructure(G2frame, data)
 
-    def AtomTransform(event):
+    def AtomTransform(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms, ct - 1)
         if not indx:
@@ -7379,7 +7375,7 @@ program; Please cite:
                 "Select one atom", "select one atom to begin molecule build then redo"
             )
 
-    def OnDensity(event):
+    def OnDensity(event):  # noqa: ARG001
         "show the density for the current phase"
         density, mattCoeff = G2mth.getDensity(data["General"])
         msg = f"Density of phase {data['General']['Name']!r} = {density:.3f} g/cc"
@@ -7389,13 +7385,13 @@ program; Please cite:
         print(msg)
         G2G.G2MessageBox(G2frame, msg, "Density")
 
-    def OnSetAll(event):
+    def OnSetAll(event):  # noqa: ARG001
         "set all atoms in table as selected"
         for row in range(Atoms.GetNumberRows()):
             Atoms.SelectRow(row, True)
         G2plt.PlotStructure(G2frame, data)
 
-    def OnSetbyList(event):
+    def OnSetbyList(event):  # noqa: ARG001
         "select atoms using a filtered listbox"
         choices = [atm[0] for atm in data["Atoms"]]
         dlg = G2G.G2MultiChoiceDialog(
@@ -7412,7 +7408,7 @@ program; Please cite:
             Atoms.SelectRow(row, True)
         G2plt.PlotStructure(G2frame, data)
 
-    def SetAtomsViewPoint(event):
+    def SetAtomsViewPoint(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms, ct - 1)
         if not indx:
@@ -7425,7 +7421,7 @@ program; Please cite:
 
     def OnDistAnglePrt(event):
         "save distances and angles to a file"
-        fp = open(
+        fp = open(  # noqa: SIM115
             os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0] + ".disagl"),
             "w",
         )
@@ -7435,7 +7431,7 @@ program; Please cite:
     def OnDistAngleHist(event):
         OnDistAngle(event, hist=True)
 
-    def OnSaveDAHist(event):
+    def OnSaveDAHist(event):  # noqa: ARG001
         Bonds = data.get("Bonds", {})
         Angles = data.get("Angles", {})
         if not len(Bonds) and not len(Angles):
@@ -7446,7 +7442,7 @@ program; Please cite:
         fName = os.path.abspath(
             os.path.splitext(G2frame.GSASprojectfile)[0] + "_BAdist.csv"
         )
-        fp = open(fName, "w")
+        fp = open(fName, "w")  # noqa: SIM115
         fp.write(f"Phase name:  {pName},")
         for Atypes in Bonds:
             fp.write(f"\nBond distances for {Atypes}, \n")
@@ -7463,13 +7459,13 @@ program; Please cite:
         fp.close()
         print(f" {fName} written")
 
-    def OnClearDAHist(event):
+    def OnClearDAHist(event):  # noqa: ARG001
         data["Bonds"] = {}
         data["Angles"] = {}
 
         print("Bond & Angle histograms now empty")
 
-    def OnDistAngle(event, fp=None, hist=False):
+    def OnDistAngle(event, fp=None, hist=False):  # noqa: ARG001
         """Compute distances and angles in response to a menu command
         or may be called by :func:`OnDistAnglePrt` or :func:`OnDistAngleHist`.
 
@@ -7577,10 +7573,10 @@ program; Please cite:
                     Title=f"Bond distances for {Atypes}",
                     PlotName=f"{Atypes} Bonds",
                 )
-                print("Total number of bonds to %s is %d" % (Atypes, len(bonds)))
+                print(f"Total number of bonds to {Atypes} is {len(bonds)}")
                 Bonds[Atypes] = bonds
                 angles = []
-                for Item in AngArray:
+                for Item in AngArray:  # noqa: PLR1704
                     angles += [item[2][0] for item in AngArray[Item]]
                 G2plt.PlotBarGraph(
                     G2frame,
@@ -7589,7 +7585,7 @@ program; Please cite:
                     Title=f"Bond angles about {Atypes}",
                     PlotName=f"{Atypes} Angles",
                 )
-                print("Total number of angles about %s is %d" % (Atypes, len(angles)))
+                print(f"Total number of angles about {Atypes} is {len(angles)}")
                 Angles[Atypes] = angles
 
             elif fp:
@@ -7602,7 +7598,7 @@ program; Please cite:
                 'try again but do "Reset" to fill in missing atom types',
             )
 
-    def OnFracSplit(event):
+    def OnFracSplit(event):  # noqa: ARG001
         "Split atom frac accordintg to atom type & refined site fraction"
         cx, ct, cs, ci = G2mth.getAtomPtrs(data)
         indx = getAtomSelections(Atoms, ct - 1)
@@ -7649,7 +7645,7 @@ program; Please cite:
                 )
 
             B1 = AtomInfo1["Isotopes"]["Nat. Abund."]["SL"][0]
-            for iso in B2:
+            for iso in B2:  # noqa: PLC0206
                 if B2[iso] != B1:
                     bfrac1 = (B1 * Afrac - B2[iso]) / (B1 - B2[iso])
                     atype2 = Atype2
@@ -7659,7 +7655,7 @@ program; Please cite:
                         f"        neutron based site fractions {Atype1} = {bfrac1:.3f}, {bfrac1 * Amult:.3f}/cell; {atype2} = {1.0 - bfrac1:.3f}, {(1.0 - bfrac1) * Amult:.3f}/cell"
                     )
 
-    def OnValidProtein(event):
+    def OnValidProtein(event):  # noqa: ARG001
         def pickHandler(resName):
             drawData = data["Drawing"]
             resid = resIDs[resName]
@@ -7688,16 +7684,16 @@ program; Please cite:
             resNames,
             Probs1,
             Probs2,
-            Title="Error score for {}".format(data["General"]["Name"]),
+            Title=f"Error score for {data['General']['Name']}",
             thresh=[[8.0, 6.0], [17.191, 11.527]],
             pickHandler=pickHandler,
         )
 
-    def OnShowIsoDistortCalc(event):
+    def OnShowIsoDistortCalc(event):  # noqa: ARG001
         Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         G2cnstG.ShowIsoDistortCalc(G2frame, data["General"]["Name"])
 
-    def OnShowIsoModes(event):
+    def OnShowIsoModes(event):  # noqa: ARG001
         Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         # import imp
         # imp.reload(G2cnstG)
@@ -7833,10 +7829,10 @@ program; Please cite:
 
     #### Dysnomia (MEM) Data page ##############################################################################
 
-    def OnLoadDysnomia(event):
+    def OnLoadDysnomia(event):  # noqa: ARG001
         print("Load MEM - might not be implemented")
 
-    def OnSaveDysnomia(event):
+    def OnSaveDysnomia(event):  # noqa: ARG001
         print("Save MEM - might not be implemented")
 
     def OnRunDysnomia(event):
@@ -8110,7 +8106,7 @@ program; Please cite:
         G2frame.OnFileSave(event)
         print(" GSAS-II project saved")
         if sys.platform.lower().startswith("win"):
-            batch = open("pdffit2.bat", "w")
+            batch = open("pdffit2.bat", "w")  # noqa: SIM115
             # Include an activate command here
             p = os.path.split(PDFfit_exec)[0]
             while p:
@@ -8128,7 +8124,7 @@ program; Please cite:
                 batch.write("pause")
             batch.close()
         else:
-            batch = open("pdffit2.sh", "w")
+            batch = open("pdffit2.sh", "w")  # noqa: SIM115
             batch.write("#!/bin/bash\n")
             # include an activate command here
             p = os.path.split(PDFfit_exec)[0]
@@ -8175,16 +8171,16 @@ program; Please cite:
                 style=wx.PD_ELAPSED_TIME | wx.PD_AUTO_HIDE | wx.PD_CAN_ABORT,
             )
             newParms = {}
-            for itm, Item in enumerate(SeqNames):
+            for itm, Item in enumerate(SeqNames):  # noqa: PLR1704
                 PDFfile = RMCPdict["seqfiles"][Item[0]]
                 pfdata = PDFfile[1]["G(R)"][1].T
                 #                    pfname = PDFfile[0].replace(' ','_')
                 pfname = "Seq_PDF.gr"
-                pfile = open(pfname, "w")
+                pfile = open(pfname, "w")  # noqa: SIM115
                 for dp in pfdata:
                     pfile.write(f"{dp[0]:12.5f}{dp[1]:12.5f}\n")
                 pfile.close()
-                rfile = open("Seq_PDFfit_template.py")
+                rfile = open("Seq_PDFfit_template.py")  # noqa: SIM115
                 lines = rfile.readlines()  # template lines
                 rfile.close()
                 newlines = []
@@ -8249,7 +8245,7 @@ program; Please cite:
                             print("Begin dscale: %d %.4f" % (itm, startParms["1"]))
                     else:
                         newlines += line
-                rfile = open("Seq_PDFfit.py", "w")
+                rfile = open("Seq_PDFfit.py", "w")  # noqa: SIM115
                 rfile.writelines(newlines)
                 rfile.close()
                 fName = "Sequential_PDFfit"  # clean out old PDFfit output files
@@ -8291,8 +8287,7 @@ program; Please cite:
                 parmkeys = [int(item) for item in RMCPdict["ParmNames"]]
                 parmkeys.sort()
                 tempList += [
-                    "{}-{}".format(item, RMCPdict["ParmNames"][item])
-                    for item in parmkeys
+                    f"{item}-{RMCPdict['ParmNames'][item]}" for item in parmkeys
                 ]
                 print("result dscale: ", parmDict["1"], " Rw: ", Rwp)
                 atParms = [str(i + 21) for i in range(len(G2Names))]
@@ -8300,7 +8295,7 @@ program; Please cite:
                 for item in tempList:
                     pid = item.split("-")[0]
                     if pid in atParms:
-                        item = f"{pid}-{G2Names[int(pid) - 21]}"
+                        item = f"{pid}-{G2Names[int(pid) - 21]}"  # noqa: PLW2901
                     varyList.append(item)
                 result = np.array(list(newParms.values())).T
                 SeqResult[PDFfile[0]] = {
@@ -8315,7 +8310,7 @@ program; Please cite:
                     "parmDict": parmDict,
                 }
 
-                pfile = open("Sequential_PDFfit.fgr")
+                pfile = open("Sequential_PDFfit.fgr")  # noqa: SIM115
                 XYcalc = np.loadtxt(pfile).T[:2]
                 pfile.close()
                 pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PDFfile[0])
@@ -8443,7 +8438,7 @@ program; Please cite:
                 break
             ilog += 1
         if sys.platform.lower().startswith("win"):
-            batch = open("fullrmc.bat", "w")
+            batch = open("fullrmc.bat", "w")  # noqa: SIM115
             # batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
             batch.write(fullrmc_exec + " " + rname + "\n")
             batch.write("pause")
@@ -8451,7 +8446,7 @@ program; Please cite:
             Proc = subp.Popen("fullrmc.bat", creationflags=subp.CREATE_NEW_CONSOLE)
             Proc.wait()  # for it to finish before continuing on
         else:
-            batch = open("fullrmc.sh", "w")
+            batch = open("fullrmc.sh", "w")  # noqa: SIM115
             batch.write("#!/bin/bash\n")
             # activate = os.path.split(os.environ.get('CONDA_EXE',''))[0] +'/activate'
             batch.write("cd " + os.path.split(os.path.abspath(rname))[0] + "\n")
@@ -8587,13 +8582,13 @@ program; Please cite:
     #         except Exception as msg:
     #             print('failed, msg=',msg)
 
-    def OnLoadRMC(event):
+    def OnLoadRMC(event):  # noqa: ARG001
         """Used to load the output from fullrmc with all atoms placed in the
         original cell
         """
         fullrmcLoadPhase(super=False)
 
-    def OnLoadRMCsuper(event):
+    def OnLoadRMCsuper(event):  # noqa: ARG001
         """Used to load the output from fullrmc with atoms in the simulation
         supercell cell
         """
@@ -8669,7 +8664,7 @@ program; Please cite:
                             atId,
                         ]
                     )
-        except:
+        except:  # noqa: E722
             G2G.G2MessageBox(
                 G2frame,
                 "Unable to open or read file " + pName + "-fullrmc.atoms. "
@@ -8686,7 +8681,7 @@ program; Please cite:
 
         # wx.CallAfter(G2frame.GPXtree.SelectItem,psub) # should call SelectDataT
 
-    def OnViewRMC(event):
+    def OnViewRMC(event):  # noqa: ARG001
         if G2frame.RMCchoice == "fullrmc":
             RMCPdict = data["RMC"]["fullrmc"]
             generalData = data["General"]
@@ -8715,7 +8710,7 @@ program; Please cite:
             plotFilePath = os.path.splitext(engineFilePath)[0] + ".plots"
             imgDict = {}
             if os.path.exists(statFilePath):
-                fp = open(statFilePath)
+                fp = open(statFilePath)  # noqa: SIM115
                 vals = []
                 for i, line in enumerate(fp):
                     v = line.strip().split(",")[
@@ -8726,7 +8721,7 @@ program; Please cite:
                         continue
                     try:
                         vals.append([float(i) for i in v])
-                    except:
+                    except:  # noqa: E722
                         print("Error reading line ", i, "in", statFilePath)
                 fp.close()
                 steps = np.array(vals)[:, 0]
@@ -8735,14 +8730,14 @@ program; Please cite:
             if os.path.exists(plotFilePath):
                 import pickle
 
-                fp = open(plotFilePath, "rb")
+                fp = open(plotFilePath, "rb")  # noqa: SIM115
                 while True:
                     try:
                         title = pickle.load(fp)
                         imgDict[title] = fp.tell()
                         im = pickle.load(fp)
                         choices += [title]
-                    except:
+                    except:  # noqa: E722
                         break
                 fp.close()
             if not choices:
@@ -8770,12 +8765,12 @@ program; Please cite:
 
             for plt in selectedPlots:
                 if plt in imgDict:
-                    fp = open(plotFilePath, "rb")
+                    fp = open(plotFilePath, "rb")  # noqa: SIM115
                     fp.seek(imgDict[plt])
                     try:
                         im = pickle.load(fp)
                         G2plt.PlotRawImage(G2frame, im, plt)
-                    except:
+                    except:  # noqa: E722
                         pass
                     fp.close()
                 else:
@@ -8787,7 +8782,7 @@ program; Please cite:
                         if sum(row**2) == 0:
                             continue  # drop if all zeros
                         if min(row) <= 0:
-                            row = np.where(
+                            row = np.where(  # noqa: PLW2901
                                 row > 0, row, min(row[np.where(row > 0)]) / 10.0
                             )
                         plotLbls.append(lbl)
@@ -8825,13 +8820,13 @@ program; Please cite:
             ifXray = False
             ifNeut = False
             try:
-                datFile = open(os.path.join(path, pName + ".dat"))
+                datFile = open(os.path.join(path, pName + ".dat"))  # noqa: SIM115
                 datLines = datFile.readlines()
                 datFile.close()
                 for line in datLines:
                     if "xray" in line:
                         ifXray = True
-            except:
+            except:  # noqa: E722
                 pass
             files = {
                 "_PDF1.csv": [],
@@ -8850,10 +8845,10 @@ program; Please cite:
             }
             for item in files:
                 if os.path.exists(os.path.join(path, pName + item)):
-                    OutFile = open(pName + item)
+                    OutFile = open(pName + item)  # noqa: SIM115
                     files[item] = OutFile.readlines()
                     OutFile.close()
-                    print("RMCProfile file %s read" % (pName + item))
+                    print(f"RMCProfile file {pName + item} read")
             #                else:
             #                    print('RMCProfile file %s not found'%(pName+item))
             # total result plots
@@ -8871,7 +8866,7 @@ program; Please cite:
                 ],
             }
             Ysave = []
-            for label in Labels:
+            for label in Labels:  # noqa: PLC0206
                 X = []
                 Yobs = []
                 Ycalc = []
@@ -9099,7 +9094,7 @@ program; Please cite:
 
             # get atoms from rmc6f file
             rmc6fName = pName + ".rmc6f"
-            rmc6f = open(rmc6fName)
+            rmc6f = open(rmc6fName)  # noqa: SIM115
             rmc6fAtoms = []
             while True:
                 line = rmc6f.readline()
@@ -9107,7 +9102,7 @@ program; Please cite:
                     Natm = int(line.split(":")[1])
                 if "Atoms:" in line:
                     break
-            for iAtm in range(Natm):
+            for iAtm in range(Natm):  # noqa: B007
                 line = rmc6f.readline().split()
                 rmc6fAtoms.append(
                     [line[1], float(line[3]), float(line[4]), float(line[5])]
@@ -9119,7 +9114,7 @@ program; Please cite:
             if os.path.exists(os.path.join(path, bondName)):
                 nBond = len(RMCPdict["Potentials"]["Stretch"])
                 bondList = []
-                bonds = open(bondName)
+                bonds = open(bondName)  # noqa: SIM115
                 while True:
                     line = bonds.readline()
                     if "............" in line:
@@ -9151,14 +9146,14 @@ program; Please cite:
                         Title=title + " from Potential Energy Restraint",
                         PlotName=f"{title} Bond for {pName}",
                     )
-                    print(" %d %s bonds found" % (len(bondDist), title))
+                    print(f" {len(bondDist)} {title} bonds found")
 
             # alt angle histograms - from rmc6 & triplets files
             tripName = pName + ".triplets"
             if os.path.exists(os.path.join(path, tripName)):
                 nAng = len(RMCPdict["Potentials"]["Angles"])
                 tripList = []
-                triples = open(tripName)
+                triples = open(tripName)  # noqa: SIM115
                 while True:
                     line = triples.readline()
                     if "............" in line:
@@ -9193,7 +9188,7 @@ program; Please cite:
                         Title=title + " from Potential Energy Restraint",
                         PlotName=f"{title} Angle for {pName}",
                     )
-                    print(" %d %s angles found" % (len(angles), title))
+                    print(f" {len(angles)} {title} angles found")
 
             # bond odf plots
             nPot = len(RMCPdict["Potentials"]["Stretch"])
@@ -9201,7 +9196,7 @@ program; Please cite:
                 fname = pName + ".bondodf_%d" % (iPot + 1)
                 bond = RMCPdict["Potentials"]["Stretch"][iPot]
                 if os.path.exists(os.path.join(path, fname)):
-                    OutFile = open(fname)
+                    OutFile = open(fname)  # noqa: SIM115
                     odfFile = OutFile.readlines()
                     if len(odfFile) > 1:
                         OutFile.seek(0)
@@ -9313,7 +9308,7 @@ program; Please cite:
                 f" ISODISTORT run complete; new cif file {rundata} created. To use, import it as a new phase."
             )
 
-    def OnNewISOPhase(event):
+    def OnNewISOPhase(event):  # noqa: ARG001
         """Make CIF file with ISODISTORT"""
         if (
             "rundata" in data["ISODISTORT"]
@@ -9334,7 +9329,7 @@ program; Please cite:
                 "ERROR - need to run ISODISTORT first - see General/Compute menu",
             )
 
-    def OnNewPDFfitPhase(event):
+    def OnNewPDFfitPhase(event):  # noqa: ARG001
         """Make new phase for PDFfit using ISODISTORT mode definitions as constraints"""
         newPhase = G2pwd.ISO2PDFfit(data)
         phaseName = newPhase["General"]["Name"]
@@ -9346,7 +9341,7 @@ program; Please cite:
 
     #### DIFFax Layer Data page ################################################################################
     # Utility routines her
-    def OnCopyPhase(event):
+    def OnCopyPhase(event):  # noqa: ARG001
         dlg = wx.FileDialog(
             G2frame,
             "Choose GSAS-II project file",
@@ -9374,7 +9369,7 @@ program; Please cite:
         data["Layers"]["Cell"] = General["Cell"]
         wx.CallAfter(G2phsG2.UpdateLayerData, G2frame, data)
 
-    def OnLoadDIFFaX(event):
+    def OnLoadDIFFaX(event):  # noqa: ARG001
         if len(data["Layers"]["Layers"]):
             dlg = wx.MessageDialog(
                 G2frame,
@@ -9404,7 +9399,7 @@ program; Please cite:
             dlg.Destroy()
         wx.CallAfter(G2phsG2.UpdateLayerData, G2frame, data)
 
-    def OnSimulate(event):
+    def OnSimulate(event):  # noqa: ARG001
         debug = False  # set True to run DIFFax to compare/debug (must be in bin)
         idebug = 0
         if debug:
@@ -9522,7 +9517,7 @@ program; Please cite:
         )
         wx.CallAfter(G2phsG2.UpdateLayerData, G2frame, data)
 
-    def OnFitLayers(event):
+    def OnFitLayers(event):  # noqa: ARG001
         print(" fit stacking fault model TBD")
         #        import scipy.optimize as opt
         wx.BeginBusyCursor()
@@ -9531,7 +9526,7 @@ program; Please cite:
         wx.CallAfter(G2phsG2.UpdateLayerData, G2frame, data)
         G2pwpl.PlotPatterns(G2frame, plotType="PWDR")
 
-    def OnSeqSimulate(event):
+    def OnSeqSimulate(event):  # noqa: ARG001
         cellSel = ["cellA", "cellB", "cellC", "cellG"]
         transSel = ["TransP", "TransX", "TransY", "TransZ"]
         ctrls = ""
@@ -9652,7 +9647,7 @@ program; Please cite:
 
     #### Wave Data page ################################################################################
 
-    def OnWaveVary(event):
+    def OnWaveVary(event):  # noqa: ARG001
         generalData = data["General"]
         cx, ct, cs, cia = generalData["AtomPtrs"]
         atomData = data["Atoms"]
@@ -9743,7 +9738,7 @@ program; Please cite:
             drawingData["showRigidBodies"] = True
         try:  # patch of sorts; this had been set to a string; needs to be an int between 0 & 3
             int(drawingData["showSlice"])
-        except:
+        except:  # noqa: E722
             drawingData["showSlice"] = 0
         if "sliceSize" not in drawingData:
             drawingData["sliceSize"] = 5.0
@@ -9840,7 +9835,7 @@ program; Please cite:
             G2gd.GetGPXtreeItemId(G2frame, G2frame.root, "Restraints"), restData
         )
 
-    def OnDefineRB(event):
+    def OnDefineRB(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data, draw=True)
         indx = getAtomSelections(G2frame.drawAtoms, ct - 1)
         if not indx:
@@ -9980,7 +9975,7 @@ program; Please cite:
                 UpdateDrawAtoms(G2frame, data)
             G2plt.PlotStructure(G2frame, data)
 
-        def NextAtom(event):
+        def NextAtom(event):  # noqa: ARG001
             "respond to a tab by cycling through the atoms"
             next = 0
             for r in drawAtoms.GetSelectedRows():
@@ -10169,7 +10164,7 @@ program; Please cite:
 
         try:
             drawAtoms.Bind(wg.EVT_GRID_TABBING, NextAtom)
-        except:  # patch: for pre-2.9.5 wx
+        except:  # patch: for pre-2.9.5 wx  # noqa: E722
             pass
         for i, atom in enumerate(drawingData["Atoms"]):
             attr = wg.GridCellAttr()  # needs to be here - gets lost if outside loop!
@@ -10198,7 +10193,7 @@ program; Please cite:
         drawAtoms.ClearSelection()
         G2frame.drawAtoms = drawAtoms
 
-    def DrawAtomStyle(event):
+    def DrawAtomStyle(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data, draw=True)
         indx = getAtomSelections(G2frame.drawAtoms, ct - 1)
         if not indx:
@@ -10232,7 +10227,7 @@ program; Please cite:
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def DrawAtomLabel(event):
+    def DrawAtomLabel(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data, draw=True)
         indx = getAtomSelections(G2frame.drawAtoms, ct - 1)
         if not indx:
@@ -10261,7 +10256,7 @@ program; Please cite:
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def DrawAtomColor(event):
+    def DrawAtomColor(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data, draw=True)
         indx = getAtomSelections(G2frame.drawAtoms, ct - 1)
         if not indx:
@@ -10303,7 +10298,7 @@ program; Please cite:
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def ResetAtomColors(event):
+    def ResetAtomColors(event):  # noqa: ARG001
         generalData = data["General"]
         atomData = data["Drawing"]["Atoms"]
         cx, ct, cs, ci = data["Drawing"]["atomPtrs"]
@@ -10314,7 +10309,7 @@ program; Please cite:
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def OnEditAtomRadii(event):
+    def OnEditAtomRadii(event):  # noqa: ARG001
         DisAglCtls = {}
         generalData = data["General"]
         if "DisAglCtls" in generalData:
@@ -10327,7 +10322,7 @@ program; Please cite:
         FindBondsDraw(data)
         G2plt.PlotStructure(G2frame, data)
 
-    def SetViewPoint(event):
+    def SetViewPoint(event):  # noqa: ARG001
         cx, ct, cs, ci = G2mth.getAtomPtrs(data, draw=True)
         indx = getAtomSelections(G2frame.drawAtoms, ct - 1)
         if not indx:
@@ -10346,7 +10341,7 @@ program; Please cite:
             for atom in atomData
         ]
 
-    def AddSymEquiv(event):
+    def AddSymEquiv(event):  # noqa: ARG001
         drawAtoms = G2frame.drawAtoms
         cx, ct, cs, ci = G2mth.getAtomPtrs(data, draw=True)
         indx = getAtomSelections(drawAtoms, ct - 1)
@@ -10416,10 +10411,10 @@ program; Please cite:
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def AddBox(event):
+    def AddBox(event):  # noqa: ARG001
         print("Box of enclosure, TBD")
 
-    def AddSphere(event=None, selection=None, radius=None, targets=None):
+    def AddSphere(event=None, selection=None, radius=None, targets=None):  # noqa: ARG001
         drawAtoms = G2frame.drawAtoms
         cx, ct, cs, ci = G2mth.getAtomPtrs(data, draw=True)
         if selection:
@@ -10522,7 +10517,7 @@ program; Please cite:
         G2frame.drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def TransformSymEquiv(event):
+    def TransformSymEquiv(event):  # noqa: ARG001
         drawAtoms = G2frame.drawAtoms
         indx = getAtomSelections(drawAtoms)
         if not indx:
@@ -10590,7 +10585,7 @@ program; Please cite:
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def FillMolecule(event):
+    def FillMolecule(event):  # noqa: ARG001
         """This is called by the Complete Molecule command. It adds a layer
         of bonded atoms of the selected types for all selected atoms in
         the Draw Atoms table. If the number of repetitions is greater than
@@ -10645,9 +10640,9 @@ program; Please cite:
         mainSizer.Add(atSizer, 0)
 
         OkBtn = wx.Button(dlg, -1, "Ok")
-        OkBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+        OkBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))  # noqa: ARG005
         cancelBtn = wx.Button(dlg, -1, "Cancel")
-        cancelBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+        cancelBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))  # noqa: ARG005
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20, 20), 1)
         btnSizer.Add(OkBtn)
@@ -10666,7 +10661,7 @@ program; Please cite:
         try:
             indH = atomTypes.index("H")
             radii[indH] = 0.5
-        except:
+        except:  # noqa: E722
             pass
         colLabels = [
             drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())
@@ -10766,7 +10761,7 @@ program; Please cite:
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def FillCoordSphere(event=None, selection=None):
+    def FillCoordSphere(event=None, selection=None):  # noqa: ARG001
         if selection:
             indx = selection
         else:
@@ -10781,7 +10776,7 @@ program; Please cite:
         try:
             indH = atomTypes.index("H")
             radii[indH] = 0.5
-        except:
+        except:  # noqa: E722
             pass
         if indx:
             indx.sort()
@@ -10842,14 +10837,14 @@ program; Please cite:
                     break
             pgbar.Destroy()
             data["Drawing"]["Atoms"] = atomData
-            print("search time: %.3f" % (time.time() - time0))
+            print(f"search time: {time.time() - time0:.3f}")
             UpdateDrawAtoms(G2frame, data)
             G2frame.drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame, data)
         else:
             G2G.G2MessageBox(G2frame, "Select atoms first")
 
-    def FillCoordSphereNew(event):
+    def FillCoordSphereNew(event):  # noqa: ARG001
         time0 = time.time()
         drawAtoms = G2frame.drawAtoms
         indx = getAtomSelections(drawAtoms)
@@ -10861,7 +10856,7 @@ program; Please cite:
         try:
             indH = atomTypes.index("H")
             radii[indH] = 0.5
-        except:
+        except:  # noqa: E722
             pass
         indx.sort()
         atomData = data["Drawing"]["Atoms"]
@@ -10897,12 +10892,12 @@ program; Please cite:
                 break
         pgbar.Destroy()
         data["Drawing"]["Atoms"] = atomData
-        print("search time: %.3f" % (time.time() - time0))
+        print(f"search time: {time.time() - time0:.3f}")
         UpdateDrawAtoms(G2frame, data)
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame, data)
 
-    def FillUnitCell(event, selectAll=None):
+    def FillUnitCell(event, selectAll=None):  # noqa: ARG001
         drawAtoms = G2frame.drawAtoms
         if selectAll is not None:
             indx = list(range(drawAtoms.NumberRows))
@@ -11093,7 +11088,7 @@ program; Please cite:
         for ind in indx:
             atomData[ind][col] = value
 
-    def OnDrawPlane(event):
+    def OnDrawPlane(event):  # noqa: ARG001
         drawAtoms = G2frame.drawAtoms
         indx = getAtomSelections(drawAtoms)
         if len(indx) < 4:
@@ -11124,7 +11119,7 @@ program; Please cite:
         PlaneData["Cell"] = generalData["Cell"][1:]  # + volume
         G2stMn.BestPlane(PlaneData)
 
-    def OnDrawDistVP(event):
+    def OnDrawDistVP(event):  # noqa: ARG001
         # distance to view point
         drawAtoms = G2frame.drawAtoms
         indx = getAtomSelections(drawAtoms, action="distance calc")
@@ -11150,7 +11145,7 @@ program; Please cite:
             dist = np.sqrt(np.sum(np.inner(Amat, Dx) ** 2, axis=0))
             print("Atom: %8s (%12s) distance = %.3f" % (atom[cn], atom[cs], dist))
 
-    def OnDrawDAT(event):
+    def OnDrawDAT(event):  # noqa: ARG001
         # compute distance, angle, or torsion depending on number of selections
         drawAtoms = G2frame.drawAtoms
         indx = getAtomSelections(drawAtoms)
@@ -11210,7 +11205,7 @@ program; Please cite:
             )
         G2stMn.DisAglTor(DATData)
 
-    def MapVoid(event):
+    def MapVoid(event):  # noqa: ARG001
         generalData = data["General"]
         rMax = max(data["General"]["vdWRadii"])
         cell = data["General"]["Cell"][1:7]
@@ -11268,7 +11263,7 @@ program; Please cite:
         )
         mainSizer.Add(hSizer)
 
-        def OnOK(event):
+        def OnOK(event):  # noqa: ARG001
             voidDlg.EndModal(wx.ID_OK)
 
         mainSizer.Add([5, 5])
@@ -11300,7 +11295,7 @@ program; Please cite:
         drawingData["showVoids"] = True
         G2plt.PlotStructure(G2frame, data)
 
-    def RandomizedAction(event):
+    def RandomizedAction(event):  # noqa: ARG001
         """perform a selected action on a random sequence from a selected
         list of atoms. After each selection, one chooses if the
         action should be performed on the selected atom
@@ -11441,7 +11436,7 @@ program; Please cite:
                 # end new code
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnMoveZ(event):
+            def OnMoveZ(event):  # noqa: ARG001
                 # old code
                 # drawingData['Zclip'] = Zclip.GetValue()
                 # Zclip.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
@@ -11462,7 +11457,7 @@ program; Please cite:
                 # end new code
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnRadFactor(invalid, value, tc):
+            def OnRadFactor(invalid, value, tc):  # noqa: ARG001
                 FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame, data)
 
@@ -11628,32 +11623,32 @@ program; Please cite:
             return slopSizer
 
         def ShowSizer():
-            def OnShowABC(event):
+            def OnShowABC(event):  # noqa: ARG001
                 drawingData["showABC"] = showABC.GetValue()
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnShowUnitCell(event):
+            def OnShowUnitCell(event):  # noqa: ARG001
                 drawingData["unitCellBox"] = unitCellBox.GetValue()
                 G2plt.PlotStructure(G2frame, data)
                 G2frame.GPXtree.UpdateSelection()
 
             #                wx.CallAfter(UpdateDrawOptions)
 
-            def OnShowHyd(event):
+            def OnShowHyd(event):  # noqa: ARG001
                 drawingData["showHydrogen"] = showHydrogen.GetValue()
                 FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnShowRB(event):
+            def OnShowRB(event):  # noqa: ARG001
                 drawingData["showRigidBodies"] = showRB.GetValue()
                 FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnSymFade(event):
+            def OnSymFade(event):  # noqa: ARG001
                 drawingData["SymFade"] = symFade.GetValue()
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnShowVoids(event):
+            def OnShowVoids(event):  # noqa: ARG001
                 drawingData["showVoids"] = showVoids.GetValue()
                 G2plt.PlotStructure(G2frame, data)
 
@@ -11816,24 +11811,23 @@ program; Please cite:
             return showSizer
 
         def MapSizer():
-            def OnShowMap(event):
+            def OnShowMap(event):  # noqa: ARG001
                 drawingData["showMap"] = showMap.GetValue()
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnShowSlice(event):
+            def OnShowSlice(event):  # noqa: ARG001
                 drawingData["showSlice"] = G2frame.phaseDisplay.showCS.GetSelection()
                 G2frame.phaseDisplay.showCS.SetValue(slices[drawingData["showSlice"]])
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnSliceSize(invalid, value, tc):
+            def OnSliceSize(invalid, value, tc):  # noqa: ARG001
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnContourMax(event):
+            def OnContourMax(event):  # noqa: ARG001
                 drawingData["contourMax"] = contourMax.GetValue() / 100.0
                 contourMaxTxt.SetLabel(
                     " Max.: "
-                    + "%.2f"
-                    % (drawingData["contourMax"] * generalData["Map"]["rhoMax"])
+                    + f"{drawingData['contourMax'] * generalData['Map']['rhoMax']:.2f}"
                 )
                 G2plt.PlotStructure(G2frame, data)
 
@@ -11873,7 +11867,7 @@ program; Please cite:
             contourMaxTxt = wx.StaticText(
                 drawOptions,
                 label=" Max.: "
-                + "%.2f" % (drawingData["contourMax"] * generalData["Map"]["rhoMax"]),
+                + f"{drawingData['contourMax'] * generalData['Map']['rhoMax']:.2f}",
             )
             line4Sizer.Add(contourMaxTxt, 0, WACV)
             contourMax = G2G.G2Slider(
@@ -11897,7 +11891,7 @@ program; Please cite:
                 drawOptions,
                 drawingData,
                 "contourLevel",
-                "Fraction of rho max ({:.2f}): ".format(generalData["Map"]["rhoMax"]),
+                f"Fraction of rho max ({generalData['Map']['rhoMax']:.2f}): ",
                 0.01,
                 1.0,
                 100.0,
@@ -11959,15 +11953,15 @@ program; Please cite:
                 plane.SetValue(f"{hkl[0]:5.3f} {hkl[1]:5.3f} {hkl[2]:5.3f}")
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnShowPlane(event):
+            def OnShowPlane(event):  # noqa: ARG001
                 drawingData["Plane"][1] = showPlane.GetValue()
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnShowStack(event):
+            def OnShowStack(event):  # noqa: ARG001
                 drawingData["Plane"][2] = showStack.GetValue()
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnPhase(invalid, value, tc):
+            def OnPhase(invalid, value, tc):  # noqa: ARG001
                 G2plt.PlotStructure(G2frame, data)
 
             planeSizer = wx.BoxSizer(wx.VERTICAL)
@@ -12015,7 +12009,7 @@ program; Please cite:
         def DistanceSettingSizer(var, key1, key2, key3):
             """Sizer to get distances to show"""
 
-            def onLeave(*args, **kwargs):
+            def onLeave(*args, **kwargs):  # noqa: ARG001
                 G2plt.PlotStructure(G2frame, data)
 
             for key in key1, key2, key3:
@@ -12253,7 +12247,7 @@ program; Please cite:
         event.StopPropagation()
 
     #### DData routines - GUI stuff in GSASIIddataGUI.py. Used for Phase/data "Edit Phase" menu
-    def OnHklfAdd(event):
+    def OnHklfAdd(event):  # noqa: ARG001
         """Called to link a Single Xtal (HKLF) dataset to the current phase.
         Most commonly, the histogram and phase are linked when the latter
         item is read in (routines OnImportPhase or OnImportSfact in
@@ -12268,7 +12262,7 @@ program; Please cite:
             return
         wx.CallAfter(G2ddG.UpdateDData, G2frame, DData, data)
 
-    def OnDataUse(event):
+    def OnDataUse(event):  # noqa: ARG001
         #        hist = G2frame.hist
         if data["Histograms"]:
             dlg = G2G.G2MultiChoiceDialog(
@@ -12289,7 +12283,7 @@ program; Please cite:
                 dlg.Destroy()
         wx.CallAfter(G2ddG.UpdateDData, G2frame, DData, data)
 
-    def OnDataCopy(event):
+    def OnDataCopy(event):  # noqa: ARG001
         hist = G2frame.hist
         keyList = G2frame.dataWindow.HistsInPhase[:]
         if hist in keyList:
@@ -12330,7 +12324,7 @@ program; Please cite:
         finally:
             dlg.Destroy()
 
-    def OnDataCopyFlags(event):
+    def OnDataCopyFlags(event):  # noqa: ARG001
         hist = G2frame.hist
         sourceDict = copy.deepcopy(data["Histograms"][hist])
         copyDict = {}
@@ -12474,7 +12468,7 @@ program; Please cite:
         finally:
             dlg.Destroy()
 
-    def OnSelDataCopy(event):
+    def OnSelDataCopy(event):  # noqa: ARG001
         """Select HAP items to copy from one Phase/Hist to other(s)"""
         hist = G2frame.hist
         sourceDict = data["Histograms"][hist]
@@ -12530,7 +12524,7 @@ program; Please cite:
         finally:
             dlg.Destroy()
 
-    def OnSelDataRead(event):
+    def OnSelDataRead(event):  # noqa: ARG001
         """Select HAP items to copy from another GPX file to current
         phase & hist
         """
@@ -12550,7 +12544,7 @@ program; Please cite:
         phases = None
         phasenames = []
         try:
-            fp = open(filename, "rb")
+            fp = open(filename, "rb")  # noqa: SIM115
             while True:
                 try:
                     d = pickle.load(fp)
@@ -12559,7 +12553,7 @@ program; Please cite:
                 if d[0][0] == "Phases":
                     phases = d
                     phasenames = [phases[i][0] for i in range(1, len(phases))]
-        except:
+        except:  # noqa: E722
             return
         finally:
             fp.close()
@@ -12620,7 +12614,7 @@ program; Please cite:
             sourceDict[i] = phases[phNum][1]["Histograms"][histNam][i]
         wx.CallAfter(G2ddG.UpdateDData, G2frame, DData, data)
 
-    def OnPwdrAdd(event):
+    def OnPwdrAdd(event):  # noqa: ARG001
         generalData = data["General"]
         SGData = generalData["SGData"]
         newList = []
@@ -12721,7 +12715,7 @@ program; Please cite:
             finally:
                 dlg.Destroy()
 
-    def OnDataDelete(event):
+    def OnDataDelete(event):  # noqa: ARG001
         if G2frame.dataWindow.HistsInPhase:
             DelList = []
             extraOpts = {"label_0": "Remove from all phases", "value_0": False}
@@ -12760,7 +12754,7 @@ program; Please cite:
 
     #            UpdatePhaseData(G2frame,Item,data)
 
-    def OnDataApplyStrain(event):
+    def OnDataApplyStrain(event):  # noqa: ARG001
         SGData = data["General"]["SGData"]
         DijVals = data["Histograms"][G2frame.hist]["HStrain"][0][:]
         # apply the Dij values to the reciprocal cell
@@ -12829,7 +12823,7 @@ program; Please cite:
             G2plt.PlotStructure(G2frame, data)
 
         def ThermDataSizer(RBObj, rbType):
-            def OnThermval(invalid, value, tc):
+            def OnThermval(invalid, value, tc):  # noqa: ARG001
                 Cart = G2mth.UpdateRBXYZ(Bmat, RBObj, RBData, rbType)[1]
                 Uout = G2mth.UpdateRBUIJ(Bmat, Cart, RBObj)
                 cia = data["General"]["AtomPtrs"][3]
@@ -12871,13 +12865,13 @@ program; Please cite:
             return thermSizer
 
         def LocationSizer(RBObj, rbType):
-            def OnOrigRef(event):
+            def OnOrigRef(event):  # noqa: ARG001
                 RBObj["Orig"][1] = Ocheck.GetValue()
 
-            def OnOrienRef(event):
+            def OnOrienRef(event):  # noqa: ARG001
                 RBObj["Orient"][1] = Qcheck.GetValue()
 
-            def OnOrigX(invalid, value, tc):
+            def OnOrigX(invalid, value, tc):  # noqa: ARG001
                 """Called when the position info is changed (vector
                 or azimuth)
                 """
@@ -12899,7 +12893,7 @@ program; Please cite:
                 UpdateDrawAtoms(G2frame, data)
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnOrien(*args, **kwargs):
+            def OnOrien(*args, **kwargs):  # noqa: ARG001
                 """Called when the orientation info is changed (vector
                 or azimuth). When called after a move of RB with alt key pressed,
                 an optional keyword arg is provided with the mode to draw atoms
@@ -13072,7 +13066,7 @@ program; Please cite:
                 RBObj["symAxis"] = axis
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnAddShell(event):
+            def OnAddShell(event):  # noqa: ARG001
                 rbNames = []
                 rbIds = {}
                 for rbId in RBData["Spin"]:
@@ -13141,7 +13135,7 @@ program; Please cite:
                     iSh = Indx[Obj.GetId()]
                     RBObj["Radius"][iSh][1] = not RBObj["Radius"][iSh][1]
 
-                def NewSHC(invalid, value, tc):
+                def NewSHC(invalid, value, tc):  # noqa: ARG001
                     G2plt.PlotStructure(G2frame, data)
 
                 def OnDelShell(event):
@@ -13276,7 +13270,7 @@ program; Please cite:
                             shcSizer.Add(
                                 wx.StaticText(
                                     RigidBodies,
-                                    label="{}".format(item.strip("+").strip("-")),
+                                    label=f"{item.strip('+').strip('-')}",
                                 )
                             )
                             shcSizer.Add(
@@ -13304,11 +13298,11 @@ program; Please cite:
                 RBObj["hide"][iSh] = not RBObj["hide"][iSh]
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnAtColor(event):
+            def OnAtColor(event):  # noqa: ARG001
                 RBObj["useAtColor"] = not RBObj["useAtColor"]
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnFadeShell(event):
+            def OnFadeShell(event):  # noqa: ARG001
                 RBObj["fadeSh"] = not RBObj["fadeSh"]
                 G2plt.PlotStructure(G2frame, data)
 
@@ -13409,7 +13403,7 @@ program; Please cite:
                 item = Indx[Obj.GetId()]
                 RBObj["Torsions"][item][1] = Obj.GetValue()
 
-            def OnTorsion(invalid, value, tc):
+            def OnTorsion(invalid, value, tc):  # noqa: ARG001
                 newXYZ = G2mth.UpdateRBXYZ(Bmat, RBObj, RBData, "Residue")[0]
                 for i, Id in enumerate(RBObj["Ids"]):
                     data["Atoms"][AtLookUp[Id]][cx : cx + 3] = newXYZ[i]
@@ -13418,12 +13412,12 @@ program; Please cite:
                 G2frame.drawAtoms.ClearSelection()
                 G2plt.PlotStructure(G2frame, data)
 
-            def OnFrac(invalid, value, tc):
+            def OnFrac(invalid, value, tc):  # noqa: ARG001
                 for _i, Id in enumerate(RBObj["Ids"]):
                     if data["Atoms"][AtLookUp[Id]][cx + 3]:
                         data["Atoms"][AtLookUp[Id]][cx + 3] = value
 
-            def OnRefFrac(event):
+            def OnRefFrac(event):  # noqa: ARG001
                 RBObj["AtomFrac"][1] = not RBObj["AtomFrac"][1]
 
             def OnDelResRB(event):
@@ -13474,7 +13468,7 @@ program; Please cite:
                 )
             try:
                 varname = str(data["pId"]) + "::RBRxxx:" + resVarLookup[resIndx]
-            except:  # happens when phase has no histograms
+            except:  # happens when phase has no histograms  # noqa: E722
                 varname = "?::RBRxxx:" + resVarLookup[resIndx]
             topLine.Add(
                 wx.StaticText(RigidBodies, -1, "  (variables " + varname + ")"), 0, WACV
@@ -13486,7 +13480,9 @@ program; Please cite:
             torSizer = wx.FlexGridSizer(0, 6, 5, 5)
             for itors, tors in enumerate(RBObj["Torsions"]):
                 torSizer.Add(
-                    wx.StaticText(RigidBodies, -1, "Torsion " + "%d" % (itors)), 0, WACV
+                    wx.StaticText(RigidBodies, -1, "Torsion " + "%d" % (itors)),
+                    0,
+                    WACV,
                 )
                 torsTxt = G2G.ValidatedTxtCtrl(
                     RigidBodies,
@@ -13578,12 +13574,12 @@ program; Please cite:
         def VecrbSizer(RBObj, resIndx):
             """Displays details for selected vector rigid body"""
 
-            def OnFrac(invalid, value, tc):
+            def OnFrac(invalid, value, tc):  # noqa: ARG001
                 for Id in RBObj["Ids"]:
                     if data["Atoms"][AtLookUp[Id]][cx + 3]:
                         data["Atoms"][AtLookUp[Id]][cx + 3] = value
 
-            def OnRefFrac(event):
+            def OnRefFrac(event):  # noqa: ARG001
                 RBObj["AtomFrac"][1] = not RBObj["AtomFrac"][1]
 
             def OnDelVecRB(event):
@@ -13653,29 +13649,29 @@ program; Please cite:
                 vecrbSizer.Add(ThermDataSizer(RBObj, "Vector"))
             return vecrbSizer
 
-        def OnVecSelect(event):
-            global prevVecId
+        def OnVecSelect(event):  # noqa: ARG001
+            global prevVecId  # noqa: PLW0603
             prevVecId = vecSelect.GetSelection()
             try:
                 resSelect.Deselect(resSelect.GetSelection())
-            except:
+            except:  # noqa: E722
                 pass
             try:
                 spnSelect.Deselect(spnSelect.GetSelection())
-            except:
+            except:  # noqa: E722
                 pass
             wx.CallLater(100, RepaintRBInfo, "Vector", prevVecId)
 
-        def OnResSelect(event):
-            global prevResId
+        def OnResSelect(event):  # noqa: ARG001
+            global prevResId  # noqa: PLW0603
             prevResId = resSelect.GetSelection()
             try:
                 vecSelect.Deselect(vecSelect.GetSelection())
-            except:
+            except:  # noqa: E722
                 pass
             try:
                 spnSelect.Deselect(spnSelect.GetSelection())
-            except:
+            except:  # noqa: E722
                 pass
             # define the parameters needed to drag the RB with the mouse
             data["testRBObj"] = {}
@@ -13721,16 +13717,16 @@ program; Please cite:
                 data["testRBObj"]["torAtms"].append([-1, -1, -1])
             wx.CallLater(100, RepaintRBInfo, "Residue", prevResId)
 
-        def OnSpnSelect(event):
-            global prevSpnId
+        def OnSpnSelect(event):  # noqa: ARG001
+            global prevSpnId  # noqa: PLW0603
             prevSpnId = spnSelect.GetSelection()
             try:
                 resSelect.Deselect(resSelect.GetSelection())
-            except:
+            except:  # noqa: E722
                 pass
             try:
                 vecSelect.Deselect(vecSelect.GetSelection())
-            except:
+            except:  # noqa: E722
                 pass
             wx.CallLater(100, RepaintRBInfo, "Spin", prevSpnId)
 
@@ -13741,7 +13737,7 @@ program; Please cite:
                     G2frame.bottomSizer.Clear(True)
                 else:
                     G2frame.bottomSizer.DeleteWindows()
-            except:
+            except:  # noqa: E722
                 return
             Indx.clear()
             rbObj = data["RBModels"][rbType][rbIndx]
@@ -13826,7 +13822,7 @@ program; Please cite:
                 resId = prevResId
             try:
                 RBnames[resId]
-            except:
+            except:  # noqa: E722
                 resId = 0
                 # rbName = RBnames[resId]
             rbObj = data["RBModels"]["Residue"][resId]
@@ -13857,7 +13853,7 @@ program; Please cite:
                 vecId = prevVecId
             try:
                 RBnames[vecId]
-            except:
+            except:  # noqa: E722
                 vecId = 0
                 # rbName = RBnames[vecId]
             rbObj = data["RBModels"]["Vector"][vecId]
@@ -13884,7 +13880,7 @@ program; Please cite:
                 spnId = prevSpnId
                 try:
                     RBnames[spnId]
-                except:
+                except:  # noqa: E722
                     spnId = 0
                     # rbName = RBnames[spnId]
             rbObj = data["RBModels"]["Spin"][spnId]
@@ -13921,7 +13917,7 @@ program; Please cite:
             mainSizer.Add(wx.StaticText(RigidBodies, label=msg), 0)
         SetPhaseWindow(RigidBodies, mainSizer)
 
-    def OnRBCopyParms(event):
+    def OnRBCopyParms(event):  # noqa: ARG001
         RBObjs = []
         for rbType in ["Vector", "Residue"]:
             RBObjs += data["RBModels"].get(rbType, [])
@@ -14067,13 +14063,13 @@ program; Please cite:
             unmatchedRBatoms[:] = unmatched
         return matchTable
 
-    def OnRBAssign(event):
+    def OnRBAssign(event):  # noqa: ARG001
         """Assign RB to atoms in a phase with tools to locate the RB in the structure"""
 
         def Draw():
             """Create the window for assigning RB to atoms"""
 
-            def OnAddRB(event):
+            def OnAddRB(event):  # noqa: ARG001
                 "respond to RB Add button, sets RB info in phase"
                 dataGeneral = data["General"]
                 dataGeneral["SpnIds"] = dataGeneral.get("SpnIds", {})
@@ -14186,11 +14182,11 @@ program; Please cite:
                 G2plt.PlotStructure(G2frame, data, False)
                 FillRigidBodyGrid(True)
 
-            def OnCancel(event):
+            def OnCancel(event):  # noqa: ARG001
                 del data["testRBObj"]
                 FillRigidBodyGrid(True)
 
-            def OnTorAngle(invalid, value, tc):
+            def OnTorAngle(invalid, value, tc):  # noqa: ARG001
                 """respond to a number entered into the torsion editor.
                 Update the slider (number is already saved)
                 recompute atom distances
@@ -14211,7 +14207,7 @@ program; Please cite:
                 ang.ChangeValue(val)
                 UpdateTablePlot()
 
-            def UpdateTable(event=None):
+            def UpdateTable(event=None):  # noqa: ARG001
                 """get fixed atom assignments, find closest mappings &
                 update displayed table
                 """
@@ -14223,13 +14219,13 @@ program; Please cite:
                 selDict = getSelectedAtoms()
                 if selDict is None:
                     return None
-                for i, l in enumerate(RigidBodies.atomsTable.data):
+                for i, l in enumerate(RigidBodies.atomsTable.data):  # noqa: E741
                     if l[4] == "Create new":
                         l[1:4] = -1, "?", -1
                         rbAssignments[i] = None
                         selDict[i] = None
                 matchTable = assignAtoms(RBData, selDict)
-                for i, l in enumerate(matchTable):
+                for i, l in enumerate(matchTable):  # noqa: E741
                     if len(l) < 11:
                         continue
                     RigidBodies.atomsTable.data[i][1:4] = l[5], l[6], l[10]
@@ -14258,7 +14254,7 @@ program; Please cite:
                 G2plt.PlotStructure(G2frame, data, False, UpdateTable)
                 UpdateTable()
 
-            def UpdateOrientation(*args, **kwargs):
+            def UpdateOrientation(*args, **kwargs):  # noqa: ARG001
                 """Respond to a change in the azimuth or vector via
                 the edit widget; update Q display & azimuth slider
                 """
@@ -14270,12 +14266,12 @@ program; Please cite:
                     G2frame.testRBObjSizers["OrientVecSiz"][4].ChangeValue(
                         int(10 * rbObj["OrientVec"][0])
                     )
-                except:
+                except:  # noqa: E722
                     pass
                 G2plt.PlotStructure(G2frame, data, False, UpdateTable)
                 UpdateTable()
 
-            def UpdateTablePlot(*args, **kwargs):
+            def UpdateTablePlot(*args, **kwargs):  # noqa: ARG001
                 """update displayed table and plot"""
                 G2plt.PlotStructure(G2frame, data, False, UpdateTable)
                 UpdateTable()
@@ -14363,12 +14359,12 @@ program; Please cite:
                 # print(np.sqrt(sum(getDeltaXYZ(selDict,data,rbObj).flatten()**2)))
                 return getDeltaXYZ(selDict, data, rbObj).flatten()
 
-            def onSetOrigin(event):
+            def onSetOrigin(event):  # noqa: ARG001
                 "Set Origin to best fit selected atoms"
                 if rbObj["fixOrig"]:
                     wx.MessageBox(
                         "Not possible with origin locked",
-                        caption="Οrigin Locked",
+                        caption="Οrigin Locked",  # noqa: RUF001
                         style=wx.ICON_EXCLAMATION,
                     )
                     return
@@ -14389,7 +14385,7 @@ program; Please cite:
                     item.ChangeValue(data["testRBObj"]["rbObj"]["Orig"][0][i])
                 UpdateTablePlot()
 
-            def onFitOrientation(event):
+            def onFitOrientation(event):  # noqa: ARG001
                 "Set Orientation to best fit selected atoms"
                 selDict = getSelectedAtoms()
                 if len(selDict) < 2:
@@ -14405,12 +14401,12 @@ program; Please cite:
                 updateAddRBorientText(G2frame, data["testRBObj"], Bmat)
                 UpdateTablePlot()
 
-            def onFitBoth(event):
+            def onFitBoth(event):  # noqa: ARG001
                 "Set Orientation and origin to best fit selected atoms"
                 if rbObj["fixOrig"]:
                     wx.MessageBox(
                         "Not possible with origin locked",
-                        caption="Οrigin Locked",
+                        caption="Οrigin Locked",  # noqa: RUF001
                         style=wx.ICON_EXCLAMATION,
                     )
                     return
@@ -14432,7 +14428,7 @@ program; Please cite:
                 updateAddRBorientText(G2frame, data["testRBObj"], Bmat)
                 UpdateTablePlot()
 
-            def BallnSticks(event):
+            def BallnSticks(event):  # noqa: ARG001
                 """Set all draw atoms in crystal structure to balls & stick"""
                 for a in data["Drawing"]["Atoms"]:
                     a[6] = "balls & sticks"
@@ -14440,7 +14436,7 @@ program; Please cite:
                 G2plt.PlotStructure(G2frame, data, False, UpdateTable)
                 RigidBodies.SetFocus()  # make sure tab presses go to panel
 
-            def Sticks(event):
+            def Sticks(event):  # noqa: ARG001
                 """Set all draw atoms in crystal structure to stick"""
                 for a in data["Drawing"]["Atoms"]:
                     a[6] = "sticks"
@@ -14480,7 +14476,7 @@ program; Please cite:
                 data["testRBObj"]["rbObj"]["symAxis"] = axis
                 UpdateTablePlot()
 
-            def OnOrigSet(event):
+            def OnOrigSet(event):  # noqa: ARG001
                 data["testRBObj"]["rbObj"]["Orig"][0] = data["Drawing"]["viewPoint"][0]
                 for i, item in enumerate(Xsizers):
                     item.ChangeValue(data["testRBObj"]["rbObj"]["Orig"][0][i])
@@ -14489,7 +14485,7 @@ program; Please cite:
 
             showAtom = [None]
 
-            def showCryAtom(*args, **kwargs):
+            def showCryAtom(*args, **kwargs):  # noqa: ARG001
                 """Respond to selection of a crystal atom"""
                 data["testRBObj"]["CRYhighLight"] = [
                     i for i, a in enumerate(data["Atoms"]) if a[0] == showAtom[0]
@@ -14616,7 +14612,7 @@ of the crystal structure.
                 Xsizers.append(origX)
             try:
                 rbObj["fixOrig"]
-            except:
+            except:  # noqa: E722
                 rbObj["fixOrig"] = False
             if rbType != "Spin":
                 fixOrig = G2G.G2CheckBox(RigidBodies, "Lock", rbObj, "fixOrig")
@@ -14824,10 +14820,10 @@ of the crystal structure.
                 "delta, A",
                 "Assign as atom",
             ]
-            rowLabels = [l[1] for l in matchTable]
+            rowLabels = [l[1] for l in matchTable]  # noqa: E741
             displayTable = []
             Actions = True
-            for i, l in enumerate(matchTable):
+            for i, l in enumerate(matchTable):  # noqa: E741
                 lbl = ""
                 if i in rbAssignments:
                     if rbAssignments[i] is None:
@@ -15064,7 +15060,7 @@ of the crystal structure.
             data["testRBObj"]["torAtms"].append([-1, -1, -1])
         wx.CallAfter(Draw)
 
-    def OnAutoFindResRB(event):
+    def OnAutoFindResRB(event):  # noqa: ARG001
         RBData = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame, G2frame.root, "Rigid bodies")
         )
@@ -15182,7 +15178,7 @@ of the crystal structure.
             wx.EndBusyCursor()
         wx.CallAfter(FillRigidBodyGrid, True)
 
-    def OnRBRemoveAll(event):
+    def OnRBRemoveAll(event):  # noqa: ARG001
         data["RBModels"]["Residue"] = []
         data["RBModels"]["Vector"] = []
         data["RBModels"]["Spin"] = []
@@ -15194,7 +15190,7 @@ of the crystal structure.
                 RBData[RBType][rbId]["useCount"] = 0
         FillRigidBodyGrid(True)
 
-    def OnGlobalResRBTherm(event):
+    def OnGlobalResRBTherm(event):  # noqa: ARG001
         RBObjs = data["RBModels"]["Residue"]
         names = ["None", "Uiso", "T", "TL", "TLS"]
         cia = data["General"]["AtomPtrs"][3]
@@ -15216,7 +15212,7 @@ of the crystal structure.
         dlg.Destroy()
         wx.CallAfter(FillRigidBodyGrid, True)
 
-    def OnGlobalResRBRef(event):
+    def OnGlobalResRBRef(event):  # noqa: ARG001
         RBObjs = data["RBModels"]["Residue"]
         names = ["Origin", "Orient. angle", "Full Orient."]
         nTor = 0
@@ -15309,7 +15305,7 @@ of the crystal structure.
             FillRigidBodyGrid()
 
     #### MC/SA routines ################################################################################
-    def UpdateMCSA(Scroll=0):
+    def UpdateMCSA(Scroll=0):  # noqa: ARG001
         Indx = {}
 
         def OnPosRef(event):
@@ -15317,7 +15313,7 @@ of the crystal structure.
             model, item, ix = Indx[Obj.GetId()]
             model[item][1][ix] = Obj.GetValue()
 
-        def OnPosVal(invalid, value, tc):
+        def OnPosVal(invalid, value, tc):  # noqa: ARG001
             G2plt.PlotStructure(G2frame, data)
 
         def OnPosRange(event):
@@ -15352,7 +15348,7 @@ of the crystal structure.
                 )
                 atomsizer.Add(posVal, 0, WACV)
             atomsizer.Add((5, 5), 0)
-            for ix, item in enumerate(["x", "y", "z"]):
+            for ix, item in enumerate(["x", "y", "z"]):  # noqa: B007
                 atomsizer.Add(wx.StaticText(G2frame.MCSA, -1, " Range: "), 0, WACV)
                 rmin, rmax = model["Pos"][2][ix]
                 #            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
@@ -15437,7 +15433,7 @@ of the crystal structure.
             molcent.Bind(wx.EVT_CHECKBOX, OnMolCent)
             Indx[molcent.GetId()] = model
             rbsizer1.Add(molcent, 0, WACV)
-            for ix, item in enumerate(["x", "y", "z"]):
+            for ix, item in enumerate(["x", "y", "z"]):  # noqa: B007
                 rbsizer1.Add(wx.StaticText(G2frame.MCSA, -1, " Range: "), 0, WACV)
                 rmin, rmax = model["Pos"][2][ix]
                 #            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
@@ -15501,7 +15497,7 @@ of the crystal structure.
             angRange.Bind(wx.EVT_KILL_FOCUS, OnPosRange)
             rbsizer2.Add(angRange, 0, WACV)
             rbsizer2.Add(wx.StaticText(G2frame.MCSA, -1, "Oi,Oj,Ok: "), 0, WACV)
-            for io, item in enumerate(["Oi", "Oj", "Ok"]):
+            for io, item in enumerate(["Oi", "Oj", "Ok"]):  # noqa: B007
                 rmin, rmax = Rge[io + 1]
                 #            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
                 vecRange = wx.TextCtrl(
@@ -15573,7 +15569,7 @@ of the crystal structure.
             return rbsizer
 
         def MDSizer(POData):
-            def OnPORef(event):
+            def OnPORef(event):  # noqa: ARG001
                 POData["Coef"][1] = poRef.GetValue()
 
             def OnPORange(event):
@@ -15600,7 +15596,7 @@ of the crystal structure.
                 if not np.any(np.array(hkl)):
                     hkl = POData["axis"]
                 POData["axis"] = hkl
-                h, k, l = hkl
+                h, k, l = hkl  # noqa: E741
                 poAxis.SetValue("%3d %3d %3d" % (h, k, l))
 
             poSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -15624,10 +15620,13 @@ of the crystal structure.
             poSizer.Add(
                 wx.StaticText(G2frame.MCSA, -1, " Unique axis, H K L: "), 0, WACV
             )
-            h, k, l = POData["axis"]
+            h, k, l = POData["axis"]  # noqa: E741
             #            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             poAxis = wx.TextCtrl(
-                G2frame.MCSA, -1, "%3d %3d %3d" % (h, k, l), style=wx.TE_PROCESS_ENTER
+                G2frame.MCSA,
+                -1,
+                "%3d %3d %3d" % (h, k, l),
+                style=wx.TE_PROCESS_ENTER,
             )
             poAxis.Bind(wx.EVT_TEXT_ENTER, OnPOAxis)
             poAxis.Bind(wx.EVT_KILL_FOCUS, OnPOAxis)
@@ -15700,11 +15699,11 @@ of the crystal structure.
             resultsSizer.Add(resultsGrid, 0, wx.EXPAND)
             return resultsSizer
 
-        def OnSelect(event):
+        def OnSelect(event):  # noqa: ARG001
             rbId = rbids[select.GetSelection()]
             wx.CallLater(100, RepaintRBInfo, rbId)
 
-        def RepaintRBInfo(rbId, Scroll=0):
+        def RepaintRBInfo(rbId, Scroll=0):  # noqa: ARG001
             oldFocus = wx.Window.FindFocus()
             if "phoenix" in wx.version():
                 G2frame.bottomSizer.Clear(True)
@@ -15718,7 +15717,7 @@ of the crystal structure.
             G2frame.dataWindow.SendSizeEvent()
             wx.CallAfter(oldFocus.SetFocus)
 
-        def OnShoLabels(event):
+        def OnShoLabels(event):  # noqa: ARG001
             data["MCSA"]["showLabels"] = not data["MCSA"]["showLabels"]
             G2plt.PlotStructure(G2frame, data)
 
@@ -15820,10 +15819,10 @@ of the crystal structure.
             else:  # March Dollase
                 Models[0]["Coef"][0] = val
 
-    def OnRunMultiMCSA(event):
+    def OnRunMultiMCSA(event):  # noqa: ARG001
         RunMCSA("multi")
 
-    def OnRunSingleMCSA(event):
+    def OnRunSingleMCSA(event):  # noqa: ARG001
         RunMCSA("single")
 
     def RunMCSA(process):
@@ -15866,7 +15865,7 @@ of the crystal structure.
             return
         print("MC/SA run:")
         print(
-            "Reflection type:" + reflType + " Total No. reflections: %d" % len(reflData)
+            "Reflection type:" + reflType + f" Total No. reflections: {len(reflData)}"
         )
         RBdata = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame, G2frame.root, "Rigid bodies")
@@ -15946,7 +15945,7 @@ of the crystal structure.
         G2plt.PlotStructure(G2frame, data)
         wx.CallAfter(UpdateMCSA)
 
-    def OnMCSAaddAtom(event):
+    def OnMCSAaddAtom(event):  # noqa: ARG001
         dlg = G2elemGUI.PickElement(G2frame)
         if dlg.ShowModal() == wx.ID_OK:
             El = dlg.Elem.strip()
@@ -15968,7 +15967,7 @@ of the crystal structure.
         G2plt.PlotStructure(G2frame, data)
         UpdateMCSA()
 
-    def OnMCSAaddRB(event):
+    def OnMCSAaddRB(event):  # noqa: ARG001
         rbData = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame, G2frame.root, "Rigid bodies")
         )
@@ -16019,7 +16018,7 @@ of the crystal structure.
         UpdateMCSA()
         wx.CallAfter(G2plt.PlotStructure, G2frame, data)
 
-    def OnMCSAclear(event):
+    def OnMCSAclear(event):  # noqa: ARG001
         data["MCSA"] = {
             "Models": [
                 {
@@ -16038,7 +16037,7 @@ of the crystal structure.
         G2plt.PlotStructure(G2frame, data)
         UpdateMCSA()
 
-    def OnMCSAmove(event):
+    def OnMCSAmove(event):  # noqa: ARG001
         general = data["General"]
         Amat, Bmat = G2lat.cell2AB(general["Cell"][1:7])
         xyz, aTypes = G2mth.UpdateMCSAxyz(Bmat, data["MCSA"])
@@ -16047,7 +16046,7 @@ of the crystal structure.
             AtomAdd(x, y, z, atype, Name=atype + "(%d)" % (iat + 1))
         G2plt.PlotStructure(G2frame, data)
 
-    def OnClearResults(event):
+    def OnClearResults(event):  # noqa: ARG001
         data["MCSA"]["Results"] = []
         UpdateMCSA()
 
@@ -16215,7 +16214,7 @@ of the crystal structure.
                 try:
                     if float(G2frame.PawleyRefl.GetCellValue(r, 6)) < 0:
                         G2frame.PawleyRefl.SetCellBackgroundColour(r, 6, wx.RED)
-                except:
+                except:  # noqa: E722
                     pass
         else:
             msg = """Pawley refinement has not yet been setup. Use the
@@ -16231,7 +16230,7 @@ tab, use Operations->"Pawley create")"""
         menu command. These settings are also available on the Phase/General tab.
         """
 
-        def DisablePawleyOpts(*args):
+        def DisablePawleyOpts(*args):  # noqa: ARG001
             "dis-/enable Pawley options"
             for c in PawleyCtrlsList:
                 c.Enable(generalData["doPawley"])
@@ -16330,7 +16329,7 @@ tab, use Operations->"Pawley create")"""
         mainSizer.Add(pawleySizer)
 
         # make OK button
-        def OnOK(event):
+        def OnOK(event):  # noqa: ARG001
             genDlg.EndModal(wx.ID_OK)
 
         mainSizer.Add([5, 5])
@@ -16413,7 +16412,7 @@ tab, use Operations->"Pawley create")"""
             wx.BeginBusyCursor()
             try:
                 HKLd = G2lat.GenSSHLaue(dmin, SGData, SSGData, Vec, maxH, A)
-                for h, k, l, m, d in HKLd:
+                for h, k, l, m, d in HKLd:  # noqa: E741
                     if d > dmax:
                         continue
                     ext, mul = G2spc.GenHKLf([h, k, l], SGData)[:2]
@@ -16426,7 +16425,7 @@ tab, use Operations->"Pawley create")"""
         else:
             wx.BeginBusyCursor()
             try:
-                for h, k, l, d in HKLd:
+                for h, k, l, d in HKLd:  # noqa: E741
                     if d > dmax:
                         continue
                     ext, mul = G2spc.GenHKLf([h, k, l], SGData)[:2]
@@ -16453,7 +16452,7 @@ tab, use Operations->"Pawley create")"""
             dlg.Destroy()
         wx.CallAfter(OnPawleyEstimate, event)
 
-    def OnPawleyEstimate(event):
+    def OnPawleyEstimate(event):  # noqa: ARG001
         # Algorithm thanks to James Hester
         try:
             Refs = data["Pawley ref"]
@@ -16549,7 +16548,7 @@ tab, use Operations->"Pawley create")"""
             wx.EndBusyCursor()
         FillPawleyReflectionsGrid()
 
-    def OnPawleyUpdate(event):
+    def OnPawleyUpdate(event):  # noqa: ARG001
         """This is the place for any reflection modification trick
         Patterson squared, etc.
         """
@@ -16587,7 +16586,7 @@ tab, use Operations->"Pawley create")"""
             wx.EndBusyCursor()
         wx.CallAfter(FillPawleyReflectionsGrid)
 
-    def OnPawleySelAll(event):
+    def OnPawleySelAll(event):  # noqa: ARG001
         refcol = [
             G2frame.PawleyRefl.GetColLabelValue(c)
             for c in range(G2frame.PawleyRefl.GetNumberCols())
@@ -16597,7 +16596,7 @@ tab, use Operations->"Pawley create")"""
 
         G2frame.PawleyRefl.ForceRefresh()
 
-    def OnPawleySelNone(event):
+    def OnPawleySelNone(event):  # noqa: ARG001
         refcol = [
             G2frame.PawleyRefl.GetColLabelValue(c)
             for c in range(G2frame.PawleyRefl.GetNumberCols())
@@ -16606,7 +16605,7 @@ tab, use Operations->"Pawley create")"""
             G2frame.PawleyRefl.GetTable().SetValue(r, refcol, False)
         G2frame.PawleyRefl.ForceRefresh()
 
-    def OnPawleyToggle(event):
+    def OnPawleyToggle(event):  # noqa: ARG001
         refcol = [
             G2frame.PawleyRefl.GetColLabelValue(c)
             for c in range(G2frame.PawleyRefl.GetNumberCols())
@@ -16714,7 +16713,7 @@ tab, use Operations->"Pawley create")"""
             G2frame.MapPeaks.Show(False)
         SetPhaseWindow(MapPeakList, mainSizer)
 
-    def OnPeaksMove(event):
+    def OnPeaksMove(event):  # noqa: ARG001
         if "Map Peaks" in data:
             mapPeaks = np.array(data["Map Peaks"])
             peakMax = np.amax(mapPeaks.T[0])
@@ -16727,17 +16726,17 @@ tab, use Operations->"Pawley create")"""
             )
             for i, ind in enumerate(Ind):
                 mag, x, y, z = mapPeaks[ind][:4]
-                AtomAdd(x, y, z, "H", Name="M " + "%d" % (int(100 * mag / peakMax)))
+                AtomAdd(x, y, z, "H", Name="M " + f"{int(100 * mag / peakMax)}")
                 pgbar.Update(i + 1, "Map peak no. %d processed" % ind)
             pgbar.Destroy()
             G2plt.PlotStructure(G2frame, data)
 
-    def OnPeaksClear(event):
+    def OnPeaksClear(event):  # noqa: ARG001
         data["Map Peaks"] = []
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame, data)
 
-    def OnPeaksSave(event):
+    def OnPeaksSave(event):  # noqa: ARG001
         if "Map Peaks" in data:
             mapPeaks = data["Map Peaks"]
             pfName = PhaseName + "_peaks.csv"
@@ -16758,7 +16757,7 @@ tab, use Operations->"Pawley create")"""
                 dlg.Destroy()
 
             if pfFile:
-                pf = open(pfFile, "w")
+                pf = open(pfFile, "w")  # noqa: SIM115
                 pf.write(f'"{PhaseName}"\n')
                 pf.write(" mag, x, y, z, dzero, dcent \n")
                 for peak in mapPeaks:
@@ -16767,7 +16766,7 @@ tab, use Operations->"Pawley create")"""
                     )
                 pf.close()
 
-    def OnPeaksDelete(event):
+    def OnPeaksDelete(event):  # noqa: ARG001
         if "Map Peaks" in data:
             mapPeaks = np.array(data["Map Peaks"])
             Ind = getAtomSelections(mapPeaks)
@@ -16796,7 +16795,7 @@ tab, use Operations->"Pawley create")"""
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame, data)
 
-    def OnRollMap(event):
+    def OnRollMap(event):  # noqa: ARG001
         if "Map Peaks" in data:
             half = np.array([0.5, 0.5, 0.5])
             mapPeaks = data["Map Peaks"]
@@ -16855,7 +16854,7 @@ tab, use Operations->"Pawley create")"""
                 G2plt.PlotStructure(G2frame, data)
             dlg.Destroy()
 
-    def OnPeaksEquiv(event):
+    def OnPeaksEquiv(event):  # noqa: ARG001
         if "Map Peaks" in data:
             mapPeaks = np.array(data["Map Peaks"])
             Ind = getAtomSelections(mapPeaks)
@@ -16872,7 +16871,7 @@ tab, use Operations->"Pawley create")"""
                     wx.EndBusyCursor()
                 G2plt.PlotStructure(G2frame, data)
 
-    def OnShowBonds(event):
+    def OnShowBonds(event):  # noqa: ARG001
         generalData = data["General"]
         if generalData["Map"].get("Show bonds", False):
             generalData["Map"]["Show bonds"] = False
@@ -16883,7 +16882,7 @@ tab, use Operations->"Pawley create")"""
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame, data)
 
-    def OnPeaksUnique(event):
+    def OnPeaksUnique(event):  # noqa: ARG001
         if "Map Peaks" in data:
             mapPeaks = np.array(data["Map Peaks"])
             Ind = getAtomSelections(G2frame.MapPeaks)
@@ -16922,7 +16921,7 @@ tab, use Operations->"Pawley create")"""
                 G2frame.MapPeaks.ForceRefresh()
                 G2plt.PlotStructure(G2frame, data)
 
-    def OnPeaksViewPoint(event):
+    def OnPeaksViewPoint(event):  # noqa: ARG001
         # set view point
         indx = getAtomSelections(G2frame.MapPeaks)
         if not indx:
@@ -16933,7 +16932,7 @@ tab, use Operations->"Pawley create")"""
         drawingData["viewPoint"][0] = mapPeaks[indx[0]][1:4]
         G2plt.PlotStructure(G2frame, data)
 
-    def OnPeaksDistVP(event):
+    def OnPeaksDistVP(event):  # noqa: ARG001
         # distance to view point
         indx = getAtomSelections(G2frame.MapPeaks)
         if not indx:
@@ -16959,7 +16958,7 @@ tab, use Operations->"Pawley create")"""
             dist = np.sqrt(np.sum(np.inner(Amat, Dx) ** 2, axis=0))
             print("Peak: %5d mag= %8.2f distance = %.3f" % (i, peak[cm], dist))
 
-    def OnPeaksDA(event):
+    def OnPeaksDA(event):  # noqa: ARG001
         # distance, angle
         indx = getAtomSelections(G2frame.MapPeaks)
         if len(indx) not in [2, 3]:
@@ -16979,7 +16978,7 @@ tab, use Operations->"Pawley create")"""
         else:
             print(f" angle for atoms {indx!s} = {G2mth.getRestAngle(xyz, Amat):.2f}")
 
-    def OnFourierMaps(event):
+    def OnFourierMaps(event):  # noqa: ARG001
         generalData = data["General"]
         mapData = generalData["Map"]
         reflNames = mapData["RefList"]
@@ -17033,7 +17032,7 @@ tab, use Operations->"Pawley create")"""
         UpdateDrawAtoms(G2frame, data)
         G2plt.PlotStructure(G2frame, data)
 
-    def OnFourClear(event):
+    def OnFourClear(event):  # noqa: ARG001
         generalData = data["General"]
         generalData["Map"] = mapDefault.copy()
         data["Drawing"]["showMap"] = False
@@ -17067,7 +17066,7 @@ tab, use Operations->"Pawley create")"""
 
     ## keep this
 
-    def OnSearchMaps(event):
+    def OnSearchMaps(event):  # noqa: ARG001
         print(" Begin fourier map search - can take some time")
         time0 = time.time()
         generalData = data["General"]
@@ -17096,8 +17095,8 @@ tab, use Operations->"Pawley create")"""
             if len(peaks):
                 mapPeaks = np.concatenate((mags, peaks, dzeros, dcents), axis=1)
                 data["Map Peaks"] = G2mth.sortArray(mapPeaks, 0, reverse=True)
-            print(" Map search finished, time = %.2fs" % (time.time() - time0))
-            print(" No.peaks found: %d" % len(peaks))
+            print(f" Map search finished, time = {time.time() - time0:.2f}s")
+            print(f" No.peaks found: {len(peaks)}")
             Page = G2frame.phaseDisplay.FindPage("Map peaks")
             G2frame.phaseDisplay.SetSelection(Page)
             wx.CallAfter(FillMapPeaksGrid)
@@ -17184,7 +17183,7 @@ tab, use Operations->"Pawley create")"""
         )
         screenSize = wx.ClientDisplayRect()
         Size = pgbar.GetSize()
-        testNames = ["%3d%3d%3d" % (h, k, l) for h, k, l in flipData["testHKL"]]
+        testNames = ["%3d%3d%3d" % (h, k, l) for h, k, l in flipData["testHKL"]]  # noqa: E741, UP031
         if 50 < Size[0] < 500:  # sanity check on size, since this fails w/Win & wx3.0
             pgbar.SetSize((int(Size[0] * 1.2), Size[1]))  # increase size a bit along x
             pgbar.SetPosition(
@@ -17227,7 +17226,7 @@ tab, use Operations->"Pawley create")"""
         else:
             print("Bad charge flip map - no peak search done")
 
-    def OnTextureRefine(event):
+    def OnTextureRefine(event):  # noqa: ARG001
         General = data["General"]
         phaseName = General["Name"]
         keyList = G2frame.GetHistogramNames("PWDR")
@@ -17309,7 +17308,7 @@ tab, use Operations->"Pawley create")"""
         G2phsG2.UpdateTexture(G2frame, data)
         G2plt.PlotTexture(G2frame, data, Start=False)
 
-    def OnTextureClear(event):
+    def OnTextureClear(event):  # noqa: ARG001
         print("clear texture? - does nothing")
 
     #### Phase page routines ###############################################################################
@@ -17360,7 +17359,7 @@ tab, use Operations->"Pawley create")"""
             try:
                 p.ClearGrid()
                 newlist.append(p)
-            except:
+            except:  # noqa: E722
                 pass
         G2frame.phaseDisplay.gridList = newlist  # remove deleted grids from list
         text = G2frame.phaseDisplay.GetPageText(page)
@@ -17618,7 +17617,7 @@ tab, use Operations->"Pawley create")"""
         try:  # IsKeyInCategory not in wx 2.9
             if not event.IsKeyInCategory(wx.WXK_CATEGORY_TAB):
                 return
-        except:
+        except:  # noqa: E722
             return
         if alt:  # advance RB selection
             # GSASIIpath.IPyBreak()
@@ -17637,12 +17636,12 @@ tab, use Operations->"Pawley create")"""
         else:
             Ind = data["testRBObj"].get("CRYhighLight", [])
             if len(Ind) == 0:
-                I = -1
+                I = -1  # noqa: E741
             else:
-                I = Ind[0]
+                I = Ind[0]  # noqa: E741
             wrap = False
             while True:
-                I += 1
+                I += 1  # noqa: E741
                 if len(data["Atoms"]) <= I and wrap:
                     print(
                         "How did this happen?",
@@ -17654,7 +17653,7 @@ tab, use Operations->"Pawley create")"""
                     return
                 elif len(data["Atoms"]) <= I:
                     wrap = True
-                    I = 0
+                    I = 0  # noqa: E741
                 if data["Atoms"][I][0] in data["testRBObj"]["availAtoms"]:
                     data["testRBObj"]["CRYhighLight"] = [I]
                     misc["showSelect"].setByString(data["Atoms"][I][0])
@@ -17742,7 +17741,7 @@ tab, use Operations->"Pawley create")"""
         data["Deformations"] = {}
     # end patch
 
-    global rbAtmDict
+    global rbAtmDict  # noqa: PLW0603
     rbAtmDict = {}
     misc = {}
     PhaseName = G2frame.GPXtree.GetItemText(Item)
@@ -17920,7 +17919,7 @@ def CheckAddHKLF(G2frame, data):
         used = [TextList[i] for i in result if TextList[i] in usedHKLFhists]
         if used:
             msg = "The following single crystal histogram(s) are already in use"
-            for i in used:
+            for i in used:  # noqa: PLW2901
                 msg += "\n  " + str(i)
             msg += "\nAre you sure you want to add them to this phase? "
             msg += "Associating a single crystal dataset to >1 histogram is usually an error, "
@@ -17961,9 +17960,9 @@ def checkPDFfit(G2frame):
     try:
         from diffpy.pdffit2 import PdfFit
 
-        PdfFit
+        PdfFit  # noqa: B018
         return True
-    except:
+    except:  # noqa: E722
         pass
 
     # Last effort: With conda we should be able to create a separate
@@ -17971,8 +17970,8 @@ def checkPDFfit(G2frame):
     try:  # have conda. Can we access it programmatically?
         import conda.cli.python_api
 
-        conda.cli.python_api
-    except:
+        conda.cli.python_api  # noqa: B018
+    except:  # noqa: E722
         G2G.G2MessageBox(
             G2frame,
             "You are running a directly installed Python. You will need to install PDFfit2 directly as well, preferably in a separate virtual environment.",
@@ -18047,7 +18046,7 @@ def makeIsoNewPhase(phData, cell, atomList, sglbl, sgnum):
         sgnum = int(sgnum)
         sgsym = G2spc.spgbyNum[sgnum]
         # sgname = sgsym.replace(" ","")
-    except:
+    except:  # noqa: E722
         print(f"Problem with processing space group name {sglbl} and number {sgnum}")
         return None
     newPhase = copy.deepcopy(phData)
@@ -18115,7 +18114,7 @@ def saveIsoNewPhase(G2frame, phData, newPhase, orgFilName):
             num = 10
             try:
                 num = int(s[1]) + 1
-            except:
+            except:  # noqa: E722
                 pass
             G2frame.GSASprojectfile = f"{s[0]}_{num}.gpx"
     G2IO.ProjFileSave(G2frame)

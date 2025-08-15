@@ -141,7 +141,7 @@ class ExportMapCCP4(G2fil.ExportBaseclass):
             self.Write(np.max(rho), "f")
             self.Write(np.mean(rho), "f")
             self.Write(0, "i")
-            for i in range(24, 53):
+            for i in range(24, 53):  # noqa: B007
                 self.Write(0, "i")
             if "2" in platform.python_version_tuple()[0]:
                 for s in ["M", "A", "P", " "]:
@@ -151,7 +151,7 @@ class ExportMapCCP4(G2fil.ExportBaseclass):
                     self.Write(s, "c")
             self.Write(0x44410000, "i")
             self.Write(np.std(rho), "f")
-            for i in range(56, 257):
+            for i in range(56, 257):  # noqa: B007
                 self.Write(0, "i")
             for x in rho.flatten("F"):
                 self.Write(x, "f")

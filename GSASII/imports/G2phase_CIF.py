@@ -41,13 +41,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
         )
 
     def ContentsValidator(self, filename):
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         ok = self.CIFValidator(fp)
         # print('validator: ',ok)
         fp.close()
         return ok
 
-    def Reader(self, filename, ParentFrame=None, usedRanIdList=None, **unused):
+    def Reader(self, filename, ParentFrame=None, usedRanIdList=None, **unused):  # noqa: ARG002
         if usedRanIdList is None:
             usedRanIdList = []
         if cif is None:  # unexpected, but worth a specific error message
@@ -124,7 +124,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if na == 1:
                     choice[-1] += "1 atom"
                 else:
-                    choice[-1] += ("%d" % na) + " atoms"
+                    choice[-1] += f"{na} atoms"
                 choice[-1] += ", cell: "
                 fmt = "%.2f,"
                 for i, key in enumerate(cellitems):
@@ -155,7 +155,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     title="Select a phase from one the CIF data_ blocks below",
                     size=(600, 100),
                 )
-            except:  # no wxPython
+            except:  # no wxPython  # noqa: E722
                 selblk = 0
         self.errors = "Error during reading of selected block"
         # process selected phase
@@ -246,7 +246,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     SpGrp = blk.get("_space_group_name_H-M_alt", "")
                 try:
                     SpGrp = G2spc.spgbyNum[int(blk.get("_symmetry_Int_Tables_number"))]
-                except:
+                except:  # noqa: E722
                     pass
                 if not SpGrp:  # try magnetic
                     MSpGrp = blk.get("_space_group.magn_name_BNS", "")
@@ -811,7 +811,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             for lbl in phasenamefields:  # get a name for the phase
                 try:
                     name = blk.get(lbl)
-                except:
+                except:  # noqa: E722
                     continue
                 if name is None:
                     continue
@@ -1120,7 +1120,7 @@ shift later as an alternative to the above."""
                 zip(Var2ModeMatrix, normlist, strict=False)
             ):
                 constraint = []
-                for j, (lbl, k) in enumerate(zip(coordVarLbl, row, strict=False)):
+                for j, (lbl, k) in enumerate(zip(coordVarLbl, row, strict=False)):  # noqa: B007
                     if k == 0:
                         continue
                     constraint.append([k / norm, G2varObj[j]])
@@ -1295,7 +1295,7 @@ shift later as an alternative to the above."""
             modeVarList = []
             for i, row in enumerate(occupancymodeInvmatrix):
                 constraint = []
-                for j, (lbl, k) in enumerate(zip(occVarLbl, row, strict=False)):
+                for j, (lbl, k) in enumerate(zip(occVarLbl, row, strict=False)):  # noqa: B007
                     if k == 0:
                         continue
                     constraint.append([k, G2varObj[j]])
@@ -1352,23 +1352,23 @@ shift later as an alternative to the above."""
         # done with read
         # ----------------------------------------------------------------------
 
-        def fmtEqn(i, head, l, var, k):
+        def fmtEqn(i, head, l, var, k):  # noqa: E741
             "format a section of a row of variables and multipliers"
             if np.isclose(k, 0):
                 return head, l
             if len(head) + len(l) > 65:
                 print(head + l)
                 head = 20 * " "
-                l = ""
+                l = ""  # noqa: E741
             if k < 0 and i > 0:
-                l += " - "
+                l += " - "  # noqa: E741
                 k = -k
             elif i > 0:
-                l += " + "
+                l += " + "  # noqa: E741
             if k == 1:
-                l += f"{var!s} "
+                l += f"{var!s} "  # noqa: E741
             else:
-                l += f"{k:.3f} * {var!s}"
+                l += f"{k:.3f} * {var!s}"  # noqa: E741
             return head, l
 
         # debug: show displacive mode var to mode relations
@@ -1381,13 +1381,13 @@ shift later as an alternative to the above."""
                 norm = self.Phase["ISODISTORT"]["NormList"][i]
                 head = "  " + str(self.Phase["ISODISTORT"]["G2ModeList"][i]) + " = ("
                 line = ""
-                for j, (lbl, k) in enumerate(zip(coordVarLbl, row, strict=False)):
+                for j, (lbl, k) in enumerate(zip(coordVarLbl, row, strict=False)):  # noqa: B007
                     var = self.Phase["ISODISTORT"]["IsoVarList"][j]
                     head, line = fmtEqn(j, head, line, var, k)
                 print(head + line + f") / {norm:.3g}")
                 head = "              = "
                 line = ""
-                for j, (lbl, k) in enumerate(zip(coordVarLbl, row, strict=False)):
+                for j, (lbl, k) in enumerate(zip(coordVarLbl, row, strict=False)):  # noqa: B007
                     var = self.Phase["ISODISTORT"]["IsoVarList"][j]
                     head, line = fmtEqn(j, head, line, var, k / norm)
                 print(head + line)
@@ -1464,7 +1464,7 @@ shift later as an alternative to the above."""
                 self.Phase["ISODISTORT"]["Mode2VarMatrix"],
                 strict=False,
             ):
-                l = ""
+                l = ""  # noqa: E741
                 s = 0.0
                 head = lbl + " ="
                 for j, (k, n) in enumerate(
@@ -1475,7 +1475,7 @@ shift later as an alternative to the above."""
                     if len(l) > 65:
                         print(head, l)
                         head = 20 * " "
-                        l = ""
+                        l = ""  # noqa: E741
                     l1 = ""
                     k1 = k
                     if j > 0 and k < 0:
@@ -1483,7 +1483,7 @@ shift later as an alternative to the above."""
                         l1 = " - "
                     elif j > 0:
                         l1 += " + "
-                    l += "{:} {:3g} * {:4g} * {:}".format(
+                    l += "{:} {:3g} * {:4g} * {:}".format(  # noqa: E741
                         l1, k1, n, self.Phase["ISODISTORT"]["IsoModeList"][j]
                     )
 
@@ -1494,7 +1494,7 @@ shift later as an alternative to the above."""
                 print(lbl, "=", s)
                 print(lbl, "==>", str(self.Phase["ISODISTORT"]["G2VarList"][i]), "\n")
             DeltaCoords = {}
-            for i, lbl, row in zip(
+            for i, lbl, row in zip(  # noqa: B007
                 range(len(coordVarLbl)), coordVarLbl, displacivemodematrix, strict=False
             ):
                 s = 0.0
@@ -1569,14 +1569,14 @@ shift later as an alternative to the above."""
             print(70 * "=")
             print("\nVar2OccMatrix", "OccVarList")
             for i, row in enumerate(occupancymodeInvmatrix):
-                l = ""
-                for j, (lbl, k) in enumerate(zip(occVarLbl, row, strict=False)):
+                l = ""  # noqa: E741
+                for j, (lbl, k) in enumerate(zip(occVarLbl, row, strict=False)):  # noqa: B007
                     if k == 0:
                         continue
                     if l:
-                        l += " + "
+                        l += " + "  # noqa: E741
                     # l += lbl+' * '+str(k)
-                    l += str(G2varObj[j]) + " * " + str(k)
+                    l += str(G2varObj[j]) + " * " + str(k)  # noqa: E741
                 print(str(i) + ": " + str(modeVarList[i]) + " = " + l)
 
             # Get the ISODISTORT offset values
@@ -1603,13 +1603,13 @@ shift later as an alternative to the above."""
             for i, (row, n) in enumerate(
                 zip(occupancymodeInvmatrix, normlist, strict=False)
             ):
-                l = ""
+                l = ""  # noqa: E741
                 for lbl, k in zip(occVarLbl, row, strict=False):
                     if k == 0:
                         continue
                     if l:
-                        l += " + "
-                    l += lbl + " * " + str(k)
+                        l += " + "  # noqa: E741
+                    l += lbl + " * " + str(k)  # noqa: E741
                 print(
                     "a"
                     + str(i)
@@ -1647,14 +1647,14 @@ shift later as an alternative to the above."""
             for i, lbl, row in zip(
                 range(len(occVarLbl)), occVarLbl, occupancymodematrix, strict=False
             ):
-                l = ""
+                l = ""  # noqa: E741
                 s = 0.0
                 for j, (k, n) in enumerate(zip(row, normlist, strict=False)):
                     if k == 0:
                         continue
                     if l:
-                        l += " + "
-                    l += str(n) + " * " + str(modeVarList[j]) + " * " + str(k)
+                        l += " + "  # noqa: E741
+                    l += str(n) + " * " + str(modeVarList[j]) + " * " + str(k)  # noqa: E741
                     s += n * modeVarDelta[modelist[j]] * k
                 print(lbl, "=", str(G2varObj[i]), "=", l, "=", s, "\n")
                 j = lbl.split("_")[0]

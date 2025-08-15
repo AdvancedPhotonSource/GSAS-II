@@ -12,9 +12,9 @@ from .. import GSASIIpath
 from .. import GSASIIplot as G2plt
 from .. import GSASIIpwd as G2pwd
 from .. import GSASIIspc as G2spc
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIphsGUI as G2phG
+from .GUI import GSASIIctrlGUI as G2G
 
 try:
     import wx
@@ -26,7 +26,7 @@ try:
     VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
     WHITE = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
     BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
-except:
+except:  # noqa: E722
     pass
 
 mapDefault = {
@@ -73,7 +73,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             if not np.any(np.array(hkl)):
                 hkl = generalData["POhkl"]
             generalData["POhkl"] = hkl
-            h, k, l = hkl
+            h, k, l = hkl  # noqa: E741
             Obj.SetValue("%3d %3d %3d" % (h, k, l))
             G2plt.PlotSizeStrainPO(G2frame, data, G2frame.hist)
 
@@ -115,9 +115,12 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
                 0,
                 WACV,
             )
-            h, k, l = generalData["POhkl"]
+            h, k, l = generalData["POhkl"]  # noqa: E741
             poAxis = wx.TextCtrl(
-                DData, wx.ID_ANY, "%3d %3d %3d" % (h, k, l), style=wx.TE_PROCESS_ENTER
+                DData,
+                wx.ID_ANY,
+                "%3d %3d %3d" % (h, k, l),
+                style=wx.TE_PROCESS_ENTER,
             )
             poAxis.Bind(wx.EVT_TEXT_ENTER, OnPOhkl)
             poAxis.Bind(wx.EVT_KILL_FOCUS, OnPOhkl)
@@ -146,7 +149,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]["Scale"][1] = Obj.GetValue()
 
-        def onChangeFraction(invalid, value, tc):
+        def onChangeFraction(invalid, value, tc):  # noqa: ARG001
             wx.CallLater(100, RepaintHistogramInfo, DData.GetScrollPos(wx.VERTICAL))
 
         scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -224,7 +227,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
         if not np.any(np.array(hkl)):
             hkl = UseList[G2frame.hist]["Mustrain"][3]
         UseList[G2frame.hist]["Mustrain"][3] = hkl
-        h, k, l = hkl
+        h, k, l = hkl  # noqa: E741
         Obj.SetValue("%3d %3d %3d" % (h, k, l))
         wx.CallAfter(G2plt.PlotSizeStrainPO, G2frame, data, hist)
 
@@ -255,7 +258,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
         if not np.any(np.array(hkl)):
             hkl = UseList[G2frame.hist]["Pref.Ori."][3]
         UseList[G2frame.hist]["Pref.Ori."][3] = hkl
-        h, k, l = hkl
+        h, k, l = hkl  # noqa: E741
         Obj.SetValue("%3d %3d %3d" % (h, k, l))
 
     def OnPOOrder(event):
@@ -285,7 +288,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
         Obj = event.GetEventObject()
         UseList[G2frame.hist]["Pref.Ori."][2] = Obj.GetValue()
 
-    def OnAddFixed(event):
+    def OnAddFixed(event):  # noqa: ARG001
         fixedVars = UseList[G2frame.hist].get("FixedSeqVars", [])
         SeqId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, "Sequential results")
         seqData = G2frame.GPXtree.GetItemPyData(SeqId)
@@ -338,10 +341,10 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             return False
         return axis
 
-    def OnNewValue(invalid, value, tc):
+    def OnNewValue(invalid, value, tc):  # noqa: ARG001
         G2plt.PlotSizeStrainPO(G2frame, data, G2frame.hist)
 
-    def OnNewValueReDraw(invalid, value, tc):
+    def OnNewValueReDraw(invalid, value, tc):  # noqa: ARG001
         G2plt.PlotSizeStrainPO(G2frame, data, G2frame.hist)
         wx.CallLater(100, RepaintHistogramInfo, DData.GetScrollPos(wx.VERTICAL))
 
@@ -410,9 +413,12 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
     def UniSizer(parm, OnAxis):
         uniSizer = wx.BoxSizer(wx.HORIZONTAL)
         uniSizer.Add(wx.StaticText(DData, wx.ID_ANY, " Unique axis, H K L: "), 0, WACV)
-        h, k, l = UseList[G2frame.hist][parm][3]
+        h, k, l = UseList[G2frame.hist][parm][3]  # noqa: E741
         Axis = wx.TextCtrl(
-            DData, wx.ID_ANY, "%3d %3d %3d" % (h, k, l), style=wx.TE_PROCESS_ENTER
+            DData,
+            wx.ID_ANY,
+            "%3d %3d %3d" % (h, k, l),
+            style=wx.TE_PROCESS_ENTER,
         )
         Axis.Bind(wx.EVT_TEXT_ENTER, OnAxis)
         Axis.Bind(wx.EVT_KILL_FOCUS, OnAxis)
@@ -654,9 +660,12 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
         )
         poSizer.Add(poVal, 0, WACV)
         poSizer.Add(wx.StaticText(DData, wx.ID_ANY, " Unique axis, H K L: "), 0, WACV)
-        h, k, l = POData[3]
+        h, k, l = POData[3]  # noqa: E741
         poAxis = wx.TextCtrl(
-            DData, wx.ID_ANY, "%3d %3d %3d" % (h, k, l), style=wx.TE_PROCESS_ENTER
+            DData,
+            wx.ID_ANY,
+            "%3d %3d %3d" % (h, k, l),
+            style=wx.TE_PROCESS_ENTER,
         )
         poAxis.Bind(wx.EVT_TEXT_ENTER, OnPOAxis)
         poAxis.Bind(wx.EVT_KILL_FOCUS, OnPOAxis)
@@ -676,7 +685,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
         return ODFSizer
 
     def SHPenalty(POData):
-        def OnHKLList(event):
+        def OnHKLList(event):  # noqa: ARG001
             dlg = G2G.G2MultiChoiceDialog(
                 G2frame, "Select penalty hkls", "Penalty hkls", hkls, filterBox=False
             )
@@ -938,7 +947,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
         return dispSizer
 
     def twinSizer():
-        def OnAddTwin(event):
+        def OnAddTwin(event):  # noqa: ARG001
             twinMat = np.array(
                 [[-1, 0, 0], [0, -1, 0], [0, 0, -1]]
             )  # inversion by default
@@ -962,7 +971,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             UseList[G2frame.hist]["Twins"][it][0][im] = uvw
             Obj.SetValue("%3d %3d %3d" % (uvw[0], uvw[1], uvw[2]))
 
-        def OnTwinVal(invalid, value, tc):
+        def OnTwinVal(invalid, value, tc):  # noqa: ARG001
             it = Indx[tc.GetId()]
             sumTw = 0.0
             for it, twin in enumerate(UseList[G2frame.hist]["Twins"]):
@@ -1038,7 +1047,9 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
                 else:
                     matSizer.Add(
                         wx.StaticText(
-                            DData, -1, " Nonmerohedral twin component %d: " % (it)
+                            DData,
+                            -1,
+                            " Nonmerohedral twin component %d: " % (it),
                         ),
                         0,
                         WACV | wx.LEFT,
@@ -1086,7 +1097,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
                 twinsizer.Add(valSizer, 0, wx.LEFT, 5)
         return twinsizer
 
-    def OnSelect(event):
+    def OnSelect(event):  # noqa: ARG001
         G2frame.hist = G2frame.dataWindow.HistsInPhase[DData.select.GetSelection()]
         oldFocus = wx.Window.FindFocus()
         G2plt.PlotSizeStrainPO(G2frame, data, G2frame.hist)
@@ -1099,7 +1110,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             G2frame.bottomSizer.Clear(True)
             # deal with case where this is called after another tree item has been selected
             try:
-                DData.Shown
+                DData.Shown  # noqa: B018
             except RuntimeError:
                 if GSASIIpath.GetConfigValue("debug"):
                     print(
@@ -1141,7 +1152,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             UseList[G2frame.hist]["Use"] = Obj.GetValue()
             wx.CallLater(100, RepaintHistogramInfo, DData.GetScrollPos(wx.VERTICAL))
 
-        def OnLeBail(event):
+        def OnLeBail(event):  # noqa: ARG001
             """Toggle the LeBail flag (Phase['Histograms'][hist]['LeBail'] and
             when turned on, set the Controls['newLeBail'] flag to indicate that
             the a new Le Bail extraction will be performed at the next
@@ -1180,7 +1191,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             if not np.any(np.array(hkl)):
                 hkl = UseList[G2frame.hist]["Size"][3]
             UseList[G2frame.hist]["Size"][3] = hkl
-            h, k, l = hkl
+            h, k, l = hkl  # noqa: E741
             Obj.SetValue("%3d %3d %3d" % (h, k, l))
 
         def OnFixVals(event):
@@ -1481,7 +1492,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
                     poSizer.Add(SHDataSizer(POData))  # ,0,wx.TOP|wx.BOTTOM,5)
                     try:
                         poSizer.Add(SHPenalty(POData))  # ,0,wx.TOP|wx.BOTTOM,5)
-                    except:
+                    except:  # noqa: E722
                         print("SHPenalty error occurred")
                 bottomSizer.Add(poSizer)  # ,0,wx.TOP|wx.BOTTOM,5)
                 bottomSizer.Add(ExtSizer("PWDR"), 0, wx.TOP | wx.BOTTOM, 5)
@@ -1534,7 +1545,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
     generalData = data["General"]
     cell = generalData["Cell"][1:]
     Amat, Bmat = G2lat.cell2AB(cell[:6])
-    PhaseName = generalData["Name"]
+    PhaseName = generalData["Name"]  # noqa: F841
     SGData = generalData["SGData"]
     if (
         len(G2frame.dataWindow.HistsInPhase) == 0
@@ -1556,7 +1567,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
                 DData.select.Unbind(
                     wx.EVT_LISTBOX
                 )  # remove binding to avoid event on Linux
-        except:
+        except:  # noqa: E722
             pass
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1667,7 +1678,7 @@ def MakeHistPhaseWin(G2frame):
 
     #### G2frame.dataWindow.DataMenu/"Edit Phase" menu routines follow
     # where these duplicate similar routines in GSASIIphsGUI.py.
-    def OnHklfAdd(event):
+    def OnHklfAdd(event):  # noqa: ARG001
         """Called to link a Single Xtal (HKLF) dataset to a selected phase.
         Most commonly, the histogram and phase are linked when the latter
         item is read in (routines OnImportPhase or OnImportSfact in
@@ -1683,7 +1694,7 @@ def MakeHistPhaseWin(G2frame):
             return
         wx.CallAfter(UpdateDData, G2frame, getDDataWindow(), data)
 
-    def OnDataUse(event):
+    def OnDataUse(event):  # noqa: ARG001
         data = getDDataPhaseinfo()
         #        hist = G2frame.hist
         if data["Histograms"]:
@@ -1705,7 +1716,7 @@ def MakeHistPhaseWin(G2frame):
                 dlg.Destroy()
         wx.CallAfter(UpdateDData, G2frame, getDDataWindow(), data)
 
-    def OnDataCopy(event):
+    def OnDataCopy(event):  # noqa: ARG001
         data = getDDataPhaseinfo()
         hist = G2frame.hist
         keyList = G2frame.dataWindow.HistsInPhase[:]
@@ -1747,7 +1758,7 @@ def MakeHistPhaseWin(G2frame):
         finally:
             dlg.Destroy()
 
-    def OnDataCopyFlags(event):
+    def OnDataCopyFlags(event):  # noqa: ARG001
         data = getDDataPhaseinfo()
         hist = G2frame.hist
         sourceDict = copy.deepcopy(data["Histograms"][hist])
@@ -1892,7 +1903,7 @@ def MakeHistPhaseWin(G2frame):
         finally:
             dlg.Destroy()
 
-    def OnSelDataCopy(event):
+    def OnSelDataCopy(event):  # noqa: ARG001
         data = getDDataPhaseinfo()
         hist = G2frame.hist
         sourceDict = data["Histograms"][hist]
@@ -1948,7 +1959,7 @@ def MakeHistPhaseWin(G2frame):
         finally:
             dlg.Destroy()
 
-    def OnPwdrAdd(event):
+    def OnPwdrAdd(event):  # noqa: ARG001
         data = getDDataPhaseinfo()
         generalData = data["General"]
         SGData = generalData["SGData"]
@@ -2045,7 +2056,7 @@ def MakeHistPhaseWin(G2frame):
             finally:
                 dlg.Destroy()
 
-    def OnDataDelete(event):
+    def OnDataDelete(event):  # noqa: ARG001
         data = getDDataPhaseinfo()
         if G2frame.dataWindow.HistsInPhase:
             DelList = []
@@ -2079,7 +2090,7 @@ def MakeHistPhaseWin(G2frame):
                     del data["Histograms"][i]
             wx.CallLater(100, UpdateDData, G2frame, getDDataWindow(), data)
 
-    def OnDataApplyStrain(event):
+    def OnDataApplyStrain(event):  # noqa: ARG001
         data = getDDataPhaseinfo()
         SGData = data["General"]["SGData"]
         DijVals = data["Histograms"][G2frame.hist]["HStrain"][0][:]
@@ -2157,8 +2168,8 @@ def MakeHistPhaseWin(G2frame):
     G2frame.Bind(wx.EVT_MENU, OnDataApplyStrain, id=G2G.wxID_DATADIJ)
     # display the last-selected phase or the 1st
     try:
-        G2frame.HistPhaseLastSel
-    except:
+        G2frame.HistPhaseLastSel  # noqa: B018
+    except:  # noqa: E722
         G2frame.HistPhaseLastSel = phaseList[0]
     if G2frame.HistPhaseLastSel in phaseList:
         page = phaseList.index(G2frame.HistPhaseLastSel)

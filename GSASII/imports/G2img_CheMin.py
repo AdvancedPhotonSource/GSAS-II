@@ -27,11 +27,11 @@ class png_ReaderClass(G2obj.ImportImage):
             longFormatName="PNG image from CheMin",
         )
 
-    def ContentsValidator(self, filename):
+    def ContentsValidator(self, filename):  # noqa: ARG002
         """no test at this time"""
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         """Reads using standard scipy PNG reader"""
         self.Image = imageio.imread(filename, flatten=True)
         self.Npix = self.Image.size

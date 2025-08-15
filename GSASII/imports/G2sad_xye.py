@@ -24,12 +24,12 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -39,14 +39,14 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
             return False
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a q-step text file")
         x = []
         y = []
         w = []
         wave = 1.5428  # Cuka default
         Temperature = 300
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
@@ -55,7 +55,7 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
                 if "wave" in S.split("=")[0].lower():
                     try:
                         wave = float(S.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         pass
                 continue
             vals = S.split()
@@ -84,7 +84,7 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.instdict["wave"] = wave
         self.instdict["type"] = "LXC"
@@ -121,12 +121,12 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -136,14 +136,14 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
             return False
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a q-step text file")
         x = []
         y = []
         w = []
         wave = 1.5428  # Cuka default
         Temperature = 300
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
@@ -152,7 +152,7 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
                 if "wave" in S.split("=")[0].lower():
                     try:
                         wave = float(S.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         pass
                 continue
             vals = S.split()
@@ -181,7 +181,7 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.instdict["wave"] = wave
         self.instdict["type"] = "LXC"
@@ -218,12 +218,12 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -233,14 +233,14 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
             return False
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a q-step text file")
         x = []
         y = []
         w = []
         wave = 1.5428  # Cuka default
         Temperature = 300
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
@@ -249,7 +249,7 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
                 if "wave" in S.split("=")[0].lower():
                     try:
                         wave = float(S.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         pass
                 continue
             vals = S.split()
@@ -278,7 +278,7 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.instdict["wave"] = wave
         self.instdict["type"] = "LNC"
@@ -317,12 +317,12 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -332,14 +332,14 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
             return False
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a q-step text file")
         x = []
         y = []
         w = []
         wave = 1.5428  # Cuka default
         Temperature = 300
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
@@ -348,7 +348,7 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
                 if "wave" in S.split("=")[0].lower():
                     try:
                         wave = float(S.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         pass
                 continue
             vals = S.split()
@@ -377,7 +377,7 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.instdict["wave"] = wave
         self.instdict["type"] = "LNC"

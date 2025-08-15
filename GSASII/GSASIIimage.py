@@ -16,32 +16,32 @@ from scipy.optimize import leastsq
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-# import GSASIImath as G2mth
-from . import GSASIIfiles as G2fil
-from . import GSASIIlattice as G2lat
-from . import GSASIIpwd as G2pwd
-from . import GSASIIspc as G2spc
-from . import ImageCalibrants as calFile
+
+from . import GSASIIfiles as G2fil  # noqa: E402
+from . import GSASIIlattice as G2lat  # noqa: E402
+from . import GSASIIpwd as G2pwd  # noqa: E402
+from . import GSASIIspc as G2spc  # noqa: E402
+from . import ImageCalibrants as calFile  # noqa: E402
 
 # trig functions in degrees
-sind = lambda x: math.sin(x * math.pi / 180.0)
-asind = lambda x: 180.0 * math.asin(x) / math.pi
-sinhd = lambda x: math.sinh(x * math.pi / 180.0)
-tand = lambda x: math.tan(x * math.pi / 180.0)
-atand = lambda x: 180.0 * math.atan(x) / math.pi
-atan2d = lambda y, x: 180.0 * math.atan2(y, x) / math.pi
-cosd = lambda x: math.cos(x * math.pi / 180.0)
-acosd = lambda x: 180.0 * math.acos(x) / math.pi
-coshd = lambda x: math.cosh(x * math.pi / 180.0)
-rdsq2d = lambda x, p: round(1.0 / math.sqrt(x), p)
+sind = lambda x: math.sin(x * math.pi / 180.0)  # noqa: E731
+asind = lambda x: 180.0 * math.asin(x) / math.pi  # noqa: E731
+sinhd = lambda x: math.sinh(x * math.pi / 180.0)  # noqa: E731
+tand = lambda x: math.tan(x * math.pi / 180.0)  # noqa: E731
+atand = lambda x: 180.0 * math.atan(x) / math.pi  # noqa: E731
+atan2d = lambda y, x: 180.0 * math.atan2(y, x) / math.pi  # noqa: E731
+cosd = lambda x: math.cos(x * math.pi / 180.0)  # noqa: E731
+acosd = lambda x: 180.0 * math.acos(x) / math.pi  # noqa: E731
+coshd = lambda x: math.cosh(x * math.pi / 180.0)  # noqa: E731
+rdsq2d = lambda x, p: round(1.0 / math.sqrt(x), p)  # noqa: E731
 # numpy versions
-npsind = lambda x: np.sin(x * np.pi / 180.0)
-npasind = lambda x: 180.0 * np.arcsin(x) / np.pi
-npcosd = lambda x: np.cos(x * np.pi / 180.0)
-npacosd = lambda x: 180.0 * np.arccos(x) / np.pi
-nptand = lambda x: np.tan(x * np.pi / 180.0)
-npatand = lambda x: 180.0 * np.arctan(x) / np.pi
-npatan2d = lambda y, x: 180.0 * np.arctan2(y, x) / np.pi
+npsind = lambda x: np.sin(x * np.pi / 180.0)  # noqa: E731
+npasind = lambda x: 180.0 * np.arcsin(x) / np.pi  # noqa: E731
+npcosd = lambda x: np.cos(x * np.pi / 180.0)  # noqa: E731
+npacosd = lambda x: 180.0 * np.arccos(x) / np.pi  # noqa: E731
+nptand = lambda x: np.tan(x * np.pi / 180.0)  # noqa: E731
+npatand = lambda x: 180.0 * np.arctan(x) / np.pi  # noqa: E731
+npatan2d = lambda y, x: 180.0 * np.arctan2(y, x) / np.pi  # noqa: E731
 nxs = np.newaxis
 debug = True
 
@@ -163,7 +163,7 @@ def FitDetector(rings, varyList, parmDict, Print=True, covar=False):
         ptstr = "values:"
         sigstr = "esds  :"
         for name, value, sig in ValSig:
-            ptlbls += "%s" % (name.rjust(12))
+            ptlbls += f"{name.rjust(12)}"
             if name == "phi":
                 ptstr += Fmt[name] % (value % 360.0)
             else:
@@ -271,7 +271,8 @@ def FitMultiDist(rings, varyList, parmDict, Print=True, covar=False):
         ptstr = "values:"
         sigstr = "esds  :"
         for d in sorted(
-            set([i[5:] for i in parmDict.keys() if "det-X" in i]), key=lambda x: int(x)
+            set([i[5:] for i in parmDict.keys() if "det-X" in i]),
+            key=lambda x: int(x),
         ):
             fmt = "%12.3f"
             for key in "det-X", "det-Y", "delta":
@@ -312,7 +313,7 @@ def FitMultiDist(rings, varyList, parmDict, Print=True, covar=False):
             else:
                 fmt = "%12.3f"
 
-            ptlbls += "%s" % (name.rjust(12))
+            ptlbls += f"{name.rjust(12)}"
             if name == "phi":
                 ptstr += fmt % (parmDict[name] % 360.0)
             else:
@@ -391,7 +392,7 @@ def FitMultiDist(rings, varyList, parmDict, Print=True, covar=False):
         sig = list(np.sqrt(chisq * np.diag(result[1])))
     else:
         sig = list(np.sqrt(np.diag(result[1])))
-    sigDict = {name: s for name, s in zip(varyList, sig, strict=False)}
+    sigDict = {name: s for name, s in zip(varyList, sig, strict=False)}  # noqa: C416
     if Print:
         CalibPrint(parmDict, sigDict, chisq, rings.shape[0])
     if covar:
@@ -460,7 +461,7 @@ def makeRing(dsp, ellipse, pix, reject, scalex, scaley, image, mul=1):
             y = radii[0] * sind(a - phi + 90.0)
         X = (cphi * x - sphi * y + cent[0]) * scalex  # convert mm to pixels
         Y = (sphi * x + cphi * y + cent[1]) * scaley
-        X, Y, I, J = ImageLocalMax(image, pix, X, Y)
+        X, Y, I, J = ImageLocalMax(image, pix, X, Y)  # noqa: E741
         if I and J and float(I) / J > reject:
             X += 0.5  # set to center of pixel
             Y += 0.5
@@ -829,7 +830,7 @@ def GetTthAzmG(x, y, data):
 
 
 def meanAzm(a, b):
-    AZM = (
+    AZM = (  # noqa: E731
         lambda a, b: npacosd(
             0.5 * (npsind(2.0 * b) - npsind(2.0 * a)) / (np.pi * (b - a) / 180.0)
         )
@@ -874,7 +875,7 @@ def GetLineScan(image, data):
     numChans = data["outChannels"]
     LUtth = np.array(data["IOtth"], dtype=float)
     azm = data["linescan"][1] - data["azmthOff"]
-    Tx = np.array([tth for tth in np.linspace(LUtth[0], LUtth[1], numChans + 1)])
+    Tx = np.array([tth for tth in np.linspace(LUtth[0], LUtth[1], numChans + 1)])  # noqa: C416
     Ty = np.zeros_like(Tx)
     dsp = wave / (2.0 * npsind(Tx / 2.0))
     xy = [GetDetectorXY(d, azm, data) for d in dsp]
@@ -913,7 +914,7 @@ def EdgeFinder(image, data):
     return zip(tax, tay, strict=False)
 
 
-def CalcRings(G2frame, ImageZ, data, masks):
+def CalcRings(G2frame, ImageZ, data, masks):  # noqa: ARG001
     pixelSize = data["pixelSize"]
     scalex = 1000.0 / pixelSize[0]
     scaley = 1000.0 / pixelSize[1]
@@ -926,7 +927,7 @@ def CalcRings(G2frame, ImageZ, data, masks):
     dmin = data["calibdmin"]
     if data["calibrant"] not in calFile.Calibrants:
         G2fil.G2Print(
-            "Warning: %s not in local copy of image calibrants file" % data["calibrant"]
+            f"Warning: {data['calibrant']} not in local copy of image calibrants file"
         )
         return
     calibrant = calFile.Calibrants[data["calibrant"]]
@@ -955,7 +956,7 @@ def CalcRings(G2frame, ImageZ, data, masks):
         if debug:
             print(H)
         dsp = H[3]
-        tth = 2.0 * asind(wave / (2.0 * dsp))
+        tth = 2.0 * asind(wave / (2.0 * dsp))  # noqa: F841
         # if tth+abs(data['tilt']) > 90.:
         #     G2fil.G2Print ('next line is a hyperbola - search stopped')
         #     break
@@ -971,7 +972,7 @@ def CalcRings(G2frame, ImageZ, data, masks):
         if Ring:
             if iH not in absent and iH >= skip:
                 data["rings"].append(np.array(Ring))
-        data["ellipses"].append(copy.deepcopy(ellipse + ("r",)))
+        data["ellipses"].append(copy.deepcopy(ellipse + ("r",)))  # noqa: RUF005
 
 
 def ImageRecalibrate(G2frame, ImageZ, data, masks, getRingsOnly=False):
@@ -1007,7 +1008,7 @@ def ImageRecalibrate(G2frame, ImageZ, data, masks, getRingsOnly=False):
     dmin = data["calibdmin"]
     if data["calibrant"] not in calFile.Calibrants:
         G2fil.G2Print(
-            "Warning: %s not in local copy of image calibrants file" % data["calibrant"]
+            f"Warning: {data['calibrant']} not in local copy of image calibrants file"
         )
         return []
     calibrant = calFile.Calibrants[data["calibrant"]]
@@ -1048,7 +1049,7 @@ def ImageRecalibrate(G2frame, ImageZ, data, masks, getRingsOnly=False):
         if debug:
             print(H)
         dsp = H[3]
-        tth = 2.0 * asind(wave / (2.0 * dsp))
+        tth = 2.0 * asind(wave / (2.0 * dsp))  # noqa: F841
         # if tth+abs(data['tilt']) > 90.:
         #     G2fil.G2Print ('next line is a hyperbola - search stopped')
         #     break
@@ -1076,7 +1077,7 @@ def ImageRecalibrate(G2frame, ImageZ, data, masks, getRingsOnly=False):
         if Ring:
             if iH not in absent and iH >= skip:
                 data["rings"].append(np.array(Ring))
-            data["ellipses"].append(copy.deepcopy(ellipse + ("r",)))
+            data["ellipses"].append(copy.deepcopy(ellipse + ("r",)))  # noqa: RUF005
             if debug:
                 print("added ellipse:", ellipse)
             Found = True
@@ -1104,8 +1105,8 @@ def ImageRecalibrate(G2frame, ImageZ, data, masks, getRingsOnly=False):
     data["ellipses"] = []  # clear away individual ellipse fits
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3], data)
-        data["ellipses"].append(copy.deepcopy(ellipse + ("b",)))
-    G2fil.G2Print("calibration time = %.3f" % (time.time() - time0))
+        data["ellipses"].append(copy.deepcopy(ellipse + ("b",)))  # noqa: RUF005
+    G2fil.G2Print(f"calibration time = {time.time() - time0:.3f}")
     if G2frame:
         from . import GSASIIplot as G2plt
 
@@ -1218,7 +1219,7 @@ def ImageCalibrate(G2frame, data):
     # set up 1st ring
     elcent, phi, radii = ellipse  # from fit of 1st ring
     dsp = HKL[0][3]
-    G2fil.G2Print("1st ring: try %.4f" % (dsp))
+    G2fil.G2Print(f"1st ring: try {dsp:.4f}")
     if varyDict["dist"]:
         wave = data["wavelength"]
         tth = 2.0 * asind(wave / (2.0 * dsp))
@@ -1259,7 +1260,7 @@ def ImageCalibrate(G2frame, data):
         i2 = 1
         while fail:
             dsp = HKL[i2][3]
-            G2fil.G2Print("2nd ring: try %.4f" % (dsp))
+            G2fil.G2Print(f"2nd ring: try {dsp:.4f}")
             tth = 2.0 * asind(wave / (2.0 * dsp))
             ellipsep = GetEllipse2(tth, 0.0, dist, centp, tilt, phi)
             G2fil.G2Print(
@@ -1354,9 +1355,9 @@ def ImageCalibrate(G2frame, data):
         #     G2fil.G2Print ('next line is a hyperbola - search stopped')
         #     break
         if debug:
-            print("HKLD:" + str(H[:4]) + "2-theta: %.4f" % (tth))
+            print("HKLD:" + str(H[:4]) + f"2-theta: {tth:.4f}")
         elcent, phi, radii = ellipse = GetEllipse(dsp, data)
-        data["ellipses"].append(copy.deepcopy(ellipse + ("g",)))
+        data["ellipses"].append(copy.deepcopy(ellipse + ("g",)))  # noqa: RUF005
         if debug:
             print(
                 fmt
@@ -1391,7 +1392,7 @@ def ImageCalibrate(G2frame, data):
                             len(rings),
                         )
                     )
-            data["ellipses"].append(copy.deepcopy(ellipse + ("r",)))
+            data["ellipses"].append(copy.deepcopy(ellipse + ("r",)))  # noqa: RUF005
         #            G2plt.PlotImage(G2frame,newImage=True)
         elif debug:
             print("insufficient number of points in this ellipse to fit")
@@ -1413,8 +1414,8 @@ def ImageCalibrate(G2frame, data):
         data["DetDepth"] = parmDict["dep"]
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3], data)
-        data["ellipses"].append(copy.deepcopy(ellipse + ("b",)))
-    G2fil.G2Print("calibration time = %.3f" % (time.time() - time0))
+        data["ellipses"].append(copy.deepcopy(ellipse + ("b",)))  # noqa: RUF005
+    G2fil.G2Print(f"calibration time = {time.time() - time0:.3f}")
     G2plt.PlotImage(G2frame, newImage=True)
     return True
 
@@ -1461,7 +1462,7 @@ def Make2ThetaAzimuthMap(data, iLim, jLim):  # most expensive part of integratio
     return TA  # 2-theta, azimuth & geom. corr. arrays
 
 
-def polymask(data, Poly, Spots=[]):
+def polymask(data, Poly, Spots=[]):  # noqa: B006
     """Applies spot(point), polygon  & frame masks via calls to matplotlib routines;
     should be called only once each during image processing. A separate call is used for a frame.
     Individual masked blocks are then pulled from the output array.
@@ -1997,7 +1998,7 @@ def ImageIntegrate(
     elif data.get("binType", "").lower() == "q":
         H2 = 2.0 * npasind(H2 * data["wavelength"] / (4.0 * np.pi))
     if Dazm:
-        H1 = np.array([azm for azm in np.linspace(LRazm[0], LRazm[1], numAzms + 1)])
+        H1 = np.array([azm for azm in np.linspace(LRazm[0], LRazm[1], numAzms + 1)])  # noqa: C416
     else:
         H1 = LRazm
     if "SASD" not in data["type"]:
@@ -2013,13 +2014,9 @@ def ImageIntegrate(
     times[4] += time.time() - t0  # cleanup
 
     G2fil.G2Print(
-        "Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
-        \n binning      %8.3fs cleanup      %8.3fs"
-        % (times[0], times[1], times[2], times[3], times[4])
+        f"Step times: \n apply masks  {times[0]:8.3f}s xy->th,azm   {times[1]:8.3f}s fill map     {times[2]:8.3f}s \n binning      {times[3]:8.3f}s cleanup      {times[4]:8.3f}s"
     )
-    G2fil.G2Print(
-        "Integration complete. Elapsed time:", "%8.3fs" % (time.time() - tbeg)
-    )
+    G2fil.G2Print("Integration complete. Elapsed time:", f"{time.time() - tbeg:8.3f}s")
     if problemEntries:
         msg = ""
         for i in problemEntries:
@@ -2102,9 +2099,7 @@ def FitStrSta(Image, StrSta, Controls):
             ringint /= np.mean(ringint)
             ring["Ivar"] = np.var(ringint)
             ring["covMat"] = covMat
-            G2fil.G2Print(
-                "Variance in normalized ring intensity: %.3f" % (ring["Ivar"])
-            )
+            G2fil.G2Print(f"Variance in normalized ring intensity: {ring['Ivar']:.3f}")
     CalcStrSta(StrSta, Controls)
 
 
@@ -2203,12 +2198,12 @@ def FitStrain(rings, p0, dset, wave, phi, StaType):
     "Fits external strain tensor from distortion of Bragg rings in images"
 
     def StrainPrint(ValSig, dset):
-        print("Strain tensor for Dset: %.6f" % (dset))
+        print(f"Strain tensor for Dset: {dset:.6f}")
         ptlbls = "names :"
         ptstr = "values:"
         sigstr = "esds  :"
         for name, fmt, value, sig in ValSig:
-            ptlbls += "%s" % (name.rjust(12))
+            ptlbls += f"{name.rjust(12)}"
             ptstr += fmt % (value)
             if sig:
                 sigstr += fmt % (sig)
@@ -2249,7 +2244,7 @@ def FitStrain(rings, p0, dset, wave, phi, StaType):
 def FitImageSpots(Image, ImMax, ind, pixSize, nxy, spotSize=1.0):
     """Used with "s" key in image plots to search for spot masks"""
 
-    def calcMean(nxy, pixSize, img):
+    def calcMean(nxy, pixSize, img):  # noqa: ARG001
         gdx, gdy = np.mgrid[0:nxy, 0:nxy]
         gdx = ma.array(
             (gdx - nxy // 2) * pixSize[0] / 1000.0, mask=~ma.getmaskarray(ImBox)
@@ -2322,7 +2317,7 @@ def TestFastPixelMask():
         if GSASIIpath.binaryPath:
             import fmask
         else:
-            from . import fmask
+            from . import fmask  # noqa: F401
     except ModuleNotFoundError:
         if GSASIIpath.GetConfigValue("debug"):
             print("fmask not found")
@@ -2360,7 +2355,7 @@ def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
             from . import fmask
         if GSASIIpath.GetConfigValue("debug"):
             print("Loaded fmask from", fmask.__file__)
-    except:
+    except:  # noqa: E722
         return None
     frame = Masks["Frames"]
     tam = ma.make_mask_none(Image.shape)
@@ -2390,7 +2385,7 @@ def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     if dlg:
         dlg.Update(10, "Fast scan in progress")
     try:
-        masked = fmask.mask(
+        masked = fmask.mask(  # noqa: F841
             esdMul, tam.ravel(), TA.ravel(), Image.ravel(), TThs, outMask, ttmin, ttmax
         )
     except Exception as msg:
@@ -2434,7 +2429,7 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
 
             if GSASIIpath.GetConfigValue("debug"):
                 print("Using deprecated scipy.stats.median_absolute_deviation routine")
-        except:
+        except:  # noqa: E722
             print("Unable to load scipy.stats.median_abs_deviation")
             return None
 
@@ -2446,7 +2441,7 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     dtth = (LUtth[1] - LUtth[0]) / numChans
     esdMul = Masks["SpotMask"]["esdMul"]
     print(
-        " Spots greater or less than %.1f of median abs deviation are masked" % esdMul
+        f" Spots greater or less than {esdMul:.1f} of median abs deviation are masked"
     )
     band = np.array(Image)
     TA = Make2ThetaAzimuthMap(Controls, (0, Image.shape[0]), (0, Image.shape[1]))[0]
@@ -2484,7 +2479,7 @@ def DoPolaCalib(ImageZ, imageData, arcTth):
     """
     from scipy.optimize import minimize_scalar
 
-    print(" Polarization fit for mask at %.1f deg 2-theta" % arcTth)
+    print(f" Polarization fit for mask at {arcTth:.1f} deg 2-theta")
     data = copy.deepcopy(imageData)
     data["IOtth"] = [arcTth - 2.0, arcTth + 2.0]
     data["fullIntegrate"] = True
@@ -2496,7 +2491,7 @@ def DoPolaCalib(ImageZ, imageData, arcTth):
         " Integration 2-theta test range %.1f - %.1f in 200 steps"
         % (data["IOtth"][0], data["IOtth"][1])
     )
-    print(" Mask azimuth range: %.1f - %.1f" % (Arc[1][0], Arc[1][1]))
+    print(f" Mask azimuth range: {Arc[1][0]:.1f} - {Arc[1][1]:.1f}")
     Masks = {
         "Points": [],
         "Rings": [],
@@ -2524,7 +2519,7 @@ def DoPolaCalib(ImageZ, imageData, arcTth):
         H0 = ImageIntegrate(ImageZ, data, Masks)[0]
         H0A = ImageIntegrate(ImageZ, data, AMasks)[0]
         M = np.sum(H0) - np.sum(H0A)
-        print(" Polarization %.4f, fxn: %.1f" % (p, M))
+        print(f" Polarization {p:.4f}, fxn: {M:.1f}")
         return M**2
 
     time0 = time.time()
@@ -2547,12 +2542,12 @@ def DoPolaCalib(ImageZ, imageData, arcTth):
             "SpotMask": {"esdMul": 3.0, "spotMask": None},
         }
         res = minimize_scalar(func, bracket=[pola - 0.001, pola], tol=0.0001)
-        print(" Mask azimuth range: %.1f - %.1f" % (Arc[1][0], Arc[1][1]))
-        print(" pola: %.5f" % res.x)
+        print(f" Mask azimuth range: {Arc[1][0]:.1f} - {Arc[1][1]:.1f}")
+        print(f" pola: {res.x:.5f}")
         Pola.append(res.x)
     Pola = np.array(Pola)
     mean = np.mean(Pola)
     std = int(10000 * np.std(Pola))
     print(" Polarization: %.4f(%d)" % (mean, std))
-    print(" time: %.2fs" % (time.time() - time0))
+    print(f" time: {time.time() - time0:.2f}s")
     imageData["PolaVal"][0] = mean

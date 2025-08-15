@@ -29,10 +29,10 @@ from .. import GSASIIplot as G2plt
 from .. import GSASIIscriptable as G2sc
 from .. import GSASIIspc as G2spc
 from .. import GSASIIstrIO as G2stIO
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIElemGUI as G2elemGUI
 from . import GSASIIphsGUI as G2phG
+from .GUI import GSASIIctrlGUI as G2G
 
 VERY_LIGHT_GREY = wx.Colour(235, 235, 235)
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -48,7 +48,7 @@ class G2BoolEditor(wg.GridCellBoolEditor):
         self.saveVals = None
         wx.grid.GridCellBoolEditor.__init__(self)
 
-    def Create(self, parent, id, evtHandler):
+    def Create(self, parent, id, evtHandler):  # noqa: ARG002
         """Create the editing control (wx.CheckBox) when cell is opened
         for edit
         """
@@ -58,7 +58,7 @@ class G2BoolEditor(wg.GridCellBoolEditor):
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
 
-    def onCheckSet(self, event):
+    def onCheckSet(self, event):  # noqa: ARG002
         """Callback used when checkbox is toggled.
         Makes change to table immediately (creating event)
         """
@@ -95,7 +95,7 @@ class G2BoolEditor(wg.GridCellBoolEditor):
         self._tc.SetFocus()
         self.ApplyEdit(*self.saveVals)
 
-    def EndEdit(self, row, col, grid, oldVal=None):
+    def EndEdit(self, row, col, grid, oldVal=None):  # noqa: ARG002
         """End editing the cell.  This is supposed to
         return None if the value has not changed, but I am not
         sure that actually works.
@@ -192,7 +192,7 @@ class RBDataTable(wg.GridTableBase):
     def GetNumberCols(self):
         return len(self.colLabels)
 
-    def IsEmptyCell(self, row, col):
+    def IsEmptyCell(self, row, col):  # noqa: ARG002
         return False
 
     def GetValue(self, row, col):
@@ -220,7 +220,7 @@ class RBDataTable(wg.GridTableBase):
                 self.types[row] = value
             else:
                 self.coords[row][col - 3] = float(value)
-        except:
+        except:  # noqa: E722
             pass
         if self.onChange:
             self.onChange()
@@ -360,22 +360,22 @@ class ConstraintDialog(wx.Dialog):
                 if abs(self.data[id][0]) < 1.0e-20:
                     setting = False
                     break
-            except:
+            except:  # noqa: E722
                 pass
         if setting:
             self.OkBtn.Enable()
         else:
             self.OkBtn.Disable()
 
-    def OnCheckBox(self, event):
+    def OnCheckBox(self, event):  # noqa: ARG002
         self.newvar[1] = self.refine.GetValue()
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
@@ -642,7 +642,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         meaning = G2obj.getDescr(FrstVarb.name)
         if not meaning:
             meaning = "(no definition found!)"
-        l = str(FrstVarb).split(":")
+        l = str(FrstVarb).split(":")  # noqa: E741
         # make lists of phases & histograms to iterate over
         phaselist = [l[0]]
         if l[0]:
@@ -688,7 +688,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 for nam in nameList:
                     for ph, plbl in zip(phaselist, phaselbl, strict=False):
                         if plbl:
-                            plbl = "For " + plbl
+                            plbl = "For " + plbl  # noqa: PLW2901
                         var = ph + "::" + nam
                         if var == str(FrstVarb) or var in varList:
                             continue
@@ -698,7 +698,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 for nam in nameList:
                     for ph, plbl in zip(phaselist, phaselbl, strict=False):
                         if plbl:
-                            plbl = " in " + plbl
+                            plbl = " in " + plbl  # noqa: PLW2901
                         for atype in ["", *TypeList]:
                             if atype:
                                 albl = "For " + atype + " atoms"
@@ -717,13 +717,13 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             for nam in nameList:
                 for ph, plbl in zip(phaselist, phaselbl, strict=False):
                     if plbl:
-                        plbl = "For " + plbl
+                        plbl = "For " + plbl  # noqa: PLW2901
                     for hst, hlbl in zip(histlist, histlbl, strict=False):
                         if hlbl:
                             if plbl:
-                                hlbl = " in " + hlbl
+                                hlbl = " in " + hlbl  # noqa: PLW2901
                             else:
-                                hlbl = "For " + hlbl
+                                hlbl = "For " + hlbl  # noqa: PLW2901
                             var = ph + ":" + hst + ":" + nam
                             if var == str(FrstVarb) or var in varList:
                                 continue
@@ -735,7 +735,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             for nam in nameList:
                 for hst, hlbl in zip(histlist, histlbl, strict=False):
                     if hlbl:
-                        hlbl = "For " + hlbl
+                        hlbl = "For " + hlbl  # noqa: PLW2901
                         var = ":" + hst + ":" + nam
                         if var == str(FrstVarb) or var in varList:
                             continue
@@ -796,7 +796,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         for sel in Selections:
             var = varList[sel]
             # phase(s) included
-            l = var.split(":")
+            l = var.split(":")  # noqa: E741
             if l[0] == "all":
                 phlist = [str(Phases[phase]["pId"]) for phase in Phases]
             else:
@@ -829,7 +829,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 for ph in phlist:
                     key = G2obj.LookupPhaseName(ph)[0]
                     for hst in hstlist:  # should be blank
-                        for iatm, at in enumerate(Phases[key]["Atoms"]):
+                        for iatm, at in enumerate(Phases[key]["Atoms"]):  # noqa: B007
                             var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
                             if var in varbs:
                                 continue
@@ -1028,7 +1028,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             raise Exception("Should not happen!")
         return vartype, varList, constrDictEnt
 
-    def OnAddHold(event):
+    def OnAddHold(event):  # noqa: ARG001
         """Create a new Hold constraint
 
         Hold constraints allows the user to select one variable (the list of available
@@ -1081,7 +1081,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             UpdateConstraints, G2frame, data, G2frame.constr.GetSelection(), True
         )
 
-    def OnAddEquivalence(event):
+    def OnAddEquivalence(event):  # noqa: ARG001
         """add an Equivalence constraint"""
         page = G2frame.Page
         vartype, varList, constrDictEnt = PageSelection(page)
@@ -1099,7 +1099,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         #        legend = "Select variables to make equivalent (only one of the variables will be varied when all are set to be varied)"
         GetAddVars(page, title1, title2, varList, constrDictEnt, "equivalence")
 
-    def OnAddAtomEquiv(event):
+    def OnAddAtomEquiv(event):  # noqa: ARG001
         """Add equivalences between all parameters on atoms"""
         page = G2frame.Page
         vartype, varList, constrDictEnt = PageSelection(page)
@@ -1117,7 +1117,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         #        legend = "Select atoms to make equivalent (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page, title1, title2, varList, constrDictEnt, "equivalence")
 
-    def OnAddRiding(event):
+    def OnAddRiding(event):  # noqa: ARG001
         """Add riding equivalences between all parameters on atoms  - not currently used"""
         page = G2frame.Page
         vartype, varList, constrDictEnt = PageSelection(page)
@@ -1135,7 +1135,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         #        legend = "Select atoms to ride (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page, title1, title2, varList, constrDictEnt, "riding")
 
-    def OnAddFunction(event):
+    def OnAddFunction(event):  # noqa: ARG001
         """add a Function (new variable) constraint"""
         page = G2frame.Page
         vartype, varList, constrDictEnt = PageSelection(page)
@@ -1153,7 +1153,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         #        legend = "Select variables to include in a new variable (the new variable will be varied when all included variables are varied)"
         GetAddVars(page, title1, title2, varList, constrDictEnt, "function")
 
-    def OnAddConstraint(event):
+    def OnAddConstraint(event):  # noqa: ARG001
         """add a constraint equation to the constraints list"""
         page = G2frame.Page
         vartype, varList, constrDictEnt = PageSelection(page)
@@ -1244,7 +1244,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                 Neigh.append(AtNames[j])
         return Neigh
 
-    def GetAddAtomVars(page, title1, title2, varList, constrDictEnt, constType):
+    def GetAddAtomVars(page, title1, title2, varList, constrDictEnt, constType):  # noqa: ARG001
         """Get the atom variables to be added for OnAddAtomEquiv. Then create and
         check the constraints. Riding for H atoms only.
         """
@@ -1317,7 +1317,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         constr += [
                             [
                                 1.2,
-                                G2obj.G2VarObj("{}:{}".format(parts[0] + "AUiso", id)),
+                                G2obj.G2VarObj(f"{parts[0] + 'AUiso'}:{id}"),
                             ]
                         ]
                     elif "AU" not in pref:
@@ -1407,8 +1407,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             ):
                 if warnmsg:
                     if helptext:
-                        helptext += "\n\n"
-                    helptext += warnmsg
+                        helptext += "\n\n"  # noqa: PLW2901
+                    helptext += warnmsg  # noqa: PLW2901
                 if helptext:
                     ch = G2G.HelpButton(panel, helptext)
                     Sizer.Add(ch, 0, wx.LEFT | wx.RIGHT | WACV | wx.ALIGN_CENTER, 1)
@@ -1441,8 +1441,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             ):
                 if warnmsg:
                     if helptext:
-                        helptext += "\n\n"
-                    helptext += warnmsg
+                        helptext += "\n\n"  # noqa: PLW2901
+                    helptext += warnmsg  # noqa: PLW2901
                 if helptext:
                     ch = G2G.HelpButton(panel, helptext)
                     Sizer.Add(ch, 0, wx.LEFT | wx.RIGHT | WACV | wx.ALIGN_CENTER, 1)
@@ -1663,7 +1663,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             panel.delBtn.checkboxList.append([constDel, Id, name])
             if refineflag:
 
-                def refresh(event):
+                def refresh(event):  # noqa: ARG001
                     return wx.CallAfter(
                         UpdateConstraints,
                         G2frame,
@@ -1783,7 +1783,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     data[name][Id] = prev
             else:
                 data[name][Id] = prev
-        except:
+        except:  # noqa: E722
             import traceback
 
             print(traceback.format_exc())
@@ -1818,7 +1818,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             btn = wx.Button(panel, wx.ID_ANY, "Show Errors")
             btn.Bind(
                 wx.EVT_BUTTON,
-                lambda event: G2G.ShowScrolledInfo(panel, errmsg, header="Error info"),
+                lambda event: G2G.ShowScrolledInfo(panel, errmsg, header="Error info"),  # noqa: ARG005
             )
             butSizer.Add(btn, 0, wx.ALIGN_CENTER_VERTICAL)
             btn.Enable(len(errmsg) > 0)
@@ -1826,7 +1826,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             butSizer.Add(btn, 0, wx.ALIGN_CENTER_VERTICAL)
             btn.Bind(
                 wx.EVT_BUTTON,
-                lambda event: G2G.ShowScrolledInfo(panel, warnmsg.replace("&", "&&")),
+                lambda event: G2G.ShowScrolledInfo(panel, warnmsg.replace("&", "&&")),  # noqa: ARG005
             )
             btn.Enable(len(warnmsg) > 0)
             btn = wx.Button(panel, wx.ID_ANY, "Show generated constraints")
@@ -1834,7 +1834,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             txt = G2mv.VarRemapShow(linelen=999).replace("&", "&&")
             btn.Bind(
                 wx.EVT_BUTTON,
-                lambda event: G2G.ShowScrolledColText(
+                lambda event: G2G.ShowScrolledColText(  # noqa: ARG005
                     panel,
                     "*** Constraints after processing ***" + txt,
                     header="Generated constraints",
@@ -1863,7 +1863,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     "_seqmode",
                     ["Set hist # to *", "Ignore unless hist=*", "Use as supplied"],
                     ["auto-wildcard", "wildcards-only", "use-all"],
-                    lambda x: wx.CallAfter(
+                    lambda x: wx.CallAfter(  # noqa: ARG005
                         UpdateConstraints,
                         G2frame,
                         data,
@@ -1881,7 +1881,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     "_seqhist",
                     list(seqHistList),
                     list(range(len(seqHistList))),
-                    lambda x: wx.CallAfter(
+                    lambda x: wx.CallAfter(  # noqa: ARG005
                         UpdateConstraints,
                         G2frame,
                         data,
@@ -1913,7 +1913,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         else:  # called directly, get current page
             try:
                 page = G2frame.constr.GetSelection()
-            except:
+            except:  # noqa: E722
                 if GSASIIpath.GetConfigValue("debug"):
                     print("DBG_gpx open error:C++ Run time error - skipped")
                 return
@@ -1976,7 +1976,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
     def SetStatusLine(text):
         G2frame.GetStatusBar().SetStatusText(text, 1)
 
-    def OnShowISODISTORT(event):
+    def OnShowISODISTORT(event):  # noqa: ARG001
         ShowIsoDistortCalc(G2frame)
 
     #### UpdateConstraints execution starts here ##############################
@@ -2244,7 +2244,7 @@ def CheckAllScalePhaseFractions(G2frame, refine=True):
     if len(problems) == 0:
         return None
     msg = "You are refining the scale factor and all phase fractions for histogram(s) #"
-    for i, (h, hist) in enumerate(problems):
+    for i, (h, hist) in enumerate(problems):  # noqa: B007
         if i:
             msg += ", "
         msg += str(h)
@@ -2258,7 +2258,7 @@ def CheckAllScalePhaseFractions(G2frame, refine=True):
     ans = dlg.ShowModal()
     dlg.Destroy()
     if ans == wx.ID_YES:
-        for h, hist in problems:
+        for h, hist in problems:  # noqa: B007
             constr = []
             for p in phases:
                 if hist not in phases[p]["Histograms"]:
@@ -2337,7 +2337,7 @@ def CheckScalePhaseFractions(G2frame, hist, histograms, phases, Constraints):
 
 
 #### Make nuclear/magnetic phase transition constraints - called by OnTransform in G2phsGUI ##########
-def TransConstraints(G2frame, oldPhase, newPhase, Trans, Vec, atCodes):
+def TransConstraints(G2frame, oldPhase, newPhase, Trans, Vec, atCodes):  # noqa: ARG001
     """Add constraints for new magnetic phase created via transformation of old
     nuclear one
     NB: A = [G11,G22,G33,2*G12,2*G13,2*G23]
@@ -2521,14 +2521,14 @@ def UpdateRigidBodies(G2frame, data):
     """
 
     def OnPageChanged(event):
-        global resList
+        global resList  # noqa: PLW0603
         resList = []
         if event:  # page change event!
             page = event.GetSelection()
         else:
             try:
                 page = G2frame.rbBook.GetSelection()
-            except:
+            except:  # noqa: E722
                 if GSASIIpath.GetConfigValue("debug"):
                     print("DBG_gpx open error:C++ Run time error - skipped")
                 return
@@ -2583,7 +2583,7 @@ def UpdateRigidBodies(G2frame, data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 macfile = dlg.GetPath()
-                macro = open(macfile)
+                macro = open(macfile)  # noqa: SIM115
                 head = macro.readline()
                 if macName not in head:
                     print(head)
@@ -2611,7 +2611,7 @@ def UpdateRigidBodies(G2frame, data):
             if dlg.ShowModal() == wx.ID_OK:
                 txtfile = dlg.GetPath()
                 ext = os.path.splitext(txtfile)[1]
-                text = open(txtfile)
+                text = open(txtfile)  # noqa: SIM115
             else:  # cancel was pressed
                 ext = ""
                 text = []
@@ -2621,7 +2621,7 @@ def UpdateRigidBodies(G2frame, data):
             ext = ".pdb"
         return text, ext.lower()
 
-    def OnImportRigidBody(event):
+    def OnImportRigidBody(event):  # noqa: ARG001
         page = G2frame.rbBook.GetSelection()
         if "Vector" in G2frame.rbBook.GetPageText(page):
             pass
@@ -2635,15 +2635,15 @@ def UpdateRigidBodies(G2frame, data):
 
                     print(traceback.format_exc())
 
-    def OnSaveRigidBody(event):
+    def OnSaveRigidBody(event):  # noqa: ARG001
         page = G2frame.rbBook.GetSelection()
         if "Vector" in G2frame.rbBook.GetPageText(page):
             pass
         elif "Residue" in G2frame.rbBook.GetPageText(page):
             SaveResidueRB()
 
-    def DumpVectorRB(event):
-        global resRBsel
+    def DumpVectorRB(event):  # noqa: ARG001
+        global resRBsel  # noqa: PLW0602
         if resRBsel not in data["Residue"]:
             return
         rbData = data["Residue"][resRBsel]
@@ -2660,7 +2660,7 @@ def UpdateRigidBodies(G2frame, data):
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0] + ".resbody"  # set extension
-                fp = open(filename, "w")
+                fp = open(filename, "w")  # noqa: SIM115
                 fp.write("Name: " + rbData["RBname"] + "\n")
                 fp.write("atNames: ")
                 for i in rbData["atNames"]:
@@ -2682,7 +2682,7 @@ def UpdateRigidBodies(G2frame, data):
         finally:
             dlg.Destroy()
 
-    def LoadVectorRB(event):
+    def LoadVectorRB(event):  # noqa: ARG001
         AtInfo = data["Residue"]["AtInfo"]
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(
@@ -2697,8 +2697,8 @@ def UpdateRigidBodies(G2frame, data):
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0] + ".resbody"  # set extension
-                fp = open(filename)
-                l = fp.readline().strip()
+                fp = open(filename)  # noqa: SIM115
+                l = fp.readline().strip()  # noqa: E741
                 if "Name" not in l:
                     fp.close()
                     G2frame.ErrorDialog(
@@ -2716,7 +2716,7 @@ def UpdateRigidBodies(G2frame, data):
                 atNames = list(line)
                 types = []
                 coords = []
-                l = fp.readline().strip()
+                l = fp.readline().strip()  # noqa: E741
                 rbSeq = []
                 while "rbSeq" in l:
                     tag, vals, lst = l.split(":")
@@ -2727,7 +2727,7 @@ def UpdateRigidBodies(G2frame, data):
                     for num in lst.split():
                         seq[-1].append(int(num))
                     rbSeq.append(seq)
-                    l = fp.readline().strip()
+                    l = fp.readline().strip()  # noqa: E741
                 while l:
                     nums = l.strip().split()
                     types.append(nums.pop(0))
@@ -2736,7 +2736,7 @@ def UpdateRigidBodies(G2frame, data):
                         Info = G2elem.GetAtomInfo(t)
                         AtInfo[t] = [Info["Drad"], Info["Color"]]
                     coords.append([float(nums.pop(0)) for j in range(3)])
-                    l = fp.readline().strip()
+                    l = fp.readline().strip()  # noqa: E741
                 fp.close()
             else:
                 return
@@ -2763,7 +2763,7 @@ def UpdateRigidBodies(G2frame, data):
         data["RBIds"]["Residue"].append(rbid)
         UpdateResidueRB()
 
-    def AddVectorRB(event):
+    def AddVectorRB(event):  # noqa: ARG001
         "Create a new vector rigid body"
         AtInfo = data["Vector"]["AtInfo"]
         dlg = G2G.MultiIntegerDialog(
@@ -2805,7 +2805,7 @@ def UpdateRigidBodies(G2frame, data):
         dlg.Destroy()
         UpdateVectorRB()
 
-    def ExtractPhaseRB(event):
+    def ExtractPhaseRB(event):  # noqa: ARG001
         "Extract a rigid body from a file with a phase"
 
         def SetupDrawing(atmData):
@@ -2874,7 +2874,7 @@ def UpdateRigidBodies(G2frame, data):
             for atom in atmData["Atoms"]:
                 atmData["Drawing"]["Atoms"].append(G2mth.MakeDrawAtom(atmData, atom))
 
-        def onCancel(event, page=0):
+        def onCancel(event, page=0):  # noqa: ARG001
             "complete or bail out from RB define, cleaning up"
             G2frame.rbBook.DeletePage(G2frame.rbBook.FindPage(pagename))
             G2frame.rbBook.SetSelection(page)
@@ -2898,7 +2898,7 @@ def UpdateRigidBodies(G2frame, data):
                     atom[cs] = list(np.array(generalData["Color"][atNum]) // factor)
                 draw(*drawArgs)
 
-            def onPage1OK(event):
+            def onPage1OK(event):  # noqa: ARG001
                 "1st section has been completed, move onto next"
                 G2frame.G2plotNB.Delete(rd.Phase["General"]["Name"])
                 GetCoords(atmsel)
@@ -2974,12 +2974,12 @@ unselected atoms appear much darker than selected atoms.
             atoms to a vector or residue rigid body.
             """
 
-            def UpdateDraw(event=None):
+            def UpdateDraw(event=None):  # noqa: ARG001
                 "Called when info changes in grid, replots"
                 UpdateVectorBody(rbData)
                 DrawCallback()
 
-            def onSetAll(event):
+            def onSetAll(event):  # noqa: ARG001
                 "Set all atoms as selected"
                 grid.completeEdits()
                 for i in range(len(rd.Phase["RBselection"])):
@@ -2987,7 +2987,7 @@ unselected atoms appear much darker than selected atoms.
                 grid.ForceRefresh()
                 UpdateDraw()
 
-            def onToggle(event):
+            def onToggle(event):  # noqa: ARG001
                 "Toggles selection state for all atoms"
                 grid.completeEdits()
                 for i in range(len(rd.Phase["RBselection"])):
@@ -2995,7 +2995,7 @@ unselected atoms appear much darker than selected atoms.
                 grid.ForceRefresh()
                 UpdateDraw()
 
-            def onSetOrigin(event):
+            def onSetOrigin(event):  # noqa: ARG001
                 "Resets origin to midpoint between all selected atoms"
                 grid.completeEdits()
                 center = np.array([0.0, 0.0, 0.0])
@@ -3009,7 +3009,7 @@ unselected atoms appear much darker than selected atoms.
                 grid.ForceRefresh()
                 UpdateDraw()
 
-            def onSetX(event):
+            def onSetX(event):  # noqa: ARG001
                 grid.completeEdits()
                 center = np.array([0.0, 0.0, 0.0])
                 count = 0
@@ -3052,7 +3052,7 @@ unselected atoms appear much darker than selected atoms.
                 grid.ForceRefresh()
                 UpdateDraw()
 
-            def onSetPlane(event):
+            def onSetPlane(event):  # noqa: ARG001
                 """Finds eigen vector/matrix for best "ellipsoid" about atoms;
                 rotate atoms so that smallest axis is along choice.
                 """
@@ -3086,7 +3086,7 @@ unselected atoms appear much darker than selected atoms.
                 grid.ForceRefresh()
                 UpdateDraw()
 
-            def onWriteXYZ(event):
+            def onWriteXYZ(event):  # noqa: ARG001
                 """Writes selected atoms in a .xyz file for use in Avogadro, etc."""
                 grid.completeEdits()
                 center = np.array([0.0, 0.0, 0.0])
@@ -3465,7 +3465,7 @@ create a Vector or Residue rigid body.
         Page1()
         return
 
-    def AddVectTrans(event):
+    def AddVectTrans(event):  # noqa: ARG001
         "Add a translation to an existing vector rigid body"
         choices = []
         rbIdlist = []
@@ -3495,7 +3495,7 @@ create a Vector or Residue rigid body.
         data["Vector"][rbid]["rbVect"] += [np.zeros((nAtoms, 3))]
         UpdateVectorRB()
 
-    def SaveVectorRB(event):
+    def SaveVectorRB(event):  # noqa: ARG001
         choices = []
         rbIdlist = []
         for rbid in data["RBIds"]["Vector"]:
@@ -3532,7 +3532,7 @@ create a Vector or Residue rigid body.
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0] + ".vecbody"  # set extension
-                fp = open(filename, "w")
+                fp = open(filename, "w")  # noqa: SIM115
                 fp.write("Name: " + data["Vector"][rbid]["RBname"] + "\n")
                 fp.write("Trans: ")
                 for i in data["Vector"][rbid]["VectMag"]:
@@ -3553,7 +3553,7 @@ create a Vector or Residue rigid body.
         finally:
             dlg.Destroy()
 
-    def ReadVectorRB(event):
+    def ReadVectorRB(event):  # noqa: ARG001
         AtInfo = data["Vector"]["AtInfo"]
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(
@@ -3568,8 +3568,8 @@ create a Vector or Residue rigid body.
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0] + ".vecbody"  # set extension
-                fp = open(filename)
-                l = fp.readline().strip()
+                fp = open(filename)  # noqa: SIM115
+                l = fp.readline().strip()  # noqa: E741
                 if "Name" not in l:
                     fp.close()
                     G2frame.ErrorDialog(
@@ -3588,7 +3588,7 @@ create a Vector or Residue rigid body.
                 ntrans = len(trans)
                 vecs = [[] for i in range(ntrans)]
                 types = []
-                l = fp.readline().strip()
+                l = fp.readline().strip()  # noqa: E741
                 while l:
                     nums = l.strip().split()
                     types.append(nums.pop(0))
@@ -3598,7 +3598,7 @@ create a Vector or Residue rigid body.
                         AtInfo[t] = [Info["Drad"], Info["Color"]]
                     for i in range(ntrans):
                         vecs[i].append([float(nums.pop(0)) for j in range(3)])
-                    l = fp.readline().strip()
+                    l = fp.readline().strip()  # noqa: E741
                 fp.close()
             else:
                 return
@@ -3626,8 +3626,8 @@ create a Vector or Residue rigid body.
         data["RBIds"]["Vector"].append(rbid)
         UpdateVectorRB()
 
-    def AddResidueRB(event):
-        global resRBsel
+    def AddResidueRB(event):  # noqa: ARG001
+        global resRBsel  # noqa: PLW0603
         AtInfo = data["Residue"]["AtInfo"]
         macro = getMacroFile("rigid body")
         if not macro:
@@ -3691,7 +3691,7 @@ create a Vector or Residue rigid body.
         UpdateResidueRB()
 
     def ImportResidueRB():
-        global resRBsel
+        global resRBsel  # noqa: PLW0603
         AtInfo = data["Residue"]["AtInfo"]
         text, ext = getTextFile()
         if not text:
@@ -3784,7 +3784,7 @@ create a Vector or Residue rigid body.
         UpdateResidueRB()
 
     def SaveResidueRB():
-        global resRBsel
+        global resRBsel  # noqa: PLW0602
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(
             G2frame,
@@ -3798,7 +3798,7 @@ create a Vector or Residue rigid body.
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0] + ".pdb"  # make extension .pdb
-                File = open(filename, "w")
+                File = open(filename, "w")  # noqa: SIM115
                 rbData = data["Residue"][resRBsel]
                 for iat, xyz in enumerate(rbData["rbXYZ"]):
                     File.write(
@@ -3818,7 +3818,7 @@ create a Vector or Residue rigid body.
         finally:
             dlg.Destroy()
 
-    def AddSpinRB(event):
+    def AddSpinRB(event):  # noqa: ARG001
         rbid = ran.randint(0, sys.maxsize)
         atType = "C"
         rbType = "Q"
@@ -3882,8 +3882,8 @@ create a Vector or Residue rigid body.
                 new = True
         return riding[2:]
 
-    def OnDefineTorsSeq(event):
-        global resRBsel
+    def OnDefineTorsSeq(event):  # noqa: ARG001
+        global resRBsel  # noqa: PLW0602
         rbData = data["Residue"][resRBsel]
         if not len(rbData):
             return
@@ -3918,9 +3918,9 @@ create a Vector or Residue rigid body.
         dlg.Destroy()
         UpdateResidueRB()
 
-    def UpdateVectorRB(Scroll=0):
+    def UpdateVectorRB(Scroll=0):  # noqa: ARG001
         """Display & edit a selected Vector RB"""
-        global resRBsel
+        global resRBsel  # noqa: PLW0603
 
         def rbNameSizer(rbid, rbData):
             def OnRBName(event):
@@ -3947,7 +3947,7 @@ create a Vector or Residue rigid body.
                     rbData["useCount"] -= 1
                 wx.CallAfter(UpdateVectorRB)
 
-            def OnPlotRB(event):
+            def OnPlotRB(event):  # noqa: ARG001
                 G2plt.PlotRigidBody(G2frame, "Vector", AtInfo, rbData, plotDefaults)
 
             # start of rbNameSizer
@@ -4066,7 +4066,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             magValue = wx.TextCtrl(
                 VectorRBDisplay,
                 -1,
-                "{:8.4f}".format(rbData["VectMag"][imag]),
+                f"{rbData['VectMag'][imag]:8.4f}",
                 style=wx.TE_PROCESS_ENTER,
             )
             Indx[magValue.GetId()] = [rbid, imag]
@@ -4083,7 +4083,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             magSizer.Add(magref, 0, WACV)
             return magSizer
 
-        def rbVectors(rbid, imag, mag, XYZ, rbData):
+        def rbVectors(rbid, imag, mag, XYZ, rbData):  # noqa: ARG001
             def TypeSelect(event):
                 AtInfo = data["Vector"]["AtInfo"]
                 r, c = event.GetRow(), event.GetCol()
@@ -4183,8 +4183,8 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                 refChoice[rbid][i].append(rbRef[i])
                 refChoice[rbid][i].sort()
 
-        def OnRBSelect(event):
-            global resRBsel
+        def OnRBSelect(event):  # noqa: ARG001
+            global resRBsel  # noqa: PLW0603
             sel = rbSelect.GetSelection()
             if sel == 0:
                 return  # 1st entry is blank
@@ -4201,7 +4201,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         if GS:
             try:  # get around a c++ error in wx 4.0; doing is again seems to be OK
                 GS.Clear(True)
-            except:
+            except:  # noqa: E722
                 GS.Clear(True)
 
         RBnames = {}
@@ -4314,7 +4314,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         if GS:
             try:  # get around a c++ error in wx 4.0; doing is again seems to be OK
                 GS.Clear(True)
-            except:
+            except:  # noqa: E722
                 GS.Clear(True)
 
         SetStatusLine(" ")
@@ -4420,7 +4420,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
 
     def UpdateResidueRB():
         """Draw the contents of the Residue Rigid Body tab for Rigid Bodies tree entry"""
-        global resRBsel
+        global resRBsel  # noqa: PLW0603
 
         def rbNameSizer(rbid, rbData):
             def OnRBName(event):
@@ -4464,7 +4464,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                 G2plt.PlotRigidBody(G2frame, "Residue", AtInfo, rbData, plotDefaults)
                 wx.CallAfter(UpdateResidueRB)
 
-            def OnPlotRB(event):
+            def OnPlotRB(event):  # noqa: ARG001
                 G2plt.PlotRigidBody(G2frame, "Residue", AtInfo, rbData, plotDefaults)
 
             # start of rbNameSizer
@@ -4881,8 +4881,8 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
                 refChoice[rbid][i].append(rbRef[i])
                 refChoice[rbid][i].sort()
 
-        def OnRBSelect(event):
-            global resRBsel
+        def OnRBSelect(event):  # noqa: ARG001
+            global resRBsel  # noqa: PLW0603
             sel = rbSelect.GetSelection()
             if sel == 0:
                 return  # 1st entry is blank
@@ -4901,7 +4901,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
         if GS:
             try:  # get around a c++ error in wx 4.0; doing is again seems to be OK
                 GS.Clear(True)
-            except:
+            except:  # noqa: E722
                 GS.Clear(True)
 
         RBnames = {}
@@ -4974,7 +4974,7 @@ rigid body to be the midpoint of all atoms in the body (not mass weighted).
         G2frame.GetStatusBar().SetStatusText(text, 1)
 
     #### UpdateRigidBodies starts here =========
-    global resList, resRBsel
+    global resList, resRBsel  # noqa: PLW0602, PLW0603
     if not data.get("RBIds") or not data:
         data.update(
             {
@@ -5030,7 +5030,7 @@ def ShowIsoDistortCalc(G2frame, phase=None):
     should be enabled only when Phase['ISODISTORT'] is defined.
     """
 
-    def _onClose(event):
+    def _onClose(event):  # noqa: ARG001
         dlg.EndModal(wx.ID_CANCEL)
 
     Phases = G2frame.GetPhaseData()
@@ -5139,7 +5139,7 @@ def ShowIsoDistortCalc(G2frame, phase=None):
             subSizer2.Add(wx.StaticText(panel2, label=str(G2mode)))
             try:
                 # value = G2mth.ValEsd(mval,msig)
-                value = "%.5f" % (mval / 2.0)  # why /2.0
+                value = f"{mval / 2.0:.5f}"  # why /2.0
             except TypeError:
                 value = str(mval)
             subSizer2.Add(wx.StaticText(panel2, label=value), 0, wx.ALIGN_RIGHT)
@@ -5229,7 +5229,7 @@ def ShowIsoModes(G2frame, phase):
     translate to.
     """
 
-    def _onClose(event):
+    def _onClose(event):  # noqa: ARG001
         dlg.EndModal(wx.ID_CANCEL)
 
     # make a lookup table for named NewVar Phase constraints
@@ -5248,18 +5248,18 @@ def ShowIsoModes(G2frame, phase):
         modeExp = {}
         for i, row in enumerate(ISO["Var2ModeMatrix"]):
             line = "("
-            l = 1
+            l = 1  # noqa: E741
             for j, k in enumerate(row):
                 var = ISO["IsoVarList"][j]
                 if np.isclose(k, 0):
                     continue
                 if l > 30:
                     line += "\n"
-                    l = 0
-                l += 3
+                    l = 0  # noqa: E741
+                l += 3  # noqa: E741
                 if k < 0 and j > 0:
                     line += " - "
-                    k = -k
+                    k = -k  # noqa: PLW2901
                 elif j > 0:
                     line += " + "
                 if np.isclose(k, 1):
@@ -5267,28 +5267,28 @@ def ShowIsoModes(G2frame, phase):
                 else:
                     l1 = f"{k:.3f} * {var!s}"
                 line += l1
-                l += len(l1)
-            line += ") / {:.3g}".format(ISO["NormList"][i])
+                l += len(l1)  # noqa: E741
+            line += f") / {ISO['NormList'][i]:.3g}"
             modeExp[str(ISO["G2ModeList"][i])] = line
 
         crdExp = {}
-        for i, (lbl, row) in enumerate(
+        for i, (lbl, row) in enumerate(  # noqa: B007
             zip(ISO["IsoVarList"], ISO["Mode2VarMatrix"], strict=False)
         ):
-            l = ""
+            l = ""  # noqa: E741
             for j, (k, n) in enumerate(zip(row, ISO["NormList"], strict=False)):
                 if np.isclose(k, 0):
                     continue
                 l1 = ""
                 if j > 0 and k < 0:
-                    k = -k
+                    k = -k  # noqa: PLW2901
                     l1 = "-"
                 elif j > 0:
                     l1 += " +"
                 if np.isclose(k, 1):
-                    l += "{:} {:4g} * {:}".format(l1, n, ISO["G2ModeList"][j])
+                    l += f"{l1} {n:4g} * {ISO['G2ModeList'][j]}"  # noqa: E741
                 else:
-                    l += "{:} {:3g} * {:4g} * {:}".format(
+                    l += "{:} {:3g} * {:4g} * {:}".format(  # noqa: E741
                         l1, k, n, ISO["G2ModeList"][j]
                     )
             crdExp[lbl] = l
@@ -5339,16 +5339,16 @@ def ShowIsoModes(G2frame, phase):
         subSizer2.Add(
             wx.StaticText(panel2, wx.ID_ANY, "expression"), 0, wx.ALIGN_CENTER
         )
-        for i in range(6):
+        for i in range(6):  # noqa: B007
             subSizer2.Add((-1, 5))
         for i, lbl in enumerate(ISO["IsoVarList"]):
             var = str(ISO["G2VarList"][i]).replace("::dA", "::A")
             if np.isclose(ISO["G2coordOffset"][i], 0):
                 G2var = f"{var}"
             elif ISO["G2coordOffset"][i] < 0:
-                G2var = "({:} + {:.3g})".format(var, -ISO["G2coordOffset"][i])
+                G2var = f"({var} + {-ISO['G2coordOffset'][i]:.3g})"
             else:
-                G2var = "({:} - {:.3g})".format(var, ISO["G2coordOffset"][i])
+                G2var = f"({var} - {ISO['G2coordOffset'][i]:.3g})"
             subSizer1.Add(wx.StaticText(panel1, wx.ID_ANY, str(lbl)), 0, WACV)
             subSizer1.Add((-1, -1))  # spacer
             subSizer1.Add(wx.StaticText(panel1, wx.ID_ANY, str(G2var)), 0, WACV)

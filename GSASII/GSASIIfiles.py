@@ -73,7 +73,7 @@ def G2SetPrintLevel(level):
       Note that capitalization and extra letters in level are ignored, so
       'Warn', 'warnings', etc. will all set the mode to 'warn'
     """
-    global G2printLevel
+    global G2printLevel  # noqa: PLW0603
     for mode in "all", "warn", "error", "none":
         if mode in level.lower():
             G2printLevel = mode
@@ -126,7 +126,7 @@ def get_python_versions(packagelist):
     for pack in packagelist:
         try:
             versions.append([pack.__name__, pack.__version__])
-        except:
+        except:  # noqa: E722
             pass
     versions.append(
         [
@@ -189,7 +189,7 @@ def NeededPackage(pkgDict):
 
 def makeInstDict(names, data, codes):
     inst = dict(zip(names, zip(data, data, codes, strict=False), strict=False))
-    for item in inst:
+    for item in inst:  # noqa: PLC0206
         inst[item] = list(inst[item])
     return inst
 
@@ -204,7 +204,7 @@ def makePdabcDict(pdabcString):
     a container dictionary
     """
 
-    if type(pdabcString) != str:
+    if type(pdabcString) != str:  # noqa: E721
         raise Exception(
             "Error interpreting pdabc entry in .instprm file. Entry must be a string"
         )
@@ -652,7 +652,7 @@ def ReadInstprm(instLines, bank, Sample=None):
                 item, val = s.split(":", 1)
                 try:
                     val = float(val)
-                except:
+                except:  # noqa: E722
                     pass
                 if item == "Gonio.radius":
                     NewSample.update({"Gonio. radius": float(val)})
@@ -846,7 +846,7 @@ def WriteInstprm(fp, InstPrm, InstPrm1, Sample=None, bank=None):
 #     return readerlist
 
 
-def LoadImportRoutines(prefix, errprefix=None, traceback=False):
+def LoadImportRoutines(prefix, errprefix=None, traceback=False):  # noqa: ARG001
     from . import imports
 
     readerlist = []
@@ -1126,7 +1126,7 @@ def readColMetadata(imagefile):
             continue
         G2Print("Read " + lblFil)
         # scan through each line in this .par file, looking for the matching image rootname
-        fp = open(parFil)
+        fp = open(parFil)  # noqa: SIM115
         for iline, line in enumerate(fp):
             items = line.strip().split(" ")
             nameList = keyExp["filename"](*[items[j] for j in keyCols["filename"]])
@@ -1162,9 +1162,9 @@ def readColMetadataLabels(lblFil):
     keyCols = {}
     labels = {}
     errors = []
-    fp = open(lblFil)  # read column labels
+    fp = open(lblFil)  # read column labels  # noqa: SIM115
     for iline, line in enumerate(fp):  # read label definitions
-        line = line.strip()
+        line = line.strip()  # noqa: PLW2901
         if not line or line[0] == "#":
             continue  # comments
         items = line.split(":")
@@ -1209,7 +1209,7 @@ def evalColMetadataDicts(items, labels, lbldict, keyCols, keyExp, ShowError=Fals
     for key in keyExp:
         try:
             res = keyExp[key](*[items[j] for j in keyCols[key]])
-        except:
+        except:  # noqa: E722
             if ShowError:
                 res = "*** error ***"
             else:
@@ -1242,9 +1242,7 @@ def GetColumnMetadata(reader):
         "wavelength",
     )
     reader.Comments = [
-        "Metadata from {} assigned by {}".format(
-            parParms["par file"], parParms["lbls file"]
-        )
+        f"Metadata from {parParms['par file']} assigned by {parParms['lbls file']}"
     ]
     for key in parParms:
         if key in (*specialKeys, "par file", "lbls file"):
@@ -1261,12 +1259,12 @@ def GetColumnMetadata(reader):
     if "wavelength" in parParms:
         reader.Data["wavelength"] = parParms["wavelength"]
     else:
-        G2Print("Error: wavelength not defined in {}".format(parParms["lbls file"]))
+        G2Print(f"Error: wavelength not defined in {parParms['lbls file']}")
     if "distance" in parParms:
         reader.Data["distance"] = parParms["distance"]
         reader.Data["setdist"] = parParms["distance"]
     else:
-        G2Print("Error: distance not defined in {}".format(parParms["lbls file"]))
+        G2Print(f"Error: distance not defined in {parParms['lbls file']}")
 
 
 def LoadControls(Slines, data):
@@ -1334,7 +1332,7 @@ def LoadControls(Slines, data):
 
 def WriteControls(filename, data):
     "Write current values to a .imctrl (Image Controls) file"
-    File = open(filename, "w")
+    File = open(filename, "w")  # noqa: SIM115
     keys = [
         "type",
         "color",
@@ -1507,7 +1505,7 @@ def RereadImageData(ImageReaderlist, imagefile, ImageTag=None, FormatName=""):
 
 def readMasks(filename, masks, ignoreThreshold):
     """Read a GSAS-II masks file"""
-    File = open(filename)
+    File = open(filename)  # noqa: SIM115
     save = {}
     oldThreshold = masks["Thresholds"][0]
     S = File.readline()
@@ -1579,7 +1577,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         iqfilename = fileroot + ".iq"
         iqdata = PDFControls["I(Q)"][1]
         iqfxn = scintp.interp1d(iqdata[0], iqdata[1], kind="linear")
-        iqfile = open(iqfilename, "w")
+        iqfile = open(iqfilename, "w")  # noqa: SIM115
         iqfile.write(f"#T I(Q) {PDFentry}\n")
         iqfile.write("#L Q     I(Q)\n")
         qnew = np.arange(iqdata[0][0], iqdata[0][-1], 0.005)
@@ -1593,7 +1591,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         sqfilename = fileroot + ".sq"
         sqdata = PDFControls["S(Q)"][1]
         sqfxn = scintp.interp1d(sqdata[0], sqdata[1], kind="linear")
-        sqfile = open(sqfilename, "w")
+        sqfile = open(sqfilename, "w")  # noqa: SIM115
         sqfile.write(f"#T S(Q) {PDFentry}\n")
         sqfile.write("#L Q     S(Q)\n")
         qnew = np.arange(sqdata[0][0], sqdata[0][-1], 0.005)
@@ -1607,7 +1605,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         fqfilename = fileroot + ".fq"
         fqdata = PDFControls["F(Q)"][1]
         fqfxn = scintp.interp1d(fqdata[0], fqdata[1], kind="linear")
-        fqfile = open(fqfilename, "w")
+        fqfile = open(fqfilename, "w")  # noqa: SIM115
         fqfile.write(f"#T F(Q) {PDFentry}\n")
         fqfile.write("#L Q     F(Q)\n")
         qnew = np.arange(fqdata[0][0], fqdata[0][-1], 0.005)
@@ -1621,7 +1619,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         grfilename = fileroot + ".gr"
         grdata = PDFControls["G(R)"][1]
         grfxn = scintp.interp1d(grdata[0], grdata[1], kind="linear")
-        grfile = open(grfilename, "w")
+        grfile = open(grfilename, "w")  # noqa: SIM115
         grfile.write(f"#T G(R) {PDFentry}\n")
         grfile.write("#L R     G(R)\n")
         rnew = np.arange(grdata[0][0], grdata[0][-1], 0.010)
@@ -1636,7 +1634,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         grdata = PDFControls["G(R)"][1]
         qdata = PDFControls["I(Q)"][1][0]
         grfxn = scintp.interp1d(grdata[0], grdata[1], kind="linear")
-        grfile = open(grfilename, "w")
+        grfile = open(grfilename, "w")  # noqa: SIM115
         rnew = np.arange(grdata[0][0], grdata[0][-1], 0.010)
         grnew = zip(rnew, grfxn(rnew), strict=False)
 
@@ -1646,15 +1644,15 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         grfile.write("\n")
         grfile.write("# input and output specifications\n")
         grfile.write("dataformat = Qnm\n")
-        grfile.write("inputfile = {}\n".format(PDFControls["Sample"]["Name"]))
-        grfile.write("backgroundfile = {}\n".format(PDFControls["Sample Bkg."]["Name"]))
+        grfile.write(f"inputfile = {PDFControls['Sample']['Name']}\n")
+        grfile.write(f"backgroundfile = {PDFControls['Sample Bkg.']['Name']}\n")
         grfile.write("outputtype = gr\n")
         grfile.write("\n")
         grfile.write("# PDF calculation setup\n")
         if "x" in Inst["Type"]:
-            grfile.write("mode = {}\n".format("xray"))
+            grfile.write("mode = xray\n")
         elif "N" in Inst["Type"]:
-            grfile.write("mode = {}\n".format("neutron"))
+            grfile.write("mode = neutron\n")
         wave = G2mth.getMeanWave(Inst)
         grfile.write(f"wavelength = {wave:.5f}\n")
         formula = ""
@@ -1662,7 +1660,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
             formula += el
             num = PDFControls["ElList"][el]["FormulaNo"]
             if num == round(num):
-                formula += "%d" % (int(num))
+                formula += f"{int(num)}"
             else:
                 formula += f"{num:.2f}"
         grfile.write(f"composition = {formula}\n")
@@ -1671,8 +1669,8 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         grfile.write(f"qmaxinst = {highQ:.2f}\n")
         grfile.write(f"qmin = {qdata[0]:.5f}\n")
         grfile.write(f"qmax = {qdata[-1]:.4f}\n")
-        grfile.write("rmin = {:.2f}\n".format(PDFControls["Rmin"]))
-        grfile.write("rmax = {:.2f}\n".format(PDFControls["Rmax"]))
+        grfile.write(f"rmin = {PDFControls['Rmin']:.2f}\n")
+        grfile.write(f"rmax = {PDFControls['Rmax']:.2f}\n")
         grfile.write("rstep = 0.01\n")
         grfile.write("\n")
         grfile.write("# End of config " + 63 * "-")
@@ -1691,7 +1689,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         fqfilename = fileroot + ".fq"
         fqdata = PDFControls["F(Q)"][1]
         fqfxn = scintp.interp1d(fqdata[0], fqdata[1], kind="linear")
-        fqfile = open(fqfilename, "w")
+        fqfile = open(fqfilename, "w")  # noqa: SIM115
         qnew = np.arange(fqdata[0][0], fqdata[0][-1], 0.005)
         nq = qnew.shape[0]
         fqfile.write("%20d\n" % (nq - 1))
@@ -1707,7 +1705,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
         grfilename = fileroot + ".gr"
         grdata = PDFControls["g(r)"][1]
         grfxn = scintp.interp1d(grdata[0], grdata[1], kind="linear")
-        grfile = open(grfilename, "w")
+        grfile = open(grfilename, "w")  # noqa: SIM115
         rnew = np.arange(grdata[0][0], grdata[0][-1], 0.010)
         nr = rnew.shape[0]
         grfile.write("%20d\n" % (nr - 1))
@@ -1819,7 +1817,7 @@ def FormulaEval(string):
         val = float(eval(string))
         if np.isnan(val) or np.isinf(val):
             return None
-    except:
+    except:  # noqa: E722
         return None
     return val
 
@@ -2086,7 +2084,7 @@ end tell
 
         fil = "/tmp/GSAS2-launch.sh"
         cmds += ["/bin/sh", fil]
-        fp = open(fil, "w")
+        fp = open(fil, "w")  # noqa: SIM115
         if project:
             fp.write(f"{pythonapp} {g2script} {project}\n")
         else:
@@ -2122,7 +2120,7 @@ def CleanupFromZip(label, cleanupList):
             try:
                 os.remove(f)
                 print("\tdeleted:", f)
-            except:
+            except:  # noqa: E722
                 print("\tdelete failed:", f)
 
 
@@ -2270,7 +2268,7 @@ class ExportBaseclass:
         """
 
         numselected = 1
-        from . import GSASIIctrlGUI as G2G
+        from .GUI import GSASIIctrlGUI as G2G
 
         if self.currentExportType == "phase":
             if len(self.Phases) == 0:
@@ -2480,7 +2478,7 @@ class ExportBaseclass:
         This could be made faster for sequential fits as info for each histogram is loaded
         later when iterating over histograms.
         """
-        from . import GSASIIdataGUI as G2gd
+        from .GUI import GSASIIdataGUI as G2gd
 
         self.G2frame.CheckNotebook()
         self.parmDict = {}
@@ -2634,7 +2632,7 @@ class ExportBaseclass:
         * Data items are placed in self.Histogram. The key for these data items
           begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.
         """
-        from . import GSASIIdataGUI as G2gd
+        from .GUI import GSASIIdataGUI as G2gd
 
         self.OverallParms = {}
         self.powderDict = {}
@@ -2797,7 +2795,7 @@ class ExportBaseclass:
         :returns: a file name (str) or None if Cancel is pressed
 
         """
-        from . import GSASIIctrlGUI as G2G
+        from .GUI import GSASIIctrlGUI as G2G
 
         # pth = G2G.GetExportPath(self.G2frame)
         if self.G2frame.GSASprojectfile:
@@ -2821,7 +2819,7 @@ class ExportBaseclass:
         """
         import wx
 
-        from . import GSASIIctrlGUI as G2G
+        from .GUI import GSASIIctrlGUI as G2G
 
         pth = G2G.GetExportPath(self.G2frame)
         dlg = wx.DirDialog(
@@ -2868,12 +2866,12 @@ class ExportBaseclass:
             self.DelayOpen = True
             self.fp = None
             return None
-        self.fp = open(self.fullpath, mode)
+        self.fp = open(self.fullpath, mode)  # noqa: SIM115
         return self.fp
 
     def openDelayed(self, mode="w"):
         self.DelayOpen = False
-        self.fp = open(self.fullpath, mode)
+        self.fp = open(self.fullpath, mode)  # noqa: SIM115
         return self.fp
 
     def Write(self, line):
@@ -3054,7 +3052,7 @@ class ExportBaseclass:
                 sig = self.sigDict.get(pfx, -0.0009)
                 td.append((val, sig))
             else:
-                for i, var in enumerate(
+                for i, var in enumerate(  # noqa: PLW2901
                     ("AU11", "AU22", "AU33", "AU12", "AU13", "AU23")
                 ):
                     pfx = str(phasedict["pId"]) + "::" + var + ":" + str(i)

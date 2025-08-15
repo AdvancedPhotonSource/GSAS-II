@@ -50,7 +50,7 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
                     for item in sline:
                         try:
                             float(item)
-                        except:
+                        except:  # noqa: E722
                             err = True
                             break
                     if err:
@@ -73,7 +73,7 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
                     j += 1
                 try:
                     angle = float(sline[0])
-                except:
+                except:  # noqa: E722
                     print("Unable to read angle on line " + str(i + 1))
                     return False
                 if prevAngle is None:
@@ -97,7 +97,7 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
                     return True
         return False
 
-    def Reader(self, filename: str, ParentFrame=None, **kwarg):
+    def Reader(self, filename: str, ParentFrame=None, **kwarg):  # noqa: ARG002
         "Read a Rigaku .txt file"
         x = []
         y = []
@@ -109,7 +109,7 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
                 sline = line.split()
                 try:
                     angle = float(sline[0])
-                except:
+                except:  # noqa: E722
                     print("Unable to read angle on line " + str(i + 1))
                     self.errors = "Error reading line: " + str(i + 1)
                     return False
@@ -118,7 +118,7 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
                     angle += self.stepsize
                     try:
                         y.append(float(j))
-                    except:
+                    except:  # noqa: E722
                         print("Unable to read intensity on line " + str(i + 1))
                         self.errors = "Error reading line: " + str(i + 1)
                         return False
@@ -186,7 +186,7 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
                 self.powderentry[0] = filename
                 self.comments = []
                 return True
-            except:
+            except:  # noqa: E722
                 return False
         elif filename.endswith(".ras"):
             with open(filename, encoding="latin-1") as fp:
@@ -208,7 +208,7 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
 
         return False
 
-    def Reader(self, filename: str, ParentFrame=None, **kwarg):
+    def Reader(self, filename: str, ParentFrame=None, **kwarg):  # noqa: ARG002
         "Read a Rigaku .ras/.rasx file"
         if ".rasx" in filename:
             x = []

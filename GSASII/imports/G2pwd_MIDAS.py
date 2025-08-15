@@ -75,7 +75,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             try:
                 fp = zarr.open(filename, mode="r")
                 return fp, store
-            except:
+            except:  # noqa: E722
                 # workaround for zarr 3.0.x where "auto discover" is
                 # not yet implemented
                 # (https://github.com/zarr-developers/zarr-python/issues/2922)
@@ -116,7 +116,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         del fp, store
         return None
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):  # noqa: ARG002
         """Scan file for sections needed by defined file types (currently
         only Midas) and then use appropriate routine to read the file.
         Most of the time the results are placed in the buffer arg (if supplied)
@@ -176,7 +176,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 # tabulate integrated intensities image & eta
                 fpbuffer["intenArr"] = []
                 fpbuffer["attributes"] = []
-                for i, k in enumerate(fp["OmegaSumFrame"]):
+                for i, k in enumerate(fp["OmegaSumFrame"]):  # noqa: B007
                     fpbuffer["intenArr"].append(fp["OmegaSumFrame"][k])
                     fpbuffer["attributes"].append(
                         dict(fp["OmegaSumFrame"][k].attrs.items())
@@ -226,7 +226,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             self.MIDASsampleprm = {}
             samplefile = os.path.splitext(filename)[0] + ".samprm"
             if os.path.exists(samplefile):
-                fp = open(samplefile)
+                fp = open(samplefile)  # noqa: SIM115
                 S = fp.readline()
                 while S:
                     if not S.strip().startswith("#"):
@@ -239,7 +239,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             self.instvals = [{}, {}]
             if os.path.exists(instfile):
                 self.instmsg = "zarr and .instprm files"
-                fp = open(instfile)
+                fp = open(instfile)  # noqa: SIM115
                 instLines = fp.readlines()
                 fp.close()
                 nbank, self.instvals = G2fil.ReadInstprm(instLines, None, self.Sample)
@@ -269,7 +269,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                 fpbuffer["attributes"][iImg]["FirstOme"]
                 + fpbuffer["attributes"][iImg]["LastOme"]
             )
-        except:
+        except:  # noqa: E722
             pass
         eta = sum(fpbuffer["REtaMap"][2][:, iAzm][unmasked]) / sum(
             unmasked
@@ -299,11 +299,11 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         samp.update(self.MIDASsampleprm)
         try:
             sampleprmList["Temperature"] = fpbuffer["attributes"][iImg]["Temperature"]
-        except:
+        except:  # noqa: E722
             pass
         try:
             sampleprmList["Pressure"] = fpbuffer["attributes"][iImg]["Pressure"]
-        except:
+        except:  # noqa: E722
             pass
         for key, val in samp.items():
             self.Sample[key] = val

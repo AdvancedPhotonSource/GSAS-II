@@ -34,7 +34,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
             import Image as Im
         except ImportError:
             try:
-                from PIL import Image as Im
+                from PIL import Image as Im  # noqa: F401
             except ImportError:
                 msg = "TIF_Reader may not be able to read some less common image formats because the pillow module is not installed."
                 G2fil.ImportErrorMsg(msg, {"TIF Image importer": ["pillow"]})
@@ -43,7 +43,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
         """Does the header match the required TIF header?"""
         return TIFValidator(filename)
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         """Read the TIF file using :func:`GetTifData` which attempts to
         recognize the detector type and set various parameters
         """
@@ -66,7 +66,7 @@ def GetTifData(filename):
     import ReadMarCCDFrame as rmf
 
     image = None
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     dataType = 5
     center = [None, None]
     wavelength = None
@@ -76,10 +76,10 @@ def GetTifData(filename):
     xpixelsize = None
     ypixelsize = None
     try:
-        Meta = open(filename + ".metadata")
+        Meta = open(filename + ".metadata")  # noqa: SIM115
         head = Meta.readlines()
         for line in head:
-            line = line.strip()
+            line = line.strip()  # noqa: PLW2901
             try:
                 if "=" not in line:
                     continue
@@ -98,7 +98,7 @@ def GetTifData(filename):
                 #     xpixelsize = float(line.split('=')[1])
                 # elif 'detectorypixelsize' == keyword.lower():
                 #     ypixelsize = float(line.split('=')[1])
-            except:
+            except:  # noqa: E722
                 G2fil.G2Print("error reading metadata: " + line)
         Meta.close()
     except OSError:
@@ -369,7 +369,7 @@ def GetTifData(filename):
                     dtype=np.int32,
                 )
         elif IFD[273][2][0] == 4096:
-            tifType = "Rayonix"
+            tifType = "Rayonix"  # noqa: F841
             pixy = [73.242, 73.242]
             File.seek(4096)
             G2fil.G2Print("Read Rayonix MX300HE tiff file: " + filename)
@@ -441,7 +441,7 @@ def GetTifData(filename):
         return lines, 0, 0, 0
     #    if GSASIIpath.GetConfigValue('debug'):
     if DEBUG:
-        G2fil.G2Print("image read time: %.3f" % (time.time() - time0))
+        G2fil.G2Print(f"image read time: {time.time() - time0:.3f}")
     image = np.reshape(image, (sizexy[1], sizexy[0]))
     center = (
         (not center[0]) and [pixy[0] * sizexy[0] / 2000, pixy[1] * sizexy[1] / 2000]
@@ -471,7 +471,7 @@ def GetTifData(filename):
 
 def TIFValidator(filename):
     """Does the header match the required TIF header?"""
-    fp = open(filename, "rb")
+    fp = open(filename, "rb")  # noqa: SIM115
     tag = fp.read(2)
     if "bytes" in str(type(tag)):
         tag = tag.decode("latin-1")

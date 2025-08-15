@@ -18,7 +18,10 @@ home = os.path.dirname(os.path.dirname(__file__))
 if home not in sys.path:
     sys.path.insert(0, home)
 
-from GSASII.imports.G2pwd_rigaku import Rigaku_rasReaderClass, Rigaku_txtReaderClass
+from GSASII.imports.G2pwd_rigaku import (  # noqa: E402
+    Rigaku_rasReaderClass,
+    Rigaku_txtReaderClass,
+)
 
 
 class TestRigakuTxtReader:
@@ -233,7 +236,7 @@ class TestRigakuRasReader:
 
         with open(filepath, "w", encoding="latin-1") as f:
             f.write("*RAS_DATA_START\n")
-            for bank in range(num_banks):
+            for bank in range(num_banks):  # noqa: B007
                 f.write("*RAS_HEADER_START\n")
                 f.write("*RAS_INT_START\n")
                 f.write("10.0 100.5\n")

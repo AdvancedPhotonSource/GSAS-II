@@ -33,16 +33,16 @@ except ImportError:
 
     wx = Placeholder()
     wxscroll = Placeholder()
-from .. import GSASIIElem as G2el
-from .. import GSASIIfiles as G2fil
-from .. import GSASIIlattice as G2lat
-from .. import GSASIImapvars as G2mv
-from .. import GSASIImath as G2mth
-from .. import GSASIIobj as G2obj
-from .. import GSASIIpath
-from .. import GSASIIspc as G2spc
-from .. import GSASIIstrIO as G2stIO
-from .. import GSASIIstrMain as G2stMn
+from .. import GSASIIElem as G2el  # noqa: E402
+from .. import GSASIIfiles as G2fil  # noqa: E402
+from .. import GSASIIlattice as G2lat  # noqa: E402
+from .. import GSASIImapvars as G2mv  # noqa: E402
+from .. import GSASIImath as G2mth  # noqa: E402
+from .. import GSASIIobj as G2obj  # noqa: E402
+from .. import GSASIIpath  # noqa: E402
+from .. import GSASIIspc as G2spc  # noqa: E402
+from .. import GSASIIstrIO as G2stIO  # noqa: E402
+from .. import GSASIIstrMain as G2stMn  # noqa: E402
 
 DEBUG = False  # True to skip printing of reflection/powder profile lists
 
@@ -104,13 +104,13 @@ def getCellwStrain(phasedict, seqData, pId, histname):
         cE = G2lat.getCellEsd(
             pfx, phasedict["General"]["SGData"], A, covData, unique=True
         )
-    except:
+    except:  # noqa: E722
         cell = 7 * [None]
         cE = 7 * [None]
     return cell, cE
 
 
-def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):
+def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):  # noqa: ARG001
     """Setup sequential results table (based on code from
     :func:`GSASII.GSASIIseqGUI.UpdateSeqResults`)
 
@@ -145,7 +145,7 @@ def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):
             ESDlookup[newCellDict[item][0]] = item
             Dlookup[item] = newCellDict[item][0]
     # add coordinate equivalents to lookup table
-    for parm in atomLookup:
+    for parm in atomLookup:  # noqa: PLC0206
         Dlookup[atomLookup[parm]] = parm
         ESDlookup[parm] = atomLookup[parm]
 
@@ -191,7 +191,7 @@ def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):
     prevVaryList = []
     foundNames = []
     missing = 0
-    for i, name in enumerate(seqHistList):
+    for i, name in enumerate(seqHistList):  # noqa: B007
         if name not in seqData:
             if missing < 5:
                 print(" Warning: " + name + " not found")
@@ -262,7 +262,7 @@ def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):
         "Phi": [],
         "Azimuth": [],
     }
-    for key in sampleParmDict:
+    for key in sampleParmDict:  # noqa: PLC0206
         for h in histNames:
             var = ":" + str(Histograms[h]["hId"]) + ":" + key
             sampleParmDict[key].append(seqData[h]["parmDict"].get(var))
@@ -326,7 +326,7 @@ def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):
                     c = G2lat.A2cell(A)
                     vol = G2lat.calc_V(A)
                     cE = G2lat.getCellEsd(pfx, SGdata[pId], A, covData, unique=True)
-                except:
+                except:  # noqa: E722
                     c = 6 * [None]
                     cE = 6 * [None]
                     vol = None
@@ -340,7 +340,7 @@ def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):
             p = phaseLookup[pId]
             tblLabels += [f"{G2lat.cellAlbl[i]}, {p}" for i in uniqCellIndx[pId]]
             tblTypes += ["10,5" if i < 3 else "10,3" for i in uniqCellIndx[pId]]
-            tblLabels.append("{}, {}".format("Volume", p))
+            tblLabels.append(f"Volume, {p}")
             tblTypes += ["10,3"]
             tblValues += zip(*cells, strict=False)
             tblSigs += zip(*cellESDs, strict=False)
@@ -444,7 +444,7 @@ def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):
             continue
         wtFrList = []
         sigwtFrList = []
-        for i, name in enumerate(histNames):
+        for i, name in enumerate(histNames):  # noqa: B007
             skip = False
             if (
                 name not in Phases[phase]["Histograms"]
@@ -532,7 +532,14 @@ def RBheader(fp):
 
 # Refactored over here to allow access by GSASIIscriptable.py
 def WriteAtomsNuclear(
-    fp, phasedict, phasenam, parmDict, sigDict, labellist, RBparms=None, RBsuDict=None
+    fp,
+    phasedict,
+    phasenam,  # noqa: ARG001
+    parmDict,
+    sigDict,
+    labellist,
+    RBparms=None,
+    RBsuDict=None,
 ):
     "Write atom positions to CIF"
     # phasedict = self.Phases[phasenam] # pointer to current phase info
@@ -741,11 +748,11 @@ def WriteAtomsNuclear(
             + "\n    _restr_rigid_body.atom_site_label\n    _restr_rigid_body.site_symmetry"
             + "\n    _restr_rigid_body.class_id\n    _restr_rigid_body.details",
         )
-        for i, l in enumerate(rbAtoms):
+        for i, l in enumerate(rbAtoms):  # noqa: E741
             WriteCIFitem(fp, f"   {i + 1:5d} {l}")
 
 
-def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
+def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):  # noqa: ARG001
     "Write atom positions to CIF"
     # phasedict = self.Phases[phasenam] # pointer to current phase info
     General = phasedict["General"]
@@ -899,7 +906,7 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
         WriteCIFitem(fp, s)
 
 
-def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict, RBparms=None):
+def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict, RBparms=None):  # noqa: ARG001
     "Write atom positions to CIF using mmCIF items"
     if RBparms is None:
         RBparms = {}
@@ -992,7 +999,7 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict, RBparms=None):
     num = 0
     # uniquely index the side chains
     entity_id = {}
-    for i, at in enumerate(Atoms):
+    for i, at in enumerate(Atoms):  # noqa: B007
         if at[ct - 2] not in entity_id:
             num += 1
             entity_id[at[ct - 2]] = num
@@ -1057,7 +1064,7 @@ def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict, RBparms=None):
 
 
 # Refactored over here to allow access by GSASIIscriptable.py
-def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
+def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):  # noqa: ARG001
     "Write atom positions to CIF"
     General = phasedict["General"]
     cx, ct, cs, cia = General["AtomPtrs"]
@@ -1264,7 +1271,7 @@ def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
             + "\n    _restr_rigid_body.atom_site_label\n    _restr_rigid_body.site_symmetry"
             + "\n    _restr_rigid_body.class_id\n    _restr_rigid_body.details",
         )
-        for i, l in enumerate(rbAtoms):
+        for i, l in enumerate(rbAtoms):  # noqa: E741
             WriteCIFitem(fp, f"   {i + 1:5d} {l}")
 
 
@@ -1283,7 +1290,7 @@ def MakeUniqueLabel(lbl, labellist):
         suffix = lbl[lbl.rfind("_") + 1 :]
         try:
             i = int(suffix) + 1
-        except:
+        except:  # noqa: E722
             pass
     while prefix + "_" + str(i) in labellist:
         i += 1
@@ -1637,7 +1644,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         G2frame,
         formatName,
         extension,
-        longFormatName=None,
+        longFormatName=None,  # noqa: ARG002
     ):
         G2fil.ExportBaseclass.__init__(
             self, G2frame, formatName, extension, longFormatName=None
@@ -1689,7 +1696,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 Tlist[h] = T
         if len(Tlist) > 0:
             T = sum(Tlist.values()) / len(Tlist)
-            if max(Tlist.values()) - T > 1:
+            if max(Tlist.values()) - T > 1:  # noqa: SIM103
                 return (
                     True  # temperatures span more than 1 degree, user needs to pick one
                 )
@@ -1732,7 +1739,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 # temperatures span more than 1 degree, user needs to pick one
                 choices = [f"{T} (unweighted average)"]
                 Ti = [T]
-                for h in Tlist:
+                for h in Tlist:  # noqa: PLC0206
                     choices += [f"{Tlist[h]} (hist {h})"]
                     Ti += [Tlist[h]]
                 msg = f"The cell parameters for phase {phasenam} are from\nhistograms with different temperatures.\n\nSelect a T value below"
@@ -1751,7 +1758,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             # each histogram has different cell lengths, user needs to pick one
             choices = []
             hi = []
-            for h in DijTlist:
+            for h in DijTlist:  # noqa: PLC0206
                 choices += [f"{DijTlist[h]} (hist {h})"]
                 hi += [h]
             msg = f"There are {len(DijTlist)} sets of cell parameters for phase {phasenam}\n due to refined Hstrain values.\n\nSelect the histogram to use with the phase form list below"
@@ -1835,7 +1842,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             line += " " + datablockidDict[h]
             WriteCIFitem(self.fp, line)
 
-    def MasterExporter(self, event=None, phaseOnly=None, histOnly=None):
+    def MasterExporter(self, event=None, phaseOnly=None, histOnly=None):  # noqa: ARG002
         """Basic code to export a CIF. Export can be full or simple, as set by
         phaseOnly and histOnly which skips distances & angles, etc.
 
@@ -1874,13 +1881,9 @@ class ExportCIF(G2fil.ExportBaseclass):
                 controls = self.OverallParms["Controls"]
                 try:
                     if controls["F**2"]:
-                        thresh = "F**2>{:.1f}u(F**2)".format(
-                            controls["UsrReject"]["minF/sig"]
-                        )
+                        thresh = f"F**2>{controls['UsrReject']['minF/sig']:.1f}u(F**2)"
                     else:
-                        thresh = "F>{:.1f}u(F)".format(
-                            controls["UsrReject"]["minF/sig"]
-                        )
+                        thresh = f"F>{controls['UsrReject']['minF/sig']:.1f}u(F)"
                     WriteCIFitem(self.fp, "_reflns_threshold_expression", thresh)
                 except KeyError:
                     pass
@@ -1890,14 +1893,14 @@ class ExportCIF(G2fil.ExportBaseclass):
                 return
             try:
                 vars = str(len(self.OverallParms["Covariance"]["varyList"]))
-            except:
+            except:  # noqa: E722
                 vars = "?"
             WriteCIFitem(self.fp, "_refine_ls_number_parameters", vars)
             try:
                 GOF = G2mth.ValEsd(
                     self.OverallParms["Covariance"]["Rvals"]["GOF"], -0.009
                 )
-            except:
+            except:  # noqa: E722
                 GOF = "?"
             WriteCIFitem(self.fp, "_refine_ls_goodness_of_fit_all", GOF)
             WriteCIFitem(self.fp, "_refine_ls_shift/su_max ", values["maxshft"])
@@ -1919,13 +1922,13 @@ class ExportCIF(G2fil.ExportBaseclass):
 
             # include an overall profile r-factor, if there is more than one powder histogram
             try:
-                R = "%.5f" % (self.OverallParms["Covariance"]["Rvals"]["Rwp"] / 100.0)
+                R = f"{self.OverallParms['Covariance']['Rvals']['Rwp'] / 100.0:.5f}"
                 WriteCIFitem(self.fp, "\n# OVERALL WEIGHTED R-FACTOR")
                 WriteCIFitem(self.fp, "_refine_ls_wR_factor_obs", R)
                 # _refine_ls_R_factor_all
                 # _refine_ls_R_factor_obs
                 # WriteCIFitem(self.fp, '_refine_ls_matrix_type','userblocks')
-            except:
+            except:  # noqa: E722
                 pass
 
         def WriteOverallMM(mode=None):
@@ -1946,13 +1949,9 @@ class ExportCIF(G2fil.ExportBaseclass):
                 controls = self.OverallParms["Controls"]
                 try:
                     if controls["F**2"]:
-                        thresh = "F**2>{:.1f}u(F**2)".format(
-                            controls["UsrReject"]["minF/sig"]
-                        )
+                        thresh = f"F**2>{controls['UsrReject']['minF/sig']:.1f}u(F**2)"
                     else:
-                        thresh = "F>{:.1f}u(F)".format(
-                            controls["UsrReject"]["minF/sig"]
-                        )
+                        thresh = f"F>{controls['UsrReject']['minF/sig']:.1f}u(F)"
                     WriteCIFitem(self.fp, "_reflns.threshold_expression", thresh)
                 except KeyError:
                     pass
@@ -1962,14 +1961,14 @@ class ExportCIF(G2fil.ExportBaseclass):
                 return
             try:
                 vars = str(len(self.OverallParms["Covariance"]["varyList"]))
-            except:
+            except:  # noqa: E722
                 vars = "?"
             WriteCIFitem(self.fp, "_refine.ls_number_parameters", vars)
             try:
                 GOF = G2mth.ValEsd(
                     self.OverallParms["Covariance"]["Rvals"]["GOF"], -0.009
                 )
-            except:
+            except:  # noqa: E722
                 GOF = "?"
             WriteCIFitem(self.fp, "_refine.ls_goodness_of_fit_all", GOF)
             WriteCIFitem(self.fp, "_refine.ls_shift_over_su_max ", values["maxshft"])
@@ -1990,10 +1989,10 @@ class ExportCIF(G2fil.ExportBaseclass):
 
             # include an overall profile r-factor, if there is more than one powder histogram
             try:
-                R = "%.5f" % (self.OverallParms["Covariance"]["Rvals"]["Rwp"] / 100.0)
+                R = f"{self.OverallParms['Covariance']['Rvals']['Rwp'] / 100.0:.5f}"
                 WriteCIFitem(self.fp, "\n# OVERALL WEIGHTED R-FACTOR")
                 WriteCIFitem(self.fp, "_refine.ls_wR_factor_obs", R)
-            except:
+            except:  # noqa: E722
                 pass
 
         def writeCIFtemplate(G2dict, tmplate, defaultname="", cifKey="CIF_template"):
@@ -2026,7 +2025,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     else:
                         print(CIFobj + " not found in path!")
                         return
-                fp = open(fil)
+                fp = open(fil)  # noqa: SIM115
                 txt = fp.read()
                 fp.close()
             elif type(CIFobj) is not list and type(CIFobj) is not tuple:
@@ -2034,7 +2033,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 if not os.path.exists(CIFobj):
                     print("Error: requested template file has disappeared: " + CIFobj)
                     return
-                fp = open(CIFobj)
+                fp = open(CIFobj)  # noqa: SIM115
                 txt = fp.read()
                 fp.close()
             else:
@@ -2156,14 +2155,14 @@ class ExportCIF(G2fil.ExportBaseclass):
                 + str(terms)
                 + " terms:\n"
             )
-            l = "    "
+            l = "    "  # noqa: E741
             for i, v in enumerate(fxn[3:]):
                 name = "%sBack;%d" % (hfx, i)
                 sig = self.sigDict.get(name, -0.009)
                 if len(l) > 60:
                     txt += l + "\n"
-                    l = "    "
-                l += G2mth.ValEsd(v, sig) + ", "
+                    l = "    "  # noqa: E741
+                l += G2mth.ValEsd(v, sig) + ", "  # noqa: E741
             txt += l
             if bkgdict["nDebye"]:
                 txt += "\n  Background Debye function parameters: A, R, U:"
@@ -2373,7 +2372,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 suffix = lbl[lbl.rfind("_") + 1 :]
                 try:
                     i = int(suffix) + 1
-                except:
+                except:  # noqa: E722
                     pass
             while prefix + "_" + str(i) in labellist:
                 i += 1
@@ -2471,7 +2470,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     AtomLabels, DistArray, AngArray = G2stMn.RetDistAngle(
                         generalData["DisAglCtls"], DisAglData
                     )
-                except:
+                except:  # noqa: E722
                     print(
                         'Reset failed. To fix this, use the Reset button in the "edit distance/angle menu" for this phase'
                     )
@@ -2638,7 +2637,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     AtomLabels, DistArray, AngArray = G2stMn.RetDistAngle(
                         generalData["DisAglCtls"], DisAglData
                     )
-                except:
+                except:  # noqa: E722
                     print(
                         'Reset failed. To fix this, use the Reset button in the "edit distance/angle menu" for this phase'
                     )
@@ -2762,7 +2761,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             T = self.Histograms[histname]["Sample Parameters"]["Temperature"]
             try:
                 T = G2mth.ValEsd(T, -1.0)
-            except:
+            except:  # noqa: E722
                 pass
             WriteCIFitem(
                 self.fp,
@@ -2902,7 +2901,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 T, hRanId = self.CellHistSelection.get(phasedict["ranId"], ("?", None))
                 try:
                     T = G2mth.ValEsd(T, -1.0)
-                except:
+                except:  # noqa: E722
                     pass
             if not oneblock:
                 # temperature is written with histogram, but duplicate it
@@ -3043,7 +3042,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 "macromolecular",
             ]:  # this needs macromolecular variant, etc!
                 try:
-                    self.labellist
+                    self.labellist  # noqa: B018
                 except AttributeError:
                     self.labellist = []
                 WriteAtomsNuclear(
@@ -3058,7 +3057,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             #                                      self.RBsuDict)
             else:
                 try:
-                    self.labellist
+                    self.labellist  # noqa: B018
                 except AttributeError:
                     self.labellist = []
                 WriteAtomsMagnetic(
@@ -3116,7 +3115,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     self.fp, "_refine_diff_density_min", G2mth.ValEsd(MinMax[1], -0.009)
                 )
 
-        def WritePhaseInfoMM(phasenam, quick=True, oneblock=True):
+        def WritePhaseInfoMM(phasenam, quick=True, oneblock=True):  # noqa: ARG001
             "Write out the phase information for the selected phase for a macromolecular phase"
             WriteCIFitem(self.fp, "\n# phase info for " + str(phasenam) + " follows")
             phasedict = self.Phases[phasenam]  # pointer to current phase info
@@ -3125,7 +3124,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             T, hRanId = self.CellHistSelection.get(phasedict["ranId"], ("?", None))
             try:
                 T = G2mth.ValEsd(T, -1.0)
-            except:
+            except:  # noqa: E722
                 pass
             if not oneblock:
                 WriteCIFitem(self.fp, "_diffrn.ambient_temperature", T)
@@ -3222,7 +3221,7 @@ class ExportCIF(G2fil.ExportBaseclass):
 
             # report atom params
             try:
-                self.labellist
+                self.labellist  # noqa: B018
             except AttributeError:
                 self.labellist = []
             WriteAtomsMM(
@@ -3366,12 +3365,12 @@ class ExportCIF(G2fil.ExportBaseclass):
                     WriteCIFitem(
                         self.fp,
                         "_refine_ls_R_F_factor      ",
-                        "%.5f" % (resdblk[pfx + "Rf"] / 100.0),
+                        f"{resdblk[pfx + 'Rf'] / 100.0:.5f}",
                     )
                     WriteCIFitem(
                         self.fp,
                         "_refine_ls_R_Fsqd_factor   ",
-                        "%.5f" % (resdblk[pfx + "Rf^2"] / 100.0),
+                        f"{resdblk[pfx + 'Rf^2'] / 100.0:.5f}",
                     )
                 else:
                     WriteCIFitem(self.fp, "\n# PHASE TABLE")
@@ -3442,39 +3441,39 @@ class ExportCIF(G2fil.ExportBaseclass):
                 WriteCIFitem(
                     self.fp,
                     "_refine_ls_R_F_factor      ",
-                    "%.5f" % (resdblk[pfx + "Rf"] / 100.0),
+                    f"{resdblk[pfx + 'Rf'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_refine_ls_R_Fsqd_factor   ",
-                    "%.5f" % (resdblk[pfx + "Rf^2"] / 100.0),
+                    f"{resdblk[pfx + 'Rf^2'] / 100.0:.5f}",
                 )
 
             try:
                 WriteCIFitem(
                     self.fp,
                     "_pd_proc_ls_prof_R_factor   ",
-                    "%.5f" % (resdblk["R"] / 100.0),
+                    f"{resdblk['R'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_pd_proc_ls_prof_wR_factor  ",
-                    "%.5f" % (resdblk["wR"] / 100.0),
+                    f"{resdblk['wR'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_gsas_proc_ls_prof_R_B_factor ",
-                    "%.5f" % (resdblk["Rb"] / 100.0),
+                    f"{resdblk['Rb'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_gsas_proc_ls_prof_wR_B_factor",
-                    "%.5f" % (resdblk["wRb"] / 100.0),
+                    f"{resdblk['wRb'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_pd_proc_ls_prof_wR_expected",
-                    "%.5f" % (resdblk["wRmin"] / 100.0),
+                    f"{resdblk['wRmin'] / 100.0:.5f}",
                 )
                 if (
                     not oneblock
@@ -3482,7 +3481,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     WriteCIFitem(
                         self.fp,
                         "_refine_ls_goodness_of_fit_all",
-                        "%.2f" % (resdblk["wR"] / resdblk["wRmin"]),
+                        f"{resdblk['wR'] / resdblk['wRmin']:.2f}",
                     )
             except KeyError:
                 pass
@@ -3618,7 +3617,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                         hklmax[i] = max(hkl, hklmax[i])
                         hklmin[i] = min(hkl, hklmin[i])
                         s += PutInCol(int(hkl), 4)
-                    for I in ref[8:10]:
+                    for I in ref[8:10]:  # noqa: E741
                         s += PutInCol(G2mth.ValEsd(I, -0.0009), 10)
                     s += PutInCol(G2mth.ValEsd(ref[10], -0.9), 7)
                     dmax = max(dmax, ref[4])
@@ -3726,7 +3725,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     if lowlim <= x <= highlim:
                         pass
                     else:
-                        yw = 0.0  # show the point is not in use
+                        yw = 0.0  # show the point is not in use  # noqa: PLW2901
 
                     if fixedstep:
                         s = ""
@@ -3885,39 +3884,39 @@ class ExportCIF(G2fil.ExportBaseclass):
                 WriteCIFitem(
                     self.fp,
                     "_refine.ls_R_factor_all    ",
-                    "%.5f" % (histblk[pfx + "Rf"] / 100.0),
+                    f"{histblk[pfx + 'Rf'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_refine_ls.R_Fsqd_factor   ",
-                    "%.5f" % (histblk[pfx + "Rf^2"] / 100.0),
+                    f"{histblk[pfx + 'Rf^2'] / 100.0:.5f}",
                 )
 
             try:
                 WriteCIFitem(
                     self.fp,
                     "_pd_proc_ls_prof_R_factor   ",
-                    "%.5f" % (histblk["R"] / 100.0),
+                    f"{histblk['R'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_pd_proc_ls_prof_wR_factor  ",
-                    "%.5f" % (histblk["wR"] / 100.0),
+                    f"{histblk['wR'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_gsas_proc_ls_prof_R_B_factor ",
-                    "%.5f" % (histblk["Rb"] / 100.0),
+                    f"{histblk['Rb'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_gsas_proc_ls_prof_wR_B_factor",
-                    "%.5f" % (histblk["wRb"] / 100.0),
+                    f"{histblk['wRb'] / 100.0:.5f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_pd_proc_ls_prof_wR_expected",
-                    "%.5f" % (histblk["wRmin"] / 100.0),
+                    f"{histblk['wRmin'] / 100.0:.5f}",
                 )
             except KeyError:
                 pass
@@ -4046,7 +4045,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                         hklmax[i] = max(hkl, hklmax[i])
                         hklmin[i] = min(hkl, hklmin[i])
                         s += PutInCol(int(hkl), 4)
-                    for I in ref[8:10]:
+                    for I in ref[8:10]:  # noqa: E741
                         s += PutInCol(G2mth.ValEsd(I, -0.0009), 14)
                     s += PutInCol(G2mth.ValEsd(ref[10], -0.9), 7)
                     dmax = max(dmax, ref[4])
@@ -4128,7 +4127,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     if lowlim <= x <= highlim:
                         pass
                     else:
-                        yw = 0.0  # show the point is not in use
+                        yw = 0.0  # show the point is not in use  # noqa: PLW2901
 
                     if fixedstep:
                         s = ""
@@ -4276,20 +4275,20 @@ class ExportCIF(G2fil.ExportBaseclass):
                 WriteCIFitem(
                     self.fp,
                     "_refine_ls_wR_factor_gt    ",
-                    "%.4f" % (histblk["wR"] / 100.0),
+                    f"{histblk['wR'] / 100.0:.4f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_refine_ls_R_factor_gt     ",
-                    "%.4f" % (histblk[hfx + "Rf"] / 100.0),
+                    f"{histblk[hfx + 'Rf'] / 100.0:.4f}",
                 )
                 WriteCIFitem(
                     self.fp,
                     "_refine_ls_R_Fsqd_factor   ",
-                    "%.4f" % (histblk[hfx + "Rf^2"] / 100.0),
+                    f"{histblk[hfx + 'Rf^2'] / 100.0:.4f}",
                 )
 
-        def EditAuthor(event=None):
+        def EditAuthor(event=None):  # noqa: ARG001
             "dialog to edit the CIF author info"
             "Edit the CIF author name"
             from .. import GSASIIctrlGUI as G2G
@@ -4312,7 +4311,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 pass
             return True
 
-        def EditInstNames(event=None):
+        def EditInstNames(event=None):  # noqa: ARG001
             "Provide a dialog for editing instrument names; for sequential fit, only need one name"
             from .. import GSASIIctrlGUI as G2G
 
@@ -4405,7 +4404,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     but = wx.Button(self.cifdefs, wx.ID_ANY, "Show error(s)")
                     but.Bind(
                         wx.EVT_BUTTON,
-                        lambda event: G2G.ShowScrolledInfo(
+                        lambda event: G2G.ShowScrolledInfo(  # noqa: ARG005
                             self.cifdefs,
                             "\n\n".join(errormsg),
                             header="Error message(s)",
@@ -4427,7 +4426,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     but = wx.Button(self.cifdefs, wx.ID_ANY, "Show warning(s)")
                     but.Bind(
                         wx.EVT_BUTTON,
-                        lambda event: G2G.ShowScrolledInfo(
+                        lambda event: G2G.ShowScrolledInfo(  # noqa: ARG005
                             self.cifdefs,
                             "\n\n".join(warnmsg),
                             header="Warning(s)",
@@ -4607,7 +4606,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         def keepFalse(event):
             event.GetEventObject().SetValue(False)
 
-        def _ResetSelT(event):
+        def _ResetSelT(event):  # noqa: ARG001
             self.CellHistSelection = {}
             for phasenam in sorted(self.Phases):
                 rId = phasedict["ranId"]
@@ -4760,7 +4759,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                         but.SetValue(True)
                     but.Bind(wx.EVT_TOGGLEBUTTON, OnToggleButton)
                     dbox.Add(but, (i + 1, 2), border=1)
-                for i, D in enumerate(AngArray[c]):
+                for i, D in enumerate(AngArray[c]):  # noqa: B007
                     val = f"{D[2][0]:.1f}"
                     but = wx.ToggleButton(cpnl, wx.ID_ANY, val)
                     but.key = (karr[D[0]], c, karr[D[1]])
@@ -4808,7 +4807,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         # ==============================================================================
         ####  MasterExporter code starts here    ======================================
         # ==============================================================================
-        global errormsg, warnmsg
+        global errormsg, warnmsg  # noqa: PLW0602
         errormsg.clear()
         warnmsg.clear()
         values["maxshft"] = "?"
@@ -5727,7 +5726,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                         )
                         WriteCIFitem(self.fp, loopprefix, datablockidDict[phasenam])
                 else:  # phase in overall block
-                    for phasenam in sorted(self.Phases):
+                    for phasenam in sorted(self.Phases):  # noqa: B007
                         break
                     datablockidDict[phasenam] = (
                         str(self.CIFdate)
@@ -5766,7 +5765,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     histblk = self.Histograms[hist]
                     instnam = histblk["Instrument Parameters"][0]["InstrName"]
                     instnam = instnam.replace(" ", "")
-                    i = histblk["hId"]
+                    i = histblk["hId"]  # noqa: PLW2901
                     datablockidDict[hist] = (
                         str(self.CIFdate)
                         + "|"
@@ -5967,7 +5966,7 @@ class ExportProjectCIF(ExportCIF):
             return
         try:
             from .. import GSASIIctrlGUI as G2G
-        except:
+        except:  # noqa: E722
             print("Unable to export without GSASIIctrlGUI access")
             return
         try:
@@ -5976,7 +5975,7 @@ class ExportProjectCIF(ExportCIF):
             try:
                 from .. import CifFile as cif  # PyCifRW, as distributed w/G2 (old)
 
-                cif
+                cif  # noqa: B018
             except ImportError:
                 msg = "The PyCifRW package is not installed. CIF templates cannot be accessed. Created CIFs will be incomplete"
                 G2G.G2MessageBox(self.G2frame, msg, "no PyCifRW")
@@ -6014,7 +6013,7 @@ class ExportPhaseCIF(ExportCIF):
     def mergeMag(self, G2frame, ChemPhase, MagPhase):
         from .. import GSASIIctrlGUI as G2G
 
-        def onChange(*args, **kwargs):
+        def onChange(*args, **kwargs):  # noqa: ARG001
             wx.CallLater(100, showMergeMag)
 
         def showMergeMag():
@@ -6065,7 +6064,7 @@ class ExportPhaseCIF(ExportCIF):
                     ):
                         cellsSame = False
                         break
-            except:
+            except:  # noqa: E722
                 mainSizer.Add(
                     wx.StaticText(dlg, label=" Computational error: singular matrix?")
                 )
@@ -6139,10 +6138,10 @@ class ExportPhaseCIF(ExportCIF):
                 mainSizer.Add(atomSizer)
             mainSizer.Add((0, 15))
             OkBtn = wx.Button(dlg, wx.ID_ANY, "Merge phases")
-            OkBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+            OkBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))  # noqa: ARG005
             OkBtn.Enable(cellsSame)
             cancelBtn = wx.Button(dlg, wx.ID_ANY, "Cancel")
-            cancelBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+            cancelBtn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))  # noqa: ARG005
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
             btnSizer.Add((20, 20), 1)
             btnSizer.Add(OkBtn)
@@ -6190,7 +6189,7 @@ class ExportPhaseCIF(ExportCIF):
                     Trans = out[0][
                         5
                     ]  # assume all transformations are equivalent, take 1st
-            except:
+            except:  # noqa: E722
                 pass
         dlg = wx.Dialog(
             G2frame,
@@ -6427,7 +6426,7 @@ def PickleCIFdict(fil):
             return {}
     cifdic = {}
     try:
-        fp = open(fil)  # patch: open file to avoid windows bug
+        fp = open(fil)  # patch: open file to avoid windows bug  # noqa: SIM115
         dictobj = cif.CifDic(fp)
         fp.close()
     except OSError:
@@ -6446,11 +6445,11 @@ def PickleCIFdict(fil):
                 cifdic[item][j] = dictobj[item][j]
     try:
         fil = os.path.splitext(fil)[0] + ".cpickle"
-        fp = open(fil, "wb")
+        fp = open(fil, "wb")  # noqa: SIM115
         pickle.dump(cifdic, fp)
         fp.close()
         # if DEBUG: print('wrote '+fil)
-    except:
+    except:  # noqa: E722
         print("Unable to write " + fil)
     return cifdic
 
@@ -6471,7 +6470,7 @@ def LoadCIFdic():
             fil = os.path.join(loc, ftyp + ".cpickle")
             if not os.path.exists(fil):
                 continue
-            fp = open(fil, "rb")
+            fp = open(fil, "rb")  # noqa: SIM115
             try:
                 cifdic.update(pickle.load(fp))
                 # if DEBUG: print('reloaded '+fil)
@@ -6512,7 +6511,7 @@ class CIFdefHelp(wx.Button):
         self.helpwin = helpwin
         self.helptxt = helptxt
 
-    def _onPress(self, event):
+    def _onPress(self, event):  # noqa: ARG002
         "Respond to a button press by displaying the requested text"
         try:
             ww, wh = self.helpwin.GetSize()
@@ -6523,7 +6522,7 @@ class CIFdefHelp(wx.Button):
             if h > oh:  # resize the help area if needed, but avoid changing width
                 self.helptxt.SetMinSize((ww, h))
                 self.helpwin.GetSizer().Fit(self.helpwin)
-        except:  # error posting help, ignore
+        except:  # error posting help, ignore  # noqa: E722
             return
 
 
@@ -6636,7 +6635,7 @@ class EditCIFtemplate(wx.Dialog):
         self.newfile = None
         self.defaultname = defaultname
         self.G2frame = parent.G2frame
-        global CIFdic  # once this is loaded, keep it around
+        global CIFdic  # once this is loaded, keep it around  # noqa: PLW0603
         if CIFdic is None:
             CIFdic = LoadCIFdic()
         wx.Dialog.__init__(
@@ -6649,7 +6648,7 @@ class EditCIFtemplate(wx.Dialog):
         OKbuttons.append(savebtn)
         savebtn.Bind(wx.EVT_BUTTON, self._onSave)
         OKbtn = wx.Button(self, wx.ID_OK, "Use")
-        OKbtn.Bind(wx.EVT_BUTTON, lambda x: self.EndModal(wx.ID_OK))
+        OKbtn.Bind(wx.EVT_BUTTON, lambda x: self.EndModal(wx.ID_OK))  # noqa: ARG005
         OKbtn.SetDefault()
         OKbuttons.append(OKbtn)
 
@@ -6678,7 +6677,7 @@ class EditCIFtemplate(wx.Dialog):
         """
         return self.ShowModal() == wx.ID_OK
 
-    def _onSave(self, event):
+    def _onSave(self, event):  # noqa: ARG002
         "Save CIF entries in a template file"
         from .. import GSASIIctrlGUI as G2G
 
@@ -6696,7 +6695,7 @@ class EditCIFtemplate(wx.Dialog):
         dlg.Destroy()
         if val:  # ignore a Cancel button
             fil = os.path.splitext(fil)[0] + ".cif"  # force extension
-            fp = open(fil, "w")
+            fp = open(fil, "w")  # noqa: SIM115
             newcf = dict2CIF(self.cifblk, self.loopstructure)
             fp.write(newcf.WriteOut())
             fp.close()
@@ -6794,11 +6793,11 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                     # fbox.Add(ent,(j+2,i+1),flag=wx.EXPAND|wx.ALL)
                     fbox.Add(ent, (j + 1, i + 1), flag=wx.EXPAND | wx.ALL)
                 if self.cifdic.get(item):
-                    df = self.cifdic[item].get("_definition")
+                    df = self.cifdic[item].get("_definition")  # noqa: PD901
                     if df:
                         try:
                             txt.SetToolTip(G2fil.trim(df))
-                        except:
+                        except:  # noqa: E722
                             txt.SetToolTipString(G2fil.trim(df))
                         but = CIFdefHelp(
                             self,
@@ -6824,11 +6823,11 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                 ent = self.CIFEntryWidget(self.cifblk, item, item)
                 hbox.Add(ent)
                 if self.cifdic.get(item):
-                    df = self.cifdic[item].get("_definition")
+                    df = self.cifdic[item].get("_definition")  # noqa: PD901
                     if df:
                         try:
                             txt.SetToolTip(G2fil.trim(df))
-                        except:
+                        except:  # noqa: E722
                             txt.SetToolTipString(G2fil.trim(df))
                         but = CIFdefHelp(
                             self,
@@ -6845,7 +6844,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
         self.Layout()
         wx.EndBusyCursor()
 
-    def OnLayoutNeeded(self, event):
+    def OnLayoutNeeded(self, event):  # noqa: ARG002
         """Called when an update of the panel layout is needed. Calls
         self.DoLayout after the current operations are complete using
         CallAfter. This is called only once, according to flag
@@ -6987,7 +6986,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         defaultname="",
         cifKey="CIF_template",
     ):
-        def _onResetTemplate(event):
+        def _onResetTemplate(event):  # noqa: ARG001
             self.CIF_template = resetTemplate
             self.dict[self.cifKey] = None
             wx.CallAfter(self.repaint)
@@ -7104,7 +7103,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         hbox.Add(but, 0, 0, 2)
         self.Add(hbox)
 
-    def _onGetTemplateFile(self, event):
+    def _onGetTemplateFile(self, event):  # noqa: ARG002
         "select a template file"
         from .. import GSASIIctrlGUI as G2G
 
@@ -7131,7 +7130,7 @@ class CIFtemplateSelect(wx.BoxSizer):
             self.dict[self.cifKey] = fil
             wx.CallAfter(self.repaint)
 
-    def _onEditTemplateContents(self, event):
+    def _onEditTemplateContents(self, event):  # noqa: ARG002
         "Called to edit the contents of a CIF template"
         if type(self.CIF_template) is list or type(self.CIF_template) is tuple:
             dblk, loopstructure = copy.deepcopy(

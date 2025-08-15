@@ -11,7 +11,7 @@ import tempfile
 
 home = os.path.dirname(__file__)
 work = tempfile.gettempdir()
-import importlib.util
+import importlib.util  # noqa: E402
 
 G2loc = None
 try:
@@ -23,7 +23,7 @@ if G2loc is None:  # fixup path if GSASII not installed into Python
     print("GSAS-II not installed in Python; Hacking sys.path")
     sys.path.append(os.path.dirname(home))
 
-import GSASII.GSASIIscriptable as G2sc
+import GSASII.GSASIIscriptable as G2sc  # noqa: E402
 
 
 def test_image():
@@ -32,7 +32,7 @@ def test_image():
     """
     print("Testing read, mask & integration of MAR image")
     try:
-        import requests
+        import requests  # noqa: F401
     except ModuleNotFoundError:
         print("Module requests not installed, test_image cannot be run")
         return
@@ -77,7 +77,7 @@ def test_CBF():
     "Read in a CBF image (tests unpack_cbf module)"
     print("Testing read of CBF image")
     try:
-        import requests
+        import requests  # noqa: F401
     except ModuleNotFoundError:
         print("Module requests not installed, test_CBF cannot be run")
         return

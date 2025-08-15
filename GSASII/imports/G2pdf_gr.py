@@ -19,7 +19,7 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid r-step file"
-        filepointer = open(filename)
+        filepointer = open(filename)  # noqa: SIM115
         Ndata = 0
         for _i, S in enumerate(filepointer):
             if "#L" in S[:2]:
@@ -30,7 +30,7 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -41,12 +41,12 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
         filepointer.close()
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a q-step text file")
         x = []
         y = []
         ifData = False
-        filepointer = open(filename)
+        filepointer = open(filename)  # noqa: SIM115
         for i, S in enumerate(filepointer):
             if not ifData:
                 if "#L" in S[:2]:
@@ -96,7 +96,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid r-step file"
-        filepointer = open(filename)
+        filepointer = open(filename)  # noqa: SIM115
         Ndata = 0
         for _i, S in enumerate(filepointer):
             if "#L r" in S[:4]:
@@ -105,7 +105,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -116,12 +116,12 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
         filepointer.close()
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a r-step text file")
         x = []
         y = []
         ifData = False
-        filepointer = open(filename)
+        filepointer = open(filename)  # noqa: SIM115
         self.Type = "N g(r)"
         for i, S in enumerate(filepointer):
             if not ifData:
@@ -170,7 +170,7 @@ class txt_PDFReaderClassG(G2obj.ImportPDFData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid r-step file"
-        filepointer = open(filename)
+        filepointer = open(filename)  # noqa: SIM115
         Ndata = 0
         for i, S in enumerate(filepointer):
             if i < 2:
@@ -178,7 +178,7 @@ class txt_PDFReaderClassG(G2obj.ImportPDFData):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -189,11 +189,11 @@ class txt_PDFReaderClassG(G2obj.ImportPDFData):
         filepointer.close()
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a r-step text file")
         x = []
         y = []
-        filepointer = open(filename)
+        filepointer = open(filename)  # noqa: SIM115
         for i, S in enumerate(filepointer):
             if i < 2:
                 continue

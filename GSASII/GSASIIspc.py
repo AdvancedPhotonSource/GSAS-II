@@ -10,7 +10,7 @@ import scipy.optimize as so
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIlattice as G2lat
+from . import GSASIIlattice as G2lat  # noqa: E402
 
 try:
     if GSASIIpath.binaryPath:
@@ -395,7 +395,7 @@ def SGErrors(IErr):
     ]
     try:
         return ErrString[IErr]
-    except:
+    except:  # noqa: E722
         return "Unknown error"
 
 
@@ -894,7 +894,7 @@ def Latt2text(Cen):
                 continue
             if icen < 0:
                 txt += "-"
-                icen *= -1
+                icen *= -1  # noqa: PLW2901
             for mul, prod, frac in zip(mulList, prodList, fracList, strict=False):
                 if abs(icen * mul - prod) < 1.0e-5:
                     txt += frac + ","
@@ -916,7 +916,7 @@ def SpaceGroup(SGSymbol):
     if E > 0:
         print(SGErrors(E))
         return
-    for l in SGPrint(A):
+    for l in SGPrint(A):  # noqa: E741
         print(l)
 
 
@@ -1277,10 +1277,10 @@ def CheckSpin(isym, SGData):
         if SGData["SGSpin"][1] * SGData["SGSpin"][2] * SGData["SGSpin"][3] < 0:
             SGData["SGSpin"][(isym + 1) % 3 + 1] *= -1
         if SGData["SpGrp"][0] == "F" and isym > 2:
-            SGData["SGSpin"][(isym + 1) % 3 + 3] == 1
+            SGData["SGSpin"][(isym + 1) % 3 + 3] == 1  # noqa: B015
     elif SGData["SGPtGrp"] == "mmm":
         if SGData["SpGrp"][0] == "F" and isym > 2:
-            SGData["SGSpin"][(isym + 1) % 3 + 3] == 1
+            SGData["SGSpin"][(isym + 1) % 3 + 3] == 1  # noqa: B015
 
 
 def MagSGSym(SGData):  # needs to use SGPtGrp not SGLaue!
@@ -1291,7 +1291,7 @@ def MagSGSym(SGData):  # needs to use SGPtGrp not SGLaue!
         ] + SGData["GenSym"]
         SGData["SGSpin"] = [1, *list(SGData["SGSpin"])]
     if len(SGData["SGSpin"]) < len(SGData["GenSym"]):
-        SGData["SGSpin"] = [
+        SGData["SGSpin"] = [  # noqa: RUF005
             1,
         ] + list(SGData["SGSpin"])  # end patch
     GenSym = SGData["GenSym"][1:]  # skip identity
@@ -1538,7 +1538,7 @@ def Trans2Text(Trans):
 
 
 def getlattSym(Trans):
-    Fives = {
+    Fives = {  # noqa: F841
         "ababc": "abc",
         "bcbca": "cba",
         "acacb": "acb",
@@ -1560,7 +1560,7 @@ def getlattSym(Trans):
     return lattSym
 
 
-def Text2MT(mcifOpr, CIF=True):
+def Text2MT(mcifOpr, CIF=True):  # noqa: ARG001
     "From space group cif text returns matrix/translation"
     XYZ = {
         "x": [1, 0, 0],
@@ -1601,7 +1601,7 @@ def Text2MT(mcifOpr, CIF=True):
     return np.array(M), np.array(T)
 
 
-def MagText2MTS(mcifOpr, CIF=True):
+def MagText2MTS(mcifOpr, CIF=True):  # noqa: ARG001
     "From magnetic space group cif text returns matrix/translation + spin flip"
     XYZ = {
         "x": [1, 0, 0],
@@ -1782,7 +1782,7 @@ def GetSGSpin(SGData, MSgSym):
                     mSpn[1:3] = [-1, 1]
         elif len(GenSym):
             if "c" not in mFlds[2]:
-                i, j = [1, 2]
+                i, j = [1, 2]  # noqa: F841
                 if "'" in mFlds[i]:
                     mSpn[1:3] = [1, -1]
                 elif "'" in mFlds[i]:
@@ -1821,7 +1821,7 @@ def GenMagOps(SGData):
     sgOps = []
     OprNames = []
     detMs = []
-    for incv in range(Ncv):
+    for incv in range(Ncv):  # noqa: B007
         Nsyms += Nsym
         sgOps += sgOp
         detMs += detM
@@ -2024,7 +2024,7 @@ def SSpcGroup(SGData, SSymbol):
                 }  # OK
             a = findMod(SSGData["modSymb"])
             OrFrac = OrOps[a]
-            for j in iFrac:
+            for j in iFrac:  # noqa: PLC0206
                 for i in OrFrac[j]:
                     SSGOps[i][0][3, j] = -2.0 * eval(iFrac[j]) * SSGKl[i - 1]
             for i in [0, 1, 2]:
@@ -2047,7 +2047,7 @@ def SSpcGroup(SGData, SSymbol):
             else:
                 SSkl = [1, -1, -1]
             OrFrac = OrOps[a]
-            for j in iFrac:
+            for j in iFrac:  # noqa: PLC0206
                 for i in OrFrac[j]:
                     SSGOps[i][0][3, j] = -2.0 * eval(iFrac[j]) * SSkl[i - 1]
             for i in [0, 1, 2]:
@@ -2313,7 +2313,7 @@ def SSpcGroup(SGData, SSymbol):
                 print(SSMT2text(Op).replace(" ", ""))
             if SGData["SGInv"]:
                 for Op in Result:
-                    Op = [-Op[0], -Op[1] % 1.0]
+                    Op = [-Op[0], -Op[1] % 1.0]  # noqa: PLW2901
                     print(SSMT2text(Op).replace(" ", ""))
         return None, SSGData
     else:
@@ -2873,7 +2873,7 @@ def SSpaceGroup(SGSymbol, SSymbol):
     if E > 0:
         print(E)
         return
-    for l in SSGPrint(B):
+    for l in SSGPrint(B):  # noqa: E741
         print(l)
 
 
@@ -2944,7 +2944,7 @@ def Opposite(XYZ, toler=0.0002):
     cperm = ["%d,%d,%d" % (i, j, k) for i, j, k in perm]
     D = dict(zip(cperm, perm, strict=False))
     new = {}
-    for key in D:
+    for key in D:  # noqa: PLC0206
         new[key] = np.array(D[key]) + np.array(XYZ)
     return new
 
@@ -3055,7 +3055,7 @@ def GenHKLf(HKL, SGData):
      *   phi = phase offset for each equivalent h,k,l
 
     """
-    hklf = list(HKL) + [
+    hklf = list(HKL) + [  # noqa: RUF005
         0,
     ]  # could be numpy array!
     Ops = SGData["SGOps"]
@@ -3066,7 +3066,7 @@ def GenHKLf(HKL, SGData):
     Nuniq, Uniq, iabsnt, mulp = pyspg.genhklpy(
         hklf, len(Ops), OpM, OpT, SGData["SGInv"], len(Cen), Cen
     )
-    h, k, l, f = Uniq
+    h, k, l, f = Uniq  # noqa: E741
     Uniq = np.array(list(zip(h[:Nuniq], k[:Nuniq], l[:Nuniq], strict=False)))
     phi = f[:Nuniq]
     return iabsnt, mulp, Uniq, phi
@@ -3074,7 +3074,7 @@ def GenHKLf(HKL, SGData):
 
 def checkSSLaue(HKL, SGData, SSGData):
     # Laue check here - Toss HKL if outside unique Laue part
-    h, k, l, m = HKL
+    h, k, l, m = HKL  # noqa: E741
     if SGData["SGLaue"] == "2/m":
         if SGData["SGUniq"] == "a":
             return not (
@@ -3861,7 +3861,7 @@ def GetCSpqinel(SpnFlp, dupDir):
     return CSI
 
 
-def getTauT(tau, sop, ssop, XYZ, wave=np.zeros(3)):
+def getTauT(tau, sop, ssop, XYZ, wave=np.zeros(3)):  # noqa: B008
     phase = np.sum(XYZ * wave)
     ssopinv = nl.inv(ssop[0])
     mst = ssopinv[3][:3]
@@ -4005,7 +4005,7 @@ def GetSSfxuinel(waveType, Stype, nH, XYZ, SGData, SSGData, debug=False):
                         FSC = np.zeros(2, dtype="i")
                         return CSI, dF, dFTP
                     else:
-                        for i in range(2):
+                        for i in range(2):  # noqa: PLW2901
                             if np.allclose(dF[i, :], dFT[i, :], atol=1.0e-6):
                                 fsc[i] = 1
                             else:
@@ -4104,7 +4104,7 @@ def GetSSfxuinel(waveType, Stype, nH, XYZ, SGData, SSGData, debug=False):
                 dXT[:, :3, :] *= ssdet * sdet  # modify the sin component
                 dXTP.append(dXT)
                 if waveType == "Fourier":
-                    for i in range(3):
+                    for i in range(3):  # noqa: PLW2901
                         if not np.allclose(dX[i, i, :], dXT[i, i, :]):
                             xsc[i] = 0
                         if not np.allclose(dX[i, i + 3, :], dXT[i, i + 3, :]):
@@ -4210,7 +4210,7 @@ def GetSSfxuinel(waveType, Stype, nH, XYZ, SGData, SSGData, debug=False):
                                 CSI[1][:2] = [[1.0, 0, 0], [mul, 0, 0]]
                                 xsc[:2] = 0
                 else:
-                    for i in range(3):
+                    for i in range(3):  # noqa: PLW2901
                         if not np.allclose(dX[:, i], dXT[i, :, i]):
                             xsc[i] = 0
                 XSC &= xsc
@@ -4405,14 +4405,14 @@ def GetSSfxuinel(waveType, Stype, nH, XYZ, SGData, SSGData, debug=False):
                             [-dT, 0.0, 0.0],
                             [-dT, 0.0, 0.0],
                         )
-                    for i in range(6):
+                    for i in range(6):  # noqa: PLW2901
                         if not USC[i]:
                             CSI[0][i] = [0, 0, 0]
                             CSI[1][i] = [0.0, 0.0, 0.0]
                             CSI[0][i + 6] = [0, 0, 0]
                             CSI[1][i + 6] = [0.0, 0.0, 0.0]
                 else:
-                    for i in range(6):
+                    for i in range(6):  # noqa: PLW2901
                         if not np.allclose(dU[i, i, :], dUT[i, i, :]):  # sin part
                             usc[i] = 0
                         if not np.allclose(
@@ -4554,7 +4554,7 @@ def GetSSfxuinel(waveType, Stype, nH, XYZ, SGData, SSGData, debug=False):
                 dMT = np.swapaxes(dMT, 1, 2)  # back to array(3x6x49)
                 dMT[:, :3, :] *= ssdet * sdet  # modify the sin component
                 dMTP.append(dMT)
-                for i in range(3):
+                for i in range(3):  # noqa: PLW2901
                     if not np.allclose(dM[i, i, :], sdet * dMT[i, i, :]):
                         msc[i] = 0
                     if not np.allclose(dM[i, i + 3, :], sdet * dMT[i, i + 3, :]):
@@ -4838,7 +4838,7 @@ def MustrainCoeff(HKL, SGData):
     # NB: order of terms is the same as returned by MustrainNames
     laue = SGData["SGLaue"]
     uniq = SGData["SGUniq"]
-    h, k, l = HKL
+    h, k, l = HKL  # noqa: E741
     Strm = []
     if laue in ["m3", "m3m"]:
         Strm.append(h**4 + k**4 + l**4)
@@ -5055,7 +5055,7 @@ def SytSym(XYZ, SGData):
         Isym = 0
     try:
         Mult = len(SGData["SGOps"]) * Ncen * inv // Jdup
-    except:  # patch because Jdup is not getting incremented for most atoms!
+    except:  # patch because Jdup is not getting incremented for most atoms!  # noqa: E722
         Mult = 0
 
     return GetKNsym(str(Isym)), Mult, Ndup, dupDir
@@ -5412,7 +5412,7 @@ def ElemPosition(SGData):
         Dt = -(Dt - 1) // 2
         Es = eleSym[Tr][Dt]
         if Dt:  # rotation-inversion
-            I = np.eye(3)
+            I = np.eye(3)  # noqa: E741
             if Tr == 1:  # mirrors/glides
                 if np.any(T):  # glide
                     M2 = np.inner(M, M)
@@ -5680,7 +5680,7 @@ def ParseXYZ(sym):
     multMat = []
     offsetVec = []
     for o in xyz:
-        o = o.lower()
+        o = o.lower()  # noqa: PLW2901
         op = [0, 0, 0]
         offset = copy.copy(o)
         for i, v in enumerate(("x", "y", "z")):
@@ -5725,11 +5725,11 @@ def CompareSym(symList, sgName=None, SGData=None):
     for sym in symList:
         try:
             syMat = ParseXYZ(sym)
-        except:
+        except:  # noqa: E722
             print(f"Ignoring unparsable sym op {sym}")
             continue
 
-        for i, mat in enumerate(matList):
+        for i, mat in enumerate(matList):  # noqa: B007
             if np.allclose(mat[0], syMat[0]) and np.allclose(
                 offsetNorm(mat[1]), offsetNorm(syMat[1])
             ):
@@ -5765,13 +5765,13 @@ def GetHallSpaceGroup(SGData):
     try:
         key = SGData["SpGrp"].lower().replace(" ", "")
         return spgHall[key][0]
-    except:
+    except:  # noqa: E722
         pass
     # H is also allowed as suffix for Hexagonal & trigonal SGs (remove it)
     if key[0] == "p" and key[-1] == "h":
         try:
             return spgHall[key[:-1]][0]
-        except:
+        except:  # noqa: E722
             pass
     if key[1:3] in ["m3", "n3", "a3", "d3"]:  # fix old-style cubic names
         keyB3 = key.replace("3", "-3")

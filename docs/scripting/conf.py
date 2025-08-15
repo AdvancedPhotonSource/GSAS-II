@@ -12,6 +12,8 @@
 import os
 import sys
 
+import git
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -30,9 +32,8 @@ try:
         version = git_verinfo.git_tags[0]
     elif len(git_verinfo.git_prevtags) >= 1:
         version = git_verinfo.git_prevtags[0]
-except:
+except:  # noqa: E722
     print("error importing git_verinfo.py")
-import git
 
 g2repo = git.Repo(os.path.abspath(os.path.join("..", "..")))
 git_version = g2repo.head.commit.hexsha[:6]
@@ -44,7 +45,7 @@ for h in list(g2repo.iter_commits("HEAD"))[:50]:  # (don't go too far back)
             if item.isnumeric():
                 version = int(item)
                 break
-        except:
+        except:  # noqa: E722
             pass
     if version:
         break

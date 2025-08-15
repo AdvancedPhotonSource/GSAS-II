@@ -253,7 +253,7 @@ def ApplyRBModels(parmDict, Phases, rigidbodyDict, Update=False):
                     parmDict[pfx + "AUiso:" + str(AtLookup[atId])] = UIJ[i][1]
                     changedPrms.append(pfx + "AUiso:" + str(AtLookup[atId]))
 
-        for irb, RBObj in enumerate(RBModels.get("Spin", [])):
+        for irb, RBObj in enumerate(RBModels.get("Spin", [])):  # noqa: B007
             iAt = AtLookup[RBObj["Ids"][0]]
             jrb = SRBIds.index(RBObj["RBId"][0])
             name = pfx + "RBSOa:%d:%d" % (iAt, jrb)
@@ -570,7 +570,7 @@ def computeRBsu(parmDict, Phases, rigidbodyDict, covMatrix, CvaryList, Csig):
             prms[dk] = 0
 
     RBData = copy.deepcopy(rigidbodyDict)  # don't mess with original!
-    prms = copy.deepcopy(parmDict)
+    prms = copy.deepcopy(parmDict)  # noqa: F841
     if len(covMatrix) == 0:
         return {}
 
@@ -607,7 +607,7 @@ def computeRBsu(parmDict, Phases, rigidbodyDict, covMatrix, CvaryList, Csig):
 
 def MakeSpHarmFF(
     HKL,
-    Amat,
+    Amat,  # noqa: ARG001
     Bmat,
     SHCdict,
     Tdata,
@@ -723,7 +723,7 @@ def MakeSpHarmFF(
                     FF[:, iAt] += Nat * SFF * R0  # Bessel function; L=0 term
                 for item in Shell:
                     if "C(" in item:
-                        l, m = eval(item.strip("C").strip("c"))
+                        l, m = eval(item.strip("C").strip("c"))  # noqa: E741
                         SH = G2lat.KslCalc(item, Th, Ph)
                         SHP = G2lat.KslCalc(item, ThP, PhP)
                         SHPi = G2lat.KslCalc(item, ThPi, PhPi)
@@ -999,12 +999,12 @@ def penaltyFxn(HistoPhases, calcControls, parmDict, varyList):
                         for i, [indx, obs, esd] in enumerate(itemRest[rest]):
                             pNames.append(str(pId) + ":" + name + ":" + str(i))
                             moms = G2mth.GetAtomMomsByID(pId, parmDict, AtLookup, indx)
-                            obs = 0.0
+                            obs = 0.0  # noqa: PLW2901
                             calcs = []
-                            for i, mom in enumerate(moms):
+                            for i, mom in enumerate(moms):  # noqa: B007, PLW2901
                                 calcs.append(G2mth.GetMag(mom, cell))
-                                obs += calcs[-1]
-                            obs /= len(indx)
+                                obs += calcs[-1]  # noqa: PLW2901
+                            obs /= len(indx)  # noqa: PLW2901
                             for calc in calcs:
                                 pVals.append(obs - calc)
                                 pWt.append(wt / esd**2)
@@ -1077,9 +1077,9 @@ def penaltyFxn(HistoPhases, calcControls, parmDict, varyList):
                                 pWsum[name] += wt * ((obs - calc) / esd) ** 2
                                 pWnum[name] += 1
                                 pNames.append(str(pId) + ":" + name + ":" + str(i))
-                            except:
+                            except:  # noqa: E722
                                 print(f"Error computing General restraint #{i + 1}")
-            except:
+            except:  # noqa: E722
                 pass
     for phase in Phases:
         name = "SH-Pref.Ori."
@@ -1110,7 +1110,7 @@ def penaltyFxn(HistoPhases, calcControls, parmDict, varyList):
                     for i, PH in enumerate(HKLs):
                         phi, beta = G2lat.CrsAng(PH, cell, SGData)
                         SH3Coef = {}
-                        for item in SHcof:
+                        for item in SHcof:  # noqa: PLC0206
                             L, N = eval(item.strip("C"))
                             SH3Coef["C%d,0,%d" % (L, N)] = SHcof[item]
                         ODFln = G2lat.Flnh(SH3Coef, phi, beta, SGData)
@@ -1277,7 +1277,7 @@ def penaltyDeriv(pNames, pVal, HistoPhases, calcControls, parmDict, varyList):
                             gam = float(pnames[3])
                             psi = float(pnames[4])
                             for SHname in ODFln:
-                                l, m, n = eval(SHname[1:])
+                                l, m, n = eval(SHname[1:])  # noqa: E741
                                 Ksl = G2lat.GetKsl(l, m, sam, psi, gam)[0]
                                 dNames += [str(pId) + "::" + SHname]
                                 deriv.append(-ODFln[SHname][0] * Ksl / SHCoef[SHname])
@@ -1335,7 +1335,7 @@ def penaltyDeriv(pNames, pVal, HistoPhases, calcControls, parmDict, varyList):
                             pDerv[ind][ip] += drv
                         except ValueError:
                             pass
-            except:
+            except:  # noqa: E722
                 pass
 
         lasthkl = np.array([0, 0, 0])
@@ -1358,13 +1358,13 @@ def penaltyDeriv(pNames, pVal, HistoPhases, calcControls, parmDict, varyList):
                 if np.any(lasthkl - hkl):
                     phi, beta = G2lat.CrsAng(np.array(hkl), cell, SGData)
                     SH3Coef = {}
-                    for item in SHcof:
+                    for item in SHcof:  # noqa: PLC0206
                         L, N = eval(item.strip("C"))
                         SH3Coef["C%d,0,%d" % (L, N)] = SHcof[item]
                     ODFln = G2lat.Flnh(SH3Coef, phi, beta, SGData)
                     lasthkl = copy.copy(hkl)
                 for SHname in SHnames:
-                    l, n = eval(SHname[1:])
+                    l, n = eval(SHname[1:])  # noqa: E741
                     SH3name = "C%d,0,%d" % (l, n)
                     Ksl = G2lat.GetKsl(l, 0, "0", psi, 0.0)[0]
                     dNames += [phfx + SHname]
@@ -1422,7 +1422,7 @@ def GetAtomFXU(pfx, calcControls, parmDict):
         "AMz:": Gdata[2],
     }
     for iatm in range(Natoms):
-        for key in keys:
+        for key in keys:  # noqa: PLC0206
             parm = pfx + key + str(iatm)
             if parm in parmDict:
                 keys[key][iatm] = parmDict[parm]
@@ -1834,7 +1834,7 @@ def StructureFactorDerv2(refDict, G, hfx, pfx, SGData, calcControls, parmDict):
                 True,
             )
             if dffdSH:
-                for item in dffdSH:
+                for item in dffdSH:  # noqa: PLC0206
                     dffdSH[item] = np.concatenate((dffdSH[item], dffdsh[item]))
             else:
                 dffdSH.update(dffdsh)
@@ -1995,7 +1995,7 @@ def StructureFactorDerv2(refDict, G, hfx, pfx, SGData, calcControls, parmDict):
         dFdvDict[pfx + "AU12:" + str(i)] = dFdua.T[3][i]
         dFdvDict[pfx + "AU13:" + str(i)] = dFdua.T[4][i]
         dFdvDict[pfx + "AU23:" + str(i)] = dFdua.T[5][i]
-        for item in dffdSH:
+        for item in dffdSH:  # noqa: PLC0206
             if "Sh" in item or "O" in item:
                 if i == int(item.split(":")[1]):
                     dFdvDict[pfx + "RBS" + item] = np.sum(
@@ -2011,7 +2011,7 @@ def StructureFactorDerv2(refDict, G, hfx, pfx, SGData, calcControls, parmDict):
     return dFdvDict
 
 
-def MagStructureFactor2(refDict, G, hfx, pfx, SGData, calcControls, parmDict):
+def MagStructureFactor2(refDict, G, hfx, pfx, SGData, calcControls, parmDict):  # noqa: ARG001
     """Compute neutron magnetic structure factors for all h,k,l for phase
     puts the result, F^2, in each ref[8] in refList
     operates on blocks of 100 reflections for speed
@@ -2208,7 +2208,7 @@ def MagStructureFactorDerv2(refDict, G, hfx, pfx, SGData, calcControls, parmDict
     return dFdvDict
 
 
-def MagStructureFactorDerv(refDict, G, hfx, pfx, SGData, calcControls, parmDict):
+def MagStructureFactorDerv(refDict, G, hfx, pfx, SGData, calcControls, parmDict):  # noqa: ARG001
     """Compute nonmagnetic structure factor derivatives on blocks of reflections in magnetic structures - for powders/nontwins only
     input:
 
@@ -2613,7 +2613,7 @@ def StructureFactorDervTw2(refDict, G, hfx, pfx, SGData, calcControls, parmDict)
         #        dFdbab[iBeg:iFin] = fas[0,:,nxs]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
         #            fbs[0,:,nxs]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         iBeg += blkSize
-    print(" %d derivative time %.4f\r" % (len(refDict["RefList"]), time.time() - time0))
+    print(f" {len(refDict['RefList'])} derivative time {time.time() - time0:.4f}\r")
     # loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):  # these all OK
         dFdvDict[pfx + "Afrac:" + str(i)] = np.sum(dFdfr.T[i] * TwinFr[:, nxs], axis=0)
@@ -3804,43 +3804,43 @@ def SStructureFactorDervTw(
         )
         # array(2,nTwin,nAtom,3) & array(2,nTwin,nAtom,6) & array(2,nTwin,nAtom,12)
         dfadGf = np.sum(
-            fa[:, it, :, :, nxs, nxs] * dGdf[0][nxs, nxs, :, :, :, :]
-            - fb[:, it, :, :, nxs, nxs] * dGdf[1][nxs, nxs, :, :, :, :],
+            fa[:, it, :, :, nxs, nxs] * dGdf[0][nxs, nxs, :, :, :, :]  # noqa: F821
+            - fb[:, it, :, :, nxs, nxs] * dGdf[1][nxs, nxs, :, :, :, :],  # noqa: F821
             axis=1,
         )
         dfbdGf = np.sum(
-            fb[:, it, :, :, nxs, nxs] * dGdf[0][nxs, nxs, :, :, :, :]
-            + fa[:, it, :, :, nxs, nxs] * dGdf[1][nxs, nxs, :, :, :, :],
+            fb[:, it, :, :, nxs, nxs] * dGdf[0][nxs, nxs, :, :, :, :]  # noqa: F821
+            + fa[:, it, :, :, nxs, nxs] * dGdf[1][nxs, nxs, :, :, :, :],  # noqa: F821
             axis=1,
         )
         dfadGx = np.sum(
-            fa[:, it, :, :, nxs, nxs] * dGdx[0][nxs, nxs, :, :, :, :]
-            - fb[:, it, :, :, nxs, nxs] * dGdx[1][nxs, nxs, :, :, :, :],
+            fa[:, it, :, :, nxs, nxs] * dGdx[0][nxs, nxs, :, :, :, :]  # noqa: F821
+            - fb[:, it, :, :, nxs, nxs] * dGdx[1][nxs, nxs, :, :, :, :],  # noqa: F821
             axis=1,
         )
         dfbdGx = np.sum(
-            fb[:, it, :, :, nxs, nxs] * dGdx[0][nxs, nxs, :, :, :, :]
-            + fa[:, it, :, :, nxs, nxs] * dGdx[1][nxs, nxs, :, :, :, :],
+            fb[:, it, :, :, nxs, nxs] * dGdx[0][nxs, nxs, :, :, :, :]  # noqa: F821
+            + fa[:, it, :, :, nxs, nxs] * dGdx[1][nxs, nxs, :, :, :, :],  # noqa: F821
             axis=1,
         )
         dfadGz = np.sum(
-            fa[:, it, :, 0, nxs, nxs] * dGdz[0][nxs, nxs, :, :, :]
-            - fb[:, it, :, 0, nxs, nxs] * dGdz[1][nxs, nxs, :, :, :],
+            fa[:, it, :, 0, nxs, nxs] * dGdz[0][nxs, nxs, :, :, :]  # noqa: F821
+            - fb[:, it, :, 0, nxs, nxs] * dGdz[1][nxs, nxs, :, :, :],  # noqa: F821
             axis=1,
         )
         dfbdGz = np.sum(
-            fb[:, it, :, 0, nxs, nxs] * dGdz[0][nxs, nxs, :, :, :]
-            + fa[:, it, :, 0, nxs, nxs] * dGdz[1][nxs, nxs, :, :, :],
+            fb[:, it, :, 0, nxs, nxs] * dGdz[0][nxs, nxs, :, :, :]  # noqa: F821
+            + fa[:, it, :, 0, nxs, nxs] * dGdz[1][nxs, nxs, :, :, :],  # noqa: F821
             axis=1,
         )
         dfadGu = np.sum(
-            fa[:, it, :, :, nxs, nxs] * dGdu[0][nxs, nxs, :, :, :, :]
-            - fb[:, it, :, :, nxs, nxs] * dGdu[1][nxs, nxs, :, :, :, :],
+            fa[:, it, :, :, nxs, nxs] * dGdu[0][nxs, nxs, :, :, :, :]  # noqa: F821
+            - fb[:, it, :, :, nxs, nxs] * dGdu[1][nxs, nxs, :, :, :, :],  # noqa: F821
             axis=1,
         )
         dfbdGu = np.sum(
-            fb[:, it, :, :, nxs, nxs] * dGdu[0][nxs, nxs, :, :, :, :]
-            + fa[:, it, :, :, nxs, nxs] * dGdu[1][nxs, nxs, :, :, :, :],
+            fb[:, it, :, :, nxs, nxs] * dGdu[0][nxs, nxs, :, :, :, :]  # noqa: F821
+            + fa[:, it, :, :, nxs, nxs] * dGdu[1][nxs, nxs, :, :, :, :],  # noqa: F821
             axis=1,
         )
         #        GSASIIpath.IPyBreak()
@@ -4120,7 +4120,7 @@ def GetNewCellParms(parmDict, varyList):
     return newCellDict  # is e.g. {'0::D11':A0-D11}
 
 
-def ApplyXYZshifts(parmDict, varyList):
+def ApplyXYZshifts(parmDict, varyList):  # noqa: ARG001
     """
     takes atom x,y,z shift and applies it to corresponding atom x,y,z value
 
@@ -4160,7 +4160,7 @@ def SHTXcal(refl, im, g, pfx, hfx, SGData, calcControls, parmDict):
         parmDict[hfx + "Azimuth"],
     ]
     phi, beta = G2lat.CrsAng(H, cell, SGData)
-    psi, gam, x, x = G2lat.SamAng(
+    psi, gam, x, x = G2lat.SamAng(  # noqa: PLW0128
         tth / 2.0, Gangls, Sangls, IFCoup
     )  # ignore 2 sets of angle derivs.
     SHnames = G2lat.GenSHCoeff(
@@ -4169,7 +4169,7 @@ def SHTXcal(refl, im, g, pfx, hfx, SGData, calcControls, parmDict):
     for item in SHnames:
         L, M, N = eval(item.strip("C"))
         Kcl = G2lat.GetKcl(L, N, SGData["SGLaue"], phi, beta)
-        Ksl, x, x = G2lat.GetKsl(L, M, parmDict[pfx + "SHmodel"], psi, gam)
+        Ksl, x, x = G2lat.GetKsl(L, M, parmDict[pfx + "SHmodel"], psi, gam)  # noqa: PLW0128
         Lnorm = G2lat.Lnorm(L)
         odfCor += parmDict[pfx + item] * Lnorm * Kcl[0] * Ksl[0]
     return odfCor
@@ -4242,14 +4242,14 @@ def SHPOcal(refl, im, g, phfx, hfx, SGData, calcControls, parmDict):
         ]
         IFCoup = False
     phi, beta = G2lat.CrsAng(H, cell, SGData)
-    psi, gam, x, x = G2lat.SamAng(
+    psi, gam, x, x = G2lat.SamAng(  # noqa: PLW0128
         tth / 2.0, Gangls, Sangls, IFCoup
     )  # ignore 2 sets of angle derivs.
     SHnames = calcControls[phfx + "SHnames"]
     for item in SHnames:
         L, N = eval(item.strip("C"))
         Kcl = G2lat.GetKcl(L, N, SGData["SGLaue"], phi, beta)
-        Ksl, x, x = G2lat.GetKsl(L, 0, "0", psi, gam)
+        Ksl, x, x = G2lat.GetKsl(L, 0, "0", psi, gam)  # noqa: PLW0128
         Lnorm = G2lat.Lnorm(L)
         odfCor += parmDict[phfx + item] * Lnorm * Kcl[0] * Ksl[0]
     return np.squeeze(odfCor)
@@ -4278,21 +4278,21 @@ def SHPOcalDerv(refl, im, g, phfx, hfx, SGData, calcControls, parmDict):
         ]
         IFCoup = False
     phi, beta = G2lat.CrsAng(H, cell, SGData)
-    psi, gam, x, x = G2lat.SamAng(
+    psi, gam, x, x = G2lat.SamAng(  # noqa: PLW0128
         tth / 2.0, Gangls, Sangls, IFCoup
     )  # ignore 2 sets of angle derivs.
     SHnames = calcControls[phfx + "SHnames"]
     for item in SHnames:
         L, N = eval(item.strip("C"))
         Kcl = G2lat.GetKcl(L, N, SGData["SGLaue"], phi, beta)
-        Ksl, x, x = G2lat.GetKsl(L, 0, "0", psi, gam)
+        Ksl, x, x = G2lat.GetKsl(L, 0, "0", psi, gam)  # noqa: PLW0128
         Lnorm = G2lat.Lnorm(L)
         odfCor += parmDict[phfx + item] * Lnorm * Kcl[0] * Ksl[0]
         dFdODF[phfx + item] = Kcl * Ksl * Lnorm
     return odfCor, dFdODF
 
 
-def GetPrefOri(uniq, G, g, phfx, hfx, SGData, calcControls, parmDict):
+def GetPrefOri(uniq, G, g, phfx, hfx, SGData, calcControls, parmDict):  # noqa: ARG001
     "March-Dollase preferred orientation correction"
     POcorr = 1.0
     MD = parmDict[phfx + "MD"]
@@ -5067,13 +5067,13 @@ def GetSampleSigGamDerv(
 def GetReflPos(refl, im, wave, A, pfx, hfx, phfx, calcControls, parmDict):
     "Needs a doc string"
     if im:
-        h, k, l, m = refl[:4]
+        h, k, l, m = refl[:4]  # noqa: E741
         vec = np.array(
             [parmDict[pfx + "mV0"], parmDict[pfx + "mV1"], parmDict[pfx + "mV2"]]
         )
         d = 1.0 / np.sqrt(G2lat.calc_rDsqSS(np.array([h, k, l, m]), A, vec))
     else:
-        h, k, l = refl[:3]
+        h, k, l = refl[:3]  # noqa: E741
         d = 1.0 / np.sqrt(G2lat.calc_rDsq(np.array([h, k, l]), A))
     refl[4 + im] = d
     if calcControls[hfx + "histType"][2] in ["A", "B", "C"]:
@@ -5113,23 +5113,23 @@ def GetReflPos(refl, im, wave, A, pfx, hfx, phfx, calcControls, parmDict):
     return pos
 
 
-def GetReflPosDerv(refl, im, wave, A, pfx, hfx, phfx, calcControls, parmDict):
+def GetReflPosDerv(refl, im, wave, A, pfx, hfx, phfx, calcControls, parmDict):  # noqa: ARG001
     "Needs a doc string"
     dpr = 180.0 / np.pi
     if im:
-        h, k, l, m = refl[:4]
+        h, k, l, m = refl[:4]  # noqa: E741
         vec = np.array(
             [parmDict[pfx + "mV0"], parmDict[pfx + "mV1"], parmDict[pfx + "mV2"]]
         )
         dstsq = G2lat.calc_rDsqSS(np.array([h, k, l, m]), A, vec)
-        h, k, l = [
+        h, k, l = [  # noqa: E741
             h + m * vec[0],
             k + m * vec[1],
             l + m * vec[2],
         ]  # do proj of hklm to hkl so dPdA & dPdV come out right
     else:
         m = 0
-        h, k, l = refl[:3]
+        h, k, l = refl[:3]  # noqa: E741
         dstsq = G2lat.calc_rDsq(np.array([h, k, l]), A)
     dst = np.sqrt(dstsq)
     dsp = 1.0 / dst
@@ -5213,7 +5213,7 @@ def GetHStrainShift(refl, im, SGData, phfx, hfx, calcControls, parmDict):
     """
     laue = SGData["SGLaue"]
     uniq = SGData["SGUniq"]
-    h, k, l = refl[:3]
+    h, k, l = refl[:3]  # noqa: E741
     if laue in ["m3", "m3m"]:
         hkl1 = h**2 + k**2 + l**2
         hkl2 = ((h * k) ** 2 + (h * l) ** 2 + (k * l) ** 2) / hkl1**2
@@ -5270,7 +5270,7 @@ def GetHStrainShiftDerv(refl, im, SGData, phfx, hfx, calcControls, parmDict):
     """
     laue = SGData["SGLaue"]
     uniq = SGData["SGUniq"]
-    h, k, l = refl[:3]
+    h, k, l = refl[:3]  # noqa: E741
     if laue in ["m3", "m3m"]:
         dDijDict = {
             phfx + "D11": h**2 + k**2 + l**2,
@@ -5513,7 +5513,7 @@ def GetFobsSq(Histograms, Phases, parmDict, calcControls):
                 sumdF = 0.0
                 sumFosq = 0.0
                 sumdFsq = 0.0
-                for iref, refl in enumerate(refDict["RefList"]):
+                for iref, refl in enumerate(refDict["RefList"]):  # noqa: B007
                     Fo = np.sqrt(np.abs(refl[8 + im]))
                     Fc = np.sqrt(np.abs(refl[9 + im]))
                     sumFo += Fo
@@ -5544,7 +5544,7 @@ def getPowderProfile(
     parmDict,
     histDict1,
     x,
-    varylist,
+    varylist,  # noqa: ARG001
     Histogram,
     Phases,
     calcControls,
@@ -5645,7 +5645,7 @@ def getPowderProfile(
         return alp, bet
 
     def SavePartial(phase, y):
-        phPartialFP = open(phasePartials, "ab")  # append to file
+        phPartialFP = open(phasePartials, "ab")  # append to file  # noqa: SIM115
         pickle.dump(phase, phPartialFP)
         pickle.dump(y, phPartialFP)
         phPartialFP.close()
@@ -5766,9 +5766,9 @@ def getPowderProfile(
         if histType[2] in ["A", "B", "C"]:
             for iref, refl in enumerate(refDict["RefList"]):
                 if im:
-                    h, k, l, m = refl[:4]
+                    h, k, l, m = refl[:4]  # noqa: E741
                 else:
-                    h, k, l = refl[:3]
+                    h, k, l = refl[:3]  # noqa: E741
                 Uniq = np.inner(refl[:3], SGMT)
                 refl[5 + im] = GetReflPos(
                     refl, im, wave, A, pfx, hfx, phfx, calcControls, parmDict
@@ -5962,9 +5962,9 @@ def getPowderProfile(
         elif "E" in histType:  # Energy-dispersive X-ray
             for iref, refl in enumerate(refDict["RefList"]):
                 if im:
-                    h, k, l, m = refl[:4]
+                    h, k, l, m = refl[:4]  # noqa: E741
                 else:
-                    h, k, l = refl[:3]
+                    h, k, l = refl[:3]  # noqa: E741
                 Uniq = np.inner(refl[:3], SGMT)
                 refl[5 + im] = GetReflPos(
                     refl, im, 0.0, A, pfx, hfx, phfx, calcControls, parmDict
@@ -6020,9 +6020,9 @@ def getPowderProfile(
         elif "T" in histType:  # TOF
             for iref, refl in enumerate(refDict["RefList"]):
                 if im:
-                    h, k, l, m = refl[:4]
+                    h, k, l, m = refl[:4]  # noqa: E741
                 else:
-                    h, k, l = refl[:3]
+                    h, k, l = refl[:3]  # noqa: E741
                 Uniq = np.inner(refl[:3], SGMT)
                 refl[5 + im] = GetReflPos(
                     refl, im, 0.0, A, pfx, hfx, phfx, calcControls, parmDict
@@ -6135,7 +6135,7 @@ def getPowderProfile(
             "ouch #7 bad profile coefficients yield negative peak width; some reflections skipped"
         )
     if GSASIIpath.GetConfigValue("Show_timing", False):
-        print("getPowderProfile t=%.3f" % (time.time() - starttime))
+        print(f"getPowderProfile t={time.time() - starttime:.3f}")
     return yc, yb
 
 
@@ -6411,9 +6411,9 @@ def getPowderProfileDerv(args):
         for iref in range(prc, len(refDict["RefList"]), tprc):
             refl = refDict["RefList"][iref]
             if im:
-                h, k, l, m = refl[:4]
+                h, k, l, m = refl[:4]  # noqa: E741
             else:
-                h, k, l = refl[:3]
+                h, k, l = refl[:3]  # noqa: E741
             Uniq = np.inner(refl[:3], SGMT)
             if "T" in histType:
                 wave = refl[14 + im]
@@ -6694,7 +6694,7 @@ def getPowderProfileDerv(args):
                     if Ka2:  # not for TOF either
                         dMdpw[iBeg2:iFin2] += dervDict2["int"] / refl[9 + im]
                     dMdv[idx] = dMdpw
-                except:  # ValueError:
+                except:  # ValueError:  # noqa: E722
                     pass
             if histType[2] in ["A", "B", "C"]:
                 dpdA, dpdw, dpdZ, dpdSh, dpdTr, dpdX, dpdY, dpdV = GetReflPosDerv(
@@ -7190,7 +7190,14 @@ def dervHKLF(Histogram, Phase, calcControls, varylist, parmDict, rigidbodyDict):
 
 
 def dervRefine(
-    values, HistoPhases, parmDict, histDict1, varylist, calcControls, pawleyLookup, dlg
+    values,
+    HistoPhases,
+    parmDict,
+    histDict1,
+    varylist,
+    calcControls,
+    pawleyLookup,
+    dlg,  # noqa: ARG001
 ):
     """Loop over histograms and compute derivatives of the fitting
     model (M) with respect to all parameters.  Results are returned in
@@ -7267,7 +7274,14 @@ def dervRefine(
 
 
 def HessRefine(
-    values, HistoPhases, parmDict, histDict1, varylist, calcControls, pawleyLookup, dlg
+    values,
+    HistoPhases,
+    parmDict,
+    histDict1,
+    varylist,
+    calcControls,
+    pawleyLookup,
+    dlg,
 ):
     """Loop over histograms and compute derivatives of the fitting
     model (M) with respect to all parameters.  For each histogram, the
@@ -7365,7 +7379,7 @@ def HessRefine(
                 #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
             G2mv.Dict2Deriv(varylist, depDerivDict, dMdvh)
             if GSASIIpath.GetConfigValue("Show_timing", False):
-                print("getPowderProfileDerv t=%.3f" % (time.time() - starttime))
+                print(f"getPowderProfileDerv t={time.time() - starttime:.3f}")
             Wt = ma.sqrt(W[xB:xF])[nxs, :]
             Dy = dy[xB:xF][nxs, :]
             dMdvh *= Wt
@@ -7639,7 +7653,7 @@ def errRefine(
             else:
                 StructureFactor2(refDict, G, hfx, pfx, SGData, calcControls, parmDict)
             #            print 'sf-calc time: %.3f'%(time.time()-time0)
-            df = np.zeros(len(refDict["RefList"]))
+            df = np.zeros(len(refDict["RefList"]))  # noqa: PD901
             sumwYo = 0
             sumFo = 0
             sumFo2 = 0
@@ -7745,7 +7759,7 @@ def errRefine(
                             Nexti += 1
             Scale = sumFo2 / sumFc2
             if (Scale < 0.8 or Scale > 1.2) and phfx + "Scale" in varylist:
-                print("New scale: %.4f" % (Scale * parmDict[phfx + "Scale"]))
+                print(f"New scale: {Scale * parmDict[phfx + 'Scale']:.4f}")
                 indx = varylist.index(phfx + "Scale")
                 values[indx] = Scale * parmDict[phfx + "Scale"]
             Histogram["Residuals"]["Nobs"] = nobs
@@ -7803,9 +7817,7 @@ def errRefine(
     if dlg:
         if hasattr(dlg, "SetHistogram"):
             dlg.SetHistogram(-1, "overall")
-        GoOn = dlg.Update(
-            int(Rw), newmsg="{}{:8.3f}{}".format("All data Rw =", Rw, "%")
-        )
+        GoOn = dlg.Update(int(Rw), newmsg=f"All data Rw ={Rw:8.3f}%")
         if type(GoOn) is tuple:
             if not GoOn[0]:
                 parmDict["saved values"] = values
@@ -7903,7 +7915,7 @@ def calcMassFracs(varyList, covMatrix, Phases, hist, hId):
         var = f"{pId_j}:{hId}:WgtFrac"
         valDict[var] = mass[pId_j] * phFr[pId_j] / wtSum
         Avec = np.zeros(len(varyList))
-        for i in used:
+        for i in used:  # noqa: PLC0206
             if type(used[i]) is dict:
                 for pId_i in used[i]:
                     if pId_i == pId_j:

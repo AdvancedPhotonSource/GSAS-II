@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 
 """main Absorb routines
 Copyright: 2009, Robert B. Von Dreele (Argonne National Laboratory)
@@ -18,14 +18,14 @@ import sys
 import matplotlib as mpl
 import numpy as np
 
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIElem as G2elem
-from . import GSASIIElemGUI as G2elemGUI
 from . import GSASIIpath
 from . import GSASIIpwd as G2pwd
+from .GUI import GSASIIctrlGUI as G2G
+from .GUI import GSASIIElemGUI as G2elemGUI
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -86,7 +86,7 @@ Pwrm1 = chr(0x207B) + chr(0x0B9)
 class Absorb(wx.Frame):
     """Creates a frame where input for absorption calculation is supplied"""
 
-    Elems = []
+    Elems = []  # noqa: RUF012
     Wave = 1.5405  # CuKa default
     Kev = 12.397639  # keV for 1A x-rays
     for arg in sys.argv:
@@ -130,37 +130,37 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     def _init_coll_KALPHA_Items(self, parent: wx.Menu) -> None:
         "Set of characteristic radiation from sealed tube sources"
 
-        def OnCrkaMenu(event):
+        def OnCrkaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(2.28962)
 
-        def OnMnkaMenu(event):
+        def OnMnkaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(2.10174)
 
-        def OnFekaMenu(event):
+        def OnFekaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(1.93597)
 
-        def OnCokaMenu(event):
+        def OnCokaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(1.78896)
 
-        def OnNikaMenu(event):
+        def OnNikaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(1.65784)
 
-        def OnCukaMenu(event):
+        def OnCukaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(1.54052)
 
-        def OnZnkaMenu(event):
+        def OnZnkaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(1.43510)
 
-        def OnGakaMenu(event):
+        def OnGakaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(1.34134)
 
-        def OnMokaMenu(event):
+        def OnMokaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(0.70926)
 
-        def OnAgkaMenu(event):
+        def OnAgkaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(0.55936)
 
-        def OnInkaMenu(event):
+        def OnInkaMenu(event):  # noqa: ARG001
             self.SetWaveEnergy(0.51357)
 
         parent.Append(wxID_KALPHACRKA, "CrKa")
@@ -414,12 +414,12 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Elems = []
         self.linePicked = None
 
-    def OnExitMenu(self, event):
+    def OnExitMenu(self, event):  # noqa: ARG002
         self.parent.G2plotNB.Delete("Absorb")
         self.Close()
         self.Destroy()
 
-    def OnNewMenu(self, event):
+    def OnNewMenu(self, event):  # noqa: ARG002
         ElList = []
         for Elem in self.Elems:
             ElList.append(Elem[0])
@@ -448,7 +448,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.NewFPPlot = True
             self.SetWaveEnergy(self.Wave)
 
-    def OnDeleteMenu(self, event):
+    def OnDeleteMenu(self, event):  # noqa: ARG002
         if len(self.Elems):
             ElList = []
             for Elem in self.Elems:
@@ -478,36 +478,36 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 self.ifVol = False
             self.SetWaveEnergy(self.Wave)
 
-    def OnSpinText1(self, event):
+    def OnSpinText1(self, event):  # noqa: ARG002
         self.SetWaveEnergy(float(self.SpinText1.GetValue()))
 
-    def OnSpinText2(self, event):
+    def OnSpinText2(self, event):  # noqa: ARG002
         self.SetWaveEnergy(self.Kev / (float(self.SpinText2.GetValue())))
 
-    def OnSpinText3(self, event):
+    def OnSpinText3(self, event):  # noqa: ARG002
         self.Volume = max(10.0, float(self.SpinText3.GetValue()))
         self.ifVol = True
         self.SetWaveEnergy(self.Wave)
 
-    def OnSpinText4(self, event):
+    def OnSpinText4(self, event):  # noqa: ARG002
         self.Zcell = max(1, float(self.SpinText4.GetValue()))
         self.SetWaveEnergy(self.Wave)
 
-    def OnSpinText5(self, event):
+    def OnSpinText5(self, event):  # noqa: ARG002
         self.Radius = max(0.01, float(self.SpinText5.GetValue()))
         self.SetWaveEnergy(self.Wave)
 
-    def OnSpinText6(self, event):
+    def OnSpinText6(self, event):  # noqa: ARG002
         self.Pack = min(1.0, max(0.01, float(self.SpinText6.GetValue())))
         self.SetWaveEnergy(self.Wave)
 
-    def OnSpinButton(self, event):
+    def OnSpinButton(self, event):  # noqa: ARG002
         move = self.SpinButton.GetValue() / 10000.0
         self.Wave = min(max(self.Wave + move, self.Wmin), self.Wmax)
         self.SpinButton.SetValue(0)
         self.SetWaveEnergy(self.Wave)
 
-    def OnSlider1(self, event):
+    def OnSlider1(self, event):  # noqa: ARG002
         if self.ifWave:
             Wave = float(self.slider1.GetValue()) / 1000.0
         else:
@@ -590,7 +590,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 self.Pack * muT / self.Volume,
                 "cm" + Pwrm1 + ", ",
             )
-            Text += "{}{:10.4g}{}".format("Total " + Gkmu + "R =", self.muR, ", ")
+            Text += f"{'Total ' + Gkmu + 'R ='}{self.muR:10.4g}, "
             Text += "{}{:10.4f}{}\n".format(
                 "Transmission exp(-2" + Gkmu + "R) =",
                 100.0
@@ -600,10 +600,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             if muT > 0.0:
                 pene = 10.0 / (self.Pack * muT / self.Volume)
                 if pene > 0.01:
-                    Text += "{} {:10.4g} mm\n".format(
-                        "1/e (~27.2%) penetration depth = ",
-                        pene,
-                    )
+                    Text += f"1/e (~27.2%) penetration depth =  {pene:10.4g} mm\n"
                 else:
                     Text += "{} {:10.4g} {}m\n".format(
                         "1/e (~27.2%) penetration depth = ",
@@ -620,9 +617,9 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Results.SetValue(Text)
             den = Mass / (0.602 * self.Volume)
             if self.ifVol:
-                Text += "{}".format("Theor. density =")
+                Text += "Theor. density ="
             else:
-                Text += "{}".format("Est. density =")
+                Text += "Est. density ="
             Text += "{:6.3f} {}{:.3f} {}\n".format(
                 den,
                 "g/cm" + Pwr3 + ", Powder density =",
@@ -666,14 +663,14 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 muT = []
                 for iE, Elem in enumerate(self.Elems):
                     Els = Elem[0]
-                    Els = Els = Els.ljust(2).lower().capitalize()
+                    Els = Els = Els.ljust(2).lower().capitalize()  # noqa: PLW0127, PLW0128
                     Wmin = self.Wmin
                     Wmax = self.Wmax
                     lWmin = math.log(Wmin)
                     N = int(
                         round(math.log(Wmax / Wmin) / self.Wres)
                     )  # number of constant delta-lam/lam steps
-                    I = range(N + 1)
+                    I = range(N + 1)  # noqa: E741
                     Ws = []
                     for i in I:
                         Ws.append(math.exp(i * self.Wres + lWmin))
@@ -741,7 +738,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 asb = self.Page.figure.get_axes()[1]
                 xylim = asb.get_xlim(), asb.get_ylim()
             newPlot = False
-        except:
+        except:  # noqa: E722
             new, plotNum, self.Page, self.fplot, lim = self.parent.G2plotNB.FindPlotTab(
                 "Absorb", "mpl"
             )
@@ -836,11 +833,11 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 Wave = self.Kev / xpos
             self.SetWaveEnergy(Wave)
 
-    def OnABOUTItems0Menu(self, event):
+    def OnABOUTItems0Menu(self, event):  # noqa: ARG002
         """Displays the About window"""
         try:
             import wx.adv as wxadv  # AboutBox moved here in Phoenix
-        except:
+        except:  # noqa: E722
             wxadv = wx
         info = wxadv.AboutDialogInfo()
         info.Name = "Absorb"
@@ -874,5 +871,5 @@ if __name__ == "__main__":
     frm.G2plotNB = G2plt.G2PlotNoteBook(frm.plotFrame, G2frame=frm)
     abswin = Absorb(frm)
     abswin.Show()
-    abswin.Bind(wx.EVT_WINDOW_DESTROY, lambda event: sys.exit())
+    abswin.Bind(wx.EVT_WINDOW_DESTROY, lambda event: sys.exit())  # noqa: ARG005
     app.MainLoop()

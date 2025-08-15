@@ -62,7 +62,7 @@ def test_SpcGroup1():
         if testdir not in sys.path:
             sys.path.insert(0, testdir)
 
-    def CompareSpcGroup(spc, referr, refdict, reflist):
+    def CompareSpcGroup(spc, referr, refdict, reflist):  # noqa: ARG001
         "Compare output from GSASIIspc.SpcGroup with results from a previous run"
         msg0 = f"CompareSpcGroup failed on space group {spc}"
         result = SpcGroup(spc)

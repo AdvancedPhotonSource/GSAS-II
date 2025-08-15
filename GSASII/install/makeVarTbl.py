@@ -20,7 +20,7 @@ def main():
     G2obj.CompileVarDesc()
     varstblloc = os.path.join(home, "docs", "source", "vars.rst")
     print(f"creating file {os.path.normpath(varstblloc)}")
-    fp = open(varstblloc, "w")
+    fp = open(varstblloc, "w")  # noqa: SIM115
     fp.write(""".. 
     This file is created using makeVarTbl.py. Edit that, not this file.
 
@@ -43,7 +43,7 @@ def main():
 
     for _line, r in enumerate(G2obj.reVarDesc):  # loop over each entry in table
         comment = ""
-        parmName = orig_str = str(r).split("'")[1]
+        parmName = orig_str = str(r).split("'")[1]  # noqa: F841
         parmName = parmName.replace(r"\\(", "(").replace(r"\\)", ")")
         parmName = parmName.replace("[0-9]*", "[0-9]")
         if parmName.endswith("$"):  # final character in RE
@@ -52,7 +52,7 @@ def main():
         if parmName.count("(") != 0 and termcount > 0:  # () terms replace \\1, \\2,...
             symTerms = []
             exmplTerms = []
-            for i, field in enumerate(parenRE.split(parmName)[1::2]):
+            for i, field in enumerate(parenRE.split(parmName)[1::2]):  # noqa: B007
                 symList = []
                 exmplList = []
                 for j, reg in enumerate(bracketRE.split(field)[1::2]):

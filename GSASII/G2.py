@@ -7,6 +7,7 @@
 # Even better:
 #    GSASII_NOPATHHACKING="true" python -c "from GSASII.GSASIIGUI import main; main()"
 
+import importlib.util
 import os
 import sys
 
@@ -16,7 +17,6 @@ if os.path.exists(oldg2script):
     os.remove(oldg2script)
     print(f"Cleanup: removing old {oldg2script!r} file")
 # end patch
-import importlib.util
 
 try:
     pkginfo = importlib.util.find_spec("GSASII.GSASIIGUI")

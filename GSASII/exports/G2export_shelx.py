@@ -72,11 +72,11 @@ class ExportPhaseShelx(G2fil.ExportBaseclass):
             AtomsList = self.GetAtoms(phasenam)
             maxmult = 0
             elemtypes = {}
-            for lbl, typ, mult, xyz, td in AtomsList:
+            for lbl, typ, mult, xyz, td in AtomsList:  # noqa: B007
                 maxmult = max(maxmult, mult)
-                typ = re.search("[A-Za-z]+", typ).group(0)
-                typ = typ[0:2]
-                typ = typ[0].upper() + typ[1:].lower()
+                typ = re.search("[A-Za-z]+", typ).group(0)  # noqa: PLW2901
+                typ = typ[0:2]  # noqa: PLW2901
+                typ = typ[0].upper() + typ[1:].lower()  # noqa: PLW2901
                 if elemtypes.get(typ) is None:
                     elemtypes[typ] = 1
                 else:
@@ -90,23 +90,23 @@ class ExportPhaseShelx(G2fil.ExportBaseclass):
             # handle atom records
             count = {}
             for lbl, typ, mult, xyz, td in AtomsList:
-                typ = re.search("[A-Za-z]+", typ).group(0)
-                typ = typ[0:2]
-                typ = typ[0].upper() + typ[1:].lower()
+                typ = re.search("[A-Za-z]+", typ).group(0)  # noqa: PLW2901
+                typ = typ[0:2]  # noqa: PLW2901
+                typ = typ[0].upper() + typ[1:].lower()  # noqa: PLW2901
                 if count.get(typ) is None:
                     count[typ] = 0
                 else:
                     count[typ] += 1
                 # make a unique <=4 character label, if possible
                 if elemtypes[typ] <= 99:
-                    lbl = f"{typ:s}{count[typ]:d}"
+                    lbl = f"{typ:s}{count[typ]:d}"  # noqa: PLW2901
                 else:  # more than 99 atoms, use hexadecimal notation
-                    lbl = typ + f"{count[typ]:X}"[-2:]
+                    lbl = typ + f"{count[typ]:X}"[-2:]  # noqa: PLW2901
                 sfnum = (
                     elemlist.index(typ) + 1
                 )  # element number in scattering factor list
-                l = lbl + " " + str(sfnum)
-                l += " {:.5f} {:.5f} {:.5f}".format(*[x[0] for x in xyz[:3]])
+                l = lbl + " " + str(sfnum)  # noqa: E741
+                l += " {:.5f} {:.5f} {:.5f}".format(*[x[0] for x in xyz[:3]])  # noqa: E741
                 if mult == maxmult:
                     m = 1
                 else:
@@ -115,9 +115,9 @@ class ExportPhaseShelx(G2fil.ExportBaseclass):
                     occ = 10 + m
                 else:
                     occ = m * xyz[3][0]
-                l += f" {occ:.3f}"
+                l += f" {occ:.3f}"  # noqa: E741
                 for val, _sig in td:
-                    l += f" {val:.3f}"
+                    l += f" {val:.3f}"  # noqa: E741
                 self.Write(l)
             self.Write("END")
             self.CloseFile()

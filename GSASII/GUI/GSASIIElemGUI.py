@@ -154,14 +154,14 @@ class PickElement(wx.Dialog):
         else:
             self.EndModal(wx.ID_OK)
 
-    def OnClose(self, event):
+    def OnClose(self, event):  # noqa: ARG002
         self.EndModal(wx.ID_OK)
 
 
 class PickElements(wx.Dialog):
     """Makes periodic table widget for picking elements - caller maintains element list"""
 
-    Elem = []
+    Elem = []  # noqa: RUF012
 
     def _init_ctrls(self, prnt, list):
         wx.Dialog.__init__(
@@ -302,7 +302,7 @@ class PickElements(wx.Dialog):
                 tip=E[3],
                 color=E[4],
             )
-            i += 1
+            i += 1  # noqa: SIM113
         mainSizer.Add(elPanel, 0, wx.EXPAND)
         mainSizer.Add((10, 10), 0)
 
@@ -320,13 +320,13 @@ class PickElements(wx.Dialog):
         panel.SetSizer(mainSizer)
         panel.Fit()
 
-    def OnOk(self, event):
+    def OnOk(self, event):  # noqa: ARG002
         if self.Elem:
             self.EndModal(wx.ID_OK)
         else:
             self.EndModal(wx.ID_CANCEL)
 
-    def OnCancel(self, event):
+    def OnCancel(self, event):  # noqa: ARG002
         self.EndModal(wx.ID_CANCEL)
 
     def __init__(self, parent, list):
@@ -372,7 +372,7 @@ class DeleteElement(wx.Dialog):
     "Delete element from selected set widget"
 
     def _init_ctrls(self, parent, choice):
-        l = len(choice) - 1
+        l = len(choice) - 1  # noqa: E741
         wx.Dialog.__init__(
             self,
             id=-1,
@@ -392,7 +392,7 @@ class DeleteElement(wx.Dialog):
         Elem = []
         for Elem in choice:
             self.ElButton(name=Elem, pos=wxPoint(16 + i * 24, 16))
-            i += 1
+            i += 1  # noqa: SIM113
 
     def __init__(self, parent, choice):
         DeleteElement.El = " "

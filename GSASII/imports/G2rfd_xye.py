@@ -35,7 +35,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid q-step file"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         Ndata = 0
         for _i, S in enumerate(fp):
             if "#" in S[0]:
@@ -43,7 +43,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -53,7 +53,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
             return False
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a q-step text file")
         x = []
         y = []
@@ -61,7 +61,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
         sq = []
         wave = 1.5428  # Cuka default
         Temperature = 300
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
@@ -70,7 +70,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
                 if "wave" in S.split("=")[0].lower():
                     try:
                         wave = float(S.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         pass
                 continue
             if "#" in S[0]:
@@ -105,7 +105,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.instdict["wave"] = wave
         self.instdict["type"] = "RXC"
@@ -141,14 +141,14 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
     def ContentsValidator(self, filename):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             if "#" in S[0]:
                 continue
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -158,7 +158,7 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
             return False
         return True  # no errors encountered
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+    def Reader(self, filename, filepointer, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a q-step text file")
         x = []
         y = []
@@ -166,7 +166,7 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
         sq = []
         wave = 1.5428  # Cuka default
         Temperature = 300
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
@@ -175,7 +175,7 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
                 if "wave" in S.split("=")[0].lower():
                     try:
                         wave = float(S.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         pass
                 continue
             if "#" in S[0]:
@@ -210,7 +210,7 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.instdict["wave"] = wave
         self.instdict["type"] = "RNC"
@@ -247,7 +247,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
         self.wavelength = 0.0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _i, S in enumerate(fp):
             if "#" in S[0]:
                 if "wavelength" in S[:-1].lower():
@@ -258,7 +258,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
             vals = S.split()
             if len(vals) >= 2:
                 try:
-                    data = [float(val) for val in vals]
+                    data = [float(val) for val in vals]  # noqa: F841
                     Ndata += 1
                 except ValueError:
                     pass
@@ -271,7 +271,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
             return False
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         print("Read a q-step text file")
         x = []
         y = []
@@ -279,7 +279,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
         sq = []
         wave = self.wavelength
         Temperature = 300
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
@@ -288,7 +288,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
                 if "wave" in S.split("=")[0].lower():
                     try:
                         wave = float(S.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         pass
                 continue
             if "#" in S[0]:
@@ -323,7 +323,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.instdict["wave"] = wave
         self.instdict["type"] = "RXC"

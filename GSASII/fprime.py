@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 
 """main Fprime routines
 Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
@@ -17,11 +17,11 @@ import matplotlib as mpl
 import numpy as np
 
 from . import GSASIIElem as G2elem
-from . import GSASIIElemGUI as G2elemGUI
 from . import GSASIIpath
+from .GUI import GSASIIElemGUI as G2elemGUI
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -74,7 +74,7 @@ Angstr = chr(0x00C5)
 class Fprime(wx.Frame):
     """Creates a frame where input for absorption calculation is supplied"""
 
-    Elems = []
+    Elems = []  # noqa: RUF012
     Wave = 1.5405  # CuKa default
     Kev = 12.397639  # keV for 1A x-rays
     for arg in sys.argv:
@@ -260,7 +260,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 self.FFxaxis = "T"
             self.UpDateFPlot(self.Wave, rePlot=False)
 
-        def OnChoice3(event):
+        def OnChoice3(event):  # noqa: ARG001
             self.Norm = not self.Norm
             self.UpDateFPlot(self.Wave, rePlot=False)
 
@@ -289,12 +289,12 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.linePicked = None
         self.Norm = False
 
-    def OnFPRIMEExitMenu(self, event) -> None:
+    def OnFPRIMEExitMenu(self, event) -> None:  # noqa: ARG002
         self.parent.G2plotNB.Delete("Fprime")
         self.Close()
         self.Destroy()
 
-    def OnFPRIMENewMenu(self, event) -> None:
+    def OnFPRIMENewMenu(self, event) -> None:  # noqa: ARG002
         ElList = []
         for Elem in self.Elems:
             ElList.append(Elem[0])
@@ -320,7 +320,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.CalcFPPS()
             self.SetWaveEnergy(self.Wave)
 
-    def OnFPRIMEDeleteMenu(self, event) -> None:
+    def OnFPRIMEDeleteMenu(self, event) -> None:  # noqa: ARG002
         if len(self.Elems):
             ElList = []
             for Elem in self.Elems:
@@ -338,52 +338,52 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     self.Delete.Enable(False)
                 self.SetWaveEnergy(self.Wave)
 
-    def OnKALPHACrkaMenu(self, event) -> None:
+    def OnKALPHACrkaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(2.28962)
 
-    def OnKALPHAMnkaMenu(self, event) -> None:
+    def OnKALPHAMnkaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(2.10174)
 
-    def OnKALPHAFekaMenu(self, event) -> None:
+    def OnKALPHAFekaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(1.93597)
 
-    def OnKALPHACokaMenu(self, event) -> None:
+    def OnKALPHACokaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(1.78896)
 
-    def OnKALPHANikaMenu(self, event) -> None:
+    def OnKALPHANikaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(1.65784)
 
-    def OnKALPHACukaMenu(self, event) -> None:
+    def OnKALPHACukaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(1.54052)
 
-    def OnKALPHAZnkaMenu(self, event) -> None:
+    def OnKALPHAZnkaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(1.43510)
 
-    def OnKALPHAGakaMenu(self, event) -> None:
+    def OnKALPHAGakaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(1.34134)
 
-    def OnKALPHAMokaMenu(self, event) -> None:
+    def OnKALPHAMokaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(0.70926)
 
-    def OnKALPHAAgkaMenu(self, event) -> None:
+    def OnKALPHAAgkaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(0.55936)
 
-    def OnKALPHAInkaMenu(self, event) -> None:
+    def OnKALPHAInkaMenu(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(0.51357)
 
-    def OnSpinText1(self, event) -> None:
+    def OnSpinText1(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(float(self.SpinText1.GetValue()))
 
-    def OnSpinText2(self, event) -> None:
+    def OnSpinText2(self, event) -> None:  # noqa: ARG002
         self.SetWaveEnergy(self.Kev / (float(self.SpinText2.GetValue())))
 
-    def OnSpinButton(self, event) -> None:
+    def OnSpinButton(self, event) -> None:  # noqa: ARG002
         move = self.SpinButton.GetValue() / 10000.0
         self.Wave = min(max(self.Wave + move, self.Wmin), self.Wmax)
         self.SpinButton.SetValue(0)
         self.SetWaveEnergy(self.Wave)
 
-    def OnSlider1(self, event) -> None:
+    def OnSlider1(self, event) -> None:  # noqa: ARG002
         if self.ifWave:
             Wave = float(self.slider1.GetValue()) / 1000.0
         else:
@@ -405,7 +405,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 self.axylim = self.ax.get_xlim(), self.ax.get_ylim()
                 self.bxylim = self.bx.get_xlim(), self.bx.get_ylim()
             newPlot = False
-        except:
+        except:  # noqa: E722
             new, plotNum, self.Page, self.fplot, lim = self.parent.G2plotNB.FindPlotTab(
                 "Fprime", "mpl"
             )
@@ -473,7 +473,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 )
         else:
             self.bx.set_title(
-                "{}{:6.2f}{}".format("Form factors  (E =", self.Energy, "keV)"),
+                f"Form factors  (E ={self.Energy:6.2f}keV)",
                 x=0,
                 ha="left",
             )
@@ -497,7 +497,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         Ymax = 0.0
         for i, Elem in enumerate(self.Elems):
             Els = Elem[0]
-            Els = Els = Els.ljust(2).lower().capitalize()
+            Els = Els = Els.ljust(2).lower().capitalize()  # noqa: PLW0127, PLW0128
             if self.Norm:
                 Ymax = 0.2
             else:
@@ -567,9 +567,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             Wave = min(max(Wave, self.Wmin), self.Wmax)
             if event.inaxes == self.ax:
                 self.parent.G2plotNB.status.SetStatusText(
-                    "Wavelength: {:.4f}, Energy: {:.3f}, f'{}: {:.3f}".format(
-                        Wave, self.Kev / Wave, 'f"', ypos
-                    ),
+                    f"Wavelength: {Wave:.4f}, Energy: {self.Kev / Wave:.3f}, f'f\": {ypos:.3f}",
                     1,
                 )
             elif event.inaxes == self.bx:
@@ -623,7 +621,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     "barns/atom",
                 )
             elif Elem[1] > 94 and self.Energy - DE < self.Kev / 2.67:
-                Text += "%s\t%s%6s\t%s%6s\t%s%10s%s\n" % (
+                Text += "%s\t%s%6s\t%s%6s\t%s%10s%s\n" % (  # noqa: F507, UP031
                     "Element= " + str(Els),
                     " f'=",
                     "not valid",
@@ -633,16 +631,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     "not valid",
                 )
             else:
-                Text += "{}\t{}{:6.3f}   \t{}{:6.3f}  \t{}{:10.2f} {}\n".format(
-                    "Element= " + str(Els),
-                    " f'=",
-                    (r1[0] + r2[0]) / 2.0,
-                    ' f"=',
-                    (r1[1] + r2[1]) / 2.0,
-                    " " + Gkmu + "=",
-                    (r1[2] + r2[2]) / 2.0,
-                    "barns/atom",
-                )
+                fprime = (r1[0] + r2[0]) / 2.0
+                fdoubleprime = (r1[1] + r2[1]) / 2.0
+                fmu = (r1[2] + r2[2]) / 2.0
+                Text += f"Element= {Els}\t f'={fprime:6.3f}   \t f\"={fdoubleprime:6.3f}  \t {Gkmu}={fmu:10.2f} barns/atom\n"
         if len(self.Elems):
             self.Results.SetValue(Text)
             self.Results.Update()
@@ -658,7 +650,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             try:
                 for Elem in self.Elems:
                     Els = Elem[0]
-                    Els = Els = Els.ljust(2).lower().capitalize()
+                    Els = Els = Els.ljust(2).lower().capitalize()  # noqa: PLW0127, PLW0128
                     Wmin = self.Wmin
                     Wmax = self.Wmax
                     Z = Elem[1]
@@ -674,7 +666,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     N = int(
                         round(math.log(Wmax / Wmin) / self.Wres)
                     )  # number of constant delta-lam/lam steps
-                    I = range(N + 1)
+                    I = range(N + 1)  # noqa: E741
                     Ws = []
                     for i in I:
                         Ws.append(math.exp(i * self.Wres + lWmin))
@@ -720,11 +712,11 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.CalcFPPS()
         self.UpDateFPlot(self.Wave, rePlot=False)
 
-    def OnABOUTItems0Menu(self, event):
+    def OnABOUTItems0Menu(self, event):  # noqa: ARG002
         """Displays the About window"""
         try:
             import wx.adv as wxadv  # AboutBox moved here in Phoenix
-        except:
+        except:  # noqa: E722
             wxadv = wx
         info = wxadv.AboutDialogInfo()
         info.Name = "pyFprime"
@@ -758,5 +750,5 @@ if __name__ == "__main__":
     frm.G2plotNB = G2plt.G2PlotNoteBook(frm.plotFrame, G2frame=frm)
     win = Fprime(frm)
     win.Show()
-    win.Bind(wx.EVT_WINDOW_DESTROY, lambda event: sys.exit())
+    win.Bind(wx.EVT_WINDOW_DESTROY, lambda event: sys.exit())  # noqa: ARG005
     app.MainLoop()

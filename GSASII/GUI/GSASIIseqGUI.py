@@ -19,10 +19,10 @@ from .. import GSASIIobj as G2obj
 from .. import GSASIIplot as G2plt
 from .. import GSASIIpwdplot as G2pwpl
 from .. import GSASIIstrIO as G2stIO
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIexprGUI as G2exG
 from . import GSASIImiscGUI as G2IO
+from .GUI import GSASIIctrlGUI as G2G
 
 try:
     import wx
@@ -34,7 +34,7 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 
 #####  Display of Sequential Results ##########################################
-def UpdateSeqResults(G2frame, data, prevSize=None):
+def UpdateSeqResults(G2frame, data, prevSize=None):  # noqa: ARG001
     """
     Called when any data tree entry is selected that has 'Sequential' in the name
     to show results from any sequential analysis.
@@ -95,7 +95,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                     sampleParmDict[item].append(data[name]["parmDict"].get(item, 0))
             else:
                 if "PDF" in name:
-                    name = "PWDR" + name[4:]
+                    name = "PWDR" + name[4:]  # noqa: PLW2901
                 Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
                 if Id:
                     sampleData = G2frame.GPXtree.GetItemPyData(
@@ -217,7 +217,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
         "Called by a right MB click on a row or column label"
         PlotSelectedColRow("right", event)
 
-    def OnPlotSelSeq(event):
+    def OnPlotSelSeq(event):  # noqa: ARG001
         "plot the selected columns or row from menu command"
         cols = sorted(G2frame.dataDisplay.GetSelectedCols())  # ignore selection order
         rows = G2frame.dataDisplay.GetSelectedRows()
@@ -232,7 +232,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                 "No columns or rows selected in table. Click on row or column labels to select fields for plotting.",
             )
 
-    def OnAveSelSeq(event):
+    def OnAveSelSeq(event):  # noqa: ARG001
         "average the selected columns from menu command"
         cols = sorted(G2frame.dataDisplay.GetSelectedCols())  # ignore selection order
         useCol = ~np.array(G2frame.SeqTable.GetColValues(1), dtype=bool)
@@ -257,7 +257,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                 "No columns selected in table. Click on column labels to select fields for averaging.",
             )
 
-    def OnSelectUse(event):
+    def OnSelectUse(event):  # noqa: ARG001
         dlg = G2G.G2MultiChoiceDialog(
             G2frame, "Select rows to use", "Select rows", histNames
         )
@@ -274,7 +274,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             G2frame.dataDisplay.ForceRefresh()
         dlg.Destroy()
 
-    def OnRenameSelSeq(event):
+    def OnRenameSelSeq(event):  # noqa: ARG001
         cols = sorted(G2frame.dataDisplay.GetSelectedCols())  # ignore selection order
         colNames = [G2frame.SeqTable.GetColLabelValue(c) for c in cols]
         newNames = colNames[:]
@@ -308,7 +308,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
         "export all columns to a .csv file from menu command"
         OnSaveSelSeq(event, csv=True, allcols=True)
 
-    def OnSaveSelSeq(event, csv=False, allcols=False):
+    def OnSaveSelSeq(event, csv=False, allcols=False):  # noqa: ARG001
         "export the selected columns to a .txt or .csv file from menu command"
 
         def WriteLine(line):
@@ -358,7 +358,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
 
         def WriteSeq():
             lenName = len(saveNames[0])
-            line = "  {}  ".format("name".center(lenName))
+            line = f"  {'name'.center(lenName)}  "
             for col in cols:
                 item = G2frame.SeqTable.GetColLabelValue(col)
                 if col in havesig:
@@ -434,7 +434,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             if dlg.ShowModal() == wx.ID_OK:
                 SeqTextFile = dlg.GetPath()
                 SeqTextFile = G2IO.FileDlgFixExt(dlg, SeqTextFile)
-                SeqFile = open(SeqTextFile, "w")
+                SeqFile = open(SeqTextFile, "w")  # noqa: SIM115
                 if csv:
                     WriteCSV()
                 else:
@@ -491,7 +491,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
         G2frame.dataWindow.SequentialPvars.Enable(G2G.wxID_DELSEQVAR, val)
         G2frame.dataWindow.SequentialPvars.Enable(G2G.wxID_EDITSEQVAR, val)
 
-    def DelPseudoVar(event):
+    def DelPseudoVar(event):  # noqa: ARG001
         "Ask the user to select a pseudo var expression to delete"
         choices = list(data["SeqPseudoVars"].keys())
         selected = G2G.ItemSelector(
@@ -510,7 +510,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                 G2frame, data, G2frame.dataDisplay.GetSize()
             )  # redisplay variables
 
-    def EditPseudoVar(event):
+    def EditPseudoVar(event):  # noqa: ARG001
         "Edit an existing pseudo var expression"
         choices = list(data["SeqPseudoVars"].keys())
         if len(choices) == 1:
@@ -541,7 +541,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                     G2frame, data, G2frame.dataDisplay.GetSize()
                 )  # redisplay variables
 
-    def AddNewPseudoVar(event):
+    def AddNewPseudoVar(event):  # noqa: ARG001
         "Create a new pseudo var expression"
         dlg = G2exG.ExpressionDialog(
             G2frame.dataDisplay,
@@ -559,7 +559,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                 G2frame, data, G2frame.dataDisplay.GetSize()
             )  # redisplay variables
 
-    def AddNewDistPseudoVar(event):
+    def AddNewDistPseudoVar(event):  # noqa: ARG001
         obj = None
         dlg = G2exG.BondDialog(
             G2frame.dataDisplay, Phases, PSvarDict, VarLabel="New Bond"
@@ -609,7 +609,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                 G2frame, data, G2frame.dataDisplay.GetSize()
             )  # redisplay variables
 
-    def AddNewAnglePseudoVar(event):
+    def AddNewAnglePseudoVar(event):  # noqa: ARG001
         obj = None
         dlg = G2exG.AngleDialog(
             G2frame.dataDisplay,
@@ -674,10 +674,10 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                 # convert to direct cell & add the unique terms to the dictionary
                 try:
                     dcell = G2lat.A2cell(A)
-                except:
+                except:  # noqa: E722
                     print("phase", pId, "Invalid cell tensor", A)
-                    raise ValueError("Invalid cell tensor in phase " + str(pId))
-                for i, val in enumerate(dcell):
+                    raise ValueError("Invalid cell tensor in phase " + str(pId))  # noqa: B904
+                for i, val in enumerate(dcell):  # noqa: PLW2901
                     if i in uniqCellIndx[pId]:
                         lbl = str(pId) + "::" + G2lat.cellUlbl[i]
                         parmDict[lbl] = val
@@ -742,7 +742,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                         str(pId) + "::", SGdata[pId], VparmDict, zeroDict[pId]
                     )
                     # convert to direct cell & add the unique terms to the dictionary
-                    for i, val in enumerate(G2lat.A2cell(A)):
+                    for i, val in enumerate(G2lat.A2cell(A)):  # noqa: PLW2901
                         if i in uniqCellIndx[pId]:
                             lbl = str(pId) + "::" + G2lat.cellUlbl[i]
                             VparmDict[lbl] = val
@@ -785,7 +785,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                 result.append(calcobj.depVal - calcobj.EvalExpression())
         return result
 
-    def DoParEqFit(event, eqObj=None):
+    def DoParEqFit(event, eqObj=None):  # noqa: ARG001
         "Parametric fit minimizer"
         varyValueDict = {}  # dict of variables and their initial values
         calcObjList = []  # expression objects, ready to go for each data point
@@ -849,7 +849,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             esdDict = {}
             for i, avar in enumerate(varyList):
                 esdDict[avar] = np.sqrt(covar[i, i])
-        except:
+        except:  # noqa: E722
             print("====> Fit failed")
             return
         print("==== Fit Results ====")
@@ -883,7 +883,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             indepVars = obj.GetIndependentVars()
             # loop over each datapoint
             fitvals = []
-            for j, row in enumerate(zip(*G2frame.colList, strict=False)):
+            for j, row in enumerate(zip(*G2frame.colList, strict=False)):  # noqa: B007
                 calcobj.SetupCalc(
                     {var: row[i] for i, var in enumerate(colLabels) if var in indepVars}
                 )
@@ -1049,7 +1049,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             return
         G2IO.ExportSequential(G2frame, data, *vals)
 
-    def onSelectSeqVars(event):
+    def onSelectSeqVars(event):  # noqa: ARG001
         """Select which variables will be shown in table"""
         hides = [
             saveColLabels[2:].index(item)
@@ -1080,7 +1080,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
         data["Use"][r] = val
         G2frame.SeqTable.SetValue(r, c, val)
 
-    def OnSelectUpdate(event):
+    def OnSelectUpdate(event):  # noqa: ARG001
         """Update all phase parameters from a selected column in the Sequential Table.
         If no histogram is selected (or more than one), ask the user to make a selection.
 
@@ -1235,7 +1235,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                             for iname, name in enumerate(names):
                                 AtomSS[Stype][iw][0][iname] = parmDict[pfx + name]
 
-    def OnEditSelectPhaseVars(event):
+    def OnEditSelectPhaseVars(event):  # noqa: ARG001
         """Select phase parameters in a selected histogram in a sequential
         fit. This allows the user to set their value(s)
         """
@@ -1278,13 +1278,13 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             return
         if len(select) == 0:
             return
-        l = [phaseKeys[i] for i in select]
+        l = [phaseKeys[i] for i in select]  # noqa: E741
         d = {i: parmDict[i] for i in l}
         val = G2G.CallScrolledMultiEditor(G2frame, len(l) * [d], l, l, CopyButton=True)
         if val:
             for sel in selRows:
                 parmDict = data[histNames[sel]]["parmDict"]
-                for key in d:  # update values shown in table
+                for key in d:  # update values shown in table  # noqa: PLC0206
                     if parmDict[key] == d[key]:
                         continue
                     if key in data[histNames[sel]]["varyList"]:
@@ -1471,7 +1471,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             ESDlookup[newCellDict[item][0]] = item
             Dlookup[item] = newCellDict[item][0]
     # add coordinate equivalents to lookup table
-    for parm in atomsVaryList:
+    for parm in atomsVaryList:  # noqa: PLC0206
         Dlookup[atomsVaryList[parm]] = parm
         ESDlookup[parm] = atomsVaryList[parm]
     combinedVaryList.sort()
@@ -1480,7 +1480,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
     posdict = {}  # defines position for each entry in table; for inner
     # dict key is column number & value is parameter name
     histNumList = []
-    for i, name in enumerate(histNames):
+    for i, name in enumerate(histNames):  # noqa: B007
         if name in Histograms:
             histNumList.append(list(Histograms.keys()).index(name))
         # if prevVaryList != data[name]['varyList']: # this refinement has a different refinement list from previous
@@ -1623,7 +1623,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                     c = G2lat.A2cell(A)
                     vol = G2lat.calc_V(A)
                     cE = G2lat.getCellEsd(pfx, SGdata[pId], A, covData)
-                except:
+                except:  # noqa: E722
                     c = 6 * [None]
                     cE = 6 * [None]
                     vol = None
@@ -1662,7 +1662,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
         if "nv-" in lbl:
             nlbl = lbl.replace("::nv-", "::")
             if nlbl in ISOlist:
-                lbl = nlbl
+                lbl = nlbl  # noqa: PLW2901
                 ISOcols[lbl] = i
         colLabels.append(lbl)
     Types += len(combinedVaryList) * [
@@ -1685,7 +1685,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             [data[name]["variables"][s] if s is not None else None for s in sellist]
         )
         # replace mode displacement shift with value; esd applies to both
-        for pname in ISOcols:
+        for pname in ISOcols:  # noqa: PLC0206
             if pname in data[name]["parmDict"]:
                 vals[ih][ISOcols[pname]] = data[name]["parmDict"][pname]
         esds.append([data[name]["sig"][s] if s is not None else None for s in sellist])
@@ -1819,7 +1819,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             psDict.update(sampleDict[name])
             try:
                 UpdateParmDict(psDict)
-            except:
+            except:  # noqa: E722
                 print("UpdateParmDict error on histogram", name)
             calcobj.UpdateDict(psDict)
             valList.append(calcobj.EvalExpression())
@@ -1865,7 +1865,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
     VarDict.update(dict(newCellDict.values()))
 
     # remove items to be hidden from table
-    for l in reversed(range(len(colLabels))):
+    for l in reversed(range(len(colLabels))):  # noqa: E741
         if colLabels[l] in G2frame.SeqTblHideList:
             del colLabels[l]
             del Types[l]
@@ -1876,7 +1876,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
 
     # make a copy of the column labels substituting alternate labels when defined
     displayLabels = colLabels[:]
-    for i, l in enumerate(colLabels):
+    for i, l in enumerate(colLabels):  # noqa: E741
         if l in variableLabels:
             displayLabels[i] = variableLabels[l]
 
@@ -1896,7 +1896,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
     G2frame.dataWindow.SetSizer(mainSizer)
     if histNames[0].startswith("PWDR"):
         # rowLabels = [str(i)+': '+l[5:30] for i,l in enumerate(histNames)]
-        rowLabels = [l[5:] for i, l in enumerate(histNames)]
+        rowLabels = [l[5:] for i, l in enumerate(histNames)]  # noqa: E741
     else:
         rowLabels = histNames
     G2frame.SeqTable = G2G.Table(
@@ -1947,7 +1947,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                     G2frame.dataDisplay.SetCellStyle(
                         row, deltaChiCol, color=wx.Colour(255, 255, 0)
                     )
-            except:
+            except:  # noqa: E722
                 pass
     G2frame.dataDisplay.InstallGridToolTip(GridSetToolTip, GridColLblToolTip)
     # G2frame.dataDisplay.SendSizeEvent() # resize needed on mac
@@ -1973,11 +1973,11 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         import sklearn.svm as SKVM
 
         ClusData["SKLearn"] = True
-    except:
+    except:  # noqa: E722
         ClusData["SKLearn"] = False
 
     def FileSizer():
-        def OnSelectData(event):
+        def OnSelectData(event):  # noqa: ARG001
             def GetCaLimits(names):
                 """scan through data selected for cluster analysis to find highest lower & lowest upper limits
                 param: data dict: Cluster analysis info
@@ -2052,10 +2052,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         if len(ClusData["Files"]):
             if "PDF" in ClusData["Files"][0]:
                 Type = "PDF"
-            lbl = "Cluster Analysis with %d %s datasets: " % (
-                len(ClusData["Files"]),
-                Type,
-            )
+            lbl = f"Cluster Analysis with {len(ClusData['Files'])} {Type} datasets: "
             ClusData["Type"] = Type
         else:
             lbl = "No data selected for Cluster Analysis"
@@ -2066,7 +2063,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         return fileSizer
 
     def LimitSizer():
-        def CheckLimits(invalid, value, tc):
+        def CheckLimits(invalid, value, tc):  # noqa: ARG001
             # TODO this needs a check on ultimate size of data array; loop over names & count points?
 
             if ClusData["Limits"][1][1] < ClusData["Limits"][1][0]:
@@ -2132,7 +2129,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
             nData += iFin - iBeg
         return nData
 
-    def OnMakeArray(event):
+    def OnMakeArray(event):  # noqa: ARG001
         Limits = ClusData["Limits"][1]
         Start = True
         nFiles = len(ClusData["Files"])
@@ -2177,7 +2174,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
             OnCompute(event)
             wx.CallAfter(UpdateClusterAnalysis, G2frame, ClusData)
 
-        def OnCompute(event):
+        def OnCompute(event):  # noqa: ARG001
             if "minkowski" in ClusData["Method"]:
                 ClusData["ConDistMat"] = SSD.pdist(
                     ClusData["DataMatrix"], ClusData["Method"], p=int(ClusData["MinkP"])
@@ -2249,7 +2246,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
             ClusData["Opt Order"] = not ClusData["Opt Order"]
             OnCompute(event)
 
-        def OnCompute(event):
+        def OnCompute(event):  # noqa: ARG001
             ClusData["CLuZ"] = SCH.linkage(
                 ClusData["ConDistMat"],
                 method=ClusData["LinkMethod"],
@@ -2295,7 +2292,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
             ClusData["NumClust"] = int(numclust.GetValue())
             OnCompute(event)
 
-        def OnCompute(event):
+        def OnCompute(event):  # noqa: ARG001
             whitMat = SCV.whiten(ClusData["DataMatrix"])
             codebook, dist = SCV.kmeans2(whitMat, ClusData["NumClust"])  # use K-means++
             ClusData["codes"], ClusData["dists"] = SCV.vq(whitMat, codebook)
@@ -2322,7 +2319,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         kmeanssizer.Add(compute)
         return kmeanssizer
 
-    def OnPlotSel(event):
+    def OnPlotSel(event):  # noqa: ARG001
         ClusData["plots"] = plotsel.GetValue()
         if ClusData["plots"] == "Suprise":
             G2plt.PlotClusterXYZ(G2frame, None, None, ClusData, PlotName="Suprise")
@@ -2345,7 +2342,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
             ClusData["NumClust"] = int(numclust.GetValue())
             OnCompute(event)
 
-        def OnCompute(event):
+        def OnCompute(event):  # noqa: ARG001
             whitMat = SCV.whiten(ClusData["DataMatrix"])
             if ClusData["Scikit"] == "K-Means":
                 result = SKC.KMeans(
@@ -2450,7 +2447,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         compute.Bind(wx.EVT_BUTTON, OnCompute)
         clusSizer.Add(compute, 0, WACV)
         scikitSizer.Add(clusSizer)
-        useTxt = "{} used the whitened data matrix".format(ClusData["Scikit"])
+        useTxt = f"{ClusData['Scikit']} used the whitened data matrix"
         if ClusData["Scikit"] in ["Agglomerative clustering", "Affinity propagation"]:
             useTxt = "{} used {} for distance method".format(
                 ClusData["Scikit"],
@@ -2468,11 +2465,11 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         return scikitSizer
 
     def memberSizer():
-        def OnClusNum(event):
+        def OnClusNum(event):  # noqa: ARG001
             shoNum = int(numclust.GetValue())
             wx.CallAfter(UpdateClusterAnalysis, G2frame, ClusData, shoNum)
 
-        def OnSelection(event):
+        def OnSelection(event):  # noqa: ARG001
             name = cluslist.GetStringSelection()
             item = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
             G2frame.PatternId = item
@@ -2513,7 +2510,8 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         for i in range(NClust + 1):
             nPop = len(ClusData["codes"]) - np.count_nonzero(ClusData["codes"] - i)
             txt = wx.StaticText(
-                G2frame.dataWindow, label="Cluster #%d has %d members" % (i, nPop)
+                G2frame.dataWindow,
+                label="Cluster #%d has %d members" % (i, nPop),
             )
             txt.SetForegroundColour(wx.Colour(Colors[i][1]))
             if wx.Colour(Colors[i][1]).GetLuminance() > 0.5:
@@ -2563,7 +2561,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
             ClusData["OutMethod"] = outsel.GetValue()
             OnCompute(event)
 
-        def OnCompute(event):
+        def OnCompute(event):  # noqa: ARG001
             if ClusData["OutMethod"] == "One-Class SVM":
                 ClusData["codes"] = SKVM.OneClassSVM().fit_predict(
                     ClusData["DataMatrix"]
@@ -2600,7 +2598,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         outSizer.Add(outline)
         return outSizer
 
-    def OnSelection(event):
+    def OnSelection(event):  # noqa: ARG001
         name = outlist.GetStringSelection()
         item = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
         G2frame.PatternId = item

@@ -398,8 +398,8 @@ def GetXsectionCoeff(El):
     if not os.path.exists(filename):  # patch 3/2024 for svn dir organization
         filename = os.path.join(GSASIIpath.path2GSAS2, "Xsect.dat")
     try:
-        xsec = open(filename)
-    except:
+        xsec = open(filename)  # noqa: SIM115
+    except:  # noqa: E722
         print(
             f"**** ERROR - File Xsect.dat not found in directory {os.path.dirname(filename)}"
         )
@@ -1088,7 +1088,7 @@ def SetupGeneral(data, dirname):
             * generalData["Isotopes"][elem][isotope]["SL"][0]
         )
         if elem.strip() in ["D", "T"]:
-            elem = "H"
+            elem = "H"  # noqa: PLW2901
         F000E += (
             generalData["NoAtoms"][elem]
             * ScatFac(EFFtables[StripValence(elem)], 0.0)[0]
@@ -1100,7 +1100,7 @@ def SetupGeneral(data, dirname):
 
     if badList:
         msg = "Warning: element symbol(s) not found:"
-        for key in badList:
+        for key in badList:  # noqa: PLC0206
             msg += "\n\t" + key
             if badList[key] > 1:
                 msg += " (" + str(badList[key]) + " times)"

@@ -161,5 +161,5 @@ try:
     import UserSubstances as userFile
 
     Substances.update(userFile.Substances)
-except:
+except:  # noqa: E722
     pass

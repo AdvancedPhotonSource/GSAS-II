@@ -46,7 +46,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         self.Chi = False
         Qchi = False
         self.Wave = None
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         ext = os.path.splitext(filename)[1]
         if ext == ".chi":
             self.Chi = True
@@ -76,7 +76,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                             if wave:
                                 try:
                                     self.Wave = float(wave[0])
-                                except:
+                                except:  # noqa: E722
                                     pass
                             if not self.Wave:
                                 self.errors = "No wavelength in a Q chi file"
@@ -100,7 +100,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                             if wave:
                                 try:
                                     self.Wave = float(wave)
-                                except:
+                                except:  # noqa: E722
                                     self.Wave = 1.0  # special for POWGEN 1A-2A frame "pink" CW data
                         continue  # ignore comments, if any
                     if S.startswith("TITLE"):
@@ -127,14 +127,14 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         fp.close()
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read a Topas file"
         x = []
         y = []
         w = []
         gotCcomment = False
         begin = True
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, S in enumerate(fp):
             self.errors = "Error reading line: " + str(i + 1)
             # or a block of comments delimited by /* and */
@@ -193,7 +193,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     print(msg)
                     print(S.strip())
                 break
-            except:
+            except:  # noqa: E722
                 msg = "Error in line " + str(i + 1)
                 if GSASIIpath.GetConfigValue("debug"):
                     print(msg)
@@ -229,12 +229,12 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             if "temp" in S.lower().split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
             if "pressure" in S.lower().split("=")[0]:
                 try:
                     self.Sample["Pressure"] = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.Sample["Temperature"] = Temperature
         fp.close()

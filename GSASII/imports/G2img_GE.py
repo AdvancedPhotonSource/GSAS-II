@@ -39,12 +39,12 @@ class GE_ReaderClass(G2obj.ImportImage):
         """just a test on file size"""
         if ".sum" not in str(filename):
             try:
-                fp = open(filename, "rb")
+                fp = open(filename, "rb")  # noqa: SIM115
                 statinfo = os.stat(str(fp).split("'")[1])
                 fsize = statinfo.st_size
                 self.nimages = (fsize - 8192) / (2 * 2048**2)
                 fp.close()
-            except:
+            except:  # noqa: E722
                 return False  # bad file size
         return True
 
@@ -87,12 +87,12 @@ class GEsum_ReaderClass(G2obj.ImportImage):
     def ContentsValidator(self, filename):
         """just a test on file size"""
         try:
-            fp = open(filename, "rb")
+            fp = open(filename, "rb")  # noqa: SIM115
             statinfo = os.stat(str(fp).split("'")[1])
             fsize = statinfo.st_size
-            nimages = (fsize - 8192) / (2 * 2048**2)
+            nimages = (fsize - 8192) / (2 * 2048**2)  # noqa: F841
             fp.close()
-        except:
+        except:  # noqa: E722
             return False  # bad file size
         return True
 
@@ -123,7 +123,7 @@ def GetGEsumData(self, filename, imagenum=1, sum=False):
 
     more = False
     time0 = time.time()
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     if filename.split(".")[-1] in ["sum", "cor32"]:
         head = [
             "GE detector sum/corrected data from APS 1-ID",
@@ -191,7 +191,7 @@ def GetGEsumData(self, filename, imagenum=1, sum=False):
             "file: " + filename + " image #" + str(imagenum),
         ]
         if sum:  # will ignore imagenum
-            print("Frames to read %d," % (nframes), end="")
+            print(f"Frames to read {nframes},", end="")
             while nframes > 1:  # OK, this will sum the frames.
                 try:
                     image += np.array(
@@ -201,11 +201,11 @@ def GetGEsumData(self, filename, imagenum=1, sum=False):
                 except ValueError:
                     break
                 nframes -= 1
-                print("%d," % (nframes), end="")
+                print(f"{nframes},", end="")
             print("")
             more = False
             filename = os.path.splitext(filename)[0] + ".G2img"
-            File = open(filename, "wb")
+            File = open(filename, "wb")  # noqa: SIM115
             Data = {
                 "pixelSize": [200.0, 200.0],
                 "wavelength": 0.15,
@@ -230,6 +230,6 @@ def GetGEsumData(self, filename, imagenum=1, sum=False):
     }
     File.close()
     if GSASIIpath.GetConfigValue("debug"):
-        print("Image read time %.2fs" % (time.time() - time0))
-        print("Read GE file: " + filename + " image #" + "%04d" % (imagenum))
+        print(f"Image read time {time.time() - time0:.2f}s")
+        print(f"Read GE file: {filename} image #{imagenum:04d}")
     return head, data, Npix, image, more

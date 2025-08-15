@@ -36,7 +36,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
 
     def ContentsValidator(self, filename):
         """Does the header match the required TIF header?"""
-        fp = open(filename, "rb")
+        fp = open(filename, "rb")  # noqa: SIM115
         tag = fp.read(2)
         if "bytes" in str(type(tag)):
             tag = tag.decode("latin-1")
@@ -50,7 +50,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
         fp.close()
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         """Read the TIF file using :func:`GetTifData`."""
         self.Comments, self.Data, self.Npix, self.Image = GetTifData(filename)
         if self.Npix == 0:
@@ -70,7 +70,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
                 }
                 try:
                     self.Data["size"] = list(self.Image.shape)
-                except:
+                except:  # noqa: E722
                     return False
                 self.Data["center"] = [int(i / 2) for i in self.Image.shape]
         if self.Npix == 0:
@@ -94,7 +94,7 @@ def GetTifData(filename):
 
     # import ReadMarCCDFrame as rmf
     image = None
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     dataType = 5
     center = [None, None]
     wavelength = None
@@ -102,23 +102,23 @@ def GetTifData(filename):
     polarization = None
     DEBUG = False
     try:
-        Meta = open(filename + ".metadata")
+        Meta = open(filename + ".metadata")  # noqa: SIM115
         head = Meta.readlines()
         for line in head:
-            line = line.strip()
+            line = line.strip()  # noqa: PLW2901
             try:
                 if "=" not in line:
                     continue
                 keyword = line.split("=")[0].strip()
                 if keyword == "dataType":
-                    dataType = int(line.split("=")[1])
+                    dataType = int(line.split("=")[1])  # noqa: F841
                 elif keyword.lower() == "wavelength":
                     wavelength = float(line.split("=")[1])
                 elif keyword.lower() == "distance":
                     distance = float(line.split("=")[1])
                 elif keyword.lower() == "polarization":
                     polarization = float(line.split("=")[1])
-            except:
+            except:  # noqa: E722
                 print("error reading metadata: " + line)
         Meta.close()
     except OSError:
@@ -162,7 +162,7 @@ def GetTifData(filename):
             st.unpack(byteOrd + nVal * "h", File.read(nVal * 2))
         elif Type == 4:
             if Tag in [273, 279]:
-                nSlice = nVal
+                nSlice = nVal  # noqa: F841
                 nVal = 1
             Value = st.unpack(byteOrd + nVal * "i", File.read(nVal * 4))
         elif Type == 5:
@@ -186,7 +186,7 @@ def GetTifData(filename):
         IFD[258][2][0] == 16
     ):  # summed files are 16 bit to hold the required amount of data
         if sizexy in ([1024, 402], [402, 1024]):  # confirms that it has the proper size
-            tifType = "1ID summed 16bit Dexela"
+            tifType = "1ID summed 16bit Dexela"  # noqa: F841
             pixy = [62.0, 62.0]  # sets the pixel size
             print("Read 1ID normalized 16bit Pixirad tiff file: " + filename)
             File.seek(0)  # goto first pixel
@@ -209,7 +209,7 @@ def GetTifData(filename):
             "Unexpected image size, not 1024 by 402",
         ]
         return lines, 0, 0, 0
-    print("image read time: %.3f" % (time.time() - time0))
+    print(f"image read time: {time.time() - time0:.3f}")
     image = np.reshape(image, (sizexy[1], sizexy[0]))
     center = (
         (not center[0]) and [pixy[0] * sizexy[0] / 2000, pixy[1] * sizexy[1] / 2000]

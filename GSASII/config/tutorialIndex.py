@@ -231,7 +231,7 @@ tutorialIndex = (
         "MCSA in GSAS.htm",
         "Monte-Carlo simulated annealing structure determination",
         """Solving the structures of 3-aminoquinoline and α-d-lactose monohydrate from powder diffraction data 
-     via Monte Carlo/Simulated Annealing (MC/SA).""",
+     via Monte Carlo/Simulated Annealing (MC/SA).""",  # noqa: RUF001
     ],
     [
         "PDF 1: RMCProfile Reverse Monte-Carlo PDF & S(Q) Modeling"

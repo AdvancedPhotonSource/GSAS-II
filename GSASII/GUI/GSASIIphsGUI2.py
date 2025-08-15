@@ -22,13 +22,13 @@ from .. import GSASIIplot as G2plt
 from .. import GSASIIpwd as G2pwd
 from .. import GSASIIspc as G2spc
 from .. import GSASIIstrIO as G2stIO
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIElemGUI as G2elemGUI
 from . import GSASIIphsGUI as G2phsG
+from .GUI import GSASIIctrlGUI as G2G
 
 try:
-    wx.NewIdRef
+    wx.NewIdRef  # noqa: B018
     wx.NewId = wx.NewIdRef
 except AttributeError:
     pass
@@ -39,7 +39,7 @@ try:
     BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
     RED = wx.Colour(255, 0, 0)
     WACV = wx.ALIGN_CENTER_VERTICAL
-except:
+except:  # noqa: E722
     pass
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
@@ -103,25 +103,25 @@ DrawStyleChoice = [
 def UpdateDysnomia(G2frame, data):
     """Present the controls for running Dysnomia"""
 
-    def OnOptMeth(event):
+    def OnOptMeth(event):  # noqa: ARG001
         DysData["Optimize"] = OptMeth.GetValue()
         wx.CallAfter(UpdateDysnomia, G2frame, data)
 
-    def OnZmult(event):
+    def OnZmult(event):  # noqa: ARG001
         DysData["Lagrange"][0] = Zmult.GetValue()
         wx.CallAfter(UpdateDysnomia, G2frame, data)
 
-    def OnStart(event):
+    def OnStart(event):  # noqa: ARG001
         DysData["DenStart"] = Start.GetValue()
 
-    def OnPrior(event):
+    def OnPrior(event):  # noqa: ARG001
         DysData["prior"] = Prior.GetValue()
         if DysData["prior"] == "last run":
             if os.path.isfile(pName + "_prior.pgrid"):
                 os.remove(pName + "_prior.pgrid")
             os.rename(pName + ".pgrid", pName + "_prior.pgrid")
 
-    def OnFileCheck(event):
+    def OnFileCheck(event):  # noqa: ARG001
         DysData["clear"] = fileCheck.GetValue()
 
     generalData = data["General"]
@@ -393,7 +393,7 @@ def UpdateDeformation(G2frame, data, AtdId):
             data["Deformations"][-dId]["UVmat"] = UVmat
         wx.CallAfter(UpdateDeformation, G2frame, data, dId)
 
-    def OnAtSel(event):
+    def OnAtSel(event):  # noqa: ARG001
         dId = atomList[atSel.GetValue()]
         wx.CallAfter(UpdateDeformation, G2frame, data, dId)
 
@@ -611,8 +611,7 @@ def UpdateDeformation(G2frame, data, AtdId):
             )
         elif len(neigh) < 9:
             names = [
-                "{}={}".format(alpha[i], item[0].replace(" ", ""))
-                for i, item in enumerate(neigh)
+                f"{alpha[i]}={item[0].replace(' ', '')}" for i, item in enumerate(neigh)
             ]
             lineSizer.Add(
                 wx.StaticText(deformation, label=" Neighbors: " + str(names)), 0, WACV
@@ -707,7 +706,7 @@ def UpdateDeformation(G2frame, data, AtdId):
         G2G.HorizontalLine(mainSizer, deformation)
         mainSizer.Add(wx.StaticText(deformation, label=" Deformation parameters:"))
         orbSizer = wx.FlexGridSizer(0, 9, 2, 2)
-        for iorb, orb in enumerate(deformationData[dId]):
+        for iorb, orb in enumerate(deformationData[dId]):  # noqa: B007
             if deformationData[-dId]["Radial"] == "Bessel" and "Sl " not in orb[0]:
                 if "<j0>" in orb[0]:
                     orbSizer.Add(wx.StaticText(deformation, label=orb[0] + " Ne:"))
@@ -773,7 +772,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
     """
 
     def displaySetup():
-        def OnParentCif(event):
+        def OnParentCif(event):  # noqa: ARG001
             dlg = wx.FileDialog(
                 G2frame.ISODIST,
                 "Select parent cif file",
@@ -790,17 +789,17 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
                 dlg.Destroy()
             UpdateISODISTORT(G2frame, data)
 
-        def OnUsePhase(event):
+        def OnUsePhase(event):  # noqa: ARG001
             ISOdata["ParentCIF"] = "Use this phase"
             UpdateISODISTORT(G2frame, data)
 
-        def OnMethodSel(event):
+        def OnMethodSel(event):  # noqa: ARG001
             method = methodSel.GetSelection() + 1
             if method in [1, 4]:
                 ISOdata["ISOmethod"] = method
             UpdateISODISTORT(G2frame, data)
 
-        def OnChildCif(event):
+        def OnChildCif(event):  # noqa: ARG001
             dlg = wx.FileDialog(
                 G2frame.ISODIST,
                 "Select child cif file",
@@ -817,7 +816,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
                 dlg.Destroy()
             UpdateISODISTORT(G2frame, data)
 
-        def OnUsePhase2(event):
+        def OnUsePhase2(event):  # noqa: ARG001
             ISOdata["ChildCIF"] = "Use this phase"
             UpdateISODISTORT(G2frame, data)
 
@@ -891,7 +890,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
             ISOdata["selection"] = None
             UpdateISODISTORT(G2frame, data)
 
-        def OnAllBtn(event):
+        def OnAllBtn(event):  # noqa: ARG001
             for item in ISOdata["SGselect"]:
                 ISOdata["SGselect"][item] = not ISOdata["SGselect"][item]
             ISOdata["selection"] = None
@@ -1001,7 +1000,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
             G2phsG.FindBondsDraw(data)
             G2plt.PlotStructure(G2frame, data)
 
-        def OnDispVal(invalid, value, tc):
+        def OnDispVal(invalid, value, tc):  # noqa: ARG001
             """Respond to entry of a value into a distortion mode entry widget"""
             idsp, displ = Indx[tc.GetId()]
             displ.SetValue(int(value * 1000))
@@ -1016,7 +1015,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
             idsp, item = Indx[Obj.GetId()]
             item[-2] = not item[-2]
 
-        def OnReset(event):
+        def OnReset(event):  # noqa: ARG001
             """Reset all distortion mode values to initial values"""
             ISOdata["modeDispl"] = copy.deepcopy(ISOdata["ISOmodeDispl"])
             err = G2mth.ApplyModeDisp(data)
@@ -1026,7 +1025,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
             G2plt.PlotStructure(G2frame, data)
             UpdateISODISTORT(G2frame, data)
 
-        def OnSetZero(event):
+        def OnSetZero(event):  # noqa: ARG001
             """Reset all distortion mode values to 0"""
             ISOdata["modeDispl"] = [0.0 for i in ISOdata["ISOmodeDispl"]]
             err = G2mth.ApplyModeDisp(data)
@@ -1036,7 +1035,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
             G2plt.PlotStructure(G2frame, data)
             UpdateISODISTORT(G2frame, data)
 
-        def OnSaveModes(event):
+        def OnSaveModes(event):  # noqa: ARG001
             """Set saved distortion mode values to displayed values"""
             dlg = wx.MessageDialog(
                 G2frame,
@@ -1127,7 +1126,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
             slideSizer.Add(
                 wx.StaticText(
                     G2frame.ISODIST,
-                    label=" {:.5g} ".format(ISOdata["ISOmodeDispl"][idsp]),
+                    label=f" {ISOdata['ISOmodeDispl'][idsp]:.5g} ",
                     style=wx.ALIGN_CENTER_HORIZONTAL,
                 ),
                 0,
@@ -1316,7 +1315,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
         data["Layers"]["Laue"] = Obj.GetValue()
         wx.CallAfter(UpdateLayerData, G2frame, data)
 
-    def OnSadpPlot(event):
+    def OnSadpPlot(event):  # noqa: ARG001
         sadpPlot.SetValue(False)
         labels = Layers["Sadp"]["Plane"]
         lmax = float(Layers["Sadp"]["Lmax"])
@@ -1332,7 +1331,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             Title=Layers["Sadp"]["Plane"],
         )
 
-    def OnSeqPlot(event):
+    def OnSeqPlot(event):  # noqa: ARG001
         seqPlot.SetValue(False)
         resultXY, resultXY2, seqNames = Layers["seqResults"]
         pName = Layers["seqCodes"][0]
@@ -1392,7 +1391,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             ],
         ]
 
-        def OnCellRef(event):
+        def OnCellRef(event):  # noqa: ARG001
             data["Layers"]["Cell"][0] = cellRef.GetValue()
 
         def OnCellChange(event):
@@ -1486,7 +1485,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             widthSizer.Add(widthRef, 0, WACV)
         return widthSizer
 
-    def OnNewLayer(event):
+    def OnNewLayer(event):  # noqa: ARG001
         data["Layers"]["Layers"].append(
             {"Name": "Unk", "SameAs": "", "Symm": "None", "Atoms": []}
         )
@@ -1504,14 +1503,14 @@ def UpdateLayerData(G2frame, data, Scroll=0):
         data["Layers"]["Transitions"] = Trans
         wx.CallLater(100, UpdateLayerData, G2frame, data)
 
-    def OnDeleteLast(event):
+    def OnDeleteLast(event):  # noqa: ARG001
         del data["Layers"]["Layers"][-1]
         del data["Layers"]["Transitions"][-1]
         for trans in data["Layers"]["Transitions"]:
             del trans[-1]
         wx.CallAfter(UpdateLayerData, G2frame, data)
 
-    def OnImportLayer(event):
+    def OnImportLayer(event):  # noqa: ARG001
         dlg = wx.FileDialog(
             G2frame,
             "Choose GSAS-II project file",
@@ -1571,11 +1570,11 @@ def UpdateLayerData(G2frame, data, Scroll=0):
         #     Layer['Name'] = layerName.GetValue()
         #     wx.CallLater(100,UpdateLayerData,G2frame,data)
 
-        def OnAddAtom(event):
+        def OnAddAtom(event):  # noqa: ARG001
             Layer["Atoms"].append(["Unk", "Unk", 0.0, 0.0, 0.0, 1.0, 0.01])
             wx.CallAfter(UpdateLayerData, G2frame, data)
 
-        def OnSymm(event):
+        def OnSymm(event):  # noqa: ARG001
             Layer["Symm"] = symm.GetValue()
 
         def AtomTypeSelect(event):
@@ -1600,7 +1599,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             else:
                 event.Skip()
 
-        def OnDrawLayer(event):
+        def OnDrawLayer(event):  # noqa: ARG001
             drawLayer.SetValue(False)
             G2plt.PlotLayers(
                 G2frame,
@@ -1612,7 +1611,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
                 firstCall=True,
             )
 
-        def OnSameAs(event):
+        def OnSameAs(event):  # noqa: ARG001
             Layer["SameAs"] = sameas.GetValue()
             wx.CallLater(100, UpdateLayerData, G2frame, data)
 
@@ -1679,7 +1678,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             attr.IncRef()  # fix from Jim Hester
             attr.SetEditor(G2G.GridFractionEditor(atomGrid))
             atomGrid.SetColAttr(c, attr)
-        for row, atom in enumerate(Layer["Atoms"]):
+        for row, atom in enumerate(Layer["Atoms"]):  # noqa: B007
             atomGrid.SetReadOnly(row, 1, True)
         atomGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, AtomTypeSelect)
         atomGrid.AutoSizeColumns(True)
@@ -1707,10 +1706,10 @@ def UpdateLayerData(G2frame, data, Scroll=0):
                 for Xi in range(len(transArray)):
                     Psum += transArray[Xi][Xi][0]
                 Psum /= len(transArray)
-                totalFault.SetLabel(" Total fault density = %.3f" % (1.0 - Psum))
+                totalFault.SetLabel(f" Total fault density = {1.0 - Psum:.3f}")
                 event.Skip()
 
-        def OnNormProb(event):
+        def OnNormProb(event):  # noqa: ARG001
             for Yi, _Yname in enumerate(Names):
                 Psum = 0.0
                 for Xi, _Xname in enumerate(Names):
@@ -1722,7 +1721,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
                     transArray[Yi][Xi][0] /= Psum
             wx.CallAfter(UpdateLayerData, G2frame, data)
 
-        def OnSymProb(event):
+        def OnSymProb(event):  # noqa: ARG001
             if symprob.GetValue():
                 Nx = len(Names) - 1
                 Layers["SymTrans"] = True
@@ -1790,7 +1789,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
         if len(transArray):
             diagSum /= len(transArray)
             totalFault = wx.StaticText(
-                layerData, label=" Total fault density = %.3f" % (1.0 - diagSum)
+                layerData, label=f" Total fault density = {1.0 - diagSum:.3f}"
             )
             transSizer.Add(totalFault, 0)
         return transSizer
@@ -1841,7 +1840,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             "list",
         ]
 
-        def OnStackType(event):
+        def OnStackType(event):  # noqa: ARG001
             newType = stackType.GetValue()
             if newType == data["Layers"]["Stacking"][0]:
                 return
@@ -1853,7 +1852,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
                 data["Layers"]["Stacking"][2] = "250"
             wx.CallAfter(UpdateLayerData, G2frame, data)
 
-        def OnSeqType(event):
+        def OnSeqType(event):  # noqa: ARG001
             newType = seqType.GetValue()
             if newType == data["Layers"]["Stacking"][1]:
                 return
@@ -2030,7 +2029,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
     try:
         if layerData.GetSizer():
             layerData.GetSizer().Clear(True)
-    except:
+    except:  # noqa: E722
         pass
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2202,7 +2201,7 @@ def UpdateTexture(G2frame, data):
         Obj = event.GetEventObject()
         textureData[angIndx[Obj.GetId()]][0] = Obj.GetValue()
 
-    def OnODFValue(invalid, value, tc):
+    def OnODFValue(invalid, value, tc):  # noqa: ARG001
         wx.CallAfter(G2plt.PlotTexture, G2frame, data)
 
     def OnPfType(event):
@@ -2240,7 +2239,7 @@ def UpdateTexture(G2frame, data):
             textureData["PFxyz"] = xyz
         wx.CallAfter(G2plt.PlotTexture, G2frame, data)
 
-    def OnpopLA(event):
+    def OnpopLA(event):  # noqa: ARG001
         pfName = PhaseName
         cell = generalData["Cell"][1:7]
         PH = np.array(textureData["PFhkl"])
@@ -2264,7 +2263,7 @@ def UpdateTexture(G2frame, data):
             dlg.Destroy()
         print("popLA save " + pfFile)
         if pfFile:
-            pf = open(pfFile, "w")
+            pf = open(pfFile, "w")  # noqa: SIM115
             pf.write(PhaseName + "\n")
             str = " %d%d%d   5.0 90.0  5.0360.0 1 1 2 1 3  100    1" % (
                 PH[0],
@@ -2292,7 +2291,7 @@ def UpdateTexture(G2frame, data):
                 % (PH[0], PH[1], PH[2], pfFile)
             )
 
-    def OnCSV(event):
+    def OnCSV(event):  # noqa: ARG001
         pfName = PhaseName
         pfFile = ""
         cell = generalData["Cell"][1:7]
@@ -2304,7 +2303,7 @@ def UpdateTexture(G2frame, data):
             xyz = np.sqrt(PX[0] ** 2 + PX[1] ** 2 + PX[2] ** 2)
             psi = asind(xy / xyz)
             IODFln = G2lat.Glnh(SHCoef, psi, gam, SamSym[textureData["Model"]])
-            pfName = PhaseName + "%d%d%dIPF.csv" % (int(PX[0]), int(PX[1]), int(PX[2]))
+            pfName = PhaseName + f"{int(PX[0])}{int(PX[1])}{int(PX[2])}IPF.csv"
             pth = G2G.GetExportPath(G2frame)
             dlg = wx.FileDialog(
                 G2frame,
@@ -2336,7 +2335,7 @@ def UpdateTexture(G2frame, data):
         finally:
             dlg.Destroy()
         if pfFile:
-            pf = open(pfFile, "w")
+            pf = open(pfFile, "w")  # noqa: SIM115
             pf.write(f'"{PhaseName}"\n')
             if "Inverse" in textureData["PlotType"]:
                 pf.write(
@@ -2512,7 +2511,7 @@ def UpdateTexture(G2frame, data):
                 textureData["Sample chi"][1],
                 textureData["Sample phi"][1],
             ]
-            phi, gam, x, x = G2lat.SamAng(Tth, Gangls, Sangls, False)
+            phi, gam, x, x = G2lat.SamAng(Tth, Gangls, Sangls, False)  # noqa: PLW0128
             if phi > 90.0:
                 phi = 180.0 - phi
                 gam += 180.0
@@ -2691,7 +2690,10 @@ def UpdateTexture(G2frame, data):
         PH = textureData["PFhkl"]
         #            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
         pfVal = wx.TextCtrl(
-            Texture, -1, "%d %d %d" % (PH[0], PH[1], PH[2]), style=wx.TE_PROCESS_ENTER
+            Texture,
+            -1,
+            "%d %d %d" % (PH[0], PH[1], PH[2]),
+            style=wx.TE_PROCESS_ENTER,
         )
     else:
         PTSizer.Add(wx.StaticText(Texture, -1, " Inverse pole figure XYZ: "), 0, WACV)
@@ -2708,7 +2710,7 @@ def UpdateTexture(G2frame, data):
     PTSizer.Add(pfVal, 0, WACV)
     if "Axial" not in textureData["PlotType"] and "3D" not in textureData["PlotType"]:
         PTSizer.Add(wx.StaticText(Texture, -1, " Color scheme"), 0, WACV)
-        choice = list(mpl.cm.datad.keys()) + [
+        choice = list(mpl.cm.datad.keys()) + [  # noqa: RUF005
             "GSPaired",
             "GSPaired_r",
         ]  # if not m.endswith("_r")
@@ -2872,10 +2874,10 @@ def UpdateWavesData(G2frame, data, Scroll=0):
         G2frame.dataWindow.SendSizeEvent()
 
     def ShowAtomInfo():
-        global mapSel  # so it can be seen below in OnWavePlot
+        global mapSel  # so it can be seen below in OnWavePlot  # noqa: PLW0602
 
         def AtomSizer(atom):
-            global mapSel
+            global mapSel  # noqa: PLW0603
 
             def OnShowWave(event):
                 Obj = event.GetEventObject()
@@ -2910,7 +2912,7 @@ def UpdateWavesData(G2frame, data, Scroll=0):
                 atomSizer.Add(mapSel, 0, WACV)
             return atomSizer
 
-        def WaveSizer(iatm, wavedata, Stype, typeName, Names):
+        def WaveSizer(iatm, wavedata, Stype, typeName, Names):  # noqa: ARG001
             def OnWaveType(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
@@ -2963,7 +2965,7 @@ def UpdateWavesData(G2frame, data, Scroll=0):
                     RepaintAtomInfo, G2frame.waveData.GetScrollPos(wx.VERTICAL)
                 )
 
-            def OnWavePlot(invalid, value, tc):
+            def OnWavePlot(invalid, value, tc):  # noqa: ARG001
                 if len(D4Map["rho"]):
                     Ax = mapSel.GetValue()
                     if Ax:

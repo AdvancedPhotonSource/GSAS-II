@@ -11,10 +11,10 @@ from .. import GSASIIobj as G2obj
 
 def ColumnValidator(parent, filepointer, nCol=5):
     "Validate a file to check that it contains columns of numbers"
-    l = filepointer.readline()
+    l = filepointer.readline()  # noqa: E741
     line = 1
     while l[0] in ["#", "("]:  # get past comments & fortran formats, if any
-        l = filepointer.readline()
+        l = filepointer.readline()  # noqa: E741
         line += 1
     for _i in range(10):  # scan a few lines
         S = l.split()
@@ -32,7 +32,7 @@ def ColumnValidator(parent, filepointer, nCol=5):
                     + l
                 )
                 return False
-        l = filepointer.readline()
+        l = filepointer.readline()  # noqa: E741
         line += 1
     return True
 
@@ -50,22 +50,22 @@ class HKLF_ReaderClass(G2obj.ImportStructFactor):
 
     def ContentsValidator(self, filename):
         "Make sure file contains the expected columns on numbers"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         valid = ColumnValidator(self, fp)
         fp.close()
         return valid
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for line, S in enumerate(fp):
                 self.errors = "  Error reading line " + str(line + 1)
                 if S[0] == "#":
                     continue  # ignore comments, if any
                 items = S.split()
-                h, k, l, Fo, sigFo = items[:5]
-                h, k, l = [int(h), int(k), int(l)]
+                h, k, l, Fo, sigFo = items[:5]  # noqa: E741
+                h, k, l = [int(h), int(k), int(l)]  # noqa: E741
                 if not any([h, k, l]):
                     break
                 Fo = float(Fo)
@@ -81,7 +81,7 @@ class HKLF_ReaderClass(G2obj.ImportStructFactor):
             self.RefDict["Super"] = 0
             self.UpdateParameters(Type="SXC", Wave=None)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False
 
 
@@ -98,21 +98,21 @@ class HKLMF_ReaderClass(G2obj.ImportStructFactor):
 
     def ContentsValidator(self, filename):
         "Make sure file contains the expected columns on numbers"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         valid = ColumnValidator(self, fp)
         fp.close()
         return valid
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for line, S in enumerate(fp):
                 self.errors = "  Error reading line " + str(line + 1)
                 if S[0] == "#":
                     continue  # ignore comments, if any
-                h, k, l, m, Fo = S.split()
-                h, k, l, m = [int(h), int(k), int(l), int(m)]
+                h, k, l, m, Fo = S.split()  # noqa: E741
+                h, k, l, m = [int(h), int(k), int(l), int(m)]  # noqa: E741
                 if h == 999 or not any([h, k, l]):
                     break
                 Fo = float(Fo)
@@ -130,7 +130,7 @@ class HKLMF_ReaderClass(G2obj.ImportStructFactor):
             self.RefDict["Super"] = 1
             self.UpdateParameters(Type="SXC", Wave=None)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False
 
 
@@ -155,28 +155,28 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
             longFormatName=longFormatName,
         )
 
-    def ContentsValidator(self, filename):
+    def ContentsValidator(self, filename):  # noqa: ARG002
         "Make sure file contains the expected columns on numbers"
         return True
 
     #        return ColumnValidator(self, filepointer)
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for line, S in enumerate(fp):
                 self.errors = "  Error reading line " + str(line + 1)
                 if S[0] == "#":
                     continue  # ignore comments, if any
                 try:  # use a simple split if possible
                     items = S.split()
-                    h, k, l, Fo, sigFo = items[:5]
-                    h, k, l = [int(h), int(k), int(l)]
-                except:  # but sometimes if no space between k & F
+                    h, k, l, Fo, sigFo = items[:5]  # noqa: E741
+                    h, k, l = [int(h), int(k), int(l)]  # noqa: E741
+                except:  # but sometimes if no space between k & F  # noqa: E722
                     # need to use some fixed formatting
-                    h, k, l = S[:12].split()
-                    h, k, l = [int(h), int(k), int(l)]
+                    h, k, l = S[:12].split()  # noqa: E741
+                    h, k, l = [int(h), int(k), int(l)]  # noqa: E741
                     Fo, sigFo = S[12:].split()[:2]
                 if not any([h, k, l]):
                     break
@@ -194,7 +194,7 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
             self.RefDict["Super"] = 0
             self.UpdateParameters(Type="SXC", Wave=None)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False
 
 
@@ -220,7 +220,7 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
         """Discover how many columns before F^2 are in the SHELX HKL5 file
         - could be 3-6 depending on satellites"""
         numCols = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, line in enumerate(fp):
             for j, item in enumerate(line.split()):  # find 1st col with '.'; has F^2
                 if "." in item:
@@ -236,25 +236,25 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
             )
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         TwDict = {}
         TwSet = {}
         TwMax = [-1, []]
         first = True
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             m1 = 0
             for line, S in enumerate(fp):
                 self.errors = "  Error reading line " + str(line + 1)
                 if self.Super == 0:
-                    h, k, l, Fo, sigFo, Tw = S.split()
+                    h, k, l, Fo, sigFo, Tw = S.split()  # noqa: E741
                     #                    h,k,l,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:20],S[20:28],S[28:32]
-                    h, k, l = [int(h), int(k), int(l)]
+                    h, k, l = [int(h), int(k), int(l)]  # noqa: E741
                 elif self.Super == 1:
-                    h, k, l, m1, Fo, sigFo, Tw = S.split()
+                    h, k, l, m1, Fo, sigFo, Tw = S.split()  # noqa: E741
                     #                    h,k,l,m1,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:24],S[24:32],S[32:36]
-                    h, k, l, m1 = [int(h), int(k), int(l), int(m1)]
+                    h, k, l, m1 = [int(h), int(k), int(l), int(m1)]  # noqa: E741
                 Tw = Tw.strip()
                 if Tw in ["", "0"]:
                     Tw = "1"
@@ -301,7 +301,7 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
             self.RefDict["TwMax"] = TwMax
             self.UpdateParameters(Type="SXC", Wave=None)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False
 
 
@@ -327,7 +327,7 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
         """Discover how many columns before F^2 are in the SHELX HKL6 file
         - could be 3-6 depending on satellites"""
         numCols = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, line in enumerate(fp):
             for j, item in enumerate(line.split()):  # find 1st col with '.'; has F^2
                 if "." in item:
@@ -343,17 +343,17 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
         self.Super = 1
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         TwDict = {}
         TwSet = {}
         TwMax = [-1, []]
         first = True
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for line, S in enumerate(fp):
                 self.errors = "  Error reading line " + str(line + 1)
-                h, k, l, m1, m2, m3, Fo, sigFo, Tw = (
+                h, k, l, m1, m2, m3, Fo, sigFo, Tw = (  # noqa: E741
                     S[:4],
                     S[4:8],
                     S[8:12],
@@ -364,7 +364,7 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
                     S[32:40],
                     S[40:44],
                 )
-                h, k, l, m1, m2, m3 = [
+                h, k, l, m1, m2, m3 = [  # noqa: E741
                     int(h),
                     int(k),
                     int(l),
@@ -418,7 +418,7 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
             self.RefDict["TwMax"] = TwMax
             self.UpdateParameters(Type="SXC", Wave=None)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False
 
 
@@ -443,7 +443,7 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
     def ContentsValidator(self, filename):
         "Discover how many columns are in the m90 file - could be 9-12 depending on satellites"
         numCols = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         startData = -1
         if "m90" in filename.lower():
             for i, line in enumerate(fp):
@@ -466,10 +466,10 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
             )
         return True  # ColumnValidator(self, filepointer)
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+    def Reader(self, filename, filepointer, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for line, S in enumerate(fp):
                 self.errors = "  Error reading line " + str(line + 1)
                 if S[0] == "#":
@@ -478,11 +478,11 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
                     break
                 try:
                     if self.Super == 0:
-                        h, k, l, Fo, sigFo = S.split()[:5]
-                        h, k, l = [int(h), int(k), int(l)]
+                        h, k, l, Fo, sigFo = S.split()[:5]  # noqa: E741
+                        h, k, l = [int(h), int(k), int(l)]  # noqa: E741
                     elif self.Super == 1:
-                        h, k, l, m1, Fo, sigFo = S.split()[:6]
-                        h, k, l, m1 = [int(h), int(k), int(l), int(m1)]
+                        h, k, l, m1, Fo, sigFo = S.split()[:6]  # noqa: E741
+                        h, k, l, m1 = [int(h), int(k), int(l), int(m1)]  # noqa: E741
                 except ValueError:  # skipping text at front
                     if not S:
                         break
@@ -511,15 +511,15 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
             self.RefDict["Super"] = self.Super
             if "m91" in filename:
                 filename2 = filename.replace(".m91", ".m50")
-                fp = open(filename2)
-                for line, S in enumerate(fp):
+                fp = open(filename2)  # noqa: SIM115
+                for line, S in enumerate(fp):  # noqa: B007
                     if "lambda" in S:
                         wave = float(S.split()[1])
                         break
                 fp.close()
             self.UpdateParameters(Type="SXC", Wave=wave)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False
 
 
@@ -546,7 +546,7 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
         oldNo = -1
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for _line, S in enumerate(fp):
                 if not S:  # empty line terminates read
                     break
@@ -556,7 +556,7 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
                     break
                 try:
                     bankNo = S.split()[5]
-                except:
+                except:  # noqa: E722
                     return False
                 if bankNo != oldNo:
                     self.Banks.append(
@@ -571,13 +571,13 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
             valid = ColumnValidator(self, fp, nCol=8)
             fp.close()
             return valid
-        except:
+        except:  # noqa: E722
             return False
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for line, S in enumerate(fp):
                 if not S:
                     break
@@ -585,10 +585,10 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
                 if S[0] == "#":
                     continue  # ignore comments, if any
                 data = S.split()
-                h, k, l, Fo, sigFo, bN, wave, tbar = data[
+                h, k, l, Fo, sigFo, bN, wave, tbar = data[  # noqa: E741
                     :8
                 ]  # bN = 1..., 6 dir cos next
-                h, k, l = [int(h), int(k), int(l)]
+                h, k, l = [int(h), int(k), int(l)]  # noqa: E741
                 if not any([h, k, l]):
                     break
                 Fo = float(Fo)
@@ -618,7 +618,7 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
                 self.errors = "Error after reading reflections (unexpected!)"
                 self.UpdateParameters(Type="SNT", Wave=None)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False
 
 
@@ -645,7 +645,7 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
         oldNo = -1
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for _line, S in enumerate(fp):
                 if not S:  # empty line terminates read
                     break
@@ -665,22 +665,22 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
             valid = ColumnValidator(self, fp, nCol=10)
             fp.close()
             return valid
-        except:
+        except:  # noqa: E722
             return False
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+    def Reader(self, filename, filepointer, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for line, S in enumerate(fp):
                 self.errors = "  Error reading line " + str(line + 1)
                 if S[0] in ["#", "("]:
                     continue  # ignore comments & fortran format line
                 data = S.split()
-                h, k, l, Fo, sigFo, bN, wave, x, x, tbar = data[
+                h, k, l, Fo, sigFo, bN, wave, x, x, tbar = data[  # noqa: E741, PLW0128
                     :10
                 ]  # bN = 1..., 6 dir cos next
-                h, k, l = [int(h), int(k), int(l)]
+                h, k, l = [int(h), int(k), int(l)]  # noqa: E741
                 if not any([h, k, l]):
                     break
                 Fo = float(Fo)
@@ -710,7 +710,7 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
                 self.errors = "Error after reading reflections (unexpected!)"
                 self.UpdateParameters(Type="SNT", Wave=None)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False
 
 
@@ -733,7 +733,7 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
 
     def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for _line, S in enumerate(fp):
             if not S:  # empty line terminates read
                 break
@@ -744,17 +744,17 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
         fp.close()
         return valid
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+    def Reader(self, filename, filepointer, ParentFrame=None, **unused):  # noqa: ARG002
         "Read the file"
         try:
-            fp = open(filename)
+            fp = open(filename)  # noqa: SIM115
             for line, S in enumerate(fp):
                 self.errors = "  Error reading line " + str(line + 1)
                 if S[0] == "#":
                     continue  # ignore comments, if any
                 data = S.split()
-                h, k, l, Fo, sigFo = data
-                h, k, l = [int(h), int(k), int(l)]
+                h, k, l, Fo, sigFo = data  # noqa: E741
+                h, k, l = [int(h), int(k), int(l)]  # noqa: E741
                 if not any([h, k, l]):
                     break
                 Fo = float(Fo)
@@ -770,5 +770,5 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
             self.errors = "Error after reading reflections (unexpected!)"
             self.UpdateParameters(Type="SNC", Wave=None)  # histogram type
             return True
-        except:
+        except:  # noqa: E722
             return False

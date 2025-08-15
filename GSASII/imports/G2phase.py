@@ -38,7 +38,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         """Taking a stab a validating a PDB file
         (look for cell & at least one atom)
         """
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         #        for i,l in enumerate(fp):
         #            if l.startswith('CRYST1'):
         #                break
@@ -46,7 +46,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         #            self.errors = 'no CRYST1 record found'
         #            fp.close()
         #            return False
-        for _i, l in enumerate(fp):
+        for _i, l in enumerate(fp):  # noqa: E741
             if l.startswith(("ATOM", "HETATM")):
                 fp.close()
                 return True
@@ -54,7 +54,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         fp.close()
         return False
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read a PDB file using :meth:`ReadPDBPhase`"
         self.Phase = self.ReadPDBPhase(filename, ParentFrame)
         return True
@@ -63,7 +63,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         """Read a phase from a PDB file."""
         EightPiSq = 8.0 * math.pi**2
         self.errors = "Error opening file"
-        file = open(filename)
+        file = open(filename)  # noqa: SIM115
         Phase = {}
         Title = os.path.basename(filename)
         RES = Title[:3]
@@ -146,7 +146,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                     Type = "C"
                 Aname = S[12:17].strip()
                 if Anum:
-                    Aname += "%d" % Anum
+                    Aname += f"{Anum}"
                 if S[17:20].upper() != "UNL":
                     RES = S[17:20].upper()
                 Atom = [
@@ -228,7 +228,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
 
     def ContentsValidator(self, filename):
         "Look for a VERSION tag in 1st line"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         if fp.read(13) == "     VERSION ":
             fp.close()
             return True
@@ -236,7 +236,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         fp.close()
         return False
 
-    def Reader(self, filename, ParentFrame=None, usedRanIdList=None, **unused):
+    def Reader(self, filename, ParentFrame=None, usedRanIdList=None, **unused):  # noqa: ARG002
         """Read a phase from a GSAS .EXP file using
         :meth:`~EXP_ReaderClass.ReadEXPPhase`
         """
@@ -253,7 +253,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         )  # create a new empty phase dict
         while self.MPhase["ranId"] in usedRanIdList:
             self.MPhase["ranId"] = ran.randint(0, sys.maxsize)
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         self.ReadEXPPhase(ParentFrame, fp)
         fp.close()
         return True
@@ -366,7 +366,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                     try:
                         float(SHdata[i])
                         SHvals[i] = SHdata[i]
-                    except:
+                    except:  # noqa: E722
                         pass
                 textureData["Order"] = int(SHvals[0])
                 textureData["Model"] = shModels[int(SHvals[2])]
@@ -462,7 +462,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             shCoef = {}
             nRec = [i + 1 for i in range((shNcof - 1) // 6 + 1)]
             for irec in nRec:
-                ODkey = keyList[0][:6] + "OD" + "%3dA" % (irec)
+                ODkey = keyList[0][:6] + f"OD{irec:3d}A"
                 indx = EXPphase[ODkey].split()
                 ODkey = ODkey[:-1] + "B"
                 vals = EXPphase[ODkey].split()
@@ -534,15 +534,15 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         """Taking a stab a validating a .m50 file
         (look for cell & at least one atom)
         """
-        fp = open(filename)
-        for _i, l in enumerate(fp):
+        fp = open(filename)  # noqa: SIM115
+        for _i, l in enumerate(fp):  # noqa: E741
             if l.startswith("cell"):
                 break
         else:
             self.errors = "no cell record found"
             fp.close()
             return False
-        for _i, l in enumerate(fp):
+        for _i, l in enumerate(fp):  # noqa: E741
             if l.startswith("spgroup"):
                 fp.close()
                 return True
@@ -550,7 +550,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         fp.close()
         return False
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read a m50 file using :meth:`ReadJANAPhase`"
         self.Phase = self.ReadJANAPhase(filename, ParentFrame)
         return True
@@ -558,7 +558,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
     def ReadJANAPhase(self, filename, parent=None):
         """Read a phase from a JANA2006 m50 & m40 files."""
         self.errors = "Error opening file"
-        fp = open(filename)  # contains only cell & spcgroup
+        fp = open(filename)  # contains only cell & spcgroup  # noqa: SIM115
         Phase = {}
         Title = os.path.basename(filename)
         Type = "nuclear"
@@ -653,12 +653,12 @@ class JANA_ReaderClass(G2obj.ImportPhase):
             "ZigZag",
         ]
         filename2 = os.path.splitext(filename)[0] + ".m40"
-        file2 = open(filename2)
+        file2 = open(filename2)  # noqa: SIM115
         S = file2.readline()
         line = 1
         self.errors = "Error reading at line " + str(line)
         nAtoms = int(S.split()[0])
-        for i in range(4):
+        for i in range(4):  # noqa: B007
             S = file2.readline()
         for i in range(nAtoms):
             S1N = [0, 0, 0]
@@ -699,7 +699,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                     Uij = R2pisq * G2lat.UijtoU6(
                         G2lat.U6toUij(Uij) / Mast
                     )  # these things are betaij in Jana2000! need to convert to Uij
-            for i in range(S1N[0]):
+            for i in range(S1N[0]):  # noqa: PLW2901
                 if not i:
                     FS = file2.readline()
                     Sfrac.append(FS[:9])  #'O' or 'delta' = 'length' for crenel
@@ -709,13 +709,13 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                         )
                 Sfrac.append(file2.readline()[:18])  # if not crenel = Osin & Ocos
                 # else Osin & Ocos except last one is X40 = 'Center'
-            for i in range(S1N[1]):
+            for i in range(S1N[1]):  # noqa: B007, PLW2901
                 Spos.append(file2.readline()[:54])
-            for i in range(S1N[2]):
+            for i in range(S1N[2]):  # noqa: B007, PLW2901
                 Sadp.append(file2.readline()[:54] + file2.readline())
             if sum(S1N):  # if any waves: skip mystery line?
                 file2.readline()
-            for i, it in enumerate(Sfrac):
+            for i, it in enumerate(Sfrac):  # noqa: PLW2901
                 if not i:
                     if "Crenel" in waveType:
                         vals = [float(it), float(Sfrac[-1][:9])]
@@ -729,7 +729,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                     del Sfrac[-1]
                     break
                 Sfrac[i] = [vals, False]
-            for i, it in enumerate(Spos):
+            for i, it in enumerate(Spos):  # noqa: PLW2901
                 if (
                     waveType
                     in [
@@ -753,7 +753,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                         float(it[45:54]),
                     ]
                 Spos[i] = [vals, False]
-            for i, it in enumerate(Sadp):
+            for i, it in enumerate(Sadp):  # noqa: PLW2901
                 vals = [
                     float(it[:9]),
                     float(it[9:18]),
@@ -843,7 +843,7 @@ class PDF_ReaderClass(G2obj.ImportPhase):
 
     def ContentsValidator(self, filename):
         "Look for a str tag in 1st line"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         if fp.read(3) == "str":
             fp.close()
             return True
@@ -851,9 +851,9 @@ class PDF_ReaderClass(G2obj.ImportPhase):
         fp.close()
         return False
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read phase from a ICDD .str file using :meth:`ReadPDFPhase`"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         self.Phase = self.ReadPDFPhase(ParentFrame, fp)
         fp.close()
         return True

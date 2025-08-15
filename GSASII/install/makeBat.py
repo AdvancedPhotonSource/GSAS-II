@@ -74,7 +74,7 @@ if __name__ == "__main__":
     print(".bat file to be at  ", G2bat)
 
     # create a GSAS-II script
-    fp = open(G2bat, "w")
+    fp = open(G2bat, "w")  # noqa: SIM115
     fp.write(
         f"@REM created by run of makeBat.py on {datetime.datetime.now():%d %b %Y %H:%M}\n"
     )
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         G2reset = os.path.normpath(
             os.path.join(path2repo, "..", "Reset2FreshGSASII.bat")
         )
-        fp = open(G2reset, "w")
+        fp = open(G2reset, "w")  # noqa: SIM115
         fp.write(
             f"@REM created by run of makeBat.py on {datetime.datetime.now():%d %b %Y %H:%M}\n"
         )
@@ -205,7 +205,7 @@ if __name__ == "__main__":
             winreg.CloseKey(openkey)
             winreg.CloseKey(gpxkey)
             print("Assigned icon and batch file to .gpx files in registry")
-        except:
+        except:  # noqa: E722
             print("Error assigning icon and batch file to .gpx files")
     else:
         print("old assignment of icon and batch file in registery is retained")
@@ -221,7 +221,7 @@ if __name__ == "__main__":
         print(
             "Module pywin32 not present, .gpx files will display properly after logging in again"
         )
-    except:
+    except:  # noqa: E722
         print("Unexpected error on explorer refresh.")
         import traceback
 
@@ -281,7 +281,7 @@ if __name__ == "__main__":
             print("No shortcut for this GSAS-II created on desktop")
     except ImportError:
         print("Module pywin32 not present, will not make desktop shortcut")
-    except:
+    except:  # noqa: E722
         print("Unexpected error making desktop shortcut.")
         import traceback
 

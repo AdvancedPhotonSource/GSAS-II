@@ -36,7 +36,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
     # Validate the contents
     def ContentsValidator(self, filename):
         "Use standard CIF validator"
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         return self.CIFValidator(fp)
         fp.close()
         return None
@@ -307,7 +307,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                     num = itemkeys.get(i)
                     try:
                         HKL.append(int(item[num]))
-                    except:
+                    except:  # noqa: E722
                         HKL.append(".")
                 # h,k,l,tw,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,Ext
                 if im:
@@ -341,13 +341,13 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 try:
                     if F2cdn:
                         F2c = float(item[itemkeys[F2cdn]])
-                except:
+                except:  # noqa: E722
                     pass
                 try:
                     if Fcdn:
                         Fc = float(item[itemkeys[Fcdn]])
                         F2c = Fc * Fc
-                except:
+                except:  # noqa: E722
                     pass
 
                 ref[8 + im] = F2
@@ -358,9 +358,9 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 try:
                     if Phdn:
                         ref[10 + im] = float(item[itemkeys[Phdn]])
-                except:
+                except:  # noqa: E722
                     pass
-            except:
+            except:  # noqa: E722
                 continue  # skip over incompletely parsed reflections
             self.RefDict["RefList"].append(ref)
         #                self.RefDict['FF'].append({})

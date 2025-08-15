@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: EXE001
 # GSAS-II Data/Model Comparison
 
 # TODO:
@@ -109,7 +109,7 @@ def main(application: wx.App):
     application.main.PackageVersions = G2fil.get_python_versions([wx, mpl, np, sp, ogl])
     try:
         application.SetAppDisplayName("GSAS-II Compare")
-    except:
+    except:  # noqa: E722
         pass
     # application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
@@ -140,7 +140,7 @@ class MakeTopWindow(wx.Frame):
                 size = eval(size)
             else:
                 raise Exception
-        except:
+        except:  # noqa: E722
             size = wx.Size(700, 600)
         self.plotFrame = wx.Frame(
             None,
@@ -242,7 +242,7 @@ class MakeTopWindow(wx.Frame):
         # self.GPXtree.Bind(wx.EVT_TREE_END_DRAG,
         #     self.OnGPXtreeEndDrag, id=TreeId)
         self.root = self.GPXtree.root
-        self.Bind(wx.EVT_CLOSE, lambda event: sys.exit())
+        self.Bind(wx.EVT_CLOSE, lambda event: sys.exit())  # noqa: ARG005
 
         self.fileList = []  # list of files read for use in Reload
         self.histListOrg = []  # list of histograms, before mods for unique naming
@@ -259,7 +259,7 @@ class MakeTopWindow(wx.Frame):
                 win.SetPosition(pos)
                 if G2gd.GetDisplay(pos) is None:
                     win.Center()
-            except:
+            except:  # noqa: E722
                 if GSASIIpath.GetConfigValue(var):
                     print(
                         f"Value for config {var} {GSASIIpath.GetConfigValue(var)} is invalid"
@@ -323,7 +323,7 @@ class MakeTopWindow(wx.Frame):
             m = "?"
         return m
 
-    def onRefresh(self, event):
+    def onRefresh(self, event):  # noqa: ARG002
         """reread all files, in response to a change in mode, etc."""
         self.GPXtree.DeleteChildren(self.root)  # delete tree contents
         self.histList = []  # clear list of loaded histograms
@@ -371,7 +371,7 @@ class MakeTopWindow(wx.Frame):
             )
             self.GPXtree.SelectItem(overId)
 
-    def onLoadGPX(self, event) -> None:
+    def onLoadGPX(self, event) -> None:  # noqa: ARG002
         """Initial load of GPX file in response to a menu command"""
         fil = self.SelectGPX()
         if not fil:
@@ -382,7 +382,7 @@ class MakeTopWindow(wx.Frame):
         self.loadFile(fil)
         self.doneLoad()
 
-    def onLoadMultGPX(self, event):
+    def onLoadMultGPX(self, event):  # noqa: ARG002
         """Initial load of multiple GPX files in response to a menu command"""
         for fil in self.SelectMultGPX():
             if not os.path.exists(fil):
@@ -391,7 +391,7 @@ class MakeTopWindow(wx.Frame):
             self.loadFile(fil)
         self.doneLoad()
 
-    def onLoadWildGPX(self, event, wildcard=None):
+    def onLoadWildGPX(self, event, wildcard=None):  # noqa: ARG002
         """Initial load of GPX file in response to a menu command"""
         home = os.path.abspath(os.getcwd())
         hlp = f'''Enter a wildcard version of a file name.
@@ -422,8 +422,8 @@ be included for the files beginning with "B" only.
             wl = [wildcard]
         for w in wl:
             if not os.path.split(w)[0]:
-                w = os.path.join(home, w)
-            w = os.path.splitext(w)[0] + ".gpx"
+                w = os.path.join(home, w)  # noqa: PLW2901
+            w = os.path.splitext(w)[0] + ".gpx"  # noqa: PLW2901
             for fil in glob.glob(w):
                 if not os.path.exists(fil):
                     continue
@@ -440,7 +440,7 @@ be included for the files beginning with "B" only.
         see :func:`GSASIImiscGUI.ProjFileOpen`
         """
         G2frame = self
-        filep = open(fil, "rb")
+        filep = open(fil, "rb")  # noqa: SIM115
         shortname = os.path.splitext(os.path.split(fil)[1])[0]
 
         wx.BeginBusyCursor()
@@ -562,7 +562,7 @@ be included for the files beginning with "B" only.
         see :func:`GSASIImiscGUI.ProjFileOpen`
         """
         G2frame = self
-        filep = open(fil, "rb")
+        filep = open(fil, "rb")  # noqa: SIM115
         shortname = os.path.splitext(os.path.split(fil)[1])[0]
 
         wx.BeginBusyCursor()
@@ -633,7 +633,7 @@ be included for the files beginning with "B" only.
         import datetime
 
         G2frame = self
-        filep = open(fil, "rb")
+        filep = open(fil, "rb")  # noqa: SIM115
         saved = datetime.datetime.fromtimestamp(os.path.getmtime(fil)).strftime(
             "%Y-%h-%d %H:%M"
         )
@@ -705,7 +705,7 @@ be included for the files beginning with "B" only.
             if Sizer:
                 try:
                     Sizer.Clear(True)
-                except:
+                except:  # noqa: E722
                     pass
 
         G2frame = self
@@ -744,14 +744,10 @@ be included for the files beginning with "B" only.
                 text += "\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}".format(
                     Rvals["Nobs"], Nvars, Rvals.get("SVD0", 0.0)
                 )
-                text += "\n\tmax shift/esd = {:.3f}".format(
-                    Rvals.get("Max shft/sig", 0.0)
-                )
+                text += f"\n\tmax shift/esd = {Rvals.get('Max shft/sig', 0.0):.3f}"
                 if "lamMax" in Rvals:
-                    text += "\n\tlog10 MaxLambda = {:.1f}".format(
-                        np.log10(Rvals["lamMax"])
-                    )
-                text += "\n\tReduced χ**2 = {:.2f}".format(Rvals["GOF"] ** 2)
+                    text += f"\n\tlog10 MaxLambda = {np.log10(Rvals['lamMax']):.1f}"
+                text += f"\n\tReduced χ**2 = {Rvals['GOF'] ** 2:.2f}"
                 G2frame.dataWindow.GetSizer().Add(
                     wx.StaticText(G2frame.dataWindow, wx.ID_ANY, text)
                 )
@@ -782,7 +778,7 @@ be included for the files beginning with "B" only.
     #     else:
     #         event.Skip(False)
 
-    def onProjFtest(self, event):
+    def onProjFtest(self, event):  # noqa: ARG002
         """Compare two projects (selected here if more than two are present)
         using the statistical F-test (aka Hamilton R-factor test), see:
 
@@ -929,7 +925,7 @@ be included for the files beginning with "B" only.
         msg += postmsg
         G2G.G2MessageBox(self, msg, "F-test result")
 
-    def onHistPrinceTest(self, event):
+    def onHistPrinceTest(self, event):  # noqa: ARG002
         """Compare two histograms (selected here if more than two are present)
         using the statistical test proposed by Ted Prince in
         Acta Cryst. B35 1099-1100. (1982). Also see Int. Tables Vol. C
@@ -1017,7 +1013,7 @@ if __name__ == "__main__":
     application = wx.App(0)  # create the GUI framework
     try:
         GSASIIpath.SetBinaryPath(True)
-    except:
+    except:  # noqa: E722
         print("Unable to run with current setup")  # , do you want to update to the')
     #         try:
     # #            if '2' in platform.python_version_tuple()[0]:

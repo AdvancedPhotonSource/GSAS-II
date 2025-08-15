@@ -25,7 +25,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         good = 0
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, S in enumerate(fp):
             if S.strip().startswith("#"):
                 continue
@@ -53,13 +53,13 @@ class csv_ReaderClass(G2obj.ImportPowderData):
         fp.close()
         return True  # no errors encountered
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         "Read a csv file"
         x = []
         y = []
         w = []
         positions = [0, 1, 2]
-        fp = open(filename)
+        fp = open(filename)  # noqa: SIM115
         for i, S in enumerate(fp):
             if i <= 2 and "x=" in S:  # header entry specifying columns
                 for v in S.strip().replace(",", ";").split(";"):
@@ -75,7 +75,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
                         positions[j] = int(v.strip().split("=")[1])
                         if j == 1:
                             positions[2] = -1
-                    except:
+                    except:  # noqa: E722
                         print('Error parsing: "' + S + '"')
                 print("positions=", positions)
             if S.strip().startswith("#"):
@@ -100,7 +100,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
             except ValueError:
                 err = True
                 msg = "Error parsing number in line " + str(i + 1)
-            except:
+            except:  # noqa: E722
                 err = True
                 msg = "Error in line " + str(i + 1)
             if err and i > 0:
@@ -128,7 +128,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
             if "Temp" in S.split("=")[0]:
                 try:
                     Temperature = float(S.split("=")[1])
-                except:
+                except:  # noqa: E722
                     pass
         self.Sample["Temperature"] = Temperature
 

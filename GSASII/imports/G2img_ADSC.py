@@ -14,11 +14,11 @@ class ADSC_ReaderClass(G2obj.ImportImage):
             longFormatName="ADSC image file",
         )
 
-    def ContentsValidator(self, filename):
+    def ContentsValidator(self, filename):  # noqa: ARG002
         """no test at this time"""
         return True
 
-    def Reader(self, filename, ParentFrame=None, **unused):
+    def Reader(self, filename, ParentFrame=None, **unused):  # noqa: ARG002
         self.Comments, self.Data, self.Npix, self.Image = GetImgData(filename)
         if self.Npix == 0 or not self.Comments:
             return False
@@ -32,13 +32,13 @@ def GetImgData(filename, imageOnly=False):
 
     if not imageOnly:
         print("Read ADSC img file: " + filename)
-    File = open(filename, "rb")
+    File = open(filename, "rb")  # noqa: SIM115
     head = File.read(511)
     lines = head.split("\n")
     head = []
     center = [0, 0]
     for line in lines[1:-2]:
-        line = line.strip()[:-1]
+        line = line.strip()[:-1]  # noqa: PLW2901
         if line:
             if "SIZE1" in line:
                 size = int(line.split("=")[1])

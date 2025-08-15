@@ -83,7 +83,7 @@ def npatan2d(y, x):
 ###############################################################################
 
 
-def SphereFF(Q, R, args=()):
+def SphereFF(Q, R, args=()):  # noqa: ARG001
     """Compute hard sphere form factor - can use numpy arrays
     :param float Q: Q value array (usually in A-1)
     :param float R: sphere radius (Usually in A - must match Q-1 units)
@@ -127,7 +127,7 @@ def SpheroidFF(Q, R, args):
         cth = np.linspace(0, 1.0, NP)
         try:
             Rct = R[:, np.newaxis] * np.sqrt(1.0 + (AR**2 - 1.0) * cth**2)
-        except:
+        except:  # noqa: E722
             Rct = R * np.sqrt(1.0 + (AR**2 - 1.0) * cth**2)
         return np.sqrt(np.sum(SphereFF(Q[:, np.newaxis], Rct, 0) ** 2, axis=2) / NP)
 
@@ -174,7 +174,7 @@ def CylinderARFF(Q, R, args):
     return CylinderFF(Q, R, args=[2.0 * R * AR])
 
 
-def UniSphereFF(Q, R, args=0):
+def UniSphereFF(Q, R, args=0):  # noqa: ARG001
     """Compute form factor for unified sphere - can use numpy arrays
     param float Q: Q value array (A-1)
     param float R: cylinder radius (A)
@@ -282,7 +282,7 @@ def UniTubeFF(Q, R, args):
 ###############################################################################
 
 
-def SphereVol(R, args=()):
+def SphereVol(R, args=()):  # noqa: ARG001
     """Compute volume of sphere
     - numpy array friendly
     param float R: sphere radius
@@ -361,7 +361,7 @@ def CylinderARVol(R, args):
     )
 
 
-def UniSphereVol(R, args=()):
+def UniSphereVol(R, args=()):  # noqa: ARG001
     """Compute volume of sphere
     - numpy array friendly
     param float R: sphere radius
@@ -769,7 +769,7 @@ J Skilling and RK Bryan; MNRAS 211 (1984) 111 - 124.
 
 :license: Copyright (c) 2013, UChicago Argonne, LLC
 :license: This file is distributed subject to a Software License Agreement found
-     in the file LICENSE that is included with this distribution. 
+     in the file LICENSE that is included with this distribution.
 
 References:
 
@@ -1044,14 +1044,14 @@ def MaxEnt_SB(
         #         print_vec("MaxEnt: s1", s1)
 
         for k in range(SEARCH_DIRECTIONS):
-            for l in range(k + 1):
+            for l in range(k + 1):  # noqa: E741
                 c2[k][l] = 2 * sum(eta[k] * eta[l] / sigma / sigma) / chisq
                 s2[k][l] = -sum(xi[k] * xi[l] / f) / blank
         #         print_arr("MaxEnt: c2", c2)
         #         print_arr("MaxEnt: s2", s2)
 
         # reflect across the body diagonal
-        for k, l in ((0, 1), (0, 2), (1, 2)):
+        for k, l in ((0, 1), (0, 2), (1, 2)):  # noqa: E741
             c2[k][l] = c2[l][k]  #  M_(mu,nu)
             s2[k][l] = s2[l][k]  #  g_(mu,nu)
 
@@ -1073,7 +1073,7 @@ def MaxEnt_SB(
         for i in range(n):
             if f[i] <= 0.0:
                 f[i] = RESET_STRAYS * base[i]
-        df = f - f_old
+        df = f - f_old  # noqa: PD901
         fSum = sum(f)
         fChange = sum(df)
 
@@ -1108,7 +1108,7 @@ def IPG(
     sigma,
     G,
     Bins,
-    Dbins,
+    Dbins,  # noqa: ARG001
     IterMax,
     Qvec=None,
     approach=0.8,
@@ -1199,7 +1199,7 @@ def Bestimate(G, Rg, P):
     return (G * P / Rg**P) * np.exp(scsp.gammaln(P / 2))
 
 
-def SmearData(Ic, Q, slitLen, Back):
+def SmearData(Ic, Q, slitLen, Back):  # noqa: ARG001
     Np = Q.shape[0]
     Qtemp = np.concatenate([Q, Q[-1] + 20 * Q])
     Ictemp = np.concatenate(
@@ -1311,7 +1311,7 @@ def SizeDistribution(Profile, ProfDict, Limits, Sample, data):
 ################################################################################
 
 
-def PairDistFxn(Profile, ProfDict, Limits, Sample, data):
+def PairDistFxn(Profile, ProfDict, Limits, Sample, data):  # noqa: ARG001
     def CalcMoore():
         def MoorePOR(cw, r, dmax):  # lines 1417-1428
             n = 0
@@ -1530,7 +1530,7 @@ def ModelFit(Profile, ProfDict, Limits, Sample, Model):
         return levelTypes, parmDict, varyList, values
 
     def SetModelParms():
-        print(" Refined parameters: Histogram scale: {:.4g}".format(parmDict["Scale"]))
+        print(f" Refined parameters: Histogram scale: {parmDict['Scale']:.4g}")
         if "Back" in varyList:
             Model["Back"][0] = parmDict["Back"]
             print(
@@ -1792,7 +1792,7 @@ def getSASDRg(Q, parmDict):
     return Ic
 
 
-def RgFit(Profile, ProfDict, Limits, Sample, Model):
+def RgFit(Profile, ProfDict, Limits, Sample, Model):  # noqa: ARG001
     print("unified fit single Rg to data to estimate a size")
 
     def GetModelParms():
@@ -1814,7 +1814,7 @@ def RgFit(Profile, ProfDict, Limits, Sample, Model):
         values += [parmDict["G"], parmDict["Rg"], parmDict["B"]]
         return parmDict, varyList, values
 
-    def calcSASD(values, Q, Io, wt, Ifb, parmDict, varyList):
+    def calcSASD(values, Q, Io, wt, Ifb, parmDict, varyList):  # noqa: ARG001
         parmDict.update(zip(varyList, values, strict=False))
         M = np.sqrt(wt) * (getSASDRg(Q, parmDict) - Io)
         return M
@@ -1910,7 +1910,7 @@ def RgFit(Profile, ProfDict, Limits, Sample, Model):
     ]
 
 
-def ModelFxn(Profile, ProfDict, Limits, Sample, sasdData):
+def ModelFxn(Profile, ProfDict, Limits, Sample, sasdData):  # noqa: ARG001
     shapes = {
         "Spheroid": [SpheroidFF, SpheroidVol],
         "Cylinder": [CylinderDFF, CylinderDVol],
@@ -2070,7 +2070,7 @@ def MakeDiamDist(DistName, nPoints, cutoff, distDict):
         cumeFxn = "LogNormalCume"
         pos = distDict["MinSize"]
         args = [distDict["Mean"], distDict["StdDev"]]
-        step = 4.0 * np.sqrt(
+        step = 4.0 * np.sqrt(  # noqa: F841
             np.exp(distDict["StdDev"] ** 2) * (np.exp(distDict["StdDev"] ** 2) - 1.0)
         )
         mode = distDict["MinSize"] + distDict["Mean"] / np.exp(distDict["StdDev"] ** 2)
@@ -2094,9 +2094,9 @@ def MakeDiamDist(DistName, nPoints, cutoff, distDict):
         distFxn = "SchulzZimmDist"
         cumeFxn = "SchulzZimmCume"
         pos = distDict["Mean"]
-        args = [distDict["StdDev"]]
-        minX = np.max([1.0, pos - 4.0 * distDict["StdDev"]])
-        maxX = np.min([pos + 4.0 * distDict["StdDev"], 1.0e5])
+        args = [distDict["StdDev"]]  # noqa: F841
+        minX = np.max([1.0, pos - 4.0 * distDict["StdDev"]])  # noqa: F841
+        maxX = np.min([pos + 4.0 * distDict["StdDev"], 1.0e5])  # noqa: F841
     nP = 500
     Diam = np.logspace(0.0, 5.0, nP, True)
     TCW = eval(cumeFxn + "(Diam,pos,args)")
@@ -2139,10 +2139,10 @@ def test_MaxEnt_SB(report=True):
         """return q, I, dI from a 3-column text file"""
         if not os.path.exists(filename):
             raise Exception("file not found: " + filename)
-        buf = [line.split() for line in open(filename).readlines()]
+        buf = [line.split() for line in open(filename).readlines()]  # noqa: SIM115
         buf = zip(*buf, strict=False)  # transpose rows and columns
         q = np.array(buf[0], dtype=np.float64)
-        I = np.array(buf[1], dtype=np.float64)
+        I = np.array(buf[1], dtype=np.float64)  # noqa: E741
         dI = np.array(buf[2], dtype=np.float64)
         return q, I, dI
 
@@ -2160,7 +2160,7 @@ def test_MaxEnt_SB(report=True):
     f_dr = np.ndarray(nRadii) * 0  # volume fraction histogram
     b = np.ndarray(nRadii) * 0 + defaultDistLevel  # MaxEnt "sky background"
 
-    qVec, I, dI = readTextData(test_data_file)
+    qVec, I, dI = readTextData(test_data_file)  # noqa: E741
     G = G_matrix(qVec, r, rhosq, SphereFF, SphereVol, args=())
 
     chisq, f_dr, Ic = MaxEnt_SB(I - bkg, dI * errFac, b, IterMax, G, report=report)

@@ -104,7 +104,7 @@ def MakeUniqueLabel(lbl, labellist):
         suffix = lbl[lbl.rfind("_") + 1 :]
         try:
             i = int(suffix) + 1
-        except:  # suffix could not be parsed
+        except:  # suffix could not be parsed  # noqa: E722
             i = 1
             prefix = lbl
     while prefix + "_" + str(i) in labellist:
@@ -169,7 +169,7 @@ Initialized in :func:`CompileVarDesc`.
 # create a default space group object for P1; N.B. fails when building documentation
 try:
     P1SGData = G2spc.SpcGroup("P 1")[1]  # data structure for default space group
-except:
+except:  # noqa: E722
     pass
 
 
@@ -285,7 +285,7 @@ def ReadCIF(URLorFile):
     # ciffile = 'file:'+urllib.pathname2url(filename)
 
     try:
-        fp = open(URLorFile)
+        fp = open(URLorFile)  # noqa: SIM115
         cf = cif.ReadCif(fp)
         fp.close()
         return cf
@@ -391,7 +391,7 @@ def AddPhase2Index(rdObj, filename):
     if ranId in PhaseRanIdLookup:
         return
     maxph = -1
-    for r in PhaseRanIdLookup:
+    for r in PhaseRanIdLookup:  # noqa: PLC0206
         maxph = max(maxph, int(PhaseRanIdLookup[r]))
     PhaseRanIdLookup[ranId] = pId = str(maxph + 1)
     PhaseIdLookup[pId] = (ph, ranId)
@@ -541,7 +541,7 @@ def fmtVarDescr(varname):
 
     :returns: a string with the description
     """
-    s, l = VarDescr(varname)
+    s, l = VarDescr(varname)  # noqa: E741
     return s + ": " + l
 
 
@@ -560,7 +560,7 @@ def VarDescr(varname):
     if varname.find(":") == -1:
         return "Global", varname
 
-    l = getVarDescr(varname)
+    l = getVarDescr(varname)  # noqa: E741
     if not l:
         return ("invalid variable name (" + str(varname) + ")!"), ""
     #        return "invalid variable name!",""
@@ -651,19 +651,19 @@ def getVarDescr(varname):
       If the variable name is incorrectly formed (for example, wrong
       number of colons), `None` is returned instead of a list.
     """
-    l = varname.split(":")
+    l = varname.split(":")  # noqa: E741
     if len(l) == 2:  # SASD parameter name
         return varname, l[0], getDescr(l[1])
     if len(l) == 3:
-        l += [None, None]
+        l += [None, None]  # noqa: E741
     elif len(l) == 4:
-        l += [None]
+        l += [None]  # noqa: E741
     elif len(l) != 5:
         return None
     for i in (0, 1, 3, 4):
         if l[i] == "":
             l[i] = None
-    l += [getDescr(l[2])]
+    l += [getDescr(l[2])]  # noqa: E741
     return l
 
 
@@ -896,13 +896,13 @@ def getDescr(name):
     """
 
     CompileVarDesc()  # compile the regular expressions, if needed
-    for key in reVarDesc:
+    for key in reVarDesc:  # noqa: PLC0206
         m = key.match(name)
         if m:
             reVarDesc[key]
             try:
                 return m.expand(reVarDesc[key])
-            except:
+            except:  # noqa: E722
                 print(f"Error in key: {key}")
     return None
 
@@ -920,7 +920,7 @@ def getVarStep(name, parmDict=None):
       no value is provided in :func:`CompileVarDesc`, then None is returned.
     """
     CompileVarDesc()  # compile the regular expressions, if needed
-    for key in reVarStep:
+    for key in reVarStep:  # noqa: PLC0206
         m = key.match(name)
         if m:
             return reVarStep[key]
@@ -1037,7 +1037,7 @@ def SortVariables(varlist):
             #                continue
             try:
                 v.append(int(i))
-            except:
+            except:  # noqa: E722
                 v.append(-1)
         return v
 
@@ -1082,10 +1082,10 @@ class G2VarObj:
 
     """
 
-    IDdict = {}
-    IDdict["phases"] = {}
-    IDdict["hists"] = {}
-    IDdict["atoms"] = {}
+    IDdict = {}  # noqa: RUF012
+    IDdict["phases"] = {}  # noqa: RUF012
+    IDdict["hists"] = {}  # noqa: RUF012
+    IDdict["atoms"] = {}  # noqa: RUF012
 
     def __init__(self, *args):
         self.phase = None
@@ -1421,7 +1421,7 @@ class ImportBaseclass:
         else:
             return None
 
-    def ContentsValidator(self, filename):
+    def ContentsValidator(self, filename):  # noqa: ARG002
         """This routine will attempt to determine if the file can be read
         with the current format.
         This will typically be overridden with a method that
@@ -1436,7 +1436,7 @@ class ImportBaseclass:
     def CIFValidator(self, filepointer):
         """A :meth:`ContentsValidator` for use to validate CIF files."""
         filepointer.seek(0)
-        for i, l in enumerate(filepointer):
+        for i, l in enumerate(filepointer):  # noqa: E741
             if i >= 1000:
                 return True
             """Encountered only blank lines or comments in first 1000
@@ -1870,7 +1870,7 @@ def FindFunction(f):
       defines the object associated with the function.
       If the function is not found, pkgobj is None.
     """
-    df = f.split(".")
+    df = f.split(".")  # noqa: PD901
     pkgdict = {}
     # no listed module name, try in current namespace
     if len(df) == 1:
@@ -1984,7 +1984,7 @@ class ExpressionObj:
                 self.assgnVars[v] = varName[v]
         self.CheckVars()
 
-    def EditExpression(self, exprVarLst, varSelect, varName, varValue, varRefflag):
+    def EditExpression(self, exprVarLst, varSelect, varName, varValue, varRefflag):  # noqa: ARG002
         """Load the expression and associated settings from the object into
         arrays used for editing.
 

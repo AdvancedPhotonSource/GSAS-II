@@ -121,7 +121,7 @@ class HDF5_Reader(G2obj.ImportImage):
                 return False
             kwargs = {"imagenum": imagenum}
             quick = False
-        except:
+        except:  # noqa: E722
             kwargs = {"name": imagenum[0], "num": imagenum[1]}
             quick = True
         # we have been passed a map to images
@@ -163,7 +163,7 @@ class HDF5_Reader(G2obj.ImportImage):
         """
         head = []
 
-        def func(name, dset):
+        def func(name, dset):  # noqa: ARG001
             if not hasattr(dset, "shape"):
                 return  # not array, can't be image
             if isinstance(dset, h5py.Dataset):
@@ -234,7 +234,7 @@ class HDF5_Reader(G2obj.ImportImage):
             else:
                 pixelsize = [misc[f"DetPixelSize{i}"][j] for i in ("X", "Y")]
                 print(f"Using DetPixelSize* for Pixel size: {pixelsize}.")
-        except:
+        except:  # noqa: E722
             print(f"No DetSize* or DetPixelSize* Pixel size defaulting to {pixelsize}.")
         data = {
             "pixelSize": pixelsize,

@@ -53,7 +53,7 @@ def _path_discovery(printInfo=False):
         namedpath = glob.glob(os.path.join(loc, "AllBinaries", binprfx + "*"))
         namedpath += glob.glob(os.path.join(loc, "GSASII-bin", binprfx + "*"))
         for d in namedpath:
-            d = os.path.realpath(d)
+            d = os.path.realpath(d)  # noqa: PLW2901
             v = GSASIIpath.intver(d.rstrip("/").split("_")[-1].lstrip("n"))
             versions[v] = d
         vmin = None

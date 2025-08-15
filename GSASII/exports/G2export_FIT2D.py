@@ -91,7 +91,7 @@ class ExportPowderQCHI(G2fil.ExportBaseclass):
         self.Write("Intensity")
         self.Write("       " + str(len(histblk["Data"][0])))
         for X, Y in zip(histblk["Data"][0], histblk["Data"][1], strict=False):
-            line = " %5.7e" % (2.0 * np.pi / G2lat.Pos2dsp(inst, X))
+            line = f" {2.0 * np.pi / G2lat.Pos2dsp(inst, X):5.7e}"
             line += f"   {Y:5.7e}"
             self.Write(line)
         self.CloseFile()

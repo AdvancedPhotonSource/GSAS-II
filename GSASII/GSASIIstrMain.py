@@ -24,16 +24,16 @@ from numpy import ma
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIElem as G2elem
-from . import GSASIIfiles as G2fil
-from . import GSASIIlattice as G2lat
-from . import GSASIImapvars as G2mv
-from . import GSASIImath as G2mth
-from . import GSASIIobj as G2obj
-from . import GSASIIspc as G2spc
-from . import GSASIIstrIO as G2stIO
-from . import GSASIIstrMath as G2stMth
-from .data import atmdata
+from . import GSASIIElem as G2elem  # noqa: E402
+from . import GSASIIfiles as G2fil  # noqa: E402
+from . import GSASIIlattice as G2lat  # noqa: E402
+from . import GSASIImapvars as G2mv  # noqa: E402
+from . import GSASIImath as G2mth  # noqa: E402
+from . import GSASIIobj as G2obj  # noqa: E402
+from . import GSASIIspc as G2spc  # noqa: E402
+from . import GSASIIstrIO as G2stIO  # noqa: E402
+from . import GSASIIstrMath as G2stMth  # noqa: E402
+from .data import atmdata  # noqa: E402
 
 try:
     if GSASIIpath.binaryPath:
@@ -306,7 +306,7 @@ def AllPrmDerivs(
         parmDict[dprm] -= delta
         G2mv.Dict2Map(parmDict)
         if dprm in latCopyDict:  # apply contraints on lattice parameters
-            for i in latCopyDict:
+            for i in latCopyDict:  # noqa: PLW2901
                 parmDict[i] = parmDict[dprm]
         # for i in parmDict:
         #    if origParms[i] != parmDict[i]: print('changed',i,origParms[i],parmDict[i])
@@ -318,7 +318,7 @@ def AllPrmDerivs(
         parmDict[dprm] += 2 * delta
         G2mv.Dict2Map(parmDict)
         if dprm in latCopyDict:  # apply contraints on lattice parameters
-            for i in latCopyDict:
+            for i in latCopyDict:  # noqa: PLW2901
                 parmDict[i] = parmDict[dprm]
         # for i in parmDict:
         #    if origParms[i] != parmDict[i]: print('changed',i,origParms[i],parmDict[i])
@@ -599,11 +599,7 @@ def RefineCore(
                     mode="error",
                 )
             else:
-                print(
-                    "Maximum shift/esd = {:.3f} for all cycles".format(
-                        Rvals["Max shft/sig"]
-                    )
-                )
+                print(f"Maximum shift/esd = {Rvals['Max shft/sig']:.3f} for all cycles")
             # report on refinement issues. Result in Rvals['msg']
             ReportProblems(result, Rvals, varyList)
             break  # refinement succeeded - finish up!
@@ -686,9 +682,9 @@ def Refine(
     ptx.pyqlmninit()  # initialize fortran arrays for spherical harmonics
 
     if allDerivs:
-        printFile = open(ospath.splitext(GPXfile)[0] + ".junk", "w")
+        printFile = open(ospath.splitext(GPXfile)[0] + ".junk", "w")  # noqa: SIM115
     else:
-        printFile = open(ospath.splitext(GPXfile)[0] + ".lst", "w")
+        printFile = open(ospath.splitext(GPXfile)[0] + ".lst", "w")  # noqa: SIM115
     G2stIO.ShowBanner(printFile)
     varyList = []
     parmDict = {}
@@ -963,11 +959,11 @@ def Refine(
         s = ""
         for i in "Vector", "Residue":
             try:
-                l = len(Phases[ph]["RBModels"][i])
+                l = len(Phases[ph]["RBModels"][i])  # noqa: E741
                 if s:
                     s += "; "
                 s += f"{l} {i} bodies"
-            except:
+            except:  # noqa: E722
                 pass
         if s:
             if not Rvals["RBsumm"]:
@@ -977,7 +973,7 @@ def Refine(
     # for testing purposes, create a file for testderiv
     if GSASIIpath.GetConfigValue("debug"):  # and IfOK:
         # needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
-        fl = open(ospath.splitext(GPXfile)[0] + ".testDeriv", "wb")
+        fl = open(ospath.splitext(GPXfile)[0] + ".testDeriv", "wb")  # noqa: SIM115
         pickle.dump(result[0], fl, 1)
         pickle.dump([Histograms, Phases, restraintDict, rigidbodyDict], fl, 1)
         pickle.dump([constrDict, fixedList, G2mv.GetDependentVars()], fl, 1)
@@ -1264,7 +1260,7 @@ def SeqRefine(GPXfile, dlg, refPlotUpdate=None):
     #    from . import pytexture as ptx
     ptx.pyqlmninit()  # initialize fortran arrays for spherical harmonics
     msgs = {}
-    printFile = open(ospath.splitext(GPXfile)[0] + ".lst", "w")
+    printFile = open(ospath.splitext(GPXfile)[0] + ".lst", "w")  # noqa: SIM115
     G2fil.G2Print("Starting Sequential Refinement")
     G2stIO.ShowBanner(printFile)
     Controls = G2stIO.GetControls(GPXfile)
@@ -1401,7 +1397,7 @@ def SeqRefine(GPXfile, dlg, refPlotUpdate=None):
             items = item.split(":")
             if items[1]:
                 items[1] = ""
-            item = ":".join(items)
+            item = ":".join(items)  # noqa: PLW2901
             saveVaryList[i] = item
         if not ihst:
             SeqResult["varyList"] = saveVaryList
@@ -1414,7 +1410,7 @@ def SeqRefine(GPXfile, dlg, refPlotUpdate=None):
         parmDict.update(histDict)
         if Controls["Copy2Next"]:  # update with parms from last histogram
             # parmDict.update(NewparmDict) # don't use in case extra entries would cause a problem
-            for parm in NewparmDict:
+            for parm in NewparmDict:  # noqa: PLC0206
                 if parm in parmDict:
                     parmDict[parm] = NewparmDict[parm]
             for phase in Phases:
@@ -1478,7 +1474,7 @@ def SeqRefine(GPXfile, dlg, refPlotUpdate=None):
                 items = item.split(":")
                 if items[1]:
                     items[1] = ""
-                item = ":".join(items)
+                item = ":".join(items)  # noqa: PLW2901
                 firstVaryList.append(item)
             newVaryList = firstVaryList
         else:
@@ -1487,7 +1483,7 @@ def SeqRefine(GPXfile, dlg, refPlotUpdate=None):
                 items = item.split(":")
                 if items[1]:
                     items[1] = ""
-                item = ":".join(items)
+                item = ":".join(items)  # noqa: PLW2901
                 newVaryList.append(item)
         if newVaryList != firstVaryList and Controls["Copy2Next"]:
             # variable lists are expected to match between sequential refinements when Copy2Next is on
@@ -1551,8 +1547,8 @@ def SeqRefine(GPXfile, dlg, refPlotUpdate=None):
                 refPlotUpdate=refPlotUpdate,
             )
             try:
-                shft = "{:.4f}".format(Rvals["Max shft/sig"])
-            except:
+                shft = f"{Rvals['Max shft/sig']:.4f}"
+            except:  # noqa: E722
                 shft = "?"
             G2fil.G2Print(
                 "  wR = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}, last delta chi = {:.4f}, last shft/sig = {}".format(
@@ -1661,7 +1657,7 @@ def SeqRefine(GPXfile, dlg, refPlotUpdate=None):
                         NewparmDict[newparm] = parmDict[parm]
                     else:
                         if items[2].startswith("dA"):
-                            parm = parm.replace(":dA", ":A")
+                            parm = parm.replace(":dA", ":A")  # noqa: PLW2901
                         NewparmDict[parm] = parmDict[parm]
 
         except G2obj.G2RefineCancel as Msg:
@@ -1838,7 +1834,7 @@ def RetDistAngle(DisAglCtls, DisAglData, dlg=None):
         )
     )
     indices = (-2, -1, 0, 1, 2)
-    Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])
+    Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])  # noqa: E741
     origAtoms = DisAglData["OrigAtoms"]
     targAtoms = DisAglData["TargAtoms"]
     AtomLabels = {}
@@ -2065,7 +2061,7 @@ def PrintDistAngle(DisAglCtls, DisAglData, out=sys.stdout):
         for k, j, tup in AngArray[i]:
             angles[k][j], angsig[k][j] = angles[j][k], angsig[j][k] = tup
         line = ""
-        for i, x in enumerate(Oatom[3:6]):
+        for i, x in enumerate(Oatom[3:6]):  # noqa: B007
             line += (f"{x:12.5f}").rstrip("0")
         MyPrint("\n Distances & angles for " + Oatom[1] + " at " + line.rstrip())
         MyPrint(80 * "*")
@@ -2217,7 +2213,7 @@ def BestPlane(PlaneData):
     XYZ = np.array(XYZ) - sumXYZ
     XYZ = np.inner(Amat, XYZ).T
     Zmat = np.zeros((3, 3))
-    for i, xyz in enumerate(XYZ):
+    for i, xyz in enumerate(XYZ):  # noqa: B007
         Zmat += np.outer(xyz.T, xyz)
     G2fil.G2Print(
         f" Selected atoms centered at {sumXYZ[0]:10.5f} {sumXYZ[1]:10.5f} {sumXYZ[2]:10.5f}"

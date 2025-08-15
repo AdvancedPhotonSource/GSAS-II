@@ -15,12 +15,12 @@ except ModuleNotFoundError:
 from GSASII import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from GSASII import GSASIIspc as G2spc
-from GSASII.GUI import GSASIIctrlGUI as G2G
-from GSASII.GUI import GSASIIphsGUI as G2phsGUI
+from GSASII import GSASIIspc as G2spc  # noqa: E402
+from GSASII.GUI import GSASIIctrlGUI as G2G  # noqa: E402
+from GSASII.GUI import GSASIIphsGUI as G2phsGUI  # noqa: E402
 
 try:
-    wx.NewId
+    wx.NewId  # noqa: B018
 except AttributeError:
     wx.NewId = wx.NewIdRef
 
@@ -59,17 +59,17 @@ class testMagSym(wx.Frame):
         self.XYZ = "0,0,0"
         self.UpdateData(Data)
 
-    def ExitMain(self, event):
+    def ExitMain(self, event):  # noqa: ARG002
         sys.exit()
 
-    def OnFileExit(self, event):
+    def OnFileExit(self, event):  # noqa: ARG002
         if self.dataFrame:
             self.dataFrame.Clear()
             self.dataFrame.Destroy()
         self.Close()
 
     def UpdateData(self, Data):
-        def OnSpaceGroup(event):
+        def OnSpaceGroup(event):  # noqa: ARG001
             SpGrp = "P 1"
             SpcGp = G2phsGUI.GetSpGrpfromUser(self, SpGrp)
             SGErr, SGData = G2spc.SpcGroup(SpcGp)
@@ -138,7 +138,7 @@ class testMagSym(wx.Frame):
                     " mag. site sym: %6s, mult: %3d, CSI: %s %s"
                     % (MagSytSym, Mul, magStr, magVal)
                 )
-            except:
+            except:  # noqa: E722
                 print("Bad X,Y,Z entry: ", Obj.GetValue())
                 self.XYZ = "0,0,0"
                 Obj.SetValue(self.XYZ)
@@ -154,12 +154,12 @@ class testMagSym(wx.Frame):
                 OpNames = [G2spc.GetOprName(str(irt)) for irt in Lirt]
                 for Opr, name in zip(Little, OpNames, strict=False):
                     print(f"  {G2spc.MT2text(Opr)}:  {name}")
-            except:
+            except:  # noqa: E722
                 print("Bad prop vector entry: ", Obj.GetValue())
                 self.propVec = "0,0,0"
                 Obj.SetValue(self.propVec)
 
-        def OnShowOps(event):
+        def OnShowOps(event):  # noqa: ARG001
             text, table = G2spc.SGPrint(SGData)
             msg = "Space Group Information"
             SgNo = G2spc.SpaceGroupNumber(SGData["SpGrp"])
@@ -167,13 +167,13 @@ class testMagSym(wx.Frame):
                 text[0] += ", No. " + str(SgNo)
             G2G.SGMessageBox(self, msg, text, table, SpnFlp).Show()
 
-        def OnShowGen(event):
+        def OnShowGen(event):  # noqa: ARG001
             GenText = G2spc.TextGen(SGData, reverse=True)
             print(" Symmetry generators for {}:".format(text[0].split(":")[1]))
             for item in GenText:
                 print(item)
 
-        def OnShowMOps(event):
+        def OnShowMOps(event):  # noqa: ARG001
             text, table = G2spc.SGPrint(SGData, AddInv=True)
             text[0] = " Magnetic Space Group: " + SGData["MagSpGrp"]
             text[3] = " The magnetic lattice point group is " + SGData["MagPtGp"]
@@ -191,7 +191,7 @@ class testMagSym(wx.Frame):
                 SGData["SGGray"],
             ).Show()
 
-        def OnTestHKL(event):
+        def OnTestHKL(event):  # noqa: ARG001
             print("Extinctions for " + Data["SGData"]["MagSpGrp"])
             hkls = np.mgrid[-6:6, -6:6, -6:6]
             HKLs = hkls.reshape((3, -1)).T

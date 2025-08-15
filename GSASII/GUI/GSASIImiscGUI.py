@@ -28,9 +28,9 @@ from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
 from .. import GSASIIpwd as G2pwd
 from .. import GSASIIspc as G2spc
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIimgGUI as G2imG
+from .GUI import GSASIIctrlGUI as G2G
 
 DEBUG = False  # =True for various prints
 TRANSP = False  # =true to transpose images for testing
@@ -60,7 +60,7 @@ def GetPowderPeaks(fileName):
         return 180.0 * math.asin(x) / math.pi
 
     wave = 1.54052
-    File = open(fileName)
+    File = open(fileName)  # noqa: SIM115
     Comments = []
     peaks = []
     S = File.readline()
@@ -199,7 +199,7 @@ def EditImageParms(parent, Data, Comments, Image, filename):
         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
     )
 
-    def onClose(event):
+    def onClose(event):  # noqa: ARG001
         dlg.EndModal(wx.ID_OK)
 
     mainsizer = wx.BoxSizer(wx.VERTICAL)
@@ -349,12 +349,12 @@ def LoadImage2Tree(imagefile, G2frame, Comments, Data, Npix, Image):
         if GSASIIpath.GetConfigValue("Image_2theta_min"):
             try:
                 Data["IOtth"][0] = float(GSASIIpath.GetConfigValue("Image_2theta_min"))
-            except:
+            except:  # noqa: E722
                 pass
         if GSASIIpath.GetConfigValue("Image_2theta_max"):
             try:
                 Data["IOtth"][1] = float(GSASIIpath.GetConfigValue("Image_2theta_max"))
-            except:
+            except:  # noqa: E722
                 pass
         Data["LRazimuth"] = [0.0, 180.0]
         Data["azmthOff"] = 0.0
@@ -514,7 +514,7 @@ def SaveMultipleImg(G2frame):
             G2gd.GetGPXtreeItemId(G2frame, Id, "Image Controls")
         )
         print("Writing " + imroot + ".imctrl")
-        File = open(imroot + ".imctrl", "w")
+        File = open(imroot + ".imctrl", "w")  # noqa: SIM115
         keys = [
             "type",
             "wavelength",
@@ -555,7 +555,7 @@ def SaveMultipleImg(G2frame):
         )
         G2imG.CleanupMasks(mask)
         print("Writing " + imroot + ".immask")
-        File = open(imroot + ".immask", "w")
+        File = open(imroot + ".immask", "w")  # noqa: SIM115
         for key in ["Points", "Rings", "Arcs", "Polygons", "Frames", "Thresholds"]:
             File.write(key + ":" + str(mask[key]) + "\n")
         File.close()
@@ -563,7 +563,7 @@ def SaveMultipleImg(G2frame):
 
 def PutG2Image(filename, Comments, Data, Npix, image):
     "Write an image as a python pickle - might be better as an .edf file?"
-    File = open(filename, "wb")
+    File = open(filename, "wb")  # noqa: SIM115
     pickle.dump([Comments, Data, Npix, image], File, 2)
     File.close()
 
@@ -623,7 +623,7 @@ def objectScan(data, tag, indexStack=None):
             s += f"[{i}]"
         # print(s,data.__class__.__name__) # loses full name of class
         print(s, type(data))
-        global unexpectedObject
+        global unexpectedObject  # noqa: PLW0603
         unexpectedObject = True
         # fix bad objects
         if "gdi.Colour" in str(type(data)):
@@ -644,7 +644,7 @@ def ProjFileOpen(G2frame, showProvenance=True):
         )
         return
     LastSavedUsing = None
-    filep = open(G2frame.GSASprojectfile, "rb")
+    filep = open(G2frame.GSASprojectfile, "rb")  # noqa: SIM115
     if showProvenance:
         print("loading from file: " + G2frame.GSASprojectfile)
     GPXphase = os.path.splitext(G2frame.GSASprojectfile)[0] + ".seqPhase"
@@ -666,7 +666,7 @@ def ProjFileOpen(G2frame, showProvenance=True):
             deleteSeq = result != wx.ID_CANCEL
             if result == wx.ID_YES:
                 updateFromSeq = True
-                fp = open(GPXphase, "rb")
+                fp = open(GPXphase, "rb")  # noqa: SIM115
                 data = pickleLoad(fp)  # first block in file should be Phases
                 if data[0][0] != "Phases":
                     msg = f"Unexpected block in {GPXphase} file. How did this happen?"
@@ -682,7 +682,7 @@ def ProjFileOpen(G2frame, showProvenance=True):
                 ]  # 3rd block in file should be Rigid Bodies
                 fp.close()
                 # index the histogram updates
-                hist = open(GPXhist, "rb")
+                hist = open(GPXhist, "rb")  # noqa: SIM115
                 try:
                     while True:
                         loc = hist.tell()
@@ -708,7 +708,7 @@ def ProjFileOpen(G2frame, showProvenance=True):
                 posPrev = filep.tell()
             # scan the GPX file for unexpected objects
             if GSASIIpath.GetConfigValue("debug"):
-                global unexpectedObject
+                global unexpectedObject  # noqa: PLW0603
                 unexpectedObject = False
                 objectScan(data, f'tree item "{datum[0]}" entry ')
                 # if unexpectedObject:
@@ -776,7 +776,7 @@ def ProjFileOpen(G2frame, showProvenance=True):
                             print(f"  {p[0]:<14s}: {p[1]:s}")
                     else:
                         for p in datum[1]["PythonVersions"]:
-                            print("  {:<12s} {:s}".format(p[0] + ":", p[1]))
+                            print(f"  {p[0] + ':':<12s} {p[1]:s}")
             oldPDF = False
             for datus in data[1:]:
                 # patch - 1/23/17 PDF cleanup
@@ -848,7 +848,7 @@ def ProjFileOpen(G2frame, showProvenance=True):
         if GSASIIpath.GetConfigValue("show_gpxSize"):
             print(50 * "=")
             print("File section sizes (Kb)")
-            for item in sizeList:
+            for item in sizeList:  # noqa: PLC0206
                 print(f"  {item[:20]:20s} {sizeList[item] / 1024.0:10.3f}")
             print(50 * "=")
         G2frame.NewPlot = True
@@ -876,17 +876,17 @@ def ProjFileOpen(G2frame, showProvenance=True):
             hist.close()
         try:
             os.remove(GPXphase)
-        except:
+        except:  # noqa: E722
             print(f"Warning: unable to delete {GPXphase}")
         try:
             os.remove(GPXhist)
-        except:
+        except:  # noqa: E722
             print(f"Warning: unable to delete {GPXhist}")
     G2frame.SetTitleByGPX()
     if LastSavedUsing:
         try:
             G2G.updateNotifier(G2frame, int(LastSavedUsing.split()[0]))
-        except:
+        except:  # noqa: E722
             pass
 
 
@@ -894,7 +894,7 @@ def ProjFileSave(G2frame):
     "Save a GSAS-II project file"
     if not G2frame.GPXtree.IsEmpty():
         try:
-            file = open(G2frame.GSASprojectfile, "wb")
+            file = open(G2frame.GSASprojectfile, "wb")  # noqa: SIM115
         except PermissionError:
             G2G.G2MessageBox(
                 G2frame,
@@ -919,10 +919,10 @@ def ProjFileSave(G2frame):
                 commit = g2repo.head.commit
                 Controls["LastSavedUsing"] += f" git {commit.hexsha[:8]}"
             else:
-                gv = getSavedVersionInfo()
+                gv = getSavedVersionInfo()  # noqa: F821
                 if gv is not None:
                     Controls["LastSavedUsing"] += f" static {gv.git_version[:8]}"
-        except:
+        except:  # noqa: E722
             pass
         wx.BeginBusyCursor()
         try:
@@ -974,9 +974,9 @@ def SaveIntegration(G2frame, PickId, data, Overwrite=False):
     Controls = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame, G2frame.root, "Controls")
     )
-    Comments.append("Dark image = {}\n".format(str(data["dark image"])))
-    Comments.append("Background image = {}\n".format(str(data["background image"])))
-    Comments.append("Gain map = {}\n".format(str(data["Gain map"])))
+    Comments.append(f"Dark image = {data['dark image']!s}\n")
+    Comments.append(f"Background image = {data['background image']!s}\n")
+    Comments.append(f"Gain map = {data['Gain map']!s}\n")
 
     if "PWDR" in name:
         if "target" in data:
@@ -1043,7 +1043,7 @@ def SaveIntegration(G2frame, PickId, data, Overwrite=False):
         dazm = np.min(np.abs(np.diff(azms))) / 2.0
     G2frame.IntgOutList = []
     for i, azm in enumerate(azms[:-1]):
-        Aname = name + " Azm= %.2f" % ((azm + dazm) % 360.0)
+        Aname = name + f" Azm= {(azm + dazm) % 360.0:.2f}"
         item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
         # if Overwrite delete any duplicate
         if Overwrite and G2gd.GetGPXtreeItemId(G2frame, G2frame.root, Aname):
@@ -1081,7 +1081,7 @@ def SaveIntegration(G2frame, PickId, data, Overwrite=False):
                 if key.lower() in item.lower():
                     try:
                         Sample[key] = float(item.split("=")[1])
-                    except:
+                    except:  # noqa: E722
                         pass
             if "label_prm" in item.lower():
                 for num in ("1", "2", "3"):
@@ -1252,7 +1252,7 @@ def XYsave(G2frame, XY, labelX="X", labelY="Y", names=None):
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()
             filename = os.path.splitext(filename)[0] + ".csv"
-            File = open(filename, "w")
+            File = open(filename, "w")  # noqa: SIM115
         else:
             filename = None
     finally:
@@ -1290,7 +1290,7 @@ def PeakListSave(G2frame, file, peaks):
 
 def IndexPeakListSave(G2frame, peaks):
     "Save powder peaks from the indexing list"
-    file = open(G2frame.peaklistfile, "wa")
+    file = open(G2frame.peaklistfile, "wa")  # noqa: SIM115, PLW1501
     print("save index peak list to file: " + G2frame.peaklistfile)
     wx.BeginBusyCursor()
     try:
@@ -1323,7 +1323,7 @@ def ExportPowderList(G2frame):
     for obj in G2frame.exporterlist:
         if "powder" in obj.exporttype:
             try:
-                obj.Writer
+                obj.Writer  # noqa: B018
                 extList.append(obj.extension)
                 extLabel.append(obj.formatName)
             except AttributeError:
@@ -1353,7 +1353,7 @@ def ExportPowder(G2frame, TreeName, fileroot, extension, hint=""):
             if TreeName not in obj.Histograms:
                 raise Exception("Histogram not found: " + str(TreeName))
             try:
-                obj.Writer
+                obj.Writer  # noqa: B018
             except AttributeError:
                 continue
             try:
@@ -1406,7 +1406,7 @@ def ExportSequential(G2frame, data, obj, exporttype):
             data["histNames"],
         )
         if dlg.ShowModal() == wx.ID_OK:
-            histlist = [data["histNames"][l] for l in dlg.GetSelections()]
+            histlist = [data["histNames"][l] for l in dlg.GetSelections()]  # noqa: E741
             dlg.Destroy()
         else:
             dlg.Destroy()
@@ -1423,7 +1423,7 @@ def ExportSequential(G2frame, data, obj, exporttype):
                 G2frame, "Select phases to export from list", "Select phases", phaselist
             )
             if dlg.ShowModal() == wx.ID_OK:
-                phaselist = [phaselist[l] for l in dlg.GetSelections()]
+                phaselist = [phaselist[l] for l in dlg.GetSelections()]  # noqa: E741
                 dlg.Destroy()
             else:
                 dlg.Destroy()
@@ -1474,7 +1474,7 @@ def ReadDIFFaX(DIFFaXfile):
         "Toler": 0.01,
         "AtInfo": {},
     }
-    df = open(DIFFaXfile)
+    df = open(DIFFaXfile)  # noqa: SIM115, PD901
     lines = df.readlines()
     df.close()
     struct = False
@@ -1484,16 +1484,16 @@ def ReadDIFFaX(DIFFaXfile):
     trans = False
     Trans = []
     for diff in lines:
-        diff = diff[:-1].lower()
+        diff = diff[:-1].lower()  # noqa: PLW2901
         if "!" in diff:
             continue
         while "}" in diff:  # strip comments
             iB = diff.index("{")
             iF = diff.index("}") + 1
             if iB:
-                diff = diff[:iB]
+                diff = diff[:iB]  # noqa: PLW2901
             else:
-                diff = diff[iF:]
+                diff = diff[iF:]  # noqa: PLW2901
         if not diff:
             continue
         if diff.strip() == "instrumental":
@@ -1509,7 +1509,7 @@ def ReadDIFFaX(DIFFaXfile):
             stack = False
             trans = True
             continue
-        diff = diff.strip()
+        diff = diff.strip()  # noqa: PLW2901
         if struct:
             if diff:
                 Struct.append(diff)
@@ -1547,7 +1547,7 @@ def ReadDIFFaX(DIFFaXfile):
         if Struct[3] != "infinite":
             width = Struct[3].split()
             Layer["Width"][0] = [float(width[0]), float(width[1])]
-    for nL in range(nLayers):
+    for nL in range(nLayers):  # noqa: B007
         if "=" in Struct[N]:
             name = Struct[N].split("=")
             sameas = int(name[1]) - 1
@@ -1598,9 +1598,9 @@ def ReadDIFFaX(DIFFaXfile):
     # TRANSITIONS records
     transArray = []
     N = 0
-    for i in range(nLayers):
+    for i in range(nLayers):  # noqa: B007
         transArray.append([])
-        for j in range(nLayers):
+        for j in range(nLayers):  # noqa: B007
             vals = Trans[N].split()
             newVals = []
             for val in vals[:4]:
@@ -1651,7 +1651,7 @@ def saveNewPhase(G2frame, phData, newData, phlbl, msgs, orgFilName):
         sgnum = int(newData[0].strip())
         sgsym = G2spc.spgbyNum[sgnum]
         sgname = sgsym.replace(" ", "")
-    except:
+    except:  # noqa: E722
         print(f"Problem with processing record:\n{newData}")
         return None
     newPhase = copy.deepcopy(phData)
@@ -1691,7 +1691,7 @@ def saveNewPhase(G2frame, phData, newData, phlbl, msgs, orgFilName):
             ]
             atom.append(ran.randint(0, sys.maxsize))
             Atoms.append(atom)
-        except:
+        except:  # noqa: E722
             print(f"error in atom line {a}")
         # finally: pass
     phData.update(newPhase)
@@ -1710,7 +1710,7 @@ def saveNewPhase(G2frame, phData, newData, phlbl, msgs, orgFilName):
             num = 10
             try:
                 num = int(s[1]) + 1
-            except:
+            except:  # noqa: E722
                 pass
             G2frame.GSASprojectfile = f"{s[0]}_{num}.gpx"
     ProjFileSave(G2frame)

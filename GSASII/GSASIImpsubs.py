@@ -47,13 +47,13 @@ def ResetMP():
     """Call after changing Config var 'Multiprocessing_cores' to force a resetting
     of the useMP from the parameter.
     """
-    global ncores
+    global ncores  # noqa: PLW0603
     ncores = None
 
 
 def InitMP(allowMP=True):
     """Called to initialize use of Multiprocessing"""
-    global useMP, ncores
+    global useMP, ncores  # noqa: PLW0603
     if ncores is not None:
         return useMP, ncores
     useMP = False
@@ -80,7 +80,7 @@ def InitFobsSqGlobals(
     """Initialize for the computation of Fobs Squared for powder histograms.
     Puts lots of junk into the global namespace in this module.
     """
-    global x, ratio, shl, xB, xF, im, lamRatio, kRatio, xMask, Ka2, cw
+    global x, ratio, shl, xB, xF, im, lamRatio, kRatio, xMask, Ka2, cw  # noqa: PLW0603
     x = ma.getdata(x1)
     cw = np.diff(x)
     cw = np.append(cw, cw[-1])
@@ -170,7 +170,7 @@ def ComputeFobsSqEDbatch(profList):
     return sInt, resList
 
 
-def ComputeFobsSqCW(refl, iref):
+def ComputeFobsSqCW(refl, iref):  # noqa: ARG001
     yp = np.zeros(len(x))  # not masked
     sInt = 0
     refl8im = 0
@@ -223,7 +223,7 @@ def ComputeFobsSqCW(refl, iref):
     return refl8im, sInt
 
 
-def ComputeFobsSqCWB(refl, iref):
+def ComputeFobsSqCWB(refl, iref):  # noqa: ARG001
     yp = np.zeros(len(x))  # not masked
     refl8im = 0
     Wd, fmin, fmax = G2pwd.getWidthsTOF(
@@ -257,7 +257,7 @@ def ComputeFobsSqCWB(refl, iref):
     return refl8im, refl[11 + im] * refl[9 + im]
 
 
-def ComputeFobsSqCWA(refl, iref):
+def ComputeFobsSqCWA(refl, iref):  # noqa: ARG001
     yp = np.zeros(len(x))  # not masked
     refl8im = 0
     Wd, fmin, fmax = G2pwd.getWidthsCWA(
@@ -292,7 +292,7 @@ def ComputeFobsSqCWA(refl, iref):
     return refl8im, refl[11 + im] * refl[9 + im]
 
 
-def ComputeFobsSqTOF(refl, iref):
+def ComputeFobsSqTOF(refl, iref):  # noqa: ARG001
     yp = np.zeros(len(x))  # not masked
     refl8im = 0
     Wd, fmin, fmax = G2pwd.getWidthsTOF(
@@ -326,7 +326,7 @@ def ComputeFobsSqTOF(refl, iref):
     return refl8im, refl[11 + im] * refl[9 + im]
 
 
-def ComputeFobsSqED(refl, iref):
+def ComputeFobsSqED(refl, iref):  # noqa: ARG001
     yp = np.zeros(len(x))  # not masked
     refl8im = 0
     Wd, fmin, fmax = G2pwd.getWidthsED(refl[5 + im], refl[6 + im], refl[7 + im])
@@ -356,7 +356,7 @@ def InitPwdrProfGlobals(im1, x1):
     """Initialize for the computation of Fobs Squared for powder histograms.
     Puts lots of junk into the global namespace in this module.
     """
-    global im, x, cw, yc
+    global im, x, cw, yc  # noqa: PLW0603
     im = im1
     x = ma.getdata(x1)
     cw = np.diff(x)

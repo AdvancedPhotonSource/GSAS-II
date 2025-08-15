@@ -190,7 +190,7 @@ end open
             shutil.rmtree(appPath)
 
         shell = os.path.join("/tmp/", "appscrpt.script")
-        f = open(shell, "w")
+        f = open(shell, "w")  # noqa: SIM115
         # f.write(AppleScript.format(newpython,G2script,'',newpython,G2script,''))
         f.write(AppleScript)
         f.close()
@@ -247,7 +247,7 @@ end open
 
     # Edit the app plist file to restrict the type of files that can be dropped
     if hasattr(plistlib, "load"):
-        fp = open(os.path.join(appPath, "Contents", "Info.plist"), "rb")
+        fp = open(os.path.join(appPath, "Contents", "Info.plist"), "rb")  # noqa: SIM115
         d = plistlib.load(fp)
         fp.close()
     else:
@@ -261,7 +261,7 @@ end open
     ]
 
     if hasattr(plistlib, "dump"):
-        fp = open(os.path.join(appPath, "Contents", "Info.plist"), "wb")
+        fp = open(os.path.join(appPath, "Contents", "Info.plist"), "wb")  # noqa: SIM115
         plistlib.dump(d, fp)
         fp.close()
     else:

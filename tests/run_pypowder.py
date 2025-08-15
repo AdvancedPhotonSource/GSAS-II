@@ -16,7 +16,7 @@ if G2loc is None:  # fixup path if GSASII not installed into Python
     print("GSAS-II not installed in Python; Hacking sys.path")
     sys.path.append(os.path.dirname(home))
 
-from GSASII import GSASIIpath
+from GSASII import GSASIIpath  # noqa: E402
 
 GSASIIpath.SetBinaryPath()
 
@@ -41,7 +41,7 @@ ydata = pyd.pypsvfcjo(len(xdata), xdata - pos, pos, sig, gam, shl)
 # shl = 0.035
 # ydata = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa: E402
 
 plt.plot(xdata, ydata)
 plt.show()

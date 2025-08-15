@@ -4,12 +4,12 @@ import subprocess as subp
 
 try:
     import requests
-except:
+except:  # noqa: E722
     print("Module requests not installed, access to ISODISTORT not possible")
 import copy
 
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIscriptable as G2sc
+from .GUI import GSASIIctrlGUI as G2G
 
 # import tempfile
 isouploadsite = "https://stokes.byu.edu/iso/isodistortuploadfile.php"
@@ -25,13 +25,13 @@ def HandleError(out):
     except AttributeError:
         try:  # should work on MacOS and most linux versions
             subp.call(["open", url])
-        except:
+        except:  # noqa: E722
             print("Could not open URL")
 
 
 def UploadCIF(cifname):
     # upload cif file to BYU web site
-    ciffile = open(cifname, "rb")
+    ciffile = open(cifname, "rb")  # noqa: SIM115
     up1 = {
         "toProcess": (cifname, ciffile),
     }
@@ -149,8 +149,8 @@ def GetISODISTORT(Phase):
         cifout = GetISOcif(out25, 4)
         if cifout is None:
             return None, None
-        cifFile = "{}_{}.cif".format(Phase["General"]["Name"], "child")
-        fl = open(cifFile, "wb")
+        cifFile = f"{Phase['General']['Name']}_child.cif"
+        fl = open(cifFile, "wb")  # noqa: SIM115
         fl.write(cifout.encode("utf-8"))
         fl.close()
         return [], cifFile
@@ -284,7 +284,7 @@ def GetISODISTORTcif(Phase):
         names[2].replace("*", "_"),
         names[3],
     )
-    fl = open(cifFile, "wb")
+    fl = open(cifFile, "wb")  # noqa: SIM115
     fl.write(out5.encode("utf-8"))
     fl.close()
 

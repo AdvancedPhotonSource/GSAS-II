@@ -25,10 +25,10 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
 
     def ContentsValidator(self, filename):
         "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
-        fp = open(filename, "rb")
+        fp = open(filename, "rb")  # noqa: SIM115
         try:
             data = pickleLoad(fp)
-        except:
+        except:  # noqa: E722
             self.errors = "This is not a valid .GPX file. Not recognized by pickle"
             fp.close()
             return False
@@ -51,7 +51,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
         fp.close()
         return False
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):  # noqa: ARG002
         """Read a dataset from a .GPX file.
         If multiple datasets are requested, use self.repeat and buffer caching.
         """
@@ -65,7 +65,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             histnames = rdbuffer.get("histnames")
         else:
             try:
-                fp = open(filename, "rb")
+                fp = open(filename, "rb")  # noqa: SIM115
                 while True:
                     pos = fp.tell()
                     try:
@@ -75,7 +75,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
                     if data[0][0][:4] == "PWDR":
                         histnames.append(data[0][0])
                         poslist.append(pos)
-            except:
+            except:  # noqa: E722
                 self.errors = "Reading of histogram names failed"
                 return False
             finally:
@@ -101,7 +101,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
                     rdbuffer["histnames"] = histnames
                     rdbuffer["selections"] = self.selections
 
-        fp = open(filename, "rb")
+        fp = open(filename, "rb")  # noqa: SIM115
         fp.seek(poslist[selblk])
         data = pickleLoad(fp)
         N = len(data[0][1][1][0])

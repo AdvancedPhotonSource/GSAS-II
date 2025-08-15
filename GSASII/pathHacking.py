@@ -18,6 +18,8 @@ def _path_discovery(printInfo=False):
             if newpath in searchpathlist:
                 return False
             searchpathlist.append(newpath)
+            return None
+        return None
 
     inpver = GSASIIpath.intver(np.__version__)
 
@@ -96,6 +98,8 @@ def _path_discovery(printInfo=False):
         sys.path.insert(0, binpath)
     if printInfo:
         print(f"GSAS-II binary directory: {binpath}")
+        return None
+    return None
 
     # *** Thanks to work by Tom, imports and exports are now found directly
     # *** and the code below is no longer needed.

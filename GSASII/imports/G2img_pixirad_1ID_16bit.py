@@ -148,7 +148,7 @@ def GetTifData(filename):
     nSlice = 1
     if DEBUG:
         print("byteorder:", byteOrd)
-    for ied in range(NED):
+    for _ied in range(NED):
         Tag, Type = st.unpack(byteOrd + "Hh", File.read(4))
         nVal = st.unpack(byteOrd + "i", File.read(4))[0]
         if DEBUG:
@@ -185,10 +185,7 @@ def GetTifData(filename):
     if (
         IFD[258][2][0] == 16
     ):  # summed files are 16 bit to hold the required amount of data
-        if sizexy == [1024, 402] or sizexy == [
-            402,
-            1024,
-        ]:  # confirms that it has the proper size
+        if sizexy in ([1024, 402], [402, 1024]):  # confirms that it has the proper size
             tifType = "1ID summed 16bit Dexela"
             pixy = [62.0, 62.0]  # sets the pixel size
             print("Read 1ID normalized 16bit Pixirad tiff file: " + filename)

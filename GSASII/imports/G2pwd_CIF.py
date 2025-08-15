@@ -15,7 +15,8 @@ except ImportError:
         from .. import CifFile as cif  # PyCifRW, as distributed w/G2 (old)
     except ImportError:
         cif = None
-asind = lambda x: 180.0 * np.arcsin(x) / np.pi
+def asind(x):
+    return 180.0 * np.arcsin(x) / np.pi
 
 
 class CIFpwdReader(G2obj.ImportPowderData):
@@ -39,6 +40,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
         fp = open(filename)
         return self.CIFValidator(fp)
         fp.close()
+        return None
 
     def Reader(self, filename, ParentFrame=None, **kwarg):
         """Read powder data from a CIF.
@@ -114,9 +116,9 @@ class CIFpwdReader(G2obj.ImportPowderData):
         # scan all blocks for sets of data
         if choicelist is None:
             choicelist = []
-            for blk in cf.keys():
+            for blk in cf:
                 blkkeys = [
-                    k.lower() for k in cf[blk].keys()
+                    k.lower() for k in cf[blk]
                 ]  # save a list of the data items, since we will use it often
                 # scan through block for x items
                 xldict = {}
@@ -124,7 +126,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                     if (
                         type(x) is tuple
                     ):  # check for the presence of all three items that define a range of data
-                        if not all([i in blkkeys for i in x]):
+                        if not all(i in blkkeys for i in x):
                             continue
                         try:
                             items = [float(cf[blk][xi]) for xi in x]
@@ -207,7 +209,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
         else:  # choose from options
             # compile a list of choices for the user
             choices = []
-            for blk, l, x, y, su, mod in choicelist:
+            for blk, l, x, y, _su, _mod in choicelist:
                 sx = x[0]
                 if len(x) > 1:
                     sx += "..."
@@ -267,7 +269,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             chlbls.append("Select the data item to be used for weighting")
             choices.append(such)
             chlbls.append("Divide intensities by data item")
-            choices.append(["none"] + modch)
+            choices.append(["none", *modch])
             from .. import GSASIIctrlGUI as G2G
 
             res = G2G.MultipleChoicesSelector(choices, chlbls)
@@ -362,7 +364,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                         vl.append(0.0)
                     else:
                         vl.append(v)
-            elif sucf == "_pd_proc_intensity_total" or sucf == "_pd_meas_counts_total":
+            elif sucf in ("_pd_proc_intensity_total", "_pd_meas_counts_total"):
                 for val in cf[blk].get(sucf, "?"):
                     v, e = cif.get_number_with_esd(val)
                     if v is None:  # not parsed

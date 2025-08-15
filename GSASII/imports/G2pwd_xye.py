@@ -10,7 +10,9 @@ import numpy as np
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
 
-asind = lambda x: 180.0 * np.arcsin(x) / np.pi
+
+def asind(x):
+    return 180.0 * np.arcsin(x) / np.pi
 
 
 class xye_ReaderClass(G2obj.ImportPowderData):
@@ -117,7 +119,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                 continue
             self.errors = "Unexpected information in line: " + str(i + 1)
             if all(
-                [ord(c) < 128 and ord(c) != 0 for c in str(S)]
+                ord(c) < 128 and ord(c) != 0 for c in str(S)
             ):  # show only if ASCII
                 self.errors += "  " + str(S)
             else:

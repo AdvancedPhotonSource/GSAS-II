@@ -306,7 +306,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             clockWd = float(cons[4]) / 1000.0  # in mus
             TMap = np.zeros(Nch + 2, dtype=int)
             ind = 0
-            for i in range(Nrec):
+            for _i in range(Nrec):
                 S = File.readline().rstrip("\n")
                 vals = S.split()
                 for val in vals:

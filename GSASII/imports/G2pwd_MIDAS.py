@@ -106,7 +106,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             # self.errors += '\n\t' + str(msg)
             self.errors += "\nPlease report this"
         elif all(
-            [(i in fp) for i in self.midassections]
+            (i in fp) for i in self.midassections
         ):  # are expected MIDAS sections present?
             self.mode = "midas"
             del fp, store
@@ -137,7 +137,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         if self.mode is None:
             fp, store = self.zarrOpen(filename)
             # are expected MIDAS sections present?
-            if all([(i in fp) for i in self.midassections]):
+            if all((i in fp) for i in self.midassections):
                 self.mode = "midas"
             else:
                 print(f"{filename} is not a MIDAS file")
@@ -151,8 +151,10 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             res = False
         return res
 
-    def readMidas(self, filename, fpbuffer={}):
+    def readMidas(self, filename, fpbuffer=None):
         """Read zarr file produced by Midas"""
+        if fpbuffer is None:
+            fpbuffer = {}
         self.instmsg = "MIDAS zarr file"
         # has the zarr file already been cached?
         doread = False  # yes

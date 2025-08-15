@@ -271,7 +271,7 @@ class Exportbracket(G2fil.ExportBaseclass):
             # self.Write(parameter_values[0:-2])
 
             for name in model_parameters:
-                self.Write("%s, %s," % (name, model_parameters[name]))
+                self.Write(f"{name}, {model_parameters[name]},")
 
         finally:
             try:

@@ -54,7 +54,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
             except ValueError:
                 self.errors = "Unexpected information in line: " + str(i + 1)
                 if all(
-                    [ord(c) < 128 and ord(c) != 0 for c in str(S)]
+                    ord(c) < 128 and ord(c) != 0 for c in str(S)
                 ):  # show only if ASCII
                     self.errors += "  " + str(S)
                 else:

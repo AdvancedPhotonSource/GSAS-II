@@ -55,14 +55,22 @@ except:
     pass
 
 # trig functions in degrees
-sind = lambda x: math.sin(x * math.pi / 180.0)
-tand = lambda x: math.tan(x * math.pi / 180.0)
-cosd = lambda x: math.cos(x * math.pi / 180.0)
-asind = lambda x: 180.0 * math.asin(x) / math.pi
-tth2q = lambda t, w: 4.0 * math.pi * sind(t / 2.0) / w
-tof2q = lambda t, C: 2.0 * math.pi * C / t
-atand = lambda x: 180.0 * math.atan(x) / math.pi
-atan2d = lambda y, x: 180.0 * math.atan2(y, x) / math.pi
+def sind(x):
+    return math.sin(x * math.pi / 180.0)
+def tand(x):
+    return math.tan(x * math.pi / 180.0)
+def cosd(x):
+    return math.cos(x * math.pi / 180.0)
+def asind(x):
+    return 180.0 * math.asin(x) / math.pi
+def tth2q(t, w):
+    return 4.0 * math.pi * sind(t / 2.0) / w
+def tof2q(t, C):
+    return 2.0 * math.pi * C / t
+def atand(x):
+    return 180.0 * math.atan(x) / math.pi
+def atan2d(y, x):
+    return 180.0 * math.atan2(y, x) / math.pi
 
 ################################################################################
 ##### Image Data
@@ -186,10 +194,9 @@ def UpdateImageData(G2frame, data):
         dlg = G2G.SingleFloatDialog(
             G2frame,
             "Polarization test arc mask",
-            """ Do not use if pattern has uneven absorption
+            f""" Do not use if pattern has uneven absorption
  Set 2-theta max in image controls to be fully inside image
- Enter 2-theta position for arc mask (32-%.1f) """
-            % IOtth[1],
+ Enter 2-theta position for arc mask (32-{IOtth[1]:.1f}) """,
             IOtth[1],
             IOtth,
             fmt="%.2f",
@@ -271,7 +278,7 @@ def UpdateImageData(G2frame, data):
     )
     pixSize = wx.FlexGridSizer(0, 4, 5, 5)
     pixLabels = [" Pixel X-dimension (\xb5m)", " Pixel Y-dimension (\xb5m)"]
-    for i, [pixLabel, pix] in enumerate(
+    for i, [pixLabel, _pix] in enumerate(
         zip(pixLabels, data["pixelSize"], strict=False)
     ):
         pixSize.Add(wx.StaticText(G2frame.dataWindow, label=pixLabel), 0, WACV)
@@ -340,7 +347,7 @@ def UpdateImageData(G2frame, data):
     tthSizer.Add(
         wx.StaticText(
             G2frame.dataWindow,
-            label=" Sample changer position %.2f mm " % data["samplechangerpos"],
+            label=" Sample changer position {:.2f} mm ".format(data["samplechangerpos"]),
         ),
         0,
         WACV,
@@ -800,7 +807,7 @@ def UpdateImageControls(
                     Data["ellipses"] = []  # clear away individual ellipse fits
                     for H in HKL[key][:N]:
                         ellipse = G2img.GetEllipse(H[3], Data)
-                        Data["ellipses"].append(copy.deepcopy(ellipse + ("b",)))
+                        Data["ellipses"].append(copy.deepcopy((*ellipse, "b")))
                 G2frame.EnablePlot = True
                 G2frame.GPXtree.SelectItem(
                     G2frame.root
@@ -1322,7 +1329,8 @@ def UpdateImageControls(
                 else:
                     G2G.G2MessageBox(G2frame, "Nothing to do!")
                     return
-                xferAng = lambda tth, dist1, dist2: atand(dist1 * tand(tth) / dist2)
+                def xferAng(tth, dist1, dist2):
+                    return atand(dist1 * tand(tth) / dist2)
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
                 Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, Source)
@@ -2212,14 +2220,7 @@ def UpdateImageControls(
         oldFlat = data.get("Flat Bkg", 0.0)
 
         backSizer.Add(wx.StaticText(G2frame.dataWindow, -1, " Dark image"), 0, WACV)
-        Choices = [
-            "",
-        ] + G2gd.GetGPXtreeDataNames(
-            G2frame,
-            [
-                "IMG ",
-            ],
-        )
+        Choices = ["", *G2gd.GetGPXtreeDataNames(G2frame, ["IMG "])]
         Source = G2frame.GPXtree.GetItemText(G2frame.Image)
         Choices.pop(Choices.index(Source))
         darkImage = wx.ComboBox(
@@ -2584,14 +2585,10 @@ def UpdateImageControls(
         "* Global parameters in Multi-dist recalib.", 1
     )
     colorList = sorted(
-        [m for m in mpl.cm.datad.keys()]
-        + [
-            "GSPaired",
-            "GSPaired_r",
-        ],
+        [*list(mpl.cm.datad.keys()), "GSPaired", "GSPaired_r"],
         key=lambda s: s.lower(),
     )  # if not m.endswith("_r")
-    calList = sorted([m for m in calFile.Calibrants.keys()], key=lambda s: s.lower())
+    calList = sorted(calFile.Calibrants.keys(), key=lambda s: s.lower())
     typeList = [
         "PWDR - powder diffraction data",
         "SASD - small angle scattering data",
@@ -3368,7 +3365,7 @@ def UpdateMasks(G2frame, data):
             labelX="Azimuth",
             labelY="Intensity",
             newPlot=True,
-            Title="Ring Mask Intensity: 2%s=%.2f" % (GkTheta, data["Rings"][ringId][0]),
+            Title="Ring Mask Intensity: 2{}={:.2f}".format(GkTheta, data["Rings"][ringId][0]),
             lines=True,
         )
 
@@ -3620,7 +3617,7 @@ def UpdateMasks(G2frame, data):
         ]
         colIds = ["position, mm", "diameter, mm", "Delete?"]
         rowIds = [str(i) for i in range(len(Spots))]
-        table = [["%.2f,%.2f" % (item[0], item[1]), item[2], False] for item in Spots]
+        table = [[f"{item[0]:.2f},{item[1]:.2f}", item[2], False] for item in Spots]
         SpotTable = G2G.Table(table, rowLabels=rowIds, colLabels=colIds, types=colTypes)
         SpotGrid = G2G.GSGrid(G2frame.dataWindow)
         SpotGrid.SetTable(SpotTable, True)
@@ -3654,7 +3651,7 @@ def UpdateMasks(G2frame, data):
             if Rings[i]:
                 ringText = wx.TextCtrl(
                     parent=G2frame.dataWindow,
-                    value=("%.3f" % (Rings[i][0])),
+                    value=(f"{Rings[i][0]:.3f}"),
                     style=wx.TE_READONLY,
                 )
                 ringText.SetBackgroundColour(VERY_LIGHT_GREY)
@@ -3710,7 +3707,7 @@ def UpdateMasks(G2frame, data):
                 tth, azimuth, thick = Arcs[i]
                 arcText = wx.TextCtrl(
                     parent=G2frame.dataWindow,
-                    value=("%.3f" % (tth)),
+                    value=(f"{tth:.3f}"),
                     style=wx.TE_READONLY,
                 )
                 arcText.SetBackgroundColour(VERY_LIGHT_GREY)
@@ -3816,7 +3813,7 @@ def UpdateMasks(G2frame, data):
             if Polygons[i]:
                 polyList = []
                 for x, y in Polygons[i]:
-                    polyList.append("%.2f, %.2f" % (x, y))
+                    polyList.append(f"{x:.2f}, {y:.2f}")
                 polyText = wx.ComboBox(
                     G2frame.dataWindow,
                     value=polyList[0],
@@ -3847,7 +3844,7 @@ def UpdateMasks(G2frame, data):
         littleSizer = wx.FlexGridSizer(0, 2, 0, 5)
         frameList = []
         for x, y in frame:
-            frameList.append("%.2f, %.2f" % (x, y))
+            frameList.append(f"{x:.2f}, {y:.2f}")
         frameText = wx.ComboBox(
             G2frame.dataWindow,
             value=frameList[0],
@@ -4098,7 +4095,7 @@ def UpdateStressStrain(G2frame, data):
             G2gd.GetGPXtreeItemId(G2frame, G2frame.Image, "Image Controls")
         )
         RingInt = G2img.IntStrSta(G2frame.ImageZ, data, Controls)
-        Names = ["d=%.3f" % (ring["Dcalc"]) for ring in data["d-zero"]]
+        Names = ["d={:.3f}".format(ring["Dcalc"]) for ring in data["d-zero"]]
         G2plt.PlotExposedImage(G2frame, event=event)
         G2frame.G2plotNB.Delete("Ring Intensities")
         G2plt.PlotXY(
@@ -4117,7 +4114,7 @@ def UpdateStressStrain(G2frame, data):
             G2gd.GetGPXtreeItemId(G2frame, G2frame.Image, "Image Controls")
         )
         RingInt = G2img.IntStrSta(G2frame.ImageZ, data, Controls)
-        Names = ["d=%.3f" % (ring["Dcalc"]) for ring in data["d-zero"]]
+        Names = ["d={:.3f}".format(ring["Dcalc"]) for ring in data["d-zero"]]
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(
             G2frame,
@@ -4132,10 +4129,10 @@ def UpdateStressStrain(G2frame, data):
                 filename = dlg.GetPath()
                 File = open(filename, "w")
                 for i, name in enumerate(Names):
-                    File.write("%s%s\n" % (" Ring intensity for ", name))
+                    File.write("{}{}\n".format(" Ring intensity for ", name))
                     File.write("%12s %12s\n" % ("Azimuth", "RMD"))
                     for item in RingInt[i].T:
-                        File.write(" %12.3f %12.3f\n" % (item[0], item[1]))
+                        File.write(f" {item[0]:12.3f} {item[1]:12.3f}\n")
                     File.write("\n")
                 File.close()
         finally:
@@ -5354,7 +5351,7 @@ class AutoIntFrame(wx.Frame):
                 G2gd.GetGPXtreeItemId(G2frame, Id, "Sample Parameters")
             )
             if self.AutoScale:
-                print("Rescale by %.4f" % (Scale))
+                print(f"Rescale by {Scale:.4f}")
                 y, w = G2frame.GPXtree.GetItemPyData(Id)[1][1:3]
                 y *= Scale
                 w /= Scale**2
@@ -5506,7 +5503,7 @@ class AutoIntFrame(wx.Frame):
             if (
                 self.params["Mode"] != "table"
             ):  # reset controls and masks for all IMG items in tree to master
-                for img in G2gd.GetGPXtreeDataNames(G2frame, ["IMG "]):
+                for _img in G2gd.GetGPXtreeDataNames(G2frame, ["IMG "]):
                     # update controls from master
                     controlsDict = G2frame.GPXtree.GetItemPyData(
                         G2gd.GetGPXtreeItemId(G2frame, self.imageBase, "Image Controls")

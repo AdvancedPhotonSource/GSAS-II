@@ -13,7 +13,7 @@ import scipy.special as spsp
 
 from . import GSASIIElem as G2elem
 from . import GSASIImath as G2mth
-from . import GSASIIpath as GSASIIpath
+from . import GSASIIpath
 from . import GSASIIspc as G2spc
 
 try:
@@ -26,15 +26,24 @@ except ImportError:  # ignore; will report this as an error in GSASIIplot import
     pass
 
 # trig functions in degrees
-sind = lambda x: np.sin(x * np.pi / 180.0)
-asind = lambda x: 180.0 * np.arcsin(x) / np.pi
-tand = lambda x: np.tan(x * np.pi / 180.0)
-atand = lambda x: 180.0 * np.arctan(x) / np.pi
-atan2d = lambda y, x: 180.0 * np.arctan2(y, x) / np.pi
-cosd = lambda x: np.cos(x * np.pi / 180.0)
-acosd = lambda x: 180.0 * np.arccos(x) / np.pi
-rdsq2d = lambda x, p: round(1.0 / math.sqrt(x), p)
-nprdsq2d = lambda x, p: np.round(1.0 / np.sqrt(x), p)
+def sind(x):
+    return np.sin(x * np.pi / 180.0)
+def asind(x):
+    return 180.0 * np.arcsin(x) / np.pi
+def tand(x):
+    return np.tan(x * np.pi / 180.0)
+def atand(x):
+    return 180.0 * np.arctan(x) / np.pi
+def atan2d(y, x):
+    return 180.0 * np.arctan2(y, x) / np.pi
+def cosd(x):
+    return np.cos(x * np.pi / 180.0)
+def acosd(x):
+    return 180.0 * np.arccos(x) / np.pi
+def rdsq2d(x, p):
+    return round(1.0 / math.sqrt(x), p)
+def nprdsq2d(x, p):
+    return np.round(1.0 / np.sqrt(x), p)
 try:  # fails on doc build
     rpd = np.pi / 180.0
     RSQ2PI = 1.0 / np.sqrt(2.0 * np.pi)
@@ -341,7 +350,7 @@ def getCellSU(pId, hId, SGData, parmDict, covData):
     pfx = f"{pId}::"
     phfx = f"{pId}:{hId}:"
     A = cellDijFill(pfx, phfx, SGData, parmDict)
-    cell = list(A2cell(A)) + [calc_V(A)]
+    cell = [*list(A2cell(A)), calc_V(A)]
 
     rVsq = calc_rVsq(A)
     G, g = A2Gmat(A)  # get recip. & real metric tensors
@@ -441,7 +450,7 @@ def showCellSU(cellList, cellSig, SGData, cellNames=None):
         3 * [-0.00001] + 3 * [-0.001] + [-0.01]
     )  # significance to use when no sigma
     if cellNames is None:
-        cellNames = list(cellAlbl) + ["vol"]
+        cellNames = [*list(cellAlbl), "vol"]
     laue = SGData["SGLaue"]
     if laue == "2/m":
         laue += SGData["SGUniq"]
@@ -902,7 +911,7 @@ def GenCellConstraints(
                 continue
             constr.append([const, G2obj.G2VarObj(f"{origPhase}::{aTerm}")])
         if i in uniqueAnew:
-            constrList.append(constr + [0.0, None, "c"])
+            constrList.append([*constr, 0.0, None, "c"])
         if debug:
             Anew.append(np.dot(origA, mult))
     if debug:
@@ -950,6 +959,7 @@ def cellUnique(SGData):
         return [
             0,
         ]
+    return None
 
 
 def cellZeros(SGData):
@@ -982,6 +992,7 @@ def cellZeros(SGData):
         return 6 * [False]
     elif SGData["SGLaue"] in ["m3m", "m3"]:
         return [False, False, False, True, True, True]
+    return None
 
 
 def TransformXYZ(XYZ, Trans, Vec):
@@ -1289,9 +1300,7 @@ def FillUnitCell(Phase, Force=True):
 
 def GetUnique(Phase, atCodes):
     def noDuplicate(xyzA, XYZ):
-        if True in [np.allclose(xyzA % 1.0, xyzB % 1.0, atol=0.0002) for xyzB in XYZ]:
-            return False
-        return True
+        return True not in [np.allclose(xyzA % 1.0, xyzB % 1.0, atol=0.0002) for xyzB in XYZ]
 
     cx, ct = Phase["General"]["AtomPtrs"][:2]
     SGData = Phase["General"]["SGData"]
@@ -1921,17 +1930,7 @@ def Hx2Rh(Hx):
 def CentCheck(Cent, H):
     "checks individual hkl for centering extinction; returns True for allowed, False otherwise - slow"
     h, k, l = H
-    if (
-        (Cent == "A" and (k + l) % 2)
-        or (Cent == "B" and (h + l) % 2)
-        or (Cent == "C" and (h + k) % 2)
-        or (Cent == "I" and (h + k + l) % 2)
-        or (Cent == "F" and ((h + k) % 2 or (h + l) % 2 or (k + l) % 2))
-        or (Cent == "R" and (-h + k + l) % 3)
-    ):
-        return False
-    else:
-        return True
+    return not ((Cent == "A" and (k + l) % 2) or (Cent == "B" and (h + l) % 2) or (Cent == "C" and (h + k) % 2) or (Cent == "I" and (h + k + l) % 2) or (Cent == "F" and ((h + k) % 2 or (h + l) % 2 or (k + l) % 2)) or (Cent == "R" and (-h + k + l) % 3))
 
 
 def newCentCheck(Cent, H):
@@ -2036,8 +2035,9 @@ def GetBraviasNum(center, system):
         return 16
     elif center.upper() == "P" and system.lower() == "triclinic":
         return 17
+    msg = f"non-standard Bravais lattice center={center}, cell={system}"
     raise ValueError(
-        "non-standard Bravais lattice center=%s, cell=%s" % (center, system)
+        msg
     )
 
 
@@ -2888,7 +2888,7 @@ def LaueUnique(Laue, HKLF):
             HKLFT[:3],
         )
         HKLFT[:3] = np.squeeze(np.inner(HKLF[:, :3], mat32[nxs, :, :])).T
-    elif Laue == "3 m 1" or Laue == "3 m":
+    elif Laue in ("3 m 1", "3 m"):
         HKLFT[:3] = np.where(
             HKLFT[1] < 0,
             np.squeeze(np.inner(HKLF[:, :3], mat32[nxs, :, :])).T,
@@ -2934,7 +2934,7 @@ def LaueUnique(Laue, HKLF):
             np.squeeze(np.inner(HKLF[:, :3], -mat31[nxs, :, :])).T,
             HKLFT[:3],
         )
-    elif Laue == "-3 m 1" or Laue == "-3 m":  # ok
+    elif Laue in ("-3 m 1", "-3 m"):  # ok
         HKLFT[:3] = np.where(
             HKLFT[1] < 0,
             np.squeeze(np.inner(HKLF[:, :3], mat32[nxs, :, :])).T,
@@ -4122,7 +4122,8 @@ BOH = {
     ],
 }
 
-Lnorm = lambda L: 4.0 * np.pi / (2.0 * L + 1.0)
+def Lnorm(L):
+    return 4.0 * np.pi / (2.0 * L + 1.0)
 
 
 def GetKcl(L, N, SGLaue, phi, beta):

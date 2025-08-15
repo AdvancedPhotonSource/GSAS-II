@@ -150,7 +150,7 @@ def VarKeys(constr):
     :returns: a list of keys where any keys beginning with '_' are
       removed.
     """
-    return [i for i in constr.keys() if not i.startswith("_")]
+    return [i for i in constr if not i.startswith("_")]
 
 
 def GroupConstraints(constrDict):
@@ -197,7 +197,7 @@ def GroupConstraints(constrDict):
                     assignedlist.append(j)
                     groupset = groupset | set(VarKeys(constrJ))
         group = sorted(grouplist)
-        varlist = sorted(list(groupset))
+        varlist = sorted(groupset)
         groups.append(group)
         ParmList.append(varlist)
     return groups, ParmList
@@ -1034,7 +1034,7 @@ def ProcessConstraints(constList, seqmode="use-all", seqhst=None):
             else:
                 D["_name"] = "::nv-" + varname
             D["_name"] = G2obj.MakeUniqueLabel(D["_name"], namedVarList)
-            D["_vary"] = varyFlag == True  # force to bool
+            D["_vary"] = varyFlag is True  # force to bool
             constrDict.append(D)
         elif constr[-1] == "c":
             # process a constraint equation
@@ -1139,17 +1139,17 @@ def StoreEquivalence(independentVar, dependentList, symGen=True):
             raise Exception("Cannot parse " + repr(var) + " as var or (var,multiplier)")
         mapList.append(var)
         try:
-            multlist.append(tuple((float(mult),)))
+            multlist.append((float(mult),))
         except:
             allfloat = False
-            multlist.append(tuple((mult,)))
+            multlist.append((mult,))
     # added relationships to stored values
     arrayList.append(None)
     if allfloat:
         invarrayList.append(np.array(multlist))
     else:
         invarrayList.append(multlist)
-    indParmList.append(list((independentVar,)))
+    indParmList.append([independentVar,])
     dependentParmList.append(mapList)
     symGenList.append(symGen)
 
@@ -1221,7 +1221,7 @@ def EvaluateMultipliers(constList, *dicts):
         for v in valList:
             try:
                 1 + v[0]
-                repList.append(tuple((v[0],)))
+                repList.append((v[0],))
                 continue
             except:
                 pass
@@ -1229,12 +1229,12 @@ def EvaluateMultipliers(constList, *dicts):
                 newval = SubfromParmDict(v[0][:], prmDict)
                 if GSASIIpath.GetConfigValue("debug"):
                     print("Changing ", v[0], "to", newval)
-                repList.append(tuple((newval,)))
+                repList.append((newval,))
             except:
                 if problemList:
                     problemList += ", "
                 problemList += v[0]
-                repList.append(tuple(("error",)))
+                repList.append(("error",))
         invarrayList[i] = np.array(repList)
     return problemList
 
@@ -1568,7 +1568,7 @@ def ComputeDepESD(covMatrix, varyList, noSym=False):
       parameters are placed in the returned dict.
     """
     sigmaDict = {}
-    for varlist, mapvars, multarr, invmultarr, symgen in zip(
+    for varlist, mapvars, _multarr, invmultarr, symgen in zip(
         dependentParmList,
         indParmList,
         arrayList,
@@ -1592,7 +1592,7 @@ def ComputeDepESD(covMatrix, varyList, noSym=False):
                 iv2 = varyList.index(name2)
                 vcov[i1][i2] = covMatrix[iv1][iv2]
         # vec is the vector that multiplies each of the independent values
-        for i, (v, vec) in enumerate(zip(varlist, invmultarr, strict=False)):
+        for _i, (v, vec) in enumerate(zip(varlist, invmultarr, strict=False)):
             # if i == varied: break # this limits the number of generated params
             # to match the number varied. Not sure why I did this.
             sigmaDict[v] = np.sqrt(np.inner(vec.T, np.inner(vcov, vec)))
@@ -1615,9 +1615,9 @@ def _FormatConstraint(RelDict, RelVal):
             s[-1] += " - "
             m = abs(m)
         if m == 1:
-            s[-1] += "%s " % var
+            s[-1] += f"{var} "
         else:
-            s[-1] += "%.3f*%s " % (m, var)
+            s[-1] += f"{m:.3f}*{var} "
     if len(s[-1]) > linelen:
         s.append(" ")
     if RelVal is None:
@@ -1636,7 +1636,7 @@ def _showEquiv(varlist, mapvars, invmultarr, longmsg=False):
     """Format an equivalence relationship, note that varlist, mapvars, invmultarr
     are elements of dependentParmList, indParmList, invarrayList
     """
-    for i, mv in enumerate(mapvars):
+    for _i, mv in enumerate(mapvars):
         s1 = str(mv)
         if not longmsg:
             s1 += " ==> "
@@ -1675,7 +1675,7 @@ def VarRemapSumm():
     freeOut = 0
     variedOut = 0
     global dependentParmList, arrayList, invarrayList, indParmList, symGenList
-    for varlist, mapvars, multarr, invmultarr, symFlag in zip(
+    for _varlist, mapvars, multarr, _invmultarr, symFlag in zip(
         dependentParmList,
         indParmList,
         arrayList,
@@ -1683,7 +1683,7 @@ def VarRemapSumm():
         symGenList,
         strict=False,
     ):
-        for i, mv in enumerate(mapvars):
+        for _i, mv in enumerate(mapvars):
             if multarr is None:
                 if symFlag:
                     symOut += 1
@@ -1924,7 +1924,7 @@ def CountUserConstraints():
     global dependentParmList, arrayList, invarrayList, indParmList, symGenList
 
     count = 0
-    for varlist, mapvars, multarr, invmultarr, symFlag in zip(
+    for varlist, mapvars, multarr, _invmultarr, symFlag in zip(
         dependentParmList,
         indParmList,
         arrayList,
@@ -1935,7 +1935,7 @@ def CountUserConstraints():
         if symFlag:
             continue
         if multarr is None:
-            for i, mv in enumerate(mapvars):
+            for _i, mv in enumerate(mapvars):
                 if mv not in varyList:
                     continue
                 count += len(varlist)
@@ -2055,13 +2055,13 @@ def GetSymEquiv(seqmode, seqhistnum):
                         else:
                             helptext += f"\n  {v} " + " (" + G2obj.fmtVarDescr(v) + ")"
                 err, msg, note = getConstrError(
-                    cnstr + [None, None, "e"], seqmode, seqhistnum
+                    [*cnstr, None, None, "e"], seqmode, seqhistnum
                 )
                 symerr.append([msg, note])
                 symout.append(s1 + s2)
                 symhelp.append(helptext)
             else:
-                s = "  %s = " % mv
+                s = f"  {mv} = "
                 j = 0
                 for m, v in zip(multarr[i, :], varlist, strict=False):
                     if m == 0:
@@ -2069,7 +2069,7 @@ def GetSymEquiv(seqmode, seqhistnum):
                     if j > 0:
                         s += " + "
                     j += 1
-                    s += "(%s * %s)" % (m, v)
+                    s += f"({m} * {v})"
                 print("unexpected sym op=" + s)
     return symout, symerr, symhelp
 
@@ -2140,13 +2140,13 @@ def GetDroppedSym(seqmode, seqhistnum):
                         else:
                             helptext += f"\n  {v} " + " (" + G2obj.fmtVarDescr(v) + ")"
                 err, msg, note = getConstrError(
-                    cnstr + [None, None, "e"], seqmode, seqhistnum
+                    [*cnstr, None, None, "e"], seqmode, seqhistnum
                 )
                 symerr.append([msg, note])
                 symout.append(s1 + s2)
                 symhelp.append(helptext)
             else:
-                s = "  %s = " % mv
+                s = f"  {mv} = "
                 j = 0
                 for m, v in zip(multarr[i, :], varlist, strict=False):
                     if m == 0:
@@ -2154,7 +2154,7 @@ def GetDroppedSym(seqmode, seqhistnum):
                     if j > 0:
                         s += " + "
                     j += 1
-                    s += "(%s * %s)" % (m, v)
+                    s += f"({m} * {v})"
                 print("unexpected sym op=" + s)
     return symout, symerr, symhelp
 
@@ -2281,7 +2281,7 @@ def normParms(parmDict):
                     print("normParms error: Parameter", var, "not in parmDict")
                     break
                 sumcons += parmDict[var] * m
-            if sumcons != s and sumcons != 0 and s != 0:
+            if sumcons not in (s, 0) and s != 0:
                 for var in varlist:
                     parmDict[var] *= s / sumcons
 
@@ -2546,14 +2546,14 @@ if __name__ == "__main__":
     Map2Dict(parmdict, varyList)
     print("parmdict before and after Map2Dict")
     print("  key / before / after")
-    for key in sorted(list(parmdict.keys())):
+    for key in sorted(parmdict.keys()):
         print("  " + key, "\t", before.get(key), "\t", parmdict[key])
     print("varylist after", varyList)
     before = parmdict.copy()
     Dict2Map(parmdict)
     print("after Dict2Map")
     print("  key / before / after")
-    for key in sorted(list(parmdict.keys())):
+    for key in sorted(parmdict.keys()):
         print("  " + key, "\t", before.get(key), "\t", parmdict[key])
 #    dMdv = len(varylist)*[0]
 #    deriv = {}

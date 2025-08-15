@@ -36,7 +36,8 @@ def test_image():
     except ModuleNotFoundError:
         print("Module requests not installed, test_image cannot be run")
         return
-    workloc = lambda fil: os.path.join(work, fil)
+    def workloc(fil):
+        return os.path.join(work, fil)
     gpx = G2sc.G2Project(newgpx=workloc("test_image.gpx"))
     img = "https://advancedphotonsource.github.io/GSAS-II-tutorials/2DStrain/data/nx09_strain_011.mar2300"
     img = gpx.add_image(
@@ -78,7 +79,8 @@ def test_CBF():
     except ModuleNotFoundError:
         print("Module requests not installed, test_CBF cannot be run")
         return
-    workloc = lambda fil: os.path.join(work, fil)
+    def workloc(fil):
+        return os.path.join(work, fil)
     gpx = G2sc.G2Project(newgpx=workloc("test_CBF.gpx"))
     img = "https://advancedphotonsource.github.io/GSAS-II-tutorials/selftestdata/130mm_0001.cbf"
     img = gpx.add_image(

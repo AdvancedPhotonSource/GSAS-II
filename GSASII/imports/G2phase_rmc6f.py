@@ -116,10 +116,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         Phase = G2obj.SetNewPhase(
             Name="RMCProfile phase",
             SGData=SGData,
-            cell=cell
-            + [
-                Volume,
-            ],
+            cell=[*cell, Volume],
         )
         Phase["General"]["Name"] = Title
         Phase["General"]["Type"] = "nuclear"

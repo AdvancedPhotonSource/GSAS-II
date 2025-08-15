@@ -153,7 +153,7 @@ class testMagSym(wx.Frame):
                 Lirt = G2spc.PackRot(Little)
                 OpNames = [G2spc.GetOprName(str(irt)) for irt in Lirt]
                 for Opr, name in zip(Little, OpNames, strict=False):
-                    print("  %s:  %s" % (G2spc.MT2text(Opr), name))
+                    print(f"  {G2spc.MT2text(Opr)}:  {name}")
             except:
                 print("Bad prop vector entry: ", Obj.GetValue())
                 self.propVec = "0,0,0"
@@ -169,7 +169,7 @@ class testMagSym(wx.Frame):
 
         def OnShowGen(event):
             GenText = G2spc.TextGen(SGData, reverse=True)
-            print(" Symmetry generators for %s:" % text[0].split(":")[1])
+            print(" Symmetry generators for {}:".format(text[0].split(":")[1]))
             for item in GenText:
                 print(item)
 
@@ -241,7 +241,7 @@ class testMagSym(wx.Frame):
         spCode = {-1: "red", 1: "black"}
         for isym, sym in enumerate(SGData["GenSym"][1:]):
             spinSizer.Add(
-                wx.StaticText(self.testSSPanel, label=" %s: " % (sym.strip())), 0, WACV
+                wx.StaticText(self.testSSPanel, label=f" {sym.strip()}: "), 0, WACV
             )
             spinOp = wx.ComboBox(
                 self.testSSPanel,
@@ -267,10 +267,7 @@ class testMagSym(wx.Frame):
             BNS = wx.ComboBox(
                 self.testSSPanel,
                 value=SGData["BNSlattsym"][0],
-                choices=[
-                    "",
-                ]
-                + list(BNSsym.keys()),
+                choices=["", *list(BNSsym.keys())],
                 style=wx.CB_READONLY | wx.CB_DROPDOWN,
             )
             BNS.Bind(wx.EVT_COMBOBOX, OnBNSlatt)
@@ -289,13 +286,13 @@ class testMagSym(wx.Frame):
         mainSizer.Add(
             wx.StaticText(
                 self.testSSPanel,
-                label=" Magnetic space group: %s  " % (SGData["MagSpGrp"]),
+                label=" Magnetic space group: {}  ".format(SGData["MagSpGrp"]),
             ),
             0,
             WACV,
         )
         mainSizer.Add(
-            wx.StaticText(self.testSSPanel, label="Mag Gen: %s" % str(SGData["SGSpin"]))
+            wx.StaticText(self.testSSPanel, label="Mag Gen: {}".format(str(SGData["SGSpin"])))
         )
         SpPos = wx.BoxSizer(wx.HORIZONTAL)
         SpPos.Add(wx.StaticText(self.testSSPanel, label=" X,Y,Z:"), 0, WACV)
@@ -332,13 +329,13 @@ class testMagSym(wx.Frame):
         SGData1["SGSpin"] = G2spc.GetSGSpin(SGData1, SGData1["MagSpGrp"])
         mainSizer.Add(
             wx.StaticText(
-                self.testSSPanel, label="New Mag Gen: %s" % str(SGData1["SGSpin"])
+                self.testSSPanel, label="New Mag Gen: {}".format(str(SGData1["SGSpin"]))
             )
         )
         SGData1["GenSym"], SGData1["GenFlg"], BNSsym = G2spc.GetGenSym(SGData1)
         MagSpGrp = G2spc.MagSGSym(SGData1).replace(" ", "")
         mainSizer.Add(
-            wx.StaticText(self.testSSPanel, label="Gives symbol: %s" % MagSpGrp)
+            wx.StaticText(self.testSSPanel, label=f"Gives symbol: {MagSpGrp}")
         )
 
         SpGp = MagSpGrp.replace("'", "")
@@ -353,12 +350,12 @@ class testMagSym(wx.Frame):
             SGData1["BNSlattsym"] = [SGData["SGLatt"], [0.0, 0.0, 0.0]]
         mainSizer.Add(
             wx.StaticText(
-                self.testSSPanel, label="Symbol Mag Gen: %s" % str(SGData1["SGSpin"])
+                self.testSSPanel, label="Symbol Mag Gen: {}".format(str(SGData1["SGSpin"]))
             )
         )
         MagSpGrp = G2spc.MagSGSym(SGData1).replace(" ", "")
         mainSizer.Add(
-            wx.StaticText(self.testSSPanel, label="Gives symbol: %s" % MagSpGrp)
+            wx.StaticText(self.testSSPanel, label=f"Gives symbol: {MagSpGrp}")
         )
         self.testSSPanel.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.testSSPanel)

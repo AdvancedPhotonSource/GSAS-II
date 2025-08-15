@@ -100,7 +100,7 @@ def getCellwStrain(phasedict, seqData, pId, histname):
         A, zeros = G2stIO.cellFill(
             pfx, phasedict["General"]["SGData"], cellDict, zeroDict
         )
-        cell = list(G2lat.A2cell(A)) + [G2lat.calc_V(A)]
+        cell = [*list(G2lat.A2cell(A)), G2lat.calc_V(A)]
         cE = G2lat.getCellEsd(
             pfx, phasedict["General"]["SGData"], A, covData, unique=True
         )
@@ -532,10 +532,14 @@ def RBheader(fp):
 
 # Refactored over here to allow access by GSASIIscriptable.py
 def WriteAtomsNuclear(
-    fp, phasedict, phasenam, parmDict, sigDict, labellist, RBparms={}, RBsuDict={}
+    fp, phasedict, phasenam, parmDict, sigDict, labellist, RBparms=None, RBsuDict=None
 ):
     "Write atom positions to CIF"
     # phasedict = self.Phases[phasenam] # pointer to current phase info
+    if RBsuDict is None:
+        RBsuDict = {}
+    if RBparms is None:
+        RBparms = {}
     General = phasedict["General"]
     cx, ct, cs, cia = General["AtomPtrs"]
     GS = G2lat.cell2GS(General["Cell"][1:7])
@@ -588,7 +592,7 @@ def WriteAtomsNuclear(
     naniso = 0
     for i, at in enumerate(Atoms):
         if phasedict["General"]["Type"] == "macromolecular":
-            label = "%s_%s_%s_%s" % (at[ct - 1], at[ct - 3], at[ct - 4], at[ct - 2])
+            label = f"{at[ct - 1]}_{at[ct - 3]}_{at[ct - 4]}_{at[ct - 2]}"
             s = PutInCol(MakeUniqueLabel(label, labellist), 15)  # label
         else:
             s = PutInCol(MakeUniqueLabel(at[ct - 1], labellist), 6)  # label
@@ -797,7 +801,7 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
     naniso = 0
     for i, at in enumerate(Atoms):
         if phasedict["General"]["Type"] == "macromolecular":
-            label = "%s_%s_%s_%s" % (at[ct - 1], at[ct - 3], at[ct - 4], at[ct - 2])
+            label = f"{at[ct - 1]}_{at[ct - 3]}_{at[ct - 4]}_{at[ct - 2]}"
             s = PutInCol(MakeUniqueLabel(label, labellist), 15)  # label
         else:
             s = PutInCol(MakeUniqueLabel(at[ct - 1], labellist), 6)  # label
@@ -895,8 +899,10 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
         WriteCIFitem(fp, s)
 
 
-def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict, RBparms={}):
+def WriteAtomsMM(fp, phasedict, phasenam, parmDict, sigDict, RBparms=None):
     "Write atom positions to CIF using mmCIF items"
+    if RBparms is None:
+        RBparms = {}
     AA3letter = [
         "ALA",
         "ARG",
@@ -1109,7 +1115,7 @@ def WriteSeqAtomsNuclear(fp, cell, phasedict, phasenam, hist, seqData, RBparms):
 
     for i, at in enumerate(Atoms):
         if phasedict["General"]["Type"] == "macromolecular":
-            label = "%s_%s_%s_%s" % (at[ct - 1], at[ct - 3], at[ct - 4], at[ct - 2])
+            label = f"{at[ct - 1]}_{at[ct - 3]}_{at[ct - 4]}_{at[ct - 2]}"
             s = PutInCol(MakeUniqueLabel(label, labellist), 15)  # label
         else:
             s = PutInCol(MakeUniqueLabel(at[ct - 1], labellist), 6)  # label
@@ -1283,6 +1289,7 @@ def MakeUniqueLabel(lbl, labellist):
         i += 1
     lbl = prefix + "_" + str(i)
     labellist.append(lbl)
+    return None
 
 
 # Refactored over here to allow access by GSASIIscriptable.py
@@ -1353,7 +1360,7 @@ def WriteComposition(fp, phasedict, phasenam, parmDict, quickmode=True, keV=None
         if atype.find("+") != -1:
             atype = atype.split("+")[0]
         atype = atype[0].upper() + atype[1:2].lower()  # force case conversion
-        if atype == "D" or atype == "D":
+        if atype in ("D", "D"):
             atype = "H"
         fvar = fpfx + str(i)
         fval = parmDict.get(fvar, at[cfrac])
@@ -1500,7 +1507,7 @@ def WriteCompositionMM(fp, phasedict, phasenam, parmDict, quickmode=True, keV=No
         if atype.find("+") != -1:
             atype = atype.split("+")[0]
         atype = atype[0].upper() + atype[1:2].lower()  # force case conversion
-        if atype == "D" or atype == "D":
+        if atype in ("D", "D"):
             atype = "H"
         fvar = fpfx + str(i)
         fval = parmDict.get(fvar, at[cfrac])
@@ -1657,6 +1664,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 "Unicode not valid for CIF",
             )
             return True
+        return None
 
     def _CellSelectNeeded(self, phasenam):
         """Determines if selection is needed for a T value in a multiblock CIF
@@ -1691,6 +1699,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         elif len(DijTlist) > 1:
             # each histogram has different cell lengths, user needs to pick one
             return True
+        return None
 
     def _CellSelectT(self, phasenam):
         """Select T value for a phase in a multiblock CIF
@@ -1735,7 +1744,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 dlg.Destroy()
             return (T, None)
         elif len(DijTlist) == 1:
-            h = list(DijTlist)[0]
+            h = next(iter(DijTlist))
             h_ranId = self.Histograms[h]["ranId"]
             return (DijTlist[h], h_ranId)
         elif len(DijTlist) > 1:
@@ -1866,10 +1875,10 @@ class ExportCIF(G2fil.ExportBaseclass):
                 try:
                     if controls["F**2"]:
                         thresh = (
-                            "F**2>%.1fu(F**2)" % (controls["UsrReject"]["minF/sig"])
+                            "F**2>{:.1f}u(F**2)".format(controls["UsrReject"]["minF/sig"])
                         )
                     else:
-                        thresh = "F>%.1fu(F)" % (controls["UsrReject"]["minF/sig"])
+                        thresh = "F>{:.1f}u(F)".format(controls["UsrReject"]["minF/sig"])
                     WriteCIFitem(self.fp, "_reflns_threshold_expression", thresh)
                 except KeyError:
                     pass
@@ -1936,10 +1945,10 @@ class ExportCIF(G2fil.ExportBaseclass):
                 try:
                     if controls["F**2"]:
                         thresh = (
-                            "F**2>%.1fu(F**2)" % (controls["UsrReject"]["minF/sig"])
+                            "F**2>{:.1f}u(F**2)".format(controls["UsrReject"]["minF/sig"])
                         )
                     else:
-                        thresh = "F>%.1fu(F)" % (controls["UsrReject"]["minF/sig"])
+                        thresh = "F>{:.1f}u(F)".format(controls["UsrReject"]["minF/sig"])
                     WriteCIFitem(self.fp, "_reflns.threshold_expression", thresh)
                 except KeyError:
                     pass
@@ -2001,7 +2010,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             templateDefName = "template_" + tmplate + ".cif"
             if not CIFobj:  # copying a template
                 lbl = "Standard version"
-                for pth in [os.getcwd()] + sys.path:
+                for pth in [os.getcwd(), *sys.path]:
                     fil = os.path.join(pth, defaultname)
                     if os.path.exists(fil) and defaultname:
                         break
@@ -2251,11 +2260,11 @@ class ExportCIF(G2fil.ExportBaseclass):
                     s += "\n"
                 if len(self.powderDict) > 1:  # if one histogram, no ambiguity
                     s += f"  Parameters for histogram #{hId!s} {histogram!s} & phase {phasenam}\n"
-                s += '  Crystallite size in microns with "%s" model:\n  ' % (size[0])
+                s += f'  Crystallite size in microns with "{size[0]}" model:\n  '
                 names = ["Size;i", "Size;mx"]
                 if "uniax" in size[0]:
                     names = ["Size;i", "Size;a", "Size;mx"]
-                    s += "anisotropic axis is %s\n  " % (str(size[3]))
+                    s += f"anisotropic axis is {size[3]!s}\n  "
                     s += "parameters: equatorial size, axial size, G/L mix\n    "
                     for i, item in enumerate(names):
                         name = phfx + item
@@ -2281,13 +2290,12 @@ class ExportCIF(G2fil.ExportBaseclass):
                         s += G2mth.ValEsd(val, sig) + ", "
                         i = 2  # skip the aniso value
                 s += (
-                    '\n  Microstrain, "%s" model (10^6^ * delta Q/Q)\n  '
-                    % (mustrain[0])
+                    f'\n  Microstrain, "{mustrain[0]}" model (10^6^ * delta Q/Q)\n  '
                 )
                 names = ["Mustrain;i", "Mustrain;mx"]
                 if "uniax" in mustrain[0]:
                     names = ["Mustrain;i", "Mustrain;a", "Mustrain;mx"]
-                    s += "anisotropic axis is %s\n  " % (str(size[3]))
+                    s += f"anisotropic axis is {size[3]!s}\n  "
                     s += (
                         "parameters: equatorial mustrain, axial mustrain, G/L mix\n    "
                     )
@@ -2369,6 +2377,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 i += 1
             lbl = prefix + "_" + str(i)
             labellist.append(lbl)
+            return None
 
         def WriteDistances(phasenam):
             """Report bond distances and angles for the CIF
@@ -3350,7 +3359,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 if not phasebyhistDict.get(histlbl) and not seq:
                     WriteCIFitem(self.fp, "\n# No phases associated with this data set")
                 elif len(self.Phases) == 1:
-                    pId = self.Phases[list(self.Phases)[0]]["pId"]
+                    pId = self.Phases[next(iter(self.Phases))]["pId"]
                     pfx = str(pId) + ":" + str(hId) + ":"
                     WriteCIFitem(
                         self.fp,
@@ -3426,7 +3435,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             elif len(self.Phases) == 1:
                 # single phase in this histogram
                 # get the phase number here
-                pId = self.Phases[list(self.Phases)[0]]["pId"]
+                pId = self.Phases[next(iter(self.Phases))]["pId"]
                 pfx = str(pId) + ":" + str(hId) + ":"
                 WriteCIFitem(
                     self.fp,
@@ -3547,7 +3556,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 # Icorr = np.array([refl[13] for refl in histblk['Reflection Lists'][phasenam]])[0]
                 # FO2 = np.array([refl[8] for refl in histblk['Reflection Lists'][phasenam]])
                 # I100 = scale*FO2*Icorr
-                Imax = max(Imax, max(I100))
+                Imax = max(Imax, *I100)
 
             WriteCIFitem(self.fp, "loop_")
             if len(phaselist) > 1:
@@ -3869,7 +3878,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             elif len(self.Phases) == 1:
                 # single phase in this histogram
                 # get the phase number here
-                pId = self.Phases[list(self.Phases)[0]]["pId"]
+                pId = self.Phases[next(iter(self.Phases))]["pId"]
                 pfx = str(pId) + ":" + str(hId) + ":"
                 WriteCIFitem(
                     self.fp,
@@ -4016,7 +4025,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 refcount += len(histblk["Reflection Lists"][phasenam]["RefList"])
                 # refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
                 # I100 = scale*refList.T[8]*refList.T[11]
-                for j, ref in enumerate(
+                for _j, ref in enumerate(
                     histblk["Reflection Lists"][phasenam]["RefList"]
                 ):
                     if DEBUG:
@@ -4227,7 +4236,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     WriteCIFitem(
                         self.fp,
                         "_refine_ls_extinction_method",
-                        "Becker-Coppens %s %s" % (extModel, extType),
+                        f"Becker-Coppens {extModel} {extType}",
                     )
                     sig = -1.0e-3
                     if extModel == "Primary":
@@ -5175,7 +5184,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         # ======================================================================
         print("Writing CIF output to file " + self.filename + "...")
         self.openDelayed()
-        if self.currentExportType == "single" or self.currentExportType == "powder":
+        if self.currentExportType in ("single", "powder"):
             # ======================================================================
             #### Data only CIF (powder/xtal) ======================================
             # ======================================================================
@@ -5204,7 +5213,7 @@ class ExportCIF(G2fil.ExportBaseclass):
             if (
                 phasenam is None
             ):  # if not already selected, select the first phase (should be one)
-                phasenam = list(self.Phases)[0]
+                phasenam = next(iter(self.Phases))
             # print 'phasenam',phasenam
             # phaseblk = self.Phases[phasenam] # pointer to current phase info
             instnam = instnam.replace(" ", "")
@@ -5451,7 +5460,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 if phaseWithHist:  # include sample info in overall block
                     step += 1
                     dlg.Update(step, "Exporting phase")
-                    phasenam = list(self.Phases)[0]
+                    phasenam = next(iter(self.Phases))
                     writeCIFtemplate(
                         self.Phases[phasenam]["General"], "phase", phasenam
                     )  # write phase template
@@ -5833,7 +5842,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                         atype = (
                             atype[0].upper() + atype[1:2].lower()
                         )  # force case conversion
-                        if atype == "D" or atype == "D":
+                        if atype in ("D", "D"):
                             atype = "H"
                         if atype not in uniqueAtoms:
                             uniqueAtoms.append(atype)
@@ -6215,7 +6224,7 @@ class ExportPhaseCIF(ExportCIF):
             )
 
         for atom in tmpPhase["Atoms"]:
-            for x in atom[cxT : cxT + 3]:
+            for _x in atom[cxT : cxT + 3]:
                 match = False
                 for Matom in self.Phases[MagPhase]["Atoms"]:
                     if atom[ctT] == Matom[ctM]:
@@ -6524,7 +6533,7 @@ def CIF2dict(cf):
       CIF items and loopstructure is a list of lists that defines
       which items are in which loops.
     """
-    blk = list(cf)[0]  # assume templates are a single CIF block, use the 1st
+    blk = next(iter(cf))  # assume templates are a single CIF block, use the 1st
     try:
         loopstructure = cf[blk].loopnames()[:]  # copy over the list of loop contents
     except AttributeError:
@@ -6718,9 +6727,13 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
     :param (other): optional keyword parameters for wx.ScrolledPanel
     """
 
-    def __init__(self, parent, cifblk, loopstructure, cifdic={}, OKbuttons=[], **kw):
+    def __init__(self, parent, cifblk, loopstructure, cifdic=None, OKbuttons=None, **kw):
         from .. import GSASIIctrlGUI as G2G
 
+        if OKbuttons is None:
+            OKbuttons = []
+        if cifdic is None:
+            cifdic = {}
         self.parent = parent
         wxscroll.ScrolledPanel.__init__(self, parent, wx.ID_ANY, **kw)
         self.vbox = None
@@ -6772,7 +6785,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
             for i, item in enumerate(lp):
                 txt = wx.StaticText(self, wx.ID_ANY, item + "  ")
                 fbox.Add(txt, (0, i + 1))
-                for j, val in enumerate(self.cifblk[item]):
+                for j, _val in enumerate(self.cifblk[item]):
                     ent = self.CIFEntryWidget(self.cifblk[item], j, item)
                     # fbox.Add(ent,(j+2,i+1),flag=wx.EXPAND|wx.ALL)
                     fbox.Add(ent, (j + 1, i + 1), flag=wx.EXPAND | wx.ALL)
@@ -7001,9 +7014,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         # find default name for template
         resetTemplate = None
         localTemplate = None
-        for pth in [
-            os.path.dirname(__file__)
-        ] + sys.path:  # -- search with default name
+        for pth in [os.path.dirname(__file__), *sys.path]:  # -- search with default name
             fil = os.path.join(pth, templateDefName)
             if os.path.exists(fil):
                 resetTemplate = fil
@@ -7014,7 +7025,7 @@ class CIFtemplateSelect(wx.BoxSizer):
                 templateDefName,
                 "not found in path!\nProblem with GSAS-II installation?",
             )
-        for pth in [os.getcwd()] + sys.path:  # -- search with name based on hist/phase
+        for pth in [os.getcwd(), *sys.path]:  # -- search with name based on hist/phase
             fil = os.path.join(pth, self.defaultname)
             if os.path.exists(fil) and self.defaultname:
                 localTemplate = fil

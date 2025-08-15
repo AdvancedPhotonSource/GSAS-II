@@ -67,7 +67,7 @@ def LoadDefaultExpressions():
     if defaultExpressions is not None:
         return  # run this routine only once
     defaultExpressions = sorted(
-        list(set(GSASIIpath.LoadConfigFile("DefaultExpressions.txt")))
+        set(GSASIIpath.LoadConfigFile("DefaultExpressions.txt"))
     )
 
 
@@ -133,9 +133,11 @@ class ExpressionDialog(wx.Dialog):
         VarLabel=None,
         depVarDict=None,
         ExtraButton=None,
-        usedVars=[],
+        usedVars=None,
         wildCard=True,
     ):
+        if usedVars is None:
+            usedVars = []
         self.fit = fit
         self.depVarDict = depVarDict
         "dict for dependent variables"
@@ -752,8 +754,10 @@ class BondDialog(wx.Dialog):
         VarLabel=None,
         depVarDict=None,
         ExtraButton=None,
-        usedVars=[],
+        usedVars=None,
     ):
+        if usedVars is None:
+            usedVars = []
         wx.Dialog.__init__(
             self,
             parent,
@@ -767,7 +771,7 @@ class BondDialog(wx.Dialog):
         self.Phases = Phases
         self.parmDict = parmDict
         self.header = header
-        self.pName = list(Phases.keys())[0]
+        self.pName = next(iter(Phases.keys()))
         self.Oatom = ""
         self.Tatom = ""
         if "DisAglCtls" not in self.Phases[self.pName]["General"]:
@@ -854,12 +858,12 @@ class BondDialog(wx.Dialog):
         if self.Oatom:
             neigh = G2mth.FindAllNeighbors(Phase, self.Oatom, aNames)
         if neigh:
-            bNames = [item[0] + " d=%.3f" % (item[2]) for item in neigh[0]]
+            bNames = [item[0] + f" d={item[2]:.3f}" for item in neigh[0]]
         if bNames:
             targAtom = wx.ComboBox(
                 self.panel,
                 value=self.Tatom,
-                choices=[""] + bNames,
+                choices=["", *bNames],
                 style=wx.CB_READONLY | wx.CB_DROPDOWN,
             )
             targAtom.Bind(wx.EVT_COMBOBOX, OnTargAtom)
@@ -922,8 +926,10 @@ class AngleDialog(wx.Dialog):
         VarLabel=None,
         depVarDict=None,
         ExtraButton=None,
-        usedVars=[],
+        usedVars=None,
     ):
+        if usedVars is None:
+            usedVars = []
         wx.Dialog.__init__(
             self,
             parent,
@@ -937,7 +943,7 @@ class AngleDialog(wx.Dialog):
         self.Phases = Phases
         self.parmDict = parmDict
         self.header = header
-        self.pName = list(Phases.keys())[0]
+        self.pName = next(iter(Phases.keys()))
         self.Oatom = ""
         self.Tatoms = ""
         if "DisAglCtls" not in self.Phases[self.pName]["General"]:
@@ -1033,13 +1039,13 @@ class AngleDialog(wx.Dialog):
             for iA, aName in enumerate(neigh):
                 for cName in neigh[iA + 1 :]:
                     bNames.append(
-                        "%s;%s" % (aName[0].replace(" ", ""), cName[0].replace(" ", ""))
+                        "{};{}".format(aName[0].replace(" ", ""), cName[0].replace(" ", ""))
                     )
         if bNames:
             targAtoms = wx.ComboBox(
                 self.panel,
                 value=self.Tatoms,
-                choices=[""] + bNames,
+                choices=["", *bNames],
                 style=wx.CB_READONLY | wx.CB_DROPDOWN,
             )
             targAtoms.Bind(wx.EVT_COMBOBOX, OnTargAtoms)

@@ -39,13 +39,20 @@ try:
         # import GSASII.pytexture as ptx
 except ImportError:  # ignore; will report this as an error in GSASIIplot import
     pass
-sind = lambda x: np.sin(x * np.pi / 180.0)
-cosd = lambda x: np.cos(x * np.pi / 180.0)
-tand = lambda x: np.tan(x * np.pi / 180.0)
-asind = lambda x: 180.0 * np.arcsin(x) / np.pi
-acosd = lambda x: 180.0 * np.arccos(x) / np.pi
-atand = lambda x: 180.0 * np.arctan(x) / np.pi
-atan2d = lambda y, x: 180.0 * np.arctan2(y, x) / np.pi
+def sind(x):
+    return np.sin(x * np.pi / 180.0)
+def cosd(x):
+    return np.cos(x * np.pi / 180.0)
+def tand(x):
+    return np.tan(x * np.pi / 180.0)
+def asind(x):
+    return 180.0 * np.arcsin(x) / np.pi
+def acosd(x):
+    return 180.0 * np.arccos(x) / np.pi
+def atand(x):
+    return 180.0 * np.arctan(x) / np.pi
+def atan2d(y, x):
+    return 180.0 * np.arctan2(y, x) / np.pi
 try:  # fails on doc build
     twopi = 2.0 * np.pi
     twopisq = 2.0 * np.pi**2
@@ -412,8 +419,7 @@ def HessianLSQ(
                     )
                 if lam > 10.0:
                     G2fil.G2Print(
-                        "ouch #4 stuck: chisq-new %.4g > chisq0 %.4g with lambda %.1g"
-                        % (chisq1, chisq0, lam),
+                        f"ouch #4 stuck: chisq-new {chisq1:.4g} > chisq0 {chisq0:.4g} with lambda {lam:.1g}",
                         mode="warn",
                     )
                     if GSASIIpath.GetConfigValue("debug"):
@@ -726,7 +732,7 @@ def HessianSVD(
         Yvec /= Adiag
         Amat /= Anorm
         if Print:
-            G2fil.G2Print("initial chi^2 %.5g" % (chisq0))
+            G2fil.G2Print(f"initial chi^2 {chisq0:.5g}")
         try:
             Ainv, Nzeros = pinv(Amat, xtol)  # do Moore-Penrose inversion (via SVD)
         except nl.LinAlgError:
@@ -903,11 +909,11 @@ def FindMolecule(
         Radii.append(radii[atomTypes.index(atom[ct])])
     UAtoms = np.array(UAtoms)
     Radii = np.array(Radii)
-    for nOp, Op in enumerate(SGData["SGOps"][1:]):
+    for _nOp, Op in enumerate(SGData["SGOps"][1:]):
         UAtoms = np.concatenate((UAtoms, (np.inner(Op[0], UAtoms[:nAtom]).T + Op[1])))
         Radii = np.concatenate((Radii, Radii[:nAtom]))
         Indx += Indx[:nAtom]
-    for icen, cen in enumerate(SGData["SGCen"][1:]):
+    for _icen, cen in enumerate(SGData["SGCen"][1:]):
         UAtoms = np.concatenate((UAtoms, (UAtoms + cen)))
         Radii = np.concatenate((Radii, Radii))
         Indx += Indx[:nAtom]
@@ -934,7 +940,7 @@ def FindMolecule(
         if not len(IndB):
             break
         indb = IndB.pop()
-        if atomData[Indx[indb]] == None:
+        if atomData[Indx[indb]] is None:
             continue
         while True:
             try:
@@ -950,7 +956,7 @@ def FindMolecule(
         if len(IndB) > nAtom:
             return "Assemble molecule cannot be used on extended structures"
     for atom in atomData:
-        if atom != None:
+        if atom is not None:
             newAtoms.append(atom)
     return newAtoms
 
@@ -1542,7 +1548,7 @@ def FindAllNeighbors(
     for xyz in XYZ:
         results.append(G2spc.GenAtom(xyz, SGData, False, Move=False))
     for iA, result in enumerate(results):
-        for [Txyz, Top, Tunit, Spn] in result:
+        for [Txyz, Top, _Tunit, _Spn] in result:
             Dx = (Txyz - np.array(Oxyz)) + Units
             dx = np.inner(Dx, Amat)
             dist = np.sqrt(np.sum(dx**2, axis=1))
@@ -1966,6 +1972,7 @@ def GetSpnRBData(SpnRB, atId):
     for SpnData in SpnRB:
         if atId in SpnData["Ids"]:
             return SpnData
+    return None
 
 
 def UpdateMCSAxyz(Bmat, MCSA):
@@ -2139,11 +2146,7 @@ def UpdateRBUIJ(Bmat, Cart, RBObj):
             Umat = G2lat.U6toUij(U)
             beta = np.inner(np.inner(Bmat.T, Umat), Bmat)
             Uout.append(
-                [
-                    "A",
-                    0.0,
-                ]
-                + list(G2lat.UijtoU6(beta) * gvec)
+                ["A", 0.0, *list(G2lat.UijtoU6(beta) * gvec)]
             )
         else:
             Uout.append(
@@ -3084,11 +3087,15 @@ zero in initial CIF.) Reimporting is suggested.
         )  # this will be wrong if the _iso_deltacoordinate_value are not zero
 
 
-def CalcIsoDisp(Phase, parmDict={}, covdata={}):
+def CalcIsoDisp(Phase, parmDict=None, covdata=None):
     """Compute the ISODISTORT displacement variable values from the
     atomic coordinates, applying the p::dA?:n displacements if parmDict
     is supplied. Uncertainties are computed if covdata is supplied.
     """
+    if covdata is None:
+        covdata = {}
+    if parmDict is None:
+        parmDict = {}
     ISO = Phase["ISODISTORT"]
     if "G2coordOffset" not in ISO:
         patchIsoDisp(ISO)  # patch Nov 2021
@@ -3113,7 +3120,7 @@ def CalcIsoDisp(Phase, parmDict={}, covdata={}):
         modeEsds = len(ISO["G2ModeList"]) * [-0.0001]
 
     dispValues = []
-    for iso, g2, off in zip(
+    for _iso, g2, off in zip(
         ISO["IsoVarList"], ISO["G2VarList"], ISO["G2coordOffset"], strict=False
     ):
         if g2.atom not in atmIndex:
@@ -3128,7 +3135,7 @@ def CalcIsoDisp(Phase, parmDict={}, covdata={}):
     return dispValues, dispEsds, modeValues, modeEsds
 
 
-def CalcIsoCoords(Phase, parmDict, covdata={}):
+def CalcIsoCoords(Phase, parmDict, covdata=None):
     """Compute the coordinate positions from ISODISTORT displacement mode values
     Uncertainties are computed if covdata is supplied.
 
@@ -3142,6 +3149,8 @@ def CalcIsoCoords(Phase, parmDict, covdata={}):
       and mode s.u. values; posDict contains pairs of displacement values
       and their s.u. values.
     """
+    if covdata is None:
+        covdata = {}
     ISO = Phase["ISODISTORT"]
     if "G2coordOffset" not in ISO:
         patchIsoDisp(ISO)  # patch Nov 2021
@@ -3498,7 +3507,7 @@ def getRestDeriv(Func, XYZ, Amat, ops, SGData):
     """
     deriv = np.zeros((len(XYZ), 3))
     dx = 0.00001
-    for j, xyz in enumerate(XYZ):
+    for j, _xyz in enumerate(XYZ):
         for i, x in enumerate(np.array([[dx, 0, 0], [0, dx, 0], [0, 0, dx]])):
             XYZ[j] -= x
             d1 = Func(getSyXYZ(XYZ, ops, SGData), Amat)
@@ -3547,7 +3556,7 @@ def getRestPlane(XYZ, Amat):
     XYZ = np.array(XYZ) - sumXYZ
     XYZ = np.inner(Amat, XYZ).T
     Zmat = np.zeros((3, 3))
-    for i, xyz in enumerate(XYZ):
+    for _i, xyz in enumerate(XYZ):
         Zmat += np.outer(xyz.T, xyz)
     Evec, Emat = nl.eig(Zmat)
     Evec = np.sqrt(Evec) / (len(XYZ) - 3)
@@ -3594,7 +3603,7 @@ def getRestTorsion(XYZ, Amat):
     return TOR
 
 
-def calcTorsionEnergy(TOR, Coeff=[]):
+def calcTorsionEnergy(TOR, Coeff=None):
     """default doc string
 
     :param type name: description
@@ -3602,6 +3611,8 @@ def calcTorsionEnergy(TOR, Coeff=[]):
     :returns: type name: description
 
     """
+    if Coeff is None:
+        Coeff = []
     sum = 0.0
     if len(Coeff):
         cof = np.reshape(Coeff, (3, 3)).T
@@ -3626,7 +3637,7 @@ def getTorsionDeriv(XYZ, Amat, Coeff):
     """
     deriv = np.zeros((len(XYZ), 3))
     dx = 0.00001
-    for j, xyz in enumerate(XYZ):
+    for j, _xyz in enumerate(XYZ):
         for i, x in enumerate(np.array([[dx, 0, 0], [0, dx, 0], [0, 0, dx]])):
             XYZ[j] -= x
             tor = getRestTorsion(XYZ, Amat)
@@ -3653,7 +3664,7 @@ def getRestRama(XYZ, Amat):
     return phi, psi
 
 
-def calcRamaEnergy(phi, psi, Coeff=[]):
+def calcRamaEnergy(phi, psi, Coeff=None):
     """Computes pseudo potential energy from a pair of torsion angles and a
     numerical description of the potential energy surface. Used to create
     penalty function in LS refinement:
@@ -3669,6 +3680,8 @@ def calcRamaEnergy(phi, psi, Coeff=[]):
       sum is used for penalty function.
 
     """
+    if Coeff is None:
+        Coeff = []
     sum = 0.0
     Eval = 0.0
     if len(Coeff):
@@ -3701,7 +3714,7 @@ def getRamaDeriv(XYZ, Amat, Coeff):
     """
     deriv = np.zeros((len(XYZ), 3))
     dx = 0.00001
-    for j, xyz in enumerate(XYZ):
+    for j, _xyz in enumerate(XYZ):
         for i, x in enumerate(np.array([[dx, 0, 0], [0, dx, 0], [0, 0, dx]])):
             XYZ[j] -= x
             phi, psi = getRestRama(XYZ, Amat)
@@ -3959,7 +3972,7 @@ def getAngleDerv(Oxyz, Axyz, Bxyz, Amat, Tunit, symNo, SGData):
     return deriv
 
 
-def getAngSig(VA, VB, Amat, SGData, covData={}):
+def getAngSig(VA, VB, Amat, SGData, covData=None):
     """Compute an interatomic angle and its uncertainty from two vectors
     each between an orgin atom and either of a pair of nearby atoms.
 
@@ -3974,6 +3987,8 @@ def getAngSig(VA, VB, Amat, SGData, covData={}):
     :returns: angle, sigma(angle)
     """
 
+    if covData is None:
+        covData = {}
     def calcVec(Ox, Tx, U, inv, C, M, T, Amat):
         TxT = inv * (np.inner(M, Tx) + T) + C + U
         return np.inner(Amat, (TxT - Ox))
@@ -4174,7 +4189,7 @@ def getRBAngSig(VA, VB, Amat, SGData, covData, multiParmDict, changedParmDict):
     return Ang0, sigAng
 
 
-def GetDistSig(Oatoms, Atoms, Amat, SGData, covData={}):
+def GetDistSig(Oatoms, Atoms, Amat, SGData, covData=None):
     """not used
 
     :param type name: description
@@ -4183,6 +4198,8 @@ def GetDistSig(Oatoms, Atoms, Amat, SGData, covData={}):
 
     """
 
+    if covData is None:
+        covData = {}
     def calcDist(Atoms, SyOps, Amat):
         XYZ = []
         for i, atom in enumerate(Atoms):
@@ -4225,7 +4242,7 @@ def GetDistSig(Oatoms, Atoms, Amat, SGData, covData={}):
     return Dist, sig
 
 
-def GetAngleSig(Oatoms, Atoms, Amat, SGData, covData={}):
+def GetAngleSig(Oatoms, Atoms, Amat, SGData, covData=None):
     """Not used
 
     :param type name: description
@@ -4234,6 +4251,8 @@ def GetAngleSig(Oatoms, Atoms, Amat, SGData, covData={}):
 
     """
 
+    if covData is None:
+        covData = {}
     def calcAngle(Atoms, SyOps, Amat):
         XYZ = []
         for i, atom in enumerate(Atoms):
@@ -4281,7 +4300,7 @@ def GetAngleSig(Oatoms, Atoms, Amat, SGData, covData={}):
     return Angle, sig
 
 
-def GetTorsionSig(Oatoms, Atoms, Amat, SGData, covData={}):
+def GetTorsionSig(Oatoms, Atoms, Amat, SGData, covData=None):
     """default doc string
 
     :param type name: description
@@ -4290,6 +4309,8 @@ def GetTorsionSig(Oatoms, Atoms, Amat, SGData, covData={}):
 
     """
 
+    if covData is None:
+        covData = {}
     def calcTorsion(Atoms, SyOps, Amat):
         XYZ = []
         for i, atom in enumerate(Atoms):
@@ -4348,7 +4369,7 @@ def GetTorsionSig(Oatoms, Atoms, Amat, SGData, covData={}):
     return Tors, sig
 
 
-def GetDATSig(Oatoms, Atoms, Amat, SGData, covData={}):
+def GetDATSig(Oatoms, Atoms, Amat, SGData, covData=None):
     """default doc string
 
     :param type name: description
@@ -4357,6 +4378,8 @@ def GetDATSig(Oatoms, Atoms, Amat, SGData, covData={}):
 
     """
 
+    if covData is None:
+        covData = {}
     def calcDist(Atoms, SyOps, Amat):
         XYZ = []
         for i, atom in enumerate(Atoms):
@@ -4510,18 +4533,18 @@ def searchBondRestr(
     indices = (-2, -1, 0, 1, 2)
     Units = np.array([[h, k, l] for h in indices for k in indices for l in indices])
     Norig = 0
-    for Oid, Otype, Ocoord in origAtoms:
+    for Oid, _Otype, Ocoord in origAtoms:
         Norig += 1
         if dlg:
             dlg.Update(Norig)
-        for Tid, Ttype, Tcoord in targAtoms:
+        for Tid, _Ttype, Tcoord in targAtoms:
             if "macro" in GType:
                 result = [
                     [Tcoord, 1, [0, 0, 0], []],
                 ]
             else:
                 result = G2spc.GenAtom(Tcoord, SGData, False, Move=False)
-            for Txyz, Top, Tunit, Spn in result:
+            for Txyz, Top, Tunit, _Spn in result:
                 Dx = (Txyz - np.array(Ocoord)) + Units
                 dx = np.inner(Amat, Dx)
                 dist = ma.masked_less(np.sqrt(np.sum(dx**2, axis=0)), bond / Factor)
@@ -4753,9 +4776,7 @@ def validProtein(Phase, old):
     XYZ = np.array([atom[cx : cx + 3] for atom in cartAtoms])
     xyzmin = np.array([np.min(XYZ.T[i]) for i in [0, 1, 2]])
     xyzmax = np.array([np.max(XYZ.T[i]) for i in [0, 1, 2]])
-    nbox = list(np.array(np.ceil((xyzmax - xyzmin) / 4.0), dtype=int)) + [
-        15,
-    ]
+    nbox = [*list(np.array(np.ceil((xyzmax - xyzmin) / 4.0), dtype=int)), 15]
     Boxes = np.zeros(nbox, dtype=int)
     iBox = np.array(
         [np.trunc((XYZ.T[i] - xyzmin[i]) / 4.0) for i in [0, 1, 2]], dtype=int
@@ -4853,7 +4874,7 @@ def validProtein(Phase, old):
                     resname.append("")
                     resIntAct.append(sumintact(intact))
             res.append(atom[0])
-            name = "%s-%s%s" % (atom[2], atom[0], atom[1])
+            name = f"{atom[2]}-{atom[0]}{atom[1]}"
             resname.append(name)
             resID[name] = atom[-1]
             if not newChain:
@@ -4959,7 +4980,7 @@ def validProtein(Phase, old):
     resIntAct.append(sumintact(intact))
     chainIntAct.append(resIntAct)
     chainProb = []
-    for ich, chn in enumerate(chains):
+    for ich, _chn in enumerate(chains):
         IntAct = chainIntAct[ich]
         nRes = len(IntAct)
         Probs = [0.0, 0.0, 0.0, 0.0]  # skip 1st 4 residues in chain
@@ -5022,9 +5043,9 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
         sigstr = "  esds  :"
         for name in names:
             namstr += "%12s" % ("Sample " + name)
-            ptstr += "%12.3f" % (textureData["Sample " + name][1])
+            ptstr += "{:12.3f}".format(textureData["Sample " + name][1])
             if "Sample " + name in SHtextureSig:
-                sigstr += "%12.3f" % (SHtextureSig["Sample " + name])
+                sigstr += "{:12.3f}".format(SHtextureSig["Sample " + name])
             else:
                 sigstr += 12 * " "
         print(namstr)
@@ -5046,10 +5067,10 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
                     l = 2.0 * eval(name.strip("C"))[0] + 1
                     Tindx += SHcoeff[name] ** 2 / l
                     namstr += "%12s" % (name)
-                    ptstr += "%12.3f" % (SHcoeff[name])
+                    ptstr += f"{SHcoeff[name]:12.3f}"
                     if name in SHtextureSig:
                         Tvar += (2.0 * SHcoeff[name] * SHtextureSig[name] / l) ** 2
-                        sigstr += "%12.3f" % (SHtextureSig[name])
+                        sigstr += f"{SHtextureSig[name]:12.3f}"
                     else:
                         sigstr += 12 * " "
             print(namstr)
@@ -5080,7 +5101,7 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
             parmDict["Sample " + "chi"],
             parmDict["Sample " + "phi"],
         ]
-        for hist in Gangls.keys():
+        for hist in Gangls:
             Refs = refData[hist]
             Refs[:, 5] = np.where(Refs[:, 5] > 0.0, Refs[:, 5], 0.0)
             wt = 1.0 / np.sqrt(np.fmax(Refs[:, 4], 0.25))
@@ -5104,8 +5125,8 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
         sumD = np.sum(np.abs(Mat))
         R = min(100.0, 100.0 * sumD / sumObs)
         pgbar.Raise()
-        pgbar.Update(int(R), newmsg="Residual = %5.2f" % (R))
-        print(" Residual: %.3f%%" % (R))
+        pgbar.Update(int(R), newmsg=f"Residual = {R:5.2f}")
+        print(f" Residual: {R:.3f}%")
         return Mat
 
     def dervSpHarm(
@@ -5117,7 +5138,7 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
             parmDict["Sample chi"],
             parmDict["Sample phi"],
         ]
-        for hist in Gangls.keys():
+        for hist in Gangls:
             mat = np.zeros((len(varyList), len(refData[hist])))
             Refs = refData[hist]
             H = Refs[:, :3]
@@ -5200,7 +5221,7 @@ def FitTexture(General, Gangls, refData, keyList, pgbar):
                 % (result[2]["nfev"], len(result[2]["fvec"]), len(varyList))
             )
             G2fil.G2Print(
-                "refinement time = %8.3fs, %8.3fs/cycle" % (runtime, runtime / ncyc)
+                f"refinement time = {runtime:8.3f}s, {runtime / ncyc:8.3f}s/cycle"
             )
             try:
                 sig = np.sqrt(np.diag(result[1]) * GOF)
@@ -5276,7 +5297,7 @@ def OmitMap(data, reflDict, pgbar=None):
     adjHKLmax(SGData, Hmax)
     Fhkl = np.zeros(shape=2 * Hmax, dtype="c16")
     time0 = time.time()
-    for iref, ref in enumerate(reflDict["RefList"]):
+    for _iref, ref in enumerate(reflDict["RefList"]):
         if ref[4] >= dmin:
             Fosq, Fcsq, ph = ref[8:11]
             Uniq = np.inner(ref[:3], SGMT)
@@ -5350,7 +5371,7 @@ def FourierMap(data, reflDict):
     Fhkl = np.zeros(shape=2 * Hmax, dtype="c16")
     #    Fhkl[0,0,0] = generalData['F000X']
     time0 = time.time()
-    for iref, ref in enumerate(reflDict["RefList"]):
+    for _iref, ref in enumerate(reflDict["RefList"]):
         if ref[4] > dmin:
             Fosq, Fcsq, ph = ref[8:11]
             Uniq = np.inner(ref[:3], SGMT)
@@ -5421,14 +5442,12 @@ def Fourier4DMap(data, reflDict):
     cell = generalData["Cell"][1:8]
     A = G2lat.cell2A(cell[:6])
     maxM = 4
-    Hmax = G2lat.getHKLmax(dmin, SGData, A) + [
-        maxM,
-    ]
+    Hmax = [*G2lat.getHKLmax(dmin, SGData, A), maxM]
     adjHKLmax(SGData, Hmax)
     Hmax = np.asarray(Hmax, dtype="i") + 1
     Fhkl = np.zeros(shape=2 * Hmax, dtype="c16")
     time0 = time.time()
-    for iref, ref in enumerate(reflDict["RefList"]):
+    for _iref, ref in enumerate(reflDict["RefList"]):
         if ref[5] > dmin:
             Fosq, Fcsq, ph = ref[9:12]
             Fosq = np.where(Fosq > 0.0, Fosq, 0.0)  # can't use Fo^2 < 0
@@ -5531,7 +5550,7 @@ def findOffset(SGData, A, Fhkl):
         F = Fhkl[HKL[0]][HKL[1]][HKL[2]]
         if F == 0.0:
             break
-        Fdict["%.6f" % (np.absolute(F))] = hkl
+        Fdict[f"{np.absolute(F):.6f}"] = hkl
     Flist = np.flipud(np.sort(list(Fdict.keys())))
     F = str(1.0e6)
     i = 0
@@ -5613,8 +5632,7 @@ def ChargeFlip(data, reflDict, pgbar):
                 FFtable.update(ff)
         if "X" in reflDict["Type"]:
             print(
-                "%s normalizing form factor: fa: %s, fb: %s, fc: %s"
-                % (
+                "{} normalizing form factor: fa: {}, fb: {}, fc: {}".format(
                     FFtable["Symbol"],
                     str(FFtable["fa"]),
                     str(FFtable["fb"]),
@@ -5623,8 +5641,7 @@ def ChargeFlip(data, reflDict, pgbar):
             )
         else:
             print(
-                "%s normalizing form factor: fa: %s, fb: %s"
-                % (FFtable["Symbol"], str(FFtable["fa"]), str(FFtable["fb"]))
+                "{} normalizing form factor: fa: {}, fb: {}".format(FFtable["Symbol"], str(FFtable["fa"]), str(FFtable["fb"]))
             )
     dmin = flipData["GridStep"] * 2.0
     SGData = generalData["SGData"]
@@ -5634,13 +5651,13 @@ def ChargeFlip(data, reflDict, pgbar):
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
     im = 0
-    if generalData["Modulated"] == True:
+    if generalData["Modulated"] is True:
         im = 1
     Hmax = np.asarray(G2lat.getHKLmax(dmin, SGData, A), dtype="i") + 1
     adjHKLmax(SGData, Hmax)
     Ehkl = np.zeros(shape=2 * Hmax, dtype="c16")  # 2X64bits per complex no.
     time0 = time.time()
-    for iref, ref in enumerate(reflDict["RefList"]):
+    for _iref, ref in enumerate(reflDict["RefList"]):
         dsp = ref[4 + im]
         if im and ref[3]:  # skip super lattice reflections - result is 3D projection
             continue
@@ -5750,7 +5767,7 @@ def findSSOffset(SGData, SSGData, A, Fhklm):
         F = Fhklm[HKLM[0]][HKLM[1]][HKLM[2]][HKLM[3]]
         if F == 0.0:
             break
-        Fdict["%.6f" % (np.absolute(F))] = hklm
+        Fdict[f"{np.absolute(F):.6f}"] = hklm
     Flist = np.flipud(np.sort(list(Fdict.keys())))
     F = str(1.0e6)
     i = 0
@@ -5842,10 +5859,7 @@ def SSChargeFlip(data, reflDict, pgbar):
     maxM = 4
     Hmax = (
         np.asarray(
-            G2lat.getHKLmax(dmin, SGData, A)
-            + [
-                maxM,
-            ],
+            [*G2lat.getHKLmax(dmin, SGData, A), maxM],
             dtype="i",
         )
         + 1
@@ -5853,7 +5867,7 @@ def SSChargeFlip(data, reflDict, pgbar):
     adjHKLmax(SGData, Hmax)
     Ehkl = np.zeros(shape=2 * Hmax, dtype="c16")  # 2X64bits per complex no.
     time0 = time.time()
-    for iref, ref in enumerate(reflDict["RefList"]):
+    for _iref, ref in enumerate(reflDict["RefList"]):
         dsp = ref[5]
         if dsp > dmin:
             ff = 0.1 * Vol  # est. no. atoms for ~10A**3/atom
@@ -5962,9 +5976,10 @@ def getRho(xyz, mapData):
 
     :returns: density at xyz
     """
-    rollMap = lambda rho, roll: np.roll(
-        np.roll(np.roll(rho, roll[0], axis=0), roll[1], axis=1), roll[2], axis=2
-    )
+    def rollMap(rho, roll):
+        return np.roll(
+            np.roll(np.roll(rho, roll[0], axis=0), roll[1], axis=1), roll[2], axis=2
+        )
     if not len(mapData):
         return 0.0
     rho = copy.copy(mapData["rho"])  # don't mess up original
@@ -6046,7 +6061,7 @@ def getRhos(XYZ, rho):
     iBeg = 0
     R = np.zeros(len(XYZ))
     # actually a lot faster!
-    for iblk in range(nBlk):
+    for _iblk in range(nBlk):
         iFin = iBeg + Blk
         Xs = X[iBeg:iFin]
         I = np.array(np.rint(Xs * mapShape), dtype="int")
@@ -6080,9 +6095,10 @@ def SearchMap(generalData, drawingData, Neg=False):
           the distance of the peaks from  the unit cell center
 
     """
-    rollMap = lambda rho, roll: np.roll(
-        np.roll(np.roll(rho, roll[0], axis=0), roll[1], axis=1), roll[2], axis=2
-    )
+    def rollMap(rho, roll):
+        return np.roll(
+            np.roll(np.roll(rho, roll[0], axis=0), roll[1], axis=1), roll[2], axis=2
+        )
 
     norm = 1.0 / (np.sqrt(3.0) * np.sqrt(2.0 * np.pi) ** 3)
 
@@ -6112,10 +6128,7 @@ def SearchMap(generalData, drawingData, Neg=False):
     def peakHess(parms, rX, rY, rZ, rho, res, SGLaue):
         Mag, x0, y0, z0, sig = parms
         dMdv = np.zeros(
-            [
-                5,
-            ]
-            + list(rX.shape)
+            [5, *list(rX.shape)]
         )
         delt = 0.01
         for i in range(5):
@@ -6170,7 +6183,7 @@ def SearchMap(generalData, drawingData, Neg=False):
     indx = np.transpose(rhoMask.nonzero())
     peaks = indx / incre
     mags = rhoMask[rhoMask.nonzero()]
-    for i, [ind, peak, mag] in enumerate(zip(indx, peaks, mags, strict=False)):
+    for _i, [ind, peak, _mag] in enumerate(zip(indx, peaks, mags, strict=False)):
         rho = rollMap(rho, ind)
         rMM = mapHalf - steps
         rMP = mapHalf + steps + 1
@@ -6280,12 +6293,7 @@ def PeaksEquiv(data, Ind):
     """
 
     def Duplicate(xyz, peaks, Amat):
-        if True in [
-            np.allclose(np.inner(Amat, xyz), np.inner(Amat, peak), atol=0.5)
-            for peak in peaks
-        ]:
-            return True
-        return False
+        return True in [np.allclose(np.inner(Amat, xyz), np.inner(Amat, peak), atol=0.5) for peak in peaks]
 
     generalData = data["General"]
     Amat, Bmat = G2lat.cell2AB(generalData["Cell"][1:7])
@@ -6321,12 +6329,7 @@ def PeaksUnique(data, Ind, Sel, dlg):
     #    XYZE = np.array([[equiv[0] for equiv in G2spc.GenAtom(xyz[1:4],SGData,Move=True)] for xyz in mapPeaks]) #keep this!!
 
     def noDuplicate(xyz, peaks, Amat):
-        if True in [
-            np.allclose(np.inner(Amat, xyz), np.inner(Amat, peak), atol=0.5)
-            for peak in peaks
-        ]:
-            return False
-        return True
+        return True not in [np.allclose(np.inner(Amat, xyz), np.inner(Amat, peak), atol=0.5) for peak in peaks]
 
     generalData = data["General"]
     Amat, Bmat = G2lat.cell2AB(generalData["Cell"][1:7])
@@ -7227,7 +7230,7 @@ def worker(
     random.seed(
         int(time.time()) % 100000 + nprocess
     )  # make sure each process has a different random start
-    for n in range(iCyc):
+    for _n in range(iCyc):
         result = mcsaSearch(
             data, RBdata, reflType, reflData, covData, None, False
         )  # mcsa result,time,rcov
@@ -7235,8 +7238,7 @@ def worker(
         timelist.append(result[1])
         nsflist.append(result[2])
         G2fil.G2Print(
-            " MC/SA final fit: %.3f%% structure factor time: %.3f"
-            % (100 * result[0][2], result[1])
+            f" MC/SA final fit: {100 * result[0][2]:.3f}% structure factor time: {result[1]:.3f}"
         )
     out_q.put(outlist)
     out_t.put(timelist)
@@ -7328,11 +7330,9 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
 
     def getAtomparms(item, pfx, aTypes, SGData, parmDict, varyList):
         parmDict[pfx + "Atype"] = item["atType"]
-        aTypes |= set(
-            [
+        aTypes |= {
                 item["atType"],
-            ]
-        )
+            }
         pstr = ["Ax", "Ay", "Az"]
         XYZ = [0, 0, 0]
         for i in range(3):
@@ -7575,7 +7575,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
     def MCSAcallback(x, f, accept):
         return not pgbar.Update(
             int(min(100, f * 100)),
-            newmsg="%s%8.4f%s" % ("MC/SA Residual:", int(f * 100), "%"),
+            newmsg="{}{:8.4f}{}".format("MC/SA Residual:", int(f * 100), "%"),
         )[0]
 
     sq2pi = np.sqrt(2 * np.pi)
@@ -7589,18 +7589,16 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
     SGT = np.array([SGData["SGOps"][i][1] for i in range(len(SGData["SGOps"]))])
     fixAtoms = data["Atoms"]  # if any
     cx, ct, cs = getAtomPtrs(data)[:3]
-    aTypes = set([])
+    aTypes = set()
     parmDict = {"Bmat": Bmat, "Gmat": Gmat}
     varyList = []
     atNo = 0
     for atm in fixAtoms:
         pfx = ":" + str(atNo) + ":"
         parmDict[pfx + "Atype"] = atm[ct]
-        aTypes |= set(
-            [
+        aTypes |= {
                 atm[ct],
-            ]
-        )
+            }
         pstr = ["Ax", "Ay", "Az"]
         parmDict[pfx + "Amul"] = atm[cs + 1]
         for i in range(3):
@@ -7784,8 +7782,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
             dlg=pgbar,
         )
         G2fil.G2Print(
-            " Acceptance rate: %.2f%% MCSA residual: %.2f%%"
-            % (100.0 * results[5] / results[3], 100.0 * results[1])
+            f" Acceptance rate: {100.0 * results[5] / results[3]:.2f}% MCSA residual: {100.0 * results[1]:.2f}%"
         )
         results = so.minimize(
             mcsaCalc,
@@ -7797,12 +7794,7 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
     mcsaCalc(
         results["x"], refs, rcov, cosTable, ifInv, allFF, RBdata, varyList, parmDict
     )
-    Result = [
-        False,
-        False,
-        results["fun"],
-        0.0,
-    ] + list(results["x"])
+    Result = [False, False, results["fun"], 0.0, *list(results["x"])]
     Result.append(varyList)
     return Result, tsum, nsum, rcov
 
@@ -8070,7 +8062,8 @@ def annealtests():
     from numpy import cos
 
     # minimum expected at ~-0.195
-    func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
+    def func(x):
+        return cos(14.5 * x - 0.3) + (x + 0.2) * x
     print(
         anneal(
             func,
@@ -8109,7 +8102,8 @@ def annealtests():
     )
 
     # minimum expected at ~[-0.195, -0.1]
-    func = lambda x: cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
+    def func(x):
+        return cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
     print(
         anneal(
             func,
@@ -8242,6 +8236,7 @@ def SetDefaultDData(dType, histoName, NShkl=0, NDij=0):
             "Extinction": [0.0, False],
             "Babinet": {"BabA": [0.0, False], "BabU": [0.0, False]},
         }
+    return None
 
 
 def UpdateHKLFvals(histoName, phaseData, reflData):
@@ -8306,7 +8301,7 @@ def UpdateHKLFvals(histoName, phaseData, reflData):
             [np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]), [1.0, False, 0]],
         ]
 
-    for iref, ref in enumerate(reflData["RefList"]):
+    for _iref, ref in enumerate(reflData["RefList"]):
         hkl = ref[:3]
         if Super:
             H = list(hkl + SuperVec * ref[3])

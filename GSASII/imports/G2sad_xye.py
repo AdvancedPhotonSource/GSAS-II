@@ -4,7 +4,9 @@ import numpy as np
 
 from .. import GSASIIobj as G2obj
 
-npasind = lambda x: 180.0 * np.arcsin(x) / np.pi
+
+def npasind(x):
+    return 180.0 * np.arcsin(x) / np.pi
 
 
 class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
@@ -23,7 +25,7 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -45,7 +47,7 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
         wave = 1.5428  # Cuka default
         Temperature = 300
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
             if "=" in S:
@@ -73,7 +75,7 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
                         w.append(1.0 / float(data[1]))
                     x.append(float(data[0]))
                 except ValueError:
-                    msg = "Error in line :%s" % S
+                    msg = f"Error in line :{S}"
                     print(msg)
                     continue
         fp.close()
@@ -120,7 +122,7 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -142,7 +144,7 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
         wave = 1.5428  # Cuka default
         Temperature = 300
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
             if "=" in S:
@@ -170,7 +172,7 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
                         w.append(1.0 / float(data[1]))
                     x.append(float(data[0]) / 10.0)  # convert nm-1 to A-1
                 except ValueError:
-                    msg = "Error in line :%s" % S
+                    msg = f"Error in line :{S}"
                     print(msg)
                     continue
         fp.close()
@@ -217,7 +219,7 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -239,7 +241,7 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
         wave = 1.5428  # Cuka default
         Temperature = 300
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
             if "=" in S or "#" in S:
@@ -267,7 +269,7 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
                         w.append(1.0 / float(data[1]))
                     x.append(float(data[0]))
                 except ValueError:
-                    msg = "Error in line :%s" % S
+                    msg = f"Error in line :{S}"
                     print(msg)
                     continue
         fp.close()
@@ -316,7 +318,7 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -338,7 +340,7 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
         wave = 1.5428  # Cuka default
         Temperature = 300
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             if len(S) == 1:  # skip blank line
                 continue
             if "=" in S or "#" in S:
@@ -366,7 +368,7 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
                         w.append(1.0 / float(data[1]))
                     x.append(float(data[0]) / 10.0)  # convert to A-1
                 except ValueError:
-                    msg = "Error in line :%s" % S
+                    msg = f"Error in line :{S}"
                     print(msg)
                     continue
         fp.close()

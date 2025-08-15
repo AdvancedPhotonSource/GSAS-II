@@ -36,7 +36,8 @@ DEBUG = False  # =True for various prints
 TRANSP = False  # =true to transpose images for testing
 if GSASIIpath.GetConfigValue("Transpose"):
     TRANSP = True
-npsind = lambda x: np.sin(x * np.pi / 180.0)
+def npsind(x):
+    return np.sin(x * np.pi / 180.0)
 
 
 def FileDlgFixExt(dlg, file):
@@ -49,8 +50,10 @@ def FileDlgFixExt(dlg, file):
 
 def GetPowderPeaks(fileName):
     "Read powder peaks from a file"
-    sind = lambda x: math.sin(x * math.pi / 180.0)
-    asind = lambda x: 180.0 * math.asin(x) / math.pi
+    def sind(x):
+        return math.sin(x * math.pi / 180.0)
+    def asind(x):
+        return 180.0 * math.asin(x) / math.pi
     wave = 1.54052
     File = open(fileName)
     Comments = []
@@ -581,23 +584,27 @@ except AttributeError:
     pass
 
 
-def objectScan(data, tag, indexStack=[]):
+def objectScan(data, tag, indexStack=None):
     """Recursively scan an object looking for unexpected data types.
     This is used in debug mode to scan .gpx files for objects we did not
     intend to be there.
     """
+    if indexStack is None:
+        indexStack = []
     if type(data) is list or type(data) is tuple:
         for i in range(len(data)):
-            val = objectScan(data[i], tag, indexStack + [i])
+            val = objectScan(data[i], tag, [*indexStack, i])
             if val:
                 data[i] = val
                 print("...fixed")
+        return None
     elif type(data) is dict:
         for key in data:
-            val = objectScan(data[key], tag, indexStack + [key])
+            val = objectScan(data[key], tag, [*indexStack, key])
             if val:
                 data[key] = val
                 print("...fixed")
+        return None
     elif (
         data is None
         or type(data) in objectScanIgnore
@@ -657,8 +664,9 @@ def ProjFileOpen(G2frame, showProvenance=True):
                 fp = open(GPXphase, "rb")
                 data = pickleLoad(fp)  # first block in file should be Phases
                 if data[0][0] != "Phases":
+                    msg = f"Unexpected block in {GPXphase} file. How did this happen?"
                     raise Exception(
-                        f"Unexpected block in {GPXphase} file. How did this happen?"
+                        msg
                     )
                 Phases = {}
                 for name, vals in data[1:]:
@@ -733,7 +741,7 @@ def ProjFileOpen(G2frame, showProvenance=True):
                     for j, (name, val) in enumerate(hdata[1:])
                     if name in xferItems
                 }
-                for j, (name, val) in enumerate(data[1:]):
+                for j, (name, _val) in enumerate(data[1:]):
                     if name not in xferItems:
                         continue
                     data[j + 1][1] = hdata[hItems[name]][1]
@@ -963,9 +971,9 @@ def SaveIntegration(G2frame, PickId, data, Overwrite=False):
     Controls = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame, G2frame.root, "Controls")
     )
-    Comments.append("Dark image = %s\n" % str(data["dark image"]))
-    Comments.append("Background image = %s\n" % str(data["background image"]))
-    Comments.append("Gain map = %s\n" % str(data["Gain map"]))
+    Comments.append("Dark image = {}\n".format(str(data["dark image"])))
+    Comments.append("Background image = {}\n".format(str(data["background image"])))
+    Comments.append("Gain map = {}\n".format(str(data["Gain map"])))
 
     if "PWDR" in name:
         if "target" in data:
@@ -1224,8 +1232,10 @@ def SaveIntegration(G2frame, PickId, data, Overwrite=False):
     return Id  # last powder pattern generated
 
 
-def XYsave(G2frame, XY, labelX="X", labelY="Y", names=[]):
+def XYsave(G2frame, XY, labelX="X", labelY="Y", names=None):
     "Save XY table data"
+    if names is None:
+        names = []
     pth = G2G.GetExportPath(G2frame)
     dlg = wx.FileDialog(
         G2frame,
@@ -1248,12 +1258,12 @@ def XYsave(G2frame, XY, labelX="X", labelY="Y", names=[]):
         return
     for i in range(len(XY)):
         if len(names):
-            header = "%s,%s(%s)\n" % (labelX, labelY, names[i])
+            header = f"{labelX},{labelY}({names[i]})\n"
         else:
             header = "%s,%s(%d)\n" % (labelX, labelY, i)
         File.write(header)
         for x, y in XY[i].T:
-            File.write("%.3f,%.3f\n" % (x, y))
+            File.write(f"{x:.3f},{y:.3f}\n")
     File.close()
     print(" XY data saved to: " + filename)
 
@@ -1270,7 +1280,7 @@ def PeakListSave(G2frame, file, peaks):
         return
     for peak in peaks:
         file.write(
-            "%10.4f %12.2f %10.3f %10.3f \n" % (peak[0], peak[2], peak[4], peak[6])
+            f"{peak[0]:10.4f} {peak[2]:12.2f} {peak[4]:10.3f} {peak[6]:10.3f} \n"
         )
     print("peak list saved")
 
@@ -1289,7 +1299,7 @@ def IndexPeakListSave(G2frame, peaks):
                 dlg.Destroy()
             return
         for peak in peaks:
-            file.write("%12.6f\n" % (peak[7]))
+            file.write(f"{peak[7]:12.6f}\n")
         file.close()
     finally:
         wx.EndBusyCursor()
@@ -1428,8 +1438,9 @@ def ExportSequential(G2frame, data, obj, exporttype):
                 obj.Writer(h, phasenam=p, mode=mode)
                 mode = "a"
         print("...done")
+        return None
     elif (
-        exporttype == "Project" or exporttype == "Powder"
+        exporttype in ("Project", "Powder")
     ):  # note that the CIF exporter is not yet ready for this
         filename = obj.askSaveFile()
         if not filename:
@@ -1443,6 +1454,8 @@ def ExportSequential(G2frame, data, obj, exporttype):
             print("\t" + str(h) + " written")
             mode = "a"
         print("...done")
+        return None
+    return None
 
 
 def ReadDIFFaX(DIFFaXfile):
@@ -1558,7 +1571,7 @@ def ReadDIFFaX(DIFFaXfile):
             )
             if atomType not in Layer["AtInfo"]:
                 Layer["AtInfo"][atomType] = G2el.GetAtomInfo(atomType)
-            atomName = "%s(%s)" % (atomType, atom[0])
+            atomName = f"{atomType}({atom[0]})"
             newVals = []
             for val in atom[1:6]:
                 if "/" in val:
@@ -1591,7 +1604,7 @@ def ReadDIFFaX(DIFFaXfile):
                     newVals.append(eval(val + "."))
                 else:
                     newVals.append(float(val))
-            transArray[-1].append(newVals + ["", False])
+            transArray[-1].append([*newVals, "", False])
             N += 1
     Layer["Transitions"] = transArray
     # STACKING records

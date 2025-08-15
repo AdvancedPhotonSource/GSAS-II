@@ -169,7 +169,7 @@ class HDF5_Reader(G2obj.ImportImage):
             if isinstance(dset, h5py.Dataset):
                 dims = dset.shape
                 if len(dims) < 2:
-                    head.append("%s: %s" % (dset.name, str(dset[()][0])))
+                    head.append(f"{dset.name}: {dset[()][0]!s}")
                 elif len(dims) == 4:
                     size = dims[2:]
                     self.buffer["imagemap"] += [
@@ -201,7 +201,7 @@ class HDF5_Reader(G2obj.ImportImage):
         else:
             quick = True
         dset = fp[name]
-        if num == None:
+        if num is None:
             image = dset[()]
         elif len(dset.shape) == 4:
             image = dset[0, num, ...]
@@ -222,7 +222,7 @@ class HDF5_Reader(G2obj.ImportImage):
         try:
             misc = {}
             for key in "DetSizeX", "DetSizeY":
-                misc[key] = [i for i in fp["misc"][key]]
+                misc[key] = list(fp["misc"][key])
             for key in "DetPixelSizeX", "DetPixelSizeY":
                 misc[key] = [float(i) for i in fp["misc"][key]]
             if "DetSizeX" in misc and "DetSizeY" in misc:

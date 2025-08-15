@@ -86,9 +86,10 @@ def G2SetPrintLevel(level):
 
 def find(name, path):
     """find 1st occurance of file in path"""
-    for root, dirs, files in os.walk(path):
+    for root, _dirs, files in os.walk(path):
         if name in files:
             return os.path.join(root, name)
+    return None
 
 
 def G2Print(*args, **kwargs):
@@ -140,7 +141,7 @@ ImportErrors = []
 condaRequestList = {}
 
 
-def ImportErrorMsg(errormsg=None, pkg={}):
+def ImportErrorMsg(errormsg=None, pkg=None):
     """Store error message(s) from loading importers (usually missing
     packages. Or, report back all messages, if called with no argument.
 
@@ -153,11 +154,15 @@ def ImportErrorMsg(errormsg=None, pkg={}):
     :returns: the error messages as a list (an empty list if there are none),
       only if errormsg is None (the default).
     """
+    if pkg is None:
+        pkg = {}
     if errormsg is None:
         return ImportErrors
     ImportErrors.append(errormsg)
     if pkg:
         NeededPackage(pkg)
+        return None
+    return None
 
 
 def NeededPackage(pkgDict):
@@ -564,9 +569,10 @@ def SetPowderInstParms(Iparm, rd):
         Iparm1 = makeInstDict(names, data, codes)
         Iparm1["Bank"] = [Bank, Bank, 0]
         return [Iparm1, {}]
+    return None
 
 
-def ReadInstprm(instLines, bank, Sample={}):
+def ReadInstprm(instLines, bank, Sample=None):
     """Read contents of a GSAS-II (new) .instprm instrument parameter file
 
     :param list instLines: contents of GSAS-II parameter file as a
@@ -591,6 +597,8 @@ def ReadInstprm(instLines, bank, Sample={}):
     will set defaults in the sample parameters. Otherwise, a single-wavelength file
     will set Debye-Scherrer mode and dual wavelength will set Bragg-Brentano.
     """
+    if Sample is None:
+        Sample = {}
     if "GSAS-II" not in instLines[0]:
         raise ValueError("Not a valid GSAS-II instprm file")
 
@@ -625,7 +633,8 @@ def ReadInstprm(instLines, bank, Sample={}):
                     while il < len(instLines) and "#Bank" not in S:
                         il += 1
                         if il == len(instLines):
-                            raise ValueError(f"Bank {bank} not found in instprm file")
+                            msg = f"Bank {bank} not found in instprm file"
+                            raise ValueError(msg)
                         S = instLines[il]
                     continue
             else:
@@ -727,7 +736,7 @@ def ReadInstprm(instLines, bank, Sample={}):
     return bank, [makeInstDict(newItems, newVals, len(newVals) * [False]), iparm1]
 
 
-def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
+def WriteInstprm(fp, InstPrm, InstPrm1, Sample=None, bank=None):
     """Write the contents of a GSAS-II (new) .instprm instrument parameter file
     ToDo: use this inside G2frame.OnSave and G2frame.OnSaveAll
 
@@ -739,6 +748,8 @@ def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
       a "#Bank" heading to be placed in the file before the
       parameters are written.
     """
+    if Sample is None:
+        Sample = {}
     if bank is not None:
         # somehow, somewhere bank is becoming a float. Ensure it is an int here:
         fp.write(
@@ -1236,7 +1247,7 @@ def GetColumnMetadata(reader):
         )
     ]
     for key in parParms:
-        if key in specialKeys + ("par file", "lbls file"):
+        if key in (*specialKeys, "par file", "lbls file"):
             continue
         reader.Comments += [f"{key} = {parParms[key]}"]
     if "polarization" in parParms:
@@ -1531,7 +1542,7 @@ def readMasks(filename, masks, ignoreThreshold):
         masks[key] = [i for i in masks[key] if len(i)]
 
 
-def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
+def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst=None, Limits=None):
     """Write PDF-related data (G(r), S(Q),...) into files, as
     selected.
 
@@ -1559,18 +1570,22 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
     """
     import scipy.interpolate as scintp
 
+    if Limits is None:
+        Limits = []
+    if Inst is None:
+        Inst = {}
     fileroot = os.path.splitext(fileroot)[0]
     if PDFsaves[0]:  # I(Q)
         iqfilename = fileroot + ".iq"
         iqdata = PDFControls["I(Q)"][1]
         iqfxn = scintp.interp1d(iqdata[0], iqdata[1], kind="linear")
         iqfile = open(iqfilename, "w")
-        iqfile.write("#T I(Q) %s\n" % (PDFentry))
+        iqfile.write(f"#T I(Q) {PDFentry}\n")
         iqfile.write("#L Q     I(Q)\n")
         qnew = np.arange(iqdata[0][0], iqdata[0][-1], 0.005)
         iqnew = zip(qnew, iqfxn(qnew), strict=False)
         for q, iq in iqnew:
-            iqfile.write("%15.6g %15.6g\n" % (q, iq))
+            iqfile.write(f"{q:15.6g} {iq:15.6g}\n")
         iqfile.close()
         G2Print(" I(Q) saved to: " + iqfilename)
 
@@ -1579,12 +1594,12 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
         sqdata = PDFControls["S(Q)"][1]
         sqfxn = scintp.interp1d(sqdata[0], sqdata[1], kind="linear")
         sqfile = open(sqfilename, "w")
-        sqfile.write("#T S(Q) %s\n" % (PDFentry))
+        sqfile.write(f"#T S(Q) {PDFentry}\n")
         sqfile.write("#L Q     S(Q)\n")
         qnew = np.arange(sqdata[0][0], sqdata[0][-1], 0.005)
         sqnew = zip(qnew, sqfxn(qnew), strict=False)
         for q, sq in sqnew:
-            sqfile.write("%15.6g %15.6g\n" % (q, sq))
+            sqfile.write(f"{q:15.6g} {sq:15.6g}\n")
         sqfile.close()
         G2Print(" S(Q) saved to: " + sqfilename)
 
@@ -1593,12 +1608,12 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
         fqdata = PDFControls["F(Q)"][1]
         fqfxn = scintp.interp1d(fqdata[0], fqdata[1], kind="linear")
         fqfile = open(fqfilename, "w")
-        fqfile.write("#T F(Q) %s\n" % (PDFentry))
+        fqfile.write(f"#T F(Q) {PDFentry}\n")
         fqfile.write("#L Q     F(Q)\n")
         qnew = np.arange(fqdata[0][0], fqdata[0][-1], 0.005)
         fqnew = zip(qnew, fqfxn(qnew), strict=False)
         for q, fq in fqnew:
-            fqfile.write("%15.6g %15.6g\n" % (q, fq))
+            fqfile.write(f"{q:15.6g} {fq:15.6g}\n")
         fqfile.close()
         G2Print(" F(Q) saved to: " + fqfilename)
 
@@ -1607,12 +1622,12 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
         grdata = PDFControls["G(R)"][1]
         grfxn = scintp.interp1d(grdata[0], grdata[1], kind="linear")
         grfile = open(grfilename, "w")
-        grfile.write("#T G(R) %s\n" % (PDFentry))
+        grfile.write(f"#T G(R) {PDFentry}\n")
         grfile.write("#L R     G(R)\n")
         rnew = np.arange(grdata[0][0], grdata[0][-1], 0.010)
         grnew = zip(rnew, grfxn(rnew), strict=False)
         for r, gr in grnew:
-            grfile.write("%15.6g %15.6g\n" % (r, gr))
+            grfile.write(f"{r:15.6g} {gr:15.6g}\n")
         grfile.close()
         G2Print(" G(R) saved to: " + grfilename)
 
@@ -1631,17 +1646,17 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
         grfile.write("\n")
         grfile.write("# input and output specifications\n")
         grfile.write("dataformat = Qnm\n")
-        grfile.write("inputfile = %s\n" % (PDFControls["Sample"]["Name"]))
-        grfile.write("backgroundfile = %s\n" % (PDFControls["Sample Bkg."]["Name"]))
+        grfile.write("inputfile = {}\n".format(PDFControls["Sample"]["Name"]))
+        grfile.write("backgroundfile = {}\n".format(PDFControls["Sample Bkg."]["Name"]))
         grfile.write("outputtype = gr\n")
         grfile.write("\n")
         grfile.write("# PDF calculation setup\n")
         if "x" in Inst["Type"]:
-            grfile.write("mode = %s\n" % ("xray"))
+            grfile.write("mode = {}\n".format("xray"))
         elif "N" in Inst["Type"]:
-            grfile.write("mode = %s\n" % ("neutron"))
+            grfile.write("mode = {}\n".format("neutron"))
         wave = G2mth.getMeanWave(Inst)
-        grfile.write("wavelength = %.5f\n" % (wave))
+        grfile.write(f"wavelength = {wave:.5f}\n")
         formula = ""
         for el in PDFControls["ElList"]:
             formula += el
@@ -1649,15 +1664,15 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
             if num == round(num):
                 formula += "%d" % (int(num))
             else:
-                formula += "%.2f" % (num)
-        grfile.write("composition = %s\n" % (formula))
+                formula += f"{num:.2f}"
+        grfile.write(f"composition = {formula}\n")
         grfile.write("bgscale = %.3f\n" % (-PDFControls["Sample Bkg."]["Mult"]))
         highQ = 2.0 * np.pi / G2lat.Pos2dsp(Inst, Limits[1][1])
-        grfile.write("qmaxinst = %.2f\n" % (highQ))
-        grfile.write("qmin = %.5f\n" % (qdata[0]))
-        grfile.write("qmax = %.4f\n" % (qdata[-1]))
-        grfile.write("rmin = %.2f\n" % (PDFControls["Rmin"]))
-        grfile.write("rmax = %.2f\n" % (PDFControls["Rmax"]))
+        grfile.write(f"qmaxinst = {highQ:.2f}\n")
+        grfile.write(f"qmin = {qdata[0]:.5f}\n")
+        grfile.write(f"qmax = {qdata[-1]:.4f}\n")
+        grfile.write("rmin = {:.2f}\n".format(PDFControls["Rmin"]))
+        grfile.write("rmax = {:.2f}\n".format(PDFControls["Rmax"]))
         grfile.write("rstep = 0.01\n")
         grfile.write("\n")
         grfile.write("# End of config " + 63 * "-")
@@ -1666,7 +1681,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
         grfile.write("#S 1\n")
         grfile.write("#L r($\\AA$)  G($\\AA^{-2}$)\n")
         for r, gr in grnew:
-            grfile.write("%15.2F %15.6F\n" % (r, gr))
+            grfile.write(f"{r:15.2F} {gr:15.6F}\n")
         grfile.close()
         G2Print(" G(R) saved to: " + grfilename)
 
@@ -1685,7 +1700,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
         for q, fq in fqnew:
             if not q:
                 continue
-            fqfile.write("%15.6g %15.6g\n" % (q, fq))
+            fqfile.write(f"{q:15.6g} {fq:15.6g}\n")
         fqfile.close()
         G2Print(" F(Q) saved to: " + fqfilename)
 
@@ -1701,7 +1716,7 @@ def PDFWrite(PDFentry, fileroot, PDFsaves, PDFControls, Inst={}, Limits=[]):
         for r, gr in grnew:
             if not r:
                 continue
-            grfile.write("%15.6g %15.6g\n" % (r, gr))
+            grfile.write(f"{r:15.6g} {gr:15.6g}\n")
         grfile.close()
         G2Print(" G(R) saved to: " + grfilename)
 
@@ -1843,7 +1858,7 @@ def FormatValue(val, maxdigits=None):
 
     :returns: a string with <= maxdigits characters (usually).
     """
-    if "str" in str(type(val)) and (val == "?" or val == "."):
+    if "str" in str(type(val)) and (val in ("?", ".")):
         return val
     if maxdigits is None:
         digits = [10, 2, "f"]
@@ -1917,7 +1932,7 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
 
     :returns: a string with <= maxdigits characters (I hope).
     """
-    if "str" in str(type(val)) and (val == "?" or val == "."):
+    if "str" in str(type(val)) and (val in ("?", ".")):
         return val
     if treatAsZero is not None:
         if abs(val) < treatAsZero:
@@ -2439,18 +2454,19 @@ class ExportBaseclass:
             if not filename:
                 return True
             self.dirname, self.filename = os.path.split(filename)
+            return None
         elif (
-            AskFile == "dir"
-            or AskFile == "single"
-            or (AskFile == "default-dir" and not self.G2frame.GSASprojectfile)
+            AskFile in ("dir", "single") or (AskFile == "default-dir" and not self.G2frame.GSASprojectfile)
         ):
             self.dirname = self.askSaveDirectory()
             if not self.dirname:
                 return True
-        elif AskFile == "default-dir" or AskFile == "default":
+            return None
+        elif AskFile in ("default-dir", "default"):
             self.dirname, self.filename = os.path.split(
                 os.path.splitext(self.G2frame.GSASprojectfile)[0] + self.extension
             )
+            return None
         else:
             raise Exception("This should not happen!")
 
@@ -2714,7 +2730,7 @@ class ExportBaseclass:
                 i = self.Histograms[hist].get("hId")
                 if i is None and not d.keys():
                     i = 0
-                elif i is None or i in d.keys():
+                elif i is None or i in d:
                     i = max(d.keys()) + 1
                 d[i] = hist
             return None
@@ -2741,6 +2757,7 @@ class ExportBaseclass:
                 self.sasdDict[i] = hist
             elif hist.startswith("REFD"):
                 self.refdDict[i] = hist
+        return None
 
     def dumpTree(self, mode="type"):
         """Print out information on the data tree dicts loaded in loadTree.
@@ -2942,7 +2959,7 @@ class ExportBaseclass:
                 self.OverallParms["Covariance"],
                 unique=unique,
             )  # returns 7 vals, includes sigVol
-            cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
+            cellList = (*G2lat.A2cell(A), G2lat.calc_V(A))
             return cellList, cellSig
         except KeyError:
             cell = phasedict["General"]["Cell"][1:]
@@ -2985,7 +3002,7 @@ class ExportBaseclass:
             "varyList": [Dlookup.get(striphist(v), v) for v in data_name["varyList"]],
             "covMatrix": data_name["covMatrix"],
         }
-        return list(G2lat.A2cell(A)) + [G2lat.calc_V(A)], G2lat.getCellEsd(
+        return [*list(G2lat.A2cell(A)), G2lat.calc_V(A)], G2lat.getCellEsd(
             str(pId) + "::", SGdata, A, covData
         )
 
@@ -3014,7 +3031,7 @@ class ExportBaseclass:
         atomslist = []
         for i, at in enumerate(phasedict["Atoms"]):
             if phasedict["General"]["Type"] == "macromolecular":
-                label = "%s_%s_%s_%s" % (at[ct - 1], at[ct - 3], at[ct - 4], at[ct - 2])
+                label = f"{at[ct - 1]}_{at[ct - 3]}_{at[ct - 4]}_{at[ct - 2]}"
             else:
                 label = at[ct - 1]
             fval = self.parmDict.get(fpfx + str(i), at[cfrac])

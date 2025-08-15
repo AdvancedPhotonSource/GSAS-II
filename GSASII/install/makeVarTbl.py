@@ -41,7 +41,7 @@ def main():
     exmplDig = {71: "10", 72: "0", 73: "0"}
     nextChar = 75  # N.B. 74 saved for term at end of line (.*)
 
-    for line, r in enumerate(G2obj.reVarDesc):  # loop over each entry in table
+    for _line, r in enumerate(G2obj.reVarDesc):  # loop over each entry in table
         comment = ""
         parmName = orig_str = str(r).split("'")[1]
         parmName = parmName.replace(r"\\(", "(").replace(r"\\)", ")")
@@ -104,7 +104,7 @@ def main():
             out2 = G2obj.reVarDesc[r].replace("\\" + str(i + 1), symTerms[i])
             if comment:
                 out2 += "; where " + comment + ","
-        elif parmName.endswith("(.*)") or parmName.endswith(".*"):
+        elif parmName.endswith(("(.*)", ".*")):
             sym = "\\ :math:`\\scriptstyle " + chr(74) + "`\\ "
             out1 = repTmp + " (example: ``" + exmplTmp + "``)"
             comment += (

@@ -4,8 +4,11 @@ import numpy as np
 
 from .. import GSASIIobj as G2obj
 
-npasind = lambda x: 180.0 * np.arcsin(x) / np.pi
-npsind = lambda x: np.sin(np.pi * x / 180.0)
+
+def npasind(x):
+    return 180.0 * np.arcsin(x) / np.pi
+def npsind(x):
+    return np.sin(np.pi * x / 180.0)
 try:  # fails on doc build
     fourpi = 4.0 * np.pi
     _double_min = np.finfo(float).min
@@ -30,7 +33,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
         "Look through the file for expected types of lines in a valid q-step file"
         fp = open(filename)
         Ndata = 0
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             if "#" in S[0]:
                 continue
             vals = S.split()
@@ -135,7 +138,7 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
         "Look through the file for expected types of lines in a valid q-step file"
         Ndata = 0
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             if "#" in S[0]:
                 continue
             vals = S.split()
@@ -241,7 +244,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
         Ndata = 0
         self.wavelength = 0.0
         fp = open(filename)
-        for i, S in enumerate(fp):
+        for _i, S in enumerate(fp):
             if "#" in S[0]:
                 if "wavelength" in S[:-1].lower():
                     self.wavelength = float(S[:-1].split("=")[1])

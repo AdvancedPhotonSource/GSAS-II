@@ -218,10 +218,7 @@ def SetNewPhase(Name="New Phase", SGData=None, cell=None, Super=None):
             "Modulated": False,
             "AtomPtrs": [3, 1, 7, 9],
             "SGData": SGData,
-            "Cell": [
-                False,
-            ]
-            + cell,
+            "Cell": [False, *cell],
             "Pawley dmin": 1.0,
             "Data plot type": "None",
             "SH Texture": {
@@ -302,9 +299,7 @@ def TestIndexAll():
 
     :returns: Returns True if indexing is needed.
     """
-    if PhaseIdLookup or AtomIdLookup or HistIdLookup:
-        return False
-    return True
+    return not (PhaseIdLookup or AtomIdLookup or HistIdLookup)
 
 
 def IndexAllIds(Histograms, Phases):
@@ -364,7 +359,7 @@ def IndexAllIds(Histograms, Phases):
                 at[cia + 8] = ranId = ran.randint(0, sys.maxsize)
             AtomRanIdLookup[pId][ranId] = str(iatm)
             if Phases[ph]["General"]["Type"] == "macromolecular":
-                label = "%s_%s_%s_%s" % (at[ct - 1], at[ct - 3], at[ct - 4], at[ct - 2])
+                label = f"{at[ct - 1]}_{at[ct - 3]}_{at[ct - 4]}_{at[ct - 2]}"
             else:
                 label = at[ct - 1]
             AtomIdLookup[pId][str(iatm)] = (label, ranId)
@@ -614,11 +609,7 @@ def VarDescr(varname):
                     + ","
                 )
             else:  # modulation parm
-                s = "Atom %s wave %s in %s" % (
-                    LookupAtomLabel(l[0], l[3])[0],
-                    l[4],
-                    lbl,
-                )
+                s = f"Atom {LookupAtomLabel(l[0], l[3])[0]} wave {l[4]} in {lbl}"
         elif l[3] is not None:  # atom parameter,
             lbl = ShortPhaseNames.get(l[0], "phase?")
             try:
@@ -912,7 +903,7 @@ def getDescr(name):
             try:
                 return m.expand(reVarDesc[key])
             except:
-                print("Error in key: %s" % key)
+                print(f"Error in key: {key}")
     return None
 
 
@@ -1234,22 +1225,19 @@ class G2VarObj:
         if type(other) is str:
             other = G2VarObj(other)
         elif type(other) is not G2VarObj:
+            msg = f"Invalid type ({type(other)}) for G2VarObj comparison with {other}"
             raise Exception(
-                f"Invalid type ({type(other)}) for G2VarObj comparison with {other}"
+                msg
             )
-        if self.phase != other.phase and self.phase != "*" and other.phase != "*":
+        if self.phase not in (other.phase, "*") and other.phase != "*":
             return False
         if (
-            self.histogram != other.histogram
-            and self.histogram != "*"
-            and other.histogram != "*"
+            self.histogram not in (other.histogram, "*") and other.histogram != "*"
         ):
             return False
-        if self.atom != other.atom and self.atom != "*" and other.atom != "*":
+        if self.atom not in (other.atom, "*") and other.atom != "*":
             return False
-        if self.name != other.name:
-            return False
-        return True
+        return not self.name != other.name
 
     def fmtVarByMode(self, seqmode, note, warnmsg):
         """Format a parameter object for display. Note that these changes
@@ -1289,7 +1277,7 @@ class G2VarObj:
                 explain = (
                     "\nIgnoring: " + self.varname() + " does not contain a wildcard.\n"
                 )
-        elif seqmode != "use-all" and seqmode != "wildcards-only":
+        elif seqmode not in ("use-all", "wildcards-only"):
             print("Unexpected mode", seqmode, " in fmtVarByMode")
         return s, explain, note, warnmsg
 
@@ -1361,9 +1349,11 @@ class ImportBaseclass:
         self,
         formatName,
         longFormatName=None,
-        extensionlist=[],
+        extensionlist=None,
         strictExtension=False,
     ):
+        if extensionlist is None:
+            extensionlist = []
         self.formatName = formatName  # short string naming file type
         if longFormatName:  # longer string naming file type
             self.longFormatName = longFormatName
@@ -1372,7 +1362,7 @@ class ImportBaseclass:
         # define extensions that are allowed for the file type
         # for windows, remove any extensions that are duplicate, as case is ignored
         if sys.platform == "windows" and extensionlist:
-            extensionlist = list(set([s.lower() for s in extensionlist]))
+            extensionlist = list({s.lower() for s in extensionlist})
         self.extensionlist = extensionlist
         # If strictExtension is True, the file will not be read, unless
         # the extension matches one in the extensionlist
@@ -1465,7 +1455,7 @@ class ImportBaseclass:
             else:  # found something invalid
                 self.errors = "line " + str(i + 1) + " contains unexpected data:\n"
                 if all(
-                    [ord(c) < 128 and ord(c) != 0 for c in str(l)]
+                    ord(c) < 128 and ord(c) != 0 for c in str(l)
                 ):  # show only if ASCII
                     self.errors += "  " + str(l)
                 else:
@@ -1475,6 +1465,7 @@ class ImportBaseclass:
                 )
                 self.errors += "\n        a data_ statement begins a block."
                 return False
+        return None
 
 
 ######################################################################
@@ -1493,10 +1484,12 @@ class ImportPhase(ImportBaseclass):
         self,
         formatName,
         longFormatName=None,
-        extensionlist=[],
+        extensionlist=None,
         strictExtension=False,
     ):
         # call parent __init__
+        if extensionlist is None:
+            extensionlist = []
         ImportBaseclass.__init__(
             self, formatName, longFormatName, extensionlist, strictExtension
         )
@@ -1529,9 +1522,11 @@ class ImportStructFactor(ImportBaseclass):
         self,
         formatName,
         longFormatName=None,
-        extensionlist=[],
+        extensionlist=None,
         strictExtension=False,
     ):
+        if extensionlist is None:
+            extensionlist = []
         ImportBaseclass.__init__(
             self, formatName, longFormatName, extensionlist, strictExtension
         )
@@ -1593,9 +1588,11 @@ class ImportPowderData(ImportBaseclass):
         self,
         formatName,
         longFormatName=None,
-        extensionlist=[],
+        extensionlist=None,
         strictExtension=False,
     ):
+        if extensionlist is None:
+            extensionlist = []
         ImportBaseclass.__init__(
             self, formatName, longFormatName, extensionlist, strictExtension
         )
@@ -1644,9 +1641,11 @@ class ImportSmallAngleData(ImportBaseclass):
         self,
         formatName,
         longFormatName=None,
-        extensionlist=[],
+        extensionlist=None,
         strictExtension=False,
     ):
+        if extensionlist is None:
+            extensionlist = []
         ImportBaseclass.__init__(
             self, formatName, longFormatName, extensionlist, strictExtension
         )
@@ -1685,9 +1684,11 @@ class ImportReflectometryData(ImportBaseclass):
         self,
         formatName,
         longFormatName=None,
-        extensionlist=[],
+        extensionlist=None,
         strictExtension=False,
     ):
+        if extensionlist is None:
+            extensionlist = []
         ImportBaseclass.__init__(
             self, formatName, longFormatName, extensionlist, strictExtension
         )
@@ -1726,9 +1727,11 @@ class ImportPDFData(ImportBaseclass):
         self,
         formatName,
         longFormatName=None,
-        extensionlist=[],
+        extensionlist=None,
         strictExtension=False,
     ):
+        if extensionlist is None:
+            extensionlist = []
         ImportBaseclass.__init__(
             self, formatName, longFormatName, extensionlist, strictExtension
         )
@@ -1810,9 +1813,11 @@ class ImportImage(ImportBaseclass):
         self,
         formatName,
         longFormatName=None,
-        extensionlist=[],
+        extensionlist=None,
         strictExtension=False,
     ):
+        if extensionlist is None:
+            extensionlist = []
         ImportBaseclass.__init__(
             self, formatName, longFormatName, extensionlist, strictExtension
         )
@@ -1854,7 +1859,8 @@ sind = sin = s = lambda x: np.sin(x * np.pi / 180.0)
 cosd = cos = c = lambda x: np.cos(x * np.pi / 180.0)
 tand = tan = t = lambda x: np.tan(x * np.pi / 180.0)
 sqrt = sq = lambda x: np.sqrt(x)
-pi = lambda: np.pi
+def pi():
+    return np.pi
 
 
 def FindFunction(f):
@@ -2126,7 +2132,7 @@ class ExpressionObj:
             return None
         # find the variables & functions
         v, f = ASTtransverse(exprast)
-        varlist = sorted(list(set(v)))
+        varlist = sorted(set(v))
         fxnlist = list(set(f))
         pkgdict = {}
         # check the functions are defined
@@ -2257,7 +2263,7 @@ class ExpressionCalcObj:
                     self.exprDict[v] = np.array([parmDict[var][0] for var in varlist])
                 else:
                     self.exprDict[v] = np.array([parmDict[var] for var in varlist])
-                self.varLookup[v] = [var for var in varlist]
+                self.varLookup[v] = list(varlist)
             else:
                 self.exprDict[v] = None
         #                raise Exception,"No value for variable "+str(v)
@@ -2351,7 +2357,7 @@ def makeAngleObj(Phase, Oatom, Tatoms):
         tIds.append(aNames.index(Tatom.split("+")[0]))
     # create an expression object
     obj = ExpressionObj()
-    obj.expression = "Angle(%s,%s,\n%s)" % (Tatoms[0], Oatom, Tatoms[1])
+    obj.expression = f"Angle({Tatoms[0]},{Oatom},\n{Tatoms[1]})"
     obj.angle_dict = {"pId": pId, "SGData": SGData, "symNo": symNos, "cellNo": cellNos}
     obj.angle_atoms = [oId, tIds]
     return obj
@@ -2398,7 +2404,7 @@ def HowDidIgetHere(wherecalledonly=False):
 
 
 # Note that this is GUI code and should be moved at somepoint
-def CreatePDFitems(G2frame, PWDRtree, ElList, Qlimits, numAtm=1, FltBkg=0, PDFnames=[]):
+def CreatePDFitems(G2frame, PWDRtree, ElList, Qlimits, numAtm=1, FltBkg=0, PDFnames=None):
     """Create and initialize a new set of PDF tree entries
 
     :param Frame G2frame: main GSAS-II tree frame object
@@ -2411,6 +2417,8 @@ def CreatePDFitems(G2frame, PWDRtree, ElList, Qlimits, numAtm=1, FltBkg=0, PDFna
 
     :returns: the Id of the newly created PDF entry
     """
+    if PDFnames is None:
+        PDFnames = []
     PDFname = (
         "PDF " + PWDRtree[4:]
     )  # this places two spaces after PDF, which is needed is some places
@@ -2521,11 +2529,13 @@ class ShowTiming:
             print(f"{i} {lbl:20} {1000.0 * val:8.2f} ms {100 * val / sumT:5.2f}%")
 
 
-def validateAtomDrawType(typ, generalData={}):
+def validateAtomDrawType(typ, generalData=None):
     """Confirm that the selected Atom drawing type is valid for the current
     phase. If not, use 'vdW balls'. This is currently used only for setting a
     default when atoms are added to the atoms draw list.
     """
+    if generalData is None:
+        generalData = {}
     if typ in ("lines", "vdW balls", "sticks", "balls & sticks", "ellipsoids"):
         return typ
     # elif generalData.get('Type','') == 'macromolecular':

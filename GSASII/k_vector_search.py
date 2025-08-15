@@ -473,7 +473,7 @@ class kVector:
 
                     return (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md)
 
-            if self.option == 1 or self.option == 2:
+            if self.option in (1, 2):
                 # search along the k-path
                 print("[Info] Searching along the high symmetry path ...")
                 k_paths = self.kpathFinder()
@@ -556,3 +556,4 @@ class kVector:
             warn_msg += "of the satellite peaks, thus skipping the "
             warn_msg += "search over the high symmetry points."
             print(f"[Warning] {warn_msg}")
+            return None

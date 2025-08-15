@@ -567,7 +567,7 @@ def test_gmat():
     if NeedTestData:
         TestData()
     msg = "test cell2Gmat, fillgmat, Gmat2cell"
-    for cell, tg, tG, trcell, tV, trV in CellTestData:
+    for cell, tg, tG, trcell, _tV, _trV in CellTestData:
         G, g = cell2Gmat(cell)
         assert np.allclose(G, tG), msg
         assert np.allclose(g, tg), msg
@@ -586,7 +586,7 @@ def test_Avec():
     if NeedTestData:
         TestData()
     msg = "test cell2A and A2Gmat"
-    for cell, tg, tG, trcell, tV, trV in CellTestData:
+    for cell, tg, tG, _trcell, _tV, _trV in CellTestData:
         G, g = A2Gmat(cell2A(cell))
         assert np.allclose(G, tG), msg
         assert np.allclose(g, tg), msg
@@ -601,7 +601,7 @@ def test_2cell():
     if NeedTestData:
         TestData()
     msg = "test Gmat2A, A2cell, A2Gmat, Gmat2cell"
-    for cell, tg, tG, trcell, tV, trV in CellTestData:
+    for cell, _tg, _tG, _trcell, _tV, _trV in CellTestData:
         G, g = cell2Gmat(cell)
         tcell = A2cell(Gmat2A(G))
         assert np.allclose(cell, tcell), msg
@@ -616,12 +616,12 @@ def test_invcell():
     if NeedTestData:
         TestData()
     msg = "test invcell2Gmat"
-    for cell, tg, tG, trcell, tV, trV in CellTestData:
+    for cell, tg, tG, trcell, _tV, _trV in CellTestData:
         G, g = invcell2Gmat(trcell)
         assert np.allclose(G, tG), msg
         assert np.allclose(g, tg), msg
     msg = "test A2invcell"
-    for cell, tg, tG, trcell, tV, trV in CellTestData:
+    for cell, tg, tG, trcell, _tV, _trV in CellTestData:
         rcell = A2invcell(cell2A(cell))
         assert np.allclose(rcell, trcell), msg
 
@@ -635,7 +635,7 @@ def test_V():
     if NeedTestData:
         TestData()
     msg = "test calc_rVsq, calc_rV, calc_V"
-    for cell, tg, tG, trcell, tV, trV in CellTestData:
+    for cell, _tg, _tG, _trcell, tV, trV in CellTestData:
         assert np.allclose(calc_rV(cell2A(cell)), trV), msg
         assert np.allclose(calc_V(cell2A(cell)), tV), msg
 
@@ -712,9 +712,9 @@ def test_Brav():
         g2list = GenHBravais(sgtbxlattinp.dmin, bravcode, cell2A(cell))
 
         assert len(sgtbxlattinp.sgtbx7[key][1]) == len(g2list), (
-            "Reflection lists differ for %s" % key
+            f"Reflection lists differ for {key}"
         )
-        for h, k, l, d, num in g2list:
+        for h, k, l, d, _num in g2list:
             for hkllist, dref in sgtbxlattinp.sgtbx7[key][1]:
                 if abs(d - dref) < derror:
                     if indexmatch(
@@ -728,7 +728,7 @@ def test_Brav():
                     ):
                         break
             else:
-                assert 0, "No match for %s at %s (%s)" % ((h, k, l), d, key)
+                assert 0, f"No match for {(h, k, l)} at {d} ({key})"
 
 
 selftestlist.append(test_Brav)
@@ -788,7 +788,7 @@ def test_Laue():
         #    print 'SGTBX:'
         #    for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref
         assert len(g2list) == len(sgtbxlattinp.sgtbx8[key][1]), (
-            "Reflection lists differ for %s" % key
+            f"Reflection lists differ for {key}"
         )
         # match = True
         for h, k, l, d in g2list:
@@ -806,7 +806,7 @@ def test_Laue():
                     ):
                         break
             else:
-                assert 0, "No match for %s at %s (%s)" % ((h, k, l), d, key)
+                assert 0, f"No match for {(h, k, l)} at {d} ({key})"
                 # match = False
         # if not match:
         # for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref

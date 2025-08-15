@@ -174,7 +174,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
                     UseList[G2frame.hist]["Scale"][0] * generalData["Mass"] / wtSum
                 )
                 scaleSizer.Add(
-                    wx.StaticText(DData, label=" Wt. fraction: %.3f" % (weightFr)),
+                    wx.StaticText(DData, label=f" Wt. fraction: {weightFr:.3f}"),
                     0,
                     WACV,
                 )
@@ -502,14 +502,13 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             compSizer.Add(
                 wx.StaticText(
                     DData,
-                    label="(%.3f, %.3f, %.3f) "
-                    % (hkls[Id][0], hkls[Id][1], hkls[Id][2]),
+                    label=f"({hkls[Id][0]:.3f}, {hkls[Id][1]:.3f}, {hkls[Id][2]:.3f}) ",
                 ),
                 0,
                 WACV,
             )
             compSizer.Add(
-                wx.StaticText(DData, label="Length: %.3f" % lengths[Id]), 0, WACV
+                wx.StaticText(DData, label=f"Length: {lengths[Id]:.3f}"), 0, WACV
             )
         dataSizer.Add(compSizer)
         return dataSizer
@@ -547,7 +546,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             dataSizer.Add(strainVal, 0, WACV)
         mainSizer.Add(dataSizer)
         mainSizer.Add(
-            wx.StaticText(DData, label=" Mean mustrain %.1f" % muMean),
+            wx.StaticText(DData, label=f" Mean mustrain {muMean:.1f}"),
             0,
             wx.ALIGN_CENTER_HORIZONTAL,
         )
@@ -603,7 +602,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             else:
                 return hSizer
             cellstr = ""
-            for txt, fmt, ifEdit, Id in zip(*useGUI[2:], strict=False):
+            for txt, fmt, _ifEdit, Id in zip(*useGUI[2:], strict=False):
                 if cellstr:
                     cellstr += ", "
                 cellstr += txt + fmt.format(cell[Id])
@@ -946,7 +945,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
             twinVal = 0.0
             UseList[G2frame.hist]["Twins"].append([twinMat, twinVal])
             nNonM = UseList[G2frame.hist]["Twins"][0][1][2]
-            for i in range(nNonM):
+            for _i in range(nNonM):
                 UseList[G2frame.hist]["Twins"].append([False, 0.0])
             addtwin.SetValue(False)
             wx.CallLater(100, RepaintHistogramInfo, DData.GetScrollPos(wx.VERTICAL))
@@ -1071,7 +1070,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
                     )
                     Indx[twinval.GetId()] = it
                 else:
-                    twinval = wx.TextCtrl(DData, -1, "%.3f" % (TwVal), style=Style)
+                    twinval = wx.TextCtrl(DData, -1, f"{TwVal:.3f}", style=Style)
                     twinval.SetBackgroundColour(VERY_LIGHT_GREY)
                 valSizer.Add(twinval, 0, WACV)
                 if it and "bool" not in str(type(Twin[0])):
@@ -1473,7 +1472,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
                             DData,
                             wx.ID_ANY,
                             " Spherical harmonic coefficients: "
-                            + "Texture index: %.3f" % (textJ),
+                            + f"Texture index: {textJ:.3f}",
                         ),
                         0,
                         wx.TOP | wx.BOTTOM,
@@ -1582,7 +1581,7 @@ def UpdateDData(G2frame, DData, data, hist="", Scroll=0):
         DData.select.SetFirstItem(G2frame.dataWindow.HistsInPhase.index(G2frame.hist))
         DData.select.Bind(wx.EVT_LISTBOX, OnSelect)
         topSizer.Add(DData.select, 0, WACV | wx.LEFT, 5)
-        if any(["PWDR" in item for item in keyList]):
+        if any("PWDR" in item for item in keyList):
             topSizer.Add(PlotSizer())
         mainSizer.Add(topSizer)
         G2frame.bottomSizer, LeBailMsg = ShowHistogramInfo()
@@ -2140,7 +2139,7 @@ def MakeHistPhaseWin(G2frame):
         menu.Remove(item)
     if len(phaseList) == 0:
         return
-    for i, page in enumerate(phaseList):
+    for _i, page in enumerate(phaseList):
         Id = wx.NewId()
         if menu.FindItem(page) >= 0:
             continue  # is tab already in menu?

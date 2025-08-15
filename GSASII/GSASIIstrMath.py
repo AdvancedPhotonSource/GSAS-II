@@ -16,7 +16,9 @@ routines as arguments. The data tree is never accessed directly here.
 """
 
 import copy
+import functools
 import multiprocessing as mp
+import operator
 import pickle
 import time
 
@@ -45,12 +47,18 @@ try:
 except ImportError:  # ignore; will report this as an error in GSASIIplot import
     pass
 
-sind = lambda x: np.sin(x * np.pi / 180.0)
-cosd = lambda x: np.cos(x * np.pi / 180.0)
-tand = lambda x: np.tan(x * np.pi / 180.0)
-asind = lambda x: 180.0 * np.arcsin(x) / np.pi
-acosd = lambda x: 180.0 * np.arccos(x) / np.pi
-atan2d = lambda y, x: 180.0 * np.arctan2(y, x) / np.pi
+def sind(x):
+    return np.sin(x * np.pi / 180.0)
+def cosd(x):
+    return np.cos(x * np.pi / 180.0)
+def tand(x):
+    return np.tan(x * np.pi / 180.0)
+def asind(x):
+    return 180.0 * np.arcsin(x) / np.pi
+def acosd(x):
+    return 180.0 * np.arccos(x) / np.pi
+def atan2d(y, x):
+    return 180.0 * np.arctan2(y, x) / np.pi
 
 try:  # fails on doc build
     ateln2 = 8.0 * np.log(2.0)
@@ -409,7 +417,7 @@ def ApplyRBModelDervs(dFdvDict, parmDict, rigidbodyDict, Phase):
         torData = RBData["Residue"][RBObj["RBId"]]["rbSeq"]
         rbsx = str(irb) + ":" + str(jrb)
         XYZ, Cart = G2mth.UpdateRBXYZ(Bmat, RBObj, RBData, "Residue")
-        for itors, tors in enumerate(RBObj["Torsions"]):  # derivative error?
+        for itors, _tors in enumerate(RBObj["Torsions"]):  # derivative error?
             tname = pfx + "RBRTr;" + str(itors) + ":" + rbsx
             orId, pvId = torData[itors][:2]
             pivotVec = Cart[orId] - Cart[pvId]
@@ -829,6 +837,7 @@ def MakeSpHarmFF(
             atFlg.append(0.0)
     if ifDeriv:
         return dFFdS, atFlg
+    return None
 
 
 def GetSHC(pfx, parmDict):
@@ -1287,7 +1296,7 @@ def penaltyDeriv(pNames, pVal, HistoPhases, calcControls, parmDict, varyList):
                                     if var in G2mv.indepVarList:
                                         G2mv.Dict2Map(parmDict)
                                         oneparm = False
-                                    elif var in sum(G2mv.dependentParmList, []):
+                                    elif var in functools.reduce(operator.iadd, G2mv.dependentParmList, []):
                                         G2mv.Map2Dict(parmDict, [])
                                         oneparm = False
                                     if "RB" in var:
@@ -5181,6 +5190,7 @@ def GetReflPosDerv(refl, im, wave, A, pfx, hfx, phfx, calcControls, parmDict):
             / 2.0
         )
         return dpdA, dpdZ, dpdDC, dpdDA, dpdDB, dpdV
+    return None
 
 
 def GetHStrainShift(refl, im, SGData, phfx, hfx, calcControls, parmDict):
@@ -5656,7 +5666,7 @@ def getPowderProfile(
         if "B" not in histType:
             shl = max(parmDict[hfx + "SH/L"], 0.002)
         Ka2 = False
-        if hfx + "Lam1" in (parmDict.keys()):
+        if hfx + "Lam1" in (parmDict):
             wave = parmDict[hfx + "Lam1"]
             Ka2 = True
             lamRatio = (
@@ -6196,6 +6206,7 @@ def getPowderProfileDerv(args):
             ]
         elif SGData["SGLaue"] in ["m3m", "m3"]:
             return [[pfx + "A0", dpdA[0]]]
+        return None
 
     # create a list of dependent variables and set up a dictionary to hold their derivatives
     #    dependentVars = G2mv.GetDependentVars()
@@ -6242,7 +6253,7 @@ def getPowderProfileDerv(args):
         if "B" not in histType:
             shl = max(parmDict[hfx + "SH/L"], 0.002)
         Ka2 = False
-        if hfx + "Lam1" in (parmDict.keys()):
+        if hfx + "Lam1" in (parmDict):
             wave = parmDict[hfx + "Lam1"]
             Ka2 = True
             lamRatio = (
@@ -6963,14 +6974,7 @@ def getPowderProfileDerv(args):
 
 
 def UserRejectHKL(ref, im, userReject):
-    if (
-        ref[5 + im] / ref[6 + im] < userReject["minF/sig"]
-        or userReject["MaxD"] < ref[4 + im] > userReject["MinD"]
-        or ref[11 + im] < userReject["MinExt"]
-        or abs(ref[5 + im] - ref[7 + im]) / ref[6 + im] > userReject["MaxDF/F"]
-    ):
-        return False
-    return True
+    return not (ref[5 + im] / ref[6 + im] < userReject["minF/sig"] or userReject["MaxD"] < ref[4 + im] > userReject["MinD"] or ref[11 + im] < userReject["MinExt"] or abs(ref[5 + im] - ref[7 + im]) / ref[6 + im] > userReject["MaxDF/F"])
 
 
 def dervHKLF(Histogram, Phase, calcControls, varylist, parmDict, rigidbodyDict):
@@ -7318,7 +7322,7 @@ def HessRefine(
                         depDerivDict = depDerivs
                     else:
                         dMdvh += dmdv
-                        for key in depDerivs.keys():
+                        for key in depDerivs:
                             depDerivDict[key] += depDerivs[key]
                 MPpool.terminate()
             else:
@@ -7780,7 +7784,7 @@ def errRefine(
     if dlg:
         if hasattr(dlg, "SetHistogram"):
             dlg.SetHistogram(-1, "overall")
-        GoOn = dlg.Update(int(Rw), newmsg="%s%8.3f%s" % ("All data Rw =", Rw, "%"))
+        GoOn = dlg.Update(int(Rw), newmsg="{}{:8.3f}{}".format("All data Rw =", Rw, "%"))
         if type(GoOn) is tuple:
             if not GoOn[0]:
                 parmDict["saved values"] = values

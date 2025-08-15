@@ -266,8 +266,10 @@ class marFrame:
     :param dict IFD: ?
     """
 
-    def __init__(self, File, byteOrd="<", IFD={}):
+    def __init__(self, File, byteOrd="<", IFD=None):
         # simple TIFF header info
+        if IFD is None:
+            IFD = {}
         self.TIFFsizeX = IFD[256][2][0]
         self.TIFFsizeY = IFD[257][2][0]
         self.TIFFbitDepth = IFD[258][2][0]
@@ -703,12 +705,8 @@ class marFrame:
         myHead = []
         for curAttr in dir(self):
             if (
-                curAttr != "__doc__"
-                and curAttr != "__init__"
-                and curAttr != "__module__"
-                and curAttr != "outputHead"
-                and curAttr != "image"
+                curAttr not in ("__doc__", "__init__", "__module__", "outputHead", "image")
             ):
                 if "__" not in str(curAttr):
-                    myHead.append(" %s = %s" % (curAttr, getattr(self, curAttr)))
+                    myHead.append(f" {curAttr} = {getattr(self, curAttr)}")
         return myHead

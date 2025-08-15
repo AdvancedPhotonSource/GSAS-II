@@ -5,7 +5,9 @@ import numpy as np
 
 from .. import GSASIIobj as G2obj
 
-npsind = lambda x: np.sin(np.pi * x / 180.0)
+
+def npsind(x):
+    return np.sin(np.pi * x / 180.0)
 
 
 class Rigaku_txtReaderClass(G2obj.ImportReflectometryData):
@@ -207,7 +209,7 @@ class Rigaku_rasReaderClass(G2obj.ImportReflectometryData):
                 fp.close()
                 return False
             nBanks = 0
-            for i, line in enumerate(fp):
+            for _i, line in enumerate(fp):
                 if line[:-1] == "*RAS_HEADER_START":
                     nBanks += 1
                     self.dnames.append(

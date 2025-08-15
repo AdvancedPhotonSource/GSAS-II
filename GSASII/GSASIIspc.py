@@ -20,8 +20,10 @@ try:
 except ImportError:
     print("binary load error: pyspg not found")
 
-npsind = lambda x: np.sin(x * np.pi / 180.0)
-npcosd = lambda x: np.cos(x * np.pi / 180.0)
+def npsind(x):
+    return np.sin(x * np.pi / 180.0)
+def npcosd(x):
+    return np.cos(x * np.pi / 180.0)
 nxs = np.newaxis
 DEBUG = False
 
@@ -304,9 +306,7 @@ def SpcGroup(SGSymbol):
         "3",
         "23",
     ]:
-        SGData["SGSpin"] = lattSpin + [
-            1,
-        ]
+        SGData["SGSpin"] = [*lattSpin, 1]
     elif SGData["SGPtGrp"] in [
         "-1",
         "2",
@@ -323,10 +323,7 @@ def SpcGroup(SGSymbol):
         "432",
         "-43m",
     ]:
-        SGData["SGSpin"] = lattSpin + [
-            1,
-            1,
-        ]
+        SGData["SGSpin"] = [*lattSpin, 1, 1]
     elif SGData["SGPtGrp"] in [
         "2/m",
         "4/m",
@@ -344,18 +341,9 @@ def SpcGroup(SGSymbol):
         "m3",
         "m3m",
     ]:
-        SGData["SGSpin"] = lattSpin + [
-            1,
-            1,
-            1,
-        ]
+        SGData["SGSpin"] = [*lattSpin, 1, 1, 1]
     else:  #'222'-'mmm','4/mmm','6/mmm'
-        SGData["SGSpin"] = lattSpin + [
-            1,
-            1,
-            1,
-            1,
-        ]
+        SGData["SGSpin"] = [*lattSpin, 1, 1, 1, 1]
     return SGInfo[-1], SGData
 
 
@@ -413,7 +401,7 @@ def SGpolar(SGData):
     POL = ("", "x", "y", "x y", "z", "x z", "y z", "xyz", "111")
     NP = [1, 2, 4]
     NPZ = [0, 1]
-    for M, T in SGData["SGOps"]:
+    for M, _T in SGData["SGOps"]:
         for i in range(3):
             if M[i][i] <= 0.0:
                 NP[i] = 0
@@ -466,6 +454,7 @@ def SGPtGroup(SGData):
                 return "m2m", [1, -1, 1]
             elif SGData["SGPolax"] == "z":
                 return "mm2", [1, 1, -1]
+            return None
         else:
             return "mmm", [1, 1, 1]
     elif SGData["SGLaue"] == "4/m":  # tetragonal
@@ -557,6 +546,7 @@ def SGPtGroup(SGData):
                 return "432", []
         else:
             return "m3m", []
+    return None
 
 
 def SGPrint(SGData, AddInv=False):
@@ -1294,9 +1284,7 @@ def MagSGSym(SGData):  # needs to use SGPtGrp not SGLaue!
         SGData["GenSym"] = [
             "1",
         ] + SGData["GenSym"]
-        SGData["SGSpin"] = [
-            1,
-        ] + list(SGData["SGSpin"])
+        SGData["SGSpin"] = [1, *list(SGData["SGSpin"])]
     if len(SGData["SGSpin"]) < len(SGData["GenSym"]):
         SGData["SGSpin"] = [
             1,
@@ -1520,7 +1508,7 @@ def fixMono(SpGrp):
     Flds = SpGrp.split()
     if len(Flds) == 4:
         if Flds[2] != "1":
-            return "%s %s" % (Flds[0], Flds[2])
+            return f"{Flds[0]} {Flds[2]}"
         else:
             return None
     else:
@@ -1537,7 +1525,7 @@ def Trans2Text(Trans):
             if row[i]:
                 if Fld and row[i] > 0.0:
                     Fld += "+"
-                Fld += "%3.1f" % (row[i]) + cells[i]
+                Fld += f"{row[i]:3.1f}" + cells[i]
         Text += Fld
         Text += ","
         Text = Text.replace("1.0", "").replace(".0", "").replace("0.5", "1/2")
@@ -1847,9 +1835,7 @@ def GenMagOps(SGData):
                         SpnFlp[ieqv] *= FlpSpn[iunq]
                     except IndexError:
                         print("index error: ", Nsym, ieqv, Nfl, iunq)
-                        FlpSpn = FlpSpn + [
-                            1,
-                        ]
+                        FlpSpn = [*FlpSpn, 1]
                         SpnFlp[ieqv] *= FlpSpn[iunq]
         if SGData["SGLaue"] == "6/m":  # treat special as algorithm above fails
             if SGData["SGSpin"] == [1, -1, 1]:
@@ -1865,9 +1851,7 @@ def GenMagOps(SGData):
                         (SpnFlp, SpnFlp[:Nsym] * FlpSpn[Nfl + incv - 1])
                     )
                 except IndexError:
-                    FlpSpn = [
-                        1,
-                    ] + FlpSpn
+                    FlpSpn = [1, *FlpSpn]
                     SpnFlp = np.concatenate(
                         (SpnFlp, SpnFlp[:Nsym] * FlpSpn[Nfl + incv - 1])
                     )
@@ -1961,7 +1945,7 @@ def SSpcGroup(SGData, SSymbol):
                             [OpD[0], OpD[1] + np.array([0.0, 0.0, 0.0, 0.5])]
                         )
                     #                    print '    ('+OpCtxt.replace(' ','')+' = ? '+OpDtxt.replace(' ','')+')'
-                    if OpCtxt == OpDtxt or OpCtxt == OpDtxt2:
+                    if OpCtxt in (OpDtxt, OpDtxt2):
                         continue
                     if OpCtxt.split(",")[:3] == OpDtxt.split(",")[:3]:
                         if "t" not in OpDtxt:
@@ -1979,6 +1963,7 @@ def SSpcGroup(SGData, SSymbol):
         for a in ["a", "b", "g"]:
             if a in modSym:
                 return a
+        return None
 
     def genSSGOps():
         SSGOps = SSGData["SSGOps"][:]
@@ -2308,7 +2293,7 @@ def SSpcGroup(SGData, SSymbol):
             SSCen[icen, 3] = 0.5
     SSGData["SSGCen"] = SSCen % 1.0
     SSGData["SSGOps"] = []
-    for iop, op in enumerate(SGData["SGOps"]):
+    for _iop, op in enumerate(SGData["SGOps"]):
         T = np.zeros(4)
         ssop = np.zeros((4, 4))
         ssop[:3, :3] = op[0]
@@ -2802,9 +2787,9 @@ def SSGModCheck(Vec, modSymb, newMod=True):
         return [
             Q if mod not in ["a", "b", "g"] and vec != Q else vec
             for [vec, mod, Q] in zip(newVec, modSymb, modQ, strict=False)
-        ], [True if mod in ["a", "b", "g"] else False for mod in modSymb]
+        ], [mod in ["a", "b", "g"] for mod in modSymb]
     else:
-        return Vec, [True if mod in ["a", "b", "g"] else False for mod in modSymb]
+        return Vec, [mod in ["a", "b", "g"] for mod in modSymb]
 
 
 def SSMT2text(Opr):
@@ -2859,7 +2844,7 @@ def SSLatt2text(SSGCen):
     for vec in SSGCen:
         lattTxt += " "
         for item in vec:
-            lattTxt += "%s," % (lattDir[int(item * 12)])
+            lattTxt += f"{lattDir[int(item * 12)]},"
         lattTxt = lattTxt.rstrip(",")
         lattTxt += ";"
     lattTxt = lattTxt.rstrip(";").lstrip(" ")
@@ -2959,7 +2944,7 @@ def Opposite(XYZ, toler=0.0002):
     return new
 
 
-def GenAtom(XYZ, SGData, All=False, Uij=[], Move=True):
+def GenAtom(XYZ, SGData, All=False, Uij=None, Move=True):
     """
     Generates the equivalent positions for a specified coordinate and space group
 
@@ -2980,6 +2965,8 @@ def GenAtom(XYZ, SGData, All=False, Uij=[], Move=True):
       * +1/-1 for spin inversion of operator - empty if not magnetic
 
     """
+    if Uij is None:
+        Uij = []
     XYZEquiv = []
     UijEquiv = []
     Idup = []
@@ -3069,7 +3056,7 @@ def GenHKLf(HKL, SGData):
     Ops = SGData["SGOps"]
     OpM = np.array([op[0] for op in Ops], order="F")
     OpT = np.array([op[1] for op in Ops])
-    Cen = np.array([cen for cen in SGData["SGCen"]], order="F")
+    Cen = np.array(list(SGData["SGCen"]), order="F")
 
     Nuniq, Uniq, iabsnt, mulp = pyspg.genhklpy(
         hklf, len(Ops), OpM, OpT, SGData["SGInv"], len(Cen), Cen
@@ -3085,46 +3072,19 @@ def checkSSLaue(HKL, SGData, SSGData):
     h, k, l, m = HKL
     if SGData["SGLaue"] == "2/m":
         if SGData["SGUniq"] == "a":
-            if ("a" in SSGData["modSymb"] and h == 0 and m < 0) or (
-                "b" in SSGData["modSymb"] and k == 0 and l == 0 and m < 0
-            ):
-                return False
-            else:
-                return True
+            return not (("a" in SSGData["modSymb"] and h == 0 and m < 0) or ("b" in SSGData["modSymb"] and k == 0 and l == 0 and m < 0))
         elif SGData["SGUniq"] == "b":
-            if ("b" in SSGData["modSymb"] and k == 0 and m < 0) or (
-                "a" in SSGData["modSymb"] and h == 0 and l == 0 and m < 0
-            ):
-                return False
-            else:
-                return True
+            return not (("b" in SSGData["modSymb"] and k == 0 and m < 0) or ("a" in SSGData["modSymb"] and h == 0 and l == 0 and m < 0))
         elif SGData["SGUniq"] == "c":
-            if ("g" in SSGData["modSymb"] and l == 0 and m < 0) or (
-                "a" in SSGData["modSymb"] and h == 0 and k == 0 and m < 0
-            ):
-                return False
-            else:
-                return True
+            return not (("g" in SSGData["modSymb"] and l == 0 and m < 0) or ("a" in SSGData["modSymb"] and h == 0 and k == 0 and m < 0))
     elif SGData["SGLaue"] == "mmm":
         if "a" in SSGData["modSymb"]:
-            if h == 0 and m < 0:
-                return False
-            else:
-                return True
+            return not (h == 0 and m < 0)
         elif "b" in SSGData["modSymb"]:
-            if k == 0 and m < 0:
-                return False
-            else:
-                return True
+            return not (k == 0 and m < 0)
         elif "g" in SSGData["modSymb"]:
-            if l == 0 and m < 0:
-                return False
-            else:
-                return True
-    elif l == 0 and m < 0:
-        return False
-    else:
-        return True
+            return not (l == 0 and m < 0)
+    return not (l == 0 and m < 0)
 
 
 def checkHKLextc(HKL, SGData):
@@ -3192,9 +3152,7 @@ def checkMagextc(HKL, SGData):
     if np.allclose(Psum, np.zeros(3), atol=1.0e-3):
         return True
     else:
-        if np.abs(np.inner(HKL, Psum)) > 1.0e-3:
-            return True
-        return False
+        return np.abs(np.inner(HKL, Psum)) > 0.001
 
 
 def checkSSextc(HKL, SSGData):
@@ -3583,15 +3541,12 @@ NXUPQsym = {
     "m(110)": (18, 19, 6, 18),
     "m(120)": (24, 27, 15, 24),
     "m(210)": (25, 26, 16, 25),
-    "m(+-0)": (17, 20, 7, 17),
     "2(001)": (14, 16, 14, 23),
     "2(100)": (12, 25, 12, 26),
     "2(010)": (13, 28, 13, 27),
     "2(110)": (6, 19, 6, 18),
     "2(120)": (15, 27, 15, 24),
     "2(210)": (16, 26, 16, 25),
-    "2(+-0)": (7, 20, 7, 17),
-    "-1": (1, 29, 28, 0),
 }
 
 CSxinel = [
@@ -5062,9 +5017,9 @@ def SytSym(XYZ, SGData):
     #    for xeqv in Xeqv:   print(xeqv)
     IRT = PackRot(SGData["SGOps"])
     L = -1
-    for ic, cen in enumerate(icen[:Ncen]):
+    for _ic, _cen in enumerate(icen[:Ncen]):
         for invers in range(int(inv)):
-            for io, ops in enumerate(SGData["SGOps"]):
+            for io, _ops in enumerate(SGData["SGOps"]):
                 irtx = (1 - 2 * invers) * IRT[io]
                 L += 1
                 if not Xeqv[L][1]:
@@ -5131,7 +5086,7 @@ def MagSytSym(SytSym, dupDir, SGData):
             MagSytSym += "(" + SplitSytSym[1]
         return MagSytSym
     if len(dupDir) == 1:
-        return list(dupDir.keys())[0]
+        return next(iter(dupDir.keys()))
 
     if "2/m" in SytSym:  # done I think; last 2wo might be not needed
         ops = {
@@ -5471,8 +5426,10 @@ def ElemPosition(SGData):
     return SymElements
 
 
-def ApplyStringOps(A, SGData, X, Uij=[]):
+def ApplyStringOps(A, SGData, X, Uij=None):
     "Needs a doc string"
+    if Uij is None:
+        Uij = []
     SGOps = SGData["SGOps"]
     SGCen = SGData["SGCen"]
     Ax = A.split("+")

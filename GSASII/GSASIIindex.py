@@ -15,22 +15,37 @@ from . import GSASIImath as G2mth
 from . import GSASIIpwd as G2pwd
 from . import GSASIIspc as G2spc
 
+
 # trig functions in degrees
-sind = lambda x: math.sin(x * math.pi / 180.0)
-asind = lambda x: 180.0 * math.asin(x) / math.pi
-tand = lambda x: math.tan(x * math.pi / 180.0)
-atand = lambda x: 180.0 * math.atan(x) / math.pi
-atan2d = lambda y, x: 180.0 * math.atan2(y, x) / math.pi
-cosd = lambda x: math.cos(x * math.pi / 180.0)
-acosd = lambda x: 180.0 * math.acos(x) / math.pi
-rdsq2d = lambda x, p: round(1.0 / math.sqrt(x), p)
+def sind(x):
+    return math.sin(x * math.pi / 180.0)
+def asind(x):
+    return 180.0 * math.asin(x) / math.pi
+def tand(x):
+    return math.tan(x * math.pi / 180.0)
+def atand(x):
+    return 180.0 * math.atan(x) / math.pi
+def atan2d(y, x):
+    return 180.0 * math.atan2(y, x) / math.pi
+def cosd(x):
+    return math.cos(x * math.pi / 180.0)
+def acosd(x):
+    return 180.0 * math.acos(x) / math.pi
+def rdsq2d(x, p):
+    return round(1.0 / math.sqrt(x), p)
 # numpy versions
-npsind = lambda x: np.sin(x * np.pi / 180.0)
-npasind = lambda x: 180.0 * np.arcsin(x) / math.pi
-npcosd = lambda x: np.cos(x * math.pi / 180.0)
-nptand = lambda x: np.tan(x * math.pi / 180.0)
-npatand = lambda x: 180.0 * np.arctan(x) / np.pi
-npatan2d = lambda y, x: 180.0 * np.arctan2(y, x) / np.pi
+def npsind(x):
+    return np.sin(x * np.pi / 180.0)
+def npasind(x):
+    return 180.0 * np.arcsin(x) / math.pi
+def npcosd(x):
+    return np.cos(x * math.pi / 180.0)
+def nptand(x):
+    return np.tan(x * math.pi / 180.0)
+def npatand(x):
+    return 180.0 * np.arctan(x) / np.pi
+def npatan2d(y, x):
+    return 180.0 * np.arctan2(y, x) / np.pi
 try:  # fails on doc build
     rpd = np.pi / 180.0
 except TypeError:
@@ -187,7 +202,7 @@ def calc_M20(peaks, HKL, ifX20=True):
     else:
         d20 = peak[7]
         Nobs20 = len(peaks)
-    for N20, hkl in enumerate(HKL):
+    for _N20, hkl in enumerate(HKL):
         if hkl[3] < d20:
             break
     Q20 = 1.0 / d20**2
@@ -217,7 +232,7 @@ def calc_M20SS(peaks, HKL):
     else:
         d20 = peak[8]
         Nobs20 = len(peaks)
-    for N20, hkl in enumerate(HKL):
+    for _N20, hkl in enumerate(HKL):
         if hkl[4] < d20:
             break
     Q20 = 1.0 / d20**2
@@ -332,7 +347,7 @@ def findMV(peaks, controls, ssopt, Inst, dlg):
     SSGData = G2spc.SSpcGroup(SGData, ssopt["ssSymb"])[1]
     A = G2lat.cell2A(controls[6:12])
     Z = controls[1]
-    Vref = [True if x in ssopt["ssSymb"] else False for x in ["a", "b", "g"]]
+    Vref = [x in ssopt["ssSymb"] for x in ["a", "b", "g"]]
     values = []
     ranges = []
     dT = 0.01  # seems to be a good choice
@@ -397,10 +412,7 @@ def IndexPeaks(peaks, HKL):
     N = len(HKL)
     if N == 0:
         return False, peaks
-    hklds = list(np.array(HKL).T[3]) + [
-        1000.0,
-        0.0,
-    ]
+    hklds = [*list(np.array(HKL).T[3]), 1000.0, 0.0]
     hklds.sort()  # ascending sort - upper bound at end
     for ipk, peak in enumerate(peaks):
         peak[4:7] = [0, 0, 0]  # clear old indexing
@@ -452,10 +464,7 @@ def IndexSSPeaks(peaks, HKL):
         Peaks = np.insert(Peaks, 7, np.zeros_like(Peaks.T[0]), axis=1)
     #        for peak in Peaks:
     #            peak.insert(7,0)
-    hklds = list(np.array(HKL).T[4]) + [
-        1000.0,
-        0.0,
-    ]
+    hklds = [*list(np.array(HKL).T[4]), 1000.0, 0.0]
     hklds.sort()  # ascending sort - upper bound at end
     hklmax = [0, 0, 0, 0]
     for ipk, peak in enumerate(Peaks):
@@ -1303,7 +1312,7 @@ def DoIndexPeaks(
     Nobs = len(peaks) - notUse
     zero, ncno = controls[1:3]
     ncMax = Nobs * ncno
-    print("%s %8.3f %8.3f" % ("lattice parameter range = ", amin, amax))
+    print("{} {:8.3f} {:8.3f}".format("lattice parameter range = ", amin, amax))
     print(
         "%s %.4f %s %d %s %d"
         % ("Zero =", zero, "Nc/No max =", ncno, " Max Nc =", ncno * Nobs)
@@ -1466,8 +1475,7 @@ def DoIndexPeaks(
                     pass
             #                dlg.Destroy()
             print(
-                "%s%s%s%s"
-                % (
+                "{}{}{}{}".format(
                     "finished cell search for ",
                     bravaisNames[ibrav],
                     ", elapsed time = ",

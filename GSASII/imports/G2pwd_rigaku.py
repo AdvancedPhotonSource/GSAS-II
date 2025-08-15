@@ -200,7 +200,7 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
                 fp.close()
                 return False
             nBanks = 0
-            for i, line in enumerate(fp):
+            for _i, line in enumerate(fp):
                 if line[:-1] == "*RAS_HEADER_START":
                     nBanks += 1
                     self.dnames.append(

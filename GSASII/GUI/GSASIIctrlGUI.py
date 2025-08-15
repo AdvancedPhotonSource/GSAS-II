@@ -50,9 +50,8 @@ except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
 
-if sys.version_info[0] >= 3:
-    unicode = str
-    basestring = str
+unicode = str
+basestring = str
 
 # Define a short names for convenience
 DULL_YELLOW = (230, 230, 190)
@@ -397,12 +396,16 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         OnLeave=None,
         typeHint=None,
         CIFinput=False,
-        exclLim=[False, False],
-        OnLeaveArgs={},
+        exclLim=None,
+        OnLeaveArgs=None,
         ASCIIonly=False,
         **kw,
     ):
         # save passed values needed outside __init__
+        if OnLeaveArgs is None:
+            OnLeaveArgs = {}
+        if exclLim is None:
+            exclLim = [False, False]
         self.result = loc
         self.key = key
         self.nDig = nDig
@@ -437,7 +440,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.type = int
         elif "float" in str(type(val)):
             self.type = float
-        elif isinstance(val, str) or isinstance(val, unicode):
+        elif isinstance(val, str | unicode):
             self.type = str
         elif val is None:
             raise Exception(
@@ -572,7 +575,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 else:
                     val = int(val)
             except:
-                if self.CIFinput and (val == "?" or val == "."):
+                if self.CIFinput and (val in ("?", ".")):
                     pass
                 else:
                     self.invalid = True
@@ -584,7 +587,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     val = val.replace(",", ".")
                 val = float(val)  # convert strings, if needed
             except:
-                if self.CIFinput and (val == "?" or val == "."):
+                if self.CIFinput and (val in ("?", ".")):
                     pass
                 else:
                     self.invalid = True
@@ -627,7 +630,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if key in [wx.WXK_BACK, wx.WXK_DELETE]:
             if self.Validator:
                 wx.CallAfter(self.Validator.TestValid, self)
-        if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
+        if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
             self._onLoseFocus(None)
         if event:
             event.Skip()
@@ -669,7 +672,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             elif self.type is float:
                 val = float(val)
         except:
-            if self.CIFinput and (val == "?" or val == "."):
+            if self.CIFinput and (val in ("?", ".")):
                 pass
             else:
                 self.invalid = True
@@ -839,13 +842,15 @@ class NumberValidator(wxValidator):
         positiveonly=False,
         xmin=None,
         xmax=None,
-        exclLim=[False, False],
+        exclLim=None,
         result=None,
         key=None,
         OKcontrol=None,
         CIFinput=False,
     ):
         "Create the validator"
+        if exclLim is None:
+            exclLim = [False, False]
         wxValidator.__init__(self)
         # save passed parameters
         self.typ = typ
@@ -909,7 +914,7 @@ class NumberValidator(wxValidator):
         tc.invalid = False  # assume valid
         if self.CIFinput:
             val = tc.GetValue().strip()
-            if val == "?" or val == ".":
+            if val in ("?", "."):
                 self.result[self.key] = val
                 return
         try:
@@ -927,10 +932,10 @@ class NumberValidator(wxValidator):
             else:
                 tc.invalid = True
                 return
-        if self.xmax != None:
+        if self.xmax is not None:
             if (val >= self.xmax and self.exclLim[1]) or val > self.xmax:
                 tc.invalid = True
-        if self.xmin != None:
+        if self.xmin is not None:
             if val <= self.xmin and self.exclLim[0]:
                 tc.invalid = True
             elif val < self.xmin:
@@ -987,7 +992,7 @@ class NumberValidator(wxValidator):
         """
         key = event.GetKeyCode()
         tc = self.GetWindow()
-        if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
+        if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
             if tc.invalid:
                 self.CheckInput(True)
             else:
@@ -1047,6 +1052,7 @@ class ASCIIValidator(wxValidator):
         return ASCIIValidator(result=self.result, key=self.key)
         tc = self.GetWindow()
         tc.invalid = False  # make sure the validity flag is defined in parent
+        return None
 
     def TransferToWindow(self):
         "Needed by validator, strange, but required component"
@@ -1076,7 +1082,7 @@ class ASCIIValidator(wxValidator):
         """
         key = event.GetKeyCode()
         tc = self.GetWindow()
-        if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
+        if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
             self.TestValid(tc)
             if event:
                 event.Skip()
@@ -1141,7 +1147,7 @@ def G2SliderWidget(
     xmax,
     iscale,
     onChange=None,
-    onChangeArgs=[],
+    onChangeArgs=None,
     sizer=None,
     nDig=None,
     size=(50, 20),
@@ -1180,6 +1186,8 @@ def G2SliderWidget(
     :returns: returns a wx.BoxSizer containing the widgets
     """
 
+    if onChangeArgs is None:
+        onChangeArgs = []
     def onScale(event):
         loc[key] = vScale.GetScaledValue()
         wx.TextCtrl.SetValue(vEntry, str(loc[key]))  # will not trigger onValSet
@@ -1235,7 +1243,7 @@ def G2SpinWidget(
     xmin=None,
     xmax=None,
     onChange=None,
-    onChangeArgs=[],
+    onChangeArgs=None,
     hsize=35,
 ):
     """A customized combination of a wx.SpinButton and a validated
@@ -1270,6 +1278,8 @@ def G2SpinWidget(
     :returns: returns a wx.BoxSizer containing the widgets
     """
 
+    if onChangeArgs is None:
+        onChangeArgs = []
     def _onSpin(event):
         Obj = event.GetEventObject()
         loc[key] += Obj.GetValue()  # +1 or -1
@@ -1648,7 +1658,7 @@ class G2CheckBox(wx.CheckBox):
         self.loc = loc
         self.key = key
         self.OnChange = OnChange
-        self.SetValue(self.loc[self.key] == True)
+        self.SetValue(self.loc[self.key] is True)
         self.Bind(wx.EVT_CHECKBOX, self._OnCheckBox)
 
     def _OnCheckBox(self, event):
@@ -1720,8 +1730,8 @@ def CallScrolledMultiEditor(
     parent,
     dictlst,
     elemlst,
-    prelbl=[],
-    postlbl=[],
+    prelbl=None,
+    postlbl=None,
     title="Edit items",
     header="",
     size=(300, 250),
@@ -1736,6 +1746,10 @@ def CallScrolledMultiEditor(
       with the system menu or the Cancel button.
 
     """
+    if postlbl is None:
+        postlbl = []
+    if prelbl is None:
+        prelbl = []
     dlg = ScrolledMultiEditor(
         parent,
         dictlst,
@@ -1846,20 +1860,34 @@ class ScrolledMultiEditor(wx.Dialog):
         parent,
         dictlst,
         elemlst,
-        prelbl=[],
-        postlbl=[],
+        prelbl=None,
+        postlbl=None,
         title="Edit items",
         header="",
         size=(300, 250),
         CopyButton=False,
         ASCIIonly=False,
-        minvals=[],
-        maxvals=[],
-        sizevals=[],
-        checkdictlst=[],
-        checkelemlst=[],
+        minvals=None,
+        maxvals=None,
+        sizevals=None,
+        checkdictlst=None,
+        checkelemlst=None,
         checklabel="",
     ):
+        if checkelemlst is None:
+            checkelemlst = []
+        if checkdictlst is None:
+            checkdictlst = []
+        if sizevals is None:
+            sizevals = []
+        if maxvals is None:
+            maxvals = []
+        if minvals is None:
+            minvals = []
+        if postlbl is None:
+            postlbl = []
+        if prelbl is None:
+            prelbl = []
         if len(dictlst) != len(elemlst):
             raise Exception(
                 "ScrolledMultiEditor error: len(dictlst) != len(elemlst) "
@@ -2095,11 +2123,15 @@ class G2MultiChoiceDialog(wx.Dialog):
         toggle=True,
         monoFont=False,
         filterBox=True,
-        extraOpts={},
-        selected=[],
+        extraOpts=None,
+        selected=None,
         **kw,
     ):
         # process keyword parameters, notably style
+        if selected is None:
+            selected = []
+        if extraOpts is None:
+            extraOpts = {}
         options = {
             "size": (320, 310),  # default Frame keywords
             "style": wx.DEFAULT_DIALOG_STYLE
@@ -2410,9 +2442,11 @@ class G2MultiChoiceWindow(wx.BoxSizer):
         monoFont=False,
         filterBox=True,
         OnChange=None,
-        OnChangeArgs=[],
+        OnChangeArgs=None,
         helpText=None,
     ):
+        if OnChangeArgs is None:
+            OnChangeArgs = []
         self.SelectList = SelectList
         self.ChoiceList = [
             "%4d) %s" % (i, item) for i, item in enumerate(ChoiceList)
@@ -3138,7 +3172,7 @@ def ShowScrolledInfo(
         btnsizer.Add(btn)
     else:
         for b in buttonlist:
-            if isinstance(b, (list, tuple)):
+            if isinstance(b, list | tuple):
                 btn = wx.Button(dlg, wx.ID_ANY, b[0])
                 btn.Bind(wx.EVT_BUTTON, b[1])
             else:
@@ -3427,7 +3461,9 @@ class SingleFloatDialog(wx.Dialog):
 
     """
 
-    def __init__(self, parent, title, prompt, value, limits=[0.0, 1.0], fmt="%.5g"):
+    def __init__(self, parent, title, prompt, value, limits=None, fmt="%.5g"):
+        if limits is None:
+            limits = [0.0, 1.0]
         wx.Dialog.__init__(
             self,
             parent,
@@ -3524,7 +3560,9 @@ class SingleIntDialog(SingleFloatDialog):
 
     """
 
-    def __init__(self, parent, title, prompt, value, limits=[None, None]):
+    def __init__(self, parent, title, prompt, value, limits=None):
+        if limits is None:
+            limits = [None, None]
         SingleFloatDialog.__init__(
             self, parent, title, prompt, value, limits=limits, format="%d"
         )
@@ -3613,15 +3651,15 @@ class MultiDataDialog(wx.Dialog):
         title,
         prompts,
         values,
-        limits=[
-            [0.0, 1.0],
-        ],
+        limits=None,
         testfxns=None,
-        formats=[
-            "%.5g",
-        ],
+        formats=None,
         header=None,
     ):
+        if formats is None:
+            formats = ["%.5g"]
+        if limits is None:
+            limits = [[0.0, 1.0]]
         wx.Dialog.__init__(
             self,
             parent,
@@ -3693,7 +3731,7 @@ class MultiDataDialog(wx.Dialog):
                     else:
                         Obj.SetBackgroundColour(wx.YELLOW)
                         Obj.SetForegroundColour("red")
-                    Obj.SetValue("%s" % (val))
+                    Obj.SetValue(f"{val}")
                 self.values[tid][idl] = Obj.GetValue()
             elif "bool" in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
@@ -3706,7 +3744,7 @@ class MultiDataDialog(wx.Dialog):
                 except ValueError:
                     val = self.values[tid]
                 self.values[tid] = val
-                Obj.SetValue("%s" % (val))
+                Obj.SetValue(f"{val}")
             elif "testfxn" in fmt:
                 tid, x, testfxn = Indx[Obj][:3]
                 val = Obj.GetValue()
@@ -3721,7 +3759,7 @@ class MultiDataDialog(wx.Dialog):
                 else:
                     Obj.SetBackgroundColour(wx.YELLOW)
                     Obj.SetForegroundColour("red")
-                Obj.SetValue("%s" % (val))
+                Obj.SetValue(f"{val}")
             elif "choice" in fmt:
                 self.values[Indx[Obj][0]] = Obj.GetValue()
 
@@ -3766,12 +3804,12 @@ class MultiDataDialog(wx.Dialog):
                         listItem.Bind(wx.EVT_COMBOBOX, OnValItem)
                     elif "testfxn" in item:
                         listItem = wx.TextCtrl(
-                            self.panel, value="%s" % (value), style=wx.TE_PROCESS_ENTER
+                            self.panel, value=f"{value}", style=wx.TE_PROCESS_ENTER
                         )
                         Indx[listItem] = [tid, idl, limits, testfxn, fmt]
                         listItem.Bind(wx.EVT_TEXT_ENTER, OnValItem)
                         listItem.Bind(wx.EVT_KILL_FOCUS, OnValItem)
-                        listItem.SetValue("%s" % value[idl])
+                        listItem.SetValue(f"{value[idl]}")
                     elif "choice" in item:
                         style = wx.CB_READONLY | wx.CB_DROPDOWN
                         listItem = wx.ComboBox(
@@ -3788,11 +3826,11 @@ class MultiDataDialog(wx.Dialog):
                 valItem.SetValue(value)
             elif "str" in fmt:
                 valItem = wx.TextCtrl(
-                    self.panel, value="%s" % (value), style=wx.TE_PROCESS_ENTER
+                    self.panel, value=f"{value}", style=wx.TE_PROCESS_ENTER
                 )
                 valItem.Bind(wx.EVT_TEXT_ENTER, OnValItem)
                 valItem.Bind(wx.EVT_KILL_FOCUS, OnValItem)
-                valItem.SetValue("%s" % value)
+                valItem.SetValue(f"{value}")
             elif "edit" in fmt:
                 valItem = wx.ComboBox(
                     self.panel, value=limits[0], choices=limits, style=wx.CB_DROPDOWN
@@ -3809,7 +3847,7 @@ class MultiDataDialog(wx.Dialog):
                 valItem.Bind(wx.EVT_COMBOBOX, OnValItem)
             elif "testfxn" in fmt:
                 valItem = wx.TextCtrl(
-                    self.panel, value="%s" % (value), style=wx.TE_PROCESS_ENTER
+                    self.panel, value=f"{value}", style=wx.TE_PROCESS_ENTER
                 )
                 valItem.Bind(wx.EVT_TEXT_ENTER, OnValItem)
                 valItem.Bind(wx.EVT_KILL_FOCUS, OnValItem)
@@ -3917,7 +3955,7 @@ class SingleStringDialog(wx.Dialog):
                 wx.ID_ANY,
                 value,
                 size=size,
-                choices=[value] + choices,
+                choices=[value, *choices],
                 style=wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER,
             )
         elif size[1] > 20:
@@ -3984,12 +4022,14 @@ class MultiStringDialog(wx.Dialog):
         parent,
         title,
         prompts,
-        values=[],
+        values=None,
         size=-1,
         addRows=False,
         hlp=None,
         lbl=None,
     ):
+        if values is None:
+            values = []
         wx.Dialog.__init__(
             self,
             parent,
@@ -4065,10 +4105,7 @@ class MultiStringDialog(wx.Dialog):
 
         :returns: True if the user pressed OK; False if the User pressed Cancel
         """
-        if self.ShowModal() == wx.ID_OK:
-            return True
-        else:
-            return False
+        return self.ShowModal() == wx.ID_OK
 
     def GetValues(self):
         """Use this method to get the value(s) entered by the user
@@ -4193,7 +4230,7 @@ class G2ColumnIDDialog(wx.Dialog):
         self.sel = []
         self.mod = []
         Indx = {}
-        for icol, col in enumerate(self.ColumnData):
+        for icol, _col in enumerate(self.ColumnData):
             colSizer = wx.BoxSizer(wx.VERTICAL)
             colSizer.Add(wx.StaticText(panel, label=" Column #%d Select:" % (icol)))
             self.sel.append(
@@ -4347,9 +4384,7 @@ class G2HistoDataDialog(wx.Dialog):
         self.sel = []
         self.mod = []
         Indx = {}
-        for item in [
-            "Histogram",
-        ] + self.ParmList:
+        for item in ["Histogram", *self.ParmList]:
             dataSizer.Add(wx.StaticText(panel, -1, label=" %10s " % (item)), 0, WACV)
         for irow, name in enumerate(self.HistoList):
             dataSizer.Add(
@@ -4455,6 +4490,7 @@ def ItemSelector(
         dlg.Destroy()
         return None
     dlg.Destroy()
+    return None
 
 
 ########################################################
@@ -4811,7 +4847,7 @@ class OrderBox(wxscroll.ScrolledPanel):
         for nam in keylist:
             posdict = self.posdict[nam]
             if posdict.keys():
-                self.maxcol = max(self.maxcol, max(posdict))
+                self.maxcol = max(self.maxcol, *posdict)
         wxscroll.ScrolledPanel.__init__(self, parent, wx.ID_ANY, *arg, **kw)
         self.GBsizer = wx.GridBagSizer(4, 4)
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
@@ -4877,8 +4913,8 @@ class OrderBox(wxscroll.ScrolledPanel):
                 for mtcol in range(newcol + 1, self.maxcol + 2):
                     if mtcol not in self.posdict[key]:
                         break
-                l1 = range(mtcol, newcol, -1) + [newcol]
-                l = range(mtcol - 1, newcol - 1, -1) + [col]
+                l1 = [*range(mtcol, newcol, -1), newcol]
+                l = [*range(mtcol - 1, newcol - 1, -1), col]
             else:
                 l1 = [newcol]
                 l = [col]
@@ -5284,8 +5320,10 @@ class SGMessageBox(wx.Dialog):
         title,
         text,
         table,
-        spins=[],
+        spins=None,
     ):
+        if spins is None:
+            spins = []
         wx.Dialog.__init__(
             self,
             parent,
@@ -5302,7 +5340,7 @@ class SGMessageBox(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((0, 10))
         for line in text:
-            mainSizer.Add(wx.StaticText(self.panel, label="     %s     " % (line)))
+            mainSizer.Add(wx.StaticText(self.panel, label=f"     {line}     "))
         ncol = self.table[0].count(",") + 1
         tableSizer = wx.FlexGridSizer(0, 2 * ncol + 3, 0, 0)
         j = 0
@@ -5321,9 +5359,9 @@ class SGMessageBox(wx.Dialog):
             flds = flds.replace(" ", "").split(",")
             for i, fld in enumerate(flds):
                 if i < ncol - 1:
-                    text = wx.StaticText(self.panel, label="%s, " % (fld))
+                    text = wx.StaticText(self.panel, label=f"{fld}, ")
                 else:
-                    text = wx.StaticText(self.panel, label="%s" % (fld))
+                    text = wx.StaticText(self.panel, label=f"{fld}")
                 if len(self.spins) and self.spins[j] < 0:
                     text.SetForegroundColour("Red")
                 tableSizer.Add(text, 0, WACV | wx.ALIGN_RIGHT)
@@ -5332,7 +5370,7 @@ class SGMessageBox(wx.Dialog):
             j += 1
 
         def OnPrintOps(event):
-            print(" Symmetry operations for %s:" % self.text[0].split(":")[1])
+            print(" Symmetry operations for {}:".format(self.text[0].split(":")[1]))
             for iop, opText in enumerate(
                 G2spc.TextOps(self.text, self.table, reverse=True)
             ):
@@ -5405,7 +5443,7 @@ class SGMagSpinBox(wx.Dialog):
         self.spins = spins
         self.ifGray = ifGray
         self.PrintTable = [
-            " Magnetic symmetry operations for %s:" % self.text[0].split(":")[1],
+            " Magnetic symmetry operations for {}:".format(self.text[0].split(":")[1]),
         ]
         self.panel = wxscroll.ScrolledPanel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5416,7 +5454,7 @@ class SGMagSpinBox(wx.Dialog):
         if len(Cents) > 1:
             cents = self.text[-1].split(";")
         for line in self.text:
-            mainSizer.Add(wx.StaticText(self.panel, label="     %s     " % (line)), 0)
+            mainSizer.Add(wx.StaticText(self.panel, label=f"     {line}     "), 0)
             if "equivalent" in line:
                 break
         ncol = self.table[0].count(",") + 2
@@ -5437,7 +5475,7 @@ class SGMagSpinBox(wx.Dialog):
                 if ic:
                     if cent:
                         cent = cent.strip(" (").strip(")+\n")
-                    label = "      for (%s)+" % (cent)
+                    label = f"      for ({cent})+"
                     if ng:  # test for gray operators
                         label += "1'"
                     mainSizer.Add(wx.StaticText(self.panel, label=label), 0)
@@ -5452,12 +5490,12 @@ class SGMagSpinBox(wx.Dialog):
                     flds = flds.replace(" ", "").split(",")
                     for i, fld in enumerate(flds):
                         if i < ncol - 1:
-                            text = wx.StaticText(self.panel, label="%s, " % (fld))
+                            text = wx.StaticText(self.panel, label=f"{fld}, ")
                         else:
-                            text = wx.StaticText(self.panel, label="%s " % (fld))
+                            text = wx.StaticText(self.panel, label=f"{fld} ")
                         tableSizer.Add(text, 0, WACV)
                     text = wx.StaticText(
-                        self.panel, label=" (%s) " % (self.names[j % Nnames])
+                        self.panel, label=f" ({self.names[j % Nnames]}) "
                     )
                     try:
                         if self.spins[j] < 0:
@@ -5683,7 +5721,7 @@ class ShowLSParms(wx.Dialog):
         else:
             self.frozenList = []
         # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
-        self.parmNames = sorted(list(parmDict.keys()))
+        self.parmNames = sorted(parmDict.keys())
         if "2" in platform.python_version_tuple()[0]:
             basestr = basestring
         else:
@@ -5699,30 +5737,26 @@ class ShowLSParms(wx.Dialog):
         if len(globNames):
             self.choiceDict["Global"] = G2obj.SortVariables(globNames)
         self.globVars = sorted(
-            list(
-                set(
+            set(
                     [
                         " ",
                     ]
                     + [item[2] for item in splitNames if not item[0] and not item[1]]
                 )
-            )
         )
         hisNames = [":".join(item) for item in splitNames if not item[0] and item[1]]
         self.choiceDict["Histogram"] = G2obj.SortVariables(hisNames)
-        self.hisNums = sorted(list(set([int(item.split(":")[1]) for item in hisNames])))
+        self.hisNums = sorted({int(item.split(":")[1]) for item in hisNames})
         self.hisNums = [
             "*",
         ] + [str(item) for item in self.hisNums]
         self.hisVars = sorted(
-            list(
-                set(
+            set(
                     [
                         " ",
                     ]
                     + [item[2] for item in splitNames if not item[0]]
                 )
-            )
         )
         phasNames = [
             ":".join(item)
@@ -5731,16 +5765,12 @@ class ShowLSParms(wx.Dialog):
         ]
         self.choiceDict["Phase"] = G2obj.SortVariables(phasNames)
         self.phasNums = sorted(
-            [
-                "*",
-            ]
-            + list(set([item.split(":")[0] for item in phasNames]))
+            ["*", *list({item.split(":")[0] for item in phasNames})]
         )
         if "" in self.phasNums:
             self.phasNums.remove("")
         self.phasVars = sorted(
-            list(
-                set(
+            set(
                     [
                         " ",
                     ]
@@ -5750,19 +5780,16 @@ class ShowLSParms(wx.Dialog):
                         if not item[1] and not item[2].startswith("is")
                     ]
                 )
-            )
         )
         hapNames = [":".join(item) for item in splitNames if item[0] and item[1]]
         self.choiceDict["Phase/Histo"] = G2obj.SortVariables(hapNames)
         self.hapVars = sorted(
-            list(
-                set(
+            set(
                     [
                         " ",
                     ]
                     + [item[2] for item in splitNames if item[0] and item[1]]
                 )
-            )
         )
 
         self.hisNum = "*"
@@ -6387,7 +6414,7 @@ class VirtualVarBox(wx.ListCtrl):
             except TypeError:
                 value = str(self.parmWin.parmDict[name]) + " -?"  # unexpected
             return value
-        elif col == 4 or col == 5:  # min/max value
+        elif col in (4, 5):  # min/max value
             if col == 4:  # min
                 d = self.parmWin.Controls["parmMinDict"]
             else:
@@ -6605,7 +6632,9 @@ class GSGrid(wg.Grid):
 class Table(wg.GridTableBase):
     """Basic data table for use with GSgrid"""
 
-    def __init__(self, data=[], rowLabels=None, colLabels=None, types=None):
+    def __init__(self, data=None, rowLabels=None, colLabels=None, types=None):
+        if data is None:
+            data = []
         wg.GridTableBase.__init__(self)
         self.colLabels = colLabels
         self.rowLabels = rowLabels
@@ -6619,10 +6648,7 @@ class Table(wg.GridTableBase):
     def CanGetValueAs(self, row, col, typeName):
         if self.dataTypes:
             colType = self.dataTypes[col].split(":")[0]
-            if typeName == colType:
-                return True
-            else:
-                return False
+            return typeName == colType
         else:
             return False
 
@@ -6641,6 +6667,7 @@ class Table(wg.GridTableBase):
     def GetColLabelValue(self, col):
         if self.colLabels:
             return self.colLabels[col]
+        return None
 
     def GetData(self):
         data = []
@@ -6660,6 +6687,7 @@ class Table(wg.GridTableBase):
     def GetRowLabelValue(self, row):
         if self.rowLabels:
             return self.rowLabels[row]
+        return None
 
     def GetColValues(self, col):
         data = []
@@ -6690,7 +6718,7 @@ class Table(wg.GridTableBase):
             return None
 
     def InsertRows(self, pos, rows):
-        for row in range(rows):
+        for _row in range(rows):
             self.data.insert(pos, [])
             pos += 1
 
@@ -7006,7 +7034,9 @@ class MyHelp(wx.Menu):
 
     """
 
-    def __init__(self, frame, includeTree=False, morehelpitems=[]):
+    def __init__(self, frame, includeTree=False, morehelpitems=None):
+        if morehelpitems is None:
+            morehelpitems = []
         wx.Menu.__init__(self, "")
         self.HelpById = {}
         self.frame = frame
@@ -7619,6 +7649,7 @@ def BlockSelector(
     else:
         return None
     dlg.Destroy()
+    return None
 
 
 def MultipleBlockSelector(
@@ -7635,7 +7666,7 @@ def MultipleBlockSelector(
     :returns: a list of the selected blocks
     """
     dlg = wx.MultiChoiceDialog(
-        ParentFrame, title, header, ChoiceList + ["Select all"], wx.CHOICEDLG_STYLE
+        ParentFrame, title, header, [*ChoiceList, "Select all"], wx.CHOICEDLG_STYLE
     )
     if size:
         dlg.SetMinSize(size)
@@ -7766,8 +7797,10 @@ def PhaseSelector(
     return BlockSelector(ChoiceList, ParentFrame, title, size, header)
 
 
-def XformMatrix(panel, Trans, Uvec, Vvec, OnLeave=None, OnLeaveArgs={}):
+def XformMatrix(panel, Trans, Uvec, Vvec, OnLeave=None, OnLeaveArgs=None):
     """Display a transformation matrix and two vectors"""
+    if OnLeaveArgs is None:
+        OnLeaveArgs = {}
     Trmat = wx.FlexGridSizer(4, 6, 0, 0)
     Trmat.Add((10, 0), 0)
     Trmat.Add(wx.StaticText(panel, label="      M"), wx.ALIGN_CENTER)
@@ -7777,7 +7810,7 @@ def XformMatrix(panel, Trans, Uvec, Vvec, OnLeave=None, OnLeaveArgs={}):
     Trmat.Add(wx.StaticText(panel, label="      V"), wx.ALIGN_CENTER)
 
     for iy, line in enumerate(Trans):
-        for ix, val in enumerate(line):
+        for ix, _val in enumerate(line):
             item = ValidatedTxtCtrl(
                 panel,
                 line,
@@ -8124,7 +8157,8 @@ class SelectConfigSetting(wx.Dialog):
     def onSelExec(self, event):
         "Select an executable file from a menu"
         var = self.choice[0]
-        is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+        def is_exe(fpath):
+            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
         defD = defF = ""
         if self.vars[var][1] is not None and os.path.exists(self.vars[var][1]):
             defD, defF = os.path.split(self.vars[var][1])
@@ -8226,7 +8260,7 @@ class SelectConfigSetting(wx.Dialog):
             rb.Bind(wx.EVT_RADIOBOX, self.OnBoolSelect)
             self.varsizer.Add(rb, 0, wx.ALIGN_CENTRE | wx.ALL, 5)
         else:
-            if var.endswith("_directory") or var.endswith("_location"):
+            if var.endswith(("_directory", "_location")):
                 btn = wx.Button(self, wx.ID_ANY, "Select from file dialog...")
                 btn.Bind(wx.EVT_BUTTON, self.onSelDir)
                 sz = (400, -1)
@@ -8247,11 +8281,7 @@ class SelectConfigSetting(wx.Dialog):
                 if self.vars[var][1] is None:
                     self.vars[var][1] = "Paired"
                 colorList = sorted(
-                    [m for m in mpl.cm.datad.keys()]
-                    + [
-                        "GSPaired",
-                        "GSPaired_r",
-                    ],
+                    [*list(mpl.cm.datad.keys()), "GSPaired", "GSPaired_r"],
                     key=lambda s: s.lower(),
                 )  # if not m.endswith("_r")
                 self.colSel = wx.ComboBox(
@@ -8266,7 +8296,7 @@ class SelectConfigSetting(wx.Dialog):
                 from . import ImageCalibrants as calFile
 
                 calList = sorted(
-                    [m for m in calFile.Calibrants.keys()], key=lambda s: s.lower()
+                    calFile.Calibrants.keys(), key=lambda s: s.lower()
                 )
                 self.colSel = EnumSelector(
                     self, self.vars[var], 1, calList, OnChange=self.OnChange
@@ -8371,7 +8401,8 @@ class RefinementProgress(wx.ProgressDialog):
 
 
 ################################################################################
-fmtRw = lambda value: f"{float(value):.2f}"
+def fmtRw(value):
+    return f"{float(value):.2f}"
 
 
 class G2RefinementProgress(wx.Dialog):
@@ -8935,7 +8966,8 @@ class gitVersionSelector(wx.Dialog):
         :returns: a multi-line string
         """
         # import datetime
-        fmtdate = lambda c: f"{c.committed_datetime:%d-%b-%Y %H:%M}"
+        def fmtdate(c):
+            return f"{c.committed_datetime:%d-%b-%Y %H:%M}"
         commit = self.g2repo.commit(commit)  # converts a hash, if supplied
         msg = f"git {commit.hexsha[:10]} from {fmtdate(commit)}"
         tags = self.g2repo.git.tag("--points-at", commit).split("\n")
@@ -9399,6 +9431,7 @@ class OpenGitTutorial(wx.Dialog):
             if selection == -1:
                 return None
             return selection
+        return None
 
     def SelectDownloadLoc(self, event):
         """Select a download location,
@@ -9878,9 +9911,9 @@ def AutoLoadFiles(G2frame, FileTyp="pwd"):
             i for i in G2fil.LoadImportRoutines("pwd", "Powder_Data") if i.scriptable
         ]
         fmtchoices = [p.longFormatName for p in fileReaders]
-        Settings["fmt"] = [i for i, v in enumerate(fmtchoices) if "fxye" in v][0]
+        Settings["fmt"] = next(i for i, v in enumerate(fmtchoices) if "fxye" in v)
     else:
-        fileReaders = [i for i in G2frame.ImportPDFReaderlist]
+        fileReaders = list(G2frame.ImportPDFReaderlist)
         #                       if i.scriptable]
         fmtchoices = [p.longFormatName for p in fileReaders]
         Settings["fmt"] = 0
@@ -10580,12 +10613,14 @@ class gpxFileSelector(wx.Dialog):
             return f"{delta / 60:.1f} minutes"
 
 
-def setColorButton(parent, array, key, callback=None, callbackArgs=[]):
+def setColorButton(parent, array, key, callback=None, callbackArgs=None):
     """Define a button for setting colors
     This bypasses the bug in wx4.1.x in ColourSelect
     """
     import wx.lib.colourselect as wcs
 
+    if callbackArgs is None:
+        callbackArgs = []
     def OnColor(event):
         array[key] = list(event.GetValue())[:3]
         if callback:
@@ -10729,6 +10764,7 @@ def NISTlatUse(msgonly=False):
     if msgonly:
         return msg
     wx.MessageBox(msg, caption="Using NIST*LATTICE", style=wx.ICON_INFORMATION)
+    return None
 
 
 def Load2Cells(G2frame, phase):
@@ -11369,6 +11405,7 @@ def gitAskSave(G2frame, regressmsg, cmds):
         if ans:
             cmds += [G2frame.GSASprojectfile]
         return False
+    return None
 
 
 def gitSelectVersion(G2frame):
@@ -11935,7 +11972,7 @@ def SelectPkgInstall(event):
         "Install packages?",
         msg,
         [("package", 120, 0), ("needed by", 300, 0)],
-        [i for i in choices.items()],
+        list(choices.items()),
     )
     if sel is None:
         return
@@ -12067,7 +12104,7 @@ if __name__ == "__main__":
             "all have moment",
             "max unique",
         ],
-        values=kvec + [False, "", True, "", False, 100],
+        values=[*kvec, False, "", True, "", False, 100],
         limits=[
             ["0", "0", "0"],
             ["0", "0", "0"],

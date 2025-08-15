@@ -330,9 +330,9 @@ class MakeTopWindow(wx.Frame):
         self.histListOrg = []
         self.projList = []
         self.hFilter.Enable(
-            not self.getMode() == "Phase"
+            self.getMode() != "Phase"
         )  # Filter disabled for Phase display
-        for fil, mode in self.fileList:
+        for fil, _mode in self.fileList:
             self.loadFile(fil)
         self.doneLoad()
         self.SetModeMenu()
@@ -482,7 +482,7 @@ be included for the files beginning with "B" only.
             wx.EndBusyCursor()
 
         datum = None
-        for i, data in enumerate(histLoadList):
+        for _i, data in enumerate(histLoadList):
             datum = data[0]
             datum[0] = G2obj.MakeUniqueLabel(datum[0], self.histList)
             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root, text=datum[0])

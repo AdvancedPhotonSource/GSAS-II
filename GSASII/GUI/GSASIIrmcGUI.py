@@ -48,13 +48,20 @@ except:
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
 # trig functions in degrees
-sind = lambda x: np.sin(x * np.pi / 180.0)
-tand = lambda x: np.tan(x * np.pi / 180.0)
-cosd = lambda x: np.cos(x * np.pi / 180.0)
-asind = lambda x: 180.0 * np.arcsin(x) / np.pi
-acosd = lambda x: 180.0 * np.arccos(x) / np.pi
-atan2d = lambda x, y: 180.0 * np.arctan2(y, x) / np.pi
-is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+def sind(x):
+    return np.sin(x * np.pi / 180.0)
+def tand(x):
+    return np.tan(x * np.pi / 180.0)
+def cosd(x):
+    return np.cos(x * np.pi / 180.0)
+def asind(x):
+    return 180.0 * np.arcsin(x) / np.pi
+def acosd(x):
+    return 180.0 * np.arccos(x) / np.pi
+def atan2d(x, y):
+    return 180.0 * np.arctan2(y, x) / np.pi
+def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 sqt2 = np.sqrt(2.0)
 sqt3 = np.sqrt(3.0)
 
@@ -107,7 +114,7 @@ def UpdateRMC(G2frame, data):
             atSeq = RMCPdict["atSeq"]
             lenA = len(atSeq)
             for pair in [
-                [" %s-%s" % (atSeq[i], atSeq[j]) for j in range(i, lenA)]
+                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)]
                 for i in range(lenA)
             ]:
                 #                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
@@ -116,7 +123,7 @@ def UpdateRMC(G2frame, data):
             if RMCPdict["useBVS"]:
                 BVSpairs = []
                 for pair in [
-                    [" %s-%s" % (atSeq[i], atSeq[j]) for j in range(i + 1, lenA)]
+                    [f" {atSeq[i]}-{atSeq[j]}" for j in range(i + 1, lenA)]
                     for i in range(lenA)
                 ]:
                     BVSpairs += pair
@@ -282,7 +289,7 @@ def UpdateRMC(G2frame, data):
         axes = ["X", "Y", "Z"]
         for i, ax in enumerate(axes):
             superSizer.Add(
-                wx.StaticText(G2frame.FRMC, label=" %s-axis: " % ax), 0, WACV
+                wx.StaticText(G2frame.FRMC, label=f" {ax}-axis: "), 0, WACV
             )
             superSizer.Add(
                 G2G.ValidatedTxtCtrl(
@@ -366,8 +373,7 @@ def UpdateRMC(G2frame, data):
                     start += 1
                     if start > 500:  # absurd number of header lines!
                         wx.MessageBox(
-                            "WARNING: %s has bad data at end;\n RMCProfile may fail to read it"
-                            % fileItem[0],
+                            f"WARNING: {fileItem[0]} has bad data at end;\n RMCProfile may fail to read it",
                             style=wx.ICON_ERROR,
                         )
                         break
@@ -923,7 +929,7 @@ def UpdateRMC(G2frame, data):
             Pairs = []
             for pair in [
                 [
-                    " %s-%s" % (atSeq[i], atSeq[j])
+                    f" {atSeq[i]}-{atSeq[j]}"
                     for j in range(i, lenA)
                     if "Va" not in atSeq[j]
                 ]
@@ -997,7 +1003,7 @@ def UpdateRMC(G2frame, data):
             axes = ["X", "Y", "Z"]
             for i, ax in enumerate(axes):
                 superSizer.Add(
-                    wx.StaticText(G2frame.FRMC, label=" %s-axis: " % ax), 0, WACV
+                    wx.StaticText(G2frame.FRMC, label=f" {ax}-axis: "), 0, WACV
                 )
                 superSizer.Add(
                     G2G.ValidatedTxtCtrl(
@@ -1022,7 +1028,7 @@ def UpdateRMC(G2frame, data):
             axes = ["X", "Y", "Z"]
             for i, ax in enumerate(axes):
                 boxSizer.Add(
-                    wx.StaticText(G2frame.FRMC, label=" %s-axis: " % ax), 0, WACV
+                    wx.StaticText(G2frame.FRMC, label=f" {ax}-axis: "), 0, WACV
                 )
                 boxSizer.Add(
                     G2G.ValidatedTxtCtrl(
@@ -1205,7 +1211,7 @@ def UpdateRMC(G2frame, data):
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
         if ifBox:
             lineSizer.Add(
-                wx.StaticText(G2frame.FRMC, label=" Big box dimensions, %s:" % Angstr),
+                wx.StaticText(G2frame.FRMC, label=f" Big box dimensions, {Angstr}:"),
                 0,
                 WACV,
             )
@@ -1433,7 +1439,7 @@ def UpdateRMC(G2frame, data):
                 grpadd.index = i
                 grpBox.Add(grpadd, 0, WACV)
                 msg = " Contains atoms: "
-                for i, n in enumerate(g):
+                for i, _n in enumerate(g):
                     if i + 1 == len(g):
                         msg += " && "
                     elif i > 0:
@@ -1547,7 +1553,7 @@ def UpdateRMC(G2frame, data):
             Pairs = {}
             #                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
             for pairs in [
-                [" %s-%s" % (atSeq[i], atSeq[j]) for j in range(i, lenA)]
+                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)]
                 for i in range(lenA)
             ]:
                 for pair in pairs:
@@ -1568,7 +1574,7 @@ def UpdateRMC(G2frame, data):
             Pairs = {}
             #                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
             for pairs in [
-                [" %s-%s" % (atSeq[i], atSeq[j]) for j in range(i, lenA)]
+                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)]
                 for i in range(lenA)
             ]:
                 for pair in pairs:
@@ -1577,7 +1583,7 @@ def UpdateRMC(G2frame, data):
             if lenA > 1:
                 #                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
                 for pair in [
-                    [" %s-%s" % (atSeq[i], atSeq[j]) for j in range(i, lenA)]
+                    [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)]
                     for i in range(lenA)
                 ]:
                     BVSpairs += pair
@@ -1763,14 +1769,14 @@ def UpdateRMC(G2frame, data):
             def OnResetBVS(event):
                 Obj = event.GetEventObject()
                 pair = Indx[Obj.GetId()]
-                pId = [key for key in RMCPdict["BVS"]].index(pair) + 1
+                pId = list(RMCPdict["BVS"]).index(pair) + 1
                 nId = len(RMCPdict["BVS"]) + 1
                 dist = G2elem.GetBVS(pair, RMCPdict["atSeq"], RMCPdict["Oxid"])
                 if dist:
                     RMCPdict["BVS"][pair] = [dist, 0.37, 3.0]
                     bvsCh = bvsSizer.GetChildren()
                     addr = 2 * nId + pId
-                    bvsCh[addr].Window.SetValue("%6.3f" % dist)
+                    bvsCh[addr].Window.SetValue(f"{dist:6.3f}")
                     bvsCh[addr + nId].Window.SetValue("0.37")
                     bvsCh[addr + 2 * nId].Window.SetValue("3.00")
 

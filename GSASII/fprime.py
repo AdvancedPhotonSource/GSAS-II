@@ -189,7 +189,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             id=wxID_SPINTEXT1,
             parent=panel,
             size=wx.Size(100, 20),
-            value="%6.4f" % (self.Wave),
+            value=f"{self.Wave:6.4f}",
             style=wx.TE_PROCESS_ENTER,
         )
         selSizer.Add(self.SpinText1, 0)
@@ -202,7 +202,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             id=wxID_SPINTEXT2,
             parent=panel,
             size=wx.Size(100, 20),
-            value="%7.4f" % (self.Energy),
+            value=f"{self.Energy:7.4f}",
             style=wx.TE_PROCESS_ENTER,
         )
         selSizer.Add(self.SpinText2, 0)
@@ -431,8 +431,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         if self.FPPS:
             for i, Fpps in enumerate(self.FPPS):
                 Color = colors[i % 6]
-                Ymin = min(Ymin, min(Fpps[2]), min(Fpps[3]))
-                Ymax = max(Ymax, max(Fpps[2]), max(Fpps[3]))
+                Ymin = min(Ymin, *Fpps[2], *Fpps[3])
+                Ymax = max(Ymax, *Fpps[2], *Fpps[3])
                 fppsP1 = np.array(Fpps[1])
                 fppsP2 = np.array(Fpps[2])
                 fppsP3 = np.array(Fpps[3])
@@ -454,8 +454,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         if self.ifWave:
             if self.Norm:
                 self.bx.set_title(
-                    "%s%s%6.4f%s"
-                    % (
+                    "{}{}{:6.4f}{}".format(
                         "Normalized form factors (",
                         r"$\lambda=$",
                         self.Wave,
@@ -466,14 +465,13 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 )
             else:
                 self.bx.set_title(
-                    "%s%s%6.4f%s"
-                    % ("Form factors (", r"$\lambda=$", self.Wave, r"$\AA)$"),
+                    "{}{}{:6.4f}{}".format("Form factors (", r"$\lambda=$", self.Wave, r"$\AA)$"),
                     x=0,
                     ha="left",
                 )
         else:
             self.bx.set_title(
-                "%s%6.2f%s" % ("Form factors  (E =", self.Energy, "keV)"),
+                "{}{:6.2f}{}".format("Form factors  (E =", self.Energy, "keV)"),
                 x=0,
                 ha="left",
             )
@@ -567,13 +565,12 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             Wave = min(max(Wave, self.Wmin), self.Wmax)
             if event.inaxes == self.ax:
                 self.parent.G2plotNB.status.SetStatusText(
-                    "Wavelength: %.4f, Energy: %.3f, f'%s: %.3f"
-                    % (Wave, self.Kev / Wave, 'f"', ypos),
+                    "Wavelength: {:.4f}, Energy: {:.3f}, f'{}: {:.3f}".format(Wave, self.Kev / Wave, 'f"', ypos),
                     1,
                 )
             elif event.inaxes == self.bx:
                 self.parent.G2plotNB.status.SetStatusText(
-                    "%s: %.4f, f,f+f': %.3f" % (self.bxlabel, xpos, ypos), 1
+                    f"{self.bxlabel}: {xpos:.4f}, f,f+f': {ypos:.3f}", 1
                 )
         if self.linePicked:
             self.SetWaveEnergy(Wave)
@@ -596,8 +593,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Energy = round(self.Energy, 4)
         E = self.Energy
         DE = E * self.Eres  # smear by defined source resolution
-        self.SpinText1.SetValue("%6.4f" % (self.Wave))
-        self.SpinText2.SetValue("%7.4f" % (self.Energy))
+        self.SpinText1.SetValue(f"{self.Wave:6.4f}")
+        self.SpinText2.SetValue(f"{self.Energy:7.4f}")
         self.SpinText1.Update()
         self.SpinText2.Update()
         if self.ifWave:
@@ -632,7 +629,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     "not valid",
                 )
             else:
-                Text += "%s\t%s%6.3f   \t%s%6.3f  \t%s%10.2f %s\n" % (
+                Text += "{}\t{}{:6.3f}   \t{}{:6.3f}  \t{}{:10.2f} {}\n".format(
                     "Element= " + str(Els),
                     " f'=",
                     (r1[0] + r2[0]) / 2.0,
@@ -704,8 +701,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Wave = round(self.Wave, 4)
             self.slider1.SetRange(int(1000.0 * self.Wmin), int(1000.0 * self.Wmax))
             self.slider1.SetValue(int(1000.0 * self.Wave))
-            self.SpinText1.SetValue("%6.4f" % (self.Wave))
-            self.SpinText2.SetValue("%7.4f" % (self.Energy))
+            self.SpinText1.SetValue(f"{self.Wave:6.4f}")
+            self.SpinText2.SetValue(f"{self.Energy:7.4f}")
         else:
             self.ifWave = False
             self.NewFPPlot = True
@@ -714,8 +711,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Energy = round(self.Energy, 4)
             self.slider1.SetRange(int(1000.0 * Emin), int(1000.0 * Emax))
             self.slider1.SetValue(int(1000.0 * self.Energy))
-            self.SpinText1.SetValue("%6.4f" % (self.Wave))
-            self.SpinText2.SetValue("%7.4f" % (self.Energy))
+            self.SpinText1.SetValue(f"{self.Wave:6.4f}")
+            self.SpinText2.SetValue(f"{self.Energy:7.4f}")
         self.CalcFPPS()
         self.UpDateFPlot(self.Wave, rePlot=False)
 

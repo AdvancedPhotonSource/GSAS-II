@@ -20,7 +20,7 @@ class Rigaku_ReaderClass(G2obj.ImportImage):
         """Test by checking if the file size makes sense."""
         fileSize = os.stat(filename).st_size
         Npix = (fileSize - 6000) / 2
-        if Npix == 9000000 or Npix == 2250000 or Npix == 36000000:
+        if Npix in (9000000, 2250000, 36000000):
             return True
         return False  # not valid size
 
@@ -46,7 +46,7 @@ def GetRigaku(filename, imageOnly=False):
         "Rigaku R-Axis IV detector data",
     ]
     image = np.array(ar.array("H", File.read(fileSize - 6000)), dtype=np.int32)
-    print("%s %s" % (fileSize, str(image.shape)))
+    print(f"{fileSize} {image.shape!s}")
     print(head)
     if Npix == 9000000:
         sizexy = [3000, 3000]

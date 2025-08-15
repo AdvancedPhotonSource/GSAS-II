@@ -115,17 +115,15 @@ DetMode = "BBpoint"
 
 def SetCu2Wave():
     """Set the parameters to the two-line Cu K alpha 1+2 spectrum"""
-    parmDict["wave"] = {i: v for i, v in enumerate((1.5405925, 1.5443873))}
-    parmDict["int"] = {i: v for i, v in enumerate((0.653817, 0.346183))}
-    parmDict["lwidth"] = {i: v for i, v in enumerate((0.501844, 0.626579))}
+    parmDict["wave"] = dict(enumerate((1.5405925, 1.5443873)))
+    parmDict["int"] = dict(enumerate((0.653817, 0.346183)))
+    parmDict["lwidth"] = dict(enumerate((0.501844, 0.626579)))
 
 
 def SetCu6wave():
     """Set the emission parameters to the NIST six-line Cu K alpha spectrum"""
     # values from Marcus Mendenhall from atan_windowed_FP_profile.py
-    parmDict["wave"] = {
-        i: v
-        for i, v in enumerate(
+    parmDict["wave"] = dict(enumerate(
             (
                 1.5405925,
                 1.5443873,
@@ -134,11 +132,8 @@ def SetCu6wave():
                 1.53471,
                 1.53382,
             )
-        )
-    }
-    parmDict["int"] = {
-        i: v
-        for i, v in enumerate(
+        ))
+    parmDict["int"] = dict(enumerate(
             (
                 0.58384351,
                 0.2284605,
@@ -147,11 +142,8 @@ def SetCu6wave():
                 0.0043303,
                 0.00208613,
             )
-        )
-    }
-    parmDict["lwidth"] = {
-        i: v
-        for i, v in enumerate(
+        ))
+    parmDict["lwidth"] = dict(enumerate(
             (
                 0.436,
                 0.487,
@@ -160,8 +152,7 @@ def SetCu6wave():
                 2.93,
                 2.93,
             )
-        )
-    }
+        ))
 
 
 def SetMonoWave():
@@ -390,7 +381,7 @@ def MakeTopasFPASizer(G2frame, FPdlg, SetButtonStatus):
         waveSizer.Add(text, 0, wx.EXPAND)
         if prm not in parmDict:
             parmDict[prm] = {}
-        for i in parmDict["wave"].keys():
+        for i in parmDict["wave"]:
             if i not in parmDict[prm]:
                 parmDict[prm][i] = defVal
             if prm == "wave":
@@ -433,7 +424,7 @@ def MakeTopasFPASizer(G2frame, FPdlg, SetButtonStatus):
     btnsizer.Add(detBtn1, (0, 1))
     detBtn1.Bind(wx.EVT_RADIOBUTTON, _onSetDetBtn)
     detBtn2 = wx.RadioButton(FPdlg, wx.ID_ANY, "PSD")
-    detBtn2.SetValue(not DetMode == "BBpoint")
+    detBtn2.SetValue(DetMode != "BBpoint")
     btnsizer.Add(detBtn2, (1, 1))
     detBtn2.Bind(wx.EVT_RADIOBUTTON, _onSetDetBtn)
     btnsizer.Add((40, -1), (0, 2), (1, 1), wx.ALIGN_CENTER | wx.ALL, 5)

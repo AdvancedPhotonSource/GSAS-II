@@ -55,21 +55,35 @@ except RuntimeError:  # happens during doc builds
     pass
 
 # useful degree trig functions
-sind = lambda x: math.sin(x * math.pi / 180.0)
-cosd = lambda x: math.cos(x * math.pi / 180.0)
-tand = lambda x: math.tan(x * math.pi / 180.0)
-asind = lambda x: 180.0 * math.asin(x) / math.pi
-acosd = lambda x: 180.0 * math.acos(x) / math.pi
-atan2d = lambda x, y: 180.0 * math.atan2(y, x) / math.pi
-atand = lambda x: 180.0 * math.atan(x) / math.pi
+def sind(x):
+    return math.sin(x * math.pi / 180.0)
+def cosd(x):
+    return math.cos(x * math.pi / 180.0)
+def tand(x):
+    return math.tan(x * math.pi / 180.0)
+def asind(x):
+    return 180.0 * math.asin(x) / math.pi
+def acosd(x):
+    return 180.0 * math.acos(x) / math.pi
+def atan2d(x, y):
+    return 180.0 * math.atan2(y, x) / math.pi
+def atand(x):
+    return 180.0 * math.atan(x) / math.pi
 # numpy versions
-npsind = lambda x: np.sin(x * np.pi / 180.0)
-npcosd = lambda x: np.cos(x * np.pi / 180.0)
-nptand = lambda x: np.tan(x * np.pi / 180.0)
-npacosd = lambda x: 180.0 * np.arccos(x) / np.pi
-npasind = lambda x: 180.0 * np.arcsin(x) / np.pi
-npatand = lambda x: 180.0 * np.arctan(x) / np.pi
-npatan2d = lambda x, y: 180.0 * np.arctan2(x, y) / np.pi
+def npsind(x):
+    return np.sin(x * np.pi / 180.0)
+def npcosd(x):
+    return np.cos(x * np.pi / 180.0)
+def nptand(x):
+    return np.tan(x * np.pi / 180.0)
+def npacosd(x):
+    return 180.0 * np.arccos(x) / np.pi
+def npasind(x):
+    return 180.0 * np.arcsin(x) / np.pi
+def npatand(x):
+    return 180.0 * np.arctan(x) / np.pi
+def npatan2d(x, y):
+    return 180.0 * np.arctan2(x, y) / np.pi
 # misc global vars
 Clip_on = GSASIIpath.GetConfigValue("Clip_on", True)
 Gkchisq = chr(0x03C7) + chr(0xB2)
@@ -169,7 +183,7 @@ def PlotPatterns(
     newPlot=False,
     plotType="PWDR",
     data=None,
-    extraKeys=[],
+    extraKeys=None,
     refineMode=False,
     indexFrom="",
 ):
@@ -191,6 +205,8 @@ def PlotPatterns(
       * G2frame.Extinct: used for display of extinct reflections (in blue)
         for generated reflections when "show extinct" is selected.
     """
+    if extraKeys is None:
+        extraKeys = []
     global PlotList, IndxFrom
     IndxFrom = indexFrom
 
@@ -291,7 +307,7 @@ def PlotPatterns(
                 Page.plotStyle["refDelt"] = 0.1 * YmaxS
             newPlot = True
         elif event.key == "S" and "PWDR" in plottype:
-            choice = [m for m in mpl.cm.datad.keys()] + [
+            choice = list(mpl.cm.datad.keys()) + [
                 "GSPaired",
                 "GSPaired_r",
             ]  # if not m.endswith("_r")
@@ -316,7 +332,7 @@ def PlotPatterns(
                 G2frame.Cmax = max(0.0, G2frame.Cmax * 0.8)
             elif Page.plotStyle["Offset"][0] > -100.0:
                 Page.plotStyle["Offset"][0] -= 1.0
-        elif (event.key == "u" or event.key == "d") and G2frame.GPXtree.GetItemText(
+        elif (event.key in ("u", "d")) and G2frame.GPXtree.GetItemText(
             G2frame.PickId
         ) in ["Index Peak List", "Peak List"]:
             # select the next or previous peak and highlight it
@@ -626,13 +642,13 @@ def PlotPatterns(
             if Page.plotStyle["qPlot"] and "PWDR" in plottype:
                 q = xpos
                 if q <= 0:
-                    G2frame.G2plotNB.status.SetStatusText("Q = %9.5f" % q)
+                    G2frame.G2plotNB.status.SetStatusText(f"Q = {q:9.5f}")
                     return
                 try:
                     dsp = 2.0 * np.pi / q
                     xpos = G2lat.Dsp2pos(Parms, 2.0 * np.pi / q)
                 except ValueError:  # avoid bad value in asin beyond upper limit
-                    G2frame.G2plotNB.status.SetStatusText("Q = %9.5f" % q)
+                    G2frame.G2plotNB.status.SetStatusText(f"Q = {q:9.5f}")
                     return
                 if "T" in Parms["Type"][0]:  # TOF
                     dT = Parms["difC"][1] * 2 * np.pi * tolerance / q**2
@@ -652,19 +668,19 @@ def PlotPatterns(
             elif plottype in ["SASD", "REFD"]:
                 q = xpos
                 if q <= 0:
-                    G2frame.G2plotNB.status.SetStatusText("Q = %9.5f" % q)
+                    G2frame.G2plotNB.status.SetStatusText(f"Q = {q:9.5f}")
                     return
                 dsp = 2.0 * np.pi / q
             elif Page.plotStyle["dPlot"]:
                 dsp = xpos
                 if dsp <= 0:
-                    G2frame.G2plotNB.status.SetStatusText("d = %9.5f" % dsp)
+                    G2frame.G2plotNB.status.SetStatusText(f"d = {dsp:9.5f}")
                     return
                 try:
                     q = 2.0 * np.pi / dsp
                     xpos = G2lat.Dsp2pos(Parms, dsp)
                 except ValueError:  # avoid bad value
-                    G2frame.G2plotNB.status.SetStatusText("d = %9.5f" % dsp)
+                    G2frame.G2plotNB.status.SetStatusText(f"d = {dsp:9.5f}")
                     return
                 dT = tolerance * xpos / dsp
             else:
@@ -700,40 +716,20 @@ def PlotPatterns(
                     pass
             elif "T" in Parms["Type"][0]:
                 if Page.plotStyle["sqrtPlot"]:
-                    statLine = "TOF = %9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f" % (
-                        xpos,
-                        dsp,
-                        q,
-                        ypos,
-                    )
+                    statLine = f"TOF = {xpos:9.3f} d={dsp:9.5f} Q={q:9.5f} sqrt(Intensity) ={ypos:9.2f}"
                 else:
-                    statLine = "TOF =%9.3f d=%9.5f Q=%9.5f Intensity =%9.2f" % (
-                        xpos,
-                        dsp,
-                        q,
-                        ypos,
-                    )
+                    statLine = f"TOF ={xpos:9.3f} d={dsp:9.5f} Q={q:9.5f} Intensity ={ypos:9.2f}"
             elif "E" in Parms["Type"][0]:
-                statLine = "Energy =%9.3f d=%9.5f Q=%9.5f sqrt(Intensity) =%9.2f" % (
-                    xpos,
-                    dsp,
-                    q,
-                    ypos,
-                )
+                statLine = f"Energy ={xpos:9.3f} d={dsp:9.5f} Q={q:9.5f} sqrt(Intensity) ={ypos:9.2f}"
             elif "PWDR" in plottype:
                 ytmp = ypos
                 if Page.plotStyle["sqrtPlot"]:
                     ytmp = ypos**2
-                statLine = "2-theta=%.3f d=%.5f Q=%.4f Intensity=%.2f" % (
-                    xpos,
-                    dsp,
-                    q,
-                    ytmp,
-                )
+                statLine = f"2-theta={xpos:.3f} d={dsp:.5f} Q={q:.4f} Intensity={ytmp:.2f}"
             elif plottype == "SASD":
-                statLine = "q =%12.5g Intensity =%12.5g d =%9.1f" % (q, ypos, dsp)
+                statLine = f"q ={q:12.5g} Intensity ={ypos:12.5g} d ={dsp:9.1f}"
             elif plottype == "REFD":
-                statLine = "q =%12.5g Reflectivity =%12.5g d =%9.1f" % (q, ypos, dsp)
+                statLine = f"q ={q:12.5g} Reflectivity ={ypos:12.5g} d ={dsp:9.1f}"
             zoomstat = Page.toolbar.get_zoompan()
             if zoomstat:
                 statLine = "[" + zoomstat + "] " + statLine
@@ -778,7 +774,7 @@ def PlotPatterns(
                             s += "\n"
                         s += fmt.format(*hkl[:n])
             elif G2frame.itemPicked:  # not sure when this will happen
-                s = "%9.5f" % (xpos)
+                s = f"{xpos:9.5f}"
             Page.SetToolTipString(s)
 
         except TypeError:
@@ -1021,7 +1017,7 @@ def PlotPatterns(
             ypos = pick.get_ydata()
             ind = event.ind
             xy = list(
-                list(zip(np.take(xpos, ind), np.take(ypos, ind), strict=False))[0]
+                next(zip(np.take(xpos, ind), np.take(ypos, ind), strict=False))
             )
             # convert from plot units
             xtick = xy[0]  # selected tickmarck pos in 2theta/TOF or d-space (not Q)
@@ -1060,7 +1056,7 @@ def PlotPatterns(
                 # picked a tick mark
                 Page.pickTicknum = Page.phaseList.index(phname)
                 resetlist = []
-                for pId, phase in enumerate(
+                for _pId, phase in enumerate(
                     Page.phaseList
                 ):  # set the tickmarks to a lighter color
                     col = Page.tickDict[phase].get_color()
@@ -1261,7 +1257,7 @@ def PlotPatterns(
                     ytick = (
                         ypos[0] - 3 * (Plot.get_ylim()[1] - Plot.get_ylim()[0]) / 100
                     )
-                    for i, refl in enumerate(Phases[ph]["RefList"][found_indices]):
+                    for _i, refl in enumerate(Phases[ph]["RefList"][found_indices]):
                         key = f"{refl[5 + Super]:.7g}"
                         data[0]["HKLmarkers"][ph][key] = data[0]["HKLmarkers"][ph].get(
                             key, [None, []]
@@ -1298,7 +1294,7 @@ def PlotPatterns(
                     return
                 Page.pickTicknum = Page.phaseList.index(pick)
                 resetlist = []
-                for pId, phase in enumerate(
+                for _pId, phase in enumerate(
                     Page.phaseList
                 ):  # set the tickmarks to a lighter color
                     col = Page.tickDict[phase].get_color()
@@ -1736,7 +1732,7 @@ def PlotPatterns(
             return
 
         if plottingItem not in Histograms:
-            histoList = [i for i in Histograms.keys() if i.startswith("PWDR ")]
+            histoList = [i for i in Histograms if i.startswith("PWDR ")]
             if len(histoList) == 0:
                 print("Skipping plot, no PWDR item found!")
                 return
@@ -2051,7 +2047,7 @@ def PlotPatterns(
         Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         if plottingItem not in Histograms:
             # current plotted item is not in refinement
-            histoList = [i for i in Histograms.keys() if i.startswith("PWDR ")]
+            histoList = [i for i in Histograms if i.startswith("PWDR ")]
             if len(histoList) != 0:
                 plottingItem = histoList[0]
                 G2frame.PatternId = G2gd.GetGPXtreeItemId(
@@ -2265,19 +2261,9 @@ def PlotPatterns(
             del Page.Choice[1]
 
         if not G2frame.SinglePlot:
-            Page.Choice = Page.Choice + [
-                "u/U: offset up/10x",
-                "d/D: offset down/10x",
-                "l: offset left",
-                "r: offset right",
-                "o: reset offset",
-                "F: select data",
-                "/: normalize",
-            ]
+            Page.Choice = [*Page.Choice, "u/U: offset up/10x", "d/D: offset down/10x", "l: offset left", "r: offset right", "o: reset offset", "F: select data", "/: normalize"]
         else:
-            Page.Choice = Page.Choice + [
-                "p: toggle partials (if available)",
-            ]
+            Page.Choice = [*Page.Choice, "p: toggle partials (if available)"]
         if G2frame.SinglePlot:
             Page.Choice += ["v: CSV output of plot"]
     elif plottype in ["SASD", "REFD"]:
@@ -2292,18 +2278,10 @@ def PlotPatterns(
             "+: toggle obs line plot",
         ]
         if not G2frame.SinglePlot:
-            Page.Choice = Page.Choice + [
-                "u: offset up",
-                "d: offset down",
-                "l: offset left",
-                "r: offset right",
-                "o: reset offset",
-            ]
+            Page.Choice = [*Page.Choice, "u: offset up", "d: offset down", "l: offset left", "r: offset right", "o: reset offset"]
 
     for KeyItem in extraKeys:
-        Page.Choice = Page.Choice + [
-            KeyItem[0] + ": " + KeyItem[2],
-        ]
+        Page.Choice = [*Page.Choice, KeyItem[0] + ": " + KeyItem[2]]
     magLineList = []  # null value indicates no magnification
     Page.toolbar.updateActions = None  # no update actions
     G2frame.cid = None
@@ -2418,7 +2396,7 @@ def PlotPatterns(
                     G2gd.GetGPXtreeItemId(G2frame, pid, "Limits")
                 )
             )
-            Temps.append("%.1fK" % SampleList[-1]["Temperature"])
+            Temps.append("{:.1f}K".format(SampleList[-1]["Temperature"]))
         if not G2frame.Contour:
             PlotList.reverse()
             ParmList.reverse()
@@ -2431,14 +2409,14 @@ def PlotPatterns(
         )
     lenX = 0  # length of first histogram, used for contour plots
     Ymax = None
-    for ip, Pattern in enumerate(PlotList):
+    for _ip, Pattern in enumerate(PlotList):
         xye = Pattern[1]
         xye = np.nan_to_num(xye)
         if xye[1] is None:
             continue
         if Ymax is None:
             Ymax = max(xye[1])
-        Ymax = max(Ymax, max(xye[1]))
+        Ymax = max(Ymax, *xye[1])
     if Ymax is None:
         return None  # nothing to plot
     offsetX = Page.plotStyle["Offset"][1]
@@ -3152,7 +3130,7 @@ def PlotPatterns(
                             else:
                                 l.append(pos)
                         if l:
-                            G2plt.Write2csv(fp, ['"peaks"'] + l)
+                            G2plt.Write2csv(fp, ['"peaks"', *l])
                         peaks["LaueFringe"] = peaks.get("LaueFringe", {})
                         l = []
                         for pos in peaks["LaueFringe"].get("satellites", []):
@@ -3163,7 +3141,7 @@ def PlotPatterns(
                             else:
                                 l.append(pos)
                         if l:
-                            G2plt.Write2csv(fp, ['"satellites"'] + l)
+                            G2plt.Write2csv(fp, ['"satellites"', *l])
 
                         G2plt.Write2csv(
                             fp,
@@ -3729,6 +3707,7 @@ def PlotPatterns(
             G2frame.dataWindow.moveDiffCurve.Enable(True)
     if refineMode:
         return refPlotUpdate
+    return None
 
 
 def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
@@ -3790,7 +3769,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
             MPL2rgba = mpcls.to_rgba
         else:
             MPL2rgba = mpcls.ColorConverter().to_rgba
-        for i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):
             lbl = l.get_label()
             if "magline" in lbl:
                 pass
@@ -3974,7 +3953,7 @@ def PublishRietveldPlot(G2frame, Pattern, Plot, Page, reuse=None):
         )
         # ======================================================================
         # plot magnification lines and labels (first, so "under" data)
-        for i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):
             lbl = l.get_label()
             if "magline" not in lbl:
                 continue
@@ -4462,7 +4441,7 @@ in a cmd.exe window to do this.
         legends = []
         zerovals = None
         fontsize = 18 * float(plotOpt["labelSize"]) / 12.0
-        for i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):
             lbl = l.get_label()
             if not plotOpt["Show"].get(lbl[1:], True):
                 continue
@@ -4546,7 +4525,7 @@ X ModifyGraph btLen=5
             zerovals = (Plot.get_xlim()[0], Plot.get_xlim()[1])
         fp.write("X //  ***   add line at y=zero\n")
         fp.write("WAVES /D/O ZeroX, Zero\nBEGIN\n")
-        fp.write(" {0} 0.0\n {1} 0.0\n".format(*zerovals))
+        fp.write(" {} 0.0\n {} 0.0\n".format(*zerovals))
         fp.write("END\nX AppendToGraph Zero vs ZeroX\n")
         if "sqrt" in Plot.yaxis.get_label().get_text():
             ylabel = "\u221aIntensity"
@@ -4554,11 +4533,11 @@ X ModifyGraph btLen=5
             ylabel = "Intensity"
         fp.write(
             """X //  ***   add axis labels and position them
-X Label left "{1}"
-X Label Res_left "{2}"
-X Label bottom "{0}"
+X Label left "{}"
+X Label Res_left "{}"
+X Label bottom "{}"
 X ModifyGraph lblPosMode=0,lblPos(Res_left)=84
-""".format("2Θ", ylabel, "∆/σ")
+""".format(ylabel, "∆/σ", "2Θ")
         )
         fp.write(
             """X //  ***   set display limits.
@@ -4596,7 +4575,7 @@ X SetAxis Res_bot {0}, {1}
         fp.write("X //  ***   End modify how data are displayed ****\n")
         # loop over reflections
         ticknum = 0
-        for i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):
             lbl = l.get_label()
             if not plotOpt["Show"].get(lbl, True):
                 continue
@@ -4628,7 +4607,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
 
         # plot magnification lines and labels
         j = 0
-        for i, l in enumerate(Plot.lines):
+        for _i, l in enumerate(Plot.lines):
             lbl = l.get_label()
             if "magline" not in lbl:
                 continue
@@ -5118,7 +5097,7 @@ def CopyRietveldPlot(G2frame, Pattern, Plot, Page, figure, phaseList):
     legLbl = []
     legLine = []
     # get the obs/calc... & magnification lines and xfer them
-    for i, l in enumerate(Plot.lines):
+    for _i, l in enumerate(Plot.lines):
         lbl = l.get_label()
         if lbl[1:] in ("obs", "calc", "bkg", "zero", "diff"):
             lbl = lbl[1:]
@@ -5392,7 +5371,7 @@ def changePlotSettings(G2frame, Plot):
     dlg.ShowModal()
 
 
-def uneqImgShow(figure, ax, Xlist, Ylist, cmap, vmin, vmax, Ylbls=[]):
+def uneqImgShow(figure, ax, Xlist, Ylist, cmap, vmin, vmax, Ylbls=None):
     """Plots a contour plot where point spacing varies within a dataset
     and where the X values may differ between histograms. Note that
     the length of Xlist and Ylist must be the same and will be the number
@@ -5417,6 +5396,8 @@ def uneqImgShow(figure, ax, Xlist, Ylist, cmap, vmin, vmax, Ylbls=[]):
         are labeled normally with the first histogram numbered starting at 0.
     """
 
+    if Ylbls is None:
+        Ylbls = []
     def midPoints(x):
         """Return the pixel corners for a series of steps
         For the series [1,2,3,5] this will be [0.5,1.5,2.5,4,6]

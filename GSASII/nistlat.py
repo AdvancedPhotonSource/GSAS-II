@@ -593,7 +593,7 @@ def CellSymSearch(
                         else:
                             inCnvCell = ConvCell(cellstuff[2])
                             red2convInp = inCnvCell[3]
-                        redCell = ([j for j in (xformSum / xformCount)[:6]], "P", " ")
+                        redCell = (list((xformSum / xformCount)[:6]), "P", " ")
                         cnvCell = ConvCell(redCell[0][:6])
                         if cnvCell is None:
                             print("ConvCell failed on ", redCell[0][:6])

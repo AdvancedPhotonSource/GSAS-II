@@ -146,7 +146,7 @@ class testSSymbols(wx.Frame):
             SpGrp = Data["SGData"]["SpGrp"]
             if Data["SGData"]["SGGray"]:
                 SpGrp += " 1'"
-            print("Try: %s%s" % (Data["SGData"]["SpGrp"], SSymbol))
+            print("Try: {}{}".format(Data["SGData"]["SpGrp"], SSymbol))
             E, SSGData = G2spc.SSpcGroup(Data["SGData"], SSymbol)
             if SSGData:
                 text, table = G2spc.SSGPrint(Data["SGData"], SSGData)

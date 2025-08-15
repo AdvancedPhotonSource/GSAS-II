@@ -403,8 +403,7 @@ class ExportDrawPhaseCartXYZ(G2fil.ExportBaseclass):
             stick = " stick " + 7 * "{:10.3f}"
             face = " tri " + 9 * "{:10.3f}"
             self.Write(
-                "XYZ file of drawn %s - Cartesian axes suitable for 3D printing/glass etching"
-                % phasenam
+                f"XYZ file of drawn {phasenam} - Cartesian axes suitable for 3D printing/glass etching"
             )
             self.Write("Atoms as balls: element X Y Z radius")
             for atom in Atoms:

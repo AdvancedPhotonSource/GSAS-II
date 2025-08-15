@@ -166,6 +166,7 @@ extend-ignore = [
   "PTH110",   # Do not force code-thrash
   "PTH113",   # Do not force code-thrash
   "PTH116",   # Do not force code-thrash
+  "PTH118",   # Do not force code-thrash
   "PTH121",   # Do not force code-thrash
   "PTH123",   # Path.open vs open (using the builtin is fine)
   "RET504",   # do not complain about extra locals

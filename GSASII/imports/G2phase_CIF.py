@@ -47,7 +47,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
         fp.close()
         return ok
 
-    def Reader(self, filename, ParentFrame=None, usedRanIdList=[], **unused):
+    def Reader(self, filename, ParentFrame=None, usedRanIdList=None, **unused):
+        if usedRanIdList is None:
+            usedRanIdList = []
         if cif is None:  # unexpected, but worth a specific error message
             print("Attempting to read a CIF without PyCifRW installed")
             raise Exception("Attempting to read a CIF without PyCifRW installed")
@@ -96,9 +98,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
         # scan blocks for structural info
         self.errors = "Error during scan of blocks for datasets"
         str_blklist = []
-        for blk in cf.keys():
+        for blk in cf:
             for r in reqitems + cellitems:
-                if r not in cf[blk].keys():
+                if r not in cf[blk]:
                     break
             else:
                 str_blklist.append(blk)
@@ -114,7 +116,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 choice[-1] += blknm + ": "
                 for i in phasenamefields:  # get a name for the phase
                     name = cf[blknm].get(i, "phase name").strip()
-                    if name is None or name == "?" or name == ".":
+                    if name is None or name in ("?", "."):
                         continue
                     choice[-1] += name.strip() + ", "
                     break
@@ -451,23 +453,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 cell.append(cif.get_number_with_esd(blk[lbl])[0])
             Volume = G2lat.calc_V(G2lat.cell2A(cell))
             self.Phase["General"]["Cell"] = (
-                [
-                    False,
-                ]
-                + cell
-                + [
-                    Volume,
-                ]
+                [False, *cell, Volume]
             )
             if magnetic:
                 self.MPhase["General"]["Cell"] = (
-                    [
-                        False,
-                    ]
-                    + cell
-                    + [
-                        Volume,
-                    ]
+                    [False, *cell, Volume]
                 )
             if Super:
                 waveloop = blk.GetLoop("_cell_wave_vector_seq_id")
@@ -492,7 +482,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             self.errors = "Error during reading of atoms"
             atomlbllist = []  # table to look up atom IDs
             atomloop = blk.GetLoop("_atom_site_label")
-            atomkeys = [i.lower() for i in atomloop.keys()]
+            atomkeys = [i.lower() for i in atomloop]
             if not blk.get("_atom_site_type_symbol"):
                 isodistort_warnings += (
                     "\natom types are missing. \n Check & revise atom types as needed"
@@ -501,7 +491,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 try:
                     magmoment = "_atom_site_moment.label"
                     magatomloop = blk.GetLoop(magmoment)
-                    magatomkeys = [i.lower() for i in magatomloop.keys()]
+                    magatomkeys = [i.lower() for i in magatomloop]
                     magatomlabels = blk.get(magmoment)
                     G2MagDict = {
                         "_atom_site_moment.label": 0,
@@ -512,7 +502,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 except KeyError:
                     magmoment = "_atom_site_moment_label"
                     magatomloop = blk.GetLoop(magmoment)
-                    magatomkeys = [i.lower() for i in magatomloop.keys()]
+                    magatomkeys = [i.lower() for i in magatomloop]
                     magatomlabels = blk.get(magmoment)
                     G2MagDict = {
                         "_atom_site_moment_label": 0,
@@ -523,7 +513,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
 
             if blk.get("_atom_site_aniso_label"):
                 anisoloop = blk.GetLoop("_atom_site_aniso_label")
-                anisokeys = [i.lower() for i in anisoloop.keys()]
+                anisokeys = [i.lower() for i in anisoloop]
                 anisolabels = blk.get("_atom_site_aniso_label")
             else:
                 anisoloop = None
@@ -830,7 +820,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if name is None:
                     continue
                 name = name.strip()
-                if name == "?" or name == ".":
+                if name in ("?", "."):
                     continue
                 break
             else:  # no name found, use block name for lack of a better choice; for isodistort use filename
@@ -1380,9 +1370,9 @@ shift later as an alternative to the above."""
             elif i > 0:
                 l += " + "
             if k == 1:
-                l += "%s " % str(var)
+                l += f"{var!s} "
             else:
-                l += "%.3f * %s" % (k, str(var))
+                l += f"{k:.3f} * {var!s}"
             return head, l
 
         # debug: show displacive mode var to mode relations
@@ -1451,7 +1441,7 @@ shift later as an alternative to the above."""
                 head = "  = ("
                 for j, (lbl, k) in enumerate(zip(coordVarLbl, row, strict=False)):
                     head, line = fmtEqn(j, head, line, lbl, k)
-                print(head + line + ") / " + ("%.3f" % n))
+                print(head + line + ") / " + (f"{n:.3f}"))
                 line = ""
                 head = "  = ("
                 vsum = 0.0
@@ -1459,7 +1449,7 @@ shift later as an alternative to the above."""
                     val = f"{coordVarDelta[lbl]:3g}"
                     head, line = fmtEqn(j, head, line, val, k)
                     vsum += coordVarDelta[lbl] * k
-                print(head + line + ") / " + ("%.3f" % n))
+                print(head + line + ") / " + (f"{n:.3f}"))
                 fileval = modeVarDelta[self.Phase["ISODISTORT"]["IsoModeList"][i]]
                 print(
                     "{} = {:4g} (value read from CIF = {:4g})\n".format(

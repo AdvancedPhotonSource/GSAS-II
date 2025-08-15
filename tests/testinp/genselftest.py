@@ -11,8 +11,10 @@ SGdat and SGlist that can be used for testing.
 import datetime
 import sys
 
+import numpy as np
+
 sys.path.append("..")
-from . import GSASIIspc
+from GSASII import GSASIIspc
 
 sgdat = {}
 sglist = {}
@@ -331,17 +333,16 @@ GenSGdat("F -1")  # dup: non-standard
 GenSGdat("a 2 2 2")  # dup: non-standard
 
 # do a bit of internal consistency checking
-import numpy as np
 
 array = np.array
 float32 = np.float32
 # check for internal agreement with duplicates
 for key1, key2 in duplist:
-    msg = "checking %s against %s" % (key1, key2)
+    msg = f"checking {key1} against {key2}"
     keys = sgdat[key1].keys()
     assert len(keys) == len(sgdat[key2].keys()), msg
     for key in keys:
-        if key == "SGOps" or key == "SGCen":
+        if key in ("SGOps", "SGCen"):
             assert len(sgdat[key2][key]) == len(sgdat[key1][key]), msg
             for i in range(len(sgdat[key2][key])):
                 assert np.allclose(sgdat[key1][key][i][0], sgdat[key2][key][i][0]), msg
@@ -352,34 +353,24 @@ for key1, key2 in duplist:
             assert sgdat[key1][key] == sgdat[key2][key], msg + ": key = " + key
 
 
-fp = open("spctestinp.py", "w")
-fp.write(
-    "# output from GSASIIspc computed on platform %s on %s\n"
-    % (sys.platform, datetime.date.today())
-)
-fp.write("import numpy as np\n")
-fp.write("array = np.array\n")
-fp.write("float32=np.float32\n")
-fp.write("# testing %s space groups (25 dups/non-standard)\n" % len(sgdat))
-fp.write("SGdat = {\n")
-for spc in sgdat:
+with open("spctestinp.py", "w") as fp:
     fp.write(
-        '"%s": %s ,\n'
-        % (
-            spc,
-            sgdat[spc],
-        )
+        f"# output from GSASIIspc computed on platform {sys.platform} on {datetime.date.today()}\n"
     )
-fp.write("}\n")
+    fp.write("import numpy as np\n")
+    fp.write("array = np.array\n")
+    fp.write("float32=np.float32\n")
+    fp.write(f"# testing {len(sgdat)} space groups (25 dups/non-standard)\n")
+    fp.write("SGdat = {\n")
+    for spc_key, spc_value in sgdat.items():
+        fp.write(
+            f'"{spc_key}": {spc_value} ,\n'
+        )
+    fp.write("}\n")
 
-fp.write("SGlist = {\n")
-for spc in sgdat:
-    fp.write(
-        '"%s": %s ,\n'
-        % (
-            spc,
-            sglist[spc],
+    fp.write("SGlist = {\n")
+    for spc_key, spc_value in sglist.items():
+        fp.write(
+            f'"{spc_key}": {spc_value} ,\n'
         )
-    )
-fp.write("}\n")
-fp.close()
+    fp.write("}\n")

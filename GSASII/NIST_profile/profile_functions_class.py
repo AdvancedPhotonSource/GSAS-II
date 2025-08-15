@@ -53,7 +53,7 @@
 import math
 import sys
 
-import numpy
+import numpy as np
 
 ## @brief figure out which FFT package we have, and import it
 try:
@@ -77,8 +77,8 @@ try:
     cache.enable()
     cache.set_keepalive_time(1.0)
 except ImportError:
-    best_rfft = numpy.fft.rfft
-    best_irfft = numpy.fft.irfft
+    best_rfft = np.fft.rfft
+    best_irfft = np.fft.irfft
     ## @brief create a table of nice factorizations for the FFT package
     #
     # this is built once, and shared by all instances
@@ -93,7 +93,7 @@ except ImportError:
     ]
 
 ft_factors.sort()
-ft_factors = numpy.array(ft_factors, int)
+ft_factors = np.array(ft_factors, int)
 
 ## @brief used for debugging moments from FP_profile.axial_helper().
 moment_list = []
@@ -159,8 +159,9 @@ class FP_profile:
         self, anglemode, output_gaussian_smoother_bins_sigma=1.0, oversampling=10
     ):
         if anglemode not in ("d", "twotheta"):
+            msg = f"invalid angle mode {anglemode}, must be 'd' or 'twotheta'"
             raise Exception(
-                "invalid angle mode %s, must be 'd' or 'twotheta'" % anglemode
+                msg
             )
         ## set to either 'd' for d-spacing based position, or 'twotheta' for angle-based position
         self.anglemode = anglemode
@@ -171,10 +172,10 @@ class FP_profile:
         ## List of our convolvers, found by introspection of names beginning with 'conv_'
         self.convolvers = convolvers = [x for x in dir(self) if x.startswith("conv_")]
         ## A dictionary which will store all the parameters local to each convolution
-        self.param_dicts = dict([(c, {}) for c in convolvers])
+        self.param_dicts = {c: {} for c in convolvers}
         # add global parameters, associated with no specific convolver
         ## A dictionary of bound functions to call to compute convolutions
-        self.convolver_funcs = dict([(x, getattr(self, x)) for x in convolvers])
+        self.convolver_funcs = {x: getattr(self, x) for x in convolvers}
         ## If \a True, print cache hit information
         self.debug_cache = False
 
@@ -234,23 +235,23 @@ class FP_profile:
         b = self.add_buffer  # shortcut
 
         ## a real-format scratch buffer
-        self._rb1 = b(numpy.zeros(nn, float))
+        self._rb1 = b(np.zeros(nn, float))
         ## a real-format scratch buffer
-        self._rb2 = b(numpy.zeros(nn, float))
+        self._rb2 = b(np.zeros(nn, float))
         ## a real-format scratch buffer
-        self._rb3 = b(numpy.zeros(nn, float))
+        self._rb3 = b(np.zeros(nn, float))
         ## a complex-format scratch buffer
-        self._cb1 = b(numpy.zeros(nn, complex))
+        self._cb1 = b(np.zeros(nn, complex))
         ## a scratch buffer used by the axial helper
-        self._f0buf = b(numpy.zeros(self.oversampling * twotheta_output_points, float))
+        self._f0buf = b(np.zeros(self.oversampling * twotheta_output_points, float))
         ## a scratch buffer used for axial divergence
-        self._epsb2 = b(numpy.zeros(self.oversampling * twotheta_output_points, float))
+        self._epsb2 = b(np.zeros(self.oversampling * twotheta_output_points, float))
         ## the I2+ buffer
-        self._I2p = b(numpy.zeros(self.oversampling * twotheta_output_points, float))
+        self._I2p = b(np.zeros(self.oversampling * twotheta_output_points, float))
         ## the I2- buffer
-        self._I2m = b(numpy.zeros(self.oversampling * twotheta_output_points, float))
+        self._I2m = b(np.zeros(self.oversampling * twotheta_output_points, float))
         ## another buffer used for axial divergence
-        self._axial = b(numpy.zeros(self.oversampling * twotheta_output_points, float))
+        self._axial = b(np.zeros(self.oversampling * twotheta_output_points, float))
         ## the largest frequency in Fourier space
         omega_max = self.n_omega_points * 2 * math.pi / window_fullwidth
         # build the x grid and the complex array that is the convolver
@@ -261,13 +262,13 @@ class FP_profile:
         # then ds=2*pi*omega*cos(twotheta/2)/lambda (double check this!)
         ## The grid in Fourier space, in inverse radians
         self.omega_vals = b(
-            numpy.linspace(0, omega_max, self.n_omega_points, endpoint=True)
+            np.linspace(0, omega_max, self.n_omega_points, endpoint=True)
         )
         ## The grid in Fourier space, in inverse degrees
         self.omega_inv_deg = b(self.omega_vals * (math.pi / 180))
         ## The grid in real space, in radians, with full oversampling
         self.twothetasamples = b(
-            numpy.linspace(
+            np.linspace(
                 twotheta - window_fullwidth / 2.0,
                 twotheta + window_fullwidth / 2.0,
                 self.twotheta_output_points * self.oversampling,
@@ -276,7 +277,7 @@ class FP_profile:
         )
         ## The grid in real space, in degrees, with full oversampling
         self.twothetasamples_deg = b(
-            numpy.linspace(
+            np.linspace(
                 twotheta_window_center_deg - twotheta_window_fullwidth_deg / 2.0,
                 twotheta_window_center_deg + twotheta_window_fullwidth_deg / 2.0,
                 self.twotheta_output_points * self.oversampling,
@@ -288,7 +289,7 @@ class FP_profile:
 
         ## A dictionary in which we collect recent state for each convolution.
         ## whenever the window gets reset, all of these get cleared
-        self.convolution_history = dict([(x, []) for x in self.convolvers])
+        self.convolution_history = {x: [] for x in self.convolvers}
 
         ## A dictionary of Lorentz widths, used for de-periodizing the final result.
         self.lor_widths = {}
@@ -363,7 +364,7 @@ class FP_profile:
             buf = history.pop(-1)[1]  # re-use oldest buffer
             buf[:] = 0
         else:
-            buf = numpy.zeros(self.n_omega_points, format)
+            buf = np.zeros(self.n_omega_points, format)
         history.insert(0, (key, buf))
         if self.debug_cache:
             print >> sys.stderr, name, False
@@ -410,7 +411,7 @@ class FP_profile:
         keys.insert(
             0, keys.pop(keys.index("conv_global"))
         )  # global is always first, anyways!
-        strings = ["", "***convolver id 0x%08x:" % id(self)]
+        strings = ["", f"***convolver id 0x{id(self):08x}:"]
         for k in keys:
             strfn = "str_" + k[5:]
             if hasattr(self, strfn):
@@ -429,8 +430,7 @@ class FP_profile:
             "d", 0
         )  # in case it's not initialized
         return (
-            "global: peak center=%(twotheta0_deg).4f, d=%(d).8g, eq. div=%(equatorial_divergence_deg).3f"
-            % self.param_dicts["conv_global"]
+            "global: peak center={twotheta0_deg:.4f}, d={d:.8g}, eq. div={equatorial_divergence_deg:.3f}".format(**self.param_dicts["conv_global"])
         )
 
     ## @brief the global context isn't really a convolver, returning \a None means ignore result
@@ -549,7 +549,7 @@ class FP_profile:
 
         # make the numerics accurate: compute average on each bin, which is
         # integral of 1/sqrt = 2*sqrt, then difference integral
-        intg = numpy.sqrt(
+        intg = np.sqrt(
             deps, deps
         )  # do it in place, return value is actually deps too
         intg *= 2 * k * sign
@@ -791,24 +791,24 @@ class FP_profile:
             # solIfunc=numpy.frompyfunc(lambda x: max(0, 1.0-abs(x/solIrad)),1,1)
             # note: solIfunc is only called with a scalar, no need for numpy-ized version, really
             def solIfunc(x):
-                return numpy.clip(1.0 - abs(x / solIrad), 0, 1)
+                return np.clip(1.0 - abs(x / solIrad), 0, 1)
 
             beta2 = min(beta2, solIrad)  # no point going beyond Soller
         else:
 
             def solIfunc(x):
-                return numpy.ones_like(x)
+                return np.ones_like(x)
 
         if sollerDdeg is not None:
             solDrad = sollerDdeg * pi / 180 / 2
 
             # solDfunc=numpy.frompyfunc(lambda x: max(0, 1.0-abs(x/solDrad)),1,1)
             def solDfunc(x):
-                return numpy.clip(1.0 - abs(x / solDrad), 0, 1)
+                return np.clip(1.0 - abs(x / solDrad), 0, 1)
         else:
 
             def solDfunc(x):
-                return numpy.ones_like(x)
+                return np.ones_like(x)
 
         accum = self._axial
         accum[:] = 0
@@ -839,7 +839,7 @@ class FP_profile:
                 deps[-2] = max(deps[-2], 0)
                 deps[1] = max(deps[1], 0)
 
-            gamarg = numpy.sqrt(deps, deps)  # do sqrt in place for speed
+            gamarg = np.sqrt(deps, deps)  # do sqrt in place for speed
             # still need to convert these to in-place
             gamp = gamma0 + gamarg
             gamm = gamma0 - gamarg
@@ -940,17 +940,17 @@ class FP_profile:
         cb1.real = 0
         cb1.imag = self.omega_vals
         cb1.imag *= tail_center  # sign is consistent with Topas definition
-        numpy.exp(cb1, tailfn)  # shifted center, computed into tailfn
+        np.exp(cb1, tailfn)  # shifted center, computed into tailfn
 
         rb1[:] = self.omega_vals
         rb1 *= tail_eps / 2 / math.pi
-        rb1 = numpy.sinc(rb1)
+        rb1 = np.sinc(rb1)
         tailfn *= rb1
         tailfn *= tail_area  # normalize
 
         rb1[:] = self.omega_vals
         rb1 *= main_eps / 2 / math.pi
-        rb1 = numpy.sinc(rb1)
+        rb1 = np.sinc(rb1)
         tailfn += rb1  # add central peak
         return tailfn
 
@@ -969,7 +969,7 @@ class FP_profile:
         rb1 = self._rb1
         rb1[:] = self.omega_vals
         rb1 *= width / 2 / math.pi
-        conv[:] = numpy.sinc(rb1)
+        conv[:] = np.sinc(rb1)
         return conv
 
     ## A dictionary of default parameters for conv_emissions,
@@ -999,7 +999,7 @@ class FP_profile:
         dd.setdefault("strain_lor", 0)
         dd.setdefault("strain_gauss", 0)
         xx = type("data", (), dd)
-        spect = numpy.array(
+        spect = np.array(
             (
                 xx.emiss_wavelengths,
                 xx.emiss_intensities,
@@ -1017,8 +1017,8 @@ class FP_profile:
         items.append(
             "crystallite_size_gauss (nm): %.5g" % (xx.crystallite_size_gauss * nm)
         )
-        items.append("strain_lor: %.5g" % xx.strain_lor)
-        items.append("strain_gauss: %.5g" % xx.strain_gauss)
+        items.append(f"strain_lor: {xx.strain_lor:.5g}")
+        items.append(f"strain_gauss: {xx.strain_gauss:.5g}")
         return "\n".join(items)
 
     ## @brief compute the emission spectrum and (for convenience) the particle size widths
@@ -1053,7 +1053,7 @@ class FP_profile:
 
         xx = type("data", (), kwargs)  # make it dot-notation accessible
 
-        epsilon0s = 2 * numpy.arcsin(xx.emiss_wavelengths / (2.0 * xx.d)) - xx.twotheta0
+        epsilon0s = 2 * np.arcsin(xx.emiss_wavelengths / (2.0 * xx.d)) - xx.twotheta0
         theta = xx.twotheta0 / 2
         ## Emission profile FWHM + crystallite broadening (scale factors are Topas choice!) (Lorentzian)
         # note:  the strain broadenings in Topas are expressed in degrees 2theta, must convert to radians(theta) with pi/360
@@ -1083,10 +1083,10 @@ class FP_profile:
         for wid, gfwhm2, eps, intens in zip(
             widths, gfwhm2s, epsilon0s, xx.emiss_intensities, strict=False
         ):
-            xvals = numpy.clip(omega_vals * (-wid), -100, 0)
+            xvals = np.clip(omega_vals * (-wid), -100, 0)
             sig2 = gfwhm2 / (8 * math.log(2.0))  # convert fwhm**2 to sigma**2
-            gxv = numpy.clip((sig2 / -2.0) * omega_vals * omega_vals, -100, 0)
-            emiss += numpy.exp(xvals + gxv + complex(0, -eps) * omega_vals) * intens
+            gxv = np.clip((sig2 / -2.0) * omega_vals * omega_vals, -100, 0)
+            emiss += np.exp(xvals + gxv + complex(0, -eps) * omega_vals) * intens
         return emiss
 
     ## @brief compute the convolver for the flat-specimen correction
@@ -1162,7 +1162,7 @@ class FP_profile:
         cb.imag = self.omega_vals
         cb.imag *= -1
         cb.real = 1 / delta
-        numpy.reciprocal(cb, conv)  # limit for thick samples=1/(delta*arg)
+        np.reciprocal(cb, conv)  # limit for thick samples=1/(delta*arg)
         conv *= 1.0 / delta  # normalize
         if (
             kwargs.get("sample_thickness") is not None
@@ -1174,7 +1174,7 @@ class FP_profile:
                 / xx.diffractometer_radius
             )
             cb *= epsmin
-            numpy.expm1(cb, cb)
+            np.expm1(cb, cb)
             cb *= -1
             conv *= cb
         return conv
@@ -1217,7 +1217,7 @@ class FP_profile:
             - zero_error_deg * math.pi / 180.0
             - (twotheta0 - self.twotheta_window_center)
         )
-        numpy.exp(conv, conv)
+        np.exp(conv, conv)
         return conv
 
     ## @brief compute the rectangular convolution for the receiver slit or SiPSD pixel size
@@ -1311,7 +1311,7 @@ class FP_profile:
         )
         buf *= buf
         buf *= -0.5
-        numpy.exp(buf, buf)
+        np.exp(buf, buf)
         return buf
 
     ## @brief execute all the convolutions; if convolver_names is None, use everything
@@ -1382,10 +1382,10 @@ class FP_profile:
         mu = (peak * self.twothetasamples).sum() / peak.sum()  # centroid
         dx = self.twothetasamples - mu
         eps_corr1 = (math.sinh(d2p * alpha) / self.window_fullwidth) / (
-            math.cosh(d2p * alpha) - numpy.cos(d2p * dx)
+            math.cosh(d2p * alpha) - np.cos(d2p * dx)
         )
         eps_corr2 = (alpha / pi) / (dx * dx + alpha * alpha)
-        corr = (convolver[0].real / numpy.sum(eps_corr2)) * (eps_corr1 - eps_corr2)
+        corr = (convolver[0].real / np.sum(eps_corr2)) * (eps_corr1 - eps_corr2)
         peak -= corr
 
         peak *= self.window_fullwidth / (
@@ -1609,10 +1609,10 @@ def fourier_line_profile(
 
 if __name__ == "__main__" and sys.argv.pop(-1) == "plot":
     ## fixed parameters
-    mat_wavelengths = numpy.array((1.540596e-10, 1.540596e-10 * 1.001))
-    mat_lor_widths = numpy.array((1.5e-13 / 5, 1.5e-13 / 5))
-    mat_gauss_widths = numpy.array((1.5e-13 / 5, 1.5e-13 / 5))
-    mat_intensities = numpy.array((1.0, 0.0))
+    mat_wavelengths = np.array((1.540596e-10, 1.540596e-10 * 1.001))
+    mat_lor_widths = np.array((1.5e-13 / 5, 1.5e-13 / 5))
+    mat_gauss_widths = np.array((1.5e-13 / 5, 1.5e-13 / 5))
+    mat_intensities = np.array((1.0, 0.0))
     collect_moment_errors = True
 
     try:
@@ -1724,16 +1724,16 @@ if __name__ == "__main__" and sys.argv.pop(-1) == "plot":
     from matplotlib import pyplot as plt
 
     datasets = []
-    for idx, (twotheta, eqdiv, soller, result) in enumerate(profiles):
+    for _idx, (_twotheta, eqdiv, soller, result) in enumerate(profiles):
         # normalize both to integral=sum/dx
         dx1 = result.twotheta_deg[1] - result.twotheta_deg[0]
         peaknorm = 40 * result.peak / dx1
-        plt.plot(result.twotheta_deg, peaknorm, label="%.1f : %.1f" % (eqdiv, soller))
+        plt.plot(result.twotheta_deg, peaknorm, label=f"{eqdiv:.1f} : {soller:.1f}")
 
     plt.legend()
     plt.show()
 
-    hh = numpy.histogram(moment_list, bins=20)
+    hh = np.histogram(moment_list, bins=20)
     print("error histogram=", hh)
     xl = (hh[1][1:] + hh[1][:-1]) * 0.5  # bin centers
     print(

@@ -7,8 +7,7 @@ import numpy as np
 
 fp = sys.stdout
 fp.write(
-    "# output from uctbx (cctbx) computed on platform %s on %s\n"
-    % (sys.platform, datetime.date.today())
+    f"# output from uctbx (cctbx) computed on platform {sys.platform} on {datetime.date.today()}\n"
 )
 fp.write("#import numpy as np\n")
 fp.write("array = np.array\n\n")
@@ -29,7 +28,7 @@ for cell in [
     result.append(uc.unit_cell(cell).reciprocal().parameters())
     result.append(uc.unit_cell(cell).volume())
     result.append(uc.unit_cell(cell).reciprocal().volume())
-    fp.write("  %s,\n" % result)
+    fp.write(f"  {result},\n")
 fp.write("]\n")
 
 fp.write("CoordTestData = [\n")
@@ -39,7 +38,7 @@ for cell in [
     (3.5, 3.5, 6, 90, 90, 120),
 ]:
     fp.write("# cell, ((frac, ortho),...)\n")
-    fp.write("  ((%s,%s,%s,%s,%s,%s,), [\n" % cell)
+    fp.write("  (({},{},{},{},{},{},), [\n".format(*cell))
     for frac in [
         (0.1, 0.0, 0.0),
         (0.0, 0.1, 0.0),
@@ -49,7 +48,7 @@ for cell in [
         (0.3, 0.2, 0.1),
         (0.5, 0.5, 0.5),
     ]:
-        fp.write(" (%s,%s),\n" % (frac, uc.unit_cell(cell).orthogonalize(frac)))
+        fp.write(f" ({frac},{uc.unit_cell(cell).orthogonalize(frac)}),\n")
     fp.write("]),\n")
 fp.write("]\n")
 

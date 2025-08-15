@@ -35,8 +35,10 @@ path2GSAS2 = os.path.dirname(
 )  # location of this file; save before any changes in pwd
 
 # convert version numbers as '1.2.3' to integers (1002) and back (to 1.2)
-fmtver = lambda v: str(v // 1000) + "." + str(v % 1000)
-intver = lambda vs: sum([int(i) for i in vs.split(".")[0:2]] * np.array((1000, 1)))
+def fmtver(v):
+    return str(v // 1000) + "." + str(v % 1000)
+def intver(vs):
+    return sum([int(i) for i in vs.split(".")[0:2]] * np.array((1000, 1)))
 
 
 def GetConfigValue(key: str, default: Any | None =None, getDefault: bool = False):
@@ -337,6 +339,7 @@ def getG2Branch():
             return g2repo.active_branch.name
         except TypeError:  # likely on a detached head
             return "?"
+    return None
 
 
 def getG2VersionInfo():
@@ -423,6 +426,8 @@ def saveGitHubVersion():
     return subprocess.Popen([sys.executable, __file__, "--github-tags"])
     if GetConfigValue("debug"):
         print("Updates fetched")
+        return None
+    return None
 
 
 def getGitHubVersion():
@@ -753,6 +758,8 @@ def gitGetUpdate(mode="Background"):
         g2repo.remote().fetch()
         if GetConfigValue("debug"):
             print("Updates fetched")
+            return None
+        return None
 
 
 def gitHistory(values="tag", g2repo=None, maxdepth=100):
@@ -791,12 +798,13 @@ def gitHistory(values="tag", g2repo=None, maxdepth=100):
 
         # potentially faster code
         r1 = [
-            [i.hexsha] + g2repo.git.tag("--points-at", i).split("\n")
+            [i.hexsha, *g2repo.git.tag("--points-at", i).split("\n")]
             for i in history[:maxdepth]
         ]
         return [[i[0]] if i[1] == "" else i for i in r1]
     else:
-        raise ValueError(f"gitHistory has invalid values specified: {values}")
+        msg = f"gitHistory has invalid values specified: {values}"
+        raise ValueError(msg)
 
 
 def getGitBinaryReleases(cache=False):
@@ -1040,7 +1048,7 @@ def gitStartUpdate(cmdopts):
     """Update GSAS-II in a separate process, by running this script with the
     options supplied in the call to this function and then exiting GSAS-II.
     """
-    cmd = [sys.executable, __file__] + cmdopts
+    cmd = [sys.executable, __file__, *cmdopts]
     if GetConfigValue("debug"):
         print("Starting updates with command\n\t" + f"{' '.join(cmd)}")
     proc = subprocess.Popen(cmd)
@@ -1158,7 +1166,7 @@ def downloadDirContents(
 
 # ==============================================================================
 # ==============================================================================
-def runScript(cmds=[], wait=False, G2frame=None):
+def runScript(cmds=None, wait=False, G2frame=None):
     """run a shell script of commands in an external process
 
     :param list cmds: a list of str's, each ietm containing a shell (cmd.exe
@@ -1173,6 +1181,8 @@ def runScript(cmds=[], wait=False, G2frame=None):
     """
     import tempfile
 
+    if cmds is None:
+        cmds = []
     if not cmds:  # debug
         print("nothing to do in runScript")
         return
@@ -1517,6 +1527,7 @@ def WriteConfig(configDict):
     with open(cfgfile, "w") as configfile:
         cfgP.write(configfile)
     print(f"Configuration settings saved as {cfgfile}")
+    return None
 
 
 def LoadConfig(printInfo=True):
@@ -1603,14 +1614,12 @@ def LoadConfig(printInfo=True):
         try:
             if cfgG[key] == "None":
                 configDict[capKey] = None
-            elif key.endswith("_pos") or key.endswith("_size"):  # list of integers
+            elif key.endswith(("_pos", "_size")):  # list of integers
                 configDict[capKey] = tuple(
                     [int(i) for i in cfgG[key].strip("()").split(",")]
                 )
             elif (
-                key.endswith("_location")
-                or key.endswith("_directory")
-                or key.endswith("_exec")
+                key.endswith(("_location", "_directory", "_exec"))
             ):  # None (above) or str
                 configDict[capKey] = cfgG.get(key)
             elif cfgG[key].startswith("[") and cfgG[key].endswith(
@@ -1691,15 +1700,13 @@ def condaTest(requireAPI=False):
     :returns: True, if running under Conda
     """
     if not all(
-        [
-            (i in os.environ)
+        (i in os.environ)
             for i in (
                 "CONDA_DEFAULT_ENV",
                 "CONDA_EXE",
                 "CONDA_PREFIX",
                 "CONDA_PYTHON_EXE",
             )
-        ]
     ):
         return False
     if requireAPI:
@@ -1798,7 +1805,7 @@ def fullsplit(fil, prev=None):
         prev.insert(0, j)
         out = fullsplit(i, prev)
     else:
-        return [i] + prev
+        return [i, *prev]
     return out
 
 
@@ -1811,10 +1818,7 @@ def commonPath(dir1, dir2):
     :returns: True if the paths are common
     """
 
-    for i, j in zip(fullsplit(dir1), fullsplit(dir2), strict=False):
-        if i != j:
-            return False
-    return True
+    return all(i == j for i, j in zip(fullsplit(dir1), fullsplit(dir2), strict=False))
 
 
 def pipInstall(packageList):
@@ -1840,7 +1844,7 @@ def pipInstall(packageList):
         if "=" in val and "==" not in val:
             packageList[i] = packageList[i].replace("=", "==")
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install"] + packageList)
+        subprocess.check_call([sys.executable, "-m", "pip", "install", *packageList])
     except Exception as msg:
         return msg
     return None
@@ -1871,15 +1875,13 @@ def condaEnvCreate(envname, packageList, force=False):
       location of the newly-created Python interpreter.
     """
     if not all(
-        [
-            (i in os.environ)
+        (i in os.environ)
             for i in (
                 "CONDA_DEFAULT_ENV",
                 "CONDA_EXE",
                 "CONDA_PREFIX",
                 "CONDA_PYTHON_EXE",
             )
-        ]
     ):
         p = sys.exec_prefix
     else:
@@ -1930,15 +1932,13 @@ def addCondaPkg():
     the environment was inherited; seems to work w/o shell on Windows.
     """
     if not all(
-        [
-            (i in os.environ)
+        (i in os.environ)
             for i in (
                 "CONDA_DEFAULT_ENV",
                 "CONDA_EXE",
                 "CONDA_PREFIX",
                 "CONDA_PYTHON_EXE",
             )
-        ]
     ):
         return
     # condaexe = os.environ['CONDA_EXE']

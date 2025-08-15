@@ -206,19 +206,19 @@ class ExportPowderCSV(G2fil.ExportBaseclass):
                 "Type",
                 "Source",
             ]:
-                line = '"Instparm: %s","%s"' % (parm, Parms[parm][0])
+                line = f'"Instparm: {parm}","{Parms[parm][0]}"'
             elif parm in [
                 "Lam",
                 "Zero",
             ]:
-                line = '"Instparm: %s",%10.6f' % (parm, Parms[parm][1])
+                line = f'"Instparm: {parm}",{Parms[parm][1]:10.6f}'
             else:
-                line = '"Instparm: %s",%10.2f' % (parm, Parms[parm][1])
+                line = f'"Instparm: {parm}",{Parms[parm][1]:10.2f}'
             self.Write(line)
         Samp = self.Histograms[TreeName]["Sample Parameters"]
         for samp in Samp:
             if samp in ["InstrName", "Type"]:
-                line = '"Samparm: %s",%s' % (samp, Samp[samp])
+                line = f'"Samparm: {samp}",{Samp[samp]}'
             elif samp in [
                 "Azimuth",
                 "Chi",
@@ -229,7 +229,7 @@ class ExportPowderCSV(G2fil.ExportBaseclass):
                 "Temperature",
                 "Time",
             ]:
-                line = '"Samparm: %s",%10.2f' % (samp, Samp[samp])
+                line = f'"Samparm: {samp}",{Samp[samp]:10.2f}'
             elif samp in [
                 "DisplaceX",
                 "DisplaceY",
@@ -239,7 +239,7 @@ class ExportPowderCSV(G2fil.ExportBaseclass):
                 "SurfRoughB",
                 "Transparency",
             ]:
-                line = '"Samparm: %s",%10.2f' % (samp, Samp[samp][0])
+                line = f'"Samparm: {samp}",{Samp[samp][0]:10.2f}'
             else:
                 continue
             self.Write(line)
@@ -256,10 +256,10 @@ class ExportPowderCSV(G2fil.ExportBaseclass):
             strict=False,
         ):
             line = ""
-            for val, digits in zip(vallist, digitList, strict=False):
+            for val, _digits in zip(vallist, digitList, strict=False):
                 if line:
                     line += ","
-                line += "%.6g" % val
+                line += f"{val:.6g}"
             #                line += G2fil.FormatValue(val,digits)
             self.Write(line)
         if mode == "w":
@@ -341,10 +341,10 @@ class ExportMultiPowderCSV(G2fil.ExportBaseclass):
         WriteList(self, headList)
         for vallist in np.array(csvData).T:
             line = ""
-            for val, digits in zip(vallist, digitList, strict=False):
+            for val, _digits in zip(vallist, digitList, strict=False):
                 if line:
                     line += ","
-                line += "%.6g" % val
+                line += f"{val:.6g}"
             #                line += G2fil.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
@@ -382,9 +382,7 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
         self.loadTree()
         if self.ExportSelect():
             return  # set export parameters, get file name
-        hist = list(self.histnam)[
-            0
-        ]  # there should only be one histogram, in any case take the 1st
+        hist = next(iter(self.histnam))  # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
         self.OpenFile()
         self.write(hist, histblk)
@@ -734,7 +732,7 @@ class ExportSASDCSV(G2fil.ExportBaseclass):
                     self.Write("Calc size dist for model %d" % i)
                     WriteList(self, ["diam", "dist"])
                     for rbin, dist in zip(Rbins[i], Dist[i], strict=False):
-                        self.Write("%13.4g,%13.4g" % (2.0 * rbin, dist))
+                        self.Write(f"{2.0 * rbin:13.4g},{dist:13.4g}")
 
         self.Write('"Small angle data"')
         Parms = self.Histograms[TreeName]["Instrument Parameters"][0]
@@ -743,13 +741,13 @@ class ExportSASDCSV(G2fil.ExportBaseclass):
                 "Type",
                 "Source",
             ]:
-                line = '"Instparm: %s","%s"' % (parm, Parms[parm][0])
+                line = f'"Instparm: {parm}","{Parms[parm][0]}"'
             elif parm in [
                 "Lam",
             ]:
-                line = '"Instparm: %s",%10.6f' % (parm, Parms[parm][1])
+                line = f'"Instparm: {parm}",{Parms[parm][1]:10.6f}'
             else:
-                line = '"Instparm: %s",%10.2f' % (parm, Parms[parm][1])
+                line = f'"Instparm: {parm}",{Parms[parm][1]:10.2f}'
             self.Write(line)
         WriteList(self, ("q", "y_obs", "y_sig", "y_calc", "y_bkg"))
         digitList = 5 * ((13, 5, "g"),)
@@ -765,7 +763,7 @@ class ExportSASDCSV(G2fil.ExportBaseclass):
             for val, digits in zip(vallist, digitList, strict=False):
                 if line:
                     line += ","
-                line += "%.6g" % val
+                line += f"{val:.6g}"
             #                line += G2fil.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
@@ -820,13 +818,13 @@ class ExportREFDCSV(G2fil.ExportBaseclass):
                 "Type",
                 "Source",
             ]:
-                line = '"Instparm: %s","%s"' % (parm, Parms[parm][0])
+                line = f'"Instparm: {parm}","{Parms[parm][0]}"'
             elif parm in [
                 "Lam",
             ]:
-                line = '"Instparm: %s",%10.6f' % (parm, Parms[parm][1])
+                line = f'"Instparm: {parm}",{Parms[parm][1]:10.6f}'
             else:
-                line = '"Instparm: %s",%10.2f' % (parm, Parms[parm][1])
+                line = f'"Instparm: {parm}",{Parms[parm][1]:10.2f}'
             self.Write(line)
         WriteList(self, ("q", "y_obs", "y_sig", "y_calc", "y_bkg"))
         digitList = 5 * ((13, 5, "g"),)
@@ -839,10 +837,10 @@ class ExportREFDCSV(G2fil.ExportBaseclass):
             strict=False,
         ):
             line = ""
-            for val, digits in zip(vallist, digitList, strict=False):
+            for val, _digits in zip(vallist, digitList, strict=False):
                 if line:
                     line += ","
-                line += "%.6g" % val
+                line += f"{val:.6g}"
             #                line += G2fil.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()

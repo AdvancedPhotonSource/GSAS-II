@@ -5,7 +5,9 @@ import numpy as np
 
 from .. import GSASIIobj as G2obj
 
-sind = lambda x: np.sin(x * np.pi / 180.0)
+
+def sind(x):
+    return np.sin(x * np.pi / 180.0)
 
 
 class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
@@ -71,7 +73,7 @@ class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
         scan = scans[blockNum - 1]
         header = scan.find(tag + "header")
         dataPoints = scan.find(tag + "dataPoints")
-        self.comments.append("Gonio. radius=%.2f" % (radius))
+        self.comments.append(f"Gonio. radius={radius:.2f}")
         self.Sample["Gonio. radius"] = radius
         if sample.find(tag + "id").text:
             self.comments.append("Sample name=" + sample.find(tag + "id").text)
@@ -85,12 +87,12 @@ class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
             self.comments.append("xray tube=" + tube.attrib["name"])
         except AttributeError:
             pass
-        self.comments.append("Ka1=%s" % (wave.find(tag + "kAlpha1").text))
-        self.comments.append("Ka2=%s" % (wave.find(tag + "kAlpha2").text))
+        self.comments.append("Ka1={}".format(wave.find(tag + "kAlpha1").text))
+        self.comments.append("Ka2={}".format(wave.find(tag + "kAlpha2").text))
         self.comments.append(
-            "Ka2/Ka1=%s" % (wave.find(tag + "ratioKAlpha2KAlpha1").text)
+            "Ka2/Ka1={}".format(wave.find(tag + "ratioKAlpha2KAlpha1").text)
         )
-        self.comments.append("Kb=%s" % (wave.find(tag + "kBeta").text))
+        self.comments.append("Kb={}".format(wave.find(tag + "kBeta").text))
         self.comments.append("Voltage=" + tube.find(tag + "tension").text)
         self.comments.append("Current=" + tube.find(tag + "current").text)
         limits = dataPoints.find(tag + "positions")

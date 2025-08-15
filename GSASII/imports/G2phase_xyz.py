@@ -45,7 +45,7 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
 
         counts = {}
         Atoms = []
-        for i in range(natom):
+        for _i in range(natom):
             line += 1
             self.errors = "Error reading at line " + str(line)
             l = fp.readline()
@@ -82,10 +82,7 @@ class XYZ_ReaderClass(G2obj.ImportPhase):
         self.Phase = G2obj.SetNewPhase(
             Name=Title,
             SGData=SGData,
-            cell=cell
-            + [
-                Volume,
-            ],
+            cell=[*cell, Volume],
         )
         self.Phase["General"]["Type"] = "nuclear"
         self.Phase["General"]["AtomPtrs"] = [3, 1, 7, 9]

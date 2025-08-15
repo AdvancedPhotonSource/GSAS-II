@@ -44,7 +44,8 @@ meanwaves = {
     "Inka": 0.51357,
 }
 
-getElSym = lambda sym: sym.split("+")[0].split("-")[0].capitalize()
+def getElSym(sym):
+    return sym.split("+")[0].split("-")[0].capitalize()
 
 
 def GetFormFactorCoeff(El):
@@ -64,7 +65,7 @@ def GetFormFactorCoeff(El):
     """
 
     Els = El.capitalize().strip()
-    valences = [ky for ky in atmdata.XrayFF.keys() if Els == getElSym(ky)]
+    valences = [ky for ky in atmdata.XrayFF if Els == getElSym(ky)]
     FormFactors = [atmdata.XrayFF[val] for val in valences]
     for Sy, FF in zip(valences, FormFactors, strict=False):
         FF.update({"Symbol": Sy.upper()})
@@ -88,7 +89,7 @@ def GetEFormFactorCoeff(El):
 
     Els = El.capitalize().strip()
     valences = [
-        ky for ky in atmdata.ElecFF.keys() if Els == getElSym(ky)
+        ky for ky in atmdata.ElecFF if Els == getElSym(ky)
     ]  # will only be one
     FormFactors = [atmdata.ElecFF[val] for val in valences]
     for Sy, FF in zip(valences, FormFactors, strict=False):
@@ -272,10 +273,7 @@ def CheckElement(El):
     Elements = []
     for elem in ET.ElTable:
         Elements.append(elem[0][0])
-    if El.capitalize() in Elements:
-        return True
-    else:
-        return False
+    return El.capitalize() in Elements
 
 
 def StripValence(El):
@@ -341,7 +339,7 @@ def GetAtomInfo(El, ifMag=False):
     AtomInfo["Symbol"] = El
     AtomInfo["Color"] = ET.ElTable[Elements.index(ElS)][6]
     AtomInfo["Z"] = atmdata.XrayFF[ElS]["Z"]
-    isotopes = [ky for ky in atmdata.AtmBlens.keys() if ElS == ky.split("_")[0]]
+    isotopes = [ky for ky in atmdata.AtmBlens if ElS == ky.split("_")[0]]
     isotopes.sort()
     AtomInfo["Mass"] = atmdata.AtmBlens[isotopes[0]]["Mass"]  # default to nat. abund.
     AtomInfo["Isotopes"] = {}
@@ -481,7 +479,7 @@ def GetMagFormFacCoeff(El):
     """
     Els = El.capitalize().strip()
     MagFormFactors = []
-    mags = [ky for ky in atmdata.MagFF.keys() if Els == getElSym(ky)]
+    mags = [ky for ky in atmdata.MagFF if Els == getElSym(ky)]
     for mag in mags:
         magData = {}
         data = atmdata.MagFF[mag]
@@ -585,6 +583,7 @@ def ClosedFormFF(Z, SQ, k, N):
                 * (Z * Z2**3 - 7.0 * K2 * Z * Z2**2 + 7.0 * K2**2 * Z * Z2 - Z * K2**3)
                 / K2pZ2**8
             )
+        return None
     elif k == 1:
         if N == 2:
             return 2.0 * K / K2pZ2**2
@@ -607,6 +606,7 @@ def ClosedFormFF(Z, SQ, k, N):
                 * (21.0 * Z2**3 - 63.0 * K2 * Z2**2 + 27.0 * K2**2 * Z2 - K2**3)
                 / K2pZ2**8
             )
+        return None
     elif k == 2:
         if N == 3:
             return 8.0 * K2 / K2pZ2**3
@@ -626,6 +626,7 @@ def ClosedFormFF(Z, SQ, k, N):
                 * (21.0 * Z2**2 - 30.0 * K2 * Z2 + 5.0 * K2**2)
                 / K2pZ2**8
             )
+        return None
     elif k == 3:
         if N == 4:
             return 48.0 * K**3 / K2pZ2**4
@@ -637,6 +638,7 @@ def ClosedFormFF(Z, SQ, k, N):
             return 11520.0 * K**3 * Z * (3.0 * Z2 - K2) / K2pZ2**7
         elif N == 8:
             return 11520.0 * K**3 * (33.0 * Z2**2 - 22.0 * K2 * Z2 + K2**2) / K2pZ2**8
+        return None
     elif k == 4:
         if N == 5:
             return 384.0 * K2**2 / K2pZ2**5
@@ -646,6 +648,7 @@ def ClosedFormFF(Z, SQ, k, N):
             return 3840.0 * K2**2 * (11.0 * Z2 - K2) / K2pZ2**7
         elif N == 8:
             return 46080.0 * K**5 * (13.0 * Z2 - K2) / K2pZ2**8
+        return None
     elif k == 5:
         if N == 6:
             return 3840.0 * K**5 / K2pZ2**6
@@ -653,14 +656,18 @@ def ClosedFormFF(Z, SQ, k, N):
             return 46080.0 * Z * K**5 / K2pZ2**7
         elif N == 8:
             return 46080.0 * K**5 * (13.0 * Z2 - K2) / K2pZ2**8
+        return None
     elif k == 6:
         if N == 7:
             return 46080.0 * K**6 / K2pZ2**7
         elif N == 8:
             return 645120.0 * Z * K2**3 / K2pZ2**8
+        return None
     elif k == 7:
         if N == 8:
             return 645120.0 * K**7 / K2pZ2**8
+        return None
+    return None
 
 
 def BlenResCW(Els, BLtables, wave):
@@ -694,7 +701,7 @@ def BlenResTOF(Els, BLtables, wave):
     FP = np.zeros((len(Els), len(wave)))
     FPP = np.zeros((len(Els), len(wave)))
     BL = [BLtables[el][1] for el in Els]
-    for i, El in enumerate(Els):
+    for i, _El in enumerate(Els):
         if "BW-LS" in BL[i]:
             Re, Im, E0, gam, A, E1, B, E2 = BL[i]["BW-LS"][1:]
             Emev = 81.80703 / wave**2
@@ -934,9 +941,7 @@ def SetupGeneral(data, dirname):
                         elif parm == "Spos":
                             if "Crenel" not in waveType:
                                 wType = waveType
-                        atom[-1]["SS1"][parm] = [
-                            wType,
-                        ] + list(atom[-1]["SS1"][parm])
+                        atom[-1]["SS1"][parm] = [wType, *list(atom[-1]["SS1"][parm])]
                 del atom[-1]["SS1"]["waveType"]
     else:
         generalData["Super"] = 0
@@ -979,7 +984,7 @@ def SetupGeneral(data, dirname):
         landeg = generalData.get("Lande g", [])
     generalData["Mydir"] = dirname
     badList = {}
-    for iat, atom in enumerate(atomData):
+    for _iat, atom in enumerate(atomData):
         atom[ct] = atom[ct].lower().capitalize()  # force to standard form
         if generalData["AtomTypes"].count(atom[ct]):
             generalData["NoAtoms"][atom[ct]] += atom[cx + 3] * float(atom[cs + 1])
@@ -1076,7 +1081,7 @@ def SetupGeneral(data, dirname):
     F000E = 0.0
     ElTypes = [StripValence(elem) for elem in generalData["AtomTypes"]]
     EFFtables = GetEFFtable(ElTypes)
-    for i, elem in enumerate(generalData["AtomTypes"]):
+    for _i, elem in enumerate(generalData["AtomTypes"]):
         F000X += generalData["NoAtoms"][elem] * generalData["Z"]
         isotope = generalData["Isotope"][elem]
         F000N += (

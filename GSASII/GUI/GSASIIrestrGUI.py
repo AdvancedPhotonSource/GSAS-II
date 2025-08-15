@@ -55,7 +55,7 @@ def GetSelectedRows(widget, lbl="edit", G2frame=None):
             if rows:
                 return rows
 
-        rows = sorted(list(set([cell[0] for cell in widget.GetSelectedCells()])))
+        rows = sorted({cell[0] for cell in widget.GetSelectedCells()})
         if rows:
             return rows
 
@@ -169,7 +169,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     torList = restrData["Torsion"]["Torsions"]
                     Names = []
                     Angles = []
-                    for i, [indx, ops, cofName, esd] in enumerate(torList):
+                    for _i, [indx, _ops, cofName, _esd] in enumerate(torList):
                         if cofName == torName:
                             atoms = G2mth.GetAtomItemsById(Atoms, AtLookUp, indx, 0, 4)
                             name = (
@@ -217,7 +217,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     ramaList = restrData["Rama"]["Ramas"]
                     Names = []
                     PhiPsi = []
-                    for i, [indx, ops, cofName, esd] in enumerate(ramaList):
+                    for _i, [indx, _ops, cofName, _esd] in enumerate(ramaList):
                         if cofName == ramaName or (
                             ramaName == "All" and "-1" in cofName
                         ):
@@ -550,7 +550,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                 result = G2spc.GenAtom(Tcoord, SGData, All=False, Move=False)
                 BsumR = (Radii[Otype][0] + Radii[Ttype][0]) * Factor
                 AsumR = (Radii[Otype][1] + Radii[Ttype][1]) * Factor
-                for Txyz, Top, Tunit, Spn in result:
+                for Txyz, Top, Tunit, _Spn in result:
                     Dx = (Txyz - Ocoord) + Units
                     dx = np.inner(Amat, Dx)
                     dist = ma.masked_less(np.sqrt(np.sum(dx**2, axis=0)), 0.5)
@@ -2078,7 +2078,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     "restr",
                     "esd",
                 ]
-                for i, [indx, ops, cofName, esd] in enumerate(torsionList):
+                for i, [indx, _ops, cofName, esd] in enumerate(torsionList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms, AtLookUp, indx, 0, 4)
                         name = (
@@ -2259,7 +2259,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     "restr",
                     "esd",
                 ]
-                for i, [indx, ops, cofName, esd] in enumerate(ramaList):
+                for i, [indx, _ops, cofName, esd] in enumerate(ramaList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms, AtLookUp, indx, 0, 4)
                         name = (
@@ -3057,7 +3057,7 @@ def UpdateRestraints(G2frame, data, phaseName):
     else:
         Names = ["all " + name for name in General["AtomTypes"]]
         iBeg = len(Names)
-        Types = [name for name in General["AtomTypes"]]
+        Types = list(General["AtomTypes"])
         Coords = [[] for type in Types]
         Ids = [0 for type in Types]
         Names += [atom[ct - 1] for atom in Atoms]

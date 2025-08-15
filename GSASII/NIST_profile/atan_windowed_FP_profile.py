@@ -7,7 +7,7 @@ MHM October 2019
 import math
 import sys
 
-import numpy
+import numpy as np
 
 from . import profile_functions_class
 
@@ -64,7 +64,7 @@ class FP_atan_windowed_convolver:
         self.abs_window_pm = relative_passwidth * center_wavelength * 1e12
 
         X = self.twothetasamples - 2 * center_angle  # to match notation in Topas macro
-        real_emiss = numpy.zeros_like(X)  # emission in real space
+        real_emiss = np.zeros_like(X)  # emission in real space
 
         for wid, lam0, intens in zip(
             xx.emiss_lor_widths,
@@ -77,16 +77,16 @@ class FP_atan_windowed_convolver:
             hw = dispersion * (wid / center_wavelength) / 2
             real_emiss += (hw * intens / math.pi) / (xvals * xvals + hw * hw)
 
-        left_passband = numpy.arctan(
+        left_passband = np.arctan(
             (X + passwidth - xx.passband_mistune * passwidth)
             / (xx.passband_shoulder * passwidth)
         )
-        right_passband = numpy.arctan(
+        right_passband = np.arctan(
             (X - passwidth - xx.passband_mistune * passwidth)
             / (xx.passband_shoulder * passwidth)
         )
 
-        self.raw_emission_shape = numpy.array(real_emiss)
+        self.raw_emission_shape = np.array(real_emiss)
 
         self.passband_window = left_passband - right_passband
         real_emiss *= left_passband - right_passband
@@ -153,10 +153,10 @@ class FP_atan_windowed_convolver:
         for wid, gfwhm2, intens in zip(
             widths, gfwhm2s, xx.emiss_intensities, strict=False
         ):
-            xvals = numpy.clip(omega_vals * (-wid), -100, 0)
+            xvals = np.clip(omega_vals * (-wid), -100, 0)
             sig2 = gfwhm2 / (8 * math.log(2.0))  # convert fwhm**2 to sigma**2
-            gxv = numpy.clip((sig2 / -2.0) * omega_vals * omega_vals, -100, 0)
-            emiss += numpy.exp(xvals + gxv) * intens
+            gxv = np.clip((sig2 / -2.0) * omega_vals * omega_vals, -100, 0)
+            emiss += np.exp(xvals + gxv) * intens
         return emiss
 
 
@@ -167,7 +167,7 @@ class FP_atan_windowed_convolver:
 #        (0.15446782, 0.754, 0.0630e-3), #ka22
 #    ))*(1e-9,1,1e-9)
 # replaced due to Sphinx problem with scaled values:
-cu_ka_spectdata = numpy.array(
+cu_ka_spectdata = np.array(
     (  # each cluster is wavelength/m, intensity, fwhm/m, from Cu kalpha paper
         (0.15405925e-9, 3.91, 0.0436e-12),  # ka11
         (0.15410769e-9, 0.474, 0.0558e-12),  # ka12
@@ -317,27 +317,27 @@ if __name__ == "__main__":
         )
         # plt.legend()
         # plt.show()
-        dstarplot = numpy.array(
-            (result.twotheta_deg, 2 * numpy.sin(result.twotheta / 2) / 0.15409, pk)
+        dstarplot = np.array(
+            (result.twotheta_deg, 2 * np.sin(result.twotheta / 2) / 0.15409, pk)
         ).transpose()
-        numpy.savetxt(
+        np.savetxt(
             "dstar_{abs_window_pm:.2f}_tth_{twotheta_x:.0f}.dat".format(**locals()),
             dstarplot,
         )
 
         omega = result.omega_inv_deg * omega_length_scale_deg(0.15409, twotheta_x)
-        omega_max = numpy.searchsorted(omega, 300)
-        fft = numpy.array(result.convolver)
+        omega_max = np.searchsorted(omega, 300)
+        fft = np.array(result.convolver)
         fft /= fft[0]
         fft[1::2] *= -1  # center it
         fixphase(fft, second_try_bin=5)  # adjust to best centering
-        numpy.savetxt(
+        np.savetxt(
             "fourier_{abs_window_pm:.2f}_tth_{twotheta_x:.0f}.dat".format(**locals()),
-            numpy.transpose((omega[:omega_max], numpy.abs(fft[:omega_max]))),
+            np.transpose((omega[:omega_max], np.abs(fft[:omega_max]))),
         )
         print(fft[:10], file=sys.stderr)
         plt.figure(f"fourier log {twotheta_x:.0f}")
-        plt.semilogy(omega[:omega_max], numpy.abs(fft[:omega_max]))
+        plt.semilogy(omega[:omega_max], np.abs(fft[:omega_max]))
         plt.xlabel(r"$\omega$ / nm")
         plt.savefig(
             "ft_log_window_{abs_window_pm:.2f}_tth_{twotheta_x:.0f}.pdf".format(
@@ -348,7 +348,7 @@ if __name__ == "__main__":
             frameon=False,
         )
         plt.figure(f"fourier lin {twotheta_x:.0f}")
-        plt.plot(omega[:omega_max], numpy.abs(fft[:omega_max]))
+        plt.plot(omega[:omega_max], np.abs(fft[:omega_max]))
         plt.xlabel(r"$\omega$ / nm")
         plt.savefig(
             "ft_lin_window_{abs_window_pm:.2f}_tth_{twotheta_x:.0f}.pdf".format(

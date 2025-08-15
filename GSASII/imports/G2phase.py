@@ -46,8 +46,8 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         #            self.errors = 'no CRYST1 record found'
         #            fp.close()
         #            return False
-        for i, l in enumerate(fp):
-            if l.startswith("ATOM") or l.startswith("HETATM"):
+        for _i, l in enumerate(fp):
+            if l.startswith(("ATOM", "HETATM")):
                 fp.close()
                 return True
         self.errors = "no ATOM records found after CRYST1 record"
@@ -207,10 +207,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         Phase = G2obj.SetNewPhase(
             Name=PhaseName,
             SGData=SGData,
-            cell=cell
-            + [
-                Volume,
-            ],
+            cell=[*cell, Volume],
         )
         Phase["General"]["Type"] = "macromolecular"
         Phase["General"]["AtomPtrs"] = [6, 4, 10, 12]
@@ -239,10 +236,12 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         fp.close()
         return False
 
-    def Reader(self, filename, ParentFrame=None, usedRanIdList=[], **unused):
+    def Reader(self, filename, ParentFrame=None, usedRanIdList=None, **unused):
         """Read a phase from a GSAS .EXP file using
         :meth:`~EXP_ReaderClass.ReadEXPPhase`
         """
+        if usedRanIdList is None:
+            usedRanIdList = []
         self.Phase = G2obj.SetNewPhase(
             Name="new phase"
         )  # create a new empty phase dict
@@ -355,11 +354,9 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             elif "SPNFLP" in key:
                 SpnFlp = np.array([int(float(s)) for s in EXPphase[key].split()])
                 SpnFlp = np.where(SpnFlp == 0, 1, SpnFlp)
-                SpnFlp = [
-                    1,
-                ] + list(SpnFlp)
+                SpnFlp = [1, *list(SpnFlp)]
                 if SGData["SpGrp"][0] in ["A", "B", "C", "I", "R", "F"]:
-                    SpnFlp = list(SpnFlp) + [1, 1, 1, 1]
+                    SpnFlp = [*list(SpnFlp), 1, 1, 1, 1]
             elif "MXDSTR" in key:
                 MagDmin = float(EXPphase[key][:10])
             elif "OD    " in key:
@@ -470,11 +467,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                 ODkey = ODkey[:-1] + "B"
                 vals = EXPphase[ODkey].split()
                 for i, val in enumerate(vals):
-                    key = "C(%s,%s,%s)" % (
-                        indx[3 * i],
-                        indx[3 * i + 1],
-                        indx[3 * i + 2],
-                    )
+                    key = f"C({indx[3 * i]},{indx[3 * i + 1]},{indx[3 * i + 2]})"
                     shCoef[key] = float(val)
             textureData["SH Coeff"] = [False, shCoef]
 
@@ -491,14 +484,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             {
                 "Type": Ptype,
                 "Name": PhaseName,
-                "Cell": [
-                    False,
-                ]
-                + abc
-                + angles
-                + [
-                    Volume,
-                ],
+                "Cell": [False, *abc, *angles, Volume],
                 "SGData": SGData,
             }
         )
@@ -507,14 +493,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                 {
                     "Type": "magnetic",
                     "Name": PhaseName + " mag",
-                    "Cell": [
-                        False,
-                    ]
-                    + abc
-                    + angles
-                    + [
-                        Volume,
-                    ],
+                    "Cell": [False, *abc, *angles, Volume],
                     "SGData": SGData,
                 }
             )
@@ -556,14 +535,14 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         (look for cell & at least one atom)
         """
         fp = open(filename)
-        for i, l in enumerate(fp):
+        for _i, l in enumerate(fp):
             if l.startswith("cell"):
                 break
         else:
             self.errors = "no cell record found"
             fp.close()
             return False
-        for i, l in enumerate(fp):
+        for _i, l in enumerate(fp):
             if l.startswith("spgroup"):
                 fp.close()
                 return True
@@ -817,22 +796,10 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                 Atom.append(
                     {
                         "SS1": {
-                            "Sfrac": [
-                                waveType,
-                            ]
-                            + Sfrac,
-                            "Spos": [
-                                waveType,
-                            ]
-                            + Spos,
-                            "Sadp": [
-                                "Fourier",
-                            ]
-                            + Sadp,
-                            "Smag": [
-                                "Fourier",
-                            ]
-                            + Smag,
+                            "Sfrac": [waveType, *Sfrac],
+                            "Spos": [waveType, *Spos],
+                            "Sadp": ["Fourier", *Sadp],
+                            "Smag": ["Fourier", *Smag],
                         }
                     }
                 )  # SS2 is for (3+2), etc.
@@ -846,10 +813,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         Phase = G2obj.SetNewPhase(
             Name=Title,
             SGData=SGData,
-            cell=cell
-            + [
-                Volume,
-            ],
+            cell=[*cell, Volume],
         )
         Phase["General"]["Type"] = Type
         Phase["General"]["Modulated"] = False
@@ -1048,10 +1012,7 @@ class PDF_ReaderClass(G2obj.ImportPhase):
         Phase = G2obj.SetNewPhase(
             Name=Title,
             SGData=SGData,
-            cell=cell
-            + [
-                Volume,
-            ],
+            cell=[*cell, Volume],
         )
         Phase["General"]["Type"] = "nuclear"
         Phase["General"]["AtomPtrs"] = [3, 1, 7, 9]

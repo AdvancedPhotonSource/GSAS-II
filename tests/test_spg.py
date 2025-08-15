@@ -64,12 +64,12 @@ def test_SpcGroup1():
 
     def CompareSpcGroup(spc, referr, refdict, reflist):
         "Compare output from GSASIIspc.SpcGroup with results from a previous run"
-        msg0 = "CompareSpcGroup failed on space group %s" % spc
+        msg0 = f"CompareSpcGroup failed on space group {spc}"
         result = SpcGroup(spc)
         if result[0] == referr and referr > 0:
             return True
         for key in refdict:
-            if key == "SGCen" or key == "SGOps":
+            if key in ("SGCen", "SGOps"):
                 assert len(refdict[key]) == len(result[1][key]), f"{msg0}, {key} length"
             else:
                 assert refdict[key] == result[1][key], f"{msg0}, key={key}"
@@ -81,7 +81,8 @@ def test_SpcGroup1():
                     indices.pop(i)
                     break
             else:
-                assert False, f"{msg0} no {key} matches center {item}"
+                msg = f"{msg0} no {key} matches center {item}"
+                raise AssertionError(msg)
         key = "SGOps"
         indices = list(range(len(result[1][key])))
         for k, item in enumerate(refdict[key]):
@@ -92,7 +93,9 @@ def test_SpcGroup1():
                     indices.pop(i)
                     break
             else:
-                assert False, f"{msg0} no {key} matches sym op #{k}"
+                msg = f"{msg0} no {key} matches sym op #{k}"
+                raise AssertionError(msg)
+        return None
 
     for spc in spctestinp.SGdat:
         CompareSpcGroup(spc, 0, spctestinp.SGdat[spc], spctestinp.SGlist[spc])
@@ -121,7 +124,7 @@ def test_SpcGroup2():
         # lattice type of R implies Hexagonal centering", fix the rhombohedral settings
         if latticetype == "R" and len(spc["SGCen"]) == 1:
             latticetype = "P"
-        assert latticetype == spc["SGLatt"], "Failed: %s does not match Lattice: %s" % (
+        assert latticetype == spc["SGLatt"], "Failed: {} does not match Lattice: {}".format(
             spcname,
             spc["SGLatt"],
         )
@@ -135,7 +138,7 @@ def test_SpcGroup2():
                     noff = MoveToUnitCell(noff)[0]
                     mult = tuple((op * inv).ravel().tolist())
                     if debug:
-                        print("\n%s: %s + %s" % (spcname, mult, noff))
+                        print(f"\n{spcname}: {mult} + {noff}")
                     for refop in cctbx:
                         if debug:
                             print(refop)
@@ -151,11 +154,8 @@ def test_SpcGroup2():
                             cctbx.remove(refop)
                             break
                     else:
-                        assert False, "failed on %s:\n\t %s + %s" % (
-                            spcname,
-                            mult,
-                            noff,
-                        )
+                        msg = f"failed on {spcname}:\n\t {mult} + {noff}"
+                        raise AssertionError(msg)
 
     for key in sgtbxtestinp.sgtbx:
         CompareWcctbx(key, sgtbxtestinp.sgtbx[key])

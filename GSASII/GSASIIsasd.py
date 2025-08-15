@@ -12,23 +12,39 @@ import scipy.special as scsp
 # import pdb
 from . import GSASIIpwd as G2pwd
 
+
 # trig functions in degrees
-sind = lambda x: math.sin(x * math.pi / 180.0)
-asind = lambda x: 180.0 * math.asin(x) / math.pi
-tand = lambda x: math.tan(x * math.pi / 180.0)
-atand = lambda x: 180.0 * math.atan(x) / math.pi
-atan2d = lambda y, x: 180.0 * math.atan2(y, x) / math.pi
-cosd = lambda x: math.cos(x * math.pi / 180.0)
-acosd = lambda x: 180.0 * math.acos(x) / math.pi
-rdsq2d = lambda x, p: round(1.0 / math.sqrt(x), p)
+def sind(x):
+    return math.sin(x * math.pi / 180.0)
+def asind(x):
+    return 180.0 * math.asin(x) / math.pi
+def tand(x):
+    return math.tan(x * math.pi / 180.0)
+def atand(x):
+    return 180.0 * math.atan(x) / math.pi
+def atan2d(y, x):
+    return 180.0 * math.atan2(y, x) / math.pi
+def cosd(x):
+    return math.cos(x * math.pi / 180.0)
+def acosd(x):
+    return 180.0 * math.acos(x) / math.pi
+def rdsq2d(x, p):
+    return round(1.0 / math.sqrt(x), p)
 # numpy versions
-npsind = lambda x: np.sin(x * np.pi / 180.0)
-npasind = lambda x: 180.0 * np.arcsin(x) / math.pi
-npcosd = lambda x: np.cos(x * math.pi / 180.0)
-npacosd = lambda x: 180.0 * np.arccos(x) / math.pi
-nptand = lambda x: np.tan(x * math.pi / 180.0)
-npatand = lambda x: 180.0 * np.arctan(x) / np.pi
-npatan2d = lambda y, x: 180.0 * np.arctan2(y, x) / np.pi
+def npsind(x):
+    return np.sin(x * np.pi / 180.0)
+def npasind(x):
+    return 180.0 * np.arcsin(x) / math.pi
+def npcosd(x):
+    return np.cos(x * math.pi / 180.0)
+def npacosd(x):
+    return 180.0 * np.arccos(x) / math.pi
+def nptand(x):
+    return np.tan(x * math.pi / 180.0)
+def npatand(x):
+    return 180.0 * np.arctan(x) / np.pi
+def npatan2d(y, x):
+    return 180.0 * np.arctan2(y, x) / np.pi
 # npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 # npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
 
@@ -428,7 +444,7 @@ def GaussDist(x, pos, args):
     )
 
 
-def LSWDist(x, pos, args=[]):
+def LSWDist(x, pos, args=None):
     """Lifshitz-Slyozov-Wagner Ostwald ripening distribution - numpy friendly on x axis
     ref:
     param float x: independent axis (can be numpy array)
@@ -437,6 +453,8 @@ def LSWDist(x, pos, args=[]):
     param float shape: not used
     returns float: LSW distribution
     """
+    if args is None:
+        args = []
     redX = x / pos
     result = (
         (81.0 * 2 ** (-5 / 3.0))
@@ -494,7 +512,7 @@ def GaussCume(x, pos, args):
     return (scsp.erf(redX / np.sqrt(2.0)) + 1.0) / 2.0
 
 
-def LSWCume(x, pos, args=[]):
+def LSWCume(x, pos, args=None):
     """Lifshitz-Slyozov-Wagner Ostwald ripening cumulative distribution - numpy friendly on x axis
     param float x: independent axis (can be numpy array)
     param float pos: location of distribution
@@ -502,6 +520,8 @@ def LSWCume(x, pos, args=[]):
     param float shape: not used
     returns float: LSW cumulative distribution
     """
+    if args is None:
+        args = []
     nP = 500
     xMin, xMax = [0.0, 2.0 * pos]
     X = np.linspace(xMin, xMax, nP, True)
@@ -537,8 +557,10 @@ def SchulzZimmCume(x, pos, args):
 ################################################################################
 
 
-def DiluteSF(Q, args=[]):
+def DiluteSF(Q, args=None):
     """Default: no structure factor correction for dilute system"""
+    if args is None:
+        args = []
     return np.ones_like(Q)  # or return 1.0
 
 
@@ -922,9 +944,9 @@ def MaxEnt_SB(
 
     # MaxEnt_SB starts here
 
-    if image_to_data == None:
+    if image_to_data is None:
         image_to_data = opus
-    if data_to_image == None:
+    if data_to_image is None:
         data_to_image = tropus
     n = len(base)
     npt = len(datum)
@@ -1032,10 +1054,9 @@ def MaxEnt_SB(
 
         if report:
             print(" MaxEnt trial/max: %3d/%3d" % ((iter + 1), IterMax))
-            print(" Residual: %5.2lf%% Entropy: %8lg" % (100 * test, S))
+            print(f" Residual: {100 * test:5.2f}% Entropy: {S:8g}")
             print(
-                " Function sum: %.6lg Change from last: %.2lf%%\n"
-                % (fSum, 100 * fChange / fSum)
+                f" Function sum: {fSum:.6g} Change from last: {100 * fChange / fSum:.2f}%\n"
             )
 
         # See if we have finished our task.
@@ -1053,7 +1074,7 @@ def MaxEnt_SB(
 
 
 def IPG(
-    datum, sigma, G, Bins, Dbins, IterMax, Qvec=[], approach=0.8, Power=-1, report=False
+    datum, sigma, G, Bins, Dbins, IterMax, Qvec=None, approach=0.8, Power=-1, report=False
 ):
     """An implementation of the Interior-Point Gradient method of
     Michael Merritt & Yin Zhang, Technical Report TR04-08, Dept. of Comp. and
@@ -1069,6 +1090,8 @@ def IPG(
     :param int Power: 0-4 for Q^Power weighting, -1 to use input sigma
 
     """
+    if Qvec is None:
+        Qvec = []
     if Power < 0:
         GmatE = G / sigma[: np.newaxis]
         IntE = datum / sigma
@@ -1240,7 +1263,7 @@ def SizeDistribution(Profile, ProfDict, Limits, Sample, data):
         )
     Ib[:] = Back[0]
     Ic[Ibeg:Ifin] += Back[0]
-    print(" Final chi^2: %.3f" % (chisq))
+    print(f" Final chi^2: {chisq:.3f}")
     data["Size"]["Distribution"] = [Bins, Dbins, BinMag / (2.0 * Dbins)]
 
 
@@ -1343,12 +1366,12 @@ def PairDistFxn(Profile, ProfDict, Limits, Sample, data):
             % (ncalc, Ifin - Ibeg, N)
         )
         print(
-            "Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f" % (Rwp, chisq, GOF)
+            f"Rwp = {Rwp:7.2f}%, chi**2 = {chisq:12.6g}, reduced chi**2 = {GOF:6.2f}"
         )
         if len(covM):
             sig = np.sqrt(np.diag(covM) * GOF)
             for val, esd in zip(result[0], sig, strict=False):
-                print(" parameter: %.4g esd: %.4g" % (val, esd))
+                print(f" parameter: {val:.4g} esd: {esd:.4g}")
         BinMag = MoorePOR(MPVR, Bins, dmax) / 2.0
         return Bins, Dbins, BinMag
 
@@ -1470,7 +1493,7 @@ def ModelFit(Profile, ProfDict, Limits, Sample, Model):
         return levelTypes, parmDict, varyList, values
 
     def SetModelParms():
-        print(" Refined parameters: Histogram scale: %.4g" % (parmDict["Scale"]))
+        print(" Refined parameters: Histogram scale: {:.4g}".format(parmDict["Scale"]))
         if "Back" in varyList:
             Model["Back"][0] = parmDict["Back"]
             print(
@@ -1711,8 +1734,7 @@ def ModelFit(Profile, ProfDict, Limits, Sample, Model):
             % (ncalc, Ifin - Ibeg, len(varyList))
         )
         print(
-            "Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f"
-            % (Rvals["Rwp"], chisq, Rvals["GOF"])
+            "Rwp = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}".format(Rvals["Rwp"], chisq, Rvals["GOF"])
         )
         SetModelParms()
         covMatrix = covM * Rvals["GOF"]
@@ -1834,8 +1856,7 @@ def RgFit(Profile, ProfDict, Limits, Sample, Model):
             % (ncalc, Ifin - Ibeg, len(varyList))
         )
         print(
-            "Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f"
-            % (Rvals["Rwp"], chisq, Rvals["GOF"])
+            "Rwp = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}".format(Rvals["Rwp"], chisq, Rvals["GOF"])
         )
         SetModelParms()
         covMatrix = covM * Rvals["GOF"]
@@ -2053,9 +2074,9 @@ def MakeDiamDist(DistName, nPoints, cutoff, distDict):
 def print_vec(text, a):
     """print the contents of a vector to the console"""
     n = a.shape[0]
-    print("%s[ = (" % text, end="")
+    print(f"{text}[ = (", end="")
     for i in range(n):
-        s = " %g, " % a[i]
+        s = f" {a[i]:g}, "
         print(s, end="")
     print(")")
 
@@ -2063,11 +2084,11 @@ def print_vec(text, a):
 def print_arr(text, a):
     """print the contents of an array to the console"""
     n, m = a.shape
-    print("%s[][] = (" % text)
+    print(f"{text}[][] = (")
     for i in range(n):
         print(" (", end="")
         for j in range(m):
-            print(" %g, " % a[i][j], end="")
+            print(f" {a[i][j]:g}, ", end="")
         print("),")
     print(")")
 
@@ -2108,7 +2129,7 @@ def test_MaxEnt_SB(report=True):
 
     print("solution reached")
     for a, b, c in zip(r.tolist(), dr.tolist(), f_dr.tolist(), strict=False):
-        print("%10.4f %10.4f %12.4g" % (a, b, c))
+        print(f"{a:10.4f} {b:10.4f} {c:12.4g}")
 
 
 def tests():

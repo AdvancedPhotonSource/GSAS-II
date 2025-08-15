@@ -39,6 +39,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
         fp = open(filename)
         return self.CIFValidator(fp)
         fp.close()
+        return None
 
     def Reader(self, filename, ParentFrame=None, **kwarg):
         """Read single crystal data from a CIF.
@@ -139,9 +140,9 @@ class CIFhklReader(G2obj.ImportStructFactor):
         # scan blocks for reflections
         self.errors = "Error during scan of blocks for datasets"
         blklist = []
-        for blk in cf.keys():  # scan for reflections, F or F2 values and cell lengths.
+        for blk in cf:  # scan for reflections, F or F2 values and cell lengths.
             # Ignore blocks that do not have structure factors and a cell
-            blkkeys = [k.lower() for k in cf[blk].keys()]
+            blkkeys = [k.lower() for k in cf[blk]]
             gotFo = False
             im = 0
             for i in range(2):
@@ -181,7 +182,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 choice[-1] += blknm + ": "
                 for i in phasenamefields:  # get a name for the phase
                     name = cf[blknm].get(i)
-                    if name is None or name == "?" or name == ".":
+                    if name is None or name in ("?", "."):
                         continue
                     choice[-1] += name.strip()[:20] + ", "
                     break
@@ -310,9 +311,9 @@ class CIFhklReader(G2obj.ImportStructFactor):
                         HKL.append(".")
                 # h,k,l,tw,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,Ext
                 if im:
-                    ref = HKL + [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+                    ref = [*HKL, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
                 else:
-                    ref = HKL + [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+                    ref = [*HKL, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
                 if F2dn:
                     F2 = item[itemkeys[F2dn]]
                     if "(" in F2:

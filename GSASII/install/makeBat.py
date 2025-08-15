@@ -265,7 +265,7 @@ if __name__ == "__main__":
             else:
                 # set an installation location
                 distdir = os.path.split(os.path.dirname(os.path.dirname(path2GSAS2)))[1]
-                if distdir == "\\" or distdir == "":
+                if distdir in ("\\", ""):
                     distdir = "/"
                 shortbase = f"GSAS-II from {distdir}.lnk"
                 shortcut = os.path.join(desktop, shortbase)

@@ -41,8 +41,10 @@ def test_refine():
         )
 
     print("test_refine(): test a small refinement")
-    dataloc = lambda fil: os.path.join(home, "testinp", fil)
-    workloc = lambda fil: os.path.join(work, fil)
+    def dataloc(fil):
+        return os.path.join(home, "testinp", fil)
+    def workloc(fil):
+        return os.path.join(work, fil)
     gpx = G2sc.G2Project(newgpx=workloc("test_scripting.gpx"))
     # setup step 1: add two histograms to the project
     h1 = gpx.add_powder_histogram(

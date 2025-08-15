@@ -7935,7 +7935,7 @@ MagFF = {
     },
 }
 
-pass  # placed here so that the following is not processed by Sphinx as a doc string
+# placed here so that the following is not processed by Sphinx as a doc string
 """ # unused unused terms follow
 j<0>
 W_6s15d5    FFj0A=0.3811 FFj0a=62.707 FFj0B=0.7523 FFj0b=21.434 FFj0C=12.5449 FFj0c=2.702 FFj0D=12.4130 FFj0d=2.674 FFj0E=0.0023 0.0365

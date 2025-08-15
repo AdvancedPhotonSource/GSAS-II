@@ -14,10 +14,15 @@ from . import GSASIIfiles as G2fil
 from . import GSASIIimage as G2img
 from . import GSASIIplot as G2plt
 
-npsind = lambda x: np.sin(x * np.pi / 180.0)
-npcosd = lambda x: np.cos(x * np.pi / 180.0)
-npacosd = lambda x: 180.0 * np.arccos(x) / np.pi
-npasind = lambda x: 180.0 * np.arcsin(x) / np.pi
+
+def npsind(x):
+    return np.sin(x * np.pi / 180.0)
+def npcosd(x):
+    return np.cos(x * np.pi / 180.0)
+def npacosd(x):
+    return 180.0 * np.arccos(x) / np.pi
+def npasind(x):
+    return 180.0 * np.arcsin(x) / np.pi
 
 try:
     wx.NewIdRef
@@ -214,7 +219,7 @@ class scanCCD(wx.Frame):
         Amat = np.zeros(shape=(numChans, 1), order="F", dtype=np.float32)
         Qmat = np.zeros(shape=(numChans, 1), order="F", dtype=np.float32)
         imSize = np.array(self.data["size"]) * self.data["imScale"]
-        H1 = [tth for tth in np.linspace(LUtth[0], LUtth[1], numChans)]
+        H1 = list(np.linspace(LUtth[0], LUtth[1], numChans))
         blkSize = 2048
         N = 4096 / blkSize
         nBlk = N**2 * len(
@@ -336,10 +341,10 @@ class scanCCD(wx.Frame):
                 for X, Y, E in XYE:
                     if Fxye:
                         file.write(
-                            "%15.6g %15.6g %15.6g\n" % (100.0 * X, Y, max(E, 1.0))
+                            f"{100.0 * X:15.6g} {Y:15.6g} {max(E, 1.0):15.6g}\n"
                         )
                     else:
-                        file.write("%15.6g %15.6g %15.6g\n" % (X, Y, max(E, 1.0)))
+                        file.write(f"{X:15.6g} {Y:15.6g} {max(E, 1.0):15.6g}\n")
                 file.close()
             finally:
                 wx.EndBusyCursor()
@@ -385,7 +390,7 @@ class scanCCD(wx.Frame):
             def OnSkipFiles(event):
                 data["skip"] = int(skipFile.GetValue())
 
-            colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")] + [
+            colorList = [m for m in mpl.cm.datad if not m.endswith("_r")] + [
                 "GSPaired",
                 "GSPaired_r",
             ]
@@ -457,7 +462,7 @@ class scanCCD(wx.Frame):
             self.maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
             self.maxVal = wx.TextCtrl(
                 parent=self.SCCDPanel,
-                value="%d" % (data["range"][1]),
+                value=f"{data['range'][1]:d}",
                 style=wx.TE_PROCESS_ENTER,
             )
             self.maxVal.Bind(wx.EVT_TEXT_ENTER, OnMaxValue)
@@ -482,7 +487,7 @@ class scanCCD(wx.Frame):
                 wx.ALIGN_CENTER_VERTICAL,
             )
             zMax = wx.TextCtrl(
-                self.SCCDPanel, value="%d" % (data["Zmax"]), style=wx.TE_PROCESS_ENTER
+                self.SCCDPanel, value=f"{data['Zmax']:d}", style=wx.TE_PROCESS_ENTER
             )
             zMax.Bind(wx.EVT_TEXT_ENTER, OnZValue)
             zMax.Bind(wx.EVT_KILL_FOCUS, OnZValue)
@@ -494,7 +499,7 @@ class scanCCD(wx.Frame):
                 wx.ALIGN_CENTER_VERTICAL,
             )
             zMin = wx.TextCtrl(
-                self.SCCDPanel, value="%d" % (data["Zmin"]), style=wx.TE_PROCESS_ENTER
+                self.SCCDPanel, value=f"{data['Zmin']:d}", style=wx.TE_PROCESS_ENTER
             )
             ObjIndx[zMin.GetId()] = "Zmin"
             zMin.Bind(wx.EVT_TEXT_ENTER, OnZValue)
@@ -511,7 +516,7 @@ class scanCCD(wx.Frame):
                 except ValueError:
                     value = data[item[0]][item[1]]
                 data[item[0]][item[1]] = value
-                Obj.SetValue("%.3f" % (value))
+                Obj.SetValue(f"{value:.3f}")
                 self.PlotImage()
 
             def OnZpdgValue(event):
@@ -523,7 +528,7 @@ class scanCCD(wx.Frame):
                     value = self.data[item[0]]
                 self.data[item[0]] = value
                 self.data["radius"] = 180.0 * value / math.pi
-                Obj.SetValue("%.3f" % (value))
+                Obj.SetValue(f"{value:.3f}")
                 self.PlotImage()
 
             zeroSizer = wx.FlexGridSizer(0, 6, 5, 5)
@@ -534,7 +539,7 @@ class scanCCD(wx.Frame):
             )
             zMax = wx.TextCtrl(
                 self.SCCDPanel,
-                value="%.3f" % (data["Zeros"][0]),
+                value="{:.3f}".format(data["Zeros"][0]),
                 style=wx.TE_PROCESS_ENTER,
             )
             zMax.Bind(wx.EVT_TEXT_ENTER, OnZeroValue)
@@ -548,7 +553,7 @@ class scanCCD(wx.Frame):
             )
             zMin = wx.TextCtrl(
                 self.SCCDPanel,
-                value="%.3f" % (data["Zeros"][1]),
+                value="{:.3f}".format(data["Zeros"][1]),
                 style=wx.TE_PROCESS_ENTER,
             )
             ObjIndx[zMin.GetId()] = ["Zeros", 1]
@@ -562,7 +567,7 @@ class scanCCD(wx.Frame):
             )
             zpdeg = wx.TextCtrl(
                 self.SCCDPanel,
-                value="%.3f" % (data["mm/deg"]),
+                value="{:.3f}".format(data["mm/deg"]),
                 style=wx.TE_PROCESS_ENTER,
             )
             ObjIndx[zpdeg.GetId()] = ["mm/deg"]
@@ -580,7 +585,7 @@ class scanCCD(wx.Frame):
                 except ValueError:
                     value = data[item[0]][item[1]]
                 data[item[0]][item[1]] = value
-                Obj.SetValue("%d" % (value))
+                Obj.SetValue(f"{value:d}")
                 self.PlotImage()
 
             TBLRsizer = wx.FlexGridSizer(0, 4, 5, 5)
@@ -592,7 +597,7 @@ class scanCCD(wx.Frame):
                 )
                 TBlim = wx.TextCtrl(
                     self.SCCDPanel,
-                    value="%d" % (data["TBlimits"][i]),
+                    value=f"{data['TBlimits'][i]:d}",
                     style=wx.TE_PROCESS_ENTER,
                 )
                 TBlim.Bind(wx.EVT_TEXT_ENTER, OnTBLRValue)
@@ -610,7 +615,7 @@ class scanCCD(wx.Frame):
                 except ValueError:
                     value = self.data["2thScan"][item]
                 data["2thScan"][item] = value
-                Obj.SetValue("%.3f" % (value))
+                Obj.SetValue(f"{value:.3f}")
                 if item in [0, 1]:
                     pixel = data["pixel"]
                     zero = data["Zeros"][0]
@@ -624,7 +629,7 @@ class scanCCD(wx.Frame):
                 scanSizer.Add(wx.StaticText(self.SCCDPanel, label=item + ":"))
                 scanParm = wx.TextCtrl(
                     self.SCCDPanel,
-                    value="%.3f" % (data["2thScan"][i]),
+                    value="{:.3f}".format(data["2thScan"][i]),
                     style=wx.TE_PROCESS_ENTER,
                 )
                 scanParm.Bind(wx.EVT_TEXT_ENTER, OnScanValue)
@@ -642,7 +647,7 @@ class scanCCD(wx.Frame):
         mainSizer.Add(TBLRSizer(self.data))
         self.SCCDPanel.SetSizer(mainSizer)
         mainSizer.Layout()
-        fitSize = mainSizer.Fit(self.SCCDPanel)
+        _fitSize = mainSizer.Fit(self.SCCDPanel)
 
     #        self.SCCDPanel.GetParent().SetSize(fitSize)
 
@@ -660,7 +665,7 @@ class scanCCD(wx.Frame):
                 if item:
                     if "Line" in str(item):
                         Page.canvas.SetToolTipString(
-                            "%8.3f %8.3fmm" % (event.xdata, event.ydata)
+                            f"{event.xdata:8.3f} {event.ydata:8.3f}mm"
                         )
                 else:
                     xpos = event.xdata
@@ -682,8 +687,7 @@ class scanCCD(wx.Frame):
                         vecB /= nl.norm(vecB)
                         tth2 = npacosd(np.dot(vecA, vecB)) * tth / abs(tth)
                         self.plotNB.status.SetStatusText(
-                            "Detector x,y =%9.3fmm %9.3fmm, 2-th =%9.3f I = %6d"
-                            % (xpos, ypos, tth2, Int),
+                            f"Detector x,y ={xpos:9.3f}mm {ypos:9.3f}mm, 2-th ={tth2:9.3f} I = {Int:6d}",
                             1,
                         )
 
@@ -739,7 +743,7 @@ class scanCCD(wx.Frame):
 
         self.plotNB.status.SetStatusText("", 1)
         Zmin = self.data["Zmin"]
-        Zmax = self.data["Zmax"]
+        _Zmax = self.data["Zmax"]
         Zeros = self.data["Zeros"]
         Lines = []
 
@@ -747,7 +751,7 @@ class scanCCD(wx.Frame):
         #        MaskA = ma.getmaskarray(MA)
         #        ImgM = Plot.imshow(MaskA,aspect='auto',cmap='Reds',
         #            interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,0,Ymax])
-        Img = Plot.imshow(
+        _Img = Plot.imshow(
             self.Image.T - Zmin,
             interpolation="nearest",
             vmin=Imin,
@@ -792,7 +796,7 @@ class scanCCD(wx.Frame):
             plotNum = self.plotNB.plotList.index("Block")
             Page = self.plotNB.nb.GetPage(plotNum)
             xylim = []
-        Img = Plot.imshow(
+        _Img = Plot.imshow(
             block, interpolation="nearest", aspect="equal", cmap=self.data["color"]
         )
         Plot.invert_yaxis()
@@ -817,7 +821,7 @@ class scanCCD(wx.Frame):
                 Page.canvas.SetCursor(wx.CROSS_CURSOR)
                 try:
                     self.plotNB.status.SetStatusText(
-                        "X =%9.3f %s =%9.3f" % (xpos, type, ypos), 1
+                        f"X ={xpos:9.3f} {type} ={ypos:9.3f}", 1
                     )
                 except TypeError:
                     self.plotNB.status.SetStatusText(
@@ -847,8 +851,7 @@ class scanCCD(wx.Frame):
         else:
             Plot.set_xlabel(r"2-theta, deg", fontsize=14)
         Plot.set_ylabel(r"" + type, fontsize=14)
-        colors = ["b", "g", "r", "c", "m", "k"]
-        lenX = 0
+
         X, Y, S = XY
         Plot.plot(X, Y, "k", picker=False)
         Plot.plot(X, S, "r", picker=False)

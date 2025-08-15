@@ -200,9 +200,7 @@ class ExportPowderReflText(G2fil.ExportBaseclass):
         ):
             return
         self.OpenFile()
-        hist = list(self.histnam)[
-            0
-        ]  # there should only be one histogram, in any case take the 1st
+        hist = next(iter(self.histnam))  # there should only be one histogram, in any case take the 1st
         self.Write("\nHistogram " + hist)
         histblk = self.Histograms[hist]
         for phasenam in histblk["Reflection Lists"]:
@@ -510,10 +508,10 @@ class ExportSingleText(G2fil.ExportBaseclass):
             Fobs,
             sigFobs,
             Fcalc,
-            FobsT,
-            FcalcT,
+            _FobsT,
+            _FcalcT,
             phase,
-            Icorr,
+            _Icorr,
         ) in hist.data["data"][1]["RefList"]:
             if twin > 0:
                 self.Write(
@@ -535,9 +533,7 @@ class ExportSingleText(G2fil.ExportBaseclass):
         ):
             return
         self.OpenFile()
-        hist = list(self.histnam)[
-            0
-        ]  # there should only be one histogram, in any case take the 1st
+        hist = next(iter(self.histnam))  # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
         hklfmt = "{:.0f},{:.0f},{:.0f}"
         hfmt = "{:>10s} {:>8s} {:>12s} {:>12s} {:>12s} {:>7s} {:>6s}"
@@ -558,10 +554,10 @@ class ExportSingleText(G2fil.ExportBaseclass):
             Fobs,
             sigFobs,
             Fcalc,
-            FobsT,
-            FcalcT,
+            _FobsT,
+            _FcalcT,
             phase,
-            Icorr,
+            _Icorr,
         ) in histblk["Data"]["RefList"]:
             if twin > 0:
                 self.Write(

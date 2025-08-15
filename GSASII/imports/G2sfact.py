@@ -16,7 +16,7 @@ def ColumnValidator(parent, filepointer, nCol=5):
     while l[0] in ["#", "("]:  # get past comments & fortran formats, if any
         l = filepointer.readline()
         line += 1
-    for i in range(10):  # scan a few lines
+    for _i in range(10):  # scan a few lines
         S = l.split()
         if len(S) < nCol:
             parent.errors = "line " + str(line) + ": invalid input\n" + l
@@ -547,7 +547,7 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
         oldNo = -1
         try:
             fp = open(filename)
-            for line, S in enumerate(fp):
+            for _line, S in enumerate(fp):
                 if not S:  # empty line terminates read
                     break
                 if S[0] == "#":
@@ -646,7 +646,7 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
         oldNo = -1
         try:
             fp = open(filename)
-            for line, S in enumerate(fp):
+            for _line, S in enumerate(fp):
                 if not S:  # empty line terminates read
                     break
                 if S[0] in ["#", "("]:
@@ -734,7 +734,7 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
     def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
         fp = open(filename)
-        for line, S in enumerate(fp):
+        for _line, S in enumerate(fp):
             if not S:  # empty line terminates read
                 break
             if S[0] == "#":

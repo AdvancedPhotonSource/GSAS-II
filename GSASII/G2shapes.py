@@ -289,9 +289,9 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                 x = float(aList_x_write[i])
                 y = float(aList_y_write[i])
                 z = float(aList_z_write[i])
-                x = "%.3f" % (x)
-                y = "%.3f" % (y)
-                z = "%.3f" % (z)
+                x = f"{x:.3f}"
+                y = f"{y:.3f}"
+                z = f"{z:.3f}"
                 x = x.rjust(8)
                 y = y.rjust(8)
                 z = z.rjust(8)
@@ -1060,7 +1060,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
 
             if icount == 0:
                 aString = (
-                    "Emin cycle: " + str(i) + " Energy: " + str("%4.2f" % (vdw_all))
+                    "Emin cycle: " + str(i) + " Energy: " + str(f"{vdw_all:4.2f}")
                 )
                 print(aString)
                 icount = -10
@@ -1575,7 +1575,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
         # Get the initial score between observed and calculated P(r)
 
         hist_score_best = pr_dif(aList_pr, aList_pr_model, skip)
-        aString = "Initial rms P(r): " + str("%4.3f" % (hist_score_best))
+        aString = "Initial rms P(r): " + str(f"{hist_score_best:4.3f}")
         print(aString)
 
         aList_i_calc = []
@@ -1583,9 +1583,9 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
         (chi_sq, rvalue) = score_Ic(aList_q, aList_i, aList_i_sd, aList_i_calc)
         aString = (
             "Initial Rvalue: "
-            + str("%4.3f" % (rvalue))
+            + str(f"{rvalue:4.3f}")
             + " CHI-squared: "
-            + str("%4.3f" % (chi_sq))
+            + str(f"{chi_sq:4.3f}")
         )
         print(aString)
 
@@ -1687,7 +1687,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                     "Target volume: "
                     + str("%4.2f" % (scale_vol * psv_ratio))
                     + " Actual volume: "
-                    + str("%4.2f" % (fraction_psv))
+                    + str(f"{fraction_psv:4.2f}")
                     + " Beads outside volume: "
                     + str(num_outof_box)
                 )
@@ -1716,14 +1716,14 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                     if mean_success_rate < 0.1:
                         sd_mc = 1.3 * sd_mc
                         aString = "Raising allowed energy deviation to " + str(
-                            "%4.2f" % (sd_mc)
+                            f"{sd_mc:4.2f}"
                         )
                         print(aString)
 
                     if mean_success_rate > 0.2:
                         sd_mc = 0.7 * sd_mc
                         aString = "Reducing allowed energy deviation to " + str(
-                            "%4.2f" % (sd_mc)
+                            f"{sd_mc:4.2f}"
                         )
                         print(aString)
 
@@ -1993,13 +1993,13 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
                     "Cycle "
                     + str(count_it + 1)
                     + " Moves "
-                    + str("%.2f" % (success_rate))
+                    + str(f"{success_rate:.2f}")
                     + " Possibles "
-                    + str("%.2f" % (count_hist_yes))
+                    + str(f"{count_hist_yes:.2f}")
                     + " rms P(r) "
-                    + str("%4.3f" % (hist_score))
+                    + str(f"{hist_score:4.3f}")
                     + " Energy "
-                    + str("%4.2f" % (vdw_all))
+                    + str(f"{vdw_all:4.2f}")
                 )
                 print(aString)
             #                print('Rvalue: %4.3f CHI-squared: %4.3f'%(rvalue,chi_sq))
@@ -2029,7 +2029,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
         # P(r) fitting statistics
         delta_hist_sum = pr_rfactor(aList_pr, aList_pr_sd, aList_pr_model_test, skip)
 
-        aString = "Delta P(r): " + str("%4.3f" % (delta_hist_sum))
+        aString = "Delta P(r): " + str(f"{delta_hist_sum:4.3f}")
         print(aString)
 
         # Get final energy
@@ -2037,7 +2037,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
             aList_beads_x, aList_beads_y, aList_beads_z, econ12, econ6, bead_sep3
         )
 
-        aString = "VDW energy: " + str("%4.2f" % (vdw_all))
+        aString = "VDW energy: " + str(f"{vdw_all:4.2f}")
         print(aString)
 
         Phases.append(
@@ -2111,7 +2111,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
             num_boxes = len(aList_box_x)
             fraction_psv = float(num_boxes) * box_pt_vol / psv_vol
 
-        aString = "Final PSV of protein envelope: " + str("%4.2f" % (fraction_psv))
+        aString = "Final PSV of protein envelope: " + str(f"{fraction_psv:4.2f}")
         print(aString)
 
         # Write input and model P(r)
@@ -2131,9 +2131,9 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
 
             aString = (
                 "Rvalue: "
-                + str("%4.3f" % (rvalue))
+                + str(f"{rvalue:4.3f}")
                 + " CHI-squared: "
-                + str("%4.3f" % (chi_sq))
+                + str(f"{chi_sq:4.3f}")
             )
             print(aString)
 
@@ -2149,10 +2149,10 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
 
         # Write final volume
 
-        delta_hist_sum = "%4.3f" % (delta_hist_sum)
-        vdw_all = "%4.2f" % (vdw_all)
-        fraction_psv = "%4.2f" % (fraction_psv)
-        chi_sq = "%4.3f" % (chi_sq)
+        delta_hist_sum = f"{delta_hist_sum:4.3f}"
+        vdw_all = f"{vdw_all:4.2f}"
+        fraction_psv = f"{fraction_psv:4.2f}"
+        chi_sq = f"{chi_sq:4.3f}"
 
         aString = (
             "REMARK     P(r) dif:"
@@ -2197,7 +2197,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
     print("Profiler of function calculation; top 50% of routines:")
     ps.print_stats(0.5)
     print(s.getvalue())
-    print("%s%.3f" % ("Run time = ", time.time() - time0))
+    print("{}{:.3f}".format("Run time = ", time.time() - time0))
 
     localtime = time.asctime(time.localtime(time.time()))
 

@@ -41,23 +41,20 @@ class ExportPowderFXYE(G2fil.ExportBaseclass):
         )
         self.Write(
             (
-                "INS   HTYPE   %sR                                                              "
-            )
-            % (Inst["Type"][0])
+                "INS   HTYPE   {}R                                                              "
+            ).format(Inst["Type"][0])
         )
         if "Lam1" in Inst:  # Ka1 & Ka2
             self.Write(
                 (
-                    "INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   "
-                )
-                % (Inst["Lam1"][0], Inst["Lam2"][0])
+                    "INS  1 ICONS{:10.7f}{:10.7f}    0.0000               0.990    0     0.500   "
+                ).format(Inst["Lam1"][0], Inst["Lam2"][0])
             )
         elif "Lam" in Inst:  # single wavelength
             self.Write(
                 (
-                    "INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   "
-                )
-                % (Inst["Lam"][1], 0.0)
+                    "INS  1 ICONS{:10.7f}{:10.7f}    0.0000               0.990    0     0.500   "
+                ).format(Inst["Lam"][1], 0.0)
             )
         self.Write(
             "INS  1 IRAD     0                                                               "
@@ -70,20 +67,17 @@ class ExportPowderFXYE(G2fil.ExportBaseclass):
         )
         self.Write(
             (
-                "INS  1DETAZM%10.3f                                                          "
-            )
-            % (Inst["Azimuth"][0])
+                "INS  1DETAZM{:10.3f}                                                          "
+            ).format(Inst["Azimuth"][0])
         )
         self.Write(
             "INS  1PRCF1     3    8   0.00100                                                "
         )
         self.Write(
-            ("INS  1PRCF11%15.6e%15.6e%15.6e%15.6e   ")
-            % (Inst["U"][1], Inst["V"][1], Inst["W"][1], 0.0)
+            ("INS  1PRCF11{:15.6e}{:15.6e}{:15.6e}{:15.6e}   ").format(Inst["U"][1], Inst["V"][1], Inst["W"][1], 0.0)
         )
         self.Write(
-            ("INS  1PRCF12%15.6e%15.6e%15.6e%15.6e   ")
-            % (Inst["X"][1], Inst["Y"][1], Inst["SH/L"][1] / 2.0, Inst["SH/L"][1] / 2.0)
+            ("INS  1PRCF12{:15.6e}{:15.6e}{:15.6e}{:15.6e}   ").format(Inst["X"][1], Inst["Y"][1], Inst["SH/L"][1] / 2.0, Inst["SH/L"][1] / 2.0)
         )
         self.CloseFile()
         print("Parameters from " + hist + " written to " + prmname)

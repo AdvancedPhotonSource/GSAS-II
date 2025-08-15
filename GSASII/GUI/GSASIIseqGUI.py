@@ -247,9 +247,9 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                     " Average for "
                     + G2frame.SeqTable.GetColLabelValue(col)
                     + ": "
-                    + "%.6g" % (ave)
+                    + f"{ave:.6g}"
                     + " +/- "
-                    + "%.6g" % (sig)
+                    + f"{sig:.6g}"
                 )
         else:
             G2frame.ErrorDialog(
@@ -358,7 +358,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
 
         def WriteSeq():
             lenName = len(saveNames[0])
-            line = "  %s  " % ("name".center(lenName))
+            line = "  {}  ".format("name".center(lenName))
             for col in cols:
                 item = G2frame.SeqTable.GetColLabelValue(col)
                 if col in havesig:
@@ -367,19 +367,16 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                     line += " %12s " % (item.center(12))
             WriteLine(line + "\n")
             for row, name in enumerate(saveNames):
-                line = " '%s' " % (name)
+                line = f" '{name}' "
                 for col in cols:
                     if col in havesig:
                         try:
-                            line += " %12.6f %12.6f " % (
-                                saveData[col][row],
-                                saveSigs[col][row],
-                            )
+                            line += f" {saveData[col][row]:12.6f} {saveSigs[col][row]:12.6f} "
                         except TypeError:
                             line += "                           "
                     else:
                         try:
-                            line += " %12.6f " % saveData[col][row]
+                            line += f" {saveData[col][row]:12.6f} "
                         except TypeError:
                             line += "              "
                 WriteLine(line + "\n")
@@ -591,7 +588,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                 tId = aNames.index(Tatom.split(" +")[0])
                 # create an expression object
                 obj = G2obj.ExpressionObj()
-                obj.expression = "Dist(%s,\n%s)" % (
+                obj.expression = "Dist({},\n{})".format(
                     Oatom,
                     Tatom.split(" d=")[0].replace(" ", ""),
                 )
@@ -801,7 +798,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
         UseFlags = G2frame.SeqTable.GetColValues(1)
         for obj in eqObjList:
             # assemble refined vars for this equation
-            varyValueDict.update({var: val for var, val in obj.GetVariedVarVal()})
+            varyValueDict.update(dict(obj.GetVariedVarVal()))
             # lookup dependent var position
             depVar = obj.GetDepVar()
             if depVar in colLabels:
@@ -856,7 +853,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             print("====> Fit failed")
             return
         print("==== Fit Results ====")
-        print("  chisq =  %.2f, GOF = %.2f" % (chisq, GOF))
+        print(f"  chisq =  {chisq:.2f}, GOF = {GOF:.2f}")
         for obj in eqObjList:
             obj.UpdateVariedVars(varyList, values)
             ind = "      "
@@ -1179,7 +1176,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
                     waveType = AtomSS["waveType"]
                     for Stype in ["Sfrac", "Spos", "Sadp", "Smag"]:
                         Waves = AtomSS[Stype]
-                        for iw, wave in enumerate(Waves):
+                        for iw, _wave in enumerate(Waves):
                             stiw = str(i) + ":" + str(iw)
                             if Stype == "Spos":
                                 if (
@@ -1312,7 +1309,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
     if not len(Histograms) and not len(
         Phases
     ):  # SASD, REFD, PDF or IMG histogrms not PWDR or HKLF
-        histNames = [name for name in data["histNames"]]
+        histNames = list(data["histNames"])
         Controls = {}
         ifPWDR = False
     else:
@@ -1563,7 +1560,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
         sampleDict[name] = dict(
             zip(
                 sampleParms.keys(),
-                [sampleParms[key][i] for key in sampleParms.keys()],
+                [sampleParms[key][i] for key in sampleParms],
                 strict=False,
             )
         )
@@ -1865,7 +1862,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
         if striphist(var) not in Dlookup:
             VarDict[var] = val
     # add recip cell coeff. values
-    VarDict.update({var: val for var, val in newCellDict.values()})
+    VarDict.update(dict(newCellDict.values()))
 
     # remove items to be hidden from table
     for l in reversed(range(len(colLabels))):
@@ -2163,8 +2160,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         except ValueError:
             G2G.G2MessageBox(
                 G2frame,
-                "Data for %s is mismatched in length to those already processed or has different step size"
-                % name,
+                f"Data for {name} is mismatched in length to those already processed or has different step size",
                 "No Cluster Analysis possible",
             )
             return
@@ -2355,7 +2351,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
                 result = SKC.KMeans(
                     n_clusters=ClusData["NumClust"], algorithm="elkan", init="k-means++"
                 ).fit(whitMat)
-                print("K-Means sum squared dist. to means %.2f" % result.inertia_)
+                print(f"K-Means sum squared dist. to means {result.inertia_:.2f}")
             elif ClusData["Scikit"] == "Spectral clustering":
                 result = SKC.SpectralClustering(n_clusters=ClusData["NumClust"]).fit(
                     whitMat
@@ -2390,11 +2386,11 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
                 Scoeff = SKM.silhouette_score(
                     whitMat, result.labels_, metric="euclidean"
                 )
-                print("Silhouette Coefficient: %.3f" % Scoeff)
+                print(f"Silhouette Coefficient: {Scoeff:.3f}")
                 CHcoeff = SKM.calinski_harabasz_score(whitMat, result.labels_)
-                print("Calinski-Harabasz index (Variance ratio): %.3f" % CHcoeff)
+                print(f"Calinski-Harabasz index (Variance ratio): {CHcoeff:.3f}")
                 DBcoeff = SKM.davies_bouldin_score(whitMat, result.labels_)
-                print("Davies-Bouldin Index: %.3f" % DBcoeff)
+                print(f"Davies-Bouldin Index: {DBcoeff:.3f}")
                 return Scoeff, CHcoeff, DBcoeff
             else:
                 print(
@@ -2454,9 +2450,9 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         compute.Bind(wx.EVT_BUTTON, OnCompute)
         clusSizer.Add(compute, 0, WACV)
         scikitSizer.Add(clusSizer)
-        useTxt = "%s used the whitened data matrix" % ClusData["Scikit"]
+        useTxt = "{} used the whitened data matrix".format(ClusData["Scikit"])
         if ClusData["Scikit"] in ["Agglomerative clustering", "Affinity propagation"]:
-            useTxt = "%s used %s for distance method" % (
+            useTxt = "{} used {} for distance method".format(
                 ClusData["Scikit"],
                 ClusData["Method"],
             )
@@ -2466,8 +2462,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
             scikitSizer.Add(
                 wx.StaticText(
                     G2frame.dataWindow,
-                    label="Metrics: Silhoutte: %.3f, Variance: %.3f, Davies-Bouldin: %.3f"
-                    % (metrics[0], metrics[1], metrics[2]),
+                    label=f"Metrics: Silhoutte: {metrics[0]:.3f}, Variance: {metrics[1]:.3f}, Davies-Bouldin: {metrics[2]:.3f}",
                 )
             )
         return scikitSizer
@@ -2650,8 +2645,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         mainSizer.Add(
             wx.StaticText(
                 G2frame.dataWindow,
-                label="(Examine any %s plot for reasonable limits; any change will clear Cluster data matrix) "
-                % ClusData["Type"],
+                label="(Examine any {} plot for reasonable limits; any change will clear Cluster data matrix) ".format(ClusData["Type"]),
             )
         )
         makeArray = wx.Button(
@@ -2699,8 +2693,7 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
                     kmeansres.Add(
                         wx.StaticText(
                             G2frame.dataWindow,
-                            label="K-means ave. dist = %.2f"
-                            % np.mean(ClusData["dists"]),
+                            label="K-means ave. dist = {:.2f}".format(np.mean(ClusData["dists"])),
                         )
                     )
                     mainSizer.Add(kmeansres)

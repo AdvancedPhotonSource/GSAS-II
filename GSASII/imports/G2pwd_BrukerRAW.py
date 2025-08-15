@@ -49,7 +49,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         else:
             self.errors = "Unexpected information in header: "
             if all(
-                [ord(c) < 128 and ord(c) != 0 for c in str(head)]
+                ord(c) < 128 and ord(c) != 0 for c in str(head)
             ):  # show only if ASCII
                 self.errors += "  " + str(head)
             else:
@@ -74,11 +74,11 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             fp.seek(168)
             self.comments.append("Date/Time=" + self.Read(fp, 20))
             self.comments.append("Anode=" + self.Read(fp, 2))
-            self.comments.append("Ka1=%.5f" % (st.unpack("<f", fp.read(4))[0]))
-            self.comments.append("Ka2=%.5f" % (st.unpack("<f", fp.read(4))[0]))
-            self.comments.append("Ka2/Ka1=%.5f" % (st.unpack("<f", fp.read(4))[0]))
+            self.comments.append("Ka1={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
+            self.comments.append("Ka2={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
+            self.comments.append("Ka2/Ka1={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
             fp.seek(206)
-            self.comments.append("Kb=%.5f" % (st.unpack("<f", fp.read(4))[0]))
+            self.comments.append("Kb={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
             pos = 256
             fp.seek(pos)
             blockNum = kwarg.get("blocknum", 0)
@@ -127,16 +127,16 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             self.comments.append("Sample=" + self.Read(fp, 60))
             fp.seek(564)
             radius = st.unpack("<f", fp.read(4))[0]
-            self.comments.append("Gonio. radius=%.2f" % (radius))
+            self.comments.append(f"Gonio. radius={radius:.2f}")
             self.Sample["Gonio. radius"] = radius
             fp.seek(608)
             self.comments.append("Anode=" + self.Read(fp, 4))
             fp.seek(616)
-            self.comments.append("Ka mean=%.5f" % (st.unpack("<d", fp.read(8))[0]))
-            self.comments.append("Ka1=%.5f" % (st.unpack("<d", fp.read(8))[0]))
-            self.comments.append("Ka2=%.5f" % (st.unpack("<d", fp.read(8))[0]))
-            self.comments.append("Kb=%.5f" % (st.unpack("<d", fp.read(8))[0]))
-            self.comments.append("Ka2/Ka1=%.5f" % (st.unpack("<d", fp.read(8))[0]))
+            self.comments.append("Ka mean={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
+            self.comments.append("Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
+            self.comments.append("Ka2={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
+            self.comments.append("Kb={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
+            self.comments.append("Ka2/Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
             pos = 712
             fp.seek(pos)  # position at 1st block header
             blockNum = kwarg.get("blocknum", 0)
@@ -215,8 +215,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     if segtype == 10:
                         fp.read(4)  # skip these
                         self.comments.append(
-                            "%s=%s"
-                            % (
+                            "{}={}".format(
                                 self.Read(fp, 24).strip("\x00"),
                                 self.Read(fp, seglen - 36).strip("\x00"),
                             )
@@ -224,19 +223,19 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     elif segtype == 30:  # x-ray source info
                         fp.read(64)
                         self.comments.append(
-                            "Ka mean=%.5f" % (st.unpack("<d", fp.read(8))[0])
+                            "Ka mean={:.5f}".format(st.unpack("<d", fp.read(8))[0])
                         )
                         self.comments.append(
-                            "Ka1=%.5f" % (st.unpack("<d", fp.read(8))[0])
+                            "Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0])
                         )
                         self.comments.append(
-                            "Ka2=%.5f" % (st.unpack("<d", fp.read(8))[0])
+                            "Ka2={:.5f}".format(st.unpack("<d", fp.read(8))[0])
                         )
                         self.comments.append(
-                            "Kb=%.5f" % (st.unpack("<d", fp.read(8))[0])
+                            "Kb={:.5f}".format(st.unpack("<d", fp.read(8))[0])
                         )
                         self.comments.append(
-                            "Ka2/Ka1=%.5f" % (st.unpack("<d", fp.read(8))[0])
+                            "Ka2/Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0])
                         )
                         fp.read(4)
                         self.comments.append("Anode=" + self.Read(fp, 4).strip("\x00"))
@@ -250,11 +249,11 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                         self.comments.append(
                             "Drive %s: align flag %d" % (driveName, alignFlag)
                         )
-                        self.comments.append("Drive %s: delta %f" % (driveName, Delt))
+                        self.comments.append(f"Drive {driveName}: delta {Delt:f}")
                         driveNo += 1
                     else:
                         fp.read(seglen - 8)
-                if segtype == 0 or segtype == 160:  # read data block
+                if segtype in (0, 160):  # read data block
                     self.idstring = self.dnames[nBank]
                     meta = {}
                     fp.read(28)
@@ -267,9 +266,9 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                         return False
                     fp.read(16)
                     startAngle = st.unpack("<d", fp.read(8))[0]
-                    meta["startAngle"] = "%.4f" % startAngle
+                    meta["startAngle"] = f"{startAngle:.4f}"
                     stepSize = st.unpack("<d", fp.read(8))[0]
-                    meta["stepSize"] = "%.4f" % stepSize
+                    meta["stepSize"] = f"{stepSize:.4f}"
                     Nsteps = st.unpack("<I", fp.read(4))[0]
                     meta["Nsteps"] = "%d" % Nsteps
                     meta["stepTime(ms)"] = st.unpack("<f", fp.read(4))[0]
@@ -303,8 +302,8 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                                     "Divergence Slit",
                                 ]:
                                     fp.read(20)
-                                    meta["start %s" % segName] = (
-                                        "%.4f" % (st.unpack("<d", fp.read(8))[0])
+                                    meta[f"start {segName}"] = (
+                                        "{:.4f}".format(st.unpack("<d", fp.read(8))[0])
                                     )
                                     fp.read(seglen - 64)
                                 else:
@@ -344,7 +343,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                             ]
                             for item in meta:
                                 self.comments.append(
-                                    "%s = %s" % (item, str(meta[item]))
+                                    f"{item} = {meta[item]!s}"
                                 )
                             fp.close()
                             self.repeat = True

@@ -180,7 +180,7 @@ def GetNonStdSubgroupsmag(SGData, kvec, star=False, landau=False, maximal=False)
         sid = item.find("<sub>")
         if sid == 8:
             bns = spgrp[1]
-            spgrp = "%s_%s %s" % (spgrp[0], bns, spgrp[2:])
+            spgrp = f"{spgrp[0]}_{bns} {spgrp[2:]}"
         return spgrp, bns
 
     def getMatVec(item):
@@ -323,7 +323,7 @@ def parseBilbaoCheckLattice(page):
     return found
 
 
-def GetStdSGset(SGData=None, oprList=[]):
+def GetStdSGset(SGData=None, oprList=None):
     """Determine the standard setting for a space group from either
     a list of symmetry operators or a space group object using the
     Bilbao Crystallographic Server utility IDENTIFY GROUP
@@ -344,6 +344,8 @@ def GetStdSGset(SGData=None, oprList=[]):
     """
     import re
 
+    if oprList is None:
+        oprList = []
     Site = bilbaoSite + "checkgr.pl"
 
     if not bool(oprList) ^ bool(SGData):
@@ -535,8 +537,8 @@ def applySym(xform, cell):
         scalA = [i * vadj for i in newA]
         cellsList.append(
             (
-                list(G2lat.A2cell(scalA)) + [G2lat.calc_V(scalA)],
-                list(G2lat.A2cell(origA)) + [G2lat.calc_V(origA)],
+                [*list(G2lat.A2cell(scalA)), G2lat.calc_V(scalA)],
+                [*list(G2lat.A2cell(origA)), G2lat.calc_V(origA)],
             )
         )
     return cellsList
@@ -637,7 +639,7 @@ program; Please cite:
         pagelist[0] = page0
     if page0 is None:
         return None
-    return scanBilbaoSymSearch1(page0, postdict) + [savedcookies]
+    return [*scanBilbaoSymSearch1(page0, postdict), savedcookies]
 
 
 def scanBilbaoSymSearch1(page0, postdict):
@@ -963,7 +965,7 @@ web service. Please cite:
         1
     ]
     rd.Phase["General"]["Cell"] = (
-        [False] + list(cell) + [G2lat.calc_V(G2lat.cell2A(cell))]
+        [False, *list(cell), G2lat.calc_V(G2lat.cell2A(cell))]
     )
     rd.Phase["Atoms"] = []
     for i, line in enumerate(structure.split("\n")[3:]):
@@ -1000,6 +1002,7 @@ web service. Please cite:
         if i == int(natom) - 1:
             break
     del rd.SymOps["xyz"]  # as-read sym ops now obsolete
+    return None
 
 
 def test():

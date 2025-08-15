@@ -202,7 +202,7 @@ class testDeriv(wx.Frame):
             except ValueError:
                 value = self.delt[item]
             self.delt[item] = value
-            Obj.SetValue("%g" % (value))
+            Obj.SetValue(f"{value:g}")
 
         if self.testDerivPanel.GetSizer():
             self.testDerivPanel.GetSizer().Clear(True)
@@ -223,7 +223,7 @@ class testDeriv(wx.Frame):
             useVal.Bind(wx.EVT_CHECKBOX, OnItemCk)
             mainSizer.Add(useVal, 0)
             delVal = wx.TextCtrl(
-                self.testDerivPanel, wx.ID_ANY, "%g" % (d), style=wx.TE_PROCESS_ENTER
+                self.testDerivPanel, wx.ID_ANY, f"{d:g}", style=wx.TE_PROCESS_ENTER
             )
             ObjInd[delVal.GetId()] = id
             delVal.Bind(wx.EVT_TEXT_ENTER, OnDelValue)

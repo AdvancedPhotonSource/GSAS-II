@@ -85,9 +85,12 @@ except AttributeError:
     pass
 
 # trig functions in degrees
-sind = lambda x: np.sin(x * np.pi / 180.0)
-tand = lambda x: np.tan(x * np.pi / 180.0)
-cosd = lambda x: np.cos(x * np.pi / 180.0)
+def sind(x):
+    return np.sin(x * np.pi / 180.0)
+def tand(x):
+    return np.tan(x * np.pi / 180.0)
+def cosd(x):
+    return np.cos(x * np.pi / 180.0)
 
 # Define short names for convenience
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -245,7 +248,7 @@ class MergeDialog(wx.Dialog):
             transSizer.Add(commonSizer)
             Trmat = wx.FlexGridSizer(3, 3, 0, 0)
         for iy, line in enumerate(self.Trans):
-            for ix, val in enumerate(line):
+            for ix, _val in enumerate(line):
                 item = G2G.ValidatedTxtCtrl(
                     self.panel, self.Trans[iy], ix, nDig=(10, 3), size=(65, 25)
                 )
@@ -435,7 +438,7 @@ def convVersion(version):
             break
         if len(v) == 0:
             break
-        v = list(filter(None, re.split("(\\d+)", v)))[0]  # conv '1b2' to '1'
+        v = next(filter(None, re.split("(\\d+)", v)))  # conv '1b2' to '1'
         try:
             vIntList[i] = int(v)
         except:
@@ -631,15 +634,14 @@ def ShowVersions():
                     break
                 except:
                     pass
-        print("  Image:      %s (PIL or Pillow)" % version)
+        print(f"  Image:      {version} (PIL or Pillow)")
     print(
-        "  Platform:   %s %s %s"
-        % (sys.platform, platform.architecture()[0], platform.machine())
+        f"  Platform:   {sys.platform} {platform.architecture()[0]} {platform.machine()}"
     )
     try:
         import mkl
 
-        print("  Max threads:%s" % mkl.get_max_threads())
+        print(f"  Max threads:{mkl.get_max_threads()}")
     except:
         pass
 
@@ -1114,7 +1116,7 @@ class GSASII(wx.Frame):
             rdmsg = None
         fp.close()
         if rdmsg is None or not all(
-            [ord(c) < 128 and ord(c) != 0 for c in rdmsg]
+            ord(c) < 128 and ord(c) != 0 for c in rdmsg
         ):  # show only if ASCII
             rdmsg = (
                 "File " + filename + " is a binary file. Do you want to read this file?"
@@ -1130,9 +1132,7 @@ class GSASII(wx.Frame):
             result = dlg.ShowModal()
         finally:
             dlg.Destroy()
-        if result == wx.ID_NO:
-            return True
-        return False
+        return result == wx.ID_NO
 
     def OnImportGeneric(
         self,
@@ -1140,7 +1140,7 @@ class GSASII(wx.Frame):
         readerlist,
         label,
         multiple=False,
-        usedRanIdList=[],
+        usedRanIdList=None,
         Preview=True,
         load2Tree=False,
     ):
@@ -1196,6 +1196,8 @@ class GSASII(wx.Frame):
         :returns: a list of reader objects (rd_list) that were able
           to read the specified file(s). This list may be empty.
         """
+        if usedRanIdList is None:
+            usedRanIdList = []
         self.lastimport = ""
         self.zipfile = None
         singlereader = True
@@ -1980,7 +1982,7 @@ If you continue from this point, it is quite likely that all intensity computati
         if (
             bank is None
         ):  # no bank was specified in the input file, is more than one present in file?
-            banklist = set([])
+            banklist = set()
             for S in instLines:
                 if S[0] == "#" and "Bank" in S:
                     banklist.add(int(S.split(":")[0].split()[1]))
@@ -2081,8 +2083,10 @@ If you continue from this point, it is quite likely that all intensity computati
             param: rd: importer data structure
             returns: dict: Instrument parameter dictionary
             """
-            sind = lambda x: math.sin(x * math.pi / 180.0)
-            tand = lambda x: math.tan(x * math.pi / 180.0)
+            def sind(x):
+                return math.sin(x * math.pi / 180.0)
+            def tand(x):
+                return math.tan(x * math.pi / 180.0)
             while True:  # loop until we get a choice
                 choices = []
                 head = "Select from default instrument parameters for " + rd.idstring
@@ -2182,7 +2186,7 @@ If you continue from this point, it is quite likely that all intensity computati
                         selection=os.path.split(basename + ext)[1],
                         parent=self,
                     )
-                    if instfile == None:
+                    if instfile is None:
                         continue
                     print(f"created {instfile} from {self.zipfile}")
                     self.cleanupList.append(instfile)
@@ -2224,7 +2228,7 @@ If you continue from this point, it is quite likely that all intensity computati
             else:
                 # for multiple reads of one data file, reuse the inst parm file
                 instfile = lastIparmfile
-            if instfile != None and os.path.exists(instfile):
+            if instfile is not None and os.path.exists(instfile):
                 if (
                     "instprm" in instfile
                 ):  # GSAS-II file must have .instprm as extension
@@ -2264,7 +2268,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     parent=self,
                     msg="Reading an instrument parameter file\n\n",
                 )
-                if instfile == None:
+                if instfile is None:
                     self.zipfile = None
                     continue
                 print(f"created {instfile} from {self.zipfile}")
@@ -2428,7 +2432,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 continue
             if HistName in PWDRlist:
                 dlg = wx.MessageDialog(
-                    self, "Skip %s?" % (HistName), "Duplicate data name", wx.YES_NO
+                    self, f"Skip {HistName}?", "Duplicate data name", wx.YES_NO
                 )
                 try:
                     if dlg.ShowModal() == wx.ID_YES:
@@ -4344,13 +4348,9 @@ If you continue from this point, it is quite likely that all intensity computati
 
         def GetData(self):
             if self.dataType == "PWDR":
-                return self.selectData + [
-                    self.data[-1],
-                ], self.result
+                return [*self.selectData, self.data[-1]], self.result
             else:
-                return self.selectData + [
-                    self.data[-1],
-                ], self.selectVals
+                return [*self.selectData, self.data[-1]], self.selectVals
 
         def onChar(self, event):
             "Respond to keyboard events in the Filter box"
@@ -4372,7 +4372,7 @@ If you continue from this point, it is quite likely that all intensity computati
             else:
                 dlg.Destroy()
                 return
-            for Id, item in enumerate(self.selectData):
+            for Id, _item in enumerate(self.selectData):
                 self.selectVals[Id] = val
             wx.CallAfter(self.Draw)
 
@@ -4470,6 +4470,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 )
                 self.plotFrame.Show()
                 return True
+            return None
 
         def OnOk(self, event):
             if self.dataType == "PWDR":
@@ -4706,12 +4707,11 @@ If you continue from this point, it is quite likely that all intensity computati
                                     print("Differences: ")
                                     for diff in chkDiff:
                                         print(
-                                            "%s: %s %s"
-                                            % (diff[0], str(diff[1]), str(diff[2]))
+                                            f"{diff[0]}: {diff[1]!s} {diff[2]!s}"
                                         )
                                     return
                             Found = True
-                            Comments.append("%10.3f %s" % (scale, " * " + name))
+                            Comments.append("{:10.3f} {}".format(scale, " * " + name))
                             i = TextList.index(name)
                             Npix, imagefile, imagetag = DataList[i]
                             imagefile = G2IO.GetCheckImageFile(self, IdList[i])[1]
@@ -4953,15 +4953,7 @@ If you continue from this point, it is quite likely that all intensity computati
                         data = self.GPXtree.GetItemPyData(item)
                         if usedPhase:  # remove r-factors
                             dellist = [value for value in data[0] if ":" in value]
-                            for v in dellist + [
-                                "Durbin-Watson",
-                                "R",
-                                "wR",
-                                "Rb",
-                                "wRb",
-                                "wRmin",
-                                "Nobs",
-                            ]:
+                            for v in [*dellist, "Durbin-Watson", "R", "wR", "Rb", "wRb", "wRmin", "Nobs"]:
                                 if v in data[0]:
                                     del data[0][v]
                             # could wipe out computed & difference patterns, but does not work
@@ -5282,7 +5274,7 @@ If you continue from this point, it is quite likely that all intensity computati
         except:
             print("Error processing previous project list:", files)
         if len(keeplist) == 0:
-            GSASIIpath.SetConfigValue({"previous_GPX_files": tuple([])})
+            GSASIIpath.SetConfigValue({"previous_GPX_files": ()})
             return
         dlg = G2G.G2SingleChoiceDialog(
             self, "Select previous project to open", "Select project", sellist
@@ -5773,7 +5765,7 @@ If you continue from this point, it is quite likely that all intensity computati
             )
             return
         header = "Select histograms for MTZ file:"
-        histList = [item for item in Histograms]
+        histList = list(Histograms)
         od = {
             "label_1": "Export Fo^2",
             "value_1": False,
@@ -5850,12 +5842,11 @@ If you continue from this point, it is quite likely that all intensity computati
                     refDict[hklStr] = rec
             nRef = len(refDict)
         # set up header stuff
-        Header = "%s" % ("VERS MTZ:V1.1".ljust(80))
-        Header += ("TITLE %s" % (General["Name"])).ljust(80)
+        Header = "{}".format("VERS MTZ:V1.1".ljust(80))
+        Header += ("TITLE {}".format(General["Name"])).ljust(80)
         Header += ("NCOL %10d%10d%10d" % (nCol, nRef, 0)).ljust(80)
         Header += (
-            "CELL %9.4f%9.4f%9.4f%9.4f%9.4f%9.4f"
-            % (Cell[0], Cell[1], Cell[2], Cell[3], Cell[4], Cell[5])
+            f"CELL {Cell[0]:9.4f}{Cell[1]:9.4f}{Cell[2]:9.4f}{Cell[3]:9.4f}{Cell[4]:9.4f}{Cell[5]:9.4f}"
         ).ljust(80)
         Header += "SORT    1   2   3   0   0".ljust(80)
         Nops = len(SGData["SGOps"])
@@ -5869,9 +5860,9 @@ If you continue from this point, it is quite likely that all intensity computati
         SGtext, SGTable = G2spc.SGPrint(SGData)
         textOps = G2spc.TextOps(SGtext, SGTable, reverse=True)
         for ops in textOps:
-            Header += ("SYMM  %s" % ops.upper()).ljust(80)
+            Header += (f"SYMM  {ops.upper()}").ljust(80)
         Header += (
-            "RESO  %.8f  %.8f " % (1.0 / dRange[1] ** 2, 1.0 / dRange[0] ** 2)
+            f"RESO  {1.0 / dRange[1] ** 2:.8f}  {1.0 / dRange[0] ** 2:.8f} "
         ).ljust(80)
         Header += "VALM NAN".ljust(80)
         Header += ("COLUMN %s H%18d%18d" % ("H".ljust(30), Hrange[0], Hrange[1])).ljust(
@@ -5887,32 +5878,26 @@ If you continue from this point, it is quite likely that all intensity computati
             hname = hist.split()[1].split(".")[0]
             if useFo:
                 Header += (
-                    "COLUMN %s F%18.4f%18.4f"
-                    % (("F_" + hname).ljust(30), IoRange[ih][0], IoRange[ih][1])
+                    "COLUMN {} F{:18.4f}{:18.4f}".format(("F_" + hname).ljust(30), IoRange[ih][0], IoRange[ih][1])
                 ).ljust(78) + "%2d" % (ih + 1)
                 Header += (
-                    "COLUMN %s Q%18.8f%18.8f"
-                    % (("SIGFP_" + hname).ljust(30), SigRange[ih][0], SigRange[ih][1])
+                    "COLUMN {} Q{:18.8f}{:18.8f}".format(("SIGFP_" + hname).ljust(30), SigRange[ih][0], SigRange[ih][1])
                 ).ljust(78) + "%2d" % (ih + 1)
                 Header += (
-                    "COLUMN %s F%18.4f%18.4f"
-                    % (("FC_" + hname).ljust(30), IcRange[ih][0], IcRange[ih][1])
+                    "COLUMN {} F{:18.4f}{:18.4f}".format(("FC_" + hname).ljust(30), IcRange[ih][0], IcRange[ih][1])
                 ).ljust(78) + "%2d" % (ih + 1)
             else:
                 Header += (
-                    "COLUMN %s J%18.4f%18.4f"
-                    % (("I_" + hname).ljust(30), IoRange[ih][0], IoRange[ih][1])
+                    "COLUMN {} J{:18.4f}{:18.4f}".format(("I_" + hname).ljust(30), IoRange[ih][0], IoRange[ih][1])
                 ).ljust(78) + "%2d" % (ih + 1)
                 Header += (
-                    "COLUMN %s Q%18.8f%18.8f"
-                    % (("SIGI_" + hname).ljust(30), SigRange[ih][0], SigRange[ih][1])
+                    "COLUMN {} Q{:18.8f}{:18.8f}".format(("SIGI_" + hname).ljust(30), SigRange[ih][0], SigRange[ih][1])
                 ).ljust(78) + "%2d" % (ih + 1)
                 Header += (
-                    "COLUMN %s J%18.4f%18.4f"
-                    % (("IC_" + hname).ljust(30), IcRange[ih][0], IcRange[ih][1])
+                    "COLUMN {} J{:18.4f}{:18.4f}".format(("IC_" + hname).ljust(30), IcRange[ih][0], IcRange[ih][1])
                 ).ljust(78) + "%2d" % (ih + 1)
             Header += (
-                "COLUMN %s P%18.4f%18.4f" % (("PHIC_" + hname).ljust(30), -180.0, 180.0)
+                "COLUMN {} P{:18.4f}{:18.4f}".format(("PHIC_" + hname).ljust(30), -180.0, 180.0)
             ).ljust(78) + "%2d" % (ih + 1)
         Header += ("NDIF %10d" % nDif).ljust(80)
         projName = os.path.split(self.GSASprojectfile)[1]
@@ -5930,7 +5915,7 @@ If you continue from this point, it is quite likely that all intensity computati
             ).ljust(80)  # not correct- sholud include Dijs
             Header += ("DWAVE   %7d %10.5f" % (iH + 1, wave)).ljust(80)
         Header += "END".ljust(80)
-        Header += ("Created by GSAS-II on %s" % time.ctime()).ljust(80)
+        Header += (f"Created by GSAS-II on {time.ctime()}").ljust(80)
         Header += "MTZENDOFHEADER".ljust(80)
 
         if useFo:
@@ -5954,7 +5939,7 @@ If you continue from this point, it is quite likely that all intensity computati
             MTZ.write(string)
         MTZ.write(Header.encode())
         MTZ.close()
-        print("MTZ file %s written" % fName)
+        print(f"MTZ file {fName} written")
 
     def OnExportPeakList(self, event):
         """Exports a PWDR peak list as a text file"""
@@ -5992,7 +5977,7 @@ If you continue from this point, it is quite likely that all intensity computati
                             item2, cookie2 = self.GPXtree.GetNextChild(item, cookie2)
                         file.write("#%s \n" % (name + " Peak List"))
                         if wave:
-                            file.write("#wavelength = %10.6f\n" % (wave))
+                            file.write(f"#wavelength = {wave:10.6f}\n")
                         if "T" in Type:
                             file.write(
                                 "#%9s %10s %10s %12s %10s %10s %10s %10s %10s %10s\n"
@@ -6053,8 +6038,7 @@ If you continue from this point, it is quite likely that all intensity computati
                                     peak[4] * peak[6]
                                 )  # to get delta-TOF from Gam(peak)
                                 file.write(
-                                    "%10.2f %10.5f %10.5f %12.2f%10.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n"
-                                    % (
+                                    "{:10.2f} {:10.5f} {:10.5f} {:12.2f}{:10.2f} {:10.3f} {:10.3f} {:10.3f} {:10.3f} {:10.3f}\n".format(
                                         peak[0],
                                         dsp,
                                         esddsp,
@@ -6085,8 +6069,7 @@ If you continue from this point, it is quite likely that all intensity computati
                                     gam, sig
                                 )  # to get delta-2-theta in deg. from Gam(peak)
                                 file.write(
-                                    "%10.4f %10.5f %10.5f %12.2f %10.2f %10.5f %10.5f %10.5f %10.5f %10.5f \n"
-                                    % (
+                                    "{:10.4f} {:10.5f} {:10.5f} {:12.2f} {:10.2f} {:10.5f} {:10.5f} {:10.5f} {:10.5f} {:10.5f} \n".format(
                                         peak[0],
                                         dsp,
                                         esddsp,
@@ -6139,22 +6122,15 @@ If you continue from this point, it is quite likely that all intensity computati
                                     if Imax:
                                         I100 *= 100.0 / Imax
                                     file.write(
-                                        "%s %s %s \n"
-                                        % (name, phase, " Reflection List")
+                                        "{} {} {} \n".format(name, phase, " Reflection List")
                                     )
                                     if "T" in peaks.get("Type", "PXC"):
                                         file.write(
-                                            "%s \n"
-                                            % (
-                                                "   h   k   l   m   d-space       TOF       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100"
-                                            )
+                                            "{} \n".format("   h   k   l   m   d-space       TOF       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100")
                                         )
                                     else:
                                         file.write(
-                                            "%s \n"
-                                            % (
-                                                "   h   k   l   m   d-space   2-theta       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100"
-                                            )
+                                            "{} \n".format("   h   k   l   m   d-space   2-theta       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100")
                                         )
                                     for ipk, peak in enumerate(peaks["RefList"]):
                                         if "T" in peaks.get("Type", "PXC"):
@@ -6291,9 +6267,12 @@ If you continue from this point, it is quite likely that all intensity computati
         """Sets up PDF data structure filled with defaults; if found chemical formula is inserted
         so a default PDF can be made.
         """
-        sind = lambda x: math.sin(x * math.pi / 180.0)
-        tth2q = lambda t, w: 4.0 * math.pi * sind(t / 2.0) / w
-        tof2q = lambda t, C: 2.0 * math.pi * C / t
+        def sind(x):
+            return math.sin(x * math.pi / 180.0)
+        def tth2q(t, w):
+            return 4.0 * math.pi * sind(t / 2.0) / w
+        def tof2q(t, C):
+            return 2.0 * math.pi * C / t
         TextList = []
         ElLists = []
         Qlimits = []
@@ -7138,7 +7117,7 @@ No: least-squares fitting starts with previously fit structure factors."""
                 )
             text += "\nLoad new result?"
             dlg2 = wx.MessageDialog(
-                self, text, "Refinement results, Rw =%.3f" % (Rw), wx.OK | wx.CANCEL
+                self, text, f"Refinement results, Rw ={Rw:.3f}", wx.OK | wx.CANCEL
             )
             dlg2.CenterOnParent()
             try:
@@ -7352,6 +7331,7 @@ No: least-squares fitting starts with previously fit structure factors."""
         Controls["deriv type"] = saveDervtype
         Controls["max cyc"] = savCyc
         self.OnFileSave(event)
+        return None
 
     def OnSavePartials(self, event):
         """Saves partials as a csv file"""
@@ -7459,6 +7439,7 @@ No: least-squares fitting starts with previously fit structure factors."""
                 print("File", phPartialFile, "written")
         fp.close()
         print("Saving partials as csv files finished")
+        return None
 
     def OnClusterAnalysis(self, event):
         """Setsup cluster analysis & make tree entry"""
@@ -7501,11 +7482,13 @@ No: least-squares fitting starts with previously fit structure factors."""
         ClustDict["SKLearn"] = SKLearn
         self.GPXtree.SelectItem(Id)
 
-    def reloadFromGPX(self, rtext=None, Rvals={}):
+    def reloadFromGPX(self, rtext=None, Rvals=None):
         """Deletes current data tree & reloads it from GPX file (after a
         refinement.) Done after events are completed to avoid crashes.
         :param rtext str: string info from caller to be put in Notebook after reload
         """
+        if Rvals is None:
+            Rvals = {}
         self.GPXtree.DeleteChildren(self.root)
         self.HKL = np.array([])
         self.Extinct = []
@@ -8081,7 +8064,7 @@ class G2DataWindow(wx.ScrolledWindow):  # wxscroll.ScrolledPanel):
         haveGrid = None  # is there a single grid in this panel?
         haveNotebook = None  # is there a single notebook in this panel?
         for child in self.GetChildren():
-            if isinstance(child, G2G.GSGrid) or isinstance(child, G2G.GSNoteBook):
+            if isinstance(child, G2G.GSGrid | G2G.GSNoteBook):
                 if haveGrid or haveNotebook:
                     haveGrid = None
                     haveNotebook = None
@@ -10730,7 +10713,7 @@ other than being included in the Notebook section of the project file.""",
             G2frame.G2plotNB.Delete("fit results")
             return
         vals = []
-        for i, l in enumerate(data):
+        for _i, l in enumerate(data):
             ls = l.split()
             if len(ls) < 1:  # empty line
                 continue
@@ -11121,7 +11104,7 @@ def UpdateControls(G2frame, data):
             except ValueError:
                 value = 1.0
             data["shift factor"] = value
-            Factr.SetValue("%.5f" % (value))
+            Factr.SetValue(f"{value:.5f}")
 
         def OnFsqRef(event):
             data["F**2"] = fsqRef.GetValue()
@@ -11694,7 +11677,7 @@ def UpdatePWHKPlot(G2frame, kind, item):
             print(mtext)
             Comments.append(mtext)
         else:
-            print("nothing to merge for %s reflections" % (mergeRef.shape[0]))
+            print(f"nothing to merge for {mergeRef.shape[0]} reflections")
         HKLFlist = []
         newName = Name + " " + Laue
         if G2frame.GPXtree.GetCount():
@@ -11742,7 +11725,7 @@ def UpdatePWHKPlot(G2frame, kind, item):
         Comments.append(
             " Changing %d reflection F^2^2 to F^2 from %s" % (len(refList), Name)
         )
-        for ih, hkl in enumerate(refList):  # undo F--> F^2
+        for _ih, hkl in enumerate(refList):  # undo F--> F^2
             hkl[5 + Super] = np.sqrt(hkl[5 + Super])
             hkl[6 + Super] = hkl[6 + Super] / (2.0 * hkl[5 + Super])
             hkl[7 + Super] = np.sqrt(hkl[7 + Super])
@@ -11956,7 +11939,7 @@ def UpdatePWHKPlot(G2frame, kind, item):
 
     if kind == "PWDR" and S is not None:
         wtSizer.Add(
-            wx.StaticText(G2frame.dataWindow, label=' Data "Surprise" factor: %.3f' % S)
+            wx.StaticText(G2frame.dataWindow, label=f' Data "Surprise" factor: {S:.3f}')
         )
     mainSizer.Add(wtSizer, 0, wx.EXPAND)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -12018,7 +12001,7 @@ def UpdatePWHKPlot(G2frame, kind, item):
                 DBW = 1.0
             mainSizer.Add(
                 wx.StaticText(
-                    G2frame.dataWindow, label=" Durbin-Watson statistic: %.3f" % DBW
+                    G2frame.dataWindow, label=f" Durbin-Watson statistic: {DBW:.3f}"
                 )
             )
         for value in data[0]:
@@ -12318,7 +12301,7 @@ def SelectDataTreeItem(G2frame, item, oldFocus=None):
         try:
             if grid.IsCellEditControlEnabled():  # complete any grid edits in progress
                 if GSASIIpath.GetConfigValue("debug"):
-                    print("Completing grid edit in%s" % str(grid))
+                    print(f"Completing grid edit in{grid!s}")
                 grid.SaveEditControlValue()
                 # not sure if the next two things do anything
                 grid.HideCellEditControl()
@@ -12415,7 +12398,7 @@ def SelectDataTreeItem(G2frame, item, oldFocus=None):
         except IndexError:
             G2frame.dataWindow.helpKey = ""
             if GSASIIpath.GetConfigValue("debug"):
-                print("bug: why here? prfx=%s prfx1=%s" % (prfx, prfx1))
+                print(f"bug: why here? prfx={prfx} prfx1={prfx1}")
                 G2obj.HowDidIgetHere()
 
     # clear out the old panel contents
@@ -12845,7 +12828,7 @@ def SelectDataTreeItem(G2frame, item, oldFocus=None):
         data = G2frame.GPXtree.GetItemPyData(item)
         G2frame.RefList = ""
         if len(data):
-            G2frame.RefList = list(data.keys())[0]
+            G2frame.RefList = next(iter(data.keys()))
         G2pdG.UpdateReflectionGrid(G2frame, data)
         G2frame.dataWindow.HideShow.Enable(False)
         newPlot = False

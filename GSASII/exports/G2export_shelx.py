@@ -116,7 +116,7 @@ class ExportPhaseShelx(G2fil.ExportBaseclass):
                 else:
                     occ = m * xyz[3][0]
                 l += f" {occ:.3f}"
-                for val, sig in td:
+                for val, _sig in td:
                     l += f" {val:.3f}"
                 self.Write(l)
             self.Write("END")

@@ -128,7 +128,7 @@ def GetTifData(filename):
     nSlice = 1
     if DEBUG:
         print("byteorder:", byteOrd)
-    for ied in range(NED):
+    for _ied in range(NED):
         Tag, Type = st.unpack(byteOrd + "Hh", File.read(4))
         nVal = st.unpack(byteOrd + "i", File.read(4))[0]
         if DEBUG:
@@ -225,7 +225,7 @@ def GetTifData(filename):
                 np.frombuffer(File.read(4 * Npix), dtype=np.int32), dtype=np.int32
             )
         elif IFD[258][2][0] == 16:
-            if sizexy == [3888, 3072] or sizexy == [3072, 3888]:
+            if sizexy in ([3888, 3072], [3072, 3888]):
                 tifType = "Dexela"
                 pixy = [74.8, 74.8]
                 G2fil.G2Print("Read Dexela detector tiff file: " + filename)
@@ -304,7 +304,7 @@ def GetTifData(filename):
         image = np.array(
             np.frombuffer(File.read(2 * Npix), dtype=np.uint16), dtype=np.int32
         )
-    elif sizexy == [2048, 2048] or sizexy == [1024, 1024] or sizexy == [3072, 3072]:
+    elif sizexy in ([2048, 2048], [1024, 1024], [3072, 3072]):
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 32:
                 tifType = "PE"

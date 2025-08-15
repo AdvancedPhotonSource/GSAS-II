@@ -21,12 +21,12 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
         "Look through the file for expected types of lines in a valid r-step file"
         filepointer = open(filename)
         Ndata = 0
-        for i, S in enumerate(filepointer):
+        for _i, S in enumerate(filepointer):
             if "#L" in S[:2]:
                 break
             if len(S.split()) != 2:
                 break
-        for i, S in enumerate(filepointer):
+        for _i, S in enumerate(filepointer):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -98,10 +98,10 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
         "Look through the file for expected types of lines in a valid r-step file"
         filepointer = open(filename)
         Ndata = 0
-        for i, S in enumerate(filepointer):
+        for _i, S in enumerate(filepointer):
             if "#L r" in S[:4]:
                 break
-        for i, S in enumerate(filepointer):
+        for _i, S in enumerate(filepointer):
             vals = S.split()
             if len(vals) >= 2:
                 try:

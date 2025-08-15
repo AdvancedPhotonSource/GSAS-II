@@ -109,15 +109,15 @@ class testSytSym(wx.Frame):
                 ShTerms, ShSigns = G2lat.GenRBCoeff(SytSym, "1", 21)
                 ShRBTerms, ShRBSigns = G2lat.GenRBCoeff(SytSym, self.RBsym, 21)
                 if len(ShTerms) > 12:
-                    StrSh = [sh for sh in ShTerms[:12]]
+                    StrSh = list(ShTerms[:12])
                 else:
-                    StrSh = [sh for sh in ShTerms]
-                Shtxt.SetLabel(" Sp. Harm coeff:  %s" % StrSh)
+                    StrSh = list(ShTerms)
+                Shtxt.SetLabel(f" Sp. Harm coeff:  {StrSh}")
                 if len(ShRBTerms) > 12:
-                    StrRBSh = [sh for sh in ShRBTerms[:12]]
+                    StrRBSh = list(ShRBTerms[:12])
                 else:
-                    StrRBSh = [sh for sh in ShRBTerms]
-                ShRBtxt.SetLabel(" Sp. Harm coeff:  %s" % StrRBSh)
+                    StrRBSh = list(ShRBTerms)
+                ShRBtxt.SetLabel(f" Sp. Harm coeff:  {StrRBSh}")
             except:
                 print("Bad X,Y,Z entry: ", Obj.GetValue())
                 self.XYZ = "0,0,0"
@@ -133,7 +133,7 @@ class testSytSym(wx.Frame):
 
         def OnShowGen(event):
             GenText = G2spc.TextGen(SGData, reverse=True)
-            print(" Symmetry generators for %s:" % text[0].split(":")[1])
+            print(" Symmetry generators for {}:".format(text[0].split(":")[1]))
             for item in GenText:
                 print(item)
 
@@ -150,10 +150,10 @@ class testSytSym(wx.Frame):
             self.RBsym = simsel.GetStringSelection()
             ShRBTerms, ShRBSigns = G2lat.GenRBCoeff(SytSym, self.RBsym, 21)
             if len(ShRBTerms) > 12:
-                StrRBSh = [sh for sh in ShRBTerms[:12]]
+                StrRBSh = list(ShRBTerms[:12])
             else:
-                StrRBSh = [sh for sh in ShRBTerms]
-            ShRBtxt.SetLabel(" Sp. Harm coeff:  %s" % StrRBSh)
+                StrRBSh = list(ShRBTerms)
+            ShRBtxt.SetLabel(f" Sp. Harm coeff:  {StrRBSh}")
 
         SGData = Data["SGData"]
         self.testSSPanel.DestroyChildren()
@@ -186,13 +186,13 @@ class testSytSym(wx.Frame):
         StrUIJ = [str(suij) for suij in CSIU[0]]
         ValUIJ = [str(val) for val in CSIU[1]]
         if len(ShTerms) > 12:
-            StrSh = [sh for sh in ShTerms[:12]]
+            StrSh = list(ShTerms[:12])
         else:
-            StrSh = [sh for sh in ShTerms]
+            StrSh = list(ShTerms)
         if len(ShRBTerms) > 12:
-            StrRBSh = [sh for sh in ShRBTerms[:12]]
+            StrRBSh = list(ShRBTerms[:12])
         else:
-            StrRBSh = [sh for sh in ShRBTerms]
+            StrRBSh = list(ShRBTerms)
         CSIXtxt = wx.StaticText(
             self.testSSPanel,
             label=" site sym: %6s, mult: %3d, CSI-X: %s %s"
@@ -206,7 +206,7 @@ class testSytSym(wx.Frame):
             % (SytSym, Mul, StrUIJ, ValUIJ),
         )
         mainSizer.Add(CSIUtxt)
-        Shtxt = wx.StaticText(self.testSSPanel, label=" Sp. Harm coeff:  %s" % StrSh)
+        Shtxt = wx.StaticText(self.testSSPanel, label=f" Sp. Harm coeff:  {StrSh}")
         mainSizer.Add(Shtxt)
         RBsizer = wx.BoxSizer(wx.HORIZONTAL)
         RBsizer.Add(wx.StaticText(self.testSSPanel, label=" Spinning RB symmetry: "))
@@ -234,7 +234,7 @@ class testSytSym(wx.Frame):
         RBsizer.Add(simsel, 0, WACV)
         mainSizer.Add(RBsizer)
         ShRBtxt = wx.StaticText(
-            self.testSSPanel, label=" Sp. Harm coeff:  %s" % StrRBSh
+            self.testSSPanel, label=f" Sp. Harm coeff:  {StrRBSh}"
         )
         mainSizer.Add(ShRBtxt)
         testHKL = wx.Button(self.testSSPanel, -1, "Extinction test")

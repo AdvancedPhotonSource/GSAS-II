@@ -48,27 +48,44 @@ except ImportError:
     print("pydiffax is not available for this platform")
 
 # trig functions in degrees
-tand = lambda x: math.tan(x * math.pi / 180.0)
-atand = lambda x: 180.0 * math.atan(x) / math.pi
-atan2d = lambda y, x: 180.0 * math.atan2(y, x) / math.pi
-cosd = lambda x: math.cos(x * math.pi / 180.0)
-acosd = lambda x: 180.0 * math.acos(x) / math.pi
-rdsq2d = lambda x, p: round(1.0 / math.sqrt(x), p)
+def tand(x):
+    return math.tan(x * math.pi / 180.0)
+def atand(x):
+    return 180.0 * math.atan(x) / math.pi
+def atan2d(y, x):
+    return 180.0 * math.atan2(y, x) / math.pi
+def cosd(x):
+    return math.cos(x * math.pi / 180.0)
+def acosd(x):
+    return 180.0 * math.acos(x) / math.pi
+def rdsq2d(x, p):
+    return round(1.0 / math.sqrt(x), p)
 # numpy versions
-npsind = lambda x: np.sin(x * np.pi / 180.0)
-npasind = lambda x: 180.0 * np.arcsin(x) / math.pi
-npcosd = lambda x: np.cos(x * math.pi / 180.0)
-npacosd = lambda x: 180.0 * np.arccos(x) / math.pi
-nptand = lambda x: np.tan(x * math.pi / 180.0)
-npatand = lambda x: 180.0 * np.arctan(x) / np.pi
-npatan2d = lambda y, x: 180.0 * np.arctan2(y, x) / np.pi
-npT2stl = lambda tth, wave: 2.0 * npsind(tth / 2.0) / wave  # =d*
-npT2q = lambda tth, wave: 2.0 * np.pi * npT2stl(tth, wave)  # =2pi*d*
-npq2T = lambda Q, wave: 2.0 * npasind(0.25 * Q * wave / np.pi)
+def npsind(x):
+    return np.sin(x * np.pi / 180.0)
+def npasind(x):
+    return 180.0 * np.arcsin(x) / math.pi
+def npcosd(x):
+    return np.cos(x * math.pi / 180.0)
+def npacosd(x):
+    return 180.0 * np.arccos(x) / math.pi
+def nptand(x):
+    return np.tan(x * math.pi / 180.0)
+def npatand(x):
+    return 180.0 * np.arctan(x) / np.pi
+def npatan2d(y, x):
+    return 180.0 * np.arctan2(y, x) / np.pi
+def npT2stl(tth, wave):
+    return 2.0 * npsind(tth / 2.0) / wave  # =d*
+def npT2q(tth, wave):
+    return 2.0 * np.pi * npT2stl(tth, wave)  # =2pi*d*
+def npq2T(Q, wave):
+    return 2.0 * npasind(0.25 * Q * wave / np.pi)
 ateln2 = 8.0 * np.log(2.0)
 sateln2 = np.sqrt(ateln2)
 nxs = np.newaxis
-is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
 
 #### Powder utilities ################################################################################
@@ -128,6 +145,7 @@ def Transmission(Geometry, Abs, Diam):
         return math.exp(-MuR)
     elif "Bragg" in Geometry:
         return 0.0
+    return None
 
 
 def SurfaceRough(SRA, SRB, Tth):
@@ -238,6 +256,7 @@ def Absorb(Geometry, MuR, Tth, Phi=0, Psi=0):
         MuT = 2.0 * MuR
         cth = npcosd(Tth / 2.0)
         return np.exp(-MuT / cth) / cth
+    return None
 
 
 def AbsorbDerv(Geometry, MuR, Tth, Phi=0, Psi=0):
@@ -811,7 +830,7 @@ def factorize(num):
         sqi += 2 * i + 1
         i += 1
 
-    if num != 1 and num != orig:
+    if num not in (1, orig):
         factors[num] = factors.get(num, 0) + 1
 
     if factors:
@@ -1080,20 +1099,32 @@ def getFWHM(pos, Inst, N=1):
     :returns float: total FWHM of pseudoVoigt in deg or musec
     """
 
-    sig = lambda Th, U, V, W: np.sqrt(max(0.001, U * tand(Th) ** 2 + V * tand(Th) + W))
-    sigED = lambda E, A, B, C: np.sqrt(max(0.001, A * E**2 + B * E + C))
-    sigTOF = lambda dsp, S0, S1, S2, Sq: np.sqrt(
-        S0 + S1 * dsp**2 + S2 * dsp**4 + Sq * dsp
-    )
-    gam = lambda Th, X, Y, Z: Z + X / cosd(Th) + Y * tand(Th)
-    gamED = lambda E, X, Y, Z: max(0.001, X * E**2 + Y * E + Z)
-    gamTOF = lambda dsp, X, Y, Z: Z + X * dsp + Y * dsp**2
-    alpTOF = lambda dsp, alp: alp / dsp
-    betTOF = lambda dsp, bet0, bet1, betq: bet0 + bet1 / dsp**4 + betq / dsp**2
-    alpPinkX = lambda pos, alp0, alp1: alp0 + alp1 * nptand(pos / 2.0)
-    betPinkX = lambda pos, bet0, bet1: bet0 + bet1 * nptand(pos / 2.0)
-    alpPinkN = lambda pos, alp0, alp1: alp0 + alp1 * npsind(pos / 2.0)
-    betPinkN = lambda pos, bet0, bet1: bet0 + bet1 * npsind(pos / 2.0)
+    def sig(Th, U, V, W):
+        return np.sqrt(max(0.001, U * tand(Th) ** 2 + V * tand(Th) + W))
+    def sigED(E, A, B, C):
+        return np.sqrt(max(0.001, A * E**2 + B * E + C))
+    def sigTOF(dsp, S0, S1, S2, Sq):
+        return np.sqrt(
+            S0 + S1 * dsp**2 + S2 * dsp**4 + Sq * dsp
+        )
+    def gam(Th, X, Y, Z):
+        return Z + X / cosd(Th) + Y * tand(Th)
+    def gamED(E, X, Y, Z):
+        return max(0.001, X * E**2 + Y * E + Z)
+    def gamTOF(dsp, X, Y, Z):
+        return Z + X * dsp + Y * dsp**2
+    def alpTOF(dsp, alp):
+        return alp / dsp
+    def betTOF(dsp, bet0, bet1, betq):
+        return bet0 + bet1 / dsp**4 + betq / dsp**2
+    def alpPinkX(pos, alp0, alp1):
+        return alp0 + alp1 * nptand(pos / 2.0)
+    def betPinkX(pos, bet0, bet1):
+        return bet0 + bet1 * nptand(pos / 2.0)
+    def alpPinkN(pos, alp0, alp1):
+        return alp0 + alp1 * npsind(pos / 2.0)
+    def betPinkN(pos, bet0, bet1):
+        return bet0 + bet1 * npsind(pos / 2.0)
     if "LF" in Inst["Type"][0]:
         return 3
     elif "T" in Inst["Type"][0]:
@@ -1136,17 +1167,18 @@ def getgamFW(g, s):
 
     :returns float: total FWHM of pseudoVoigt
     """
-    gamFW = lambda s, g: np.exp(
-        np.log(
-            s**5
-            + 2.69269 * s**4 * g
-            + 2.42843 * s**3 * g**2
-            + 4.47163 * s**2 * g**3
-            + 0.07842 * s * g**4
-            + g**5
+    def gamFW(s, g):
+        return np.exp(
+            np.log(
+                s**5
+                + 2.69269 * s**4 * g
+                + 2.42843 * s**3 * g**2
+                + 4.47163 * s**2 * g**3
+                + 0.07842 * s * g**4
+                + g**5
+            )
+            / 5.0
         )
-        / 5.0
-    )
     return gamFW(2.35482 * s, g)  # sqrt(8ln2)*sig = FWHM(G)
 
 
@@ -1331,7 +1363,8 @@ def getBackground(pfx, parmDict, bakType, dataType, xdata, fixback=None):
                     * getPsVoigt(pkP, pkS * 10.0**4, pkG * 100.0, xdata[iBeg:iFin])[0]
                 )
             else:
-                raise Exception(f"dataType of {dataType} should not happen!")
+                msg = f"dataType of {dataType} should not happen!"
+                raise Exception(msg)
             yb[iBeg:iFin] += ybi
             sumBk[2] += np.sum(ybi)
             iD += 1
@@ -1792,7 +1825,7 @@ def getHKLpeak(dmin, SGData, A, Inst=None, nodup=False):
             if nodup and int(10000 * d) in ds:
                 continue
             ds.append(int(10000 * d))
-            if Inst == None:
+            if Inst is None:
                 HKLs.append([h, k, l, d, 0, -1])
             else:
                 HKLs.append([h, k, l, d, G2lat.Dsp2pos(Inst, d), -1])
@@ -1863,7 +1896,7 @@ def getPeakProfile(dataType, parmDict, xdata, fixback, varyList, bakType):
     yb = getBackground("", parmDict, bakType, dataType, xdata, fixback)[0]
     yc = np.zeros_like(yb)
     if "LF" in dataType:
-        if "Lam1" in parmDict.keys():
+        if "Lam1" in parmDict:
             lam = parmDict["Lam1"]
             lam2 = parmDict["Lam2"]
             Ka2 = True
@@ -1958,7 +1991,7 @@ def getPeakProfile(dataType, parmDict, xdata, fixback, varyList, bakType):
         if "B" not in dataType:
             shl = max(parmDict["SH/L"], 0.002)
         Ka2 = False
-        if "Lam1" in parmDict.keys():
+        if "Lam1" in parmDict:
             Ka2 = True
             lamRatio = (
                 360 * (parmDict["Lam2"] - parmDict["Lam1"]) / (np.pi * parmDict["Lam1"])
@@ -2198,7 +2231,7 @@ def getPeakProfileDerv(dataType, parmDict, xdata, fixback, varyList, bakType):
         if "B" not in dataType:
             shl = max(parmDict["SH/L"], 0.002)
         Ka2 = False
-        if "Lam1" in parmDict.keys():
+        if "Lam1" in parmDict:
             Ka2 = True
             lamRatio = (
                 360 * (parmDict["Lam2"] - parmDict["Lam1"]) / (np.pi * parmDict["Lam1"])
@@ -2742,7 +2775,7 @@ def DoCalibInst(IndexPeaks, Inst, Sample):
                 "YE",
                 "ZE",
             ]:
-                ptlbls += "%s" % (parm.center(12))
+                ptlbls += f"{parm.center(12)}"
                 ptstr += ptfmt % (Inst[parm][1])
                 if parm in sigDict:
                     sigstr += ptfmt % (sigDict[parm])
@@ -2750,7 +2783,7 @@ def DoCalibInst(IndexPeaks, Inst, Sample):
                     sigstr += 12 * " "
         for parm in Sample:
             if parm in ["DisplaceX", "DisplaceY"]:
-                ptlbls += "%s" % (parm.center(12))
+                ptlbls += f"{parm.center(12)}"
                 ptstr += ptfmt % (Sample[parm][0])
                 if parm in sigDict:
                     sigstr += ptfmt % (sigDict[parm])
@@ -2817,8 +2850,8 @@ def DoCalibInst(IndexPeaks, Inst, Sample):
             "Number of function calls: %d Number of observations: %d Number of parameters: %d"
             % (result[2]["nfev"], len(peakPos), len(varyList))
         )
-        G2fil.G2Print("calib time = %8.3fs, %8.3fs/cycle" % (runtime, runtime / ncyc))
-        G2fil.G2Print("chi**2 = %12.6g, reduced chi**2 = %6.2f" % (chisq, GOF))
+        G2fil.G2Print(f"calib time = {runtime:8.3f}s, {runtime / ncyc:8.3f}s/cycle")
+        G2fil.G2Print(f"chi**2 = {chisq:12.6g}, reduced chi**2 = {GOF:6.2f}")
         try:
             sig = np.sqrt(np.diag(result[1]) * GOF)
             if np.any(np.isnan(sig)):
@@ -2883,7 +2916,7 @@ def DoPeakFit(
     Inst2,
     data,
     fixback=None,
-    prevVaryList=[],
+    prevVaryList=None,
     oneCycle=False,
     controls=None,
     wtFactor=1.0,
@@ -2924,6 +2957,8 @@ def DoPeakFit(
 
     """
 
+    if prevVaryList is None:
+        prevVaryList = []
     def GetBackgroundParms(parmList, Background):
         iBak = 0
         while True:
@@ -3133,7 +3168,7 @@ def DoPeakFit(
                 "alpha-0",
                 "alpha-1",
             ]:
-                ptlbls += "%s" % (parm.center(12))
+                ptlbls += f"{parm.center(12)}"
                 ptstr += ptfmt % (Inst[parm][1])
                 if parm in sigDict:
                     sigstr += ptfmt % (sigDict[parm])
@@ -3267,7 +3302,7 @@ def DoPeakFit(
                 if parName not in parmDict:
                     continue
                 ptstr += ptfmt[name] % (parmDict[parName])
-                if name == "l" or name == "ttheta":
+                if name in ("l", "ttheta"):
                     continue
                 if parName in varyList:
                     ptstr += ptfmt[name] % (sigDict[parName])
@@ -3275,8 +3310,8 @@ def DoPeakFit(
                     ptstr += 8 * " "
                 else:
                     ptstr += 10 * " "
-            ptstr += "%8.1f" % (ptsperFW[i])
-            print("%s" % (("Peak" + str(i + 1)).center(8)), ptstr)
+            ptstr += f"{ptsperFW[i]:8.1f}"
+            print("{}".format(("Peak" + str(i + 1)).center(8)), ptstr)
 
     def devPeakProfile(
         values,
@@ -3323,7 +3358,7 @@ def DoPeakFit(
         if dlg:
             dlg.Raise()
             GoOn = dlg.Update(
-                int(Rwp), newmsg="%s%8.3f%s" % ("Peak fit Rwp =", Rwp, "%")
+                int(Rwp), newmsg="{}{:8.3f}{}".format("Peak fit Rwp =", Rwp, "%")
             )[0]
             if not GoOn:
                 return -M  # abort!!
@@ -3478,11 +3513,10 @@ def DoPeakFit(
         )
         if ncyc:
             G2fil.G2Print(
-                "fitpeak time = %8.3fs, %8.3fs/cycle" % (runtime, runtime / ncyc)
+                f"fitpeak time = {runtime:8.3f}s, {runtime / ncyc:8.3f}s/cycle"
             )
         G2fil.G2Print(
-            "Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f"
-            % (Rvals["Rwp"], chisq, Rvals["GOF"])
+            "Rwp = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}".format(Rvals["Rwp"], chisq, Rvals["GOF"])
         )
         sig = [0] * len(varyList)
         if len(varyList) == 0:
@@ -3557,7 +3591,7 @@ def DoPeakFit(
                 "*** Warning: data binning yields too few data points across peak FWHM for reliable Rietveld refinement ***"
             )
             G2fil.G2Print(
-                "*** recommended is 6-10; you have %.2f ***" % (min(binsperFWHM))
+                f"*** recommended is 6-10; you have {min(binsperFWHM):.2f} ***"
             )
     return sigDict, result, sig, Rvals, varyList, parmDict, fullvaryList, badVary
 
@@ -3656,39 +3690,18 @@ def MakeInst(PWDdata, Name, Size, Mustrain, useSamBrd):
         fl.write("1\n")
         fl.write("%d\n" % int(inst[prms[0]][1]))
         fl.write(
-            "%19.11f%19.11f%19.11f%19.11f%19.11f\n"
-            % (
-                inst[prms[1]][1],
-                inst[prms[2]][1],
-                inst[prms[3]][1],
-                inst[prms[4]][1],
-                inst[prms[5]][1],
-            )
+            f"{inst[prms[1]][1]:19.11f}{inst[prms[2]][1]:19.11f}{inst[prms[3]][1]:19.11f}{inst[prms[4]][1]:19.11f}{inst[prms[5]][1]:19.11f}\n"
         )
         fl.write(
-            "%12.6e%14.6e%14.6e%14.6e\n"
-            % (inst[prms[6]][1], inst[prms[7]][1], inst[prms[8]][1], inst[prms[9]][1])
+            f"{inst[prms[6]][1]:12.6e}{inst[prms[7]][1]:14.6e}{inst[prms[8]][1]:14.6e}{inst[prms[9]][1]:14.6e}\n"
         )
         fl.write(
-            "%12.6e%14.6e%14.6e%14.6e\n"
-            % (
-                inst[prms[10]][1],
-                inst[prms[11]][1],
-                inst[prms[12]][1],
-                inst[prms[13]][1],
-            )
+            f"{inst[prms[10]][1]:12.6e}{inst[prms[11]][1]:14.6e}{inst[prms[12]][1]:14.6e}{inst[prms[13]][1]:14.6e}\n"
         )
         fl.write(
-            "%12.6e%14.6e%14.6e%14.6e%14.6e\n"
-            % (
-                inst[prms[14]][1],
-                inst[prms[15]][1] + Ysb,
-                inst[prms[16]][1] + Xsb,
-                0.0,
-                0.0,
-            )
+            f"{inst[prms[14]][1]:12.6e}{inst[prms[15]][1] + Ysb:14.6e}{inst[prms[16]][1] + Xsb:14.6e}{0.0:14.6e}{0.0:14.6e}\n"
         )
-        fl.write("%12.6e\n\n\n" % (sample["Absorption"][0]))
+        fl.write("{:12.6e}\n\n\n".format(sample["Absorption"][0]))
         fl.close()
     else:
         if useSamBrd[0]:
@@ -3708,15 +3721,13 @@ def MakeInst(PWDdata, Name, Size, Mustrain, useSamBrd):
             % (inst[prms[1]][1], 100.0 * inst[prms[2]][1], inst[prms[3]][1], 0)
         )
         fl.write(
-            "%10.3f%10.3f%10.3f\n"
-            % (inst[prms[4]][1], inst[prms[5]][1], inst[prms[6]][1])
+            f"{inst[prms[4]][1]:10.3f}{inst[prms[5]][1]:10.3f}{inst[prms[6]][1]:10.3f}\n"
         )
         fl.write(
-            "%10.3f%10.3f%10.3f\n"
-            % (inst[prms[7]][1] + Xsb, inst[prms[8]][1] + Ysb, 0.0)
+            f"{inst[prms[7]][1] + Xsb:10.3f}{inst[prms[8]][1] + Ysb:10.3f}{0.0:10.3f}\n"
         )
-        fl.write("%10.3f%10.3f%10.3f\n" % (0.0, 0.0, 0.0))
-        fl.write("%12.6e\n\n\n" % (sample["Absorption"][0]))
+        fl.write(f"{0.0:10.3f}{0.0:10.3f}{0.0:10.3f}\n")
+        fl.write("{:12.6e}\n\n\n".format(sample["Absorption"][0]))
         fl.close()
     return fname
 
@@ -3733,9 +3744,9 @@ def MakeBack(PWDdata, Name):
     fl.write("%10d\n" % Nback)
     for val in BackVals:
         if "T" in inst["Type"][1]:
-            fl.write("%12.6g\n" % (float(val)))
+            fl.write(f"{float(val):12.6g}\n")
         else:
-            fl.write("%12.6g\n" % val)
+            fl.write(f"{val:12.6g}\n")
     fl.close()
     return fname
 
@@ -3744,7 +3755,7 @@ def findDup(Atoms):
     Dup = []
     Fracs = []
     for iat1, at1 in enumerate(Atoms):
-        if any([at1[0] in dup for dup in Dup]):
+        if any(at1[0] in dup for dup in Dup):
             continue
         Dup.append(
             [
@@ -3756,7 +3767,7 @@ def findDup(Atoms):
                 at1[6],
             ]
         )
-        for iat2, at2 in enumerate(Atoms[(iat1 + 1) :]):
+        for _iat2, at2 in enumerate(Atoms[(iat1 + 1) :]):
             if np.sum((np.array(at1[3:6]) - np.array(at2[3:6])) ** 2) < 0.00001:
                 Dup[-1] += [
                     at2[0],
@@ -3774,7 +3785,7 @@ def MakeRMC6f(PWDdata, Name, Phase, RMCPdict):
     generalData = Phase["General"]
     Dups, Fracs = findDup(Phase["Atoms"])
     Sfracs = [np.cumsum(fracs) for fracs in Fracs]
-    ifSfracs = any([np.any(sfracs - 1.0) for sfracs in Sfracs])
+    ifSfracs = any(np.any(sfracs - 1.0) for sfracs in Sfracs)
     Sample = PWDdata["Sample Parameters"]
     Meta["temperature"] = Sample["Temperature"]
     Meta["pressure"] = Sample["Pressure"]
@@ -3860,21 +3871,20 @@ def MakeRMC6f(PWDdata, Name, Phase, RMCPdict):
     fl.write("(Version 6f format configuration file)\n")
     for item in Meta:
         fl.write("%-20s%s\n" % ("Metadata " + item + ":", Meta[item]))
-    fl.write("Atom types present:                 %s\n" % "    ".join(Atseq))
-    fl.write("Number of each atom type:       %s\n" % "".join(NAstr))
+    fl.write("Atom types present:                 {}\n".format("    ".join(Atseq)))
+    fl.write("Number of each atom type:       {}\n".format("".join(NAstr)))
     fl.write("Number of atoms:                %d\n" % len(Natoms))
     fl.write(
         "%-35s%4d%4d%4d\n"
         % ("Supercell dimensions:", Supercell[0], Supercell[1], Supercell[2])
     )
     fl.write(
-        "Cell (Ang/deg): %12.6f%12.6f%12.6f%12.6f%12.6f%12.6f\n"
-        % (Cell[0], Cell[1], Cell[2], Cell[3], Cell[4], Cell[5])
+        f"Cell (Ang/deg): {Cell[0]:12.6f}{Cell[1]:12.6f}{Cell[2]:12.6f}{Cell[3]:12.6f}{Cell[4]:12.6f}{Cell[5]:12.6f}\n"
     )
     A, B = G2lat.cell2AB(Cell, True)
     fl.write("Lattice vectors (Ang):\n")
     for i in [0, 1, 2]:
-        fl.write("%12.6f%12.6f%12.6f\n" % (A[i, 0], A[i, 1], A[i, 2]))
+        fl.write(f"{A[i, 0]:12.6f}{A[i, 1]:12.6f}{A[i, 2]:12.6f}\n")
     fl.write("Atoms (fractional coordinates):\n")
     nat = 0
     for atm in Atseq:
@@ -3921,11 +3931,11 @@ def MakeBragg(PWDdata, Name, Phase):
     if "T" in Inst["Type"][0]:
         fl.write("%12s%12s\n" % ("   TOF,ms", "  I(obs)"))
         for i in range(Ibeg, Ifin - 1):
-            fl.write("%12.8f%12.6f\n" % (Data[0][i] / 1000.0, Data[1][i]))
+            fl.write(f"{Data[0][i] / 1000.0:12.8f}{Data[1][i]:12.6f}\n")
     else:
         fl.write("%12s%12s\n" % ("   2-theta, deg", "  I(obs)"))
         for i in range(Ibeg, Ifin - 1):
-            fl.write("%11.6f%15.2f\n" % (Data[0][i], Data[1][i]))
+            fl.write(f"{Data[0][i]:11.6f}{Data[1][i]:15.2f}\n")
     fl.close()
     return fname
 
@@ -3983,7 +3993,7 @@ def MakeRMCPdat(PWDdata, Name, Phase, RMCPdict):
     Ncoeff = []
     Nblen = [Isotopes[at][Isotope[at]]["SL"][0] for at in Atypes]
     for pair in [
-        [" %s-%s" % (Atseq[i], Atseq[j]) for j in range(i, lenA)] for i in range(lenA)
+        [f" {Atseq[i]}-{Atseq[j]}" for j in range(i, lenA)] for i in range(lenA)
     ]:
         Pairs += pair
     for pair in Pairs:
@@ -3999,8 +4009,8 @@ def MakeRMCPdat(PWDdata, Name, Phase, RMCPdict):
         Ncoeff += [
             ncoef,
         ]
-    pairMin = [atPairs[pair] if pair in atPairs else [0.0, 0.0, 0.0] for pair in Pairs]
-    maxMoves = [Atypes[atm] if atm in Atypes else 0.0 for atm in Atseq]
+    pairMin = [atPairs.get(pair, [0.0, 0.0, 0.0]) for pair in Pairs]
+    maxMoves = [Atypes.get(atm, 0.0) for atm in Atseq]
     fname = Name + ".dat"
     fl = open(fname, "w")
     fl.write(" %% Hand edit the following as needed\n")
@@ -4011,16 +4021,16 @@ def MakeRMCPdat(PWDdata, Name, Phase, RMCPdict):
     fl.write("INVESTIGATOR :: " + Meta["owner"] + "\n")
     if RMCPdict.get("useGPU", False):
         fl.write("GPU_ACCELERATOR :: 0\n")
-    minHD = " ".join(["%6.3f" % dist[0] for dist in pairMin])
-    minD = " ".join(["%6.3f" % dist[1] for dist in pairMin])
-    maxD = " ".join(["%6.3f" % dist[2] for dist in pairMin])
-    fl.write("MINIMUM_DISTANCES ::   %s  Angstrom\n" % minHD)
-    maxMv = " ".join(["%6.3f" % mov for mov in maxMoves])
-    fl.write("MAXIMUM_MOVES ::   %s Angstrom\n" % maxMv)
+    minHD = " ".join([f"{dist[0]:6.3f}" for dist in pairMin])
+    minD = " ".join([f"{dist[1]:6.3f}" for dist in pairMin])
+    maxD = " ".join([f"{dist[2]:6.3f}" for dist in pairMin])
+    fl.write(f"MINIMUM_DISTANCES ::   {minHD}  Angstrom\n")
+    maxMv = " ".join([f"{mov:6.3f}" for mov in maxMoves])
+    fl.write(f"MAXIMUM_MOVES ::   {maxMv} Angstrom\n")
     fl.write("R_SPACING ::  0.0200 Angstrom\n")
     fl.write("PRINT_PERIOD :: 100\n")
-    fl.write("TIME_LIMIT ::     %.2f MINUTES\n" % Times[0])
-    fl.write("SAVE_PERIOD ::    %.2f MINUTES\n" % Times[1])
+    fl.write(f"TIME_LIMIT ::     {Times[0]:.2f} MINUTES\n")
+    fl.write(f"SAVE_PERIOD ::    {Times[1]:.2f} MINUTES\n")
     fl.write("\n")
     fl.write("ATOMS :: " + " ".join(Atseq) + "\n")
     fl.write("\n")
@@ -4036,50 +4046,38 @@ def MakeRMCPdat(PWDdata, Name, Phase, RMCPdict):
     if "T" in inst["Type"][1]:
         fl.write(
             "NEUTRON_COEFFICIENTS :: "
-            + "".join(["%9.5f" % coeff for coeff in Ncoeff])
+            + "".join([f"{coeff:9.5f}" for coeff in Ncoeff])
             + "\n"
         )
     fl.write("DISTANCE_WINDOW ::\n")
-    fl.write("  > MNDIST :: %s\n" % minD)
-    fl.write("  > MXDIST :: %s\n" % maxD)
+    fl.write(f"  > MNDIST :: {minD}\n")
+    fl.write(f"  > MXDIST :: {maxD}\n")
     if len(RMCPdict["Potentials"]["Stretch"]) or len(RMCPdict["Potentials"]["Stretch"]):
         fl.write("\n")
         fl.write("POTENTIALS ::\n")
-        fl.write("  > TEMPERATURE :: %.1f K\n" % RMCPdict["Potentials"]["Pot. Temp."])
+        fl.write("  > TEMPERATURE :: {:.1f} K\n".format(RMCPdict["Potentials"]["Pot. Temp."]))
         fl.write("  > PLOT :: pixels=400, colour=red, zangle=90, zrotation=45 deg\n")
         if len(RMCPdict["Potentials"]["Stretch"]):
             fl.write(
-                "  > STRETCH_SEARCH :: %.1f%%\n"
-                % RMCPdict["Potentials"]["Stretch search"]
+                "  > STRETCH_SEARCH :: {:.1f}%\n".format(RMCPdict["Potentials"]["Stretch search"])
             )
             for bond in RMCPdict["Potentials"]["Stretch"]:
                 fl.write(
-                    "  > STRETCH :: %s %s %.2f eV %.2f Ang\n"
-                    % (bond[0], bond[1], bond[3], bond[2])
+                    f"  > STRETCH :: {bond[0]} {bond[1]} {bond[3]:.2f} eV {bond[2]:.2f} Ang\n"
                 )
         if len(RMCPdict["Potentials"]["Angles"]):
             fl.write(
-                "  > ANGLE_SEARCH :: %.1f%%\n" % RMCPdict["Potentials"]["Angle search"]
+                "  > ANGLE_SEARCH :: {:.1f}%\n".format(RMCPdict["Potentials"]["Angle search"])
             )
             for angle in RMCPdict["Potentials"]["Angles"]:
                 fl.write(
-                    "  > ANGLE :: %s %s %s %.2f eV %.2f deg %.2f %.2f Ang\n"
-                    % (
-                        angle[1],
-                        angle[0],
-                        angle[2],
-                        angle[6],
-                        angle[3],
-                        angle[4],
-                        angle[5],
-                    )
+                    f"  > ANGLE :: {angle[1]} {angle[0]} {angle[2]} {angle[6]:.2f} eV {angle[3]:.2f} deg {angle[4]:.2f} {angle[5]:.2f} Ang\n"
                 )
     if RMCPdict["useBVS"]:
         fl.write("BVS ::\n")
         fl.write("  > ATOM :: " + " ".join(Atseq) + "\n")
         fl.write(
-            "  > WEIGHTS :: %s\n"
-            % " ".join(["%6.3f" % RMCPdict["BVS"][bvs][2] for bvs in RMCPdict["BVS"]])
+            "  > WEIGHTS :: {}\n".format(" ".join(["{:6.3f}".format(RMCPdict["BVS"][bvs][2]) for bvs in RMCPdict["BVS"]]))
         )
         oxid = []
         for val in RMCPdict["Oxid"]:
@@ -4087,18 +4085,15 @@ def MakeRMCPdat(PWDdata, Name, Phase, RMCPdict):
                 oxid.append(val[0][1:])
             else:
                 oxid.append(val[0][2:])
-        fl.write("  > OXID :: %s\n" % " ".join(oxid))
+        fl.write("  > OXID :: {}\n".format(" ".join(oxid)))
         fl.write(
-            "  > RIJ :: %s\n"
-            % " ".join(["%6.3f" % RMCPdict["BVS"][bvs][0] for bvs in RMCPdict["BVS"]])
+            "  > RIJ :: {}\n".format(" ".join(["{:6.3f}".format(RMCPdict["BVS"][bvs][0]) for bvs in RMCPdict["BVS"]]))
         )
         fl.write(
-            "  > BVAL :: %s\n"
-            % " ".join(["%6.3f" % RMCPdict["BVS"][bvs][1] for bvs in RMCPdict["BVS"]])
+            "  > BVAL :: {}\n".format(" ".join(["{:6.3f}".format(RMCPdict["BVS"][bvs][1]) for bvs in RMCPdict["BVS"]]))
         )
         fl.write(
-            "  > CUTOFF :: %s\n"
-            % " ".join(["%6.3f" % RMCPdict["BVS"][bvs][2] for bvs in RMCPdict["BVS"]])
+            "  > CUTOFF :: {}\n".format(" ".join(["{:6.3f}".format(RMCPdict["BVS"][bvs][2]) for bvs in RMCPdict["BVS"]]))
         )
         fl.write("  > SAVE :: 100000\n")
         fl.write("  > UPDATE :: 100000\n")
@@ -4153,14 +4148,14 @@ def MakeRMCPdat(PWDdata, Name, Phase, RMCPdict):
                 lines = int(fqdata.readline()[:-1])
                 fqdata.close()
             fl.write("\n")
-            fl.write("%s ::\n" % File.split(";")[0].upper().replace(" ", "_"))
-            fl.write("  > FILENAME :: %s\n" % Files[File][0])
-            fl.write("  > DATA_TYPE :: %s\n" % Files[File][2])
-            fl.write("  > FIT_TYPE :: %s\n" % Files[File][2])
+            fl.write("{} ::\n".format(File.split(";")[0].upper().replace(" ", "_")))
+            fl.write(f"  > FILENAME :: {Files[File][0]}\n")
+            fl.write(f"  > DATA_TYPE :: {Files[File][2]}\n")
+            fl.write(f"  > FIT_TYPE :: {Files[File][2]}\n")
             if "Xray" not in File:
                 fl.write("  > START_POINT :: 1\n")
                 fl.write("  > END_POINT :: 3000\n")
-                fl.write("  > WEIGHT :: %.4f\n" % Files[File][1])
+                fl.write(f"  > WEIGHT :: {Files[File][1]:.4f}\n")
             fl.write("  > CONSTANT_OFFSET 0.000\n")
             fl.write("  > NO_FITTED_OFFSET\n")
             if RMCPdict["FitScale"]:
@@ -4168,7 +4163,7 @@ def MakeRMCPdat(PWDdata, Name, Phase, RMCPdict):
             else:
                 fl.write("  > NO_FITTED_SCALE\n")
             if Files[File][3] != "RMC":
-                fl.write("  > %s\n" % Files[File][3])
+                fl.write(f"  > {Files[File][3]}\n")
             if "reciprocal" in File:
                 fl.write("  > CONVOLVE ::\n")
                 if "Xray" in File:
@@ -4184,14 +4179,14 @@ def MakeRMCPdat(PWDdata, Name, Phase, RMCPdict):
                     )
     fl.write("\n")
     fl.write("BRAGG ::\n")
-    fl.write("  > BRAGG_SHAPE :: %s\n" % gsasType)
+    fl.write(f"  > BRAGG_SHAPE :: {gsasType}\n")
     fl.write("  > RECALCUATE\n")
     fl.write("  > DMIN :: %.2f\n" % (dMin - 0.02))
-    fl.write("  > WEIGHT :: %10.3f\n" % BraggWt)
+    fl.write(f"  > WEIGHT :: {BraggWt:10.3f}\n")
     if "T" in inst["Type"][1]:
         fl.write(
             "  > SCATTERING LENGTH :: "
-            + "".join(["%8.4f" % blen for blen in Nblen])
+            + "".join([f"{blen:8.4f}" for blen in Nblen])
             + "\n"
         )
     fl.write("\n")
@@ -4364,6 +4359,8 @@ def findrmcprofile():
             return rmcprofile_exe
     if GSASIIpath.GetConfigValue("debug"):
         print(f"rmcprofile not found. Path searched: {pathlist}")
+        return None
+    return None
 
 
 def findfullrmc():
@@ -4402,6 +4399,7 @@ def findfullrmc():
             if GSASIIpath.GetConfigValue("debug"):
                 print("fullrmc found as", fullrmc_exe)
             return fullrmc_exe
+    return None
 
 
 def fullrmcDownload():
@@ -4479,7 +4477,7 @@ def GetPDFfitAtomVar(Phase, RMCPdict):
                 itms = item.split("@")
                 for itm in itms[1:]:
                     itnum = itm[:2]
-                    varname = "@%s" % itnum
+                    varname = f"@{itnum}"
                     varnames.append(varname)
                     if it < 6:
                         if varname not in AtomVar:
@@ -4507,7 +4505,7 @@ def MakePDFfitAtomsFile(Phase, RMCPdict):
     fatm.write("title  structure of " + General["Name"] + "\n")
     fatm.write("format pdffit\n")
     fatm.write("scale   1.000000\n")  # fixed
-    sharp = "%10.6f,%10.6f,%10.6f,%10.6f\n" % (
+    sharp = "{:10.6f},{:10.6f},{:10.6f},{:10.6f}\n".format(
         RMCPdict["delta2"][0],
         RMCPdict["delta1"][0],
         RMCPdict["sratio"][0],
@@ -4516,16 +4514,15 @@ def MakePDFfitAtomsFile(Phase, RMCPdict):
     fatm.write("sharp " + sharp)
     shape = ""
     if RMCPdict["shape"] == "sphere" and RMCPdict["spdiameter"][0] > 0.0:
-        shape = "   sphere, %10.6f\n" % RMCPdict["spdiameter"][0]
+        shape = "   sphere, {:10.6f}\n".format(RMCPdict["spdiameter"][0])
     elif RMCPdict["stepcut"] > 0.0:
-        shape = "stepcut, %10.6f\n" % RMCPdict["stepcut"]
+        shape = "stepcut, {:10.6f}\n".format(RMCPdict["stepcut"])
     if shape:
         fatm.write("shape  " + shape)
-    fatm.write("spcgr   %s\n" % RMCPdict["SGData"]["SpGrp"].replace(" ", ""))
+    fatm.write("spcgr   {}\n".format(RMCPdict["SGData"]["SpGrp"].replace(" ", "")))
     cell = General["Cell"][1:7]
     fatm.write(
-        "cell  %10.6f,%10.6f,%10.6f,%10.6f,%10.6f,%10.6f\n"
-        % (cell[0], cell[1], cell[2], cell[3], cell[4], cell[5])
+        f"cell  {cell[0]:10.6f},{cell[1]:10.6f},{cell[2]:10.6f},{cell[3]:10.6f},{cell[4]:10.6f},{cell[5]:10.6f}\n"
     )
     fatm.write("dcell " + 5 * "  0.000000," + "  0.000000\n")
     Atoms = Phase["Atoms"]
@@ -4543,26 +4540,22 @@ def MakePDFfitAtomsFile(Phase, RMCPdict):
                 atom[cx + 3],
             )
         )
-        fatm.write("    " + "%18.8f%18.8f%18.8f%13.4f\n" % (0.0, 0.0, 0.0, 0.0))
+        fatm.write("    " + f"{0.0:18.8f}{0.0:18.8f}{0.0:18.8f}{0.0:13.4f}\n")
         fatm.write(
             "    "
-            + "%18.8f%18.8f%18.8f\n" % (atom[cia + 2], atom[cia + 3], atom[cia + 4])
+            + f"{atom[cia + 2]:18.8f}{atom[cia + 3]:18.8f}{atom[cia + 4]:18.8f}\n"
         )
         fatm.write(
             "    "
-            + "%18.8f%18.8f%18.8f\n"
-            % (
-                0.0,
-                0.0,
-                0.0,
-            )
+            + f"{0.0:18.8f}{0.0:18.8f}{0.0:18.8f}\n"
         )
         fatm.write(
             "    "
-            + "%18.8f%18.8f%18.8f\n" % (atom[cia + 5], atom[cia + 6], atom[cia + 7])
+            + f"{atom[cia + 5]:18.8f}{atom[cia + 6]:18.8f}{atom[cia + 7]:18.8f}\n"
         )
-        fatm.write("    " + "%18.8f%18.8f%18.8f\n" % (0.0, 0.0, 0.0))
+        fatm.write("    " + f"{0.0:18.8f}{0.0:18.8f}{0.0:18.8f}\n")
     fatm.close()
+    return None
 
 
 def MakePDFfitRunFile(Phase, RMCPdict):
@@ -4584,6 +4577,7 @@ def MakePDFfitRunFile(Phase, RMCPdict):
                 return [1, 2, 3, 0, 4, 0]
             elif SGData["SGUniq"] == "c":
                 return [1, 2, 3, 0, 0, 4]
+            return None
         else:
             return [1, 2, 3, 4, 5, 6]
 
@@ -4618,7 +4612,7 @@ pathWrap = lambda f: os.path.join(datadir,f)
             else:
                 Nd += 1
                 dType = "Xdata"
-            rundata += "pf.read_data(pathWrap(r'%s'), '%s', 30.0, %.4f)\n" % (
+            rundata += "pf.read_data(pathWrap(r'{}'), '{}', 30.0, {:.4f})\n".format(
                 filNam,
                 dType[0],
                 RMCPdict[dType]["qdamp"][0],
@@ -4686,13 +4680,12 @@ pathWrap = lambda f: os.path.join(datadir,f)
                         itnum = int(itm[:2])
                     except ValueError:
                         print(
-                            " *** ERROR - invalid string in atom constraint %s ***"
-                            % (item)
+                            f" *** ERROR - invalid string in atom constraint {item} ***"
                         )
                         return None
                     if it < 6:
                         if not once:
-                            rundata += 'pf.constrain(%s,"%s")\n' % (names[it - 2], item)
+                            rundata += f'pf.constrain({names[it - 2]},"{item}")\n'
                             once = True
                         if itnum not in used:
                             parms[itnum] = AtomVar["@%d" % itnum]
@@ -4705,7 +4698,7 @@ pathWrap = lambda f: os.path.join(datadir,f)
                             "pf.u33(%d)" % (iat + 1),
                         ]
                         for i in range(3):
-                            rundata += 'pf.constrain(%s,"%s")\n' % (uijs[i], item)
+                            rundata += f'pf.constrain({uijs[i]},"{item}")\n'
                             if itnum not in used:
                                 parms[itnum] = AtomVar["@%d" % itnum]
                                 parmNames[itnum] = uijs[i].split(".")[1]
@@ -4906,7 +4899,7 @@ def UpdatePDFfit(Phase, RMCPdict):
         if "Scale" in line and "(" in line:
             XNdata[dkey]["dscale"][0] = float(line.split()[3])
 
-    for iline, line in enumerate(lines):
+    for _iline, line in enumerate(lines):
         if "Refinement parameters" in line:
             Ibeg = True
             continue
@@ -4914,7 +4907,7 @@ def UpdatePDFfit(Phase, RMCPdict):
             if "---------" in line:
                 break
             resline += line[:-1]
-    for iline, line in enumerate(lines):
+    for _iline, line in enumerate(lines):
         if "Rw - " in line:
             if "nan" in line:
                 Rwp = 100.0
@@ -4936,7 +4929,7 @@ def UpdatePDFfit(Phase, RMCPdict):
         for pyline in pylines:
             if "setpar" in pyline:
                 parm = pyline.split("(")[1].split(",")[0]
-                newpy.append("pf.setpar(%s,%.5f)\n" % (parm, RMCPdict["Parms"][parm]))
+                newpy.append("pf.setpar({},{:.5f})\n".format(parm, RMCPdict["Parms"][parm]))
             else:
                 newpy.append(pyline)
         py.writelines(newpy)
@@ -5033,7 +5026,7 @@ def MakefullrmcRun(pName, Phase, RMCPdict):
     # restart = '%s_restart.pdb'%pName
     Files = RMCPdict["files"]
     rundata = ""
-    rundata += "## fullrmc %s file ##\n## OK to edit this by hand ##\n" % scrname
+    rundata += f"## fullrmc {scrname} file ##\n## OK to edit this by hand ##\n"
     rundata += "# created in " + __file__ + " v" + filversion
     rundata += dt.datetime.strftime(dt.datetime.now(), " at %Y-%m-%dT%H:%M\n")
     rundata += '''
@@ -5252,7 +5245,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
         if "Xray" in File:
             sfwt = "atomicNumber"
         if "G(r)" in File:
-            rundata += '    GR = np.loadtxt(os.path.join(dirName,"%s")).T\n' % filDat[0]
+            rundata += f'    GR = np.loadtxt(os.path.join(dirName,"{filDat[0]}")).T\n'
             if filDat[3] == 0:
                 # rundata += '''    # read and xform G(r) as defined in RMCProfile
                 # see eq. 44 in Keen, J. Appl. Cryst. (2001) 34 172-177\n'''
@@ -5260,20 +5253,17 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                 # rundata += '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'%sfwt
                 rundata += "    # G(r) as defined in RMCProfile\n"
                 rundata += (
-                    '    GofR = RadialDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'
-                    % sfwt
+                    f'    GofR = RadialDistributionConstraint(experimentalData=GR.T, weighting="{sfwt}")\n'
                 )
             elif filDat[3] == 1:
                 rundata += "    # This is G(r) as defined in PDFFIT\n"
                 rundata += (
-                    '    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="%s")\n'
-                    % sfwt
+                    f'    GofR = fPDF.PairDistributionConstraint(experimentalData=GR.T, weighting="{sfwt}")\n'
                 )
             elif filDat[3] == 2:
                 rundata += "    # This is g(r)\n"
                 rundata += (
-                    '    GofR = fPDF.PairCorrelationConstraint(experimentalData=GR.T, weighting="%s")\n'
-                    % sfwt
+                    f'    GofR = fPDF.PairCorrelationConstraint(experimentalData=GR.T, weighting="{sfwt}")\n'
                 )
             else:
                 raise ValueError("Invalid G(r) type: " + str(filDat[3]))
@@ -5299,7 +5289,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                 rundata += "    }\n"
         elif "(Q)" in File:
             rundata += (
-                '    SOQ = np.loadtxt(os.path.join(dirName,"%s")).T\n' % filDat[0]
+                f'    SOQ = np.loadtxt(os.path.join(dirName,"{filDat[0]}")).T\n'
             )
             if filDat[3] == 0:
                 rundata += "    # F(Q) as defined in RMCProfile\n"
@@ -5307,8 +5297,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                 if filDat[4]:
                     rundata += "    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=calcRmax(ENGINE))\n"
                 rundata += (
-                    '    SofQ = NormalizedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'
-                    % sfwt
+                    f'    SofQ = NormalizedStructureFactorConstraint(experimentalData=SOQ.T, weighting="{sfwt}")\n'
                 )
             elif filDat[3] == 1:
                 rundata += "    # S(Q) as defined in PDFFIT\n"
@@ -5316,8 +5305,7 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
                 if filDat[4]:
                     rundata += "    SOQ[1] = Collection.sinc_convolution(q=SOQ[0],sq=SOQ[1],rmax=calcRmax(ENGINE))\n"
                 rundata += (
-                    '    SofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="%s")\n'
-                    % sfwt
+                    f'    SofQ = ReducedStructureFactorConstraint(experimentalData=SOQ.T, weighting="{sfwt}")\n'
                 )
             else:
                 raise ValueError("Invalid S(Q) type: " + str(filDat[3]))
@@ -5378,14 +5366,13 @@ ENGINE.set_log_file(os.path.join(dirName,prefix))
         rundata += "SwapGen = {}\n"
         for swap in RMCPdict["Swaps"]:
             rundata += (
-                'SwapA = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n' % swap[0]
+                f'SwapA = [[idx] for idx in range(len(aN)) if aN[idx]=="{swap[0]}"]\n'
             )
             rundata += (
-                'SwapB = [[idx] for idx in range(len(aN)) if aN[idx]=="%s"]\n' % swap[1]
+                f'SwapB = [[idx] for idx in range(len(aN)) if aN[idx]=="{swap[1]}"]\n'
             )
             rundata += (
-                'SwapGen["%s-%s"] = [SwapPositionsGenerator(swapList=SwapA),SwapPositionsGenerator(swapList=SwapB),%.2f]\n'
-                % (swap[0], swap[1], swap[2])
+                f'SwapGen["{swap[0]}-{swap[1]}"] = [SwapPositionsGenerator(swapList=SwapA),SwapPositionsGenerator(swapList=SwapB),{swap[2]:.2f}]\n'
             )
         rundata += "    for swaps in SwapGen:\n"
         rundata += '        AB = swaps.split("-")\n'
@@ -5599,12 +5586,12 @@ def ISO2PDFfit(Phase):
         pid, opid = [int(item) for item in atcode.split(":")]
         atmConstr = [atom[ct - 1], atom[ct], "", "", "", "", "", atcode]
         for ip, pname in enumerate(
-            ["%s_d%s" % (atom[ct - 1], x) for x in ["x", "y", "z"]]
+            [f"{atom[ct - 1]}_d{x}" for x in ["x", "y", "z"]]
         ):
             try:
                 conStr = ""
                 if Atoms[iatm][cx + ip]:
-                    conStr += "%.5f" % Atoms[iatm][cx + ip]
+                    conStr += f"{Atoms[iatm][cx + ip]:.5f}"
                 pid = ISOdict["IsoVarList"].index(pname)
                 consVec = ModeMatrix[pid]
                 for ic, citm in enumerate(
@@ -5646,7 +5633,7 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
     G2fil.G2Print(
         "fit REFD data by "
         + data["Minimizer"]
-        + " using %.2f%% data resolution" % (data["Resolution"][0])
+        + " using {:.2f}% data resolution".format(data["Resolution"][0])
     )
 
     class RandomDisplacementBounds:
@@ -5685,13 +5672,7 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
                 values.append(data[parm][0])
                 bounds.append(Bounds[parm])
         parmDict["Layer Seq"] = np.array(
-            [
-                "0",
-            ]
-            + data["Layer Seq"].split()
-            + [
-                str(len(data["Layers"]) - 1),
-            ],
+            ["0", *data["Layer Seq"].split(), str(len(data["Layers"]) - 1)],
             dtype=int,
         )
         parmDict["nLayers"] = len(parmDict["Layer Seq"])
@@ -5716,15 +5697,15 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
         return parmDict, varyList, values, bounds
 
     def SetModelParms():
-        line = " Refined parameters: Histogram scale: %.4g" % (parmDict["Scale"])
+        line = " Refined parameters: Histogram scale: {:.4g}".format(parmDict["Scale"])
         if "Scale" in varyList:
             data["Scale"][0] = parmDict["Scale"]
-            line += " esd: %.4g" % (sigDict["Scale"])
+            line += " esd: {:.4g}".format(sigDict["Scale"])
         G2fil.G2Print(line)
-        line = " Flat background: %15.4g" % (parmDict["FltBack"])
+        line = " Flat background: {:15.4g}".format(parmDict["FltBack"])
         if "FltBack" in varyList:
             data["FltBack"][0] = parmDict["FltBack"]
-            line += " esd: %15.3g" % (sigDict["FltBack"])
+            line += " esd: {:15.3g}".format(sigDict["FltBack"])
         G2fil.G2Print(line)
         for ilay, layer in enumerate(data["Layers"]):
             name = layer["Name"]
@@ -5743,9 +5724,9 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
                         layer[parm][0] = abs(parmDict[cid + parm])  # make positive
                     else:
                         layer[parm][0] = parmDict[cid + parm]
-                    line += " %s: %.3f" % (parm, layer[parm][0])
+                    line += f" {parm}: {layer[parm][0]:.3f}"
                     if cid + parm in varyList:
-                        line += " esd: %.3g" % (sigDict[cid + parm])
+                        line += f" esd: {sigDict[cid + parm]:.3g}"
             G2fil.G2Print(line)
             G2fil.G2Print(line2)
 
@@ -5794,7 +5775,7 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
     def estimateT0(takestep):
         Mmax = -1.0e-10
         Mmin = 1.0e10
-        for i in range(100):
+        for _i in range(100):
             x0 = takestep(values)
             M = sumREFD(
                 x0,
@@ -5856,7 +5837,7 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
             xyrng = np.array(bounds).T
             take_step = RandomDisplacementBounds(xyrng[0], xyrng[1])
             T0 = estimateT0(take_step)
-            G2fil.G2Print(" Estimated temperature: %.3g" % (T0))
+            G2fil.G2Print(f" Estimated temperature: {T0:.3g}")
             result = so.basinhopping(
                 sumREFD,
                 values,
@@ -5917,7 +5898,7 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
             chisq = result[1]
             ncalc = result[3]
             covM = []
-            G2fil.G2Print(" MC/SA final temperature: %.4g" % (result[2]))
+            G2fil.G2Print(f" MC/SA final temperature: {result[2]:.4g}")
         elif data["Minimizer"] == "L-BFGS-B":
             result = so.minimize(
                 sumREFD,
@@ -5992,8 +5973,7 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
             % (ncalc, Ifin - Ibeg, len(varyList))
         )
         G2fil.G2Print(
-            "Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f"
-            % (Rvals["Rwp"], chisq, Rvals["GOF"])
+            "Rwp = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}".format(Rvals["Rwp"], chisq, Rvals["GOF"])
         )
         SetModelParms()
         return True, result, varyList, sig, Rvals, covMatrix, parmDict, ""
@@ -6005,13 +5985,7 @@ def REFDRefine(Profile, ProfDict, Inst, Limits, Substances, data):
 def makeSLDprofile(data, Substances):
     sq2 = np.sqrt(2.0)
     laySeq = (
-        [
-            "0",
-        ]
-        + data["Layer Seq"].split()
-        + [
-            str(len(data["Layers"]) - 1),
-        ]
+        ["0", *data["Layer Seq"].split(), str(len(data["Layers"]) - 1)]
     )
     Nlayers = len(laySeq)
     laySeq = np.array(laySeq, dtype=int)
@@ -6065,13 +6039,7 @@ def REFDModelFxn(Profile, Inst, Limits, Substances, data):
     if data["Layer Seq"] == []:
         return
     laySeq = (
-        [
-            "0",
-        ]
-        + data["Layer Seq"].split()
-        + [
-            str(len(data["Layers"]) - 1),
-        ]
+        ["0", *data["Layer Seq"].split(), str(len(data["Layers"]) - 1)]
     )
     Nlayers = len(laySeq)
     depth = np.zeros(Nlayers)
@@ -6272,7 +6240,7 @@ def GetStackParms(Layers):
     return Parms
 
 
-def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profile=[]):
+def StackSim(Layers, ctrls, scale=0.0, background=None, limits=None, inst=None, profile=None):
     """Simulate powder or selected area diffraction pattern from stacking faults using DIFFaX
 
     :param dict Layers: dict with following items
@@ -6294,6 +6262,14 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
     """
     from .config import atmdata
 
+    if profile is None:
+        profile = []
+    if inst is None:
+        inst = {}
+    if limits is None:
+        limits = []
+    if background is None:
+        background = {}
     path = sys.path
     for name in path:
         if "bin" in name:
@@ -6314,14 +6290,14 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
         Adat = atmdata.XrayFF[atType]
         text = "%4s" % (atType.ljust(4))
         for i in range(4):
-            text += "%11.6f%11.6f" % (Adat["fa"][i], Adat["fb"][i])
-        text += "%11.6f%11.6f" % (Adat["fc"], blen)
+            text += "{:11.6f}{:11.6f}".format(Adat["fa"][i], Adat["fb"][i])
+        text += "{:11.6f}{:11.6f}".format(Adat["fc"], blen)
         text += "%3d\n" % (Adat["Z"])
         sf.write(text)
     sf.close()
     # make DIFFaX control.dif file - future use GUI to set some of these flags
     cf = open("control.dif", "w")
-    if ctrls == "0\n0\n3\n" or ctrls == "0\n1\n3\n":
+    if ctrls in ("0\n0\n3\n", "0\n1\n3\n"):
         x0 = profile[0]
         iBeg = np.searchsorted(x0, limits[0])
         iFin = np.searchsorted(x0, limits[1]) + 1
@@ -6329,7 +6305,7 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
             iFin = iBeg + 20000
         Dx = (x0[iFin] - x0[iBeg]) / (iFin - iBeg)
         cf.write("GSASII-DIFFaX.dat\n" + ctrls)
-        cf.write("%.6f %.6f %.6f\n1\n1\nend\n" % (x0[iBeg], x0[iFin], Dx))
+        cf.write(f"{x0[iBeg]:.6f} {x0[iFin]:.6f} {Dx:.6f}\n1\n1\nend\n")
     else:
         cf.write("GSASII-DIFFaX.dat\n" + ctrls)
         inst = {
@@ -6346,8 +6322,8 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
         df.write("X-RAY\n")
     elif "N" in inst["Type"][0]:
         df.write("NEUTRON\n")
-    if ctrls == "0\n0\n3\n" or ctrls == "0\n1\n3\n":
-        df.write("%.4f\n" % (G2mth.getMeanWave(inst)))
+    if ctrls in ("0\n0\n3\n", "0\n1\n3\n"):
+        df.write(f"{G2mth.getMeanWave(inst):.4f}\n")
         U = ateln2 * inst["U"][1] / 10000.0
         V = ateln2 * inst["V"][1] / 10000.0
         W = ateln2 * inst["W"][1] / 10000.0
@@ -6358,11 +6334,11 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
         #    df.write('PSEUDO-VOIGT 0.015 -0.0036 0.009 0.605 TRIM\n')
         if "Mean" in Layers["selInst"]:
             df.write(
-                "GAUSSIAN %.6f TRIM\n" % (HW)
+                f"GAUSSIAN {HW:.6f} TRIM\n"
             )  # fast option - might not really matter
         elif "Gaussian" in Layers["selInst"]:
             df.write(
-                "GAUSSIAN %.6f %.6f %.6f TRIM\n" % (U, V, W)
+                f"GAUSSIAN {U:.6f} {V:.6f} {W:.6f} TRIM\n"
             )  # slow - make a GUI option?
         else:
             df.write("None\n")
@@ -6371,21 +6347,20 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
     df.write("STRUCTURAL\n")
     a, b, c = Layers["Cell"][1:4]
     gam = Layers["Cell"][6]
-    df.write("%.4f %.4f %.4f %.3f\n" % (a, b, c, gam))
+    df.write(f"{a:.4f} {b:.4f} {c:.4f} {gam:.3f}\n")
     laue = Layers["Laue"]
     if laue == "2/m(ab)":
         laue = "2/m(1)"
     elif laue == "2/m(c)":
         laue = "2/m(2)"
     if "unknown" in Layers["Laue"]:
-        df.write("%s %.3f\n" % (laue, Layers["Toler"]))
+        df.write("{} {:.3f}\n".format(laue, Layers["Toler"]))
     else:
-        df.write("%s\n" % (laue))
+        df.write(f"{laue}\n")
     df.write("%d\n" % (len(Layers["Layers"])))
     if Layers["Width"][0][0] < 1.0 or Layers["Width"][0][1] < 1.0:
         df.write(
-            "%.1f %.1f\n"
-            % (Layers["Width"][0][0] * 10000.0, Layers["Width"][0][0] * 10000.0)
+            "{:.1f} {:.1f}\n".format(Layers["Width"][0][0] * 10000.0, Layers["Width"][0][0] * 10000.0)
         )  # mum to A
     layerNames = []
     for layer in Layers["Layers"]:
@@ -6410,9 +6385,9 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
                 % (atype.ljust(6), ia, x, y, z, 78.9568 * Uiso, frac)
             )
     df.write("STACKING\n")
-    df.write("%s\n" % (Layers["Stacking"][0]))
+    df.write("{}\n".format(Layers["Stacking"][0]))
     if "recursive" in Layers["Stacking"][0]:
-        df.write("%s\n" % Layers["Stacking"][1])
+        df.write("{}\n".format(Layers["Stacking"][1]))
     elif "list" in Layers["Stacking"][1]:
         Slen = len(Layers["Stacking"][2])
         iB = 0
@@ -6422,22 +6397,21 @@ def StackSim(Layers, ctrls, scale=0.0, background={}, limits=[], inst={}, profil
             if iF >= Slen:
                 break
             iF = min(iF, Slen)
-            df.write("%s\n" % (Layers["Stacking"][2][iB:iF]))
+            df.write("{}\n".format(Layers["Stacking"][2][iB:iF]))
             iB = iF
     else:
-        df.write("%s\n" % Layers["Stacking"][1])
+        df.write("{}\n".format(Layers["Stacking"][1]))
     df.write("TRANSITIONS\n")
     for iY in range(len(Layers["Layers"])):
         sumPx = 0.0
         for iX in range(len(Layers["Layers"])):
             p, dx, dy, dz = Layers["Transitions"][iY][iX][:4]
             p = round(p, 3)
-            df.write("%.3f %.5f %.5f %.5f\n" % (p, dx, dy, dz))
+            df.write(f"{p:.3f} {dx:.5f} {dy:.5f} {dz:.5f}\n")
             sumPx += p
         if sumPx != 1.0:  # this has to be picky since DIFFaX is.
             G2fil.G2Print(
-                "ERROR - Layer probabilities sum to %.3f DIFFaX will insist it = 1.0"
-                % sumPx
+                f"ERROR - Layer probabilities sum to {sumPx:.3f} DIFFaX will insist it = 1.0"
             )
             df.close()
             os.remove("data.sfc")
@@ -6753,8 +6727,8 @@ def makePRFfile(data, MEMtype):
     else:
         prf.write("1\n")
     prf.write("%.4f %d\n" % (DysData["Lagrange"][1], DysData["wt pwr"]))
-    prf.write("%.3f\n" % DysData["Lagrange"][2])
-    prf.write("%.2f\n" % DysData["E_factor"])
+    prf.write("{:.3f}\n".format(DysData["Lagrange"][2]))
+    prf.write("{:.2f}\n".format(DysData["E_factor"]))
     prf.write("1\n")
     prf.write("0\n")
     prf.write("%d\n" % DysData["Ncyc"])
@@ -6791,7 +6765,7 @@ def makeMEMfile(data, reflData, MEMtype, DYSNOMIA):
     mem = open(memName, "w")
     mem.write("%s\n" % (generalData["Name"] + " from " + UseList[0]))
     a, b, c, alp, bet, gam = cell
-    mem.write("%10.5f%10.5f%10.5f%10.5f%10.5f%10.5f\n" % (a, b, c, alp, bet, gam))
+    mem.write(f"{a:10.5f}{b:10.5f}{c:10.5f}{alp:10.5f}{bet:10.5f}{gam:10.5f}\n")
     mem.write(
         "      0.0000000      0.0000000     -1    0    0    0     P\n"
     )  # dummy PO stuff
@@ -6819,11 +6793,11 @@ def makeMEMfile(data, reflData, MEMtype, DYSNOMIA):
         else:
             sumpos += blen * Nat
     if "X" in Type:
-        mem.write("%10.2f  0.001\n" % sumZ)
+        mem.write(f"{sumZ:10.2f}  0.001\n")
     elif "N" in Type and MEMtype:
-        mem.write("%10.3f%10.3f 0.001\n" % (sumpos, sumneg))
+        mem.write(f"{sumpos:10.3f}{sumneg:10.3f} 0.001\n")
     else:
-        mem.write("%10.3f 0.001\n" % sumpos)
+        mem.write(f"{sumpos:10.3f} 0.001\n")
 
     dmin = DysData["MEMdmin"]
     TOFlam = 2.0 * dmin * npsind(80.0)
@@ -7270,7 +7244,7 @@ def LaueFringePeakCalc(
 #        LaueFringePeakPlot(ttArr[istart:iend], (intens * peakObj.peak[pstart:pend]/pkMax))
 
 
-def LaueSatellite(peakpos, wave, c, ncell, j=[-4, -3, -2, -1, 0, 1, 2, 3, 4]):
+def LaueSatellite(peakpos, wave, c, ncell, j=None):
     """Returns the locations of the Laue satellite positions relative
     to the peak position
 
@@ -7280,6 +7254,8 @@ def LaueSatellite(peakpos, wave, c, ncell, j=[-4, -3, -2, -1, 0, 1, 2, 3, 4]):
       on the lower 2theta side and j=1 is the first satellite on the high
       2theta side. j=0 gives the peak position
     """
+    if j is None:
+        j = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
     Qpos = 4 * np.pi * np.sin(peakpos * np.pi / 360) / wave
     dQvals = (2 * np.array(j) + np.sign(j)) * np.pi / (c * ncell)
     return np.arcsin((Qpos + dQvals) * wave / (4 * np.pi)) * (360 / np.pi)
@@ -7525,9 +7501,9 @@ def test1():
     if NeedTestData:
         TestData()
     time0 = time.time()
-    for i in range(100):
+    for _i in range(100):
         getPeakProfile(parmDict1, xdata, np.zeros_like(xdata), varyList, bakType)
-    G2fil.G2Print("100+6*Ka1-2 peaks=1200 peaks %.2f" % time.time() - time0)
+    G2fil.G2Print(f"100+6*Ka1-2 peaks=1200 peaks {time.time():.2f}" - time0)
 
 
 def test2(name, delt):

@@ -1029,7 +1029,7 @@ def ProcessImage(
             if not os.path.exists(savedir):
                 os.makedirs(savedir)
             # loop over created histgrams (multiple if caked), writing them as requested
-            for i, h in enumerate(hists):
+            for _i, h in enumerate(hists):
                 fname = h.name[5:].replace(" ", "_")
                 # if len(hists) > 1:
                 # GSASIIpath.IPyBreak_base()
@@ -1048,7 +1048,7 @@ def ProcessImage(
                 inst = h.data["Instrument Parameters"][0]
                 pdf.calculate(copy.deepcopy(xydata), limits, inst)
                 if optPDF:
-                    for i in range(5):
+                    for _i in range(5):
                         if pdf.optimize(True, 5, copy.deepcopy(xydata), limits, inst):
                             break
                     pdf.calculate(copy.deepcopy(xydata), limits, inst)

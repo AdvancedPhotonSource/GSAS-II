@@ -44,7 +44,7 @@ def UploadCIF(cifname):
     pos1 = out1.index("VALUE=", pos) + 7
     filename = out1[pos1 : out1.index('"', pos1)]
 
-    print("ciffile %s uploaded to ISODISTORT to make %s" % (cifname, filename))
+    print(f"ciffile {cifname} uploaded to ISODISTORT to make {filename}")
     return filename
 
 
@@ -85,7 +85,7 @@ def GetISODISTORT(Phase):
     childcif = None
     if "Use this phase" in parentcif:
         parentcif = MakePhaseCif(Phase)
-    print(" Run ISODISTORT with %s as parent cif" % parentcif)
+    print(f" Run ISODISTORT with {parentcif} as parent cif")
     ISOparentcif = UploadCIF(parentcif)
 
     # submit cif for processing by ISODISTORT
@@ -130,7 +130,7 @@ def GetISODISTORT(Phase):
         childcif = ISOdata["ChildCIF"]
         if "Use this phase" in childcif:
             childcif = MakePhaseCif(Phase)
-        print(" Run ISODISTORT with %s as child cif" % childcif)
+        print(f" Run ISODISTORT with {childcif} as child cif")
         ISOchildcif = UploadCIF(childcif)
         data["input"] = "uploadsubgroupcif"
         data["filename"] = ISOchildcif
@@ -149,7 +149,7 @@ def GetISODISTORT(Phase):
         cifout = GetISOcif(out25, 4)
         if cifout is None:
             return None, None
-        cifFile = "%s_%s.cif" % (Phase["General"]["Name"], "child")
+        cifFile = "{}_{}.cif".format(Phase["General"]["Name"], "child")
         fl = open(cifFile, "wb")
         fl.write(cifout.encode("utf-8"))
         fl.close()
@@ -278,7 +278,7 @@ def GetISODISTORTcif(Phase):
 
     out5 = GetISOcif(out4, 1)
     names = ISOdata["selection"][1].split()
-    cifFile = "%s_%s%s%s.cif" % (
+    cifFile = "{}_{}{}{}.cif".format(
         Phase["General"]["Name"],
         names[1],
         names[2].replace("*", "_"),

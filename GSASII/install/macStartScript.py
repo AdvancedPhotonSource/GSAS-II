@@ -184,7 +184,7 @@ end open
 
     # create an app using this python and if that fails to run wx, look for a
     # pythonw and try that with wx
-    for i in 1, 2, 3:
+    for _i in 1, 2, 3:
         if os.path.exists(appPath):  # cleanup
             print("\nRemoving old " + projectname + " app (" + str(appPath) + ")")
             shutil.rmtree(appPath)

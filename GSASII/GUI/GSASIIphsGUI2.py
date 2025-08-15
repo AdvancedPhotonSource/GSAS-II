@@ -44,13 +44,20 @@ except:
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
 # trig functions in degrees
-sind = lambda x: np.sin(x * np.pi / 180.0)
-tand = lambda x: np.tan(x * np.pi / 180.0)
-cosd = lambda x: np.cos(x * np.pi / 180.0)
-asind = lambda x: 180.0 * np.arcsin(x) / np.pi
-acosd = lambda x: 180.0 * np.arccos(x) / np.pi
-atan2d = lambda x, y: 180.0 * np.arctan2(y, x) / np.pi
-is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+def sind(x):
+    return np.sin(x * np.pi / 180.0)
+def tand(x):
+    return np.tan(x * np.pi / 180.0)
+def cosd(x):
+    return np.cos(x * np.pi / 180.0)
+def asind(x):
+    return 180.0 * np.arcsin(x) / np.pi
+def acosd(x):
+    return 180.0 * np.arccos(x) / np.pi
+def atan2d(x, y):
+    return 180.0 * np.arctan2(y, x) / np.pi
+def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 sqt2 = np.sqrt(2.0)
 sqt3 = np.sqrt(3.0)
 
@@ -496,7 +503,7 @@ def UpdateDeformation(G2frame, data, AtdId):
     if dId is not None:
         AtChoice = atomData[AtLookUp[dId]][ct - 1]
     elif len(atomList):
-        AtChoice = list(atomList.keys())[0]
+        AtChoice = next(iter(atomList.keys()))
         dId = atomList[AtChoice]
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)
@@ -549,7 +556,7 @@ def UpdateDeformation(G2frame, data, AtdId):
         lineSizer.Add(
             wx.StaticText(
                 deformation,
-                label=" For atom %s, site sym %s:" % (atom[ct - 1], atom[cs]),
+                label=f" For atom {atom[ct - 1]}, site sym {atom[cs]}:",
             ),
             0,
             WACV,
@@ -588,7 +595,7 @@ def UpdateDeformation(G2frame, data, AtdId):
             )
         elif len(neigh) < 9:
             names = [
-                "%s=%s" % (alpha[i], item[0].replace(" ", ""))
+                "{}={}".format(alpha[i], item[0].replace(" ", ""))
                 for i, item in enumerate(neigh)
             ]
             lineSizer.Add(
@@ -692,17 +699,17 @@ def UpdateDeformation(G2frame, data, AtdId):
                     if "kappa" in orb[1]:
                         orbSizer.Add(wx.StaticText(deformation, label=" kappa:"))
                         Kappa(deformation, orbSizer, dId, orb, Indx)
-                    for i in range(3):
+                    for _i in range(3):
                         orbSizer.Add((5, 5), 0)
                     continue
                 if "kappa" in orb[1]:
-                    for i in range(3):
+                    for _i in range(3):
                         orbSizer.Add((5, 5), 0)
                     orbSizer.Add(wx.StaticText(deformation, label=orb[0] + " kappa':"))
                     Kappa(deformation, orbSizer, dId, orb, Indx)
                 if "kappa" not in orb[1]:
                     orbSizer.Add(wx.StaticText(deformation, label=orb[0] + ":"))
-                    for i in range(2):
+                    for _i in range(2):
                         orbSizer.Add((5, 5), 0)
                 nItem = 0
                 for item in orb[1]:
@@ -710,9 +717,9 @@ def UpdateDeformation(G2frame, data, AtdId):
                         nItem += 1
                         Dsizer(deformation, orbSizer, dId, orb, Indx)
                         if nItem in [2, 4, 6, 8, 10]:
-                            for i in range(3):
+                            for _i in range(3):
                                 orbSizer.Add((5, 5), 0)
-                for i in range(3):
+                for _i in range(3):
                     orbSizer.Add((5, 5), 0)
             elif deformationData[-dId]["Radial"] == "Slater" and "Sl " in orb[0]:
                 orbSizer.Add(wx.StaticText(deformation, label=orb[0] + " Ne:"))
@@ -722,7 +729,7 @@ def UpdateDeformation(G2frame, data, AtdId):
                     orbSizer.Add(wx.StaticText(deformation, label=" kappa:"))
                     Kappa(deformation, orbSizer, dId, orb, Indx)
                     Np = 1
-                for i in range(3 * Np):
+                for _i in range(3 * Np):
                     orbSizer.Add((5, 5), 0)
                 iD = 1
                 for item in orb[1]:
@@ -732,7 +739,7 @@ def UpdateDeformation(G2frame, data, AtdId):
                             nItems = orbSizer.GetItemCount() % 9
                             if nItems:
                                 nB = 9 - nItems
-                                for i in range(nB):
+                                for _i in range(nB):
                                     orbSizer.Add((5, 5), 0)
                         Dsizer(deformation, orbSizer, dId, orb, Indx)
         mainSizer.Add(orbSizer)
@@ -1104,7 +1111,7 @@ def UpdateISODISTORT(G2frame, data, Scroll=0):
             slideSizer.Add(
                 wx.StaticText(
                     G2frame.ISODIST,
-                    label=" %.5g " % ISOdata["ISOmodeDispl"][idsp],
+                    label=" {:.5g} ".format(ISOdata["ISOmodeDispl"][idsp]),
                     style=wx.ALIGN_CENTER_HORIZONTAL,
                 ),
                 0,
@@ -1392,24 +1399,24 @@ def UpdateLayerData(G2frame, data, Scroll=0):
                     cell[6] = 90.0
                 if ObjId == 0:
                     cell[1] = cell[2] = value
-                    Obj.SetValue("%.5f" % (cell[1]))
+                    Obj.SetValue(f"{cell[1]:.5f}")
                 else:
                     cell[3] = value
-                    Obj.SetValue("%.5f" % (cell[3]))
+                    Obj.SetValue(f"{cell[3]:.5f}")
             elif laue in ["mmm"]:
                 cell[ObjId + 1] = value
                 cell[4] = cell[5] = cell[6] = 90.0
-                Obj.SetValue("%.5f" % (cell[ObjId + 1]))
+                Obj.SetValue(f"{cell[ObjId + 1]:.5f}")
             elif laue in ["2/m", "-1"]:
                 cell[4] = cell[5] = 90.0
                 if ObjId != 3:
                     cell[ObjId + 1] = value
-                    Obj.SetValue("%.5f" % (cell[ObjId + 1]))
+                    Obj.SetValue(f"{cell[ObjId + 1]:.5f}")
                 else:
                     cell[6] = value
-                    Obj.SetValue("%.3f" % (cell[6]))
+                    Obj.SetValue(f"{cell[6]:.3f}")
             cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
-            volVal.SetLabel(" Vol = %.3f" % (cell[7]))
+            volVal.SetLabel(f" Vol = {cell[7]:.3f}")
 
         cell = data["Layers"]["Cell"]
         laue = data["Layers"]["Laue"]
@@ -1422,7 +1429,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
         cellRef.Bind(wx.EVT_CHECKBOX, OnCellRef)
         cellRef.SetValue(cell[0])
         cellList = []
-        for txt, fmt, ifEdit, Id in useGUI[2]:
+        for txt, fmt, _ifEdit, Id in useGUI[2]:
             cellSizer.Add(wx.StaticText(layerData, label=txt), 0, WACV)
             #            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),xmin=0.01,xmax=4.0)
             cellVal = wx.TextCtrl(
@@ -1432,7 +1439,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             cellVal.Bind(wx.EVT_KILL_FOCUS, OnCellChange)
             cellSizer.Add(cellVal, 0, WACV)
             cellList.append(cellVal.GetId())
-        volVal = wx.StaticText(layerData, label=" Vol = %.3f" % (cell[7]))
+        volVal = wx.StaticText(layerData, label=f" Vol = {cell[7]:.3f}")
         cellSizer.Add(volVal, 0, WACV)
         return cellSizer
 
@@ -1447,7 +1454,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
         for i in range(2):
             widthSizer.Add(
                 wx.StaticText(
-                    layerData, label=" layer width(%s) (<= 1\xb5m): " % (Labels[i])
+                    layerData, label=f" layer width({Labels[i]}) (<= 1\xb5m): "
                 ),
                 0,
                 WACV,
@@ -1688,14 +1695,14 @@ def UpdateLayerData(G2frame, data, Scroll=0):
                 event.Skip()
 
         def OnNormProb(event):
-            for Yi, Yname in enumerate(Names):
+            for Yi, _Yname in enumerate(Names):
                 Psum = 0.0
-                for Xi, Xname in enumerate(Names):
+                for Xi, _Xname in enumerate(Names):
                     Psum += transArray[Yi][Xi][0]
                 if not Psum:
                     transArray[Yi][0][0] = 1.0
                     Psum = 1.0
-                for Xi, Xname in enumerate(Names):
+                for Xi, _Xname in enumerate(Names):
                     transArray[Yi][Xi][0] /= Psum
             wx.CallAfter(UpdateLayerData, G2frame, data)
 
@@ -1709,7 +1716,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
                             Layers["SymTrans"] = False
                             symprob.SetValue(False)
                             wx.MessageBox(
-                                "%s-%s not equal %s-%s" % (Yname, Xname, Xname, Yname),
+                                f"{Yname}-{Xname} not equal {Xname}-{Yname}",
                                 caption="Probability symmetry error",
                                 style=wx.ICON_EXCLAMATION,
                             )
@@ -1737,7 +1744,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             return transSizer
         diagSum = 0.0
         for Yi, Yname in enumerate(Names):
-            transSizer.Add(wx.StaticText(layerData, label=" From %s to:" % (Yname)), 0)
+            transSizer.Add(wx.StaticText(layerData, label=f" From {Yname} to:"), 0)
             table = []
             rowLabels = []
             diagSum += transArray[Yi][Yi][0]
@@ -1778,7 +1785,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
             vals = plotSeq.GetValue().split()
             try:
                 vals = [int(val) - 1 for val in vals]
-                if not all([0 <= val < len(Names) for val in vals]):
+                if not all(0 <= val < len(Names) for val in vals):
                     raise ValueError
             except ValueError:
                 plotSeq.SetValue("Error in string " + plotSeq.GetValue())
@@ -1876,7 +1883,7 @@ def UpdateLayerData(G2frame, data, Scroll=0):
                 try:
                     newstack = ""
                     Istar = 0
-                    for star in range(nstar):
+                    for _star in range(nstar):
                         Istar = stack.index("*", Istar + 1)
                         iB = stack[:Istar].rfind(" ")
                         if iB == -1:
@@ -2213,7 +2220,7 @@ def UpdateTexture(G2frame, data):
                 xyz = textureData["PFxyz"]
             if not np.any(np.array(xyz)):  # can't be all zeros!
                 xyz = textureData["PFxyz"]
-            Obj.SetValue("%3.1f %3.1f %3.1f" % (xyz[0], xyz[1], xyz[2]))
+            Obj.SetValue(f"{xyz[0]:3.1f} {xyz[1]:3.1f} {xyz[2]:3.1f}")
             textureData["PFxyz"] = xyz
         wx.CallAfter(G2plt.PlotTexture, G2frame, data)
 
@@ -2314,7 +2321,7 @@ def UpdateTexture(G2frame, data):
             dlg.Destroy()
         if pfFile:
             pf = open(pfFile, "w")
-            pf.write('"%s"\n' % (PhaseName))
+            pf.write(f'"{PhaseName}"\n')
             if "Inverse" in textureData["PlotType"]:
                 pf.write(
                     '" %s %d %d %d inverse pole figure"\n'
@@ -2575,8 +2582,7 @@ def UpdateTexture(G2frame, data):
     mainSizer.Add(
         wx.StaticText(
             Texture,
-            label=" Texture Index J = %7.3f"
-            % (G2lat.textureIndex(textureData["SH Coeff"][1])),
+            label=" Texture Index J = {:7.3f}".format(G2lat.textureIndex(textureData["SH Coeff"][1])),
         )
     )
     mainSizer.Add((0, 5), 0)
@@ -2676,7 +2682,7 @@ def UpdateTexture(G2frame, data):
         pfVal = wx.TextCtrl(
             Texture,
             -1,
-            "%3.1f %3.1f %3.1f" % (PX[0], PX[1], PX[2]),
+            f"{PX[0]:3.1f} {PX[1]:3.1f} {PX[2]:3.1f}",
             style=wx.TE_PROCESS_ENTER,
         )
     pfVal.Bind(wx.EVT_TEXT_ENTER, OnPFValue)
@@ -2684,7 +2690,7 @@ def UpdateTexture(G2frame, data):
     PTSizer.Add(pfVal, 0, WACV)
     if "Axial" not in textureData["PlotType"] and "3D" not in textureData["PlotType"]:
         PTSizer.Add(wx.StaticText(Texture, -1, " Color scheme"), 0, WACV)
-        choice = [m for m in mpl.cm.datad.keys()] + [
+        choice = list(mpl.cm.datad.keys()) + [
             "GSPaired",
             "GSPaired_r",
         ]  # if not m.endswith("_r")
@@ -2863,8 +2869,7 @@ def UpdateWavesData(G2frame, data, Scroll=0):
             atomSizer.Add(
                 wx.StaticText(
                     waveData,
-                    label=" Modulation data for atom: %s  Site sym: %s"
-                    % (atom[0], atom[cs].strip()),
+                    label=f" Modulation data for atom: {atom[0]}  Site sym: {atom[cs].strip()}",
                 ),
                 0,
                 WACV,
@@ -3020,8 +3025,7 @@ def UpdateWavesData(G2frame, data, Scroll=0):
                     waveSizer.Add(
                         wx.StaticText(
                             waveData,
-                            label=" %s  parameters: %s"
-                            % (
+                            label=" {}  parameters: {}".format(
                                 waveName,
                                 str(names).rstrip("]").lstrip("[").replace("'", ""),
                             ),
@@ -3054,7 +3058,7 @@ def UpdateWavesData(G2frame, data, Scroll=0):
                             )
                         else:
                             waveVal = G2G.ReadOnlyTextCtrl(
-                                waveData, value="%.5f" % (val)
+                                waveData, value=f"{val:.5f}"
                             )
                         Waves.Add(waveVal, 0, WACV)
                         if len(wave[0]) > 6 and ival == 5:

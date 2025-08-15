@@ -12,7 +12,7 @@ try:
     from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
 except ImportError:
     from matplotlib.backends.backend_wxagg import (
-        Toolbar as Toolbar,  # name changes in wx4.0.1
+        Toolbar,  # name changes in wx4.0.1
     )
 
 
@@ -68,7 +68,7 @@ class PlotNotebook(wx.Panel):
             xpos = event.xdata
             if xpos:  # avoid out of frame mouse position
                 ypos = event.ydata
-                self.status.SetStatusText("X= %.3f Y= %.3f" % (xpos, ypos))
+                self.status.SetStatusText(f"X= {xpos:.3f} Y= {ypos:.3f}")
 
         page = Plot(self.nb)
         page.canvas.mpl_connect("motion_notify_event", OnMotion)

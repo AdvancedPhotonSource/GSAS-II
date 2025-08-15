@@ -264,7 +264,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     parent=self.panel,
                     name=Elem[0],
                     size=wx.Size(70, 20),
-                    value="%.2f" % (Elem[2]),
+                    value=f"{Elem[2]:.2f}",
                     style=wx.TE_PROCESS_ENTER,
                 )
                 compSizer.Add(numElem, 0)
@@ -282,7 +282,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             id=wxID_SPINTEXT1,
             parent=self.panel,
             size=wx.Size(100, 20),
-            value="%.4f" % (self.Wave),
+            value=f"{self.Wave:.4f}",
             style=wx.TE_PROCESS_ENTER,
         )
         selSizer.Add(self.SpinText1, 0)
@@ -295,7 +295,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             id=wxID_SPINTEXT2,
             parent=self.panel,
             size=wx.Size(100, 20),
-            value="%.4f" % (self.Energy),
+            value=f"{self.Energy:.4f}",
             style=wx.TE_PROCESS_ENTER,
         )
         selSizer.Add(self.SpinText2, 0)
@@ -352,7 +352,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             id=wxID_SPINTEXT3,
             parent=self.panel,
             size=wx.Size(100, 20),
-            value="%.2f" % (self.Volume),
+            value=f"{self.Volume:.2f}",
             style=wx.TE_PROCESS_ENTER,
         )
         cellSizer.Add(self.SpinText3, 0)
@@ -380,7 +380,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             id=wxID_SPINTEXT5,
             parent=self.panel,
             size=wx.Size(50, 20),
-            value="%.2f" % (self.Radius),
+            value=f"{self.Radius:.2f}",
             style=wx.TE_PROCESS_ENTER,
         )
         cellSizer.Add(self.SpinText5, 0)
@@ -394,7 +394,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             id=wxID_SPINTEXT6,
             parent=self.panel,
             size=wx.Size(50, 20),
-            value="%.2f" % (self.Pack),
+            value=f"{self.Pack:.2f}",
             style=wx.TE_PROCESS_ENTER,
         )
         cellSizer.Add(self.SpinText6, 0)
@@ -474,7 +474,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         for Elem in self.Elems:
             if event.GetEventObject().GetName() == Elem[0]:
                 Elem[2] = float(event.GetEventObject().GetValue())
-                event.GetEventObject().SetValue("%8.2f" % (Elem[2]))
+                event.GetEventObject().SetValue(f"{Elem[2]:8.2f}")
                 self.ifVol = False
             self.SetWaveEnergy(self.Wave)
 
@@ -520,8 +520,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.Energy = round(self.Energy, 4)
         E = self.Energy
         DE = E * self.Eres  # smear by defined source resolution
-        self.SpinText1.SetValue("%.4f" % (self.Wave))
-        self.SpinText2.SetValue("%.4f" % (self.Energy))
+        self.SpinText1.SetValue(f"{self.Wave:.4f}")
+        self.SpinText2.SetValue(f"{self.Energy:.4f}")
         self.SpinText1.Update()
         self.SpinText2.Update()
         if self.ifWave:
@@ -576,31 +576,22 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             else:
                 mu = self.Zcell * Elem[2] * (r1[2] + r2[2]) / 2.0
                 Fop += Elem[2] * (Elem[1] + (r1[0] + r2[0]) / 2.0)
-                Text += "%s\t%s%8.2f  %s%6.3f  %s%6.3f  %s%10.2f %s\n" % (
-                    "Element: " + str(Els),
-                    "N = ",
-                    Elem[2],
-                    " f'=",
-                    (r1[0] + r2[0]) / 2.0,
-                    ' f"=',
-                    (r1[1] + r2[1]) / 2.0,
-                    " " + Gkmu + "=",
-                    mu,
-                    "barns",
-                )
+                fprime = (r1[0] + r2[0]) / 2.0
+                fdoubleprime = (r1[1] + r2[1]) / 2.0
+                Text += f"Element: {Els!s}\tN = {Elem[2]:8.2f}    f'={fprime:6.3f}   f''={fdoubleprime:6.3f}  {Gkmu}={mu:10.2f} barns\n"
             muT += mu
             self.muT = muT
 
         if self.Volume:
             self.muR = self.Radius * self.Pack * muT / (10.0 * self.Volume)
-            Text += "%s %s%10.4g %s" % (
+            Text += "{} {}{:10.4g} {}".format(
                 "Total",
                 " " + Gkmu + " =",
                 self.Pack * muT / self.Volume,
                 "cm" + Pwrm1 + ", ",
             )
-            Text += "%s%10.4g%s" % ("Total " + Gkmu + "R =", self.muR, ", ")
-            Text += "%s%10.4f%s\n" % (
+            Text += "{}{:10.4g}{}".format("Total " + Gkmu + "R =", self.muR, ", ")
+            Text += "{}{:10.4f}{}\n".format(
                 "Transmission exp(-2" + Gkmu + "R) =",
                 100.0
                 * math.exp(-2.0 * self.Radius * self.Pack * muT / (10.0 * self.Volume)),
@@ -609,19 +600,19 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             if muT > 0.0:
                 pene = 10.0 / (self.Pack * muT / self.Volume)
                 if pene > 0.01:
-                    Text += "%s %10.4g mm\n" % (
+                    Text += "{} {:10.4g} mm\n".format(
                         "1/e (~27.2%) penetration depth = ",
                         pene,
                     )
                 else:
-                    Text += "%s %10.4g %sm\n" % (
+                    Text += "{} {:10.4g} {}m\n".format(
                         "1/e (~27.2%) penetration depth = ",
                         1000.0 * pene,
                         Gkmu,
                     )
                 Tth = np.array([0.0, 140.0])
                 Xabs = 1.0 / G2pwd.Absorb("Cylinder", self.muR, Tth)
-                Text += "%s %10.4g to %10.4g\n" % (
+                Text += "{} {:10.4g} to {:10.4g}\n".format(
                     "Cylinder absorption correction extremes:",
                     Xabs[0],
                     Xabs[1],
@@ -629,35 +620,35 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Results.SetValue(Text)
             den = Mass / (0.602 * self.Volume)
             if self.ifVol:
-                Text += "%s" % ("Theor. density =")
+                Text += "{}".format("Theor. density =")
             else:
-                Text += "%s" % ("Est. density =")
-            Text += "%6.3f %s%.3f %s\n" % (
+                Text += "{}".format("Est. density =")
+            Text += "{:6.3f} {}{:.3f} {}\n".format(
                 den,
                 "g/cm" + Pwr3 + ", Powder density =",
                 self.Pack * den,
                 "g/cm" + Pwr3,
             )
-            Text += "%s%10.2f%s\n" % (
+            Text += "{}{:10.2f}{}\n".format(
                 "X-ray small angle scattering contrast",
                 (28.179 * Fo / self.Volume) ** 2,
                 "*10" + Pwr20 + "/cm" + Pwr4,
             )
             if Fop:
-                Text += "%s%10.2f%s\n" % (
+                Text += "{}{:10.2f}{}\n".format(
                     "Anomalous X-ray small angle scattering contrast",
                     (28.179 * Fop / self.Volume) ** 2,
                     "*10" + Pwr20 + "/cm" + Pwr4,
                 )
             self.Results.SetValue(Text)
         self.Results.Update()
-        self.SpinText3.SetValue("%.2f" % (self.Volume))
+        self.SpinText3.SetValue(f"{self.Volume:.2f}")
         self.SpinText3.Update()
         self.SpinText4.SetValue("%d" % (self.Zcell))
         self.SpinText4.Update()
-        self.SpinText5.SetValue("%.2f" % (self.Radius))
+        self.SpinText5.SetValue(f"{self.Radius:.2f}")
         self.SpinText5.Update()
-        self.SpinText6.SetValue("%.2f" % (self.Pack))
+        self.SpinText6.SetValue(f"{self.Pack:.2f}")
         self.SpinText6.Update()
         if len(self.Elems):
             self.CalcFPPS()
@@ -721,8 +712,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Wave = round(self.Wave, 4)
             self.slider1.SetRange(int(1000.0 * self.Wmin), int(1000.0 * self.Wmax))
             self.slider1.SetValue(int(1000.0 * self.Wave))
-            self.SpinText1.SetValue("%6.4f" % (self.Wave))
-            self.SpinText2.SetValue("%7.4f" % (self.Energy))
+            self.SpinText1.SetValue(f"{self.Wave:6.4f}")
+            self.SpinText2.SetValue(f"{self.Energy:7.4f}")
         else:
             self.ifWave = False
             self.NewFPPlot = True
@@ -731,8 +722,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Energy = round(self.Energy, 4)
             self.slider1.SetRange(int(1000.0 * Emin), int(1000.0 * Emax))
             self.slider1.SetValue(int(1000.0 * self.Energy))
-            self.SpinText1.SetValue("%6.4f" % (self.Wave))
-            self.SpinText2.SetValue("%7.4f" % (self.Energy))
+            self.SpinText1.SetValue(f"{self.Wave:6.4f}")
+            self.SpinText2.SetValue(f"{self.Energy:7.4f}")
         if len(self.Elems):
             self.CalcFPPS()
             self.UpDateAbsPlot(self.Wave, rePlot=False)
@@ -774,7 +765,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.ax.set_title("X-Ray Absorption", x=0, ha="left")
         self.ax.set_ylabel(r"$\mu R$", fontsize=14)
         self.bx.set_title(
-            r"Cylinder abs. corr. for $\lambda= %.4f\AA$" % self.Wave, x=0, ha="left"
+            rf"Cylinder abs. corr. for $\lambda= {self.Wave:.4f}\AA$", x=0, ha="left"
         )
         self.bx.set_xlabel(r"$2\theta$", fontsize=14)
         Tth = np.arange(0.0, 140.0, 0.1)
@@ -784,8 +775,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         Ymax = 0.0
         if self.FPPS:
             for Fpps in self.FPPS:
-                Ymin = min(Ymin, min(Fpps[2]))
-                Ymax = max(Ymax, max(Fpps[2]))
+                Ymin = min(Ymin, *Fpps[2])
+                Ymax = max(Ymax, *Fpps[2])
                 fppsP1 = np.array(Fpps[1])
                 fppsP2 = np.array(Fpps[2])
                 self.ax.plot(fppsP1, fppsP2, label=r"$\mu R$ " + Fpps[0])
@@ -827,8 +818,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 Wave = self.Kev / xpos
             Wave = min(max(Wave, self.Wmin), self.Wmax)
             self.parent.G2plotNB.status.SetStatusText(
-                "Wavelength: %.4f, Energy: %.3f, %sR: %.3f"
-                % (Wave, self.Kev / Wave, Gkmu, ypos),
+                f"Wavelength: {Wave:.4f}, Energy: {self.Kev / Wave:.3f}, {Gkmu}R: {ypos:.3f}",
                 1,
             )
         if self.linePicked:

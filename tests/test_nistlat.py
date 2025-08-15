@@ -30,6 +30,7 @@ from GSASII import nistlat
 def V(cell):
     return float(G2lat.calc_V(G2lat.cell2A(cell)))
 
+
 work = tempfile.gettempdir()
 
 

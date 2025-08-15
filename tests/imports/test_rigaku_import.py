@@ -18,7 +18,7 @@ home = os.path.dirname(os.path.dirname(__file__))
 if home not in sys.path:
     sys.path.insert(0, home)
 
-from GSASII.imports.G2pwd_rigaku import Rigaku_txtReaderClass, Rigaku_rasReaderClass
+from GSASII.imports.G2pwd_rigaku import Rigaku_rasReaderClass, Rigaku_txtReaderClass
 
 
 class TestRigakuTxtReader:
@@ -32,12 +32,13 @@ class TestRigakuTxtReader:
     def teardown_method(self):
         """Clean up test fixtures"""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def create_test_txt_file(self, filename, data_lines, header_lines=0):
         """Helper to create test .txt files"""
         filepath = os.path.join(self.temp_dir, filename)
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             # Add header lines
             for _ in range(header_lines):
                 f.write("Header line\n")
@@ -67,7 +68,9 @@ class TestRigakuTxtReader:
         result = self.reader.ContentsValidator(filename)
         assert result is True
         assert self.reader.vals == 3
-        assert abs(self.reader.stepsize - 0.05) < 1e-10  # step size is (angle_diff) / (vals-1)
+        assert (
+            abs(self.reader.stepsize - 0.05) < 1e-10
+        )  # step size is (angle_diff) / (vals-1)
 
     def test_contents_validator_with_blank_lines(self):
         """Test ContentsValidator with blank lines in header"""
@@ -82,7 +85,9 @@ class TestRigakuTxtReader:
         result = self.reader.ContentsValidator(filename)
         assert result is True
         assert self.reader.vals == 3
-        assert abs(self.reader.stepsize - 0.05) < 1e-10  # step size is (angle_diff) / (vals-1)
+        assert (
+            abs(self.reader.stepsize - 0.05) < 1e-10
+        )  # step size is (angle_diff) / (vals-1)
 
     def test_contents_validator_inconsistent_values(self):
         """Test ContentsValidator with inconsistent number of values"""
@@ -156,7 +161,14 @@ class TestRigakuTxtReader:
         np.testing.assert_array_almost_equal(y, expected_y)
 
         # Check weights (1/sqrt(intensity))
-        expected_w = [1.0/100.5, 1.0/200.3, 1.0/101.2, 1.0/201.4, 1.0/102.8, 1.0/202.9]
+        expected_w = [
+            1.0 / 100.5,
+            1.0 / 200.3,
+            1.0 / 101.2,
+            1.0 / 201.4,
+            1.0 / 102.8,
+            1.0 / 202.9,
+        ]
         np.testing.assert_array_almost_equal(w, expected_w)
 
         # Check other arrays are zeros
@@ -197,13 +209,14 @@ class TestRigakuRasReader:
     def teardown_method(self):
         """Clean up test fixtures"""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def create_test_rasx_file(self, filename):
         """Helper to create test .rasx files (zip format)"""
         filepath = os.path.join(self.temp_dir, filename)
 
-        with zipfile.ZipFile(filepath, 'w') as zf:
+        with zipfile.ZipFile(filepath, "w") as zf:
             # Create Data0 directory structure
             # The reader expects to seek(3) and then read lines, so we need some padding
             profile_data = "  10.0 100.5\n10.1 101.2\n10.2 102.8\n"
@@ -218,7 +231,7 @@ class TestRigakuRasReader:
         """Helper to create test .ras files"""
         filepath = os.path.join(self.temp_dir, filename)
 
-        with open(filepath, 'w', encoding='latin-1') as f:
+        with open(filepath, "w", encoding="latin-1") as f:
             f.write("*RAS_DATA_START\n")
             for bank in range(num_banks):
                 f.write("*RAS_HEADER_START\n")
@@ -233,7 +246,10 @@ class TestRigakuRasReader:
     def test_init(self):
         """Test reader initialization"""
         assert self.reader.formatName == "Rigaku .ras/.rasx file"
-        assert self.reader.longFormatName == "Rigaku .ras/.rasx raw multipattern powder data"
+        assert (
+            self.reader.longFormatName
+            == "Rigaku .ras/.rasx raw multipattern powder data"
+        )
         assert self.reader.extensionlist == (".ras", ".RAS", ".rasx", ".RASX")
         assert self.reader.strictExtension is True
         assert self.reader.scriptable is True
@@ -251,7 +267,7 @@ class TestRigakuRasReader:
     def test_contents_validator_invalid_ras_file(self):
         """Test ContentsValidator with invalid .ras file"""
         filepath = os.path.join(self.temp_dir, "invalid.ras")
-        with open(filepath, 'w', encoding='latin-1') as f:
+        with open(filepath, "w", encoding="latin-1") as f:
             f.write("INVALID_HEADER\n")
             f.write("10.0 100.5\n")
 
@@ -283,15 +299,21 @@ class TestRigakuRasReader:
         np.testing.assert_array_almost_equal(y, expected_y)
 
         # Check weights
-        expected_w = [1.0/100.5, 1.0/101.2, 1.0/102.8]
+        expected_w = [1.0 / 100.5, 1.0 / 101.2, 1.0 / 102.8]
         np.testing.assert_array_almost_equal(w, expected_w)
+
 
 class TestRigakuIntegration:
     """Integration tests using the actual test fixture"""
 
     def test_real_rasx_file(self):
         """Test with the actual rasx file from fixtures"""
-        fixture_path = Path(__file__).parent.parent / "fixtures" / "rigaku" / "Sample_Repeated Measurement.rasx"
+        fixture_path = (
+            Path(__file__).parent.parent
+            / "fixtures"
+            / "rigaku"
+            / "Sample_Repeated Measurement.rasx"
+        )
 
         if not fixture_path.exists():
             pytest.skip("Test fixture not found")

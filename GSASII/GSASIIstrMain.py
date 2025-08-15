@@ -43,18 +43,30 @@ try:
 except ImportError:  # ignore; will report this as an error in GSASIIplot import
     pass
 
+
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def acosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def atan2d(y, x):
     return 180.0 * np.arctan2(y, x) / np.pi
+
 
 ateln2 = 8.0 * math.log(2.0)
 DEBUG = True
@@ -224,6 +236,7 @@ def AllPrmDerivs(
 
     def rms(y):
         return np.sqrt(np.mean(y**2))
+
     G2mv.Map2Dict(parmDict, varyList)
     begin = time.time()
     seqList = Controls.get("Seq Data", [])
@@ -285,10 +298,7 @@ def AllPrmDerivs(
             if dprm in symHold:
                 continue  # held by symmetry
             delta = 1e-6
-        if (
-            nam in ["A0", "A1", "A2", "A3", "A4", "A5"]
-            and "PWDR" not in Histograms
-        ):
+        if nam in ["A0", "A1", "A2", "A3", "A4", "A5"] and "PWDR" not in Histograms:
             continue
         dprm = prm
         # print('***',prm,type(parmDict[prm]))
@@ -541,7 +551,9 @@ def RefineCore(
                 % (runtime, runtime / ncyc, ncyc)
             )
         printFile.write(
-            " wR = {:7.2f}%, chi**2 = {:12.6g}, GOF = {:6.2f}\n".format(Rvals["Rwp"], Rvals["chisq"], Rvals["GOF"])
+            " wR = {:7.2f}%, chi**2 = {:12.6g}, GOF = {:6.2f}\n".format(
+                Rvals["Rwp"], Rvals["chisq"], Rvals["GOF"]
+            )
         )
         sig = len(varyList) * [
             None,
@@ -2065,8 +2077,8 @@ def PrintDistAngle(DisAglCtls, DisAglData, out=sys.stdout):
         BVdat = {}
         Otyp = G2elem.FixValence(Oatom[2]).split("+")[0].split("-")[0]
         BVox = [BV for BV in atmdata.BVSoxid[Otyp] if "+" in BV]
-        if len(BVox):
-            BVS = {BV: 0.0 for BV in BVox}
+        if BVox:
+            BVS = dict.fromkeys(BVox, 0.0)
             BVdat = {
                 BV: dict(zip(["O", "F", "Cl"], atmdata.BVScoeff[BV], strict=False))
                 for BV in BVox
@@ -2088,7 +2100,7 @@ def PrintDistAngle(DisAglCtls, DisAglData, out=sys.stdout):
                 val = G2mth.ValEsd(dist[3], dist[4])
             else:
                 val = f"{dist[3]:8.4f}"
-            if len(BVox):
+            if BVox:
                 Tatm = G2elem.FixValence(DisAglData["TargAtoms"][dist[0]][2]).split(
                     "-"
                 )[0]
@@ -2108,7 +2120,7 @@ def PrintDistAngle(DisAglCtls, DisAglData, out=sys.stdout):
                 )
                 + line.rstrip()
             )
-        if len(BVox):
+        if BVox:
             MyPrint(80 * "*")
             for BV in BVox:
                 pvline += f" {BV}: {BVS[BV]:.2f}  "

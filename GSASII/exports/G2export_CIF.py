@@ -276,7 +276,7 @@ def mkSeqResTable(mode, seqHistList, seqData, Phases, Histograms, Controls):
             tblTypes += ["float"]
 
     # add unique cell parameters
-    if len(newCellDict):
+    if newCellDict:
         for pId in sorted(RecpCellTerms):
             pfx = str(pId) + "::"  # prefix for A values from phase
             cells = []
@@ -1874,11 +1874,13 @@ class ExportCIF(G2fil.ExportBaseclass):
                 controls = self.OverallParms["Controls"]
                 try:
                     if controls["F**2"]:
-                        thresh = (
-                            "F**2>{:.1f}u(F**2)".format(controls["UsrReject"]["minF/sig"])
+                        thresh = "F**2>{:.1f}u(F**2)".format(
+                            controls["UsrReject"]["minF/sig"]
                         )
                     else:
-                        thresh = "F>{:.1f}u(F)".format(controls["UsrReject"]["minF/sig"])
+                        thresh = "F>{:.1f}u(F)".format(
+                            controls["UsrReject"]["minF/sig"]
+                        )
                     WriteCIFitem(self.fp, "_reflns_threshold_expression", thresh)
                 except KeyError:
                     pass
@@ -1944,11 +1946,13 @@ class ExportCIF(G2fil.ExportBaseclass):
                 controls = self.OverallParms["Controls"]
                 try:
                     if controls["F**2"]:
-                        thresh = (
-                            "F**2>{:.1f}u(F**2)".format(controls["UsrReject"]["minF/sig"])
+                        thresh = "F**2>{:.1f}u(F**2)".format(
+                            controls["UsrReject"]["minF/sig"]
                         )
                     else:
-                        thresh = "F>{:.1f}u(F)".format(controls["UsrReject"]["minF/sig"])
+                        thresh = "F>{:.1f}u(F)".format(
+                            controls["UsrReject"]["minF/sig"]
+                        )
                     WriteCIFitem(self.fp, "_reflns.threshold_expression", thresh)
                 except KeyError:
                     pass
@@ -2289,9 +2293,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                         sig = sigDict.get(name, -0.009)
                         s += G2mth.ValEsd(val, sig) + ", "
                         i = 2  # skip the aniso value
-                s += (
-                    f'\n  Microstrain, "{mustrain[0]}" model (10^6^ * delta Q/Q)\n  '
-                )
+                s += f'\n  Microstrain, "{mustrain[0]}" model (10^6^ * delta Q/Q)\n  '
                 names = ["Mustrain;i", "Mustrain;mx"]
                 if "uniax" in mustrain[0]:
                     names = ["Mustrain;i", "Mustrain;a", "Mustrain;mx"]
@@ -6727,7 +6729,9 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
     :param (other): optional keyword parameters for wx.ScrolledPanel
     """
 
-    def __init__(self, parent, cifblk, loopstructure, cifdic=None, OKbuttons=None, **kw):
+    def __init__(
+        self, parent, cifblk, loopstructure, cifdic=None, OKbuttons=None, **kw
+    ):
         from .. import GSASIIctrlGUI as G2G
 
         if OKbuttons is None:
@@ -7014,7 +7018,10 @@ class CIFtemplateSelect(wx.BoxSizer):
         # find default name for template
         resetTemplate = None
         localTemplate = None
-        for pth in [os.path.dirname(__file__), *sys.path]:  # -- search with default name
+        for pth in [
+            os.path.dirname(__file__),
+            *sys.path,
+        ]:  # -- search with default name
             fil = os.path.join(pth, templateDefName)
             if os.path.exists(fil):
                 resetTemplate = fil

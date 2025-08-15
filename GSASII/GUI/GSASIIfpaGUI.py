@@ -123,7 +123,8 @@ def SetCu2Wave():
 def SetCu6wave():
     """Set the emission parameters to the NIST six-line Cu K alpha spectrum"""
     # values from Marcus Mendenhall from atan_windowed_FP_profile.py
-    parmDict["wave"] = dict(enumerate(
+    parmDict["wave"] = dict(
+        enumerate(
             (
                 1.5405925,
                 1.5443873,
@@ -132,8 +133,10 @@ def SetCu6wave():
                 1.53471,
                 1.53382,
             )
-        ))
-    parmDict["int"] = dict(enumerate(
+        )
+    )
+    parmDict["int"] = dict(
+        enumerate(
             (
                 0.58384351,
                 0.2284605,
@@ -142,8 +145,10 @@ def SetCu6wave():
                 0.0043303,
                 0.00208613,
             )
-        ))
-    parmDict["lwidth"] = dict(enumerate(
+        )
+    )
+    parmDict["lwidth"] = dict(
+        enumerate(
             (
                 0.436,
                 0.487,
@@ -152,7 +157,8 @@ def SetCu6wave():
                 2.93,
                 2.93,
             )
-        ))
+        )
+    )
 
 
 def SetMonoWave():
@@ -510,8 +516,7 @@ def XferFPAsettings(InpParms):
     """
     # cleanup old stuff
     for key in "tube_tails", "absorption", "si_psd", "displacement", "receiver_slit":
-        if key in NISTparms:
-            del NISTparms[key]
+        NISTparms.pop(key, None)
 
     keys = list(InpParms["wave"].keys())
     source_wavelengths_m = 1.0e-10 * np.array([InpParms["wave"][i] for i in keys])

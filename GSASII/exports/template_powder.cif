@@ -84,4 +84,3 @@ _pd_spec_mount_mode               ?       # options are 'reflection'
     
 _pd_spec_shape                    ?       # options are 'cylinder' 
                                           # 'flat_sheet' or 'irregular'
-

@@ -118,9 +118,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             if len(vals) == 2 or len(vals) == 3:
                 continue
             self.errors = "Unexpected information in line: " + str(i + 1)
-            if all(
-                ord(c) < 128 and ord(c) != 0 for c in str(S)
-            ):  # show only if ASCII
+            if all(ord(c) < 128 and ord(c) != 0 for c in str(S)):  # show only if ASCII
                 self.errors += "  " + str(S)
             else:
                 self.errors += "  (binary)"

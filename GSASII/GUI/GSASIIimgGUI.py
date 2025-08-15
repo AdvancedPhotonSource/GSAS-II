@@ -54,23 +54,39 @@ try:
 except:
     pass
 
+
 # trig functions in degrees
 def sind(x):
     return math.sin(x * math.pi / 180.0)
+
+
 def tand(x):
     return math.tan(x * math.pi / 180.0)
+
+
 def cosd(x):
     return math.cos(x * math.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * math.asin(x) / math.pi
+
+
 def tth2q(t, w):
     return 4.0 * math.pi * sind(t / 2.0) / w
+
+
 def tof2q(t, C):
     return 2.0 * math.pi * C / t
+
+
 def atand(x):
     return 180.0 * math.atan(x) / math.pi
+
+
 def atan2d(y, x):
     return 180.0 * math.atan2(y, x) / math.pi
+
 
 ################################################################################
 ##### Image Data
@@ -347,7 +363,9 @@ def UpdateImageData(G2frame, data):
     tthSizer.Add(
         wx.StaticText(
             G2frame.dataWindow,
-            label=" Sample changer position {:.2f} mm ".format(data["samplechangerpos"]),
+            label=" Sample changer position {:.2f} mm ".format(
+                data["samplechangerpos"]
+            ),
         ),
         0,
         WACV,
@@ -1262,7 +1280,7 @@ def UpdateImageControls(
                     File.close()
         finally:
             dlg.Destroy()
-        if not len(controlsDict):
+        if not controlsDict:
             return
         Names = G2gd.GetGPXtreeDataNames(
             G2frame,
@@ -1329,8 +1347,10 @@ def UpdateImageControls(
                 else:
                     G2G.G2MessageBox(G2frame, "Nothing to do!")
                     return
+
                 def xferAng(tth, dist1, dist2):
                     return atand(dist1 * tand(tth) / dist2)
+
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
                 Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, Source)
@@ -3365,7 +3385,9 @@ def UpdateMasks(G2frame, data):
             labelX="Azimuth",
             labelY="Intensity",
             newPlot=True,
-            Title="Ring Mask Intensity: 2{}={:.2f}".format(GkTheta, data["Rings"][ringId][0]),
+            Title="Ring Mask Intensity: 2{}={:.2f}".format(
+                GkTheta, data["Rings"][ringId][0]
+            ),
             lines=True,
         )
 
@@ -6232,7 +6254,7 @@ def testColumnMetadata(G2frame):
         for f in glob.glob(parRoot + ".*lbls"):
             if os.path.exists(f):
                 lblList.append(f)
-        if not len(lblList):
+        if not lblList:
             continue
         parList.append(parFile)
     if len(parList) == 0:
@@ -6268,7 +6290,7 @@ def testColumnMetadata(G2frame):
     for f in glob.glob(parRoot + ".*lbls"):
         if os.path.exists(f):
             lblList.append(f)
-    if not len(lblList):
+    if not lblList:
         raise Exception("How did this happen! No .*lbls files for " + parFile)
     if len(lblList) == 1:
         lblFile = lblList[0]

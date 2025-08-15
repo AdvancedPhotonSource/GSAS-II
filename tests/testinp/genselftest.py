@@ -363,14 +363,10 @@ with open("spctestinp.py", "w") as fp:
     fp.write(f"# testing {len(sgdat)} space groups (25 dups/non-standard)\n")
     fp.write("SGdat = {\n")
     for spc_key, spc_value in sgdat.items():
-        fp.write(
-            f'"{spc_key}": {spc_value} ,\n'
-        )
+        fp.write(f'"{spc_key}": {spc_value} ,\n')
     fp.write("}\n")
 
     fp.write("SGlist = {\n")
     for spc_key, spc_value in sglist.items():
-        fp.write(
-            f'"{spc_key}": {spc_value} ,\n'
-        )
+        fp.write(f'"{spc_key}": {spc_value} ,\n')
     fp.write("}\n")

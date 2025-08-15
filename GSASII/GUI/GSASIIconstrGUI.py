@@ -745,7 +745,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             pass
         else:
             raise Exception("Unknown constraint page " + page[1])
-        if len(choices):
+        if choices:
             l1 = l2 = 1
             for i1, i2, _i3 in choices:
                 l1 = max(l1, len(i1))
@@ -1315,7 +1315,10 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                     if "AUiso" in pref:
                         parts = pref.split("AUiso")
                         constr += [
-                            [1.2, G2obj.G2VarObj("{}:{}".format(parts[0] + "AUiso", id))]
+                            [
+                                1.2,
+                                G2obj.G2VarObj("{}:{}".format(parts[0] + "AUiso", id)),
+                            ]
                         ]
                     elif "AU" not in pref:
                         constr += [[1.0, G2obj.G2VarObj(f"{pref}:{id}")]]
@@ -1659,14 +1662,16 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             constSizer.Add(constDel)  # delete selection
             panel.delBtn.checkboxList.append([constDel, Id, name])
             if refineflag:
+
                 def refresh(event):
                     return wx.CallAfter(
-                                    UpdateConstraints,
-                                    G2frame,
-                                    data,
-                                    G2frame.constr.GetSelection(),
-                                    True,
-                                )
+                        UpdateConstraints,
+                        G2frame,
+                        data,
+                        G2frame.constr.GetSelection(),
+                        True,
+                    )
+
                 ch = G2G.G2CheckBox(panel, "vary ", item, -2, OnChange=refresh)
                 constSizer.Add(ch)
             else:
@@ -2324,7 +2329,7 @@ def CheckScalePhaseFractions(G2frame, hist, histograms, phases, Constraints):
         # the correct histogram?
         if all(
             (i[1].name == "Scale" and i[1].varname().split(":")[1] == histStr)
-                for i in c[:-3]
+            for i in c[:-3]
         ):
             # got a constraint, this is OK
             return False
@@ -4135,9 +4140,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
             rowLabels = []
             atNames = []
             for ivec, xyz in enumerate(rbData["rbVect"][imag]):
-                table.append(
-                    [*list(xyz), rbData["rbTypes"][ivec], *list(XYZ[ivec])]
-                )
+                table.append([*list(xyz), rbData["rbTypes"][ivec], *list(XYZ[ivec])])
                 rowLabels.append(str(ivec))
                 atNames.append(rbData["rbTypes"][ivec] + str(ivec))
             rbData["atNames"] = atNames

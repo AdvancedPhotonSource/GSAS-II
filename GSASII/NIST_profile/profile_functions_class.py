@@ -160,9 +160,7 @@ class FP_profile:
     ):
         if anglemode not in ("d", "twotheta"):
             msg = f"invalid angle mode {anglemode}, must be 'd' or 'twotheta'"
-            raise Exception(
-                msg
-            )
+            raise Exception(msg)
         ## set to either 'd' for d-spacing based position, or 'twotheta' for angle-based position
         self.anglemode = anglemode
         ## sigma, in units of bins, for the final smoother. \a None means no final smoothing step.
@@ -429,8 +427,8 @@ class FP_profile:
         self.param_dicts["conv_global"].setdefault(
             "d", 0
         )  # in case it's not initialized
-        return (
-            "global: peak center={twotheta0_deg:.4f}, d={d:.8g}, eq. div={equatorial_divergence_deg:.3f}".format(**self.param_dicts["conv_global"])
+        return "global: peak center={twotheta0_deg:.4f}, d={d:.8g}, eq. div={equatorial_divergence_deg:.3f}".format(
+            **self.param_dicts["conv_global"]
         )
 
     ## @brief the global context isn't really a convolver, returning \a None means ignore result
@@ -549,9 +547,7 @@ class FP_profile:
 
         # make the numerics accurate: compute average on each bin, which is
         # integral of 1/sqrt = 2*sqrt, then difference integral
-        intg = np.sqrt(
-            deps, deps
-        )  # do it in place, return value is actually deps too
+        intg = np.sqrt(deps, deps)  # do it in place, return value is actually deps too
         intg *= 2 * k * sign
 
         intg[:-1] -= intg[
@@ -874,8 +870,7 @@ class FP_profile:
         kwargs = {}
         kwargs.update(self.param_dicts[me])  # get all of our parameters
         kwargs.update(self.param_dicts["conv_global"])
-        if "equatorial_divergence_deg" in kwargs:
-            del kwargs["equatorial_divergence_deg"]  # not used
+        kwargs.pop("equatorial_divergence_deg", None)  # not used
 
         flag, axfn = self.get_conv(me, kwargs, complex)
         if flag:

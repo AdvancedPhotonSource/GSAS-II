@@ -76,7 +76,9 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             self.comments.append("Anode=" + self.Read(fp, 2))
             self.comments.append("Ka1={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
             self.comments.append("Ka2={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
-            self.comments.append("Ka2/Ka1={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
+            self.comments.append(
+                "Ka2/Ka1={:.5f}".format(st.unpack("<f", fp.read(4))[0])
+            )
             fp.seek(206)
             self.comments.append("Kb={:.5f}".format(st.unpack("<f", fp.read(4))[0]))
             pos = 256
@@ -132,11 +134,15 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             fp.seek(608)
             self.comments.append("Anode=" + self.Read(fp, 4))
             fp.seek(616)
-            self.comments.append("Ka mean={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
+            self.comments.append(
+                "Ka mean={:.5f}".format(st.unpack("<d", fp.read(8))[0])
+            )
             self.comments.append("Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
             self.comments.append("Ka2={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
             self.comments.append("Kb={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
-            self.comments.append("Ka2/Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0]))
+            self.comments.append(
+                "Ka2/Ka1={:.5f}".format(st.unpack("<d", fp.read(8))[0])
+            )
             pos = 712
             fp.seek(pos)  # position at 1st block header
             blockNum = kwarg.get("blocknum", 0)
@@ -302,8 +308,8 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                                     "Divergence Slit",
                                 ]:
                                     fp.read(20)
-                                    meta[f"start {segName}"] = (
-                                        "{:.4f}".format(st.unpack("<d", fp.read(8))[0])
+                                    meta[f"start {segName}"] = "{:.4f}".format(
+                                        st.unpack("<d", fp.read(8))[0]
                                     )
                                     fp.read(seglen - 64)
                                 else:
@@ -342,9 +348,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                                 np.zeros(Nsteps),
                             ]
                             for item in meta:
-                                self.comments.append(
-                                    f"{item} = {meta[item]!s}"
-                                )
+                                self.comments.append(f"{item} = {meta[item]!s}")
                             fp.close()
                             self.repeat = True
                             if nBank == self.numbanks - 1:

@@ -84,13 +84,19 @@ try:
 except AttributeError:
     pass
 
+
 # trig functions in degrees
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
 
 # Define short names for convenience
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -2083,10 +2089,13 @@ If you continue from this point, it is quite likely that all intensity computati
             param: rd: importer data structure
             returns: dict: Instrument parameter dictionary
             """
+
             def sind(x):
                 return math.sin(x * math.pi / 180.0)
+
             def tand(x):
                 return math.tan(x * math.pi / 180.0)
+
             while True:  # loop until we get a choice
                 choices = []
                 head = "Select from default instrument parameters for " + rd.idstring
@@ -4706,9 +4715,7 @@ If you continue from this point, it is quite likely that all intensity computati
                                     ]
                                     print("Differences: ")
                                     for diff in chkDiff:
-                                        print(
-                                            f"{diff[0]}: {diff[1]!s} {diff[2]!s}"
-                                        )
+                                        print(f"{diff[0]}: {diff[1]!s} {diff[2]!s}")
                                     return
                             Found = True
                             Comments.append("{:10.3f} {}".format(scale, " * " + name))
@@ -4953,7 +4960,16 @@ If you continue from this point, it is quite likely that all intensity computati
                         data = self.GPXtree.GetItemPyData(item)
                         if usedPhase:  # remove r-factors
                             dellist = [value for value in data[0] if ":" in value]
-                            for v in [*dellist, "Durbin-Watson", "R", "wR", "Rb", "wRb", "wRmin", "Nobs"]:
+                            for v in [
+                                *dellist,
+                                "Durbin-Watson",
+                                "R",
+                                "wR",
+                                "Rb",
+                                "wRb",
+                                "wRmin",
+                                "Nobs",
+                            ]:
                                 if v in data[0]:
                                     del data[0][v]
                             # could wipe out computed & difference patterns, but does not work
@@ -5225,7 +5241,7 @@ If you continue from this point, it is quite likely that all intensity computati
             if "Sequential" in name:
                 SeqList.append(name)
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
-        if not len(SeqList):
+        if not SeqList:
             G2G.G2MessageBox(self, "No tree items to be deleted", "Nothing to delete")
             return
         dlg = G2G.G2MultiChoiceDialog(
@@ -5241,7 +5257,7 @@ If you continue from this point, it is quite likely that all intensity computati
         finally:
             dlg.Destroy()
         DelList = [SeqList[i] for i in result]
-        if not len(DelList):
+        if not DelList:
             G2G.G2MessageBox(self, "No tree items selected", "Nothing deleted")
             return
         item, cookie = self.GPXtree.GetFirstChild(self.root)
@@ -5878,26 +5894,40 @@ If you continue from this point, it is quite likely that all intensity computati
             hname = hist.split()[1].split(".")[0]
             if useFo:
                 Header += (
-                    "COLUMN {} F{:18.4f}{:18.4f}".format(("F_" + hname).ljust(30), IoRange[ih][0], IoRange[ih][1])
+                    "COLUMN {} F{:18.4f}{:18.4f}".format(
+                        ("F_" + hname).ljust(30), IoRange[ih][0], IoRange[ih][1]
+                    )
                 ).ljust(78) + "%2d" % (ih + 1)
                 Header += (
-                    "COLUMN {} Q{:18.8f}{:18.8f}".format(("SIGFP_" + hname).ljust(30), SigRange[ih][0], SigRange[ih][1])
+                    "COLUMN {} Q{:18.8f}{:18.8f}".format(
+                        ("SIGFP_" + hname).ljust(30), SigRange[ih][0], SigRange[ih][1]
+                    )
                 ).ljust(78) + "%2d" % (ih + 1)
                 Header += (
-                    "COLUMN {} F{:18.4f}{:18.4f}".format(("FC_" + hname).ljust(30), IcRange[ih][0], IcRange[ih][1])
+                    "COLUMN {} F{:18.4f}{:18.4f}".format(
+                        ("FC_" + hname).ljust(30), IcRange[ih][0], IcRange[ih][1]
+                    )
                 ).ljust(78) + "%2d" % (ih + 1)
             else:
                 Header += (
-                    "COLUMN {} J{:18.4f}{:18.4f}".format(("I_" + hname).ljust(30), IoRange[ih][0], IoRange[ih][1])
+                    "COLUMN {} J{:18.4f}{:18.4f}".format(
+                        ("I_" + hname).ljust(30), IoRange[ih][0], IoRange[ih][1]
+                    )
                 ).ljust(78) + "%2d" % (ih + 1)
                 Header += (
-                    "COLUMN {} Q{:18.8f}{:18.8f}".format(("SIGI_" + hname).ljust(30), SigRange[ih][0], SigRange[ih][1])
+                    "COLUMN {} Q{:18.8f}{:18.8f}".format(
+                        ("SIGI_" + hname).ljust(30), SigRange[ih][0], SigRange[ih][1]
+                    )
                 ).ljust(78) + "%2d" % (ih + 1)
                 Header += (
-                    "COLUMN {} J{:18.4f}{:18.4f}".format(("IC_" + hname).ljust(30), IcRange[ih][0], IcRange[ih][1])
+                    "COLUMN {} J{:18.4f}{:18.4f}".format(
+                        ("IC_" + hname).ljust(30), IcRange[ih][0], IcRange[ih][1]
+                    )
                 ).ljust(78) + "%2d" % (ih + 1)
             Header += (
-                "COLUMN {} P{:18.4f}{:18.4f}".format(("PHIC_" + hname).ljust(30), -180.0, 180.0)
+                "COLUMN {} P{:18.4f}{:18.4f}".format(
+                    ("PHIC_" + hname).ljust(30), -180.0, 180.0
+                )
             ).ljust(78) + "%2d" % (ih + 1)
         Header += ("NDIF %10d" % nDif).ljust(80)
         projName = os.path.split(self.GSASprojectfile)[1]
@@ -6122,15 +6152,21 @@ If you continue from this point, it is quite likely that all intensity computati
                                     if Imax:
                                         I100 *= 100.0 / Imax
                                     file.write(
-                                        "{} {} {} \n".format(name, phase, " Reflection List")
+                                        "{} {} {} \n".format(
+                                            name, phase, " Reflection List"
+                                        )
                                     )
                                     if "T" in peaks.get("Type", "PXC"):
                                         file.write(
-                                            "{} \n".format("   h   k   l   m   d-space       TOF       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100")
+                                            "{} \n".format(
+                                                "   h   k   l   m   d-space       TOF       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100"
+                                            )
                                         )
                                     else:
                                         file.write(
-                                            "{} \n".format("   h   k   l   m   d-space   2-theta       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100")
+                                            "{} \n".format(
+                                                "   h   k   l   m   d-space   2-theta       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100"
+                                            )
                                         )
                                     for ipk, peak in enumerate(peaks["RefList"]):
                                         if "T" in peaks.get("Type", "PXC"):
@@ -6267,12 +6303,16 @@ If you continue from this point, it is quite likely that all intensity computati
         """Sets up PDF data structure filled with defaults; if found chemical formula is inserted
         so a default PDF can be made.
         """
+
         def sind(x):
             return math.sin(x * math.pi / 180.0)
+
         def tth2q(t, w):
             return 4.0 * math.pi * sind(t / 2.0) / w
+
         def tof2q(t, C):
             return 2.0 * math.pi * C / t
+
         TextList = []
         ElLists = []
         Qlimits = []

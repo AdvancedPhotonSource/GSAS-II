@@ -452,13 +452,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
             for lbl in cellitems:
                 cell.append(cif.get_number_with_esd(blk[lbl])[0])
             Volume = G2lat.calc_V(G2lat.cell2A(cell))
-            self.Phase["General"]["Cell"] = (
-                [False, *cell, Volume]
-            )
+            self.Phase["General"]["Cell"] = [False, *cell, Volume]
             if magnetic:
-                self.MPhase["General"]["Cell"] = (
-                    [False, *cell, Volume]
-                )
+                self.MPhase["General"]["Cell"] = [False, *cell, Volume]
             if Super:
                 waveloop = blk.GetLoop("_cell_wave_vector_seq_id")
                 waveDict = dict(waveloop.items())

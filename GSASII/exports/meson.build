@@ -23,4 +23,3 @@ py.install_sources([
   pure: false,    # Will be installed next to binaries
   subdir: 'GSASII/exports'  # Folder relative to site-packages to install to
 )
-

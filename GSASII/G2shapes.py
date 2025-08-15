@@ -1059,9 +1059,7 @@ def G2shapes(Profile, ProfDict, Limits, data, dlg=None):
             )
 
             if icount == 0:
-                aString = (
-                    "Emin cycle: " + str(i) + " Energy: " + str(f"{vdw_all:4.2f}")
-                )
+                aString = "Emin cycle: " + str(i) + " Energy: " + str(f"{vdw_all:4.2f}")
                 print(aString)
                 icount = -10
 

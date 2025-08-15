@@ -197,4 +197,3 @@ GSASIImiscGUI Classes & Routines
 
 .. automodule:: gltext
     :members: 
-

@@ -25,25 +25,44 @@ try:
 except ImportError:  # ignore; will report this as an error in GSASIIplot import
     pass
 
+
 # trig functions in degrees
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def atand(x):
     return 180.0 * np.arctan(x) / np.pi
+
+
 def atan2d(y, x):
     return 180.0 * np.arctan2(y, x) / np.pi
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def acosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def rdsq2d(x, p):
     return round(1.0 / math.sqrt(x), p)
+
+
 def nprdsq2d(x, p):
     return np.round(1.0 / np.sqrt(x), p)
+
+
 try:  # fails on doc build
     rpd = np.pi / 180.0
     RSQ2PI = 1.0 / np.sqrt(2.0 * np.pi)
@@ -1300,7 +1319,9 @@ def FillUnitCell(Phase, Force=True):
 
 def GetUnique(Phase, atCodes):
     def noDuplicate(xyzA, XYZ):
-        return True not in [np.allclose(xyzA % 1.0, xyzB % 1.0, atol=0.0002) for xyzB in XYZ]
+        return True not in [
+            np.allclose(xyzA % 1.0, xyzB % 1.0, atol=0.0002) for xyzB in XYZ
+        ]
 
     cx, ct = Phase["General"]["AtomPtrs"][:2]
     SGData = Phase["General"]["SGData"]
@@ -1930,7 +1951,14 @@ def Hx2Rh(Hx):
 def CentCheck(Cent, H):
     "checks individual hkl for centering extinction; returns True for allowed, False otherwise - slow"
     h, k, l = H
-    return not ((Cent == "A" and (k + l) % 2) or (Cent == "B" and (h + l) % 2) or (Cent == "C" and (h + k) % 2) or (Cent == "I" and (h + k + l) % 2) or (Cent == "F" and ((h + k) % 2 or (h + l) % 2 or (k + l) % 2)) or (Cent == "R" and (-h + k + l) % 3))
+    return not (
+        (Cent == "A" and (k + l) % 2)
+        or (Cent == "B" and (h + l) % 2)
+        or (Cent == "C" and (h + k) % 2)
+        or (Cent == "I" and (h + k + l) % 2)
+        or (Cent == "F" and ((h + k) % 2 or (h + l) % 2 or (k + l) % 2))
+        or (Cent == "R" and (-h + k + l) % 3)
+    )
 
 
 def newCentCheck(Cent, H):
@@ -2036,9 +2064,7 @@ def GetBraviasNum(center, system):
     elif center.upper() == "P" and system.lower() == "triclinic":
         return 17
     msg = f"non-standard Bravais lattice center={center}, cell={system}"
-    raise ValueError(
-        msg
-    )
+    raise ValueError(msg)
 
 
 def _GenHBravais_cctbx(
@@ -4121,6 +4147,7 @@ BOH = {
         ],
     ],
 }
+
 
 def Lnorm(L):
     return 4.0 * np.pi / (2.0 * L + 1.0)

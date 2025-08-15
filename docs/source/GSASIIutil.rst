@@ -153,4 +153,3 @@ tutorialIndex Contents
 
 .. automodule:: GSASII.tutorialIndex
     :members: 
-

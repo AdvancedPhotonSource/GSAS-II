@@ -43,21 +43,37 @@ except:
     pass
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
+
+
 # trig functions in degrees
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def acosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def atan2d(x, y):
     return 180.0 * np.arctan2(y, x) / np.pi
+
+
 def is_exe(fpath):
     return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+
 sqt2 = np.sqrt(2.0)
 sqt3 = np.sqrt(3.0)
 
@@ -429,7 +445,7 @@ def UpdateDeformation(G2frame, data, AtdId):
         Order = 1
         Hkeys = list(Harm[1].keys())
         orders = [int(item[2]) for item in Hkeys if "D" in item]
-        if len(orders):
+        if orders:
             Order = max(orders) + 1
         cofNames = []
         notFound = True
@@ -502,7 +518,7 @@ def UpdateDeformation(G2frame, data, AtdId):
     AtChoice = " "
     if dId is not None:
         AtChoice = atomData[AtLookUp[dId]][ct - 1]
-    elif len(atomList):
+    elif atomList:
         AtChoice = next(iter(atomList.keys()))
         dId = atomList[AtChoice]
     topSizer = G2frame.dataWindow.topBox
@@ -2582,7 +2598,9 @@ def UpdateTexture(G2frame, data):
     mainSizer.Add(
         wx.StaticText(
             Texture,
-            label=" Texture Index J = {:7.3f}".format(G2lat.textureIndex(textureData["SH Coeff"][1])),
+            label=" Texture Index J = {:7.3f}".format(
+                G2lat.textureIndex(textureData["SH Coeff"][1])
+            ),
         )
     )
     mainSizer.Add((0, 5), 0)
@@ -3057,9 +3075,7 @@ def UpdateWavesData(G2frame, data, Scroll=0):
                                 OnLeave=OnWavePlot,
                             )
                         else:
-                            waveVal = G2G.ReadOnlyTextCtrl(
-                                waveData, value=f"{val:.5f}"
-                            )
+                            waveVal = G2G.ReadOnlyTextCtrl(waveData, value=f"{val:.5f}")
                         Waves.Add(waveVal, 0, WACV)
                         if len(wave[0]) > 6 and ival == 5:
                             Waves.Add((5, 5), 0)

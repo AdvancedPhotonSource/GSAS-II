@@ -17,12 +17,19 @@ from . import GSASIIplot as G2plt
 
 def npsind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def npcosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def npacosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def npasind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
 
 try:
     wx.NewIdRef
@@ -340,9 +347,7 @@ class scanCCD(wx.Frame):
                 XYE = zip(x, y, e, strict=False)
                 for X, Y, E in XYE:
                     if Fxye:
-                        file.write(
-                            f"{100.0 * X:15.6g} {Y:15.6g} {max(E, 1.0):15.6g}\n"
-                        )
+                        file.write(f"{100.0 * X:15.6g} {Y:15.6g} {max(E, 1.0):15.6g}\n")
                     else:
                         file.write(f"{X:15.6g} {Y:15.6g} {max(E, 1.0):15.6g}\n")
                 file.close()

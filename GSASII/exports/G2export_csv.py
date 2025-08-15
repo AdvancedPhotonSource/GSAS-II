@@ -382,7 +382,9 @@ class ExportPowderReflCSV(G2fil.ExportBaseclass):
         self.loadTree()
         if self.ExportSelect():
             return  # set export parameters, get file name
-        hist = next(iter(self.histnam))  # there should only be one histogram, in any case take the 1st
+        hist = next(
+            iter(self.histnam)
+        )  # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
         self.OpenFile()
         self.write(hist, histblk)

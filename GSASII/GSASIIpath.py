@@ -34,14 +34,17 @@ path2GSAS2 = os.path.dirname(
     os.path.abspath(os.path.expanduser(__file__))
 )  # location of this file; save before any changes in pwd
 
+
 # convert version numbers as '1.2.3' to integers (1002) and back (to 1.2)
 def fmtver(v):
     return str(v // 1000) + "." + str(v % 1000)
+
+
 def intver(vs):
     return sum([int(i) for i in vs.split(".")[0:2]] * np.array((1000, 1)))
 
 
-def GetConfigValue(key: str, default: Any | None =None, getDefault: bool = False):
+def GetConfigValue(key: str, default: Any | None = None, getDefault: bool = False):
     """Return the configuration file value for key or a default value
     if not specified.
 
@@ -1618,8 +1621,8 @@ def LoadConfig(printInfo=True):
                 configDict[capKey] = tuple(
                     [int(i) for i in cfgG[key].strip("()").split(",")]
                 )
-            elif (
-                key.endswith(("_location", "_directory", "_exec"))
+            elif key.endswith(
+                ("_location", "_directory", "_exec")
             ):  # None (above) or str
                 configDict[capKey] = cfgG.get(key)
             elif cfgG[key].startswith("[") and cfgG[key].endswith(
@@ -1701,12 +1704,12 @@ def condaTest(requireAPI=False):
     """
     if not all(
         (i in os.environ)
-            for i in (
-                "CONDA_DEFAULT_ENV",
-                "CONDA_EXE",
-                "CONDA_PREFIX",
-                "CONDA_PYTHON_EXE",
-            )
+        for i in (
+            "CONDA_DEFAULT_ENV",
+            "CONDA_EXE",
+            "CONDA_PREFIX",
+            "CONDA_PYTHON_EXE",
+        )
     ):
         return False
     if requireAPI:
@@ -1876,12 +1879,12 @@ def condaEnvCreate(envname, packageList, force=False):
     """
     if not all(
         (i in os.environ)
-            for i in (
-                "CONDA_DEFAULT_ENV",
-                "CONDA_EXE",
-                "CONDA_PREFIX",
-                "CONDA_PYTHON_EXE",
-            )
+        for i in (
+            "CONDA_DEFAULT_ENV",
+            "CONDA_EXE",
+            "CONDA_PREFIX",
+            "CONDA_PYTHON_EXE",
+        )
     ):
         p = sys.exec_prefix
     else:
@@ -1933,12 +1936,12 @@ def addCondaPkg():
     """
     if not all(
         (i in os.environ)
-            for i in (
-                "CONDA_DEFAULT_ENV",
-                "CONDA_EXE",
-                "CONDA_PREFIX",
-                "CONDA_PYTHON_EXE",
-            )
+        for i in (
+            "CONDA_DEFAULT_ENV",
+            "CONDA_EXE",
+            "CONDA_PREFIX",
+            "CONDA_PYTHON_EXE",
+        )
     ):
         return
     # condaexe = os.environ['CONDA_EXE']

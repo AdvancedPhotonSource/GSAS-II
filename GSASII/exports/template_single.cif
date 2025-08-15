@@ -21,4 +21,3 @@ _computing_data_collection        ?
 _computing_data_reduction         ?                   
 
 _diffrn_radiation_monochromator   ?        
-

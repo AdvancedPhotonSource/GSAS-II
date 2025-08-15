@@ -395,7 +395,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             mpl.rcParams["axes.grid"] = not mpl.rcParams["axes.grid"]
             self.SetWaveEnergy(self.Wave)
 
-    def UpDateFPlot(self, Wave, rePlot:bool = True):
+    def UpDateFPlot(self, Wave, rePlot: bool = True):
         """Plot f' & f" vs wavelength 0.05-3.0A"""
         "generate a set of form factor curves & plot them vs sin-theta/lambda or q or 2-theta"
         self.axylim = []
@@ -465,7 +465,9 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 )
             else:
                 self.bx.set_title(
-                    "{}{}{:6.4f}{}".format("Form factors (", r"$\lambda=$", self.Wave, r"$\AA)$"),
+                    "{}{}{:6.4f}{}".format(
+                        "Form factors (", r"$\lambda=$", self.Wave, r"$\AA)$"
+                    ),
                     x=0,
                     ha="left",
                 )
@@ -565,7 +567,9 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             Wave = min(max(Wave, self.Wmin), self.Wmax)
             if event.inaxes == self.ax:
                 self.parent.G2plotNB.status.SetStatusText(
-                    "Wavelength: {:.4f}, Energy: {:.3f}, f'{}: {:.3f}".format(Wave, self.Kev / Wave, 'f"', ypos),
+                    "Wavelength: {:.4f}, Energy: {:.3f}, f'{}: {:.3f}".format(
+                        Wave, self.Kev / Wave, 'f"', ypos
+                    ),
                     1,
                 )
             elif event.inaxes == self.bx:

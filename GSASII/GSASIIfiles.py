@@ -2455,8 +2455,8 @@ class ExportBaseclass:
                 return True
             self.dirname, self.filename = os.path.split(filename)
             return None
-        elif (
-            AskFile in ("dir", "single") or (AskFile == "default-dir" and not self.G2frame.GSASprojectfile)
+        elif AskFile in ("dir", "single") or (
+            AskFile == "default-dir" and not self.G2frame.GSASprojectfile
         ):
             self.dirname = self.askSaveDirectory()
             if not self.dirname:
@@ -2996,7 +2996,7 @@ class ExportBaseclass:
         cellDict = dict(
             zip([str(pId) + "::A" + str(i) for i in range(6)], A, strict=False)
         )
-        zeroDict = {i: 0.0 for i in cellDict}
+        zeroDict = dict.fromkeys(cellDict, 0.0)
         A, zeros = G2stIO.cellFill(str(pId) + "::", SGdata, cellDict, zeroDict)
         covData = {
             "varyList": [Dlookup.get(striphist(v), v) for v in data_name["varyList"]],

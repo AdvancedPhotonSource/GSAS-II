@@ -12,5 +12,3 @@
        
 .. automodule:: GSASII.Substances
     :members: 
-
-

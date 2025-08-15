@@ -124,9 +124,11 @@ def test_SpcGroup2():
         # lattice type of R implies Hexagonal centering", fix the rhombohedral settings
         if latticetype == "R" and len(spc["SGCen"]) == 1:
             latticetype = "P"
-        assert latticetype == spc["SGLatt"], "Failed: {} does not match Lattice: {}".format(
-            spcname,
-            spc["SGLatt"],
+        assert latticetype == spc["SGLatt"], (
+            "Failed: {} does not match Lattice: {}".format(
+                spcname,
+                spc["SGLatt"],
+            )
         )
         onebar = [1]
         if spc["SGInv"]:

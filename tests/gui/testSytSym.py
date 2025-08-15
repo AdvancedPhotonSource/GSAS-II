@@ -233,9 +233,7 @@ class testSytSym(wx.Frame):
         simsel.Bind(wx.EVT_COMBOBOX, OnRBSymSel)
         RBsizer.Add(simsel, 0, WACV)
         mainSizer.Add(RBsizer)
-        ShRBtxt = wx.StaticText(
-            self.testSSPanel, label=f" Sp. Harm coeff:  {StrRBSh}"
-        )
+        ShRBtxt = wx.StaticText(self.testSSPanel, label=f" Sp. Harm coeff:  {StrRBSh}")
         mainSizer.Add(ShRBtxt)
         testHKL = wx.Button(self.testSSPanel, -1, "Extinction test")
         testHKL.Bind(wx.EVT_BUTTON, OnTestHKL)

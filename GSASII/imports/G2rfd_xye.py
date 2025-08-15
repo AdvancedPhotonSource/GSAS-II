@@ -7,8 +7,12 @@ from .. import GSASIIobj as G2obj
 
 def npasind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def npsind(x):
     return np.sin(np.pi * x / 180.0)
+
+
 try:  # fails on doc build
     fourpi = 4.0 * np.pi
     _double_min = np.finfo(float).min

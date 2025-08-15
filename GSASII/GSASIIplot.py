@@ -91,36 +91,65 @@ try:
 except ImportError:
     G2fil.NeededPackage({"Saving movies": ["imageio"]})
 
+
 # useful degree trig functions
 def sind(x):
     return math.sin(x * math.pi / 180.0)
+
+
 def cosd(x):
     return math.cos(x * math.pi / 180.0)
+
+
 def tand(x):
     return math.tan(x * math.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * math.asin(x) / math.pi
+
+
 def acosd(x):
     return 180.0 * math.acos(x) / math.pi
+
+
 def atan2d(x, y):
     return 180.0 * math.atan2(y, x) / math.pi
+
+
 def atand(x):
     return 180.0 * math.atan(x) / math.pi
+
+
 # numpy versions
 def npsind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def npcosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def nptand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def npacosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def npasind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def npatand(x):
     return 180.0 * np.arctan(x) / np.pi
+
+
 def npatan2d(x, y):
     return 180.0 * np.arctan2(x, y) / np.pi
+
+
 try:  # fails on doc build
     sq8ln2 = np.sqrt(8.0 * np.log(2.0))
 except TypeError:
@@ -2160,12 +2189,7 @@ def Plot3DSngl(G2frame, newPlot=False, Data=None, hklRef=None, Title=False):
     #    Page.canvas.Bind(wx.EVT_SIZE, OnSize)
     Page.camera["position"] = drawingData["cameraPos"]
     Page.camera["viewPoint"] = np.inner(Amat, drawingData["viewPoint"][0])
-    Page.camera["backColor"] = (
-        np.array(
-            [*list(drawingData["backColor"]), 0]
-        )
-        / 255.0
-    )
+    Page.camera["backColor"] = np.array([*list(drawingData["backColor"]), 0]) / 255.0
     Page.controls = Data
     try:
         Page.canvas.SetCurrent()
@@ -3764,9 +3788,7 @@ def PlotPowderLines(G2frame, indexFrom=""):
         xpos = event.xdata
         if xpos:  # avoid out of frame mouse position
             SetCursor(Page)
-            G2frame.G2plotNB.status.SetStatusText(
-                f"2-theta ={xpos:9.3f} {IndxFrom}", 1
-            )
+            G2frame.G2plotNB.status.SetStatusText(f"2-theta ={xpos:9.3f} {IndxFrom}", 1)
             if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in [
                 "Index Peak List",
                 "Unit Cells List",
@@ -4878,9 +4900,7 @@ def ModulationPlot(G2frame, data, atom, ax, off=0):
     else:
         Title = MapType
     Title += (
-        " map for atom "
-        + atom[0]
-        + f" at {atxyz[0]:.4f} {atxyz[1]:.4f} {atxyz[2]:.4f}"
+        " map for atom " + atom[0] + f" at {atxyz[0]:.4f} {atxyz[1]:.4f} {atxyz[2]:.4f}"
     )
     ix = -np.array(np.rint(rhoSize[:3] * atxyz) + 1, dtype="i")
     ix += rhoSize[:3] // 2
@@ -5080,7 +5100,9 @@ def PlotCovariance(G2frame, Data, Cube=False):
 
 
 #### PlotTorsion ################################################################################
-def PlotTorsion(G2frame, phaseName, Torsion, TorName, Names=None, Angles=None, Coeff=None):
+def PlotTorsion(
+    G2frame, phaseName, Torsion, TorName, Names=None, Angles=None, Coeff=None
+):
     "needs a doc string"
 
     if Coeff is None:
@@ -5131,11 +5153,11 @@ def PlotTorsion(G2frame, phaseName, Torsion, TorName, Names=None, Angles=None, C
 
     G2frame.G2plotNB.status.SetStatusText("Use mouse LB to identify torsion atoms", 1)
     Plot.plot(X, torsion, "b+")
-    if len(Coeff):
+    if Coeff:
         X2 = np.linspace(0.0, 360.0, 45)
         Y2 = np.array([-G2mth.calcTorsionEnergy(x, Coeff)[1] for x in X2])
         Plot.plot(X2, Y2, "r")
-    if len(Angles):
+    if Angles:
         Eval = np.array([-G2mth.calcTorsionEnergy(x, Coeff)[1] for x in Angles])
         Plot.plot(Angles, Eval, "ro", picker=True, pickradius=5)
     Plot.set_xlim((0.0, 360.0))
@@ -5216,7 +5238,7 @@ def PlotRama(G2frame, phaseName, Rama, RamaName, Names=None, PhiPsi=None, Coeff=
     G2frame.G2plotNB.status.SetStatusText("Use mouse LB to identify phi/psi atoms", 1)
     acolor = GetColorMap(G2frame.RamaColor)
     if RamaName == "All" or "-1" in RamaName:
-        if len(Coeff):
+        if Coeff:
             X, Y = np.meshgrid(
                 np.linspace(-180.0, 180.0, 45), np.linspace(-180.0, 180.0, 45)
             )
@@ -5235,14 +5257,14 @@ def PlotRama(G2frame, phaseName, Rama, RamaName, Names=None, PhiPsi=None, Coeff=
             extent=[-180, 180, -180, 180],
             origin="lower",
         )
-        if len(PhiPsi):
+        if PhiPsi:
             PhiPsi = np.where(PhiPsi > 180.0, PhiPsi - 360.0, PhiPsi)
             Phi, Psi = PhiPsi.T
             Plot.plot(Phi, Psi, "ro", picker=True, pickradius=5)
         Plot.set_xlim((-180.0, 180.0))
         Plot.set_ylim((-180.0, 180.0))
     else:
-        if len(Coeff):
+        if Coeff:
             X, Y = np.meshgrid(np.linspace(0.0, 360.0, 45), np.linspace(0.0, 360.0, 45))
             Z = np.array(
                 [
@@ -5578,8 +5600,10 @@ def ComputeArc(angI, angO, wave, azm0=0, azm1=362):
     and beginning and ending azimuths azm0,azm1 (optional).
     Returns the inner and outer ring/arc arrays.
     """
+
     def Dsp(tth, wave):
         return wave / (2.0 * npsind(tth / 2.0))
+
     xy1 = []
     xy2 = []
     aR = [
@@ -5959,7 +5983,7 @@ def PlotImage(G2frame, newPlot=False, event=None, newImage=True):
                     xy = G2img.GetDetectorXY2(dspI, azm, Data)
                     if np.any(xy):
                         xyI.append(xy)
-                if len(xyI):
+                if xyI:
                     xyI = np.array(xyI)
                     arcxI, arcyI = xyI.T
             if ellO:
@@ -5968,7 +5992,7 @@ def PlotImage(G2frame, newPlot=False, event=None, newImage=True):
                     xy = G2img.GetDetectorXY2(dspO, azm, Data)
                     if np.any(xy):
                         xyO.append(xy)
-                if len(xyO):
+                if xyO:
                     xyO = np.array(xyO)
                     arcxO, arcyO = xyO.T
 
@@ -6485,7 +6509,10 @@ def PlotImage(G2frame, newPlot=False, event=None, newImage=True):
                 spotnum = G2frame.itemPicked.itemNumber
                 if event.button == 1:
                     if G2frame.ShiftDown:
-                        Masks["Points"][spotnum] = [*list(G2frame.itemPicked.center), 2.0 * G2frame.itemPicked.radius]
+                        Masks["Points"][spotnum] = [
+                            *list(G2frame.itemPicked.center),
+                            2.0 * G2frame.itemPicked.radius,
+                        ]
                     else:
                         # update the selected circle mask with the last drawn values
                         Masks["Points"][spotnum][0:2] = G2frame.itemPicked.center
@@ -6688,7 +6715,7 @@ def PlotImage(G2frame, newPlot=False, event=None, newImage=True):
                     xy = G2img.GetDetectorXY2(dspI, azm, Data)
                     if np.any(xy):
                         xyI.append(xy)
-                if len(xyI):
+                if xyI:
                     xyI = np.array(xyI)
                     arcxI, arcyI = xyI.T
                     Plot.plot(arcxI, arcyI, picker=True, pickradius=3, label="Itth")
@@ -6699,7 +6726,7 @@ def PlotImage(G2frame, newPlot=False, event=None, newImage=True):
                     xy = G2img.GetDetectorXY2(dspO, azm, Data)
                     if np.any(xy):
                         xyO.append(xy)
-                if len(xyO):
+                if xyO:
                     xyO = np.array(xyO)
                     arcxO, arcyO = xyO.T
                     Plot.plot(arcxO, arcyO, picker=True, pickradius=3, label="Otth")
@@ -8756,7 +8783,7 @@ def PlotStructure(G2frame, data, firstCall=False, pageCallback=None):
         BackboneColor = []
         #        glEnable(GL_BLEND)
         #        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-        if not len(Fade):
+        if not Fade:
             atmFade = np.ones(len(drawingData["Atoms"]))
         else:
             atmFade = Fade
@@ -9348,9 +9375,7 @@ def PlotStructure(G2frame, data, firstCall=False, pageCallback=None):
     )
     mapPeakVecs = np.inner(mV, Bmat)
 
-    backColor = np.array(
-        [*list(drawingData["backColor"]), 0]
-    )
+    backColor = np.array([*list(drawingData["backColor"]), 0])
     Bc = np.array(list(drawingData["backColor"]))
     uColors = [
         Rd,

@@ -10,10 +10,10 @@ import numpy.linalg as nl
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from .GUI import GSASIIctrlGUI as G2G
 from . import GSASIIElem as G2elem
 from . import GSASIIlattice as G2lat
 from . import GSASIIspc as G2spc
+from .GUI import GSASIIctrlGUI as G2G
 
 bilbaoSite = "https://www.cryst.ehu.es/cgi-bin/cryst/programs/"
 submagSite = bilbaoSite + "subgrmag1_general_GSAS.pl?"
@@ -964,9 +964,7 @@ web service. Please cite:
     rd.Phase["General"]["SGData"] = SGData = G2spc.SpcGroup(G2spc.spgbyNum[int(spnum)])[
         1
     ]
-    rd.Phase["General"]["Cell"] = (
-        [False, *list(cell), G2lat.calc_V(G2lat.cell2A(cell))]
-    )
+    rd.Phase["General"]["Cell"] = [False, *list(cell), G2lat.calc_V(G2lat.cell2A(cell))]
     rd.Phase["Atoms"] = []
     for i, line in enumerate(structure.split("\n")[3:]):
         atomlist = [

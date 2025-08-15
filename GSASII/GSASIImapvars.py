@@ -1149,7 +1149,11 @@ def StoreEquivalence(independentVar, dependentList, symGen=True):
         invarrayList.append(np.array(multlist))
     else:
         invarrayList.append(multlist)
-    indParmList.append([independentVar,])
+    indParmList.append(
+        [
+            independentVar,
+        ]
+    )
     dependentParmList.append(mapList)
     symGenList.append(symGen)
 

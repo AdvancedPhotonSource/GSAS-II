@@ -39,20 +39,36 @@ try:
         # import GSASII.pytexture as ptx
 except ImportError:  # ignore; will report this as an error in GSASIIplot import
     pass
+
+
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def acosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def atand(x):
     return 180.0 * np.arctan(x) / np.pi
+
+
 def atan2d(y, x):
     return 180.0 * np.arctan2(y, x) / np.pi
+
+
 try:  # fails on doc build
     twopi = 2.0 * np.pi
     twopisq = 2.0 * np.pi**2
@@ -174,7 +190,7 @@ def setSVDwarn(info, Amat, Nzeros, indices):
     if len(svdsing) < Nzeros:  # try to get the Nzeros worst terms
         svdsing = list(np.where(d <= sorted(d)[Nzeros - 1])[0])
 
-    if not len(svdsing):  # make sure at least the worst term is shown
+    if not svdsing:  # make sure at least the worst term is shown
         svdsing = [np.argmin(d)]
     info["SVDsing"] = [indices[i] for i in svdsing]
 
@@ -336,7 +352,7 @@ def HessianLSQ(
                 loops += 1
                 d = np.abs(np.diag(nl.qr(Amatlam)[1]))
                 psing = list(np.where(d < 1.0e-14)[0])
-                if not len(psing):  # make sure at least the worst term is removed
+                if not psing:  # make sure at least the worst term is removed
                     psing = [np.argmin(d)]
                 G2fil.G2Print(
                     f"ouch #2 bad SVD inversion; dropping terms for for variable(s) #{psing}",
@@ -562,7 +578,7 @@ def HessianLSQ(
             info.update({"Xvec": XvecAll})
         setSVDwarn(info, Amat, Nzeros, indices)
         # expand Bmat by filling with zeros if columns have been dropped
-        if len(psing_prev):
+        if psing_prev:
             ins = [j - i for i, j in enumerate(psing_prev)]
             Bmat = np.insert(np.insert(Bmat, ins, 0, 1), ins, 0, 0)
         if lastShifts is not None:
@@ -596,7 +612,7 @@ def HessianLSQ(
             "ouch #6 linear algebra error in making final v-cov matrix", mode="error"
         )
         psing = list(np.where(np.abs(np.diag(nl.qr(Amat)[1])) < 1.0e-14)[0])
-        if not len(psing):  # make sure at least the worst term is flagged
+        if not psing:  # make sure at least the worst term is flagged
             d = np.abs(np.diag(nl.qr(Amat)[1]))
             psing = [np.argmin(d)]
         Amat, indices, Yvec = dropTerms(psing, Amat, indices, Yvec)
@@ -615,7 +631,7 @@ def HessianLSQ(
         return [x0, None, info]
     # expand Bmat by filling with zeros if columns have been dropped
     psing = [i for i in range(n) if i not in indices]
-    if len(psing):
+    if psing:
         ins = [j - i for i, j in enumerate(psing)]
         Bmat = np.insert(np.insert(Bmat, ins, 0, 1), ins, 0, 0)
     info.update(
@@ -2145,9 +2161,7 @@ def UpdateRBUIJ(Bmat, Cart, RBObj):
             )
             Umat = G2lat.U6toUij(U)
             beta = np.inner(np.inner(Bmat.T, Umat), Bmat)
-            Uout.append(
-                ["A", 0.0, *list(G2lat.UijtoU6(beta) * gvec)]
-            )
+            Uout.append(["A", 0.0, *list(G2lat.UijtoU6(beta) * gvec)])
         else:
             Uout.append(
                 [
@@ -2997,7 +3011,7 @@ def ApplyModulation(data, tau):
                     else:
                         scof.append(sfrac[0][0])
                         ccof.append(sfrac[0][1])
-                    if len(scof):
+                    if scof:
                         Fade[ind] += np.sum(fracFourier(tauT, scof, ccof))
             if len(Spos):
                 scof = []
@@ -3030,7 +3044,7 @@ def ApplyModulation(data, tau):
                     else:
                         scof.append(spos[0][:3])
                         ccof.append(spos[0][3:])
-                if len(scof):
+                if scof:
                     wave += np.sum(
                         posFourier(tauT, np.array(scof), np.array(ccof)), axis=1
                     )
@@ -3041,7 +3055,7 @@ def ApplyModulation(data, tau):
                 for i, spos in enumerate(Smag[1:]):
                     scof.append(spos[0][:3])
                     ccof.append(spos[0][3:])
-                if len(scof):
+                if scof:
                     mom += np.sum(
                         posFourier(tauT, np.array(scof), np.array(ccof)), axis=1
                     )
@@ -3614,7 +3628,7 @@ def calcTorsionEnergy(TOR, Coeff=None):
     if Coeff is None:
         Coeff = []
     sum = 0.0
-    if len(Coeff):
+    if Coeff:
         cof = np.reshape(Coeff, (3, 3)).T
         delt = TOR - cof[1]
         delt = np.where(delt < -180.0, delt + 360.0, delt)
@@ -3684,7 +3698,7 @@ def calcRamaEnergy(phi, psi, Coeff=None):
         Coeff = []
     sum = 0.0
     Eval = 0.0
-    if len(Coeff):
+    if Coeff:
         cof = Coeff.T
         dPhi = phi - cof[1]
         dPhi = np.where(dPhi < -180.0, dPhi + 360.0, dPhi)
@@ -3989,6 +4003,7 @@ def getAngSig(VA, VB, Amat, SGData, covData=None):
 
     if covData is None:
         covData = {}
+
     def calcVec(Ox, Tx, U, inv, C, M, T, Amat):
         TxT = inv * (np.inner(M, Tx) + T) + C + U
         return np.inner(Amat, (TxT - Ox))
@@ -4200,6 +4215,7 @@ def GetDistSig(Oatoms, Atoms, Amat, SGData, covData=None):
 
     if covData is None:
         covData = {}
+
     def calcDist(Atoms, SyOps, Amat):
         XYZ = []
         for i, atom in enumerate(Atoms):
@@ -4253,6 +4269,7 @@ def GetAngleSig(Oatoms, Atoms, Amat, SGData, covData=None):
 
     if covData is None:
         covData = {}
+
     def calcAngle(Atoms, SyOps, Amat):
         XYZ = []
         for i, atom in enumerate(Atoms):
@@ -4311,6 +4328,7 @@ def GetTorsionSig(Oatoms, Atoms, Amat, SGData, covData=None):
 
     if covData is None:
         covData = {}
+
     def calcTorsion(Atoms, SyOps, Amat):
         XYZ = []
         for i, atom in enumerate(Atoms):
@@ -4380,6 +4398,7 @@ def GetDATSig(Oatoms, Atoms, Amat, SGData, covData=None):
 
     if covData is None:
         covData = {}
+
     def calcDist(Atoms, SyOps, Amat):
         XYZ = []
         for i, atom in enumerate(Atoms):
@@ -4832,7 +4851,7 @@ def validProtein(Phase, old):
             atom[2] not in chains
         ):  # get chain id & save residue sequence from last chain
             chains.append(atom[2])
-            if len(resIntAct):
+            if resIntAct:
                 resIntAct.append(sumintact(intact))
                 chainIntAct.append(resIntAct)
                 resNames += resname
@@ -5641,7 +5660,9 @@ def ChargeFlip(data, reflDict, pgbar):
             )
         else:
             print(
-                "{} normalizing form factor: fa: {}, fb: {}".format(FFtable["Symbol"], str(FFtable["fa"]), str(FFtable["fb"]))
+                "{} normalizing form factor: fa: {}, fb: {}".format(
+                    FFtable["Symbol"], str(FFtable["fa"]), str(FFtable["fb"])
+                )
             )
     dmin = flipData["GridStep"] * 2.0
     SGData = generalData["SGData"]
@@ -5976,10 +5997,12 @@ def getRho(xyz, mapData):
 
     :returns: density at xyz
     """
+
     def rollMap(rho, roll):
         return np.roll(
             np.roll(np.roll(rho, roll[0], axis=0), roll[1], axis=1), roll[2], axis=2
         )
+
     if not len(mapData):
         return 0.0
     rho = copy.copy(mapData["rho"])  # don't mess up original
@@ -6095,6 +6118,7 @@ def SearchMap(generalData, drawingData, Neg=False):
           the distance of the peaks from  the unit cell center
 
     """
+
     def rollMap(rho, roll):
         return np.roll(
             np.roll(np.roll(rho, roll[0], axis=0), roll[1], axis=1), roll[2], axis=2
@@ -6127,9 +6151,7 @@ def SearchMap(generalData, drawingData, Neg=False):
 
     def peakHess(parms, rX, rY, rZ, rho, res, SGLaue):
         Mag, x0, y0, z0, sig = parms
-        dMdv = np.zeros(
-            [5, *list(rX.shape)]
-        )
+        dMdv = np.zeros([5, *list(rX.shape)])
         delt = 0.01
         for i in range(5):
             parms[i] -= delt
@@ -6293,7 +6315,10 @@ def PeaksEquiv(data, Ind):
     """
 
     def Duplicate(xyz, peaks, Amat):
-        return True in [np.allclose(np.inner(Amat, xyz), np.inner(Amat, peak), atol=0.5) for peak in peaks]
+        return True in [
+            np.allclose(np.inner(Amat, xyz), np.inner(Amat, peak), atol=0.5)
+            for peak in peaks
+        ]
 
     generalData = data["General"]
     Amat, Bmat = G2lat.cell2AB(generalData["Cell"][1:7])
@@ -6329,7 +6354,10 @@ def PeaksUnique(data, Ind, Sel, dlg):
     #    XYZE = np.array([[equiv[0] for equiv in G2spc.GenAtom(xyz[1:4],SGData,Move=True)] for xyz in mapPeaks]) #keep this!!
 
     def noDuplicate(xyz, peaks, Amat):
-        return True not in [np.allclose(np.inner(Amat, xyz), np.inner(Amat, peak), atol=0.5) for peak in peaks]
+        return True not in [
+            np.allclose(np.inner(Amat, xyz), np.inner(Amat, peak), atol=0.5)
+            for peak in peaks
+        ]
 
     generalData = data["General"]
     Amat, Bmat = G2lat.cell2AB(generalData["Cell"][1:7])
@@ -7331,8 +7359,8 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
     def getAtomparms(item, pfx, aTypes, SGData, parmDict, varyList):
         parmDict[pfx + "Atype"] = item["atType"]
         aTypes |= {
-                item["atType"],
-            }
+            item["atType"],
+        }
         pstr = ["Ax", "Ay", "Az"]
         XYZ = [0, 0, 0]
         for i in range(3):
@@ -7597,8 +7625,8 @@ def mcsaSearch(data, RBdata, reflType, reflData, covData, pgbar, start=True):
         pfx = ":" + str(atNo) + ":"
         parmDict[pfx + "Atype"] = atm[ct]
         aTypes |= {
-                atm[ct],
-            }
+            atm[ct],
+        }
         pstr = ["Ax", "Ay", "Az"]
         parmDict[pfx + "Amul"] = atm[cs + 1]
         for i in range(3):
@@ -8064,6 +8092,7 @@ def annealtests():
     # minimum expected at ~-0.195
     def func(x):
         return cos(14.5 * x - 0.3) + (x + 0.2) * x
+
     print(
         anneal(
             func,
@@ -8104,6 +8133,7 @@ def annealtests():
     # minimum expected at ~[-0.195, -0.1]
     def func(x):
         return cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
+
     print(
         anneal(
             func,

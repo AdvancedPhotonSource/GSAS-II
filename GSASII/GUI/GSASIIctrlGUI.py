@@ -1188,6 +1188,7 @@ def G2SliderWidget(
 
     if onChangeArgs is None:
         onChangeArgs = []
+
     def onScale(event):
         loc[key] = vScale.GetScaledValue()
         wx.TextCtrl.SetValue(vEntry, str(loc[key]))  # will not trigger onValSet
@@ -1280,6 +1281,7 @@ def G2SpinWidget(
 
     if onChangeArgs is None:
         onChangeArgs = []
+
     def _onSpin(event):
         Obj = event.GetEventObject()
         loc[key] += Obj.GetValue()  # +1 or -1
@@ -5734,15 +5736,15 @@ class ShowLSParms(wx.Dialog):
         globNames = [
             ":".join(item) for item in splitNames if not item[0] and not item[1]
         ]
-        if len(globNames):
+        if globNames:
             self.choiceDict["Global"] = G2obj.SortVariables(globNames)
         self.globVars = sorted(
             set(
-                    [
-                        " ",
-                    ]
-                    + [item[2] for item in splitNames if not item[0] and not item[1]]
-                )
+                [
+                    " ",
+                ]
+                + [item[2] for item in splitNames if not item[0] and not item[1]]
+            )
         )
         hisNames = [":".join(item) for item in splitNames if not item[0] and item[1]]
         self.choiceDict["Histogram"] = G2obj.SortVariables(hisNames)
@@ -5752,11 +5754,11 @@ class ShowLSParms(wx.Dialog):
         ] + [str(item) for item in self.hisNums]
         self.hisVars = sorted(
             set(
-                    [
-                        " ",
-                    ]
-                    + [item[2] for item in splitNames if not item[0]]
-                )
+                [
+                    " ",
+                ]
+                + [item[2] for item in splitNames if not item[0]]
+            )
         )
         phasNames = [
             ":".join(item)
@@ -5764,32 +5766,30 @@ class ShowLSParms(wx.Dialog):
             if not item[1] and not item[2].startswith("is")
         ]
         self.choiceDict["Phase"] = G2obj.SortVariables(phasNames)
-        self.phasNums = sorted(
-            ["*", *list({item.split(":")[0] for item in phasNames})]
-        )
+        self.phasNums = sorted(["*", *list({item.split(":")[0] for item in phasNames})])
         if "" in self.phasNums:
             self.phasNums.remove("")
         self.phasVars = sorted(
             set(
-                    [
-                        " ",
-                    ]
-                    + [
-                        item[2]
-                        for item in splitNames
-                        if not item[1] and not item[2].startswith("is")
-                    ]
-                )
+                [
+                    " ",
+                ]
+                + [
+                    item[2]
+                    for item in splitNames
+                    if not item[1] and not item[2].startswith("is")
+                ]
+            )
         )
         hapNames = [":".join(item) for item in splitNames if item[0] and item[1]]
         self.choiceDict["Phase/Histo"] = G2obj.SortVariables(hapNames)
         self.hapVars = sorted(
             set(
-                    [
-                        " ",
-                    ]
-                    + [item[2] for item in splitNames if item[0] and item[1]]
-                )
+                [
+                    " ",
+                ]
+                + [item[2] for item in splitNames if item[0] and item[1]]
+            )
         )
 
         self.hisNum = "*"
@@ -6472,8 +6472,7 @@ class GSGrid(wg.Grid):
         is false)
         """
         setFracEdit = kwargs.get("useFracEdit", True)
-        if "useFracEdit" in kwargs:
-            del kwargs["useFracEdit"]
+        kwargs.pop("useFracEdit", None)
         wg.Grid.SetTable(self, table, *args, **kwargs)
         if setFracEdit:
             for i, t in enumerate(table.dataTypes):
@@ -8157,8 +8156,10 @@ class SelectConfigSetting(wx.Dialog):
     def onSelExec(self, event):
         "Select an executable file from a menu"
         var = self.choice[0]
+
         def is_exe(fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
         defD = defF = ""
         if self.vars[var][1] is not None and os.path.exists(self.vars[var][1]):
             defD, defF = os.path.split(self.vars[var][1])
@@ -8295,9 +8296,7 @@ class SelectConfigSetting(wx.Dialog):
             elif var == "Image_calibrant":
                 from . import ImageCalibrants as calFile
 
-                calList = sorted(
-                    calFile.Calibrants.keys(), key=lambda s: s.lower()
-                )
+                calList = sorted(calFile.Calibrants.keys(), key=lambda s: s.lower())
                 self.colSel = EnumSelector(
                     self, self.vars[var], 1, calList, OnChange=self.OnChange
                 )
@@ -8965,9 +8964,11 @@ class gitVersionSelector(wx.Dialog):
 
         :returns: a multi-line string
         """
+
         # import datetime
         def fmtdate(c):
             return f"{c.committed_datetime:%d-%b-%Y %H:%M}"
+
         commit = self.g2repo.commit(commit)  # converts a hash, if supplied
         msg = f"git {commit.hexsha[:10]} from {fmtdate(commit)}"
         tags = self.g2repo.git.tag("--points-at", commit).split("\n")
@@ -9035,7 +9036,14 @@ class SortableLstCtrl(wx.Panel):
         self.list.SetItemData(index, key)
         self.list.itemDataMap[key] = data
 
-    def SetColWidth(self, col: int, width: int | None = None, auto: bool = True, minwidth: int = 0, maxwidth: int | None = None) -> None:
+    def SetColWidth(
+        self,
+        col: int,
+        width: int | None = None,
+        auto: bool = True,
+        minwidth: int = 0,
+        maxwidth: int | None = None,
+    ) -> None:
         """Sets the column width.
 
         :param int col: the column number to set the width for
@@ -10621,6 +10629,7 @@ def setColorButton(parent, array, key, callback=None, callbackArgs=None):
 
     if callbackArgs is None:
         callbackArgs = []
+
     def OnColor(event):
         array[key] = list(event.GetValue())[:3]
         if callback:

@@ -18,7 +18,9 @@ import pickle
 import sys
 
 
-def dump2tmp(uselocals: bool = True, useglobals: bool = True, usefunctions: bool = False) -> None:
+def dump2tmp(
+    uselocals: bool = True, useglobals: bool = True, usefunctions: bool = False
+) -> None:
     """
     Places variables from current interpreter into a scratch pickle file
     that can be read into another Python interpreter.
@@ -74,6 +76,7 @@ def dump2tmp(uselocals: bool = True, useglobals: bool = True, usefunctions: bool
                     print("dumpped", o)
                 except:
                     print("no dump for ", o, type(globals()[o]))
+
 
 # dumpStuff()
 

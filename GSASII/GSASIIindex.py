@@ -19,33 +19,61 @@ from . import GSASIIspc as G2spc
 # trig functions in degrees
 def sind(x):
     return math.sin(x * math.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * math.asin(x) / math.pi
+
+
 def tand(x):
     return math.tan(x * math.pi / 180.0)
+
+
 def atand(x):
     return 180.0 * math.atan(x) / math.pi
+
+
 def atan2d(y, x):
     return 180.0 * math.atan2(y, x) / math.pi
+
+
 def cosd(x):
     return math.cos(x * math.pi / 180.0)
+
+
 def acosd(x):
     return 180.0 * math.acos(x) / math.pi
+
+
 def rdsq2d(x, p):
     return round(1.0 / math.sqrt(x), p)
+
+
 # numpy versions
 def npsind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def npasind(x):
     return 180.0 * np.arcsin(x) / math.pi
+
+
 def npcosd(x):
     return np.cos(x * math.pi / 180.0)
+
+
 def nptand(x):
     return np.tan(x * math.pi / 180.0)
+
+
 def npatand(x):
     return 180.0 * np.arctan(x) / np.pi
+
+
 def npatan2d(y, x):
     return 180.0 * np.arctan2(y, x) / np.pi
+
+
 try:  # fails on doc build
     rpd = np.pi / 180.0
 except TypeError:

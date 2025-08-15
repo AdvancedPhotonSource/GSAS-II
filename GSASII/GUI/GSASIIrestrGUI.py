@@ -1222,7 +1222,7 @@ def UpdateRestraints(G2frame, data, phaseName):
         bondList = bondRestData["Bonds"]
         if len(bondList) and len(bondList[0]) == 6:  # patch
             bondList = bondRestData["Bonds"] = []
-        if len(bondList):
+        if bondList:
             table = []
             rowLabels = []
             bad = []
@@ -1289,11 +1289,11 @@ def UpdateRestraints(G2frame, data, phaseName):
                     except KeyError:
                         print("**** WARNING - missing atom - restraint deleted ****")
                         bad.append(i)
-            if len(bad):
+            if bad:
                 bad.reverse()
                 for ibad in bad:
                     del bondList[ibad]
-            if len(bondList):
+            if bondList:
                 bondTable = G2G.Table(
                     table, rowLabels=rowLabels, colLabels=colLabels, types=Types
                 )
@@ -1504,7 +1504,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     except KeyError:
                         print("**** WARNING - missing atom - restraint deleted ****")
                         bad.append(i)
-            if len(bad):
+            if bad:
                 bad.reverse()
                 for ibad in bad:
                     del angleList[ibad]
@@ -1683,7 +1683,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     except KeyError:
                         print("**** WARNING - missing atom - restraint deleted ****")
                         bad.append(i)
-            if len(bad):
+            if bad:
                 bad.reverse()
                 for ibad in bad:
                     del planeList[ibad]
@@ -1897,7 +1897,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     except KeyError:
                         print("**** WARNING - missing atom - restraint deleted ****")
                         bad.append(i)
-            if len(bad):
+            if bad:
                 bad.reverse()
                 for ibad in bad:
                     del volumeList[ibad]
@@ -2097,7 +2097,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     except KeyError:
                         print("**** WARNING - missing atom - restraint deleted ****")
                         bad.append(i)
-            if len(bad):
+            if bad:
                 bad.reverse()
                 for ibad in bad:
                     del torsionList[ibad]
@@ -2278,7 +2278,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                     except KeyError:
                         print("**** WARNING - missing atom - restraint deleted ****")
                         bad.append(i)
-            if len(bad):
+            if bad:
                 bad.reverse()
                 for ibad in bad:
                     del ramaList[ibad]
@@ -2451,7 +2451,7 @@ def UpdateRestraints(G2frame, data, phaseName):
                 except KeyError:
                     print("**** WARNING - missing atom - restraint deleted ****")
                     bad.append(i)
-            if len(bad):
+            if bad:
                 bad.reverse()
                 for ibad in bad:
                     del chemcompList[ibad]

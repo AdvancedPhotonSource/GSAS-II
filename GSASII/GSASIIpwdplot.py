@@ -54,36 +54,65 @@ except ImportError:
 except RuntimeError:  # happens during doc builds
     pass
 
+
 # useful degree trig functions
 def sind(x):
     return math.sin(x * math.pi / 180.0)
+
+
 def cosd(x):
     return math.cos(x * math.pi / 180.0)
+
+
 def tand(x):
     return math.tan(x * math.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * math.asin(x) / math.pi
+
+
 def acosd(x):
     return 180.0 * math.acos(x) / math.pi
+
+
 def atan2d(x, y):
     return 180.0 * math.atan2(y, x) / math.pi
+
+
 def atand(x):
     return 180.0 * math.atan(x) / math.pi
+
+
 # numpy versions
 def npsind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def npcosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def nptand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def npacosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def npasind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def npatand(x):
     return 180.0 * np.arctan(x) / np.pi
+
+
 def npatan2d(x, y):
     return 180.0 * np.arctan2(x, y) / np.pi
+
+
 # misc global vars
 Clip_on = GSASIIpath.GetConfigValue("Clip_on", True)
 Gkchisq = chr(0x03C7) + chr(0xB2)
@@ -725,7 +754,9 @@ def PlotPatterns(
                 ytmp = ypos
                 if Page.plotStyle["sqrtPlot"]:
                     ytmp = ypos**2
-                statLine = f"2-theta={xpos:.3f} d={dsp:.5f} Q={q:.4f} Intensity={ytmp:.2f}"
+                statLine = (
+                    f"2-theta={xpos:.3f} d={dsp:.5f} Q={q:.4f} Intensity={ytmp:.2f}"
+                )
             elif plottype == "SASD":
                 statLine = f"q ={q:12.5g} Intensity ={ypos:12.5g} d ={dsp:9.1f}"
             elif plottype == "REFD":
@@ -1016,9 +1047,7 @@ def PlotPatterns(
             xpos = pick.get_xdata()
             ypos = pick.get_ydata()
             ind = event.ind
-            xy = list(
-                next(zip(np.take(xpos, ind), np.take(ypos, ind), strict=False))
-            )
+            xy = list(next(zip(np.take(xpos, ind), np.take(ypos, ind), strict=False)))
             # convert from plot units
             xtick = xy[0]  # selected tickmarck pos in 2theta/TOF or d-space (not Q)
             if Page.plotStyle["qPlot"]:  # qplot - convert back to 2-theta/TOF
@@ -2261,7 +2290,16 @@ def PlotPatterns(
             del Page.Choice[1]
 
         if not G2frame.SinglePlot:
-            Page.Choice = [*Page.Choice, "u/U: offset up/10x", "d/D: offset down/10x", "l: offset left", "r: offset right", "o: reset offset", "F: select data", "/: normalize"]
+            Page.Choice = [
+                *Page.Choice,
+                "u/U: offset up/10x",
+                "d/D: offset down/10x",
+                "l: offset left",
+                "r: offset right",
+                "o: reset offset",
+                "F: select data",
+                "/: normalize",
+            ]
         else:
             Page.Choice = [*Page.Choice, "p: toggle partials (if available)"]
         if G2frame.SinglePlot:
@@ -2278,7 +2316,14 @@ def PlotPatterns(
             "+: toggle obs line plot",
         ]
         if not G2frame.SinglePlot:
-            Page.Choice = [*Page.Choice, "u: offset up", "d: offset down", "l: offset left", "r: offset right", "o: reset offset"]
+            Page.Choice = [
+                *Page.Choice,
+                "u: offset up",
+                "d: offset down",
+                "l: offset left",
+                "r: offset right",
+                "o: reset offset",
+            ]
 
     for KeyItem in extraKeys:
         Page.Choice = [*Page.Choice, KeyItem[0] + ": " + KeyItem[2]]
@@ -3517,7 +3562,7 @@ def PlotPatterns(
                 )  # remove duplicate phase entries
                 handles = [labels[item] for item in labels]
                 legends = list(labels.keys())
-                if len(Phases) and obsInCaption:
+                if Phases and obsInCaption:
                     Plot.legend(handles, legends, title="Phases & Data", loc="best")
                 else:
                     Plot.legend(handles, legends, title="Data", loc="best")
@@ -5398,6 +5443,7 @@ def uneqImgShow(figure, ax, Xlist, Ylist, cmap, vmin, vmax, Ylbls=None):
 
     if Ylbls is None:
         Ylbls = []
+
     def midPoints(x):
         """Return the pixel corners for a series of steps
         For the series [1,2,3,5] this will be [0.5,1.5,2.5,4,6]

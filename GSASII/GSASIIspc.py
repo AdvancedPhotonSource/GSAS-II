@@ -20,10 +20,15 @@ try:
 except ImportError:
     print("binary load error: pyspg not found")
 
+
 def npsind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def npcosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 nxs = np.newaxis
 DEBUG = False
 
@@ -2985,7 +2990,7 @@ def GenAtom(XYZ, SGData, All=False, Uij=None, Move=True):
             for io, [M, T] in enumerate(SGData["SGOps"]):
                 idup = ((io + 1) + 100 * ic) * (1 - 2 * invers)
                 XT = np.inner(M, X) + T
-                if len(Uij):
+                if Uij:
                     U = Uij2U(Uij)
                     U = np.inner(M, np.inner(U, M).T)
                     newUij = U2Uij(U)
@@ -3009,14 +3014,14 @@ def GenAtom(XYZ, SGData, All=False, Uij=None, Move=True):
                     XYZEquiv.append(newX)
                     Idup.append(idup)
                     Cell.append(cell)
-                    if len(Uij):
+                    if Uij:
                         UijEquiv.append(newUij)
                     if len(SpnFlp):
                         spnflp.append(SpnFlp[mj])
                     else:
                         spnflp.append(1)
                 mj += 1
-    if len(Uij):
+    if Uij:
         return zip(XYZEquiv, UijEquiv, Idup, Cell, spnflp, strict=False)
     else:
         return zip(XYZEquiv, Idup, Cell, spnflp, strict=False)
@@ -3072,11 +3077,20 @@ def checkSSLaue(HKL, SGData, SSGData):
     h, k, l, m = HKL
     if SGData["SGLaue"] == "2/m":
         if SGData["SGUniq"] == "a":
-            return not (("a" in SSGData["modSymb"] and h == 0 and m < 0) or ("b" in SSGData["modSymb"] and k == 0 and l == 0 and m < 0))
+            return not (
+                ("a" in SSGData["modSymb"] and h == 0 and m < 0)
+                or ("b" in SSGData["modSymb"] and k == 0 and l == 0 and m < 0)
+            )
         elif SGData["SGUniq"] == "b":
-            return not (("b" in SSGData["modSymb"] and k == 0 and m < 0) or ("a" in SSGData["modSymb"] and h == 0 and l == 0 and m < 0))
+            return not (
+                ("b" in SSGData["modSymb"] and k == 0 and m < 0)
+                or ("a" in SSGData["modSymb"] and h == 0 and l == 0 and m < 0)
+            )
         elif SGData["SGUniq"] == "c":
-            return not (("g" in SSGData["modSymb"] and l == 0 and m < 0) or ("a" in SSGData["modSymb"] and h == 0 and k == 0 and m < 0))
+            return not (
+                ("g" in SSGData["modSymb"] and l == 0 and m < 0)
+                or ("a" in SSGData["modSymb"] and h == 0 and k == 0 and m < 0)
+            )
     elif SGData["SGLaue"] == "mmm":
         if "a" in SSGData["modSymb"]:
             return not (h == 0 and m < 0)
@@ -5448,7 +5462,7 @@ def ApplyStringOps(A, SGData, X, Uij=None):
     else:
         cellA = np.zeros(3)
     newX = Cen + iC * (np.inner(M, X).T + T) + cellA
-    if len(Uij):
+    if Uij:
         U = Uij2U(Uij)
         U = np.inner(M, np.inner(U, M).T)
         newUij = U2Uij(U)

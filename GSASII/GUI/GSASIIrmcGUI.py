@@ -47,21 +47,37 @@ except:
     pass
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
+
+
 # trig functions in degrees
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def acosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def atan2d(x, y):
     return 180.0 * np.arctan2(y, x) / np.pi
+
+
 def is_exe(fpath):
     return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+
 sqt2 = np.sqrt(2.0)
 sqt3 = np.sqrt(3.0)
 
@@ -114,8 +130,7 @@ def UpdateRMC(G2frame, data):
             atSeq = RMCPdict["atSeq"]
             lenA = len(atSeq)
             for pair in [
-                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)]
-                for i in range(lenA)
+                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)] for i in range(lenA)
             ]:
                 #                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
                 Pairs += pair
@@ -288,9 +303,7 @@ def UpdateRMC(G2frame, data):
         superSizer = wx.BoxSizer(wx.HORIZONTAL)
         axes = ["X", "Y", "Z"]
         for i, ax in enumerate(axes):
-            superSizer.Add(
-                wx.StaticText(G2frame.FRMC, label=f" {ax}-axis: "), 0, WACV
-            )
+            superSizer.Add(wx.StaticText(G2frame.FRMC, label=f" {ax}-axis: "), 0, WACV)
             superSizer.Add(
                 G2G.ValidatedTxtCtrl(
                     G2frame.FRMC,
@@ -1553,8 +1566,7 @@ def UpdateRMC(G2frame, data):
             Pairs = {}
             #                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
             for pairs in [
-                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)]
-                for i in range(lenA)
+                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)] for i in range(lenA)
             ]:
                 for pair in pairs:
                     if pair in oldPairs:
@@ -1574,8 +1586,7 @@ def UpdateRMC(G2frame, data):
             Pairs = {}
             #                for pairs in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA) if 'Va' not in atSeq[j]] for i in range(lenA) if 'Va' not in atSeq[i]]:
             for pairs in [
-                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)]
-                for i in range(lenA)
+                [f" {atSeq[i]}-{atSeq[j]}" for j in range(i, lenA)] for i in range(lenA)
             ]:
                 for pair in pairs:
                     Pairs[pair] = [0.0, 0.0, 0.0]

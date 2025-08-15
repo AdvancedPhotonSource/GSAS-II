@@ -34,4 +34,3 @@ written at present.
 
 .. automodule:: GSASII.G2compare
     :members: 
-

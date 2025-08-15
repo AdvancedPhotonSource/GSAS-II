@@ -1226,14 +1226,10 @@ class G2VarObj:
             other = G2VarObj(other)
         elif type(other) is not G2VarObj:
             msg = f"Invalid type ({type(other)}) for G2VarObj comparison with {other}"
-            raise Exception(
-                msg
-            )
+            raise Exception(msg)
         if self.phase not in (other.phase, "*") and other.phase != "*":
             return False
-        if (
-            self.histogram not in (other.histogram, "*") and other.histogram != "*"
-        ):
+        if self.histogram not in (other.histogram, "*") and other.histogram != "*":
             return False
         if self.atom not in (other.atom, "*") and other.atom != "*":
             return False
@@ -1859,6 +1855,8 @@ sind = sin = s = lambda x: np.sin(x * np.pi / 180.0)
 cosd = cos = c = lambda x: np.cos(x * np.pi / 180.0)
 tand = tan = t = lambda x: np.tan(x * np.pi / 180.0)
 sqrt = sq = lambda x: np.sqrt(x)
+
+
 def pi():
     return np.pi
 
@@ -2404,7 +2402,9 @@ def HowDidIgetHere(wherecalledonly=False):
 
 
 # Note that this is GUI code and should be moved at somepoint
-def CreatePDFitems(G2frame, PWDRtree, ElList, Qlimits, numAtm=1, FltBkg=0, PDFnames=None):
+def CreatePDFitems(
+    G2frame, PWDRtree, ElList, Qlimits, numAtm=1, FltBkg=0, PDFnames=None
+):
     """Create and initialize a new set of PDF tree entries
 
     :param Frame G2frame: main GSAS-II tree frame object

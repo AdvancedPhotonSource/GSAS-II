@@ -70,21 +70,37 @@ except:
     pass
 mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
+
+
 # trig functions in degrees
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def acosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def atan2d(x, y):
     return 180.0 * np.arctan2(y, x) / np.pi
+
+
 def is_exe(fpath):
     return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+
 sqt2 = np.sqrt(2.0)
 sqt3 = np.sqrt(3.0)
 
@@ -1388,9 +1404,7 @@ class AddHatomDialog(wx.Dialog):
             dataSizer.Add(checks, 0, WACV)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             for ib, bond in enumerate(neigh[1][0]):
-                Bond = wx.CheckBox(
-                    self.panel, -1, label=f": {bond[0]}, {bond[1]:.3f}"
-                )
+                Bond = wx.CheckBox(self.panel, -1, label=f": {bond[0]}, {bond[1]:.3f}")
                 Bond.SetValue(bond[2])
                 Indx[Bond.GetId()] = [inei, ib]
                 Bond.Bind(wx.EVT_CHECKBOX, OnBond)
@@ -1442,8 +1456,10 @@ class AddHatomDialog(wx.Dialog):
 
 def getPawleydRange(G2frame, data):
     "find d-space range in used histograms"
+
     def fmtd(d):
         return "?" if d is None else f"{d:.5f}"
+
     dmaxAll = dminAll = None
     Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     nhist = 0
@@ -1909,9 +1925,7 @@ def VoidMap(
             cMin, cMax, int(0.5 + cell[2] * (cMax - cMin) / gridspacing), endpoint=False
         ),
     )
-    coordGrd = np.array(
-        list(zip(xx.ravel(), yy.ravel(), zz.ravel(), strict=False))
-    )
+    coordGrd = np.array(list(zip(xx.ravel(), yy.ravel(), zz.ravel(), strict=False)))
 
     lgclArray = [True for i in xx.ravel()]
 
@@ -5151,7 +5165,7 @@ program; Please cite:
             os.unlink(i)  # cleanup tmp web pages
 
         # show final message
-        if len(gpxList):
+        if gpxList:
             _showSummary(G2frame, msgs, gpxList)
             print(f"Search done, from {msgs[0]}\n{len(gpxList)} supergroups located:\n")
             for i in gpxList:
@@ -5435,7 +5449,7 @@ program; Please cite:
                 magchoices.append(
                     "(%d) %s; (%s) + (%s)" % (im + 1, magdata["Name"], trans, vec)
                 )
-        if not len(magKeep):
+        if not magKeep:
             G2frame.ErrorDialog(
                 "Subgroup/magnetic phase selection error",
                 'No magnetic phases found; be sure to "Keep" some',
@@ -5614,7 +5628,7 @@ program; Please cite:
                     "(%d) %s; (%s) + (%s)"
                     % (im + 1, phaseDict[mid]["Name"], trans, vec)
                 )
-        if not len(subKeep):
+        if not subKeep:
             G2frame.ErrorDialog(
                 "Subgroup phase selection error",
                 'No subgroups available; be sure to "Keep" some',
@@ -6354,7 +6368,12 @@ program; Please cite:
         ifMag = False
         if generalData["Type"] == "macromolecular":
             colLabels = ["res no", "residue", "chain", *colLabels]
-            Types = [wg.GRID_VALUE_STRING, wg.GRID_VALUE_CHOICE + AAchoice, wg.GRID_VALUE_STRING, *Types]
+            Types = [
+                wg.GRID_VALUE_STRING,
+                wg.GRID_VALUE_CHOICE + AAchoice,
+                wg.GRID_VALUE_STRING,
+                *Types,
+            ]
         elif generalData["Type"] == "magnetic":
             ifMag = True
             colLabels = colLabels[:7] + ["Mx", "My", "Mz"] + colLabels[7:]
@@ -7926,6 +7945,7 @@ program; Please cite:
     def OnSetupRMC(event):
         def written(fil):
             return print(f" {fil} written")
+
         generalData = data["General"]
         if not G2frame.GSASprojectfile:  # force a project save
             G2frame.OnFileSaveas(event)
@@ -8205,7 +8225,9 @@ program; Please cite:
                             for iprm in startParms:
                                 if int(iprm) > 9:
                                     break
-                                newlines += f"pf.setpar({iprm},{startParms[iprm]:.6f})\n"
+                                newlines += (
+                                    f"pf.setpar({iprm},{startParms[iprm]:.6f})\n"
+                                )
                             print("Begin dscale: %d %.4f" % (itm, startParms["1"]))
                             for iprm in RMCPdict["Parms"]:
                                 if isinstance(RMCPdict["Parms"][iprm], float):
@@ -8221,7 +8243,9 @@ program; Please cite:
                         elif not RMCPdict["SeqCopy"]:
                             startParms = PDFfile[1]["result"]
                             for iprm in startParms:
-                                newlines += f"pf.setpar({iprm},{startParms[iprm][0]:.6f})\n"
+                                newlines += (
+                                    f"pf.setpar({iprm},{startParms[iprm][0]:.6f})\n"
+                                )
                             print("Begin dscale: %d %.4f" % (itm, startParms["1"]))
                     else:
                         newlines += line
@@ -8267,7 +8291,8 @@ program; Please cite:
                 parmkeys = [int(item) for item in RMCPdict["ParmNames"]]
                 parmkeys.sort()
                 tempList += [
-                    "{}-{}".format(item, RMCPdict["ParmNames"][item]) for item in parmkeys
+                    "{}-{}".format(item, RMCPdict["ParmNames"][item])
+                    for item in parmkeys
                 ]
                 print("result dscale: ", parmDict["1"], " Rw: ", Rwp)
                 atParms = [str(i + 21) for i in range(len(G2Names))]
@@ -10316,7 +10341,10 @@ program; Please cite:
 
     def noDuplicate(xyz, atomData):  # be careful where this is used - it's slow
         cx = data["Drawing"]["atomPtrs"][0]
-        return True not in [np.allclose(np.array(xyz), np.array(atom[cx:cx + 3]), atol=0.0002) for atom in atomData]
+        return True not in [
+            np.allclose(np.array(xyz), np.array(atom[cx : cx + 3]), atol=0.0002)
+            for atom in atomData
+        ]
 
     def AddSymEquiv(event):
         drawAtoms = G2frame.drawAtoms
@@ -13247,7 +13275,8 @@ program; Please cite:
                         for item in RBObj["SHC"][iSh]:
                             shcSizer.Add(
                                 wx.StaticText(
-                                    RigidBodies, label="{}".format(item.strip("+").strip("-"))
+                                    RigidBodies,
+                                    label="{}".format(item.strip("+").strip("-")),
                                 )
                             )
                             shcSizer.Add(
@@ -13328,7 +13357,9 @@ program; Please cite:
             sprbSizer.Add(
                 wx.StaticText(
                     RigidBodies,
-                    label="Spinning RB orientation parameters for {}:".format(RBObj["RBname"][0]),
+                    label="Spinning RB orientation parameters for {}:".format(
+                        RBObj["RBname"][0]
+                    ),
                 )
             )
             sprbSizer.Add(LocationSizer(RBObj, "Spin"))
@@ -14089,7 +14120,7 @@ program; Please cite:
                     else:
                         atomData[line[5]][cx : cx + 3] = line[2:5]
                         Ids.append(line[11])
-                if len(Ids):
+                if Ids:
                     AtLookUp = G2mth.FillAtomLookUp(atomData, cia + 8)
                     G2lat.RBsymCheck(atomData, ct, cx, cs, AtLookUp, Amat, Ids, SGData)
                 if updateNeeded:
@@ -15039,7 +15070,7 @@ of the crystal structure.
         )
         rbKeys = list(RBData["Residue"].keys())
         rbKeys.remove("AtInfo")
-        if not len(rbKeys):
+        if not rbKeys:
             print("**** ERROR - no residue rigid bodies are defined ****")
             return
         RBNames = [RBData["Residue"][k]["RBname"] for k in rbKeys]
@@ -15739,7 +15770,7 @@ of the crystal structure.
                     rbNames.append(model["name"])
                     rbids.append(im)
             G2G.HorizontalLine(mainSizer, G2frame.MCSA)
-            if len(rbNames):
+            if rbNames:
                 rbName = rbNames[0]
                 select = wx.ListBox(
                     G2frame.MCSA, choices=rbNames, style=wx.LB_SINGLE, size=(-1, 65)
@@ -16440,7 +16471,7 @@ tab, use Operations->"Pawley create")"""
         HistoNames = list(
             filter(lambda a: Histograms[a]["Use"] is True, list(Histograms.keys()))
         )
-        if not len(HistoNames):
+        if not HistoNames:
             G2frame.ErrorDialog(
                 "Pawley estimate", "No histograms defined for this phase"
             )
@@ -16944,13 +16975,9 @@ tab, use Operations->"Pawley create")"""
         for i in indx:
             xyz.append(mapPeaks[i][1:4])
         if len(indx) == 2:
-            print(
-                f" distance for atoms {indx!s} = {G2mth.getRestDist(xyz, Amat):.3f}"
-            )
+            print(f" distance for atoms {indx!s} = {G2mth.getRestDist(xyz, Amat):.3f}")
         else:
-            print(
-                f" angle for atoms {indx!s} = {G2mth.getRestAngle(xyz, Amat):.2f}"
-            )
+            print(f" angle for atoms {indx!s} = {G2mth.getRestAngle(xyz, Amat):.2f}")
 
     def OnFourierMaps(event):
         generalData = data["General"]
@@ -16997,7 +17024,9 @@ tab, use Operations->"Pawley create")"""
         ftext = (
             dim
             + mapData["MapType"]
-            + " computed: rhomax = {:.3f} rhomin = {:.3f} sigma = {:.3f}".format(np.max(mapData["rho"]), np.min(mapData["rho"]), mapSig)
+            + " computed: rhomax = {:.3f} rhomin = {:.3f} sigma = {:.3f}".format(
+                np.max(mapData["rho"]), np.min(mapData["rho"]), mapSig
+            )
         )
         print(ftext)
         G2frame.AddToNotebook("Fourier " + ftext, "FM")
@@ -17121,7 +17150,9 @@ tab, use Operations->"Pawley create")"""
         data["Drawing"]["contourLevel"] = 1.0
         data["Drawing"]["mapSize"] = 10.0
         print(
-            " 4D Charge flip map computed: rhomax = {:.3f} rhomin = {:.3f} sigma = {:.3f}".format(np.max(mapData["rho"]), np.min(mapData["rho"]), mapSig)
+            " 4D Charge flip map computed: rhomax = {:.3f} rhomin = {:.3f} sigma = {:.3f}".format(
+                np.max(mapData["rho"]), np.min(mapData["rho"]), mapSig
+            )
         )
         if mapData["Rcf"] < 99.0:
             OnSearchMaps(event)  # does a plot structure at end
@@ -17187,7 +17218,9 @@ tab, use Operations->"Pawley create")"""
         data["Drawing"]["mapSize"] = 10.0
         data["Drawing"]["showMap"] = True
         print(
-            " Charge flip map computed: rhomax = {:.3f} rhomin = {:.3f} sigma = {:.3f}".format(np.max(mapData["rho"]), np.min(mapData["rho"]), mapSig)
+            " Charge flip map computed: rhomax = {:.3f} rhomin = {:.3f} sigma = {:.3f}".format(
+                np.max(mapData["rho"]), np.min(mapData["rho"]), mapSig
+            )
         )
         if mapData["Rcf"] < 99.0:
             OnSearchMaps(event)  # does a plot structure at end

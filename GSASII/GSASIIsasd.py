@@ -16,35 +16,65 @@ from . import GSASIIpwd as G2pwd
 # trig functions in degrees
 def sind(x):
     return math.sin(x * math.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * math.asin(x) / math.pi
+
+
 def tand(x):
     return math.tan(x * math.pi / 180.0)
+
+
 def atand(x):
     return 180.0 * math.atan(x) / math.pi
+
+
 def atan2d(y, x):
     return 180.0 * math.atan2(y, x) / math.pi
+
+
 def cosd(x):
     return math.cos(x * math.pi / 180.0)
+
+
 def acosd(x):
     return 180.0 * math.acos(x) / math.pi
+
+
 def rdsq2d(x, p):
     return round(1.0 / math.sqrt(x), p)
+
+
 # numpy versions
 def npsind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def npasind(x):
     return 180.0 * np.arcsin(x) / math.pi
+
+
 def npcosd(x):
     return np.cos(x * math.pi / 180.0)
+
+
 def npacosd(x):
     return 180.0 * np.arccos(x) / math.pi
+
+
 def nptand(x):
     return np.tan(x * math.pi / 180.0)
+
+
 def npatand(x):
     return 180.0 * np.arctan(x) / np.pi
+
+
 def npatan2d(y, x):
     return 180.0 * np.arctan2(y, x) / np.pi
+
+
 # npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 # npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
 
@@ -1074,7 +1104,16 @@ def MaxEnt_SB(
 
 
 def IPG(
-    datum, sigma, G, Bins, Dbins, IterMax, Qvec=None, approach=0.8, Power=-1, report=False
+    datum,
+    sigma,
+    G,
+    Bins,
+    Dbins,
+    IterMax,
+    Qvec=None,
+    approach=0.8,
+    Power=-1,
+    report=False,
 ):
     """An implementation of the Interior-Point Gradient method of
     Michael Merritt & Yin Zhang, Technical Report TR04-08, Dept. of Comp. and
@@ -1365,9 +1404,7 @@ def PairDistFxn(Profile, ProfDict, Limits, Sample, data):
             "Number of function calls: %d Number of observations: %d Number of parameters: %d"
             % (ncalc, Ifin - Ibeg, N)
         )
-        print(
-            f"Rwp = {Rwp:7.2f}%, chi**2 = {chisq:12.6g}, reduced chi**2 = {GOF:6.2f}"
-        )
+        print(f"Rwp = {Rwp:7.2f}%, chi**2 = {chisq:12.6g}, reduced chi**2 = {GOF:6.2f}")
         if len(covM):
             sig = np.sqrt(np.diag(covM) * GOF)
             for val, esd in zip(result[0], sig, strict=False):
@@ -1725,7 +1762,7 @@ def ModelFit(Profile, ProfDict, Limits, Sample, Model):
             name = varyList[Negs.nonzero(True)[0]]
             Msg = "negative coefficient for " + name + "!"
             raise ValueError
-        if len(covM):
+        if covM:
             sig = np.sqrt(np.diag(covM) * Rvals["GOF"])
             sigDict = dict(zip(varyList, sig, strict=False))
         print(" Results of small angle data modelling fit:")
@@ -1734,7 +1771,9 @@ def ModelFit(Profile, ProfDict, Limits, Sample, Model):
             % (ncalc, Ifin - Ibeg, len(varyList))
         )
         print(
-            "Rwp = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}".format(Rvals["Rwp"], chisq, Rvals["GOF"])
+            "Rwp = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}".format(
+                Rvals["Rwp"], chisq, Rvals["GOF"]
+            )
         )
         SetModelParms()
         covMatrix = covM * Rvals["GOF"]
@@ -1856,7 +1895,9 @@ def RgFit(Profile, ProfDict, Limits, Sample, Model):
             % (ncalc, Ifin - Ibeg, len(varyList))
         )
         print(
-            "Rwp = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}".format(Rvals["Rwp"], chisq, Rvals["GOF"])
+            "Rwp = {:7.2f}%, chi**2 = {:12.6g}, reduced chi**2 = {:6.2f}".format(
+                Rvals["Rwp"], chisq, Rvals["GOF"]
+            )
         )
         SetModelParms()
         covMatrix = covM * Rvals["GOF"]

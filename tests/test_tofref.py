@@ -37,10 +37,13 @@ def test_refine():
         npt.assert_allclose([h1.residuals["wR"]], [w1], rtol=0.0001)
 
     print("test_refine(): test a small TOF refinement")
+
     def dataloc(fil):
         return os.path.join(home, "testinp", fil)
+
     def workloc(fil):
         return os.path.join(work, fil)
+
     gpx = G2sc.G2Project(newgpx=workloc("test_scripting.gpx"))
     # setup step 1: add two phases from a original GSAS .EXP file on the web
     URL = "https://advancedphotonsource.github.io/GSAS-II-tutorials/TOF-CW%20Joint%20Refinement/data/NAC.cif"

@@ -36,6 +36,8 @@ DEBUG = False  # =True for various prints
 TRANSP = False  # =true to transpose images for testing
 if GSASIIpath.GetConfigValue("Transpose"):
     TRANSP = True
+
+
 def npsind(x):
     return np.sin(x * np.pi / 180.0)
 
@@ -50,10 +52,13 @@ def FileDlgFixExt(dlg, file):
 
 def GetPowderPeaks(fileName):
     "Read powder peaks from a file"
+
     def sind(x):
         return math.sin(x * math.pi / 180.0)
+
     def asind(x):
         return 180.0 * math.asin(x) / math.pi
+
     wave = 1.54052
     File = open(fileName)
     Comments = []
@@ -665,9 +670,7 @@ def ProjFileOpen(G2frame, showProvenance=True):
                 data = pickleLoad(fp)  # first block in file should be Phases
                 if data[0][0] != "Phases":
                     msg = f"Unexpected block in {GPXphase} file. How did this happen?"
-                    raise Exception(
-                        msg
-                    )
+                    raise Exception(msg)
                 Phases = {}
                 for name, vals in data[1:]:
                     Phases[name] = vals
@@ -1257,7 +1260,7 @@ def XYsave(G2frame, XY, labelX="X", labelY="Y", names=None):
     if not filename:
         return
     for i in range(len(XY)):
-        if len(names):
+        if names:
             header = f"{labelX},{labelY}({names[i]})\n"
         else:
             header = "%s,%s(%d)\n" % (labelX, labelY, i)
@@ -1439,8 +1442,9 @@ def ExportSequential(G2frame, data, obj, exporttype):
                 mode = "a"
         print("...done")
         return None
-    elif (
-        exporttype in ("Project", "Powder")
+    elif exporttype in (
+        "Project",
+        "Powder",
     ):  # note that the CIF exporter is not yet ready for this
         filename = obj.askSaveFile()
         if not filename:

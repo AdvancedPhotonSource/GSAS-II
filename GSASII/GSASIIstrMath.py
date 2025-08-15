@@ -47,18 +47,30 @@ try:
 except ImportError:  # ignore; will report this as an error in GSASIIplot import
     pass
 
+
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def acosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def atan2d(y, x):
     return 180.0 * np.arctan2(y, x) / np.pi
+
 
 try:  # fails on doc build
     ateln2 = 8.0 * np.log(2.0)
@@ -882,7 +894,7 @@ def GetSHC(pfx, parmDict):
             if -atid not in SHCdict:
                 SHCdict[-atid] = {}
             SHCdict[-atid][items[2]] = parmDict[parm]
-    if len(SHCdict):
+    if SHCdict:
         return {
             pfx: SHCdict,
         }
@@ -1296,7 +1308,9 @@ def penaltyDeriv(pNames, pVal, HistoPhases, calcControls, parmDict, varyList):
                                     if var in G2mv.indepVarList:
                                         G2mv.Dict2Map(parmDict)
                                         oneparm = False
-                                    elif var in functools.reduce(operator.iadd, G2mv.dependentParmList, []):
+                                    elif var in functools.reduce(
+                                        operator.iadd, G2mv.dependentParmList, []
+                                    ):
                                         G2mv.Map2Dict(parmDict, [])
                                         oneparm = False
                                     if "RB" in var:
@@ -1819,7 +1833,7 @@ def StructureFactorDerv2(refDict, G, hfx, pfx, SGData, calcControls, parmDict):
                 SQ,
                 True,
             )
-            if len(dffdSH):
+            if dffdSH:
                 for item in dffdSH:
                     dffdSH[item] = np.concatenate((dffdSH[item], dffdsh[item]))
             else:
@@ -6974,7 +6988,12 @@ def getPowderProfileDerv(args):
 
 
 def UserRejectHKL(ref, im, userReject):
-    return not (ref[5 + im] / ref[6 + im] < userReject["minF/sig"] or userReject["MaxD"] < ref[4 + im] > userReject["MinD"] or ref[11 + im] < userReject["MinExt"] or abs(ref[5 + im] - ref[7 + im]) / ref[6 + im] > userReject["MaxDF/F"])
+    return not (
+        ref[5 + im] / ref[6 + im] < userReject["minF/sig"]
+        or userReject["MaxD"] < ref[4 + im] > userReject["MinD"]
+        or ref[11 + im] < userReject["MinExt"]
+        or abs(ref[5 + im] - ref[7 + im]) / ref[6 + im] > userReject["MaxDF/F"]
+    )
 
 
 def dervHKLF(Histogram, Phase, calcControls, varylist, parmDict, rigidbodyDict):
@@ -7784,7 +7803,9 @@ def errRefine(
     if dlg:
         if hasattr(dlg, "SetHistogram"):
             dlg.SetHistogram(-1, "overall")
-        GoOn = dlg.Update(int(Rw), newmsg="{}{:8.3f}{}".format("All data Rw =", Rw, "%"))
+        GoOn = dlg.Update(
+            int(Rw), newmsg="{}{:8.3f}{}".format("All data Rw =", Rw, "%")
+        )
         if type(GoOn) is tuple:
             if not GoOn[0]:
                 parmDict["saved values"] = values

@@ -60,21 +60,36 @@ Pwrm4 = unichr(0x207B) + unichr(0x2074)
 Angstr = unichr(0x00C5)
 superMinusOne = unichr(0xAF) + unichr(0xB9)
 notEq0 = unichr(0x2260) + "0"
+
+
 # trig functions in degrees
 def sind(x):
     return math.sin(x * math.pi / 180.0)
+
+
 def tand(x):
     return math.tan(x * math.pi / 180.0)
+
+
 def cosd(x):
     return math.cos(x * math.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * math.asin(x) / math.pi
+
+
 def npsind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def npasind(x):
     return 180.0 * np.arcsin(x) / math.pi
+
+
 def npcosd(x):
     return np.cos(x * math.pi / 180.0)
+
 
 cellDisplayOpts = {"showExtinct": False}
 cellGUIlist = [
@@ -733,7 +748,7 @@ def SetCopyNames(histName, dataType, addNames=None):
             "Materials",
             "Thick",
         ]
-    if len(addNames):
+    if addNames:
         copyNames += addNames
     return histType, copyNames
 
@@ -971,11 +986,15 @@ def RefineCell(G2frame):
             print(" {}{:10.6f}".format("a =", cell[0]))
         elif ibrav in ["R3-H", "P6/mmm", "I4/mmm", "P4/mmm"]:
             print(
-                " {}{:10.6f} {}{:10.6f} {}{:12.3f}".format("a =", cell[0], " c =", cell[2], " volume =", Vol)
+                " {}{:10.6f} {}{:10.6f} {}{:12.3f}".format(
+                    "a =", cell[0], " c =", cell[2], " volume =", Vol
+                )
             )
         elif ibrav in ["P4/mmm", "Fmmm", "Immm", "Ammm", "Bmmm", "Cmmm", "Pmmm"]:
             print(
-                " {}{:10.6f} {}{:10.6f} {}{:10.6f} {}{:12.3f}".format("a =", cell[0], "b =", cell[1], "c =", cell[2], " volume =", Vol)
+                " {}{:10.6f} {}{:10.6f} {}{:10.6f} {}{:12.3f}".format(
+                    "a =", cell[0], "b =", cell[1], "c =", cell[2], " volume =", Vol
+                )
             )
         elif ibrav in ["I2/m", "A2/m", "C2/m", "P2/m"]:
             print(
@@ -994,7 +1013,9 @@ def RefineCell(G2frame):
             )
         else:
             print(
-                " {}{:10.6f} {}{:10.6f} {}{:10.6f}".format("a =", cell[0], "b =", cell[1], "c =", cell[2])
+                " {}{:10.6f} {}{:10.6f} {}{:10.6f}".format(
+                    "a =", cell[0], "b =", cell[1], "c =", cell[2]
+                )
             )
             print(
                 " {}{:8.3f} {}{:8.3f} {}{:8.3f} {}{:12.3f}".format(
@@ -1011,7 +1032,9 @@ def RefineCell(G2frame):
 
     def vecPrint(Vec):
         print(
-            " {} {:10.5f} {:10.5f} {:10.5f}".format("Modulation vector:", Vec[0], Vec[1], Vec[2])
+            " {} {:10.5f} {:10.5f} {:10.5f}".format(
+                "Modulation vector:", Vec[0], Vec[1], Vec[2]
+            )
         )
 
     Inst = G2frame.GPXtree.GetItemPyData(
@@ -1042,9 +1065,7 @@ def RefineCell(G2frame):
     SGData = G2spc.SpcGroup(controls[13])[1]
     if "T" in Inst["Type"][0]:
         if ssopt.get("Use", False):
-            vecFlags = [
-                x in ssopt["ssSymb"] for x in ["a", "b", "g"]
-            ]
+            vecFlags = [x in ssopt["ssSymb"] for x in ["a", "b", "g"]]
             SSGData = G2spc.SSpcGroup(SGData, ssopt["ssSymb"])[1]
             G2frame.HKL = G2pwd.getHKLMpeak(
                 dmin, Inst, SGData, SSGData, ssopt["ModVec"], ssopt["maxH"], A
@@ -3015,11 +3036,13 @@ def UpdateBackground(G2frame, data):
         elif bkgdict["autoPrms"]["Mode"] == "fit":
             xydata[4] = G2pwd.autoBkgCalc(bkgdict, xydata[1])
             npts = len(xydata[0])
-            bkgdict["FixedPoints"] = list(zip(
+            bkgdict["FixedPoints"] = list(
+                zip(
                     xydata[0].data[:: npts // 100],
                     xydata[4].data[:: npts // 100],
                     strict=False,
-                ))
+                )
+            )
             OnBkgFit(event)
         else:
             wx.CallAfter(UpdateBackground, G2frame, data)
@@ -3074,11 +3097,13 @@ def UpdateBackground(G2frame, data):
             elif autoBkgDict["Mode"] == "fit":
                 xydata[4] = G2pwd.autoBkgCalc(itemData[1], xydata[1])
                 npts = len(xydata[0])
-                itemData[1]["FixedPoints"] = list(zip(
+                itemData[1]["FixedPoints"] = list(
+                    zip(
                         xydata[0].data[:: npts // 100],
                         xydata[4].data[:: npts // 100],
                         strict=False,
-                    ))
+                    )
+                )
                 OnBkgFit(event)
         G2frame.PatternId = savePatternId
         wx.CallAfter(UpdateBackground, G2frame, data)
@@ -3641,7 +3666,7 @@ def UpdateInstrumentGrid(G2frame, data):
                         )
                     XY.append([peak[-1], peak[0] - shft, binwid])
                     Sigs.append(IndexPeaks[1][ip])
-            if len(XY):
+            if XY:
                 XY = np.array(XY)
                 G2plt.PlotCalib(G2frame, data, XY, Sigs, newPlot=True)
                 return None
@@ -3671,8 +3696,10 @@ def UpdateInstrumentGrid(G2frame, data):
 
             def sind(x):
                 return math.sin(x * math.pi / 180.0)
+
             def tand(x):
                 return math.tan(x * math.pi / 180.0)
+
             while True:  # loop until we get a choice
                 choices = []
                 head = "Select from default instrument parameters"
@@ -4005,7 +4032,9 @@ def UpdateInstrumentGrid(G2frame, data):
             else:
                 print(
                     item
-                    + " not copied - instrument type {} does not match source type {}".format(instData["Type"][0], instType)
+                    + " not copied - instrument type {} does not match source type {}".format(
+                        instData["Type"][0], instType
+                    )
                 )
 
     def AfterChange(invalid, value, tc):
@@ -4616,7 +4645,9 @@ def UpdateInstrumentGrid(G2frame, data):
                 refFlgElem.append(None)
                 instSizer.Add(
                     wx.StaticText(
-                        G2frame.dataWindow, -1, "  Azimuth: {:7.2f}".format(insVal["Azimuth"])
+                        G2frame.dataWindow,
+                        -1,
+                        "  Azimuth: {:7.2f}".format(insVal["Azimuth"]),
                     ),
                     0,
                     WACV,
@@ -5182,7 +5213,7 @@ def UpdateSampleGrid(G2frame, data):
             if "SASD" in name and name != histName:
                 histList.append(name)
             item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
-        if not len(histList):  # nothing to copy to!
+        if not histList:  # nothing to copy to!
             return
         dlg = wx.SingleChoiceDialog(
             G2frame,
@@ -5690,7 +5721,8 @@ def UpdateSampleGrid(G2frame, data):
         conSizer = wx.BoxSizer(wx.HORIZONTAL)
         conSizer.Add(
             wx.StaticText(
-                G2frame.dataWindow, label=" Contrast: {:10.2f} ".format(data["Contrast"][0])
+                G2frame.dataWindow,
+                label=" Contrast: {:10.2f} ".format(data["Contrast"][0]),
             ),
             0,
             WACV,
@@ -6006,7 +6038,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     G2frame.indxPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
     G2frame.indxPeaks.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)
     G2frame.indxPeaks.AutoSizeColumns(False)
-    if len(XY):
+    if XY:
         XY = np.array(XY)
         G2plt.PlotCalib(G2frame, Inst, XY, Sigs, newPlot=True)
     G2frame.dataWindow.ClearData()
@@ -6357,7 +6389,7 @@ def UpdateUnitCellsGrid(
             if not Phase["General"]["SGData"].get("SGFixed", False):
                 Phases.append(G2frame.GPXtree.GetItemText(item))
             item, cookie = G2frame.GPXtree.GetNextChild(pId, cookie)
-        if not len(Phases):
+        if not Phases:
             wx.MessageBox(
                 "NB: Magnetic phases from mcif files are not suitable for this purpose,\n because of space group symbol - operators mismatches",
                 caption="No usable space groups",
@@ -8177,7 +8209,9 @@ def UpdateUnitCellsGrid(
                 ssopt["ModVec"][1] = ypos
             vec = ssopt["ModVec"]
             print(
-                " Trying: {} {} modulation vector = {:.3f} {:.3f} {:.3f}".format(controls[13], ssopt["ssSymb"], vec[0], vec[1], vec[2])
+                " Trying: {} {} modulation vector = {:.3f} {:.3f} {:.3f}".format(
+                    controls[13], ssopt["ssSymb"], vec[0], vec[1], vec[2]
+                )
             )
             OnHklShow(None, indexFrom=" Indexing from selected modulation vector")
             wx.CallAfter(UpdateUnitCellsGrid, G2frame, data)
@@ -8202,7 +8236,9 @@ def UpdateUnitCellsGrid(
                         labelX="a",
                         labelY="g",
                         newPlot=True,
-                        Title="Modulation vector search for {}{}".format(controls[13], ssopt["ssSymb"]),
+                        Title="Modulation vector search for {}{}".format(
+                            controls[13], ssopt["ssSymb"]
+                        ),
                         buttonHandler=OnButton,
                     )
                 elif len(result[0]) == 1:
@@ -8214,7 +8250,9 @@ def UpdateUnitCellsGrid(
                         labelX="k",
                         labelY="fit",
                         newPlot=True,
-                        Title="Modulation vector search for {}{}".format(controls[13], ssopt["ssSymb"]),
+                        Title="Modulation vector search for {}{}".format(
+                            controls[13], ssopt["ssSymb"]
+                        ),
                     )
 
             finally:
@@ -9330,9 +9368,7 @@ def UpdateUnitCellsGrid(
         baseList = controls[16]
         if "magAtms" in magcells[0]:
             G2frame.dataWindow.RunSubGroupsMag.Enable(True)
-            Label = (
-                f"\n Magnetic subgroup cells from Bilbao k-SUBGROUPSMAG for {controls[13]}; kvec1=({kvec1})"
-            )
+            Label = f"\n Magnetic subgroup cells from Bilbao k-SUBGROUPSMAG for {controls[13]}; kvec1=({kvec1})"
         else:
             G2frame.dataWindow.RunSubGroups.Enable(True)
             Label = f"\n Subgroup cells from Bilbao SUBGROUPS for {controls[13]}; kvec1=({kvec1})"
@@ -9403,7 +9439,17 @@ def UpdateUnitCellsGrid(
                     phase["Uvec"],
                 ]
             )
-            row = [phase["Name"], phase["Use"], phase["Keep"], natms, nConj, nSup, trans, vec, *cell]
+            row = [
+                phase["Name"],
+                phase["Use"],
+                phase["Keep"],
+                natms,
+                nConj,
+                nSup,
+                trans,
+                vec,
+                *cell,
+            ]
             table.append(row)
         MagCellsTable = G2G.Table(
             table, rowLabels=rowLabels, colLabels=colLabels, types=Types
@@ -10769,7 +10815,7 @@ def UpdateSubstanceGrid(G2frame, data):
         finally:
             dlg.Destroy()
         ElList = list(data["Substances"][name]["Elements"].keys())
-        if len(ElList):
+        if ElList:
             DE = G2elemGUI.DeleteElement(G2frame, ElList)
             if DE.ShowModal() == wx.ID_OK:
                 El = DE.GetDeleteElement().strip().upper()
@@ -10912,7 +10958,9 @@ def UpdateSubstanceGrid(G2frame, data):
                 substSizer.Add(
                     wx.StaticText(
                         G2frame.dataWindow,
-                        label=" Scattering density,f: {:.3f} *10{}cm{}".format(data["Substances"][name]["Scatt density"], Pwr10, Pwrm2),
+                        label=" Scattering density,f: {:.3f} *10{}cm{}".format(
+                            data["Substances"][name]["Scatt density"], Pwr10, Pwrm2
+                        ),
                     ),
                     0,
                 )
@@ -10992,7 +11040,9 @@ def UpdateSubstanceGrid(G2frame, data):
                 denSizer.Add(
                     wx.StaticText(
                         G2frame.dataWindow,
-                        label=": {:.3f} *10{}cm{}".format(Substance["Scatt density"], Pwr10, Pwrm2),
+                        label=": {:.3f} *10{}cm{}".format(
+                            Substance["Scatt density"], Pwr10, Pwrm2
+                        ),
                     ),
                     0,
                     WACV,
@@ -11005,7 +11055,9 @@ def UpdateSubstanceGrid(G2frame, data):
                 denSizer.Add(
                     wx.StaticText(
                         G2frame.dataWindow,
-                        label=": {:.3f} *10{}cm{}".format(Substance["XAnom density"], Pwr10, Pwrm2),
+                        label=": {:.3f} *10{}cm{}".format(
+                            Substance["XAnom density"], Pwr10, Pwrm2
+                        ),
                     ),
                     0,
                     WACV,
@@ -11018,7 +11070,9 @@ def UpdateSubstanceGrid(G2frame, data):
                 denSizer.Add(
                     wx.StaticText(
                         G2frame.dataWindow,
-                        label=": {:.3g} *10{}cm{}".format(Substance["XImag density"], Pwr10, Pwrm2),
+                        label=": {:.3g} *10{}cm{}".format(
+                            Substance["XImag density"], Pwr10, Pwrm2
+                        ),
                     ),
                     0,
                     WACV,
@@ -11054,9 +11108,7 @@ def UpdateSubstanceGrid(G2frame, data):
     G2frame.dataWindow.ClearData()
     topSizer = G2frame.dataWindow.topBox
     parent = G2frame.dataWindow.topPanel
-    topSizer.Add(
-        wx.StaticText(parent, label=f"Sample substances for {Name}:"), 0, WACV
-    )
+    topSizer.Add(wx.StaticText(parent, label=f"Sample substances for {Name}:"), 0, WACV)
     topSizer.Add((-1, -1), 1, wx.EXPAND)
     # print('Substance ',G2frame.dataWindow.helpKey)
     topSizer.Add(G2G.HelpButton(parent, helpIndex=G2frame.dataWindow.helpKey))
@@ -13869,9 +13921,7 @@ def UpdatePDFGrid(G2frame, data):
         )
         PDFfileSizer.Add((5, 5), 0)
         if "C" in inst["Type"][0]:
-            str = (
-                f" Sample file: PWDR{dataFile[4:]}   Wavelength, A: {wave:.5f}  Energy, keV: {keV:.3f}  Polariz.: {polariz:.2f} "
-            )
+            str = f" Sample file: PWDR{dataFile[4:]}   Wavelength, A: {wave:.5f}  Energy, keV: {keV:.3f}  Polariz.: {polariz:.2f} "
             PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataWindow, label=str), 0)
         PDFfileSizer.Add((5, 5), 0)
         fileSizer = wx.FlexGridSizer(0, 5, 5, 1)
@@ -13970,7 +14020,9 @@ def UpdatePDFGrid(G2frame, data):
         midSizer.Add(
             wx.StaticText(
                 G2frame.dataWindow,
-                label=" Theoretical absorption: {:.4f} cm-1 Sample absorption: {:.4f} cm-1".format(Abs, Abs * data["Pack"]),
+                label=" Theoretical absorption: {:.4f} cm-1 Sample absorption: {:.4f} cm-1".format(
+                    Abs, Abs * data["Pack"]
+                ),
             ),
             0,
             WACV,
@@ -14632,10 +14684,13 @@ def UpdatePDFGrid(G2frame, data):
     # Routine UpdatePDFGrid starts here
     G2gd.SetDataMenuBar(G2frame, G2frame.dataWindow.PDFMenu)
     global inst
+
     def tth2q(t, w):
         return 4.0 * math.pi * sind(t / 2.0) / w
+
     def tof2q(t, C):
         return 2.0 * math.pi * C / t
+
     dataFile = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     powName = "PWDR" + dataFile[4:]
     powId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, powName)

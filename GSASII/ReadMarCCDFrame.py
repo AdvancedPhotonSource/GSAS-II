@@ -704,8 +704,12 @@ class marFrame:
     def outputHead(self):
         myHead = []
         for curAttr in dir(self):
-            if (
-                curAttr not in ("__doc__", "__init__", "__module__", "outputHead", "image")
+            if curAttr not in (
+                "__doc__",
+                "__init__",
+                "__module__",
+                "outputHead",
+                "image",
             ):
                 if "__" not in str(curAttr):
                     myHead.append(f" {curAttr} = {getattr(self, curAttr)}")

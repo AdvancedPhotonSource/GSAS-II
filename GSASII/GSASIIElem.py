@@ -44,6 +44,7 @@ meanwaves = {
     "Inka": 0.51357,
 }
 
+
 def getElSym(sym):
     return sym.split("+")[0].split("-")[0].capitalize()
 
@@ -88,9 +89,7 @@ def GetEFormFactorCoeff(El):
     """
 
     Els = El.capitalize().strip()
-    valences = [
-        ky for ky in atmdata.ElecFF if Els == getElSym(ky)
-    ]  # will only be one
+    valences = [ky for ky in atmdata.ElecFF if Els == getElSym(ky)]  # will only be one
     FormFactors = [atmdata.ElecFF[val] for val in valences]
     for Sy, FF in zip(valences, FormFactors, strict=False):
         FF.update({"Symbol": Sy.upper()})

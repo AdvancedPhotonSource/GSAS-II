@@ -1565,7 +1565,7 @@ def UpdateSeqResults(G2frame, data, prevSize=None):
             )
         )
     # add unique cell parameters
-    if Controls.get("ShowCell", False) and len(newCellDict):
+    if Controls.get("ShowCell", False) and newCellDict:
         phaseLookup = {Phases[phase]["pId"]: phase for phase in Phases}
         for pId in sorted(RecpCellTerms):
             pfx = str(pId) + "::"  # prefix for A values from phase
@@ -2645,7 +2645,9 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
         mainSizer.Add(
             wx.StaticText(
                 G2frame.dataWindow,
-                label="(Examine any {} plot for reasonable limits; any change will clear Cluster data matrix) ".format(ClusData["Type"]),
+                label="(Examine any {} plot for reasonable limits; any change will clear Cluster data matrix) ".format(
+                    ClusData["Type"]
+                ),
             )
         )
         makeArray = wx.Button(
@@ -2693,7 +2695,9 @@ def UpdateClusterAnalysis(G2frame, ClusData, shoNum=-1):
                     kmeansres.Add(
                         wx.StaticText(
                             G2frame.dataWindow,
-                            label="K-means ave. dist = {:.2f}".format(np.mean(ClusData["dists"])),
+                            label="K-means ave. dist = {:.2f}".format(
+                                np.mean(ClusData["dists"])
+                            ),
                         )
                     )
                     mainSizer.Add(kmeansres)

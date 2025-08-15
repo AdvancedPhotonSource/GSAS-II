@@ -292,7 +292,9 @@ class testMagSym(wx.Frame):
             WACV,
         )
         mainSizer.Add(
-            wx.StaticText(self.testSSPanel, label="Mag Gen: {}".format(str(SGData["SGSpin"])))
+            wx.StaticText(
+                self.testSSPanel, label="Mag Gen: {}".format(str(SGData["SGSpin"]))
+            )
         )
         SpPos = wx.BoxSizer(wx.HORIZONTAL)
         SpPos.Add(wx.StaticText(self.testSSPanel, label=" X,Y,Z:"), 0, WACV)
@@ -350,7 +352,8 @@ class testMagSym(wx.Frame):
             SGData1["BNSlattsym"] = [SGData["SGLatt"], [0.0, 0.0, 0.0]]
         mainSizer.Add(
             wx.StaticText(
-                self.testSSPanel, label="Symbol Mag Gen: {}".format(str(SGData1["SGSpin"]))
+                self.testSSPanel,
+                label="Symbol Mag Gen: {}".format(str(SGData1["SGSpin"])),
             )
         )
         MagSpGrp = G2spc.MagSGSym(SGData1).replace(" ", "")

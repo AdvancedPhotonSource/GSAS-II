@@ -15,6 +15,8 @@ except ImportError:
         from .. import CifFile as cif  # PyCifRW, as distributed w/G2 (old)
     except ImportError:
         cif = None
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
 

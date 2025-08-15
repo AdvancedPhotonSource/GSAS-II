@@ -74,10 +74,14 @@ class ExportPowderFXYE(G2fil.ExportBaseclass):
             "INS  1PRCF1     3    8   0.00100                                                "
         )
         self.Write(
-            ("INS  1PRCF11{:15.6e}{:15.6e}{:15.6e}{:15.6e}   ").format(Inst["U"][1], Inst["V"][1], Inst["W"][1], 0.0)
+            ("INS  1PRCF11{:15.6e}{:15.6e}{:15.6e}{:15.6e}   ").format(
+                Inst["U"][1], Inst["V"][1], Inst["W"][1], 0.0
+            )
         )
         self.Write(
-            ("INS  1PRCF12{:15.6e}{:15.6e}{:15.6e}{:15.6e}   ").format(Inst["X"][1], Inst["Y"][1], Inst["SH/L"][1] / 2.0, Inst["SH/L"][1] / 2.0)
+            ("INS  1PRCF12{:15.6e}{:15.6e}{:15.6e}{:15.6e}   ").format(
+                Inst["X"][1], Inst["Y"][1], Inst["SH/L"][1] / 2.0, Inst["SH/L"][1] / 2.0
+            )
         )
         self.CloseFile()
         print("Parameters from " + hist + " written to " + prmname)

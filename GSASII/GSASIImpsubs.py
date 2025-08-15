@@ -26,10 +26,16 @@ from . import GSASIIpwd as G2pwd
 
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 # asind = lambda x: 180.*np.arcsin(x)/np.pi
 # acosd = lambda x: 180.*np.arccos(x)/np.pi
 # atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi

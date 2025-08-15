@@ -1039,7 +1039,9 @@ class AngleDialog(wx.Dialog):
             for iA, aName in enumerate(neigh):
                 for cName in neigh[iA + 1 :]:
                     bNames.append(
-                        "{};{}".format(aName[0].replace(" ", ""), cName[0].replace(" ", ""))
+                        "{};{}".format(
+                            aName[0].replace(" ", ""), cName[0].replace(" ", "")
+                        )
                     )
         if bNames:
             targAtoms = wx.ComboBox(

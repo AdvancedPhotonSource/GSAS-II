@@ -33,16 +33,27 @@ from . import GSASIIstrMath as G2stMth
 
 def sind(x):
     return np.sin(x * np.pi / 180.0)
+
+
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
+
+
 def tand(x):
     return np.tan(x * np.pi / 180.0)
+
+
 def asind(x):
     return 180.0 * np.arcsin(x) / np.pi
+
+
 def acosd(x):
     return 180.0 * np.arccos(x) / np.pi
+
+
 def atan2d(y, x):
     return 180.0 * np.arctan2(y, x) / np.pi
+
 
 ateln2 = 8.0 * math.log(2.0)
 
@@ -1336,7 +1347,9 @@ def SetRigidBodyModels(parmDict, sigDict, rigidbodyDict, pFile=None):
     "needs a doc string"
 
     def PrintRBVectandSig(VectRB, VectSig):
-        pFile.write("\n Rigid body vector magnitudes for {}:\n".format(VectRB["RBname"]))
+        pFile.write(
+            "\n Rigid body vector magnitudes for {}:\n".format(VectRB["RBname"])
+        )
         namstr = "  names :"
         valstr = "  values:"
         sigstr = "  esds  :"
@@ -1411,6 +1424,7 @@ def GetPhaseData(
         rbIds = {}
     if RestraintDict is None:
         RestraintDict = {}
+
     def PrintFFtable(FFtable):
         pFile.write("\n X-ray scattering factors:\n")
         pFile.write(
@@ -1591,18 +1605,14 @@ def GetPhaseData(
                     text = ""
                     for i in range(6, 12):
                         text += (
-                            "L"
-                            + tlstr[i - 6]
-                            + f" {TLS[i]:8.2f} {str(TLSvar[i])[0]} "
+                            "L" + tlstr[i - 6] + f" {TLS[i]:8.2f} {str(TLSvar[i])[0]} "
                         )
                     pFile.write(text + "\n")
                 if "S" in RB["ThermalMotion"][0]:
                     text = ""
                     for i in range(12, 20):
                         text += (
-                            "S"
-                            + sstr[i - 12]
-                            + f" {TLS[i]:8.3f} {str(TLSvar[i])[0]} "
+                            "S" + sstr[i - 12] + f" {TLS[i]:8.3f} {str(TLSvar[i])[0]} "
                         )
                     pFile.write(text + "\n")
             if "U" in RB["ThermalMotion"][0]:
@@ -1616,13 +1626,19 @@ def GetPhaseData(
                 Qrijk = RB["Orient"][0]
                 Angle = 2.0 * acosd(Qrijk[0])
                 pFile.write(
-                    "\nRBObject {} at {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(RB["RBname"], Oxyz[0], Oxyz[1], Oxyz[2], RB["Orig"][1])
+                    "\nRBObject {} at {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(
+                        RB["RBname"], Oxyz[0], Oxyz[1], Oxyz[2], RB["Orig"][1]
+                    )
                 )
                 pFile.write(
-                    "Orientation angle,vector: {:10.3f} {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(Angle, Qrijk[1], Qrijk[2], Qrijk[3], RB["Orient"][1])
+                    "Orientation angle,vector: {:10.3f} {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(
+                        Angle, Qrijk[1], Qrijk[2], Qrijk[3], RB["Orient"][1]
+                    )
                 )
                 pFile.write(
-                    "Atom site frac: {:10.3f} Refine? {}\n".format(RB["AtomFrac"][0], RB["AtomFrac"][1])
+                    "Atom site frac: {:10.3f} Refine? {}\n".format(
+                        RB["AtomFrac"][0], RB["AtomFrac"][1]
+                    )
                 )
                 Torsions = RB["Torsions"]
                 if len(Torsions):
@@ -1638,13 +1654,19 @@ def GetPhaseData(
                 Qrijk = RB["Orient"][0]
                 Angle = 2.0 * acosd(Qrijk[0])
                 pFile.write(
-                    "\nRBObject {} at {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(RB["RBname"], Oxyz[0], Oxyz[1], Oxyz[2], RB["Orig"][1])
+                    "\nRBObject {} at {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(
+                        RB["RBname"], Oxyz[0], Oxyz[1], Oxyz[2], RB["Orig"][1]
+                    )
                 )
                 pFile.write(
-                    "Orientation angle,vector: {:10.3f} {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(Angle, Qrijk[1], Qrijk[2], Qrijk[3], RB["Orient"][1])
+                    "Orientation angle,vector: {:10.3f} {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(
+                        Angle, Qrijk[1], Qrijk[2], Qrijk[3], RB["Orient"][1]
+                    )
                 )
                 pFile.write(
-                    "Atom site frac: {:10.3f} Refine? {}\n".format(RB["AtomFrac"][0], RB["AtomFrac"][1])
+                    "Atom site frac: {:10.3f} Refine? {}\n".format(
+                        RB["AtomFrac"][0], RB["AtomFrac"][1]
+                    )
                 )
                 PrintRBThermals()
 
@@ -1656,10 +1678,14 @@ def GetPhaseData(
                 Qrijk = RB["Orient"][0]
                 Angle = 2.0 * acosd(Qrijk[0])
                 pFile.write(
-                    "\nRBObject {} at {:10.4f} {:10.4f} {:10.4f} \n".format(RB["RBname"][0], Oxyz[0], Oxyz[1], Oxyz[2])
+                    "\nRBObject {} at {:10.4f} {:10.4f} {:10.4f} \n".format(
+                        RB["RBname"][0], Oxyz[0], Oxyz[1], Oxyz[2]
+                    )
                 )
                 pFile.write(
-                    "Orientation angle,vector: {:10.3f} {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(Angle, Qrijk[1], Qrijk[2], Qrijk[3], RB["Orient"][1])
+                    "Orientation angle,vector: {:10.3f} {:10.4f} {:10.4f} {:10.4f} Refine? {}\n".format(
+                        Angle, Qrijk[1], Qrijk[2], Qrijk[3], RB["Orient"][1]
+                    )
                 )
                 pFile.write(
                     "Bessel/Spherical Harmonics coefficients; symmetry required sign shown\n"
@@ -2765,7 +2791,9 @@ def PrintRestraints(
             itemRest = phaseRest[name]
             if rest in itemRest and itemRest[rest] and itemRest["Use"]:
                 pFile.write(
-                    "\n {} restraint weight factor {:10.3f} Use: {}\n".format(name, itemRest["wtFactor"], str(itemRest["Use"]))
+                    "\n {} restraint weight factor {:10.3f} Use: {}\n".format(
+                        name, itemRest["wtFactor"], str(itemRest["Use"])
+                    )
                 )
                 if name in ["Bond", "Angle", "Plane", "Chiral"]:
                     pFile.write(
@@ -3778,6 +3806,7 @@ def GetHistogramPhaseData(
 
     if Controls is None:
         Controls = {}
+
     def PrintSize(hapData):
         if hapData[0] in ["isotropic", "uniaxial"]:
             line = "\n Size model    : %9s" % (hapData[0])
@@ -4063,10 +4092,14 @@ def GetHistogramPhaseData(
                         pFile.write(" Perform LeBail extraction\n")
                     elif "E" not in inst["Type"][0]:
                         pFile.write(
-                            " Phase fraction  : {:10.4g} Refine? {}\n".format(hapData["Scale"][0], hapData["Scale"][1])
+                            " Phase fraction  : {:10.4g} Refine? {}\n".format(
+                                hapData["Scale"][0], hapData["Scale"][1]
+                            )
                         )
                         pFile.write(
-                            " Extinction coeff: {:10.4f} Refine? {}\n".format(hapData["Extinction"][0], hapData["Extinction"][1])
+                            " Extinction coeff: {:10.4f} Refine? {}\n".format(
+                                hapData["Extinction"][0], hapData["Extinction"][1]
+                            )
                         )
                         if hapData["Pref.Ori."][0] == "MD":
                             Ax = hapData["Pref.Ori."][3]
@@ -4093,7 +4126,9 @@ def GetHistogramPhaseData(
                     PrintHStrain(hapData["HStrain"], SGData)
                     if "Layer Disp" in hapData:
                         pFile.write(
-                            " Layer Displacement: {:10.3f} Refine? {}\n".format(hapData["Layer Disp"][0], hapData["Layer Disp"][1])
+                            " Layer Displacement: {:10.3f} Refine? {}\n".format(
+                                hapData["Layer Disp"][0], hapData["Layer Disp"][1]
+                            )
                         )
                     if (
                         Phases[phase]["General"]["Type"] != "magnetic"
@@ -4325,9 +4360,7 @@ def GetHistogramPhaseData(
                                     # ... sig,gam,fotsq,fctsq, phase,icorr
                     if len(refList) == 0:
                         msg = f"Ouch #8: no reflections in data range.\nRethink PWDR limits for phase {phase!r} and histogram {histogram!r}"
-                        raise G2obj.G2Exception(
-                            msg
-                        )
+                        raise G2obj.G2Exception(msg)
                     Histogram["Reflection Lists"][phase] = {
                         "RefList": np.array(refList),
                         "FF": {},
@@ -4423,7 +4456,9 @@ def GetHistogramPhaseData(
                     pFile.write(f"\n Phase: {phase} in histogram: {histogram}\n")
                     pFile.write(135 * "=" + "\n")
                     pFile.write(
-                        " Scale factor     : {:10.4g} Refine? {}\n".format(hapData["Scale"][0], hapData["Scale"][1])
+                        " Scale factor     : {:10.4g} Refine? {}\n".format(
+                            hapData["Scale"][0], hapData["Scale"][1]
+                        )
                     )
                     if extType != "None":
                         pFile.write(
@@ -4442,7 +4477,9 @@ def GetHistogramPhaseData(
                     if not SGData["SGInv"] and len(Twins) == 1:
                         hapData["Flack"] = hapData.get("Flack", [0.0, False])
                         pFile.write(
-                            " Flack parameter: {:10.3f} Refine? {}\n".format(hapData["Flack"][0], hapData["Flack"][1])
+                            " Flack parameter: {:10.3f} Refine? {}\n".format(
+                                hapData["Flack"][0], hapData["Flack"][1]
+                            )
                         )
                     if len(Twins) > 1:
                         for it, twin in enumerate(Twins):
@@ -4485,6 +4522,7 @@ def SetHistogramPhaseData(
         varyList = []
     if covMatrix is None:
         covMatrix = []
+
     def PrintSizeAndSig(hapData, sizeSig):
         line = "\n Size model:     %9s" % (hapData[0])
         refine = False
@@ -4872,10 +4910,14 @@ def SetHistogramPhaseData(
                         )
                     )
                     pFile.write(
-                        " Durbin-Watson statistic = {:.3f}\n".format(Histogram["Residuals"]["Durbin-Watson"])
+                        " Durbin-Watson statistic = {:.3f}\n".format(
+                            Histogram["Residuals"]["Durbin-Watson"]
+                        )
                     )
                     pFile.write(
-                        " Bragg intensity sum = {:.3g}\n".format(Histogram["Residuals"][pfx + "sumInt"])
+                        " Bragg intensity sum = {:.3g}\n".format(
+                            Histogram["Residuals"][pfx + "sumInt"]
+                        )
                     )
 
                     if parmDict.get(pfx + "LeBail") or "E" in Inst["Type"][0]:
@@ -4941,7 +4983,7 @@ def SetHistogramPhaseData(
                         and not parmDict.get(pfx + "LeBail")
                         and "E" not in Inst["Type"][0]
                     ):
-                        if len(BabSig):
+                        if BabSig:
                             PrintBabinetAndSig(pfx, hapData["Babinet"], BabSig)
 
                 elif "HKLF" in histogram:
@@ -4963,21 +5005,27 @@ def SetHistogramPhaseData(
                                 calcControls["BLtables"], Inst["Lam"][1], pFile
                             )
                     pFile.write(
-                        " HKLF histogram weight factor = {:.3f}\n".format(Histogram["wtFactor"])
+                        " HKLF histogram weight factor = {:.3f}\n".format(
+                            Histogram["wtFactor"]
+                        )
                     )
                     if pfx + "Scale" in ScalExtSig:
                         pFile.write(
-                            " Scale factor : {:10.4g}, sig {:10.4g}\n".format(hapData["Scale"][0], ScalExtSig[pfx + "Scale"])
+                            " Scale factor : {:10.4g}, sig {:10.4g}\n".format(
+                                hapData["Scale"][0], ScalExtSig[pfx + "Scale"]
+                            )
                         )
                     if hapData["Extinction"][0] != "None":
                         PrintExtAndSig(pfx, hapData["Extinction"], ScalExtSig)
-                    if len(BabSig):
+                    if BabSig:
                         PrintBabinetAndSig(pfx, hapData["Babinet"], BabSig)
                     if pfx + "Flack" in ScalExtSig:
                         pFile.write(
-                            " Flack parameter : {:10.3f}, sig {:10.3f}\n".format(hapData["Flack"][0], ScalExtSig[pfx + "Flack"])
+                            " Flack parameter : {:10.3f}, sig {:10.3f}\n".format(
+                                hapData["Flack"][0], ScalExtSig[pfx + "Flack"]
+                            )
                         )
-                    if len(TwinFrSig):
+                    if TwinFrSig:
                         PrintTwinsAndSig(pfx, hapData["Twins"], TwinFrSig)
 
 
@@ -5163,9 +5211,7 @@ def GetHistogramData(Histograms, Print=True, pFile=None):
 
     def PrintInstParms(Inst):
         pFile.write("\n Instrument Parameters:\n")
-        insKeys = [
-            item for item in Inst if item not in ["Type", "Source", "Bank"]
-        ]
+        insKeys = [item for item in Inst if item not in ["Type", "Source", "Bank"]]
         insKeys.sort()
         iBeg = 0
         Ok = True
@@ -5193,7 +5239,9 @@ def GetHistogramData(Histograms, Print=True, pFile=None):
     def PrintSampleParms(Sample):
         pFile.write("\n Sample Parameters:\n")
         pFile.write(
-            " Goniometer omega = {:.2f}, chi = {:.2f}, phi = {:.2f}\n".format(Sample["Omega"], Sample["Chi"], Sample["Phi"])
+            " Goniometer omega = {:.2f}, chi = {:.2f}, phi = {:.2f}\n".format(
+                Sample["Omega"], Sample["Chi"], Sample["Phi"]
+            )
         )
         ptlbls = " name  :"
         ptstr = " value :"

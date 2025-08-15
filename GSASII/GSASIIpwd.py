@@ -1,41 +1,40 @@
-# -*- coding: utf-8 -*-
 '''
 Classes and routines defined in :mod:`GSASIIpwd` follow.
 '''
 
-from __future__ import division, print_function
-import sys
+import copy
+import datetime as dt
 import math
-import time
 import os
 import os.path
+import random as rand
 import subprocess as subp
-import datetime as dt
-import copy
+import sys
+import time
 
 import numpy as np
 import numpy.linalg as nl
-import numpy.ma as ma
-import random as rand
-import numpy.fft as fft
 import scipy.interpolate as si
-import scipy.stats as st
 import scipy.optimize as so
 import scipy.special as sp
-import scipy.signal as signal
+import scipy.stats as st
+from numpy import fft, ma
+from scipy import signal
 
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
 
 filversion = str(GSASIIpath.GetVersionNumber())
-from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
 from . import GSASIIElem as G2elem
-from . import GSASIImath as G2mth
 from . import GSASIIfiles as G2fil
+from . import GSASIIlattice as G2lat
+from . import GSASIImath as G2mth
+from . import GSASIIspc as G2spc
+
 try:
     if GSASIIpath.binaryPath:
-        import  pypowder as pyd
+        import pypowder as pyd
     else:
         from . import pypowder as pyd
 except ImportError:
@@ -188,11 +187,10 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
             MuRSTh2 = np.vstack((MuR,Sth2))
             AbsCr = np.where(MuRSTh2[0]<=3.0,muRunder3(MuRSTh2[0],MuRSTh2[1]),muRover3(MuRSTh2[0],MuRSTh2[1]))
             return AbsCr
+        elif MuR <= 3.0:
+            return muRunder3(MuR,Sth2)
         else:
-            if MuR <= 3.0:
-                return muRunder3(MuR,Sth2)
-            else:
-                return muRover3(MuR,Sth2)
+            return muRover3(MuR,Sth2)
     elif 'Bragg' in Geometry:
         return 1.0
     elif 'Fixed' in Geometry: #assumes sample plane is perpendicular to incident beam
@@ -325,7 +323,7 @@ def CalcPDF(data,inst,limits,xydata):
                 xycontainer += xydata['Container Bkg.'][1][1][Ibeg:Ifin]*data['Container Bkg.']['Mult']
             except ValueError:
                 print('Number of points do not agree between Container and Container Bkg.')
-                return
+                return None
         try:   # fails if background differs in number of points
             IofQ[1][1] += xycontainer[Ibeg:Ifin]
         except ValueError:
@@ -444,8 +442,8 @@ def CalcPDF(data,inst,limits,xydata):
         xydata['gofr'][1][1] = gr
     if data.get('noRing',True):
         Rmin = data['Rmin']
-        xydata['gofr'][1][1] = np.where(R<Rmin,-4.*numbDen,xydata['gofr'][1][1])
-        xydata['GofR'][1][1] = np.where(R<Rmin,-4.*R*np.pi*numbDen,xydata['GofR'][1][1])
+        xydata['gofr'][1][1] = np.where(Rmin > R,-4.*numbDen,xydata['gofr'][1][1])
+        xydata['GofR'][1][1] = np.where(Rmin > R,-4.*R*np.pi*numbDen,xydata['GofR'][1][1])
     return auxPlot
 
 def PDFPeakFit(peaks,data):
@@ -495,7 +493,7 @@ def PDFPeakFit(peaks,data):
                 return Z
 
     def errPDFProfile(values,xdata,ydata,parmdict,varylist):
-        parmdict.update(zip(varylist,values))
+        parmdict.update(zip(varylist,values, strict=False))
         M = CalcPDFpeaks(parmdict,xdata)-ydata
         return M
 
@@ -1126,7 +1124,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
             elif 'E' in dataType:
                 ybi = pkI*getPsVoigt(pkP,pkS*10.**4,pkG*100.,xdata[iBeg:iFin])[0]
             else:
-                raise Exception('dataType of {:} should not happen!'.format(dataType))
+                raise Exception(f'dataType of {dataType} should not happen!')
             yb[iBeg:iFin] += ybi
             sumBk[2] += np.sum(ybi)
             iD += 1
@@ -1215,9 +1213,9 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata,fixback=None):
                 elif i == len(bakPos)-1:
                     dydb[i] = np.where(xdata>bakPos[-2],(bakPos[-1]-xdata)/(bakPos[-1]-bakPos[-2]),0.)
                 else:
-                    dydb[i] = np.where(xdata>bakPos[i],
-                        np.where(xdata<bakPos[i+1],(bakPos[i+1]-xdata)/(bakPos[i+1]-bakPos[i]),0.),
-                        np.where(xdata>bakPos[i-1],(xdata-bakPos[i-1])/(bakPos[i]-bakPos[i-1]),0.))
+                    dydb[i] = np.where(xdata>pos,
+                        np.where(xdata<bakPos[i+1],(bakPos[i+1]-xdata)/(bakPos[i+1]-pos),0.),
+                        np.where(xdata>bakPos[i-1],(xdata-bakPos[i-1])/(pos-bakPos[i-1]),0.))
     if hfx+'difC' in parmDict:
         ff = 1.
     else:
@@ -1531,7 +1529,7 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
     dvec = 1./(maxH*vstar+1./dmin)
     HKL = G2lat.GenHLaue(dvec,SGData,A)
     SSdH = [vec*h for h in range(-maxH,maxH+1)]
-    SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
+    SSdH = dict(zip(range(-maxH,maxH+1),SSdH, strict=False))
     ifMag = False
     if 'MagSpGrp' in SGData:
         ifMag = True
@@ -1623,7 +1621,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 iFin = np.searchsorted(xdata,pos+fmin/2)
                 if not iBeg+iFin:       # skip peak below low limit
                     continue
-                elif not iBeg-iFin:     # got peak above high limit (peaks sorted, so we can stop)
+                if not iBeg-iFin:     # got peak above high limit (peaks sorted, so we can stop)
                     break
                 LaueFringePeakCalc(xdata,yc,lam,pos,intens,sig,gam,shol,ncells,clat,dampM,dampP,fmin,fitPowerM,fitPowerP,plot=False)
                 if Ka2:
@@ -1684,7 +1682,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
-                elif not iBeg-iFin:     #peak above high limit
+                if not iBeg-iFin:     #peak above high limit
                     return yb+yc
                 elif iFin-iBeg < 2:
                     iPeak += 1
@@ -1736,7 +1734,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
-                elif not iBeg-iFin:     #peak above high limit
+                if not iBeg-iFin:     #peak above high limit
                     return yb+yc
                 yc[iBeg:iFin] += intens*getPsVoigt(pos,sig*10.**4,gam*100.,xdata[iBeg:iFin])[0]
                 iPeak += 1
@@ -1796,7 +1794,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
-                elif not iBeg-iFin:     #peak above high limit
+                if not iBeg-iFin:     #peak above high limit
                     return yb+yc
                 yc[iBeg:iFin] += intens*getEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])[0]
                 iPeak += 1
@@ -1896,7 +1894,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
-                elif not iBeg-iFin:     #peak above high limit
+                if not iBeg-iFin:     #peak above high limit
                     break
                 if 'C' in dataType:
                     dMdpk = np.zeros(shape=(6,len(xdata)))
@@ -2006,7 +2004,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
-                elif not iBeg-iFin:     #peak above high limit
+                if not iBeg-iFin:     #peak above high limit
                     break
                 dMdpk = np.zeros(shape=(4,len(xdata)))
                 dMdipk = getdPsVoigt(pos,sig*10.**4,gam*100.,xdata[iBeg:iFin])
@@ -2096,7 +2094,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 if not iBeg+iFin:       #peak below low limit
                     iPeak += 1
                     continue
-                elif not iBeg-iFin:     #peak above high limit
+                if not iBeg-iFin:     #peak above high limit
                     break
                 dMdpk = np.zeros(shape=(7,len(xdata)))
                 dMdipk = getdEpsVoigt(pos,alp,bet,sig,gam,xdata[iBeg:iFin])
@@ -2148,7 +2146,7 @@ def Dict2Values(parmdict, varylist):
 def Values2Dict(parmdict, varylist, values):
     ''' Use after call to leastsq to update the parameter dictionary with
     values corresponding to keys in varylist'''
-    parmdict.update(zip(varylist,values))
+    parmdict.update(zip(varylist,values, strict=False))
 
 def SetBackgroundParms(Background):
     'Loads background parameters into dicts/lists to create varylist & parmdict'
@@ -2158,7 +2156,7 @@ def SetBackgroundParms(Background):
     backVals = Background[0][3:]
     backNames = ['Back;'+str(i) for i in range(len(backVals))]
     Debye = Background[1]           #also has background peaks stuff
-    backDict = dict(zip(backNames,backVals))
+    backDict = dict(zip(backNames,backVals, strict=False))
     backVary = []
     if bakFlag:
         backVary = backNames
@@ -2168,8 +2166,8 @@ def SetBackgroundParms(Background):
     debyeList = []
     for i in range(Debye['nDebye']):
         debyeNames = ['DebyeA;'+str(i),'DebyeR;'+str(i),'DebyeU;'+str(i)]
-        debyeDict.update(dict(zip(debyeNames,Debye['debyeTerms'][i][::2])))
-        debyeList += zip(debyeNames,Debye['debyeTerms'][i][1::2])
+        debyeDict.update(dict(zip(debyeNames,Debye['debyeTerms'][i][::2], strict=False)))
+        debyeList += zip(debyeNames,Debye['debyeTerms'][i][1::2], strict=False)
     debyeVary = []
     for item in debyeList:
         if item[1]:
@@ -2182,8 +2180,8 @@ def SetBackgroundParms(Background):
     peaksList = []
     for i in range(Debye['nPeaks']):
         peaksNames = ['BkPkpos;'+str(i),'BkPkint;'+str(i),'BkPksig;'+str(i),'BkPkgam;'+str(i)]
-        peaksDict.update(dict(zip(peaksNames,Debye['peaksList'][i][::2])))
-        peaksList += zip(peaksNames,Debye['peaksList'][i][1::2])
+        peaksDict.update(dict(zip(peaksNames,Debye['peaksList'][i][::2], strict=False)))
+        peaksList += zip(peaksNames,Debye['peaksList'][i][1::2], strict=False)
     peaksVary = []
     for item in peaksList:
         if item[1]:
@@ -2229,7 +2227,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
             if parm in ['Lam','difC','difA','difB','Zero','2-theta','XE','YE','ZE']:
                 if Inst[parm][2]:
                     insVary.append(parm)
-        if 'C' in dataType or 'B' in dataType and 'Debye' in Sample['Type']:
+        if 'C' in dataType or ('B' in dataType and 'Debye' in Sample['Type']):
             insNames.append('radius')
             insVals.append(Sample['Gonio. radius'])
             insNames.append('DisplaceX')
@@ -2240,7 +2238,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
             insVals.append(Sample['DisplaceY'][0])
             if Sample['DisplaceY'][1]:
                 insVary.append('DisplaceY')
-        instDict = dict(zip(insNames,insVals))
+        instDict = dict(zip(insNames,insVals, strict=False))
         return dataType,instDict,insVary
 
     def GetInstParms(parmDict,varyList):
@@ -2283,7 +2281,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
         print (sigstr)
 
     def errPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+        parmDict.update(zip(varyList,values, strict=False))
         calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
         if 'C' in dataType or 'B' in dataType:
             const = 18.e-2/(np.pi*parmDict['radius'])
@@ -2298,11 +2296,11 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
     peakPos = []
     peakDsp = []
     peakWt = []
-    for peak,sig in zip(IndexPeaks[0],IndexPeaks[1]):
+    for peak,sig in zip(IndexPeaks[0],IndexPeaks[1], strict=False):
         if peak[2] and peak[3] and sig > 0.:
             peakPos.append(peak[0])
             peakDsp.append(peak[-1])    #d-calc
-            peakWt.append(1./(sig*peak[-1]))   #
+            peakWt.append(1./(sig*peak[-1]))
     peakPos = np.array(peakPos)
     peakDsp = np.array(peakDsp)
     peakWt = np.array(peakWt)
@@ -2335,7 +2333,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
             G2fil.G2Print ('**** Refinement failed - singular matrix ****')
             return False
 
-    sigDict = dict(zip(varyList,sig))
+    sigDict = dict(zip(varyList,sig, strict=False))
     GetInstParms(parmDict,varyList)
     InstPrint(sigDict)
     return True
@@ -2508,7 +2506,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha','A','B','C',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','alpha-0','alpha-1'] and Inst[parm][2]:
                     insVary.append(parm)
-        instDict = dict(zip(insNames,insVals))
+        instDict = dict(zip(insNames,insVals, strict=False))
         if 'SH/L' in instDict:
             instDict['SH/L'] = max(instDict['SH/L'],0.002)
         return dataType,instDict,insVary
@@ -2683,7 +2681,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 head += name.center(10)+'esd'.center(10)
         head += 'bins'.center(12)
         print (head)
-        ptfmt = dict(zip(names,fmt))
+        ptfmt = dict(zip(names,fmt, strict=False))
         for i,peak in enumerate(Peaks):
             if type(peak) is dict:
                 continue
@@ -2697,11 +2695,10 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                     continue
                 if parName in varyList:
                     ptstr += ptfmt[name] % (sigDict[parName])
+                elif name in ['alp','bet']:
+                    ptstr += 8*' '
                 else:
-                    if name in ['alp','bet']:
-                        ptstr += 8*' '
-                    else:
-                        ptstr += 10*' '
+                    ptstr += 10*' '
             ptstr += '%8.1f'%(ptsperFW[i])
             print ('%s'%(('Peak'+str(i+1)).center(8)),ptstr)
 
@@ -2710,14 +2707,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         values (see :func:`errPeakProfile`) with respect to each parameter
         in backVary,insVary,peakVary. Used for peak fitting.
         '''
-        parmdict.update(zip(varylist,values))
+        parmdict.update(zip(varylist,values, strict=False))
         return np.sqrt(weights)*getPeakProfileDerv(dataType,parmdict,xdata,fixback,varylist,bakType)
 
     def errPeakProfile(values,xdata,ydata,fixback,weights,dataType,parmdict,varylist,bakType,dlg):
         '''Computes a vector with the weighted calc-obs values differences
         for peak fitting
         '''
-        parmdict.update(zip(varylist,values))
+        parmdict.update(zip(varylist,values, strict=False))
         M = np.sqrt(weights)*(getPeakProfile(dataType,parmdict,xdata,fixback,varylist,bakType)-ydata)
         Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
         if dlg:
@@ -2784,7 +2781,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     if sum(w[xBeg:xFin]) == 0:
         print('Unusable data: data weights are zero')
         if dlg: dlg.Destroy()
-        return
+        return None
     while not noFit:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
@@ -2801,7 +2798,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             else:
                 print('peak fit failure')
             if dlg: dlg.Destroy()
-            return
+            return None
         ncyc = int(result[2]['nfev']/2)
         runtime = time.time()-begin
         chisq = np.sum(result[2]['fvec']**2)
@@ -2836,8 +2833,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     if noFit:
         GetPeaksParms(Inst,parmDict,Peaks,varyList)
-        return
-    sigDict = dict(zip(varyList,sig))
+        return None
+    sigDict = dict(zip(varyList,sig, strict=False))
     GetBackgroundParms(parmDict,Background)
     if bakVary: BackgroundPrint(Background,sigDict)
     GetPkInstParms(parmDict,Inst,varyList) # sets sigma & gamma when computed
@@ -2979,7 +2976,7 @@ def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
 def MakeBack(PWDdata,Name):
     Back = PWDdata['Background'][0]
     inst = PWDdata['Instrument Parameters'][0]
-    if 'chebyschev-1' != Back[0]:
+    if Back[0] != 'chebyschev-1':
         return None
     Nback = Back[2]
     BackVals = Back[3:]
@@ -3000,9 +2997,8 @@ def findDup(Atoms):
     for iat1,at1 in enumerate(Atoms):
         if any([at1[0] in dup for dup in Dup]):
             continue
-        else:
-            Dup.append([at1[0],])
-            Fracs.append([at1[6],])
+        Dup.append([at1[0],])
+        Fracs.append([at1[6],])
         for iat2,at2 in enumerate(Atoms[(iat1+1):]):
             if np.sum((np.array(at1[3:6])-np.array(at2[3:6]))**2) < 0.00001:
                 Dup[-1] += [at2[0],]
@@ -3284,7 +3280,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     for File in Files:
         if Files[File][0] and Files[File][0] != 'Select':
             if 'Xray' in File and 'F(Q)' in File:
-                fqdata = open(Files[File][0],'r')
+                fqdata = open(Files[File][0])
                 lines = int(fqdata.readline()[:-1])
                 fqdata.close()
             fl.write('\n')
@@ -3518,8 +3514,9 @@ def fullrmcDownload():
     Does some error checking.
     '''
     import os
-    import requests
     import platform
+
+    import requests
     if platform.architecture()[0] != '64bit':
         return "fullrmc is only available for 64 bit machines. This is 32 bit"
     setXbit = True
@@ -3555,8 +3552,8 @@ def findPDFfit():
             GSASIIpath.GetConfigValue('pdffit2_exec')):
         return GSASIIpath.GetConfigValue('pdffit2_exec')
     try:
-        from diffpy.pdffit2 import PdfFit
         import diffpy
+        from diffpy.pdffit2 import PdfFit
         PdfFit
         diffpy
         return sys.executable
@@ -3658,12 +3655,12 @@ def MakePDFfitRunFile(Phase,RMCPdict):
 
     General = Phase['General']
     Cell = General['Cell'][1:7]
-    rundata = '''#!/usr/bin/env python
+    rundata = f'''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys,os
-datadir = r'{:}'
+datadir = r'{os.path.abspath(os.getcwd())}'
 pathWrap = lambda f: os.path.join(datadir,f)
-'''.format(os.path.abspath(os.getcwd()))
+'''
     PDFfit_exe = findPDFfit()  # returns python loc
     if not PDFfit_exe:
         print('PDFfit2 is not found. Creating .sh file without paths.')
@@ -3701,7 +3698,7 @@ pathWrap = lambda f: os.path.join(datadir,f)
     if 'sequential' in RMCPdict['refinement']:
         fName = 'Sequential_PDFfit.stru'
     Np = 9
-    rundata += "pf.read_struct(pathWrap(r'{:}'))\n".format(fName)
+    rundata += f"pf.read_struct(pathWrap(r'{fName}'))\n"
     for item in ['delta1','delta2','sratio']:
         if RMCPdict[item][1]:
             Np += 1
@@ -3825,7 +3822,7 @@ def UpdatePDFfit(Phase,RMCPdict):
     if RMCPdict['refinement'] == 'normal':
         fName = General['Name']+'-PDFfit.rstr'
         try:
-            rstr = open(fName.replace(' ','_'),'r')
+            rstr = open(fName.replace(' ','_'))
         except FileNotFoundError:
             return [fName,'Not found - PDFfit failed']
         lines = rstr.readlines()
@@ -3862,7 +3859,7 @@ def UpdatePDFfit(Phase,RMCPdict):
     else:
         fName = 'Sequential_PDFfit.res'
     try:
-        res = open(fName.replace(' ','_'),'r')
+        res = open(fName.replace(' ','_'))
     except FileNotFoundError:
         return [fName,'Not found - PDFfit failed']
     lines = res.readlines()
@@ -3902,7 +3899,7 @@ def UpdatePDFfit(Phase,RMCPdict):
     RMCPdict['Parms'] = dict([[item[0][1:-1],float(item[1])] for item in results])      #{'n':val,...}
     if RMCPdict['refinement'] == 'normal':
         fName = General['Name']+'-PDFfit.py'
-        py = open(fName.replace(' ','_'),'r')
+        py = open(fName.replace(' ','_'))
         pylines = py.readlines()
         py.close()
         py = open(fName.replace(' ','_'),'w')
@@ -4261,10 +4258,9 @@ if not ENGINE.is_engine(engineFileName) or FRESH_START:
             d1,d2 = BondList[pair]
             if d1 == 0: continue
             if d2 == 0:
-                minDists += '("element","{}","{}",{}),'.format(e1.strip(),e2.strip(),d1)
+                minDists += f'("element","{e1.strip()}","{e2.strip()}",{d1}),'
             else:
-                rundata += '            ("element","{}","{}",{},{}),\n'.format(
-                                        e1.strip(),e2.strip(),d1,d2)
+                rundata += f'            ("element","{e1.strip()}","{e2.strip()}",{d1},{d2}),\n'
         rundata += '             ])\n'
     rundata += '    D_CONSTRAINT = DistanceConstraint(defaultLowerDistance={})\n'.format(RMCPdict['min Contact'])
     if minDists:
@@ -4449,7 +4445,7 @@ def GetRMCAngles(general,RMCPdict,Atoms,angleList):
         DBx = np.sqrt(np.sum(DBxV**2,axis=2))
         iDAx = np.argmin(DAx,axis=0)
         iDBx = np.argmin(DBx,axis=0)
-        for i,[iA,iB] in enumerate(zip(iDAx,iDBx)):
+        for i,[iA,iB] in enumerate(zip(iDAx,iDBx, strict=False)):
             DAv = DAxV[iA,i]/DAx[iA,i]
             DBv = DBxV[iB,i]/DBx[iB,i]
             bondAngles.append(npacosd(np.sum(DAv*DBv)))
@@ -4491,7 +4487,7 @@ def ISO2PDFfit(Phase):
     Norms = ISOdict['NormList']
     ModeMatrix = ISOdict['Mode2VarMatrix']
     RMCPdict['AtomVar'] = {'@%d'%(itm+21):val for itm,val in enumerate(ISOdict['modeDispl'])}
-    for iatm,[atom,atcode] in enumerate(zip(Atoms,atCodes)):
+    for iatm,[atom,atcode] in enumerate(zip(Atoms,atCodes, strict=False)):
         pid,opid = [int(item) for item in atcode.split(':')]
         atmConstr = [atom[ct-1],atom[ct],'','','','','',atcode]
         for ip,pname in enumerate(['%s_d%s'%(atom[ct-1],x) for x in ['x','y','z']]):
@@ -4533,7 +4529,7 @@ def GetAtmDispList(ISOdata):
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     G2fil.G2Print ('fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0]))
 
-    class RandomDisplacementBounds(object):
+    class RandomDisplacementBounds:
         """random displacement with bounds"""
         def __init__(self, xmin, xmax, stepsize=0.5):
             self.xmin = xmin
@@ -4616,12 +4612,12 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             G2fil.G2Print (line2)
 
     def calcREFD(values,Q,Io,wt,Qsig,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+        parmDict.update(zip(varyList,values, strict=False))
         M = np.sqrt(wt)*(getREFD(Q,Qsig,parmDict)-Io)
         return M
 
     def sumREFD(values,Q,Io,wt,Qsig,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+        parmDict.update(zip(varyList,values, strict=False))
         M = np.sqrt(wt)*(getREFD(Q,Qsig,parmDict)-Io)
         return np.sum(M**2)
 
@@ -4638,10 +4634,10 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             cid = str(lay)+';'
             depth[ilay] = parmDict[cid+'Thick']
             sigma[ilay] = parmDict[cid+'Rough']
-            if parmDict[cid+'Name'] == u'unit scatter':
+            if parmDict[cid+'Name'] == 'unit scatter':
                 rho[ilay] = parmDict[cid+'DenMul']
                 irho[ilay] = parmDict[cid+'iDenMul']
-            elif 'vacuum' != parmDict[cid+'Name']:
+            elif parmDict[cid+'Name'] != 'vacuum':
                 rho[ilay] = parmDict[cid+'rho']*parmDict[cid+'DenMul']
                 irho[ilay] = parmDict[cid+'irho']*parmDict[cid+'DenMul']
             if cid+'Mag SLD' in parmDict:
@@ -4683,7 +4679,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         if data['Minimizer'] == 'LMLS':
             result = so.leastsq(calcREFD,values,full_output=True,epsfcn=1.e-8,ftol=1.e-6,
                 args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList))
-            parmDict.update(zip(varyList,result[0]))
+            parmDict.update(zip(varyList,result[0], strict=False))
             chisq = np.sum(result[2]['fvec']**2)
             ncalc = result[2]['nfev']
             covM = result[1]
@@ -4708,7 +4704,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                 boltzmann=10.0, feps=1e-6,lower=xyrng[0], upper=xyrng[1], slope=0.9,ranStart=True,
                 ranRange=0.20,autoRan=False,dlg=None)
             newVals = result[0]
-            parmDict.update(zip(varyList,newVals))
+            parmDict.update(zip(varyList,newVals, strict=False))
             chisq = result[1]
             ncalc = result[3]
             covM = []
@@ -4716,7 +4712,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         elif data['Minimizer'] == 'L-BFGS-B':
             result = so.minimize(sumREFD,values,method='L-BFGS-B',bounds=bounds,   #ftol=Ftol,
                 args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList))
-            parmDict.update(zip(varyList,result['x']))
+            parmDict.update(zip(varyList,result['x'], strict=False))
             chisq = result.fun
             ncalc = result.nfev
             newVals = result.x
@@ -4756,7 +4752,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         else:
             sig = np.zeros(len(varyList))
             covMatrix = []
-        sigDict = dict(zip(varyList,sig))
+        sigDict = dict(zip(varyList,sig, strict=False))
         G2fil.G2Print (' Results of reflectometry data modelling fit:')
         G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,len(varyList)))
         G2fil.G2Print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
@@ -4832,7 +4828,7 @@ def REFDModelFxn(Profile,Inst,Limits,Substances,data):
             depth[ilay] = layer['Thick'][0]
         if 'Rough' in layer:    #skips first layer
             sigma[ilay] = layer['Rough'][0]
-        if 'unit scatter' == name:
+        if name == 'unit scatter':
             rho[ilay] = layer['DenMul'][0]
             irho[ilay] = layer['iDenMul'][0]
         else:
@@ -4889,7 +4885,7 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
         B22 = 1
         B21 = 0
         B12 = 0
-        for i in range(0, len(depth)-1):
+        for i in range(len(depth)-1):
             k_next = np.sqrt(kz_sq - 4e-6*np.pi*(rho[:,i+1] + 1j*irho[:,i+1]))
             F = (k - k_next) / (k + k_next)
             F *= np.exp(-2*k*k_next*sigma[i]**2)
@@ -5106,20 +5102,19 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     df.write('%s\n'%(Layers['Stacking'][0]))
     if 'recursive' in Layers['Stacking'][0]:
         df.write('%s\n'%Layers['Stacking'][1])
+    elif 'list' in Layers['Stacking'][1]:
+        Slen = len(Layers['Stacking'][2])
+        iB = 0
+        iF = 0
+        while True:
+            iF += 68
+            if iF >= Slen:
+                break
+            iF = min(iF,Slen)
+            df.write('%s\n'%(Layers['Stacking'][2][iB:iF]))
+            iB = iF
     else:
-        if 'list' in Layers['Stacking'][1]:
-            Slen = len(Layers['Stacking'][2])
-            iB = 0
-            iF = 0
-            while True:
-                iF += 68
-                if iF >= Slen:
-                    break
-                iF = min(iF,Slen)
-                df.write('%s\n'%(Layers['Stacking'][2][iB:iF]))
-                iB = iF
-        else:
-            df.write('%s\n'%Layers['Stacking'][1])
+        df.write('%s\n'%Layers['Stacking'][1])
     df.write('TRANSITIONS\n')
     for iY in range(len(Layers['Layers'])):
         sumPx = 0.
@@ -5251,9 +5246,8 @@ def SetCellAtoms(Layers):
         if layer['SameAs']:
             LayerNum.append(layerNames.index(layer['SameAs'])+1)
             continue
-        else:
-            LayerNum.append(il+1)
-            Nuniq += 1
+        LayerNum.append(il+1)
+        Nuniq += 1
         if '-1' in layer['Symm']:
             LayerSymm.append(1)
         else:
@@ -5522,13 +5516,12 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
             if nref2 == len(refs2):
                 refs2.append([])
             refs2[nref2].append(refs[iref])
+        elif start:
+            refs2[nref2].append(refs[iref])
+            start = False
+            nref2 += 1
         else:
-            if start:
-                refs2[nref2].append(refs[iref])
-                start = False
-                nref2 += 1
-            else:
-                refs1.append(refs[iref])
+            refs1.append(refs[iref])
         iref += 1
     if start:
         refs2[nref2].append(refs[iref])
@@ -5599,7 +5592,7 @@ def MEMupdateReflData(prfName,data,reflData):
             reflDict[hash('%5d%5d%5d'%(ref[0],ref[1],ref[2]))] = iref
     fbaName = os.path.splitext(prfName)[0]+'.fba'
     if os.path.isfile(fbaName):
-        fba = open(fbaName,'r')
+        fba = open(fbaName)
     else:
         return False
     fba.readline()
@@ -5631,6 +5624,7 @@ def MEMupdateReflData(prfName,data,reflData):
 
 #===Laue Fringe code ===================================================================
 from . import NIST_profile as FP
+
 
 class profileObj(FP.FP_profile):
     def conv_Lauefringe(self):

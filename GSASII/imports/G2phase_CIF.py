@@ -1,25 +1,26 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 # Routines to import Phase information from CIF files
-from __future__ import division, print_function
-import sys
-import random as ran
-import numpy as np
-import re
 import copy
 import os.path
-from .. import GSASIIpath
-from .. import GSASIIobj as G2obj
-from .. import GSASIIspc as G2spc
+import random as ran
+import re
+import sys
+
+import numpy as np
+
 from .. import GSASIIElem as G2elem
-from .. import GSASIIlattice as G2lat
 from .. import GSASIIfiles as G2fil
+from .. import GSASIIlattice as G2lat
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+from .. import GSASIIspc as G2spc
+
 try:
-    import CifFile as cif # PyCifRW from James Hester as a package
+    import CifFile as cif  # PyCifRW from James Hester as a package
 except ImportError:
     try:
-        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        from .. import CifFile as cif  # PyCifRW, as distributed w/G2 (old)
     except ImportError:
         cif = None
 debug = GSASIIpath.GetConfigValue('debug')
@@ -40,7 +41,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             )
 
     def ContentsValidator(self, filename):
-        fp = open(filename,'r')
+        fp = open(filename)
         ok = self.CIFValidator(fp)
         #print('validator: ',ok)
         fp.close()
@@ -106,9 +107,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     name = cf[blknm].get(i,'phase name').strip()
                     if name is None or name == '?' or name == '.':
                         continue
-                    else:
-                        choice[-1] += name.strip() + ', '
-                        break
+                    choice[-1] += name.strip() + ', '
+                    break
                 na = len(cf[blknm].get("_atom_site_fract_x"))
                 if na == 1:
                     choice[-1] += '1 atom'
@@ -264,8 +264,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.SymOps['xyz'] = ops
             elif blk.get("_space_group_symop_operation_xyz"):
                 self.SymOps['xyz'] = blk.get("_space_group_symop_operation_xyz")
-            else:
-                if 'xyz' in self.SymOps: del self.SymOps['xyz']
+            elif 'xyz' in self.SymOps: del self.SymOps['xyz']
             if Super:
                 E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 if E:
@@ -475,7 +474,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             ranIdlookup = {}
             for aitem in atomloop:
                 atomlist = ['','','',0.,0.,0.,1.0,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
-                for val,key in zip(aitem,atomkeys):
+                for val,key in zip(aitem,atomkeys, strict=False):
                     col = G2AtomDict.get(key,-1)
                     if col >= 3:
                         atomlist[col] = cif.get_number_with_esd(val)[0]
@@ -503,7 +502,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         self.warnings += ' Atom type '+typ+' not recognized; Xe assumed\n'
                 if atomlist[0] in anisolabels: # does this atom have aniso values in separate loop?
                     atomlist[9] = 'A'
-                    for val,key in zip(anisoloop.GetKeyedPacket('_atom_site_aniso_label',atomlist[0]),anisokeys):
+                    for val,key in zip(anisoloop.GetKeyedPacket('_atom_site_aniso_label',atomlist[0]),anisokeys, strict=False):
                         col = G2AtomDict.get(key)
                         if col:
                             atomlist[col] = cif.get_number_with_esd(val)[0]
@@ -522,7 +521,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
 
                 if magnetic and atomlist[0] in magatomlabels:
                     matomlist = atomlist[:7]+[0.,0.,0.,]+atomlist[7:]
-                    for mval,mkey in zip(magatomloop.GetKeyedPacket(magmoment,atomlist[0]),magatomkeys):
+                    for mval,mkey in zip(magatomloop.GetKeyedPacket(magmoment,atomlist[0]),magatomkeys, strict=False):
                         mcol = G2MagDict.get(mkey,-1)
                         if mcol > 0:
                             matomlist[mcol] = cif.get_number_with_esd(mval)[0]
@@ -615,8 +614,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 name = name.strip()
                 if name == '?' or name == '.':
                     continue
-                else:
-                    break
+                break
             else: # no name found, use block name for lack of a better choice; for isodistort use filename
                 name = blknm
             if 'isodistort' in name:
@@ -743,14 +741,14 @@ shift later as an alternative to the above.'''
             for id,lbl,val in zip(
                 blk.get('_iso_displacivemode_ID'),
                 blk.get('_iso_displacivemode_label'),
-                blk.get('_iso_displacivemode_value')):
+                blk.get('_iso_displacivemode_value'), strict=False):
                 idlist.append(int(id))
                 modelist.append(lbl)
                 modedispl.append(float(val))
                 ISODISTORT_shortLbl(lbl,shortmodelist) # shorten & make unique
             # just in case the items are not ordered increasing by id, sort them here
-            modelist = [i for i,j in sorted(zip(modelist,idlist),key=lambda k:k[1])]
-            shortmodelist = [i for i,j in sorted(zip(shortmodelist,idlist),key=lambda k:k[1])]
+            modelist = [i for i,j in sorted(zip(modelist,idlist, strict=False),key=lambda k:k[1])]
+            shortmodelist = [i for i,j in sorted(zip(shortmodelist,idlist, strict=False),key=lambda k:k[1])]
             # read in the coordinate offset variables names and map them to G2 names/objects
             coordVarLbl = []
             G2varObj = []
@@ -760,7 +758,7 @@ shift later as an alternative to the above.'''
             ParentCoordinates = {}
             for lbl,exp in zip(
                 blk.get('_iso_coordinate_label'),
-                blk.get('_iso_coordinate_formula') ):
+                blk.get('_iso_coordinate_formula'), strict=False ):
                 if '_' in lbl:
                     albl = lbl[:lbl.rfind('_')]
                     vlbl = lbl[lbl.rfind('_')+1:]
@@ -787,8 +785,7 @@ shift later as an alternative to the above.'''
                     self.warnings += ' ERROR: _iso_coordinate_formula coordinate not interpreted: '+lbl
                     error = True
                     continue
-                else:
-                    ParentCoordinates[albl][i] = val
+                ParentCoordinates[albl][i] = val
             if error:
                 print (self.warnings)
                 raise Exception("Error decoding variable labels")
@@ -798,7 +795,7 @@ shift later as an alternative to the above.'''
             for id,lbl,val in zip(
                 blk.get('_iso_deltacoordinate_ID'),
                 blk.get('_iso_deltacoordinate_label'),
-                blk.get('_iso_deltacoordinate_value') ):
+                blk.get('_iso_deltacoordinate_value'), strict=False ):
                 idlist.append(int(id))
                 coordVarLbl.append(lbl)
                 if '_' in lbl:
@@ -826,8 +823,8 @@ shift later as an alternative to the above.'''
             if error:
                 raise Exception("Error decoding variable labels")
             # just in case the items are not ordered increasing by id, sort them here
-            coordVarLbl = [i for i,j in sorted(zip(coordVarLbl,idlist),key=lambda k:k[1])]
-            G2varObj = [i for i,j in sorted(zip(G2varObj,idlist),key=lambda k:k[1])]
+            coordVarLbl = [i for i,j in sorted(zip(coordVarLbl,idlist, strict=False),key=lambda k:k[1])]
+            G2varObj = [i for i,j in sorted(zip(G2varObj,idlist, strict=False),key=lambda k:k[1])]
 
             if len(G2varObj) != len(modelist):
                 print ("non-square input")
@@ -838,25 +835,25 @@ shift later as an alternative to the above.'''
             idlist = []
             for id,exp in zip(
                 blk.get('_iso_displacivemodenorm_ID'),
-                blk.get('_iso_displacivemodenorm_value'),
+                blk.get('_iso_displacivemodenorm_value'), strict=False,
                 ):
                 idlist.append(int(id))
                 normlist.append(float(exp))
-            normlist = [i for i,j in sorted(zip(normlist,idlist),key=lambda k:k[1])]
+            normlist = [i for i,j in sorted(zip(normlist,idlist, strict=False),key=lambda k:k[1])]
             # get mapping of modes to atomic coordinate displacements
             displacivemodematrix = np.zeros((len(G2varObj),len(G2varObj)))
             for row,col,val in zip(
                 blk.get('_iso_displacivemodematrix_row'),
                 blk.get('_iso_displacivemodematrix_col'),
-                blk.get('_iso_displacivemodematrix_value'),):
+                blk.get('_iso_displacivemodematrix_value'), strict=False,):
                 displacivemodematrix[int(row)-1,int(col)-1] = float(val)
             # Invert to get mapping of atom displacements to modes
             Var2ModeMatrix = np.linalg.inv(displacivemodematrix)
             # create the constraints
             modeVarList = []
-            for i,(row,norm) in enumerate(zip(Var2ModeMatrix,normlist)):
+            for i,(row,norm) in enumerate(zip(Var2ModeMatrix,normlist, strict=False)):
                 constraint = []
-                for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+                for j,(lbl,k) in enumerate(zip(coordVarLbl,row, strict=False)):
                     if k == 0: continue
                     constraint.append([k/norm,G2varObj[j]])
                 modeVar = G2obj.G2VarObj(
@@ -884,7 +881,7 @@ shift later as an alternative to the above.'''
                 'Mode2VarMatrix' : displacivemodematrix,
                 })
             # make explaination dictionary
-            for mode,shortmode in zip(modelist,shortmodelist):
+            for mode,shortmode in zip(modelist,shortmodelist, strict=False):
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmode,None))
                 explaination[modeVar] = ("Full ISODISTORT name for " +
@@ -898,13 +895,13 @@ shift later as an alternative to the above.'''
             idlist = []
             for id,lbl in zip(
                 blk.get('_iso_occupancymode_ID'),
-                blk.get('_iso_occupancymode_label')):
+                blk.get('_iso_occupancymode_label'), strict=False):
                 idlist.append(int(id))
                 modelist.append(lbl)
                 ISODISTORT_shortLbl(lbl,shortmodelist) # shorten & make unique
             # just in case the items are not ordered increasing by id, sort them here
-            modelist = [i for i,j in sorted(zip(modelist,idlist),key=lambda k:k[1])]
-            shortmodelist = [i for i,j in sorted(zip(shortmodelist,idlist),key=lambda k:k[1])]
+            modelist = [i for i,j in sorted(zip(modelist,idlist, strict=False),key=lambda k:k[1])]
+            shortmodelist = [i for i,j in sorted(zip(shortmodelist,idlist, strict=False),key=lambda k:k[1])]
             # read in the coordinate offset variables names and map them to G2 names/objects
             occVarLbl = []
             G2varObj = []
@@ -912,7 +909,7 @@ shift later as an alternative to the above.'''
             error = False
             for id,lbl in zip(
                 blk.get('_iso_deltaoccupancy_ID'),
-                blk.get('_iso_deltaoccupancy_label') ):
+                blk.get('_iso_deltaoccupancy_label'), strict=False ):
                 idlist.append(int(id))
                 occVarLbl.append(lbl)
                 if '_' in lbl:
@@ -939,8 +936,8 @@ shift later as an alternative to the above.'''
             if error:
                 raise Exception("Error decoding variable labels")
             # just in case the items are not ordered increasing by id, sort them here
-            occVarLbl = [i for i,j in sorted(zip(occVarLbl,idlist),key=lambda k:k[1])]
-            G2varObj = [i for i,j in sorted(zip(G2varObj,idlist),key=lambda k:k[1])]
+            occVarLbl = [i for i,j in sorted(zip(occVarLbl,idlist, strict=False),key=lambda k:k[1])]
+            G2varObj = [i for i,j in sorted(zip(G2varObj,idlist, strict=False),key=lambda k:k[1])]
 
             if len(G2varObj) != len(modelist):
                 print ("non-square input")
@@ -950,7 +947,7 @@ shift later as an alternative to the above.'''
             ParentOcc = {}
             for lbl,exp in zip(
                 blk.get('_iso_occupancy_label'),
-                blk.get('_iso_occupancy_formula') ):
+                blk.get('_iso_occupancy_formula'), strict=False ):
                 if '_' in lbl:
                     albl = lbl[:lbl.rfind('_')]
                     vlbl = lbl[lbl.rfind('_')+1:]
@@ -977,7 +974,7 @@ shift later as an alternative to the above.'''
             for row,col,val in zip(
                 blk.get('_iso_occupancymodematrix_row'),
                 blk.get('_iso_occupancymodematrix_col'),
-                blk.get('_iso_occupancymodematrix_value'),):
+                blk.get('_iso_occupancymodematrix_value'), strict=False,):
                 occupancymodematrix[int(row)-1,int(col)-1] = float(val)
             # Invert to get mapping of atom displacements to modes
             occupancymodeInvmatrix = np.linalg.inv(occupancymodematrix)
@@ -985,7 +982,7 @@ shift later as an alternative to the above.'''
             modeVarList = []
             for i,row in enumerate(occupancymodeInvmatrix):
                 constraint = []
-                for j,(lbl,k) in enumerate(zip(occVarLbl,row)):
+                for j,(lbl,k) in enumerate(zip(occVarLbl,row, strict=False)):
                     if k == 0: continue
                     constraint.append([k,G2varObj[j]])
                 modeVar = G2obj.G2VarObj(
@@ -998,11 +995,11 @@ shift later as an alternative to the above.'''
             idlist = []
             for id,exp in zip(
                 blk.get('_iso_occupancymodenorm_ID'),
-                blk.get('_iso_occupancymodenorm_value'),
+                blk.get('_iso_occupancymodenorm_value'), strict=False,
                 ):
                 idlist.append(int(id))
                 normlist.append(float(exp))
-            normlist = [i for i,j in sorted(zip(normlist,idlist),key=lambda k:k[1])]
+            normlist = [i for i,j in sorted(zip(normlist,idlist, strict=False),key=lambda k:k[1])]
             #----------------------------------------------------------------------
             # save the ISODISTORT info for "mode analysis"
             if 'ISODISTORT' not in self.Phase: self.Phase['ISODISTORT'] = {}
@@ -1020,7 +1017,7 @@ shift later as an alternative to the above.'''
                 'Occ2VarMatrix' : occupancymodematrix,
                 })
             # make explaination dictionary
-            for mode,shortmode in zip(modelist,shortmodelist):
+            for mode,shortmode in zip(modelist,shortmodelist, strict=False):
                 modeVar = G2obj.G2VarObj(
                     (self.Phase['ranId'],None,shortmode,None))
                 explaination[modeVar] = ("Full ISODISTORT name for " +
@@ -1056,13 +1053,13 @@ shift later as an alternative to the above.'''
                 norm = self.Phase['ISODISTORT']['NormList'][i]
                 head = '  ' + str(self.Phase['ISODISTORT']['G2ModeList'][i]) + ' = ('
                 line = ''
-                for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+                for j,(lbl,k) in enumerate(zip(coordVarLbl,row, strict=False)):
                     var = self.Phase['ISODISTORT']['IsoVarList'][j]
                     head,line = fmtEqn(j,head,line,var,k)
-                print(head+line+') / {:.3g}'.format(norm))
+                print(head+line+f') / {norm:.3g}')
                 head = '              = '
                 line = ''
-                for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+                for j,(lbl,k) in enumerate(zip(coordVarLbl,row, strict=False)):
                     var = self.Phase['ISODISTORT']['IsoVarList'][j]
                     head,line = fmtEqn(j,head,line,var,k/norm)
                 print(head+line)
@@ -1080,12 +1077,12 @@ shift later as an alternative to the above.'''
             coordVarDelta = {}
             for lbl,val in zip(
                 blk.get('_iso_deltacoordinate_label'),
-                blk.get('_iso_deltacoordinate_value'),):
+                blk.get('_iso_deltacoordinate_value'), strict=False,):
                 coordVarDelta[lbl] = float(val)
             modeVarDelta = {}
             for lbl,val in zip(
                 blk.get('_iso_displacivemode_label'),
-                blk.get('_iso_displacivemode_value'),):
+                blk.get('_iso_displacivemode_value'), strict=False,):
                 modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
 
             print('\n' + 70*'=')
@@ -1093,18 +1090,18 @@ shift later as an alternative to the above.'''
                       '\nusing Var2ModeMatrix, NormList, IsoVarList')
             # compute the mode values from the reported coordinate deltas
             for i,(row,n) in enumerate(zip(self.Phase['ISODISTORT']['Var2ModeMatrix'],
-                                           self.Phase['ISODISTORT']['NormList'])):
+                                           self.Phase['ISODISTORT']['NormList'], strict=False)):
                 line = ''
                 print(str(self.Phase['ISODISTORT']['IsoModeList'][i])+' = ')
                 head = '  = ('
-                for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+                for j,(lbl,k) in enumerate(zip(coordVarLbl,row, strict=False)):
                     head,line = fmtEqn(j,head,line,lbl,k)
                 print(head+line+') / '+('%.3f'%n))
                 line = ''
                 head = '  = ('
                 vsum = 0.
-                for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                    val = "{:3g}".format(coordVarDelta[lbl])
+                for j,(lbl,k) in enumerate(zip(coordVarLbl,row, strict=False)):
+                    val = f"{coordVarDelta[lbl]:3g}"
                     head,line = fmtEqn(j,head,line,val,k)
                     vsum += coordVarDelta[lbl] * k
                 print(head+line+') / '+('%.3f'%n))
@@ -1117,11 +1114,11 @@ shift later as an alternative to the above.'''
                       '\nusing Mode2VarMatrix, NormList, IsoModeList, IsoVarList',)
             # compute the coordinate displacements from the reported mode values
             for lbl,row in zip(self.Phase['ISODISTORT']['IsoVarList'],
-                               self.Phase['ISODISTORT']['Mode2VarMatrix']):
+                               self.Phase['ISODISTORT']['Mode2VarMatrix'], strict=False):
                 l = ''
                 s = 0.0
                 head = lbl+' ='
-                for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
+                for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'], strict=False)):
                     if k == 0: continue
                     if len(l) > 65:
                         print(head,l)
@@ -1142,9 +1139,9 @@ shift later as an alternative to the above.'''
                 print(lbl,'=',s)
                 print(lbl,'==>',str(self.Phase['ISODISTORT']['G2VarList'][i]),'\n')
             DeltaCoords = {}
-            for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix):
+            for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix, strict=False):
                 s = 0.0
-                for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'])):
+                for j,(k,n) in enumerate(zip(row,self.Phase['ISODISTORT']['NormList'], strict=False)):
                     s += k * n * modeVarDelta[self.Phase['ISODISTORT']['IsoModeList'][j]]
                 at,d = lbl.rsplit('_',1)
                 if at not in DeltaCoords:
@@ -1179,8 +1176,8 @@ shift later as an alternative to the above.'''
             print("G2 short name ==> ISODISTORT full name",
                       " (from IsoModeList and G2ModeList)")
             for mode,G2mode in zip(self.Phase['ISODISTORT']['IsoModeList'],
-                                   self.Phase['ISODISTORT']['G2ModeList']):
-                print('{} ==> {}'.format(str(G2mode), mode))
+                                   self.Phase['ISODISTORT']['G2ModeList'], strict=False):
+                print(f'{G2mode!s} ==> {mode}')
             print('\nConstraint help dict info')
             for i in self.Constraints:
                 if type(i) is dict:
@@ -1207,7 +1204,7 @@ shift later as an alternative to the above.'''
             print('\nVar2OccMatrix' ,'OccVarList' )
             for i,row in enumerate(occupancymodeInvmatrix):
                 l = ''
-                for j,(lbl,k) in enumerate(zip(occVarLbl,row)):
+                for j,(lbl,k) in enumerate(zip(occVarLbl,row, strict=False)):
                     if k == 0: continue
                     if l: l += ' + '
                     #l += lbl+' * '+str(k)
@@ -1218,30 +1215,30 @@ shift later as an alternative to the above.'''
             occVarDelta = {}
             for lbl,val in zip(
                 blk.get('_iso_deltaoccupancy_label'),
-                blk.get('_iso_deltaoccupancy_value'),):
+                blk.get('_iso_deltaoccupancy_value'), strict=False,):
                 occVarDelta[lbl] = float(val)
             modeVarDelta = {}
             for lbl,val in zip(
                 blk.get('_iso_occupancymode_label'),
-                blk.get('_iso_occupancymode_value'),):
+                blk.get('_iso_occupancymode_value'), strict=False,):
                 modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
 
             print( 70*'=')
             print('\nInverse relations using Var2OccModeMatrix, OccNormList, OccVarList')
             # compute the mode values from the reported coordinate deltas
-            for i,(row,n) in enumerate(zip(occupancymodeInvmatrix,normlist)):
+            for i,(row,n) in enumerate(zip(occupancymodeInvmatrix,normlist, strict=False)):
                 l = ''
-                for lbl,k in zip(occVarLbl,row):
+                for lbl,k in zip(occVarLbl,row, strict=False):
                     if k == 0: continue
                     if l: l += ' + '
                     l += lbl+' * '+str(k)
                 print('a'+str(i)+' = '+str(modeVarList[i])+' = ('+l+')/'+str(n))
             print('\nCalculation checks\n')
-            for i,(row,n) in enumerate(zip(occupancymodeInvmatrix,normlist)):
+            for i,(row,n) in enumerate(zip(occupancymodeInvmatrix,normlist, strict=False)):
                 #l = ''
                 sl = ''
                 s = 0.
-                for lbl,k in zip(occVarLbl,row):
+                for lbl,k in zip(occVarLbl,row, strict=False):
                     if k == 0: continue
                     #if l: l += ' + '
                     #l += lbl+' * '+str(k)
@@ -1256,10 +1253,10 @@ shift later as an alternative to the above.'''
             print('\nDirect relations using Occ2VarMatrix, OccNormList, OccVarList')
             # compute the coordinate displacements from the reported mode values
             Occ = {}
-            for i,lbl,row in zip(range(len(occVarLbl)),occVarLbl,occupancymodematrix):
+            for i,lbl,row in zip(range(len(occVarLbl)),occVarLbl,occupancymodematrix, strict=False):
                 l = ''
                 s = 0.0
-                for j,(k,n) in enumerate(zip(row,normlist)):
+                for j,(k,n) in enumerate(zip(row,normlist, strict=False)):
                     if k == 0: continue
                     if l: l += ' + '
                     l += str(n)+' * '+str(modeVarList[j])+' * '+str(k)
@@ -1290,7 +1287,7 @@ shift later as an alternative to the above.'''
             print("\nG2name ==> ISODISTORT full name",
                       ".Phase['ISODISTORT']['OccModeList']",
                       ".Phase['ISODISTORT']['G2OccModeList']")
-            for mode,G2mode in zip(modelist,modeVarList):
+            for mode,G2mode in zip(modelist,modeVarList, strict=False):
                 print("  ?::"+str(G2mode),' ==>', mode)
 
 def ISODISTORT_shortLbl(lbl,shortmodelist):

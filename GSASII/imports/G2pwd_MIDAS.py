@@ -1,17 +1,17 @@
-# -*- coding: utf-8 -*-
 '''Import a collection of "lineouts" from MIDAS from a zarr zip file
 '''
 # TODO: radius to be added to Zarr file
 #
-from __future__ import division, print_function
 import os
+
 try:
     import zarr
 except ImportError:
     zarr = None
 import numpy as np
-from .. import GSASIIobj as G2obj
+
 from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
 
 instprmList = [('Bank',1.0), ('Lam',0.413263), ('Polariz.',0.99),
@@ -91,7 +91,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
         #else:  # test here for any other formats that might use zarr
         #    pass
         del fp, store
-        return
+        return None
 
     def Reader(self, filename, ParentFrame=None, **kwarg):
         '''Scan file for sections needed by defined file types (currently
@@ -185,7 +185,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
                     if key in self.MIDASinstprm:
                         self.MIDASinstprm[newkey] = self.MIDASinstprm[key]
                         del self.MIDASinstprm[key]
-            except IOError:
+            except OSError:
                 print ('cannot open file '+ filename)
                 return False
             finally:
@@ -194,7 +194,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             self.MIDASsampleprm = {}
             samplefile = os.path.splitext(filename)[0] + '.samprm'
             if os.path.exists(samplefile):
-                fp = open(samplefile,'r')
+                fp = open(samplefile)
                 S = fp.readline()
                 while S:
                     if not S.strip().startswith('#'):
@@ -207,7 +207,7 @@ class MIDAS_Zarr_Reader(G2obj.ImportPowderData):
             self.instvals = [{},{}]
             if os.path.exists(instfile):
                 self.instmsg = 'zarr and .instprm files'
-                fp = open(instfile,'r')
+                fp = open(instfile)
                 instLines = fp.readlines()
                 fp.close()
                 nbank,self.instvals = G2fil.ReadInstprm(instLines, None, self.Sample)

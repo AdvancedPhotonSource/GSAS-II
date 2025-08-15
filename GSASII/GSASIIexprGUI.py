@@ -1,20 +1,19 @@
-# -*- coding: utf-8 -*-
 #GSASIIexprGUI - Expression Definition and Evaluation
 '''Routines for users to input Python expressions used within
 GSAS-II computations follow.
 '''
-from __future__ import division, print_function
-import re
-import platform
 import copy
+import re
+
+import numpy as np
 import wx
 import wx.lib.scrolledpanel as wxscroll
-import numpy as np
-from . import GSASIIpath
+
 from . import GSASIIctrlGUI as G2G
-from . import GSASIIobj as G2obj
-from . import GSASIImath as G2mth
 from . import GSASIIfiles as G2fil
+from . import GSASIImath as G2mth
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
 
 # Define a short name for convenience
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -344,7 +343,6 @@ class ExpressionDialog(wx.Dialog):
         self.OKbtn.Disable()
         if self.ExtraBtn: self.ExtraBtn.Disable()
         event.Skip()
-        return
 
     def CheckVars(self):
         '''Check that appropriate variables are defined for each
@@ -394,7 +392,7 @@ class ExpressionDialog(wx.Dialog):
                         msg += f'Value {val} invalid for {v}'
         if invalid:
             return f'({msg})'
-        return
+        return None
 
     def OnDepChoice(self,event):
         '''Respond to a selection of a variable type for a label in
@@ -467,7 +465,7 @@ class ExpressionDialog(wx.Dialog):
             l1 = max(l1,len(i))
             loc,desc = G2obj.VarDescr(i)
             l2 = max(l2,len(loc))
-        fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
+        fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in wildList]
         dlg = G2G.G2SingleChoiceDialog(
             self,f'Select GSAS-II parameter for variable "{var}":',
@@ -925,7 +923,7 @@ class AngleDialog(wx.Dialog):
                 calcobj = G2obj.ExpressionCalcObj(aobj)
                 calcobj.UpdateDict(self.parmDict)
                 atomSizer.Add(wx.StaticText(self.panel,
-                    label=' = {:.2f} deg'.format(calcobj.EvalExpression())),
+                    label=f' = {calcobj.EvalExpression():.2f} deg'),
                                                 0,WACV)
         else:
             atomSizer.Add(wx.StaticText(self.panel,label='(none in search range)'))
@@ -1004,7 +1002,7 @@ if __name__ == "__main__":
     obj = G2obj.ExpressionObj()
     obj.expression = "A*np.exp(B)"
     obj.assgnVars =  {'B': '0::Afrac:*'}
-    obj.freeVars =  {'A': [u'A', 0.5, True]}
+    obj.freeVars =  {'A': ['A', 0.5, True]}
     obj.CheckVars()
     parmDict2 = {'0::Afrac:0':1.0, '0::Afrac:1': 1.0}
     calcobj = G2obj.ExpressionCalcObj(obj)
@@ -1022,7 +1020,7 @@ if __name__ == "__main__":
     calcobj.SetupCalc(parmDict1)
     showEQ(calcobj)
 
-    fp = open('/tmp/obj.pickle','r')
+    fp = open('/tmp/obj.pickle')
     obj = pickle.load(fp)
     fp.close()
     parmDict2 = {'0::Afrac:0':0.0, '0::Afrac:1': 1.0}

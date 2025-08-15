@@ -1,8 +1,9 @@
 #!/Users/toby/build/cctbx_build/bin/python
+import datetime
 import sys
+
 import cctbx.uctbx as uc
 import numpy as np
-import datetime
 
 fp = sys.stdout
 fp.write("# output from uctbx (cctbx) computed on platform %s on %s\n" %

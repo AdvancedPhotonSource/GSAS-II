@@ -1,8 +1,9 @@
 # record tag number and git hash into a git_verinfo.py file.
 #
+import datetime as dt
 import os
 import sys
-import datetime as dt
+
 import git
 
 # get location of the GSAS-II files
@@ -80,8 +81,7 @@ if __name__ == '__main__':
     if tagsm1:
         fp.write(f'git_prevtags = {tagsm1}\n')
     else:
-        fp.write(f'git_prevtags = []\n')
+        fp.write('git_prevtags = []\n')
     fp.write(f'git_versiontag = {versiontag!r}\n')
-    #
     fp.close()
     print(f'Created git version file {pyfile} at {now} for {commit0[:7]!r}')

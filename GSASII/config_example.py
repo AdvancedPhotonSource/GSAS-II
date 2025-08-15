@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #config.py - Variables used to set optional configuration options
 '''
 This file contains optional configuration options for GSAS-II. The 

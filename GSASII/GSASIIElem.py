@@ -1,18 +1,18 @@
-# -*- coding: utf-8 -*-
 # Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
 """
 Routines used to define element settings follow.
 """
 
-import math
-import sys
-import os.path
-from . import GSASIIpath
 import copy
+import math
+import os.path
+import sys
+
 import numpy as np
-from . import atmdata
-from . import GSASIImath as G2mth
+
 from . import ElementTable as ET
+from . import GSASIImath as G2mth
+from . import GSASIIpath, atmdata
 
 nxs = np.newaxis
 Bohr = 0.529177
@@ -46,7 +46,7 @@ def GetFormFactorCoeff(El):
     Els = El.capitalize().strip()
     valences = [ky for ky in atmdata.XrayFF.keys() if Els == getElSym(ky)]
     FormFactors = [atmdata.XrayFF[val] for val in valences]
-    for Sy,FF in zip(valences,FormFactors):
+    for Sy,FF in zip(valences,FormFactors, strict=False):
         FF.update({'Symbol':Sy.upper()})
     return FormFactors
 
@@ -68,7 +68,7 @@ def GetEFormFactorCoeff(El):
     Els = El.capitalize().strip()
     valences = [ky for ky in atmdata.ElecFF.keys() if Els == getElSym(ky)] #will only be one
     FormFactors = [atmdata.ElecFF[val] for val in valences]
-    for Sy,FF in zip(valences,FormFactors):
+    for Sy,FF in zip(valences,FormFactors, strict=False):
         FF.update({'Symbol':Sy.upper()})
     return FormFactors
 
@@ -123,7 +123,7 @@ def GetMFtable(atomTypes,Landeg):
 
     '''
     MFtable = {}
-    for El,gfac in zip(atomTypes,Landeg):
+    for El,gfac in zip(atomTypes,Landeg, strict=False):
         MFs = GetMagFormFacCoeff(getElSym(El))
         for item in MFs:
             if item['Symbol'] == El.upper():
@@ -290,7 +290,7 @@ def GetAtomInfo(El,ifMag=False):
                 ElS = 'H'
         print('Atom type '+El+' not found, using '+ElS)
         El = ElS
-    AtomInfo.update(dict(zip(['Drad','Arad','Vdrad','Hbrad'],atmdata.AtmSize[ElS])))
+    AtomInfo.update(dict(zip(['Drad','Arad','Vdrad','Hbrad'],atmdata.AtmSize[ElS], strict=False)))
     AtomInfo['Symbol'] = El
     AtomInfo['Color'] = ET.ElTable[Elements.index(ElS)][6]
     AtomInfo['Z'] = atmdata.XrayFF[ElS]['Z']
@@ -315,7 +315,7 @@ def GetElInfo(El,inst):
         ElData = GetFormFactorCoeff(ElemSym)[0]
         ElData['FormulaNo'] = 0.0
         ElData.update(GetAtomInfo(ElemSym))
-        ElData.update(dict(zip(['fp','fpp','mu'],FpMu)))
+        ElData.update(dict(zip(['fp','fpp','mu'],FpMu, strict=False)))
         ElData.update(GetFFC5(El))
     else: #'N'eutron
         ElData = {}
@@ -352,7 +352,7 @@ def GetXsectionCoeff(El):
     if not os.path.exists(filename):  # patch 3/2024 for svn dir organization
         filename = os.path.join(GSASIIpath.path2GSAS2,'Xsect.dat')
     try:
-        xsec = open(filename,'r')
+        xsec = open(filename)
     except:
         print (f'**** ERROR - File Xsect.dat not found in directory {os.path.dirname(filename)}')
         sys.exit()
@@ -388,7 +388,7 @@ def GetXsectionCoeff(El):
                 Nval = 10
                 Orb['SEdge'] = 0.0
             Orb['Nval'] = Nval
-            D = dict(zip(Energy,XSect))
+            D = dict(zip(Energy,XSect, strict=False))
             Energy.sort()
             X = []
             for key in Energy:
@@ -655,7 +655,7 @@ def FPcalc(Orbs, KEv):
         LEner = Orb['LEner']
         for i in range(Nval):
             if LEner[i] <= LKev: j = i
-        if j > Nval-3: j= Nval-3
+        j = min(j, Nval-3)
         T = [0,0,0,0,0,0]
         LXSect = Orb['LXSect']
         for i in range(3):
@@ -802,7 +802,7 @@ def SetupGeneral(data, dirname):
                             if 'Crenel' in waveType:
                                 wType = 'Crenel'
                         elif parm == 'Spos':
-                            if not 'Crenel' in waveType:
+                            if 'Crenel' not in waveType:
                                 wType = waveType
                         atom[-1]['SS1'][parm] = [wType,]+list(atom[-1]['SS1'][parm])
                 del atom[-1]['SS1']['waveType']

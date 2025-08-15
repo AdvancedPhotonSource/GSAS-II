@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_Bracket` follow.
 '''
 
 # This module initially written by Conrad Gillard. For any enquiries please contact conrad.gillard@gmail.com
 # Export3col exporter adapted from Exportbracket by BHT
-from __future__ import division, print_function
-from .. import GSASIIfiles as G2fil
 from collections import OrderedDict
+
+from .. import GSASIIfiles as G2fil
 from ..GSASIImath import ValEsd
+
 
 class Exportbracket(G2fil.ExportBaseclass):
     '''Enables export of parameters that are commonly needed for publications, in bracket notation
@@ -66,7 +66,7 @@ class Exportbracket(G2fil.ExportBaseclass):
                 cell_quantity_symbols = ["a", "b", "c", "alpha", "beta", "gamma", "Volume"]
                 cell_quantity_units = ["(Å)", "(Å)", "(Å)", "(°)", "(°)", "(°)", "(Å³)"]
 
-                for i in range(0, len(cellList)):
+                for i in range(len(cellList)):
                     if cellSig[i] > 0:
                         # Formulate lattice parameter in bracket notation
                         current_lp_bracket = ValEsd(cellList[i], cellSig[i])
@@ -270,7 +270,7 @@ class Export3col(G2fil.ExportBaseclass):
                 cellList, cellSig = self.GetCell(phasenam)
                 # Initialise lattice parameter letter
                 lp_letter = "a"
-                for i in range(0, len(cellList)):
+                for i in range(len(cellList)):
                 # for cell in cellList:
                     if cellSig[i] > 0:
                         # Formulate lattice parameter

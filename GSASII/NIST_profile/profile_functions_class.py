@@ -49,13 +49,15 @@
 #
 # @file
 
-from __future__ import print_function
 
-import os, sys, math
+import math
+import sys
+
 import numpy
+
 ## @brief figure out which FFT package we have, and import it
 try:
-    from pyfftw.interfaces import numpy_fft, cache
+    from pyfftw.interfaces import cache, numpy_fft
     ## recorded variant of real fft that we will use
     best_rfft=numpy_fft.rfft
     ## recorded variant of inverse real fft that we will use
@@ -92,7 +94,7 @@ moment_list=[]
 collect_moment_errors=False
 
 ## @brief a skeleton class which makes a combined dict and namespace interface for easy pickling and data passing
-class profile_data(object):
+class profile_data:
     ## @brief initialize the class
     #  @param self self
     #  @param kwargs keyword=value list to pre-populate the class
@@ -387,7 +389,7 @@ class FP_profile:
     #  @return \a None, always
     def conv_global(self):
         """a dummy convolver to hold global variables and information"""
-        return None
+        return
     
     ## @brief the function F0 from the paper.
     #
@@ -523,7 +525,7 @@ class FP_profile:
             epsvals=None
         ):
         
-        from math import sin, cos, tan, pi
+        from math import cos, pi, tan
         beta1=(Ls-Lx)/(2*R) #Ch&Co after eq. 15abcd
         beta2=(Ls+Lx)/(2*R) #Ch&Co after eq. 15abcd, corrected by KM
         
@@ -559,13 +561,12 @@ class FP_profile:
                 rng=2; ea=eps2p; eb=eps1p; ec=eps1m; ed=eps2m
             else:
                 rng=3; ea=eps2p; eb=eps1p; ec=eps1m; ed=eps2m
+        elif z0m < -Lr/2 and z0p > Lr/2: #beam hanging off both ends of slit, peak centered
+            rng=1; ea=eps1m; eb=eps2p; ec=eps1p; ed=eps2m
+        elif (-Lr/2 < z0m < Lr/2 and z0p > Lr/2) or (-Lr/2 < z0p < Lr/2 and z0m < -Lr/2): #one edge of beam within slit
+            rng=2; ea=eps2p; eb=eps1m; ec=eps1p; ed=eps2m
         else:
-            if z0m < -Lr/2 and z0p > Lr/2: #beam hanging off both ends of slit, peak centered
-                rng=1; ea=eps1m; eb=eps2p; ec=eps1p; ed=eps2m
-            elif (-Lr/2 < z0m < Lr/2 and z0p > Lr/2) or (-Lr/2 < z0p < Lr/2 and z0m < -Lr/2): #one edge of beam within slit
-                rng=2; ea=eps2p; eb=eps1m; ec=eps1p; ed=eps2m
-            else:
-                rng=3; ea=eps2p; eb=eps1m; ec=eps1p; ed=eps2m
+            rng=3; ea=eps2p; eb=eps1m; ec=eps1p; ed=eps2m
 
         #now, evaluate function on bounds in table 1 based on ranges
         #note: because of a sign convention in epsilon, the bounds all get switched
@@ -638,7 +639,7 @@ class FP_profile:
     def full_axdiv_I3(self, Lx=None, Ls=None, Lr=None, R=None,
         twotheta=None,
         epsvals=None, sollerIdeg=None, sollerDdeg=None, nsteps=10, axDiv=""):
-        from math import sin, cos, tan, pi
+        from math import cos, pi, tan
         
         beta2=(Ls+Lx)/(2*R) #Ch&Co after eq. 15abcd, corrected by KM
 
@@ -809,7 +810,7 @@ class FP_profile:
     def general_tophat(self, name="", width=None):
         """handle all centered top-hats"""
         if width is None:
-            return #no convolver
+            return None #no convolver
         flag, conv = self.get_conv(name, width, float)
         if flag: return conv #already up to date
         rb1=self._rb1
@@ -914,7 +915,7 @@ class FP_profile:
         #carefully handled to put the lines in the right places.
         #note that the transform of f(x+dx)=exp(i omega dx) f~(x)
         omega_vals=self.omega_vals
-        for wid, gfwhm2, eps, intens in zip(widths, gfwhm2s, epsilon0s, xx.emiss_intensities):
+        for wid, gfwhm2, eps, intens in zip(widths, gfwhm2s, epsilon0s, xx.emiss_intensities, strict=False):
             xvals=numpy.clip(omega_vals*(-wid),-100,0)
             sig2=gfwhm2/(8*math.log(2.0)) #convert fwhm**2 to sigma**2
             gxv=numpy.clip((sig2/-2.0)*omega_vals*omega_vals,-100,0)
@@ -979,7 +980,7 @@ class FP_profile:
         cb.real=1/delta
         numpy.reciprocal(cb,conv) #limit for thick samples=1/(delta*arg)
         conv *= 1.0/delta #normalize
-        if kwargs.get("sample_thickness", None) is not None: #rest of transform of function with cutoff
+        if kwargs.get("sample_thickness") is not None: #rest of transform of function with cutoff
             epsmin = -2.0*xx.sample_thickness*math.cos(xx.twotheta0/2.0)/xx.diffractometer_radius
             cb*=epsmin
             numpy.expm1(cb,cb)
@@ -1062,7 +1063,7 @@ class FP_profile:
         dthu=psd_upper_window_pos/xx.diffractometer_radius
         alpha=xx.equatorial_divergence_deg*math.pi/180
         argscale=alpha/(2.0*math.tan(xx.twotheta0/2))
-        from scipy.special import sici #get the sine and cosine integral
+        from scipy.special import sici  #get the sine and cosine integral
         #WARNING si(x)=integral(sin(x)/x), not integral(sin(pi x)/(pi x))
         #i.e. they sinc function is not consistent with the si function
         #whence the missing pi in the denominator of argscale
@@ -1088,7 +1089,7 @@ class FP_profile:
     def conv_smoother(self):
         #create a smoother for output result, independent of real physics, if wanted
         me=self.get_function_name() #the name of this convolver,as a string
-        if not self.output_gaussian_smoother_bins_sigma: return # no smoothing
+        if not self.output_gaussian_smoother_bins_sigma: return None # no smoothing
         flag, buf=self.get_conv(me, self.output_gaussian_smoother_bins_sigma,
             format=float)
         if flag: return buf #already computed
@@ -1110,8 +1111,10 @@ class FP_profile:
         
         #create a function which is the Fourier transform of the
         #combined convolutions of all the factors
-        from numpy import sin, cos, tan, arcsin as asin, arccos as acos
         from math import pi
+
+        from numpy import arcsin as asin
+        from numpy import sin
 
         anglemode=self.anglemode #="d" if we are using 'd' space, "twotheta" if using twotheta
         
@@ -1192,7 +1195,7 @@ class FP_profile:
         clean=self._clean_on_pickle
         pd=dict()
         pd.update(self.__dict__)        
-        for thing in pd.keys():
+        for thing in pd:
             x=getattr(self, thing)
             if id(x) in clean:
                 delattr(self,thing)
@@ -1213,7 +1216,7 @@ class FP_profile:
         clean=self._clean_on_pickle
         pd=dict()
         pd.update(self.__dict__)
-        for thing in pd.keys():
+        for thing in pd:
             x=getattr(self, thing)
             if id(x) in clean:
                 del pd[thing]

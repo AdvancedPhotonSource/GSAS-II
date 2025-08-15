@@ -1,13 +1,14 @@
-# -*- coding: utf-8 -*-
 '''Class to read a phase from a RMCprofile output file
 '''
-from __future__ import division, print_function
-import sys
 import os.path
-import numpy as np
 import random as ran
-from .. import GSASIIobj as G2obj
+import sys
+
+import numpy as np
+
 from .. import GSASIIlattice as G2lat
+from .. import GSASIIobj as G2obj
+
 try:
     from .. import GSASIIctrlGUI as G2G
 except ImportError:
@@ -25,7 +26,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         
     def ContentsValidator(self, filename):
         "Test if the rmc6f file has a CELL record"
-        fp = open(filename,'r')
+        fp = open(filename)
         if fp.readline()[:-1] != '(Version 6f format configuration file)':
             self.errors = 'This is not a valid .rmc6f file.'
             fp.close()
@@ -44,7 +45,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         '''Read a phase from a rmc6f file.
         '''
         self.errors = 'Error opening file'
-        fp = open(filename, 'r')
+        fp = open(filename)
         Phase = {}
         Title = os.path.split(filename)
         if G2G is not None: 

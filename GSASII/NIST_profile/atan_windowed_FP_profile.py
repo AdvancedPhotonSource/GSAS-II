@@ -1,17 +1,17 @@
-# -*- coding: utf-8 -*-
 """
 Code to convert FP_Profile to use a windowed spectrum,
 and to generate real-space and Fourier IPF
 MHM October 2019
 """
 
-from __future__ import print_function
 
-import numpy
 import math
 import sys
 
+import numpy
+
 from . import profile_functions_class
+
 
 class FP_atan_windowed_convolver:
 
@@ -59,7 +59,7 @@ class FP_atan_windowed_convolver:
         X=self.twothetasamples-2*center_angle #to match notation in Topas macro
         real_emiss=numpy.zeros_like(X) #emission in real space
 
-        for wid, lam0, intens in zip(xx.emiss_lor_widths, xx.emiss_wavelengths, xx.emiss_intensities):
+        for wid, lam0, intens in zip(xx.emiss_lor_widths, xx.emiss_wavelengths, xx.emiss_intensities, strict=False):
             #wid comes in as an FWHM, convert to HWHM
             xvals=X-dispersion*(lam0-center_wavelength)/center_wavelength
             hw=dispersion*(wid/center_wavelength)/2
@@ -129,7 +129,7 @@ class FP_atan_windowed_convolver:
         # note that the Fourier transform of a lorentzian with FWHM 2a
         # is exp(-abs(a omega))
         omega_vals=self.omega_vals
-        for wid, gfwhm2, intens in zip(widths, gfwhm2s, xx.emiss_intensities):
+        for wid, gfwhm2, intens in zip(widths, gfwhm2s, xx.emiss_intensities, strict=False):
             xvals=numpy.clip(omega_vals*(-wid),-100,0)
             sig2=gfwhm2/(8*math.log(2.0)) #convert fwhm**2 to sigma**2
             gxv=numpy.clip((sig2/-2.0)*omega_vals*omega_vals,-100,0)
@@ -176,7 +176,6 @@ if __name__ == "__main__":
         return xfrm
     
     from diffraction_constants import omega_length_scale_deg
-    
     from matplotlib import pyplot as plt
     plt.style.use('posters_and_pubs')
     
@@ -255,7 +254,7 @@ if __name__ == "__main__":
         print(p,file=sys.stderr)
         abs_window_pm=p.abs_window_pm
         
-        plt.figure("real {0:.0f}".format(twotheta_x))
+        plt.figure(f"real {twotheta_x:.0f}")
         pk=result.peak/result.peak.max()
         emiss=p.full_emission_shape[::2]/p.full_emission_shape.max()
         raw_emiss=p.raw_emission_shape[::2]/p.raw_emission_shape.max()
@@ -283,12 +282,12 @@ if __name__ == "__main__":
             numpy.transpose((omega[:omega_max], numpy.abs(fft[:omega_max])))
         )
         print(fft[:10], file=sys.stderr)
-        plt.figure("fourier log {0:.0f}".format(twotheta_x))
+        plt.figure(f"fourier log {twotheta_x:.0f}")
         plt.semilogy(omega[:omega_max], numpy.abs(fft[:omega_max]))      
         plt.xlabel(r"$\omega$ / nm")
         plt.savefig("ft_log_window_{abs_window_pm:.2f}_tth_{twotheta_x:.0f}.pdf".format(**locals()),
                     bbox_inches='tight', transparent=True, frameon=False)
-        plt.figure("fourier lin {0:.0f}".format(twotheta_x))
+        plt.figure(f"fourier lin {twotheta_x:.0f}")
         plt.plot(omega[:omega_max], numpy.abs(fft[:omega_max]))       
         plt.xlabel(r"$\omega$ / nm")
         plt.savefig("ft_lin_window_{abs_window_pm:.2f}_tth_{twotheta_x:.0f}.pdf".format(**locals()),

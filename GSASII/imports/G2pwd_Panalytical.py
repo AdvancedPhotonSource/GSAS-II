@@ -1,10 +1,12 @@
-# -*- coding: utf-8 -*-
 
-from __future__ import division, print_function
 import os.path as ospath
 import xml.etree.ElementTree as ET
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
+
 class Panalytical_ReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Pananalytical.xrdm (xml) file. 
     
@@ -25,7 +27,7 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
     def ContentsValidator(self, filename):
-        fp = open(filename,'r')
+        fp = open(filename)
         self.vals = None
         self.stepsize = None
         fp.seek(0)

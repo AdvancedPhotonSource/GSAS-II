@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_pwdr` follow:
 '''
-from __future__ import division, print_function
 import os.path
+
 import numpy as np
-from .. import GSASIIobj as G2obj
+
 from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+
 
 class ExportPowderFXYE(G2fil.ExportBaseclass):
     '''Used to create a FXYE file for a powder data set
@@ -70,7 +71,7 @@ class ExportPowderFXYE(G2fil.ExportBaseclass):
             ))
 #            for X,Y,S in zip(x,histblk['Data'][1],s):
 #                self.Write("{:15.6g} {:15.6g} {:15.6g}".format(X,Y,S))
-        for XYS in zip(x,histblk['Data'][1],s):
+        for XYS in zip(x,histblk['Data'][1],s, strict=False):
             line = ''
             for val in XYS:
                 line += G2fil.FormatPadValue(val,(15,6))
@@ -126,7 +127,7 @@ class ExportPowderXYE(G2fil.ExportBaseclass):
         s = np.sqrt(np.maximum(0.,np.array(histblk['Data'][2])))
         s[s==0] = np.max(s)
         s = 1./s
-        for XYS in zip(x,histblk['Data'][1],s):
+        for XYS in zip(x,histblk['Data'][1],s, strict=False):
             line = ''
             for val in XYS:
                 line += G2fil.FormatPadValue(val,(15,6))

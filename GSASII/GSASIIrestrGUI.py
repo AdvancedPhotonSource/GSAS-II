@@ -1,25 +1,25 @@
-# -*- coding: utf-8 -*-
 #GSASIIrestr - restraint GUI routines
 '''Restraint GUI routines follow.
 '''
-from __future__ import division, print_function
+import os.path
+
+import numpy as np
 import wx
 import wx.grid as wg
-import numpy as np
-import numpy.ma as ma
-import os.path
-from . import GSASIIpath
-from . import GSASIImath as G2mth
-from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIplot as G2plt
-from . import GSASIIdata as G2data
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIphsGUI as G2phsGUI
-from . import GSASIIobj as G2obj
+from numpy import ma
+
 from . import GSASIIconstrGUI as G2cnstG
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIdata as G2data
+from . import GSASIIdataGUI as G2gd
 from . import GSASIIexprGUI as G2exG
+from . import GSASIIlattice as G2lat
+from . import GSASIImath as G2mth
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIphsGUI as G2phsGUI
+from . import GSASIIplot as G2plt
+from . import GSASIIspc as G2spc
 
 try:
     wx.NewIdRef
@@ -55,17 +55,17 @@ def GetSelectedRows(widget,lbl='edit',G2frame=None):
         rows = sorted(list(set([cell[0] for cell in widget.GetSelectedCells()])))
         if rows: return rows
 
-        choices = ["{}: {}".format(widget.GetRowLabelValue(i),widget.GetCellValue(i,0)) 
+        choices = [f"{widget.GetRowLabelValue(i)}: {widget.GetCellValue(i,0)}" 
                        for i in range(widget.GetNumberRows())]
         try:
             dlg = G2G.G2MultiChoiceDialog(G2frame,'Restraints to '+lbl,
                                                   'Select restraints',choices)
-            if dlg.ShowModal() != wx.ID_OK: return
+            if dlg.ShowModal() != wx.ID_OK: return None
             return dlg.GetSelections()
         finally:
             dlg.Destroy()
     except:
-        return
+        return None
     
 def UpdateRestraints(G2frame,data,phaseName):
     '''Respond to selection of the Restraints item on the
@@ -79,7 +79,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             defDir = os.path.join(GSASIIpath.path2GSAS2,'GSASIImacros')
         if not os.path.exists(defDir):
             print('Warning: GSASIImacros directory not found')
-            return
+            return None
         dlg = wx.FileDialog(G2frame,message='Choose '+macName+' restraint macro file',
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
             style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
@@ -87,7 +87,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             macro = ''
             if dlg.ShowModal() == wx.ID_OK:
                 macfile = dlg.GetPath()
-                macro = open(macfile,'r')
+                macro = open(macfile)
                 head = macro.readline()
                 if macName not in head:
                     print (head)
@@ -107,7 +107,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             mogul = ''
             if dlg.ShowModal() == wx.ID_OK:
                 csvfile = dlg.GetPath()
-                mogul = open(csvfile,'r')
+                mogul = open(csvfile)
                 head = mogul.readline()
                 if 'Type' not in head:
                     print ('Note: header line is\n',head)
@@ -241,7 +241,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             
     def makeChains(Names,Ids):
         Chains = {}
-        atoms = zip(Names,Ids)
+        atoms = zip(Names,Ids, strict=False)
         for name,Id in atoms:
             items = name.split(' ',2)
             rnum,res = items[0].split(':')
@@ -267,7 +267,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 for x in sel:
                     if 'all' in Names[x]:
                         allType = Types[x]
-                        for name,Type,coords,Id in zip(Names,Types,Coords,Ids):
+                        for name,Type,coords,Id in zip(Names,Types,Coords,Ids, strict=False):
                             if Type == allType and 'all' not in name:
                                 Lists[listName].append([Id,Type,coords])
                     else:
@@ -299,7 +299,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         if not macro:
             return
         macStr = macro.readline()
-        atoms = zip(Names,Coords,Ids)
+        atoms = zip(Names,Coords,Ids, strict=False)
         Factor = bondRestData['Range']
         while macStr:
             items = macStr.split()
@@ -327,8 +327,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                             tIds.append(Id)
                             tCoords.append(np.array(coords))
                             tDis.append(names[2][3])
-                for i,[oId,oCoord,odis] in enumerate(zip(oIds,oCoords,oDis)):
-                    for tId,tCoord,tdis in list(zip(tIds,tCoords,tDis))[i:]:
+                for i,[oId,oCoord,odis] in enumerate(zip(oIds,oCoords,oDis, strict=False)):
+                    for tId,tCoord,tdis in list(zip(tIds,tCoords,tDis, strict=False))[i:]:
                         if odis+tdis in ['AB','BA']:
                             continue
                         obsd = np.sqrt(np.sum(np.inner(Amat,tCoord-oCoord)**2))
@@ -347,7 +347,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         badCount = 0
         for line in mogul:
             items = line.split(',')
-            if 'bond' == items[colNums[0]]:
+            if items[colNums[0]] == 'bond':
                 oName,tName = items[colNums[1]].split()
                 try:
                     oInd = Names.index(oName)
@@ -376,7 +376,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             wx.GetApp().Yield()
             G2G.G2MessageBox(G2frame,msg,'Missing atoms')
     def AddAngleRestraint(angleRestData):
-        Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'])))
+        Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'], strict=False), strict=False))
         Lists = {'A-atom':[],'B-atom':[],'C-atom':[]}
         for listName in ['A-atom','B-atom']:
             dlg = G2G.G2MultiChoiceDialog(G2frame,'Select '+listName+' for angle A-B-C for '+General['Name']                                                                           ,
@@ -386,17 +386,16 @@ def UpdateRestraints(G2frame,data,phaseName):
                 for x in sel:
                     if 'all' in Names[x]:
                         allType = Types[x]
-                        for name,Type,coords,Id in zip(Names,Types,Coords,Ids):
+                        for name,Type,coords,Id in zip(Names,Types,Coords,Ids, strict=False):
                             if Type == allType and 'all' not in name:
                                 if 'A' in listName:
                                     Lists[listName].append(Type)
                                 else:
                                     Lists[listName].append([Id,Type,coords])
+                    elif 'A' in listName:
+                        Lists[listName].append(Types[x])
                     else:
-                        if 'A' in listName:
-                            Lists[listName].append(Types[x])
-                        else:
-                            Lists[listName].append([Ids[x],Types[x],Coords[x],])
+                        Lists[listName].append([Ids[x],Types[x],Coords[x],])
             else:
                 return
             targAtoms = [[Ids[x+iBeg],Types[x+iBeg],Coords[x+iBeg]] for x in range(len(Names[iBeg:]))]
@@ -513,7 +512,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         mogul,colNums = getMOGULFile()
         for line in mogul:
             items = line.split(',')
-            if 'angle' == items[colNums[0]]:
+            if items[colNums[0]] == 'angle':
                 aName,bName,cName = items[colNums[1]].split()
                 aInd = Names.index(aName)
                 bInd = Names.index(bName)
@@ -829,7 +828,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             for x in sel:
                 if 'all' in Names[x]:
                     allType = Types[x]
-                    for name,Type,Id in zip(Names,Types,Ids):
+                    for name,Type,Id in zip(Names,Types,Ids, strict=False):
                         if Type == allType and 'all' not in name:
                             ids.append(Id)
                             factors.append(1.0)
@@ -1858,7 +1857,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     mulfrac = mul*frac
                     calcs = mul*frac*factors
                     chisq += chemcompRestData['wtFactor']*((obs-np.sum(calcs))/esd)**2
-                    for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
+                    for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs, strict=False)):
                         table.append([atom,mf,fr,clc,'',''])
                         rowLabels.append('term:'+str(i)+':'+str(iatm))
                     table.append(['(Sum)','','',np.sum(calcs),obs,esd])
@@ -2156,7 +2155,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     0,wx.ALIGN_CENTER)
             for i,rest in enumerate(generalRestData['General']):
                 eq = rest[0]
-                txt = '{}: '.format(i+1)
+                txt = f'{i+1}: '
                 GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
                 txt = eq.expression
                 if len(txt) > 50:
@@ -2171,7 +2170,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                 try:
                     calcobj = G2obj.ExpressionCalcObj(rest[0])
                     calcobj.SetupCalc(parmDict)
-                    txt = ' {:f} '.format(calcobj.EvalExpression())
+                    txt = f' {calcobj.EvalExpression():f} '
                 except:
                     txt = ' (error) '
                     txtC.SetForegroundColour("red")
@@ -2298,8 +2297,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             if tabname == G2frame.restrBook.GetPageText(PageNum):
                 G2frame.restrBook.SetSelection(PageNum)
                 return
-        else:
-            print ("Warning: tab "+tabname+" was not found")
+        print ("Warning: tab "+tabname+" was not found")
 
     #### UpdateRestraints execution starts here
     topSizer = G2frame.dataWindow.topBox

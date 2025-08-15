@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Sun Jul  6 14:27:24 2025
 
@@ -12,23 +11,24 @@ Created on Sun Jul  6 14:27:24 2025
 Routines for Phase/RMC follow. Only Update routines are here
 all others are in GSASIIphsGUI.py
 '''
-import os
-import wx
-import wx.grid as wg
 import copy
-import time
+import os
 import shutil
+import time
 
 import numpy as np
-from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
-from . import GSASIIElem as G2elem
-from . import GSASIIplot as G2plt
-from . import GSASIIdataGUI as G2gd
-from . import GSASIImath as G2mth
-from . import GSASIIpwd as G2pwd
+import wx
+import wx.grid as wg
+
 from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIElem as G2elem
+from . import GSASIIlattice as G2lat
+from . import GSASIImath as G2mth
 from . import GSASIIphsGUI as G2phsG
+from . import GSASIIplot as G2plt
+from . import GSASIIpwd as G2pwd
+from . import GSASIIspc as G2spc
 from . import atmdata
 
 try:
@@ -633,7 +633,7 @@ def UpdateRMC(G2frame,data):
         RMCPdict = data['RMC']['fullrmc'] = data['RMC'].get('fullrmc',{})
         # update, if atoms list has been updated
         Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
-        aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+        aTypes = dict(zip(Atypes,len(Atypes)*[0.10,], strict=False))
         if len(data['RMC']['fullrmc'].get('aTypes',{})) != len(aTypes):
             #print('atypes has changed')
             atSeq = list(aTypes.keys())
@@ -664,7 +664,7 @@ def UpdateRMC(G2frame,data):
                 bigcell = np.array(cell)*np.array(RMCPdict['SuperCell']+[1,1,1])
                 bigG = G2lat.cell2Gmat(bigcell)[0]
                 rmax = min([0.5/np.sqrt(G2lat.calc_rDsq2(H,bigG)) for H in np.eye(3)])
-                rmaxlbl.SetLabel('  Rmax = {:.1f}'.format(rmax))
+                rmaxlbl.SetLabel(f'  Rmax = {rmax:.1f}')
             superSizer = wx.BoxSizer(wx.HORIZONTAL)
             axes = ['X','Y','Z']
             for i,ax in enumerate(axes):
@@ -1024,7 +1024,7 @@ def UpdateRMC(G2frame,data):
         mainSizer.Add(txt)
         mainSizer.Add((5,5))
         Atypes = [atype.split('+')[0].split('-')[0] for atype in data['General']['AtomTypes']]
-        aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+        aTypes = dict(zip(Atypes,len(Atypes)*[0.10,], strict=False))
         atSeq = list(aTypes.keys())
         lenA = len(atSeq)
         atOxid = [[atmdata.BVSoxid[atm][0],0.001] for atm in atSeq]

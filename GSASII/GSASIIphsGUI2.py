@@ -1,30 +1,30 @@
-# -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 '''
 
 Routines for Phase dataframes follow. Only Update routines are here
 all others are in GSASIIphsGUI.py
 '''
-import os
-import wx
-import wx.grid as wg
-import matplotlib as mpl
 #import math
 import copy
+import os
 
+import matplotlib as mpl
 import numpy as np
 import numpy.linalg as nl
-from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
+import wx
+import wx.grid as wg
+
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
 from . import GSASIIElem as G2elem
 from . import GSASIIElemGUI as G2elemGUI
-from . import GSASIIplot as G2plt
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIstrIO as G2stIO
+from . import GSASIIlattice as G2lat
 from . import GSASIImath as G2mth
-from . import GSASIIpwd as G2pwd
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIphsGUI as G2phsG
+from . import GSASIIplot as G2plt
+from . import GSASIIpwd as G2pwd
+from . import GSASIIspc as G2spc
+from . import GSASIIstrIO as G2stIO
 
 try:
     wx.NewIdRef
@@ -801,7 +801,7 @@ def UpdateISODISTORT(G2frame,data,Scroll=0):
         txt.Wrap(500)
         mainSizer.Add(txt)
         mainSizer.Add(wx.StaticText(G2frame.ISODIST,label=
-u''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
+''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
  display mode values. The positions in the Atoms and Draw Atoms tabs, as well as the atom
  positions shown in the Plot Window are changed to reflect the display mode values. The
  range of the slider corresponds to making a maximum atomic displacement between -2 && +2 \u212B.'''))
@@ -814,7 +814,7 @@ u''' The 2nd column below shows the last saved mode values. The 3rd && 4th colum
         slideSizer.Add(wx.StaticText(G2frame.ISODIST,label='Value'),0,wx.ALIGN_CENTER)
         slideSizer.Add(wx.StaticText(G2frame.ISODIST,label='Refine?'),0,wx.ALIGN_CENTER)
         slideSizer.Add(wx.StaticText(G2frame.ISODIST,label='Atom displacements'),0,wx.EXPAND|wx.LEFT,15)
-        isoDict = {i.name:j for (i,j) in zip(data['ISODISTORT']['G2ModeList'],data['ISODISTORT']['IsoModeList'])}
+        isoDict = {i.name:j for (i,j) in zip(data['ISODISTORT']['G2ModeList'],data['ISODISTORT']['IsoModeList'], strict=False)}
         for item in ConstrData['Phase']:
             if item[-1] != 'f': continue # only want new vars
             if item[-3] is None: continue # unnamed new var is not ISO
@@ -955,10 +955,10 @@ def UpdateLayerData(G2frame,data,Scroll=0):
     def CellSizer():
 
         cellGUIlist = [
-            [['-3','-3m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "],["%.5f","%.5f",],[True,True],[0,2])],
-            [['mmm'],8,zip([" a = "," b = "," c = "],["%.5f","%.5f","%.5f"],[True,True,True],[0,1,2,])],
+            [['-3','-3m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "],["%.5f","%.5f",],[True,True],[0,2], strict=False)],
+            [['mmm'],8,zip([" a = "," b = "," c = "],["%.5f","%.5f","%.5f"],[True,True,True],[0,1,2,], strict=False)],
             [['2/m(ab)','2/m(c)','-1','axial','unknown'],10,zip([" a = "," b = "," c = "," gamma = "],
-                ["%.5f","%.5f","%.5f","%.3f"],[True,True,True,True],[0,1,2,5])]]
+                ["%.5f","%.5f","%.5f","%.3f"],[True,True,True,True],[0,1,2,5], strict=False)]]
 
         def OnCellRef(event):
             data['Layers']['Cell'][0] = cellRef.GetValue()
@@ -1036,7 +1036,7 @@ def UpdateLayerData(G2frame,data,Scroll=0):
         flags = Layers['Width'][1]
         widthSizer = wx.BoxSizer(wx.HORIZONTAL)
         for i in range(2):
-            widthSizer.Add(wx.StaticText(layerData,label=u' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
+            widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
             widthVal = G2G.ValidatedTxtCtrl(layerData,Layers['Width'][0],i,nDig=(10,3),xmin=0.005,xmax=1.0)
             widthSizer.Add(widthVal,0,WACV)
             widthRef = wx.CheckBox(layerData,label='Refine?')
@@ -1376,8 +1376,7 @@ def UpdateLayerData(G2frame,data,Scroll=0):
             try:
                 if 0 > int(val) > 1022:
                     raise ValueError
-                else:
-                    data['Layers']['Stacking'][2] = val
+                data['Layers']['Stacking'][2] = val
             except ValueError:
                 val = data['Layers']['Stacking'][2]
             numRan.SetValue(val)
@@ -1531,7 +1530,7 @@ def UpdateTexture(G2frame,data):
 
     def SetSHCoef():
         cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],SamSym[textureData['Model']],textureData['Order'])
-        newSHCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
+        newSHCoef = dict(zip(cofNames,np.zeros(len(cofNames)), strict=False))
         SHCoeff = textureData['SH Coeff'][1]
         for cofName in SHCoeff:
             if cofName in  cofNames:
@@ -1802,7 +1801,7 @@ def UpdateTexture(G2frame,data):
     if 'ShoDet' not in textureData:
         textureData['ShoDet'] = False
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
-    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+    SamSym = dict(zip(shModels,['0','-1','2/m','mmm'], strict=False))
     keyList = G2frame.GetHistogramNames(['PWDR',])
     UseList = data['Histograms']
     HistsInPhase = [name for name in keyList if name in UseList]
@@ -2056,10 +2055,9 @@ def UpdateWavesData(G2frame,data,Scroll=0):
                     atm[-1]['SS1'][item] = [0,]
                     atm[-1]['SS1'][item][0] = waveType.GetValue()
                     wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
-                else:
-                    if len(waveTypes[Stype]) > 1:
-                        waveType.SetValue(atm[-1]['SS1'][Stype][0])
-                        G2G.G2MessageBox(G2frame,'Warning: can only change wave type if no waves','Not changed')
+                elif len(waveTypes[Stype]) > 1:
+                    waveType.SetValue(atm[-1]['SS1'][Stype][0])
+                    G2G.G2MessageBox(G2frame,'Warning: can only change wave type if no waves','Not changed')
 
             def OnAddWave(event):
                 Obj = event.GetEventObject()

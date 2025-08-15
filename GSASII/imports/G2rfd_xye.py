@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import os.path as ospath
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npsind = lambda x: np.sin(np.pi*x/180.)
 try:  # fails on doc build
@@ -28,7 +29,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
-        fp = open(filename,'r')
+        fp = open(filename)
         Ndata = 0
         for i,S in enumerate(fp):
             if '#' in S[0]:
@@ -54,7 +55,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
         sq = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
@@ -77,7 +78,7 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
                     if f <= 0.0:
                         del x[-1]
                         continue
-                    elif len(vals) > 2:
+                    if len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                         if len(vals) == 4:
@@ -132,7 +133,7 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if '#' in S[0]:
                 continue
@@ -157,7 +158,7 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
         sq = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
@@ -180,7 +181,7 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
                     if f <= 0.0:
                         del x[-1]
                         continue
-                    elif len(vals) > 2:
+                    if len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                         if len(vals) == 4:
@@ -236,7 +237,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
         self.wavelength = 0.
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if '#' in S[0]:
                 if 'wavelength' in S[:-1].lower():
@@ -268,7 +269,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
         sq = []
         wave = self.wavelength
         Temperature = 300
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
@@ -291,7 +292,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
                     if f <= 0.0:
                         del x[-1]
                         continue
-                    elif len(vals) > 2:
+                    if len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                         if len(vals) == 4:

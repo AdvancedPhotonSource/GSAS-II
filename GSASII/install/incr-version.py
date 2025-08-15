@@ -5,9 +5,10 @@
 
 # This routine can only be used where HEAD and HEAD^1 have not been a tag
 
+import datetime as dt
 import os
 import sys
-import datetime as dt
+
 import git
 
 mode = 'mini'

@@ -9,9 +9,11 @@ rhombohedral settings of R space groups.
 
 '''
 
-from cctbx import sgtbx
-import sys
 import datetime
+import sys
+
+from cctbx import sgtbx
+
 
 def GenSGdat(spc):
     fp.write("'%s': [\n" % spc)

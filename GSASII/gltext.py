@@ -25,10 +25,11 @@ distributed under GNU General Public License.
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import wx
-import struct as st
-import OpenGL.GL as GL
 import platform
+import struct as st
+
+import wx
+from OpenGL import GL
 
 """
 Optimize with psyco if possible, this gains us about 50% speed when
@@ -45,7 +46,7 @@ psyco. If you don't like loosing the memory you have to turn the lines following
     
 #Disable psyco
 #          
-class TextElement(object):
+class TextElement:
     """
     A simple class for using system Fonts to display
     text in an OpenGL scene
@@ -319,7 +320,7 @@ class TextElement(object):
     texture_size = property(getTexture_size, None, None, "Size of the used texture")       
                
 
-class Text(object):
+class Text:
     """
     A simple class for using System Fonts to display text in
     an OpenGL scene. The Text adds a global Cache of already

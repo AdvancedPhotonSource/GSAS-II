@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #testDeriv.py
 '''
 To use set ``DEBUG=True`` in GSASIIstrMain.py (line 40, as of version
@@ -14,26 +13,32 @@ squares. They should match. Profiling is also done for function
 calculation & for the 1st selected derivative (rest should be the same).
 '''
 
-import sys
-import os
 import copy
-import pickle
-import io as StringIO
-import cProfile,pstats
-import wx
-import numpy as np
+import cProfile
+
 # path hack for restart, when needed
 import importlib.util
+import io as StringIO
+import os
+import pickle
+import pstats
+import sys
+
+import numpy as np
+import wx
+
 try:
     importlib.util.find_spec('GSASII.GSASIIGUI')
 except ModuleNotFoundError:
     print('GSAS-II not installed in Python; Hacking sys.path')
     sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
 from GSASII import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
+from GSASII import GSASIImapvars as G2mv
 from GSASII import GSASIIstrMath as G2stMth
 from GSASII import GSASIItestplot as plot
-from GSASII import GSASIImapvars as G2mv
+
 try:  # fails on doc build
     from . import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
@@ -78,7 +83,7 @@ class testDeriv(wx.Frame):
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
             try:
-                self.testFile = os.path.splitext(arg[1])[0]+u'.testDeriv'
+                self.testFile = os.path.splitext(arg[1])[0]+'.testDeriv'
             except:
                 self.testFile = os.path.splitext(arg[1])[0]+'.testDeriv'
             self.TestRead()
@@ -180,7 +185,7 @@ class testDeriv(wx.Frame):
         topSizer.Add(self.timingVal,0)
         topSizer.Add((-1,10))
         mainSizer = wx.FlexGridSizer(0,8,5,5)
-        for id,[ck,name,d] in enumerate(zip(use,self.names,delt)):
+        for id,[ck,name,d] in enumerate(zip(use,self.names,delt, strict=False)):
             useVal = wx.CheckBox(self.testDerivPanel,label=name)
             useVal.SetValue(ck)
             ObjInd[useVal.GetId()] = id
@@ -295,7 +300,7 @@ class testDeriv(wx.Frame):
         self.timingOn = self.timingVal.GetValue()
 
         doProfile = True
-        for use,name,delt in zip(self.use,self.names,self.delt):
+        for use,name,delt in zip(self.use,self.names,self.delt, strict=False):
             if use:
                 test2(name,delt,doProfile)
                 doProfile = False

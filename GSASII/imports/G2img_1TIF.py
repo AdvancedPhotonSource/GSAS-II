@@ -1,17 +1,18 @@
-# -*- coding: utf-8 -*-
 '''
 Note that the name ``G2img_1TIF`` is used so that this file will
 sort to the top of the image formats and thus show up first in the menu.
 (It is the most common, alas).
 '''
 
-from __future__ import division, print_function
 import struct as st
+import time
+
+import numpy as np
+
+from .. import GSASIIfiles as G2fil
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
-from .. import GSASIIfiles as G2fil
-import numpy as np
-import time
+
 DEBUG = False
 class TIF_ReaderClass(G2obj.ImportImage):
     '''Reads TIF files using a routine (:func:`GetTifData`) that looks
@@ -56,8 +57,9 @@ def GetTifData(filename):
     as produced by a wide variety of software, almost always
     incorrectly in some way.
     '''
-    import struct as st
     import array as ar
+    import struct as st
+
     import ReadMarCCDFrame as rmf
     image = None
     File = open(filename,'rb')
@@ -70,22 +72,22 @@ def GetTifData(filename):
     xpixelsize = None
     ypixelsize = None
     try:
-        Meta = open(filename+'.metadata','r')
+        Meta = open(filename+'.metadata')
         head = Meta.readlines()
         for line in head:
             line = line.strip()
             try:
                 if '=' not in line: continue
                 keyword = line.split('=')[0].strip()
-                if 'dataType' == keyword:
+                if keyword == 'dataType':
                     dataType = int(line.split('=')[1])
-                elif 'wavelength' == keyword.lower():
+                elif keyword.lower() == 'wavelength':
                     wavelength = float(line.split('=')[1])
-                elif 'distance' == keyword.lower():
+                elif keyword.lower() == 'distance':
                     distance = float(line.split('=')[1])
-                elif 'polarization' == keyword.lower():
+                elif keyword.lower() == 'polarization':
                     polarization = float(line.split('=')[1])
-                elif 'samplechangercoordinate' == keyword.lower():
+                elif keyword.lower() == 'samplechangercoordinate':
                     samplechangerpos = float(line.split('=')[1])
                 # elif 'detectorxpixelsize' == keyword.lower():
                 #     xpixelsize = float(line.split('=')[1])
@@ -94,7 +96,7 @@ def GetTifData(filename):
             except:
                 G2fil.G2Print('error reading metadata: '+line)
         Meta.close()
-    except IOError:
+    except OSError:
         if DEBUG:
             G2fil.G2Print ('no metadata file found - will try to read file anyway')
         head = ['no metadata file found',]
@@ -156,15 +158,15 @@ def GetTifData(filename):
         head = marFrame.outputHead()
 # extract resonable wavelength from header
         wavelength = marFrame.sourceWavelength*1e-5
-        wavelength = (marFrame.opticsWavelength > 0) and marFrame.opticsWavelength*1e-5 or wavelength
-        wavelength = (wavelength <= 0) and None or wavelength
+        wavelength = ((marFrame.opticsWavelength > 0) and marFrame.opticsWavelength*1e-5) or wavelength
+        wavelength = ((wavelength <= 0) and None) or wavelength
 # extract resonable distance from header
         distance = (marFrame.startXtalToDetector+marFrame.endXtalToDetector)*5e-4
-        distance = (distance <= marFrame.startXtalToDetector*5e-4) and marFrame.xtalToDetector*1e-3 or distance
-        distance = (distance <= 0) and None or distance
+        distance = ((distance <= marFrame.startXtalToDetector*5e-4) and marFrame.xtalToDetector*1e-3) or distance
+        distance = ((distance <= 0) and None) or distance
 # extract resonable center from header
         center = [marFrame.beamX*marFrame.pixelsizeX*1e-9,marFrame.beamY*marFrame.pixelsizeY*1e-9]
-        center = (center[0] != 0 and center[1] != 0) and center or [None,None]
+        center = ((center[0] != 0 and center[1] != 0) and center) or [None,None]
 #print head,tifType,pixy
     elif nSlice > 1:    #CheMin multislice tif file!
         try:
@@ -194,25 +196,24 @@ def GetTifData(filename):
             File.seek(4096)
             G2fil.G2Print ('Read Pilatus tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
-        else:
-            if IFD[258][2][0] == 16:
-                if sizexy == [3888,3072] or sizexy == [3072,3888]:
-                    tifType = 'Dexela'
-                    pixy = [74.8,74.8]
-                    G2fil.G2Print ('Read Dexela detector tiff file: '+filename)
-                else:
-                    tifType = 'GE'
-                    pixy = [200.,200.]
-                    G2fil.G2Print ('Read GE-detector tiff file: '+filename)
-                File.seek(8)
-                image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
-            elif IFD[258][2][0] == 32:
-                # includes CHESS & Pilatus files from Area Detector
-                tifType = 'CHESS'
+        elif IFD[258][2][0] == 16:
+            if sizexy == [3888,3072] or sizexy == [3072,3888]:
+                tifType = 'Dexela'
+                pixy = [74.8,74.8]
+                G2fil.G2Print ('Read Dexela detector tiff file: '+filename)
+            else:
+                tifType = 'GE'
                 pixy = [200.,200.]
-                File.seek(8)
-                G2fil.G2Print ('Read as 32-bit unsigned (CHESS) tiff file: '+filename)
-                image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.uint32)
+                G2fil.G2Print ('Read GE-detector tiff file: '+filename)
+            File.seek(8)
+            image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
+        elif IFD[258][2][0] == 32:
+            # includes CHESS & Pilatus files from Area Detector
+            tifType = 'CHESS'
+            pixy = [200.,200.]
+            File.seek(8)
+            G2fil.G2Print ('Read as 32-bit unsigned (CHESS) tiff file: '+filename)
+            image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.uint32)
     elif 270 in IFD:
         File.seek(IFD[270][2][0])
         S = File.read(IFD[273][2][0]-IFD[270][2][0])
@@ -239,16 +240,15 @@ def GetTifData(filename):
                 else:
                     pixy = [109.92,109.92]      #for LCLS ImageJ tif files
                 image = np.array(np.frombuffer(image,dtype=byteOrd+'u2'),dtype=np.int32)
-        else:   
-            if sizexy == [2880,2880]:
-                pixy = [150.,150.]
-                image = File.read(4*Npix)
-                image = np.array(np.frombuffer(image,dtype=byteOrd+'f4'),dtype=np.int32)
-            else:
-                pixy = [200.,200.]
-                tifType = 'Gain map'
-                image = File.read(4*Npix)
-                image = np.array(np.frombuffer(image,dtype=byteOrd+'f4')*1000,dtype=np.int32)
+        elif sizexy == [2880,2880]:
+            pixy = [150.,150.]
+            image = File.read(4*Npix)
+            image = np.array(np.frombuffer(image,dtype=byteOrd+'f4'),dtype=np.int32)
+        else:
+            pixy = [200.,200.]
+            tifType = 'Gain map'
+            image = File.read(4*Npix)
+            image = np.array(np.frombuffer(image,dtype=byteOrd+'f4')*1000,dtype=np.int32)
 
     elif 262 in IFD and IFD[262][2][0] > 4:
         tifType = 'DND'
@@ -374,11 +374,11 @@ def GetTifData(filename):
     if DEBUG:
         G2fil.G2Print ('image read time: %.3f'%(time.time()-time0))
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center
-    wavelength = (not wavelength) and 0.10 or wavelength
-    distance = (not distance) and 100.0 or distance
-    polarization = (not polarization) and 0.99 or polarization
-    samplechangerpos = (not samplechangerpos) and 0.0 or samplechangerpos
+    center = ((not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000]) or center
+    wavelength = ((not wavelength) and 0.10) or wavelength
+    distance = ((not distance) and 100.0) or distance
+    polarization = ((not polarization) and 0.99) or polarization
+    samplechangerpos = ((not samplechangerpos) and 0.0) or samplechangerpos
     if xpixelsize is not None and ypixelsize is not None:
         pixy = [xpixelsize,ypixelsize]
         if GSASIIpath.GetConfigValue('debug'):
@@ -395,9 +395,7 @@ def TIFValidator(filename):
     tag = fp.read(2)
     if 'bytes' in str(type(tag)):
         tag = tag.decode('latin-1')
-    if tag == 'II' and int(st.unpack('<h',fp.read(2))[0]) == 42: #little endian
-        pass
-    elif tag == 'MM' and int(st.unpack('>h',fp.read(2))[0]) == 42: #big endian
+    if (tag == 'II' and int(st.unpack('<h',fp.read(2))[0]) == 42) or (tag == 'MM' and int(st.unpack('>h',fp.read(2))[0]) == 42): #little endian
         pass
     else:
         return False # header not found; not valid TIF

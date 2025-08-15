@@ -1,13 +1,14 @@
-# -*- coding: utf-8 -*-
 '''
 '''
-from __future__ import division, print_function
-import sys
-import numpy as np
 import random as ran
+import sys
+
+import numpy as np
+
+from .. import GSASIIlattice as G2lat
 from .. import GSASIIobj as G2obj
 from .. import GSASIIspc as G2spc
-from .. import GSASIIlattice as G2lat
+
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .INS file and pulls out a selected phase'
@@ -21,7 +22,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
         
     def ContentsValidator(self, filename):
         "Test if the ins file has a CELL record"
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,l in enumerate(fp):
             if l.startswith('CELL'):
                 break
@@ -49,7 +50,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
             'SUMP','L.S.','CGLS','BLOC','DAMP','STIR','WGHT','FVAR','BOND','CONF','MPLA',
             'HTAB','LIST','ACTA','SIZE','TEMP','WPDB','FMAP','GRID','PLAN','MOLE']
         self.errors = 'Error opening file'
-        fp = open(filename, 'r')
+        fp = open(filename)
         Phase = {}
         Title = ''
         Atoms = []
@@ -90,13 +91,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
                     SFACcontinue = True
                 else:
                     SFACcontinue = False
-            elif S[0] == 'Q':
-                pass
-            elif '\x1a' in S[:4]:
-                pass
-            elif S[:3].upper() == 'REM':
-                pass
-            elif S[:3].upper() == 'END':
+            elif S[0] == 'Q' or '\x1a' in S[:4] or S[:3].upper() == 'REM' or S[:3].upper() == 'END':
                 pass
             elif S[:4].strip().upper() not in Shelx:   #this will find an atom record or an extended title!
                 if ifTITL:

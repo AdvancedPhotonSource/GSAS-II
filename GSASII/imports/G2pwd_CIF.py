@@ -1,17 +1,18 @@
-# -*- coding: utf-8 -*-
 '''Class to read a phase from a CIF
 '''
-from __future__ import division, print_function
-import numpy as np
 import os.path
-from .. import GSASIIpath
-from .. import GSASIIobj as G2obj
+
+import numpy as np
+
 from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpath
+
 try:
-    import CifFile as cif # PyCifRW from James Hester as a package
+    import CifFile as cif  # PyCifRW from James Hester as a package
 except ImportError:
     try:
-        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        from .. import CifFile as cif  # PyCifRW, as distributed w/G2 (old)
     except ImportError:
         cif = None
 asind = lambda x: 180.*np.arcsin(x)/np.pi
@@ -32,7 +33,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
     # Validate the contents
     def ContentsValidator(self, filename):
         'Use standard CIF validator'
-        fp = open(filename,'r')
+        fp = open(filename)
         return self.CIFValidator(fp)
         fp.close()
 
@@ -94,7 +95,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             print ('debug: Reuse previously parsed CIF')
             selections = rdbuffer.get('selections')
         if cf is None:
-            if GSASIIpath.GetConfigValue('debug'): print("Starting parse of {} as CIF".format(filename))
+            if GSASIIpath.GetConfigValue('debug'): print(f"Starting parse of {filename} as CIF")
             cf = G2obj.ReadCIF(filename)
             if GSASIIpath.GetConfigValue('debug'): print ("CIF file parsed")
         # scan all blocks for sets of data
@@ -304,16 +305,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                         vl.append(0.)
                     else:
                         vl.append(v)
-            elif sucf ==  '_pd_proc_intensity_total':
-                for val in cf[blk].get(sucf,'?'):
-                    v,e = cif.get_number_with_esd(val)
-                    if v is None: # not parsed
-                        vl.append(0.)
-                    elif v <= 0:
-                        vl.append(1.)
-                    else:
-                        vl.append(1./v)
-            elif sucf ==  '_pd_meas_counts_total':
+            elif sucf ==  '_pd_proc_intensity_total' or sucf ==  '_pd_meas_counts_total':
                 for val in cf[blk].get(sucf,'?'):
                     v,e = cif.get_number_with_esd(val)
                     if v is None: # not parsed

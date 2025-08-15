@@ -1,21 +1,19 @@
 #scanCCD data processing
 '''
 '''
-import os
-import os.path as ospath
-import sys
 import math
+import sys
 import time
+
+import matplotlib as mpl
 import numpy as np
 import numpy.linalg as nl
-import numpy.ma as ma
 import wx
-import matplotlib as mpl
-from . import GSASIIpath
-from . import GSASIImiscGUI as G2IO
+from numpy import ma
+
+from . import GSASIIfiles as G2fil
 from . import GSASIIimage as G2img
 from . import GSASIIplot as G2plt
-from . import GSASIIfiles as G2fil
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
@@ -154,7 +152,6 @@ class scanCCD(wx.Frame):
 
     
         def Fill2ThetaMap(data,TA,image):
-            import numpy.ma as ma
             Zmin = data['Zmin']
             Zmax = data['Zmax']
             tax,tay = TA    # 2-theta & yaxis
@@ -260,7 +257,7 @@ class scanCCD(wx.Frame):
                     file.write(powderfile+'\n')
                     file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
                         100.*x[0],100.*(x[1]-x[0])))                    
-                XYE = zip(x,y,e)
+                XYE = zip(x,y,e, strict=False)
                 for X,Y,E in XYE:
                     if Fxye:
                         file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,max(E,1.0)))                        

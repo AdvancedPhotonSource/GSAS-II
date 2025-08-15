@@ -5,12 +5,13 @@ Tests the two NIST*LATTICE binaries, LATTIC and convcell using
 their Python wrappers in module nistlat.py
 '''
 
+import importlib.util
 import os
 import sys
 import tempfile
+
 import numpy.testing as npt
 
-import importlib.util
 G2loc = None
 try: 
     G2loc = importlib.util.find_spec('GSASII.nistlat')
@@ -22,9 +23,9 @@ if G2loc is None: # fixup path if GSASII not installed into Python
     print('GSAS-II not installed in Python; Hacking sys.path')
     sys.path.append(os.path.dirname(home))
 
-import GSASII
-import GSASII.nistlat as nistlat
 import GSASII.GSASIIlattice as G2lat
+from GSASII import nistlat
+
 V = lambda cell: float(G2lat.calc_V(G2lat.cell2A(cell)))
 
 work = tempfile.gettempdir()

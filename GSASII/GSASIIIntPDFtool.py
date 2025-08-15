@@ -1,31 +1,27 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 '''Autointegration GSASIIimgGUI and GSASIIimage, hacked for stand-alone use
 
 '''
 #
 # idea: select image file type & set filter from that
 #
-from __future__ import division, print_function
-import os
 import copy
 import glob
-import time
-import re
-import math
+import os
 import sys
-import wx
-import wx.lib.mixins.listctrl  as  listmix
-import wx.grid as wg
+import time
+
 import numpy as np
+import wx
+
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath(True)
-from . import GSASIIctrlGUI as G2G
-from . import GSASIIobj as G2obj
-from . import GSASIIimgGUI as G2imG
-from . import GSASIIfiles as G2fil
-from . import GSASIIscriptable as G2sc
 import multiprocessing as mp
+
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIimgGUI as G2imG
+from . import GSASIIscriptable as G2sc
 
 try: # fails during doc build
     wxMainFrameStyle = wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX
@@ -159,7 +155,7 @@ class AutoIntFrame(wx.Frame):
                     self.gpxin[3] = dlg.GetPath()
                 dlg.Destroy()
             if not os.path.exists(self.gpxin[3]):
-                G2G.G2MessageBox(self,'Error: file {} not found.'.format(self.gpxin[3]))
+                G2G.G2MessageBox(self,f'Error: file {self.gpxin[3]} not found.')
                 return
             SetGPXInputFile()
         def SetGPXInputFile():
@@ -168,7 +164,7 @@ class AutoIntFrame(wx.Frame):
             self.histList = gpx.histograms()
             self.pdfList = gpx.pdfs()
             if not self.imgList:
-                G2G.G2MessageBox(self,'Error: no images in {}.'.format(self.gpxin[3]))
+                G2G.G2MessageBox(self,f'Error: no images in {self.gpxin[3]}.')
                 return
             self.gpxin[1].SetValue(self.gpxin[3])            
             self.imprm[1].Clear()
@@ -206,7 +202,7 @@ class AutoIntFrame(wx.Frame):
                 # select the format here
                 dlg = G2G.G2SingleChoiceDialog(self,
                         'There is more than one format with a '+
-                        '.{} output. Choose the one to use'.format(fmt),
+                        f'.{fmt} output. Choose the one to use',
                         'Choose output format',choices)
                 dlg.CenterOnParent()
                 dlg.clb.SetSelection(0)  # force a selection
@@ -232,28 +228,19 @@ class AutoIntFrame(wx.Frame):
                 return
             # do we have integration input?
             if not self.params['TableMode']:
-                if not self.gpxin[3]:
-                    self.EnableIntButtons(False)
-                    return
-                elif not os.path.exists(self.gpxin[3]):
-                    self.EnableIntButtons(False)
-                    return
-                elif len(self.imgList) == 0:
+                if not self.gpxin[3] or not os.path.exists(self.gpxin[3]) or len(self.imgList) == 0:
                     self.EnableIntButtons(False)
                     return
                 else:
                     self.EnableIntButtons(True)
+            elif self.ImgTblParms:
+                self.EnableIntButtons(True)
             else:
-                if self.ImgTblParms:
-                    self.EnableIntButtons(True)
-                else:
-                    self.EnableIntButtons(False)
-                    return
+                self.EnableIntButtons(False)
+                return
             # do we have PDF input, if requested
             if self.params['ComputePDF']:
-                if len(self.pdfList) == 0 or not writingPDF:
-                    self.EnableIntButtons(False)
-                elif 'Error' in self.formula:
+                if len(self.pdfList) == 0 or not writingPDF or 'Error' in self.formula:
                     self.EnableIntButtons(False)
                 
         def checkPDFselection():
@@ -274,7 +261,7 @@ class AutoIntFrame(wx.Frame):
             try: 
                 PDFobj = self.gpxInp.pdf(pdfEntry)
             except KeyError:
-                print("PDF entry not found: {}".format(pdfEntry))
+                print(f"PDF entry not found: {pdfEntry}")
                 return
             histNames = [i.name for i in self.histList]
             for i,lbl in enumerate(('Sample Bkg.','Container',
@@ -296,12 +283,12 @@ class AutoIntFrame(wx.Frame):
                 i = PDFobj.data['PDF Controls']['ElList'][el]['FormulaNo']
                 if i <= 0:
                     continue
-                elif i == 1:
+                if i == 1:
                     if self.formula: self.formula += ' '
-                    self.formula += '{}'.format(el)
+                    self.formula += f'{el}'
                 else:
                     if self.formula: self.formula += ' '
-                    self.formula += '{}({:.1f})'.format(el,i)
+                    self.formula += f'{el}({i:.1f})'
             if not self.formula:
                 self.formula = 'Error: no chemical formula'
             lbl5b.SetLabel(self.formula)
@@ -398,15 +385,15 @@ class AutoIntFrame(wx.Frame):
                     self.params['TableMode'] = True
                     self.params['ControlsTable'] = {}
                     self.params['MaskTable'] = {}
-                    for f,m in zip(self.IMfileList,self.ImgTblParms[-1]):
+                    for f,m in zip(self.IMfileList,self.ImgTblParms[-1], strict=False):
                         n = os.path.split(f)[1]
                         if n in self.params['ControlsTable']:
-                            print('Warning overwriting entry {}'.format(n))
+                            print(f'Warning overwriting entry {n}')
                         self.params['ControlsTable'][n] = G2imG.ReadControls(f)
                         if m and os.path.exists(m):
                             self.params['MaskTable'][n] = G2imG.ReadMask(m)
                         elif m != "(none)":
-                            print("Error: Mask file {} not found".format(m))
+                            print(f"Error: Mask file {m} not found")
                 else:
                     self.params['TableMode'] = False
                     self.params['ControlsTable'] = {}
@@ -660,7 +647,6 @@ class AutoIntFrame(wx.Frame):
             self.ShowMatchingFiles(None)
         finally:
             dlg.Destroy()
-        return
         
     def ShowMatchingFiles(self,value,invalid=False,**kwargs):
         '''Find and image files matching the image
@@ -729,9 +715,8 @@ class AutoIntFrame(wx.Frame):
                 if not self.params['outsel'][dfmt[1:]]: continue
                 dir = os.path.join(self.params['outdir'],dfmt[1:])
                 if not os.path.exists(dir): os.makedirs(dir)
-        else:
-            if not os.path.exists(self.params['outdir']):
-                os.makedirs(self.params['outdir'])
+        elif not os.path.exists(self.params['outdir']):
+            os.makedirs(self.params['outdir'])
         if self.Reset: # special things to do after Reset has been pressed
             self.G2frame.IntegratedList = []
             wx.Yield()
@@ -779,7 +764,7 @@ class AutoIntFrame(wx.Frame):
             
         if GSASIIpath.GetConfigValue('debug'):
             import datetime
-            print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+            print (f"DBG_Timer tick at {datetime.datetime.now():%d %b %Y %H:%M:%S}\n")
         if self.PreventTimerReEntry: return
         self.PreventTimerReEntry = True
         self.ShowMatchingFiles(None)
@@ -807,7 +792,7 @@ class AutoIntFrame(wx.Frame):
             try: 
                 PDFobj = gpxinp.pdf(pdfEntry)
             except KeyError:
-                print("PDF entry not found: {}".format(pdfEntry))
+                print(f"PDF entry not found: {pdfEntry}")
             # update with GUI input
             for i,lbl in enumerate(('Sample Bkg.','Container',
                                     'Container Bkg.')):
@@ -919,8 +904,8 @@ def ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,ou
                     fil = os.path.join(savedir,fname)
                     print('Wrote',h.Export(fil,dfmt,hint))
                 except Exception as msg:
-                    print('Failed to write {} as {}. Error msg\n{}'
-                              .format(fname,dfmt,msg))
+                    print(f'Failed to write {fname} as {dfmt}. Error msg\n{msg}'
+                              )
         if ComputePDF:  # compute PDF
             for h in hists:
                 pdf = gpxout.copy_PDF(PDFdict,h)
@@ -958,15 +943,15 @@ def SetupInterpolation(dlg):
     nonInterpVars = dlg.nonInterpVars
     ControlsTable = {}
     MaskTable = {}
-    for f,m in zip(IMfileList,parms[-1]):
+    for f,m in zip(IMfileList,parms[-1], strict=False):
         n = os.path.split(f)[1]
         if n in ControlsTable:
-            print('Warning overwriting entry {}'.format(n))
+            print(f'Warning overwriting entry {n}')
         ControlsTable[n] = G2imG.ReadControls(f)
         if m and os.path.exists(m):
             MaskTable[n] = G2imG.ReadMask(m)
         elif m != "(none)":
-            print("Error: Mask file {} not found".format(m))
+            print(f"Error: Mask file {m} not found")
     return copy.deepcopy([cols, parms, IMfileList, ParmList, nonInterpVars,ControlsTable,MaskTable])
 
 def LookupFromTable(dist,parmList):
@@ -1022,7 +1007,7 @@ def LookupFromTable(dist,parmList):
 if __name__ == "__main__":
     GSASIIpath.InvokeDebugOpts()
     App = wx.App()
-    class dummyClass(object):
+    class dummyClass:
         '''An empty class where a few values needed from parent are placed
         '''
         def __init__(self): 

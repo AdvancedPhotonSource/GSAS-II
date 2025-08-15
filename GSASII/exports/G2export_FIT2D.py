@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_FIT2D` follow:
 '''
-from __future__ import division, print_function
 import os.path
+
 import numpy as np
+
 from .. import GSASIIfiles as G2fil
 from .. import GSASIIobj as G2obj
+
 
 class ExportPowderCHI(G2fil.ExportBaseclass):
     '''Used to create a CHI file for a powder data set
@@ -29,7 +30,7 @@ class ExportPowderCHI(G2fil.ExportBaseclass):
         self.Write("2-Theta Angle (Degrees)")
         self.Write("Intensity")
         self.Write("       "+str(len(histblk['Data'][0])))
-        for X,Y in zip(histblk['Data'][0],histblk['Data'][1]):
+        for X,Y in zip(histblk['Data'][0],histblk['Data'][1], strict=False):
             line = " %5.7e" % X
             line += "   %5.7e" % Y
             self.Write(line)
@@ -82,10 +83,10 @@ class ExportPowderQCHI(G2fil.ExportBaseclass):
             lam = 0.
         else:
             lam = inst['Lam'][1]
-        self.Write("Q{:>20.6f}".format(lam))
+        self.Write(f"Q{lam:>20.6f}")
         self.Write("Intensity")
         self.Write("       "+str(len(histblk['Data'][0])))
-        for X,Y in zip(histblk['Data'][0],histblk['Data'][1]):
+        for X,Y in zip(histblk['Data'][0],histblk['Data'][1], strict=False):
             line = " %5.7e" % (2.*np.pi/G2lat.Pos2dsp(inst,X))
             line += "   %5.7e" % Y
             self.Write(line)

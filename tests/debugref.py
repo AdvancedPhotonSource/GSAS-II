@@ -4,11 +4,14 @@
 import os
 import sys
 import tempfile
+
 import numpy.testing as npt
+
 home = os.path.dirname(__file__)
 work = tempfile.gettempdir()
 
 import importlib.util
+
 G2loc = None
 try: 
     G2loc = importlib.util.find_spec('GSASII.GSASIIscriptable')
@@ -19,8 +22,8 @@ if G2loc is None: # fixup path if GSASII not installed into Python
     print('GSAS-II not installed in Python; Hacking sys.path')
     sys.path.append(os.path.dirname(home))
 
-import GSASII
 import GSASII.GSASIIscriptable as G2sc
+
 
 def test_refine():
     def testR(msg,w1,w2):
@@ -45,7 +48,6 @@ def test_refine():
     gpx.save('test2.gpx')
     gpx.refine()
     testR('Before fitting',96.681098,99.748994)
-    # 
     h1.set_refinements({'Limits': [16.,158.4]})
     h2.set_refinements({'Limits': [19.,153.]})
     gpx.set_Controls('cycles', 8)
@@ -55,12 +57,10 @@ def test_refine():
     gpx.save('test4.gpx')
     gpx.refine()
     testR('Fit scale & bkg',40.64193551740201,18.6189841945785)
-    #
     phase0.set_refinements({'Cell':True})
     phase0.set_HAP_refinements({'HStrain':True},[h2])
     gpx.refine()
     testR('Fit cells',30.072804646662338,15.014744642359773)
-    #
     phase0.set_HAP_refinements({'Mustrain':{'refine':True}},[h1])
     #phase0.set_HAP_refinements({'Size':{'refine':True}},[h1])
     h1.set_refinements({"Sample Parameters": {"Shift": True}})
@@ -69,7 +69,6 @@ def test_refine():
     gpx.refine()
     testR('add Mustrain, Shift, Displace[XY], atomic X & Uiso',
               12.66845815113383,6.695761603085025)
-    #
     h1.set_refinements({'Instrument Parameters': ['U', 'V', 'W']})
     h2.set_refinements({'Instrument Parameters': ['U', 'V', 'W']})
     gpx.refine()

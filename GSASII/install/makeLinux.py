@@ -24,8 +24,13 @@ defined:
 The path to Python is determined from the version of Python used to
 run this script.
 '''
-import sys, os, os.path, stat, shutil
 import datetime
+import os
+import os.path
+import shutil
+import stat
+import sys
+
 desktop_template = """
 [Desktop Entry]
 Version=1.0
@@ -94,8 +99,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
     if os.path.exists(G2start): os.unlink(G2start)
     fp = open(G2start,'w')
     fp.write('#!/bin/bash\n')
-    fp.write("# created by run of makeLinux.py on {:%d %b %Y %H:%M}\n".format(
-        datetime.datetime.now()))
+    fp.write(f"# created by run of makeLinux.py on {datetime.datetime.now():%d %b %Y %H:%M}\n")
     activate = os.path.join(os.path.dirname(pythonexe),'activate')
     if os.path.exists(activate): fp.write(f'source {activate}\n')
     fp.write(f'{pythonexe} {G2script} $*\n')
@@ -147,7 +151,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         sys.exit()
     add2script = ''
     if script: add2script = '; ' + script
-    for f,t in zip((dfile,mfile),('Desktop','Menu')):
+    for f,t in zip((dfile,mfile),('Desktop','Menu'), strict=False):
         if f is None: continue
         try:
             with open(f,'w') as fp:
@@ -155,8 +159,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
             os.chmod(
                 dfile,
                 stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IXOTH)
-            print("Created {} shortcut calling {} as file\n\t{}".format(
-                t,term,f))
+            print(f"Created {t} shortcut calling {term} as file\n\t{f}")
         except Exception as msg:
             print("creation of file failed: "+f)
             print(msg)
@@ -166,8 +169,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
     if os.path.exists(G2startterm): os.unlink(G2startterm)
     fp = open(G2startterm,'w')
     fp.write('#!/bin/bash\n')
-    fp.write("# created by run of makeLinux.py on {:%d %b %Y %H:%M}\n".format(
-        datetime.datetime.now()))
+    fp.write(f"# created by run of makeLinux.py on {datetime.datetime.now():%d %b %Y %H:%M}\n")
     if os.path.exists(activate): fp.write(f'source {activate}\n')
     fp.write(f'{terminal} {G2start}\n')
     if os.path.exists(script): fp.write(f'{script}\n')
@@ -185,8 +187,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         if os.path.exists(G2reset): os.unlink(G2reset)
         fp = open(G2reset,'w')
         fp.write('#!/bin/bash\n')
-        fp.write("# created by run of makeLinux.py on {:%d %b %Y %H:%M}\n".format(
-            datetime.datetime.now()))
+        fp.write(f"# created by run of makeLinux.py on {datetime.datetime.now():%d %b %Y %H:%M}\n")
         if os.path.exists(activate): fp.write(f'source {activate}\n')
         fp.write('read -p "Reset any local changes and install latest GSAS-II version? (Y/[N]): " confirm\n[[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1\n')
         fp.write(f'{pythonexe} {gitstrap} --reset\n')

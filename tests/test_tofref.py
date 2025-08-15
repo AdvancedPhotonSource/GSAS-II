@@ -9,11 +9,14 @@ data. This tests the TOF diffraction code and that Marquardt damping works.
 import os
 import sys
 import tempfile
+
 import numpy.testing as npt
+
 home = os.path.dirname(__file__)
 work = tempfile.gettempdir()
 
 import importlib.util
+
 G2loc = None
 try: 
     G2loc = importlib.util.find_spec('GSASII.GSASIIscriptable')
@@ -24,8 +27,8 @@ if G2loc is None: # fixup path if GSASII not installed into Python
     print('GSAS-II not installed in Python; Hacking sys.path')
     sys.path.append(os.path.dirname(home))
 
-import GSASII
 import GSASII.GSASIIscriptable as G2sc
+
 
 def test_refine():
     '''Tests a TOF refinement with POWGEN data

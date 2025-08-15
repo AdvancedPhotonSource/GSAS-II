@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 *Module G2img_1ID_32bit_TIFsum.py: 1ID normalized 16bit Pixirad TIF for rapid access measurement*
 --------------------------------------------------
@@ -7,12 +6,14 @@ Adaptation of G2img_1ID_32bit_TIFsum.py revision 4902 for use with the 1ID SAXS 
 
 '''
 
-from __future__ import division, print_function
 import struct as st
-from .. import GSASIIobj as G2obj
-from .. import GSASIIfiles as G2fil
-import numpy as np
 import time
+
+import numpy as np
+
+from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+
 DEBUG = False
 class TIF_ReaderClass(G2obj.ImportImage):
     '''Reads TIF files using a routine (:func:`GetTifData`) that looks
@@ -37,9 +38,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
         tag = fp.read(2)
         if 'bytes' in str(type(tag)):
             tag = tag.decode('latin-1')
-        if tag == 'II' and int(st.unpack('<h',fp.read(2))[0]) == 42: #little endian
-            pass
-        elif tag == 'MM' and int(st.unpack('>h',fp.read(2))[0]) == 42: #big endian
+        if (tag == 'II' and int(st.unpack('<h',fp.read(2))[0]) == 42) or (tag == 'MM' and int(st.unpack('>h',fp.read(2))[0]) == 42): #little endian
             pass
         else:
             return False # header not found; not valid TIF
@@ -93,25 +92,25 @@ def GetTifData(filename):
     polarization = None
     DEBUG = False
     try:
-        Meta = open(filename+'.metadata','r')
+        Meta = open(filename+'.metadata')
         head = Meta.readlines()
         for line in head:
             line = line.strip()
             try:
                 if '=' not in line: continue
                 keyword = line.split('=')[0].strip()
-                if 'dataType' == keyword:
+                if keyword == 'dataType':
                     dataType = int(line.split('=')[1])
-                elif 'wavelength' == keyword.lower():
+                elif keyword.lower() == 'wavelength':
                     wavelength = float(line.split('=')[1])
-                elif 'distance' == keyword.lower():
+                elif keyword.lower() == 'distance':
                     distance = float(line.split('=')[1])
-                elif 'polarization' == keyword.lower():
+                elif keyword.lower() == 'polarization':
                     polarization = float(line.split('=')[1])
             except:
                 print('error reading metadata: '+line)
         Meta.close()
-    except IOError:
+    except OSError:
         print ('no metadata file found - will try to read file anyway')
         head = ['no metadata file found',]
         
@@ -185,10 +184,10 @@ def GetTifData(filename):
         return lines,0,0,0
     print ('image read time: %.3f'%(time.time()-time0))
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center
-    wavelength = (not wavelength) and 0.10 or wavelength
-    distance = (not distance) and 100.0 or distance
-    polarization = (not polarization) and 0.99 or polarization
+    center = ((not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000]) or center
+    wavelength = ((not wavelength) and 0.10) or wavelength
+    distance = ((not distance) and 100.0) or distance
+    polarization = ((not polarization) and 0.99) or polarization
     data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy,
             'setdist':distance,'PolaVal':[polarization,False]}
     File.close()

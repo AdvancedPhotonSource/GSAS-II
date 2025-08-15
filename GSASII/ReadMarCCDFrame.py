@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
 '''Defines a routine to read from MARCCD files
 '''
 
@@ -254,12 +253,12 @@ typedef struct frame_header_type {
 	} frame_header;
 """
 
-import struct as st
 import array as ar
+import struct as st
 
 MAXIMAGES=9
 
-class marFrame():
+class marFrame:
     '''A class to extract correct mar header and image info from a MarCCD file
 
     :param str File: file object [from open()]

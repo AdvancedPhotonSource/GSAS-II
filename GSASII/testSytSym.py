@@ -1,13 +1,16 @@
 #testMagSym
 import sys
-import wx
+
 import numpy as np
+import wx
+
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
-from . import GSASIIspc as G2spc
-from . import GSASIIlattice as G2lat
 from . import GSASIIctrlGUI as G2G
+from . import GSASIIlattice as G2lat
 from . import GSASIIphsGUI as G2phsGUI
+from . import GSASIIspc as G2spc
 
 try:
     wx.NewId

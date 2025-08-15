@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_image` follow:
 '''
-from __future__ import division, print_function
 import os.path
+
 try:
     import matplotlib.pyplot as plt
 except ImportError:
     plt = None
 from .. import GSASIIfiles as G2fil
+
 
 class ExportImagePNG(G2fil.ExportBaseclass):
     '''Used to create a PNG file for a GSAS-II image

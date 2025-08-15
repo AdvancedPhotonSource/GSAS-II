@@ -1,15 +1,16 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_examples` follow:
 '''
 # note documentation in docs/source/exports.rst
 #
-from __future__ import division, print_function
 import os
+
 import numpy as np
-from .. import GSASIIobj as G2obj
-from .. import GSASIImath as G2mth
-from .. import GSASIIpwd as G2pwd
+
 from .. import GSASIIfiles as G2fil
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpwd as G2pwd
+
 
 class ExportPhaseText(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -50,7 +51,7 @@ class ExportPhaseText(G2fil.ExportBaseclass):
             for lbl,defsig,val,sig in zip(
                 ['a','b','c','alpha','beta ','gamma','volume'],
                 3*[-0.00001] + 3*[-0.001] + [-0.01], # sign values to use when no sigma
-                cellList,cellSig
+                cellList,cellSig, strict=False
                 ):
                 if sig:
                     txt = G2mth.ValEsd(val,sig)
@@ -119,11 +120,11 @@ class ExportPowderText(G2fil.ExportBaseclass):
                            histblk['Data'][1],
                            histblk['Data'][2],
                            histblk['Data'][3],
-                           histblk['Data'][4],
+                           histblk['Data'][4], strict=False,
                            #histblk['Data'][5],
                            ):
             strg = ''
-            for val,digits in zip(vallist,digitList):
+            for val,digits in zip(vallist,digitList, strict=False):
                 strg += G2fil.FormatPadValue(val,digits)
             self.Write(strg)
         self.CloseFile()

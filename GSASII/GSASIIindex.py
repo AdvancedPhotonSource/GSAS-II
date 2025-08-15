@@ -1,19 +1,19 @@
-# -*- coding: utf-8 -*-
 #GSASII cell indexing program: variation on that of A. Coehlo
 #   includes cell refinement from peak positions (not zero as yet)
 '''
 Classes and routines defined in :mod:`GSASIIindex` follow. 
 '''
 
-from __future__ import division, print_function
 import math
 import time
+
 import numpy as np
+import scipy.optimize as so
+
 from . import GSASIIlattice as G2lat
+from . import GSASIImath as G2mth
 from . import GSASIIpwd as G2pwd
 from . import GSASIIspc as G2spc
-from . import GSASIImath as G2mth
-import scipy.optimize as so
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -224,7 +224,7 @@ def sortM20(cells):
     T = []
     for i,M in enumerate(cells):
         T.append((M[0],i))
-    D = dict(zip(T,cells))
+    D = dict(zip(T,cells, strict=False))
     T.sort()
     T.reverse()
     X = []
@@ -238,7 +238,7 @@ def sortCells(cells,col):
     T = []
     for i,M in enumerate(cells):
         T.append((M[col],i))
-    D = dict(zip(T,cells))
+    D = dict(zip(T,cells, strict=False))
     T.sort()
     X = []
     for key in T:
@@ -295,7 +295,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     values = []
     ranges = []
     dT = 0.01       #seems to be a good choice
-    for v,r in zip(ssopt['ModVec'],Vref):
+    for v,r in zip(ssopt['ModVec'],Vref, strict=False):
         if r:
             ranges += [slice(dT,1.-dT,dT),] #NB: unique part for (00g) & (a0g); (abg)?
             values += [v,]
@@ -394,7 +394,7 @@ def IndexSSPeaks(peaks,HKL):
         if peak[2]:
             if peak[-1] > 0.:
                 for j in range(4):
-                    if abs(peak[j+4]) > hklmax[j]: hklmax[j] = abs(peak[j+4])
+                    hklmax[j] = max(hklmax[j], abs(peak[j+4]))
                 peak[3] = True
     if hklmax[0]*hklmax[1]*hklmax[2]*hklmax[3] > 0:
         return True,Peaks
@@ -563,7 +563,7 @@ def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref):
     
     Peaks = np.array(peaks).T    
     values = A2values(ibrav,A)
-    for v,r in zip(V,Vref):
+    for v,r in zip(V,Vref, strict=False):
         if r:
             values.append(v)
     if Zref:
@@ -692,7 +692,7 @@ def FitHKLTSS(difC,ibrav,peaks,A,V,Vref,Z,Zref):
     
     Peaks = np.array(peaks).T    
     values = A2values(ibrav,A)
-    for v,r in zip(V,Vref):
+    for v,r in zip(V,Vref, strict=False):
         if r:
             values.append(v)
     if Zref:
@@ -890,13 +890,12 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True,cctbx_args=None):
         Nc = len(HKL)
         if Nc >= ncMax:
             GoOn = False
-        else:
-            if dlg:
-                dlg.Raise()
-                GoOn = dlg.Update(100*Nc//ncMax)[0]
-                if Skip or not GoOn:
-                    GoOn = False
-                    break
+        elif dlg:
+            dlg.Raise()
+            GoOn = dlg.Update(100*Nc//ncMax)[0]
+            if Skip or not GoOn:
+                GoOn = False
+                break
         
         if IndexPeaks(peaks,HKL)[0] and len(HKL) > mHKL[ibrav]:
             Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20,cctbx_args=cctbx_args)
@@ -979,8 +978,9 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
     'needs a doc string'
     timingOn = False
     if timingOn:
-        import cProfile,pstats
+        import cProfile
         import io as StringIO
+        import pstats
     delt = 0.005                                     #lowest d-spacing cushion
     amin = 2.5
     amax = 5.0*getDmax(peaks)
@@ -1024,7 +1024,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
                     GoOn = True
                     while GoOn:                                                 #Loop over increment of volume
                         N2 = 0
-                        while N2 < N2s[ibrav]:                                  #Table 2 step (iii)               
+                        while N2s[ibrav] > N2:                                  #Table 2 step (iii)               
                             if timeout and time.time() - begin > timeout:
                                 GoOn = False
                                 break
@@ -1041,33 +1041,32 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True,
                                 GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,0,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20,cctbx_args=cctbx_args)
                             if Skip:
                                 break
-                            elif Nc >= ncMax:
+                            if Nc >= ncMax:
                                 GoOn = False
                                 break
-                            elif 3*Nc < Nobs:
+                            if 3*Nc < Nobs:
                                 N2 = 10
                                 break
-                            else:
-                                if not GoOn:
-                                    break
-                                if 1.e6 > M20 > 1.0:    #exclude nonsense
-                                    bestM20 = max(bestM20,M20)
-                                    A = halfCell(ibrav,A[:],peaks)
-                                    if ibrav in [13,14,15,16]:
-                                        A = monoCellReduce(ibrav,A[:])
-                                    HKL = G2lat.GenHBravais(dmin,ibrav,A)
-                                    peaks = IndexPeaks(peaks,HKL)[1]
-                                    a,b,c,alp,bet,gam = G2lat.A2cell(A)
-                                    V = G2lat.calc_V(A)
-                                    if ( (M20 >= M20_min) and (X20_max is None or X20 <= X20_max) ):
-                                        cell = [M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False]
-                                        if return_Nc: cell.append(Nc)
-                                        newcell = np.array(cell[3:10])
-                                        if not np.allclose(newcell,lastcell):
-                                            print ("%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f %s"
-                                                %(M20,X20,Nc,a,b,c,alp,bet,gam,V,V1,bravaisNames[ibrav]))
-                                            cells.append(cell)
-                                        lastcell = np.array(cell[3:10])
+                            if not GoOn:
+                                break
+                            if 1.e6 > M20 > 1.0:    #exclude nonsense
+                                bestM20 = max(bestM20,M20)
+                                A = halfCell(ibrav,A[:],peaks)
+                                if ibrav in [13,14,15,16]:
+                                    A = monoCellReduce(ibrav,A[:])
+                                HKL = G2lat.GenHBravais(dmin,ibrav,A)
+                                peaks = IndexPeaks(peaks,HKL)[1]
+                                a,b,c,alp,bet,gam = G2lat.A2cell(A)
+                                V = G2lat.calc_V(A)
+                                if ( (M20_min <= M20) and (X20_max is None or X20_max >= X20) ):
+                                    cell = [M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False]
+                                    if return_Nc: cell.append(Nc)
+                                    newcell = np.array(cell[3:10])
+                                    if not np.allclose(newcell,lastcell):
+                                        print ("%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f %s"
+                                            %(M20,X20,Nc,a,b,c,alp,bet,gam,V,V1,bravaisNames[ibrav]))
+                                        cells.append(cell)
+                                    lastcell = np.array(cell[3:10])
                             if not GoOn:
                                 break
                             N2 += 1
@@ -1179,7 +1178,6 @@ def TestData():
         [7.162393327864274, 369.27397110921817, True, False, 0, 0, 0, 3.2204673608202383, 0.0], 
         [7.412173495305892, 482.84120827021826, True, True, 0, 2, 2, 3.112085822159976, 3.133096]]
         ]
-#
 def test0():
     if NeedTestData: TestData()
     ibrav,cell,bestcell,Pwr,peaks = TestData
@@ -1202,7 +1200,6 @@ def test0():
     N,M20,X20,A = result
     print ('refinePeaks:',N,M20,X20,G2lat.A2cell(A))
     print ('compare bestcell:',bestcell)
-#
 def test1():
     if NeedTestData: TestData()
     ibrav,A,Pwr,peaks = TestData2
@@ -1225,7 +1222,6 @@ def test1():
 #    print 'msg:',result[3]
 #    print 'ier:',result[4]
     
-#
 if __name__ == '__main__':
     test0()
     test1()

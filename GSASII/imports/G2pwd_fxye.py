@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 '''
 '''
-from __future__ import division, print_function
 import os.path as ospath
 import platform
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
 
 class GSAS_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a GSAS files'
@@ -28,9 +29,9 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         #print 'ContentsValidator: '+self.formatName
         nBanks= 0
         if '2' in platform.python_version_tuple()[0]:
-            fp = open(filename,'Ur')
+            fp = open(filename)
         else:
-            fp = open(filename,'r',encoding='latin-1')
+            fp = open(filename,encoding='latin-1')
         fname = ospath.basename(fp.name)
         for i,line in enumerate(fp):
             self.GSAS = True
@@ -44,9 +45,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 self.dnames.append(fname+' '+' '.join(line.split()[:2]))
                 nBanks += 1
                 continue
-            elif line[:7] == 'Monitor': continue
-            elif line [:8] == 'TIME_MAP':          #LANSCE TOF data
-                continue
+            if line[:7] == 'Monitor' or line [:8] == 'TIME_MAP': continue
 #            else:
 #                if not all(c in ' 0123456789.eE+-' for c in line[:-1]):
 #                    self.errors = 'Unexpected information in line: '+str(i+1)
@@ -116,7 +115,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         def GetESDdata(File,Pos,Bank):
             File.seek(Pos)
             cons = Bank.split()
-            if 'TIME_MAP' == cons[4]:
+            if cons[4] == 'TIME_MAP':
                 start = 0
                 step = 1
             else:
@@ -281,9 +280,9 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         title = ''
         comments = None
         if '2' in platform.python_version_tuple()[0]:
-            fp = open(filename,'Ur')
+            fp = open(filename)
         else:
-            fp = open(filename,'r',encoding='latin-1')
+            fp = open(filename,encoding='latin-1')
         # reload previously saved values - used for multibank reads
         if self.repeat and rdbuffer is not None:
             Banks = rdbuffer.get('Banks')

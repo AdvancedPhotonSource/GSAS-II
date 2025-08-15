@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_PDB` follow:
 '''
-from __future__ import division, print_function
-import numpy as np
 import os.path
+
+import numpy as np
+
 from .. import GSASIIfiles as G2fil
 from .. import GSASIIlattice as G2lat
+
 
 class ExportPhasePDB(G2fil.ExportBaseclass):
     '''Used to create a PDB file for a phase
@@ -224,7 +225,7 @@ class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
             Cell = General['Cell'][1:7]
             A,B = G2lat.cell2AB(Cell)
             fmt = '{:4s}'+3*'{:12.4f}'
-            self.Write('{:6d}'.format(len(Atoms)))
+            self.Write(f'{len(Atoms):6d}')
             self.Write(' ')
             for atom in Atoms:
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
@@ -251,7 +252,7 @@ class ExportDrawPhaseCartXYZ(G2fil.ExportBaseclass):
         
         def getRadius(atom):
             atNum = General['AtomTypes'].index(atom[ct])
-            if 'H' == atom[ct]:
+            if atom[ct] == 'H':
                 if drawingData['showHydrogen']:
                     if 'vdW' in atom[cs]:
                         radius = vdwScale*vdWRadii[atNum]
@@ -259,11 +260,10 @@ class ExportDrawPhaseCartXYZ(G2fil.ExportBaseclass):
                         radius = ballScale*drawingData['sizeH']
                 else:
                     radius = 0.0
+            elif 'vdW' in atom[cs]:
+                radius = vdwScale*vdWRadii[atNum]
             else:
-                if 'vdW' in atom[cs]:
-                    radius = vdwScale*vdWRadii[atNum]
-                else:
-                    radius = ballScale*BondRadii[atNum]
+                radius = ballScale*BondRadii[atNum]
             return radius
             
         '''Export as a XYZ file

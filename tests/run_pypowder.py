@@ -1,7 +1,8 @@
 # compute a single peak with pypowder
+import importlib.util
 import os
 import sys
-import importlib.util
+
 import numpy as np
 
 home = os.path.dirname(__file__)
@@ -16,10 +17,11 @@ if G2loc is None: # fixup path if GSASII not installed into Python
     sys.path.append(os.path.dirname(home))
 
 from GSASII import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
 
 if GSASIIpath.binaryPath:
-    import  pypowder as pyd
+    import pypowder as pyd
 else:
     from . import pypowder as pyd
 
@@ -40,6 +42,7 @@ ydata = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
 #ydata = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
 
 import matplotlib.pyplot as plt
+
 plt.plot(xdata,ydata)
 plt.show()
 

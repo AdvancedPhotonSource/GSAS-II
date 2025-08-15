@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import os.path as ospath
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
-from .. import GSASIIpath
+
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 
 class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
@@ -23,7 +23,7 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
@@ -45,7 +45,7 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
         w = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
@@ -66,7 +66,7 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
                         break
                         # del x[-1]
                         # continue
-                    elif len(vals) > 2:
+                    if len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                     else:
@@ -118,7 +118,7 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
@@ -140,7 +140,7 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
         w = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
@@ -161,7 +161,7 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
                         break
                         # x.pop()
                         # continue
-                    elif len(vals) > 2:
+                    if len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                     else:
@@ -213,7 +213,7 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
@@ -235,7 +235,7 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
         w = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
@@ -256,7 +256,7 @@ class txt_NeutronReaderClass(G2obj.ImportSmallAngleData):
                         break
                         # y.append(0.0)
                         # w.append(1.0)
-                    elif len(vals) > 2:
+                    if len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                     else:
@@ -310,7 +310,7 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
@@ -332,7 +332,7 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
         w = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
@@ -353,7 +353,7 @@ class txt_nmNeutronReaderClass(G2obj.ImportSmallAngleData):
                         break
                         # y.append(0.0)
                         # w.append(1.0)
-                    elif len(vals) > 2:
+                    if len(vals) > 2:
                         y.append(float(data[1]))
                         w.append(1.0/float(data[2])**2)
                     else:

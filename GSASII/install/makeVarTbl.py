@@ -1,6 +1,7 @@
+import copy
 import os
 import re
-import copy
+
 print('Importing makeVarTbl.py')
 
 def main():
@@ -51,7 +52,7 @@ def main():
                 symList = []
                 exmplList = []            
                 for j,reg in enumerate(bracketRE.split(field)[1::2]):
-                    if reg not in regList.keys():
+                    if reg not in regList:
                         s = 'one of the characters'
                         for c in reg: 
                             if c == reg[-1]:

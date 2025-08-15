@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Routines to move information between Python interpreters for code 
 development/debugging purposes. This is helpful to move numpy 
@@ -15,8 +14,9 @@ may be imported easily.
 Created on Fri Jul 21 10:40:08 2023 by Brian Toby
 """
 
-import sys
 import pickle
+import sys
+
 
 def dump2tmp(uselocals=True, useglobals=True, usefunctions=False):
     '''
@@ -106,6 +106,5 @@ def undumptmp(setglobals=True):
             break
         except Exception as msg:
             print(nam,'error',msg)
-            pass
     fp.close()
     return vars

@@ -1,22 +1,22 @@
-# -*- coding: utf-8 -*-
-#
 '''There are several classes in :mod:`~GSASII.imports.G2phase`. 
 The documentation for them follows.
 '''
 
-from __future__ import division, print_function
-import sys
-import os.path
 import math
+import os.path
 import random as ran
+import sys
+
 import numpy as np
+
 try:
     import wx
 except ImportError:
     wx = None
+from .. import GSASIIlattice as G2lat
 from .. import GSASIIobj as G2obj
 from .. import GSASIIspc as G2spc
-from .. import GSASIIlattice as G2lat
+
 try:  # fails on doc build
     R2pisq = 1./(2.*np.pi**2)
 except TypeError:
@@ -35,7 +35,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         '''Taking a stab a validating a PDB file
         (look for cell & at least one atom)
         '''
-        fp = open(filename,'r')
+        fp = open(filename)
 #        for i,l in enumerate(fp):
 #            if l.startswith('CRYST1'):
 #                break
@@ -61,7 +61,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         '''
         EightPiSq = 8.*math.pi**2
         self.errors = 'Error opening file'
-        file = open(filename, 'r')
+        file = open(filename)
         Phase = {}
         Title = os.path.basename(filename)
         RES = Title[:3]
@@ -184,7 +184,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         
     def ContentsValidator(self, filename):
         'Look for a VERSION tag in 1st line' 
-        fp = open(filename,'r')
+        fp = open(filename)
         if fp.read(13) == '     VERSION ':
             fp.close()
             return True
@@ -203,7 +203,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         self.MPhase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
         while self.MPhase['ranId'] in usedRanIdList:
             self.MPhase['ranId'] = ran.randint(0,sys.maxsize)
-        fp = open(filename,'r')
+        fp = open(filename)
         self.ReadEXPPhase(ParentFrame, fp)
         fp.close()
         return True
@@ -237,7 +237,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                 PNames.append(Expr[n][key])
         if len(PNames) == 0:
             raise self.ImportException("No phases found")            
-        elif len(PNames) > 1:
+        if len(PNames) > 1:
             dlg = wx.SingleChoiceDialog(G2frame, 'Which phase to read?', 'Read phase data', PNames, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -411,7 +411,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         '''Taking a stab a validating a .m50 file
         (look for cell & at least one atom)
         '''
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,l in enumerate(fp):
             if l.startswith('cell'):
                 break
@@ -436,7 +436,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         '''Read a phase from a JANA2006 m50 & m40 files.
         '''
         self.errors = 'Error opening file'
-        fp = open(filename, 'r') #contains only cell & spcgroup
+        fp = open(filename) #contains only cell & spcgroup
         Phase = {}
         Title = os.path.basename(filename)
         Type = 'nuclear'
@@ -510,7 +510,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
             SGData = G2obj.P1SGData # P 1
         waveTypes = ['Fourier','Sawtooth','ZigZag',]
         filename2 = os.path.splitext(filename)[0]+'.m40'
-        file2 = open(filename2,'r')
+        file2 = open(filename2)
         S = file2.readline()
         line = 1
         self.errors = 'Error reading at line '+str(line)
@@ -627,7 +627,7 @@ class PDF_ReaderClass(G2obj.ImportPhase):
         
     def ContentsValidator(self, filename):
         'Look for a str tag in 1st line' 
-        fp = open(filename,'r')
+        fp = open(filename)
         if fp.read(3) == 'str':
             fp.close()
             return True
@@ -637,7 +637,7 @@ class PDF_ReaderClass(G2obj.ImportPhase):
 
     def Reader(self,filename, ParentFrame=None, **unused):
         'Read phase from a ICDD .str file using :meth:`ReadPDFPhase`'
-        fp = open(filename,'r')
+        fp = open(filename)
         self.Phase = self.ReadPDFPhase(ParentFrame, fp)
         fp.close()
         return True
@@ -687,11 +687,7 @@ class PDF_ReaderClass(G2obj.ImportPhase):
 
                     dlg.Destroy()
                 G2spc.SGPrint(SGData) #silent check of space group symbol
-            elif 'a a_' in S[:7]:
-                data = S.split()
-                cell.append(float(data[2]))
-                cellkey.append(data[1])
-            elif 'b b_' in S[:7]:
+            elif 'a a_' in S[:7] or 'b b_' in S[:7]:
                 data = S.split()
                 cell.append(float(data[2]))
                 cellkey.append(data[1])
@@ -706,9 +702,7 @@ class PDF_ReaderClass(G2obj.ImportPhase):
                 data = S.split('=')
                 indx = cellkey.index(data[1].split(';')[0])
                 cell.append(cell[indx])
-            elif 'al' in S[:5]:
-                cell.append(float(S.split()[1]))
-            elif 'be' in S[:5]:
+            elif 'al' in S[:5] or 'be' in S[:5]:
                 cell.append(float(S.split()[1]))
             elif 'ga' in S[:5]:
                 cell.append(float(S.split()[1]))

@@ -3,10 +3,10 @@ documentation. Git-reorg version.
 '''
 import glob
 import os.path
+
 import git
 
 # get list of documented files (misses out on data files -- with no functions or classes)
-import glob
 loc = os.path.dirname(os.path.realpath(__file__)) # where is the documentation?
 G2loc = os.path.join(loc,'..')
 
@@ -14,7 +14,7 @@ G2loc = os.path.join(loc,'..')
 # look for a reference in the .rst files
 documented = []
 for fil in glob.glob(os.path.join(loc,'source/*.rst')):
-    for line in open(fil,'r').readlines():
+    for line in open(fil).readlines():
         if line.strip().startswith('.. automodule::'):
             documented.append(line.strip().split('::')[1].strip())
 

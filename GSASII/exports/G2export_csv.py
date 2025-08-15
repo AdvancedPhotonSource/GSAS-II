@@ -1,16 +1,17 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_csv` follow:
 '''
 # note documentation in docs/source/exports.rst
 #
-from __future__ import division, print_function
 import os.path
+
 import numpy as np
-from .. import GSASIIobj as G2obj
-from .. import GSASIImath as G2mth
-from .. import GSASIIpwd as G2pwd
-from .. import GSASIIlattice as G2lat
+
 from .. import GSASIIfiles as G2fil
+from .. import GSASIIlattice as G2lat
+from .. import GSASIImath as G2mth
+from .. import GSASIIobj as G2obj
+from .. import GSASIIpwd as G2pwd
+
 
 def WriteList(obj,headerItems):
     '''Write a CSV header
@@ -58,7 +59,7 @@ class ExportPhaseCSV(G2fil.ExportBaseclass):
         line = '"' + str(hist)+ '","' + str(phasenam) + '"'
         for defsig,val in zip(
             3*[-0.00001] + 3*[-0.001] + [-0.01], # sets sig. figs.
-            cellList
+            cellList, strict=False
             ):
             txt = G2mth.ValEsd(val,defsig)
             if line: line += ','
@@ -110,7 +111,7 @@ class ExportPhaseCSV(G2fil.ExportBaseclass):
             line = ''
             for defsig,val in zip(
                 3*[-0.00001] + 3*[-0.001] + [-0.01], # sign values to use when no sigma
-                cellList
+                cellList, strict=False
                 ):
                 txt = G2mth.ValEsd(val,defsig)
                 if line: line += ','
@@ -192,10 +193,10 @@ class ExportPowderCSV(G2fil.ExportBaseclass):
                        histblk['Data'][3],
                        histblk['Data'][4],
                        #histblk['Data'][5],
-                       2*np.pi/G2lat.Pos2dsp(Parms,histblk['Data'][0])
+                       2*np.pi/G2lat.Pos2dsp(Parms,histblk['Data'][0]), strict=False
                        ):
             line = ""
-            for val,digits in zip(vallist,digitList):
+            for val,digits in zip(vallist,digitList, strict=False):
                 if line: line += ','
                 line += '%.6g'%val
 #                line += G2fil.FormatValue(val,digits)
@@ -270,7 +271,7 @@ class ExportMultiPowderCSV(G2fil.ExportBaseclass):
         WriteList(self,headList)
         for vallist in np.array(csvData).T:
             line = ""
-            for val,digits in zip(vallist,digitList):
+            for val,digits in zip(vallist,digitList, strict=False):
                 if line: line += ','
                 line += '%.6g'%val
 #                line += G2fil.FormatValue(val,digits)
@@ -401,7 +402,7 @@ class ExportSASDCSV(G2fil.ExportBaseclass):
             digitList = 2*((13,3),)+((13,4,'g'),)
             for bindata in Distr.T:
                 line = ""
-                for val,digits in zip(bindata,digitList):
+                for val,digits in zip(bindata,digitList, strict=False):
                     if line: line += ','
                     line += G2fil.FormatValue(val,digits)
                 self.Write(line)            
@@ -413,7 +414,7 @@ class ExportSASDCSV(G2fil.ExportBaseclass):
                 if len(Rbins[i]):
                     self.Write('Calc size dist for model %d'%i)
                     WriteList(self,['diam','dist'])
-                    for rbin,dist in zip(Rbins[i],Dist[i]):
+                    for rbin,dist in zip(Rbins[i],Dist[i], strict=False):
                         self.Write('%13.4g,%13.4g'%(2.*rbin,dist))
 
         self.Write('"Small angle data"')
@@ -429,9 +430,9 @@ class ExportSASDCSV(G2fil.ExportBaseclass):
         WriteList(self,("q","y_obs","y_sig","y_calc","y_bkg"))
         digitList = 5*((13,5,'g'),)
         for vallist in zip(histblk['Data'][0],histblk['Data'][1],
-            1./np.sqrt(histblk['Data'][2]),histblk['Data'][3],histblk['Data'][4],):
+            1./np.sqrt(histblk['Data'][2]),histblk['Data'][3],histblk['Data'][4], strict=False,):
             line = ""
-            for val,digits in zip(vallist,digitList):
+            for val,digits in zip(vallist,digitList, strict=False):
                 if line: line += ','
                 line += '%.6g'%val
 #                line += G2fil.FormatValue(val,digits)
@@ -495,10 +496,10 @@ class ExportREFDCSV(G2fil.ExportBaseclass):
                        histblk['Data'][1],
                        1./np.sqrt(histblk['Data'][2]),
                        histblk['Data'][3],
-                       histblk['Data'][4],
+                       histblk['Data'][4], strict=False,
                        ):
             line = ""
-            for val,digits in zip(vallist,digitList):
+            for val,digits in zip(vallist,digitList, strict=False):
                 if line: line += ','
                 line += '%.6g'%val
 #                line += G2fil.FormatValue(val,digits)

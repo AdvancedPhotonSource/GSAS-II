@@ -1,17 +1,17 @@
-# -*- coding: utf-8 -*-
 #GSASIIpath - file location & update routines
 '''
 :mod:`GSASIIpath` Classes & routines follow
 '''
 
-from __future__ import division, print_function
-import os
-import sys
-import platform
+import datetime as dt
 import glob
+import os
+import platform
+
 #import pathlib
 import subprocess
-import datetime as dt
+import sys
+
 try:
     import numpy as np
 except ImportError:
@@ -135,7 +135,7 @@ def LoadConfigFile(filename):
         if not os.path.exists(fil): continue
         try:
             i = 0
-            fp = open(fil,'r')
+            fp = open(fil)
             for line in fp:
                 expr = line.split('#')[0].strip()
                 if expr:
@@ -161,7 +161,7 @@ def GetBinaryPrefix(pyver=None):
     elif sys.platform.startswith("linux"):
         prefix = 'linux'
     else:
-        print(u'Unknown platform: '+sys.platform)
+        print('Unknown platform: '+sys.platform)
         raise Exception('Unknown platform')
     if 'arm' in platform.machine() and sys.platform == "darwin":
         bits = 'arm'
@@ -204,9 +204,7 @@ def HowIsG2Installed():
             rev = ''
         else:
             rev = '-rev'
-        if g2URL in g2repo.remote().urls:
-            return 'github'+rev
-        elif g2URL.replace('https://github.com/',
+        if g2URL in g2repo.remote().urls or g2URL.replace('https://github.com/',
                            'git@github.com:') in g2repo.remote().urls:
             return 'github'+rev
         G2_installed_result = 'git'+rev
@@ -387,7 +385,7 @@ def saveGitHubVersion():
         requests
     except:
         print('Unable to use requests module')
-        return
+        return None
     return subprocess.Popen([sys.executable, __file__, '--github-tags'])
     if GetConfigValue('debug'): print('Updates fetched')
 
@@ -544,9 +542,8 @@ def gitTestGSASII(verbose=True,g2repo=None):
         #count_modified_files = len(g2repo.index.diff(None))
     if g2repo.head.is_detached:
         code += 2                             # detached
-    else:
-        if g2repo.active_branch.name != 'main':
-            code += 8                         # not on main branch
+    elif g2repo.active_branch.name != 'main':
+        code += 8                         # not on main branch
     if g2repo.index.diff("HEAD"): code += 4   # staged
 
     # test if there are local changes committed
@@ -631,8 +628,7 @@ def countDetachedCommits(g2repo=None):
     for c,i in enumerate(g2repo.commit().iter_parents()):
         if i in masterList:
             return c+1,i
-    else:
-        return None,None
+    return None,None
 
 def gitCountRegressions(g2repo=None):
     '''Count the number of new check ins on the main branch since
@@ -752,7 +748,7 @@ def getGitBinaryReleases(cache=False):
         import requests
     except:
         print('Unable to install binaries in getGitBinaryReleases():\n requests module not available')
-        return
+        return None
     # Get first page of releases. (Could there be more than one?)
     releases = []
     tries = 0
@@ -775,11 +771,11 @@ def getGitBinaryReleases(cache=False):
             # prevents us from using a query to get them
             if cache and count > 4:
                 fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'w')
-                res = dict(zip(versions,URLs))
+                res = dict(zip(versions,URLs, strict=False))
                 for key in res:
                     fp.write(f'{key} : {res[key]}\n')
                 fp.close()
-            return dict(zip(versions,URLs))
+            return dict(zip(versions,URLs, strict=False))
         except:
             print('Attempt to get GSAS-II binary releases/assets failed, sleeping for 10 sec and then retrying')
             import time
@@ -788,14 +784,14 @@ def getGitBinaryReleases(cache=False):
     print(f'Could not get releases from {G2binURL}. Using cache')
     res = {}
     try:
-        fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'),'r')
+        fp = open(os.path.join(path2GSAS2,'inputs','BinariesCache.txt'))
         for line in fp.readlines():
             key,val = line.split(':',1)[:2]
             res[key.strip()] = val.strip()
         fp.close()
         return res
     except:
-        raise IOError('Cache read of releases failed too.')
+        raise OSError('Cache read of releases failed too.')
 
 def getGitBinaryLoc(npver=None,pyver=None,verbose=True,debug=False):
     '''Identify the best GSAS-II binary download location from the
@@ -830,7 +826,7 @@ def getGitBinaryLoc(npver=None,pyver=None,verbose=True,debug=False):
     intVersionsList = sorted(versions.keys())
     if not intVersionsList:
         print('No binaries located to match',bindir)
-        return
+        return None
     elif inpver < min(intVersionsList):
         vsel = min(intVersionsList)
         if verbose: print(
@@ -875,8 +871,8 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
     :returns: None
     '''
     # packages not commonly used so import them here not on startup
-    import tempfile
     import tarfile
+    import tempfile
     try:
         import requests
     except:
@@ -977,7 +973,7 @@ def dirGitHub(dirlist,orgName=gitTutorialOwn, repoName=gitTutorialRepo):
         import requests
     except:
         print('Unable to search GitHub in dirGitHub():\n requests module not available')
-        return
+        return None
     dirname = ''
     for item in dirlist:
         dirname += item + '/'
@@ -1023,7 +1019,7 @@ def downloadDirContents(dirlist,targetDir,orgName=gitTutorialOwn, repoName=gitTu
     filList = dirGitHub(dirlist, orgName=orgName, repoName=repoName)
     if filList is None:
         print(f'Directory {"/".join(dirlist)!r} does not have any files')
-        return None
+        return
     for fil in filList:
         if fil.lower() == 'index.html': continue
         URL = rawGitHubURL(dirlist,fil,orgName=orgName,repoName=repoName)
@@ -1110,6 +1106,7 @@ def IPyBreak_base(userMsg=None):
             print ('IPython InteractiveShellEmbed not found')
             return
     import inspect
+
     #from IPython import __version__
     #if __version__.startswith('8.12.'): # see https://github.com/ipython/ipython/issues/13966
     from IPython.core import getipython
@@ -1119,7 +1116,7 @@ def IPyBreak_base(userMsg=None):
         ipshell = InteractiveShellEmbed()
 
     frame = inspect.currentframe().f_back
-    msg   = 'Entering IPython console inside {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
+    msg   = f'Entering IPython console inside {frame.f_code.co_filename} at line {frame.f_lineno}\n'
     if userMsg: msg += userMsg
     # globals().update(locals()) # This might help with vars inside list comprehensions, etc.
     ipshell(msg,stack_depth=2) # Go up one level, to see the calling routine
@@ -1139,8 +1136,8 @@ def exceptHook(*args):
         pass
 
     try:
-        from IPython.terminal.embed import InteractiveShellEmbed
         import IPython.core
+        from IPython.terminal.embed import InteractiveShellEmbed
         if sys.platform.startswith('win'):
             IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='NoColor')(*args)
         else:
@@ -1165,13 +1162,13 @@ def exceptHook(*args):
             print('IPython patch failed, msg=',msg)
     import inspect
     frame = inspect.getinnerframes(args[2])[-1][0]
-    msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
+    msg   = f'Entering IPython console at {frame.f_code.co_filename} at line {frame.f_lineno}\n'
     savehook = sys.excepthook # save the exception hook
     try:
         ipshell(msg,local_ns=frame.f_locals,global_ns=frame.f_globals) # newest (IPython >= 8)
     except DeprecationWarning: # IPython <=7
         try: # IPython >=5
-            class c(object): pass
+            class c: pass
             pseudomod = c() # create something that acts like a module
             pseudomod.__dict__ = frame.f_locals
             InteractiveShellEmbed(banner1=msg)(module=pseudomod,global_ns=frame.f_globals)
@@ -1183,7 +1180,6 @@ def DoNothing():
     '''A routine that does nothing. This is called in place of IPyBreak and pdbBreak
     except when the debug option is set True in the configuration settings
     '''
-    pass
 
 def InvokeDebugOpts():
     'Called to set up debug options'
@@ -1213,7 +1209,7 @@ def TestSPG():
     def showVersion():
         try:
             f = os.path.join(os.path.dirname(pyspg.__file__),'GSASIIversion.txt')
-            with open(f,'r') as fp:
+            with open(f) as fp:
                 version = fp.readline().strip()
                 vnum = fp.readline().strip()
             print(f'  Binary ver: {vnum}, {version}')
@@ -1398,7 +1394,7 @@ def LoadConfig(printInfo=True):
         from . import config_example
     except ImportError:
         try:
-            import GSASII.config_example as config_example
+            from GSASII import config_example
         except ImportError as err:
             print("Error importing config_example.py file\n",err)
             return
@@ -1466,15 +1462,15 @@ def MacRunScript(script):
     :param str script: file name for a bash script
     '''
     script = os.path.abspath(script)
-    osascript = '''
+    osascript = f'''
 set bash to "/bin/bash"
-set filename to "{}"
+set filename to "{script}"
 
 tell application "Terminal"
      activate
      do script bash & " " & filename & "; exit"
 end tell
-'''.format(script)
+'''
     subprocess.Popen(["osascript","-e",osascript])
 
 #==============================================================================
@@ -1604,7 +1600,7 @@ def commonPath(dir1,dir2):
     :returns: True if the paths are common
     '''
 
-    for i,j in zip(fullsplit(dir1),fullsplit(dir2)):
+    for i,j in zip(fullsplit(dir1),fullsplit(dir2), strict=False):
         if i != j: return False
     return True
 
@@ -1711,7 +1707,7 @@ def addCondaPkg():
     '''
     if not all([(i in os.environ) for i in ('CONDA_DEFAULT_ENV','CONDA_EXE',
                         'CONDA_PREFIX', 'CONDA_PYTHON_EXE')]):
-        return None
+        return
     #condaexe = os.environ['CONDA_EXE']
     currenv = os.environ['CONDA_DEFAULT_ENV']
     if sys.platform == "win32":
@@ -1773,7 +1769,7 @@ def makeScriptShortcut():
         if 'site-packages' in p: break
     else:
         print('No site-packages directory found in Python path')
-        return
+        return None
     newfil = os.path.join(p,'G2script.py')
     with open(newfil,'w') as fp:
         fp.write(f'#Created in makeScriptShortcut from {__file__}')
@@ -1804,7 +1800,7 @@ else:
         G2script
     except ImportError:
         print('Unexpected error: import of G2script failed!')
-        return
+        return None
     return newfil
 
 # see if a directory for local modifications is defined. If so, stick that in the path
@@ -1859,7 +1855,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
        if access fails.
     '''
     try:
-        import requests # delay this until now, since rarely needed
+        import requests  # delay this until now, since rarely needed
     except:
         # this import seems to fail with the Anaconda pythonw on
         # macs; it should not!
@@ -1890,7 +1886,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
                     getcookie.update(r.cookies)
                 return page # success
             else:
-                print('request to {} failed. Reason={}'.format(URL,r.reason))
+                print(f'request to {URL} failed. Reason={r.reason}')
         except requests.exceptions.ConnectionError as msg:
             if 'time' in str(msg) and 'out' in str(msg):
                 print(f'server timeout accessing {URL}')
@@ -1930,8 +1926,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
             if GetConfigValue('debug'): print(msg)
         finally:
             if r: r.close()
-    else:
-        return None
+    return None
 
 #===========================================================================
 # duplicated from GSASIIfiles to avoid using an import below
@@ -2006,29 +2001,29 @@ end tell
                 cmds = [term,'--title','"GSAS-II console"','--']
                 script = "echo; echo Press Enter to close window; read line"
                 break
-            elif term == "lxterminal":
+            if term == "lxterminal":
                #terminal = 'lxterminal -t "GSAS-II console" -e'
                cmds = [term,'-t','"GSAS-II console"','-e']
                script = "echo;echo Press Enter to close window; read line"
                break
-            elif term == "xterm":
+            if term == "xterm":
                 #terminal = 'xterm -title "GSAS-II console" -hold -e'
                 cmds = [term,'-title','"GSAS-II console"','-hold','-e']
                 script = "echo; echo This window can now be closed"
                 break
-            elif term == "terminator":
+            if term == "terminator":
                 cmds = [term,'-T','"GSAS-II console"','-x']
                 script = "echo;echo Press Enter to close window; read line"
                 break
-            elif term == "konsole":
+            if term == "konsole":
                 cmds = [term,'-p','tabtitle="GSAS-II console"','--hold','-e']
                 script = "echo; echo This window can now be closed"
                 break
-            elif term == "tilix":
+            if term == "tilix":
                 cmds = [term,'-t','"GSAS-II console"','-e']
                 script = "echo;echo Press Enter to close window; read line"
                 break
-            elif term == "terminology":
+            if term == "terminology":
                 cmds = [term,'-T="GSAS-II console"','--hold','-e']
                 script = "echo; echo This window can now be closed"
                 break
@@ -2143,7 +2138,6 @@ if __name__ == '__main__':
             break
         elif os.path.exists(arg):   # this is just checking
             project = arg
-            pass
         else:
             print(f'unknown arg {arg}')
             help = True

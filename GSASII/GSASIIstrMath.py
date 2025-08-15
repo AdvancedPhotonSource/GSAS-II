@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 :mod:`GSASIIstrMath` routines, found below, used to support
 refinement-related computations. These routines are used primarily in
@@ -15,25 +14,27 @@ input will have been read from the file/tree and are passed to the
 routines as arguments. The data tree is never accessed directly here.
 
 '''
-from __future__ import division, print_function
-import time
 import copy
-import numpy as np
-import numpy.ma as ma
-import numpy.linalg as nl
-import scipy.stats as st
-import scipy.special as sp
 import multiprocessing as mp
 import pickle
-from . import GSASIIpath
+import time
+
+import numpy as np
+import numpy.linalg as nl
+import scipy.special as sp
+import scipy.stats as st
+from numpy import ma
+
 from . import GSASIIElem as G2el
 from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
-from . import GSASIIpwd as G2pwd
 from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
-from . import GSASIIobj as G2obj
 from . import GSASIImpsubs as G2mp
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIpwd as G2pwd
+from . import GSASIIspc as G2spc
+
 #G2mp.InitMP(False)  # This disables multiprocessing
 try:
     if GSASIIpath.binaryPath:
@@ -82,7 +83,7 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
     RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[],'Spin':[]})  #these are lists of rbIds
     RBIds['Spin'] = RBIds.get('Spin',[])        #patch
     if not RBIds['Vector'] and not RBIds['Residue'] and not RBIds['Spin']:
-        return
+        return None
     VRBIds = RBIds['Vector']
     RRBIds = RBIds['Residue']
     SRBIds = RBIds['Spin']
@@ -389,7 +390,7 @@ def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
         ApplyRBModels(prms,Phases,rigidbodyDict)
         # apply shifts to atoms
         for dk in prms:
-            if not '::dA' in dk: continue
+            if '::dA' not in dk: continue
             if prms[dk] == 0: continue
             k = dk.replace('::dA','::A')
             prms[k] += prms[dk]
@@ -407,7 +408,7 @@ def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
     for k in sorted(changedPrms):
         RBsu[k] = 0
         derivs[k] = []
-    for var,sig in zip(CvaryList,Csig):
+    for var,sig in zip(CvaryList,Csig, strict=False):
         if sig == 0:
             for k in changedPrms:
                 derivs[k].append(0.0)
@@ -755,7 +756,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                         SHkeys = list(textureData['SH Coeff'][1].keys())
                         SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
                         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
-                        SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+                        SamSym = dict(zip(shModels,['0','-1','2/m','mmm'], strict=False))
                         for i,[hkl,grid,esd1,ifesd2,esd2] in enumerate(itemRest[rest]):
                             PH = np.array(hkl)
                             phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
@@ -789,7 +790,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                                 pWnum[name] += 1
                                 pNames.append(str(pId)+':'+name+':'+str(i))
                             except:
-                                print('Error computing General restraint #{}'.format(i+1))
+                                print(f'Error computing General restraint #{i+1}')
             except:
                 pass
     for phase in Phases:
@@ -811,7 +812,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                     wt = 1./toler**2
                     HKLs = np.array(calcControls[phfx+'SHhkl'])
                     SHnames = calcControls[phfx+'SHnames']
-                    SHcof = dict(zip(SHnames,[parmDict[phfx+cof] for cof in SHnames]))
+                    SHcof = dict(zip(SHnames,[parmDict[phfx+cof] for cof in SHnames], strict=False))
                     for i,PH in enumerate(HKLs):
                         phi,beta = G2lat.CrsAng(PH,cell,SGData)
                         SH3Coef = {}
@@ -855,7 +856,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pDerv = np.zeros((len(varyList),len(pVal)))
     for pName in pNames: # loop over restraints
-        if 'General' == pName.split(':')[1]:
+        if pName.split(':')[1] == 'General':
             # initialize for General restraint(s) here
             parmDict0 = parmDict.copy()
             # setup steps for each parameter
@@ -879,7 +880,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
         SHkeys = list(textureData['SH Coeff'][1].keys())
         SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
-        SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+        SamSym = dict(zip(shModels,['0','-1','2/m','mmm'], strict=False))
         sam = SamSym[textureData['Model']]
         phaseRest = restraintDict.get(phase,{})
         names = dict(G2obj.restraintNames)
@@ -892,7 +893,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     if 'PWL' in pName:
                         pDerv[varyList.index(pName)][ip] += 1.
                         continue
-                    elif 'SH-' in pName:
+                    if 'SH-' in pName:
                         continue
                     Id = int(pnames[2])
                     itemRest = phaseRest[name]
@@ -936,7 +937,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                         for i,ind in enumerate(indx):
                             calc = G2mth.GetMag(moms[i],cell)
                             dNames += [str(pId)+'::'+Xname+':'+str(AtLookup[ind]) for Xname in ['AMx','AMy','AMz']]
-                            deriv += list(G2mth.GetMagDerv(moms[i],cell)*np.sign((obs-calc)))
+                            deriv += list(G2mth.GetMagDerv(moms[i],cell)*np.sign(obs-calc))
                     elif 'Texture' in name:
                         deriv = []
                         dNames = []
@@ -998,7 +999,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                                 drv = 0
                             pDerv[ind][ip] = drv
                     # Add derivatives into matrix, if needed
-                    for dName,drv in zip(dNames,deriv):
+                    for dName,drv in zip(dNames,deriv, strict=False):
                         try:   # if parameter is not refined
                             ind = varyList.index(dName)
                             pDerv[ind][ip] += drv
@@ -1018,7 +1019,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                 psi = float(pnames[4])
                 HKLs = calcControls[phfx+'SHhkl']
                 SHnames = calcControls[phfx+'SHnames']
-                SHcof = dict(zip(SHnames,[parmDict[phfx+cof] for cof in SHnames]))
+                SHcof = dict(zip(SHnames,[parmDict[phfx+cof] for cof in SHnames], strict=False))
                 hkl = np.array(HKLs[int(pnames[3])])
                 if np.any(lasthkl-hkl):
                     phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
@@ -1034,7 +1035,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     Ksl = G2lat.GetKsl(l,0,'0',psi,0.0)[0]
                     dNames += [phfx+SHname]
                     deriv.append(ODFln[SH3name][0]*Ksl/SHcof[SHname])
-            for dName,drv in zip(dNames,deriv):
+            for dName,drv in zip(dNames,deriv, strict=False):
                 try:
                     ind = varyList.index(dName)
                     pDerv[ind][ip] += drv
@@ -1230,16 +1231,15 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         if 'P' in hType:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
             refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
             refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
-        else:                                       #HKLF: F^2 = (A[0]+A[1])^2 + (B[0]+B[1])^2
-            if len(TwinLaw) > 1:
-                refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
-                refl.T[7] = np.sum(TwinFr*TwMask*np.sum(fas,axis=0)**2,axis=-1)+   \
-                    np.sum(TwinFr*TwMask*np.sum(fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
-                refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f" & use primary twin
-            else:   # checked correct!!
-                refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
-                refl.T[7] = np.copy(refl.T[9])
-                refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+        elif len(TwinLaw) > 1:
+            refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
+            refl.T[7] = np.sum(TwinFr*TwMask*np.sum(fas,axis=0)**2,axis=-1)+   \
+                np.sum(TwinFr*TwMask*np.sum(fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
+            refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f" & use primary twin
+        else:   # checked correct!!
+            refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+            refl.T[7] = np.copy(refl.T[9])
+            refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
 #                refl.T[10] = atan2d(np.sum(fbs,axis=0),np.sum(fas,axis=0)) #include f' & f"
         iBeg += blkSize
 #    print 'sf time %.4f, nref %d, blkSize %d'%(time.time()-time0,nRef,blkSize)
@@ -1297,7 +1297,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdui = np.zeros((nRef,mSize))
     dFdua = np.zeros((nRef,mSize,6))
     dFdbab = np.zeros((nRef,2))
-    dFdfl = np.zeros((nRef))
+    dFdfl = np.zeros(nRef)
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
@@ -1420,9 +1420,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             if 'Sh' in item or 'O' in item:
                 if i == int(item.split(':')[1]):
                     dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=1)
-            else:
-                if i == int(item.split(':')[1]):
-                    dFdvDict[pfx+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=1)
+            elif i == int(item.split(':')[1]):
+                dFdvDict[pfx+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSH[item],(nRef,-1)),axis=1)
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
@@ -1473,7 +1472,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
-        return
+        return None
     Mag = np.array([np.sqrt(np.inner(mag,np.inner(mag,Ginv))) for mag in Gdata.T])
     Gdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2)).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:
@@ -1527,7 +1526,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             else:
                 mphase = phase
         else:
-            mphase = phase                    #
+            mphase = phase
         mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
         mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
         sinm = np.sin(mphase)                               #ditto - match magstrfc.for
@@ -1681,7 +1680,7 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             else:
                 mphase = phase
         else:
-            mphase = phase                    #
+            mphase = phase
         Hij = np.concatenate(np.array([Hij for cen in SGData['SGCen']]),axis=1)
         Uniq = np.hstack([Uniq for cen in SGData['SGCen']])
         mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
@@ -1944,7 +1943,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
-        return
+        return None
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)      #NB: Mmod is ReIm,Mxyz,Ntau,Natm
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
@@ -2318,7 +2317,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
     dFdui = np.zeros((nRef,mSize))
     dFdua = np.zeros((nRef,mSize,6))
     dFdbab = np.zeros((nRef,2))
-    dFdfl = np.zeros((nRef))
+    dFdfl = np.zeros(nRef)
     dFdGf = np.zeros((nRef,mSize,FSSdata.shape[1],2))
     dFdGx = np.zeros((nRef,mSize,XSSdata.shape[1],6))
     dFdGu = np.zeros((nRef,mSize,USSdata.shape[1],12))
@@ -2752,11 +2751,10 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
 #            DScorr = 1.+parmDict[phfx+'Ma']/ref[4+im]+parmDict[phfx+'Mb']/ref[4+im]**2
-        else:
-            if 'C' in parmDict[hfx+'Type']:
-                PLZ *= calcControls[phfx+'Tbar']
-            else: #'T'
-                PLZ *= ref[13+im]      #t-bar
+        elif 'C' in parmDict[hfx+'Type']:
+            PLZ *= calcControls[phfx+'Tbar']
+        else: #'T'
+            PLZ *= ref[13+im]      #t-bar
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
             PSIG = parmDict[phfx+'Ep']
@@ -2810,7 +2808,7 @@ def Dict2Values(parmdict, varylist):
 def Values2Dict(parmdict, varylist, values):
     ''' Use after call to leastsq to update the parameter dictionary with
     values corresponding to keys in varylist'''
-    parmdict.update(zip(varylist,values))
+    parmdict.update(zip(varylist,values, strict=False))
 
 def GetNewCellParms(parmDict,varyList):
     '''Compute unit cell tensor terms from varied Aij and Dij values.
@@ -2818,7 +2816,7 @@ def GetNewCellParms(parmDict,varyList):
     '''
     newCellDict = {}
     Anames = ['A'+str(i) for i in range(6)]
-    Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],Anames))
+    Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],Anames, strict=False))
     for item in varyList:
         keys = item.split(':')
         if keys[2] in Ddict:
@@ -2981,9 +2979,8 @@ def GetPrefOriDerv(refl,im,uniq,G,g,phfx,hfx,SGData,calcControls,parmDict):
             sumdMD -= (1.5*A**5)*(2.0*MD*cosP**2-(sinP/MD)**2)
         POcorr = sumMD/len(uniq)
         POderv[phfx+'MD'] = sumdMD/len(uniq)
-    else:   #spherical harmonics
-        if calcControls[phfx+'SHord']:
-            POcorr,POderv = SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict)
+    elif calcControls[phfx+'SHord']:
+        POcorr,POderv = SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict)
     return POcorr,POderv
 
 def GetAbsorb(refl,im,hfx,calcControls,parmDict):
@@ -3876,7 +3873,7 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
         if phase not in Phases:     #skips deleted or renamed phases silently!
             continue
         Phase = Phases[phase]
-        if histogram and not histogram in Phase['Histograms']:
+        if histogram and histogram not in Phase['Histograms']:
             continue
         pId = Phase['pId']
         pfx = '%d::'%(pId)
@@ -3908,13 +3905,12 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
         if not Phase['General'].get('doPawley') and not parmDict.get(phfx+'LeBail'):
             if 'E' in histType:
                 print('\n\n**** Error: EDX data not suitable for Rietveld refinement ****\n\n')
+            elif im:
+                SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
+            elif parmDict[pfx+'isMag'] and 'N' in histType:
+                MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
             else:
-                if im:
-                    SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
-                elif parmDict[pfx+'isMag'] and 'N' in histType:
-                    MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
-                else:
-                    StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+                StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
         badPeak = False
         # test to see if we are using multiprocessing here
         useMP,ncores = G2mp.InitMP()
@@ -3962,9 +3958,9 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
                 iFin = np.searchsorted(x,refl[5+im]+fmax)
                 if not iBeg+iFin:       #peak below low limit - skip peak
                     continue
-                elif not iBeg-iFin:     #peak above high limit - done
+                if not iBeg-iFin:     #peak above high limit - done
                     break
-                elif iBeg > iFin:   #bad peak coeff - skip
+                if iBeg > iFin:   #bad peak coeff - skip
                     badPeak = True
                     continue
                 if useMP:
@@ -3991,7 +3987,7 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
                     iFin = np.searchsorted(x,pos2+fmax)
                     if not iBeg+iFin:       #peak below low limit - skip peak
                         continue
-                    elif not iBeg-iFin:     #peak above high limit - done
+                    if not iBeg-iFin:     #peak above high limit - done
                         return yc,yb
                     elif iBeg > iFin:   #bad peak coeff - skip
                         continue
@@ -4032,9 +4028,9 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
                 iFin = np.searchsorted(x,refl[5+im]+fmax)
                 if not iBeg+iFin:       #peak below low limit - skip peak
                     continue
-                elif not iBeg-iFin:     #peak above high limit - done
+                if not iBeg-iFin:     #peak above high limit - done
                     break
-                elif iBeg > iFin:   #bad peak coeff - skip
+                if iBeg > iFin:   #bad peak coeff - skip
                     badPeak = True
                     continue
                 if useMP:
@@ -4072,9 +4068,9 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
                 iFin = np.searchsorted(x,refl[5+im]+fmax)
                 if not iBeg+iFin:       #peak below low limit - skip peak
                     continue
-                elif not iBeg-iFin:     #peak above high limit - done
+                if not iBeg-iFin:     #peak above high limit - done
                     break
-                elif iBeg > iFin:   #bad peak coeff - skip
+                if iBeg > iFin:   #bad peak coeff - skip
                     badPeak = True
                     continue
                 if useMP:
@@ -4143,9 +4139,7 @@ def getPowderProfileDerv(args):
                 return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],[pfx+'A3',dpdA[3]]]
         elif SGData['SGLaue'] in ['mmm',]:
             return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]]]
-        elif SGData['SGLaue'] in ['4/m','4/mmm']:
-            return [[pfx+'A0',dpdA[0]],[pfx+'A2',dpdA[2]]]
-        elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+        elif SGData['SGLaue'] in ['4/m','4/mmm'] or SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
             return [[pfx+'A0',dpdA[0]],[pfx+'A2',dpdA[2]]]
         elif SGData['SGLaue'] in ['3R', '3mR']:
             return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]],[pfx+'A3',dpdA[3]+dpdA[4]+dpdA[5]]]
@@ -4225,12 +4219,11 @@ def getPowderProfileDerv(args):
             if im:
                 dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
                 dFdvDict.update(SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict))
+            elif Phase['General']['Type'] == 'magnetic':
+                dFdvDict = MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+                dFdvDict.update(MagStructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict))
             else:
-                if Phase['General']['Type'] == 'magnetic':
-                    dFdvDict = MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
-                    dFdvDict.update(MagStructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict))
-                else:
-                    dFdvDict = StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+                dFdvDict = StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
         # determine the parameters that will have derivatives computed only at end
         nonatomvarylist = []
@@ -4282,7 +4275,7 @@ def getPowderProfileDerv(args):
             iFin = np.searchsorted(x,refl[5+im]+fmax)
             if not iBeg+iFin:       #peak below low limit - skip peak
                 continue
-            elif not iBeg-iFin:     #peak above high limit - done
+            if not iBeg-iFin:     #peak above high limit - done
                 break
             pos = refl[5+im]
             if histType[2] in ['A','B','C']:
@@ -4528,13 +4521,7 @@ def getPowderProfileDerv(args):
     return dMdv,depDerivDict
 
 def UserRejectHKL(ref,im,userReject):
-    if ref[5+im]/ref[6+im] < userReject['minF/sig']:
-        return False
-    elif userReject['MaxD'] < ref[4+im] > userReject['MinD']:
-        return False
-    elif ref[11+im] < userReject['MinExt']:
-        return False
-    elif abs(ref[5+im]-ref[7+im])/ref[6+im] > userReject['MaxDF/F']:
+    if ref[5+im]/ref[6+im] < userReject['minF/sig'] or userReject['MaxD'] < ref[4+im] > userReject['MinD'] or ref[11+im] < userReject['MinExt'] or abs(ref[5+im]-ref[7+im])/ref[6+im] > userReject['MaxDF/F']:
         return False
     return True
 
@@ -4566,15 +4553,13 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
         else:
             dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)  #OK
             dFdvDict.update(SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict))
+    elif len(TwinLaw) > 1:
+        dFdvDict = StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+    elif Phase['General']['Type'] == 'magnetic':
+        dFdvDict = MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+        dFdvDict.update(MagStructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict))
     else:
-        if len(TwinLaw) > 1:
-            dFdvDict = StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
-        else:   #correct!!
-            if Phase['General']['Type'] == 'magnetic':
-                dFdvDict = MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
-                dFdvDict.update(MagStructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict))
-            else:
-                dFdvDict = StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+        dFdvDict = StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
     ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
     dMdvh = np.zeros((len(varylist),len(refDict['RefList'])))
     dependentVars = G2mv.GetDependentVars()
@@ -4652,7 +4637,7 @@ def dervRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawle
 
     :returns: Jacobian numpy.array dMdv for all histograms concatinated
     '''
-    parmDict.update(zip(varylist,values))
+    parmDict.update(zip(varylist,values, strict=False))
     G2mv.Dict2Map(parmDict)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     dependentVars = G2mv.GetDependentVars()
@@ -4709,7 +4694,7 @@ def HessRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawle
 
     :returns: Vec,Hess where Vec is the least-squares vector and Hess is the Hessian
     '''
-    parmDict.update(zip(varylist,values))
+    parmDict.update(zip(varylist,values, strict=False))
     G2mv.Dict2Map(parmDict)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     dependentVars = G2mv.GetDependentVars()
@@ -4987,12 +4972,11 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
                                 sumSSwdf2[ind] +=  df[i]**2
                                 SSnobs[ind] += 1
                                 maxH = max(maxH,ind)
-                        else:
-                            if ref[3+im]:
-                                ref[3+im] = -abs(ref[3+im])      #mark as rejected
-                                nrej += 1
-                            else:   #sp.gp.extinct
-                                Nexti += 1
+                        elif ref[3+im]:
+                            ref[3+im] = -abs(ref[3+im])      #mark as rejected
+                            nrej += 1
+                        else:   #sp.gp.extinct
+                            Nexti += 1
             else:
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[5+im] > 0.:
@@ -5022,12 +5006,11 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
                                 sumSSwdf2[ind] +=  df[i]**2
                                 SSnobs[ind] += 1
                                 maxH = max(maxH,ind)
-                        else:
-                            if ref[3+im]:
-                                ref[3+im] = -abs(ref[3+im])      #mark as rejected
-                                nrej += 1
-                            else:   #sp.gp.extinct
-                                Nexti += 1
+                        elif ref[3+im]:
+                            ref[3+im] = -abs(ref[3+im])      #mark as rejected
+                            nrej += 1
+                        else:   #sp.gp.extinct
+                            Nexti += 1
             Scale = sumFo2/sumFc2
             if (Scale < 0.8 or Scale > 1.2) and phfx+'Scale' in varylist:
                 print ('New scale: %.4f'%(Scale*parmDict[phfx+'Scale']))
@@ -5127,11 +5110,11 @@ def calcMassFracs(varyList,covMatrix,Phases,hist,hId):
         phFr[pId] = Phases[phase]['Histograms'][hist]['Scale'][0]
         wtSum += mass[pId]*phFr[pId]
         # Is this PF refined?
-        var = "{}:{}:Scale".format(pId,hId)
+        var = f"{pId}:{hId}:Scale"
         if var in varyList: # yes, save it
             used[varyList.index(var)] = pId
         elif var in G2mv.GetDependentVars():
-            for v,m in zip(*G2mv.getInvConstraintEq(var,varyList)):
+            for v,m in zip(*G2mv.getInvConstraintEq(var,varyList), strict=False):
                 if v not in varyList: continue
                 i = varyList.index(v)
                 if i not in used: used[i] = {}
@@ -5145,7 +5128,7 @@ def calcMassFracs(varyList,covMatrix,Phases,hist,hId):
         if not Phases[phasej]['Histograms'][hist]['Use']: continue
         if wtSum < 1.0: continue  #no atoms; probable LeBail
         pId_j = Phases[phasej]['pId']
-        var = "{}:{}:WgtFrac".format(pId_j,hId)
+        var = f"{pId_j}:{hId}:WgtFrac"
         valDict[var] = mass[pId_j] * phFr[pId_j] / wtSum
         Avec = np.zeros(len(varyList))
         for i in used:

@@ -1,12 +1,14 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import os.path as ospath
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
+
+
 class csv_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a .xye file'
     def __init__(self):
@@ -21,7 +23,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         good = 0
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if S.strip().startswith('#'): continue
             if i > 1000: break
@@ -39,7 +41,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
                         continue
                 good += 1
                 continue
-            elif good > 1:
+            if good > 1:
                 fp.close()
                 return False
         fp.close()
@@ -51,7 +53,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
         y = []
         w = []
         positions = [0,1,2]
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             if i <= 2 and 'x=' in S: # header entry specifying columns
                 for v in S.strip().replace(',',';').split(';'):

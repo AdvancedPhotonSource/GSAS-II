@@ -75,8 +75,12 @@ If that does not exist, then the location of the current Python executable
 
 '''
 
-from __future__ import division, print_function
-import sys, os, os.path, subprocess
+import os
+import os.path
+import subprocess
+import sys
+
+
 def Usage():
     print(f"\nUsage:\n\tpython {os.path.abspath(sys.argv[0])} [install_path] [<GSAS-II_script>] [Python_loc]\n")
     sys.exit()

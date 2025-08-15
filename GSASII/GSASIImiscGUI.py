@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 Misc routines for GUI-based input and output, including image reading follow.
 
@@ -8,7 +7,6 @@ which is why most modules reference it as G2IO.
 
 '''
 
-from __future__ import division, print_function
 
 # # Allow this to be imported without wx present.
 # try:
@@ -20,32 +18,32 @@ from __future__ import division, print_function
 #         def __init__(self):
 #             self.Dialog = object
 #     wx = Placeholder()
+import copy
 import math
 import os
-import re
-import copy
-import platform
 import pickle
-import sys
 import random as ran
+import re
+import sys
 
 import numpy as np
-import numpy.ma as ma
 import wx
+from numpy import ma
 
-from . import GSASIIpath
+from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIobj as G2obj
+from . import GSASIIElem as G2el
+from . import GSASIIElem as G2elem
+from . import GSASIIfiles as G2fil
+
 #import GSASIIpwdGUI as G2pdG
 from . import GSASIIimgGUI as G2imG
-from . import GSASIIElem as G2el
-from . import GSASIIfiles as G2fil
-from . import GSASIIctrlGUI as G2G
-from . import GSASIImath as G2mth
-from . import GSASIIElem as G2elem
-from . import GSASIIspc as G2spc
 from . import GSASIIlattice as G2lat
+from . import GSASIImath as G2mth
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
 from . import GSASIIpwd as G2pwd
+from . import GSASIIspc as G2spc
 
 DEBUG = False       #=True for various prints
 TRANSP = False      #=true to transpose images for testing
@@ -64,7 +62,7 @@ def GetPowderPeaks(fileName):
     sind = lambda x: math.sin(x*math.pi/180.)
     asind = lambda x: 180.*math.asin(x)/math.pi
     wave = 1.54052
-    File = open(fileName,'r')
+    File = open(fileName)
     Comments = []
     peaks = []
     S = File.readline()
@@ -147,7 +145,7 @@ def GetCheckImageFile(G2frame,treeId):
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         gpxPath = Controls.get('LastSavedAs','').replace('\\','/').split('/') # blank in older .GPX files
         imgPath = imagefile.replace('\\','/').split('/')
-        for p1,p2 in zip(gpxPath,imgPath):
+        for p1,p2 in zip(gpxPath,imgPath, strict=False):
             if p1 == p2:
                 gpxPath.pop(0),imgPath.pop(0)
             else:
@@ -194,41 +192,41 @@ def EditImageParms(parent,Data,Comments,Image,filename):
         0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Wavelength (\xC5) '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Wavelength (\xC5) '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data,'wavelength')
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Pixel size (\xb5m). Width '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Pixel size (\xb5m). Width '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],0,size=(50,-1))
     vsizer.Add(wdgt)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Height '),wx.ALIGN_LEFT|wx.ALL, 2)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  Height '),wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],1,size=(50,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Sample to detector (mm) '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Sample to detector (mm) '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data,'distance')
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Beam center (pixels). X = '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Beam center (pixels). X = '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],0,size=(75,-1))
     vsizer.Add(wdgt)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Y = '),wx.ALIGN_LEFT|wx.ALL, 2)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  Y = '),wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],1,size=(75,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Comments '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Comments '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Comments,0,size=(250,-1))
     vsizer.Add(wdgt)
@@ -405,10 +403,9 @@ def ReadImages(G2frame,imagefile):
                 repeat = rd.repeat
             CreatedIMGitems.append(G2frame.Image)
         if CreatedIMGitems: return CreatedIMGitems
-    else:
-        print('Error reading file '+imagefile)
-        print('Error messages(s)\n'+errorReport)
-        return []
+    print('Error reading file '+imagefile)
+    print('Error messages(s)\n'+errorReport)
+    return []
         #raise Exception('No image read')
 
 def SaveMultipleImg(G2frame):
@@ -457,7 +454,6 @@ def PutG2Image(filename,Comments,Data,Npix,image):
     File = open(filename,'wb')
     pickle.dump([Comments,Data,Npix,image],File,2)
     File.close()
-    return
 
 objectScanIgnore = [int,bool,float,str,np.float64,np.float32,np.int32,np.int64,np.int16,np.ndarray,G2obj.G2VarObj,G2obj.ExpressionObj,np.bool_]
 try:
@@ -482,19 +478,12 @@ def objectScan(data,tag,indexStack=[]):
             if val:
                 data[key] = val
                 print('...fixed')
-    elif data is None:
-        return None
-    elif type(data) in objectScanIgnore:
-        return None
-    # not always recognized:
-    elif 'GSASIIobj.G2VarObj' in str(type(data)):
-        return None
-    elif 'GSASIIobj.ExpressionObj' in str(type(data)):
+    elif data is None or type(data) in objectScanIgnore or 'GSASIIobj.G2VarObj' in str(type(data)) or 'GSASIIobj.ExpressionObj' in str(type(data)):
         return None
     else:
         s = 'unexpected object in '+tag
         for i in indexStack:
-            s += "[{}]".format(i)
+            s += f"[{i}]"
         #print(s,data.__class__.__name__) # loses full name of class
         print(s,type(data))
         global unexpectedObject
@@ -502,7 +491,7 @@ def objectScan(data,tag,indexStack=[]):
         # fix bad objects
         if "gdi.Colour" in str(type(data)):
             return tuple(data)
-        return
+        return None
 
 def pickleLoad(fp):
     return pickle.load(fp,encoding='latin-1')
@@ -534,8 +523,8 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 fp = open(GPXphase,'rb')
                 data = pickleLoad(fp) # first block in file should be Phases
                 if data[0][0] != 'Phases':
-                    raise Exception('Unexpected block in {} file. How did this happen?'
-                            .format(GPXphase))
+                    raise Exception(f'Unexpected block in {GPXphase} file. How did this happen?'
+                            )
                 Phases = {}
                 for name,vals in data[1:]:
                     Phases[name] = vals
@@ -571,7 +560,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             if GSASIIpath.GetConfigValue('debug'):
                 global unexpectedObject
                 unexpectedObject = False
-                objectScan(data,'tree item "{}" entry '.format(datum[0]))
+                objectScan(data,f'tree item "{datum[0]}" entry ')
                 #if unexpectedObject:
                 #    print(datum[0])
                 #    GSASIIpath.IPyBreak()
@@ -590,7 +579,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 hist.seek(tmpHistIndex[datum[0]])
                 hdata = pickleLoad(hist)
                 if data[0][0] != hdata[0][0]:
-                    print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
+                    print(f'Error! Updating {data[0][0]} with {hdata[0][0]}')
                 datum = hdata[0]
                 xferItems = ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']
                 hItems = {name:j+1 for j,(name,val) in enumerate(hdata[1:]) if name in xferItems}
@@ -613,7 +602,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     print('DBG_Packages used to create .GPX file:')
                     if 'dict' in str(type(datum[1]['PythonVersions'])):  #patch
                         for p in sorted(datum[1]['PythonVersions'],key=lambda s: s.lower()):
-                            print("  {:<14s}: {:s}".format(p[0],p[1]))
+                            print(f"  {p[0]:<14s}: {p[1]:s}")
                     else:
                         for p in datum[1]['PythonVersions']:
                             print("  {:<12s} {:s}".format(p[0]+':',p[1]))
@@ -629,9 +618,9 @@ def ProjFileOpen(G2frame,showProvenance=True):
 #patch
                 if datus[0] == 'Instrument Parameters' and len(datus[1]) == 1:
                     if datum[0].startswith('PWDR'):
-                        datus[1] = [dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2]))),{}]
+                        datus[1] = [dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2], strict=False), strict=False)),{}]
                     else:
-                        datus[1] = [dict(zip(datus[1][2],zip(datus[1][0],datus[1][1]))),{}]
+                        datus[1] = [dict(zip(datus[1][2],zip(datus[1][0],datus[1][1], strict=False), strict=False)),{}]
                     for item in datus[1][0]:               #zip makes tuples - now make lists!
                         datus[1][0][item] = list(datus[1][0][item])
 #end patch
@@ -653,8 +642,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             print(50*'=')
             print('File section sizes (Kb)')
             for item in sizeList:
-                print('  {:20s} {:10.3f}'.format(
-                    item[:20],sizeList[item]/1024.))
+                print(f'  {item[:20]:20s} {sizeList[item]/1024.:10.3f}')
             print(50*'=')
         G2frame.NewPlot = True
     except Exception as errmsg:
@@ -675,11 +663,11 @@ def ProjFileOpen(G2frame,showProvenance=True):
         try:
             os.remove(GPXphase)
         except:
-            print('Warning: unable to delete {}'.format(GPXphase))
+            print(f'Warning: unable to delete {GPXphase}')
         try:
             os.remove(GPXhist)
         except:
-            print('Warning: unable to delete {}'.format(GPXhist))
+            print(f'Warning: unable to delete {GPXhist}')
     G2frame.SetTitleByGPX()
     if LastSavedUsing:
         try:
@@ -760,13 +748,12 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         if 'target' in data:
             names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
             codes = [0 for i in range(14)]
+        elif data.get('IfPink',False):
+            names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','Azimuth']
+            codes = [0 for i in range(15)]
         else:
-            if data.get('IfPink',False):
-                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','Azimuth']
-                codes = [0 for i in range(15)]
-            else:
-                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
-                codes = [0 for i in range(12)]
+            names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
+            codes = [0 for i in range(12)]
     elif 'SASD' in name:
         names = ['Type','Lam','Zero','Azimuth']
         codes = [0 for i in range(4)]
@@ -817,11 +804,10 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             if 'target' in data:    #from lab x-ray 2D imaging data
                 wave1,wave2 = waves[data['target']]
                 parms = ['PXC',wave1,wave2,0.5,0.0,polariz,290.,-40.,30.,6.,-14.,0.0,0.0001,Azms[i]]
+            elif data.get('IfPink',False):
+                parms = ['PXB',data['wavelength'],0.0,polariz,0.,8000.,-150.,-24.,0.,0.,0.,13.,-1300.,3.,-7.,Azms[i]]   #from Sect 35 LSS
             else:
-                if data.get('IfPink',False):
-                    parms = ['PXB',data['wavelength'],0.0,polariz,0.,8000.,-150.,-24.,0.,0.,0.,13.,-1300.,3.,-7.,Azms[i]]   #from Sect 35 LSS
-                else:
-                    parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
+                parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
         elif 'SASD' in Aname:
             Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]
@@ -836,7 +822,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         if 'PWDR' in Aname:
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Background'),[['chebyschev-1',1,3,1.0,0.0,0.0],
                 {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[],'background PWDR':['',1.0,False]}])
-        inst = [dict(zip(names,zip(parms,parms,codes))),{}]
+        inst = [dict(zip(names,zip(parms,parms,codes, strict=False), strict=False)),{}]
         for item in inst[0]:
             inst[0][item] = list(inst[0][item])
         G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),inst)
@@ -971,14 +957,12 @@ def ExportPowder(G2frame,TreeName,fileroot,extension,hint=''):
                 return
             except Exception:
                 print('Export Routine for '+extension+' failed.')
-    else:
-        print('No Export routine supports extension '+extension)
+    print('No Export routine supports extension '+extension)
 
 def ExportSequentialFullCIF(G2frame,seqData,Controls):
     '''Handles access to CIF exporter a bit differently for sequential fits, as this is
     not accessed via the usual export menus
     '''
-    from . import exports
     from GSASII.exports import G2export_CIF
     ##################### debug code to reload exporter before each use ####
     #import importlib as imp
@@ -1014,12 +998,12 @@ def ExportSequential(G2frame,data,obj,exporttype):
             dlg.Destroy()
         else:
             dlg.Destroy()
-            return
+            return None
     if exporttype == 'Phase':
         phaselist = list(obj.Phases.keys())
         if len(obj.Phases) == 0:
             G2G.G2MessageBox(G2frame,'There are no phases in sequential ref.','Warning')
-            return
+            return None
         elif len(obj.Phases) > 1:
             dlg = G2G.G2MultiChoiceDialog(G2frame,'Select phases to export from list',
                                     'Select phases', phaselist)
@@ -1028,7 +1012,7 @@ def ExportSequential(G2frame,data,obj,exporttype):
                 dlg.Destroy()
             else:
                 dlg.Destroy()
-                return
+                return None
         filename = obj.askSaveFile()
         if not filename: return True
         obj.dirname,obj.filename = os.path.split(filename)
@@ -1041,19 +1025,7 @@ def ExportSequential(G2frame,data,obj,exporttype):
                 obj.Writer(h,phasenam=p,mode=mode)
                 mode = 'a'
         print('...done')
-    elif exporttype == 'Project':  # note that the CIF exporter is not yet ready for this
-        filename = obj.askSaveFile()
-        if not filename: return True
-        obj.dirname,obj.filename = os.path.split(filename)
-        print('Writing output to file '+str(obj.filename)+"...")
-        mode = 'w'
-        for h in histlist:
-            obj.SetSeqRef(data,h)
-            obj.Writer(h,mode=mode)
-            print('\t'+str(h)+' written')
-            mode = 'a'
-        print('...done')
-    elif exporttype == 'Powder':
+    elif exporttype == 'Project' or exporttype == 'Powder':  # note that the CIF exporter is not yet ready for this
         filename = obj.askSaveFile()
         if not filename: return True
         obj.dirname,obj.filename = os.path.split(filename)
@@ -1070,7 +1042,7 @@ def ReadDIFFaX(DIFFaXfile):
     print ('read '+DIFFaXfile)
     Layer = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],'Width':[[10.,10.],[False,False]],
         'Layers':[],'Stacking':[],'Transitions':[],'Toler':0.01,'AtInfo':{}}
-    df = open(DIFFaXfile,'r')
+    df = open(DIFFaXfile)
     lines = df.readlines()
     df.close()
     struct = False
@@ -1097,11 +1069,11 @@ def ReadDIFFaX(DIFFaXfile):
         if diff.strip() == 'structural':
             struct = True
             continue
-        elif diff.strip() == 'stacking':
+        if diff.strip() == 'stacking':
             struct = False
             stack = True
             continue
-        elif diff.strip() == 'transitions':
+        if diff.strip() == 'transitions':
             stack = False
             trans = True
             continue
@@ -1158,7 +1130,7 @@ def ReadDIFFaX(DIFFaXfile):
             atomRec = [atomName,atomType,newVals[0],newVals[1],newVals[2],newVals[4],newVals[3]/78.9568]
             Layer['Layers'][-1]['Atoms'].append(atomRec)
             N += 1
-            if N > len(Struct)-1:
+            if len(Struct)-1 < N:
                 break
 #TRANSITIONS records
     transArray = []
@@ -1202,10 +1174,10 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
         return s
     if newData is None:
         print(phlbl,'empty structure')
-        return
+        return None
     elif type(newData) is str:
         msgs[phlbl] = newData
-        return
+        return None
     # create a new phase
     try:
         sgnum = int(newData[0].strip())
@@ -1213,7 +1185,7 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
         sgname = sgsym.replace(" ","")
     except:
         print(f'Problem with processing record:\n{newData}')
-        return
+        return None
     newPhase = copy.deepcopy(phData)
     newPhase['ranId'] = ran.randint(0,sys.maxsize),
     if 'magPhases' in phData: del newPhase['magPhases']
@@ -1291,9 +1263,9 @@ def mkParmDictfromTree(G2frame,sigDict=None):
       used in some parts of the code that has refinement flags and initial
       values as well.
     '''
+    from . import GSASIImapvars as G2mv
     from . import GSASIIstrIO as G2stIO
     from . import GSASIIstrMath as G2stMth
-    from . import GSASIImapvars as G2mv
     G2frame.CheckNotebook()
     parmDict = {}
     rigidbodyDict = {}
@@ -1301,7 +1273,7 @@ def mkParmDictfromTree(G2frame,sigDict=None):
     consDict = {}
 
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    if G2frame.GPXtree.IsEmpty(): return # nothing to do
+    if G2frame.GPXtree.IsEmpty(): return None # nothing to do
     rigidbodyDict = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     covDict = G2frame.GPXtree.GetItemPyData(
@@ -1321,11 +1293,11 @@ def mkParmDictfromTree(G2frame,sigDict=None):
     parmDict.update(histDict)
     parmDict.update(zip(
             covDict.get('varyList',[]),
-            covDict.get('variables',[])))
+            covDict.get('variables',[]), strict=False))
     if sigDict is not None:
         sigDict.update(dict(zip(
             covDict.get('varyList',[]),
-            covDict.get('sig',[])
+            covDict.get('sig',[]), strict=False
             )))
 
     # expand to include constraints: first compile a list of constraints

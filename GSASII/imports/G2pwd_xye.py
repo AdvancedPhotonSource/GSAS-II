@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 '''
 Importer for various two/three column formats with 2theta vs intensity 
 or Q vs intensity with an optional 3rd column for s.u.(I)
 '''
 
-from __future__ import division, print_function
 import os.path
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
 
@@ -37,7 +37,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         self.Chi = False
         Qchi = False
         self.Wave = None
-        fp = open(filename,'r')
+        fp = open(filename)
         ext = os.path.splitext(filename)[1]
         if ext == '.chi':
             self.Chi = True
@@ -71,8 +71,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                                 fp.close()
                                 return False
                         continue
-                    else:
-                        begin = False
+                    begin = False
                 else:
                     if2theta = True
                     if  i == 0 and 'xydata' in S.lower():
@@ -92,10 +91,9 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                                 except:
                                     self.Wave = 1.0   #special for POWGEN 1A-2A frame "pink" CW data
                         continue       #ignore comments, if any
-                    elif S.startswith('TITLE'):
+                    if S.startswith('TITLE'):
                         continue
-                    else:
-                        begin = False
+                    begin = False
                 # valid line to read? 
             #vals = S.split()
             if ifQ:
@@ -107,14 +105,13 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) == 2 or len(vals) == 3:
                 continue
-            else:
-                self.errors = 'Unexpected information in line: '+str(i+1)
-                if all([ord(c) < 128 and ord(c) != 0 for c in str(S)]): # show only if ASCII
-                    self.errors += '  '+str(S)
-                else: 
-                    self.errors += '  (binary)'
-                fp.close()
-                return False
+            self.errors = 'Unexpected information in line: '+str(i+1)
+            if all([ord(c) < 128 and ord(c) != 0 for c in str(S)]): # show only if ASCII
+                self.errors += '  '+str(S)
+            else: 
+                self.errors += '  (binary)'
+            fp.close()
+            return False
         fp.close()
         return True # no errors encountered
 
@@ -125,7 +122,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         w = []
         gotCcomment = False
         begin = True
-        fp = open(filename,'r')
+        fp = open(filename)
         for i,S in enumerate(fp):
             self.errors = 'Error reading line: '+str(i+1)
             # or a block of comments delimited by /* and */
@@ -136,7 +133,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     if self.minimalHeader and S.strip().startswith('#') and i < 6:
                         self.comments.append(S[:-1])
                         continue
-                    elif self.minimalHeader:
+                    if self.minimalHeader:
                         begin = False
                     elif i < 4:
                         continue
@@ -154,13 +151,12 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     if S[0] in ["'",'#','!']:
                         self.comments.append(S[:-1])
                         continue       #ignore comments, if any
-                    elif  i == 0 and 'xydata' in S.lower():
+                    if  i == 0 and 'xydata' in S.lower():
                         continue   # fullprof header
-                    elif S.startswith('TITLE'):
+                    if S.startswith('TITLE'):
                         self.comments = [S]
                         continue
-                    else:
-                        begin = False
+                    begin = False
             # valid line to read
             #vals = S.split()
             vals = S.replace(',',' ').replace(';',' ').split()

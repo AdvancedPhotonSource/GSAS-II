@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 This implements an interface to the NIST*LATTICE code using
 the Spring 1991 program version. NIST*LATTICE, "A Program to Analyze
@@ -18,10 +17,13 @@ is used.
 
 import os
 import os.path
-import subprocess
 import re
+import subprocess
+
 import numpy as np
+
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
 from . import GSASIIlattice as G2lat
 
@@ -141,7 +143,7 @@ def ReduceCell(center, cellin, mode=0, deltaV=0, output=None):
     # prepare input and start program
     cellline = '{:10.4f}{:10.4f}{:10.4f}{:10.3f}{:10.3f}{:10.3f}'.format(*cellin)
     inp = "RSS      1\n"
-    inp += "{:1d}  {:1d}{:1d}   {}{}{}\n".format(mode,2,deltaV,center,setting,cellline)
+    inp += f"{mode:1d}  {2:1d}{deltaV:1d}   {center}{setting}{cellline}\n"
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
@@ -412,7 +414,7 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
     inp = "SYM      1\n"
     inp += "R{:1d} {:2d}     {:10.5f}{:10.5f}{:10.5f}{:10.5f}{:10.5f}{:10.5f}\n".format(
             mode,deltaV,*tolerance)
-    inp += "{:1d}  {:1d}{:1d}   {}{}{}\n".format(mode,2,deltaV,center,setting,cellline)
+    inp += f"{mode:1d}  {2:1d}{deltaV:1d}   {center}{setting}{cellline}\n"
     if os.path.exists('NIST10'): # cleanup
         print("Removing old NIST10 file")
         os.remove('NIST10')
@@ -513,12 +515,12 @@ def CellSymSearch(cellin, center, tolerance=3*[0.2]+3*[1], mode=0,
                 # got to end of output for current cell, process this input
                 if 50*'-' in line:
                     if xformCount:
-                        inRedCell = (startCellList[icell][2], 'P', ' ')
+                        inRedCell = (cellstuff[2], 'P', ' ')
                         if icell ==0:
                             inCnvCell = (cellin, center, setting)
                             red2convInp = np.linalg.inv(startCellList[0][1])
                         else:
-                            inCnvCell = ConvCell(startCellList[icell][2])
+                            inCnvCell = ConvCell(cellstuff[2])
                             red2convInp = inCnvCell[3]
                         redCell = ([j for j in (xformSum/xformCount)[:6]], 'P', ' ')
                         cnvCell = ConvCell(redCell[0][:6])

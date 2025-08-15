@@ -3,20 +3,23 @@
 """main Absorb routines
    Copyright: 2009, Robert B. Von Dreele (Argonne National Laboratory)
 """
-from __future__ import division, print_function
 import math
 import sys
+
 import wx
+
 # the next line removes the need for pythonw. Thanks to Matt Newville!
 # appears unneaded from wx 4.2.1 on
 if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: True
-import numpy as np
 import sys
+
 import matplotlib as mpl
-from . import GSASIIpath
+import numpy as np
+
+from . import GSASIIctrlGUI as G2G
 from . import GSASIIElem as G2elem
 from . import GSASIIElemGUI as G2elemGUI
-from . import GSASIIctrlGUI as G2G
+from . import GSASIIpath
 from . import GSASIIpwd as G2pwd
 
 try:

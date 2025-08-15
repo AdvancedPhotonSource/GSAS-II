@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #defaultIparms
 '''
 Defines some default instrument parameters.

@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_map` follow:
 '''
-from __future__ import division, print_function
-import platform
 import os
+import platform
+
 import numpy as np
+
 from .. import GSASIIfiles as G2fil
+
 
 class ExportMapASCII(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -42,19 +43,19 @@ class ExportMapASCII(G2fil.ExportBaseclass):
                 i = self.Phases[phasenam]['pId']
                 self.filename = os.path.splitext(filename)[1] + "_" + mapData['MapType'] + str(i) + self.extension
             self.OpenFile()
-            self.Write(u"Map of Phase "+phasenam+u" from "+self.G2frame.GSASprojectfile)
+            self.Write("Map of Phase "+phasenam+" from "+self.G2frame.GSASprojectfile)
             # get cell parameters & print them
             cellList,cellSig = self.GetCell(phasenam)
             fmt = 3*" {:9.5f}" + 3*" {:9.3f}"
             self.Write(fmt.format(*cellList[:6]))
             nx,ny,nz = rho.shape
-            self.Write(" {:3d} {:3d} {:3d}".format(nx,ny,nz))
+            self.Write(f" {nx:3d} {ny:3d} {nz:3d}")
             for i in range(nx):
                 for j in range(ny):
                     for k in range(nz):
                         self.Write(str(rho[i,j,k]))
             self.CloseFile()
-            print(u'map from Phase '+phasenam+u' written to file '+self.fullpath)
+            print('map from Phase '+phasenam+' written to file '+self.fullpath)
 
 class ExportMapCCP4(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -126,4 +127,4 @@ class ExportMapCCP4(G2fil.ExportBaseclass):
             for x in rho.flatten('F'):
                 self.Write(x,'f')
             self.CloseFile()
-            print(u'map from Phase '+phasenam+u' written to file '+self.fullpath)
+            print('map from Phase '+phasenam+' written to file '+self.fullpath)

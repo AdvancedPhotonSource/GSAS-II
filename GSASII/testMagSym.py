@@ -1,20 +1,23 @@
 #testMagSym
-import sys
-import os
-import wx
-import numpy as np
 import copy
 import importlib.util
+import os
+import sys
+
+import numpy as np
+import wx
+
 try:
     importlib.util.find_spec('GSASII.GSASIIGUI')
 except ModuleNotFoundError:
     print('GSAS-II not installed in Python; Hacking sys.path')
     sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
 from GSASII import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
-from GSASII import GSASIIspc as G2spc
 from GSASII import GSASIIctrlGUI as G2G
 from GSASII import GSASIIphsGUI as G2phsGUI
+from GSASII import GSASIIspc as G2spc
 
 try:
     wx.NewId
@@ -138,7 +141,7 @@ class testMagSym(wx.Frame):
                 Little = G2spc.GetLittleGrpOps(SGData,pXYZ)
                 Lirt = G2spc.PackRot(Little)
                 OpNames = [G2spc.GetOprName(str(irt)) for irt in Lirt]
-                for Opr,name in zip(Little,OpNames):
+                for Opr,name in zip(Little,OpNames, strict=False):
                     print('  %s:  %s'%(G2spc.MT2text(Opr),name))
             except:
                 print('Bad prop vector entry: ',Obj.GetValue())
@@ -213,12 +216,11 @@ class testMagSym(wx.Frame):
             spinSizer.Add(spinOp,0,WACV)
         if '(' in SGData['BNSlattsym'][0]:
             spinSizer.Add(wx.StaticText(self.testSSPanel,label='Choose new space group to change BNS'),0,WACV)
-        else:
-            if BNSsym:
-                spinSizer.Add(wx.StaticText(self.testSSPanel,label=' BNS lattice:'),0,WACV)
-                BNS = wx.ComboBox(self.testSSPanel,value=SGData['BNSlattsym'][0],choices=['',] +list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
-                spinSizer.Add(BNS,0,WACV)
+        elif BNSsym:
+            spinSizer.Add(wx.StaticText(self.testSSPanel,label=' BNS lattice:'),0,WACV)
+            BNS = wx.ComboBox(self.testSSPanel,value=SGData['BNSlattsym'][0],choices=['',] +list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
+            spinSizer.Add(BNS,0,WACV)
         mainSizer.Add(spinSizer)
         OprNames,SpnFlp = G2spc.GenMagOps(SGData)
         SGData['SpnFlp'] = SpnFlp

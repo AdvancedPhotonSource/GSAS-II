@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
-from .. import GSASIIobj as G2obj
 import numpy as np
+
+from .. import GSASIIobj as G2obj
+
+
 class ADSC_ReaderClass(G2obj.ImportImage):
     '''Reads an ADSC .img file
     '''

@@ -4,12 +4,12 @@
 
 # this runs but has not been fully tested
 
-import sys
 import os
-import subprocess
-import shutil
-import plistlib
 import platform
+import plistlib
+import shutil
+import subprocess
+import sys
 
 makePath = os.path.dirname(__file__)  # location of this script
 path2GSAS = os.path.dirname(makePath)
@@ -263,14 +263,14 @@ end open
         plistlib.writePlist(d,os.path.join(appPath,"Contents",'Info.plist'))
 
     # Big Sur: open & save the file in the editor to set authorization levels
-    osascript = '''
+    osascript = f'''
     tell application "Script Editor"
-       set MyName to open "{}"
+       set MyName to open "{appPath}"
        save MyName
        (* close MyName *)
        (* quit *)
     end tell
-'''.format(appPath)
+'''
     # detect MacOS 11 (11.0 == 10.16!)
     if platform.mac_ver()[0].split('.')[0] == '11' or platform.mac_ver()[0][:5] == '10.16':
         print("\nFor Big Sur and later, save the app in Script Editor before using it\n")

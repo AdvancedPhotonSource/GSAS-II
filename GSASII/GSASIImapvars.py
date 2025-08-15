@@ -13,11 +13,13 @@ so that they can be resolved if the phase/histogram order changes.
 # Note that documentation for GSASIImapvars.py has been moved
 # to file docs/source/GSASIImapvars.rst
 
-from __future__ import division, print_function
 import copy
+
 import numpy as np
+
+from . import GSASIIobj as G2obj
 from . import GSASIIpath
-from . import GSASIIobj as G2obj 
+
 # data used for constraints; 
 debug = False # turns on printing as constraint input is processed
 
@@ -110,7 +112,6 @@ class ConstraintException(Exception):
     Also raised in :func:`GramSchmidtOrtho` and :func:`_SwapColumns` but caught 
     within :func:`GenerateConstraints`.
     '''
-    pass
 
 def InitVars():
     '''Initializes all constraint information'''
@@ -273,7 +274,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     # find parameters used in constraint equations & new var assignments (all are dependent)
     global constrVarList 
     constrVarList = []
-    for cnum,(cdict,fixVal) in enumerate(zip(constrDict,fixedList)):
+    for cnum,(cdict,fixVal) in enumerate(zip(constrDict,fixedList, strict=False)):
         constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
 
     # Process the equivalences; If there are conflicting parameters, move them into constraints
@@ -284,7 +285,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     # Hold, Unvaried & Undefined parameters
     skipList = []
     invalidParms = []
-    for cnum,(cdict,fixVal) in enumerate(zip(constrDict,fixedList)):
+    for cnum,(cdict,fixVal) in enumerate(zip(constrDict,fixedList, strict=False)):
         #constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
         valid = 0          # count of good parameters
         # error reporting
@@ -304,8 +305,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                 holdList.append(var)
                 if fixVal is None:   # hold in a newvar is not allowed
                     problem = True
-                else:
-                    if var not in dropList: dropList.append(var)
+                elif var not in dropList: dropList.append(var)
             elif ':*:' in var :  # wildcard still present should be treated as undefined
                 if var not in undefinedVars: undefinedVars.append(var)
                 noWildcardList.append(var)
@@ -317,8 +317,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                     if ':dAx:' in var or ':dAy:' in var or ':dAz:' in var: # coordinates from undefined atoms 
                         if fixVal is None:
                             problem = True  # invalid in New Var
-                        else:
-                            if var not in dropList: dropList.append(var) # ignore in constraint eqn
+                        elif var not in dropList: dropList.append(var) # ignore in constraint eqn
                     else:
                         problem = True
             elif varyList is None:
@@ -394,7 +393,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     # any more). For constraint equations, if all are varied, set VaryFree to True
     # and all newly created relationships will be varied. For NewVar constraints,
     # vary if the vary flag was set. 
-    for group,depPrmList in zip(groups,parmlist):
+    for group,depPrmList in zip(groups,parmlist, strict=False):
         if len(depPrmList) < len(group): # too many relationships -- no can do
             if errmsg: errmsg += '\n'
             errmsg += "Over-constrained input. "
@@ -503,7 +502,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             print (' also note warnings in constraint processing:')
             print (warning)
         raise ConstraintException
-    elif errmsg:
+    if errmsg:
         return errmsg,warning,None,None
 
     # Make list of dependent and independent variables for all constraints
@@ -511,7 +510,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     constrParms['dep-constr'] = []
     constrParms['indep-equiv'] = []
     constrParms['indep-constr'] = []
-    for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):  # process all constraints
+    for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList, strict=False):  # process all constraints
         for mv in mapvars:
             if type(mv) is float or type(mv) is int: continue
             if multarr is None and mv not in constrParms['indep-equiv']: 
@@ -588,7 +587,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
     depVarList = []  # list of all dependent parameters in equivalences
     indepVarList = []  # list of all independent parameters in equivalences
     for cnum,(varlist,mapvars,multarr,invmultarr) in enumerate(zip(
-            dependentParmList,indParmList,arrayList,invarrayList)):
+            dependentParmList,indParmList,arrayList,invarrayList, strict=False)):
         #if multarr is not None: continue # equivalence
         indepVarList += [mv for mv in mapvars if mv not in indepVarList]
         depVarList += [v for v in varlist if v not in depVarList]
@@ -598,7 +597,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
     #    independent var is OK)
     # look for parameters in equivalences that are used more than once as dependent parameters
     seenOnce = []
-    for cnum,(varlist,multarr) in enumerate(zip(dependentParmList,arrayList)):
+    for cnum,(varlist,multarr) in enumerate(zip(dependentParmList,arrayList, strict=False)):
         if multarr is not None: continue # equivalences only
         for v in varlist:
             if v not in seenOnce:
@@ -618,7 +617,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
         # look for repeated dependent vars
         convVarList = [] # parameters in equivalences to be made into constraints
         for cnum,(varlist,mapvars,multarr,invmultarr) in enumerate(zip(
-            dependentParmList,indParmList,arrayList,invarrayList)):
+            dependentParmList,indParmList,arrayList,invarrayList, strict=False)):
             if multarr is not None: continue # equivalences only
             if cnum in convertList:
                 convVarList += [v for v in mapvars+varlist if v not in convVarList and type(v) is not float]
@@ -663,7 +662,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
     unvariedParmsList = []  # parameters in equivalences that are not varied
     # scan equivalences: look for holds
     for cnum,(varlist,mapvars,multarr,invmultarr) in enumerate(zip(
-        dependentParmList,indParmList,arrayList,invarrayList)):
+        dependentParmList,indParmList,arrayList,invarrayList, strict=False)):
         if multarr is not None: continue # not an equivalence
         if cnum in convertList: continue
 
@@ -720,7 +719,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
         # look for undefined or zero multipliers
         holdList = []
         drop = 0
-        for v,m in zip(varlist,invmultarr):    
+        for v,m in zip(varlist,invmultarr, strict=False):    
             if parmDict is not None and v not in parmDict:
                 if v not in undefinedVars: undefinedVars.append(v)
                 if v not in dropVarList: dropVarList.append(v)
@@ -774,7 +773,7 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
         indvar = indParmList[cnum][0]
         # msg = '\nChanging equivalence:\n    ' + _showEquiv(
         #     dependentParmList[cnum],indParmList[cnum],invarrayList[cnum])
-        for dep,mult in zip(dependentParmList[cnum],invarrayList[cnum]):
+        for dep,mult in zip(varlist,invarrayList[cnum], strict=False):
             constrDict += [{indvar:-1.,dep:1./mult[0]}]
             fixedList += ['0.0']
         #msg += '\n  to constraint(s):'
@@ -997,7 +996,6 @@ def StoreEquivalence(independentVar,dependentList,symGen=True):
     indParmList.append(list((independentVar,)))
     dependentParmList.append(mapList)
     symGenList.append(symGen)
-    return
 
 def SubfromParmDict(s,prmDict):
     '''Process a string as a multiplier and convert it to a float value. This
@@ -1050,7 +1048,7 @@ def EvaluateMultipliers(constList,*dicts):
                 problemList += const[key]
     # loop through multipliers in equivalences
     global arrayList,invarrayList
-    for i,(a,valList) in enumerate(zip(arrayList,invarrayList)):
+    for i,(a,valList) in enumerate(zip(arrayList,invarrayList, strict=False)):
         if a is not None: continue # ignore if not equiv
         try:
             valList.shape
@@ -1275,22 +1273,21 @@ def getConstrError(constrLst,seqmode,seqhst):
                     zeroList.append(str(v))
                 elif v in undefinedVars:
                     undef.append(str(v))
-                elif (v in holdParmList and constrLst[-2] and
-                        "User supplied" in holdParmType.get(v,'') or
+                elif ((v in holdParmList and constrLst[-2] and
+                        "User supplied" in holdParmType.get(v,'')) or
                         "symmetry" in holdParmType.get(v,'') or
                         "rigid body" in holdParmType.get(v,'')):                        
                     hold.append(str(v))
-            else:                        # constraint equation
-                if m == 0:
-                    zeroList.append(str(v))
-                elif v in undefinedVars:
-                    undef.append(str(v))
-                elif v in unvariedParmsList:
-                    unvar.append(str(v))
-                elif v in holdParmList and holdParmType.get(v,'') != 'dependent param':
-                    hold.append(str(v))
-                else:
-                    toBeUsed.append(str(v))
+            elif m == 0:
+                zeroList.append(str(v))
+            elif v in undefinedVars:
+                undef.append(str(v))
+            elif v in unvariedParmsList:
+                unvar.append(str(v))
+            elif v in holdParmList and holdParmType.get(v,'') != 'dependent param':
+                hold.append(str(v))
+            else:
+                toBeUsed.append(str(v))
 
         s = ''
         for v in zeroList:
@@ -1360,7 +1357,7 @@ def ComputeDepESD(covMatrix,varyList,noSym=False):
     '''
     sigmaDict = {}
     for varlist,mapvars,multarr,invmultarr,symgen in zip(
-            dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+            dependentParmList,indParmList,arrayList,invarrayList,symGenList, strict=False):
         if symgen and noSym: continue # skip symmetry generted 
         varied = 0
         # get the v-covar matrix for independent parameters 
@@ -1374,7 +1371,7 @@ def ComputeDepESD(covMatrix,varyList,noSym=False):
                 iv2 = varyList.index(name2)
                 vcov[i1][i2] = covMatrix[iv1][iv2]
         # vec is the vector that multiplies each of the independent values
-        for i,(v,vec) in enumerate(zip(varlist,invmultarr)):
+        for i,(v,vec) in enumerate(zip(varlist,invmultarr, strict=False)):
             #if i == varied: break # this limits the number of generated params
             # to match the number varied. Not sure why I did this. 
             sigmaDict[v] = np.sqrt(np.inner(vec.T,np.inner(vcov,vec)))
@@ -1421,7 +1418,7 @@ def _showEquiv(varlist,mapvars,invmultarr,longmsg=False):
         else:
             s1 += ' is equivalent to parameters: '
         j = 0
-        for v,m in zip(varlist,invmultarr):
+        for v,m in zip(varlist,invmultarr, strict=False):
             if debug: print ('v,m[0]: ',v,m[0])
             if len(s1.split('\n')[-1]) > 60: s1 += '\n        '
             if j > 0: s1 += ' & '
@@ -1448,7 +1445,7 @@ def VarRemapSumm():
     variedOut = 0
     global dependentParmList,arrayList,invarrayList,indParmList,symGenList
     for varlist,mapvars,multarr,invmultarr,symFlag in zip(
-        dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        dependentParmList,indParmList,arrayList,invarrayList,symGenList, strict=False):
         for i,mv in enumerate(mapvars):
             if multarr is None:
                 if symFlag:
@@ -1520,7 +1517,7 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
     global dependentParmList,arrayList,invarrayList,indParmList,symGenList
 
     for varlist,mapvars,multarr,invmultarr,symFlag in zip(
-        dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        dependentParmList,indParmList,arrayList,invarrayList,symGenList, strict=False):
         for i,mv in enumerate(mapvars):
             if multarr is None:
 #                s1 = '  ' + str(mv) + ' is equivalent to parameter(s): '
@@ -1529,13 +1526,13 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                 else:
                     s1 = '   ' + str(mv) + ' is equivalent to parameters: '
                 j = 0
-                for v,m in zip(varlist,invmultarr):
+                for v,m in zip(varlist,invmultarr, strict=False):
                     if debug: print ('v,m[0]: ',v,m[0])
                     if j > 0: s1 += ' & '
                     j += 1
                     s1 += str(v)
                     if m != 1:
-                        s1 += " / " + '{:.4f}'.format(m[0])
+                        s1 += " / " + f'{m[0]:.4f}'
                     #if len(s1.split('\n')[-1]) > 70: 
                     #    s1 = ' \n          &'.join(s1.rsplit('&',1))
                 if symFlag:
@@ -1549,8 +1546,8 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
             # else:
             #     lineOut = '  {} = '.format(mv)
             j = 0 
-            lineOut = '  {} = '.format(mv)
-            for (m,v) in zip(multarr[i,:],varlist):
+            lineOut = f'  {mv} = '
+            for (m,v) in zip(multarr[i,:],varlist, strict=False):
                 if m == 0: continue
                 if m < 0:
                     lineOut += ' - '
@@ -1562,9 +1559,9 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                     ln += lineOut
                     lineOut = '\n  '
                 if m == 1:
-                    lineOut += '{}'.format(v)
+                    lineOut += f'{v}'
                 else:
-                    lineOut += '({:.4g} * {})'.format(m,v)
+                    lineOut += f'({m:.4g} * {v})'
             if mv in varyList: 
                 lineOut += '\t *VARIED*'
             ln += lineOut
@@ -1585,13 +1582,13 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                 else:
                     s1 = '   ' + str(mv) + ' is equivalent to parameters: '
                 j = 0
-                for v,m in zip(varlist,invmultarr):
+                for v,m in zip(varlist,invmultarr, strict=False):
                     if debug: print ('v,m[0]: ',v,m[0])
                     if j > 0: s1 += ' & '
                     j += 1
                     s1 += str(v)
                     if m != 1:
-                        s1 += " / " + '{:.4f}'.format(m[0])
+                        s1 += " / " + f'{m[0]:.4f}'
                 symOut += s1 + '\t *recast as equation*\n'        
     if symOut:
         s += '\nSymmetry-generated equivalences:\n' + symOut
@@ -1608,13 +1605,13 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
         
     s += '\nInverse parameter mapping relations:\n'
     lineDict = {} # store so we can sort them
-    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
+    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList, strict=False):
         varied = False
         for i,mv in enumerate(varlist):
             constrVal = 0    # offset to constraint from constant terms
-            lineOut = '  {} = '.format(mv)
+            lineOut = f'  {mv} = '
             j = 0 # number of terms shown
-            for m,v in zip(invmultarr[i,:],mapvars):
+            for m,v in zip(invmultarr[i,:],mapvars, strict=False):
                 if np.isclose(m,0): continue
                 try:
                     if np.isclose(float(v),0): continue
@@ -1636,13 +1633,13 @@ def VarRemapShow(varyList=None,inputOnly=False,linelen=60):
                     s += lineOut
                     lineOut = '\n  '
                 if m == 1:
-                    lineOut += '{}'.format(v)
+                    lineOut += f'{v}'
                 else:
-                    lineOut += '({:.4g} * {})'.format(m,v)
+                    lineOut += f'({m:.4g} * {v})'
             if constrVal < 0:
-                lineOut += ' - {:.4g}'.format(-constrVal)
+                lineOut += f' - {-constrVal:.4g}'
             elif constrVal > 0:
-                lineOut += ' + {:.4g}'.format(constrVal)
+                lineOut += f' + {constrVal:.4g}'
             elif j == 0:
                 lineOut += '0'  # no terms, no constants: var fixed at zero
             if varied: lineOut += '\t *VARIED*'
@@ -1665,7 +1662,7 @@ def CountUserConstraints():
 
     count = 0
     for varlist,mapvars,multarr,invmultarr,symFlag in zip(
-        dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        dependentParmList,indParmList,arrayList,invarrayList,symGenList, strict=False):
         if symFlag: continue
         if multarr is None:
             for i,mv in enumerate(mapvars):
@@ -1688,12 +1685,12 @@ def getInvConstraintEq(var,varyList):
     :returns: vList,mList where vList is a list of variables and 
       mList is a list of multipliers for that variable (floats)
     '''
-    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
+    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList, strict=False):
         if var not in varlist: continue
         i = varlist.index(var)
         vList = []
         mList = []
-        for m,v in zip(invmultarr[i,:],mapvars):
+        for m,v in zip(invmultarr[i,:],mapvars, strict=False):
             if v not in varyList: continue
             if m == 0: continue
             if v == 0: continue
@@ -1714,7 +1711,7 @@ def GetSymEquiv(seqmode,seqhistnum):
     global dependentParmList,arrayList,invarrayList,indParmList,symGenList
 
     for varlist,mapvars,multarr,invmultarr,symFlag in zip(
-        dependentParmList,indParmList,arrayList,invarrayList,symGenList):
+        dependentParmList,indParmList,arrayList,invarrayList,symGenList, strict=False):
         if not symFlag: continue
         for i,mv in enumerate(mapvars):
             cnstr = [[1,G2obj.G2VarObj(mv)]]
@@ -1722,7 +1719,7 @@ def GetSymEquiv(seqmode,seqhistnum):
                 s1 = ''
                 s2 = ' = ' + str(mv)
                 j = 0
-                helptext = 'Variable {:} '.format(mv) + " ("+ G2obj.fmtVarDescr(mv) + ")"
+                helptext = f'Variable {mv} ' + " ("+ G2obj.fmtVarDescr(mv) + ")"
                 if len(varlist) == 1:
                     cnstr.append([invmultarr[0][0],G2obj.G2VarObj(varlist[0])])
                     # format the way Bob prefers
@@ -1737,12 +1734,12 @@ def GetSymEquiv(seqmode,seqhistnum):
                     var1 = str(varlist[0])
                     helptext += "\n\nis equivalent to "
                     if m == 1:
-                        helptext += '\n  {:} '.format(var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                        helptext += f'\n  {var1} ' + " ("+ G2obj.fmtVarDescr(var1) + ")"
                     else:
-                        helptext += '\n  {:3g} * {:} '.format(m,var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                        helptext += f'\n  {m:3g} * {var1} ' + " ("+ G2obj.fmtVarDescr(var1) + ")"
                 else:
                     helptext += "\n\nis equivalent to the following:"
-                    for v,m in zip(varlist,invmultarr):
+                    for v,m in zip(varlist,invmultarr, strict=False):
                         cnstr.append([m,G2obj.G2VarObj(v)])
                         #if debug: print ('v,m[0]: ',v,m[0])
                         if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
@@ -1751,9 +1748,9 @@ def GetSymEquiv(seqmode,seqhistnum):
                         s1 += str(v)
                         if m != 1:
                             s1 += " / " + str(m[0])
-                            helptext += '\n  {:3g} * {:} '.format(m,v) + " ("+ G2obj.fmtVarDescr(v) + ")"
+                            helptext += f'\n  {m:3g} * {v} ' + " ("+ G2obj.fmtVarDescr(v) + ")"
                         else:
-                            helptext += '\n  {:} '.format(v) + " ("+ G2obj.fmtVarDescr(v) + ")"
+                            helptext += f'\n  {v} ' + " ("+ G2obj.fmtVarDescr(v) + ")"
                 err,msg,note = getConstrError(cnstr+[None,None,'e'],seqmode,seqhistnum)
                 symerr.append([msg,note])
                 symout.append(s1+s2)
@@ -1761,7 +1758,7 @@ def GetSymEquiv(seqmode,seqhistnum):
             else:
                 s = '  %s = ' % mv
                 j = 0
-                for m,v in zip(multarr[i,:],varlist):
+                for m,v in zip(multarr[i,:],varlist, strict=False):
                     if m == 0: continue
                     if j > 0: s += ' + '
                     j += 1
@@ -1786,7 +1783,7 @@ def GetDroppedSym(seqmode,seqhistnum):
                 s1 = ''
                 s2 = ' = ' + str(mv)
                 j = 0
-                helptext = 'Variable {:} '.format(mv) + " ("+ G2obj.fmtVarDescr(mv) + ")"
+                helptext = f'Variable {mv} ' + " ("+ G2obj.fmtVarDescr(mv) + ")"
                 if len(varlist) == 1:
                     cnstr.append([invmultarr[0][0],G2obj.G2VarObj(varlist[0])])
                     # format the way Bob prefers
@@ -1801,12 +1798,12 @@ def GetDroppedSym(seqmode,seqhistnum):
                     var1 = str(varlist[0])
                     helptext += "\n\nis equivalent to "
                     if m == 1:
-                        helptext += '\n  {:} '.format(var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                        helptext += f'\n  {var1} ' + " ("+ G2obj.fmtVarDescr(var1) + ")"
                     else:
-                        helptext += '\n  {:3g} * {:} '.format(m,var1) + " ("+ G2obj.fmtVarDescr(var1) + ")"
+                        helptext += f'\n  {m:3g} * {var1} ' + " ("+ G2obj.fmtVarDescr(var1) + ")"
                 else:
                     helptext += "\n\nis equivalent to the following:"
-                    for v,m in zip(varlist,invmultarr):
+                    for v,m in zip(varlist,invmultarr, strict=False):
                         cnstr.append([m,G2obj.G2VarObj(v)])
                         #if debug: print ('v,m[0]: ',v,m[0])
                         if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
@@ -1815,9 +1812,9 @@ def GetDroppedSym(seqmode,seqhistnum):
                         s1 += str(v)
                         if m != 1:
                             s1 += " / " + str(m[0])
-                            helptext += '\n  {:3g} * {:} '.format(m,v) + " ("+ G2obj.fmtVarDescr(v) + ")"
+                            helptext += f'\n  {m:3g} * {v} ' + " ("+ G2obj.fmtVarDescr(v) + ")"
                         else:
-                            helptext += '\n  {:} '.format(v) + " ("+ G2obj.fmtVarDescr(v) + ")"
+                            helptext += f'\n  {v} ' + " ("+ G2obj.fmtVarDescr(v) + ")"
                 err,msg,note = getConstrError(cnstr+[None,None,'e'],seqmode,seqhistnum)
                 symerr.append([msg,note])
                 symout.append(s1+s2)
@@ -1825,7 +1822,7 @@ def GetDroppedSym(seqmode,seqhistnum):
             else:
                 s = '  %s = ' % mv
                 j = 0
-                for m,v in zip(multarr[i,:],varlist):
+                for m,v in zip(multarr[i,:],varlist, strict=False):
                     if m == 0: continue
                     if j > 0: s += ' + '
                     j += 1
@@ -1847,18 +1844,18 @@ def Dict2Deriv(varyList,derivDict,dMdv):
 
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,invarrayList
-    for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList):
+    for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList, strict=False):
         for i,name in enumerate(mapvars):
             # grouped parameters: need to add in the derv. w/r
             # dependent variables to the independent ones
             if name not in varyList: continue # skip if independent var not varied
             if multarr is None:
                 if debug: print ('start dMdv for',name,dMdv[varyList.index(name)])
-                for v,m in zip(varlist,invmultarr):
+                for v,m in zip(varlist,invmultarr, strict=False):
                     if m[0] == 0: continue
                     dMdv[varyList.index(name)] += derivDict[v]/ m[0] 
             else:
-                for v,m in zip(varlist,invmultarr[:,i]):
+                for v,m in zip(varlist,invmultarr[:,i], strict=False):
                     if m == 0: continue
                     dMdv[varyList.index(name)] += m * derivDict[v]
 
@@ -1889,7 +1886,7 @@ def Map2Dict(parmDict,varyList):
     # * remove dependent ones from varylist
     # * for equivalences apply the independent parameters onto dependent variables
     global dependentParmList,arrayList,invarrayList,indParmList
-    for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList):
+    for varlist,mapvars,multarr,invmultarr in zip(dependentParmList,indParmList,arrayList,invarrayList, strict=False):
         for item in varlist: # TODO: is this still needed?
             if varyList is not None and item in varyList: varyList.remove(item)
         if multarr is None:
@@ -1897,14 +1894,14 @@ def Map2Dict(parmDict,varyList):
             #    varlist,
             #    np.dot(invmultarr,np.array([parmDict[var] for var in mapvars]))
             #    ): print('parmDict set',v,':',val)
-            parmDict.update(zip(varlist,np.dot(invmultarr,np.array([parmDict[var] for var in mapvars]))))
+            parmDict.update(zip(varlist,np.dot(invmultarr,np.array([parmDict[var] for var in mapvars])), strict=False))
 
     # * for the created parameters, compute them from their dependents
-    for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList):
+    for varlist,mapvars,multarr in zip(dependentParmList,indParmList,arrayList, strict=False):
         if multarr is None: continue
         # evaluate constraints in the forward direction
         A = np.array([parmDict[var] for var in varlist])
-        z = zip(mapvars,np.dot(multarr,A))
+        z = zip(mapvars,np.dot(multarr,A), strict=False)
         # add/replace in parameter dict
         parmDict.update([i for i in z if type(i[0]) is not float and ':' in i[0]])
 #        parmDict.update([i for i in zip(mapvars,np.dot(multarr,A)) if ':' in i[0]])
@@ -1919,7 +1916,7 @@ def normParms(parmDict):
     enforce constraint equations
     '''
     for varlist,mapvars,multarr,invmultarr in zip(
-            dependentParmList,indParmList,arrayList,invarrayList):
+            dependentParmList,indParmList,arrayList,invarrayList, strict=False):
         if multarr is None or invmultarr is None: continue # unexpected
         for i,s in enumerate(mapvars):
             try:
@@ -1927,7 +1924,7 @@ def normParms(parmDict):
             except: 
                 continue
             sumcons = 0.
-            for var,m in zip(varlist,multarr[i]):
+            for var,m in zip(varlist,multarr[i], strict=False):
                 if var not in parmDict: 
                     print('normParms error: Parameter',var,'not in parmDict')
                     break
@@ -1948,14 +1945,14 @@ def Dict2Map(parmDict):
       will be updated based on constraints and equivalences.
     '''
     global dependentParmList,arrayList,invarrayList,indParmList
-    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
+    for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList, strict=False):
         if invmultarr is None:  # is this needed?
             if GSASIIpath.GetConfigValue('debug'): 
                 print('Why does this constraint have None for invmultarr?',varlist,mapvars)
             continue
         valslist = np.array([float(parmDict.get(var,var)) for var in mapvars])
         #for v,val in zip(varlist,np.dot(invmultarr,np.array(valslist))): print(v,val) # shows what is being set
-        parmDict.update(zip(varlist,np.dot(invmultarr,valslist)))
+        parmDict.update(zip(varlist,np.dot(invmultarr,valslist), strict=False))
         
 #======================================================================
 # internal routines follow (these routines are unlikely to be called
@@ -2044,8 +2041,7 @@ def _SwapColumns(i,m,v):
             m[:,(i,j)] = m[:,(j,i)]
             v[i],v[j] = v[j],v[i]
             return
-    else:
-        raise ConstraintException('Singular input')
+    raise ConstraintException('Singular input')
 
 def _RowEchelon(m,arr,collist):
     '''Convert the first m rows in Matrix arr to row-echelon form

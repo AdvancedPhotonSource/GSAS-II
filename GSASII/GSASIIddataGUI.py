@@ -1,21 +1,20 @@
-# -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 '''Routines for Data tab in Phase dataframe follows.
 '''
-from __future__ import division, print_function
 import copy
+
 import numpy as np
 import numpy.linalg as nl
-from . import GSASIIpath
-from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
-from . import GSASIIplot as G2plt
-from . import GSASIIpwd as G2pwd
-from . import GSASIIphsGUI as G2phG
+
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIfiles as G2fil
-from . import GSASIImath as G2mth
+from . import GSASIIlattice as G2lat
+from . import GSASIIpath
+from . import GSASIIphsGUI as G2phG
+from . import GSASIIplot as G2plt
+from . import GSASIIpwd as G2pwd
+from . import GSASIIspc as G2spc
 
 try:
     import wx
@@ -265,7 +264,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         Retains values from the previous dict, if values were already present
         '''
         cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
-        newPOCoef = dict(zip(cofNames,len(cofNames)*[0.]))
+        newPOCoef = dict(zip(cofNames,len(cofNames)*[0.], strict=False))
         POCoeff = UseList[G2frame.hist]['Pref.Ori.'][5]
         for cofName in POCoeff:
             if cofName in cofNames:
@@ -341,7 +340,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     def UniDataSizer(parmName,parm,fmt,Limits,OnRef):
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
         parms = zip([' Equatorial '+parmName,' Axial '+parmName],
-            UseList[G2frame.hist][parm][2],range(2))
+            UseList[G2frame.hist][parm][2],range(2), strict=False)
         for Pa,ref,Id in parms:
             sizeRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
             sizeRef.thisown = False
@@ -356,7 +355,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
 
     def EllSizeDataSizer():
         parms = zip(['S11','S22','S33','S12','S13','S23'],UseList[G2frame.hist]['Size'][4],
-            UseList[G2frame.hist]['Size'][5],range(6))
+            UseList[G2frame.hist]['Size'][5],range(6), strict=False)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         matrixSizer = wx.FlexGridSizer(0,6,5,5)
         Sij = []
@@ -402,7 +401,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Mustrain'][5].append(False)
             onumb += 1
         muMean = G2spc.MuShklMean(SGData,Amat,UseList[G2frame.hist]['Mustrain'][4][:numb])
-        parms = zip(Snames,UseList[G2frame.hist]['Mustrain'][5],range(numb))
+        parms = zip(Snames,UseList[G2frame.hist]['Mustrain'][5],range(numb), strict=False)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         dataSizer = wx.FlexGridSizer(0,6,5,5)
         for Pa,ref,Id in parms:
@@ -430,7 +429,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         hSizer = wx.BoxSizer(wx.VERTICAL)
         hstrainSizer = wx.FlexGridSizer(0,6,5,5)
         Hsnames = G2spc.HStrainNames(SGData)
-        parms = zip(Hsnames,UseList[G2frame.hist]['HStrain'][1],range(len(Hsnames)))
+        parms = zip(Hsnames,UseList[G2frame.hist]['HStrain'][1],range(len(Hsnames)), strict=False)
         allzero = True
         for Pa,ref,Id in parms:
             hstrainRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
@@ -461,10 +460,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             else:
                 return hSizer
             cellstr = ''
-            for txt,fmt,ifEdit,Id in zip(*useGUI[2:]):
+            for txt,fmt,ifEdit,Id in zip(*useGUI[2:], strict=False):
                 if cellstr: cellstr += ", "
                 cellstr += txt+fmt.format(cell[Id])
-            cellstr += ', Vol = {:.3f}'.format(G2lat.calc_V(newA))
+            cellstr += f', Vol = {G2lat.calc_V(newA):.3f}'
             hSizer.Add(wx.StaticText(DData,wx.ID_ANY,'     '+cellstr),0)
         return hSizer
 
@@ -624,9 +623,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 val2Sizer =wx.BoxSizer(wx.HORIZONTAL)
                 if 'Primary' in UseList[G2frame.hist]['Extinction'][1]:
                     Ekey = ['Ep',]
-                elif 'Secondary Type II' == UseList[G2frame.hist]['Extinction'][1]:
+                elif UseList[G2frame.hist]['Extinction'][1] == 'Secondary Type II':
                     Ekey = ['Es',]
-                elif 'Secondary Type I' == UseList[G2frame.hist]['Extinction'][1]:
+                elif UseList[G2frame.hist]['Extinction'][1] == 'Secondary Type I':
                     Ekey = ['Eg',]
                 else:
                     Ekey = ['Eg','Es']
@@ -689,7 +688,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Layer Disp'][1] = Obj.GetValue()
 
         dispSizer = wx.BoxSizer(wx.HORIZONTAL)
-        dispRef = wx.CheckBox(DData,wx.ID_ANY,label=u' Layer displacement (\xb5m): ')
+        dispRef = wx.CheckBox(DData,wx.ID_ANY,label=' Layer displacement (\xb5m): ')
         dispRef.SetValue(UseList[G2frame.hist]['Layer Disp'][1])
         dispRef.Bind(wx.EVT_CHECKBOX, OnDispRef)
         dispSizer.Add(dispRef,0,WACV|wx.LEFT,5)
@@ -915,7 +914,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if G2frame.hist not in UseList:
             G2frame.ErrorDialog('Missing data error',
                     G2frame.hist+' not in GSAS-II data tree')
-            return
+            return None
 #patch
         if 'Use' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Use'] = True
@@ -979,7 +978,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 addFixed.Bind(wx.EVT_BUTTON,OnAddFixed)
                 fixedVars = UseList[G2frame.hist].get('FixedSeqVars',[])
                 if len(fixedVars):
-                    fixBox.Add(wx.StaticText(DData,label=' (currently {} fixed)'.format(len(fixedVars))),0,WACV)
+                    fixBox.Add(wx.StaticText(DData,label=f' (currently {len(fixedVars)} fixed)'),0,WACV)
                 bottomSizer.Add(fixBox)
 
         if not UseList[G2frame.hist]['LeBail'] or 'HKLF' in G2frame.hist[:4]:
@@ -996,7 +995,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 isoSizer.Add(LGmixSizer('Size',[0.,1.],OnLGmixRef))
                 isoSizer.Add(ResetSizer('isotropic',OnResetSize),0,WACV)
                 bottomSizer.Add(isoSizer)
-                bottomSizer.Add(IsoSizer(u'size(\xb5m): ','Size',(10,4),[0.,10.],OnSizeRef),0,wx.BOTTOM,5)
+                bottomSizer.Add(IsoSizer('size(\xb5m): ','Size',(10,4),[0.,10.],OnSizeRef),0,wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Size'][0] == 'uniaxial':
                 uniSizer = wx.BoxSizer(wx.HORIZONTAL)
                 uniSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],
@@ -1005,7 +1004,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 uniSizer.Add(ResetSizer('uniaxial',OnResetSize),0,WACV)
                 bottomSizer.Add(UniSizer('Size',OnSizeAxis),0)
                 bottomSizer.Add(uniSizer)
-                bottomSizer.Add(UniDataSizer(u'size(\xb5m): ','Size',(10,3),[0.,10.],OnSizeRef),0,wx.BOTTOM,5)
+                bottomSizer.Add(UniDataSizer('size(\xb5m): ','Size',(10,3),[0.,10.],OnSizeRef),0,wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Size'][0] == 'ellipsoidal':
                 ellSizer = wx.BoxSizer(wx.HORIZONTAL)
                 ellSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],
@@ -1058,16 +1057,15 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 poSizer.Add(PoTopSizer(POData))
                 if POData[0] == 'MD':
                     poSizer.Add(MDDataSizer(POData))
-                else:           #'SH'
-                    if POData[4]:       #SH order > 0
-                        textJ = G2lat.textureIndex(POData[5])
-                        poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
-                            ,0,wx.TOP|wx.BOTTOM,5)
-                        poSizer.Add(SHDataSizer(POData))  #,0,wx.TOP|wx.BOTTOM,5)
-                        try:
-                            poSizer.Add(SHPenalty(POData))  #,0,wx.TOP|wx.BOTTOM,5)
-                        except:
-                            print('SHPenalty error occurred')
+                elif POData[4]:       #SH order > 0
+                    textJ = G2lat.textureIndex(POData[5])
+                    poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
+                        ,0,wx.TOP|wx.BOTTOM,5)
+                    poSizer.Add(SHDataSizer(POData))  #,0,wx.TOP|wx.BOTTOM,5)
+                    try:
+                        poSizer.Add(SHPenalty(POData))  #,0,wx.TOP|wx.BOTTOM,5)
+                    except:
+                        print('SHPenalty error occurred')
                 bottomSizer.Add(poSizer)    #,0,wx.TOP|wx.BOTTOM,5)
                 bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
                 if generalData['Type'] != 'magnetic':
@@ -1157,7 +1155,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     elif not keyList:
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,
             '  (This project has no data; use Import to read it)'),0,wx.TOP,10)
-    elif not UseList in G2frame.dataWindow.HistsInPhase:
+    elif UseList not in G2frame.dataWindow.HistsInPhase:
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,
             '  (This phase has no associated data; use appropriate Edit/Add... menu item)'),0,wx.TOP,10)
     else:
@@ -1183,12 +1181,11 @@ def MakeHistPhaseWin(G2frame):
             return
         # find the tab matching the phase
         for i,page in enumerate(phaseList):
-            if tabname == phaseList[i]:
+            if tabname == page:
                 HAPBook.SetSelection(i)
                 wx.CallAfter(FillDDataWindow,i) # may result in a double paint on some OSs
                 return
-        else:
-            print ("Warning: tab "+tabname+" was not found")
+        print ("Warning: tab "+tabname+" was not found")
 
     def OnPageChanged(event):
         'respond to a notebook tab'
@@ -1264,7 +1261,7 @@ def MakeHistPhaseWin(G2frame):
         for name in copyNames:
             if name not in sourceDict: continue
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
                 'Copy phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1316,7 +1313,7 @@ def MakeHistPhaseWin(G2frame):
         if not keyList:
             G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy phase/histogram flags\nfrom '+hist[5:][:35],
                 'Copy phase/hist flags', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1383,7 +1380,7 @@ def MakeHistPhaseWin(G2frame):
         for parm in selectedItems:
             if parm not in sourceDict: continue
             copyDict[parm] = copy.deepcopy(sourceDict[parm])
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
             'Copy selected phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1470,9 +1467,9 @@ def MakeHistPhaseWin(G2frame):
         DijVals = data['Histograms'][G2frame.hist]['HStrain'][0][:]
         # apply the Dij values to the reciprocal cell
         newA = []
-        Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals))
+        Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals, strict=False))
         for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),
-                            ['D11','D22','D33','D12','D13','D23']):
+                            ['D11','D22','D33','D12','D13','D23'], strict=False):
             newA.append(Aij + Dijdict.get(lbl,0.0))
         # convert back to direct cell
         data['General']['Cell'][1:7] = G2lat.A2cell(newA)

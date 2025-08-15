@@ -1,34 +1,36 @@
-# -*- coding: utf-8 -*-
 #GSASIIctrlGUI - Custom GSAS-II GUI controls
 '''Documentation for all the routines in module :mod:`GSASIIctrlGUI`
 follows.
 '''
 # Documentation moved to doc/source/GSASIIGUIr.rst
 #
-from __future__ import division, print_function
 import os
-import sys
 import platform
+import sys
+
 try:
-    import wx
-    import wx.grid as wg
-    # import wx.wizard as wz
-    import wx.aui
-    import wx.lib.scrolledpanel as wxscroll
-    import wx.lib.mixins.listctrl  as  listmix
-    import wx.richtext as wxrt
-    import wx.lib.filebrowsebutton as wxfilebrowse
     import matplotlib as mpl
     import matplotlib.figure as mplfig
+    import wx
+
+    # import wx.wizard as wz
+    import wx.aui
+    import wx.grid as wg
+    import wx.lib.filebrowsebutton as wxfilebrowse
+    import wx.lib.mixins.listctrl as listmix
+    import wx.lib.scrolledpanel as wxscroll
+    import wx.richtext as wxrt
 
 except ImportError:
     print('ImportError for wx/mpl in GSASIIctrlGUI: ignore if docs build')
 
-import time
-import glob
 import copy
+import glob
+
 #import ast
 import random as ran
+import time
+
 import numpy as np
 
 #import matplotlib as mpl
@@ -37,19 +39,21 @@ try:
 except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
-from . import GSASIIpath
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIpwdGUI as G2pdG
-from . import GSASIIspc as G2spc
-from . import GSASIIobj as G2obj
-from . import GSASIIfiles as G2fil
 from . import GSASIIElem as G2elem
-from . import GSASIIpwd as G2pwd
+from . import GSASIIfiles as G2fil
 from . import GSASIIlattice as G2lat
 from . import GSASIImath as G2mth
+
 #from . import GSASIIstrMain as G2stMn
 from . import GSASIImiscGUI as G2IO
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIpwd as G2pwd
+from . import GSASIIpwdGUI as G2pdG
+from . import GSASIIspc as G2spc
 from .tutorialIndex import tutorialIndex
+
 if sys.version_info[0] >= 3:
     unicode = str
     basestring = str
@@ -151,8 +155,7 @@ class G2TreeCtrl(wx.TreeCtrl):
             elif itemtext.split()[0] == histtype:
                 i += 1
             item, cookie = self.GetNextChild(self.root, cookie)
-        else:
-            raise Exception("Histogram not found: "+histname)
+        raise Exception("Histogram not found: "+histname)
 
     def ConvertRelativeHistNum(self,histtype,histnum):
         '''Converts a histogram type and relative histogram number to a
@@ -166,8 +169,7 @@ class G2TreeCtrl(wx.TreeCtrl):
                 if i == histnum: return itemtext
                 i += 1
             item, cookie = self.GetNextChild(self.root, cookie)
-        else:
-            raise Exception("Histogram #'+str(histnum)+' of type "+histtype+' not found')
+        raise Exception("Histogram #'+str(histnum)+' of type "+histtype+' not found')
 
     def GetRelativePhaseNum(self,phasename):
         '''Returns a phase number if the string matches a phase name
@@ -186,11 +188,9 @@ class G2TreeCtrl(wx.TreeCtrl):
                         return i
                     item, cookie = self.GetNextChild(parent, cookie)
                     i += 1
-                else:
-                    return phasename # not a phase name
+                return phasename # not a phase name
             item, cookie = self.GetNextChild(self.root, cookie)
-        else:
-            raise Exception("No phases found ")
+        raise Exception("No phases found ")
 
     def ConvertRelativePhaseNum(self,phasenum):
         '''Converts relative phase number to a phase name in
@@ -208,11 +208,9 @@ class G2TreeCtrl(wx.TreeCtrl):
                         return self.GetItemText(item)
                     item, cookie = self.GetNextChild(parent, cookie)
                     i += 1
-                else:
-                    raise Exception("Phase "+str(phasenum)+" not found")
+                raise Exception("Phase "+str(phasenum)+" not found")
             item, cookie = self.GetNextChild(self.root, cookie)
-        else:
-            raise Exception("No phases found ")
+        raise Exception("No phases found ")
 
     def GetImageLoc(self,TreeId):
         '''Get Image data from the Tree. Handles cases where the
@@ -812,9 +810,7 @@ class NumberValidator(wxValidator):
                 tc.invalid = True
                 return
         if self.xmax != None:
-            if val >= self.xmax and self.exclLim[1]:
-                tc.invalid = True
-            elif val > self.xmax:
+            if (val >= self.xmax and self.exclLim[1]) or val > self.xmax:
                 tc.invalid = True
         if self.xmin != None:
             if val <= self.xmin and self.exclLim[0]:
@@ -880,14 +876,7 @@ class NumberValidator(wxValidator):
                 self.CheckInput(False)
             if event: event.Skip()
             return
-        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed
-            if event: event.Skip()
-            if tc.invalid:
-                wx.CallAfter(self.CheckInput,True)
-            else:
-                wx.CallAfter(self.CheckInput,False)
-            return
-        elif chr(key) in self.validchars: # valid char pressed?
+        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255 or chr(key) in self.validchars: # control characters get processed
             if event: event.Skip()
             if tc.invalid:
                 wx.CallAfter(self.CheckInput,True)
@@ -954,11 +943,7 @@ class ASCIIValidator(wxValidator):
             self.TestValid(tc)
             if event: event.Skip()
             return
-        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed
-            if event: event.Skip()
-            self.TestValid(tc)
-            return
-        elif chr(key) in self.validchars: # valid char pressed?
+        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255 or chr(key) in self.validchars: # control characters get processed
             if event: event.Skip()
             self.TestValid(tc)
             return
@@ -1593,7 +1578,7 @@ class ScrolledMultiEditor(wx.Dialog):
         self.checkelemlst = checkelemlst
         self.StartCheckValues = [checkdictlst[i][checkelemlst[i]] for i in range(len(checkdictlst))]
         self.ButtonIndex = {}
-        for d,i in zip(dictlst,elemlst):
+        for d,i in zip(dictlst,elemlst, strict=False):
             self.orig.append(d[i])
         # add a header if supplied
         if header:
@@ -1613,7 +1598,7 @@ class ScrolledMultiEditor(wx.Dialog):
         subSizer = wx.FlexGridSizer(cols=cols,hgap=2,vgap=2)
         self.ValidatedControlsList = [] # make list of TextCtrls
         self.CheckControlsList = [] # make list of CheckBoxes
-        for i,(d,k) in enumerate(zip(dictlst,elemlst)):
+        for i,(d,k) in enumerate(zip(dictlst,elemlst, strict=False)):
             if i >= len(prelbl): # label before TextCtrl, or put in a blank
                 subSizer.Add((-1,-1))
             else:
@@ -1687,7 +1672,7 @@ class ScrolledMultiEditor(wx.Dialog):
         but = event.GetEventObject()
         n = self.ButtonIndex.get(but)
         if n is None: return
-        for i,(d,k,ctrl) in enumerate(zip(self.dictlst,self.elemlst,self.ValidatedControlsList)):
+        for i,(d,k,ctrl) in enumerate(zip(self.dictlst,self.elemlst,self.ValidatedControlsList, strict=False)):
             if i < n: continue
             if i == n:
                 val = d[k]
@@ -1700,7 +1685,7 @@ class ScrolledMultiEditor(wx.Dialog):
             self.CheckControlsList[i].SetValue(self.checkdictlst[i][self.checkelemlst[i]])
     def _onClose(self,event):
         'Used on Cancel: Restore original values & close the window'
-        for d,i,v in zip(self.dictlst,self.elemlst,self.orig):
+        for d,i,v in zip(self.dictlst,self.elemlst,self.orig, strict=False):
             d[i] = v
         for i in range(len(self.checkdictlst)):
             self.checkdictlst[i][self.checkelemlst[i]] = self.StartCheckValues[i]
@@ -1719,8 +1704,7 @@ class ScrolledMultiEditor(wx.Dialog):
                 if ctrl.invalid:
                     self.OKbtn.Disable()
                     return
-            else:
-                self.OKbtn.Enable()
+            self.OKbtn.Enable()
         else:
             self.OKbtn.Disable()
 
@@ -2129,7 +2113,7 @@ class G2MultiChoiceWindow(wx.BoxSizer):
         try:
             self.SelectList.clear()
         except:  # patch: clear not in EPD
-            for i in reversed((range(len(self.SelectList)))):
+            for i in reversed(range(len(self.SelectList))):
                 del self.SelectList[i]
         for i,val in enumerate(self.Selections):
             if val: self.SelectList.append(i)
@@ -2691,7 +2675,7 @@ def ShowScrolledColText(parent,txt,width=600,height=400,header='Warning info',co
             txtSizer.Add(st,pos=(i,0),span=(0,cols),flag=wx.EXPAND)
             st.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
             continue
-        elif line.strip().startswith('**') and line.strip().endswith('**'):
+        if line.strip().startswith('**') and line.strip().endswith('**'):
             st = wx.StaticText(spanel,wx.ID_ANY,line,style=wx.ALIGN_CENTER)
             st.SetBackgroundColour(DULL_YELLOW)
             txtSizer.Add(st,pos=(i,0),span=(0,cols),flag=wx.EXPAND)
@@ -3155,7 +3139,7 @@ class MultiDataDialog(wx.Dialog):
             HorizontalLine(mainSizer,self.panel)
             mainSizer.Add((-1,5))
         lineSizer = wx.FlexGridSizer(0,2,5,5)
-        for tid,[prompt,value,limits,testfxn,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.testfxns,self.formats)):
+        for tid,[prompt,value,limits,testfxn,fmt] in enumerate(zip(self.prompts,self.values,self.limits,self.testfxns,self.formats, strict=False)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
             if type(fmt) is list:
                 valItem = wx.BoxSizer(wx.HORIZONTAL)
@@ -3372,7 +3356,7 @@ class MultiStringDialog(wx.Dialog):
         promptSizer = wx.FlexGridSizer(0,2,5,5)
         promptSizer.AddGrowableCol(1,1)
         self.Indx = {}
-        for prompt,value in zip(self.prompts,self.values):
+        for prompt,value in zip(self.prompts,self.values, strict=False):
             promptSizer.Add(wx.StaticText(self,-1,prompt))
             valItem = wx.TextCtrl(self,-1,value=value,style=wx.TE_PROCESS_ENTER,size=(self.size,-1))
             self.Indx[valItem.GetId()] = prompt
@@ -3454,8 +3438,7 @@ class G2ColumnIDDialog(wx.Dialog):
                 if item != ' ' and item in selCols:
                     OK = False
                     break
-                else:
-                    selCols.append(item)
+                selCols.append(item)
             parent = self.GetParent()
             if not OK:
                 parent.ErrorDialog('Duplicate',item+' selected more than once')
@@ -3705,14 +3688,13 @@ def ItemSelector(ChoiceList, ParentFrame=None,
             dlg = G2MultiChoiceDialog(
                 ParentFrame,title, header, ChoiceList,
                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+    elif useCancel:
+        dlg = wx.SingleChoiceDialog(
+            ParentFrame,title, header, ChoiceList)
     else:
-        if useCancel:
-            dlg = wx.SingleChoiceDialog(
-                ParentFrame,title, header, ChoiceList)
-        else:
-            dlg = wx.SingleChoiceDialog(
-                ParentFrame,title, header,ChoiceList,
-                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+        dlg = wx.SingleChoiceDialog(
+            ParentFrame,title, header,ChoiceList,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
     if size: dlg.SetSize(size)
     if dlg.ShowModal() == wx.ID_OK:
         if multiple:
@@ -3787,7 +3769,7 @@ class MultiIntegerDialog(wx.Dialog):
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         Indx = {}
-        for ival,[prompt,value] in enumerate(zip(self.prompts,self.values)):
+        for ival,[prompt,value] in enumerate(zip(self.prompts,self.values, strict=False)):
             mainSizer.Add(wx.StaticText(self.panel,-1,prompt),0,wx.ALIGN_CENTER)
             valItem = wx.TextCtrl(self.panel,-1,value='%d'%(value),style=wx.TE_PROCESS_ENTER)
             mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
@@ -3872,8 +3854,8 @@ class MultiColumnSelection(wx.Dialog):
                            size=(sizex,height), **kw)
         self.Selections = len(choices)*[False]
         try:
-            from wx.lib.wordwrap import wordwrap
             import wx.lib.agw.ultimatelistctrl as ULC
+            from wx.lib.wordwrap import wordwrap
         except ImportError:
             self.Selection = None
             return
@@ -3891,7 +3873,7 @@ class MultiColumnSelection(wx.Dialog):
             inc = 1
         else:
             inc = 0
-        for i,(lbl,wid) in enumerate(zip(colLabels, colWidths)):
+        for i,(lbl,wid) in enumerate(zip(colLabels, colWidths, strict=False)):
             self.list.InsertColumn(i+inc, lbl, width=wid, format=colPosition)
         for i,item in enumerate(choices):
             if item[0].startswith('   '):
@@ -4004,7 +3986,7 @@ def MultiColMultiSelDlg(parent, title, header, colInfo, choices):
     try:
         if dlg.ShowModal() == wx.ID_OK:
             return [lst.IsItemChecked(i) for i,c in enumerate(choices)]
-        return
+        return None
     finally:
         dlg.Destroy()
 
@@ -4095,7 +4077,7 @@ class OrderBox(wxscroll.ScrolledPanel):
                 l1 = [newcol]
                 l = [col]
             # move all of the items, starting from the last column
-            for newcol,col in zip(l1,l):
+            for newcol,col in zip(l1,l, strict=False):
                 #print 'moving',col,'to',newcol
                 self.posdict[key][newcol] = self.posdict[key][col]
                 del self.posdict[key][col]
@@ -4208,7 +4190,8 @@ def G2FileBrowser(parent, message, defaultDir, *args,
     maxFiles = 300   # when more than this number of files is found in a
                      # directory, after applying the extension and filter
                      # the list is broken into ranges
-    import fnmatch   # import these now as not commonly used in GSAS-II
+    import fnmatch  # import these now as not commonly used in GSAS-II
+
     import wx.lib.filebrowsebutton as filebrowse
     def OnDirSelect(event,**kwargs):
         '''Called when a directory or an extension is selected. 
@@ -4506,7 +4489,6 @@ class SGMessageBox(wx.Dialog):
         '''Use this method after creating the dialog to post it
         '''
         self.ShowModal()
-        return
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -4618,7 +4600,6 @@ class SGMagSpinBox(wx.Dialog):
         '''Use this method after creating the dialog to post it
         '''
         self.ShowModal()
-        return
 
 
 ################################################################################
@@ -4896,12 +4877,11 @@ class ShowLSParms(wx.Dialog):
         num = len(self.varyList)
         mainSizer.Add(wx.StaticText(self,label='View Parameters in Project'),0,wx.ALIGN_CENTER)
         parmSizer = wx.BoxSizer(wx.HORIZONTAL)
-        parmSizer.Add(wx.StaticText(self,label=' Number of refined variables: {}'.format(num)),0,wx.ALIGN_LEFT)
+        parmSizer.Add(wx.StaticText(self,label=f' Number of refined variables: {num}'),0,wx.ALIGN_LEFT)
         if len(self.varyList) != len(self.fullVaryList):
             num = len(self.fullVaryList) - len(self.varyList)
             parmSizer.Add(wx.StaticText(self,label=
-                ' + {} varied via constraints'.format(
-                    len(self.fullVaryList) - len(self.varyList))
+                f' + {len(self.fullVaryList) - len(self.varyList)} varied via constraints'
                                         ))
         parmFrozen = self.Controls.get('parmFrozen',{})
         fcount = 0
@@ -4913,7 +4893,7 @@ class ShowLSParms(wx.Dialog):
             fcount = len(parmFrozen['FrozenList'])
         if fcount:
             parmSizer.Add(wx.StaticText(self,label=
-                ' - {} frozen variables'.format(fcount)))
+                f' - {fcount} frozen variables'))
         mainSizer.Add(parmSizer)
         choice = ['Phase','Phase/Histo','Histogram']
         if 'Global' in self.choiceDict:
@@ -5007,7 +4987,7 @@ class VirtualVarBox(wx.ListCtrl):
 
         for i,(lbl,wid) in enumerate(zip(
                 ('#', "Parameter", "Ref", "Value", "Min", "Max", "Explanation"),
-                (40 , 125        , 30    ,  100   ,  75  ,  75  , 700),)):
+                (40 , 125        , 30    ,  100   ,  75  ,  75  , 700), strict=False,)):
             self.InsertColumn(i, lbl)
             self.SetColumnWidth(i, wid)
 
@@ -5116,7 +5096,7 @@ class VirtualVarBox(wx.ListCtrl):
             'Set/clear item as wildcard & delete old name(s), redraw'
             n,val = G2obj.prmLookup(name,d) # is this a wild-card?
             if val is None:
-                print('Error: Limit for parameter {} not found. Should not happen'.format(name))
+                print(f'Error: Limit for parameter {name} not found. Should not happen')
                 return
             if mode: # make wildcard
                 for n in list(d.keys()): # delete names matching wildcard
@@ -5136,7 +5116,7 @@ class VirtualVarBox(wx.ListCtrl):
             print('Error: row and event should not both be None!')
             return
         name = self.varList[row]
-        dlg = wx.Dialog(self.parmWin,wx.ID_ANY,'Parameter {} info'.format(name),
+        dlg = wx.Dialog(self.parmWin,wx.ID_ANY,f'Parameter {name} info',
                             size=(600,-1),
                         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5150,8 +5130,8 @@ class VirtualVarBox(wx.ListCtrl):
         except TypeError:
             value = str(self.parmWin.parmDict[name])+' -?' # unexpected
         subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                        'Parameter "{}" information and settings. Value={}'
-                                       .format(name,value)))
+                        f'Parameter "{name}" information and settings. Value={value}'
+                                       ))
         subSizer.Add((-1,-1),1,wx.EXPAND)
         mainSizer.Add(subSizer,0,wx.EXPAND,0)
         mainSizer.Add((0,10))
@@ -5168,13 +5148,13 @@ class VirtualVarBox(wx.ListCtrl):
 
         freezebtn = None
         if name in self.parmWin.fullVaryList and name in self.parmWin.frozenList:
-            msg = "Parameter {} exceeded limits and has been frozen".format(name)
+            msg = f"Parameter {name} exceeded limits and has been frozen"
             freezebtn = wx.Button(dlg, wx.ID_ANY,'Unfreeze')
             freezebtn.Bind(wx.EVT_BUTTON, ResetFrozen)
         elif name in self.parmWin.varyList:
-            msg = "Parameter {} is refined".format(name)
+            msg = f"Parameter {name} is refined"
         elif name in self.parmWin.fullVaryList:
-            msg = "Parameter {} is refined via a constraint".format(name)
+            msg = f"Parameter {name} is refined via a constraint"
         else:
             msg = ""
         if msg:
@@ -5464,7 +5444,7 @@ class GSGrid(wg.Grid):
             indx = self.GetSelectedRows()
             indx += [row for row,col in self.GetSelectedCells()]
             for top,bottom in zip([r for r,c in self.GetSelectionBlockTopLeft()],
-                          [r for r,c in self.GetSelectionBlockBottomRight()]):
+                          [r for r,c in self.GetSelectionBlockBottomRight()], strict=False):
                 indx += list(range(top,bottom+1))
             indx = list(set(indx))
             if len(indx) == 0: # nothing selected, get current row
@@ -5740,9 +5720,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
 
     def OnChar(self, evt):
         key = evt.GetKeyCode()
-        if key < 32 or key >= 127: # outside printable ascii range; needed for backspace etc.
-            evt.Skip()
-        elif chr(key).lower() in '.+-*/0123456789cosind(),':
+        if key < 32 or key >= 127 or chr(key).lower() in '.+-*/0123456789cosind(),': # outside printable ascii range; needed for backspace etc.
             evt.Skip()
         else:
             evt.StopPropagation()
@@ -6137,12 +6115,11 @@ def updateNotifier(G2frame,fileVersion):
                 else:
                     show = min(show,fileVersion)
                 allProjects = True
-        else:
-            if key >= lastNotice:
-                if show is None:
-                    show = lastNotice
-                else:
-                    show = min(show,lastNotice)
+        elif key >= lastNotice:
+            if show is None:
+                show = lastNotice
+            else:
+                show = min(show,lastNotice)
     if show is None: return
 
     filnam = os.path.join(GSASIIpath.path2GSAS2,'inputs','versioninfo.txt')
@@ -6151,7 +6128,7 @@ def updateNotifier(G2frame,fileVersion):
     if not os.path.exists(filnam):
         print('Warning: file versioninfo.txt not found')
         return
-    fp = open(filnam, 'r')
+    fp = open(filnam)
     vers = None
     noticeDict = {}
     for line in fp:
@@ -6160,9 +6137,8 @@ def updateNotifier(G2frame,fileVersion):
             if len(line.strip()) == 0:
                 vers = None
                 continue
-            else:
-                noticeDict[vers] += ' '
-                noticeDict[vers] += line.strip().replace('%%','\n')
+            noticeDict[vers] += ' '
+            noticeDict[vers] += line.strip().replace('%%','\n')
         elif ':' in line:
             vers,tag = line.strip().split(':',1)
             try:
@@ -6272,7 +6248,7 @@ def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
                     lastWebFrame.wv.SetPage(HTML,'')
                 else:
                     lastWebFrame.wv.LoadURL(URL)
-                return
+                return None
         except:
             pass
     dlg = wx.Frame(parent,size=size)
@@ -6444,7 +6420,7 @@ class MultipleChoicesDialog(wx.Dialog):
         topLabl = wx.StaticText(panel,wx.ID_ANY,title)
         mainSizer.Add(topLabl,0,wx.CENTER,10)
         self.ChItems = []
-        for choice,lbl in zip(choicelist,headinglist):
+        for choice,lbl in zip(choicelist,headinglist, strict=False):
             mainSizer.Add((10,10),1)
             self.chosen.append(0)
             topLabl = wx.StaticText(panel,wx.ID_ANY,' '+lbl)
@@ -6524,7 +6500,7 @@ def XformMatrix(panel,Trans,Uvec,Vvec,OnLeave=None,OnLeaveArgs={}):
 
     for iy,line in enumerate(Trans):
         for ix,val in enumerate(line):
-            item = ValidatedTxtCtrl(panel,Trans[iy],ix,nDig=(10,3),size=(65,25),
+            item = ValidatedTxtCtrl(panel,line,ix,nDig=(10,3),size=(65,25),
                                     OnLeave=OnLeave,OnLeaveArgs=OnLeaveArgs)
             Trmat.Add(item)
         Trmat.Add((25,0),0)
@@ -6545,19 +6521,19 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
     '''
     cellGUIlist = [
         [['m3','m3m'],[" Unit cell: a = "],["{:.5f}"],[0]],
-        [['3R','3mR'],[" a = ",u" \u03B1 = "],["{:.5f}","{:.3f}"],[0,3]],
+        [['3R','3mR'],[" a = "," \u03B1 = "],["{:.5f}","{:.3f}"],[0,3]],
         [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],
-             [" a = "," c = ",u" \u03B3 = "],
+             [" a = "," c = "," \u03B3 = "],
              ["{:.5f}","{:.5f}","{:.3f}"],[0,2,-5]],
         [['mmm'],[" a = "," b = "," c = "],["{:.5f}","{:.5f}","{:.5f}"],
             [0,1,2]],
-        [['2/m'+'a'],[" a = "," b = "," c = ",u" \u03B1 = "],
+        [['2/m'+'a'],[" a = "," b = "," c = "," \u03B1 = "],
             ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[0,1,2,3]],
-        [['2/m'+'b'],[" a = "," b = "," c = ",u" \u03B2 = "],
+        [['2/m'+'b'],[" a = "," b = "," c = "," \u03B2 = "],
             ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[0,1,2,4]],
-        [['2/m'+'c'],[" a = "," b = "," c = ",u" \u03B3 = "],
+        [['2/m'+'c'],[" a = "," b = "," c = "," \u03B3 = "],
             ["{:.5f}","{:.5f}","{:.5f}","{:.3f}"],[0,1,2,5]],
-        [['-1'],[" a = "," b = "," c = ",u" \u03B1 = ",u" \u03B2 = ",u" \u03B3 = "],
+        [['-1'],[" a = "," b = "," c = "," \u03B1 = "," \u03B2 = "," \u03B3 = "],
              ["{:.5f}","{:.5f}","{:.5f}","{:.3f}","{:.3f}","{:.3f}"],[0,1,2,3,4,5]]
         ]
     cellList = []
@@ -6570,7 +6546,7 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
         if laue in cellGUI[0]:
             useGUI = cellGUI
             break
-    for txt,fmt,indx in zip(*useGUI[1:]):
+    for txt,fmt,indx in zip(*useGUI[1:], strict=False):
         col = 1+2*abs(indx)
         cellrow = row
         if editAllowed and abs(indx) > 2:
@@ -6592,11 +6568,11 @@ def showUniqueCell(frame,cellSizer,row,cell,SGData=None,
         volCol = 8
     cellSizer.Add(wx.StaticText(frame,label=' Vol = '),(row,volCol))
     if editAllowed:
-        volVal = wx.TextCtrl(frame,value=('{:.2f}'.format(cell[6])),style=wx.TE_READONLY)
+        volVal = wx.TextCtrl(frame,value=(f'{cell[6]:.2f}'),style=wx.TE_READONLY)
         volVal.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
         cellSizer.Add(volVal,(row,volCol+1))
     else:
-        cellSizer.Add(wx.StaticText(frame,label='{:.2f}'.format(cell[6])),(row,volCol+1))
+        cellSizer.Add(wx.StaticText(frame,label=f'{cell[6]:.2f}'),(row,volCol+1))
     return cellrow,cellList
 
 
@@ -6636,10 +6612,11 @@ def GetConfigValsDocs():
          * item 3: the "docstring" that follows variable definition
 
     '''
-    from . import config_example
     import ast
+
+    from . import config_example
     fname = os.path.splitext(config_example.__file__)[0]+'.py' # convert .pyc to .py
-    with open(fname, 'r',encoding='utf-8') as f:
+    with open(fname,encoding='utf-8') as f:
         fstr = f.read()
     fstr = fstr.replace('\r\n', '\n').replace('\r', '\n')
     if not fstr.endswith('\n'):
@@ -6993,7 +6970,7 @@ class RefinementProgress(wx.ProgressDialog):
         return super(self.__class__,self).Update(int(value), newmsg)
 
 ################################################################################
-fmtRw = lambda value: '{:.2f}'.format(float(value))
+fmtRw = lambda value: f'{float(value):.2f}'
 class G2RefinementProgress(wx.Dialog):
     '''Defines an replacement for wx.ProgressDialog to be used for
     showing refinement progress.
@@ -7176,7 +7153,7 @@ class G2RefinementProgress(wx.Dialog):
             self._SetSeqHistogram(nextHist,histLbl)
             return
         col = None
-        lbl = 'Hist {}'.format(nextHist)
+        lbl = f'Hist {nextHist}'
         if nextHist == -1:  # overall fit goes in the 1st column, if shown
             col = 0
             lbl = 'Overall'
@@ -7207,7 +7184,7 @@ class G2RefinementProgress(wx.Dialog):
                 self.fitVals[-2] = []
         elif self.seqHist != nextHist and nextHist >= 0:
             if nextHist not in self.tblCols:
-                lbl = 'Hist {}'.format(nextHist)
+                lbl = f'Hist {nextHist}'
                 self.tblCols[nextHist],lbls = self._AddTableColumn(lbl,None)
                 self.tblLbls[nextHist] = lbls
                 self.tblLbls[nextHist][0].SetLabel(lbl)
@@ -7275,14 +7252,14 @@ class G2RefinementProgress(wx.Dialog):
             return
         if self.maxCycle and not self.SeqLen:
             self.gauge.SetValue(int(min(self.gaugemaximum,100.*cycle/self.maxCycle)))
-        self.cycleLbl.SetLabel('Cycle {:}'.format(cycle))
+        self.cycleLbl.SetLabel(f'Cycle {cycle}')
         if cycle == 0:
-            self.tblLbls[self.curHist][1].SetLabel('{:8.3g}'.format(value))
+            self.tblLbls[self.curHist][1].SetLabel(f'{value:8.3g}')
             self.RwPanel.SetupScrolling()
             self._xferLabeledTable()
         if not self.trialRw:  # show & plot current status here
             self.fitVals[self.curHist].append(value)
-            self.tblLbls[self.curHist][2].SetLabel('{:8.3g}'.format(value))
+            self.tblLbls[self.curHist][2].SetLabel(f'{value:8.3g}')
             self.plotaxis.clear()
             self.plotted = []
             if self.SeqLen:
@@ -7299,7 +7276,7 @@ class G2RefinementProgress(wx.Dialog):
             self.figure.canvas.draw()
         else: # save as trial value
             self.trialVals[self.curHist] = value
-            self.tblLbls[self.curHist][3].SetLabel('{:8.3g}'.format(value))
+            self.tblLbls[self.curHist][3].SetLabel(f'{value:8.3g}')
             if self.curHist in self.plotted:
                 sym,lbl = self._getPlotSetting(self.curHist)
                 c = len(self.fitVals[self.curHist]) - 1 + self.histOff[self.curHist]
@@ -7321,7 +7298,7 @@ class G2RefinementProgress(wx.Dialog):
         for h,value in self.trialVals.items():
             if h not in self.fitVals or h not in self.tblLbls: continue
             self.fitVals[h].append(value)
-            self.tblLbls[h][2].SetLabel('{:8.3g}'.format(value))
+            self.tblLbls[h][2].SetLabel(f'{value:8.3g}')
             self.tblLbls[h][3].SetLabel('')
             if self.SeqLen or h < 3 or len(self.trialVals) < 6: # plot overall & restraints, or p to 5 histograms
                 self._plotBar(h)
@@ -7339,7 +7316,7 @@ class G2RefinementProgress(wx.Dialog):
             self.msgLine2.SetLabel(newmsg)
         m,s = divmod(time.time()-self.startTime,60)
         h,m = divmod(m,60)
-        self.elapsed.SetLabel('{:0d}:{:02d}:{:04.1f}'.format(int(h), int(m), s))
+        self.elapsed.SetLabel(f'{int(h):0d}:{int(m):02d}:{s:04.1f}')
         wx.GetApp().Yield()
         return (not self.abortStatus, True)
 
@@ -7493,7 +7470,7 @@ class gitVersionSelector(wx.Dialog):
         :returns: a multi-line string
         '''
         #import datetime
-        fmtdate = lambda c:"{:%d-%b-%Y %H:%M}".format(c.committed_datetime)
+        fmtdate = lambda c:f"{c.committed_datetime:%d-%b-%Y %H:%M}"
         commit = self.g2repo.commit(commit)  # converts a hash, if supplied
         msg = f'git {commit.hexsha[:10]} from {fmtdate(commit)}'
         tags = self.g2repo.git.tag('--points-at',commit).split('\n')
@@ -7535,7 +7512,7 @@ class SortableLstCtrl(wx.Panel):
         info = wx.ListItem()
         info.Mask = wx.LIST_MASK_TEXT | wx.LIST_MASK_IMAGE | wx.LIST_MASK_FORMAT
         info.Image = -1
-        for i,(h,j) in enumerate(zip(header, justify)):
+        for i,(h,j) in enumerate(zip(header, justify, strict=False)):
             info.Text = h
             if j > 0:
                 info.Align =  wx.LIST_FORMAT_RIGHT
@@ -7618,7 +7595,6 @@ except TypeError:
     class G2LstCtrl(wx.ListCtrl):
         '''Creates a custom ListCtrl with support for images in column labels
         '''
-        pass
     print('docs build kludge for G2LstCtrl')
 
 #### Display Help information ################################################################################
@@ -7635,7 +7611,7 @@ def ShowHelp(helpType,frame,helpMode=None):
     if not helpLocDict: # load the anchor index
         indx = os.path.abspath(os.path.join(path2GSAS2,'help','anchorIndex.txt'))
         print('reading file',indx)
-        with open(indx,'r') as indexfile:
+        with open(indx) as indexfile:
             for line in indexfile.readlines():
                 fil,anchors = line.split(':')
                 for a in anchors.split(','):
@@ -7662,7 +7638,7 @@ def ShowHelp(helpType,frame,helpMode=None):
         helplink = 'file://' + os.path.abspath(os.path.join(path2GSAS2,'help',helplink))
         viewWebPage(frame,helplink)
     else:
-        import webbrowser     # postpone this until now for quicker startup
+        import webbrowser  # postpone this until now for quicker startup
         wb = webbrowser
         if sys.platform == "darwin": # on Mac, use a OSXscript so that file anchors work
             # Get the default browser, this will fail in py2.7 and might fail, so
@@ -7721,10 +7697,8 @@ def ShowWebPage(URL,frame,browser=False,internal=False):
     if helpMode == 'internal':
         viewWebPage(frame,URL)
     else:
-        import webbrowser     # postpone this until now for quicker startup
-        if URL.startswith('http'):
-            pfx = ''
-        elif sys.platform.lower().startswith('win'):
+        import webbrowser  # postpone this until now for quicker startup
+        if URL.startswith('http') or sys.platform.lower().startswith('win'):
             pfx = ''
         else:
             pfx = "file://"
@@ -7896,7 +7870,7 @@ class OpenGitTutorial(wx.Dialog):
         '''
         choices2 = [i[2:4] for i in tutorialCatalog]
         selected = self.ChooseTutorial2(choices2)
-        if selected is None: return
+        if selected is None: return None
         tutdir = tutorialCatalog[selected][0]
         tutfil = tutorialCatalog[selected][1]
         # open web page remotely, don't worry about data
@@ -7915,7 +7889,7 @@ class OpenGitTutorial(wx.Dialog):
         selection = dlg.Selection
         dlg.Destroy()
         if selection is not None:
-            if selection == -1: return
+            if selection == -1: return None
             return selection
 
     def SelectDownloadLoc(self,event):
@@ -8027,7 +8001,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             if d.ShowModal() == wx.ID_OK:
                 if not os.path.exists(Settings['instfile']): return
                 if not os.path.exists(d.GetPath()): return
-                with open(d.GetPath(),'r') as fp:
+                with open(d.GetPath()) as fp:
                     for line in fp: # split lines at comma/tab, strip quotes, etc
                         if line.startswith('#'): continue
                         line = line.split(',')[0]
@@ -8095,7 +8069,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         if filelist is None:
             if GSASIIpath.GetConfigValue('debug'):
                 import datetime
-                print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+                print (f"DBG_Timer tick at {datetime.datetime.now():%d %b %Y %H:%M:%S}\n")
             filelist = glob.glob(os.path.join(Settings['indir'],Settings['filter']))
             if not filelist: return
         #if GSASIIpath.GetConfigValue('debug'): print(filelist)
@@ -8108,8 +8082,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             if not rd.ContentsValidator(f):
                 Settings['timer'].Stop()
                 btnstart.SetLabel('Continue')
-                G2MessageBox(dlg,'Error in reading file {}: {}'.format(
-                    f, rd.errors))
+                G2MessageBox(dlg,f'Error in reading file {f}: {rd.errors}')
                 return
             #if len(rd.selections) > 1:
             #    G2fil.G2Print('Warning: Skipping file {}: multibank not yet implemented'.format(f))
@@ -8130,16 +8103,16 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                                           "reader:",
                                           rd.warnings)
                     elif not block:
-                        G2fil.G2Print("{} read by Reader {}"
-                              .format(f,rd.formatName))
+                        G2fil.G2Print(f"{f} read by Reader {rd.formatName}"
+                              )
                     else:
-                        G2fil.G2Print("{} block # {} read by Reader {}"
-                                .format(f,block,rd.formatName))
+                        G2fil.G2Print(f"{f} block # {block} read by Reader {rd.formatName}"
+                                )
                     block += 1
                     repeat = rd.repeat
                 else:
-                    G2fil.G2Print("Warning: {} Reader failed to read {}"
-                                      .format(rd.formatName,f))
+                    G2fil.G2Print(f"Warning: {rd.formatName} Reader failed to read {f}"
+                                      )
                 Iparm1, Iparm2 = G2sc.load_iprms(Settings['instfile'],rd)
                 if 'phoenix' in wx.version():
                     HistName = 'PWDR '+rd.idstring
@@ -8239,7 +8212,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     def RunTimerGR(event):
         if GSASIIpath.GetConfigValue('debug'):
             import datetime
-            print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+            print (f"DBG_Timer tick at {datetime.datetime.now():%d %b %Y %H:%M:%S}\n")
         filelist = glob.glob(os.path.join(Settings['indir'],Settings['filter']))
         if not filelist: return
         #if GSASIIpath.GetConfigValue('debug'): print(filelist)
@@ -8252,8 +8225,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             if not rd.ContentsValidator(f):
                 Settings['timer'].Stop()
                 btnstart.SetLabel('Continue')
-                G2MessageBox(dlg,'Error in reading file {}: {}'.format(
-                    f, rd.errors))
+                G2MessageBox(dlg,f'Error in reading file {f}: {rd.errors}')
                 return
             #if len(rd.selections) > 1:
             #    G2fil.G2Print('Warning: Skipping file {}: multibank not yet implemented'.format(f))
@@ -8274,16 +8246,16 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                                           "reader:",
                                           rd.warnings)
                     elif not block:
-                        G2fil.G2Print("{} read by Reader {}"
-                              .format(f,rd.formatName))
+                        G2fil.G2Print(f"{f} read by Reader {rd.formatName}"
+                              )
                     else:
-                        G2fil.G2Print("{} block # {} read by Reader {}"
-                                .format(f,block,rd.formatName))
+                        G2fil.G2Print(f"{f} block # {block} read by Reader {rd.formatName}"
+                                )
                     block += 1
                     repeat = rd.repeat
                 else:
-                    G2fil.G2Print("Warning: {} Reader failed to read {}"
-                                      .format(rd.formatName,f))
+                    G2fil.G2Print(f"Warning: {rd.formatName} Reader failed to read {f}"
+                                      )
                 if 'phoenix' in wx.version():
                     HistName = 'PDF  '+rd.idstring
                 else:
@@ -8463,9 +8435,9 @@ def ChooseOrigin(G2frame,rd):
         txt += '   Unit cell Contents: '
         for i,k in enumerate(cellContents):
             if i: txt += ', '
-            txt += '{}*{}'.format(cellContents[k],k)
+            txt += f'{cellContents[k]}*{k}'
         den,_ = G2mth.getDensity(phObj['General'])
-        txt += "\n   Density {:.2f} g/cc\n".format(den)
+        txt += f"\n   Density {den:.2f} g/cc\n"
 
         DisAglData['OrigAtoms'] = DisAglData['TargAtoms'] = [
                         [i,]+atom[ct-1:ct+1]+atom[cx:cx+3] for
@@ -8827,7 +8799,7 @@ class gpxFileSelector(wx.Dialog):
         glb = self.opt['filter'].strip()
         if not glb:
             glb = '*'
-        elif not '*' in glb:
+        elif '*' not in glb:
             glb = '*' + glb + '*'
         fullglob = os.path.join(self.dirBtn.GetValue(),glb+'.gpx')
         self.fl = glob.glob(fullglob)
@@ -8933,15 +8905,15 @@ class gpxFileSelector(wx.Dialog):
         'Show file age relative to now'
         delta = time.time() - tm
         if delta > 60*60*24*365:
-            return "{:.2f} years".format(delta/(60*60*24*365))
+            return f"{delta/(60*60*24*365):.2f} years"
         elif delta > 60*60*24*7:
-            return "{:.1f} weeks".format(delta/(60*60*24*7))
+            return f"{delta/(60*60*24*7):.1f} weeks"
         elif delta > 60*60*24:
-            return "{:.1f} days".format(delta/(60*60*24))
+            return f"{delta/(60*60*24):.1f} days"
         elif delta > 60*60:
-            return "{:.1f} hours".format(delta/(60*60))
+            return f"{delta/(60*60):.1f} hours"
         else:
-            return "{:.1f} minutes".format(delta/60)
+            return f"{delta/60:.1f} minutes"
 
 def setColorButton(parent,array,key,callback=None,callbackArgs=[]):
     '''Define a button for setting colors
@@ -9110,7 +9082,7 @@ def Load2Cells(G2frame,phase):
         ph2 = Phases[p]
         cellLen[cell] = ph2['General']['Cell'][1:7]
         cellCntr[cell] = ph2['General']['SGData']['SpGrp'].strip()[0]
-        for val,wid in zip(cellLen[cell],widgets[:6]):
+        for val,wid in zip(cellLen[cell],widgets[:6], strict=False):
             wid.SetValue(val)
         widgets[6].SetValue(cellCntr[cell])
         dlg.Raise() # needed to bring modal dialog to front, at least on Mac
@@ -9143,7 +9115,7 @@ def Load2Cells(G2frame,phase):
     sizer.Add((-1,15))
     tableSizer = wx.FlexGridSizer(0,9,0,0)
     tableSizer.Add((-1,-1))
-    for l in u'abc\u03B1\u03B2\u03B3':
+    for l in 'abc\u03B1\u03B2\u03B3':
         tableSizer.Add(wx.StaticText(dlg,label=l),0,WACV|wx.ALIGN_CENTER)
     tableSizer.Add(wx.StaticText(dlg,label='Centering'),0,WACV|wx.ALIGN_LEFT)
     tableSizer.Add((-1,-1))
@@ -9300,8 +9272,8 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     If the file is not a zipfile, return the name of the input file.
     If the zipfile is empty or no file has been selected, return None
     '''
-    import zipfile # do this now, since we can save startup time by doing this only on need
     import shutil
+    import zipfile  # do this now, since we can save startup time by doing this only on need
     zloc = os.path.split(filename)[0]
     if not zipfile.is_zipfile(filename):
         #print("not zip")
@@ -9959,13 +9931,13 @@ The update will be made unless Cancel is pressed.'''
     if script and sys.platform.startswith('darwin'):
         print(f'running {script}')
         import subprocess
-        subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
+        subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2, check=False)
     # On windows make a batch file with hard-coded paths to Python and GSAS-II
     elif script and sys.platform.startswith('win'):
         script = os.path.normpath(os.path.join(GSASIIpath.path2GSAS2,'install',s))
         print(f'running {script!r}')
         import subprocess
-        subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2)
+        subprocess.run([sys.executable,script],cwd=GSASIIpath.path2GSAS2, check=False)
     # On linux, make a desktop icon with hard-coded paths to Python and GSAS-II
     elif script:
         sys.argv = [script]
@@ -10006,7 +9978,7 @@ def patch_condarc():
     rc = os.path.normpath(os.path.join(GSASIIpath.path2GSAS2,'..','..','.condarc'))
 
     if os.path.exists(rc):
-        txt = open(rc,'r').read()
+        txt = open(rc).read()
     else:
         return
     if '\n  - /' in txt:

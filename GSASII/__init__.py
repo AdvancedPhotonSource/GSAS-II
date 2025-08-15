@@ -35,6 +35,6 @@ if os.environ.get("GSASII_NOPATHHACKING", ""):
 del sys, make_path_watcher, os
 
 
-from .GSASIIGUI import main  # noqa: E402
+from .GUI.GSASIIGUI import main  # noqa: E402
 
 __all__ = ["main"]

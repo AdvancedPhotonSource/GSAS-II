@@ -10,7 +10,7 @@ import numpy.linalg as nl
 from . import GSASIIpath
 
 GSASIIpath.SetBinaryPath()
-from . import GSASIIctrlGUI as G2G
+from .GUI import GSASIIctrlGUI as G2G
 from . import GSASIIElem as G2elem
 from . import GSASIIlattice as G2lat
 from . import GSASIIspc as G2spc
@@ -585,7 +585,7 @@ def BilbaoSymSearch1(
         contain possible supergroup settings.
     """
 
-    print(f"""\nUsing the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO) 
+    print(f"""\nUsing the Bilbao Crystallographic Server Pseudosymmetry search (PSEUDO)
 program; Please cite:
 {G2G.GetCite("Bilbao: PSEUDO", wrap=70, indent=5)}\n""")
 

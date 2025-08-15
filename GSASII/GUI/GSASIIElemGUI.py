@@ -34,7 +34,7 @@ class PickElement(wx.Dialog):
             style=wx.DEFAULT_DIALOG_STYLE,
             title="Pick Element",
         )
-        from ..config import ElementTable as ET
+        from ..data import ElementTable as ET
 
         self.butWid = 90
         if "nt" in os.name:

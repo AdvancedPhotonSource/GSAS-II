@@ -30,7 +30,7 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
 
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
-    def ContentsValidator(self, filename):
+    def ContentsValidator(self, filename: str):
         self.vals = None
         self.stepsize = None
         warn_once = True
@@ -38,96 +38,91 @@ class Rigaku_txtReaderClass(G2obj.ImportPowderData):
         prevAngle = None
         header = True
         self.skip = -1
-        fp = open(filename, "rb")
-        for i, line in enumerate(fp):
-            sline = line.split()
-            vals = len(sline)
-            if header:
-                self.skip += 1
-                if not line.strip():
-                    continue  # ignore blank lines
-                err = False
-                for item in sline:
-                    try:
-                        float(item)
-                    except:
-                        err = True
-                        break
-                if err:
+        with open(filename, "rb") as fp:
+            for i, line in enumerate(fp):
+                sline = line.split()
+                vals = len(sline)
+                if header:
+                    self.skip += 1
+                    if not line.strip():
+                        continue  # ignore blank lines
+                    err = False
+                    for item in sline:
+                        try:
+                            float(item)
+                        except:
+                            err = True
+                            break
+                    if err:
+                        continue
+                    if vals < 1:
+                        continue
+                    header = False  # found first non-header line
+                if vals < 2:
+                    print("Too few values for Rigaku .txt file")
+                    return False
+                if self.vals is None:
+                    self.vals = vals
+                elif self.vals != vals:
+                    print(
+                        "Inconsistent numbers values for Rigaku .txt file on line "
+                        + str(i + 1)
+                    )
+                    return False
+                else:
+                    j += 1
+                try:
+                    angle = float(sline[0])
+                except:
+                    print("Unable to read angle on line " + str(i + 1))
+                    return False
+                if prevAngle is None:
+                    prevAngle = angle
                     continue
-                if vals < 1:
-                    continue
-                header = False  # found first non-header line
-            if vals < 2:
-                print("Too few values for Rigaku .txt file")
-                fp.close()
-                return False
-            if self.vals is None:
-                self.vals = vals
-            elif self.vals != vals:
-                print(
-                    "Inconsistent numbers values for Rigaku .txt file on line "
-                    + str(i + 1)
-                )
-                fp.close()
-                return False
-            else:
-                j += 1
-            try:
-                angle = float(sline[0])
-            except:
-                print("Unable to read angle on line " + str(i + 1))
-                fp.close()
-                return False
-            if prevAngle is None:
+                stepsize = (angle - prevAngle) / (vals - 1)
                 prevAngle = angle
-                continue
-            stepsize = (angle - prevAngle) / (vals - 1)
-            prevAngle = angle
-            if self.stepsize is None:
-                self.stepsize = stepsize
-            elif (
-                warn_once
-                and abs(self.stepsize - stepsize)
-                > max(abs(stepsize), abs(self.stepsize)) / 10000.0
-            ):
-                print(
-                    "Warning: Inconsistent step size for Rigaku .txt file on line "
-                    + f"{i + 1}\n\tHere {stepsize:.5f} prev {self.stepsize:.5f}"
-                )
-                warn_once = False
-            if j > 30:
-                fp.close()
-                return True
-        fp.close()
+                if self.stepsize is None:
+                    self.stepsize = stepsize
+                elif (
+                    warn_once
+                    and abs(self.stepsize - stepsize)
+                    > max(abs(stepsize), abs(self.stepsize)) / 10000.0
+                ):
+                    print(
+                        "Warning: Inconsistent step size for Rigaku .txt file on line "
+                        + f"{i + 1}\n\tHere {stepsize:.5f} prev {self.stepsize:.5f}"
+                    )
+                    warn_once = False
+                if j > 30:
+                    return True
         return False
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+    def Reader(self, filename: str, ParentFrame=None, **kwarg):
         "Read a Rigaku .txt file"
         x = []
         y = []
         w = []
-        fp = open(filename, "rb")
-        for i, line in enumerate(fp):
-            if i < self.skip:
-                continue
-            sline = line.split()
-            try:
-                angle = float(sline[0])
-            except:
-                print("Unable to read angle on line " + str(i + 1))
-                self.errors = "Error reading line: " + str(i + 1)
-                return False
-            for j in sline[1:]:
-                x.append(angle)
-                angle += self.stepsize
+        with open(filename, "rb") as fp:
+            for i, line in enumerate(fp):
+                if i < self.skip:
+                    continue
+                sline = line.split()
                 try:
-                    y.append(float(j))
+                    angle = float(sline[0])
                 except:
-                    print("Unable to read intensity on line " + str(i + 1))
+                    print("Unable to read angle on line " + str(i + 1))
                     self.errors = "Error reading line: " + str(i + 1)
                     return False
-                w.append(1.0 / max(1.0, float(j)))
+                for j in sline[1:]:
+                    x.append(angle)
+                    angle += self.stepsize
+                    try:
+                        y.append(float(j))
+                    except:
+                        print("Unable to read intensity on line " + str(i + 1))
+                        self.errors = "Error reading line: " + str(i + 1)
+                        return False
+                    w.append(1.0 / max(1.0, float(j)))
         N = len(x)
         self.powderdata = [
             np.array(x),  # x-axis values
@@ -153,7 +148,8 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
             extensionlist=(
                 ".ras",
                 ".RAS",
-                "rasx",
+                ".rasx",
+                ".RASX",
             ),
             strictExtension=True,
             formatName="Rigaku .ras/.rasx file",
@@ -167,11 +163,10 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
 
-    def ContentsValidator(self, filename):
-        fp = open(filename, encoding="latin-1")
+    def ContentsValidator(self, filename: str):
         self.vals = None
         self.stepsize = None
-        if ".rasx" in filename:
+        if filename.endswith(".rasx"):
             try:
                 import zipfile as ZF
 
@@ -193,27 +188,27 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
                 return True
             except:
                 return False
-        else:
-            fp.seek(0)
-            if fp.readline()[:-1] != "*RAS_DATA_START":
-                self.errors = "Bad ras file"
-                fp.close()
-                return False
-            nBanks = 0
-            for _i, line in enumerate(fp):
-                if line[:-1] == "*RAS_HEADER_START":
-                    nBanks += 1
-                    self.dnames.append(
-                        os.path.basename(filename) + " sample " + (str(nBanks))
-                    )
-            if nBanks:
-                if not len(self.selections):
-                    self.selections = list(range(nBanks))
-                    self.numbanks = nBanks
-            fp.close()
-        return True
+        elif filename.endswith(".ras"):
+            with open(filename, encoding="latin-1") as fp:
+                if fp.readline()[:-1] != "*RAS_DATA_START":
+                    self.errors = "Bad ras file"
+                    return False
+                nBanks = 0
+                for _i, line in enumerate(fp):
+                    if line[:-1] == "*RAS_HEADER_START":
+                        nBanks += 1
+                        self.dnames.append(
+                            os.path.basename(filename) + " sample " + (str(nBanks))
+                        )
+                if nBanks:
+                    if not len(self.selections):
+                        self.selections = list(range(nBanks))
+                        self.numbanks = nBanks
+                return True
 
-    def Reader(self, filename, ParentFrame=None, **kwarg):
+        return False
+
+    def Reader(self, filename: str, ParentFrame=None, **kwarg):
         "Read a Rigaku .ras/.rasx file"
         if ".rasx" in filename:
             x = []
@@ -237,28 +232,28 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
             return True
 
         else:  # .ras file
-            fp = open(filename, encoding="latin-1")
-            blockNum = self.selections[0]
-            x = []
-            y = []
-            w = []
-            block = 0
-            while True:
-                line = fp.readline()[:-1]
-                if line != "*RAS_INT_START":
-                    continue
-                if block == blockNum:
+            with open(filename, encoding="latin-1") as fp:
+                blockNum = self.selections[0]
+                x = []
+                y = []
+                w = []
+                block = 0
+                while True:
                     line = fp.readline()[:-1]
-                    while True:
-                        if line == "*RAS_INT_END":
-                            break
-                        sline = line.split()
-                        x.append(float(sline[0]))
-                        y.append(float(sline[1]))
-                        w.append(1.0 / max(1.0, float(y[-1])))
+                    if line != "*RAS_INT_START":
+                        continue
+                    if block == blockNum:
                         line = fp.readline()[:-1]
-                    break
-                block += 1
+                        while True:
+                            if line == "*RAS_INT_END":
+                                break
+                            sline = line.split()
+                            x.append(float(sline[0]))
+                            y.append(float(sline[1]))
+                            w.append(1.0 / max(1.0, float(y[-1])))
+                            line = fp.readline()[:-1]
+                        break
+                    block += 1
             N = len(x)
             self.powderdata = [
                 np.array(x),  # x-axis values

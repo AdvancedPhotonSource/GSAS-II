@@ -12,8 +12,8 @@ import numpy as np
 
 from . import GSASIImath as G2mth
 from . import GSASIIpath
-from .config import ElementTable as ET
-from .config import atmdata
+from .data import ElementTable as ET
+from .data import atmdata
 
 nxs = np.newaxis
 Bohr = 0.529177
@@ -229,7 +229,7 @@ def GetFFC5(ElSym):
     :param ElSym: str(1-2 character element symbol with proper case);
     :return El: dictionary with 5 term form factor & compton coefficients
     """
-    from . import FormFactors as FF
+    from .data import FormFactors as FF
 
     El = {}
     FF5 = FF.FFac5term[ElSym]

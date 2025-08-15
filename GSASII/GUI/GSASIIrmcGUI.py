@@ -26,7 +26,7 @@ from .. import GSASIImath as G2mth
 from .. import GSASIIplot as G2plt
 from .. import GSASIIpwd as G2pwd
 from .. import GSASIIspc as G2spc
-from ..config import atmdata
+from ..data import atmdata
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIphsGUI as G2phsG

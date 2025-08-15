@@ -1,6 +1,6 @@
 from warnings import warn
 
-from GSASII.config.ElementTable import *
+from GSASII.data.ElementTable import *
 
 warn(
     "Importing GSASIIElem as a top level module is deprecated, please import "

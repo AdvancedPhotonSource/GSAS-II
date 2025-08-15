@@ -6260,7 +6260,7 @@ def StackSim(Layers, ctrls, scale=0.0, background=None, limits=None, inst=None, 
 
     Note that parameters all updated in place
     """
-    from .config import atmdata
+    from .data import atmdata
 
     if profile is None:
         profile = []

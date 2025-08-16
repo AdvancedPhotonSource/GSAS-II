@@ -31,12 +31,6 @@ import copy
 import random as ran
 import numpy as np
 
-#import matplotlib as mpl
-try:
-    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
-except ImportError:
-    from matplotlib.backends.backend_wx import FigureCanvas as Canvas
-
 from . import GSASIIpath
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIpwdGUI as G2pdG
@@ -7016,6 +7010,11 @@ class G2RefinementProgress(wx.Dialog):
     '''
     def __init__(self, title='Refinement progress', message='All data Rw =',
         maximum=101, parent=None, trialMode=False,seqLen=0, seqShow=3,style=None):
+        #import matplotlib as mpl
+        try:
+            from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
+        except ImportError:
+            from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
         self.trialRw = trialMode # used for Levenberg-Marquardt fitting
         self.SeqLen = seqLen

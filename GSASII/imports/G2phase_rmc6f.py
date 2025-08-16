@@ -8,10 +8,6 @@ import numpy as np
 import random as ran
 from .. import GSASIIobj as G2obj
 from .. import GSASIIlattice as G2lat
-try:
-    from .. import GSASIIctrlGUI as G2G
-except ImportError:
-    G2G = None
     
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .rmc6f file and pulls out the phase'
@@ -47,6 +43,10 @@ class PhaseReaderClass(G2obj.ImportPhase):
         fp = open(filename, 'r')
         Phase = {}
         Title = os.path.split(filename)
+        try:
+            from .. import GSASIIctrlGUI as G2G
+        except ImportError:
+            G2G = None
         if G2G is not None: 
             G2G.SaveGPXdirectory(Title[0])
         Title = os.path.splitext(Title[1])[0]

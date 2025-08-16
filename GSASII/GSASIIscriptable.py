@@ -431,7 +431,7 @@ def downloadFile(URL,download_loc=None):
     return filename
 
 def import_generic(filename, readerlist, fmthint=None, bank=None,
-                       URL=False, download_loc=None):
+                       URL=False, download_loc=None, useNet=True):
     """Attempt to import a filename, using a list of reader objects.
 
     Returns the first reader object which worked."""
@@ -483,6 +483,7 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                     rd.selections = [bank-1]
             rd.dnames = []
             rd.ReInitialize()
+            rd.useNet = useNet  # matters only for phase importers
             # Rewind file
             rd.errors = ""
             if not rd.ContentsValidator(filename):
@@ -1290,7 +1291,8 @@ class G2Project(G2ObjectWrapper):
 
     def add_phase(self, phasefile=None, phasename=None, histograms=[],
                       fmthint=None, mag=False,
-                      spacegroup='P 1',cell=None, URL=False):
+                      spacegroup='P 1',cell=None, URL=False,
+                      useNet = False):
         """Loads a phase into the project, usually from a .cif file
 
         :param str phasefile: The CIF file (or other file type, see fmthint)
@@ -1320,7 +1322,12 @@ class G2Project(G2ObjectWrapper):
           If URL is specified and the Python requests package is 
           not installed, a `ModuleNotFoundError` Exception will occur. 
           will occur. 
-
+        :param bool useNet: if True, when an incompatible 
+          space group setting is detected (at present this is only 
+          tested with CIFs, where symmetry operators are supplied), which is 
+          most likely to occur with origin-1 settings, where allowed, 
+          the importer will call Bilbao "CIF to Standard Setting" web service.
+          (Default is False).
         :returns: A :class:`G2Phase` object representing the
             new phase.
         """
@@ -1369,9 +1376,10 @@ class G2Project(G2ObjectWrapper):
                 raise G2ImportException(f'File {phasefile} does not exist')
         else:
             print(f'reading phase from URL {phasefile}')
-        # TODO: handle multiple phases in a file
+        # TODO: handle multiple phases in a file (CIF, others?)
         phasereaders = import_generic(phasefile, Readers['Phase'],
-                                          fmthint=fmthint, URL=URL)
+                                          fmthint=fmthint, URL=URL,
+                                          useNet=useNet)
         phasereader = phasereaders[0]
 
         if phasereader.MPhase and mag:

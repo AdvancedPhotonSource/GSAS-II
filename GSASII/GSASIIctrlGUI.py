@@ -8450,10 +8450,11 @@ def ChooseOrigin(G2frame,rd):
     txt = ''
     for i,phObj in enumerate([rd.Phase,O2Phase]):
         if i:
-            txt += "\n\nWith origin shift applied\n"
+            txt += "\n\nWith origin 1->2 shift applied\n"
         else:
             txt += "\nWith current coordinates and original origin\n"
         cellContents = {}
+        G2elem.SetupGeneral(phObj,phObj['General']['Mydir'])
         for atom in phObj['Atoms']:
             if atom[ct] in cellContents:
                 cellContents[atom[ct]] += atom[cs+1]

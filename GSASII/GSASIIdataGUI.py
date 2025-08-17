@@ -1999,6 +1999,14 @@ If you continue from this point, it is quite likely that all intensity computati
 
         Reads an instrument parameter file and then gets input from the user
         '''
+        # make a list of phase names
+        phaseRIdList,defPhases = self.GetPhaseInfofromTree()
+        phaseNameList = list(defPhases.keys()) # phase names in use
+        if not phaseNameList: # no phases yet, nothing to do
+            G2G.G2MessageBox(self,
+                    'You must have phases defined to simulate a pattern',
+                    'No phase')
+            return 
         # get a list of existing histograms
         PWDRlist = []
         if self.GPXtree.GetCount():
@@ -2047,23 +2055,25 @@ If you continue from this point, it is quite likely that all intensity computati
                 if wave:
                     wave = wave[0]
         N = 0
+        inp = None
         while (N < 3): # insist on a dataset with a few points
             if 'TOF' in rd.idstring:
                 names = ('dataset name', 'T start (ms)', 'T end (ms)', 'DT/T')
-                inp = [rd.idstring, 10.,80.,0.0005] # see names for what's what
+                if inp is None: 
+                    inp = [rd.idstring, 10.,80.,0.0005] # see names for what's what
                 minvals = (None,.5,1.0,0.0001)
                 maxvals = (None,500.,500.,.01)
             else:
                 names = ('dataset name', 'start angle', 'end angle', 'step size')
-                if not wave or wave < 1.0:
+                if not wave or wave < 1.0 and inp is None:
                     inp = [rd.idstring, 10.,40.,0.005] # see names for what's what
-                else:
+                elif inp is None:
                     inp = [rd.idstring, 10.,80.,0.01] # see names for what's what
                 minvals=(None,0.001,0.001,0.0001),
                 maxvals=(None,180.,180.,.1),
             dlg = G2G.ScrolledMultiEditor(
                 self,[inp] * len(inp),range(len(inp)),names,
-                header='Enter ramnge for simulation and histogram name',
+                header='Enter range for simulation and histogram name',
                 minvals=minvals,
                 maxvals=maxvals,
                 sizevals=((250,-1),None,None,None),
@@ -2077,18 +2087,40 @@ If you continue from this point, it is quite likely that all intensity computati
                 step = abs(step)
             else:
                 return False
-            # TODO: compute if the range and see if the widths are all
-            # positive here. If OK continue, otherwise warn and reject the
-            # limits (as per issue #170)
             if 'TOF' in rd.idstring:
                 N = (np.log(end)-np.log(start))/step
                 x = np.exp((np.arange(0,N))*step+np.log(start*1000.))
                 N = len(x)
                 rd.Sample['Scale'][0] = 5000. # default (1) is way too low for "counts"
+                # compute TOF peak widths: are there any negative values?
+                wids = G2mth.setPeakparms(Iparm1,Iparm2,x,np.ones_like(x))
+                allPos = ((wids[4] >= 0) & (wids[6] >= 0) &
+                          (wids[8] >= 0) & (wids[10] >= 0))
+                conv = 1000.
             else:
                 N = int((end-start)/step)+1
                 x = np.linspace(start,end,N,True)
                 N = len(x)
+                # compute CW peak widths: are there any negative values?
+                wids = G2mth.setPeakparms(Iparm1,Iparm2,x,np.ones_like(x))
+                allPos = ((wids[4] >= 0) & (wids[6] >= 0))
+                conv = 1.
+            # test for any areas w/negative peak wids
+            good,bad = G2mth.FindTrue(allPos) # get TOF/2th ranges as indices
+            if bad:
+                s = f"Found {len(bad)} region(s) with negative peak widths: "
+                for b in bad:
+                    s += f"{x[b][0]/conv:.1f}-{x[b][1]/conv:.1f}, "
+                s = s[:-2]
+                N = 0
+                G2G.G2MessageBox(self,s,'Bad range')
+                if good: # reset simulation range to use good range
+                    longestgood = good[np.argmax([i2-i1+1 for i1,i2 in good])]
+                    inp[1] = float(max(inp[1],min(x[longestgood[0]],x[longestgood[1]])/conv))
+                    inp[2] = float(min(inp[2],max(x[longestgood[0]],x[longestgood[1]])/conv))
+                else:
+                    return False
+                continue
         rd.powderdata = [
             np.array(x), # x-axis values
             np.zeros_like(x), # powder pattern intensities
@@ -2147,11 +2179,14 @@ If you continue from this point, it is quite likely that all intensity computati
               ' with parameters from {}'.format(rd.instmsg))
 
         # make a list of phase names
-        phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
-        phaseNameList = list(usedHistograms.keys()) # phase names in use
+        phaseRIdList,defPhases = self.GetPhaseInfofromTree()
+        phaseNameList = list(defPhases.keys()) # phase names in use
         if not phaseNameList: return # no phases yet, nothing to do
-        header = 'Select phase(s) to add the new\npowder simulation (dummy) dataset to:'
-        result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
+        if len(phaseNameList) == 1:
+            result = [0]
+        else:
+            header = 'Select phase(s) to add the new\npowder simulation (dummy) dataset to:'        
+            result = G2G.ItemSelector(phaseNameList,self,header,header='Phases to simulate',multiple=True)
         if not result: return
         # connect new phases to histograms
         sub = GetGPXtreeItemId(self,self.root,'Phases')
@@ -2179,6 +2214,11 @@ If you continue from this point, it is quite likely that all intensity computati
         Controls['max cyc'] = 0
         self.EnableRefineCommand()
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
+        # perhaps at some point this should be changed to run the refinement
+        # directly, for now provide a reminder
+        G2G.G2MessageBox(self,
+                    'Now use Calculate/Refine to compute the simulation result',
+                    'Use "Refine"')
         return # success
 
     def AddSimulatedPowder(self,ttArr,intArr,HistName,Lam1,Lam2):

@@ -6341,6 +6341,29 @@ def UpdateHKLFvals(histoName, phaseData, reflData):
             else:
                 ref[3] = 0
 
+def FindTrue(t):
+    '''Returns ranges of indices of array t where t is True or False
+
+    :param list t: a list or 1-D array of bool values
+    :param bool Condition: select if True values oa list of indices 
+    
+    :returns: two list of indices, one where all values in the range are 
+      True and the second where all the values are False.
+    '''
+    prev = None
+    ranges = []
+    for i in np.array(range(len(t)-1))[np.diff(t)]:
+        if prev is None:
+            ranges.append([0,int(i)])
+        else:
+            ranges.append([prev+1,int(i)])
+        prev = int(i)
+    if ranges:
+        ranges.append([ranges[-1][1]+1,len(t)-1])
+    else:
+        ranges = [[0,len(t)-1]]
+    return ([i for i in ranges if t[i[0]]],
+            [i for i in ranges if not t[i[0]]])
 
 if __name__ == '__main__':
     annealtests()

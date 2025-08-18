@@ -4873,9 +4873,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             elif 'linescan' in itemPicked:
                 xlim = Plot1.get_xlim()
                 azm = Data['linescan'][1]-AzmthOff
-                dspI = wave/(2.0*sind(0.1/2.0))
+                dspI = wave/(2.0*sind(IOtth[0]/2.0))
                 xyI = G2img.GetDetectorXY2(dspI,azm,Data)
-                dspO = wave/(2.0*sind(60./2.0))
+                dspO = wave/(2.0*sind(IOtth[1]/2.0))
                 xyO = G2img.GetDetectorXY2(dspO,azm,Data)
                 pick.set_data([[xyI[0],xyO[0]],[xyI[1],xyO[1]]])
                 xy = G2img.GetLineScan(G2frame.ImageZ,Data)
@@ -5493,15 +5493,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
         if 'linescan' in Data and Data['linescan'][0] and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             azm = Data['linescan'][1]-Data['azmthOff']
-            IOtth = [0.1,60.]
+            IOtth = Data['IOtth']
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
             xyI = G2img.GetDetectorXY2(dspI,azm,Data)
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
             xyO = G2img.GetDetectorXY2(dspO,azm,Data)
-            Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],
-#                picker=True,pickradius=3,label='linescan')
-                picker=False,label='linescan')
+            Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],picker=False,label='linescan')
 
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             for xring,yring in Data['ring']:

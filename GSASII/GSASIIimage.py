@@ -474,44 +474,44 @@ def GetEllipse(dsp,data):
     dxy = peneCorr(tth,dep,dist)
     return GetEllipse2(tth,dxy,dist,cent,tilt,phi)
 
-def GetDetectorXY(dsp,azm,data):
-    '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
-    & image controls dictionary (data) - new version
-    it seems to be only used in plotting & wrong
-    '''
-    def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
+# def GetDetectorXY(dsp,azm,data):
+#     '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
+#     & image controls dictionary (data) - new version
+#     it seems to be only used in plotting & wrong
+#     '''
+#     def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
 
-    	ndotu = planeNormal.dot(rayDirection)
-    	if ndotu < epsilon:
-    		return None
-    	w = rayPoint - planePoint
-    	si = -planeNormal.dot(w) / ndotu
-    	Psi = w + si * rayDirection + planePoint
-    	return Psi
+#     	ndotu = planeNormal.dot(rayDirection)
+#     	if ndotu < epsilon:
+#     		return None
+#     	w = rayPoint - planePoint
+#     	si = -planeNormal.dot(w) / ndotu
+#     	Psi = w + si * rayDirection + planePoint
+#     	return Psi
 
-    dist = data['distance']
-    cent = data['center']
-    phi = data['rotation']-90.          #to give rotation of major axis
-    T = makeMat(data['tilt'],0)     #rotate about X
-    R = makeMat(phi,2)     #rotate about Z
-    MN = np.inner(R,np.inner(R,T))
-    iMN= nl.inv(MN)
-    tth = 2.0*npasind(data['wavelength']/(2.*dsp))
-    vect = np.array([npsind(tth)*npcosd(azm-phi),npsind(tth)*npsind(azm-phi),npcosd(tth)])
-    dxyz0 = np.inner(np.array([0.,0.,1.0]),MN)    #tilt detector normal
-    dxyz0 += np.array([0.,0.,dist])                 #translate to distance
-    dxyz0 = np.inner(dxyz0,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
-    dxyz1 = np.inner(np.array([cent[0],cent[1],0.]),MN)    #tilt detector cent
-    dxyz1 += np.array([0.,0.,dist])                 #translate to distance
-    dxyz1 = np.inner(dxyz1,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
-    xyz = LinePlaneCollision(dxyz1,dxyz0,vect,dist*vect)
-    if xyz is None:
-        return np.zeros(2)
-#        return None
-    xyz = np.inner(xyz,makeMat(data['det2theta'],1).T)
-    xyz -= np.array([0.,0.,dist])                 #translate back
-    xyz = np.inner(xyz,iMN)
-    return np.squeeze(xyz)[:2]+cent
+#     dist = data['distance']
+#     cent = data['center']
+#     phi = data['rotation']-90.          #to give rotation of major axis
+#     T = makeMat(data['tilt'],0)     #rotate about X
+#     R = makeMat(phi,2)     #rotate about Z
+#     MN = np.inner(R,np.inner(R,T))
+#     iMN= nl.inv(MN)
+#     tth = 2.0*npasind(data['wavelength']/(2.*dsp))
+#     vect = np.array([npsind(tth)*npcosd(azm-phi),npsind(tth)*npsind(azm-phi),npcosd(tth)])
+#     dxyz0 = np.inner(np.array([0.,0.,1.0]),MN)    #tilt detector normal
+#     dxyz0 += np.array([0.,0.,dist])                 #translate to distance
+#     dxyz0 = np.inner(dxyz0,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
+#     dxyz1 = np.inner(np.array([cent[0],cent[1],0.]),MN)    #tilt detector cent
+#     dxyz1 += np.array([0.,0.,dist])                 #translate to distance
+#     dxyz1 = np.inner(dxyz1,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
+#     xyz = LinePlaneCollision(dxyz1,dxyz0,vect,dist*vect)
+#     if xyz is None:
+#         return np.zeros(2)
+# #        return None
+#     xyz = np.inner(xyz,makeMat(data['det2theta'],1).T)
+#     xyz -= np.array([0.,0.,dist])                 #translate back
+#     xyz = np.inner(xyz,iMN)
+#     return np.squeeze(xyz)[:2]+cent
 
 def GetDetectorXY2(dsp,azm,data):
     '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
@@ -563,12 +563,12 @@ def GetDetectorXY2(dsp,azm,data):
         xy[0] += dist*nptand(data['det2theta']+data['tilt']*npsind(data['rotation']))
     return xy
 
-def GetDetXYfromThAzm(Th,Azm,data):
-    '''Computes a detector position from a 2theta angle and an azimultal
-    angle (both in degrees) - apparently not used!
-    '''
-    dsp = data['wavelength']/(2.0*npsind(Th))
-    return GetDetectorXY(dsp,Azm,data)
+# def GetDetXYfromThAzm(Th,Azm,data):
+#     '''Computes a detector position from a 2theta angle and an azimultal
+#     angle (both in degrees) - apparently not used!
+#     '''
+#     dsp = data['wavelength']/(2.0*npsind(Th))
+#     return GetDetectorXY(dsp,Azm,data)
 
 # this suite not used for integration - only image plotting & mask positioning
 def GetTthAzmDsp2(x,y,data): #expensive
@@ -781,7 +781,7 @@ def GetLineScan(image,data):
     Tx = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
     Ty = np.zeros_like(Tx)
     dsp = wave/(2.0*npsind(Tx/2.0))
-    xy = [GetDetectorXY(d,azm,data) for d in dsp]
+    xy = [GetDetectorXY2(d,azm,data) for d in dsp]
     xy = np.array(xy).T
     xy[1] *= scalex
     xy[0] *= scaley

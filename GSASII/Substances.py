@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Defines materials commonly found in small angle & reflectometry experiments.
 GSASII substances as a dictionary ''Substances.Substances'' with these materials.

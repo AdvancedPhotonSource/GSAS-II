@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 :mod:`GSASIIstrIO` routines, used for refinement to
 read from GPX files and print to the .LST file.
@@ -7,26 +6,28 @@ Used for refinements and in G2scriptable.
 This file should not contain any wxpython references as this
 must be used in non-GUI settings.
 '''
-import re
+import copy
+import math
 import os
 import os.path as ospath
-import time
-import math
-import random as rand
-import shutil
-import copy
 import pickle
+import random as rand
+import re
+import shutil
+import time
+
 import numpy as np
-import numpy.ma as ma
-from . import GSASIIpath
+from numpy import ma
+
 from . import GSASIIElem as G2el
+from . import GSASIIfiles as G2fil
 from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
-from . import GSASIIobj as G2obj
 from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
+from . import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIspc as G2spc
 from . import GSASIIstrMath as G2stMth
-from . import GSASIIfiles as G2fil
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -79,7 +80,7 @@ def IndexGPX(GPXfile,read=False):
     '''
     global gpxSize
     if gpxSize == os.path.getsize(GPXfile) and not read:
-        return
+        return None
     global gpxIndex
     gpxIndex = {}
     global gpxNamelist
@@ -119,7 +120,7 @@ def GetControls(GPXfile):
     IndexGPX(GPXfile)
     pos = gpxIndex.get('Controls')
     if pos is None:
-        G2fil.G2Print('Warning: Controls not found in gpx file {}'.format(GPXfile))
+        G2fil.G2Print(f'Warning: Controls not found in gpx file {GPXfile}')
         return Controls
     fp = open(GPXfile,'rb')
     fp.seek(pos)
@@ -311,7 +312,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
         if 'G2VarList' in ISO:
             deltaList = []
             notfound = []
-            for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
+            for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList'], strict=False):
                 dvar = gv.varname()
                 var = dvar.replace('::dA','::A')
                 atnum = atNames.index(Ilbl[:Ilbl.rfind('_')])
@@ -333,8 +334,8 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                     msg += v
                 print(msg,'not found')
                 print('  skipping computation for modes:')
-                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList']):
-                    print('     ',i,'({})'.format(j))
+                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList'], strict=False):
+                    print('     ',i,f'({j})')
                 continue
             modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
 
@@ -342,7 +343,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
             l = str(max([len(i) for i in ISO['IsoModeList']])+3)
             fmt = '  {:'+l+'}{}'
             for varid,[var,val,norm,G2mode] in enumerate(zip(
-                    ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] )):
+                    ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'], strict=False )):
                 try:
                     value = G2mth.ValEsd(val/norm,-0.001)
                     item = str(G2mode).replace('::','::nv-')
@@ -356,7 +357,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
         if 'G2OccVarList' in ISO:       #untested - probably wrong
             deltaOccList = []
             notfound = []
-            for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
+            for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList'], strict=False):
                 var = gv.varname()
                 albl = Ilbl[:Ilbl.rfind('_')]
                 pval = ISO['BaseOcc'][albl]
@@ -376,8 +377,8 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
                     msg += v
                 print(msg,'not found')
                 print('  skipping computation for modes:')
-                for i,j in zip(ISO['OccVarList'],ISO['G2OccVarList']):
-                    print('     ',i,'({})'.format(j))
+                for i,j in zip(ISO['OccVarList'],ISO['G2OccVarList'], strict=False):
+                    print('     ',i,f'({j})')
                 continue
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
 
@@ -385,7 +386,7 @@ def PrintISOmodes(pFile,Phases,parmDict,sigDict):
             l = str(max([len(i) for i in ISO['OccModeList']])+3)
             fmt = '  {:'+l+'}{}'
             for var,val,norm,G2mode in zip(
-                    ISO['OccModeList'],modeOccVals,ISO['OccNormList'],ISO['G2OccModeList'] ):
+                    ISO['OccModeList'],modeOccVals,ISO['OccNormList'],ISO['G2OccModeList'], strict=False ):
                 try:
                     value = G2fil.FormatSigFigs(val/norm)
                     if str(G2mode) in sigDict:
@@ -479,7 +480,7 @@ def GetHistograms(GPXfile,hNames):
     for hist in hNames:
         pos = gpxIndex.get(hist)
         if pos is None:
-            raise Exception("Histogram {} not found in GPX file".format(hist))
+            raise Exception(f"Histogram {hist} not found in GPX file")
         fl.seek(pos)
         data = pickleLoad(fl)
         datum = data[0]
@@ -588,8 +589,8 @@ def GetUsedHistogramsAndPhases(GPXfile):
                 xF = np.searchsorted(x,Limits[1])+1
                 h['fixback'] = allHistograms[fixedBkg[0]]['Data'][1][xB:xF]
             except KeyError: # would happen if a referenced histogram were renamed or deleted
-                G2fil.G2Print('Warning: For hist "{}" unresolved background reference to hist "{}"'
-                          .format(hist,fixedBkg[0]))
+                G2fil.G2Print(f'Warning: For hist "{hist}" unresolved background reference to hist "{fixedBkg[0]}"'
+                          )
     G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     return Histograms,Phases
 
@@ -778,8 +779,8 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     fp = open(GPXphase,'rb')
     data = pickleLoad(fp) # first block in file should be Phases
     if data[0][0] != 'Phases':
-        raise Exception('Unexpected block in {} file. How did this happen?'
-                            .format(GPXphase))
+        raise Exception(f'Unexpected block in {GPXphase} file. How did this happen?'
+                            )
     fp.close()
     # update previous phase info
     for datum in data[1:]:
@@ -827,7 +828,6 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     fp = open(GPXhist,'ab')
     pickle.dump(data,fp,1)
     fp.close()
-    return
 
 def SetSeqResult(GPXfile,Histograms,SeqResult):
     '''
@@ -844,7 +844,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     fp = open(GPXphase,'rb')
     data = pickleLoad(fp) # first block in file should be Phases
     if data[0][0] != 'Phases':
-        raise Exception('Unexpected block in {} file. How did this happen?'.format(GPXphase))
+        raise Exception(f'Unexpected block in {GPXphase} file. How did this happen?')
     Phases = {}
     for name,vals in data[1:]:
         Phases[name] = vals
@@ -894,7 +894,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
             hist.seek(histIndex[datum[0]])
             hdata = pickleLoad(hist)
             if data[0][0] != hdata[0][0]:
-                G2fil.G2Print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
+                G2fil.G2Print(f'Error! Updating {data[0][0]} with {hdata[0][0]}')
             data[0] = hdata[0]
             xferItems = ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']
             hItems = {name:j+1 for j,(name,val) in enumerate(hdata[1:]) if name in xferItems}
@@ -909,11 +909,11 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     try:
         os.remove(GPXphase)
     except:
-        G2fil.G2Print('Warning: unable to delete {}'.format(GPXphase))
+        G2fil.G2Print(f'Warning: unable to delete {GPXphase}')
     try:
         os.remove(GPXhist)
     except:
-        G2fil.G2Print('Warning: unable to delete {}'.format(GPXhist))
+        G2fil.G2Print(f'Warning: unable to delete {GPXhist}')
     G2fil.G2Print ('GPX file merge completed')
 
 #==============================================================================
@@ -947,7 +947,7 @@ def ShowControls(Controls,pFile=None,SeqRef=False,preFrozenCount=0):
         pFile.write(' Copy of histogram results to next: %s\n'%(Controls['Copy2Next']))
         pFile.write(' Process histograms in reverse order: %s\n'%(Controls['Reverse Seq']))
     if preFrozenCount:
-        pFile.write('\n Starting refinement with {} Frozen variables\n\n'.format(preFrozenCount))
+        pFile.write(f'\n Starting refinement with {preFrozenCount} Frozen variables\n\n')
 
 def GetPawleyConstr(SGLaue,PawleyRef,im,pawleyVary):
     'needs a doc string'
@@ -1073,7 +1073,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
             if rigidbodyDict['Vector'][item]['useCount']:
                 RBmags = rigidbodyDict['Vector'][item]['VectMag']
                 RBrefs = rigidbodyDict['Vector'][item]['VectRef']
-                for i,[mag,ref] in enumerate(zip(RBmags,RBrefs)):
+                for i,[mag,ref] in enumerate(zip(RBmags,RBrefs, strict=False)):
                     pid = '::RBV;'+str(i)+':'+str(irb)
                     rbDict[pid] = mag
                     if ref:
@@ -1097,7 +1097,7 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
         namstr = '  names :'
         valstr = '  values:'
         sigstr = '  esds  :'
-        for i,[val,sig] in enumerate(zip(VectRB['VectMag'],VectSig)):
+        for i,[val,sig] in enumerate(zip(VectRB['VectMag'],VectSig, strict=False)):
             namstr += '%12s'%('Vect '+str(i))
             valstr += '%12.4f'%(val)
             if sig:
@@ -1370,7 +1370,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     def PrintMoments(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         cmx = cx+4
-        AtInfo = dict(zip(General['AtomTypes'],General['Lande g']))
+        AtInfo = dict(zip(General['AtomTypes'],General['Lande g'], strict=False))
         pFile.write('\n Magnetic moments:\n')
         line = '   name    type  refine?  Mx        My        Mz    '
         pFile.write(line+'\n')
@@ -1432,13 +1432,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     if Waves[0] in ['Block','ZigZag'] and Stype == 'Spos' and not iw:
                         for item in names[Stype][6:]:
                             line += '%8s '%(item)
+                    elif Stype == 'Spos':
+                        for item in names[Stype][:6]:
+                            line += '%8s '%(item)
                     else:
-                        if Stype == 'Spos':
-                            for item in names[Stype][:6]:
-                                line += '%8s '%(item)
-                        else:
-                            for item in names[Stype]:
-                                line += '%8s '%(item)
+                        for item in names[Stype]:
+                            line += '%8s '%(item)
                     pFile.write(line+'\n')
                     line = ''
                     for item in wave[0]:
@@ -1525,11 +1524,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         for i in range(4):
             name = pfxRB+ostr[i]+':'+sfx
             phaseDict[name] = RB['Orient'][0][i]
-            if RB['Orient'][1] == 'AV' and i:
-                phaseVary += [name,]
-            elif 'A' in RB['Orient'][1] and not i:
-                phaseVary += [name,]
-            elif RB['Orient'][1] == 'V' and i:
+            if (RB['Orient'][1] == 'AV' and i) or ('A' in RB['Orient'][1] and not i) or (RB['Orient'][1] == 'V' and i):
                 phaseVary += [name,]
         if rbKey != 'S':
             name = pfx+'RB'+rbKey+'f:'+sfx
@@ -1626,7 +1621,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     Natoms = {}
     maxSSwave = {}
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
-    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+    SamSym = dict(zip(shModels,['0','-1','2/m','mmm'], strict=False))
     atomIndx = {}
     for name in PhaseData:
         if seqHistName is not None and seqHistName != 'All': # sequential: load only used phases
@@ -1842,7 +1837,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                 equivs = {1:[],2:[],3:[], 4:[],5:[],6:[]}
                                 names = [pfx+'MXsin:'+stiw,pfx+'MYsin:'+stiw,pfx+'MZsin:'+stiw,
                                     pfx+'MXcos:'+stiw,pfx+'MYcos:'+stiw,pfx+'MZcos:'+stiw]
-                            phaseDict.update(dict(zip(names,wave[0])))
+                            phaseDict.update(dict(zip(names,wave[0], strict=False)))
                             if wave[1]: #what do we do here for multiple terms in modulation constraints?
                                 for j in range(len(equivs)):
                                     if uId[j][0] > 0:
@@ -2029,9 +2024,7 @@ def cellFill(pfx,SGData,parmDict,sigDict):
                     sigDict[pfx+'A3'],0,0]
         elif SGData['SGLaue'] in ['mmm',]:
             sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],0,0,0]
-        elif SGData['SGLaue'] in ['4/m','4/mmm']:
-            sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
-        elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+        elif SGData['SGLaue'] in ['4/m','4/mmm'] or SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
             sigA = [sigDict[pfx+'A0'],0,sigDict[pfx+'A2'],0,0,0]
         elif SGData['SGLaue'] in ['3R', '3mR']:
             sigA = [sigDict[pfx+'A0'],0,0,sigDict[pfx+'A3'],0,0]
@@ -2108,7 +2101,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                             frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs-1))
                             mulfrac = mul*frac
                             calcs = mul*frac*factors
-                            for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
+                            for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs, strict=False)):
                                 pFile.write(' %10s %8.3f %8.3f %8.3f\n'%(atom,mf,fr,clc))
                             pFile.write(' Sum:                   calc: %8.3f obs: %8.3f esd: %8.3f\n'%(np.sum(calcs),obs,esd))
                         except KeyError:
@@ -2131,7 +2124,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                 elif name == 'Texture' and textureData['Order']:
                     SHCoef = textureData['SH Coeff'][1]
                     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
-                    SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+                    SamSym = dict(zip(shModels,['0','-1','2/m','mmm'], strict=False))
                     pFile.write ('    HKL  grid  neg esd  sum neg  num neg use unit?  unit esd \n')
                     for hkl,grid,esd1,ifesd2,esd2 in itemRest[rest]:
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
@@ -2246,7 +2239,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         line = '   name       Mx        My        Mz       |Mag|'
         cx,ct,cs,cia = General['AtomPtrs']
         cmx = cx+4
-        AtInfo = dict(zip(General['AtomTypes'],General['Lande g']))
+        AtInfo = dict(zip(General['AtomTypes'],General['Lande g'], strict=False))
         pFile.write(line+'\n')
         pFile.write(135*'-'+'\n')
         fmt = {0:'%7s',ct:'%7s',cmx:'%10.3f',cmx+1:'%10.3f',cmx+2:'%10.3f'}
@@ -2472,7 +2465,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             namstr = '  names :'
             ptstr =  '  values:'
             sigstr = '  esds  :'
-            for name,a,siga in zip(names,A,sigA):
+            for name,a,siga in zip(names,A,sigA, strict=False):
                 namstr += '%15s'%(name)
                 ptstr += ptfmt%(a)
                 if siga:
@@ -2490,7 +2483,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             namstr = '  names :'
             ptstr =  '  values:'
             sigstr = '  esds  :'
-            for name,fmt,a,siga in zip(names,ptfmt,cell[1:8],cellSig):
+            for name,fmt,a,siga in zip(names,ptfmt,cell[1:8],cellSig, strict=False):
                 namstr += '%12s'%(name)
                 ptstr += fmt%(a)
                 if siga and siga > 0:
@@ -2659,7 +2652,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 PrintWavesAndSig(General,Atoms,wavesSig)
 
             density = G2mth.getDensity(General)[0]
-            if pFile: pFile.write('\n Density: {:.4f} g/cm**3\n'.format(density))
+            if pFile: pFile.write(f'\n Density: {density:.4f} g/cm**3\n')
 
 
         textureData = General['SH Texture']
@@ -2700,7 +2693,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
         if 'G2VarList' in ISO:
             deltaList = []
             notfound = []
-            for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
+            for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList'], strict=False):
                 dvar = gv.varname()
                 var = dvar.replace('::dA','::A')
                 atnum = atNames.index(Ilbl[:Ilbl.rfind('_')])
@@ -2723,10 +2716,10 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                     msg += v
                 print(msg,'not found')
                 print('  skipping computation for modes:')
-                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList']):
-                    print('     ',i,'({})'.format(j))
+                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList'], strict=False):
+                    print('     ',i,f'({j})')
                 continue
-            elif notfound:
+            if notfound:
                 continue
             modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
 
@@ -2737,7 +2730,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
             l = str(max([len(i) for i in ISO['IsoModeList']])+3)
             fmt = '  {:'+l+'}{}'
             for varid,[var,val,norm,G2mode] in enumerate(zip(
-                    ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'] )):
+                    ISO['IsoModeList'],modeVals,ISO['NormList'],ISO['G2ModeList'], strict=False )):
                 try:
                     value = G2mth.ValEsd(val/norm,-0.001)
                     item = str(G2mode).replace('::','::nv-')
@@ -2754,7 +2747,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
         if 'G2OccVarList' in ISO:       #untested - probably wrong
             deltaOccList = []
             notfound = []
-            for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
+            for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList'], strict=False):
                 var = gv.varname()
                 albl = Ilbl[:Ilbl.rfind('_')]
                 pval = ISO['BaseOcc'][albl]
@@ -2775,10 +2768,10 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
                     msg += v
                 print(msg,'not found')
                 print('  skipping computation for modes:')
-                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList']):
-                    print('     ',i,'({})'.format(j))
+                for i,j in zip(ISO['IsoModeList'],ISO['G2ModeList'], strict=False):
+                    print('     ',i,f'({j})')
                 continue
-            elif notfound:
+            if notfound:
                 continue
             modeOccVals = np.inner(ISO['Var2OccMatrix'],deltaOccList)
 
@@ -2787,7 +2780,7 @@ def SetISOmodes(parmDict,sigDict,Phases,pFile=None):
             l = str(max([len(i) for i in ISO['OccModeList']])+3)
             fmt = '  {:'+l+'}{}'
             for var,val,norm,G2mode in zip(
-                    ISO['OccModeList'],modeOccVals,ISO['OccNormList'],ISO['G2OccModeList'] ):
+                    ISO['OccModeList'],modeOccVals,ISO['OccNormList'],ISO['G2OccModeList'], strict=False ):
                 try:
                     value = G2fil.FormatSigFigs(val/norm)
                     if str(G2mode) in sigDict:
@@ -3159,9 +3152,9 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     Ekey = ['Ep','Ma','Mb']
                 elif 'I & II' in extType:
                     Ekey = ['Eg','Es']
-                elif 'Secondary Type II' == extType:
+                elif extType == 'Secondary Type II':
                     Ekey = ['Es',]
-                elif 'Secondary Type I' == extType:
+                elif extType == 'Secondary Type I':
                     Ekey = ['Eg',]
                 else:   #'None'
                     Ekey = []
@@ -3630,7 +3623,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         bakType,bakFlag = Back[:2]
         backVals = Back[3:]
         backNames = [':'+str(hId)+':Back;'+str(i) for i in range(len(backVals))]
-        backDict = dict(zip(backNames,backVals))
+        backDict = dict(zip(backNames,backVals, strict=False))
         backVary = []
         if bakFlag:
             backVary = backNames
@@ -3640,8 +3633,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         debyeList = []
         for i in range(DebyePeaks['nDebye']):
             debyeNames = [':'+str(hId)+':DebyeA;'+str(i),':'+str(hId)+':DebyeR;'+str(i),':'+str(hId)+':DebyeU;'+str(i)]
-            debyeDict.update(dict(zip(debyeNames,DebyePeaks['debyeTerms'][i][::2])))
-            debyeList += zip(debyeNames,DebyePeaks['debyeTerms'][i][1::2])
+            debyeDict.update(dict(zip(debyeNames,DebyePeaks['debyeTerms'][i][::2], strict=False)))
+            debyeList += zip(debyeNames,DebyePeaks['debyeTerms'][i][1::2], strict=False)
         debyeVary = []
         for item in debyeList:
             if item[1]:
@@ -3653,8 +3646,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         for i in range(DebyePeaks['nPeaks']):
             peakNames = [':'+str(hId)+':BkPkpos;'+str(i),':'+str(hId)+ \
                 ':BkPkint;'+str(i),':'+str(hId)+':BkPksig;'+str(i),':'+str(hId)+':BkPkgam;'+str(i)]
-            peakDict.update(dict(zip(peakNames,DebyePeaks['peaksList'][i][::2])))
-            peakList += zip(peakNames,DebyePeaks['peaksList'][i][1::2])
+            peakDict.update(dict(zip(peakNames,DebyePeaks['peaksList'][i][::2], strict=False)))
+            peakList += zip(peakNames,DebyePeaks['peaksList'][i][1::2], strict=False)
         peakVary = []
         for item in peakList:
             if item[1]:
@@ -3897,9 +3890,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             if 'X' in Inst['Type'][1]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
                 controlDict[pfx+'keV'] = G2mth.wavekE(histDict[pfx+'Lam'])
-            elif 'SEC' in Inst['Type'][1]:
-                histDict[pfx+'Lam'] = Inst['Lam'][1]
-            elif 'NC' in Inst['Type'][1] or 'NB' in Inst['Type'][1]:
+            elif 'SEC' in Inst['Type'][1] or 'NC' in Inst['Type'][1] or 'NB' in Inst['Type'][1]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
 
     return histVary,histDict,histDict1,controlDict
@@ -4287,7 +4278,7 @@ def WriteResRBModel(RBModel):
     rbRef = RBModel['rbRef']
     rbSeq = RBModel['rbSeq']
     out.append('    At name       x          y          z\n')
-    for name,xyz in zip(atNames,RBModel['rbXYZ']):
+    for name,xyz in zip(atNames,RBModel['rbXYZ'], strict=False):
         out.append('  %8s %10.4f %10.4f %10.4f\n'%(name,xyz[0],xyz[1],xyz[2]))
     out.append('  Orientation defined by: %s -> %s & %s -> %s\n'%
         (atNames[rbRef[0]],atNames[rbRef[1]],atNames[rbRef[0]],atNames[rbRef[2]]))
@@ -4313,10 +4304,10 @@ def WriteVecRBModel(RBModel,sigDict={},irb=None):
             out.append('Vector no.: %d Magnitude: %8.4f Refine? %s\n'%
                            (i,RBModel['VectMag'][i],RBModel['VectRef'][i]))
         out.append('  No. Type     vx         vy         vz\n')
-        for j,[name,xyz] in enumerate(zip(atTypes,RBModel['rbVect'][i])):
+        for j,[name,xyz] in enumerate(zip(atTypes,RBModel['rbVect'][i], strict=False)):
             out.append('  %d   %2s %10.4f %10.4f %10.4f\n'%(j,name,xyz[0],xyz[1],xyz[2]))
     out.append('  No. Type      x          y          z\n')
-    for i,[name,xyz] in enumerate(zip(atTypes,RBModel['rbXYZ'])):
+    for i,[name,xyz] in enumerate(zip(atTypes,RBModel['rbXYZ'], strict=False)):
         out.append('  %d   %2s %10.4f %10.4f %10.4f\n'%(i,name,xyz[0],xyz[1],xyz[2]))
     return out
 

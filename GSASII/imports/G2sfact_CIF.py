@@ -1,19 +1,19 @@
-# -*- coding: utf-8 -*-
 '''Class to read single-crystal data from a CIF
 '''
 # routines to read in structure factors from a CIF
 #
-from __future__ import division, print_function
-import numpy as np
 import os.path
-from .. import GSASIIpath
-from .. import GSASIIobj as G2obj
+
+import numpy as np
+
 from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
+
 try:
-    import CifFile as cif # PyCifRW from James Hester as a package
+    import CifFile as cif  # PyCifRW from James Hester as a package
 except ImportError:
     try:
-        from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+        from .. import CifFile as cif  # PyCifRW, as distributed w/G2 (old)
     except ImportError:
         cif = None
 
@@ -33,7 +33,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
     # Validate the contents
     def ContentsValidator(self, filename):
         'Use standard CIF validator'
-        fp = open(filename,'r')
+        fp = open(filename)
         return self.CIFValidator(fp)
         fp.close()
 
@@ -137,9 +137,8 @@ class CIFhklReader(G2obj.ImportStructFactor):
                     name = cf[blknm].get(i)
                     if name is None or name == '?' or name == '.':
                         continue
-                    else:
-                        choice[-1] += name.strip()[:20] + ', '
-                        break
+                    choice[-1] += name.strip()[:20] + ', '
+                    break
                 s = ''
                 fmt = "%.2f,"
                 for i,key in enumerate(cellitems[dnIndex]):

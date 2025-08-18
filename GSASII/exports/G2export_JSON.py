@@ -1,13 +1,14 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_JSON` follow:
 
 This code is to honor my friend Robert Papoular, who wants to see what is 
 inside a .gpx file.
 '''
-from __future__ import division, print_function
 import json
+
 import numpy as np
+
 from .. import GSASIIfiles as G2fil
+
 
 class JsonEncoder(json.JSONEncoder):
     '''This provides the ability to turn np arrays and masked arrays
@@ -27,7 +28,7 @@ class JsonEncoder(json.JSONEncoder):
             print('Tell Brian to fix JsonEncoder to handle type=',type(obj),
                       '. Skipping for now')
             #breakpoint()
-            return "sorry, I don't know how to show a {} object".format(str(type(obj)))
+            return f"sorry, I don't know how to show a {type(obj)!s} object"
     
 class ExportJSON(G2fil.ExportBaseclass):
     '''Implement JSON export of entire projects
@@ -68,7 +69,7 @@ class ExportJSON(G2fil.ExportBaseclass):
                 else:
                     self.Write('\n, ')
                 self.Write(json.dumps(
-                    "=========== '{}' Tree Item ==============".format(name))+',')
+                    f"=========== '{name}' Tree Item ==============")+',')
                 self.Write(json.dumps(data, indent=2, cls=JsonEncoder))
                 item2, cookie2 = G2frame.GPXtree.GetFirstChild(item)
                 while item2:
@@ -76,7 +77,7 @@ class ExportJSON(G2fil.ExportBaseclass):
                     #print('  level 1',name2)
                     self.Write(',\n')
                     self.Write(json.dumps([
-                        "=========== '{}' SubItem of Tree '{}' ==============".format(name2,name)]))
+                        f"=========== '{name2}' SubItem of Tree '{name}' =============="]))
                     self.Write(', ')
                     data = {name:{name2:G2frame.GPXtree.GetItemPyData(item2)}}
                     self.Write(json.dumps(data, indent=2, cls=JsonEncoder))

@@ -27,13 +27,14 @@
 # acknowledged for their useful comments.
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
-import sys
 import time
-import math
+
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+
 from . import GSASIIfiles as G2fil
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
 
 gen_option_avail = True
@@ -283,8 +284,7 @@ class kVector:
             k_info_tmp = seekpath.get_path(structure, True, symprec=sym_tol)
             if k_info_tmp["bravais_lattice"] == self.bravfSym:
                 break
-            else:
-                sym_tol *= 2.
+            sym_tol *= 2.
 
         k_info = {
             "point_coords": k_info_tmp["point_coords"],
@@ -340,7 +340,7 @@ class kVector:
         :param distance: the distance away from the starting point
         :return: the coordinate of the point on the vector
         """
-        vec_length = np.sqrt(sum((x - y)**2 for x, y in zip(s_point, e_point)))
+        vec_length = np.sqrt(sum((x - y)**2 for x, y in zip(s_point, e_point, strict=False)))
 
         xp = s_point[0] + distance / vec_length * (e_point[0] - s_point[0])
         yp = s_point[1] + distance / vec_length * (e_point[1] - s_point[1])
@@ -395,7 +395,7 @@ class kVector:
             [[(i - j)**2. for i in list1] for j in list2]
         )
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
-        mapping = {list2[i]: list1[j] for i, j in zip(row_ind, col_ind)}
+        mapping = {list2[i]: list1[j] for i, j in zip(row_ind, col_ind, strict=False)}
 
         sum_of_squares = np.sqrt(
             cost_matrix[row_ind, col_ind].sum()
@@ -481,7 +481,7 @@ class kVector:
             max_dd = [max_dd_v]
             return (k_opt_list, k_opt_dist, ave_dd, max_dd)
         else:
-            if len(k_opt_list) < 10:
+            if len(k_opt_list) < 10 or indicator_dist < k_opt_dist[9]:
                 k_opt_new = self.insIntoSortedList(
                     k_opt_dist,
                     indicator_dist
@@ -490,16 +490,7 @@ class kVector:
                 ave_dd.insert(k_opt_new[1], ave_dd_v)
                 max_dd.insert(k_opt_new[1], max_dd_v)
             else:
-                if indicator_dist < k_opt_dist[9]:
-                    k_opt_new = self.insIntoSortedList(
-                        k_opt_dist,
-                        indicator_dist
-                    )
-                    k_opt_list.insert(k_opt_new[1], kpoint)
-                    ave_dd.insert(k_opt_new[1], ave_dd_v)
-                    max_dd.insert(k_opt_new[1], max_dd_v)
-                else:
-                    return (k_opt_list, k_opt_dist, ave_dd, max_dd)
+                return (k_opt_list, k_opt_dist, ave_dd, max_dd)
 
             return (
                 k_opt_list[:10],
@@ -534,146 +525,142 @@ class kVector:
             err_msg = "The number of nucleus peaks is not enough for "
             err_msg += "k vector determination."
             raise ValueError("err_msg")
+        if len(self.nucPeaks) >= len(self.superPeaks):
+            # search over those high symmetry points on the suggested k
+            # path In this case, we don't need to consider their negatives
+            # as they are equivalent.
+            print("[Info] Searching over high symmetry points ...")
+            for name, kpoint in hs_points.items():
+                k_opt_tmp = self.updateCandidateList(
+                    kpoint,
+                    k_opt_list,
+                    k_opt_dist,
+                    k_opt_ad,
+                    k_opt_md,
+                    True
+                )
+                k_opt_list = k_opt_tmp[0]
+                k_opt_dist = k_opt_tmp[1]
+                k_opt_ad = k_opt_tmp[2]
+                k_opt_md = k_opt_tmp[3]
+                found_opt = k_opt_dist[0] <= self.threshold
+
+                msg = "[Info] k point (primitive setting): "
+                msg += f"{name:s} => [{kpoint[0]:.5F}, {kpoint[1]:.5F}, {kpoint[2]:.5F}], "
+                msg += "Indicator distance: "
+                msg += f"{k_opt_dist[0]:.5F}, "
+                msg += f"Threshold: {self.threshold}"
+                print(msg)
+
+                if len(k_opt_list) == 1 and found_opt:
+                    stop_search = time.time()
+                    te = stop_search - start_search
+                    print(f"[Info] Time elapsed: {te} s")
+
+                    return (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md)
+
+            if self.option == 1 or self.option == 2:
+                # search along the k-path
+                print("[Info] Searching along the high symmetry path ...")
+                k_paths = self.kpathFinder()
+                for k_path in k_paths["path"]:
+                    print("[Info] k path (primitive setting):", k_path)
+                    seg_len = self.kstep[0]
+                    k_path_s = k_paths["point_coords"][k_path[0]]
+                    k_path_e = k_paths["point_coords"][k_path[1]]
+                    k_path_vec = np.array(
+                        [
+                            y - x for y, x in zip(k_path_e, k_path_s, strict=False)
+                        ]
+                    )
+                    k_path_vec_cart = np.matmul(
+                        k_path_vec,
+                        rep_prim_latt
+                    )
+                    k_path_len = np.linalg.norm(k_path_vec_cart)
+                    while seg_len < k_path_len:
+                        kpoint = self.pointOnVector(
+                            k_path_s,
+                            k_path_e,
+                            seg_len
+                        )
+                        k_opt_tmp = self.updateCandidateList(
+                            kpoint,
+                            k_opt_list,
+                            k_opt_dist,
+                            k_opt_ad,
+                            k_opt_md,
+                            True
+                        )
+                        k_opt_list = k_opt_tmp[0]
+                        k_opt_dist = k_opt_tmp[1]
+                        k_opt_ad = k_opt_tmp[2]
+                        k_opt_md = k_opt_tmp[3]
+                        found_opt = k_opt_dist[0] <= self.threshold
+
+                        if len(k_opt_list) == 1 and found_opt:
+                            stop_search = time.time()
+                            te = stop_search - start_search
+                            print(f"[Info] Time elapsed: {te} s")
+
+                            return (k_opt_list, k_opt_dist)
+
+                        seg_len += self.kstep[0]
+
+            if self.option == 2:
+                # search over the whole 1st Brillouin zone
+                print("[Info] Searching over general k points ...")
+
+                ka_step = self.kstep[0]
+                kb_step = self.kstep[1]
+                kc_step = self.kstep[2]
+
+                kpa_len = np.linalg.norm(rep_prim_latt[0])
+                kpb_len = np.linalg.norm(rep_prim_latt[1])
+                kpc_len = .5 * np.linalg.norm(rep_prim_latt[2])
+
+                a_array = -0.5 + np.arange(0, kpa_len, ka_step) / kpa_len
+                b_array = -0.5 + np.arange(0, kpb_len, kb_step) / kpb_len
+                c_array = np.arange(0, kpc_len / 2., kc_step) / kpc_len
+
+                points = np.array(np.meshgrid(a_array, b_array, c_array))
+                points = points.T.reshape(-1, 3)
+
+                results = kvec_general.parallel_proc(
+                    points,
+                    self.nucPeaks,
+                    self.superPeaks,
+                    rep_prim_latt,
+                    processes=self.processes
+                )
+
+                k_opt_list = [
+                    item[0] for item in results
+                ]
+                k_opt_dist = [
+                    item[1] for item in results
+                ]
+                k_opt_ad = [
+                    item[2] for item in results
+                ]
+                k_opt_md = [
+                    item[3] for item in results
+                ]
+
+            stop_search = time.time()
+            te = stop_search - start_search
+            print(f"[Info] Time elapsed: {te} s")
+
+            return (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md)
+        elif self.option == 0:
+            err_msg = "The number of nucleus peaks is less than that "
+            err_msg += "of the satellite peaks, and thus the search "
+            err_msg += "should go beyond the high symmetry point. \n"
+            err_msg += "Please select to search either along k paths "
+            err_msg += "or over the whole 1st Brillouin zone."
+            raise ValueError(err_msg)
         else:
-            if len(self.nucPeaks) >= len(self.superPeaks):
-                # search over those high symmetry points on the suggested k
-                # path In this case, we don't need to consider their negatives
-                # as they are equivalent.
-                print("[Info] Searching over high symmetry points ...")
-                for name, kpoint in hs_points.items():
-                    k_opt_tmp = self.updateCandidateList(
-                        kpoint,
-                        k_opt_list,
-                        k_opt_dist,
-                        k_opt_ad,
-                        k_opt_md,
-                        True
-                    )
-                    k_opt_list = k_opt_tmp[0]
-                    k_opt_dist = k_opt_tmp[1]
-                    k_opt_ad = k_opt_tmp[2]
-                    k_opt_md = k_opt_tmp[3]
-                    found_opt = k_opt_dist[0] <= self.threshold
-
-                    msg = "[Info] k point (primitive setting): "
-                    msg += "{:s} => [{:.5F}, {:.5F}, {:.5F}], ".format(
-                        name, kpoint[0], kpoint[1], kpoint[2]
-                    )
-                    msg += "Indicator distance: "
-                    msg += "{:.5F}, ".format(k_opt_dist[0])
-                    msg += f"Threshold: {self.threshold}"
-                    print(msg)
-
-                    if len(k_opt_list) == 1 and found_opt:
-                        stop_search = time.time()
-                        te = stop_search - start_search
-                        print(f"[Info] Time elapsed: {te} s")
-
-                        return (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md)
-
-                if self.option == 1 or self.option == 2:
-                    # search along the k-path
-                    print("[Info] Searching along the high symmetry path ...")
-                    k_paths = self.kpathFinder()
-                    for k_path in k_paths["path"]:
-                        print("[Info] k path (primitive setting):", k_path)
-                        seg_len = self.kstep[0]
-                        k_path_s = k_paths["point_coords"][k_path[0]]
-                        k_path_e = k_paths["point_coords"][k_path[1]]
-                        k_path_vec = np.array(
-                            [
-                                y - x for y, x in zip(k_path_e, k_path_s)
-                            ]
-                        )
-                        k_path_vec_cart = np.matmul(
-                            k_path_vec,
-                            rep_prim_latt
-                        )
-                        k_path_len = np.linalg.norm(k_path_vec_cart)
-                        while seg_len < k_path_len:
-                            kpoint = self.pointOnVector(
-                                k_path_s,
-                                k_path_e,
-                                seg_len
-                            )
-                            k_opt_tmp = self.updateCandidateList(
-                                kpoint,
-                                k_opt_list,
-                                k_opt_dist,
-                                k_opt_ad,
-                                k_opt_md,
-                                True
-                            )
-                            k_opt_list = k_opt_tmp[0]
-                            k_opt_dist = k_opt_tmp[1]
-                            k_opt_ad = k_opt_tmp[2]
-                            k_opt_md = k_opt_tmp[3]
-                            found_opt = k_opt_dist[0] <= self.threshold
-
-                            if len(k_opt_list) == 1 and found_opt:
-                                stop_search = time.time()
-                                te = stop_search - start_search
-                                print(f"[Info] Time elapsed: {te} s")
-
-                                return (k_opt_list, k_opt_dist)
-
-                            seg_len += self.kstep[0]
-
-                if self.option == 2:
-                    # search over the whole 1st Brillouin zone
-                    print("[Info] Searching over general k points ...")
-
-                    ka_step = self.kstep[0]
-                    kb_step = self.kstep[1]
-                    kc_step = self.kstep[2]
-
-                    kpa_len = np.linalg.norm(rep_prim_latt[0])
-                    kpb_len = np.linalg.norm(rep_prim_latt[1])
-                    kpc_len = .5 * np.linalg.norm(rep_prim_latt[2])
-
-                    a_array = -0.5 + np.arange(0, kpa_len, ka_step) / kpa_len
-                    b_array = -0.5 + np.arange(0, kpb_len, kb_step) / kpb_len
-                    c_array = np.arange(0, kpc_len / 2., kc_step) / kpc_len
-
-                    points = np.array(np.meshgrid(a_array, b_array, c_array))
-                    points = points.T.reshape(-1, 3)
-
-                    results = kvec_general.parallel_proc(
-                        points,
-                        self.nucPeaks,
-                        self.superPeaks,
-                        rep_prim_latt,
-                        processes=self.processes
-                    )
-
-                    k_opt_list = [
-                        item[0] for item in results
-                    ]
-                    k_opt_dist = [
-                        item[1] for item in results
-                    ]
-                    k_opt_ad = [
-                        item[2] for item in results
-                    ]
-                    k_opt_md = [
-                        item[3] for item in results
-                    ]
-
-                stop_search = time.time()
-                te = stop_search - start_search
-                print(f"[Info] Time elapsed: {te} s")
-
-                return (k_opt_list, k_opt_dist, k_opt_ad, k_opt_md)
-            else:
-                if self.option == 0:
-                    err_msg = "The number of nucleus peaks is less than that "
-                    err_msg += "of the satellite peaks, and thus the search "
-                    err_msg += "should go beyond the high symmetry point. \n"
-                    err_msg += "Please select to search either along k paths "
-                    err_msg += "or over the whole 1st Brillouin zone."
-                    raise ValueError(err_msg)
-                else:
-                    warn_msg = "The number of nucleus peaks is less than that "
-                    warn_msg += "of the satellite peaks, thus skipping the "
-                    warn_msg += "search over the high symmetry points."
-                    print(f"[Warning] {warn_msg}")
+            warn_msg = "The number of nucleus peaks is less than that "
+            warn_msg += "of the satellite peaks, thus skipping the "
+            warn_msg += "search over the high symmetry points."
+            print(f"[Warning] {warn_msg}")

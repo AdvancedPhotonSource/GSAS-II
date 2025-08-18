@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''A reader for HDF-5 files. This should be as generic as possible, but
 at present this is pretty much customized for XSD-MPE (APS) uses.
 '''
@@ -6,9 +5,10 @@ try:
     import h5py
 except ImportError:
     h5py = None
-from .. import GSASIIobj as G2obj
 from .. import GSASIIfiles as G2fil
+from .. import GSASIIobj as G2obj
 from .. import GSASIIpath
+
 
 class HDF5_Reader(G2obj.ImportImage):
     '''Routine to read a HDF-5 image, typically from APS Sector 1 or 6.
@@ -33,7 +33,7 @@ class HDF5_Reader(G2obj.ImportImage):
             fp = h5py.File(filename, 'r')
             fp.close()
             return True
-        except IOError:
+        except OSError:
             return False
 
     def Reader(self, filename, ParentFrame=None, **kwarg):
@@ -50,7 +50,7 @@ class HDF5_Reader(G2obj.ImportImage):
         '''
         try:
             fp = h5py.File(filename, 'r')
-        except IOError:
+        except OSError:
             return False
         imagenum = kwarg.get('blocknum')
         if imagenum is None: imagenum = 1
@@ -75,6 +75,7 @@ class HDF5_Reader(G2obj.ImportImage):
                 self.buffer['selectedImages'] = list(range(len(self.buffer['imagemap'])))
                 if ParentFrame and len(self.buffer['imagemap']) > nsel and nsel >= 0:
                     import wx
+
                     from .. import GSASIIctrlGUI as G2G
                     choices = []
                     for loc,num,siz in self.buffer['imagemap']:
@@ -100,8 +101,7 @@ class HDF5_Reader(G2obj.ImportImage):
                 if imagenum-1 in self.buffer['selectedImages']:
                     del self.buffer['selectedImages'][self.buffer['selectedImages'].index(imagenum-1)]
                     break
-                else:
-                    imagenum += 1
+                imagenum += 1
             else:  # unexpected!
                 self.errors = 'No images selected from file'
                 fp.close()
@@ -136,8 +136,7 @@ class HDF5_Reader(G2obj.ImportImage):
             if imagenum in self.buffer['selectedImages']:
                 self.repeat = True
                 break
-            else:
-                imagenum += 1
+            imagenum += 1
         else:
             self.repeat = False
         fp.close()

@@ -5,8 +5,11 @@
 import glob
 import os
 import sys
+
 import numpy as np
+
 from . import GSASIIpath
+
 
 def _path_discovery(printInfo=False):
     def appendIfExists(searchpathlist,loc,subdir):

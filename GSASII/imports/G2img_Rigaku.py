@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import os
-from .. import GSASIIobj as G2obj
+
 import numpy as np
+
+from .. import GSASIIobj as G2obj
+
+
 class Rigaku_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Rigaku R-Axis IV image file.
     '''

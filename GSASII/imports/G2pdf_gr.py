@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 
-from __future__ import division, print_function
 import os.path as ospath
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
 
 class txt_FSQReaderClass(G2obj.ImportPDFData):
     'Routines to import S(Q) data from a .fq file'
@@ -20,7 +21,7 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid r-step file'
-        filepointer = open(filename,'r')
+        filepointer = open(filename)
         Ndata = 0
         for i,S in enumerate(filepointer):
             if '#L' in S[:2]:
@@ -47,7 +48,7 @@ class txt_FSQReaderClass(G2obj.ImportPDFData):
         x = []
         y = []
         ifData = False
-        filepointer = open(filename,'r')
+        filepointer = open(filename)
         for i,S in enumerate(filepointer):
             if not ifData:
                 if '#L' in S[:2]:
@@ -93,7 +94,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid r-step file'
-        filepointer = open(filename,'r')
+        filepointer = open(filename)
         Ndata = 0
         for i,S in enumerate(filepointer):
             if '#L r' in S[:4]:
@@ -118,7 +119,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
         x = []
         y = []
         ifData = False
-        filepointer = open(filename,'r')
+        filepointer = open(filename)
         self.Type = 'N g(r)'
         for i,S in enumerate(filepointer):
             if not ifData:
@@ -163,7 +164,7 @@ class txt_PDFReaderClassG(G2obj.ImportPDFData):
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid r-step file'
-        filepointer = open(filename,'r')
+        filepointer = open(filename)
         Ndata = 0
         for i,S in enumerate(filepointer):
             if i < 2:
@@ -186,7 +187,7 @@ class txt_PDFReaderClassG(G2obj.ImportPDFData):
         print ('Read a r-step text file')
         x = []
         y = []
-        filepointer = open(filename,'r')
+        filepointer = open(filename)
         for i,S in enumerate(filepointer):
             if i < 2:
                 continue

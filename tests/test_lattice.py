@@ -5,18 +5,18 @@ Performs comprehensive unit tests for many but by no means all
 routines in :mod:`~GSASII.GSASIIlattice`.
 '''
 
+import importlib.util
 import os
 import sys
+
 import numpy as np
 
-import importlib.util
 if importlib.util.find_spec('GSASII') is None: # hack path if GSASII not installed into Python
     home = os.path.dirname(__file__)
     sys.path.append(os.path.dirname(home))
 import GSASII.GSASIIspc as G2spc
 from GSASII.GSASIIlattice import *
-
-import testinp.sgtbxlattinp as sgtbxlattinp
+from testinp import sgtbxlattinp
 
 # self-test data & routines follow.
 selftestlist = []
@@ -247,8 +247,7 @@ def test_Brav():
                 hkl = [abs(i) * hklin[abs(i)-1] / i for i in perm]
                 if hkl == hklref: return True
                 if [-i for i in hkl] == hklref: return True
-        else:
-            return False
+        return False
 
     for key in sgtbxlattinp.sgtbx7:
         spdict = G2spc.SpcGroup(key)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #GSAS-II Data/Model Comparison
 '''
 '''
@@ -10,27 +9,28 @@
 # more graphics
 # display more in datawindow
 
-import sys
-import os
-import platform
 import glob
+import os
 import pickle
+import platform
+import sys
 
-import wx
-import numpy as np
 import matplotlib as mpl
+import numpy as np
+import wx
+
 try:
     import OpenGL as ogl
 except ImportError:
     pass
 import scipy as sp
 
-from . import GSASIIpath
-from . import GSASIIfiles as G2fil
-from . import GSASIIplot as G2plt
-from . import GSASIIdataGUI as G2gd
 from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIfiles as G2fil
 from . import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIplot as G2plt
 
 __version__ = '0.0.1'
 
@@ -47,7 +47,7 @@ def RC2Ftest(npts,RChiSq0,nvar0,RChiSq1,nvar1):
     '''
     if nvar1 == nvar0:
         raise Exception("parameter # agree, test is not valid")
-    elif nvar1 < nvar0:
+    if nvar1 < nvar0:
         print("Warning: RwFtest used with base/relaxed models reversed")
         RChiSq0,nvar0,RChiSq1,nvar1 = RChiSq1,nvar1,RChiSq0,nvar0
     ratio = RChiSq0 / RChiSq1
@@ -69,7 +69,7 @@ def RwFtest(npts,Rwp0,nvar0,Rwp1,nvar1):
     '''
     if nvar1 == nvar0:
         raise Exception("parameter # agree, test is not valid")
-    elif nvar1 < nvar0:
+    if nvar1 < nvar0:
         print("Warning: RwFtest used with base/relaxed models reversed")
         Rwp0,nvar0,Rwp1,nvar1 = Rwp1,nvar1,Rwp0,nvar0
     ratio = (Rwp0 / Rwp1)**2
@@ -151,8 +151,8 @@ class MakeTopWindow(wx.Frame):
         self.wxID_Mode = {}
         for i,m in enumerate(("Histogram","Phase","Project")):
             self.wxID_Mode[m] = i+1
-            item = self.Mode.AppendRadioItem(i+1,m+'\tCtrl+{}'.format(i+1),
-                                                 'Display {}s'.format(m))
+            item = self.Mode.AppendRadioItem(i+1,m+f'\tCtrl+{i+1}',
+                                                 f'Display {m}s')
             self.Bind(wx.EVT_MENU, self.onRefresh, id=item.GetId())
         self.hFilter = self.Mode.Append(wx.ID_ANY,'Filter by histogram\tCtrl+F','Only show selected histograms')
         self.Bind(wx.EVT_MENU, self.onHistFilter, id=self.hFilter.GetId())
@@ -217,7 +217,7 @@ class MakeTopWindow(wx.Frame):
                 if G2gd.GetDisplay(pos) is None: win.Center()
             except:
                 if GSASIIpath.GetConfigValue(var):
-                    print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
+                    print(f'Value for config {var} {GSASIIpath.GetConfigValue(var)} is invalid')
                     win.Center()
         self.SetModeMenu()
 
@@ -227,7 +227,7 @@ class MakeTopWindow(wx.Frame):
         dlg = wx.FileDialog(self, 'Choose GSAS-II project file',
                 wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN)
         try:
-            if dlg.ShowModal() != wx.ID_OK: return
+            if dlg.ShowModal() != wx.ID_OK: return None
             fil = os.path.splitext(dlg.GetPath())[0]+'.gpx'
         finally:
             dlg.Destroy()
@@ -235,8 +235,8 @@ class MakeTopWindow(wx.Frame):
             #self.fileList.append([fil,'GPX'])
             return fil
         else:
-            print('File {} not found, skipping'.format(fil))
-            return
+            print(f'File {fil} not found, skipping')
+            return None
 
     def SelectMultGPX(self):
         '''Select multiple .GPX files to be read
@@ -245,7 +245,7 @@ class MakeTopWindow(wx.Frame):
                 wildcard='GSAS-II project file (*.gpx)|*.gpx',
                 style=wx.FD_OPEN|wx.FD_MULTIPLE)
         try:
-            if dlg.ShowModal() != wx.ID_OK: return
+            if dlg.ShowModal() != wx.ID_OK: return None
             files = dlg.GetPaths()
         finally:
             dlg.Destroy()
@@ -256,7 +256,7 @@ class MakeTopWindow(wx.Frame):
                 if fil not in fileList:
                     fileList.append(fil)
             else:
-                print('File {} not found, skipping'.format(fil))
+                print(f'File {fil} not found, skipping')
         return fileList
 
     def getMode(self):
@@ -340,15 +340,15 @@ class MakeTopWindow(wx.Frame):
         '''Initial load of GPX file in response to a menu command
         '''
         home = os.path.abspath(os.getcwd())
-        hlp = '''Enter a wildcard version of a file name.
-The directory is assumed to be "{}" unless specified otherwise.
+        hlp = f'''Enter a wildcard version of a file name.
+The directory is assumed to be "{home}" unless specified otherwise.
 Extensions will be set to .gpx and .bak files will be ignored unless
 the wildcard string includes "bak". For example, "*abc*" will match any
 .gpx file in that directory containing "abc". String "/tmp/A*" will match
 files in "/tmp" beginning with "A". Supplying two strings, "A*" and "B*bak*"
 will match files names beginning with "A" or "B", but ".bak" files will
 be included for the files beginning with "B" only.
-'''.format(home)
+'''
         if wildcard is None:
             dlg = G2G.MultiStringDialog(self, 'Enter wildcard file names',
                     ['wild-card 1'] , values=['*'],
@@ -424,15 +424,15 @@ be included for the files beginning with "B" only.
     #patch
                 if datus[0] == 'Instrument Parameters' and len(datus[1]) == 1:
                     if datum[0].startswith('PWDR'):
-                        datus[1] = [dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2]))),{}]
+                        datus[1] = [dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2], strict=False), strict=False)),{}]
                     else:
-                        datus[1] = [dict(zip(datus[1][2],zip(datus[1][0],datus[1][1]))),{}]
+                        datus[1] = [dict(zip(datus[1][2],zip(datus[1][0],datus[1][1], strict=False), strict=False)),{}]
                     for item in datus[1][0]:               #zip makes tuples - now make lists!
                         datus[1][0][item] = list(datus[1][0][item])
     #end patch
                 G2frame.GPXtree.SetItemPyData(sub,datus[1])
         if datum: # was anything loaded?
-            print('data load successful for {}'.format(datum[0]))
+            print(f'data load successful for {datum[0]}')
     #        G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
     #    G2frame.SetTitleByGPX()
         self.GPXtree.Expand(self.root)
@@ -513,7 +513,7 @@ be included for the files beginning with "B" only.
                 G2frame.GPXtree.SetItemPyData(sub,datus[1])
         if datum: # was anything loaded?
             self.GPXtree.Expand(Id)
-            print('Phase load successful for {}'.format(datum[0]))
+            print(f'Phase load successful for {datum[0]}')
     #        G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
     #    G2frame.SetTitleByGPX()
         self.GPXtree.Expand(self.root)
@@ -759,7 +759,7 @@ be included for the files beginning with "B" only.
         msg += fmt.format('Relaxed',self.GPXtree.GetItemText(s1)[:-11],
                        len(relxDict['varyList']),
                        relxDict['Rvals']['GOF']**2)
-        msg += '\n\nCumulative F-test probability {:.2f}%\n'.format(prob*100)
+        msg += f'\n\nCumulative F-test probability {prob*100:.2f}%\n'
         if prob > 0.95:
             msg += "The relaxed model is statistically preferred to the constrained model."
         elif prob > 0.75:
@@ -879,13 +879,13 @@ if __name__ == '__main__':
         fil = os.path.splitext(arg)[0] + '.gpx'
         if os.path.exists(fil):
             if [fil,'GPX'] in Frame.fileList:
-                print('Skipping over {}: previously read'.format(fil))
+                print(f'Skipping over {fil}: previously read')
                 continue
             Frame.fileList.append([fil,'GPX'])
             Frame.loadFile(fil)
             continue
         else:
-            print('File {} not found. Skipping'.format(fil))
+            print(f'File {fil} not found. Skipping')
     Frame.doneLoad()
     # debug code to select Project in initial mode
     if loadall:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #GSASIIobj - data objects for GSAS-II
 '''
 Classes and routines defined in :mod:`GSASIIobj` follow.
@@ -6,12 +5,14 @@ Classes and routines defined in :mod:`GSASIIobj` follow.
 # Note that documentation for GSASIIobj.py has been moved
 # to file docs/source/GSASIIobj.rst
 
-import re
-import random as ran
-import sys
 import os.path
 import pickle
+import random as ran
+import re
+import sys
+
 import numpy as np
+
 from GSASII import GSASIImath as G2mth
 from GSASII import GSASIIspc as G2spc
 
@@ -83,9 +84,8 @@ def MakeUniqueLabel(lbl,labellist):
             prefix = lbl
     while prefix+'_'+str(i) in labellist:
         i += 1
-    else:
-        lbl = prefix+'_'+str(i)
-        labellist.append(lbl)
+    lbl = prefix+'_'+str(i)
+    labellist.append(lbl)
     return lbl
 
 PhaseIdLookup = {}
@@ -160,7 +160,7 @@ def GetPhaseNames(fl):
         except EOFError:
             break
         datum = data[0]
-        if 'Phases' == datum[0]:
+        if datum[0] == 'Phases':
             for datus in data[1:]:
                 PhaseNames.append(datus[0])
     fl.seek(0)          #reposition file
@@ -233,10 +233,10 @@ def ReadCIF(URLorFile):
     :returns: a PyCifRW CIF object or an empty string if PyCifRW is not accessible
     '''
     try:
-        import CifFile as cif # PyCifRW from James Hester as a package
+        import CifFile as cif  # PyCifRW from James Hester as a package
     except ImportError:
         try:
-            from .. import CifFile as cif # PyCifRW, as distributed w/G2 (old)
+            from .. import CifFile as cif  # PyCifRW, as distributed w/G2 (old)
         except ImportError:
             return ''
 
@@ -245,11 +245,11 @@ def ReadCIF(URLorFile):
     #ciffile = 'file:'+urllib.pathname2url(filename)
 
     try:
-        fp = open(URLorFile,'r')
+        fp = open(URLorFile)
         cf = cif.ReadCif(fp)
         fp.close()
         return cf
-    except IOError:
+    except OSError:
         return cif.ReadCif(URLorFile)
 
 def TestIndexAll():
@@ -611,9 +611,9 @@ def CompileVarDesc():
     for key,value in {
         # derived or other sequential vars
         '([abc])$' : 'Lattice parameter, \\1, from Ai and Djk', # N.B. '$' prevents match if any characters follow
-        u'\u03B1' : u'Lattice parameter, \u03B1, computed from both Ai and Djk',
-        u'\u03B2' : u'Lattice parameter, \u03B2, computed from both Ai and Djk',
-        u'\u03B3' : u'Lattice parameter, \u03B3, computed from both Ai and Djk',
+        '\u03B1' : 'Lattice parameter, \u03B1, computed from both Ai and Djk',
+        '\u03B2' : 'Lattice parameter, \u03B2, computed from both Ai and Djk',
+        '\u03B3' : 'Lattice parameter, \u03B3, computed from both Ai and Djk',
         # ambiguous, alas:
         'Scale' : 'Phase fraction (as p:h:Scale) or Histogram scale factor (as :h:Scale)',
         # Phase vars (p::<var>)
@@ -930,7 +930,7 @@ def SortVariables(varlist):
         return v
     return sorted(varlist,key=cvnnums)
 
-class G2VarObj(object):
+class G2VarObj:
     '''Defines a GSAS-II variable either using the phase/atom/histogram
     unique Id numbers or using a character string that specifies
     variables by phase/atom/histogram number (which can change).
@@ -1104,8 +1104,8 @@ class G2VarObj(object):
         if type(other) is str:
             other = G2VarObj(other)
         elif type(other) is not G2VarObj:
-            raise Exception("Invalid type ({}) for G2VarObj comparison with {}"
-                            .format(type(other),other))
+            raise Exception(f"Invalid type ({type(other)}) for G2VarObj comparison with {other}"
+                            )
         if self.phase != other.phase and self.phase != '*' and other.phase != '*':
             return False
         if self.histogram != other.histogram and self.histogram != '*' and other.histogram != '*':
@@ -1180,7 +1180,7 @@ def SetDefaultSample():
         'SlitLen':0.0,                          #Slit length - in Q(A-1)
         }
 ######################################################################
-class ImportBaseclass(object):
+class ImportBaseclass:
     '''Defines a base class for the reading of input files (diffraction
     data, coordinates,...). See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use a subclass of this class.
@@ -1192,7 +1192,6 @@ class ImportBaseclass(object):
         Good practice is that the Reader should define a value in self.errors that
         tells the user some information about what is wrong with their file.
         '''
-        pass
 
     UseReader = True  # in __init__ set value of self.UseReader to False to skip use of current importer
     def __init__(self,formatName,longFormatName=None,
@@ -1260,8 +1259,7 @@ class ImportBaseclass(object):
             for ext in self.extensionlist:
                 if sys.platform == 'windows':
                     if filename.lower().endswith(ext): return True
-                else:
-                    if filename.endswith(ext): return True
+                elif filename.endswith(ext): return True
         if self.strictExtension:
             return False
         else:
@@ -1290,11 +1288,9 @@ class ImportBaseclass(object):
             even less likely to find a file with nothing but hashes and
             blank lines'''
             line = l.strip()
-            if len(line) == 0: # ignore blank lines
+            if len(line) == 0 or line.startswith('#'): # ignore blank lines
                 continue
-            elif line.startswith('#'): # ignore comments
-                continue
-            elif line.startswith('data_'): # on the right track, accept this file
+            if line.startswith('data_'): # on the right track, accept this file
                 return True
             else: # found something invalid
                 self.errors = 'line '+str(i+1)+' contains unexpected data:\n'
@@ -1673,7 +1669,7 @@ def FindFunction(f):
         print('call to',f,' failed with error=',str(msg))
         return None,None # not found
 
-class ExpressionObj(object):
+class ExpressionObj:
     '''Defines an object with a user-defined expression, to be used for
     secondary fits or restraints. Object is created null, but is changed
     using :meth:`LoadExpression`. This contains only the minimum
@@ -1856,9 +1852,7 @@ class ExpressionObj(object):
                         v,f = ASTtransverse(b,fxn)
                         varlist += v
                         fxnlist += f
-                    elif node.__class__.__name__ == "Name":
-                        varlist += [b]
-                    elif fxn and node.__class__.__name__ == "Attribute":
+                    elif node.__class__.__name__ == "Name" or (fxn and node.__class__.__name__ == "Attribute"):
                         varlist += [b]
             return varlist,fxnlist
         try:
@@ -1870,7 +1864,7 @@ class ExpressionObj(object):
                 if s: s += "\n"
                 s += str(i)
             self.lastError = ("Error parsing expression:",s)
-            return
+            return None
         # find the variables & functions
         v,f = ASTtransverse(exprast)
         varlist = sorted(list(set(v)))
@@ -1882,11 +1876,11 @@ class ExpressionObj(object):
             if not fxnobj:
                 self.lastError = ("Error: Invalid function",fxn,
                                   "is not defined")
-                return
-            if not hasattr(fxnobj,'__call__'):
+                return None
+            if not callable(fxnobj):
                 self.lastError = ("Error: Not a function.",fxn,
                                   "cannot be called as a function")
-                return
+                return None
             pkgdict.update(fxndict)
         return varlist,pkgdict
 
@@ -1898,7 +1892,7 @@ class ExpressionObj(object):
         'Set the dependent variable, if used'
         self.depVar = var
 #==========================================================================
-class ExpressionCalcObj(object):
+class ExpressionCalcObj:
     '''An object used to evaluate an expression from a :class:`ExpressionObj`
     object.
 
@@ -2008,7 +2002,7 @@ class ExpressionCalcObj(object):
         :param list varList: a list of variable names
         :param list valList: a list of corresponding values
         '''
-        for var,val in zip(varList,valList):
+        for var,val in zip(varList,valList, strict=False):
             self.exprDict[self.lblLookup.get(var,'undefined: '+var)] = val
 
     def UpdateDict(self,parmDict):
@@ -2156,7 +2150,7 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
         {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
     return Id
 
-class ShowTiming(object):
+class ShowTiming:
     '''An object to use for timing repeated sections of code.
 
     Create the object with::
@@ -2201,9 +2195,9 @@ class ShowTiming(object):
         self.prev = None
     def show(self):
         sumT = sum(self.timeSum)
-        print('Timing results (total={:.2f} sec)'.format(sumT))
-        for i,(lbl,val) in enumerate(zip(self.label,self.timeSum)):
-            print('{} {:20} {:8.2f} ms {:5.2f}%'.format(i,lbl,1000.*val,100*val/sumT))
+        print(f'Timing results (total={sumT:.2f} sec)')
+        for i,(lbl,val) in enumerate(zip(self.label,self.timeSum, strict=False)):
+            print(f'{i} {lbl:20} {1000.*val:8.2f} ms {100*val/sumT:5.2f}%')
 
 def validateAtomDrawType(typ,generalData={}):
     '''Confirm that the selected Atom drawing type is valid for the current
@@ -2228,7 +2222,7 @@ def patchControls(Controls):
         if d not in Controls: Controls[d] = {}
         for k in Controls[d]:
             if type(k) is str:
-                G2fil.G2Print("Applying patch to Controls['{}']".format(d))
+                G2fil.G2Print(f"Applying patch to Controls['{d}']")
                 Controls[d] = {G2VarObj(k):v for k,v in Controls[d].items()}
                 break
     conv = False
@@ -2265,14 +2259,14 @@ if __name__ == "__main__":
 
     obj.expression = "A*np.exp(B)"
     obj.assgnVars =  {'B': '0::Afrac:1'}
-    obj.freeVars =  {'A': [u'A', 0.5, True]}
+    obj.freeVars =  {'A': ['A', 0.5, True]}
     #obj.CheckVars()
     calcobj = ExpressionCalcObj(obj)
 
     obj1 = ExpressionObj()
     obj1.expression = "A*np.exp(B)"
     obj1.assgnVars =  {'B': '0::Afrac:*'}
-    obj1.freeVars =  {'A': [u'Free Prm A', 0.5, True]}
+    obj1.freeVars =  {'A': ['Free Prm A', 0.5, True]}
     #obj.CheckVars()
     calcobj1 = ExpressionCalcObj(obj1)
 

@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 ''':mod:`GSASIIspc` Classes & routines follow
 '''
-from __future__ import division, print_function
+import copy
+import sys
+
 import numpy as np
 import numpy.linalg as nl
 import scipy.optimize as so
-import sys
-import copy
-import os.path as ospath
 
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
 from . import GSASIIlattice as G2lat
 
@@ -205,16 +204,15 @@ def SpcGroup(SGSymbol):
         elif SGData['SGPtGrp'] in  ['-3m',]:
             SGData['SGSpin'] = 5*[1,]
 
-    else:
-        if SGData['SGPtGrp'] in ['1','3','23',]:
-            SGData['SGSpin'] = lattSpin+[1,]
-        elif SGData['SGPtGrp'] in ['-1','2','m','4','-4','-3','312','321','3m1','31m','6','-6','432','-43m']:
-            SGData['SGSpin'] = lattSpin+[1,1,]
-        elif SGData['SGPtGrp'] in ['2/m','4/m','422','4mm','-42m','-4m2','-3m1','-31m',
-            '6/m','622','6mm','-6m2','-62m','m3','m3m']:
-            SGData['SGSpin'] = lattSpin+[1,1,1,]
-        else: #'222'-'mmm','4/mmm','6/mmm'
-            SGData['SGSpin'] = lattSpin+[1,1,1,1,]
+    elif SGData['SGPtGrp'] in ['1','3','23',]:
+        SGData['SGSpin'] = lattSpin+[1,]
+    elif SGData['SGPtGrp'] in ['-1','2','m','4','-4','-3','312','321','3m1','31m','6','-6','432','-43m']:
+        SGData['SGSpin'] = lattSpin+[1,1,]
+    elif SGData['SGPtGrp'] in ['2/m','4/m','422','4mm','-42m','-4m2','-3m1','-31m',
+        '6/m','622','6mm','-6m2','-62m','m3','m3m']:
+        SGData['SGSpin'] = lattSpin+[1,1,1,]
+    else: #'222'-'mmm','4/mmm','6/mmm'
+        SGData['SGSpin'] = lattSpin+[1,1,1,1,]
     return SGInfo[-1],SGData
 
 def SGErrors(IErr):
@@ -576,11 +574,10 @@ def MT2text(Opr,reverse=False):
                     Fld += (XYZ[IJ]+'+'+TRA[IK]).rjust(5)
                 else:
                     Fld += (TRA[IK]+XYZ[IJ]).rjust(5)
+            elif reverse:
+                Fld += (XYZ[IJ]+'+'+TRA[IK]).rjust(5)
             else:
-                if reverse:
-                    Fld += (XYZ[IJ]+'+'+TRA[IK]).rjust(5)
-                else:
-                    Fld += (TRA[IK]+'+'+XYZ[IJ]).rjust(5)
+                Fld += (TRA[IK]+'+'+XYZ[IJ]).rjust(5)
         else:
             Fld += XYZ[IJ].rjust(5)
         if j != 2: Fld += ', '
@@ -600,7 +597,7 @@ def Latt2text(Cen):
             if icen == 1:
                 txt += '1,'
                 continue
-            elif icen == -1:
+            if icen == -1:
                 txt += '-1,'
                 continue
             if not icen:
@@ -609,7 +606,7 @@ def Latt2text(Cen):
             if icen < 0:
                 txt += '-'
                 icen *= -1
-            for mul,prod,frac in zip(mulList,prodList,fracList):
+            for mul,prod,frac in zip(mulList,prodList,fracList, strict=False):
                 if abs(icen*mul-prod) < 1.e-5:
                     txt += frac+','
                     break
@@ -657,13 +654,13 @@ def SplitMagSpSG(MSpSg):
         Ib = If+1
     else:
         If = Ib+len(Sflds[1])
-        if "'" == MSpSg[If]:
+        if MSpSg[If] == "'":
             If += 1
         Axf.append(MSpSg[Ib:If])
         Ib = If
     for i in range(len(Sflds)-2):   #do rest
         If = Ib+len(Sflds[i+2])
-        if "'" == MSpSg[If]:
+        if MSpSg[If] == "'":
             If += 1
         Axf.append(MSpSg[Ib:If])
         Ib = If
@@ -748,17 +745,16 @@ def GetGenSym(SGData):
                 OprFlg.append(SGData['SGGen'][1])
                 UsymOp.append(OprNames[6])
                 OprFlg.append(SGData['SGGen'][6])
-            else:
-                if 'x' in OprNames[4]:      #4mm type group
-                    UsymOp.append(OprNames[4])
-                    OprFlg.append(6)
-                    UsymOp.append(OprNames[7])
-                    OprFlg.append(8)
-                else:                       #-42m, -4m2, and 422 type groups
-                    UsymOp.append(OprNames[6])
-                    OprFlg.append(19)
-                    UsymOp.append(OprNames[5])
-                    OprFlg.append(8)
+            elif 'x' in OprNames[4]:      #4mm type group
+                UsymOp.append(OprNames[4])
+                OprFlg.append(6)
+                UsymOp.append(OprNames[7])
+                OprFlg.append(8)
+            else:                       #-42m, -4m2, and 422 type groups
+                UsymOp.append(OprNames[6])
+                OprFlg.append(19)
+                UsymOp.append(OprNames[5])
+                OprFlg.append(8)
         else:                               #Orthorhombic, mmm
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
@@ -788,9 +784,7 @@ def GetGenSym(SGData):
             UsymOp.append('')
             OprFlg.append(SGData['SGGen'][3])
             for i in range(Nsyms):
-                if 'mx' in OprNames[i]:
-                    UsymOp[-1] = OprNames[i]
-                elif 'm11' in OprNames[i]:
+                if 'mx' in OprNames[i] or 'm11' in OprNames[i]:
                     UsymOp[-1] = OprNames[i]
                 elif '211' in OprNames[i]:
                     UsymOp[-1] = OprNames[i]
@@ -808,12 +802,11 @@ def GetGenSym(SGData):
                 OprFlg.append(4)
                 UsymOp.append(' m+-0 ')
                 OprFlg.append(8)
-    else:                                           #System is cubic
-        if Nsyms == 48:
-            UsymOp.append('  mx  ')
-            OprFlg.append(4)
-            UsymOp.append(' m110 ')
-            OprFlg.append(24)
+    elif Nsyms == 48:
+        UsymOp.append('  mx  ')
+        OprFlg.append(4)
+        UsymOp.append(' m110 ')
+        OprFlg.append(24)
 
     if 'P' in SGData['SGLatt']:
         if SGData['SGSys'] == 'triclinic':
@@ -1038,30 +1031,29 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
             if SpnFlp[1]*SpnFlp[2] < 0:
                 magSym[1] += "'"
                 magPtGp[0] += "'"
+        elif '/' in magSym[1]:    #P 4/m m m, etc.
+            sym = magSym[1].split('/')
+            Ptsym = ['4','m']
+            magPtGp = ['','m','m']
+            for i in [0,1,2]:
+                if SpnFlp[i+1] < 0:
+                    if i:
+                        magSym[i+1] += "'"
+                        magPtGp[i] += "'"
+                    else:
+                        sym[1] += "'"
+                        Ptsym[1] += "'"
+            if SpnFlp[2]*SpnFlp[3] < 0:
+                sym[0] += "'"
+                Ptsym[0] += "'"
+            magSym[1] = '/'.join(sym)
+            magPtGp[0] = '/'.join(Ptsym)
         else:
-            if '/' in magSym[1]:    #P 4/m m m, etc.
-                sym = magSym[1].split('/')
-                Ptsym = ['4','m']
-                magPtGp = ['','m','m']
-                for i in [0,1,2]:
-                    if SpnFlp[i+1] < 0:
-                        if i:
-                            magSym[i+1] += "'"
-                            magPtGp[i] += "'"
-                        else:
-                            sym[1] += "'"
-                            Ptsym[1] += "'"
-                if SpnFlp[2]*SpnFlp[3] < 0:
-                    sym[0] += "'"
-                    Ptsym[0] += "'"
-                magSym[1] = '/'.join(sym)
-                magPtGp[0] = '/'.join(Ptsym)
-            else:
-                for i in [0,1]:
-                    if SpnFlp[i+1] < 0:
-                        magSym[i+2] += "'"
-                if SpnFlp[1]*SpnFlp[2] < 0:
-                    magSym[1] += "'"
+            for i in [0,1]:
+                if SpnFlp[i+1] < 0:
+                    magSym[i+2] += "'"
+            if SpnFlp[1]*SpnFlp[2] < 0:
+                magSym[1] += "'"
         SGData['MagPtGp'] = ''.join(magPtGp)
     elif SGLaue in ['3','3m1','31m']:   #ok
         if '-' in SGPtGrp:
@@ -1132,7 +1124,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
             magSym[2] += "'"
             SGData['MagPtGp'] = "m'3'"
         if SpnFlp[1] < 0:
-            if not 'm' in magSym[1]:    #only Ia3
+            if 'm' not in magSym[1]:    #only Ia3
                 magSym[1].strip("'")
                 SGData['MagPtGp'] = "m3'"
     elif SGData['SGPtGrp'] in ['432','-43m']:
@@ -1500,11 +1492,10 @@ def SSpcGroup(SGData,SSymbol):
                 return [i*-1 for i in result]
             else:
                 return result
-        else:   #orthorhombic
-            if mod:
-                return [-SSGKl[i] if mod[i] in ['a','b','g'] else SSGKl[i] for i in range(3)]
-            else:
-                return [SSGKl[i] for i in range(3)]
+        elif mod:
+            return [-SSGKl[i] if mod[i] in ['a','b','g'] else SSGKl[i] for i in range(3)]
+        else:
+            return [SSGKl[i] for i in range(3)]
 
     def extendSSGOps(SSGOps):
         for OpA in SSGOps:
@@ -1525,21 +1516,18 @@ def SSpcGroup(SGData,SSymbol):
                     if SGData['SGGray']:
                         OpDtxt2 = SSMT2text([OpD[0],OpD[1]+np.array([0.,0.,0.,.5])])
 #                    print '    ('+OpCtxt.replace(' ','')+' = ? '+OpDtxt.replace(' ','')+')'
-                    if OpCtxt == OpDtxt:
+                    if OpCtxt == OpDtxt or OpCtxt == OpDtxt2:
                         continue
-                    elif OpCtxt == OpDtxt2:
-                        continue
-                    elif OpCtxt.split(',')[:3] == OpDtxt.split(',')[:3]:
+                    if OpCtxt.split(',')[:3] == OpDtxt.split(',')[:3]:
                         if 't' not in OpDtxt:
                             SSGOps[k] = OpC
 #                            print k,'   new:',OpCtxt.replace(' ','')
                             break
-                        else:
-                            OpCtxt = OpCtxt.replace(' ','')
-                            OpDtxt = OpDtxt.replace(' ','')
-                            Txt = OpCtxt+' conflicts with '+OpDtxt
+                        OpCtxt = OpCtxt.replace(' ','')
+                        OpDtxt = OpDtxt.replace(' ','')
+                        Txt = OpCtxt+' conflicts with '+OpDtxt
 #                            print (Txt)
-                            return False,Txt
+                        return False,Txt
         return True,SSGOps
 
     def findMod(modSym):
@@ -1973,11 +1961,10 @@ def SSGPrint(SGData,SSGData,AddInv=False):
         else:
             SSGCen += list(SSGData['SSGCen']+[0,0,0,0.5])
             SSGCen =  np.array(SSGCen)%1.
-    else:
-        if "1'" in SSsymb:  #leftover in nonmag phase in mcif file
-            nCen //= 2
-            Mult //= 2
-            SSsymb = SSsymb.replace("1'",'')[:-1]
+    elif "1'" in SSsymb:  #leftover in nonmag phase in mcif file
+        nCen //= 2
+        Mult //= 2
+        SSsymb = SSsymb.replace("1'",'')[:-1]
     SSGText = []
     SSGText.append(' Superspace Group: '+SSsymb)
     CentStr = 'centrosymmetric'
@@ -2024,8 +2011,8 @@ def SSGModCheck(Vec,modSymb,newMod=True):
     if newMod:
         newVec = Vec
         if not np.any(Vec):
-            newVec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb)]
-        return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(newVec,modSymb,modQ)],  \
+            newVec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb, strict=False)]
+        return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(newVec,modSymb,modQ, strict=False)],  \
             [True if mod in ['a','b','g'] else False for mod in modSymb]
     else:
         return Vec,[True if mod in ['a','b','g'] else False for mod in modSymb]
@@ -2146,7 +2133,7 @@ def Opposite(XYZ,toler=0.0002):
     TB = np.where(abs(XYZ-1)<toler,-1,0)+np.where(abs(XYZ)<toler,1,0)
     perm = TB*perm3
     cperm = ['%d,%d,%d'%(i,j,k) for i,j,k in perm]
-    D = dict(zip(cperm,perm))
+    D = dict(zip(cperm,perm, strict=False))
     new = {}
     for key in D:
         new[key] = np.array(D[key])+np.array(XYZ)
@@ -2206,9 +2193,8 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 if All:
                     if np.allclose(newX,X,atol=0.0002):     #do we want %1. here?
                         idup = False
-                else:
-                    if True in [np.allclose(newX%1.,oldX%1.,atol=0.0002) for oldX in XYZEquiv]:
-                        idup = False
+                elif True in [np.allclose(newX%1.,oldX%1.,atol=0.0002) for oldX in XYZEquiv]:
+                    idup = False
                 if All or idup:
                     XYZEquiv.append(newX)
                     Idup.append(idup)
@@ -2221,9 +2207,9 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                         spnflp.append(1)
                 mj += 1
     if len(Uij):
-        return zip(XYZEquiv,UijEquiv,Idup,Cell,spnflp)
+        return zip(XYZEquiv,UijEquiv,Idup,Cell,spnflp, strict=False)
     else:
-        return zip(XYZEquiv,Idup,Cell,spnflp)
+        return zip(XYZEquiv,Idup,Cell,spnflp, strict=False)
 
 def GenHKL(HKL,SGData):
     ''' Generates all equivlent reflections including Friedel pairs
@@ -2260,7 +2246,7 @@ def GenHKLf(HKL,SGData):
 
     Nuniq,Uniq,iabsnt,mulp = pyspg.genhklpy(hklf,len(Ops),OpM,OpT,SGData['SGInv'],len(Cen),Cen)
     h,k,l,f = Uniq
-    Uniq=np.array(list(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq])))
+    Uniq=np.array(list(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq], strict=False)))
     phi = f[:Nuniq]
     return iabsnt,mulp,Uniq,phi
 
@@ -2269,23 +2255,17 @@ def checkSSLaue(HKL,SGData,SSGData):
     h,k,l,m = HKL
     if SGData['SGLaue'] == '2/m':
         if SGData['SGUniq'] == 'a':
-            if 'a' in SSGData['modSymb'] and h == 0 and m < 0:
-                return False
-            elif 'b' in SSGData['modSymb'] and k == 0 and l ==0 and m < 0:
+            if ('a' in SSGData['modSymb'] and h == 0 and m < 0) or ('b' in SSGData['modSymb'] and k == 0 and l ==0 and m < 0):
                 return False
             else:
                 return True
         elif SGData['SGUniq'] == 'b':
-            if 'b' in SSGData['modSymb'] and k == 0 and m < 0:
-                return False
-            elif 'a' in SSGData['modSymb'] and h == 0 and l ==0 and m < 0:
+            if ('b' in SSGData['modSymb'] and k == 0 and m < 0) or ('a' in SSGData['modSymb'] and h == 0 and l ==0 and m < 0):
                 return False
             else:
                 return True
         elif SGData['SGUniq'] == 'c':
-            if 'g' in SSGData['modSymb'] and l == 0 and m < 0:
-                return False
-            elif 'a' in SSGData['modSymb'] and h == 0 and k ==0 and m < 0:
+            if ('g' in SSGData['modSymb'] and l == 0 and m < 0) or ('a' in SSGData['modSymb'] and h == 0 and k ==0 and m < 0):
                 return False
             else:
                 return True
@@ -2305,11 +2285,10 @@ def checkSSLaue(HKL,SGData,SSGData):
                 return False
             else:
                 return True
-    else:   #tetragonal, trigonal, hexagonal (& triclinic?)
-        if l == 0 and m < 0:
-            return False
-        else:
-            return True
+    elif l == 0 and m < 0:
+        return False
+    else:
+        return True
 
 def checkHKLextc(HKL,SGData):
     '''
@@ -2326,12 +2305,11 @@ def checkHKLextc(HKL,SGData):
     HKLS = np.array([HKL,-HKL])     #Freidel's Law
     DHKL = np.reshape(np.inner(HKLS,OpM)-HKL,(-1,3))
     PHKL = np.reshape(np.inner(HKLS,OpT),(-1,))
-    for dhkl,phkl in zip(DHKL,PHKL)[1:]:    #skip identity
+    for dhkl,phkl in zip(DHKL,PHKL, strict=False)[1:]:    #skip identity
         if dhkl.any():
             continue
-        else:
-            if phkl%1.:
-                return True
+        if phkl%1.:
+            return True
     return False
 
 def checkMagextc(HKL,SGData):
@@ -2361,14 +2339,13 @@ def checkMagextc(HKL,SGData):
     Psum = np.zeros(3)
     nsum = 0.
     nA = 0
-    for dhkl,phkl in zip(DHKL,PHKL):
+    for dhkl,phkl in zip(DHKL,PHKL, strict=False):
         if not np.allclose(dhkl,HKL,atol=1.e-3):           #test for eq(5)
             continue
-        else:
-            nA += 1
-            nsum += np.trace(phkl)          #eq(8)
-            pterm = np.inner(Ftest,phkl)    #eq(9)
-            Psum += pterm
+        nA += 1
+        nsum += np.trace(phkl)          #eq(8)
+        pterm = np.inner(Ftest,phkl)    #eq(9)
+        Psum += pterm
     if nsum/nA > 1.:        #only need to look at nA=1 from eq(8)
         return False
     if np.allclose(Psum,np.zeros(3),atol=1.e-3):
@@ -2385,12 +2362,11 @@ def checkSSextc(HKL,SSGData):
     HKLS = np.array([HKL,-HKL])     #Freidel's Law
     DHKL = np.reshape(np.inner(HKLS,OpM)-HKL,(-1,4))
     PHKL = np.reshape(np.inner(HKLS,OpT),(-1,))
-    for dhkl,phkl in list(zip(DHKL,PHKL))[1:]:    #skip identity
+    for dhkl,phkl in list(zip(DHKL,PHKL, strict=False))[1:]:    #skip identity
         if dhkl.any():
             continue
-        else:
-            if phkl%1.:
-                return False
+        if phkl%1.:
+            return False
     return True
 
 ################################################################################
@@ -3104,7 +3080,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
     SSGOps = copy.deepcopy(SSGData['SSGOps'])
     #expand ops to include inversions if any
     if SGData['SGInv'] and not SGData['SGFixed']:
-        for op,sop in zip(SGData['SGOps'],SSGData['SSGOps']):
+        for op,sop in zip(SGData['SGOps'],SSGData['SSGOps'], strict=False):
             SGOps.append([-op[0],-op[1]%1.])
             SSGOps.append([-sop[0],-sop[1]%1.])
     #build set of sym ops around special position
@@ -3115,11 +3091,11 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         nxyz = (np.inner(Op[0],xyz)+Op[1])%1.
         if np.allclose(xyz,nxyz,1.e-4) and iop and MT2text(Op).replace(' ','') != '-X,-Y,-Z':
             SSop.append(SSGOps[iop])
-            Sop.append(SGOps[iop])
+            Sop.append(Op)
             ssopinv = nl.inv(SSGOps[iop][0])
             mst = ssopinv[3][:3]
             epsinv = ssopinv[3][3]
-            Sdtau.append(np.sum(mst*(XYZ-SGOps[iop][1])-epsinv*SSGOps[iop][1][3]))
+            Sdtau.append(np.sum(mst*(XYZ-Op[1])-epsinv*SSGOps[iop][1][3]))
     SdIndx = np.argsort(np.array(Sdtau))     # just to do in sensible order
     if debug: print ('special pos super operators: ',[SSMT2text(ss).replace(' ','') for ss in SSop])
     #setup displacement arrays
@@ -3338,13 +3314,9 @@ def Muiso2Shkl(muiso,SGData,cell):
     HKL = np.dstack((X,Y,Z))
     if laue in ['m3','m3m']:
         S0 = [1000.,1000.]
-    elif laue in ['6/m','6/mmm']:
+    elif laue in ['6/m','6/mmm'] or laue in ['31m','3','3m1']:
         S0 = [1000.,1000.,1000.]
-    elif laue in ['31m','3','3m1']:
-        S0 = [1000.,1000.,1000.]
-    elif laue in ['3R','3mR']:
-        S0 = [1000.,1000.,1000.,1000.]
-    elif laue in ['4/m','4/mmm']:
+    elif laue in ['3R','3mR'] or laue in ['4/m','4/mmm']:
         S0 = [1000.,1000.,1000.,1000.]
     elif laue in ['mmm']:
         S0 = [1000.,1000.,1000.,1000.,1000.,1000.]
@@ -3606,7 +3578,6 @@ def UpdateSytSym(Phase):
             magSytSym = MagSytSym(sytSym,dupDir,SGData)
             atom[cs] = magSytSym
         atom[cs+1] = Mult
-    return
 
 def ElemPosition(SGData):
     ''' Under development.
@@ -3624,7 +3595,7 @@ def ElemPosition(SGData):
     if Inv:
         opM = np.concatenate((opM,-opM))
         opT = np.concatenate((opT,-opT))
-    opMT = list(zip(opM,opT))
+    opMT = list(zip(opM,opT, strict=False))
     for M,T in opMT[1:]:        #skip I
         Dt = int(nl.det(M))
         Tr = int(np.trace(M))

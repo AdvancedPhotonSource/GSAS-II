@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
 '''Class to read a phase from an existing GSAS-II project file
 '''
-from __future__ import division, print_function
-import platform
-import sys
 import pickle
+import platform
 import random as ran
+import sys
+
 from .. import GSASIIobj as G2obj
 from .. import GSASIIstrIO as G2stIO
+
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .GPX file and pulls out a selected phase'

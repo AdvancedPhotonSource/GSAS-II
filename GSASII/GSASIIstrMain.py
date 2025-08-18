@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 :mod:`GSASIIstrMain` routines, used for refinement, or refinement-related
 computations (e.g. distance & angle computations), are found below.
@@ -9,29 +8,32 @@ input will have been read from the file/tree and are passed to thes
 routines here as arguments. The data tree is never accessed directly in
 this module and no GUI modules should be imported here.
 '''
-from __future__ import division, print_function
-import sys
-import os.path as ospath
-import time
-import math
 import copy
+import math
+import os.path as ospath
 import pickle
+import sys
+import time
+
 import numpy as np
 import numpy.linalg as nl
-import numpy.ma as ma
 import scipy.optimize as so
+from numpy import ma
+
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
+from . import GSASIIElem as G2elem
+from . import GSASIIfiles as G2fil
 from . import GSASIIlattice as G2lat
-from . import GSASIIspc as G2spc
 from . import GSASIImapvars as G2mv
 from . import GSASIImath as G2mth
+from . import GSASIIobj as G2obj
+from . import GSASIIspc as G2spc
 from . import GSASIIstrIO as G2stIO
 from . import GSASIIstrMath as G2stMth
-from . import GSASIIobj as G2obj
-from . import GSASIIfiles as G2fil
-from . import GSASIIElem as G2elem
 from . import atmdata
+
 try:
     if GSASIIpath.binaryPath:
         import pytexture as ptx
@@ -61,33 +63,33 @@ def ReportProblems(result,Rvals,varyList):
     psing = result[2].get('psing',[])
     if len(psing):
         if msg: msg += '\n'
-        m = 'Error: {} Parameter(s) dropped:'.format(len(psing))
+        m = f'Error: {len(psing)} Parameter(s) dropped:'
         msg += m
         G2fil.G2Print(m, mode='warn')
         m = ''
         for i,val in enumerate(psing):
             if i == 0:
-                msg += '\n{}'.format(varyList[val])
-                m = '  {}'.format(varyList[val])
+                msg += f'\n{varyList[val]}'
+                m = f'  {varyList[val]}'
             else:
                 if len(m) > 70:
                     G2fil.G2Print(m, mode='warn')
                     m = '  '
                 else:
                     m += ', '
-                m += '{}'.format(varyList[val])
+                m += f'{varyList[val]}'
                 if i == 10:
-                    msg += ', {}... see console for full list'.format(varyList[val])
+                    msg += f', {varyList[val]}... see console for full list'
                 elif i > 10:
                     pass
                 else:
-                    msg += ', {}'.format(varyList[val])
+                    msg += f', {varyList[val]}'
         if m: G2fil.G2Print(m, mode='warn')
     SVD0 = result[2].get('SVD0',0)
     if SVD0 == 1:
         msg += 'Warning: Soft (SVD) singularity in the Hessian'
     elif SVD0 > 0:
-        msg += 'Warning: {} soft (SVD) Hessian singularities'.format(SVD0)
+        msg += f'Warning: {SVD0} soft (SVD) Hessian singularities'
     SVDsing = result[2].get('SVDsing',[])
     if len(SVDsing):
         if msg: msg += '\n'
@@ -97,21 +99,21 @@ def ReportProblems(result,Rvals,varyList):
         m = ''
         for i,val in enumerate(SVDsing):
             if i == 0:
-                msg += '\n{}'.format(varyList[val])
-                m = '  {}'.format(varyList[val])
+                msg += f'\n{varyList[val]}'
+                m = f'  {varyList[val]}'
             else:
                 if len(m) > 70:
                     G2fil.G2Print(m, mode='warn')
                     m = '  '
                 else:
                     m += ', '
-                m += '{}'.format(varyList[val])
+                m += f'{varyList[val]}'
                 if i == 10:
-                    msg += ', {}... see console for full list'.format(varyList[val])
+                    msg += f', {varyList[val]}... see console for full list'
                 elif i > 10:
                     pass
                 else:
-                    msg += ', {}'.format(varyList[val])
+                    msg += f', {varyList[val]}'
         if m: G2fil.G2Print(m, mode='warn')
     #report on highly correlated variables
     Hcorr = result[2].get('Hcorr',[])
@@ -130,8 +132,7 @@ def ReportProblems(result,Rvals,varyList):
             stars = '**'
         else:
             stars = '   '
-        m = ' {} {} and {} (@{:.2f}%)'.format(
-            stars,varyList[v1],varyList[v2],100.*corr)
+        m = f' {stars} {varyList[v1]} and {varyList[v2]} (@{100.*corr:.2f}%)'
         G2fil.G2Print(m, mode='warn')
         if i == 5:
             msg += '\n' + m
@@ -234,8 +235,7 @@ def AllPrmDerivs(Controls,Histograms,Phases,restraintDict,rigidbodyDict,
             delta = 1e-6
         if nam in ['A0','A1','A2','A3','A4','A5'] and 'PWDR' not in Histograms.keys():
             continue
-        else:
-            dprm = prm
+        dprm = prm
         #print('***',prm,type(parmDict[prm]))
         #origVal = parmDict[dprm]
         parmDict[dprm] -= delta
@@ -312,7 +312,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,h
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
             if 'lastShifts' in result[2]:
-                Rvals['lastShifts'] = dict(zip(varyList,result[2]['lastShifts']))
+                Rvals['lastShifts'] = dict(zip(varyList,result[2]['lastShifts'], strict=False))
             if 'Ouch#4' in  result[2]:
                 Rvals['Aborted'] = True
             if 'msg' in result[2]:
@@ -415,7 +415,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,h
                 elif SVD0 == -2:
                     G2fil.G2Print ('**** Refinement failed - other problem ****',mode='error')
                 elif SVD0 > 0:
-                    G2fil.G2Print ('**** Refinement failed with {} SVD singularities ****'.format(SVD0),mode='error')
+                    G2fil.G2Print (f'**** Refinement failed with {SVD0} SVD singularities ****',mode='error')
                 else:
                     G2fil.G2Print ('**** Refinement failed ****',mode='error')
                 if result[1] is None:
@@ -536,8 +536,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
         if len(frozenList) != 0:
             varyList = [i for i in varyList if i not in parmFrozenList]
             G2fil.G2Print(
-                'Frozen refined variables (due to exceeding limits)\n\t:{}'
-                .format(frozenList))
+                f'Frozen refined variables (due to exceeding limits)\n\t:{frozenList}'
+                )
 
     ifSeq = False
     printFile.write('\n Refinement results:\n')
@@ -556,7 +556,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
             refPlotUpdate=refPlotUpdate)
         if IfOK:
             if len(covMatrix):      #empty for zero cycle refinement
-                sigDict = dict(zip(varyList,sig))
+                sigDict = dict(zip(varyList,sig, strict=False))
                 newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
                 newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)
                 covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
@@ -582,8 +582,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                         Rvals['msg'] += '\n'
                     else:
                         Rvals['msg'] = ''
-                    msg = ('Warning: {} variable(s) refined outside limits and were frozen ({} total frozen)'
-                        .format(len(frozen),len(parmFrozenList))
+                    msg = (f'Warning: {len(frozen)} variable(s) refined outside limits and were frozen ({len(parmFrozenList)} total frozen)'
+                        
                         )
                     G2fil.G2Print(msg)
                     Rvals['msg'] += msg
@@ -592,8 +592,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                         Rvals['msg'] += '\n'
                     else:
                         Rvals['msg'] = ''
-                    msg = ('Note: a total of {} variable(s) are frozen due to refining outside limits'
-                        .format(len(parmFrozenList))
+                    msg = (f'Note: a total of {len(parmFrozenList)} variable(s) are frozen due to refining outside limits'
+                        
                         )
                     G2fil.G2Print('Note: ',msg)
                     Rvals['msg'] += msg
@@ -724,7 +724,7 @@ def DoNoFit(GPXfile,key):
         return False,{'msg':'No data'}
     if key not in Histograms:
         print(f"Error: no histogram by name {key}")
-        return
+        return None
     #TODO: Histograms = {key:Histograms[key]}
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -854,13 +854,13 @@ def phaseCheck(phaseVary,Phases,histogram):
             newVary = [item for item in phaseVary if item.split(':')[0] == str(pId)]
             FixVals = Phases[phase]['Histograms'][histogram].get('Fix FXU',' ')
             if 'F' in FixVals:
-                newVary = [item for item in newVary if not 'Afrac' in item]
+                newVary = [item for item in newVary if 'Afrac' not in item]
             if 'X' in FixVals:
-                newVary = [item for item in newVary if not 'dA' in item]
+                newVary = [item for item in newVary if 'dA' not in item]
             if 'U' in FixVals:
-                newVary = [item for item in newVary if not 'AU' in item]
+                newVary = [item for item in newVary if 'AU' not in item]
             if 'M' in FixVals:
-                newVary = [item for item in newVary if not 'AM' in item]
+                newVary = [item for item in newVary if 'AM' not in item]
             removeVars = Phases[phase]['Histograms'][histogram].get('FixedSeqVars',[])
             newVary = [item for item in newVary if item not in removeVars]
             NewVary += newVary
@@ -944,7 +944,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         calcControls['maxSSwave'] = maxSSwave
         if histogram not in Histograms:
             G2fil.G2Print("Error: not found!")
-            raise G2obj.G2Exception("refining with invalid histogram {}".format(histogram))
+            raise G2obj.G2Exception(f"refining with invalid histogram {histogram}")
         hId = Histograms[histogram]['hId']
         redphaseVary = phaseCheck(phaseVary,Phases,histogram)
         Histo = {histogram:Histograms[histogram],}
@@ -1009,7 +1009,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             G2mv.normParms(parmDict)
             G2mv.Map2Dict(parmDict,varyList)   # changes varyList
         except G2mv.ConstraintException:
-            G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent for histogram {}***'.format(hId))
+            G2fil.G2Print (f' *** ERROR - your constraints are internally inconsistent for histogram {hId}***')
             return False,' Constraint error'
         if not ihst:
             # first histogram to refine against
@@ -1052,8 +1052,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             firstVaryList = newVaryList
 
         ifSeq = True
-        printFile.write('\n Refinement results for histogram id {}: {}\n'
-                            .format(hId,histogram))
+        printFile.write(f'\n Refinement results for histogram id {hId}: {histogram}\n'
+                            )
         printFile.write(135*'-'+'\n')
         lasthist = histogram
         # remove frozen vars
@@ -1071,8 +1071,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                    s+= ', '
                s += a
            printFile.write(
-               ' The following refined variables have previously been frozen due to exceeding limits:\n\t{}\n'
-               .format(s))
+               f' The following refined variables have previously been frozen due to exceeding limits:\n\t{s}\n'
+               )
         G2mv.Dict2Map(parmDict)  # impose constraints initially
         try:
             IfOK,Rvals,result,covMatrix,sig,Lastshft = RefineCore(Controls,Histo,Phases,restraintDict,
@@ -1092,7 +1092,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             if not IfOK:
                 G2fil.G2Print('***** Sequential refinement failed at histogram '+histogram,mode='warn')
                 break
-            sigDict = dict(zip(varyList,sig))
+            sigDict = dict(zip(varyList,sig, strict=False))
             # add indirectly computed uncertainties into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
 
@@ -1117,14 +1117,14 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
             msg = None
             if len(frozen) > 0:
-               msg = ('Hist {}: {} variables were outside limits and were frozen (now {} frozen total)'
-                   .format(ihst,len(frozen),len(parmFrozenList)))
+               msg = (f'Hist {ihst}: {len(frozen)} variables were outside limits and were frozen (now {len(parmFrozenList)} frozen total)'
+                   )
                G2fil.G2Print(msg)
-               msg = (' {} variables were outside limits and were frozen (now {} frozen total)'
-                   .format(len(frozen),len(parmFrozenList)))
+               msg = (f' {len(frozen)} variables were outside limits and were frozen (now {len(parmFrozenList)} frozen total)'
+                   )
                for p in frozen:
                    if p not in varyList:
-                       print('Frozen Warning: {} not in varyList. This should not happen!'.format(p))
+                       print(f'Frozen Warning: {p} not in varyList. This should not happen!')
                        continue
                    i = varyList.index(p)
                    result[0][i] = parmDict[p]
@@ -1167,7 +1167,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             return False,Msg.msg
         if GSASIIpath.GetConfigValue('Show_timing'):
             t2 = time.time()
-            G2fil.G2Print("Fit step time {:.2f} sec.".format(t2-t1))
+            G2fil.G2Print(f"Fit step time {t2-t1:.2f} sec.")
             t1 = t2
     SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
     try:
@@ -1182,7 +1182,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if h == 'FrozenList': continue
         postFrozenCount += len(Controls['parmFrozen'][h])
     if postFrozenCount:
-        msgs['Frozen'] = 'Ending refinement with {} Frozen variables ({} added now)\n'.format(postFrozenCount,postFrozenCount-preFrozenCount)
+        msgs['Frozen'] = f'Ending refinement with {postFrozenCount} Frozen variables ({postFrozenCount-preFrozenCount} added now)\n'
         printFile.write('\n'+msgs['Frozen'])
     printFile.close()
     G2fil.G2Print (' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
@@ -1293,12 +1293,12 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
         rigidbodyDict = DisAglData.get('rigidbodyDict',{})
         parmDict = copy.copy(DisAglData.get('parmDict',{}))
         for dk in parmDict:
-            if not '::dA' in dk: continue
+            if '::dA' not in dk: continue
             parmDict[dk] = 0
         RBlist = DisAglData.get('RBlist',[])
 
     Factor = DisAglCtls['Factors']
-    Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'])))
+    Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'], strict=False), strict=False))
     indices = (-2,-1,0,1,2)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
     origAtoms = DisAglData['OrigAtoms']
@@ -1371,11 +1371,11 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
                 if not vecb: continue
                 if i <= j: continue
                 if (VectRB[i] or VectRB[j]) and covData:  # rigid body atom involved
-                    angSigij = G2mth.getRBAngSig(VectA[i],VectA[j],
+                    angSigij = G2mth.getRBAngSig(veca,vecb,
                             Amat,SGData,covData,
                             multiParmDict,changedParmDict)
                 else:
-                    angSigij = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
+                    angSigij = G2mth.getAngSig(veca,vecb,Amat,SGData,covData)
                 AngArray[Oatom[0]].append((i,j,angSigij))
         if dlg is not None: dlg.Update(iO,newmsg=f'Atoms done={iO} of {len(origAtoms)}')
     return AtomLabels,DistArray,AngArray
@@ -1425,7 +1425,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
         names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
         valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
         line = '\n Unit cell:'
-        for name,vals in zip(names,valEsd):
+        for name,vals in zip(names,valEsd, strict=False):
             line += name+vals
         MyPrint(line)
     else:
@@ -1458,7 +1458,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
         BVox = [BV for BV in atmdata.BVSoxid[Otyp] if '+' in BV]
         if len(BVox):
             BVS = {BV:0.0 for BV in BVox}
-            BVdat = {BV:dict(zip(['O','F','Cl'],atmdata.BVScoeff[BV])) for BV in BVox}
+            BVdat = {BV:dict(zip(['O','F','Cl'],atmdata.BVScoeff[BV], strict=False)) for BV in BVox}
             pvline = 'Bond Valence sums for: '
         for i,dist in enumerate(Dist):
             line = ''
@@ -1592,7 +1592,7 @@ def do_refine(*args):
             Refine(GPXfile,None)
         #else:
         #    SeqRefine(GPXfile,None)
-        G2fil.G2Print("Done with {}.\nExecution time {:.2f} sec.".format(GPXfile,time.time()-starttime))
+        G2fil.G2Print(f"Done with {GPXfile}.\nExecution time {time.time()-starttime:.2f} sec.")
 
 if __name__ == '__main__':
     GSASIIpath.InvokeDebugOpts()

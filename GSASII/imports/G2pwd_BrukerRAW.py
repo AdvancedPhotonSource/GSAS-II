@@ -1,10 +1,13 @@
-# -*- coding: utf-8 -*-
 '''
 '''
 import os
 import struct as st
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
+
 class raw_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a binary Bruker .RAW file'
     def __init__(self):
@@ -62,7 +65,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         fp = open(filename,'rb')
         if 'ver. 1' in self.fmtVer:
             raise Exception('Read of Bruker "RAW " (pre-version #) file not supported')    #for now
-        elif 'ver. 2' in self.fmtVer:
+        if 'ver. 2' in self.fmtVer:
             fp.seek(4)
             nBlock = int(st.unpack('<i',fp.read(4))[0])
             fp.seek(168)

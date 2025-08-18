@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 '''
 '''
-from __future__ import division, print_function
-import platform
 import pickle
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
 
 def pickleLoad(fp):
     return pickle.load(fp,encoding='latin-1')
@@ -120,7 +120,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             if data[i][0] == 'Comments':
                 self.comments = data[i][1]
                 continue
-            elif data[i][0] == 'Sample Parameters':
+            if data[i][0] == 'Sample Parameters':
                 self.Sample = data[i][1]
                 continue
             for keepitem in ('Limits','Background','Instrument Parameters'): 

@@ -1,18 +1,20 @@
-# -*- coding: utf-8 -*-
-from __future__ import division, print_function
-import re
 import copy
-import random as ran
-import sys
 import os
+import random as ran
+import re
+import sys
+
 import numpy as np
 import numpy.linalg as nl
+
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
-from . import GSASIIspc as G2spc
-from . import GSASIIlattice as G2lat
-from . import GSASIIElem as G2elem
 from . import GSASIIctrlGUI as G2G
+from . import GSASIIElem as G2elem
+from . import GSASIIlattice as G2lat
+from . import GSASIIspc as G2spc
+
 bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
 submagSite = bilbaoSite + 'subgrmag1_general_GSAS.pl?'
 pseudosym = 'pseudosym/nph-pseudosym'
@@ -70,7 +72,7 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     for j in [1,2,3]:
         if kvec[3*j-3] == ' ':
             break
-        for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
+        for i,k in zip(('x','y','z'),kvec[3*j-3:3*j], strict=False):
             postdict['knm%d%s'%(j,i)] = k
     page = GSASIIpath.postURL(submagSite,postdict)
     if not page:
@@ -119,7 +121,7 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
             superList.append(getMatVec(items[7]))
             SPGPs.append(getSpGrp(items[4]))
             MVs.append([getMatVec(items[5]),getMatVec(items[6])])
-    result = list(zip(SPGPs,MVs,itemList,altList,superList))
+    result = list(zip(SPGPs,MVs,itemList,altList,superList, strict=False))
     return result,baseList
 
 def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
@@ -183,7 +185,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
     for j in [1,2,3]:
         if kvec[3*j-3] == ' ':
             break
-        for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
+        for i,k in zip(('x','y','z'),kvec[3*j-3:3*j], strict=False):
             postdict['km%d%s'%(j,i)] = k
     page = GSASIIpath.postURL(submagSite,postdict)
     if not page:
@@ -236,16 +238,15 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
             SPGPs.append(spgrp)
             BNSs.append(bns)
             MVs.append([getMatVec(items[5]),getMatVec(items[6])])
-    result = list(zip(SPGPs,BNSs,MVs,itemList,altList,superList))
+    result = list(zip(SPGPs,BNSs,MVs,itemList,altList,superList, strict=False))
     return result,baseList
 
 def subBilbaoCheckLattice(spgNum,cell,tol=5):
     '''submit a unit cell to  Bilbao PseudoLattice
     '''
     psSite = bilbaoSite + "pseudosym/nph-pseudolattice"
-    cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
-    datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
-        str(int(spgNum)),cellstr,str(int(tol)))
+    cellstr = '+'.join([f'{i:.5f}' for i in cell])
+    datastr = f"sgr={int(spgNum)!s}&cell={cellstr}&tol={int(tol)!s}&submit=Show"
     page = GSASIIpath.postURL(psSite,datastr,timeout=timeout)
     if not page:
         print('connection error - not on internet?')
@@ -295,7 +296,7 @@ def GetStdSGset(SGData=None, oprList=[]):
 
     if not bool(oprList) ^ bool(SGData):
         raise ValueError('GetStdSGset: Must specify oprList or SGData and not both')
-    elif SGData:
+    if SGData:
         SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(SGData)
         oprList = [x.lower() for x in SymOpList]
     print('Using Bilbao Crystallographic Server utility IDENTIFY GROUP. '+
@@ -607,9 +608,9 @@ def scanBilbaoSymSearch1(page0,postdict):
                 tr = [i.split('>',1)[1].split('</td')[0] for i in row.split('<td')]
                 tr[6] = tr[6].replace('<br>','\n')
                 tr = [re.sub(r'\<.*?\>','',i).strip() for i in tr]
-                rowdict[value] = tr[1:7] + [not 'invalid' in tr[7]]
+                rowdict[value] = tr[1:7] + ['invalid' not in tr[7]]
                 break
-            elif name is not None and value is not None:
+            if name is not None and value is not None:
                 if name in valsdict and type(valsdict[name]) is str:
                     valsdict[name] = [valsdict[name],value]
                 elif name in valsdict:
@@ -784,7 +785,7 @@ def createStdSetting(cifFile,rd):
     the space group, cell and atom positions from this.
     '''
     try:
-        import requests # delay this until now, since rarely needed
+        import requests  # delay this until now, since rarely needed
     except:
         # this import seems to fail with the Anaconda pythonw on
         # macs; it should not!

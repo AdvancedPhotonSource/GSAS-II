@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 Contains atomic scattering factors from 
 "New Analytical Scattering Factor Functions for Free Atoms

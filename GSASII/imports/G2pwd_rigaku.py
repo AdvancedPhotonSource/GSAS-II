@@ -1,9 +1,12 @@
-# -*- coding: utf-8 -*-
 
 import os
 import os.path as ospath
+
 import numpy as np
+
 from .. import GSASIIobj as G2obj
+
+
 class Rigaku_txtReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
     then 1 or 11(!) intensity values on the line. The example file is proceeded
@@ -145,12 +148,12 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
     # values we will need for later read.
 
     def ContentsValidator(self, filename):
-        fp = open(filename,'r',encoding='latin-1')
+        fp = open(filename,encoding='latin-1')
         self.vals = None
         self.stepsize = None
         if '.rasx' in filename:
             try:
-                import zipfile as ZF        
+                import zipfile as ZF
                 with ZF.ZipFile(filename, 'r') as zipObj:
                     zipObj.extract('Data0/Profile0.txt')
                     zipObj.extract('Data0/MesurementConditions0.xml')
@@ -212,7 +215,7 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
                 
             
         else:    #.ras file
-            fp = open(filename,'r',encoding='latin-1')
+            fp = open(filename,encoding='latin-1')
             blockNum = self.selections[0]
             x = []
             y = []

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 At present this module defines one dict, ``ramachandranDist``,
 which contains arrays for All and specific amino acids.

@@ -112,7 +112,7 @@ report.exclude_also = [
 
 [tool.mypy]
 files = ["src", "tests"]
-python_version = "3.8"
+python_version = "3.10"
 warn_unused_configs = true
 strict = false
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -129,6 +129,7 @@ disallow_incomplete_defs = true
 
 [tool.ruff]
 src = ["src"]
+extend-exclude = ["GSASII/G2shapes.py"]
 
 [tool.ruff.lint]
 extend-select = [
@@ -178,29 +179,12 @@ unfixable = [
   "T20",  # Removes print statements
   "F841", # Removes unused variables
 ]
-# isort.required-imports = ["from __future__ import annotations"]
-# Uncomment if using a _compat.typing backport
-# typing-modules = ["gsas_ii._compat.typing"]
+
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["T20"]
 "noxfile.py" = ["T20"]
 
-
-[tool.pylint]
-py-version = "3.8"
-ignore-paths = [".*/_version.py"]
-extension-pkg-allow-list = ["gsas_ii._core"]
-reports.output-format = "colorized"
-similarities.ignore-imports = "yes"
-messages_control.disable = [
-  "design",
-  "fixme",
-  "line-too-long",
-  "missing-module-docstring",
-  "missing-function-docstring",
-  "wrong-import-position",
-]
 
 [project.gui-scripts]
 GSAS-II = 'GSASII.GSASII:main'

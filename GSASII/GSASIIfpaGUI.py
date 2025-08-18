@@ -1,23 +1,21 @@
-# -*- coding: utf-8 -*-
 '''NIST XRD Fundamental Parameters interface routines follow:
 '''
-from __future__ import division, print_function
-import os.path
-import numpy as np
 import copy
+import os.path
 
+import numpy as np
 import wx
 import wx.lib.scrolledpanel as wxscroll
 
-from . import NIST_profile as FP
-
-from . import GSASIIpath
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIdataGUI as G2gd
-from . import GSASIIplot as G2plt
-from . import GSASIImath as G2mth
-from . import GSASIIpwd as G2pwd
 from . import GSASIIfiles as G2fil
+from . import GSASIImath as G2mth
+from . import GSASIIpath
+from . import GSASIIplot as G2plt
+from . import GSASIIpwd as G2pwd
+from . import NIST_profile as FP
+
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 simParms = {}
@@ -204,7 +202,7 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
         newkey = max(parmDict['wave'].keys())+1
         for key,defVal in zip(
             ('wave','int','lwidth'),
-            (0.0,   1.0,   0.1),
+            (0.0,   1.0,   0.1), strict=False,
             ):
             parmDict[key][newkey] = defVal
         wx.CallAfter(MakeTopasFPASizer,G2frame,FPdlg,SetButtonStatus)
@@ -281,9 +279,9 @@ def MakeTopasFPASizer(G2frame,FPdlg,SetButtonStatus):
     MainSizer.Add((-1,5))
     waveSizer = wx.FlexGridSizer(cols=len(parmDict['wave'])+1,hgap=3,vgap=5)
     for lbl,prm,defVal in zip(
-            (u'Wavelength (\u212b)','Rel. Intensity',u'Lorentz Width\n(\u212b/1000)'),
+            ('Wavelength (\u212b)','Rel. Intensity','Lorentz Width\n(\u212b/1000)'),
             ('wave','int','lwidth'),
-            (0.0,   1.0,   0.1),
+            (0.0,   1.0,   0.1), strict=False,
             ):
         text = wx.StaticText(FPdlg,wx.ID_ANY,lbl,style=wx.ALIGN_CENTER)
         text.SetBackgroundColour(wx.WHITE)
@@ -584,7 +582,7 @@ def MakeSimSizer(G2frame, dlg):
         # check if too few points across Hmax
         if minPtsHM < 10:
             if msg: msg += '\n'
-            msg += 'There are only {} points above the half-max. 10 are needed. Dropping step size.'.format(minPtsHM)
+            msg += f'There are only {minPtsHM} points above the half-max. 10 are needed. Dropping step size.'
             simParms['step'] *= 0.5
         if msg:
             G2G.G2MessageBox(dlg,msg,'Bad input, try again')
@@ -719,13 +717,13 @@ def MakeSimSizer(G2frame, dlg):
         if not filename: return
         if not filename[0]: return
         try:
-            txt = open(filename[0],'r').read()
+            txt = open(filename[0]).read()
             NISTparms.clear()
             d = eval(txt)
             NISTparms.update(d)
         except Exception as err:
             G2G.G2MessageBox(dlg,
-                    u'Error reading file {}:{}\n'.format(filename,err),
+                    f'Error reading file {filename}:{err}\n',
                     'Bad dict input')
         #GSASIIpath.IPyBreak()
         SetButtonStatus()
@@ -807,7 +805,6 @@ def GetFPAInput(G2frame):
     MakeSimSizer(G2frame,dlg)
     dlg.CenterOnParent()
     dlg.Show()
-    return
 
 if __name__ == "__main__":
     app = wx.PySimpleApp()

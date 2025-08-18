@@ -1,32 +1,32 @@
-# -*- coding: utf-8 -*-
 #GSASII - image data display routines
 '''Image GUI routines follow.
 '''
-from __future__ import division, print_function
-import os
 import copy
 import glob
-import time
-import re
 import math
+import os
+import re
 import sys
-import wx
-import wx.lib.mixins.listctrl  as  listmix
-import wx.grid as wg
+import time
+
 import matplotlib as mpl
 import numpy as np
-import numpy.ma as ma
-from . import GSASIIpath
+import wx
+import wx.grid as wg
+import wx.lib.mixins.listctrl as listmix
+from numpy import ma
+
+from . import GSASIIctrlGUI as G2G
+from . import GSASIIdataGUI as G2gd
+from . import GSASIIElem as G2elem
+from . import GSASIIfiles as G2fil
 from . import GSASIIimage as G2img
 from . import GSASIImath as G2mth
-from . import GSASIIElem as G2elem
-from . import GSASIIpwdGUI as G2pdG
-from . import GSASIIplot as G2plt
 from . import GSASIImiscGUI as G2IO
-from . import GSASIIfiles as G2fil
-from . import GSASIIdataGUI as G2gd
-from . import GSASIIctrlGUI as G2G
 from . import GSASIIobj as G2obj
+from . import GSASIIpath
+from . import GSASIIplot as G2plt
+from . import GSASIIpwdGUI as G2pdG
 from . import ImageCalibrants as calFile
 
 # documentation build kludge. This prevents an error with sphinx 1.8.5 (fixed by 2.3) where all mock objects are of type _MockObject
@@ -34,9 +34,9 @@ if (type(wx.ListCtrl).__name__ ==
         type(listmix.ListCtrlAutoWidthMixin).__name__ ==
         type(listmix.TextEditMixin).__name__):
     print('Using Sphinx 1.8.5 _MockObject kludge fix in GSASIIimgGUI')
-    class Junk1(object): pass
+    class Junk1: pass
     listmix.ListCtrlAutoWidthMixin = Junk1
-    class Junk2(object): pass
+    class Junk2: pass
     listmix.TextEditMixin = Junk2
 
 try:
@@ -91,8 +91,7 @@ def GetImageZ(G2frame,data,newRange=False):
                 if darkImg is not None:                
                     sumImg += np.array(darkImage*darkScale,dtype=np.float32)
             else:
-                print('Warning: resetting dark image (not found: {})'.format(
-                    darkImg))
+                print(f'Warning: resetting dark image (not found: {darkImg})')
                 data['dark image'][0] = darkImg = ''
     if 'background image' in data:
         backImg,backScale = data['background image']
@@ -210,8 +209,8 @@ def UpdateImageData(G2frame,data):
     G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Image size: %d by %d'%(data['size'][0],data['size'][1])),0)
     pixSize = wx.FlexGridSizer(0,4,5,5)
-    pixLabels = [u' Pixel X-dimension (\xb5m)',u' Pixel Y-dimension (\xb5m)']
-    for i,[pixLabel,pix] in enumerate(zip(pixLabels,data['pixelSize'])):
+    pixLabels = [' Pixel X-dimension (\xb5m)',' Pixel Y-dimension (\xb5m)']
+    for i,[pixLabel,pix] in enumerate(zip(pixLabels,data['pixelSize'], strict=False)):
         pixSize.Add(wx.StaticText(G2frame.dataWindow,label=pixLabel),0,WACV)
         pixVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['pixelSize'],i,nDig=(10,3),
             typeHint=float,OnLeave=OnPixVal)
@@ -686,7 +685,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     else:
                         useMask = copy.deepcopy(savedMask)
                     image = GetImageZ(G2frame,Data)
-                    if not Masks['SpotMask']['spotMask'] is None:
+                    if Masks['SpotMask']['spotMask'] is not None:
                         image = ma.array(image,mask=Masks['SpotMask']['spotMask'])
                     G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,useTA=useTA,useMask=useMask)
                     del image   #force cleanup
@@ -846,7 +845,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                File = open(filename,'r')
+                File = open(filename)
                 Slines = File.readlines()
                 File.close()
                 G2fil.LoadControls(Slines,data)
@@ -871,7 +870,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 filelist = dlg.GetPaths()
                 if len(filelist) == 0: return
                 for filename in filelist:
-                    File = open(filename,'r')
+                    File = open(filename)
                     Slines = File.readlines()
                     for S in Slines:
                         if S.find('twoth') == 0:
@@ -932,8 +931,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 wave0 = data['wavelength']
                 dsp0 = data['calibdmin']
                 flatBkg = data['Flat Bkg']
-                print('distance = {:.2f} integration range: [{:.4f}, {:.4f}], calib dmin {:.3f}'
-                            .format(dist0,ttmin0,ttmax0,dsp0))
+                print(f'distance = {dist0:.2f} integration range: [{ttmin0:.4f}, {ttmax0:.4f}], calib dmin {dsp0:.3f}'
+                            )
                 for item in items:
                     name = Names[item]
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
@@ -1678,8 +1677,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     def computePhaseRings():
         'generate the powder reflections for the selected phase/calibrants'
         from . import GSASIIlattice as G2lat
-        from . import GSASIIspc as G2spc
         from . import GSASIIpwd as G2pwd
+        from . import GSASIIspc as G2spc
         dmin = data['calibdmin']
         G2frame.PhaseRing2Th = []
         for p in phaseOpts['selList']:
@@ -1690,7 +1689,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             if p in phaseOpts['calList']: # this is a calibrant
                 Bravais,SGs,Cells = calFile.Calibrants[p][:3]
                 HKL = []
-                for bravais,sg,cell in zip(Bravais,SGs,Cells):
+                for bravais,sg,cell in zip(Bravais,SGs,Cells, strict=False):
                     A = G2lat.cell2A(cell)
                     if sg:
                         SGData = G2spc.SpcGroup(sg)[1]
@@ -2030,7 +2029,7 @@ def UpdateMasks(G2frame,data):
                  data['SpotMask']['spotMask'] = G2img.FastAutoPixelMask(G2frame.ImageZ,data,Controls,nChans,dlg)
             else:
                 data['SpotMask']['spotMask'] |= G2img.FastAutoPixelMask(G2frame.ImageZ,data,Controls,nChans,dlg)
-            print(' Pixel mask search time: %.2f sec'%((time.time()-time0)))
+            print(' Pixel mask search time: %.2f sec'%(time.time()-time0))
             wx.CallAfter(UpdateMasks,G2frame,data)
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             dlg.Destroy()
@@ -2097,26 +2096,25 @@ def UpdateMasks(G2frame,data):
                     else:
                         Mask['SpotMask']['spotMask'] |= G2img.FastAutoPixelMask(
                             G2frame.ImageZ,Mask,Controls,nChans,dlg)
-                    print('Pixel mask search time: %.2f sec'%((time.time()-time0)))
+                    print('Pixel mask search time: %.2f sec'%(time.time()-time0))
                     dlg.Destroy()
                     wx.EndBusyCursor()
                     continue
-                else:
-                    print ('Std pixel mask search for '+name)
-                    try:
-                        dlg = wx.ProgressDialog("Pixel mask search for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
-                            style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,
-                                                    parent=G2frame)
-                        time0 = time.time()
-                        mask = G2img.AutoPixelMask(G2frame.ImageZ,Mask,Controls,nChans,dlg)
-                        if mask is None: return  # aborted search
-                        if Mask['SpotMask'].get('ClearPrev',True) or Mask['SpotMask']['spotMask'] is None:
-                            Mask['SpotMask']['spotMask'] = mask
-                        else:
-                            Mask['SpotMask']['spotMask'] |= mask
-                        print('Pixel mask search time: %.2f m'%((time.time()-time0)/60.))
-                    finally:
-                        dlg.Destroy()
+                print ('Std pixel mask search for '+name)
+                try:
+                    dlg = wx.ProgressDialog("Pixel mask search for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
+                        style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,
+                                                parent=G2frame)
+                    time0 = time.time()
+                    mask = G2img.AutoPixelMask(G2frame.ImageZ,Mask,Controls,nChans,dlg)
+                    if mask is None: return  # aborted search
+                    if Mask['SpotMask'].get('ClearPrev',True) or Mask['SpotMask']['spotMask'] is None:
+                        Mask['SpotMask']['spotMask'] = mask
+                    else:
+                        Mask['SpotMask']['spotMask'] |= mask
+                    print('Pixel mask search time: %.2f m'%((time.time()-time0)/60.))
+                finally:
+                    dlg.Destroy()
             except Exception as msg:
                 print('Invalid limits - pixel mask search not done')
                 if GSASIIpath.GetConfigValue('debug'): print(msg)
@@ -2672,7 +2670,7 @@ def UpdateStressStrain(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                File = open(filename,'r')
+                File = open(filename)
                 S = File.read()
                 data = eval(S)
                 Controls = G2frame.GPXtree.GetItemPyData(
@@ -2721,7 +2719,7 @@ def UpdateStressStrain(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                File = open(filename,'r')
+                File = open(filename)
                 S = File.readline()
                 newItems = []
                 itemNames = []
@@ -2742,7 +2740,7 @@ def UpdateStressStrain(G2frame,data):
         if not filename:
             G2frame.ErrorDialog('Nothing to do','No file selected')
             return
-        dataDict = dict(zip(itemNames,newItems))
+        dataDict = dict(zip(itemNames,newItems, strict=False))
         ifany = False
         Names = [' ','Sample phi','Sample z','Sample load']
         dlg = G2G.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
@@ -2750,7 +2748,7 @@ def UpdateStressStrain(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 colNames,newData = dlg.GetSelection()
-                dataDict = dict(zip(itemNames,newData.T))
+                dataDict = dict(zip(itemNames,newData.T, strict=False))
                 for item in colNames:
                     if item != ' ':
                         ifany = True
@@ -2887,7 +2885,7 @@ def UpdateStressStrain(G2frame,data):
                     sig += item['Esig']
                     varylist = ['%d;%s'%(j,Name) for Name in varyNames]
                     varyList += varylist
-                    parmDict.update(dict(zip(varylist,item['Emat'])))
+                    parmDict.update(dict(zip(varylist,item['Emat'], strict=False)))
                     parmDict['%d;Dcalc'%(j)] = item['Dcalc']
                     variables.append(1.e6*(item['Dcalc']/item['Dset']-1.))
                     varyList.append('%d;h-mstrain'%(j))
@@ -3040,7 +3038,7 @@ def UpdateStressStrain(G2frame,data):
 ###########################################################################
 def ReadMask(filename):
     'Read a mask (.immask) file'
-    File = open(filename,'r')
+    File = open(filename)
     save = {}
     S = File.readline()
     while S:
@@ -3061,7 +3059,7 @@ def ReadControls(filename):
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg',
             'PolaVal','SampleAbs','dark image','background image']
-    File = open(filename,'r')
+    File = open(filename)
     save = {}
     S = File.readline()
     while S:
@@ -3099,7 +3097,7 @@ def Read_imctrl(imctrl_file):
                         'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
                         'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg',
                         'PolaVal','SampleAbs','dark image','background image','setdist']
-    File = open(imctrl_file,'r')
+    File = open(imctrl_file)
     fullIntegrate = False
     try:
         S = File.readline()
@@ -3541,7 +3539,7 @@ class AutoIntFrame(wx.Frame):
             if not self.params[fmt]: continue
             if self.multipleFmtChoices[fmt]: continue
             choices = []
-            for f,l in zip(self.fmtlist[0],self.fmtlist[1]):
+            for f,l in zip(self.fmtlist[0],self.fmtlist[1], strict=False):
                 if f[1:] == fmt: choices.append(l)
             if len(choices) < 2:
                 print('Error: why no choices in TestInput?')
@@ -3549,7 +3547,7 @@ class AutoIntFrame(wx.Frame):
             # select the format here
             dlg = G2G.G2SingleChoiceDialog(self,
                         'There is more than one format with a '+
-                        '.{} output. Choose the one to use'.format(fmt),
+                        f'.{fmt} output. Choose the one to use',
                         'Choose output format',choices)
             dlg.clb.SetSelection(0)  # force a selection
             if dlg.ShowModal() == wx.ID_OK and dlg.GetSelection() >= 0:
@@ -3569,7 +3567,7 @@ class AutoIntFrame(wx.Frame):
         msg = ''
         File = None
         try:
-            File = open(self.params['pdfprm'],'r')
+            File = open(self.params['pdfprm'])
             S = File.readline()
             while S:
                 if '#' in S:
@@ -3608,7 +3606,7 @@ class AutoIntFrame(wx.Frame):
             name = self.pdfControls[key]['Name']
             mult = self.pdfControls[key].get('Mult',0.0)
             if not name: continue
-            msg += '\n{}: {:.2f} * "{}"'.format(key,mult,name)
+            msg += f'\n{key}: {mult:.2f} * "{name}"'
             if not G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,name):
                 msg += ' *** missing ***'
         return msg
@@ -3626,7 +3624,6 @@ class AutoIntFrame(wx.Frame):
             self.ShowMatchingFiles(None)
         finally:
             dlg.Destroy()
-        return
 
     def ShowMatchingFiles(self,value,invalid=False,**kwargs):
         '''Find and show images in the tree and the image files matching the image
@@ -3850,9 +3847,8 @@ class AutoIntFrame(wx.Frame):
                 if not self.params[dfmt[1:]]: continue
                 dir = os.path.join(self.params['outdir'],dfmt[1:])
                 if not os.path.exists(dir): os.makedirs(dir)
-        else:
-            if not os.path.exists(self.params['outdir']):
-                os.makedirs(self.params['outdir'])
+        elif not os.path.exists(self.params['outdir']):
+            os.makedirs(self.params['outdir'])
         if self.Reset: # special things to do after Reset has been pressed
             self.G2frame.IntegratedList = []
 
@@ -3976,7 +3972,7 @@ class AutoIntFrame(wx.Frame):
                         formula = item.split('=')[1].split()
                         elems = formula[::2]
                         nums = formula[1::2]
-                        formula = zip(elems,nums)
+                        formula = zip(elems,nums, strict=False)
                         sumnum = 0.
                         for [elem,num] in formula:
                             ElData = G2elem.GetElInfo(elem,Parms)
@@ -4077,7 +4073,7 @@ class AutoIntFrame(wx.Frame):
                     return
         if GSASIIpath.GetConfigValue('debug'):
             import datetime
-            print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+            print (f"DBG_Timer tick at {datetime.datetime.now():%d %b %Y %H:%M:%S}\n")
         self.PreventReEntryTimer = False
         self.Raise()
 
@@ -4196,10 +4192,10 @@ class IntegParmTable(wx.Dialog):
         '''Reads a list of .imctrl files or a single .imtbl file
         '''
         tmpDict = {}
-        if not files: return
+        if not files: return None
         # option 1, a dump from a previous save
         if os.path.splitext(files[0])[1] == '.imtbl':
-            fp = open(files[0],'r')
+            fp = open(files[0])
             S = fp.readline()
             while S:
                 if S[0] != '#':
@@ -4227,7 +4223,7 @@ class IntegParmTable(wx.Dialog):
             fileList = tmpDict.get('filenames','[]')
             parms = []
             if 'setdist' not in tmpDict:
-                print(u'Old file, recreate before using: {}'.format(files[0]))
+                print(f'Old file, recreate before using: {files[0]}')
                 return [[]],[]
             for key in self.ParmList:
                 try:
@@ -4245,7 +4241,7 @@ class IntegParmTable(wx.Dialog):
             imgDict = Read_imctrl(file)
             dist = imgDict.get('setdist',imgDict['distance'])
             if dist is None:
-                print('Skipping old file, redo: {}'.format(file))
+                print(f'Skipping old file, redo: {file}')
             tmpDict[dist] = imgDict
         parms = [[] for key in self.ParmList]
         fileList = []
@@ -4450,7 +4446,7 @@ def testColumnMetadata(G2frame):
         if os.path.exists(f): lblList.append(f)
     if not len(lblList):
         raise Exception('How did this happen! No .*lbls files for '+parFile)
-    elif len(lblList) == 1:
+    if len(lblList) == 1:
         lblFile = lblList[0]
     else:
         dlg = G2G.G2SingleChoiceDialog(G2frame,
@@ -4492,36 +4488,33 @@ def testColumnMetadata(G2frame):
     except:
         imageName = os.path.splitext(os.path.split(fileorline)[1])[0]
 
-    fp = open(parFile,'r')
+    fp = open(parFile)
     for iline,line in enumerate(fp):
         if linenum is not None:
             if iline == linenum:
                 items = line.strip().split(' ')
-                n = "Line {}".format(iline)
+                n = f"Line {iline}"
                 break
-            else:
-                continue
+            continue
+        items = line.strip().split(' ')
+        nameList = keyExp['filename'](*[items[j] for j in keyCols['filename']])
+        if type(nameList) is str:
+            if nameList != imageName: continue
+            name = nameList
+            break
+        for name in nameList:
+            print (name,name == imageName)
+            if name == imageName:
+                n = f"Image {imageName} found in line {iline}"
+                break # got a match
         else:
-            items = line.strip().split(' ')
-            nameList = keyExp['filename'](*[items[j] for j in keyCols['filename']])
-            if type(nameList) is str:
-                if nameList != imageName: continue
-                name = nameList
-                break
-            else:
-                for name in nameList:
-                    print (name,name == imageName)
-                    if name == imageName:
-                        n = "Image {} found in line {}".format(imageName,iline)
-                        break # got a match
-                else:
-                    continue
-                break
+            continue
+        break
     else:
         if linenum is not None:
-            n = "Line {}".format(iline)
+            n = f"Line {iline}"
         else:
-            n = "Image {} not found. Reporting line {}".format(imageName,iline)
+            n = f"Image {imageName} not found. Reporting line {iline}"
         items = line.strip().split(' ')
     fp.close()
     metadata = G2fil.evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp,True)
@@ -4532,9 +4525,9 @@ def testColumnMetadata(G2frame):
     for key in sorted(metadata):
         if key == "filename" or key.startswith('label_prm'): continue
         if key in keyCols:
-            n += ["  {} = {}".format(key,metadata[key])]
+            n += [f"  {key} = {metadata[key]}"]
         elif key in lbldict.values():
-            l += ["  {} = {}".format(key,metadata[key])]
+            l += [f"  {key} = {metadata[key]}"]
         else:
             t += [f"** Unexpected: {key}:{metadata[key]}"]
     if type(metadata['filename']) is str:
@@ -4549,7 +4542,7 @@ def testColumnMetadata(G2frame):
     for i in keyCols.values(): usedCols += i
     for i in range(len(items)):
         if i in usedCols: continue
-        t += ["  {}: {}".format(i,items[i])]
+        t += [f"  {i}: {items[i]}"]
     dlg = G2G.G2SingleChoiceDialog(None,title,'Column metadata parse results',t,
                 monoFont=True,filterBox=False,size=(400,600),
                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE|wx.OK)
@@ -4662,7 +4655,7 @@ def displayPhase(G2frame,phList,panel,gsizer,headers,RefreshPlot):
                 phaseOpts[p]['MPLstyle'] = '--'
         Refresh()
 
-    import  wx.lib.colourselect as csel
+    import wx.lib.colourselect as csel
     ltypeChoices = ('solid','dotted','dashed','dash-dot','loosely dashed','loosely dashdotted')
     ltypeMPLname = ('-',    ':',     '--',    '-.',      (0, (5, 10)),    (0, (3, 10, 1, 10)))
 
@@ -4674,10 +4667,8 @@ def displayPhase(G2frame,phList,panel,gsizer,headers,RefreshPlot):
         txt = wx.StaticText(panel,wx.ID_ANY,p,size=(200,-1))
         txt.Wrap(200)
         gsizer.Add(txt,0,wx.ALIGN_LEFT)
-        #
         ch = G2G.G2CheckBox(panel,'',phaseOpts[p],'Show',Refresh)
         gsizer.Add(ch,0,wx.ALIGN_CENTER)
-        #
         if phaseOpts[p]['Show']:
             if phaseOpts[p]['color'] is None:
                 # first use of phase, set its color to next in sequence
@@ -4689,13 +4680,11 @@ def displayPhase(G2frame,phList,panel,gsizer,headers,RefreshPlot):
             b.phase = p
             b.Bind(csel.EVT_COLOURSELECT, OnSelectColor)
             gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER,3)
-            #
             lwidChoices = ('0.5','0.7','1','1.5','2','2.5','3','4')
             ch = G2G.G2ChoiceButton(panel,lwidChoices,None,None,
                                     phaseOpts[p],'width',Refresh,
                                     size=(50,-1))
             gsizer.Add(ch,0,wx.ALIGN_CENTER)
-            #
             ch = G2G.G2ChoiceButton(panel,ltypeChoices,
                                     phaseOpts[p],'style',
                                     None,None,StyleChange)

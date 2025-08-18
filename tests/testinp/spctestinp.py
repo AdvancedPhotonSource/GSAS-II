@@ -1,5 +1,6 @@
 # output from GSASIIspc computed on platform darwin on 2013-06-02
 import numpy as np
+
 array = np.array
 float32=np.float32
 # testing 255 space groups (25 dups/non-standard)

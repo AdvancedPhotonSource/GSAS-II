@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 '''Classes in :mod:`~GSASII.exports.G2export_shelx` follow:
 '''
-from __future__ import division, print_function
 import os.path
+
 from .. import GSASIIfiles as G2fil
 from .. import GSASIIspc as G2spc
+
 
 class ExportPhaseShelx(G2fil.ExportBaseclass):
     '''Used to create a SHELX .ins file for a phase
@@ -83,9 +83,9 @@ class ExportPhaseShelx(G2fil.ExportBaseclass):
                     count[typ] += 1
                 # make a unique <=4 character label, if possible
                 if elemtypes[typ] <= 99:
-                    lbl = "{:s}{:d}".format(typ,count[typ])
+                    lbl = f"{typ:s}{count[typ]:d}"
                 else: # more than 99 atoms, use hexadecimal notation
-                    lbl = typ + "{:X}".format(count[typ])[-2:]
+                    lbl = typ + f"{count[typ]:X}"[-2:]
                 sfnum = elemlist.index(typ)+1 # element number in scattering factor list
                 l = lbl+" "+str(sfnum)
                 l += " {:.5f} {:.5f} {:.5f}".format(*[x[0] for x in xyz[:3]])
@@ -97,9 +97,9 @@ class ExportPhaseShelx(G2fil.ExportBaseclass):
                     occ = 10 + m
                 else:
                     occ = m * xyz[3][0]
-                l += " {:.3f}".format(occ)
+                l += f" {occ:.3f}"
                 for val,sig in td:
-                    l += " {:.3f}".format(val)                    
+                    l += f" {val:.3f}"                    
                 self.Write(l)
             self.Write('END')
             self.CloseFile()

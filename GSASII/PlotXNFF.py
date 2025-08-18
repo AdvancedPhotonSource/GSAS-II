@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #PlotXNFF.py
 '''
 *PlotXNFF: Check x-ray & neutron form factor computation*
@@ -9,17 +8,22 @@ Use this to check form factors used in x-ray & neutron scattering
 '''
 
 import sys
+
 import wx
+
 # the next line removes the need for pythonw. Thanks to Matt Newville!
 # appears unneaded from wx 4.2.1 on
 if sys.platform.lower() == 'darwin': wx.PyApp.IsDisplayAvailable = lambda _: True
 import numpy as np
+
 from . import GSASIIpath
+
 GSASIIpath.SetBinaryPath()
-from . import GSASIItestplot as plot
 from . import GSASIIElem as G2el
 from . import GSASIIElemGUI as G2elG
+from . import GSASIItestplot as plot
 from . import atmdata
+
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 try:
@@ -138,7 +142,6 @@ class PlotXNFF(wx.Frame):
         self.plotNB.Show()
 
 if __name__ == "__main__":
-    from . import GSASIIplot as G2plt
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame

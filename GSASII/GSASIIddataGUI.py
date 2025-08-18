@@ -464,7 +464,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             for txt,fmt,ifEdit,Id in zip(*useGUI[2:]):
                 if cellstr: cellstr += ", "
                 cellstr += txt+fmt.format(cell[Id])
-            cellstr += ', Vol = {:.3f}'.format(G2lat.calc_V(newA))
+            cellstr += f', Vol = {G2lat.calc_V(newA):.3f}'
+            den = G2mth.getDensity(data['General'],G2frame.hist,data)[0]
+            cellstr += f', \u03C1 = {den:.3f}'
             hSizer.Add(wx.StaticText(DData,wx.ID_ANY,'     '+cellstr),0)
         return hSizer
 

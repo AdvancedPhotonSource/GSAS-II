@@ -1551,16 +1551,31 @@ def getMass(generalData):
         mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
     return max(mass,1.0)
 
-def getDensity(generalData):
-    '''calculate crystal structure density
+def getDensity(generalData,hist=None,data=None):
+    '''Calculate crystal structure density. Uses cell values only,
+    unless hist & data are supplied. In that case it uses 
+    the Dij terms as well. 
 
     :param dict generalData: The General dictionary in Phase
-
-    :returns: float density: crystal density in gm/cm^3
-
+    :param str hist: optional name of a histogram. When not None, 
+      the volume adjusted bt the Dij (hydrostatic strain terms) is 
+      used to compute the density.
+    :parm dict data: reference to entire phase data array. Required 
+      if hist is specified. Ignored otherwise. 
+    :returns: crystal density in gm/cm^3 (float) and Matthews Coeff.
+      (Vm or Volume/mass, float)
     '''
     mass = getMass(generalData)
     Volume = generalData['Cell'][7]
+    if hist is not None: # recompute the density using Dij terms
+        if data is None:
+            print('called getDensity with hist and without data')
+            raise Exception('Called getDensity with hist and without data')
+        A = G2lat.cell2A(data['General']['Cell'][1:7])
+        DijVals = data['Histograms'][hist]['HStrain'][0][:]
+        # apply the Dij values to the reciprocal cell
+        newA =  G2lat.AplusDij(A,DijVals,data['General']['SGData'])
+        Volume = G2lat.calc_V(newA)
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
 

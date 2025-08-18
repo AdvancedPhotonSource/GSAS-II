@@ -4563,10 +4563,10 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     for azm in Azm:
         XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angI),wave),azm,Data)
         if np.any(XY):
-            xy1.append(XY)      #what about hyperbola
+            xy1.append(XY)
         XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angO),wave),azm,Data)
         if np.any(XY):
-            xy2.append(XY)      #what about hyperbola
+            xy2.append(XY)
     return np.array(xy1).T,np.array(xy2).T
 
 def UpdatePolygon(pick,event,polygon):
@@ -4874,9 +4874,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xlim = Plot1.get_xlim()
                 azm = Data['linescan'][1]-AzmthOff
                 dspI = wave/(2.0*sind(0.1/2.0))
-                xyI = G2img.GetDetectorXY(dspI,azm,Data)
+                xyI = G2img.GetDetectorXY2(dspI,azm,Data)
                 dspO = wave/(2.0*sind(60./2.0))
-                xyO = G2img.GetDetectorXY(dspO,azm,Data)
+                xyO = G2img.GetDetectorXY2(dspO,azm,Data)
                 pick.set_data([[xyI[0],xyO[0]],[xyI[1],xyO[1]]])
                 xy = G2img.GetLineScan(G2frame.ImageZ,Data)
                 Plot1.cla()
@@ -5496,9 +5496,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             IOtth = [0.1,60.]
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
-            xyI = G2img.GetDetectorXY(dspI,azm,Data)
+            xyI = G2img.GetDetectorXY2(dspI,azm,Data)
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
-            xyO = G2img.GetDetectorXY(dspO,azm,Data)
+            xyO = G2img.GetDetectorXY2(dspO,azm,Data)
             Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],
 #                picker=True,pickradius=3,label='linescan')
                 picker=False,label='linescan')

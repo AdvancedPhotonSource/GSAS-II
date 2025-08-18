@@ -45,21 +45,21 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 nxs = np.newaxis
 debug = True
 
-def pointInPolygon(pXY,xy):
-    'Needs a doc string'
-    #pXY - assumed closed 1st & last points are duplicates
-    Inside = False
-    N = len(pXY)
-    p1x,p1y = pXY[0]
-    for i in range(N+1):
-        p2x,p2y = pXY[i%N]
-        if (max(p1y,p2y) >= xy[1] > min(p1y,p2y)) and (xy[0] <= max(p1x,p2x)):
-            if p1y != p2y:
-                xinters = (xy[1]-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-            if p1x == p2x or xy[0] <= xinters:
-                Inside = not Inside
-        p1x,p1y = p2x,p2y
-    return Inside
+# def pointInPolygon(pXY,xy):
+#     'Not used anywhere - probably superceded by new matplotlib polygon routine'
+#     #pXY - assumed closed 1st & last points are duplicates
+#     Inside = False
+#     N = len(pXY)
+#     p1x,p1y = pXY[0]
+#     for i in range(N+1):
+#         p2x,p2y = pXY[i%N]
+#         if (max(p1y,p2y) >= xy[1] > min(p1y,p2y)) and (xy[0] <= max(p1x,p2x)):
+#             if p1y != p2y:
+#                 xinters = (xy[1]-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+#             if p1x == p2x or xy[0] <= xinters:
+#                 Inside = not Inside
+#         p1x,p1y = p2x,p2y
+#     return Inside
 
 def peneCorr(tth,dep,dist):
     'Compute empirical position correction due to detector absorption'
@@ -384,9 +384,9 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     'Needs a doc string'
     def ellipseC():
         'compute estimate of ellipse circumference'
-        if radii[0] < 0:        #hyperbola
-            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
+        if radii[0] <= 0:        #hyperbola
             if debug: 
+                theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
                 print ('hyperbola:',theta)
             return 200.*np.pi
         apb = radii[1]+radii[0]
@@ -401,7 +401,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     azm = []
     for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
-        if radii[1] < 0:
+        if radii[1] <= 0:        #parabola or hyperbola
             x = radii[1]*coshd(a-phi+90.)        #major axis
             y = radii[0]*sinhd(a-phi+90.)
         else:
@@ -477,39 +477,38 @@ def GetEllipse(dsp,data):
 def GetDetectorXY(dsp,azm,data):
     '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
     & image controls dictionary (data) - new version
-    it seems to be only used in plotting
+    it seems to be only used in plotting & wrong
     '''
     def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
 
     	ndotu = planeNormal.dot(rayDirection)
     	if ndotu < epsilon:
     		return None
-
     	w = rayPoint - planePoint
     	si = -planeNormal.dot(w) / ndotu
     	Psi = w + si * rayDirection + planePoint
     	return Psi
 
-
     dist = data['distance']
     cent = data['center']
-    T = makeMat(data['tilt'],0)
-    R = makeMat(data['rotation'],2)
+    phi = data['rotation']-90.          #to give rotation of major axis
+    T = makeMat(data['tilt'],0)     #rotate about X
+    R = makeMat(phi,2)     #rotate about Z
     MN = np.inner(R,np.inner(R,T))
     iMN= nl.inv(MN)
     tth = 2.0*npasind(data['wavelength']/(2.*dsp))
-    vect = np.array([npsind(tth)*npcosd(azm),npsind(tth)*npsind(azm),npcosd(tth)])
+    vect = np.array([npsind(tth)*npcosd(azm-phi),npsind(tth)*npsind(azm-phi),npcosd(tth)])
     dxyz0 = np.inner(np.array([0.,0.,1.0]),MN)    #tilt detector normal
     dxyz0 += np.array([0.,0.,dist])                 #translate to distance
     dxyz0 = np.inner(dxyz0,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
     dxyz1 = np.inner(np.array([cent[0],cent[1],0.]),MN)    #tilt detector cent
     dxyz1 += np.array([0.,0.,dist])                 #translate to distance
     dxyz1 = np.inner(dxyz1,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
-    xyz = LinePlaneCollision(dxyz0,dxyz1,vect,2.*dist*vect)
+    xyz = LinePlaneCollision(dxyz1,dxyz0,vect,dist*vect)
     if xyz is None:
         return np.zeros(2)
 #        return None
-    xyz = np.inner(xyz,makeMat(-data['det2theta'],1).T)
+    xyz = np.inner(xyz,makeMat(data['det2theta'],1).T)
     xyz -= np.array([0.,0.,dist])                 #translate back
     xyz = np.inner(xyz,iMN)
     return np.squeeze(xyz)[:2]+cent
@@ -527,7 +526,7 @@ def GetDetectorXY2(dsp,azm,data):
     tth = 2.0*asind(data['wavelength']/(2.*dsp))
     stth = sind(tth)
     cosb = cosd(tilt)
-    if radii[0] > 0.:
+    if radii[0] > 0.: #ellipse - correct!
         sinb = sind(tilt)
         tanb = tand(tilt)
         fplus = dist*tanb*stth/(cosb+stth)
@@ -537,6 +536,8 @@ def GetDetectorXY2(dsp,azm,data):
         rsqminus = radii[0]**2-radii[1]**2
         R = rsqminus*cosd(2.*azm-2.*phi)+rsqplus
         Q = np.sqrt(2.)*radii[0]*radii[1]*np.sqrt(R-2.*zdis**2*sind(azm-phi)**2)
+        if radii[0] <= 0.:
+            zdis *= -1.
         P = 2.*radii[0]**2*zdis*cosd(azm-phi)
         radius = (P+Q)/R
         xy = np.array([radius*cosd(azm),radius*sind(azm)])
@@ -554,7 +555,8 @@ def GetDetectorXY2(dsp,azm,data):
             xy = [-R*cosd(azm-phi)-offset,-R*sind(azm-phi)]
         else:
             offset = -f
-            xy = [-R*cosd(azm-phi)-offset,R*sind(azm-phi)]
+            xy = [-R*cosd(azm-phi)-offset,2.*R*sind(azm-phi)]
+            print(azm,R,offset,cosd(azm-phi),sind(azm-phi),xy)
         xy = -np.array([xy[0]*cosd(phi)+xy[1]*sind(phi),xy[0]*sind(phi)-xy[1]*cosd(phi)])
         xy += cent
     if data['det2theta']:

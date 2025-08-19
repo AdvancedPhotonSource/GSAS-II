@@ -782,7 +782,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
                 sumImg += np.array(backImage*backScale,dtype=np.int32)
     if 'Gain map' in Controls:
         gainMap = Controls['Gain map']
-        if gainMap:
+        if gainMap.strip():
             gImgObj = proj.image(gainMap)
             formatName = gImgObj.data['Image Controls'].get('formatName','')
             imagefile = gImgObj.data['data'][1]
@@ -1766,9 +1766,9 @@ class G2Project(G2ObjectWrapper):
             imageRef = self._images()[num]
             return G2Image(self.data[imageRef], imageRef, self)
         except ValueError:
-            errmsg = "imageRef {imageRef} not an object, name or image index in current selected project"
+            errmsg = f"imageRef {imageRef} not an object, name or image index in current selected project"
         except IndexError:
-            errmsg = "imageRef {imageRef} out of range (max={len(self._images())-1)}) in current selected project"
+            errmsg = f"imageRef {imageRef} out of range (max={len(self._images())-1}) in current selected project"
         if errmsg: raise G2ScriptException(errmsg)
 
     def images(self):
@@ -2746,6 +2746,7 @@ class G2Project(G2ObjectWrapper):
         if imageList is None:
             imageList = self.images()
 
+        LoadG2fil()
         # code based on GSASIIimgGUI..OnDistRecalib
         obsArr = np.array([]).reshape(0,4)
         parmDict = {}
@@ -6451,6 +6452,7 @@ class G2Image(G2ObjectWrapper):
     def initMasks(self):
         '''Initialize Masks, including resetting the Thresholds values
         '''
+        LoadG2fil()
         self.data['Masks'] = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
         if self.image is not None:
             ImageZ = self.image
@@ -6474,6 +6476,7 @@ class G2Image(G2ObjectWrapper):
           dict are ignored. The default is False which means Threshold
           Masks are retained.
         '''
+        LoadG2fil()
         self.data['Masks'] = copy.deepcopy(maskDict)
         if resetThresholds:
             if self.image is not None:
@@ -6528,6 +6531,7 @@ class G2Image(G2ObjectWrapper):
         results computed here can be reused for other images that have the
         same calibration parameters.
         '''
+        LoadG2fil()
         Controls = self.getControls()
         Masks = self.getMasks()
         frame = Masks['Frames']
@@ -6617,6 +6621,7 @@ class G2Image(G2ObjectWrapper):
         :param list ThetaAzimMap: from :meth:`G2Image.IntThetaAzMap`
         :returns: a list of created histogram (:class:`G2PwdrData` or :class:`G2SmallAngle`) objects.
         '''
+        LoadG2fil()
         if self.image is not None:
             ImageZ = self.image
         else:
@@ -6840,6 +6845,7 @@ class G2Image(G2ObjectWrapper):
           can be tuned by combining different searches.
         '''
         import math
+        LoadG2fil()
         sind = lambda x: math.sin(x*math.pi/180.)
         if self.image is not None:
             Image = self.image
@@ -6898,7 +6904,32 @@ class G2Image(G2ObjectWrapper):
         '''Removes a pixel map from an image, to reduce the .gpx file
         size & memory use
         '''
+        if 'SpotMask' not in self.getMasks(): return
         self.getMasks()['SpotMask']['spotMask'] = None
+        if 'MaskLoaded' in self.getMasks()['SpotMask']:
+            del self.getMasks()['SpotMask']['MaskLoaded']
+            
+    def loadPixelMask(self,mask,tag="loaded in G2sc.loadPixelMask"):
+        '''Loads a pixel map from an array supplied by the user
+
+        :param np.array mask: An array that has a True or False
+          value for each pixel. True means that the pixel should
+          be masked. The array dimensions must match the current image.
+        :param str tag: provides a name that is saved to indicate
+          the source of the mask. At present this name is not used.
+        '''
+        LoadG2fil()
+        if mask.dtype != np.bool_:
+            raise G2ScriptException("loadPixelMask Error: mask must be a logical numpy.array")
+        if self.image is not None:
+            Image = self.image
+        else:
+            Image = _getCorrImage(Readers['Image'],self.proj,self)
+        Controls = self.getControls()
+        if mask.shape != Image.shape:
+            raise G2ScriptException(f"loadPixelMask Error: mask shape {mask.shape} must match image {Image.shape}")
+        self.getMasks()['SpotMask']['spotMask'] = mask
+        self.getMasks()['SpotMask']['MaskLoaded'] = tag
 
 class G2SmallAngle(G2ObjectWrapper):
     """Wrapper for SASD histograms (and hopefully, in the future, other

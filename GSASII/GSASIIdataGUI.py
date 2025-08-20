@@ -6637,6 +6637,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                     if  lbl == 'Project':
                         submenu.Append(G2G.wxID_XPORTSEQFCIF,'... as full CIF',
                                 'Save all sequential refinement results as a CIF file')
+                        G2G.Define_wxId('wxID_XPORTCINEMA')
+                        submenu.Append(G2G.wxID_XPORTCINEMA,'... to CINEMA: DS',
+                                'Pass sequential refinement results for plotting in CINEMA: Debye-Scherrer')                        
                     for obj in objlist:
                         item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                         self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
@@ -6644,6 +6647,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
             self.SequentialEx.Append(G2G.wxID_XPORTSEQCSV,'Save table as CSV',
                 'Save all sequential refinement results as a CSV spreadsheet file')
+            G2G.Define_wxId('wxID_XPORTSEQIMG')
+            self.SequentialEx.Append(G2G.wxID_XPORTSEQIMG,'Save histogram images',
+                'Save all sequential refinements as a series of images')
             self.PostfillDataMenu()
             SetDataMenuBar(G2frame,self.SequentialMenu)
         self.SequentialMenu = _makemenu

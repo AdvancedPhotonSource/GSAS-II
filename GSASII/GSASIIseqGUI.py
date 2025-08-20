@@ -256,6 +256,37 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         'export the selected columns to a .csv file from menu command'
         OnSaveSelSeq(event,csv=True)
 
+    def OnSaveCinema(event):
+        '''This is a placeholder routine for exporting file(s) to
+        run Cinema: Debye-Scherrer 
+        https://github.com/cinemascience/cinema_debye_scherrer
+        (https://journals.iucr.org/j/issues/2018/03/00/ks5597/ks5597.pdf)
+        '''
+        breakpoint()
+        pass
+        
+    def OnSaveSeqImg(event):
+        'export plots from all rows, called from menu command'
+        # save currently selected row, if any
+        prevSelected = G2frame.dataDisplay.GetSelectedRows()
+        # location for output files
+        import tempfile
+        tmpdir = tempfile.mkdtemp()
+        def cleanup():
+            '''cleanup is a routine to be called to delete the directory 
+            with the files created here. Call this to clean up 
+            after using or copying the files created here.'''
+            import shutil
+            shutil.rmtree(tmpdir)
+        res = ExportSequentialImages(G2frame,histNames,tmpdir,100)
+        # reset the selection and replot
+        for row in prevSelected: # expect this to be length 0 or 1
+            G2frame.dataDisplay.SelectRow(row)
+            PlotSelectedColRow('left')
+            break
+        #breakpoint()
+        cleanup()
+    
     def OnSaveSeqCSV(event):
         'export all columns to a .csv file from menu command'
         OnSaveSelSeq(event,csv=True,allcols=True)
@@ -1124,6 +1155,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.Bind(wx.EVT_MENU, DoSequentialExport, id=id)
     G2frame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=G2G.wxID_XPORTSEQCSV)
     G2frame.Bind(wx.EVT_MENU, DoSequentialExport, id=G2G.wxID_XPORTSEQFCIF)
+    G2frame.Bind(wx.EVT_MENU, OnSaveSeqImg, id=G2G.wxID_XPORTSEQIMG)
+    G2frame.Bind(wx.EVT_MENU, OnSaveCinema, id=G2G.wxID_XPORTCINEMA)
 
     EnablePseudoVarMenus()
     EnableParFitEqMenus()
@@ -2106,3 +2139,35 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     G2frame.dataWindow.SetSizer(bigSizer)
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
+
+def ExportSequentialImages(G2frame,histNames,outdir,dpi='figure'):
+    '''Used to create plot images as PNG for each fit in the sequential results
+    table in images are created in a temporary directory.
+    For PWDR entries only. 
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    :param list histNames: a list of the tree name entries
+      corresponding to each row in the table
+    :param str outdir: Name of a directory (path). Files created by 
+      this routine are placed here.
+    :param int dpi: dots per inch for the output. Defaults to the 
+      screen resolution
+    :returns: a list of the files created by this routine
+    '''
+    import os
+    files = []
+    for i in range(G2frame.dataDisplay.GetNumberRows()):
+        G2frame.dataDisplay.SelectRow(i)
+        name = histNames[i]       #only does 1st one selected
+        if name.startswith('PWDR'):
+            # plot a powder pattern and reset tree selection
+            pickId = G2frame.PickId
+            G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
+            G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+            G2frame.PickId = pickId
+            wx.GetApp().Yield()
+            new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',False)
+            f = os.path.join(outdir,f'{i}.png')
+            files.append(f)
+            Plot.figure.savefig(f,dpi=dpi)
+    return files

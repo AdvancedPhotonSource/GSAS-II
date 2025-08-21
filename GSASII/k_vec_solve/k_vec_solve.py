@@ -129,27 +129,45 @@ def grab_user_conv_transform(trans_str):
     return user_to_conv
 
 
-def grab_user_conv_line(cif_file):
+def grab_spg_num(cif_contents):
+    """Grab the space group number from the '_symmetry_Int_Tables_number' line in a given CIF file.
+
+    Args:
+        cif_contents (str): Contents of the CIF file.
+
+    Returns:
+        str: The space group number, or None if not found.
+    """
+    spg_num = None
+    lines = cif_contents.splitlines()
+    for line in lines:
+        if '_symmetry_Int_Tables_number' in line:
+            parts = line.split()
+            if len(parts) > 1:
+                spg_num = parts[1]
+            break
+
+    return spg_num
+
+
+def grab_user_conv_line(cif_contents):
     """Grab the user to conventional setting transformation from the
     '_space_group.transform_Pp_abc' line in a given CIF file.
 
     Args:
-        cif_file (str): Full path to the input CIF file.
+        cif_contents (str): Contents of the CIF file.
 
     Returns:
         str: The user to conventional setting transformation string, or None if not found.
     """
     trans_str = None
-    try:
-        with open(cif_file, 'r', encoding='utf-8') as file:
-            for line in file:
-                if '_space_group.transform_Pp_abc' in line:
-                    parts = line.split()
-                    if len(parts) > 1:
-                        trans_str = parts[1].strip()
-                    break
-    except FileNotFoundError:
-        print(f"The file {cif_file} was not found.")
+    lines = cif_contents.splitlines()
+    for line in lines:
+        if '_space_group.transform_Pp_abc' in line:
+            parts = line.split()
+            if len(parts) > 1:
+                trans_str = parts[1].strip()
+            break
 
     return trans_str
 
@@ -211,7 +229,7 @@ def find_kvec_form_param(spg_num, isocif_cif, k_vec, k_forms):
 
     Args:
         spg_num (int): Space group number.
-        isocif_cif (str): Path to the CIF file exported from ISOCIF.
+        isocif_cif (str): Contents of the CIF file exported from ISOCIF.
         k_vec (list): k vector
         k_forms (list): List of symbolic alternative k vector forms.
             Entries should be in the form of sympy expressions.
@@ -243,7 +261,7 @@ def find_kvec_form_param(spg_num, isocif_cif, k_vec, k_forms):
     def sort_keys(dict_entry):
         # Sort keys by priority: a, then b, then g
         key_priority = {a: 1, b: 2, g: 3}
-        return [key_priority.get(key, float('inf')) for key in dict_entry.keys()]
+        return [key_priority.get(key, float('inf')) for key in dict_entry]
 
     k_vec_pr_arms = np.matmul(k_vec_pr, ref_pt_ops[0:3, 0:3])
     alt_solutions = []

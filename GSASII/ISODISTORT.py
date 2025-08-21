@@ -26,11 +26,11 @@ def HandleError(out):
         except:
             print('Could not open URL')
 
-def UploadCIF(cifname):
-       #upload cif file to BYU web site
+def UploadCIF(cifname, upload_site=isouploadsite):
+    #upload cif file to BYU web site
     ciffile = open(cifname,'rb')
     up1 = {'toProcess':(cifname,ciffile),}
-    out1 = requests.post(isouploadsite,files=up1).text
+    out1 = requests.post(upload_site,files=up1).text
     ciffile.close()
 
     #retrieve BYU temp file name for cif file

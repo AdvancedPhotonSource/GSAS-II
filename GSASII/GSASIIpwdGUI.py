@@ -20,6 +20,8 @@ import copy
 import random as ran
 import pickle
 import scipy.interpolate as si
+from sympy import symbols, nsimplify, Rational as SRational
+from fractions import Fraction
 from . import GSASIIpath
 from . import GSASIImath as G2mth
 from . import GSASIIpwd as G2pwd
@@ -5197,7 +5199,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         def grab_all_kvecs(out_html):
             """Extract all k-vectors from the ISODISTORT output HTML."""
-            from fractions import Fraction
             import re
 
             kvec1_pattern = r'<SELECT NAME="kvec1">(.*?)</SELECT>'
@@ -5224,38 +5225,65 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             else:
                 return None
 
-        def setup_kvec_input(k_vec, k_vec_dict, symmetry=None):
+        a, b, g = symbols('a b g')
+
+        def frac_str(value, max_den=1000):
+            # Try to get a rational exactly; if huge, fall back to bounded approximation
+            try:
+                rat = nsimplify(value, rational=True, maxsteps=50)
+                if isinstance(rat, SRational):
+                    num, den = rat.as_numer_denom()
+                    num, den = int(num), int(den)
+                    if den <= max_den:
+                        return f"{num}/{den}" if den != 1 else str(num)
+            except Exception:
+                pass
+
+            # Best rational with denominator <= max_den
+            try:
+                f = Fraction(value).limit_denominator(max_den)
+            except TypeError:
+                f = Fraction(float(value)).limit_denominator(max_den)
+
+            return f"{f.numerator}/{f.denominator}" if f.denominator != 1 else str(f.numerator)
+
+        def to_fraction_strs(d, keys=(a, b, g), max_den=1000):
+            out = {}
+            for k in keys:
+                if k in d:
+                    out[str(k)] = frac_str(d[k], max_den)
+            return out
+
+        def setup_kvec_input(k_vec, k_vec_dict, isocif_cif):
             """Set up the input for isodistort post request
 
             Args:
                 k_vec (str): The k-vector to use for the isodistort request.
                 k_vec_dict (dict): The dictionary containing the k-vector
-                form extracted from isodistort.
-                symmetry (str, optional): The crystal system.
+                    form extracted from isodistort.
+                isocif_cif (str): The CIF file content exported from ISOCIF.
 
             Returns:
                 dict: New entries and those need to be corrected in the data
                 to be used in the post request.
             """
             k_forms = k_vec_dict.items()
+            all_keys = list(k_forms)
 
-            k_vec_form = match_vector_pattern(k_vec, k_vec_dict, symmetry="cubic")
+            spg_num = kvsolve.grab_spg_num(isocif_cif)
+            k_vec_sol = kvsolve.find_kvec_form_param(spg_num, isocif_cif, k_vec, k_forms)
+            k_vec_form = all_keys[k_vec_sol[0]]
 
             data_update = dict()
             data_update['kvec1'] = k_vec_form
-            kvec_template = k_vec_dict[k_vec_form]
-            if isinstance(kvec_template[0], str):
-                num = k_vec[0].numerator
-                den = k_vec[0].denominator
-                data_update['kparam11'] = f"{num}/{den}"
-            if isinstance(kvec_template[1], str):
-                num = k_vec[1].numerator
-                den = k_vec[1].denominator
-                data_update['kparam21'] = f"{num}/{den}"
-            if isinstance(kvec_template[2], str):
-                num = k_vec[2].numerator
-                den = k_vec[2].denominator
-                data_update['kparam31'] = f"{num}/{den}"
+            k_vec_params = to_fraction_strs(k_vec_sol[1], max_den=1000)
+
+            if "a" in k_vec_params:
+                data_update['kparam11'] = k_vec_params["a"]
+            if "b" in k_vec_params:
+                data_update['kparam21'] = k_vec_params["b"]
+            if "g" in k_vec_params:
+                data_update['kparam31'] = k_vec_params["g"]
 
             return data_update
 
@@ -5263,10 +5291,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         import tempfile
         import re
         import requests
-        from fractions import Fraction
         from GSASII.exports import G2export_CIF
         from . import ISODISTORT as ISO
         isoformsite = 'https://iso.byu.edu/isodistortform.php'
+        isocifformsite = 'https://iso.byu.edu/isocifform.php'
+        isocifuploadsite = 'https://iso.byu.edu/isocifuploadfile.php'
 
         if not G2frame.kvecSearch['mode']:
             return
@@ -5354,9 +5383,37 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         data['input'] = 'kvector'
         data['irrepcount'] = '1'
 
+        # We need to upload the CIF file to ISOCIF and export from there, since
+        # some of the routines for k vector form solving only works with the
+        # CIF coming out from ISOCIF.
+        init_cif = ISO.UploadCIF(parentcif, upload_site=isocifuploadsite)
+        isocif_up = {'submit': 'OK', 'input': 'uploadcif', 'filename': init_cif}
+        isocif_out_1 = requests.post(isocifformsite, data=isocif_up).text
+
+        isocif_form = re.split(
+            '</form',
+            next(
+                i for i in re.split('<form', isocif_out_1, flags=re.IGNORECASE)
+                if 'Detect higher' in i
+            ),
+            flags=re.IGNORECASE
+        )[0]
+
+        isocif_formDict = {}
+        for f in isocif_form.split('<'):
+            try:
+                name = re.split('name=',f,flags=re.IGNORECASE)[1].split('"')[1]
+                value = re.split('value=',f,flags=re.IGNORECASE)[1].split('"')[1]
+                isocif_formDict[name] = value
+            except IndexError:
+                pass
+        isocif_formDict['input'] = 'savecif'
+
+        isocif_out_cif = requests.post(isocifformsite, data=isocif_formDict).text
+
         kvec_dict = grab_all_kvecs(out2)
         lat_sym = Phase['General']['SGData']
-        data_update = setup_kvec_input(kpoint, kvec_dict, symmetry=lat_sym)
+        data_update = setup_kvec_input(kpoint, kvec_dict, isocif_out_cif, lat_sym)
         for key, value in data_update.items():
             data[key] = value
 

@@ -7166,6 +7166,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.GeneralCalc.Append(G2G.wxID_COMPARECELLS,'Compare Cells','Compare Unit Cells using NIST*LATTICE')
             self.GeneralCalc.Append(G2G.wxID_COMPARESTRUCTURE,'Compare polyhedra','Compare polyhedra to ideal octahedra/tetrahedra')
             self.GeneralCalc.Enable(G2G.wxID_COMPARESTRUCTURE,False)
+            G2G.Define_wxId('wxID_SUBSRCH')
+            self.GeneralCalc.Append(G2G.wxID_SUBSRCH,'SUBGROUPS search','Search for settings of this phase in higher symmetry')
             self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')
             self.GeneralCalc.Append(G2G.wxID_USEBILBAOSUB,'Make subgroup project file(s)','Requires subcell search in PWDR/Unit Cells')
             G2G.Define_wxId('wxID_SUPERSRCH')

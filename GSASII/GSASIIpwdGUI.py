@@ -39,6 +39,7 @@ from . import GSASIIsasd as G2sasd
 from . import G2shapes
 from . import SUBGROUPS as kSUB
 from . import k_vector_search as kvs
+from . import k_vec_solve as kvsolve
 from GSASII.imports.G2phase_CIF import CIFPhaseReader as CIFpr
 from . import GSASIIscriptable as G2sc
 from . import GSASIImiscGUI as G2IO
@@ -5215,38 +5216,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
                 all_kvecs = {}
                 for key in final_kvec_keys:
-                    pattern_str = key.split("(")[1].split(")")[0]
-                    a_val = pattern_str.split(",")[0]
-                    b_val = pattern_str.split(",")[1]
-                    c_val = pattern_str.split(",")[2]
-                    if a_val == "1/2":
-                        a_val = Fraction(1, 2)
-                    elif a_val == "1/3":
-                        a_val = Fraction(1, 3)
-                    elif a_val == "1":
-                        a_val = 1
-                    elif a_val == "0":
-                        a_val = 0
-
-                    if b_val == "1/2":
-                        b_val = Fraction(1, 2)
-                    elif b_val == "1/3":
-                        b_val = Fraction(1, 3)
-                    elif b_val == "1":
-                        b_val = 1
-                    elif b_val == "0":
-                        b_val = 0
-
-                    if c_val == "1/2":
-                        c_val = Fraction(1, 2)
-                    elif c_val == "1/3":
-                        c_val = Fraction(1, 3)
-                    elif c_val == "1":
-                        c_val = 1
-                    elif c_val == "0":
-                        c_val = 0
-
-                    all_kvecs[key] = (a_val, b_val, c_val)
+                    pattern_str = f"({key.split("(")[1]}"
+                    k_form = kvsolve.parse_expression_string(pattern_str)
+                    all_kvecs[key] = k_form
 
                 return all_kvecs
             else:
@@ -5265,138 +5237,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 dict: New entries and those need to be corrected in the data
                 to be used in the post request.
             """
-            from itertools import product
-
-            def extract_coeff_and_var(s):
-                """Extract coefficient and var from strings like '2/3a', '1/3b', '1/2', 'a', etc.
-                """
-                s = s.strip()
-
-                if not s:
-                    return Fraction(1), ''
-
-                # Split into coefficient and character parts
-                # Find the last alphabetic character
-                char_match = re.search(r'[a-zA-Z]', s)
-
-                if char_match:
-                    # There's a character
-                    char_pos = char_match.start()
-                    coeff_part = s[:char_pos]
-                    char_part = s[char_pos:]
-
-                    # Validate that character part is just one letter
-                    if not re.match(r'^[a-zA-Z]$', char_part):
-                        print(f"Error: Invalid character part: {char_part}")
-                else:
-                    # No character
-                    coeff_part = s
-                    char_part = ''
-
-                # Parse coefficient
-                if not coeff_part or coeff_part in ['+', '']:
-                    coefficient = Fraction(1)
-                elif coeff_part == '-':
-                    coefficient = Fraction(-1)
-                else:
-                    try:
-                        coefficient = Fraction(coeff_part)
-                    except ValueError:
-                        try:
-                            coefficient = Fraction(float(coeff_part)).limit_denominator()
-                        except ValueError as e:
-                            print(f"Error converting coefficient: {e}")
-
-                return coefficient, char_part
-
-            def generate_all_combinations(expressions, max_var_value=100):
-                """Generate all possible combinations of variable assignments and calculate sums.
-
-                Args:
-                    expressions (list): List of strings like ['2/3a', '1/3b', '1/2', 'a']
-                    max_var_value (int): Maximum value to assign to variables (1 to max_var_value)
-
-                Returns:
-                    list: List of tuples (sum_value, variable_assignments)
-                """
-                parsed_terms = []
-                variables = set()
-
-                for expr in expressions:
-                    coeff, var = extract_coeff_and_var(expr)
-                    parsed_terms.append((coeff, var))
-                    if var:
-                        variables.add(var)
-
-                variables = sorted(list(variables))
-
-                if not variables:
-                    total_sum = sum(coeff for coeff, var in parsed_terms if not var)
-                    yield (total_sum, {})
-                    return
-
-                # Generate combinations one at a time
-                var_ranges = [range(1, max_var_value + 1) for _ in variables]
-
-                for var_values in product(*var_ranges):
-                    var_assignment = dict(zip(variables, var_values))
-
-                    total_sum = Fraction(0)
-                    for coeff, var in parsed_terms:
-                        if var:
-                            total_sum += coeff * var_assignment[var]
-                        else:
-                            total_sum += coeff
-
-                    yield (total_sum, var_assignment)
-
-            def get_unique_sums(expressions, max_var_value=100):
-                """
-                Get unique sum values and count their occurrences
-
-                Returns:
-                    dict: {sum_value: count}
-                """
-                sum_counts = {}
-
-                for total_sum, var_assignment in generate_all_combinations(expressions, max_var_value):
-                    if total_sum in sum_counts:
-                        sum_counts[total_sum] += 1
-                    else:
-                        sum_counts[total_sum] = 1
-
-                return sum_counts
-
-            def match_vector_pattern(k_vec, k_vec_dict, symmetry=None):
-                """Check the k-vector against the standard form in isodistort.
-
-                Args:
-                    k_vec (str): The k-vector to use for the isodistort request.
-                    k_vec_dict (dict): The standard k-vector form in isodistort.
-                    symmetry (str, optional): The crystal system.
-
-                Returns:
-                    str: The standard k-vector form in isodistort.
-                """
-                from itertools import permutations
-
-                all_matches = {}
-
-                for desc, pattern in k_vec_dict.items():
-                    if len(pattern) != len(k_vec):
-                        continue
-
-                    if symmetry in ['cubic', 'rhombohedral']:
-                        k_vec_sequences = list(permutations(k_vec))
-                    elif symmetry in ['hexagonal', 'trigonal', 'tetragonal']:
-                        k_vec_sequences = [k_vec, (k_vec[1], k_vec[0], k_vec[2])]
-                    else:
-                        k_vec_sequences = [k_vec]
-
-                    for k_vec_seq in k_vec_sequences:
-                        pass
-
-                return
+            k_forms = k_vec_dict.items()
 
             k_vec_form = match_vector_pattern(k_vec, k_vec_dict, symmetry="cubic")
 
@@ -5506,68 +5347,16 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             except ValueError:
                 break
 
-
-        # The following chunk of code is for converting the k-vector from the
-        # conventional setting to the primitive setting.
         phase_sel = G2frame.kvecSearch['phase']
         _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         Phase = Phases[phase_sel]
-
-        lat_type = Phase["General"]["SGData"]["SGLatt"]
-        lat_sym = Phase["General"]["SGData"]["SGSys"]
-        if lat_sym == "trigonal":
-            brav_sym = "hR"
-        else:
-            brav_sym = lat_sym[0] + lat_type
-
-        Trans = np.eye(3)
-        Uvec = np.zeros(3)
-        Vvec = np.zeros(3)
-
-        newPhase = copy.deepcopy(Phase)
-        newPhase['ranId'] = ran.randint(0, sys.maxsize)
-        newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-        newPhase, _ = G2lat.TransformPhase(Phase, newPhase, Trans,
-            Uvec, Vvec, False)
-        atoms_pointer = newPhase['General']['AtomPtrs']
-
-        atom_coords = list()
-        atom_types = list()
-        for atom in newPhase["Atoms"]:
-            coord_tmp = atom[atoms_pointer[0]:atoms_pointer[0] + 3]
-            atom_coords.append(coord_tmp)
-            type_tmp = atom[atoms_pointer[1]]
-            atom_types.append(type_tmp)
-
-        atom_ids = kvs.unique_id_gen(atom_types)
-
-        cell_params = newPhase["General"]["Cell"][1:7]
-        lat_vectors = kvs.lat_params_to_vec(cell_params)
-
-        hkl_refls = list()
-        for i in range(6):
-            for j in range(6):
-                for k in range(6):
-                    hkl_refls.append([i, j, k])
-
-        k_search = kvs.kVector(
-            brav_sym, lat_vectors,
-            atom_coords, atom_ids,hkl_refls,
-            [0.], 0.
-        )
-        kpoint = k_search.hklConvToPrim(kpoint)
-        kpoint_frac = (
-            Fraction(kpoint[0]).limit_denominator(10),
-            Fraction(kpoint[1]).limit_denominator(10),
-            Fraction(kpoint[2]).limit_denominator(10)
-        )
 
         data['input'] = 'kvector'
         data['irrepcount'] = '1'
 
         kvec_dict = grab_all_kvecs(out2)
-
-        data_update = setup_kvec_input(kpoint_frac, kvec_dict, symmetry=lat_sym)
+        lat_sym = Phase['General']['SGData']
+        data_update = setup_kvec_input(kpoint, kvec_dict, symmetry=lat_sym)
         for key, value in data_update.items():
             data[key] = value
 

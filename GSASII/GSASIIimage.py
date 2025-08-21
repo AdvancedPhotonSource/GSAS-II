@@ -542,7 +542,7 @@ def GetDetectorXY2(dsp,azm,data):
         radius = (P+Q)/R
         xy = np.array([radius*cosd(azm),radius*sind(azm)])
         xy += cent
-    else:   #hyperbola - both branches (one is way off screen!)
+    else:   #hyperbola - both branches (one is way off screen!) - not correct
         sinb = abs(sind(tilt))
         tanb = abs(tand(tilt))
         f = dist*tanb*stth/(cosb+stth)
@@ -556,21 +556,13 @@ def GetDetectorXY2(dsp,azm,data):
         else:
             offset = -f
             xy = [-R*cosd(azm-phi)-offset,2.*R*sind(azm-phi)]
-            print(azm,R,offset,cosd(azm-phi),sind(azm-phi),xy)
+            print(azm,ecc,R,offset,cosd(azm-phi),sind(azm-phi),xy)
         xy = -np.array([xy[0]*cosd(phi)+xy[1]*sind(phi),xy[0]*sind(phi)-xy[1]*cosd(phi)])
         xy += cent
     if data['det2theta']:
         xy[0] += dist*nptand(data['det2theta']+data['tilt']*npsind(data['rotation']))
     return xy
 
-# def GetDetXYfromThAzm(Th,Azm,data):
-#     '''Computes a detector position from a 2theta angle and an azimultal
-#     angle (both in degrees) - apparently not used!
-#     '''
-#     dsp = data['wavelength']/(2.0*npsind(Th))
-#     return GetDetectorXY(dsp,Azm,data)
-
-# this suite not used for integration - only image plotting & mask positioning
 def GetTthAzmDsp2(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
     OK for ellipses & hyperbola.
@@ -1647,7 +1639,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     # if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
-        H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
+        H0 /= np.abs(npcosd(H2[:-1]+data['tilt']-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:

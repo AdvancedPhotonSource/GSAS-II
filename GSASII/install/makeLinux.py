@@ -45,7 +45,7 @@ if __name__ == '__main__' and sys.platform.startswith('linux'):
         # find the main GSAS-II script if not on command line
         path2GSAS2 = os.path.dirname(os.path.dirname(__file__))
         path2repo = os.path.dirname(path2GSAS2)
-        G2script = os.path.abspath(path2GSAS2,"G2.py")
+        G2script = os.path.abspath(os.path.join(path2GSAS2,"G2.py"))
     elif __file__.endswith("makeLinux.py") and len(sys.argv) == 2:
         G2script = os.path.abspath(sys.argv[1])
         path2GSAS2 = os.path.dirname(G2script)

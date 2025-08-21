@@ -1743,7 +1743,9 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
             except KeyError:        #no more peaks to process
                 return yb+yc
     else:
-        Pdabc = parmDict['Pdabc']
+        Pdabc = []
+        if 'pdabc' in parmDict: 
+            Pdabc = parmDict['pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
@@ -1755,24 +1757,24 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 alpName = 'alp'+str(iPeak)
                 if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
+                elif len(Pdabc):
+                    alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
                 else:
-                    if len(Pdabc):
-                        alp = np.interp(dsp,Pdabc[0],Pdabc[1])
-                    else:
-                        alp = G2mth.getTOFalpha(parmDict,dsp)
+                    alp = G2mth.getTOFalpha(parmDict,dsp)
                 alp = max(0.1,alp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
+                elif len(Pdabc):
+                    bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
                 else:
-                    if len(Pdabc):
-                        bet = np.interp(dsp,Pdabc[0],Pdabc[2])
-                    else:
-                        bet = G2mth.getTOFbeta(parmDict,dsp)
+                    bet = G2mth.getTOFbeta(parmDict,dsp)
                 bet = max(0.0001,bet)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
+                elif len(Pdabc):
+                    sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
                 else:
                     sig = G2mth.getTOFsig(parmDict,dsp)
                 gamName = 'gam'+str(iPeak)
@@ -2035,7 +2037,9 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 break
 
     else:
-        Pdabc = parmDict['Pdabc']
+        Pdabc = []
+        if 'pdabc' in parmDict: 
+            Pdabc = parmDict['pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
@@ -2047,26 +2051,27 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 alpName = 'alp'+str(iPeak)
                 if alpName in varyList or not peakInstPrmMode:
                     alp = parmDict[alpName]
+                elif len(Pdabc):
+                    alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
+                    dada0 = 0
                 else:
-                    if len(Pdabc):
-                        alp = np.interp(dsp,Pdabc[0],Pdabc[1])
-                        dada0 = 0
-                    else:
-                        alp = G2mth.getTOFalpha(parmDict,dsp)
-                        dada0 = G2mth.getTOFalphaDeriv(dsp)
+                    alp = G2mth.getTOFalpha(parmDict,dsp)
+                    dada0 = G2mth.getTOFalphaDeriv(dsp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList or not peakInstPrmMode:
                     bet = parmDict[betName]
+                elif len(Pdabc):
+                    bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
+                    dbdb0 = dbdb1 = dbdb2 = 0
                 else:
-                    if len(Pdabc):
-                        bet = np.interp(dsp,Pdabc[0],Pdabc[2])
-                        dbdb0 = dbdb1 = dbdb2 = 0
-                    else:
-                        bet = G2mth.getTOFbeta(parmDict,dsp)
-                        dbdb0,dbdb1,dbdb2 = G2mth.getTOFbetaDeriv(dsp)
+                    bet = G2mth.getTOFbeta(parmDict,dsp)
+                    dbdb0,dbdb1,dbdb2 = G2mth.getTOFbetaDeriv(dsp)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList or not peakInstPrmMode:
                     sig = parmDict[sigName]
+                    dsds0 = dsds1 = dsds2 = dsds3 = 0
+                elif len(Pdabc):
+                    sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
                     dsds0 = dsds1 = dsds2 = dsds3 = 0
                 else:
                     sig = G2mth.getTOFsig(parmDict,dsp)
@@ -2509,27 +2514,39 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         return dataType,instDict,insVary
 
     def GetPkInstParms(parmDict,Inst,varyList):
+        '''This sets default values for sigma & gamma in the 
+        single-peak fitting parameter dict when peakInstPrmMode is True
+        and the peak values are not being fit. (Why not alpha & beta?)
+        Note similar routine, GetPeaksParms, which sets values in the 
+        peak table. (TODO: add setting of alpha & beta here?)
+        '''
         for name in Inst:
             Inst[name][1] = parmDict[name]
+        Pdabc = []
+        if 'pdabc' in parmDict: 
+            Pdabc = parmDict['pdabc']
         iPeak = 0
         while True:
             try:
                 sigName = 'sig'+str(iPeak)
                 pos = parmDict['pos'+str(iPeak)]
+                if 'T' in Inst['Type'][0]:
+                    dsp = G2lat.Pos2dsp(Inst,pos)
                 if sigName not in varyList and peakInstPrmMode:
-                    if 'T' in Inst['Type'][0]:
-                        dsp = G2lat.Pos2dsp(Inst,pos)
+                    if 'T' in Inst['Type'][0] and len(Pdabc):
+                        parmDict[sigName] = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
+                    elif 'T' in Inst['Type'][0]:
                         parmDict[sigName] = G2mth.getTOFsig(parmDict,dsp)
-                    if 'E' in Inst['Type'][0]:
+                    elif 'E' in Inst['Type'][0]:
                         parmDict[sigName] = G2mth.getEDsig(parmDict,pos)
                     else:
                         parmDict[sigName] = G2mth.getCWsig(parmDict,pos)
                 gamName = 'gam'+str(iPeak)
                 if gamName not in varyList and peakInstPrmMode:
                     if 'T' in Inst['Type'][0]:
-                        dsp = G2lat.Pos2dsp(Inst,pos)
+                        # N.B. Gamma is not in the lookup table
                         parmDict[gamName] = G2mth.getTOFgamma(parmDict,dsp)
-                    if 'E' in Inst['Type'][0]:
+                    elif 'E' in Inst['Type'][0]:
                         parmDict[gamName] = G2mth.getEDgam(parmDict,pos)
                     else:
                         parmDict[gamName] = G2mth.getCWgam(parmDict,pos)
@@ -2580,8 +2597,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         return peakDict,peakVary
 
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
-        '''Put values into the Peaks list from the refinement results from inside
-        the parmDict array
+        '''Put single-peak fitting values into the Peaks List 
+        from the refinement results. Where values are not fit (unless 
+        peakInstPrmMode is False), they are computed from the 
+        Instrument Parameter values. 
+        Note that routine GetPkInstParms does this prior 
+        for sigma & gamma (only).
         '''
         names,_,_ = getHeaderInfo(Inst['Type'][0])
         off = 0
@@ -2593,6 +2614,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             for i,peak in enumerate(Peaks):
                 if type(peak) is dict: continue
                 parmDict['ttheta'+str(i)] = peak[-1]
+        Pdabc = []
+        if 'pdabc' in parmDict: 
+            Pdabc = parmDict['pdabc']
         for i,peak in enumerate(Peaks):
             if type(peak) is dict:
                 continue
@@ -2611,17 +2635,23 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 parName = names[j]+str(i)
                 if peak[2*j+off + 1] or not peakInstPrmMode: continue
                 if 'alp' in parName:
-                    if 'T' in Inst['Type'][0]:
+                    if 'T' in Inst['Type'][0] and len(Pdabc):
+                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
+                    elif 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFalpha(parmDict,dsp)
                     else: #'B'
                         peak[2*j+off] = G2mth.getPinkAlpha(parmDict,pos)
                 elif 'bet' in parName:
-                    if 'T' in Inst['Type'][0]:
+                    if 'T' in Inst['Type'][0] and len(Pdabc):
+                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
+                    elif 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFbeta(parmDict,dsp)
                     else:   #'B'
                         peak[2*j+off] = G2mth.getPinkBeta(parmDict,pos)
                 elif 'sig' in parName:
-                    if 'T' in Inst['Type'][0]:
+                    if 'T' in Inst['Type'][0] and len(Pdabc):
+                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
+                    elif 'T' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getTOFsig(parmDict,dsp)
                     elif 'E' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getEDsig(parmDict,pos)
@@ -2629,6 +2659,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                         peak[2*j+off] = G2mth.getCWsig(parmDict,pos)
                 elif 'gam' in parName:
                     if 'T' in Inst['Type'][0]:
+                        # N.B. Gamma is not in the pdabc lookup table
                         peak[2*j+off] = G2mth.getTOFgamma(parmDict,dsp)
                     elif 'E' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getEDgam(parmDict,pos)
@@ -2719,7 +2750,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     parmDict.update(bakDict)
     parmDict.update(insDict)
     parmDict.update(peakDict)
-    parmDict['Pdabc'] = []      #dummy Pdabc
+    parmDict['pdabc'] = []      #dummy Pdabc
     parmDict.update(Inst2)      #put in real one if there
     if prevVaryList:
         varyList = prevVaryList[:]
@@ -2809,7 +2840,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     sigDict = dict(zip(varyList,sig))
     GetBackgroundParms(parmDict,Background)
     if bakVary: BackgroundPrint(Background,sigDict)
-    GetPkInstParms(parmDict,Inst,varyList)
+    GetPkInstParms(parmDict,Inst,varyList) # sets sigma & gamma when computed
     if insVary: InstPrint(Inst,sigDict)
     GetPeaksParms(Inst,parmDict,Peaks,varyList)
     binsperFWHM = []
@@ -3402,6 +3433,52 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
 #             break
 #     dspaces = [0.5/np.sqrt(G2lat.calc_rDsq2(H,G)) for H in np.eye(3)]
 #     return min(dspaces)
+
+def findrmcprofile():
+    '''Find where RMCProfile is installed. Tries the following:
+
+         1. Returns the Config var `rmcprofile_exec`, if defined. This 
+            is the executable to run.
+         2. The path is checked for a RMCprofile image. Also checked are
+            the location where the GSAS-II Python files are found, 
+            the location where GSAS-II binaries are found, the current 
+            working directory and the location where the Python 
+            interpreter is found. 
+            On MacOS the only place where RMCProfile can be installed
+            is /Applications/ so only that is checked.
+
+    :returns: the full path to a python executable that is assumed to
+      have fullrmc installed or None, if it was not found.
+    '''
+    rmcprofile_exe = GSASIIpath.GetConfigValue('rmcprofile_exec')
+    if rmcprofile_exe is not None:
+        if is_exe(rmcprofile_exe):
+            return rmcprofile_exe
+        else:
+            print(f'Config var rmcprofile_exec defined as {rmcprofile_exe!r} but file not found or not exe.')
+    pathlist = os.environ["PATH"].split(os.pathsep)
+    for p in (GSASIIpath.path2GSAS2,GSASIIpath.binaryPath,os.getcwd(),
+                  os.path.split(sys.executable)[0]):
+        if p not in pathlist: pathlist.append(p)
+    if sys.platform == "win32":
+        lookfor = "rmcprofile.exe"
+    elif sys.platform == "darwin":
+        lookfor = "rmcprofile"
+        # MacOS: there is only one place where RMCProfile will run
+        pathlist = ["/Applications/RMCProfile.app/Contents/MacOS/exe"]
+        #pathlist.insert(0,"/Applications/RMCProfile.app/Contents/MacOS/exe")
+        #pathlist.insert(0,os.path.expanduser("~/Applications/RMCProfile.app/Contents/MacOS/exe"))
+    else:
+        lookfor = "rmcprofile"
+    for p in pathlist:
+        if not os.path.exists(p): continue
+        rmcprofile_exe = os.path.abspath(os.path.join(p,lookfor))
+        if is_exe(rmcprofile_exe):
+            if GSASIIpath.GetConfigValue('debug'):
+                print(f'rmcprofile found as {rmcprofile_exe!r}')
+            return rmcprofile_exe
+    if GSASIIpath.GetConfigValue('debug'):
+        print(f'rmcprofile not found. Path searched: {pathlist}')
 
 def findfullrmc():
     '''Find where fullrmc is installed. Tries the following:

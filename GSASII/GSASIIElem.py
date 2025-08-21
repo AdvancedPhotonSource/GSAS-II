@@ -89,7 +89,6 @@ def GetFFtable(atomTypes):
 
 def GetEFFtable(atomTypes):
     ''' returns a dictionary of electron form factor data for atom types found in atomTypes
-    might not be needed?
 
     :param list atomTypes: list of atom types
     :return: FFtable, dictionary of form factor data; key is atom type
@@ -242,6 +241,14 @@ def CheckElement(El):
         return True
     else:
         return False
+def StripValence(El):
+    'Returns element symbol without valence'
+    if '+' in El:
+        return El.split('+')[0]
+    elif '-' in El:
+        return El.split('-')[0]
+    else:
+        return El
 
 def FixValence(El):
     'Returns the element symbol, even when a valence is present'
@@ -906,12 +913,19 @@ def SetupGeneral(data, dirname):
 
     F000X = 0.
     F000N = 0.
+    F000E = 0.
+    ElTypes = [StripValence(elem) for elem in generalData['AtomTypes']]
+    EFFtables = GetEFFtable(ElTypes) 
     for i,elem in enumerate(generalData['AtomTypes']):
         F000X += generalData['NoAtoms'][elem]*generalData['Z']
         isotope = generalData['Isotope'][elem]
         F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope]['SL'][0]
+        if elem.strip() in ['D','T']:
+            elem = 'H'
+        F000E += generalData['NoAtoms'][elem]*ScatFac(EFFtables[StripValence(elem)],0.)[0]
     generalData['F000X'] = F000X
     generalData['F000N'] = F000N
+    generalData['F000E'] = F000E
     generalData['Mass'] = G2mth.getMass(generalData)
 
     if badList:

@@ -300,11 +300,20 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
             sellist = [vs.index(v) if v is not None else None for v in varsellist]
             #sellist = [i if G2fil.striphist(v,'*') in varsellist else None for i,v in enumerate(seqData[name]['varyList'])]
         if not varsellist: raise Exception()
-        vals.append([seqData[name]['variables'][s] if s is not None else None for s in sellist])
+        vallist = []
+        # lookup values: For coordinates (::dA[xyz]) get actual val, but use dA su
+        for v,s in zip(varlbls,sellist):
+            if s is None:
+                vallist.append(None)
+            elif v in seqData[name]['newAtomDict']:
+                vallist.append(seqData[name]['newAtomDict'][v][1])
+            else:
+                vallist.append(seqData[name]['variables'][s])
+        vals.append(vallist)
         esds.append([seqData[name]['sig'][s] if s is not None else None for s in sellist])
     tblValues += zip(*vals)
     tblSigs += zip(*esds)
-    tblLabels += varlbls
+    tblLabels += [s.replace('::dA','::A') for s in varlbls]
     tblTypes += ['float' for i in varlbls]
 
     # tabulate constrained variables, removing histogram numbers if needed
@@ -322,22 +331,26 @@ def mkSeqResTable(mode,seqHistList,seqData,Phases,Histograms,Controls):
                depValDict[svar].append(val)
                depSigDict[svar].append(sig)
 
-    # add the dependent constrained variables to the table
+    # add the dependent constrained variables to the table, except coordinates
     for var in sorted(depValDict):
+        if '::dA' in var: continue
         if len(depValDict[var]) != len(histNames): continue
         tblLabels.append(var)
         tblTypes.append('10,5')
         tblSigs += [depSigDict[var]]
         tblValues += [depValDict[var]]
 
-    # add refined atom parameters to table
+    # add unrefined atom parameters to table. Expect constrained values only
     for parm in sorted(atomLookup):
+        if parm in tblLabels: continue   # skip if already present
         tblLabels.append(parm)
         tblTypes.append('10,5')
         tblValues += [[seqData[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
-        if atomLookup[parm] in seqData[histNames[0]]['varyList']:
+        if atomLookup[parm] in seqData[histNames[0]]['varyList']: # refined
             col = seqData[histNames[0]]['varyList'].index(atomLookup[parm])
             tblSigs += [[seqData[name]['sig'][col] for name in histNames]]
+        elif atomLookup[parm] in depSigDict:  # constrained
+            tblSigs += [depSigDict[atomLookup[parm]]]
         else:
             tblSigs += [None]
 
@@ -1401,7 +1414,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         # data collection T value
         for h in phasedict['Histograms']:
             if not phasedict['Histograms'][h]['Use']: continue
-            if phasedict['Histograms'][h].get('Type','').startswith('HKL'):
+            if h.startswith('HKL'):
                 return False
             T = self.Histograms[h]['Sample Parameters']['Temperature']
             if np.any(abs(np.array(phasedict['Histograms'][h]['HStrain'][0])) > 1e-8):
@@ -1433,7 +1446,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         # data collection T value
         for h in phasedict['Histograms']:
             if not phasedict['Histograms'][h]['Use']: continue
-            if phasedict['Histograms'][h].get('Type','').startswith('HKL'):
+            if h.startswith('HKL'):
                 return ( # TODO Is temperature in HKLF datasets?
                     self.Histograms[h]['Instrument Parameters'].get('Temperature',295),
                     self.Histograms[h]['ranId']
@@ -3862,7 +3875,7 @@ class ExportCIF(G2fil.ExportBaseclass):
         # write quick CIFs
         #=================================================================
         if phaseOnly: #====Phase only CIF ================================
-            print('Writing CIF output to file '+self.filename)
+            print('Writing CIF output to file '+self.fullpath)
             oneblock = True
             self.quickmode = True
             self.Write(' ')
@@ -4280,7 +4293,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                 # setup and show sequential results table
                 tblLabels,tblValues,tblSigs,tblTypes = mkSeqResTable('cif',seqHistList,self.seqData,
                                                     self.Phases,self.Histograms,self.Controls)
-                WriteCIFitem(self.fp, '\n# Sequential results table') # (in case anyone can make sense of it)
+                WriteCIFitem(self.fp, '\n# Sequential results table') # (in case anyone can make use of it)
                 WriteCIFitem(self.fp, 'loop_   _gsas_seq_results_col_num _gsas_seq_results_col_label')
                 for i,lbl in enumerate(tblLabels):
                     s = PutInCol(str(i),5)
@@ -4415,7 +4428,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     G2mv.InitVars()
                     constrDict,fixedList,ignored = G2mv.ProcessConstraints(self.constList,'auto-wildcard',hId)
                     G2mv.EvaluateMultipliers(constrDict,self.parmDict)
-                    errmsg,warnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)
+                    errmsg,conswarnmsg,groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,self.parmDict)
                     WriteCIFitem(self.fp, '_refine_ls_number_constraints',
                                 str(G2mv.CountUserConstraints()))
 
@@ -4922,30 +4935,38 @@ class ExportPhaseCIF(ExportCIF):
         self.loadParmDict()
         self.multiple = True
         self.currentExportType = 'phase'
-        if self.ExportSelect('ask'): return
-        self.OpenFile(delayOpen=True)
-        MagPhase = None
-        ChemPhase = None
+        if self.ExportSelect('ask'):
+            return
+        else:
+            baseFileName, ext=os.path.splitext(self.filename)
+            for nameOfPhase in self.phasenam:
+                # strip non-ascii characters & replace white space in filename
+                fn = '_'.join(nameOfPhase.encode('ascii','ignore').decode().split())
+                # remove characters that should not be in a path
+                fn = fn.replace('\\','-').replace('/','-').replace(':','-')
+                self.filename = f"{baseFileName}{'_'}{fn}{ext}"
+                self.OpenFile(delayOpen=True)
+                MagPhase = None
+                ChemPhase = None
 
-        if len(self.phasenam) == 2:
-            for name in self.phasenam:
-                if self.Phases[name]['General']['Type'] == 'nuclear':
-                    ChemPhase = name
-                if self.Phases[name]['General']['Type'] == 'magnetic':
-                    MagPhase = name
-            if MagPhase and ChemPhase:
-                newPhase = self.mergeMag(self.G2frame,ChemPhase,MagPhase)
-                if newPhase is not None:
-                    self.openDelayed()
-                    newName = ChemPhase + '_merged'
-                    self.Phases = {newName:newPhase}
-                    self.MasterExporter(event=event,phaseOnly=newName)
-                    self.CloseFile()
-                    return
-        for name in self.phasenam:
-            self.openDelayed()
-            self.MasterExporter(event=event,phaseOnly=name)
-        self.CloseFile()
+                if len(self.phasenam) == 2:
+                    for name in self.phasenam:
+                        if self.Phases[name]['General']['Type'] == 'nuclear':
+                            ChemPhase = name
+                        if self.Phases[name]['General']['Type'] == 'magnetic':
+                            MagPhase = name
+                    if MagPhase and ChemPhase:
+                        newPhase = self.mergeMag(self.G2frame,ChemPhase,MagPhase)
+                        if newPhase is not None:
+                            self.openDelayed()
+                            newName = ChemPhase + '_merged'
+                            self.Phases = {newName:newPhase}
+                            self.MasterExporter(event=event,phaseOnly=newName)
+                            self.CloseFile()
+                            return
+                self.openDelayed()
+                self.MasterExporter(event=event,phaseOnly=nameOfPhase)
+                self.CloseFile()
 
     def Writer(self,hist,phasenam,mode='w'):
         # set the project file name

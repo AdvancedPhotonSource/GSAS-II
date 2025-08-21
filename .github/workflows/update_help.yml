@@ -1,0 +1,71 @@
+name: xfer help info from GSAS-II docs repo
+# This updates the help file to match the contents of the MDhelp directory
+# in the GSAS-II-tutorials repo. It is triggered from the builddocsite.yml
+# workflow in the GSAS-II-tutorials repo.
+
+on:
+  repository_dispatch: # run from Web API
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  pages: write
+
+jobs:
+  build:       # Build web pages
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout
+        # get the help pages from GSAS-II docs repo
+        uses: actions/checkout@v4
+        with:
+            repository: AdvancedPhotonSource/GSAS-II-tutorials.git
+            path: _docs
+            ref: main
+
+      - name: Python setup
+        uses: actions/setup-python@v3
+
+      - name: mkdocs setup
+        run: |
+          pip install mkdocs mkdocs-material python-markdown-math mkdocs-static-i18n
+          pip install mkdocs-to-pdf pymdown-extensions
+
+      # MD help conversion
+      - name: convert MDhelp
+        run: |
+          pwd
+          cd _docs/MDhelp
+          mkdocs build
+          python findMDanchors.py  # create an anchor index
+          rm -rf ../../GSASII/help/assets/javascripts/
+          rm -rf ../../GSASII/help/assets/stylesheets/
+          cp -vr site/* ../../GSASII/help
+          cd ../../GSASII/help
+          pwd
+          ls -lt
+
+      - name: git diagnostics
+        run: |
+          pwd 
+          git status
+          git diff
+          git add GSASII/help
+          echo "After add"
+          git status
+
+      - name: commit changes
+        run: |
+          git add GSASII/help
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m"update help files"
+
+      - name: push help into repo
+        run: |
+          git push

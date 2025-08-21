@@ -786,8 +786,8 @@ def MakeDrawAtom(data,atom,oldatom=None):
             oneLetter = AA3letter.index(atom[1])
         except ValueError:
             oneLetter = -1
-        atomInfo = [[atom[1].strip()+atom[0],]+
-            [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
+        atomInfo = [[atom[1].strip()+str(atom[0]),]+
+            [AA1letter[oneLetter]+str(atom[0]),]+atom[2:5]+
             atom[6:9]+['1',]+[deftype]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
         ct,cs = [4,11]         #type & color
     atNum = generalData['AtomTypes'].index(atom[ct])
@@ -1551,16 +1551,31 @@ def getMass(generalData):
         mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
     return max(mass,1.0)
 
-def getDensity(generalData):
-    '''calculate crystal structure density
+def getDensity(generalData,hist=None,data=None):
+    '''Calculate crystal structure density. Uses cell values only,
+    unless hist & data are supplied. In that case it uses 
+    the Dij terms as well. 
 
     :param dict generalData: The General dictionary in Phase
-
-    :returns: float density: crystal density in gm/cm^3
-
+    :param str hist: optional name of a histogram. When not None, 
+      the volume adjusted bt the Dij (hydrostatic strain terms) is 
+      used to compute the density.
+    :parm dict data: reference to entire phase data array. Required 
+      if hist is specified. Ignored otherwise. 
+    :returns: crystal density in gm/cm^3 (float) and Matthews Coeff.
+      (Vm or Volume/mass, float)
     '''
     mass = getMass(generalData)
     Volume = generalData['Cell'][7]
+    if hist is not None: # recompute the density using Dij terms
+        if data is None:
+            print('called getDensity with hist and without data')
+            raise Exception('Called getDensity with hist and without data')
+        A = G2lat.cell2A(data['General']['Cell'][1:7])
+        DijVals = data['Histograms'][hist]['HStrain'][0][:]
+        # apply the Dij values to the reciprocal cell
+        newA =  G2lat.AplusDij(A,DijVals,data['General']['SGData'])
+        Volume = G2lat.calc_V(newA)
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
 
@@ -4246,16 +4261,26 @@ def ChargeFlip(data,reflDict,pgbar):
     :returns: type name: description
 
     '''
+    print('Charge flip data type: ',reflDict['Type'])
     generalData = data['General']
     mapData = generalData['Map']
     flipData = generalData['Flip']
     FFtable = {}
-    if 'None' not in flipData['Norm element']:
+    if 'None' not in flipData['Norm element'] and 'N' not in reflDict['Type']:
         normElem = flipData['Norm element'].upper()
-        FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
+        if 'X' in reflDict['Type']:
+            FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
+        else: 
+            FFs = G2el.GetEFormFactorCoeff(normElem)
         for ff in FFs:
             if ff['Symbol'] == normElem:
                 FFtable.update(ff)
+        if 'X' in reflDict['Type']:
+            print('%s normalizing form factor: fa: %s, fb: %s, fc: %s'%(FFtable['Symbol'],
+                str(FFtable['fa']),str(FFtable['fb']),str(FFtable['fc'])))
+        else:
+            print('%s normalizing form factor: fa: %s, fb: %s'%(FFtable['Symbol'],
+                str(FFtable['fa']),str(FFtable['fb'])))
     dmin = flipData['GridStep']*2.
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
@@ -5123,18 +5148,19 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
             pos = Parms['difC']*dsp
         else:
             dsp = pos/Parms['difC'][1]
-        if 'Pdabc' in Parms2:
+        if 'pdabc' in Parms2 and len(Parms2['pdabc']):
             for x in ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
                 ins[x] = Parms.get(x,[0.0,0.0])[ind]
-            Pdabc = Parms2['Pdabc'].T
-            alp = np.interp(dsp,Pdabc[0],Pdabc[1])
-            bet = np.interp(dsp,Pdabc[0],Pdabc[2])
+            Pdabc = Parms2['pdabc']
+            alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
+            bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
+            sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
         else:
             for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
                 ins[x] = Parms.get(x,[0.0,0.0])[ind]
             alp = getTOFalpha(ins,dsp)
             bet = getTOFbeta(ins,dsp)
-        sig = getTOFsig(ins,dsp)
+            sig = getTOFsig(ins,dsp)
         gam = getTOFgamma(ins,dsp)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
     elif 'C' in Parms['Type'][0] or 'LF' in Parms['Type'][0]:
@@ -6330,6 +6356,29 @@ def UpdateHKLFvals(histoName, phaseData, reflData):
             else:
                 ref[3] = 0
 
+def FindTrue(t):
+    '''Returns ranges of indices of array t where t is True or False
+
+    :param list t: a list or 1-D array of bool values
+    :param bool Condition: select if True values oa list of indices 
+    
+    :returns: two list of indices, one where all values in the range are 
+      True and the second where all the values are False.
+    '''
+    prev = None
+    ranges = []
+    for i in np.array(range(len(t)-1))[np.diff(t)]:
+        if prev is None:
+            ranges.append([0,int(i)])
+        else:
+            ranges.append([prev+1,int(i)])
+        prev = int(i)
+    if ranges:
+        ranges.append([ranges[-1][1]+1,len(t)-1])
+    else:
+        ranges = [[0,len(t)-1]]
+    return ([i for i in ranges if t[i[0]]],
+            [i for i in ranges if not t[i[0]]])
 
 if __name__ == '__main__':
     annealtests()

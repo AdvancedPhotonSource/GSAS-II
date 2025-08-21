@@ -1,5 +1,5 @@
-GSAS-II Requirements, Python Packages and External Software
-==============================================================
+GSAS-II Execution Environment
+======================================================
 
 Supported Platforms
 --------------------------------
@@ -130,7 +130,11 @@ interpreter/package versions:
    but anything from 1.17 on is likely fine,
    but if you do not match the supplied GSAS-II binaries you will
    need to build them yourself.
- * matplotlib 3.6 is recommended, but 3.4 or later is preferred.
+ * matplotlib-base
+   Note that matplotlib-base is preferred over matplotlib unless
+   matplotlib will be used outside GSAS-II.
+   3.10 is recommended, but anything later than 3.4
+   should be fine.
  * pyOpenGL: no version-related problems have been seen.
  * SciPy: no version-related problems have been seen, but in at least one
    case multiple imports are tried to account for where function
@@ -170,7 +174,8 @@ Far fewer packages are required to run GSAS-II on a
 compute server via the scripting interface
 and without a GUI.
 
-GUI Requirements
+----------------
+ GUI Requirements
 ----------------
 
 When using the GSAS-II graphical user interface (GUI), the following
@@ -257,13 +262,13 @@ optional packages are:
   conda-forge. Here is a typical conda command used to install a GSAS-II compatible
   Python interpreter after miniforge has been installed::
 
-       conda install python=3.11  numpy=1.26 wxpython scipy matplotlib pyopengl pillow h5py imageio requests git gitpython pycifrw pybaselines -c conda-forge
+       conda install python=3.13  numpy=2.2 wxpython scipy matplotlib-base pyopengl pillow h5py imageio requests git gitpython pycifrw pybaselines -c conda-forge
 
   for development environments, it is useful to have build and
   debugging tools available, so here is a more extensive list of
   useful packages::
 
-     conda create -n py311 python=3.11 numpy=1.26 matplotlib scipy wxpython  pyopengl imageio h5py hdf5 pillow requests pycifrw pybaselines ipython conda spyder-kernels meson sphinx sphinx-rtd-theme jupyter git gitpython -c conda-forge
+     conda create -n py311 python=3.11 numpy=1.26 matplotlib-base scipy wxpython  pyopengl imageio h5py hdf5 pillow requests pycifrw pybaselines ipython conda spyder-kernels meson sphinx sphinx-rtd-theme jupyter git gitpython -c conda-forge
 
 To find out what packages have been directly installed in a conda
 environment this command can be used::
@@ -275,7 +280,8 @@ Note that binaries for Python 3.12 and 3.13 using numpy 2.2 are also now supplie
 .. _ScriptingRequirements:
 
 
-Scripting Requirements
+-----------------------
+ Scripting Requirements
 -----------------------
 
 The GSAS-II scripting interface (:mod:`GSASIIscriptable`) will not
@@ -326,7 +332,7 @@ that are so new that they probably have not been tested with GSAS-II.
 
     bash ~/Downloads/Miniconda3-latest-<platform>-x86_64.sh -b -p /loc/pyg2script
     source /loc/pyg2script/bin/activate
-    conda install numpy scipy pycifrw matplotlib pillow h5py hdf5
+    conda install numpy scipy pycifrw matplotlib-base pillow h5py hdf5
 
 Some discussion on these commands follows:
 
@@ -349,7 +355,8 @@ Notes on these commands:
 * the 2nd command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
 
 
-Optional Python Packages
+---------------------------
+ Optional Python Packages
 ---------------------------
 
 * Sphinx (https://www.sphinx-doc.org) is used to generate the

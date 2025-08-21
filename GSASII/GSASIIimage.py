@@ -26,11 +26,13 @@ from . import ImageCalibrants as calFile
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
+sinhd = lambda x: math.sinh(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
 atand = lambda x: 180.*math.atan(x)/math.pi
 atan2d = lambda y,x: 180.*math.atan2(y,x)/math.pi
 cosd = lambda x: math.cos(x*math.pi/180.)
 acosd = lambda x: 180.*math.acos(x)/math.pi
+coshd = lambda x: math.cosh(x*math.pi/180.)
 rdsq2d = lambda x,p: round(1.0/math.sqrt(x),p)
 #numpy versions
 npsind = lambda x: np.sin(x*np.pi/180.)
@@ -41,27 +43,38 @@ nptand = lambda x: np.tan(x*np.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 nxs = np.newaxis
-debug = False
+debug = True
 
-def pointInPolygon(pXY,xy):
-    'Needs a doc string'
-    #pXY - assumed closed 1st & last points are duplicates
-    Inside = False
-    N = len(pXY)
-    p1x,p1y = pXY[0]
-    for i in range(N+1):
-        p2x,p2y = pXY[i%N]
-        if (max(p1y,p2y) >= xy[1] > min(p1y,p2y)) and (xy[0] <= max(p1x,p2x)):
-            if p1y != p2y:
-                xinters = (xy[1]-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-            if p1x == p2x or xy[0] <= xinters:
-                Inside = not Inside
-        p1x,p1y = p2x,p2y
-    return Inside
+# def pointInPolygon(pXY,xy):
+#     'Not used anywhere - probably superceded by new matplotlib polygon routine'
+#     #pXY - assumed closed 1st & last points are duplicates
+#     Inside = False
+#     N = len(pXY)
+#     p1x,p1y = pXY[0]
+#     for i in range(N+1):
+#         p2x,p2y = pXY[i%N]
+#         if (max(p1y,p2y) >= xy[1] > min(p1y,p2y)) and (xy[0] <= max(p1x,p2x)):
+#             if p1y != p2y:
+#                 xinters = (xy[1]-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+#             if p1x == p2x or xy[0] <= xinters:
+#                 Inside = not Inside
+#         p1x,p1y = p2x,p2y
+#     return Inside
 
 def peneCorr(tth,dep,dist):
-    'Needs a doc string'
+    'Compute empirical position correction due to detector absorption'
     return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
+
+def SamAbs(data,tax,tay,muT):
+    'Compute sample absorption correction for images'
+    if 'Cylind' in data['SampleShape']:
+        muR = muT*(1.+npsind(tay)**2/2.)/(npcosd(tax))      #adjust for additional thickness off sample normal
+        tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
+    elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
+        tabs = G2pwd.Absorb('Fixed',muT,tay)
+    else:
+        tabs = np.ones_like(tax)
+    return tabs
 
 def makeMat(Angle,Axis):
     '''Make rotation matrix from Angle and Axis
@@ -371,10 +384,11 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     'Needs a doc string'
     def ellipseC():
         'compute estimate of ellipse circumference'
-        if radii[0] < 0:        #hyperbola
-#            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
-#            print (theta)
-            return 0
+        if radii[0] <= 0:        #hyperbola
+            if debug: 
+                theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
+                print ('hyperbola:',theta)
+            return 200.*np.pi
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
         return np.pi*apb*(1+3*(amb/apb)**2/(10+np.sqrt(4-3*(amb/apb)**2)))
@@ -387,8 +401,12 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     azm = []
     for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
-        x = radii[1]*cosd(a-phi+90.)        #major axis
-        y = radii[0]*sind(a-phi+90.)
+        if radii[1] <= 0:        #parabola or hyperbola
+            x = radii[1]*coshd(a-phi+90.)        #major axis
+            y = radii[0]*sinhd(a-phi+90.)
+        else:
+            x = radii[1]*cosd(a-phi+90.)        #major axis
+            y = radii[0]*sind(a-phi+90.)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
         Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)
@@ -459,39 +477,38 @@ def GetEllipse(dsp,data):
 def GetDetectorXY(dsp,azm,data):
     '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
     & image controls dictionary (data) - new version
-    it seems to be only used in plotting
+    it seems to be only used in plotting & wrong
     '''
     def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
 
     	ndotu = planeNormal.dot(rayDirection)
     	if ndotu < epsilon:
     		return None
-
     	w = rayPoint - planePoint
     	si = -planeNormal.dot(w) / ndotu
     	Psi = w + si * rayDirection + planePoint
     	return Psi
 
-
     dist = data['distance']
     cent = data['center']
-    T = makeMat(data['tilt'],0)
-    R = makeMat(data['rotation'],2)
+    phi = data['rotation']-90.          #to give rotation of major axis
+    T = makeMat(data['tilt'],0)     #rotate about X
+    R = makeMat(phi,2)     #rotate about Z
     MN = np.inner(R,np.inner(R,T))
     iMN= nl.inv(MN)
     tth = 2.0*npasind(data['wavelength']/(2.*dsp))
-    vect = np.array([npsind(tth)*npcosd(azm),npsind(tth)*npsind(azm),npcosd(tth)])
+    vect = np.array([npsind(tth)*npcosd(azm-phi),npsind(tth)*npsind(azm-phi),npcosd(tth)])
     dxyz0 = np.inner(np.array([0.,0.,1.0]),MN)    #tilt detector normal
     dxyz0 += np.array([0.,0.,dist])                 #translate to distance
     dxyz0 = np.inner(dxyz0,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
     dxyz1 = np.inner(np.array([cent[0],cent[1],0.]),MN)    #tilt detector cent
     dxyz1 += np.array([0.,0.,dist])                 #translate to distance
     dxyz1 = np.inner(dxyz1,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
-    xyz = LinePlaneCollision(dxyz0,dxyz1,vect,2.*dist*vect)
+    xyz = LinePlaneCollision(dxyz1,dxyz0,vect,dist*vect)
     if xyz is None:
         return np.zeros(2)
 #        return None
-    xyz = np.inner(xyz,makeMat(-data['det2theta'],1).T)
+    xyz = np.inner(xyz,makeMat(data['det2theta'],1).T)
     xyz -= np.array([0.,0.,dist])                 #translate back
     xyz = np.inner(xyz,iMN)
     return np.squeeze(xyz)[:2]+cent
@@ -509,7 +526,7 @@ def GetDetectorXY2(dsp,azm,data):
     tth = 2.0*asind(data['wavelength']/(2.*dsp))
     stth = sind(tth)
     cosb = cosd(tilt)
-    if radii[0] > 0.:
+    if radii[0] > 0.: #ellipse - correct!
         sinb = sind(tilt)
         tanb = tand(tilt)
         fplus = dist*tanb*stth/(cosb+stth)
@@ -519,6 +536,8 @@ def GetDetectorXY2(dsp,azm,data):
         rsqminus = radii[0]**2-radii[1]**2
         R = rsqminus*cosd(2.*azm-2.*phi)+rsqplus
         Q = np.sqrt(2.)*radii[0]*radii[1]*np.sqrt(R-2.*zdis**2*sind(azm-phi)**2)
+        if radii[0] <= 0.:
+            zdis *= -1.
         P = 2.*radii[0]**2*zdis*cosd(azm-phi)
         radius = (P+Q)/R
         xy = np.array([radius*cosd(azm),radius*sind(azm)])
@@ -530,13 +549,14 @@ def GetDetectorXY2(dsp,azm,data):
         v = dist*(tanb+tand(tth-abs(tilt)))
         delt = dist*stth*(1+stth*cosb)/(sinb*cosb*(stth+cosb))
         ecc = (v-f)/(delt-v)
-        R = radii[1]*(ecc**2-1)/(1-ecc*cosd(azm))
+        R = radii[1]*(ecc**2-1)/(1-ecc*cosd(azm-phi))
         if tilt > 0.:
             offset = 2.*radii[1]*ecc+f      #select other branch
-            xy = [-R*cosd(azm)-offset,-R*sind(azm)]
+            xy = [-R*cosd(azm-phi)-offset,-R*sind(azm-phi)]
         else:
             offset = -f
-            xy = [-R*cosd(azm)-offset,R*sind(azm)]
+            xy = [-R*cosd(azm-phi)-offset,2.*R*sind(azm-phi)]
+            print(azm,R,offset,cosd(azm-phi),sind(azm-phi),xy)
         xy = -np.array([xy[0]*cosd(phi)+xy[1]*sind(phi),xy[0]*sind(phi)-xy[1]*cosd(phi)])
         xy += cent
     if data['det2theta']:
@@ -586,7 +606,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     Use for detector 2-theta != 0.
 
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
-        and dsp is the d-space - not used in integration
+        and dsp is the d-space - only used for non-zero detector 2-thetas
     '''
 
     def costth(xyz):
@@ -666,8 +686,7 @@ def GetTthAzmG2(x,y,data):
     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
 # G-calculation - use Law of sines
     distm = data['distance']/1000.0
-    sinB2 = np.minimum(np.ones_like(tth),
-                    (data['distance']*npsind(tth))**2/(dx**2+dy**2))
+    sinB2 = np.minimum(np.ones_like(tth),(data['distance']*npsind(tth))**2/(dx**2+dy**2))
     #sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
     G = distm**2*sinB2/npsind(C)**2
@@ -771,8 +790,10 @@ def GetLineScan(image,data):
     Ypix = ma.masked_outside(xy[0],0,Nx-1)
     xpix = Xpix[~(Xpix.mask+Ypix.mask)].compressed()
     ypix = Ypix[~(Xpix.mask+Ypix.mask)].compressed()
-    Ty = image[xpix,ypix]
+    Ty = np.array(image[xpix,ypix],dtype=float)
     Tx = ma.array(Tx,mask=Xpix.mask+Ypix.mask).compressed()
+    Ty /= npcosd(Tx)**2                        #do parallax 
+    Ty *= (data['distance']/1000.)**2           #do dist correction 
     return [Tx,Ty]
 
 def EdgeFinder(image,data):
@@ -833,9 +854,9 @@ def CalcRings(G2frame,ImageZ,data,masks):
         if debug:   print (H)
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
-        if tth+abs(data['tilt']) > 90.:
-            G2fil.G2Print ('next line is a hyperbola - search stopped')
-            break
+        # if tth+abs(data['tilt']) > 90.:
+        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
+        #     break
         ellipse = GetEllipse(dsp,data)
         if iH not in absent and iH >= skip:
             Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
@@ -911,9 +932,9 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         if debug:   print (H)
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
-        if tth+abs(data['tilt']) > 90.:
-            G2fil.G2Print ('next line is a hyperbola - search stopped')
-            break
+        # if tth+abs(data['tilt']) > 90.:
+        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
+        #     break
         ellipse = GetEllipse(dsp,data)
         if iH not in absent and iH >= skip:
             Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
@@ -923,6 +944,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
             if iH not in absent and iH >= skip:
                 data['rings'].append(np.array(Ring))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
+            if debug: print('added ellipse:',ellipse)
             Found = True
         elif not Found:         #skipping inner rings, keep looking until ring found
             continue
@@ -1126,9 +1148,9 @@ def ImageCalibrate(G2frame,data):
     for i,H in enumerate(HKL):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
-        if tth+abs(data['tilt']) > 90.:
-            G2fil.G2Print ('next line is a hyperbola - search stopped')
-            break
+        # if tth+abs(data['tilt']) > 90.:
+        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
+        #     break
         if debug:   print ('HKLD:'+str(H[:4])+'2-theta: %.4f'%(tth))
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
@@ -1239,9 +1261,10 @@ def polymask(data,Poly,Spots=[]):
     ax0 = figure.add_subplot()
     ax0.axis("off")
     figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-    px = np.array(Poly).T[0]/scalex
-    py = np.array(Poly).T[1]/scaley
-    ax0.fill(px,py,inmask)
+    for poly in Poly:
+        px = np.array(poly).T[0]/scalex
+        py = np.array(poly).T[1]/scaley
+        ax0.fill(px,py,inmask)
     for spot in Spots:
         px = np.array(spot).T[0]/scalex
         py = np.array(spot).T[1]/scaley
@@ -1274,7 +1297,7 @@ def MakeMaskMap(data,masks,iLim,jLim):
     poly = np.zeros(data['size'],dtype='uint8')
     if iLim[0] == jLim[0] == 0:
         if masks['Frames']:
-            frame = np.abs(polymask(data,masks['Frames'])-255) #turn inner to outer mask
+            frame = np.abs(polymask(data,[masks['Frames'],])-255) #turn inner to outer mask
         if masks['Polygons'] or masks['Points']:
             poly = polymask(data,masks['Polygons'],masks['Points'])
         masks['Pmask'] =  frame+poly
@@ -1478,13 +1501,7 @@ def AzimuthIntegrate(image,data,masks,ringId,blkSize=1024):
             Block = image[iBeg:iFin,jBeg:jFin]          # image Pixel mask has been applied here
             tax,tay,taz,tad = Fill2ThetaAzimuthMap(AMasks,TAr,tam,Block,ringMask=True)    #applies Ring masks only & returns contents
             if data.get('SampleAbs',[0.0,''])[1]:
-                if 'Cylind' in data['SampleShape']:
-                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
-                    tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
-                elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
-                    tabs = G2pwd.Absorb('Fixed',muT,tay)
-                else:
-                    tabs = np.ones_like(taz)
+                tabs = SamAbs(data,tax,tay,muT)
             else:
                 tabs = np.ones_like(taz)
             taz = np.array((taz*tad*tabs),dtype='float32')
@@ -1584,13 +1601,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)                 #are these really needed?
             if data.get('SampleAbs',[0.0,''])[1]:
-                if 'Cylind' in data['SampleShape']:
-                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
-                    tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
-                elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
-                    tabs = G2pwd.Absorb('Fixed',muT,tay)
-                else:
-                    tabs = np.ones_like(taz)
+                tabs = SamAbs(data,tax,tay,muT)
             else:
                 tabs = np.ones_like(taz)
             if 'log(q)' in data.get('binType',''):
@@ -1635,7 +1646,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         H1 = LRazm
     if 'SASD' not in data['type']:
         H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
-    if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
+    # if np.abs(data['det2theta']) < 1.0:         #small angle approx only; not appropriate for detectors at large 2-theta
         H0 /= np.abs(npcosd(H2[:-1]-np.abs(data['det2theta'])))**4           #parallax correction (why **4?)
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
@@ -1728,6 +1739,10 @@ def IntStrSta(Image,StrSta,Controls):
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
+            if Controls.get('SampleAbs',[0.0,''])[1]:
+                muT = Controls.get('SampleAbs',[0.0,''])[0]
+                tabs = SamAbs(Controls,Th,Azm,muT)
+                ringint *= tabs
             ringint /= pola[0]      #just 1st column
             G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
             RingsAI.append(np.array(list(zip(ringazm,ringint))).T)
@@ -1867,13 +1882,15 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
         return [posx,posy,spotSize]
     else:
         result = leastsq(calc2Peak,vals,args=(nxy,pixSize,ImBox),full_output=True)
+        if result[1] is None:
+            return [px,py,spotSize]
         vals = result[0]
         ratio = vals[4]/vals[5]
         if 0.5 < ratio < 2.0 and vals[2] < 2. and vals[3] < 2.:
             posx,posy = [px+vals[2],py+vals[3]]
             return [posx,posy,min(6.*vals[4],spotSize)]
         else:
-            return None
+            return [px,py,spotSize]
 
 def TestFastPixelMask():
     '''Test if the fast (C) version of Auto Pixel Masking is available.

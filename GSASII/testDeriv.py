@@ -207,7 +207,7 @@ class testDeriv(wx.Frame):
                 pr = cProfile.Profile()
                 pr.enable()
             M = G2stMth.errRefine(self.values,self.HistoPhases,
-                self.parmDict,self.varylist,self.calcControls,
+                self.parmDict,{},self.varylist,self.calcControls,
                 self.pawleyLookup,None)
             if self.timingOn:
                 pr.disable()
@@ -229,9 +229,9 @@ class testDeriv(wx.Frame):
                 pr.enable()
             #regenerate minimization fxn
             G2stMth.errRefine(self.values,self.HistoPhases,
-                self.parmDict,self.varylist,self.calcControls,
+                self.parmDict,{},self.varylist,self.calcControls,
                 self.pawleyLookup,None)
-            dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
+            dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,{},
                 self.names,self.calcControls,self.pawleyLookup,None)
             if doProfile and self.timingOn:
                 pr.disable()
@@ -261,11 +261,11 @@ class testDeriv(wx.Frame):
                             print('are:')
                             first = False
                         print(i,orig[i],self.parmDict[i],orig[i]-self.parmDict[i])
-                M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,{},
                     self.names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] = self.values[ind] =  self.values[ind] + 2.*delt
                 G2mv.Dict2Map(self.parmDict)
-                M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,{},
                     self.names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] = self.values[ind] =  self.values[ind] - delt
                 G2mv.Dict2Map(self.parmDict)
@@ -275,11 +275,11 @@ class testDeriv(wx.Frame):
                     #delt *= -1  # why???
                 self.parmDict[name] -= delt
                 G2mv.Dict2Map(self.parmDict)
-                M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,{},
                         self.names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] += 2.*delt
                 G2mv.Dict2Map(self.parmDict)
-                M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,{},
                         self.names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] -= delt    
                 G2mv.Dict2Map(self.parmDict)

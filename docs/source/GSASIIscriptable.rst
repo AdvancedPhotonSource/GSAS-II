@@ -420,6 +420,7 @@ method                                                Use
 :meth:`~GSASIIscriptable.G2Image.TestFastPixelMask`   Returns True if fast pixel masking is available.
 :meth:`~GSASIIscriptable.G2Image.clearImageCache`     Clears a saved image from memory, if one is present. 
 :meth:`~GSASIIscriptable.G2Image.clearPixelMask`      Clears a saved Pixel map from the project, if one is present. 
+:meth:`~GSASIIscriptable.G2Image.loadPixelMask`       Loads a Pixel map from an array
 ====================================================  ===============================================================================================================
 
 .. _Class_G2PDF:

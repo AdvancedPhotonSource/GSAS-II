@@ -1386,7 +1386,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         
     def refPlotUpdate(Histograms,cycle=None,restore=False):
         '''called to update an existing plot during a Rietveld fit; it only 
-        updates the curves, not the reflection marks or the legend
+        updates the curves, not the reflection marks or the legend. 
+        It should be called with restore=True to reset plotting 
+        parameters after the refinement is done.
         '''
         if restore:
             (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
@@ -1396,7 +1398,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if plottingItem not in Histograms:
             histoList = [i for i in Histograms.keys() if i.startswith('PWDR ')]
             if len(histoList) == 0:
-                print('Skipping plot, no PWDR item found!')
+                print('Skipping plot update, no PWDR items!')
                 return
             plotItem = histoList[0]
         else:
@@ -1418,6 +1420,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Ifin = np.searchsorted(X,limits[1][1])
         if Ibeg == Ifin: # if no points are within limits bad things happen 
             Ibeg,Ifin = 0,None
+        elif Ibeg > Ifin:
+            Ifin, Ibeg = Ibeg, Ifin # TOF with order reversed
+
         if Page.plotStyle['sqrtPlot']:
             olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
             Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
@@ -1454,6 +1459,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 Plot.set_title(Title)
         Page.canvas.draw()
+        wx.GetApp().Yield()
         
     def incCptn(string):
         '''Adds a underscore to "hide" a MPL object from the legend if 
@@ -3110,7 +3116,12 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
         fp.write('@{}axis tick major {}\n'.format('x',xticks[1]-xticks[0]))
         fp.write('@{}axis tick major {}\n'.format('y',ytick))
         fp.write("@type xy\n")
-        for x,y,m in zip(savedX,ysig,savedX.mask):
+        try:  # new behavior: .mask can return a single np.False_ value
+            savedX_mask = savedX.mask
+            len(savedX_mask)
+        except TypeError:
+            savedX_mask = len(savedX)*[False]
+        for x,y,m in zip(savedX,ysig,savedX_mask):
             if not m: fp.write("{} {}\n".format(x,y))
         fp.write("&\n")
         fp.write(linedef3.format("s1",'',1,0,1.0,0,0,1))

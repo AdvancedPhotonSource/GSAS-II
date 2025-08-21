@@ -31,12 +31,6 @@ import copy
 import random as ran
 import numpy as np
 
-#import matplotlib as mpl
-try:
-    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
-except ImportError:
-    from matplotlib.backends.backend_wx import FigureCanvas as Canvas
-
 from . import GSASIIpath
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIpwdGUI as G2pdG
@@ -475,7 +469,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
         if GSASIIpath.GetConfigValue('debug') and warn:
-            print('ValidatedTxtCtrl.SetValue using in callback?')
+            print('ValidatedTxtCtrl.SetValue used in callback?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val
@@ -4961,7 +4955,7 @@ class ShowLSParms(wx.Dialog):
         parmSizer.Add(selectionsSizer,0)
         refChoices = ['All','Refined']
         txt = ('"R" indicates a refined variable\n'+
-               '"C" indicates generated from a user entered constraint')
+               '"C" value generated from a constraint')
         if fcount:
             refChoices += ['Frozen']
             txt += '\n"F" indicates a variable that is Frozen due to exceeding min/max'
@@ -5900,13 +5894,13 @@ class MyHelp(wx.Menu):
             helpobj = self.Append(wx.ID_ANY,lbl,'')
             frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
             self.HelpById[helpobj.GetId()] = indx
-        # add help lookup(s) in gsasii.html
+        # add help lookup(s) in GSAS-II Help
         self.AppendSeparator()
         if includeTree:
             helpobj = self.Append(wx.ID_ANY,'Help on GSAS-II',
-                'Access web page with information on GSAS-II')
+                'Access web pages with information on GSAS-II')
             frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
-            self.HelpById[helpobj.GetId()] = 'Data tree'
+            self.HelpById[helpobj.GetId()] = 'HelpIntro'
         helpobj = self.Append(wx.ID_ANY,'Help on current data tree item\tF1',
                 'Access web page on selected item in tree')
         frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
@@ -5916,21 +5910,18 @@ class MyHelp(wx.Menu):
 
     def OnHelpById(self,event):
         '''Called when Help on... is pressed in a menu. Brings up a web page
-        for documentation. Uses the helpKey value from the dataWindow window
-        unless a special help key value has been defined for this menu id in
-        self.HelpById
+        for documentation. Uses the G2frame.dataWindow.helpKey value to select
+        what help is shown, unless a special help key value has been defined 
+        for the calling menu id (via a lookup in self.HelpById[], which is used
+        for Tutorials & Overall help). 
+        Note that G2frame.dataWindow.helpKey SelectDataTreeItem and reflects 
+        the data tree item that has been selected.
 
-        Note that self should now (2frame) be child of the main window (G2frame)
+        Note that self here should be a child of the main window (G2frame)
+        where self.frame is G2frame
         '''
-        if hasattr(self.frame,'dataWindow'):  # Debug code: check this is called from menu in G2frame
-            # should always be true in 2 Frame version
-            dW = self.frame.dataWindow
-        else:
-            print('help error: not called from standard menu?')
-            print (self)
-            return
         try:
-            helpKey = dW.helpKey # look up help from helpKey in data window
+            helpKey = self.frame.dataWindow.helpKey # look up help from helpKey in data window
             #if GSASIIpath.GetConfigValue('debug'): print 'DBG_dataWindow help: key=',helpKey
         except AttributeError:
             helpKey = ''
@@ -6035,7 +6026,7 @@ cite some of the following works as well:'''
 class HelpButton(wx.Button):
     '''Create a help button that displays help information.
     The text can be displayed in a modal message window or it can be
-    a reference to a location in the gsasII.html (etc.) help web page, in which
+    a reference to a location in the gsasII help web pages, in which
     case that page is opened in a web browser.
 
     TODO: it might be nice if it were non-modal: e.g. it stays around until
@@ -6046,9 +6037,12 @@ class HelpButton(wx.Button):
     :param str msg: the help text to be displayed. Indentation on
        multiline help text is stripped (see :func:`StripIndents`). If wrap
        is set as non-zero, all new lines are
-    :param str helpIndex: location of the help information in the gsasII.html
-      help file in the form of an anchor string. The URL will be
-      constructed from: location + gsasII.html + "#" + helpIndex
+    :param str helpIndex: selection for the help information in the GSAS-II
+      help files, in the form of an anchor string. That anchor is looked 
+      up to find the file name and the URL is constructed from: 
+
+         <location> + <filename> + "#" + helpIndex
+
     :param int wrap: if specified, the text displayed is reformatted by
       wrapping it to fit in wrap pixels. Default is None which prevents
       wrapping.
@@ -6884,17 +6878,17 @@ class SelectConfigSetting(wx.Dialog):
             self.varsizer.Add(rb, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         else:
             if var.endswith('_directory') or var.endswith('_location'):
-                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn = wx.Button(self,wx.ID_ANY,'Select from file dialog...')
                 btn.Bind(wx.EVT_BUTTON,self.onSelDir)
                 sz = (400,-1)
             elif var.endswith('_exec'):
-                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn = wx.Button(self,wx.ID_ANY,'Select from file dialog...')
                 btn.Bind(wx.EVT_BUTTON,self.onSelExec)
                 sz = (400,-1)
             elif var.endswith('_color') and var != 'Contour_color':
                 self.colorText = wx.StaticText(self,wx.ID_ANY,size=(80,20))
                 self.colorChip = wx.StaticText(self,wx.ID_ANY,size=(80,30))
-                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                btn = wx.Button(self,wx.ID_ANY,'Select from color selector...')
                 btn.Bind(wx.EVT_BUTTON,self.onSelColor)
                 sz = (400,-1)
             else:
@@ -7016,6 +7010,11 @@ class G2RefinementProgress(wx.Dialog):
     '''
     def __init__(self, title='Refinement progress', message='All data Rw =',
         maximum=101, parent=None, trialMode=False,seqLen=0, seqShow=3,style=None):
+        #import matplotlib as mpl
+        try:
+            from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
+        except ImportError:
+            from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
         self.trialRw = trialMode # used for Levenberg-Marquardt fitting
         self.SeqLen = seqLen
@@ -7626,22 +7625,31 @@ except TypeError:
 htmlPanel = None
 htmlFrame = None
 htmlFirstUse = True
-#helpLocDict = {}  # to be implemented if we ever split gsasii.html over multiple files
+helpLocDict = {}
+'This is an index to the HTML anchors defined in the GSAS-II help files'
 path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this file
 def ShowHelp(helpType,frame,helpMode=None):
     '''Called to bring up a web page for documentation.'''
     global htmlFirstUse,htmlPanel,htmlFrame
+    if not helpLocDict: # load the anchor index
+        indx = os.path.abspath(os.path.join(path2GSAS2,'help','anchorIndex.txt'))
+        print('reading file',indx)
+        with open(indx,'r') as indexfile:
+            for line in indexfile.readlines():
+                fil,anchors = line.split(':')
+                for a in anchors.split(','):
+                    #if a in helpLocDict: print(a,'repeated!')
+                    helpLocDict[a.strip()] = fil
     # no defined link to use, create a default based on key
-    if helpType.lower().startswith('pwdr'):
-        helplink = 'gsasII-pwdr.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
-    elif helpType.lower().startswith('phase'):
-        helplink = 'gsasII-phase.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
-    elif helpType.lower().startswith('hist/phase'):
-        helplink = 'gsasII-phase.html#Phase-Data'
-    elif helpType:
-        helplink = 'gsasII.html#'+helpType.replace(')','').replace('(','_').replace(' ','_')
-    else:
-        helplink = 'gsasII.html'
+    helplink = 'index.html'
+    if helpType:
+        anchor = helpType.replace(')','').replace('(','_').replace(' ','_')
+        if anchor not in helpLocDict:
+            print(f'Help lookup problem, anchor {anchor} not found'
+                      '\nPlease report this to toby@anl.gov along with a'
+                      '\nscreen image showing where you tried to get help')
+        else:
+            helplink = f'{helpLocDict[anchor]}#{anchor}'
     # determine if a web browser or the internal viewer should be used for help info
     if helpMode:
         pass
@@ -8428,7 +8436,7 @@ def ChooseOrigin(G2frame,rd):
     for atom in O2atoms:
         for i in [0,1,2]:
             atom[cx+i] += T[i]
-            atom[cs:cs+2] = G2spc.SytSym(atom[3:6],SGData)[0:2] # update symmetry & mult
+            atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update symmetry & mult
     #get density & distances
     DisAglData = {}
     DisAglData['SGData'] = rd.Phase['General']['SGData']
@@ -8442,10 +8450,11 @@ def ChooseOrigin(G2frame,rd):
     txt = ''
     for i,phObj in enumerate([rd.Phase,O2Phase]):
         if i:
-            txt += "\n\nWith origin shift applied\n"
+            txt += "\n\nWith origin 1->2 shift applied\n"
         else:
             txt += "\nWith current coordinates and original origin\n"
         cellContents = {}
+        G2elem.SetupGeneral(phObj,phObj['General']['Mydir'])
         for atom in phObj['Atoms']:
             if atom[ct] in cellContents:
                 cellContents[atom[ct]] += atom[cs+1]

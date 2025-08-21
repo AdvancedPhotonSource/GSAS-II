@@ -2508,7 +2508,7 @@ def UpdateLimitsGrid(G2frame, data,datatype):
 ################################################################################
 
 def UpdateInstrumentGrid(G2frame,data):
-    '''respond to selection of PWDR/SASD/REFD Instrument Parameters
+    '''respond to selection of PWDR/SASD/REFD/HKLF Instrument Parameters
     data tree item.
     '''
     if 'Bank' not in data:  #get it from name; absent for default parms selection
@@ -2694,6 +2694,8 @@ def UpdateInstrumentGrid(G2frame,data):
         '''Respond to the Instrument Parameters Operations/Save Profile menu
         item: writes current parameters to a .instprm file
         It does not write Bank n: on # line & thus can be used any time w/o clash of bank nos.
+
+        note: doesn't currently write extended instrument parameters i.e. pdabc dictionary
         '''
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(G2frame, 'Set name to save GSAS-II instrument parameters file', pth, '',
@@ -2701,13 +2703,12 @@ def UpdateInstrumentGrid(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 Sample = G2frame.GPXtree.GetItemPyData(
-                    G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId,
-                                              'Sample Parameters'))
+                    G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId,'Sample Parameters'))
                 filename = dlg.GetPath()
                 # make sure extension is .instprm
                 filename = os.path.splitext(filename)[0]+'.instprm'
                 File = open(filename,'w')
-                G2fil.WriteInstprm(File, data, Sample)
+                G2fil.WriteInstprm(File, data, Sample) 
                 File.close()
                 print ('Instrument parameters saved to: '+filename)
         finally:
@@ -2742,13 +2743,14 @@ def UpdateInstrumentGrid(G2frame,data):
                 for hist in saveList:
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
                     inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+                    inst1 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[1] #pdabc dictionary
                     Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
                     if 'Bank' not in inst:  #patch
                         bank = 1
                         if 'Bank' in hist:
                             bank = int(hist.split('Bank')[1])
                         inst['Bank'] = [bank,bank,0]
-                    G2fil.WriteInstprm(File, inst, Sample, inst['Bank'][0])
+                    G2fil.WriteInstprm(File, inst, inst1, Sample, inst['Bank'][0])
                 File.close()
         finally:
             dlg.Destroy()
@@ -2841,7 +2843,7 @@ def UpdateInstrumentGrid(G2frame,data):
         G2plt.PlotPeakWidths(G2frame)
 
     def AfterChangeEC(invalid,value,tc):
-        '''for SEC data only; converts electrn energy in keV to wavelength
+        '''for SEC data only; converts electron energy in keV to wavelength
         '''
         if invalid: return
         if value > 10.:
@@ -2902,13 +2904,15 @@ def UpdateInstrumentGrid(G2frame,data):
                 insVal['Type'] = 'SXC'
             except KeyError:
                 if 'synch' in lamType:
-                    insVal['Lam'] = 1.0  #typical?
+                    insVal['Lam'] = 1.0  #obvious incorrect default
                     data['Type'][0] = 'SXC'
                     insVal['Type'] = 'SXC'
                 elif 'micro' in lamType:
-                    insVal['Lam'] = 0.0251 # @200keV
-                    data['Type'][0] = 'SEC'
-                    insVal['Type'] = 'SEC'      #change to electron diffraction
+                    insVal['Lam'] = 0.025079 # @200keV
+                    data['Type'][0] = 'SEC'      #change to electron diffraction
+                    insVal['Type'] = 'SEC'      # in 3 places!
+                    Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId) 
+                    Pattern[0]['Type'] = 'SEC'
         updateData(insVal,insRef)
         wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
 
@@ -3079,18 +3083,23 @@ def UpdateInstrumentGrid(G2frame,data):
                 elemKeysLst.append(['2-theta',1])
                 dspLst.append([10,2])
                 refFlgElem.append(None)
-                if 'Pdabc' in Inst2:
-                    Items = ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  difC: '),0,WACV)
-                    txt = '%8.2f'%(insVal['difC'])
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
-                    labelLst.append('difC')
-                    elemKeysLst.append(['difC',1])
-                    dspLst.append([10,2])
-                    refFlgElem.append(None)
-                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  alpha, beta: fixed by table'),0,WACV)
-                else:
-                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
+
+                #note: this if statement is commented out as current implementation of pdabc is not
+                # intended to exclude diffing difC, difA, difB, etc. from refinement.
+                # TODO: check this is OK with other applications (work around is "show multiple" in GUI: which exposes everything")                   
+                # if 'pdabc' in Inst2:
+                #     Items = ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']
+                #     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  difC: '),0,WACV)
+                #     txt = '%8.2f'%(insVal['difC'])
+                #     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                #     labelLst.append('difC')
+                #     elemKeysLst.append(['difC',1])
+                #     dspLst.append([10,2])
+                #     refFlgElem.append(None)
+                #     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  alpha, beta: fixed by table'),0,WACV)
+                # else:
+                Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
+
                 mainSizer.Add((5,5),0)
                 mainSizer.Add(subSizer)
                 mainSizer.Add((5,5),0)
@@ -3399,7 +3408,11 @@ def UpdateInstrumentGrid(G2frame,data):
     RefObj = {}
     Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[1]
-    G2gd.SetDataMenuBar(G2frame)
+    G2gd.SetDataMenuBar(G2frame)  # this was removed in 12ec78f Why? (BHT)
+    #RefData = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1]
+    #RefData['Type'] = data['Type'][0]
+    # The above was added but RefData would need to be ...PatternId)[0]
+    # for this to work. Not sure what is going on, so I am commenting the new code (BHT)
     #patch
     if 'P' in insVal['Type']:                   #powder data
         if 'C' in insVal['Type']:               #constant wavelength
@@ -3435,7 +3448,7 @@ def UpdateInstrumentGrid(G2frame,data):
             MakeMultiParameterWindow()
         else:
             MakeParameterWindow()
-    elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD & REFD data menu commands
+    elif 'L' in insVal['Type'] or 'R' in insVal['Type'] or 'S' in insVal['Type']:   #HKLF, SASD & REFD data menu commands
         MakeParameterWindow()
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)

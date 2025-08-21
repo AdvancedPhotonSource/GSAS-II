@@ -1,0 +1,1463 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="powderbkg.html">
+      
+      
+        <link rel="next" href="powdersample.html">
+      
+      
+      <link rel="icon" href="images/gsas2.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
+    
+    
+      
+        <title>Instrument Parameters - GSAS-II Help</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pwdr-instrument-parameters-subdata-tree-item-powder-diffraction" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="GSAS-II Help" class="md-header__button md-logo" aria-label="GSAS-II Help" data-md-component="logo">
+      
+  <img src="images/gsas2.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSAS-II Help
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Instrument Parameters
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="GSAS-II Help" class="md-nav__button md-logo" aria-label="GSAS-II Help" data-md-component="logo">
+      
+  <img src="images/gsas2.png" alt="logo">
+
+    </a>
+    GSAS-II Help
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="preface.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Getting started
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="applicationwindow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GUI components
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="mainmenu.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Main menu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Data tree items
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Data tree items
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="datatree.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data tree overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="commontreeitems.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Universal items
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sequential.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sequential results
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="cluster.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Cluster Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Phases
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            Phases
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseoverview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Phase overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasegeneral.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    General tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedata.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseatoms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Atoms tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedrawopts.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Draw Options tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedrawatoms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Draw Atoms tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseRB.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    RB Models tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasetexture.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Texture tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasemappeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Map Peaks tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasepawley.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pawley tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaselayers.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Layers tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasewave.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Wave Data tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasemcsa.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MC/SA tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseRMC.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    RMC tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phaseisodistort.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ISODISTORT tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="phasedysnomia.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Dysnomia tab
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="image.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Images (IMG)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Powder (PWDR)
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            Powder (PWDR)
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powder.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderparent.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Main PWDR entry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdercomments.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Comments
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderlimits.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Limits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderbkg.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Background
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Instrument Parameters
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="powderinst.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Instrument Parameters
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#operations-menu-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Operations" Menu Commands
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdersample.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sample Parameters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderpeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Peak List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderindexppeaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Index Peak List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powdercells.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Unit Cells List
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="powderrefs.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Reflection Lists
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="singlecrystal.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Single Crystal (HKLF)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pairdistribution.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PDF
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="smallanglescattering.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Small Angle (SASD)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reflectometry.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Reflectometry (REFD)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="peaks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Powder Peaks (PKS)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="others.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Other info
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#operations-menu-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Operations" Menu Commands
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<!--- Don't change the HTML version of this file; edit the .md version -->
+
+<p><a name="PWDR_Instrument_Parameters"></a></p>
+<h1 id="pwdr-instrument-parameters-subdata-tree-item-powder-diffraction">PWDR <strong>Instrument Parameters</strong> subdata tree item (Powder Diffraction)</h1>
+<p>This window shows the instrument parameters for the selected powder data set. Note that the preferred method for use of GSAS-II is that these parameters are fitted only to calibration materials. The parameters fit from the calibrant then defines a set of values unique to that instrumental configuration; these values are not refined when fitting samples. The plot window shows the corresponding resolution curves. </p>
+<ul>
+<li>Solid lines are for the default values (in parentheses), </li>
+<li>dashed lines from the refined values and </li>
+<li>'+' fitted widths for individual entries in the <a href="powderpeaks.html">Peak List</a>. </li>
+</ul>
+<p>Curves that fall below zero will generate a warning in the plot title, coefficients should be adjusted to ensure every dashed line curve is zero or above.</p>
+<H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
+
+<h3 id="operations-menu-commands">"<strong>Operations</strong>" Menu Commands</h3>
+<p>A single menu is provided with the selection of instrument parameters.</p>
+<ul>
+<li>
+<p><strong>Calibrate</strong>: performs calibration of position dependent instrument coefficients from indexed peak positions.</p>
+</li>
+<li>
+<p><strong>Reset profile</strong>: resets the values for the instrument parameters to the default values shown in parentheses for each entry.</p>
+</li>
+<li>
+<p><strong>Load profile...</strong>: loads a GSAS-II instrument parameter file (name.instprm), replacing the existing instrument parameter values. All refinement flags are unset.</p>
+</li>
+<li>
+<p><strong>Save profile...</strong>: saves the current instrument parameter values in a simple text file (name.instprm); you will be prompted for the file name – do not change the extension. This file may be edited but heed the warning to not change the parameter names, the order of the parameter records or add new parameter records as this will invalidate the file. You may only change the numeric values if necessary. You can change or add comment records (begin with '#').</p>
+</li>
+<li>
+<p><strong>Save all profile...</strong>: saves multibank histogram instrument parameters into a single instprm file. Suitable for neutron TOF instruments.</p>
+</li>
+<li>
+<p><strong>Copy</strong>: this copies the instrument parameters shown to other selected powder patterns. If used, a dialog box (Copy parameters) will appear showing the list of available powder patterns, you can copy the instrument parameters to any or all of them; select 'All' to copy them to all patterns. Then select 'OK' to do the copy; 'Cancel' to cancel the operation. The copy will only work for instrument parameters that are commensurate with the one that is shown, e.g. single radiation patterns will not be updated from Kα1α2 ones.</p>
+</li>
+<li>
+<p><strong>Copy flags</strong>: this copies the instrument parameter refinement flags shown to other selected powder patterns. If used, a dialog box (Copy refinement flags) will appear showing the list of available powder patterns, you can copy the instrument parameter refinement flags to any or all of them; select 'All' to copy them to all patterns. Then select 'OK' to do the copy; 'Cancel' to cancel the operation. The copy will only work for instrument parameters that are commensurate with the one that is shown, e.g. single radiation patterns will not be updated from Kα1α2 ones.</p>
+</li>
+<li>
+<p><strong>Set one value</strong>: this is used to set a single selected instrument parameter for a selected set of PWDR histograms. The same value can be used for all histograms, or a dialog can be used to provide a table where you can set the values differently for each of selected histograms.</p>
+</li>
+<li>
+<p><strong>Show multiple</strong>: Sets a mode where selected histograms matching the current selected histogram are shown in the data window.</p>
+</li>
+</ul>
+<p>Note that you can change any of the instrument coefficients</p>
+<ul>
+<li>You can choose to refine any instrument coefficients, but this is discouraged, except for generating instrumental profiles for a NB: In certain circumstances some choices are ignored e.g. Zero is not refined during peak fitting. Also, some choices may lead to unstable refinement, e.g. Lam refinement and lattice parameter refinement. Examine the 'Covariance' display for highly correlated parameters.</li>
+</ul>
+<H3 style="color:blue;font-size:1.1em">What is plotted here?</H3>
+
+<p>This plot shows the contributions to the powder pattern peak widths as ΔQ/Q (=Δd/d) vs. Q for the Gaussian and Lorentzian parts of the profile function, in addition to the overall widths. The solid curves are based on the default values of U, V, W, X and Y shown in the Instrument Parameters window (shown in parentheses; these are the values for the instrument contribution that were set when the powder pattern was first read in to GSAS-II.) The dashed values are based on the refined values, if different. If individual peak fitting has been performed, the values of 'sig' &amp; 'gam' for those individually-fit peaks are plotted as '+'; these are computed from the fitted values of U, V, W, X and Y as well as any sig or gam values that are individually refined. For neutron TOF, the curves include those for the α and β coefficients. </p>
+<p>Care should be taken that coefficients do not generate negative peak widths at any point in the pattern where peaks are present. Negative values are not mathematically or physically possible; if encountered in fitting, the corresponding peaks may be ignored. </p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.50899def.min.js"></script>
+      
+        <script src="javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

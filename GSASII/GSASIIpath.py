@@ -60,7 +60,7 @@ def GetConfigValue(key,default=None,getDefault=False):
 def SetConfigValue(parmdict):
     '''Set configuration variables. Note that parmdict is a dictionary
     from :func:`GSASIIctrlGUI.GetConfigValsDocs` where each element is a
-    lists. The first item in list is the default value, the second is
+    list. The first item in list is the default value, the second is
     the value to use for that configuration variable. Most of the
     information gathered in GetConfigValsDocs is no longer used.
     '''
@@ -75,6 +75,15 @@ def SetConfigValue(parmdict):
             if parmdict[var][1] == '': continue
             if parmdict[var][0] == parmdict[var][1]: continue
             configDict[var] = parmdict[var][1]
+
+def AddConfigValue(valsdict):
+    '''Set configuration variables. 
+
+    :param dict valsdict: a dictionary of values that are added
+      directly to configDict.
+    '''
+    global configDict
+    configDict.update(valsdict)
 
 def GetConfigDefault(key):
     '''Return the default value for a config value
@@ -313,6 +322,7 @@ def getG2VersionInfo():
         delta = now - commit.committed_datetime
         age = delta.total_seconds()/(60*60*24.)
         msg = ''
+        rc = None
         if g2repo.head.is_detached:
             msg = ("\n" +
             "**** You have reverted to a past version of GSAS-II. Please \n"
@@ -322,10 +332,10 @@ def getG2VersionInfo():
         else:
             msg = ''
             rc,lc,_ = gitCheckForUpdates(False,g2repo)
-            if rc is None:
-                msg += f"\n\tNo history found. On development branch? ({g2repo.active_branch})"
-            elif str(g2repo.active_branch) != 'main':
-                msg += f'\n\tUsing development branch: {g2repo.active_branch}'
+            if str(g2repo.active_branch) != 'main':
+                msg += f'\n\tUsing development branch: "{g2repo.active_branch}"'
+            elif rc is None:
+                msg += f"\n\tNo history found. On a development branch? ({g2repo.active_branch})"
             elif age > 60 and len(rc) > 0:
                 msg += f"\n\t**** This version is really old ({age:.1f} days). Please update.\n\t**** At least {len(rc)} updates have been posted ****"
             elif (age > 5 and len(rc) > 0) or len(rc) > 5:
@@ -334,7 +344,9 @@ def getG2VersionInfo():
 #                msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
         # could consider getting version & tag from gv if not None (see below)
         gversion = f"{GetVersionNumber()}/{GetVersionTag()}"
-        if len(rc) > 0:
+        if rc is None:
+            return f"  GSAS-II:    {gversion} posted {ctim} (updates unknown) [{commit.hexsha[:8]}]{msg}"
+        elif len(rc) > 0:
             return f"  GSAS-II:    {gversion} posted {ctim} (\u2265{len(rc)} new updates) [{commit.hexsha[:8]}]{msg}"
         else:
             return f"  GSAS-II:    {gversion} posted {ctim} (no new updates) [{commit.hexsha[:8]}]{msg}"
@@ -897,11 +909,16 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
                 print(f'skipping file {f.name} -- how did this happen?')
                 continue
             newfil = os.path.normpath(os.path.join(install2dir,f.name))
-            tarobj.extract(f, path=install2dir, set_attrs=False)
+            if os.path.exists(newfil):
+                os.chmod(newfil,0o666)
+            try:
+                tarobj.extract(f, path=install2dir, set_attrs=False)
+                if verbose: print(f'Created GSAS-II binary file {os.path.split(newfil)[1]}')
+            except:
+                print(f'Failed to create GSAS-II binary file {os.path.split(newfil)[1]}')
             # set file mode and mod/access times (but not ownership)
             os.chmod(newfil,f.mode)
             os.utime(newfil,(f.mtime,f.mtime))
-            if verbose: print(f'Created GSAS-II binary file {os.path.split(newfil)[1]}')
         if verbose: print(f'Binary files created in {os.path.split(newfil)[0]}')
 
     finally:
@@ -1373,7 +1390,10 @@ def LoadConfig(printInfo=True):
     if not os.path.exists(cfgfile):
         print(f'N.B. Configuration file {cfgfile} does not exist')
         # patch 2/7/25: transform GSAS-II config.py contents to config.ini
-        XferConfigIni()
+        try:
+            XferConfigIni()
+        except:
+            print('transfer of config.py failed')
     try:
         from . import config_example
     except ImportError:
@@ -2031,10 +2051,11 @@ end tell
 
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a
-    separate process.
+    separate process. This is also called for background tasks such as 
+    performing a "git fetch" task or getting current tag information from
+    github.
     '''
     # check what type of update is being called for
-    import git
     gitUpdate = False
     preupdateType = None
     updateType = None
@@ -2096,6 +2117,11 @@ if __name__ == '__main__':
                 print('invalid form for --git-regress')
                 help = True
                 break
+            try:
+                import git
+            except:
+                print('Import of git failed for --git-regress')
+                sys.exit()
             gitversion = argsplit[1]
             # make sure the version or tag supplied is valid and convert to
             # a full sha hash
@@ -2159,7 +2185,11 @@ to update/regress repository from git repository:
         # allows this to be done in the background.
         import requests
         url='https://github.com/AdvancedPhotonSource/GSAS-II/tags'
-        releases = requests.get(url=url)
+        try:
+            releases = requests.get(url=url)
+        except:
+            print('background get tags failed')
+            sys.exit()
         taglist = [tag.split('"')[0] for tag in releases.text.split('AdvancedPhotonSource/GSAS-II/releases/tag/')[1:]]
         lastver = sorted([t for t in taglist if 'v' in t])[-1]
         lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]
@@ -2242,23 +2272,23 @@ to update/regress repository from git repository:
         fp.close()
         sys.exit()
 
+    try:
+        import git
+    except:
+        print(f'Import of git failed. {updateType} update mode {preupdateType}')
+        sys.exit()
+        
     if gitUpdate:
         import time
         time.sleep(1) # delay to give the main process a chance to exit
                       # so we don't change code for a running process
                       # windows does not like that
-        try:
-            import git
-        except:
-            print('git import failed')
-            sys.exit()
-        try:
-            g2repo = openGitRepo(path2GSAS2)
-        except Exception as msg:
-            print(f'Update failed with message {msg}\n')
-            sys.exit()
-        print('git repo opened')
-
+    try:
+        g2repo = openGitRepo(path2GSAS2)
+    except Exception as msg:
+        print(f'Update failed with message {msg}\n')
+        sys.exit()
+    print('git repo opened')
     if preupdateType == 'reset':
         # --git-reset   (preupdateType = 'reset')
         print('Restoring locally-updated GSAS-II files to original status')

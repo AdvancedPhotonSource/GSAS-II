@@ -362,7 +362,7 @@ versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
 'versions of modules that are known to have bugs'
 versionDict['tooNewWarn'] = {}
 'module versions newer than what we have tested & where problems are suspected'
-versionDict['tooNewUntested'] = {'Python':'3.14','wx': '4.2.3'}
+versionDict['tooNewUntested'] = {'Python':'3.14','wx': '4.2.4'}
 'module versions newer than what we have tested but no problems are suspected'
 
 def ShowVersions():
@@ -680,6 +680,7 @@ class GSASII(wx.Frame):
     def _Add_DataMenuItems(self,parent):
         '''Add items to Data menu
         '''
+        #(7/2025) next duplicated in Import menu; patch: remove this someday
         item = parent.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Sum or Average powder data','')
@@ -1998,6 +1999,14 @@ If you continue from this point, it is quite likely that all intensity computati
 
         Reads an instrument parameter file and then gets input from the user
         '''
+        # make a list of phase names
+        phaseRIdList,defPhases = self.GetPhaseInfofromTree()
+        phaseNameList = list(defPhases.keys()) # phase names in use
+        if not phaseNameList: # no phases yet, nothing to do
+            G2G.G2MessageBox(self,
+                    'You must have phases defined to simulate a pattern',
+                    'No phase')
+            return 
         # get a list of existing histograms
         PWDRlist = []
         if self.GPXtree.GetCount():
@@ -2046,23 +2055,25 @@ If you continue from this point, it is quite likely that all intensity computati
                 if wave:
                     wave = wave[0]
         N = 0
+        inp = None
         while (N < 3): # insist on a dataset with a few points
             if 'TOF' in rd.idstring:
                 names = ('dataset name', 'T start (ms)', 'T end (ms)', 'DT/T')
-                inp = [rd.idstring, 10.,80.,0.0005] # see names for what's what
+                if inp is None: 
+                    inp = [rd.idstring, 10.,80.,0.0005] # see names for what's what
                 minvals = (None,.5,1.0,0.0001)
                 maxvals = (None,500.,500.,.01)
             else:
                 names = ('dataset name', 'start angle', 'end angle', 'step size')
-                if not wave or wave < 1.0:
+                if not wave or wave < 1.0 and inp is None:
                     inp = [rd.idstring, 10.,40.,0.005] # see names for what's what
-                else:
+                elif inp is None:
                     inp = [rd.idstring, 10.,80.,0.01] # see names for what's what
                 minvals=(None,0.001,0.001,0.0001),
                 maxvals=(None,180.,180.,.1),
             dlg = G2G.ScrolledMultiEditor(
                 self,[inp] * len(inp),range(len(inp)),names,
-                header='Enter ramnge for simulation and histogram name',
+                header='Enter range for simulation and histogram name',
                 minvals=minvals,
                 maxvals=maxvals,
                 sizevals=((250,-1),None,None,None),
@@ -2076,18 +2087,40 @@ If you continue from this point, it is quite likely that all intensity computati
                 step = abs(step)
             else:
                 return False
-            # TODO: compute if the range and see if the widths are all
-            # positive here. If OK continue, otherwise warn and reject the
-            # limits (as per issue #170)
             if 'TOF' in rd.idstring:
                 N = (np.log(end)-np.log(start))/step
                 x = np.exp((np.arange(0,N))*step+np.log(start*1000.))
                 N = len(x)
                 rd.Sample['Scale'][0] = 5000. # default (1) is way too low for "counts"
+                # compute TOF peak widths: are there any negative values?
+                wids = G2mth.setPeakparms(Iparm1,Iparm2,x,np.ones_like(x))
+                allPos = ((wids[4] >= 0) & (wids[6] >= 0) &
+                          (wids[8] >= 0) & (wids[10] >= 0))
+                conv = 1000.
             else:
                 N = int((end-start)/step)+1
                 x = np.linspace(start,end,N,True)
                 N = len(x)
+                # compute CW peak widths: are there any negative values?
+                wids = G2mth.setPeakparms(Iparm1,Iparm2,x,np.ones_like(x))
+                allPos = ((wids[4] >= 0) & (wids[6] >= 0))
+                conv = 1.
+            # test for any areas w/negative peak wids
+            good,bad = G2mth.FindTrue(allPos) # get TOF/2th ranges as indices
+            if bad:
+                s = f"Found {len(bad)} region(s) with negative peak widths: "
+                for b in bad:
+                    s += f"{x[b][0]/conv:.1f}-{x[b][1]/conv:.1f}, "
+                s = s[:-2]
+                N = 0
+                G2G.G2MessageBox(self,s,'Bad range')
+                if good: # reset simulation range to use good range
+                    longestgood = good[np.argmax([i2-i1+1 for i1,i2 in good])]
+                    inp[1] = float(max(inp[1],min(x[longestgood[0]],x[longestgood[1]])/conv))
+                    inp[2] = float(min(inp[2],max(x[longestgood[0]],x[longestgood[1]])/conv))
+                else:
+                    return False
+                continue
         rd.powderdata = [
             np.array(x), # x-axis values
             np.zeros_like(x), # powder pattern intensities
@@ -2146,11 +2179,14 @@ If you continue from this point, it is quite likely that all intensity computati
               ' with parameters from {}'.format(rd.instmsg))
 
         # make a list of phase names
-        phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
-        phaseNameList = list(usedHistograms.keys()) # phase names in use
+        phaseRIdList,defPhases = self.GetPhaseInfofromTree()
+        phaseNameList = list(defPhases.keys()) # phase names in use
         if not phaseNameList: return # no phases yet, nothing to do
-        header = 'Select phase(s) to add the new\npowder simulation (dummy) dataset to:'
-        result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
+        if len(phaseNameList) == 1:
+            result = [0]
+        else:
+            header = 'Select phase(s) to add the new\npowder simulation (dummy) dataset to:'        
+            result = G2G.ItemSelector(phaseNameList,self,header,header='Phases to simulate',multiple=True)
         if not result: return
         # connect new phases to histograms
         sub = GetGPXtreeItemId(self,self.root,'Phases')
@@ -2178,6 +2214,11 @@ If you continue from this point, it is quite likely that all intensity computati
         Controls['max cyc'] = 0
         self.EnableRefineCommand()
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
+        # perhaps at some point this should be changed to run the refinement
+        # directly, for now provide a reminder
+        G2G.G2MessageBox(self,
+                    'Now use Calculate/Refine to compute the simulation result',
+                    'Use "Refine"')
         return # success
 
     def AddSimulatedPowder(self,ttArr,intArr,HistName,Lam1,Lam2):
@@ -2759,6 +2800,8 @@ If you continue from this point, it is quite likely that all intensity computati
         self._Add_ImportMenu_smallangle(Import)
         self._Add_ImportMenu_reflectometry(Import)
         self._Add_ImportMenu_PDF(Import)
+        item = Import.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
+        self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
 
         item = Import.Append(wx.ID_ANY,'Column metadata test','Test Column (.par) metadata import')
         self.Bind(wx.EVT_MENU, self.OnColMetaTest, id=item.GetId())
@@ -2860,9 +2903,9 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        self.mainPanel.SplitVertically(self.treePanel,
-                                           self.dataWindow.outer, 400)
-        self.Status.SetStatusWidths([200,-1])   # make these match?
+        sash = min(max(100,GSASIIpath.GetConfigValue('Split_Loc',250)),500)
+        self.mainPanel.SplitVertically(self.treePanel, self.dataWindow.outer, sash)
+        self.Status.SetStatusWidths([sash,-1])   # make these match?
 
         G2G.wxID_GPXTREE = wx.NewId()
         treeSizer = wx.BoxSizer(wx.VERTICAL)
@@ -4497,7 +4540,7 @@ If you continue from this point, it is quite likely that all intensity computati
 
     def ExitMain(self, event):
         '''Called if exit selected or the main window is closed
-        rescord last position of data & plot windows; saved to config.py file
+        record last position of data & plot windows to config
         NB: not called if console window closed
         '''
         if self.GPXtree.GetCount() > 1:
@@ -4517,13 +4560,25 @@ If you continue from this point, it is quite likely that all intensity computati
         elif result == wx.ID_CANCEL:
             return
         else:
+            # add a version number to Notebook before exiting
+            try:
+                gv = GSASIIpath.getSavedVersionInfo()
+                if gv is not None:
+                    for item in gv.git_tags+gv.git_prevtags:
+                        if item.isnumeric(): ver = int(item)
+                    if '?' not in gv.git_versiontag: tag = gv.git_versiontag
+                    rtext = f'version {gv.git_version[:8]} {ver}/{tag}'
+                    self.AddToNotebook(rtext,'VER')
+            except:
+                pass
             if not self.OnFileSave(event): return
         try:
             FrameInfo = {'Main_Pos':tuple(self.GetPosition()),
                      'Main_Size':tuple(self.GetSize()),
                      'Plot_Pos':tuple(self.plotFrame.GetPosition()),
                      'Plot_Size':tuple(self.plotFrame.GetSize())}
-            GSASIIpath.SetConfigValue(FrameInfo)
+            GSASIIpath.AddConfigValue(FrameInfo)
+            GSASIIpath.AddConfigValue({'Split_Loc':self.mainPanel.GetSashPosition()})
             config = G2G.GetConfigValsDocs()
             G2G.SaveConfigVars(config)
         except:
@@ -5179,7 +5234,7 @@ If you continue from this point, it is quite likely that all intensity computati
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,EFtable,ORBtables,BLtable,MFtable,maxSSwave = \
             G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False,resetRefList=False)
-        histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
+        histVary,histDict,histDict1, controlDict = G2stIO.GetHistogramData(histDict,Print=False)
         varyList = rbVary+phaseVary+hapVary+histVary
         parmDict.update(rbDict)
         parmDict.update(phaseDict)
@@ -6636,7 +6691,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.ErrorAnal.Append(G2G.wxID_PWDANALYSIS,'Error Analysis','Error analysis on single crystal data')
             self.ErrorAnal.Append(G2G.wxID_MERGEHKL,'Merge HKLs','Transform & merge HKLF data to new histogram')
             self.ErrorAnal.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs from single crystal data in 1D')
-            self.ErrorAnal.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs from single crystal data in 3D')
             self.ErrorAnal.Append(G2G.wxID_3DALLHKLPLOT,'Plot all 3D HKLs','Plot HKLs from all single crystal data in 3D')
             self.ErrorAnal.Append(G2G.wxID_FIXFSQSQDATA,'Fix (F^2)^2 data','Fix F^2 data imported as F')
     #        self.ErrorAnal.Append(G2G.wxID_PWDCOPY,'Copy params','Copy of HKLF parameters') #unused
@@ -7002,7 +7056,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # IMG / Masks
         G2G.Define_wxId('wxID_MASKCOPY', 'wxID_MASKSAVE', 'wxID_MASKLOAD', 'wxID_NEWMASKSPOT', 'wxID_NEWMASKARC', 'wxID_NEWMASKRING',
             'wxID_NEWMASKFRAME', 'wxID_NEWMASKPOLY','wxID_NEWMASKXLINE','wxID_NEWMASKYLINE','wxID_MASKLOADNOT',
-            'wxID_FINDSPOTS', 'wxID_AUTOFINDSPOTS', 'wxID_DELETESPOTS','wxID_MASKCOPYSELECTED')
+            'wxID_FINDSPOTS', 'wxID_AUTOFINDSPOTS', 'wxID_DELETESPOTS','wxID_MASKCOPYSELECTED', 'wxID_LOADSPOTS')
         def _makemenu():     # routine to create menu when first used
             self.MaskMenu = wx.MenuBar()
             self.PrefillDataMenu(self.MaskMenu)
@@ -7015,7 +7069,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.MaskEdit.Append(G2G.wxID_MASKSAVE,'Save mask','Save mask to file')
             self.MaskEdit.Append(G2G.wxID_MASKLOADNOT,'Load mask','Load mask from file; ignoring threshold')
             self.MaskEdit.Append(G2G.wxID_MASKLOAD,'Load mask w/threshold','Load mask from file keeping the threshold value')
-            self.MaskEdit.Append(G2G.wxID_FINDSPOTS,'Pixel mask search','Search for pixels to mask; NB: slow')
+            self.MaskEdit.Append(G2G.wxID_FINDSPOTS,'Pixel mask search','Search for pixels to mask')
+            self.MaskEdit.Append(G2G.wxID_LOADSPOTS,'Load pixel mask','Use non-zero pixels in an image to mask')
             self.MaskEdit.Append(G2G.wxID_AUTOFINDSPOTS,'Multi-IMG pixel mask search','Search multiple images for pixels to mask; NB: slow')
             self.MaskEdit.Append(G2G.wxID_DELETESPOTS,'Delete spot masks','Delete all spot masks')
             submenu.Append(G2G.wxID_NEWMASKARC,'Arc mask','Create an arc mask with mouse input')
@@ -7297,7 +7352,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 'wxID_DRAWVIEWPOINT', 'wxID_DRAWTRANSFORM', 'wxID_DRAWDELETE', 'wxID_DRAWFILLCELL',
                 'wxID_DRAWADDEQUIV', 'wxID_DRAWFILLCOORD', 'wxID_DRAWDISAGLTOR', 'wxID_DRAWPLANE',
                 'wxID_DRAWDISTVP', 'wxID_DRAWADDSPHERE', 'wxID_DRWAEDITRADII',
-                'wxID_DRAWSETSEL', 'wxID_DRAWLOADSEL',
+                'wxID_DRAWSETSEL', 'wxID_DRAWLOADSEL', 'wxID_DRAWADDBOX'
                 )
             G2G.Define_wxId('wxID_DRAWRESTRBOND', 'wxID_DRAWRESTRANGLE', 'wxID_DRAWRESTRPLANE', 'wxID_DRAWRESTRCHIRAL',)
             self.DrawAtomsMenu = wx.MenuBar()
@@ -7320,6 +7375,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.DrawAtomEdit.Append(G2G.wxID_DRAWSETSEL,'Select from list','Select atoms from a filtered listbox')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWADDEQUIV,'Add atoms','Add symmetry & cell equivalents to drawing set from selected atoms')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWADDSPHERE,'Add sphere of atoms','Add atoms within sphere of enclosure')
+            self.DrawAtomEdit.Append(G2G.wxID_DRAWADDBOX,'Add box of atoms','Add atoms within box of enclosure')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWTRANSFORM,'Transform draw atoms','Transform selected atoms by symmetry & cell translations')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCOORD,'Fill CN-sphere','Fill coordination sphere for selected atoms')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCELL,'Fill unit cell','Fill unit cell with selected atoms')
@@ -7484,10 +7540,7 @@ other than being included in the Notebook section of the project file.''')
             elif '[' not in ls[0] or '[REF]' in ls[0]:
                 if target not in l: continue
                 try:
-                    vals.append(
-                        float(l.split(target)[1].split(',')[0]
-                                  .replace('=','').replace('%',''))
-                        )
+                    vals.append(float(l.split(target)[1].split(',')[0].replace('=','').replace('%','')))
                 except:
                     continue
         Y = np.array(vals)
@@ -7497,11 +7550,13 @@ other than being included in the Notebook section of the project file.''')
     filterLbls = ['all',
                       'Timestamps','Refinement results','Variables',
                       'Comments','Charge flip','Fourier','Peak fit',
-                      'Constraints','Restraints','Rigid Bodies','Cell params']
+                      'Constraints','Restraints','Rigid Bodies',
+                      'Cell params','GSAS-II version #']
     filterPrefix = ['',
                         'TS', 'REF','VARS',
                         'CM', 'CF', 'FM', 'PF',
-                        'CNSTR','RSTR','RB','CEL']
+                        'CNSTR','RSTR','RB',
+                        'CEL','VER']
     cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
     if cId:
         controls = G2frame.GPXtree.GetItemPyData(cId)
@@ -8038,6 +8093,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+        
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''
@@ -8183,8 +8239,20 @@ def UpdatePWHKPlot(G2frame,kind,item):
     def OnErrorAnalysis(event):
         '''Plots an "Abrams" plot - sorted delta/sig across data set.
         Should be straight line of slope 1 - never is'''
+        def OnPlotFoFcVsFc(kind):
+            ''' Extinction check, plots Fo-Fc & 1/ExtC vs Fo for single crystal data '''
+            iFo,iFc,iExt = 5,7,11
+            refList = data[1]['RefList']
+            XY = np.array([[xy[iFo+Super],xy[iFo+Super]-xy[iFc+Super]] for xy in refList if xy[3+Super]>0])
+            XY = np.sqrt(np.abs(XY)).T
+            XE = [[xy[iFo+Super],xy[iExt+Super]] for xy in refList if xy[3+Super]>0]
+            XE = np.array([[np.sqrt(xe[0]),1./xe[1]] for xe in XE]).T
+            G2plt.PlotXY(G2frame,[[XY[0],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fo|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
+               Title='Extinction check',lines=False,points2=True,names=['|Fo|-|Fc|',],names2=['1/ExtC',])
         G2plt.PlotDeltSig(G2frame,kind)
-
+        if kind in ['HKLF',]:
+            OnPlotFoFcVsFc(kind)
+        
 #    def OnCompression(event):
 #        data[0] = int(comp.GetValue())
 
@@ -8241,7 +8309,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #end patches
     if kind in ['PWDR','SASD','REFD']:
         SetDataMenuBar(G2frame,G2frame.dataWindow.PWDRMenu)
-        G2frame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=G2G.wxID_PWDANALYSIS)
+        if kind in ['PWDR',]:
+            G2frame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=G2G.wxID_PWDANALYSIS)
         G2frame.Bind(wx.EVT_MENU, onCopySelectedItems, id=G2G.wxID_PWDCOPY)
         G2frame.Bind(wx.EVT_MENU, onCopyPlotCtrls, id=G2G.wxID_PLOTCTRLCOPY)
     elif kind in ['HKLF',]:
@@ -8251,6 +8320,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
+#        G2frame.Bind(wx.EVT_MENU, OnPlotFoVsFc, id=G2G.wxID_FOVSFCPLOT)
         G2frame.Bind(wx.EVT_MENU, OnFixFsqFsq, id=G2G.wxID_FIXFSQSQDATA)
     if kind == 'PWDR':
         lbl = 'Powder'
@@ -8546,7 +8616,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     parentID = G2frame.root
     if item == G2frame.root:
         G2frame.dataWindow.ClearData()
-        G2frame.helpKey = "Data tree"
+        G2frame.dataWindow.helpKey = "Data tree"
         mainSizer =  wx.BoxSizer(wx.VERTICAL)
         G2frame.dataWindow.SetSizer(mainSizer)
         mainSizer.Add(wx.StaticText(G2frame.dataWindow, wx.ID_ANY,

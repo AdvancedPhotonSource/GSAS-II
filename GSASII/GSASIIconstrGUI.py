@@ -266,45 +266,17 @@ class ConstraintDialog(wx.Dialog):
     '''
     def __init__(self,parent,title,text,data,separator='*',varname="",varyflag=False):
         wx.Dialog.__init__(self,parent,-1,'Edit '+title, 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         self.data = data[:]
         self.newvar = [varname,varyflag]
-        panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        topLabl = wx.StaticText(panel,-1,text)
-        mainSizer.Add((10,10),1)
-        mainSizer.Add(topLabl,0,wx.LEFT,10)
-        mainSizer.Add((10,10),1)
-        dataGridSizer = wx.FlexGridSizer(cols=3,hgap=2,vgap=2)
-        self.OkBtn = wx.Button(panel,wx.ID_OK)
-        for id in range(len(self.data)):
-            lbl1 = lbl = str(self.data[id][1])
-            if lbl[-1] != '=': lbl1 = lbl + ' ' + separator + ' '
-            name = wx.StaticText(panel,wx.ID_ANY,lbl1,style=wx.ALIGN_RIGHT)
-            scale = G2G.ValidatedTxtCtrl(panel,self.data[id],0,OKcontrol=self.DisableOK)
-            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|WACV,5)
-            dataGridSizer.Add(scale,0,wx.RIGHT,3)
-            if ':' in lbl:
-                dataGridSizer.Add(
-                    wx.StaticText(panel,-1,G2obj.fmtVarDescr(lbl)),
-                    0,wx.RIGHT|WACV,3)
-            else:
-                dataGridSizer.Add((-1,-1))
-        if title == 'New Variable':
-            name = wx.StaticText(panel,wx.ID_ANY,"New variable's\nname (optional)",
-                style=wx.ALIGN_CENTER)
-            scale = G2G.ValidatedTxtCtrl(panel,self.newvar,0,notBlank=False)
-            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|WACV,5)
-            dataGridSizer.Add(scale,0,wx.RIGHT|WACV,3)
-            self.refine = wx.CheckBox(panel,label='Refine?')
-            self.refine.SetValue(self.newvar[1]==True)
-            self.refine.Bind(wx.EVT_CHECKBOX, self.OnCheckBox)
-            dataGridSizer.Add(self.refine,0,wx.RIGHT|WACV,3)
-            
-        mainSizer.Add(dataGridSizer,0,wx.EXPAND)
+        self.SetSizer(mainSizer)
+        topLabl = wx.StaticText(self,-1,text) # top label
+        # bottom buttons
+        self.OkBtn = wx.Button(self,wx.ID_OK)
         self.OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
         self.OkBtn.SetDefault()
-        cancelBtn = wx.Button(panel,wx.ID_CANCEL)
+        cancelBtn = wx.Button(self,wx.ID_CANCEL)
         cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20),1)
@@ -313,9 +285,46 @@ class ConstraintDialog(wx.Dialog):
         btnSizer.Add(cancelBtn)
         btnSizer.Add((20,20),1)
 
+        # create scrolled edit contents        
+        size=(600,350) # initial scrolled region size
+        subpanel = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=size,
+            style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        dataGridSizer = wx.FlexGridSizer(cols=3,hgap=2,vgap=2)
+        subpanel.SetSizer(dataGridSizer)
+        for id in range(len(self.data)):
+            lbl1 = lbl = str(self.data[id][1])
+            if lbl[-1] != '=': lbl1 = lbl + ' ' + separator + ' '
+            name = wx.StaticText(subpanel,wx.ID_ANY,lbl1,style=wx.ALIGN_RIGHT)
+            scale = G2G.ValidatedTxtCtrl(subpanel,self.data[id],0,OKcontrol=self.DisableOK)
+            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|WACV,5)
+            dataGridSizer.Add(scale,0,wx.RIGHT,3)
+            if ':' in lbl:
+                dataGridSizer.Add(
+                    wx.StaticText(subpanel,-1,G2obj.fmtVarDescr(lbl)),
+                    0,wx.RIGHT|WACV,3)
+            else:
+                dataGridSizer.Add((-1,-1))
+        if title == 'New Variable':
+            name = wx.StaticText(subpanel,wx.ID_ANY,"New variable's\nname (optional)",
+                style=wx.ALIGN_CENTER)
+            scale = G2G.ValidatedTxtCtrl(subpanel,self.newvar,0,notBlank=False)
+            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|WACV,5)
+            dataGridSizer.Add(scale,0,wx.RIGHT|WACV,3)
+            self.refine = wx.CheckBox(subpanel,label='Refine?')
+            self.refine.SetValue(self.newvar[1]==True)
+            self.refine.Bind(wx.EVT_CHECKBOX, self.OnCheckBox)
+            dataGridSizer.Add(self.refine,0,wx.RIGHT|WACV,3)
+        # layout window
+        mainSizer.Add((-1,10),0)
+        mainSizer.Add(topLabl,0,wx.LEFT,10)
+        mainSizer.Add((-1,10),0)
+        mainSizer.Add(subpanel,1,wx.EXPAND)
+        mainSizer.Add((-1,3),0)
         mainSizer.Add(btnSizer,0,wx.EXPAND, 10)
-        panel.SetSizer(mainSizer)
-        panel.Fit()
+        mainSizer.Add((-1,3),0)
+        # finish up ScrolledPanel & then window
+        subpanel.SetAutoLayout(1)
+        subpanel.SetupScrolling()
         self.Fit()
         self.CenterOnParent()
         
@@ -381,7 +390,7 @@ def CheckConstraints(G2frame,Phases,Histograms,data,newcons=[],reqVaryList=None,
     # get Hist and HAP info
     hapVary, hapDict, controlDict = G2stIO.GetHistogramPhaseData(Phases, Histograms, Print=False, resetRefList=False)
     parmDict.update(hapDict)
-    histVary, histDict, controlDict = G2stIO.GetHistogramData(Histograms, Print=False)
+    histVary, histDict, histDict1, controlDict = G2stIO.GetHistogramData(Histograms, Print=False)
     parmDict.update(histDict)
     
     # TODO: twining info needed?
@@ -1659,7 +1668,7 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             hapList += wildList        
         else:
             hapList = wildList        
-    histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
+    histVary,histDict,histDict1,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
     histList = list(histDict.keys())
     histList.sort()
     if seqHistList: # convert histogram # to wildcard

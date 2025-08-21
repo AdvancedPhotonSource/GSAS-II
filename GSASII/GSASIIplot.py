@@ -213,7 +213,7 @@ class G2PlotMpl(_tabPlotWin):
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,publish=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
-        mpl.rcParams['legend.fontsize'] = 10
+        mpl.rcParams['legend.fontsize'] = 12
         mpl.rcParams['axes.grid'] = False
         self.figure = mplfig.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
@@ -463,7 +463,7 @@ class G2PlotNoteBook(wx.Panel):
         try:
             Page.helpKey = self.G2frame.dataWindow.helpKey
         except AttributeError:
-            Page.helpKey = 'Data tree'
+            Page.helpKey = 'HelpIntro'
         return new,plotNum,Page,Plot,limits
 
     def _addPage(self,name,page):
@@ -1815,7 +1815,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 
     # Plot3DSngl execution starts here (N.B. initialization above)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('3D Structure Factors','ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
@@ -2438,7 +2440,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 
 #### PlotXY ##################################################################
 def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
-    Title='',lines=False,names=[],names2=[],vertLines=[]):
+    Title='',lines=False,points2=False,names=[],names2=[],vertLines=[]):
     '''simple plot of xy data
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
@@ -2449,6 +2451,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     :param bool newPlot: =True if new plot is to be made
     :param str Title: title for plot
     :param bool lines: = True if lines desired for XY plot; XY2 always plotted as lines
+    :param bool points2: = False if XY2 is plotted as points despite lines
     :param list names: legend names for each XY plot as list a of str values
     :param list names2: legend names for each XY2 plot as list a of str values
     :param list vertLines: lists of vertical line x-positions; can be one for each XY
@@ -2491,9 +2494,10 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     def Draw():
         global xylim
         Plot.clear()
-        Plot.set_title(Title)
-        Plot.set_xlabel(r''+labelX,fontsize=14)
-        Plot.set_ylabel(r''+labelY,fontsize=14)
+        Plot.set_title(Title,fontsize=16)
+        Plot.set_xlabel(r''+labelX,fontsize=16)
+        Plot.set_ylabel(r''+labelY,fontsize=16)
+        Plot.tick_params(labelsize=14)
         colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
             'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
         NC = len(colors)
@@ -2523,12 +2527,18 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 X,Y = XY2[ixy]
                 dX = Page.Offset[0]*(ixy+1)*Xmax/500.
                 dY = Page.Offset[1]*(ixy+1)*Ymax/100.
-                if len(names2):
-                    Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False,label=names2[ixy])
-                else:
-                    Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False)
-        if len(names):
-            Plot.legend(names,loc='best')
+                if points2:
+                    if len(names2):
+                        Plot.scatter(X,Y,marker='+',color=colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                    else:
+                        Plot.scatter(X,Y,marker='+',color=colors[(ixy+1)%NC],picker=False)
+                else:    
+                    if len(names2):
+                        Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                    else:
+                        Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False)
+        if len(names)+len(names2):
+            Plot.legend(names+names2,loc='best')
         if not newPlot:
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])
@@ -4553,10 +4563,10 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     for azm in Azm:
         XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angI),wave),azm,Data)
         if np.any(XY):
-            xy1.append(XY)      #what about hyperbola
+            xy1.append(XY)
         XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angO),wave),azm,Data)
         if np.any(XY):
-            xy2.append(XY)      #what about hyperbola
+            xy2.append(XY)
     return np.array(xy1).T,np.array(xy2).T
 
 def UpdatePolygon(pick,event,polygon):
@@ -4864,9 +4874,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xlim = Plot1.get_xlim()
                 azm = Data['linescan'][1]-AzmthOff
                 dspI = wave/(2.0*sind(0.1/2.0))
-                xyI = G2img.GetDetectorXY(dspI,azm,Data)
+                xyI = G2img.GetDetectorXY2(dspI,azm,Data)
                 dspO = wave/(2.0*sind(60./2.0))
-                xyO = G2img.GetDetectorXY(dspO,azm,Data)
+                xyO = G2img.GetDetectorXY2(dspO,azm,Data)
                 pick.set_data([[xyI[0],xyO[0]],[xyI[1],xyO[1]]])
                 xy = G2img.GetLineScan(G2frame.ImageZ,Data)
                 Plot1.cla()
@@ -5149,11 +5159,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         nxy = 15
                         ImMax = np.max(G2frame.ImageZ)
                         result = G2img.FitImageSpots(G2frame.ImageZ,ImMax,ind,pixelSize,nxy,G2frame.spotSize)
-                        if result:
-                            Xpos,Ypos,sig = result
-                        else:
-                            print ('Not a spot')
-                            return
+                        Xpos,Ypos,sig = result
                     spot = [Xpos,Ypos,sig]
                     Masks['Points'].append(spot)
                     artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',
@@ -5441,16 +5447,16 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
 
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']: # draw integration range arc/circles/lines
-            LRAzim = Data['LRazimuth']                  #NB: integers
+            LRAzim = Data['LRazimuth']
             Nazm = Data['outAzimuths']
             delAzm = float(LRAzim[1]-LRAzim[0])/Nazm
             AzmthOff = Data['azmthOff']
             IOtth = Data['IOtth']
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
-            ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
+            ellI = G2img.GetEllipse(dspI,Data)           
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
-            ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
+            ellO = G2img.GetEllipse(dspO,Data)
             Azm = np.arange(LRAzim[0],LRAzim[1]+1.)-AzmthOff
             if ellI:
                 xyI = []
@@ -5490,9 +5496,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             IOtth = [0.1,60.]
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
-            xyI = G2img.GetDetectorXY(dspI,azm,Data)
+            xyI = G2img.GetDetectorXY2(dspI,azm,Data)
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
-            xyO = G2img.GetDetectorXY(dspO,azm,Data)
+            xyO = G2img.GetDetectorXY2(dspO,azm,Data)
             Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],
 #                picker=True,pickradius=3,label='linescan')
                 picker=False,label='linescan')
@@ -7584,7 +7590,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
     G2frame.seq = 0
 
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(generalData['Name'],'ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
@@ -7840,7 +7848,9 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
     uColors = [Rd,Gr,Bl]
     XYZ = np.array(Atoms[1:]).T      #don't mess with original!
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Bead model','ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
     Page.name = Atoms[0]
     Page.Choice = None
@@ -8164,7 +8174,9 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         if GSASIIpath.GetConfigValue('debug'): raise Exception('Should not happen')
 
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Rigid body','ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
     Page.name = rbData['RBname']
     Page.Choice = None
@@ -8624,7 +8636,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
     getAtoms()
 
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Layer','ogl')
-    if new:
+    try:
+        Page.views
+    except AttributeError:
         Page.views = False
         Page.labels = False
         Page.fade = False

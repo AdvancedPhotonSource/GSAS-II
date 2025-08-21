@@ -2000,6 +2000,55 @@ def UpdateMasks(G2frame,data):
         finally:
             dlg.Destroy()
 
+    def OnLoadPixelMask(event):
+        Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
+        img = G2frame.GPXtree.GetItemText(G2frame.Image)
+        if img not in Names: # remove current entry from list of names
+            print(f'Strange: {img} not in IMG entries')
+        else:
+            del Names[Names.index(img)]
+        # if nothing left, provide error & quit
+        if not Names:
+            G2G.G2MessageBox(G2frame,
+                             'Before you can use this command you must import the mask you want to use as an image',
+                             'No mask image')
+            return
+        elif len(Names) == 1:
+            sel = Names[0]
+        else:
+            dlg = G2G.G2SingleChoiceDialog(G2frame,
+                    'Select an image as a pixel mask:',
+                    'Load Pixel Mask',Names)
+            dlg.CenterOnParent()
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+        # Got our mask identified
+        maskID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,sel)
+        maskdata = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,maskID,'Image Controls'))
+        formatName = maskdata.get('formatName','')
+        Npix,maskfile,imagetag = G2IO.GetCheckImageFile(G2frame,maskID)
+        # check it matches
+        imgdim = G2frame.GPXtree.GetItemPyData(G2frame.Image)[0]
+        if Npix != imgdim:
+            G2G.G2MessageBox(G2frame,
+                             f'Mask dimensions ({Npix}) != Image ({imgdim}). Images do not match',
+                             'Mask image wrong dimensions')
+            return
+        maskImage = np.array(G2fil.GetImageData(G2frame,maskfile,True,ImageTag=imagetag,FormatName=formatName),dtype=np.float32)
+        data['SpotMask']['MaskLoaded'] = sel # provides a record that this
+                                             # was loaded rather than a search
+        data['SpotMask']['spotMask'] = maskImage > 0
+        nmasked = sum(data['SpotMask']['spotMask'].flatten())
+        frac = nmasked/data['SpotMask']['spotMask'].size
+        G2G.G2MessageBox(G2frame,
+                             f'Mask removes {nmasked} pixels ({frac:.3f}%)',
+                             'Mask loaded')
+
     def OnFindPixelMask(event):
         '''Do auto search for pixels to mask
         Called from (Masks) Operations->"Pixel mask search"
@@ -2343,6 +2392,7 @@ def UpdateMasks(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOADNOT)
     G2frame.Bind(wx.EVT_MENU, OnSaveMask, id=G2G.wxID_MASKSAVE)
     G2frame.Bind(wx.EVT_MENU, OnFindPixelMask, id=G2G.wxID_FINDSPOTS)
+    G2frame.Bind(wx.EVT_MENU, OnLoadPixelMask, id=G2G.wxID_LOADSPOTS)
     G2frame.Bind(wx.EVT_MENU, OnAutoFindPixelMask, id=G2G.wxID_AUTOFINDSPOTS)
     G2frame.Bind(wx.EVT_MENU, OnDeleteSpotMask, id=G2G.wxID_DELETESPOTS)
     G2frame.Bind(wx.EVT_MENU, ToggleSpotMaskMode, id=G2G.wxID_NEWMASKSPOT)

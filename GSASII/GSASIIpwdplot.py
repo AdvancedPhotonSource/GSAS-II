@@ -209,10 +209,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.FixedLimits['dylims'] = ['','']                
             newPlot = True
         elif event.key in ['shift+1','!']: # save current plot settings as defaults
+            # shift+1 assumes US keyboard
             print('saving plotting defaults for',G2frame.GPXtree.GetItemText(G2frame.PatternId))
             data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
             data[0]['PlotDefaults'] = copy.deepcopy([
-                Plot.get_xlim(),Plot.get_ylim(),Page.plotStyle])
+                Plot.get_xlim(),Plot.get_ylim(),Page.plotStyle,
+                G2frame.SinglePlot, G2frame.Contour, G2frame.Weight,
+                G2frame.plusPlot, G2frame.SubBack])
         elif event.key == 'X' and plottype == 'PWDR':
             G2frame.CumeChi = not G2frame.CumeChi 
         elif event.key == 'e' and plottype in ['SASD','REFD']:
@@ -426,7 +429,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     G2frame.selections = None
             dlg.Destroy()
             newPlot = True
-        elif event.key in ['+','=']:
+        elif event.key in ['+','=','shift+=']: # assumes US keyboard
             G2frame.plusPlot = (G2frame.plusPlot+1)%3
         elif event.key == '/':
             Page.plotStyle['Normalize'] = not Page.plotStyle['Normalize']
@@ -1694,7 +1697,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     #=====================================================================================
     elif 'PlotDefaults' in data[0] and fromTree:  # set style from defaults saved with '!'
         #print('setting plot style defaults')
-        xlim,ylim,styleDict = data[0]['PlotDefaults']
+        (xlim, ylim, styleDict, G2frame.SinglePlot, G2frame.Contour, G2frame.Weight,
+                G2frame.plusPlot, G2frame.SubBack) = data[0]['PlotDefaults']
         Page.plotStyle = copy.copy(styleDict)
         newPlot = True # prevent carrying limits over (may not be needed here)
     #=====================================================================================
@@ -2789,7 +2793,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                               linestyle=pLinStyl)
     if 'PlotDefaults' in data[0] and fromTree:  # set plot limists from defaults saved with '!'
         #print('setting plot defaults')
-        xlim,ylim,styleDict = data[0]['PlotDefaults']
+        (xlim, ylim, styleDict, G2frame.SinglePlot, G2frame.Contour, G2frame.Weight,
+                G2frame.plusPlot, G2frame.SubBack) = data[0]['PlotDefaults']
         Page.toolbar.push_current()
         Plot.set_xlim((xlim[0],xlim[1]))
         Plot.set_ylim((ylim[0],ylim[1]))

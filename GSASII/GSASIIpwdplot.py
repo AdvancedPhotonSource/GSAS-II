@@ -134,7 +134,7 @@ def plotVline(Page,Plot,Lines,Parms,pos,color,pick,style='dotted'):
             picker=pick,pickradius=2.,linestyle=style))
         
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
-                     extraKeys=[],refineMode=False,indexFrom=''):
+                     extraKeys=[],refineMode=False,indexFrom='',fromTree=False):
     '''Powder pattern plotting package - displays single or multiple powder 
     patterns as intensity vs 2-theta, q or TOF. Can display multiple patterns 
     as "waterfall plots" or contour plots. Log I plotting available.
@@ -152,6 +152,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         reflection list.
       * G2frame.Extinct: used for display of extinct reflections (in blue) 
         for generated reflections when "show extinct" is selected.
+
+    :param wx.Frame G2frame: main GSAS-II window
+    :param newPlot: Set to True when a new type of plot is drawn (default False)
+    :param plotType: Type of data entry to be plotted (SASD, REFD, PWDR) 
+       (default is 'PWDR')
+    :param list data: Contents of histogram
+    :param list extraKeys: list of str values with extra "command" keys to 
+       act on plot
+    :param bool refineMode: Set to True when called from inside a refinement 
+      default is False
+    :param str indexFrom: Status line message used to label indexing results
+    :param bool fromTree: will be set to True when called from the data tree
+
+    :returns: if refineMode is True, returns a reference to 
+      :func:`refPlotUpdate`. Otherwise, nothing is returned
     '''
     global PlotList,IndxFrom
     IndxFrom = indexFrom
@@ -193,6 +208,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif 'PWDR' in plottype: # Turning on Weight plot clears previous limits
                 G2frame.FixedLimits['dylims'] = ['','']                
             newPlot = True
+        elif event.key in ['shift+1','!']: # save current plot settings as defaults
+            print('saving plotting defaults for',G2frame.GPXtree.GetItemText(G2frame.PatternId))
+            data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+            data[0]['PlotDefaults'] = copy.deepcopy([
+                Plot.get_xlim(),Plot.get_ylim(),Page.plotStyle])
         elif event.key == 'X' and plottype == 'PWDR':
             G2frame.CumeChi = not G2frame.CumeChi 
         elif event.key == 'e' and plottype in ['SASD','REFD']:
@@ -225,13 +245,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.SubBack = False
             YmaxS = max(Pattern[1][1])
             if Page.plotStyle['sqrtPlot']:
-                Page.plotStyle['delOffset'] = .02*np.sqrt(YmaxS)
-                Page.plotStyle['refOffset'] = -0.1*np.sqrt(YmaxS)
-                Page.plotStyle['refDelt'] = .1*np.sqrt(YmaxS)
+                Page.plotStyle['delOffset'] = float(.02*np.sqrt(YmaxS))
+                Page.plotStyle['refOffset'] = float(-0.1*np.sqrt(YmaxS))
+                Page.plotStyle['refDelt'] = float(.1*np.sqrt(YmaxS))
             else:
-                Page.plotStyle['delOffset'] = .02*YmaxS
-                Page.plotStyle['refOffset'] = -0.1*YmaxS
-                Page.plotStyle['refDelt'] = .1*YmaxS
+                Page.plotStyle['delOffset'] = float(.02*YmaxS)
+                Page.plotStyle['refOffset'] = float(-0.1*YmaxS)
+                Page.plotStyle['refDelt'] = float(.1*YmaxS)
             newPlot = True
         elif event.key == 'S' and 'PWDR' in plottype:
             choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
@@ -337,11 +357,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     plotType=plottype,extraKeys=extraKeys)
                 if abs(Page.startExclReg - event.xdata) < 0.1: return
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
-                data = G2frame.GPXtree.GetItemPyData(LimitId)
+                limdat = G2frame.GPXtree.GetItemPyData(LimitId)
                 mn = min(Page.startExclReg, event.xdata)
                 mx = max(Page.startExclReg, event.xdata)
-                data.append([mn,mx])
-                G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
+                limdat.append([mn,mx])
+                G2pdG.UpdateLimitsGrid(G2frame,limdat,plottype)
             return
         elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
                  Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
@@ -410,7 +430,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.plusPlot = (G2frame.plusPlot+1)%3
         elif event.key == '/':
             Page.plotStyle['Normalize'] = not Page.plotStyle['Normalize']
-            newPlot=True
+            newPlot = True
         elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
@@ -1163,7 +1183,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if DifLine[0] is G2frame.itemPicked:   # respond to dragging of the difference curve
             data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
             ypos = event.ydata
-            Page.plotStyle['delOffset'] = -ypos
+            Page.plotStyle['delOffset'] = float(-ypos)
             G2frame.itemPicked = None
             wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
@@ -1555,9 +1575,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Replot()
         configPartialDisplay(G2frame,Page.phaseColors,Replot)
             
-    #### beginning PlotPatterns execution
+    #### beginning PlotPatterns execution #####################################
     global exclLines,Page
-    global DifLine # BHT: probably does not need to be global
+    global DifLine
     global Ymax
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     global savedX
@@ -1600,8 +1620,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 #patch
     if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
-        Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
-            'refDelt':0.1*Ymax,})
+        Page.plotStyle.update({'Offset':[0.0,0.0],
+                            'delOffset':float(0.02*Ymax),
+                            'refOffset':float(-0.1*Ymax),
+                            'refDelt':float(0.1*Ymax),})
 #end patch
     if 'Normalize' not in Page.plotStyle:
         Page.plotStyle['Normalize'] = False
@@ -1619,18 +1641,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     print('triggering newplot from G2frame.lastPlotType')
                 Ymax = max(data[1][1])
                 if Page.plotStyle['sqrtPlot']:
-                    Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)
-                    Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
-                    Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
+                    Page.plotStyle['delOffset'] = float(.02*np.sqrt(Ymax))
+                    Page.plotStyle['refOffset'] = float(-0.1*np.sqrt(Ymax))
+                    Page.plotStyle['refDelt'] = float(.1*np.sqrt(Ymax))
                 else:
-                    Page.plotStyle['delOffset'] = .02*Ymax
-                    Page.plotStyle['refOffset'] = -0.1*Ymax
-                    Page.plotStyle['refDelt'] = .1*Ymax
+                    Page.plotStyle['delOffset'] = float(.02*Ymax)
+                    Page.plotStyle['refOffset'] = float(-0.1*Ymax)
+                    Page.plotStyle['refDelt'] = float(.1*Ymax)
                 newPlot = True
             G2frame.lastPlotType = Parms['Type'][1]
         except TypeError:       #bad id from GetGPXtreeItemId - skip
             pass
-        
     try:
         G2frame.FixedLimits
     except:
@@ -1671,9 +1692,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.GPXtree.SelectItem(G2frame.PatternId)
                 PlotPatterns(G2frame,True,plotType,None,extraKeys)
     #=====================================================================================
-    if not new:
+    elif 'PlotDefaults' in data[0] and fromTree:  # set style from defaults saved with '!'
+        #print('setting plot style defaults')
+        xlim,ylim,styleDict = data[0]['PlotDefaults']
+        Page.plotStyle = copy.copy(styleDict)
+        newPlot = True # prevent carrying limits over (may not be needed here)
+    #=====================================================================================
+    if not new:  # plotting in previously created axes
         G2frame.xylim = copy.copy(limits)
-    else:
+    else:   # 1st time plot is created
         if plottype in ['SASD','REFD']:
             Page.plotStyle['logPlot'] = True
             G2frame.ErrorBars = True
@@ -1824,6 +1851,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.Choice = Page.Choice+ ['p: toggle partials (if available)',]
             if G2frame.SinglePlot:
                 Page.Choice += ['v: CSV output of plot']
+            Page.Choice += ['!: Save settings as default for histogram']
         elif plottype in ['SASD','REFD']:
             Page.Choice = [' key press',
                 'b: toggle subtract background file','g: toggle grid',
@@ -1906,7 +1934,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Pattern.append(G2frame.GPXtree.GetItemText(pid))
             if 'Offset' not in Page.plotStyle:     #plot offset data
                 Ymax = max(Pattern[1][1])
-                Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
+                Page.plotStyle.update({'Offset':[0.0,0.0],
+                            'delOffset':float(0.02*Ymax),
+                            'refOffset':float(-0.1*Ymax),
+                            'refDelt':float(0.1*Ymax),})
             # PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
             # Pattern[0]['BackFile'] = ['',-1.0,False]
             # if PId:
@@ -2756,6 +2787,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     y = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
                 Plot.plot(x,y,pcolor,picker=False,label=ph,linewidth=pwidth,
                               linestyle=pLinStyl)
+    if 'PlotDefaults' in data[0] and fromTree:  # set plot limists from defaults saved with '!'
+        #print('setting plot defaults')
+        xlim,ylim,styleDict = data[0]['PlotDefaults']
+        Page.toolbar.push_current()
+        Plot.set_xlim((xlim[0],xlim[1]))
+        Plot.set_ylim((ylim[0],ylim[1]))
+        Page.toolbar.push_current()
+        newPlot = True # prevent carrying limits over from other histograms
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()

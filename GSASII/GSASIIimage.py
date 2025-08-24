@@ -42,7 +42,7 @@ nptand = lambda x: np.tan(x*np.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 nxs = np.newaxis
-debug = True
+debug = False
 
 def peneCorr(tth,dep,dist):
     'Compute empirical position correction due to detector absorption'
@@ -457,94 +457,40 @@ def GetEllipse(dsp,data):
     dxy = peneCorr(tth,dep,dist)
     return GetEllipse2(tth,dxy,dist,cent,tilt,phi)
 
-# def GetDetectorXY(dsp,azm,data):
-#     '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
-#     & image controls dictionary (data) - new version
-#     it seems to be only used in plotting & wrong
-#     '''
-#     def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
-
-#     	ndotu = planeNormal.dot(rayDirection)
-#     	if ndotu < epsilon:
-#     		return None
-#     	w = rayPoint - planePoint
-#     	si = -planeNormal.dot(w) / ndotu
-#     	Psi = w + si * rayDirection + planePoint
-#     	return Psi
-
-#     dist = data['distance']
-#     cent = data['center']
-#     phi = data['rotation']-90.          #to give rotation of major axis
-#     T = makeMat(data['tilt'],0)     #rotate about X
-#     R = makeMat(phi,2)     #rotate about Z
-#     MN = np.inner(R,np.inner(R,T))
-#     iMN= nl.inv(MN)
-#     tth = 2.0*npasind(data['wavelength']/(2.*dsp))
-#     vect = np.array([npsind(tth)*npcosd(azm-phi),npsind(tth)*npsind(azm-phi),npcosd(tth)])
-#     dxyz0 = np.inner(np.array([0.,0.,1.0]),MN)    #tilt detector normal
-#     dxyz0 += np.array([0.,0.,dist])                 #translate to distance
-#     dxyz0 = np.inner(dxyz0,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
-#     dxyz1 = np.inner(np.array([cent[0],cent[1],0.]),MN)    #tilt detector cent
-#     dxyz1 += np.array([0.,0.,dist])                 #translate to distance
-#     dxyz1 = np.inner(dxyz1,makeMat(data['det2theta'],1).T)   #rotate on 2-theta
-#     xyz = LinePlaneCollision(dxyz1,dxyz0,vect,dist*vect)
-#     if xyz is None:
-#         return np.zeros(2)
-# #        return None
-#     xyz = np.inner(xyz,makeMat(data['det2theta'],1).T)
-#     xyz -= np.array([0.,0.,dist])                 #translate back
-#     xyz = np.inner(xyz,iMN)
-#     return np.squeeze(xyz)[:2]+cent
-
-def GetDetectorXY2(dsp,azm,data):
+def GetDetectorXY(dsp,azm,data):
     '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg)
-    & image controls dictionary (data)
-    it seems to be only used in plotting
+    & image controls dictionary (data) - new version
     '''
-    elcent,phi,radii = GetEllipse(dsp,data)
-    phi = data['rotation']-90.          #to give rotation of major axis
-    tilt = data['tilt']
-    dist = data['distance']
+    
+    def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
+
+    	ndotu = planeNormal.dot(rayDirection)
+    	if ndotu < epsilon:
+    		return None
+    	w = rayPoint - planePoint
+    	si = -planeNormal.dot(w) / ndotu
+    	Psi = w + si * rayDirection + planePoint
+    	return Psi
+
+    dist = data['distance']/npcosd(data['tilt'])    #sample-beam intersection point on detector plane
     cent = data['center']
-    tth = 2.0*asind(data['wavelength']/(2.*dsp))
-    stth = sind(tth)
-    cosb = cosd(tilt)
-    if radii[0] > 0.: #ellipse - correct!
-        sinb = sind(tilt)
-        tanb = tand(tilt)
-        fplus = dist*tanb*stth/(cosb+stth)
-        fminus = dist*tanb*stth/(cosb-stth)
-        zdis = (fplus-fminus)/2.
-        rsqplus = radii[0]**2+radii[1]**2
-        rsqminus = radii[0]**2-radii[1]**2
-        R = rsqminus*cosd(2.*azm-2.*phi)+rsqplus
-        Q = np.sqrt(2.)*radii[0]*radii[1]*np.sqrt(R-2.*zdis**2*sind(azm-phi)**2)
-        if radii[0] <= 0.:
-            zdis *= -1.
-        P = 2.*radii[0]**2*zdis*cosd(azm-phi)
-        radius = (P+Q)/R
-        xy = np.array([radius*cosd(azm),radius*sind(azm)])
-        xy += cent
-    else:   #hyperbola - both branches (one is way off screen!) - not correct
-        sinb = abs(sind(tilt))
-        tanb = abs(tand(tilt))
-        f = dist*tanb*stth/(cosb+stth)
-        v = dist*(tanb+tand(tth-abs(tilt)))
-        delt = dist*stth*(1+stth*cosb)/(sinb*cosb*(stth+cosb))
-        ecc = (v-f)/(delt-v)
-        R = radii[1]*(ecc**2-1)/(1-ecc*cosd(azm-phi))
-        if tilt > 0.:
-            offset = 2.*radii[1]*ecc+f      #select other branch
-            xy = [-R*cosd(azm-phi)-offset,-R*sind(azm-phi)]
-        else:
-            offset = -f
-            xy = [-R*cosd(azm-phi)-offset,2.*R*sind(azm-phi)]
-            print(azm,ecc,R,offset,cosd(azm-phi),sind(azm-phi),xy)
-        xy = -np.array([xy[0]*cosd(phi)+xy[1]*sind(phi),xy[0]*sind(phi)-xy[1]*cosd(phi)])
-        xy += cent
-    if data['det2theta']:
-        xy[0] += dist*nptand(data['det2theta']+data['tilt']*npsind(data['rotation']))
-    return xy
+    phi = data['rotation']
+    T = makeMat(data['tilt'],0)     #rotate about X
+    R = makeMat(phi,2)     #rotate about Z
+    MN = np.inner(R,np.inner(R,T))
+    iMN= nl.inv(MN)
+    tth = 2.0*npasind(data['wavelength']/(2.*dsp))
+    vect = np.array([npsind(tth)*npcosd(azm),npsind(tth)*npsind(azm),npcosd(tth)])
+    dxyzN = np.inner(np.array([0.,0.,1.0]),MN)    #tilt detector normal
+    dxyzO = np.array([0.,0.,dist])                 #translate to distance
+    dorig = np.zeros(3)
+    xyz = LinePlaneCollision(dxyzN,dxyzO,vect,dorig)
+    if xyz is None:
+        return np.zeros(2)
+    xyz = np.inner(xyz,makeMat(data['det2theta'],1).T)
+    xyz -= np.array([0.,0.,dist])                 #translate back
+    xyz = np.inner(xyz,iMN)
+    return np.squeeze(xyz)[:2]+cent
 
 def GetTthAzmDsp2(x,y,data): #expensive
     '''Computes a 2theta, etc. from a detector position and calibration constants - checked
@@ -644,28 +590,6 @@ def GetAzm(x,y,data):
     else:
         return GetTthAzmDsp2(x,y,data)[1]
 # these two are used only for integration & finding pixel masks
-# def GetTthAzmG2(x,y,data):
-#     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
-#      calibration info in data - only used in integration for detector 2-theta = 0
-#     '''
-#     tilt = data['tilt']
-#     dist = data['distance']/npcosd(tilt)
-#     MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
-#     dx = x-data['center'][0]
-#     dy = y-data['center'][1]
-#     dz = np.dot(np.dstack([dx.T,dy.T,np.zeros_like(dx.T)]),MN).T[2]
-#     xyZ = dx**2+dy**2-dz**2
-#     tth0 = npatand(np.sqrt(xyZ)/(dist-dz))
-#     dzp = peneCorr(tth0,data['DetDepth'],dist)
-#     tth = npatan2d(np.sqrt(xyZ),dist-dz+dzp)
-#     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
-# # G-calculation - use Law of sines
-#     distm = data['distance']/1000.0
-#     sinB2 = np.minimum(np.ones_like(tth),(data['distance']*npsind(tth))**2/(dx**2+dy**2))
-#     #sinB2 = (data['distance']*npsind(tth))**2/(dx**2+dy**2)
-#     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
-#     G = distm**2*sinB2/npsind(C)**2
-#     return tth,azm,G
 
 def GetTthAzmG(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
@@ -705,31 +629,11 @@ def GetTthAzmG(x,y,data):
     azm = (npatan2d(dxyz[:,:,1],dxyz[:,:,0])+data['azmthOff']+720.)%360. 
 # new G calculation - parallax & distance (in meters)
     G = 1./ctth0*np.sum(dxyz0**2,axis=2)*1.e-6            #parallax*distance^2; convert to m^2 - correct!
-# old G-calculation        
-    # x0 = data['distance']*nptand(tilt)
-    # x0x = x0*npcosd(data['rotation'])
-    # x0y = x0*npsind(data['rotation'])
-    # distsq = data['distance']**2
-    # G = ((dx-x0x)**2+(dy-x0y)**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    # G *= ctth0
-# # G-calculation - use Law of sines - wrong for nonzero det2theta!
-#     distm = data['distance']/1000.0
-#     sinB2 = np.minimum(np.ones_like(tth),
-#         (data['distance']*npsind(tth))**2/(dx**2+dy**2))
-#     C = 180.-tth-npacosd(np.sqrt(1.- sinB2))
-#     G = distm**2*sinB2/npsind(C)**2
     return tth,azm,G
 
 def meanAzm(a,b):
     AZM = lambda a,b: npacosd(0.5*(npsind(2.*b)-npsind(2.*a))/(np.pi*(b-a)/180.))/2.
     azm = AZM(a,b)
-#    quad = int((a+b)/180.)
-#    if quad == 1:
-#        azm = 180.-azm
-#    elif quad == 2:
-#        azm += 180.
-#    elif quad == 3:
-#        azm = 360-azm
     return azm
 
 def ImageCompress(image,scale):
@@ -761,7 +665,7 @@ def GetLineScan(image,data):
     Tx = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
     Ty = np.zeros_like(Tx)
     dsp = wave/(2.0*npsind(Tx/2.0))
-    xy = [GetDetectorXY2(d,azm,data) for d in dsp]
+    xy = [GetDetectorXY(d,azm,data) for d in dsp]
     xy = np.array(xy).T
     xy[1] *= scalex
     xy[0] *= scaley
@@ -833,10 +737,6 @@ def CalcRings(G2frame,ImageZ,data,masks):
     for iH,H in enumerate(HKL):
         if debug:   print (H)
         dsp = H[3]
-        tth = 2.0*asind(wave/(2.*dsp))
-        # if tth+abs(data['tilt']) > 90.:
-        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
-        #     break
         ellipse = GetEllipse(dsp,data)
         if iH not in absent and iH >= skip:
             Ring = makeRing(dsp,ellipse,0,-1.,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
@@ -903,7 +803,6 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         'setdist':data.get('setdist',data['distance']),
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     Found = False
-    wave = data['wavelength']
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)
     if frame:
@@ -911,10 +810,6 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     for iH,H in enumerate(HKL):
         if debug:   print (H)
         dsp = H[3]
-        tth = 2.0*asind(wave/(2.*dsp))
-        # if tth+abs(data['tilt']) > 90.:
-        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
-        #     break
         ellipse = GetEllipse(dsp,data)
         if iH not in absent and iH >= skip:
             Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
@@ -1128,9 +1023,6 @@ def ImageCalibrate(G2frame,data):
     for i,H in enumerate(HKL):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
-        # if tth+abs(data['tilt']) > 90.:
-        #     G2fil.G2Print ('next line is a hyperbola - search stopped')
-        #     break
         if debug:   print ('HKLD:'+str(H[:4])+'2-theta: %.4f'%(tth))
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))

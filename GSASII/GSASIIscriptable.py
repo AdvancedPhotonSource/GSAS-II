@@ -6868,8 +6868,8 @@ class G2Image(G2ObjectWrapper):
         wave = Controls['wavelength']
         dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
         dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
-        x0 = G2img.GetDetectorXY2(dsp0,0.0,Controls)[0]
-        x1 = G2img.GetDetectorXY2(dsp1,0.0,Controls)[0]
+        x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+        x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
         if not np.any(x0) or not np.any(x1):
             raise Exception
         numChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2

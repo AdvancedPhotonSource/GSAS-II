@@ -4561,10 +4561,10 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     if azm1-azm0 > 180: aR[2] //= 2  # for more than 180 degrees, steps can be 2 deg.
     Azm = np.linspace(*aR)
     for azm in Azm:
-        XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angI),wave),azm,Data)
+        XY = G2img.GetDetectorXY(Dsp(np.squeeze(angI),wave),azm,Data)
         if np.any(XY):
             xy1.append(XY)
-        XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angO),wave),azm,Data)
+        XY = G2img.GetDetectorXY(Dsp(np.squeeze(angO),wave),azm,Data)
         if np.any(XY):
             xy2.append(XY)
     return np.array(xy1).T,np.array(xy2).T
@@ -4845,7 +4845,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY2(dspI,azm,Data)
+                    xy = G2img.GetDetectorXY(dspI,azm,Data)
                     if np.any(xy):
                         xyI.append(xy)
                 if len(xyI):
@@ -4854,7 +4854,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellO:
                 xyO = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY2(dspO,azm,Data)
+                    xy = G2img.GetDetectorXY(dspO,azm,Data)
                     if np.any(xy):
                         xyO.append(xy)
                 if len(xyO):
@@ -4874,9 +4874,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xlim = Plot1.get_xlim()
                 azm = Data['linescan'][1]-AzmthOff
                 dspI = wave/(2.0*sind(IOtth[0]/2.0))
-                xyI = G2img.GetDetectorXY2(dspI,azm,Data)
+                xyI = G2img.GetDetectorXY(dspI,azm,Data)
                 dspO = wave/(2.0*sind(IOtth[1]/2.0))
-                xyO = G2img.GetDetectorXY2(dspO,azm,Data)
+                xyO = G2img.GetDetectorXY(dspO,azm,Data)
                 pick.set_data([[xyI[0],xyO[0]],[xyI[1],xyO[1]]])
                 xy = G2img.GetLineScan(G2frame.ImageZ,Data)
                 Plot1.cla()
@@ -5461,7 +5461,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY2(dspI,azm,Data)
+                    xy = G2img.GetDetectorXY(dspI,azm,Data)
                     if np.any(xy):
                         xyI.append(xy)
                 if len(xyI):
@@ -5472,7 +5472,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xyO = []
                 arcxO = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY2(dspO,azm,Data)
+                    xy = G2img.GetDetectorXY(dspO,azm,Data)
                     if np.any(xy):
                         xyO.append(xy)
                 if len(xyO):
@@ -5496,9 +5496,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             IOtth = Data['IOtth']
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
-            xyI = G2img.GetDetectorXY2(dspI,azm,Data)
+            xyI = G2img.GetDetectorXY(dspI,azm,Data)
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
-            xyO = G2img.GetDetectorXY2(dspO,azm,Data)
+            xyO = G2img.GetDetectorXY(dspO,azm,Data)
             Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],picker=False,label='linescan')
 
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:

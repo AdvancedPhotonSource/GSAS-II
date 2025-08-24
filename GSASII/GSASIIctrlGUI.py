@@ -9486,7 +9486,7 @@ def gitCheckUpdates(G2frame):
         else:
             msg = ('You have made a local branch and have switched to that.'+
                    ' Do you want to update anyway? Doing so will return'+
-                   ' you to the master branch. This may be better handled'+
+                   ' you to the main branch. This may be better handled'+
                    ' manually.\n\nPress "Yes" to continue with update\n'+
                    'Press "Cancel" to stop the update.')
         dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
@@ -9505,7 +9505,7 @@ def gitCheckUpdates(G2frame):
                     "changes locally. Your local commits will be difficult "+
                     "to locate if you update. SUGGESTION: if your changes "+
                     "are meaningful, create a new git branch and return "+
-                    "to the master branch.\n\n"+
+                    "to the main branch.\n\n"+
                     'Press "Yes" to continue, stranding your local changes\n'+
                     'Press "Cancel" to stop the update.')
             dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
@@ -9524,13 +9524,31 @@ def gitCheckUpdates(G2frame):
             return
         if len(lc) != 0:
             msg = ('You have made local changes and committed them '+
-                   'into the master branch. GUI-based updates cannot '+
+                   'into the main branch. GUI-based updates cannot '+
                    'be made. You should perform a git merge manually')
             G2MessageBox(G2frame,msg,title='Do manual update')
             return
 
     cmds = ['--git-update']
-    if localChanges:
+    if localChanges and GSASIIpath.GetConfigValue('debug'):
+        msg = ('You have locally-made changes to the GSAS-II source '+
+            'code files. Do you want to stash them before updating?\n\n'+
+            'If you select "Yes" the update will be applied after '+
+            'using git stash. You will need to use "git stash pop" '+
+            'to get these changes back.'+
+            '\n\nIf you select "No" no update will '+
+            'be performed.')
+        dlg = wx.MessageDialog(G2frame, msg, 'Stash Local Changes?',
+                wx.YES_NO|wx.NO_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+        ans = dlg.ShowModal()
+        dlg.Destroy()
+        if ans != wx.ID_YES:
+            return
+        g2repo = GSASIIpath.openGitRepo(path2GSAS2)
+        import datetime as dt
+        now = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
+        g2repo.git.stash(f'-m "preserving local changes prior to update from GUI @ {now}"')
+    elif localChanges:
         if gitAskLocalChanges(G2frame,cmds): return
     if gitAskSave(G2frame,regressmsg,cmds): return
     # launch changes and restart
@@ -9604,11 +9622,11 @@ def gitSelectVersion(G2frame):
         if localChanges:
             msg =  ('You have switched to a local branch and have '+
                     'uncommited changes. Save, stash or restore and switch '+
-                    'back to the master branch. Regression is not possible '+
+                    'back to the main branch. Regression is not possible '+
                     'from the GUI when on any other branch.')
         else:
             msg =  ('You have made and switched to a local branch. '+
-                    'You must manually switch back to the master branch.'+
+                    'You must manually switch back to the main branch.'+
                     ' Regression is not possible '+
                     'from the GUI when on any other branch.')
         G2MessageBox(G2frame,msg,title='update not possible')
@@ -9624,7 +9642,7 @@ def gitSelectVersion(G2frame):
                     "changes locally. Your local commits will be difficult "+
                     "to locate if you update. SUGGESTION: if your changes "+
                     "are meaningful, create a new git branch and return "+
-                    "to the master branch.\n\n"+
+                    "to the main branch.\n\n"+
                     'Press "Yes" to continue, stranding your local changes\n'+
                     'Press "Cancel" to stop the update.')
             dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
@@ -9638,7 +9656,7 @@ def gitSelectVersion(G2frame):
         rc,lc,_ = GSASIIpath.gitCheckForUpdates(False)
         if len(lc) != 0:
             msg = ('You have made local changes and committed them '+
-                   'into the master branch. GUI-based regression cannot '+
+                   'into the main branch. GUI-based regression cannot '+
                    'be done. You should perform a "git checkout" to the '+
                    'desired version manually')
             G2MessageBox(G2frame,msg,title='Do manual update')

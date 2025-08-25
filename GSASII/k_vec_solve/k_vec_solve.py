@@ -10,6 +10,7 @@ import json
 import numpy as np
 from fractions import Fraction
 from sympy import Eq, solve, Matrix, symbols, sympify
+import os
 
 a, b, g = symbols('a b g')
 
@@ -37,19 +38,20 @@ def parse_expression_string(expr_string):
     return sympy_expressions
 
 
-def transform_spg_ops_to_matrix(spg_ops):
+def transform_spg_ops_to_matrix(spg_ops, syms):
     '''Transforming space group operators in the string form into a matrix.
 
     Args:
         spg_ops (list): A list of operators list like ["-x + y + 1/2", "-x", "z"]
+        syms (list): A list of symbols corresponding to the operators
 
     Returns:
         numpy.ndarray: A numpy array of space group operator matrices.
     '''
     base_vectors = {
-        'x': [1, 0, 0],
-        'y': [0, 1, 0],
-        'z': [0, 0, 1],
+        syms[0]: [1, 0, 0],
+        syms[1]: [0, 1, 0],
+        syms[2]: [0, 0, 1],
     }
 
     matrices = []
@@ -60,15 +62,15 @@ def transform_spg_ops_to_matrix(spg_ops):
         terms = re.split('(?=[+-])', element)
 
         for term in terms:
-            if 'x' in term:
+            if syms[0] in term:
                 sign = -1 if term.startswith('-') else 1
-                resulatt_type_vector = [rv + sign * bv for rv, bv in zip(resulatt_type_vector, base_vectors['x'])]
-            elif 'y' in term:
+                resulatt_type_vector = [rv + sign * bv for rv, bv in zip(resulatt_type_vector, base_vectors[syms[0]])]
+            elif syms[1] in term:
                 sign = -1 if term.startswith('-') else 1
-                resulatt_type_vector = [rv + sign * bv for rv, bv in zip(resulatt_type_vector, base_vectors['y'])]
-            elif 'z' in term:
+                resulatt_type_vector = [rv + sign * bv for rv, bv in zip(resulatt_type_vector, base_vectors[syms[1]])]
+            elif syms[2] in term:
                 sign = -1 if term.startswith('-') else 1
-                resulatt_type_vector = [rv + sign * bv for rv, bv in zip(resulatt_type_vector, base_vectors['z'])]
+                resulatt_type_vector = [rv + sign * bv for rv, bv in zip(resulatt_type_vector, base_vectors[syms[2]])]
 
         return resulatt_type_vector
 
@@ -124,7 +126,8 @@ def grab_user_conv_transform(trans_str):
 
     op_str = [[x_op, y_op, z_op]]
 
-    user_to_conv = transform_spg_ops_to_matrix(op_str)[0]
+    syms = ['a', 'b', 'c']
+    user_to_conv = transform_spg_ops_to_matrix(op_str, syms)[0]
 
     return user_to_conv
 
@@ -209,14 +212,26 @@ def solve_kvec_params(numkvec, kform):
 
     Args:
         numkvec (list): k vector
-        kform (list): Candidate k vector form
+        kform (numpy array): Candidate k vector form
 
     Returns:
         list or dict: Solution for parameters involved in the provided k vector form.
             If a solution is found, the return will be a dictionary with parameter names as keys and their
             corresponding values as dict values. If no solution is found, an empty list is returned.
     """
+    # Convert to sympy Matrix
     kform_m = Matrix(kform)
+
+    # Check if kform contains only numbers
+    if not kform_m.free_symbols:
+        # Perform a piecewise comparison
+        kform_f = [float(f) for f in kform]
+        if all(n == f for n, f in zip(numkvec, kform_f)):
+            return {'match': True}
+        else:
+            return {'match': False}
+
+    # If kform contains symbols, solve for the parameters
     kvars = list(kform_m.free_symbols)
     kequats = [Eq(kform_m[i] - n, 0) for i, n in enumerate(numkvec)]
     ksols = solve(kequats, kvars)
@@ -237,11 +252,15 @@ def find_kvec_form_param(spg_num, isocif_cif, k_vec, k_forms):
     Returns:
         tuple: (index of k_form, a, b, g)
     """
-    with open("./sgtables.json", "r") as f:
+    script_path = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(script_path, "sgtables.json"), "r") as f:
         sgtables = json.load(f)
 
     spg_sym = sgtables[str(spg_num)]["SPGSym"]
-    user_aff_ops = transform_spg_ops_to_matrix(sgtables[str(spg_num)]["SPGOps"])
+    user_aff_ops = transform_spg_ops_to_matrix(
+        sgtables[str(spg_num)]["SPGOps"],
+        syms=['x', 'y', 'z']
+    )
 
     user_to_ref_conv_p_l = grab_user_conv_line(isocif_cif)
     user_to_ref_conv_p = grab_user_conv_transform(user_to_ref_conv_p_l)
@@ -256,7 +275,11 @@ def find_kvec_form_param(spg_num, isocif_cif, k_vec, k_forms):
     ref_pt_ops = np.matmul(user_to_ref_pr_q, np.matmul(user_aff_ops, user_to_ref_pr_p))
 
     k_vec_pr = np.dot(np.array(k_vec), user_to_ref_pr_p[0:3, 0:3])
-    k_forms_pr = np.matmul(k_forms, user_to_ref_pr_p[0:3, 0:3])
+    k_forms_tmp = []
+    for k_form_t in k_forms:
+        k_forms_tmp.append(k_form_t[1])
+    k_forms_tmp = np.array(k_forms_tmp)
+    k_forms_pr = np.matmul(k_forms_tmp, user_to_ref_pr_p[0:3, 0:3])
 
     def sort_keys(dict_entry):
         # Sort keys by priority: a, then b, then g
@@ -268,7 +291,7 @@ def find_kvec_form_param(spg_num, isocif_cif, k_vec, k_forms):
     for arm in k_vec_pr_arms:
         arm_sols = []
         for k_form in k_forms_pr:
-            sol = solve_kvec_params(arm, k_form)
+            sol = solve_kvec_params(arm[:3], k_form)
             if sol:
                 arm_sols.append(sol)
             else:
@@ -280,7 +303,10 @@ def find_kvec_form_param(spg_num, isocif_cif, k_vec, k_forms):
 
         for i, entry in enumerate(arm_sols):
             if isinstance(entry, dict):
-                num_keys = len(entry)
+                if 'match' in entry and entry['match'] is True:
+                    num_keys = 0
+                else:
+                    num_keys = len(entry)
 
                 # Compare this entry to the current best entry
                 if num_keys < min_keys or (num_keys == min_keys and sort_keys(entry) < sort_keys(best_dict)):

@@ -41,7 +41,7 @@ from . import GSASIIsasd as G2sasd
 from . import G2shapes
 from . import SUBGROUPS as kSUB
 from . import k_vector_search as kvs
-from . import k_vec_solve as kvsolve
+from k_vec_solve import k_vec_solve as kvsolve
 from GSASII.imports.G2phase_CIF import CIFPhaseReader as CIFpr
 from . import GSASIIscriptable as G2sc
 from . import GSASIImiscGUI as G2IO
@@ -5217,7 +5217,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
                 all_kvecs = {}
                 for key in final_kvec_keys:
-                    pattern_str = f"({key.split("(")[1]}"
+                    pattern_str = f"({key.split('(')[1]}"
                     k_form = kvsolve.parse_expression_string(pattern_str)
                     all_kvecs[key] = k_form
 
@@ -5275,7 +5275,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             k_vec_form = all_keys[k_vec_sol[0]]
 
             data_update = dict()
-            data_update['kvec1'] = k_vec_form
+            data_update['kvec1'] = k_vec_form[0]
             k_vec_params = to_fraction_strs(k_vec_sol[1], max_den=1000)
 
             if "a" in k_vec_params:
@@ -5413,7 +5413,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         kvec_dict = grab_all_kvecs(out2)
         lat_sym = Phase['General']['SGData']
-        data_update = setup_kvec_input(kpoint, kvec_dict, isocif_out_cif, lat_sym)
+        data_update = setup_kvec_input(kpoint, kvec_dict, isocif_out_cif)
         for key, value in data_update.items():
             data[key] = value
 

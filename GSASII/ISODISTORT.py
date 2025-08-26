@@ -237,6 +237,8 @@ def GetISOcif(out4,method):
     data3['strainamplitude'] = '0.1'
     # for item in data3:
     #     print(item,data3[item])
+    if 'appbtn' in data3:
+        data3.pop('appbtn')
     k = requests.post(isoformsite,data=data3)
     out5 = k.text   #this is output cif!
     #print(out5)

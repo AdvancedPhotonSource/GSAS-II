@@ -24,14 +24,14 @@ phaseoverview.html: Phase, PhaseTabList
 phasepawley.html: Phase-Pawley_reflections
 phasetexture.html: Phase-Texture
 phasewave.html: Phase-Wave_Data
-powder.html: PWDR_overview
+powder.html: PWDR_overview, PWDR_plot_actions, PWDR_dragticks, PWDR_keylist, PWDR_publication, PublicationPlots
 powderbkg.html: PWDR_Background
 powdercells.html: PWDR_Unit_Cells_List, CellDisplay, Laue_List
 powdercomments.html: PWDR_Comments
 powderindexppeaks.html: PWDR_Index_Peak_List
 powderinst.html: PWDR_Instrument_Parameters
 powderlimits.html: PWDR_Limits
-powderparent.html: PWDR_parent, PWDR, PWDR_plot_actions, PWDR_dragticks, PWDR_keylist, PWDR_publication, PublicationPlots
+powderparent.html: PWDR_parent, PWDR
 powderpeaks.html: PWDR_Peak_List, GenUnvariedWidths
 powderrefs.html: PWDR_Reflection_Lists
 powdersample.html: PWDR_Sample_Parameters

@@ -4983,11 +4983,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 wx.MessageBox('Error, multi k-vectors & Landau not compatible',
                     caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
                 return
-            wx.BeginBusyCursor()
             wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
                               G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
                               caption='Bilbao SUBGROUPS',
                               style=wx.ICON_INFORMATION)
+            wx.BeginBusyCursor()
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
             if SubGroups is None:
@@ -5006,7 +5006,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 controls[16] = baseList
             except IndexError:
                 controls.append(baseList)
-            dlg = wx.ProgressDialog('SUBGROUPS results','Processing '+SubGroups[0][0],len(SubGroups),
+            dlg = wx.ProgressDialog('SUBGROUPS results',f'Processing {SubGroups[0][0]}',len(SubGroups),
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
             for ir,result in enumerate(SubGroups):
                 dlg.Update(ir,newmsg='Processing '+result[0])

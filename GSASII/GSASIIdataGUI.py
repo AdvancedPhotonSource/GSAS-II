@@ -7166,6 +7166,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.GeneralCalc.Append(G2G.wxID_COMPARECELLS,'Compare Cells','Compare Unit Cells using NIST*LATTICE')
             self.GeneralCalc.Append(G2G.wxID_COMPARESTRUCTURE,'Compare polyhedra','Compare polyhedra to ideal octahedra/tetrahedra')
             self.GeneralCalc.Enable(G2G.wxID_COMPARESTRUCTURE,False)
+            G2G.Define_wxId('wxID_SUBSRCH')
+            self.GeneralCalc.Append(G2G.wxID_SUBSRCH,'SUBGROUPS search','Search for settings of this phase in higher symmetry')
             self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')
             self.GeneralCalc.Append(G2G.wxID_USEBILBAOSUB,'Make subgroup project file(s)','Requires subcell search in PWDR/Unit Cells')
             G2G.Define_wxId('wxID_SUPERSRCH')
@@ -8481,7 +8483,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         #     for lbl in G2frame.G2plotNB.plotList:
         #         G2frame.G2plotNB.Delete(lbl)
         #     G2frame.lastPlotType = None
-        G2pwpl.PlotPatterns(G2frame,plotType=kind,newPlot=NewPlot)
+        G2pwpl.PlotPatterns(G2frame,plotType=kind,newPlot=NewPlot,fromTree=True)
     elif kind == 'HKLF':
         Name = G2frame.GPXtree.GetItemText(item)
         phaseName = G2pdG.IsHistogramInAnyPhase(G2frame,Name)
@@ -8923,18 +8925,18 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if G2frame.Contour:
                 G2frame.Contour = False
                 newPlot = True
-        G2pwpl.PlotPatterns(G2frame,newPlot)
+        G2pwpl.PlotPatterns(G2frame,newPlot,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Background':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
         G2pdG.UpdateBackground(G2frame,data)
-        G2pwpl.PlotPatterns(G2frame,True)
+        G2pwpl.PlotPatterns(G2frame,True,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Limits':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         datatype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
         data = G2frame.GPXtree.GetItemPyData(item)
         G2pdG.UpdateLimitsGrid(G2frame,data,datatype)
-        G2pwpl.PlotPatterns(G2frame,plotType=datatype,newPlot=True)
+        G2pwpl.PlotPatterns(G2frame,plotType=datatype,newPlot=True,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Instrument Parameters':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)[0]
@@ -8948,7 +8950,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2pdG.UpdateModelsGrid(G2frame,data)
         elif prfx1 == 'REFD':
             G2pdG.UpdateREFDModelsGrid(G2frame,data)
-        G2pwpl.PlotPatterns(G2frame,plotType=prfx1)
+        G2pwpl.PlotPatterns(G2frame,plotType=prfx1,fromTree=True)
         if prfx1 == 'SASD':
             if len(data['Size']['Distribution']):
                 G2plt.PlotSASDSizeDist(G2frame)
@@ -8971,7 +8973,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2frame.GPXtree.SetItemPyData(item,data)
 
         G2pdG.UpdateSampleGrid(G2frame,data)
-        G2pwpl.PlotPatterns(G2frame,True,plotType=datatype)
+        G2pwpl.PlotPatterns(G2frame,True,plotType=datatype,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Index Peak List':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
@@ -8990,7 +8992,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 if G2frame.Contour:
                     G2frame.Contour = False
                     newPlot = True
-            G2pwpl.PlotPatterns(G2frame,newPlot)
+            G2pwpl.PlotPatterns(G2frame,newPlot,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Unit Cells List':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
@@ -9021,7 +9023,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if G2frame.Contour:
                 G2frame.Contour = False
                 newPlot = True
-        G2pwpl.PlotPatterns(G2frame,newPlot)
+        G2pwpl.PlotPatterns(G2frame,newPlot,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection List':    #HKLF reflections
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         name = G2frame.GPXtree.GetItemText(G2frame.PatternId)

@@ -3802,6 +3802,108 @@ program; Please cite:
         # Restore the original saved project
         wx.CallLater(100,_GetPhase)
 
+    def OnSubSearch(event):
+        '''Search for a lower symmetry structure consistent with the
+        current phase using the Bilbao SUBGROUPS web service
+
+        Based on GSASIIpwdGUI.OnRunSubs
+        '''
+        generalData = data['General']
+        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
+        Ky = [' ','0','1/2','1/3','2/3','1']
+        Kz = [' ','0','1/2','3/2','1/3','2/3','1']
+        kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
+        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
+            ' Use whole star',' Filter by','preserve axes','max unique'],
+            values=kvec+[False,'',True,100],
+            limits=[[Kx[1:],Ky[1:],Kz[1:]],[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
+                [True,False],[1,100]],
+            formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
+                    'bool','%d',])
+        dlg.CenterOnParent()
+        if dlg.ShowModal() != wx.ID_OK: return
+            
+        subcells = []
+        newVals = dlg.GetValues()
+        kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
+        nkvec = kvec.index(' ')
+        star = newVals[3]
+        filterby = newVals[4]
+        keepaxes = newVals[5]
+        maxequiv = newVals[6]
+        if 'maximal' in filterby:
+            maximal = True
+            Landau = False
+        elif 'Landau' in filterby:
+            maximal = False
+            Landau = True
+        else:
+            maximal = False
+            Landau = False
+        if nkvec not in [0,3,6,9]:
+            wx.MessageBox('Error: check your propagation vector(s)',
+                caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+            return
+        if nkvec in [6,9] and Landau:
+            wx.MessageBox('Error, multi k-vectors & Landau not compatible',
+                caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+            return
+        wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
+                          G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
+                          caption='Bilbao SUBGROUPS',
+                          style=wx.ICON_INFORMATION)
+        wx.BeginBusyCursor()
+        SGData = generalData['SGData']
+        from . import SUBGROUPS as kSUB
+        SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
+        wx.EndBusyCursor()
+        if SubGroups is None:
+            wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+            return
+        if not SubGroups:
+            if Landau:
+                wx.MessageBox('No results from SUBGROUPS, multi k-vectors & Landau not compatible',
+                    caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+            else:
+                wx.MessageBox('No results from SUBGROUPS, check your propagation vector(s)',
+                    caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+            return
+
+        # emulate indexing controls 
+        controls = 16*[None]
+        controls[6:12] = generalData['Cell'][1:7] # cell
+        cx,ct,cs,cia = data['General']['AtomPtrs']
+        controls[15] = [atom[:cx+3] for atom in data['Atoms']]
+        
+        dlg = wx.ProgressDialog('SUBGROUPS results',f'Processing {SubGroups[0][0]}',len(SubGroups),
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
+        import GSASII.GSASIIpwdGUI
+        for ir,result in enumerate(SubGroups):
+            dlg.Update(ir,newmsg='Processing '+result[0])
+            Trans = np.array(eval(result[1][0]))
+            Uvec = np.array(eval(result[1][1]))
+            phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
+            phase['gid'] = result[2]
+            phase['altList'] = result[3]
+            phase['supList'] = eval(result[4])
+            RVT = None
+            if keepaxes:
+                RVT = G2lat.FindNonstandard(controls,phase)
+            if RVT is not None:
+                result,Uvec,Trans = RVT
+            phase.update(G2lat.makeBilbaoPhase(result,Uvec,Trans))
+            phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)
+            phase['maxequiv'] = maxequiv
+            phase['nAtoms'] = len(GSASII.GSASIIpwdGUI.TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv,maximal))
+            subcells.append(phase)
+        dlg.Destroy()
+        data['SUBGROUPS'] = (subcells,baseList)
+        msg = f'''{len(subcells)} subgroup entries were generated. Use menu commands 
+"Select magnetic/subgroup phase" or "Make subgroup project file(s)"
+to use these entries'''
+        G2G.G2MessageBox(G2frame,msg,'Sugbroups stored')
+        wx.CallAfter(UpdatePhaseData,G2frame,Item,data)
+
     def OnTransform2Std(event):
         '''Uses the Bilbao web site to transform a space group and coordinates
         to a standard setting
@@ -3992,15 +4094,19 @@ program; Please cite:
         '''Select and apply a transformation matrix from the Bilbao web site
         to create a new phase
         '''
-        PatternName = data['magPhases']
-        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
-        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
-        UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
-        magData = UCdata[5]
-        if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
-            baseList = range(1,len(magData)+1)
+        if 'SUBGROUPS' in data:
+            magData,baseList = data['SUBGROUPS']
         else:
-            baseList = UCdata[0][16]
+            PatternName = data['magPhases']
+            PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
+            UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
+            UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
+            magData = UCdata[5]
+            if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
+                baseList = range(1,len(magData)+1)
+            else:
+                baseList = UCdata[0][16]
+        
         magKeep = []
         magIds = []
         magchoices = []
@@ -4035,8 +4141,10 @@ program; Please cite:
             else:
                 phaseName = '%s-sub_%d'%(data['General']['Name'],magchoice['No.'])
             newPhase = copy.deepcopy(data)
-            newPhase['ranId'] = ran.randint(0,sys.maxsize),
-            del newPhase['magPhases']
+            newPhase['ranId'] = ran.randint(0,sys.maxsize)
+            # remove subgroup info on parent from new phase
+            if 'magPhases' in newPhase: del newPhase['magPhases']
+            if 'SUBGROUPS' in newPhase: del newPhase['SUBGROUPS']
             generalData = newPhase['General']
             generalData['Name'] = phaseName
             generalData['SGData'] = copy.deepcopy(magchoice['SGData'])
@@ -4109,20 +4217,25 @@ program; Please cite:
         '''Select and apply a transformation matrix from the Bilbao web site
         to replace current phase with a subgroup
         '''
-        PatternName = data['magPhases']
-        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
-        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
-        UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
-        if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
-            baseList = range(1,len(UCdata[5])+1)
+        if 'SUBGROUPS' in data:
+            subPhases,baseList = data['SUBGROUPS']
+            UnitCellsId = None
         else:
-            baseList = UCdata[0][16]
+            PatternName = data['magPhases']
+            PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
+            UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
+            UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
+            if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
+                baseList = range(1,len(UCdata[5])+1)
+            else:
+                baseList = UCdata[0][16]
+            subPhases = UCdata[5]
         subKeep = []
         subIds = []
         subchoices = []
         ifMag = False
-        itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(UCdata[5])]
-        phaseDict = dict(zip(itemList,UCdata[5]))
+        itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(subPhases)]
+        phaseDict = dict(zip(itemList,subPhases))
         for im,mid in enumerate(baseList):
             if phaseDict[mid]['Keep']:
                 phaseDict[mid]['No.'] = im+1
@@ -4218,8 +4331,10 @@ program; Please cite:
             data.update(newPhase)
             #clear away prev subgroup choices
             if 'magPhases' in data: del data['magPhases']
-            UCdata[5] = []
-            G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
+            if 'SUBGROUPS' in data: del data['SUBGROUPS']
+            if UnitCellsId:
+                UCdata[5] = []
+                G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
             # save new file
             G2frame.GSASprojectfile = os.path.splitext(orgFilName
                             )[0]+'_'+spg.replace('/','_')+'.gpx'
@@ -12934,6 +13049,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnTransform2Std, id=G2G.wxID_TRANSFORMSTD)
         G2frame.Bind(wx.EVT_MENU, OnSuperSearch, id=G2G.wxID_SUPERSRCH)
         G2frame.Bind(wx.EVT_MENU, OnISOSearch, id=G2G.wxID_ISOSRCH)
+        G2frame.Bind(wx.EVT_MENU, OnSubSearch, id=G2G.wxID_SUBSRCH)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnCompareCells, id=G2G.wxID_COMPARECELLS)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
@@ -13285,6 +13401,9 @@ tab, use Operations->"Pawley create")''')
         else:
             del data['magPhases']
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOSUB,flag)
+    if not flag and 'SUBGROUPS' in data:
+        G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOSUB,True)
+        G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOMAG,True)
     G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:

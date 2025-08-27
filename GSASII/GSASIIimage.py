@@ -699,6 +699,7 @@ def EdgeFinder(image,data):
     return zip(tax,tay)
     
 def CalcRings(G2frame,ImageZ,data,masks):
+    ''' Not used anywhere?'''
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
     scaley = 1000./pixelSize[1]
@@ -733,7 +734,7 @@ def CalcRings(G2frame,ImageZ,data,masks):
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)
     if frame:
-        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,frame)-255)))
+        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,[frame,])-255)))
     for iH,H in enumerate(HKL):
         if debug:   print (H)
         dsp = H[3]
@@ -806,7 +807,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     frame = masks['Frames']
     tam = ma.make_mask_none(ImageZ.shape)
     if frame:
-        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,frame)-255)))
+        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(data,[frame,])-255)))
     for iH,H in enumerate(HKL):
         if debug:   print (H)
         dsp = H[3]
@@ -1810,7 +1811,7 @@ def FastAutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     frame = Masks['Frames']
     tam = ma.make_mask_none(Image.shape)
     if frame:
-        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(Controls,frame)-255)))
+        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(Controls,[frame,])-255)))
     ttmin = float(Masks['SpotMask'].get('SearchMin',0.0))
     ttmax = float(Masks['SpotMask'].get('SearchMax',180.0))
     esdMul = float(Masks['SpotMask']['esdMul'])
@@ -1877,7 +1878,7 @@ def AutoPixelMask(Image, Masks, Controls, numChans, dlg=None):
     frame = Masks['Frames']
     tam = ma.make_mask_none(Image.shape)
     if frame:
-        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(Controls,frame)-255)))
+        tam = ma.mask_or(tam,ma.make_mask(np.abs(polymask(Controls,[frame,])-255)))
     LUtth = np.array(Controls['IOtth'])
     dtth = (LUtth[1]-LUtth[0])/numChans
     esdMul = Masks['SpotMask']['esdMul']

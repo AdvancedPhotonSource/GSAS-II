@@ -264,6 +264,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         (https://journals.iucr.org/j/issues/2018/03/00/ks5597/ks5597.pdf)
         '''
 
+        IMAGES_SUBDIR = "images"
+        DB_JSON_FILENAME = "databases.json"
+        DATA_CSV_FILENAME = "data.csv"
         def show_project_dialog():
             dialog = wx.MessageDialog(
                 None,
@@ -285,16 +288,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         table_data = G2frame.SeqTable.GetData()
         nRows=len(table_data)
 
-        dialogDir = wx.DirDialog(
+        with wx.DirDialog(
             None,
             message="Select Cinema directory containing index.html",  # Dialog title
             defaultPath="",  # Initial directory (empty = current)
             style=wx.DD_DEFAULT_STYLE  # Dialog style
-        )
+        ) as dialogDir:
+            if dialogDir.ShowModal() == wx.ID_OK:
+                selected_dir = dialogDir.GetPath()  # Get selected directory
 
-        if dialogDir.ShowModal() == wx.ID_OK:
-            selected_dir = dialogDir.GetPath()  # Get selected directory
-        dialogDir.Destroy()
 
         # Work with Cinema json file
         import json
@@ -303,7 +305,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # Actions when continuing work with the current project
             dialogDirOfProjectDB = wx.DirDialog(
                 None,
-                message="Select directory containing project data - data.csv",  # Dialog title
+                message="Select directory containing project data - {DATA_CSV_FILENAME}",  # Dialog title
                 defaultPath="",  # Initial directory (empty = current)
                 style=wx.DD_DEFAULT_STYLE  # Dialog style
             )
@@ -311,11 +313,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 db_directory = dialogDirOfProjectDB.GetPath()
 
             dialogDirOfProjectDB.Destroy()
-            file_path = os.path.join(db_directory, "data.csv")
+            file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
 
         else:
             # Actions when creating a new project
-            json_path = os.path.join(selected_dir, 'databases.json')
+            json_path = os.path.join(selected_dir, DB_JSON_FILENAME)
 
             dlg = wx.Dialog(None, title="New Project Parameters", size=(400, 200))
             panel = wx.Panel(dlg)
@@ -380,13 +382,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 with open(json_path, 'w', encoding='utf-8') as file:
                     json.dump(data, file, indent=8, ensure_ascii=False)
             except FileNotFoundError:
-                print(f"File {json_file_path} not found")
+                print(f"File {json_path} not found")
             except json.JSONDecodeError:
                 print(f"Error reading JSON file {json_path}")
             except Exception as e:
                 print(f"An error occurred: {e}")
 
-            file_path = os.path.join(selected_dir, db_directory, "data.csv")
+            file_path = os.path.join(selected_dir, db_directory, DATA_CSV_FILENAME)
 
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(", ".join(colLabels))
@@ -395,11 +397,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
             for r in range(nRows):
                 file.write(", ".join(str(item) for item in table_data[r]))
-                file.write(",images/"+"PWDR_"+G2frame.SeqTable.rowLabels[r].replace('.', '_').replace(' ', '_')+".png")
+                file.write("," + IMAGES_SUBDIR + "/PWDR_" + G2frame.SeqTable.rowLabels[r].replace('.', '_').replace(' ', '_') + ".png")
                 file.write("\n")
-        print(f"Cinema data.csv saved at: {file_path}")
+        print(f"Cinema {DATA_CSV_FILENAME} saved at: {file_path}")
 
-        output_dir = os.path.join(selected_dir, db_directory, "images")
+        output_dir = os.path.join(selected_dir, db_directory, IMAGES_SUBDIR)
         try:
             os.makedirs(output_dir, exist_ok=True)
         except OSError as e:

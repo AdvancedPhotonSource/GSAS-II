@@ -7,6 +7,7 @@ from __future__ import division, print_function
 import platform
 import copy
 import re
+import os
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
@@ -262,8 +263,155 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         https://github.com/cinemascience/cinema_debye_scherrer
         (https://journals.iucr.org/j/issues/2018/03/00/ks5597/ks5597.pdf)
         '''
-        breakpoint()
-        pass
+
+        def show_project_dialog():
+            dialog = wx.MessageDialog(
+                None,
+                "Continue with current Cinema project or create a new one?",
+                "Project Selection",
+                wx.OK | wx.CANCEL | wx.ICON_QUESTION
+            )
+            dialog.SetOKCancelLabels("Continue", "New Project")
+
+            result = dialog.ShowModal()
+            dialog.Destroy()
+
+            if result == wx.ID_OK:
+                return True
+            else:
+                return False
+
+        colLabels = G2frame.seqResults_colLabels
+        table_data = G2frame.SeqTable.GetData()
+        nRows=len(table_data)
+
+        dialogDir = wx.DirDialog(
+            None,
+            message="Select Cinema directory containing index.html",  # Dialog title
+            defaultPath="",  # Initial directory (empty = current)
+            style=wx.DD_DEFAULT_STYLE  # Dialog style
+        )
+
+        if dialogDir.ShowModal() == wx.ID_OK:
+            selected_dir = dialogDir.GetPath()  # Get selected directory
+        dialogDir.Destroy()
+
+        # Work with Cinema json file
+        import json
+        db_directory = None
+        if show_project_dialog():
+            # Actions when continuing work with the current project
+            dialogDirOfProjectDB = wx.DirDialog(
+                None,
+                message="Select directory containing project data - data.csv",  # Dialog title
+                defaultPath="",  # Initial directory (empty = current)
+                style=wx.DD_DEFAULT_STYLE  # Dialog style
+            )
+            if dialogDirOfProjectDB.ShowModal() == wx.ID_OK:
+                db_directory = dialogDirOfProjectDB.GetPath()
+
+            dialogDirOfProjectDB.Destroy()
+            file_path = os.path.join(db_directory, "data.csv")
+
+        else:
+            # Actions when creating a new project
+            json_path = os.path.join(selected_dir, 'databases.json')
+
+            dlg = wx.Dialog(None, title="New Project Parameters", size=(400, 200))
+            panel = wx.Panel(dlg)
+            main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+            # Flexible grid layout (2 columns, 2 rows, 5px spacing)
+            grid_sizer = wx.FlexGridSizer(2, 2, 5, 5)
+            grid_sizer.AddGrowableCol(1)
+
+            # Project name field
+            name_label = wx.StaticText(panel, label="Project Name:")
+            name_ctrl = wx.TextCtrl(panel, value="New Project Cinema")
+            grid_sizer.Add(name_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+            grid_sizer.Add(name_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
+
+            # Database directory field
+            dir_label = wx.StaticText(panel, label="DB Directory: data/...")
+            dir_ctrl = wx.TextCtrl(panel, value="exampledb.cdb")
+            grid_sizer.Add(dir_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+            grid_sizer.Add(dir_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
+
+            main_sizer.Add(grid_sizer, 0, wx.EXPAND|wx.ALL, 10)
+
+            # Buttons
+            btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            btn_sizer.AddStretchSpacer(1)
+            btn_ok = wx.Button(panel, wx.ID_OK, "OK")
+            btn_cancel = wx.Button(panel, wx.ID_CANCEL, "Cancel")
+            btn_sizer.Add(btn_ok, 0, wx.RIGHT, 10)
+            btn_sizer.Add(btn_cancel, 0)
+            btn_sizer.AddStretchSpacer(1)
+            main_sizer.Add(btn_sizer, 0, wx.EXPAND|wx.ALL, 10)
+
+            panel.SetSizer(main_sizer)
+
+            dlg.Layout()
+            dlg.Centre()
+
+
+            if dlg.ShowModal() == wx.ID_OK:
+                project_name = name_ctrl.GetValue()
+                db_directory = os.path.join("data", dir_ctrl.GetValue())
+
+                try:
+                    os.makedirs(os.path.join(selected_dir,db_directory), exist_ok=True)
+                except OSError as e:
+                    print(f"Directory creation failed:  {e}")
+                    wx.MessageBox(f"Failed to create directory: {e}", "Error", wx.OK|wx.ICON_ERROR)
+                    return  # Terminate execution if directory creation failed
+
+            try:
+                with open(json_path, 'r', encoding='utf-8') as file:
+                    data = json.load(file)
+                new_entry = {
+                    "name": project_name,
+                    "directory": db_directory,
+                    "smoothLines": True,
+                    "lineOpacity": 1.0
+                }
+                data.append(new_entry)
+                # rewrite data to json file
+                with open(json_path, 'w', encoding='utf-8') as file:
+                    json.dump(data, file, indent=8, ensure_ascii=False)
+            except FileNotFoundError:
+                print(f"File {json_file_path} not found")
+            except json.JSONDecodeError:
+                print(f"Error reading JSON file {json_path}")
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+            file_path = os.path.join(selected_dir, db_directory, "data.csv")
+
+        with open(file_path, 'w', encoding='utf-8') as file:
+            file.write(", ".join(colLabels))
+            file.write(",FILE ")
+            file.write("\n")
+
+            for r in range(nRows):
+                file.write(", ".join(str(item) for item in table_data[r]))
+                file.write(",images/"+"PWDR_"+G2frame.SeqTable.rowLabels[r].replace('.', '_').replace(' ', '_')+".png")
+                file.write("\n")
+        print(f"Cinema data.csv saved at: {file_path}")
+
+        output_dir = os.path.join(selected_dir, db_directory, "images")
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+        except OSError as e:
+            print(f"images directory creation failed:  {e}")
+            wx.MessageBox(f"Failed to create directory images: {e}", "Error", wx.OK|wx.ICON_ERROR)
+            return  # Terminate execution if directory creation failed
+
+
+        ExportSequentialImages(G2frame,histNames,output_dir,100)
+
+        print('Export to the Cinema completed successfully')
+
         
     def OnSaveSeqImg(event):
         'export plots from all rows, called from menu command'
@@ -1564,6 +1712,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
         colLabels=displayLabels,rowLabels=rowLabels,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
+    G2frame.seqResults_colLabels = colLabels #need for Cinema export in OnSaveCinema()
     # make all Use editable all others ReadOnly
     for c in range(len(colLabels)):
         for r in range(nRows):
@@ -2167,7 +2316,7 @@ def ExportSequentialImages(G2frame,histNames,outdir,dpi='figure'):
             G2frame.PickId = pickId
             wx.GetApp().Yield()
             new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',False)
-            f = os.path.join(outdir,f'{i}.png')
+            f = os.path.join(outdir,f"{histNames[i].replace('.', '_').replace(' ', '_')}.png")
             files.append(f)
             Plot.figure.savefig(f,dpi=dpi)
     return files

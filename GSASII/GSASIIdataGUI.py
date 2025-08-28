@@ -622,6 +622,91 @@ def GSASIImain(application):
     application.GetTopWindow().Show(True)
     application.main.UpdateTask = GSASIIpath.GetRepoUpdatesInBackground()
 
+class G2EventLogger(wx.EvtHandler):
+    '''This is used to record all wx events
+    '''
+    def ProcessEvent(self, event):
+        # how to log "action" widgets (checkbuttons, buttons, etc.)?
+        # How to log info supplied in dialogs
+        def ShowTreeSelection(tree):
+            'respond to a tree event (after done)'
+            G2frame = self.G2frame
+            sel = tree.GetSelection()
+            txt = tree.GetItemText(sel)
+            l = []
+            print('Tree selection (after)',tree.GetItemText(tree.GetSelection()))
+            while txt != tree.GetItemText(G2frame.root):
+                l.append(txt)
+                sel = tree.GetItemParent(sel)
+                txt = tree.GetItemText(sel)
+                print('  parent',txt)
+            print('Tree selection (after)',l)
+        #fp = open('/tmp/events.txt','a')
+        #print(f"Event {event.GetEventType()} Obj {event.GetEventObject()}")
+        #fp.write(f"Event {event.GetEventType()} Obj {event.GetEventObject()}\n")
+        #fp.close()
+        evtNum = event.GetEventType()
+        if evtNum in ( # events to ignore
+                wx.EVT_ENTER_WINDOW.typeId,   # 10032
+                wx.EVT_LEAVE_WINDOW.typeId,   # 10033
+                      ):
+            pass
+        elif evtNum == wx.EVT_MENU_OPEN.typeId: #10103
+            print('Open pos=',wx.GetMousePosition())
+            #breakpoint()
+        elif evtNum == wx.EVT_TREE_SEL_CHANGING.typeId: #10216
+            # Tree selection: save text of selected entry & parent, but only
+            # after event has been processed
+            o = event.GetEventObject()
+            i = o.GetSelection()
+            wx.CallAfter(ShowTreeSelection,o)
+        elif evtNum == wx.EVT_MENU.typeId:   # 10013
+            # got a menu command, need to determine the menu name:
+            print('menu=',
+                      event.GetEventObject().GetTitle()
+                ,' command=',
+                      event.GetEventObject().GetLabelText(event.GetId()) # menu command name
+                      )
+            print('pos=',wx.GetMousePosition())
+            print('wx.EVT_MENU obj,id,',event.GetEventObject(),event.GetId())
+        elif evtNum == wx.EVT_TEXT.typeId:   # 10033
+            # text entry: saving object type & location and text contents
+            if self.LastTextObj != event.GetEventObject():
+                self.LastTextObj = event.GetEventObject()
+                print('TEXT obj,id,',event.GetEventObject().GetClassName(),
+                          event.GetEventObject().GetScreenPosition()
+                          - self.G2frame.GetScreenPosition())
+                #breakpoint()
+            # isinstance(o, G2G.ValidatedTxtCtrl)
+            print(event.GetEventObject().GetValue())
+            #breakpoint()
+        elif evtNum not in self.eventLog: # note 1st time we see any other event
+            self.eventLog[evtNum] = time.time() - self.start
+            print(f"Event {evtNum} ({self.evtCode.get(evtNum,'?')}) @ {self.eventLog[evtNum]} {event.GetEventObject()}")
+            #try:
+            #    print(event.GetEventObject().Id)
+            #except:
+            #    pass
+            #breakpoint()
+        return super().ProcessEvent(event)
+    
+    def logFrame(self,frame):
+        self.LastTextObj = None
+        print(f'Logging events for {frame}')
+        # create a lookup table for events
+        names = [n for n in dir(wx) if n.startswith('EVT_')]
+        evtdict = {n:getattr(wx,n) for n in names}
+        
+        self.evtCode = {evt.typeId:n for n,evt in evtdict.items() if isinstance(evt, wx.PyEventBinder)}
+        self.eventLog = {}
+        self.start = time.time()
+        self.G2frame = frame
+        frame.PushEventHandler(self)
+    def unlogFrame(self):
+        # note that we need to do a PopEventHandler before the
+        # frame is deleted
+        frame.PopEventHandler(self)
+
 #### Create main frame (window) for GUI; main menu items here #######################################
 class GSASII(wx.Frame):
     '''Define the main GSAS-II frame and its associated menu items.
@@ -2888,7 +2973,6 @@ If you continue from this point, it is quite likely that all intensity computati
         self.ExportCIF = []
         self.ExportMTZ = []
         #
-        self.MacroStatusList = []  # logging
         self.Status = self.CreateStatusBar()
         self.Status.SetFieldsCount(2)
         # Bob: note different ways to display the SplitterWindow. I like the 3d effect on the Mac
@@ -3080,13 +3164,17 @@ If you continue from this point, it is quite likely that all intensity computati
                     wx.CallAfter(self.StartProject)
                 else:
                     self.StartProject()
-                return
+                #return
             except Exception:
                 print ('Error opening or reading file'+arg[1])
                 import traceback
                 print (traceback.format_exc())
         elif any('SPYDER' in name for name in os.environ):
             self.OnFileReopen(None)
+        # register the event logger
+        self.event_logger = []
+        self.event_logger.append(G2EventLogger())
+        self.event_logger[-1].logFrame(self)
 
     def GetTreeItemsList(self,item):
         ''' returns a list of all GSAS-II tree items
@@ -7982,6 +8070,113 @@ def UpdateControls(G2frame,data):
         btn.Bind(wx.EVT_BUTTON,ClearFrozen)
         subSizer.Add(btn)
         mainSizer.Add(subSizer)
+    btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Test stuff')
+    mainSizer.Add(btn)
+
+    
+    def TestStuff(event):
+        #============================================================
+        # animation code: open menu and invoke mouse command
+        from time import sleep
+        menupos = (132, 15)
+        cmdpos= (159, 186)
+        sim = wx.UIActionSimulator()
+        print('move to menu')
+        sim.MouseMove(menupos)
+        wx.Yield()
+        if sys.platform == "darwin":
+            dlg = wx.PopupTransientWindow(G2frame, wx.BORDER_RAISED)
+            wx.StaticText(dlg, label='Click on the "Save Project" entry')
+            dlg.SetPosition((cmdpos[0]+250,cmdpos[1]))
+            dlg.SetSize((250,40))
+            dlg.SetBackgroundColour(wx.YELLOW)
+            dlg.Show()
+            wx.Yield()
+            #breakpoint()
+            print('click on menu')
+            sim.MouseClick(wx.MOUSE_BTN_LEFT)
+            print('menu open')
+            wx.Yield()
+            dlg.Destroy()
+            return
+        # this is untested but might work on Linux/Windows
+        print('click on menu')
+        sim.MouseClick(wx.MOUSE_BTN_LEFT)
+        print('menu open')
+        for i in range(10): # move mouse slowly
+            nextpos = (np.array(cmdpos)-menupos)*(1+i)/10+menupos
+            print('move to ',nextpos)
+            sim.MouseMove(nextpos)
+            wx.Yield()
+            sleep(0.2)
+        # invoke the menu
+        sim.MouseClick(wx.MOUSE_BTN_LEFT)
+        return
+        #============================================================
+        # put text into a widget
+        typ = 'wxTextCtrl'
+        pos = (562, 69)
+        txt = "0.1234"
+        # get all windows in a frame
+        def get_all_windows(parent_window):
+            """
+            Recursively gets all child windows of a given wx.Window instance.
+
+            Args:
+            parent_window (wx.Window): The starting window to begin the traversal.
+
+            Returns:
+            list: A list containing all child windows found.
+            """
+            all_children = []
+            children = parent_window.GetChildren()
+            if children:
+                for child in children:
+                    all_children.append(child)
+                    # Recursively call for each child
+                    all_children.extend(get_all_windows(child))
+            return all_children
+        #============================================================
+        # select a tree item
+        # need to find item
+        #item = GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+        #item = GetGPXtreeItemId(G2frame,item,'silicon')
+        item = GetGPXtreeItemId(G2frame,G2frame.root,'Notebook')
+        G2frame.GPXtree.SelectItem(item)
+        return
+        #============================================================
+        # generate event code lookup table
+        names = [n for n in dir(wx) if n.startswith('EVT_')]
+        evtdict = {n:getattr(wx,n) for n in names}
+        evtCode = {}
+        for n,evt in evtdict.items():
+            if not isinstance(evt, wx.PyEventBinder):
+                #print('skip',n,evt)
+                continue
+            i = evt.typeId
+            if i in evtCode:
+                print('duplicate',i,n,evtCode[i])
+            else:
+                evtCode[i] = n
+        return
+        #============================================================
+        # executes 'Save project' from File Menu
+        # need to find menu
+        fileMenu = G2frame.dataMenuBars[0].GetMenu(0)
+        # need to find menu item
+        menuId = None
+        for o in fileMenu.GetMenuItems():
+            if o.GetItemLabelText() == 'Save project':
+                menuId = o.Id
+                break
+        else:
+            print('Not found')
+        itemId = eval('wx.EVT_MENU').typeId
+        sim = wx.CommandEvent(itemId,menuId)
+        wx.PostEvent(G2frame,sim)
+        #============================================================
+        #breakpoint()
+    btn.Bind(wx.EVT_BUTTON,TestStuff)
     G2frame.dataWindow.SetDataSize()
 #    G2frame.SendSizeEvent()
 

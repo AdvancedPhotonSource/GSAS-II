@@ -5511,13 +5511,33 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.plot(xring,yring,'.',color=colors[N%NC])
                     N += 1
             for ellipse in Data['ellipses']:      #what about hyperbola?
-                cent,phi,[width,height],col = ellipse
+                try:
+                    cent,phi,[width,height,tth],col = ellipse
+                except ValueError:
+                    cent,phi,[width,height],col = ellipse
+                    tth = 0.0
                 if width > 0:       #ellipses
                     try:  # angle was changed to a keyword at some point, needed in mpl 3.8
                         Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,angle=phi,ec=col,fc='none'))
                     except: # but keep the old version as a patch (5/20/24) in case old call needed for old MPL
                         Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+                elif tth:       #future hyperbola plot
+                    dsp =0.5*Data['wavelength']/npsind(tth/2.0)
+                    darc = Data['rotation']
+#                    Azm = np.arange(-10.-darc,190.5-darc,.5)
+                    Azm = np.arange(0.,360.5,.5)
+                    xyH = []
+                    for azm in Azm:
+                        xy = G2img.GetDetectorXY(dsp,azm,Data)
+                        if np.any(xy):
+                            xyH.append(xy)
+                    if len(xyH):
+                        xyH = np.array(xyH)
+                        xH,yH = xyH.T
+                        Plot.plot(xH,yH,color=col)
+                    Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+                    continue
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
             for N,ring in enumerate(StrSta['d-zero']):
                 if 'ImxyCalc' in ring:

@@ -9487,39 +9487,39 @@ def UpdatePDFGrid(G2frame,data):
 
         def OnFlatSpin(event):
             data['Flat Bkg'] += flatSpin.GetValue()*0.01*data['IofQmin']
-            G2frame.flatBkg.SetValue(data['Flat Bkg'])
+            G2frame.flatBkg.ChangeValue(data['Flat Bkg'])
             flatSpin.SetValue(0)
             wx.CallAfter(OnComputePDF,None)
 
         def OnBackSlider(event):
             value = int(backSldr.GetValue())/100.
             data['BackRatio'] = value
-            backVal.SetValue(data['BackRatio'])
+            backVal.ChangeValue(data['BackRatio'])
             wx.CallAfter(OnComputePDF,None)
 
         def OnRulSlider(event):
             value = int(rulandSldr.GetValue())/100.
             data['Ruland'] = max(0.001,value)
-            rulandWdt.SetValue(data['Ruland'])
+            rulandWdt.ChangeValue(data['Ruland'])
             wx.CallAfter(OnComputePDF,None)
 
         def OnGRscaleSlider(event):
             value = int(gscaleSldr.GetValue())/50.
             data['GR Scale'] = max(0.1,min(2.,value))
-            gscale.SetValue(data['GR Scale'])
+            gscale.ChangeValue(data['GR Scale'])
             wx.CallAfter(OnComputePDF,None)
 
         def NewQmax(invalid,value,tc):
             if invalid: return
             data['QScaleLim'][0] = 0.9*value
-            SQmin.SetValue(data['QScaleLim'][0])
+            SQmin.ChangeValue(data['QScaleLim'][0])
             wx.CallAfter(OnComputePDF,None)
 
         def OnResetQ(event):
             data['QScaleLim'][1] = qLimits[1]
-            SQmax.SetValue(data['QScaleLim'][1])
+            SQmax.ChangeValue(data['QScaleLim'][1])
             data['QScaleLim'][0] = 0.9*qLimits[1]
-            SQmin.SetValue(data['QScaleLim'][0])
+            SQmin.ChangeValue(data['QScaleLim'][0])
             wx.CallAfter(OnComputePDF,None)
 
         def OnLorch(event):
@@ -9877,7 +9877,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='g(r)')
 
-    # Routine UpdatePDFGrid starts here
+    #### Routine UpdatePDFGrid starts here
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PDFMenu)
     global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
@@ -9955,7 +9955,7 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataWindow.SetDataSize()
 
 ###############################################################################################################
-#UpdatePDFPeaks: peaks in G(r)
+####UpdatePDFPeaks: peaks in G(r)
 ###############################################################################################################
 def UpdatePDFPeaks(G2frame,peaks,data):
 
@@ -10136,6 +10136,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     G2frame.Bind(wx.EVT_MENU, OnFitPDFpeaks, id=G2G.wxID_PDFPKSFIT)
     G2frame.Bind(wx.EVT_MENU, OnFitAllPDFpeaks, id=G2G.wxID_PDFPKSFITALL)
     G2frame.Bind(wx.EVT_MENU, OnClearPDFpeaks, id=G2G.wxID_CLEARPDFPEAKS)
+    G2frame.dataWindow.ClearData()
     mainSizer =  wx.BoxSizer(wx.VERTICAL)
     G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add((5,5),0)

@@ -258,8 +258,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         OnSaveSelSeq(event,csv=True)
 
     def OnSaveCinema(event):
-        '''This is a placeholder routine for exporting file(s) to
-        run Cinema: Debye-Scherrer 
+        '''This routine exports file(s) to run Cinema: Debye-Scherrer 
         https://github.com/cinemascience/cinema_debye_scherrer
         (https://journals.iucr.org/j/issues/2018/03/00/ks5597/ks5597.pdf)
         '''
@@ -294,9 +293,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             defaultPath="",  # Initial directory (empty = current)
             style=wx.DD_DEFAULT_STYLE  # Dialog style
         ) as dialogDir:
-            if dialogDir.ShowModal() == wx.ID_OK:
+            res = dialogDir.ShowModal()
+            dialogDir.Destroy()
+            if res == wx.ID_OK:
                 selected_dir = dialogDir.GetPath()  # Get selected directory
-
+            else:
+                return
 
         # Work with Cinema json file
         import json
@@ -305,14 +307,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # Actions when continuing work with the current project
             dialogDirOfProjectDB = wx.DirDialog(
                 None,
-                message="Select directory containing project data - {DATA_CSV_FILENAME}",  # Dialog title
+                message=f"Select directory containing project data - {DATA_CSV_FILENAME}",  # Dialog title
                 defaultPath="",  # Initial directory (empty = current)
                 style=wx.DD_DEFAULT_STYLE  # Dialog style
             )
-            if dialogDirOfProjectDB.ShowModal() == wx.ID_OK:
-                db_directory = dialogDirOfProjectDB.GetPath()
-
+            res = dialogDirOfProjectDB.ShowModal()
             dialogDirOfProjectDB.Destroy()
+            if res == wx.ID_OK:
+                db_directory = dialogDirOfProjectDB.GetPath()
+            else:
+                return
             file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
 
         else:
@@ -355,22 +359,25 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
             dlg.Layout()
             dlg.Centre()
+            res = dlg.ShowModal() 
+            dlg.Destroy()
 
-
-            if dlg.ShowModal() == wx.ID_OK:
+            if res == wx.ID_OK:
                 project_name = name_ctrl.GetValue()
                 db_directory = os.path.join("data", dir_ctrl.GetValue())
 
                 try:
                     os.makedirs(os.path.join(selected_dir,db_directory), exist_ok=True)
                 except OSError as e:
-                    print(f"Directory creation failed:  {e}")
+                    print(f"Directory creation failed: {e}")
                     wx.MessageBox(f"Failed to create directory: {e}", "Error", wx.OK|wx.ICON_ERROR)
                     return  # Terminate execution if directory creation failed
+            else:
+                return
 
             try:
-                with open(json_path, 'r', encoding='utf-8') as file:
-                    data = json.load(file)
+                with open(json_path, 'r', encoding='utf-8') as fil:
+                    data = json.load(fil)
                 new_entry = {
                     "name": project_name,
                     "directory": db_directory,
@@ -390,30 +397,27 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
             file_path = os.path.join(selected_dir, db_directory, DATA_CSV_FILENAME)
 
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(", ".join(colLabels))
-            file.write(",FILE ")
-            file.write("\n")
+        with open(file_path, 'w', encoding='utf-8') as fil:
+            fil.write(", ".join(colLabels))
+            fil.write(",FILE ")
+            fil.write("\n")
 
             for r in range(nRows):
-                file.write(", ".join(str(item) for item in table_data[r]))
-                file.write("," + IMAGES_SUBDIR + "/PWDR_" + G2frame.SeqTable.rowLabels[r].replace('.', '_').replace(' ', '_') + ".png")
-                file.write("\n")
+                fil.write(", ".join(str(item) for item in table_data[r]))
+                fil.write("," + IMAGES_SUBDIR + "/PWDR_" + G2frame.SeqTable.rowLabels[r].replace('.', '_').replace(' ', '_') + ".png")
+                fil.write("\n")
         print(f"Cinema {DATA_CSV_FILENAME} saved at: {file_path}")
 
         output_dir = os.path.join(selected_dir, db_directory, IMAGES_SUBDIR)
         try:
             os.makedirs(output_dir, exist_ok=True)
         except OSError as e:
-            print(f"images directory creation failed:  {e}")
+            print(f"images directory creation failed: {e}")
             wx.MessageBox(f"Failed to create directory images: {e}", "Error", wx.OK|wx.ICON_ERROR)
             return  # Terminate execution if directory creation failed
 
-
         ExportSequentialImages(G2frame,histNames,output_dir,100)
-
-        print('Export to the Cinema completed successfully')
-
+        print('Export to Cinema: Debye-Scherrer completed successfully')
         
     def OnSaveSeqImg(event):
         'export plots from all rows, called from menu command'

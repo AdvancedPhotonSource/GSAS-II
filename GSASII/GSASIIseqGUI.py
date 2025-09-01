@@ -260,7 +260,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def OnSaveCinema(event):
         '''This routine creates/modifies files to run Cinema: Debye-Scherrer 
         https://github.com/cinemascience/cinema_debye_scherrer
+        https://cinemascience.github.io/publications.html
         (https://journals.iucr.org/j/issues/2018/03/00/ks5597/ks5597.pdf)
+
+        Note that cinema is installed and run with:
+          git clone https://github.com/cinemascience/cinema_debye_scherrer.git
+          cd cinema_debye_scherrer
+          python -m http.server
+          
+          open http://localhost:8000/ in browser
         '''
 
         IMAGES_SUBDIR = "images"

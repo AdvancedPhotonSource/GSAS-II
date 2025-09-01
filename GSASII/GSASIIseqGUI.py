@@ -281,6 +281,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 return True
             else:
                 return False
+        # at present this only has been tested with PWDR sequential fits
+        if not histNames[0].startswith('PWDR'):
+            G2G.G2MessageBox(G2frame,
+                'Cinema export is only available at present for PWDR fits',
+                'Sorry')
+            return
 
         # create a table of values from sequential table, copying 
         # the number of displayed digits and removing unneeded entries

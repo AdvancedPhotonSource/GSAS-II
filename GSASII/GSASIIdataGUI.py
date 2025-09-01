@@ -6638,7 +6638,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                         submenu.Append(G2G.wxID_XPORTSEQFCIF,'... as full CIF',
                                 'Save all sequential refinement results as a CIF file')
                         G2G.Define_wxId('wxID_XPORTCINEMA')
-                        submenu.Append(G2G.wxID_XPORTCINEMA,'... to CINEMA: DS',
+                        submenu.Append(G2G.wxID_XPORTCINEMA,'... to CINEMA: Debye-Scherrer',
                                 'Pass sequential refinement results for plotting in CINEMA: Debye-Scherrer')                        
                     for obj in objlist:
                         item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)

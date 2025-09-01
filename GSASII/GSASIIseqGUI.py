@@ -329,78 +329,88 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         # Work with Cinema json file
         import json
         db_directory = None
-        if show_project_dialog():
-            # Actions when continuing work with the current project
-            dialogDirOfProjectDB = wx.DirDialog(
-                None,
-                message=f"Select directory containing project data - {DATA_CSV_FILENAME}",  # Dialog title
-                defaultPath="",  # Initial directory (empty = current)
-                style=wx.DD_DEFAULT_STYLE  # Dialog style
-            )
-            if dialogDirOfProjectDB.ShowModal() == wx.ID_OK:
-                db_directory = dialogDirOfProjectDB.GetPath()
-                dialogDirOfProjectDB.Destroy()
+        Repeat = True
+        while Repeat:
+            Repeat = False
+            if show_project_dialog():
+                # Actions when continuing work with a previous project
+                import glob
+                f1 = os.path.join('data','*',DATA_CSV_FILENAME)
+                choices = [os.path.split(i)[0] for i in glob.glob(f1,root_dir=selected_dir)]
+                dlg = G2G.G2SingleChoiceDialog(G2frame,
+                                                   'Select previously used location',
+                                                   'Select directory',choices)
+                dlg.CenterOnParent()
+                if dlg.ShowModal() == wx.ID_OK:
+                    val = choices[dlg.GetSelection()]
+                    db_directory = os.path.join(selected_dir,val)
+                    dlg.Destroy()
+                else:
+                    dlg.Destroy()
+                    return
+                file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
+
             else:
-                dialogDirOfProjectDB.Destroy()
-                return
-            file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
+                # Actions when creating a new project
+                json_path = os.path.join(selected_dir, DB_JSON_FILENAME)
 
-        else:
-            # Actions when creating a new project
-            json_path = os.path.join(selected_dir, DB_JSON_FILENAME)
+                dlg = wx.Dialog(G2frame, title="New Cinema:D-S Project", size=(400, 200))
+                panel = wx.Panel(dlg)
+                main_sizer = wx.BoxSizer(wx.VERTICAL)
 
-            dlg = wx.Dialog(G2frame, title="New Cinema:D-S Project Parameters", size=(400, 200))
-            panel = wx.Panel(dlg)
-            main_sizer = wx.BoxSizer(wx.VERTICAL)
+                # Flexible grid layout (2 columns, 2 rows, 5px spacing)
+                grid_sizer = wx.FlexGridSizer(2, 2, 5, 5)
+                grid_sizer.AddGrowableCol(1)
 
-            # Flexible grid layout (2 columns, 2 rows, 5px spacing)
-            grid_sizer = wx.FlexGridSizer(2, 2, 5, 5)
-            grid_sizer.AddGrowableCol(1)
+                # Project name field
+                name_label = wx.StaticText(panel, label="Project Name:")
+                name_ctrl = wx.TextCtrl(panel, value="GSAS-II Cinema Export")
+                grid_sizer.Add(name_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                grid_sizer.Add(name_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
 
-            # Project name field
-            name_label = wx.StaticText(panel, label="Project Name:")
-            name_ctrl = wx.TextCtrl(panel, value="GSAS-II Cinema Export")
-            grid_sizer.Add(name_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
-            grid_sizer.Add(name_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
+                # Database directory field
+                dir_label = wx.StaticText(panel, label="DB Directory: data/...")
+                dir_ctrl = wx.TextCtrl(panel, value="g2db.cdb")
+                grid_sizer.Add(dir_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                grid_sizer.Add(dir_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
 
-            # Database directory field
-            dir_label = wx.StaticText(panel, label="DB Directory: data/...")
-            dir_ctrl = wx.TextCtrl(panel, value="g2db.cdb")
-            grid_sizer.Add(dir_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
-            grid_sizer.Add(dir_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
+                main_sizer.Add(grid_sizer, 0, wx.EXPAND|wx.ALL, 10)
 
-            main_sizer.Add(grid_sizer, 0, wx.EXPAND|wx.ALL, 10)
+                # Buttons
+                btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                btn_sizer.AddStretchSpacer(1)
+                btn_ok = wx.Button(panel, wx.ID_OK, "OK")
+                btn_ok.SetDefault()
+                btn_cancel = wx.Button(panel, wx.ID_CANCEL, "Cancel")
+                btn_sizer.Add(btn_ok, 0, wx.RIGHT, 10)
+                btn_sizer.Add(btn_cancel, 0)
+                btn_sizer.AddStretchSpacer(1)
+                main_sizer.Add(btn_sizer, 0, wx.EXPAND|wx.ALL, 10)
 
-            # Buttons
-            btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
-            btn_sizer.AddStretchSpacer(1)
-            btn_ok = wx.Button(panel, wx.ID_OK, "OK")
-            btn_cancel = wx.Button(panel, wx.ID_CANCEL, "Cancel")
-            btn_sizer.Add(btn_ok, 0, wx.RIGHT, 10)
-            btn_sizer.Add(btn_cancel, 0)
-            btn_sizer.AddStretchSpacer(1)
-            main_sizer.Add(btn_sizer, 0, wx.EXPAND|wx.ALL, 10)
+                panel.SetSizer(main_sizer)
+                main_sizer.Fit(dlg)
+                dlg.CenterOnParent()
 
-            panel.SetSizer(main_sizer)
-
-            dlg.Layout()
-            dlg.Centre()
-            dlg.CenterOnParent()
-
-            if dlg.ShowModal() == wx.ID_OK:
-                project_name = name_ctrl.GetValue()
-                db_directory = os.path.join("data", dir_ctrl.GetValue())
-                dlg.Destroy()
-
-                try:
-                    os.makedirs(os.path.join(selected_dir,db_directory), exist_ok=True)
-                except OSError as e:
-                    print(f"Directory creation failed: {e}")
-                    wx.MessageBox(f"Failed to create directory: {e}", "Error", wx.OK|wx.ICON_ERROR)
-                    return  # Terminate execution if directory creation failed
-            else:
-                dlg.Destroy()
-                return
+                if dlg.ShowModal() == wx.ID_OK:
+                    project_name = name_ctrl.GetValue()
+                    db_directory = os.path.join("data", dir_ctrl.GetValue())
+                    dlg.Destroy()
+                    new_loc = os.path.join(selected_dir,db_directory)
+                    if os.path.exists(new_loc):
+                        G2G.G2MessageBox(G2frame,
+                f'This file has already been created, specify a new DB directory or reuse {dir_ctrl.GetValue()}',
+                'In use')
+                        Repeat = True
+                        continue
+                    try:
+                        os.makedirs(new_loc, exist_ok=True)
+                    except OSError as e:
+                        print(f"Directory creation failed: {e}")
+                        wx.MessageBox(f"Failed to create directory: {e}", "Error", wx.OK|wx.ICON_ERROR)
+                        return  # Terminate execution if directory creation failed
+                else:
+                    dlg.Destroy()
+                    return
 
             try:
                 with open(json_path, 'r', encoding='utf-8') as fil:

@@ -258,7 +258,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         OnSaveSelSeq(event,csv=True)
 
     def OnSaveCinema(event):
-        '''This routine exports file(s) to run Cinema: Debye-Scherrer 
+        '''This routine creates/modifies files to run Cinema: Debye-Scherrer 
         https://github.com/cinemascience/cinema_debye_scherrer
         (https://journals.iucr.org/j/issues/2018/03/00/ks5597/ks5597.pdf)
         '''
@@ -283,22 +283,49 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             else:
                 return False
 
-        colLabels = G2frame.seqResults_colLabels
-        table_data = G2frame.SeqTable.GetData()
-        nRows=len(table_data)
-
-        with wx.DirDialog(
-            None,
-            message="Select Cinema directory containing index.html",  # Dialog title
-            defaultPath="",  # Initial directory (empty = current)
-            style=wx.DD_DEFAULT_STYLE  # Dialog style
-        ) as dialogDir:
-            res = dialogDir.ShowModal()
-            dialogDir.Destroy()
-            if res == wx.ID_OK:
-                selected_dir = dialogDir.GetPath()  # Get selected directory
+        #colLabels = G2frame.seqResults_colLabels
+        #table_data = G2frame.SeqTable.GetData()
+        nRows=len(G2frame.SeqTable.GetData())
+        colLabels = []
+        colDecimals = []
+        useCol = []
+        for i,lbl in enumerate(G2frame.seqResults_colLabels):
+            typ = G2frame.SeqTable.GetTypeName(0,i)
+            if typ in ['long','bool']:
+                colDecimals.append(None)
+                useCol.append(False)
+                continue
+            colLabels.append(lbl)
+            useCol.append(True)
+            if ',' in typ:
+                colDecimals.append(typ.split(',')[1])
             else:
-                return
+                colDecimals.append('6')
+        table_data = []
+        for r in range(nRows):
+            row = []
+            for i,val in enumerate(G2frame.SeqTable.GetData()[r]):
+                if not useCol[i]: continue
+                row.append(f"{val:.{colDecimals[i]}f}")
+            table_data.append(row)
+        # Get location where software is installed
+        selected_dir = GSASIIpath.GetConfigValue('CINEMA_DS_directory')
+        if not (selected_dir and os.path.exists(selected_dir)):
+            with wx.DirDialog(
+                None,
+                message="Select Cinema directory containing index.html",  # Dialog title
+                defaultPath="",  # Initial directory (empty = current)
+                style=wx.DD_DEFAULT_STYLE  # Dialog style
+            ) as dialogDir:
+                if dialogDir.ShowModal() == wx.ID_OK:
+                    selected_dir = dialogDir.GetPath()  # Get selected directory
+                    dialogDir.Destroy()
+                else:
+                    dialogDir.Destroy()
+                    return
+            GSASIIpath.SetConfigValue({'CINEMA_DS_directory':[None,selected_dir]})
+            config = G2G.GetConfigValsDocs()
+            G2G.SaveConfigVars(config)
 
         # Work with Cinema json file
         import json
@@ -311,11 +338,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 defaultPath="",  # Initial directory (empty = current)
                 style=wx.DD_DEFAULT_STYLE  # Dialog style
             )
-            res = dialogDirOfProjectDB.ShowModal()
-            dialogDirOfProjectDB.Destroy()
-            if res == wx.ID_OK:
+            if dialogDirOfProjectDB.ShowModal() == wx.ID_OK:
                 db_directory = dialogDirOfProjectDB.GetPath()
+                dialogDirOfProjectDB.Destroy()
             else:
+                dialogDirOfProjectDB.Destroy()
                 return
             file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
 
@@ -323,7 +350,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # Actions when creating a new project
             json_path = os.path.join(selected_dir, DB_JSON_FILENAME)
 
-            dlg = wx.Dialog(None, title="New Project Parameters", size=(400, 200))
+            dlg = wx.Dialog(None, title="New CINEMA Project Parameters", size=(400, 200))
             panel = wx.Panel(dlg)
             main_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -359,12 +386,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
             dlg.Layout()
             dlg.Centre()
-            res = dlg.ShowModal() 
-            dlg.Destroy()
+            dlg.CenterOnParent()
 
-            if res == wx.ID_OK:
+            if dlg.ShowModal() == wx.ID_OK:
                 project_name = name_ctrl.GetValue()
                 db_directory = os.path.join("data", dir_ctrl.GetValue())
+                dlg.Destroy()
 
                 try:
                     os.makedirs(os.path.join(selected_dir,db_directory), exist_ok=True)
@@ -373,6 +400,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     wx.MessageBox(f"Failed to create directory: {e}", "Error", wx.OK|wx.ICON_ERROR)
                     return  # Terminate execution if directory creation failed
             else:
+                dlg.Destroy()
                 return
 
             try:
@@ -403,7 +431,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             fil.write("\n")
 
             for r in range(nRows):
-                fil.write(", ".join(str(item) for item in table_data[r]))
+                fil.write(", ".join(table_data[r]))
                 fil.write("," + IMAGES_SUBDIR + "/PWDR_" + G2frame.SeqTable.rowLabels[r].replace('.', '_').replace(' ', '_') + ".png")
                 fil.write("\n")
         print(f"Cinema {DATA_CSV_FILENAME} saved at: {file_path}")

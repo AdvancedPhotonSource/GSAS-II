@@ -337,3 +337,9 @@ BRML_T_col = -1
 is stored in a Bruker BRML file. With the default value (-1), the columns 
 8, 6, and 5 are tried, in that order.
 '''
+
+CINEMA_DS_directory=None
+'''Location where CINEMA: Debye-Scherrer is installed. This is the location 
+where the index.html file is located. If not set, if the export for this 
+is used, you will be asked to supply the directory, which will be saved here.
+'''

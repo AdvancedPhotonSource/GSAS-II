@@ -307,22 +307,36 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if not useCol[i]: continue
                 row.append(f"{val:.{colDecimals[i]}f}")
             table_data.append(row)
-        # Get location where software is installed
+        
+        # Get location where Cinema software is installed
+        # must have the index.html file
         selected_dir = GSASIIpath.GetConfigValue('CINEMA_DS_directory')
-        if not (selected_dir and os.path.exists(selected_dir)):
+        while ((selected_dir is None) or (not os.path.exists(selected_dir))
+            or (not os.path.exists(os.path.join(selected_dir,'index.html')))
+            ):
             with wx.DirDialog(
-                None,
+                G2frame,
                 message="Select Cinema directory containing index.html",  # Dialog title
                 defaultPath="",  # Initial directory (empty = current)
                 style=wx.DD_DEFAULT_STYLE  # Dialog style
             ) as dialogDir:
+                dialogDir.CenterOnParent()
                 if dialogDir.ShowModal() == wx.ID_OK:
-                    selected_dir = dialogDir.GetPath()  # Get selected directory
+                    selected_dir = dialogDir.GetPath()
                     dialogDir.Destroy()
                 else:
                     dialogDir.Destroy()
+                    print('Cancelling Cinema export')
                     return
-            GSASIIpath.SetConfigValue({'CINEMA_DS_directory':[None,selected_dir]})
+            if not (os.path.exists(selected_dir) and
+                    os.path.exists(os.path.join(selected_dir,'index.html'))):
+                G2G.G2MessageBox(G2frame,
+                f'Directory {selected_dir!r} does not exist or '+
+                'does not contain an index.html file. Try again',
+                'Invalid location')
+                continue             # don't save if not valid
+            GSASIIpath.SetConfigValue({'CINEMA_DS_directory':
+                                           [None,selected_dir]})
             config = G2G.GetConfigValsDocs()
             G2G.SaveConfigVars(config)
 
@@ -347,6 +361,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     dlg.Destroy()
                 else:
                     dlg.Destroy()
+                    print('Cancelling Cinema export')
                     return
                 file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
 
@@ -410,6 +425,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         return  # Terminate execution if directory creation failed
                 else:
                     dlg.Destroy()
+                    print('Cancelling Cinema export')
                     return
 
             try:
@@ -2333,8 +2349,9 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
 
 def ExportSequentialImages(G2frame,histNames,outdir,dpi='figure'):
     '''Used to create plot images as PNG for each fit in the sequential results
-    table in images are created in a temporary directory.
+    table. 
     For PWDR entries only. 
+    Used in Cinema: D-S to create refinement thumbnails.
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     :param list histNames: a list of the tree name entries

@@ -2060,8 +2060,8 @@ def UpdateMasks(G2frame,data):
             LUtth = np.array(Controls['IOtth'])
             dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
             dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
-            x0 = G2img.GetDetectorXY2(dsp0,0.0,Controls)[0]
-            x1 = G2img.GetDetectorXY2(dsp1,0.0,Controls)[0]
+            x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+            x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
             if not np.any(x0) or not np.any(x1):
                 raise Exception
             nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
@@ -2126,8 +2126,8 @@ def UpdateMasks(G2frame,data):
                 LUtth = np.array(Controls['IOtth'])
                 dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
                 dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
-                x0 = G2img.GetDetectorXY2(dsp0,0.0,Controls)[0]
-                x1 = G2img.GetDetectorXY2(dsp1,0.0,Controls)[0]
+                x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+                x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
                 if not np.any(x0) or not np.any(x1):
                     raise Exception
                 nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2

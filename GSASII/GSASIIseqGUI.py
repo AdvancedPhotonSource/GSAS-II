@@ -268,25 +268,24 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         DATA_CSV_FILENAME = "data.csv"
         def show_project_dialog():
             dialog = wx.MessageDialog(
-                None,
-                "Continue with current Cinema project or create a new one?",
+                G2frame,
+                "Reuse previous Cinema project or create a new one?",
                 "Project Selection",
                 wx.OK | wx.CANCEL | wx.ICON_QUESTION
             )
-            dialog.SetOKCancelLabels("Continue", "New Project")
-
+            dialog.SetOKCancelLabels("Reuse", "New Project")
+            dialog.CenterOnParent()
             result = dialog.ShowModal()
             dialog.Destroy()
-
             if result == wx.ID_OK:
                 return True
             else:
                 return False
 
-        #colLabels = G2frame.seqResults_colLabels
-        #table_data = G2frame.SeqTable.GetData()
+        # create a table of values from sequential table, copying 
+        # the number of displayed digits and removing unneeded entries
         nRows=len(G2frame.SeqTable.GetData())
-        colLabels = []
+        colLabels = ['File']
         colDecimals = []
         useCol = []
         for i,lbl in enumerate(G2frame.seqResults_colLabels):
@@ -303,7 +302,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 colDecimals.append('6')
         table_data = []
         for r in range(nRows):
-            row = []
+            row = [G2frame.SeqTable.GetRowLabelValue(r)]
             for i,val in enumerate(G2frame.SeqTable.GetData()[r]):
                 if not useCol[i]: continue
                 row.append(f"{val:.{colDecimals[i]}f}")
@@ -350,7 +349,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # Actions when creating a new project
             json_path = os.path.join(selected_dir, DB_JSON_FILENAME)
 
-            dlg = wx.Dialog(None, title="New CINEMA Project Parameters", size=(400, 200))
+            dlg = wx.Dialog(G2frame, title="New Cinema:D-S Project Parameters", size=(400, 200))
             panel = wx.Panel(dlg)
             main_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -360,13 +359,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
             # Project name field
             name_label = wx.StaticText(panel, label="Project Name:")
-            name_ctrl = wx.TextCtrl(panel, value="New Project Cinema")
+            name_ctrl = wx.TextCtrl(panel, value="GSAS-II Cinema Export")
             grid_sizer.Add(name_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
             grid_sizer.Add(name_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
 
             # Database directory field
             dir_label = wx.StaticText(panel, label="DB Directory: data/...")
-            dir_ctrl = wx.TextCtrl(panel, value="exampledb.cdb")
+            dir_ctrl = wx.TextCtrl(panel, value="g2db.cdb")
             grid_sizer.Add(dir_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
             grid_sizer.Add(dir_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
 
@@ -427,8 +426,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
         with open(file_path, 'w', encoding='utf-8') as fil:
             fil.write(", ".join(colLabels))
-            fil.write(",FILE ")
-            fil.write("\n")
+            fil.write(", FILE\n")
 
             for r in range(nRows):
                 fil.write(", ".join(table_data[r]))

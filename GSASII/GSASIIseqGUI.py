@@ -263,12 +263,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         https://cinemascience.github.io/publications.html
         (https://journals.iucr.org/j/issues/2018/03/00/ks5597/ks5597.pdf)
 
-        Note that cinema is installed and run with:
+        Routine developed by Andrew Kuncevich (see https://github.com/AdvancedPhotonSource/GSAS-II/issues/11)
+
+        Note that cinema is installed and run with commands like:
           git clone https://github.com/cinemascience/cinema_debye_scherrer.git
           cd cinema_debye_scherrer
           python -m http.server
-          
           open http://localhost:8000/ in browser
+        Perhaps if there is demand, we could have GSAS-II install and launch 
+        Cinema: Debye-Scherrer, but for now let's leave this for users to 
+        do. 
         '''
 
         IMAGES_SUBDIR = "images"
@@ -375,7 +379,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     dlg.Destroy()
                     print('Cancelling Cinema export')
                     return
-                file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
+                #file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
 
             else:
                 # Actions when creating a new project

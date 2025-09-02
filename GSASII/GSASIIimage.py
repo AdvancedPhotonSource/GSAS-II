@@ -45,9 +45,41 @@ nxs = np.newaxis
 debug = False
 
 def peneCorr(tth,dep,dist):
-    'Compute empirical position correction due to detector absorption'
+    ''' Compute empirical position correction due to detector absorption
+    :param float/array tth: angle between detector normal & scattered ray vector
+    :param float dep: coefficient
+    :param float dist: sample to detector surface in mm
+    :returns: float/array distance: correction for penetration'''
+    
     return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
 
+def GetTthP(x,y,parmDict):
+    ''' Compute angle between detector normal & sample scattering ray vector
+    :param float/array x: detector x-position in mm
+    :param float/array y: detector y-position in mm
+    :param dict parmDict: dictionary of detector orientation parameters in fitting routine
+        names are: det-X, det-Y, tilt, dist & phi
+    :returns: float/array angle: = 2-theta if tilt is zero
+    '''
+    def costth(xyz,d0):
+        ''' compute cos of angle between vectors; xyz not normalized, d0 normalized'''
+        u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
+        return np.dot(u,d0)
+    
+    dx = x-parmDict['det-X']
+    dy = y-parmDict['det-Y']
+    tilt = parmDict['tilt']
+    dist = parmDict['dist']/npcosd(tilt)    #sample-beam intersection point on detector plane
+    T = makeMat(tilt,0)         #detector tilt matrix
+    R = makeMat(parmDict['phi'],2)     #rotation of tilt axis matrix
+    MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T)
+    d001 = np.array([0.,0.,1.])         #vector along z (beam direction); normal to untilted detector plane
+    r001 = np.inner(d001,MN)            #should rotate vector same as detector
+    dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #transform detector pixel x,y by tilt/rotate
+    dxyz0 += np.array([0.,0.,dist])         #shift away from sample
+    ctth0 = costth(dxyz0,r001)              #cos of angle between detector normal & sample-pixel vector
+    return npacosd(ctth0)[0]
+        
 def SamAbs(data,tax,tay,muT):
     'Compute sample absorption correction for images'
     if 'Cylind' in data['SampleShape']:
@@ -148,7 +180,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         print (ptlbls)
         print (ptstr)
         print (sigstr)
-
+        
     def ellipseCalcD(B,xyd,varyList,parmDict):
 
         x,y,dsp = xyd
@@ -160,9 +192,10 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
             else:
                 parms[parm] = parmDict[parm]
         phi = parms['phi']-90.               #get rotation of major axis from tilt axis
+        dtth = GetTthP(x,y,parmDict)        #sample-detector ray wrt detector plane != 2-theta if tilted
         tth = 2.0*npasind(parms['wave']/(2.*dsp))
         phi0 = npatan2d(y-parms['det-Y'],x-parms['det-X'])
-        dxy = peneCorr(tth,parms['dep'],parms['dist'])
+        dxy = peneCorr(dtth,parms['dep'],parms['dist'])
         stth = npsind(tth)
         cosb = npcosd(parms['tilt'])
         tanb = nptand(parms['tilt'])
@@ -302,8 +335,9 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
 
         phi = parms['phi']-90.               #get rotation of major axis from tilt axis
         tth = 2.0*npasind(parms['wavelength']/(2.*dsp))
+        dtth = GetTthP(x,y,parmDict)
         phi0 = npatan2d(y-detY,x-detX)
-        dxy = peneCorr(tth,parms['dep'],dist-deltaDist)
+        dxy = peneCorr(dtth,parms['dep'],dist-deltaDist)
         stth = npsind(tth)
         cosb = npcosd(parms['tilt'])
         tanb = nptand(parms['tilt'])
@@ -519,7 +553,7 @@ def GetTthAzmDsp2(x,y,data): #expensive
     OK for ellipses & hyperbola.
     Use only for detector 2-theta = 0
 
-    :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
+    :returns: np.array(tth,azm,dsp) where tth is 2theta, azm is the azimutal angle,
        and dsp is the d-space - not used in integration
     '''
     wave = data['wavelength']
@@ -535,7 +569,7 @@ def GetTthAzmDsp2(x,y,data): #expensive
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
-    dxy = peneCorr(tth,dep,dist)
+    dxy = peneCorr(tth,dep,data['distance'])
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
     tth = npatan2d(DY,DX)
@@ -548,7 +582,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     OK for ellipses & hyperbola.
     Use for detector 2-theta != 0.
 
-    :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
+    :returns: np.array(tth,azm,dsp) where tth is 2theta, azm is the azimutal angle,
         and dsp is the d-space - only used for non-zero detector 2-thetas
     '''
 
@@ -570,7 +604,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     if data['DetDepth']:
         ctth0 = costth(dxyz0)
         tth0 = npacosd(ctth0)
-        dzp = peneCorr(tth0,data['DetDepth'],dist)
+        dzp = peneCorr(tth0,data['DetDepth'],data['distance'])
         dxyz0[:,:,2] += dzp
 #non zero detector 2-theta:
     if data['det2theta']:
@@ -638,7 +672,7 @@ def GetTthAzmG(x,y,data):
     ctth0 = costth(dxyz0,r001)              #cos of angle between detector normal & sample-pixel vector
     if data['DetDepth']:
         tth0 = npacosd(ctth0)
-        dzp = peneCorr(tth0,data['DetDepth'],dist)
+        dzp = peneCorr(tth0,data['DetDepth'],data['distance'])
         dxyz0[:,:,2] += dzp
 #non zero detector 2-theta:
     if data.get('det2theta',0):

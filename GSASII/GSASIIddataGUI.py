@@ -984,7 +984,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     fixBox.Add(wx.StaticText(DData,label=' (currently {} fixed)'.format(len(fixedVars))),0,WACV)
                 bottomSizer.Add(fixBox)
 
-        if not UseList[G2frame.hist]['LeBail'] or 'HKLF' in G2frame.hist[:4]:
+        if  'HKLF' in G2frame.hist[:4] or not UseList[G2frame.hist]['LeBail']:
             bottomSizer.Add(ScaleSizer(),0,wx.BOTTOM,5)
         else:
             # if phase fraction/scale is hidden, turn off flag

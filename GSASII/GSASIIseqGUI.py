@@ -337,9 +337,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 dialogDir.CenterOnParent()
                 if dialogDir.ShowModal() == wx.ID_OK:
                     selected_dir = dialogDir.GetPath()
-                    dialogDir.Destroy()
                 else:
-                    dialogDir.Destroy()
                     print('Cancelling Cinema export')
                     return
             if not (os.path.exists(selected_dir) and
@@ -394,6 +392,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 # Project name field
                 name_label = wx.StaticText(panel, label="Project Name:")
                 name_ctrl = wx.TextCtrl(panel, value="GSAS-II Cinema Export")
+                name_ctrl.SetMinSize((200, -1))
                 grid_sizer.Add(name_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
                 grid_sizer.Add(name_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
 
@@ -437,30 +436,31 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         print(f"Directory creation failed: {e}")
                         wx.MessageBox(f"Failed to create directory: {e}", "Error", wx.OK|wx.ICON_ERROR)
                         return  # Terminate execution if directory creation failed
+
+                    try:
+                        print('Open and reuse json')
+                        with open(json_path, 'r', encoding='utf-8') as fil:
+                            data = json.load(fil)
+                        new_entry = {
+                            "name": project_name,
+                            "directory": db_directory,
+                            "smoothLines": True,
+                            "lineOpacity": 1.0
+                        }
+                        data.append(new_entry)
+                        # rewrite data to json file
+                        with open(json_path, 'w', encoding='utf-8') as file:
+                            json.dump(data, file, indent=8, ensure_ascii=False)
+                    except FileNotFoundError:
+                        print(f"File {json_path} not found")
+                    except json.JSONDecodeError:
+                        print(f"Error reading JSON file {json_path}")
+                    except Exception as e:
+                        print(f"An error occurred: {e}")
                 else:
                     dlg.Destroy()
                     print('Cancelling Cinema export')
                     return
-
-            try:
-                with open(json_path, 'r', encoding='utf-8') as fil:
-                    data = json.load(fil)
-                new_entry = {
-                    "name": project_name,
-                    "directory": db_directory,
-                    "smoothLines": True,
-                    "lineOpacity": 1.0
-                }
-                data.append(new_entry)
-                # rewrite data to json file
-                with open(json_path, 'w', encoding='utf-8') as file:
-                    json.dump(data, file, indent=8, ensure_ascii=False)
-            except FileNotFoundError:
-                print(f"File {json_path} not found")
-            except json.JSONDecodeError:
-                print(f"Error reading JSON file {json_path}")
-            except Exception as e:
-                print(f"An error occurred: {e}")
 
             file_path = os.path.join(selected_dir, db_directory, DATA_CSV_FILENAME)
 

@@ -44,8 +44,8 @@ jobs:
           manifest-path: pixi/pixi.toml
 
       # run pixi command
-      - name: upgrade 
-        run: pixi upgrade compilers clang --manifest-path pixi/pixi.toml
+#      - name: upgrade 
+#        run: pixi upgrade compilers clang --manifest-path pixi/pixi.toml
 
       - name: see-upgrade
         run: git diff

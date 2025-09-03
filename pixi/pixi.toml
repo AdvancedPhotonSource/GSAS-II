@@ -65,8 +65,8 @@ gfortran = ">=14.2.0,<14.3"
 gcc = ">=14.2.0,<14.3"
 
 [target.osx-arm64.dependencies]
-compilers = ">=1.9.0,<2"
-clang = ">=18.1.8,<19"
+compilers = ">=1.11.0,<2"
+clang = ">=19.1.7,<22"
 
 # for now assume gcc & gfortran already installed in Linux
 

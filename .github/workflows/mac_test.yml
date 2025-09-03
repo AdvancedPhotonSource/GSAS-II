@@ -1,14 +1,13 @@
-name: smoke test
+name: self-test on MacOS only
 
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches-ignore:
-      - master
-      - pixi-fix
-  #   branches: ['develop']
-  pull_request:
-    branches: ['main']
+#    branches-ignore:
+#      - master
+    branches: ['pixi-fix']
+#  pull_request:
+#    branches: ['main']
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -26,11 +25,12 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - name: 'ubuntu-22.04'
+#          - name: 'ubuntu-22.04'
           - name: 'macos-latest'
-          - name: 'windows-latest'
+#          - name: 'windows-latest'
 #            cmd_extra: '-win'
-        env: ['py310', 'py311', 'py312', 'py313']
+#        env: ['py310', 'py311', 'py312', 'py313']
+        env: ['py313']
     runs-on: ${{ matrix.os.name }}
     steps:
       # checkout repo
@@ -40,13 +40,15 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           environments: ${{ matrix.env }}
-          pixi-version: v0.39.5
+          #pixi-version: v0.39.5
           manifest-path: pixi/pixi.toml
 
       # run install to see if it works
       - name: Build
         # run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}
-        run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install
+        run:
+          pixi help
+          pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install
 
       - name: test
         run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} test

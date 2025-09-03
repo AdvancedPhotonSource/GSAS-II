@@ -17,11 +17,13 @@ platforms = ["linux-64", "win-64", "osx-arm64"]
 clean-build = { cmd = "(rm dist/*whl || true) && (rm -r build || true) ", cwd='../' }
 saveversions =  { cmd = "python save-versions.py", cwd='../GSASII/install' }
 build =  { cmd = "python -m build -wnx -vvvv -Cbuild-dir='build'", cwd='../', depends-on = ['clean-build']}
-install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['saveversions', 'build']}
+install = { cmd = "pip install dist/*whl --force-reinstall --no-deps" , cwd='../', depends-on=['saveversions', 'build', 'CIFfix']}
+
+CIFfix =  { cmd = "python -c 'import CifFile'", cwd='../' } # This command fixes a bug in PyCifRW 4.x
 
 # following contains a rather kludgy way to get files into bin area
-install-editable =  { cmd = "pip install -ve . --no-build-isolation; /bin/cp -v $(find ./build -name convcell) ./pixi/.pixi/envs/$PIXI_ENVIRONMENT_NAME/bin/; /bin/cp -v $(find ./build -name LATTIC) ./pixi/.pixi/envs/$PIXI_ENVIRONMENT_NAME/bin/", cwd='../', depends-on=['clean-build', 'saveversions']}
-install-editable-win =  { cmd = "pip install -ve . --no-build-isolation; cp ./build/*/sources/LATTIC.exe ./pixi/.pixi/envs/*/Scripts/; cp ./build/*/sources/convcell.exe ./pixi/.pixi/envs/*/Scripts/; ls; ls -d ./pixi/.pixi/envs/*/Scripts/*.exe", cwd='../', depends-on=['clean-build', 'saveversions']}
+install-editable =  { cmd = "pip install -ve . --no-build-isolation; /bin/cp -v $(find ./build -name convcell) ./pixi/.pixi/envs/$PIXI_ENVIRONMENT_NAME/bin/; /bin/cp -v $(find ./build -name LATTIC) ./pixi/.pixi/envs/$PIXI_ENVIRONMENT_NAME/bin/", cwd='../', depends-on=['clean-build', 'saveversions', 'CIFfix']}
+install-editable-win =  { cmd = "pip install -ve . --no-build-isolation; cp ./build/*/sources/LATTIC.exe ./pixi/.pixi/envs/*/Scripts/; cp ./build/*/sources/convcell.exe ./pixi/.pixi/envs/*/Scripts/; ls; ls -d ./pixi/.pixi/envs/*/Scripts/*.exe", cwd='../', depends-on=['clean-build', 'saveversions', 'CIFfix']}
 
 build-and-go ={ depends-on= ["install", "ui"]}
 #build-and-go-win ={ depends-on= ["install-win", "ui"]}

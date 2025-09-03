@@ -44,9 +44,12 @@ jobs:
           manifest-path: pixi/pixi.toml
 
       # run pixi command
-      - name: update
-        run: pixi help
-         
+      - name: upgrade 
+        run: pixi upgrade compilers clang
+
+      - name: see-upgrade
+        run: git diff
+
       # run install to see if it works
       - name: Build
         # run: pixi run --manifest-path pixi/pixi.toml   -e ${{ matrix.env }} install${{ matrix.os.cmd_extra }}

@@ -45,7 +45,7 @@ jobs:
 
       # run pixi command
       - name: update
-         run: pixi help
+        run: pixi help
          
       # run install to see if it works
       - name: Build

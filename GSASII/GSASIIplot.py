@@ -956,7 +956,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         i = zones.index(Data['Zone'])
         newPlot = False
         pwdrChoice = {'f':'Fo','s':'Fosq','u':'Unit Fc'}
-        hklfChoice = {'1':'|DFsq|>sig','3':'|DFsq|>3sig','w':'|DFsq|/sig','f':'Fo','s':'Fosq','i':'Unit Fc'}
+        hklfChoice = {'1':'|DFsq|>sig','3':'|DFsq|>3sig','w':'|DFsq|/sig','f':'Fo','s':'Fosq','u':'Unit Fc','o':'Fo only'}
         if event.key == 'h':
             Data['Zone'] = '100'
             newPlot = True
@@ -1044,7 +1044,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             'f: select Fo','s: select Fosq','u: select unit Fc',
             '+: increase index','-: decrease index','0: zero layer',)
         if 'HKLF' in Name:
-            Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
+            Page.Choice += ('o: select Fo only','w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
     try:
         Plot.set_aspect(aspect='equal')
     except: #broken in mpl 3.1.1; worked in mpl 3.0.3
@@ -1096,6 +1096,9 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 B = scale*math.sqrt(max(0,Fcsq))/FoMax
                 C = abs(A-B)
                 sumDF += C
+            elif Type == 'Fo only':
+                A = scale*Fosq/FosqMax
+                sumFo += A
             elif Type == 'Unit Fc':
                 A = scale/2
                 B = scale/2

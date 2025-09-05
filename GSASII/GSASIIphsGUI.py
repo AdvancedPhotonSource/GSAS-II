@@ -13504,7 +13504,7 @@ def CheckAddHKLF(G2frame,data):
     for i in result:
         histoName = TextList[i]
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
-        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
+        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)[:2]
         G2mth.UpdateHKLFvals(histoName, data, reflData)
 
     wx.EndBusyCursor()

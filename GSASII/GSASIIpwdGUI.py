@@ -9568,6 +9568,8 @@ def UpdatePDFGrid(G2frame,data):
                 xmin=0.01,typeHint=float,size=wx.Size(50,20))
         sqBox.Add(rmin,0,WACV)
         sfgSizer.Add(sqBox,0,wx.EXPAND)
+        if data['DetType'] == 'Area detector' and fullLimits[1] > 80.:
+            sfgSizer.Add(wx.StaticText(G2frame.dataWindow,label=' NB: Detector choice may be in error; use Point detector instead'))
 
         bkBox = wx.BoxSizer(wx.HORIZONTAL)
         bkBox.Add(wx.StaticText(G2frame.dataWindow,label=' Background ratio: '),0,WACV)
@@ -9925,6 +9927,7 @@ def UpdatePDFGrid(G2frame,data):
             data['diffMult'] = 1.0
         if 'GR Scale' not in data:
             data['GR Scale'] = 1.0
+            
     if powId:
         G2frame.dataWindow.PDFMenu.EnableTop(0,enable=True)
     else:

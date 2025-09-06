@@ -129,10 +129,12 @@ class MergeDialog(wx.Dialog):
             self.Trans = np.eye(4)
         else:
             self.Trans = np.eye(3)
+        self.Type = data[0]['Type']
         self.Cent = 'noncentrosymmetric'
         self.Laue = '1'
         self.Class = 'triclinic'
         self.Common = 'abc'
+        self.Smart = False
         self.Draw()
 
     def Draw(self):
@@ -159,6 +161,9 @@ class MergeDialog(wx.Dialog):
             self.Common = Obj.GetValue()
             self.Trans = commonTrans[self.Common]
             wx.CallAfter(self.Draw)
+            
+        def OnSmart(event):
+            self.Smart = not self.Smart
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -215,6 +220,10 @@ class MergeDialog(wx.Dialog):
         Laue.Bind(wx.EVT_COMBOBOX,OnLaue)
         mergeSizer.Add(Laue,0,WACV)
         mainSizer.Add(mergeSizer)
+        if self.Type == 'SEC':
+            Smart = wx.CheckBox(self.panel,label=' Do smart merge for microED?')
+            Smart.Bind(wx.EVT_CHECKBOX,OnSmart)
+        mainSizer.Add(Smart,0)    
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -234,7 +243,7 @@ class MergeDialog(wx.Dialog):
         self.Fit()
 
     def GetSelection(self):
-        return self.Trans,self.Cent,self.Laue
+        return self.Trans,self.Cent,self.Laue,self.Smart
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -8118,7 +8127,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         dlg = MergeDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                Trans,Cent,Laue = dlg.GetSelection()
+                Trans,Cent,Laue,Smart = dlg.GetSelection()
             else:
                 return
         finally:
@@ -8158,6 +8167,11 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 Fo = np.average(fos[:,2],weights=wFo)
                 std = np.std(fos[:,2])
                 sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
+                if Smart:
+                    fos[:,2] = np.where(np.abs(fos[:,2]-Fo)/std > 2.0,Fo,fos[:,2])
+                    Fo = np.average(fos[:,2],weights=wFo)
+                    std = np.std(fos[:,2])
+                    sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
                 sumFo += np.sum(fos[:,2])
                 sumDf += np.sum(np.abs(fos[:,2]-Fo))
                 dlg.Update(ih)

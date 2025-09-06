@@ -11,8 +11,8 @@ import copy
 from . import GSASIIscriptable as G2sc
 from . import GSASIIctrlGUI as G2G
 #import tempfile
-isouploadsite = 'https://stokes.byu.edu/iso/isodistortuploadfile.php'
-isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
+isouploadsite = 'https://iso.byu.edu/isodistortuploadfile.php'
+isoformsite = 'https://iso.byu.edu/isodistortform.php'
 
 def HandleError(out):
     with open('out.html','wb') as fp:
@@ -26,11 +26,11 @@ def HandleError(out):
         except:
             print('Could not open URL')
 
-def UploadCIF(cifname):
-       #upload cif file to BYU web site
+def UploadCIF(cifname, upload_site=isouploadsite):
+    #upload cif file to BYU web site
     ciffile = open(cifname,'rb')
     up1 = {'toProcess':(cifname,ciffile),}
-    out1 = requests.post(isouploadsite,files=up1).text
+    out1 = requests.post(upload_site,files=up1).text
     ciffile.close()
 
     #retrieve BYU temp file name for cif file
@@ -237,6 +237,8 @@ def GetISOcif(out4,method):
     data3['strainamplitude'] = '0.1'
     # for item in data3:
     #     print(item,data3[item])
+    if 'appbtn' in data3:
+        data3.pop('appbtn')
     k = requests.post(isoformsite,data=data3)
     out5 = k.text   #this is output cif!
     #print(out5)

@@ -7899,23 +7899,77 @@ def UpdateControls(G2frame,data):
                 ShklSizer.Add(usrrej,0,WACV)
         return LSSizer,ShklSizer
 
-    def AuthSizer():
-        def OnAuthor(event):
-            event.Skip()
-            data['Author'] = auth.GetValue()
-
-        Author = data['Author']
-        authSizer = wx.BoxSizer(wx.HORIZONTAL)
-        authSizer.Add(wx.StaticText(G2frame.dataWindow,label=' CIF Author (last, first):'),0,WACV)
-        auth = wx.TextCtrl(G2frame.dataWindow,-1,value=Author,style=wx.TE_PROCESS_ENTER)
-        auth.Bind(wx.EVT_TEXT_ENTER,OnAuthor)
-        auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
-        authSizer.Add(auth,0,WACV)
-        return authSizer
+    # def AuthSizer():
+    #     def OnAuthor(event):
+    #         event.Skip()
+    #         data['Author'] = auth.GetValue()
+    #
+    #     Author = data['Author']
+    #     authSizer = wx.BoxSizer(wx.HORIZONTAL)
+    #     authSizer.Add(wx.StaticText(G2frame.dataWindow,label=' CIF Author (last, first):'),0,WACV)
+    #     auth = wx.TextCtrl(G2frame.dataWindow,-1,value=Author,style=wx.TE_PROCESS_ENTER)
+    #     auth.Bind(wx.EVT_TEXT_ENTER,OnAuthor)
+    #     auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
+    #     authSizer.Add(auth,0,WACV)
+    #     return authSizer
 
     def ClearFrozen(event):
         'Removes all frozen parameters by clearing the entire dict'
         Controls['parmFrozen'] = {}
+        wx.CallAfter(UpdateControls,G2frame,data)
+
+    def SearchGroups(event):
+        '''Create a dict to group similar histograms. Similarity
+        is judged by a common string that matches a template
+        supplied by the user
+        '''
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        for hist in Histograms:
+            if hist.startswith('PWDR '):
+                break
+        else:
+            G2G.G2MessageBox(G2frame,'No PWDR histograms found to group',
+                                     'Cannot group')
+            return
+        msg = ('Edit the histogram name below placing a question mark (?) '
+                'at the location '
+                'of characters that change between groups of '
+                'histograms. Use backspace or delete to remove '
+                'characters that should be ignored as they will '
+                'vary within a histogram group (e.g. Bank 1). '
+                'Be sure to leave enough characters so the string '
+                'can be uniquely matched.')
+        res = G2G.StringSearchTemplate(G2frame,'Set match template',msg,hist[5:])
+        re_res = re.compile(res.replace('.',r'\.').replace('?','.'))
+        setDict = {}
+        keyList = []
+        noMatchCount = 0
+        for hist in Histograms:
+            if hist.startswith('PWDR '):
+                m = re_res.search(hist)
+                if m:
+                    key = hist[m.start():m.end()]
+                    setDict[hist] = key
+                    if key not in keyList: keyList.append(key)
+                else:
+                    noMatchCount += 1
+        groupDict = {}
+        groupCount = {}
+        for k in keyList:
+            groupDict[k] = [hist for hist,key in setDict.items() if k == key]
+            groupCount[k] = len(groupDict[k])
+            
+        msg = f'With template {res!r} found '
+        if min(groupCount.values()) == max(groupCount.values()):
+            msg += f'{len(groupDict)} groups with {min(groupCount.values())} histograms each'
+        else:
+            msg += (f'{len(groupDict)} groups with between {min(groupCount.values())}'
+                       f' and {min(groupCount.values())} histograms in each')
+        if noMatchCount:
+            msg += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups"
+        G2G.G2MessageBox(G2frame,msg,'Grouping result')
+        data['Groups'] = {'groupDict':groupDict,'notGrouped':noMatchCount,
+                              'template':res}
         wx.CallAfter(UpdateControls,G2frame,data)
 
     # start of UpdateControls
@@ -7959,11 +8013,39 @@ def UpdateControls(G2frame,data):
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     subSizer = wx.BoxSizer(wx.HORIZONTAL)
     subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Global Settings'),0,WACV)
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping'),0,WACV)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND)    
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    groupDict = data.get('Groups',{}).get('groupDict',{})
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    if groupDict:
+        groupCount = [len(groupDict[k]) for k in groupDict]
+        if min(groupCount) == max(groupCount):
+            msg = f'Have {len(groupDict)} group(s) with {min(groupCount)} histograms in each'
+        else:
+            msg = (f'Have {len(groupDict)} group(s) with {min(groupCount)}'
+                       f' to {min(groupCount)} histograms in each')
+        notGrouped = data.get('Groups',{}).get('notGrouped',0)
+        if notGrouped:
+            msg += f". {notGrouped} not in a group"
+        subSizer.Add(wx.StaticText(G2frame.dataWindow,label=msg),0,WACV)
+        subSizer.Add((5,-1))
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Redefine groupings')
+    else:
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
+    btn.Bind(wx.EVT_BUTTON,SearchGroups)
+    subSizer.Add(btn)
     subSizer.Add((-1,-1),1,wx.EXPAND)
     mainSizer.Add(subSizer,0,wx.EXPAND)
-    mainSizer.Add(AuthSizer())
-    mainSizer.Add((5,5),0)
+    mainSizer.Add((-1,8))
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    # subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Global Settings'),0,WACV)
+    # subSizer.Add((-1,-1),1,wx.EXPAND)
+    # mainSizer.Add(subSizer,0,wx.EXPAND)
+    # mainSizer.Add(AuthSizer())
     Controls = data
     # count frozen variables (in appropriate place)
     for key in ('parmMinDict','parmMaxDict','parmFrozen'):

@@ -1687,7 +1687,7 @@ class ScrolledMultiEditor(wx.Dialog):
                 val = d[k]
                 continue
             d[k] = val
-            ctrl.SetValue(val)
+            ctrl.ChangeValue(val)
         for i in range(len(self.checkdictlst)):
             if i < n: continue
             self.checkdictlst[i][self.checkelemlst[i]] = self.checkdictlst[n][self.checkelemlst[n]]
@@ -10110,6 +10110,80 @@ If "Yes", GSAS-II will reopen the project after the update.
     G2fil.openInNewTerm(project)
     print ('exiting GSAS-II')
     sys.exit()
+
+def StringSearchTemplate(parent,title,prompt,start,help=None):
+    '''Dialog to obtain a single string value from user
+
+    :param wx.Frame parent: name of parent frame
+    :param str title: title string for dialog
+    :param str prompt: string to tell use what they are inputting
+    :param str start: default input value, if any
+    :param str help: if supplied, a help button is added to the dialog that
+      can be used to display the supplied help text/URL for setting this
+      variable. (Default is '', which is ignored.)
+    '''
+    def on_invalid():
+        G2MessageBox(parent,
+            'The pattern must retain some non-blank characters from the original string. Resetting so you can start again.','Try again')
+        valItem.SetValue(start)
+        return
+    def on_char_typed(event):
+        keycode = event.GetKeyCode()
+        if keycode == 32 or keycode == 63: # ' ' or '?' - replace with '?'
+            #has a range been selected?
+            sel = valItem.GetSelection()
+            if sel[0] == sel[1]:
+                insertion_point = valItem.GetInsertionPoint()
+                sel = (insertion_point,insertion_point+1)
+            for i in range(*sel):
+                valItem.Replace(i, i + 1, '?')
+            # Move the insertion point forward one character
+            valItem.SetInsertionPoint(i + 1)
+            # make sure some characters remain
+            if len(valItem.GetValue().replace('?','').strip()) == 0:
+                wx.CallAfter(on_invalid)
+            event.Skip(False)
+        elif keycode >= wx.WXK_SPACE: # anything else printable, ignore
+            event.Skip(False)
+        else: # arrows etc are processed naturally
+            event.Skip(True)
+    dlg = wx.Dialog(parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    dlg.CenterOnParent()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    txt = wx.StaticText(dlg,wx.ID_ANY,prompt)
+    sizer1.Add((10,-1),1,wx.EXPAND)
+    txt.Wrap(500)
+    sizer1.Add(txt,0,wx.ALIGN_CENTER)
+    sizer1.Add((10,-1),1,wx.EXPAND)
+    if help:
+        sizer1.Add(HelpButton(dlg,help),0,wx.ALL)
+    mainSizer.Add(sizer1,0,wx.EXPAND)
+    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    valItem = wx.TextCtrl(dlg,wx.ID_ANY,value=start,style=wx.TE_PROCESS_ENTER)
+    valItem.Bind(wx.EVT_CHAR, on_char_typed)
+    valItem.Bind(wx.EVT_TEXT_ENTER, lambda event: event.Skip(False))
+    wx.CallAfter(valItem.SetSelection,0,0) # clear the initial selection
+    mainSizer.Add(valItem,1,wx.EXPAND)
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_OK)
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    ans = dlg.ShowModal()
+    if ans != wx.ID_OK:
+        dlg.Destroy()
+        return
+    else:
+        val = valItem.GetValue()
+        dlg.Destroy()
+    return val
 
 if __name__ == '__main__':
     app = wx.App()

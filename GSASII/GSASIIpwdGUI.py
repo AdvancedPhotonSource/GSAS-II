@@ -2910,6 +2910,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     insVal['Type'] = 'SEC'      # in 3 places!
                     Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId) 
                     Pattern[0]['Type'] = 'SEC'
+                    Pattern[1]['Type'] = 'SEC'          #Here, too!
         updateData(insVal,insRef)
         wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
 

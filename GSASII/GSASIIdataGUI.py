@@ -8158,8 +8158,17 @@ def UpdatePWHKPlot(G2frame,kind,item):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         sumDf = 0.
         sumFo = 0.
+        Nmerge = {1:[0,0],}
+        MaxN = 1
         for ih,hkl in enumerate(HKLdict):
             HKL = HKLdict[hkl]
+            Nhkl = len(HKL[1])
+            if Nhkl not in Nmerge:
+                Nmerge.update({Nhkl:[1,0],})
+                MaxN = max(MaxN,Nhkl)
+                
+            else:
+                Nmerge[Nhkl][0] += 1
             newHKL = list(HKL[0])+list(HKL[1][0])
             if len(HKL[1]) > 1:
                 fos = np.array(HKL[1])
@@ -8168,7 +8177,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 std = np.std(fos[:,2])
                 sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
                 if Smart:
-                    fos[:,2] = np.where(np.abs(fos[:,2]-Fo)/std > 2.0,Fo,fos[:,2])
+                    test = np.abs(fos[:,2]-Fo)/std
+                    Nmerge[Nhkl][1] += len(fos[:,2][test >2.0])
+                    fos[:,2] = np.where(test > 2.0,Fo,fos[:,2])
                     Fo = np.average(fos[:,2],weights=wFo)
                     std = np.std(fos[:,2])
                     sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
@@ -8181,6 +8192,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
             if newHKL[5+Super] > 0.:
                 mergeRef.append(list(newHKL))
         dlg.Destroy()
+        print(' Duplicate reflection statistics:')
+        for ihkl in range(MaxN):
+            try:
+                print('Ndup hkl:',ihkl+1,' Number: ',Nmerge[ihkl+1][0],' Rej:',Nmerge[ihkl+1][1])
+            except KeyError:
+                print('Ndup hkl:',ihkl+1,' Number: ',0)
         if Super:
             mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,3),2),1),0)
         else:

@@ -20,7 +20,6 @@ import copy
 import random as ran
 import pickle
 import scipy.interpolate as si
-from sympy import symbols, nsimplify, Rational as SRational
 from fractions import Fraction
 from . import GSASIIpath
 from . import GSASIImath as G2mth
@@ -41,10 +40,15 @@ from . import GSASIIsasd as G2sasd
 from . import G2shapes
 from . import SUBGROUPS as kSUB
 from . import k_vector_search as kvs
-from k_vec_solve import k_vec_solve as kvsolve
 from GSASII.imports.G2phase_CIF import CIFPhaseReader as CIFpr
 from . import GSASIIscriptable as G2sc
 from . import GSASIImiscGUI as G2IO
+try:
+    from sympy import symbols, nsimplify, Rational as SRational
+    from k_vec_solve import k_vec_solve as kvsolve
+except ImportError:
+        G2fil.NeededPackage({'ISODISTORT k-vector search':['sympy']})
+
 try:
     VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
     WACV = wx.ALIGN_CENTER_VERTICAL

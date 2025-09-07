@@ -48,6 +48,7 @@ try:
     from k_vec_solve import k_vec_solve as kvsolve
 except ImportError:
         G2fil.NeededPackage({'ISODISTORT k-vector search':['sympy']})
+        symbols = None
 
 try:
     VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
@@ -5174,8 +5175,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def OnISODISTORT_kvec(phase_nam):   # needs attention from Yuanpeng
-        '''Search for k-vector using the ISODISTORT web service
+    def OnISODISTORT_kvec(event):
+        '''Search for k-vector using the ISODISTORT web service.
+        Developed by Yuanpeng Zhang with help from Branton Campbell.
         '''
         def _showWebPage(event):
             'Show a web page when the user presses the "show" button'
@@ -5292,6 +5294,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             return data_update
 
         # start of OnISODISTORT_kvec computations
+        if symbols is None:
+            G2G.G2MessageBox(G2frame,
+                    'Unable to perform ISODISTORT kvec search without the sympy module. Use Help/Add packages... to address','No sympy')
+            return
         import tempfile
         import re
         import requests

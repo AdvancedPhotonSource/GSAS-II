@@ -39,13 +39,11 @@ from . import GSASIIElem as G2elem
 from . import GSASIIsasd as G2sasd
 from . import G2shapes
 from . import SUBGROUPS as kSUB
-from . import k_vector_search as kvs
 from GSASII.imports.G2phase_CIF import CIFPhaseReader as CIFpr
 from . import GSASIIscriptable as G2sc
 from . import GSASIImiscGUI as G2IO
 try:
     from sympy import symbols, nsimplify, Rational as SRational
-    from k_vec_solve import k_vec_solve as kvsolve
 except ImportError:
         G2fil.NeededPackage({'ISODISTORT k-vector search':['sympy']})
         symbols = None
@@ -4612,6 +4610,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         Generates & plots reflections
         '''
+        from . import k_vector_search as kvs
         data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         cells,dminx = data[2:4]
         if event is None:
@@ -5206,6 +5205,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         def grab_all_kvecs(out_html):
             """Extract all k-vectors from the ISODISTORT output HTML."""
             import re
+            from k_vec_solve import k_vec_solve as kvsolve
 
             kvec1_pattern = r'<SELECT NAME="kvec1">(.*?)</SELECT>'
             kvec1_match = re.search(kvec1_pattern, out_html, re.DOTALL)
@@ -5273,6 +5273,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 dict: New entries and those need to be corrected in the data
                 to be used in the post request.
             """
+            from k_vec_solve import k_vec_solve as kvsolve
             k_forms = k_vec_dict.items()
             all_keys = list(k_forms)
 
@@ -5298,9 +5299,14 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             G2G.G2MessageBox(G2frame,
                     'Unable to perform ISODISTORT kvec search without the sympy module. Use Help/Add packages... to address','No sympy')
             return
+        try:
+            import requests
+        except:
+            G2G.G2MessageBox(G2frame,
+                    'Unable to perform ISODISTORT kvec search without the requests module. Use Help/Add packages... to address','No requests')
+            return
         import tempfile
         import re
-        import requests
         from GSASII.exports import G2export_CIF
         from . import ISODISTORT as ISO
         isoformsite = 'https://iso.byu.edu/isodistortform.php'
@@ -5422,7 +5428,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         isocif_out_cif = requests.post(isocifformsite, data=isocif_formDict).text
 
         kvec_dict = grab_all_kvecs(out2)
-        lat_sym = Phase['General']['SGData']
+        #lat_sym = Phase['General']['SGData']
         data_update = setup_kvec_input(kpoint, kvec_dict, isocif_out_cif)
         for key, value in data_update.items():
             data[key] = value
@@ -5461,13 +5467,13 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         resId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
         Restraints = G2frame.GPXtree.GetItemPyData(resId)
         resId = G2gd.GetGPXtreeItemId(G2frame, resId, phsnam)
-        savedRestraints = None
+        #savedRestraints = None
         if phsnam in Restraints:
             Restraints[phsnam]['Bond']['Bonds'] = []
             Restraints[phsnam]['Angle']['Angles'] = []
-            savedRestraints = Restraints[phsnam]
+            #savedRestraints = Restraints[phsnam]
             del Restraints[phsnam]
-        orgData = copy.deepcopy(data)
+        #orgData = copy.deepcopy(data)
 
         for ir_opt, _ in ir_options:
             print("Processing irrep:", ir_opt)
@@ -5697,6 +5703,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         def OnKvecSearch(event):
             'Run the k-vector search'
+            from . import k_vector_search as kvs
 
             try:
                 import seekpath

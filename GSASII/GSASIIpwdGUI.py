@@ -9738,6 +9738,7 @@ def UpdatePDFGrid(G2frame,data):
             wx.CallAfter(OnComputePDF,None)
 
         def OnDetType(event):
+            #TODO: to be removed
             data['DetType'] = detType.GetValue()
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
             wx.CallAfter(OnComputePDF,None)
@@ -9799,6 +9800,7 @@ def UpdatePDFGrid(G2frame,data):
 
         sfgSizer.Add((5,5),0)
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
+        #TODO: this should be removed
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Detector type: '),0,WACV)
         choice = ['Area detector','Point detector']
         detType = wx.ComboBox(G2frame.dataWindow,value=data['DetType'],choices=choice,
@@ -9810,6 +9812,7 @@ def UpdatePDFGrid(G2frame,data):
             obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'ObliqCoeff',nDig=(10,3),xmin=0.0,xmax=1.0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
             sqBox.Add(obliqCoeff,0)
+        #TODO: end of proposed removal
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Flat Bkg.: '),0,WACV)
         G2frame.flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),
                 typeHint=float,OnLeave=AfterChangeNoRefresh)

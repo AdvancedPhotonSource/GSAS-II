@@ -344,8 +344,10 @@ def CalcPDF(data,inst,limits,xydata):
         MuR = Abs*data['Diam']/20.0
         IofQ[1][1] /= Absorb(data['Geometry'],MuR,Tth)
         IofQ[1][1] /= Polarization(inst['Polariz.'][1],Tth,Azm=inst['Azimuth'][1])[0]
+        #TODO: to be removed
         if data['DetType'] == 'Area detector':
             IofQ[1][1] *= Oblique(data['ObliqCoeff'],Tth)
+        #TODO: end of remove
     elif 'T' in inst['Type'][0]:    #neutron TOF normalized data - needs wavelength dependent absorption
         wave = 2.*G2lat.TOF2dsp(inst,IofQ[1][0])*npsind(inst['2-theta'][1]/2.)
         Els = ElList.keys()

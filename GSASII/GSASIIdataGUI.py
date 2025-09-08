@@ -83,7 +83,7 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(240,240,240)
 DULL_YELLOW = (230,230,190)
-
+GkDelta = chr(0x0394)
 # transformation matrices
 commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.]]),
     'ba-c':np.array([[0.,1.,0.],[1.,0.,0.],[0.,0.,-1.]]),'-cba':np.array([[0.,0.,-1.],[0.,1.,0.],[1.,0.,0.]]),
@@ -8278,19 +8278,23 @@ def UpdatePWHKPlot(G2frame,kind,item):
     def OnErrorAnalysis(event):
         '''Plots an "Abrams" plot - sorted delta/sig across data set.
         Should be straight line of slope 1 - never is'''
-        def OnPlotFoFcVsFc(kind):
+        def OnPlotFoFcVsFc():
             ''' Extinction check, plots Fo-Fc & 1/ExtC vs Fo for single crystal data '''
-            iFo,iFc,iExt = 5,7,11
+            test = lambda xy: (xy[iFc+Super]>0 and xy[iFo+Super]>0)
+            iFo,iSig,iFc,iExt = 5,6,7,11
             refList = data[1]['RefList']
-            XY = np.array([[xy[iFo+Super],xy[iFo+Super]-xy[iFc+Super]] for xy in refList if xy[3+Super]>0])
-            XY = np.sqrt(np.abs(XY)).T
-            XE = [[xy[iFo+Super],xy[iExt+Super]] for xy in refList if xy[3+Super]>0]
+            wtFctr = data[0]['wtFactor']
+            Fo = np.sqrt(np.array([xy[iFo+Super] for xy in refList if test(xy)]))
+            Fc = np.sqrt(np.array([xy[iFc+Super] for xy in refList if test(xy)]))
+            Sig = np.array([xy[iSig+Super] for xy in refList if test(xy)])      #sig(fo^2)
+            XE = [[xy[iFc+Super],xy[iExt+Super]] for xy in refList if test(xy)]
             XE = np.array([[np.sqrt(xe[0]),1./xe[1]] for xe in XE]).T
-            G2plt.PlotXY(G2frame,[[XY[0],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fo|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
+            G2plt.PlotXY(G2frame,[[Fc,2.*Fo*(Fo-Fc)/Sig],],XY2=[XE,],labelX='|Fc|',labelY=GkDelta+'F/sig, 1/ExtC',newPlot=False,
                Title='Extinction check',lines=False,points2=True,names=['|Fo|-|Fc|',],names2=['1/ExtC',])
+            
         G2plt.PlotDeltSig(G2frame,kind)
         if kind in ['HKLF',]:
-            OnPlotFoFcVsFc(kind)
+            OnPlotFoFcVsFc()
         
 #    def OnCompression(event):
 #        data[0] = int(comp.GetValue())

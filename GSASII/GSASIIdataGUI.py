@@ -8286,7 +8286,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             wtFctr = data[0]['wtFactor']
             Fo = np.sqrt(np.array([xy[iFo+Super] for xy in refList if test(xy)]))
             Fc = np.sqrt(np.array([xy[iFc+Super] for xy in refList if test(xy)]))
-            Sig = np.array([xy[iSig+Super] for xy in refList if test(xy)])      #sig(fo^2)
+            Sig = np.array([xy[iSig+Super] for xy in refList if test(xy)])/wtFctr      #sig(fo^2)/wtFactor (1/GOF)
             XE = [[xy[iFc+Super],xy[iExt+Super]] for xy in refList if test(xy)]
             XE = np.array([[np.sqrt(xe[0]),1./xe[1]] for xe in XE]).T
             G2plt.PlotXY(G2frame,[[Fc,2.*Fo*(Fo-Fc)/Sig],],XY2=[XE,],labelX='|Fc|',labelY=GkDelta+'F/sig, 1/ExtC',newPlot=False,

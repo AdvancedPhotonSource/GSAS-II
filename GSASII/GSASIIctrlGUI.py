@@ -7691,6 +7691,15 @@ def ShowHelp(helpType,frame,helpMode=None):
         helplink = os.path.join(path2GSAS2,'help',helplink)
         pfx = "file://"
         if sys.platform.lower().startswith('win'):
+            # really don't understand what urlunsplit is doing, but this seems
+            # to prevent windows from encoding the # for the anchor
+            # (suggested by Google's AI!) 
+            from urllib.parse import urlunsplit
+            f = helplink.split('#')[0]
+            a = ''
+            if '#' in helplink:
+                a = helplink.split('#')[1]
+            helplink = urlunsplit(['file','',f,'',a])
             pfx = ''
         #if GSASIIpath.GetConfigValue('debug'): print 'DBG_Help link=',pfx+helplink
         if htmlFirstUse:

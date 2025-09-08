@@ -13411,7 +13411,10 @@ tab, use Operations->"Pawley create")''')
         ind = Pages.index(G2frame.lastSelectedPhaseTab)
         if ind:
             UpdateGeneral(SkipDraw=ind)
-            G2frame.phaseDisplay.SetSelection(ind)
+            #G2frame.phaseDisplay.SetSelection(ind)
+            # on windows, need to wait for previous to finish before
+            # going to selected tab
+            wx.CallAfter(G2frame.phaseDisplay.SetSelection,ind)
             return
     ChangePage(0)
     

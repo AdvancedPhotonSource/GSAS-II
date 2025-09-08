@@ -129,10 +129,12 @@ class MergeDialog(wx.Dialog):
             self.Trans = np.eye(4)
         else:
             self.Trans = np.eye(3)
+        self.Type = data[0]['Type']
         self.Cent = 'noncentrosymmetric'
         self.Laue = '1'
         self.Class = 'triclinic'
         self.Common = 'abc'
+        self.Smart = False
         self.Draw()
 
     def Draw(self):
@@ -159,6 +161,9 @@ class MergeDialog(wx.Dialog):
             self.Common = Obj.GetValue()
             self.Trans = commonTrans[self.Common]
             wx.CallAfter(self.Draw)
+            
+        def OnSmart(event):
+            self.Smart = not self.Smart
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -215,6 +220,10 @@ class MergeDialog(wx.Dialog):
         Laue.Bind(wx.EVT_COMBOBOX,OnLaue)
         mergeSizer.Add(Laue,0,WACV)
         mainSizer.Add(mergeSizer)
+        if self.Type == 'SEC':
+            Smart = wx.CheckBox(self.panel,label=' Do smart merge for microED?')
+            Smart.Bind(wx.EVT_CHECKBOX,OnSmart)
+        mainSizer.Add(Smart,0)    
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -234,7 +243,7 @@ class MergeDialog(wx.Dialog):
         self.Fit()
 
     def GetSelection(self):
-        return self.Trans,self.Cent,self.Laue
+        return self.Trans,self.Cent,self.Laue,self.Smart
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -8200,7 +8209,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         dlg = MergeDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                Trans,Cent,Laue = dlg.GetSelection()
+                Trans,Cent,Laue,Smart = dlg.GetSelection()
             else:
                 return
         finally:
@@ -8231,8 +8240,17 @@ def UpdatePWHKPlot(G2frame,kind,item):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         sumDf = 0.
         sumFo = 0.
+        Nmerge = {1:[0,0],}
+        MaxN = 1
         for ih,hkl in enumerate(HKLdict):
             HKL = HKLdict[hkl]
+            Nhkl = len(HKL[1])
+            if Nhkl not in Nmerge:
+                Nmerge.update({Nhkl:[1,0],})
+                MaxN = max(MaxN,Nhkl)
+                
+            else:
+                Nmerge[Nhkl][0] += 1
             newHKL = list(HKL[0])+list(HKL[1][0])
             if len(HKL[1]) > 1:
                 fos = np.array(HKL[1])
@@ -8240,6 +8258,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 Fo = np.average(fos[:,2],weights=wFo)
                 std = np.std(fos[:,2])
                 sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
+                if Smart:
+                    test = np.abs(fos[:,2]-Fo)/std
+                    Nmerge[Nhkl][1] += len(fos[:,2][test >2.0])
+                    fos[:,2] = np.where(test > 2.0,Fo,fos[:,2])
+                    Fo = np.average(fos[:,2],weights=wFo)
+                    std = np.std(fos[:,2])
+                    sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
                 sumFo += np.sum(fos[:,2])
                 sumDf += np.sum(np.abs(fos[:,2]-Fo))
                 dlg.Update(ih)
@@ -8249,6 +8274,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
             if newHKL[5+Super] > 0.:
                 mergeRef.append(list(newHKL))
         dlg.Destroy()
+        print(' Duplicate reflection statistics:')
+        for ihkl in range(MaxN):
+            try:
+                print('Ndup hkl:',ihkl+1,' Number: ',Nmerge[ihkl+1][0],' Rej:',Nmerge[ihkl+1][1])
+            except KeyError:
+                print('Ndup hkl:',ihkl+1,' Number: ',0)
         if Super:
             mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,3),2),1),0)
         else:

@@ -1068,6 +1068,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.pickTicknum = Page.phaseList.index(pick)
                 resetlist = []
                 for pId,phase in enumerate(Page.phaseList): # set the tickmarks to a lighter color
+                    if phase not in Page.tickDict: return
                     col = Page.tickDict[phase].get_color()
                     rgb = mpcls.ColorConverter().to_rgb(col)
                     rgb_light = [(2 + i)/3. for i in rgb]
@@ -1635,6 +1636,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.lastPlotType
     except:
         G2frame.lastPlotType = None
+    groupDict = {}
     if plotType == 'PWDR':
         try:
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
@@ -1655,6 +1657,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.lastPlotType = Parms['Type'][1]
         except TypeError:       #bad id from GetGPXtreeItemId - skip
             pass
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
     try:
         G2frame.FixedLimits
     except:
@@ -1994,8 +1998,154 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             xLabel = 'E, keV'
         else:
             xLabel = r'$\mathsf{2\theta}$'
+    # working here
+    groupName = None
+    if groupDict:
+        histname = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        for key in groupDict:
+            if histname in groupDict[key]:
+                groupName = key
+                break
+        else:
+            print('No group for histogram',histname)
+    
+    if groupName is not None:
+        # plot a group of histograms
+        Page.Choice = [' key press',
+                'f: toggle full-length ticks','g: toggle grid',
+                's: toggle sqrt plot',
+                'q: toggle Q plot','t: toggle d-spacing plot']
+        Plot.set_visible(False) # removes "big" plot
+        gXmin = {}
+        gXmax = {}
+        gYmin = {}
+        gYmax = {}
+        gX = {}
+        gdat = {}
+        totalrange = 0
+        DZmax = 0
+        DZmin = 0
+        nx = len(groupDict[groupName])
+        for i,h in enumerate(groupDict[groupName]):
+            gPatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, h)
+            gParms,_ = G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,gPatternId,
+                                          'Instrument Parameters'))
+            LimitId = G2gd.GetGPXtreeItemId(G2frame,gPatternId, 'Limits')
+            limdat = G2frame.GPXtree.GetItemPyData(LimitId)
+            gd = G2frame.GPXtree.GetItemPyData(gPatternId)
+            # drop data outside limits
+            mask = (limdat[1][0] <= gd[1][0]) & (gd[1][0] <= limdat[1][1])
+            gdat[i] = {}
+            for j in range(6):
+                y = gd[1][j][mask]
+                if Page.plotStyle['sqrtPlot']:
+                    gdat[i][j] = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
+                else:
+                    gdat[i][j] = y
+            gYmax[i] = max(max(gdat[i][1]),max(gdat[i][3]))
+            gYmin[i] = min(min(gdat[i][1]),min(gdat[i][3]))
+            if Page.plotStyle['qPlot']:
+                gX[i] = 2.*np.pi/G2lat.Pos2dsp(gParms,gdat[i][0])
+            elif Page.plotStyle['dPlot']:
+                gX[i] = G2lat.Pos2dsp(gParms,gdat[i][0])
+            else:
+                gX[i] = gdat[i][0]
+            gXmin[i] = min(gX[i])
+            gXmax[i] = max(gX[i])
+            # obs-calc/sigma
+            DZ = (gdat[i][1]-gdat[i][3])*np.sqrt(gdat[i][2])
+            DZmin = min(DZmin,DZ.min())
+            DZmax = max(DZmax,DZ.max())
+            totalrange += gXmax[i]-gXmin[i]
+        # apportion axes lengths so that units are equal
+        xfrac = [(gXmax[i]-gXmin[i])/totalrange for i in range(nx)]
+        GS_kw = {'height_ratios':[4, 1], 'width_ratios':xfrac,}
 
-    if G2frame.Weight and not G2frame.Contour:
+        Plots = Page.figure.subplots(2,nx,sharey='row',sharex='col',
+                                         gridspec_kw=GS_kw)
+        Page.figure.subplots_adjust(left=5/100.,bottom=16/150.,
+            right=.99,top=1.-3/200.,hspace=0,wspace=0)
+        for i in range(nx):
+            Plots[0,i].set_xlim(gXmin[i],gXmax[i])
+            Plots[1,i].set_xlim(gXmin[i],gXmax[i])
+            Plots[1,i].set_ylim(DZmin,DZmax)
+            Plots[0,i].set_ylim(-len(Page.phaseList)*5,102)
+
+        # pretty up the tick labels
+        Plots[0,0].tick_params(axis='y', direction='inout', left=True, right=True)
+        Plots[1,0].tick_params(axis='y', direction='inout', left=True, right=True)
+        for ax in Plots[:,1:].ravel():
+            ax.tick_params(axis='y', direction='in', left=True, right=True)
+        # remove 1st upper y-label so that it does not overlap with lower box
+        Plots[0,0].get_yticklabels()[0].set_visible(False)
+        Plots[1,0].set_ylabel(r'$\mathsf{\Delta I/\sigma_I}$',fontsize=12)
+        if Page.plotStyle['sqrtPlot']:
+            Plots[0,0].set_ylabel(r'$\rm\sqrt{Normalized\ intensity}$',fontsize=12)
+        else:
+            Plots[0,0].set_ylabel('Normalized Intensity',fontsize=12)
+        Page.figure.supxlabel(xLabel)
+            
+        for i,h in enumerate(groupDict[groupName]):
+            Plot = Plots[0,i]
+            Plot1 = Plots[1,i]
+            xye = gdat[i]
+            DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
+            DifLine = Plot1.plot(gX[i],DZ,pwdrCol['Diff_color']) #,picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
+            pP = '+'
+            lW = 1.5
+            scaleY = lambda Y: (Y-gYmin[i])/(gYmax[i]-gYmin[i])*100
+            Plot.plot(gX[i],scaleY(xye[1]),marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,picker=True,pickradius=3.,
+                            clip_on=Clip_on,label=incCptn('obs'))
+            Plot.plot(gX[i],scaleY(xye[3]),pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
+            Plot.plot(gX[i],scaleY(xye[4]),pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
+
+            l = GSASIIpath.GetConfigValue('Tick_length',8.0)
+            w = GSASIIpath.GetConfigValue('Tick_width',1.)
+            for pId,phase in enumerate(Page.phaseList):
+                if 'list' in str(type(Phases[phase])):
+                    continue
+                if phase in Page.phaseColors:
+                    plcolor = Page.phaseColors[phase]
+                else: # how could this happen? 
+                    plcolor = 'k'
+                    #continue
+                peaks = Phases[phase].get('RefList',[])
+                if not len(peaks):
+                    continue
+                if Phases[phase].get('Super',False):
+                    peak = np.array([[peak[5],peak[6]] for peak in peaks])
+                else:
+                    peak = np.array([[peak[4],peak[5]] for peak in peaks])
+#                pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
+                pos = 2.5-len(Page.phaseList)*5 + pId*5
+                pos = pos * np.ones_like(peak)
+                if Page.plotStyle['qPlot']:
+                    xtick = 2*np.pi/peak.T[0]
+                elif Page.plotStyle['dPlot']:
+                    xtick = peak.T[0]
+                else:
+                    xtick = peak.T[1]
+                if not Page.plotStyle.get('flTicks',False):     # short tick-marks
+                    Plot.plot(
+                        xtick,pos,'|',mew=w,ms=l,picker=True,pickradius=3.,
+                        label=phase,color=plcolor)
+                else:                                           # full length tick-marks
+                    if len(xtick) > 0:
+                        # create an ~hidden tickmark to create a legend entry
+                        Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
+                                                label=phase,color=plcolor)[0]
+                    for xt in xtick: # a separate line for each reflection position
+                            Plot.axvline(xt,color=plcolor,
+                                        picker=True,pickradius=3.,
+                                        label='_FLT_'+phase,lw=0.5)
+        # Not sure if this does anything
+        G2frame.dataWindow.moveTickLoc.Enable(False)
+        G2frame.dataWindow.moveTickSpc.Enable(False)
+        #     G2frame.dataWindow.moveDiffCurve.Enable(True)
+        Page.canvas.draw()
+        return
+    elif G2frame.Weight and not G2frame.Contour:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         GS_kw = {'height_ratios':[4, 1],}
         # try:

@@ -2025,8 +2025,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         totalrange = 0
         DZmax = 0
         DZmin = 0
+        RefTbl = {}
+        histlbl = {}
         nx = len(groupDict[groupName])
+        # find portion of hist name that is the same and different
+        h0 = groupDict[groupName][0]
+        msk = [True] * len(h0)
+        for h in groupDict[groupName][1:]:
+            msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h,msk)]
+        # place centered-dot in loc of non-common letters
+        commonltrs = ''.join([h0i if m else '\u00B7' for (h0i,m) in zip(h0,msk)])
         for i,h in enumerate(groupDict[groupName]):
+            histlbl[i] = ''.join([hi for (hi,m) in zip(h,msk) if not m]) # unique letters
             gPatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, h)
             gParms,_ = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,gPatternId,
@@ -2034,6 +2044,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             LimitId = G2gd.GetGPXtreeItemId(G2frame,gPatternId, 'Limits')
             limdat = G2frame.GPXtree.GetItemPyData(LimitId)
             gd = G2frame.GPXtree.GetItemPyData(gPatternId)
+            RefTbl[i] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,gPatternId,'Reflection Lists'))
             # drop data outside limits
             mask = (limdat[1][0] <= gd[1][0]) & (gd[1][0] <= limdat[1][1])
             gdat[i] = {}
@@ -2070,8 +2081,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plots[0,i].set_xlim(gXmin[i],gXmax[i])
             Plots[1,i].set_xlim(gXmin[i],gXmax[i])
             Plots[1,i].set_ylim(DZmin,DZmax)
-            Plots[0,i].set_ylim(-len(Page.phaseList)*5,102)
-
+            if not Page.plotStyle.get('flTicks',False):
+                Plots[0,i].set_ylim(-len(Page.phaseList)*5,102)
+            else:
+                Plots[0,i].set_ylim(-1,102)
+                
         # pretty up the tick labels
         Plots[0,0].tick_params(axis='y', direction='inout', left=True, right=True)
         Plots[1,0].tick_params(axis='y', direction='inout', left=True, right=True)
@@ -2084,18 +2098,29 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plots[0,0].set_ylabel(r'$\rm\sqrt{Normalized\ intensity}$',fontsize=12)
         else:
             Plots[0,0].set_ylabel('Normalized Intensity',fontsize=12)
+        Page.figure.text(0.001,0.03,commonltrs,fontsize=13)
         Page.figure.supxlabel(xLabel)
-            
         for i,h in enumerate(groupDict[groupName]):
             Plot = Plots[0,i]
             Plot1 = Plots[1,i]
+            if Page.plotStyle['qPlot']:
+                pos = 0.98
+                ha = 'right'
+            else:
+                pos = 0.02
+                ha = 'left'
+            Plot.text(pos,0.98,histlbl[i],
+                              transform=Plot.transAxes,
+                              verticalalignment='top',
+                              horizontalalignment=ha,
+                              fontsize=14)
             xye = gdat[i]
             DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
             DifLine = Plot1.plot(gX[i],DZ,pwdrCol['Diff_color']) #,picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
             pP = '+'
             lW = 1.5
             scaleY = lambda Y: (Y-gYmin[i])/(gYmax[i]-gYmin[i])*100
-            Plot.plot(gX[i],scaleY(xye[1]),marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,picker=True,pickradius=3.,
+            Plot.plot(gX[i],scaleY(xye[1]),marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,# picker=True,pickradius=3.,
                             clip_on=Clip_on,label=incCptn('obs'))
             Plot.plot(gX[i],scaleY(xye[3]),pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
             Plot.plot(gX[i],scaleY(xye[4]),pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
@@ -2110,16 +2135,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else: # how could this happen? 
                     plcolor = 'k'
                     #continue
-                peaks = Phases[phase].get('RefList',[])
+                peaks = []
+                if phase in RefTbl[i]:
+                    peaks = RefTbl[i][phase].get('RefList',[])
+                    super = RefTbl[i][phase].get('Super',False)
+                # else:
+                #     peaks = Phases[phase].get('RefList',[])
+                #     super = Phases[phase].get('Super',False)
                 if not len(peaks):
                     continue
-                if Phases[phase].get('Super',False):
+                if super:
                     peak = np.array([[peak[5],peak[6]] for peak in peaks])
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
-#                pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
-                pos = 2.5-len(Page.phaseList)*5 + pId*5
-                pos = pos * np.ones_like(peak)
+                pos = 2.5-len(Page.phaseList)*5 + pId*5 # tick positions hard-coded
                 if Page.plotStyle['qPlot']:
                     xtick = 2*np.pi/peak.T[0]
                 elif Page.plotStyle['dPlot']:
@@ -2128,7 +2157,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     xtick = peak.T[1]
                 if not Page.plotStyle.get('flTicks',False):     # short tick-marks
                     Plot.plot(
-                        xtick,pos,'|',mew=w,ms=l,picker=True,pickradius=3.,
+                        xtick,pos * np.ones_like(peak),
+                        '|',mew=w,ms=l, # picker=True,pickradius=3.,
                         label=phase,color=plcolor)
                 else:                                           # full length tick-marks
                     if len(xtick) > 0:

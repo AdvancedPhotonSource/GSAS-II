@@ -66,9 +66,9 @@ Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
 Gkchisq = chr(0x03C7)+chr(0xb2)
 plotDebug = False
 timeDebug = GSASIIpath.GetConfigValue('Show_timing',False)
-obsInCaption = True # include the observed, calc,... items in the plot caption (PlotPatterns)
 # options for publication-quality Rietveld plots
 plotOpt = {}
+plotOpt['obsInCaption'] = True # include the observed, calc,... items in the plot caption (PlotPatterns)
 plotOpt['labelSize'] = '11'
 plotOpt['dpi'] = 600
 plotOpt['width'] = 8.
@@ -222,8 +222,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.ErrorBars = not G2frame.ErrorBars
         elif event.key == 'T' and 'PWDR' in plottype:
             Page.plotStyle['title'] = not Page.plotStyle.get('title',True)
-        elif event.key == 'f' and 'PWDR' in plottype: # short or full length tick-marks
-            Page.plotStyle['flTicks'] = not Page.plotStyle.get('flTicks',False)
+        elif event.key == 'f' and 'PWDR' in plottype: # short,full length or no tick-marks
+            Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
         elif event.key == 'x'and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
@@ -314,11 +314,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['Offset'][1] -= 1.
         elif event.key == 'r' and not G2frame.SinglePlot:
             Page.plotStyle['Offset'][1] += 1.
-        elif event.key == 'o':
-            if G2frame.SinglePlot and not G2frame.Contour:
-                global obsInCaption # include the observed, calc,... items in the plot caption (PlotPatterns)
-                obsInCaption = not obsInCaption
-            elif not G2frame.SinglePlot: 
+        elif event.key == 'o':    # controls caption
+            if G2frame.Contour: return
+            # include the observed, calc,... items in the plot caption (PlotPatterns)
+            plotOpt['obsInCaption'] = not plotOpt['obsInCaption']
+        elif event.key in ['O','shift+o']:    # resets offsets
+            if G2frame.Contour: return
+            if not G2frame.SinglePlot: # waterfall: reset the offsets
                 G2frame.Cmax = 1.0
                 G2frame.Cmin = 0.0
                 Page.plotStyle['Offset'] = [0,0]
@@ -411,7 +413,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['chanPlot'] = False
         elif event.key == 'm':
             if not G2frame.Contour:                
-                G2frame.SinglePlot = not G2frame.SinglePlot                
+                G2frame.SinglePlot = not G2frame.SinglePlot
+                if not G2frame.SinglePlot: plotOpt['obsInCaption'] = False # remove caption from waterfall
             G2frame.Contour = False
             newPlot = True
         elif event.key == 'F' and not G2frame.SinglePlot:
@@ -430,7 +433,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             dlg.Destroy()
             newPlot = True
         elif event.key in ['+','=','shift+=']: # assumes US keyboard
-            G2frame.plusPlot = (G2frame.plusPlot+1)%3
+            if G2frame.Contour: return
+            if G2frame.SinglePlot:
+                G2frame.plusPlot = (G2frame.plusPlot+1)%3
+            else:
+                G2frame.plusPlot = (G2frame.plusPlot+1)%4
         elif event.key == '/':
             Page.plotStyle['Normalize'] = not Page.plotStyle['Normalize']
             newPlot = True
@@ -1488,7 +1495,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         '''Adds a underscore to "hide" a MPL object from the legend if 
         obsInCaption is False
         '''
-        if obsInCaption:
+        if plotOpt['obsInCaption']:
             return string
         else:
             return '_'+string
@@ -1664,7 +1671,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     except:
         G2frame.UseLimits = {i:[False,False] for i in ('xlims','ylims','dylims','cylims')}
     #=====================================================================================
-    # code to setup for plotting Rietveld results. Turns off multiplot,
+    # code to setup for plotting Rietveld results. Turns off multiplot (contour/waterfall),
     # sqrtplot, turn on + and weight plot, but sqrtPlot qPlot and dPlot are not changed.
     # Magnification regions are ignored.
     # the last-plotted histogram (from G2frame.PatternId) is used for this plotting
@@ -1825,10 +1832,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 'f: toggle full-length ticks','g: toggle grid',
                 'X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
-            if obsInCaption:
-                Page.Choice += ['o: remove obs, calc,... from legend',]
+            if plotOpt['obsInCaption']:
+                addrem = 'remove'
             else:
-                Page.Choice += ['o: add obs, calc,... to legend',]
+                addrem = 'add'
+            if G2frame.SinglePlot:
+                what = "obs, calc,..."
+            else:
+                what = "histogram names"                
+            Page.Choice += [f'o: legend: {addrem} {what} in legend',]
             if ifLimits:
                 Page.Choice += ['e: create excluded region',
                         's: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
@@ -1850,7 +1862,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if not G2frame.SinglePlot:
                 Page.Choice = Page.Choice+ \
                     ['u/U: offset up/10x','d/D: offset down/10x','l: offset left','r: offset right',
-                     'o: reset offset','F: select data','/: normalize']
+                     'O: reset offset','F: select data','/: normalize']
             else:
                 Page.Choice = Page.Choice+ ['p: toggle partials (if available)',]
             if G2frame.SinglePlot:
@@ -2106,11 +2118,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if G2frame.Contour:
             xye0 = xye[0]   # drop mask for contouring
 
-        # convert all X values and then reapply mask
+        # convert all X values and then reapply mask if xye0 is a masked array
+        mask = None
+        if hasattr(xye0,'mask'): mask = xye0.mask
         if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
-            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,xye0.data),mask=xye0.mask)
+            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,xye0.data),mask=mask)
         elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
-            X = ma.array(G2lat.Pos2dsp(Parms,xye0.data),mask=xye0.mask)
+            X = ma.array(G2lat.Pos2dsp(Parms,xye0.data),mask=mask)
         else:
             X = copy.deepcopy(xye0)
         if ifpicked and not G2frame.Contour:
@@ -2251,6 +2265,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif G2frame.plusPlot == 1:
                 pP = '+'
                 lW = 0
+            elif G2frame.plusPlot == 2:
+                pP = ''
+                lW = 1.5
             else:
                 pP = '+'
                 lW = 1.5
@@ -2352,7 +2369,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.set_yscale("log",nonpositive='mask')
                         Plot.plot(X,Y,marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,picker=True,pickradius=3.,
                             clip_on=Clip_on,label=incCptn('obs'))
-                        if G2frame.SinglePlot or G2frame.plusPlot:
+                        if G2frame.SinglePlot or G2frame.plusPlot == 1 or G2frame.plusPlot == 2:
                             Plot.plot(X,Z,pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                             if G2frame.plusPlot:
                                 Plot.plot(X,W,pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
@@ -2394,9 +2411,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
-                                picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
-                            CalcLine = Plot.plot(X,Z/ymax,pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)                 #Ic
+                            if G2frame.plusPlot != 3:
+                                ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
+                                    picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
+                                CalcLine = Plot.plot(X,Z/ymax,pwdrCol['Calc_color'],
+                                    picker=False,label=incCptn('calc'),linewidth=1.5)                  #Ic
+                            else: # waterfall mode=3: plot 1st pattern like others, name in legend?
+                                name = Pattern[2]
+                                if Pattern[0]['histTitle']: name = Pattern[0]['histTitle']
+                                ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=1.5,
+                                    picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn(name))    #Io
                         else:
                             Plot.plot(X,YB,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
@@ -2513,7 +2537,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 picker=False,nonpositive='mask')
                 else:
                     if 'PWDR' in plottype:
-                        Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False)
+                        # waterfall mode=3: name in legend?
+                        name = Pattern[2]
+                        if Pattern[0]['histTitle']: name = Pattern[0]['histTitle']
+                        Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False,label=incCptn(name))
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.loglog(X,Y,mcolors.cmap(icolor),
@@ -2662,13 +2689,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     xtick = peak.T[0]
                 else:
                     xtick = peak.T[1]
-                if not Page.plotStyle.get('flTicks',False):     # short tick-marks
+                if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
                     Page.tickDict[phase],_ = Plot.plot(
                         xtick,pos,'|',mew=w,ms=l,picker=True,pickradius=3.,
                         label=phase,color=plcolor)
                     # N.B. above creates two Line2D objects, 2nd is ignored.
                     # Not sure what each does.
-                else:                                           # full length tick-marks
+                elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
                     if len(xtick) > 0:
                         # create an ~hidden tickmark to create a legend entry
                         Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
@@ -2682,10 +2709,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 labels = dict(zip(legends,handles))     # remove duplicate phase entries
                 handles = [labels[item] for item in labels]
                 legends = list(labels.keys())
-                if len(Phases) and obsInCaption: 
-                    Plot.legend(handles,legends,title='Phases & Data',loc='best')
+                if len(Phases) and plotOpt['obsInCaption'] and Page.plotStyle.get('flTicks',0) != 2: 
+                    msg = 'Data'
+                elif len(Phases) and plotOpt['obsInCaption']: 
+                    msg = 'Phases & Data'
                 else:
-                    Plot.legend(handles,legends,title='Data',loc='best')
+                    msg = 'Phases'
+                Plot.legend(handles,legends,title=msg,loc='best')
     
     if G2frame.Contour:
         time0 = time.time()

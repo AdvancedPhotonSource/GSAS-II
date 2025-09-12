@@ -223,6 +223,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif event.key == 'T' and 'PWDR' in plottype:
             Page.plotStyle['title'] = not Page.plotStyle.get('title',True)
         elif event.key == 'f' and 'PWDR' in plottype: # short,full length or no tick-marks
+            if G2frame.Contour: return
             Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
         elif event.key == 'x'and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
@@ -325,7 +326,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.Cmin = 0.0
                 Page.plotStyle['Offset'] = [0,0]
         elif event.key == 'C' and 'PWDR' in plottype and G2frame.Contour:
-            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plotType)
+            #G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plotType)
+            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,True,plotType) # force newPlot=True, prevents blank plot on Mac
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
@@ -464,6 +466,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             #print('no binding for key',event.key)
             return
+        if G2frame.Contour: newPlot = True # needed or plot disappears, at least on Mac
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):

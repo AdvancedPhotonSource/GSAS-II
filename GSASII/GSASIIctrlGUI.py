@@ -8572,7 +8572,7 @@ def makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plottype):
             G2frame.Cmax = val
         else:
             G2frame.Cmin = val
-        obj.txt.SetValue(int(Ymax*val))
+        obj.txt.ChangeValue(int(Ymax*val))
         updatePlot()
     def OnNewVal(*args,**kwargs):
         'respond when a value is placed in the min or max text box'

@@ -2728,13 +2728,24 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
     extCor = 1.0
     dervDict = {}
     dervCor = 1.0
+    if 'microED' in calcControls[phfx+'EType']:
+        FPone = np.sqrt(ref[9+im])
+        PA = np.exp(-parmDict[phfx+'Ma']*FPone)
+        PB = np.exp(-parmDict[phfx+'Mb']*FPone**2)
+        PC = np.exp(-parmDict[phfx+'Mc']*FPone**3)
+        extCor = (PA+ + PB + PC)/3.            
+        dervDict[phfx+'Ma'] = -PA*FPone/3.
+        dervDict[phfx+'Mb'] = -PB*FPone**2/3.
+        dervDict[phfx+'Mc'] = -PC*FPone**3/3.
+        return extCor,dervDict,dervCor
+        
     if calcControls[phfx+'EType'] != 'None':
         SQ = 1/(4.*ref[4+im]**2)
         if 'C' in parmDict[hfx+'Type']:
             cos2T = 1.0-2.*SQ*parmDict[hfx+'Lam']**2           #cos(2theta)
         else:   #'T'
             cos2T = 1.0-2.*SQ*ref[12+im]**2                       #cos(2theta)
-        if 'SXC' in parmDict[hfx+'Type'] or 'SEC' in parmDict[hfx+'Type']:
+        if 'SXC' in parmDict[hfx+'Type']:
             AV = 7.9406e5/parmDict[pfx+'Vol']**2    #is 7.9406e5 constant right for electroms?
             PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
             P12 = (calcControls[phfx+'Cos2TM']+cos2T**4)/(calcControls[phfx+'Cos2TM']+cos2T**2)
@@ -2751,7 +2762,8 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         DScorr = 1.0
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
-#            DScorr = 1.+parmDict[phfx+'Ma']/ref[4+im]+parmDict[phfx+'Mb']/ref[4+im]**2
+            FPone = ref[9+im]+1.0
+            DScorr = 1.
         else:
             if 'C' in parmDict[hfx+'Type']:
                 PLZ *= calcControls[phfx+'Tbar']
@@ -2790,10 +2802,6 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         if 'Primary' in calcControls[phfx+'EType']:
             if phfx+'Ep' in varyList:
                 dervDict[phfx+'Ep'] = -ref[7+im]*PLZ*PF3/DScorr
-            # if phfx+'Ma' in varyList:
-            #     dervDict[phfx+'Ma'] = -extCor/ref[4+im]
-            # if phfx+'Mb' in varyList:
-            #     dervDict[phfx+'Mb'] = -extCor/ref[4+im]**2
             extCor  /= DScorr
         if 'II' in calcControls[phfx+'EType'] and phfx+'Es' in varyList:
             dervDict[phfx+'Es'] = -ref[7+im]*PLZ*PF3*(PSIG/parmDict[phfx+'Es'])**3

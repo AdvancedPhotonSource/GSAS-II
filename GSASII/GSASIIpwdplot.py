@@ -2546,7 +2546,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     if 'PWDR' in plottype:
                         # waterfall mode=3: name in legend?
                         name = Pattern[2]
-                        if Pattern[0]['histTitle']: name = Pattern[0]['histTitle']
+                        if 'histTitle' in Pattern[0] and Pattern[0]['histTitle']: name = Pattern[0]['histTitle']
                         Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False,label=incCptn(name))
                     elif plottype in ['SASD','REFD']:
                         try:

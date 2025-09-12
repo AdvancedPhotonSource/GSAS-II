@@ -579,172 +579,155 @@ def WriteInstprm(fp, InstPrm, InstPrm1, Sample={}, bank=None):
             #write output string
             fp.write(resString)
 
-# version of LoadImportRoutines from before switch to "main"
-# def _old_LoadImportRoutines(prefix, errprefix=None, traceback=False):
-#     '''Routine to locate GSASII importers matching a prefix string.
-#
-#     Warns if more than one file with the same name is in the path
-#     or if a file is found that is not in the main directory tree.
-#     '''
-#     if errprefix is None:
-#         errprefix = prefix
-#
-#     readerlist = []
-#     import_files = {}
-#     if '.' not in sys.path: sys.path.append('.')
-#     for path in sys.path:
-#         for filename in glob.iglob(os.path.join(path, 'G2'+prefix+'*.py')):
-#             pkg = os.path.splitext(os.path.split(filename)[1])[0]
-#             if pkg in import_files:
-#                 G2Print('Warning: importer {} overrides {}'.format(import_files[pkg],os.path.abspath(filename)))
-#             elif not filename.startswith(GSASIIpath.path2GSAS2):
-#                 G2Print('Note: found importer in non-standard location:'+
-#                             f'\n\t{os.path.abspath(filename)}')
-#                 import_files[pkg] = filename
-#             else:
-#                 import_files[pkg] = filename
-
-#     for pkg in sorted(import_files.keys()):
-#         try:
-#             exec('import '+pkg)
-#             #print(eval(pkg+'.__file__'))
-#             for name, value in inspect.getmembers(eval(pkg)):
-#                 if name.startswith('_'):
-#                     continue
-#                 if inspect.isclass(value):
-#                     for method in 'Reader', 'ExtensionValidator', 'ContentsValidator':
-#                         if not hasattr(value, method):
-#                             break
-#                         if not callable(getattr(value, method)):
-#                             break
-#                     else:
-#                         reader = value()
-#                         if reader.UseReader:
-#                             readerlist.append(reader)
-#         except AttributeError:
-#             G2Print ('Import_' + errprefix + ': Attribute Error ' + import_files[pkg])
-#             if traceback:
-#                 traceback.print_exc(file=sys.stdout)
-#         except Exception as exc:
-#             G2Print ('\nImport_' + errprefix + ': Error importing file ' + import_files[pkg])
-#             G2Print (u'Error message: {}\n'.format(exc))
-#             if traceback:
-#                 traceback.print_exc(file=sys.stdout)
-#     return readerlist
-
 def LoadImportRoutines(prefix, errprefix=None, traceback=False):
+    '''Loads import routines from the GSASII.imports area and 
+    from a user-supplied area, ~/.GSASII/imports.
+
+    :param str prefix: string used in the file name to differentiate the 
+      importer type (e.g. `G2img_xyz.py` is an importer for images. Will 
+      be one of 'img' (images), 'pdf' (pair distribution function), 
+      'phase' (cell/coordinates), 'pwd' (powder diffraction), 'rfd' 
+      (reflectivity), 'sad' (small-angle scattering) or 'sfact' 
+      (single crystal).
+    :param errprefix: no longer used
+    :param traceback: no longer used
+    :returns: a list of reader routines (callable objects)
+    '''
     from . import imports
     readerlist = []
-    # how to import directly from a file for extra search magic if we need
-    # https://stackoverflow.com/questions/67631/how-can-i-import-a-module-dynamically-given-the-full-path
-    # TODO handle non-bundled readers
-    for mod_name in (_ for _ in dir(imports) if _.startswith(f'G2{prefix}')):
-        mod = getattr(imports, mod_name)
+    # configure readers that have already been imported
+    for mod_name in [i for i in sys.modules.keys() if
+                         i.startswith(f'GSASII.imports.G2{prefix}')]:
+        mod = sys.modules[mod_name]
         for member_name in dir(mod):
             if member_name.startswith('_'):
                 continue
             member = getattr(mod, member_name)
-            if all(
-                hasattr(member, meth)
-                for meth in ('Reader', 'ExtensionValidator', 'ContentsValidator')
-            ):
+            if not callable(member): continue
+            for meth in ('Reader', 'ExtensionValidator', 'ContentsValidator','UseReader'):
+                if not hasattr(member, meth): break
+            else:
                 reader = member()
                 if reader.UseReader:
                     readerlist.append(reader)
+    # Now look for modules in the "user-defined" area (~/.GSASII/imports)
+    fnam = os.path.expanduser(os.path.normpath(f'~/.GSASII/imports/G2{prefix}*.py'))
+    import importlib.util
+    for f in sorted(glob.glob(fnam)):
+        nam = os.path.splitext(os.path.split(f)[1])[0]
+        try:
+            modspec = importlib.util.spec_from_file_location(nam, f)
+            module = importlib.util.module_from_spec(modspec)
+            # will process "from .." and "from ." as if found in
+            # GSASII/imports directory
+            module.__package__ = "GSASII.imports"
+            modspec.loader.exec_module(module)
+            # not sure if I want to do this or not
+            sys.modules[f"GSASII.userimports.{nam}"] = module
+            for member_name in dir(module):
+                if member_name.startswith('_'):
+                    continue
+                member = getattr(module, member_name)
+                if not callable(member): continue
+                for meth in ('Reader', 'ExtensionValidator', 'ContentsValidator','UseReader'):
+                    if not hasattr(member, meth): break
+                else:
+                    reader = member()
+                    reader.formatName = '(user) ' + reader.formatName
+                    reader.longFormatName = '(user supplied) ' + reader.longFormatName
+                    if reader.UseReader:
+                        readerlist.append(reader)
+        except ImportError as msg:
+            print(f'Failed to import importer {f} with error\n{msg}')
     return readerlist
 
-# version of LoadExportRoutines from before switch to "main" 
-# def _LoadExportRoutines(parent, usetraceback=False):
-#     '''Routine to locate GSASII exporters. Warns if more than one file
-#     with the same name is in the path or if a file is found that is not
-#     in the main directory tree.
-#     '''
-#     exporterlist = []
-#     export_files = {}
-#     if '.' not in sys.path: sys.path.append('.')
-#     for path in sys.path:
-#         for filename in glob.iglob(os.path.join(path,"G2export*.py")):
-#             pkg = os.path.splitext(os.path.split(filename)[1])[0]
-#             if pkg in export_files:
-#                 G2Print('Warning: exporter {} overrides {}'.format(export_files[pkg],os.path.abspath(filename)))
-#             elif not filename.startswith(GSASIIpath.path2GSAS2):
-#                 G2Print('Note, found non-standard exporter: {}'.format(os.path.abspath(filename)))
-#                 export_files[pkg] = filename
-#             else:
-#                 export_files[pkg] = filename
-#     # go through the routines and import them, saving objects that
-#     # have export routines (method Exporter)
-#     for pkg in sorted(export_files.keys()):
-#         try:
-#             exec('import '+pkg)
-#             for clss in inspect.getmembers(eval(pkg)): # find classes defined in package
-#                 if clss[0].startswith('_'): continue
-#                 if not inspect.isclass(clss[1]): continue
-#                 # check if we have the required methods
-#                 if not hasattr(clss[1],'Exporter'): continue
-#                 if not callable(getattr(clss[1],'Exporter')): continue
-#                 if parent is None:
-#                     if not hasattr(clss[1],'Writer'): continue
-#                 else:
-#                     if not hasattr(clss[1],'loadParmDict'): continue
-#                     if not callable(getattr(clss[1],'loadParmDict')): continue
-#                 try:
-#                     exporter = clss[1](parent) # create an export instance
-#                 except AttributeError:
-#                     pass
-#                 except Exception as exc:
-#                     G2Print ('\nExport init: Error substantiating class ' + clss[0])
-#                     G2Print (u'Error message: {}\n'.format(exc))
-#                     if usetraceback:
-#                         import traceback
-#                         traceback.print_exc(file=sys.stdout)
-#                     continue
-#                 exporterlist.append(exporter)
-#         except AttributeError:
-#             G2Print ('Export Attribute Error ' + export_files[pkg])
-#             if usetraceback:
-#                 import traceback
-#                 traceback.print_exc(file=sys.stdout)
-#         except Exception as exc:
-#             G2Print ('\nExport init: Error importing file ' + export_files[pkg])
-#             G2Print (u'Error message: {}\n'.format(exc))
-#             if usetraceback:
-#                 import traceback
-#                 traceback.print_exc(file=sys.stdout)
-#     return exporterlist
-
 def LoadExportRoutines(parent, usetraceback=False):
+    '''Loads all export routines from the GSASII.exports area and 
+    from a user-supplied area, ~/.GSASII/exports.
+
+    :param parent: a reference to the main GSAS-II window when called 
+      from the GUI or None when called from GSASIIscriptable
+    :param usetraceback: if True (used for debug only) a traceback 
+      is shown when accessing the exporter object fails
+    :returns: a list of exporter routines (callable objects)
+    '''
     from . import exports
     exporterlist = []
-    # how to import directly from a file for extra search magic if we need
-    # https://stackoverflow.com/questions/67631/how-can-i-import-a-module-dynamically-given-the-full-path
-    # TODO handle non-bundled readers
-    for mod_name in (_ for _ in dir(exports) if _.startswith('G2export')):
-        mod = getattr(exports, mod_name)
+    
+    # configure exporters that have already been imported
+    for mod_name in [i for i in sys.modules.keys() if
+                         i.startswith('GSASII.exports.G2export')]:
+        mod = sys.modules[mod_name]
         for member_name in dir(mod):
             if member_name.startswith('_'):
                 continue
             member = getattr(mod, member_name)
-            if not hasattr(member, 'Exporter'):
+            if not callable(member): continue
+            if not hasattr(member, 'Exporter'): # exporters must have an exporter
                 continue
-            if parent is None:
-                if not hasattr(member, 'Writer'):
-                    continue
-            else:
-                if not hasattr(member, 'loadParmDict'):
-                    continue
             try:
-                exporter = member(parent)
+                if parent is None: # scripting, must also have Writer
+                    if not hasattr(member, 'Writer'):
+                        continue
+                    exporter = member()
+                else: # from GUI, must also have loadParmDict
+                    if not hasattr(member, 'loadParmDict'):
+                        continue
+                    exporter = member(parent)  # pass the main window to the class
                 exporterlist.append(exporter)
             except Exception as exc:
-                G2Print ('\nExport init: Error substantiating class ' + member_name)
+                G2Print (f'\nExport init: Error substantiating class {member_name}')
                 G2Print ('Error message: {}\n'.format(exc))
                 if usetraceback:
                     import traceback
                     traceback.print_exc(file=sys.stdout)
-                continue
+    # Now look for modules in the "user-defined" area (~/.GSASII/exports)
+    fnam = os.path.expanduser(os.path.normpath('~/.GSASII/exports/G2export*.py'))
+    import importlib.util
+    for f in sorted(glob.glob(fnam)):
+        nam = os.path.splitext(os.path.split(f)[1])[0]
+        try:
+            modspec = importlib.util.spec_from_file_location(nam, f)
+            module = importlib.util.module_from_spec(modspec)
+            # will process "from .." and "from ." as if found in
+            # GSASIIexports directory
+            module.__package__ = "GSASII.exports"
+            modspec.loader.exec_module(module)
+            # not sure if I want to do this or not
+            sys.modules[f"GSASII.userexports.{nam}"] = module
+        except Exception as exc:
+            G2Print (f'\nExport init: Error with file {f}')
+            G2Print ('Error message: {}\n'.format(exc))
+            if usetraceback:
+                import traceback
+                traceback.print_exc(file=sys.stdout)
+            continue
+        for member_name in dir(module):
+            try:
+                if member_name.startswith('_'):
+                    continue
+                member = getattr(module, member_name)
+                if not hasattr(member, 'Exporter'): # exporters must have an exporter
+                    continue
+                if parent is None: # scripting, must also have Writer
+                        if not hasattr(member, 'Writer'):
+                            continue
+                        exporter = member()
+                else: # from GUI, must also have loadParmDict
+                        if not hasattr(member, 'loadParmDict'):
+                            continue
+                        exporter = member(parent)  # pass the main window to the class
+                exporter.formatName = '(user) ' + exporter.formatName
+                exporter.longFormatName = '(user supplied) ' + exporter.longFormatName
+                
+                exporterlist.append(exporter)
+            except Exception as exc:
+                G2Print (f'\nExport init: Error with substantiating class {member_name}')
+                G2Print ('Error message: {}\n'.format(exc))
+                if usetraceback:
+                    import traceback
+                    traceback.print_exc(file=sys.stdout)
     return exporterlist
-
 
 def readColMetadata(imagefile):
     '''Reads image metadata from a column-oriented metadata table

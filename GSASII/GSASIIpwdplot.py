@@ -315,11 +315,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['Offset'][1] -= 1.
         elif event.key == 'r' and not G2frame.SinglePlot:
             Page.plotStyle['Offset'][1] += 1.
-        elif event.key == 'o':    # controls caption
+        elif event.key in ['L','shift+l']:    # controls legend
             if G2frame.Contour: return
             # include the observed, calc,... items in the plot caption (PlotPatterns)
             plotOpt['obsInCaption'] = not plotOpt['obsInCaption']
-        elif event.key in ['O','shift+o']:    # resets offsets
+        elif event.key in ['o','O','shift+o']:    # resets offsets
             if G2frame.Contour: return
             if not G2frame.SinglePlot: # waterfall: reset the offsets
                 G2frame.Cmax = 1.0
@@ -1330,6 +1330,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             dbox[i].Enable(checked)
         def applyLims(event):
             Page.toolbar.push_current()
+            # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+            # Page.canvas.draw_idle() # schedule an MPL update (needs test)
             CurLims = {}
             CurLims['xlims'] = list(Plot.get_xlim())
             if G2frame.Weight:
@@ -1359,6 +1361,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 Plot.set_ylim(CurLims['ylims'])
             Page.toolbar.push_current()
+            # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+            # Page.canvas.draw_idle() # schedule an MPL update (needs test)
             Plot.figure.canvas.draw()
         
         # onSetPlotLim starts here
@@ -1843,7 +1847,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 what = "obs, calc,..."
             else:
                 what = "histogram names"                
-            Page.Choice += [f'o: legend: {addrem} {what} in legend',]
+            Page.Choice += [f'L: {addrem} {what} in legend',]
             if ifLimits:
                 Page.Choice += ['e: create excluded region',
                         's: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
@@ -1865,7 +1869,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if not G2frame.SinglePlot:
                 Page.Choice = Page.Choice+ \
                     ['u/U: offset up/10x','d/D: offset down/10x','l: offset left','r: offset right',
-                     'O: reset offset','F: select data','/: normalize']
+                     'o: reset offset','F: select data','/: normalize']
             else:
                 Page.Choice = Page.Choice+ ['p: toggle partials (if available)',]
             if G2frame.SinglePlot:
@@ -2829,19 +2833,27 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         (xlim, ylim, styleDict, G2frame.SinglePlot, G2frame.Contour, G2frame.Weight,
                 G2frame.plusPlot, G2frame.SubBack) = data[0]['PlotDefaults']
         Page.toolbar.push_current()
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
         Plot.set_xlim((xlim[0],xlim[1]))
         Plot.set_ylim((ylim[0],ylim[1]))
-        Page.toolbar.push_current()
+        Page.toolbar.push_current() # why two?
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
         newPlot = True # prevent carrying limits over from other histograms
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
         if G2frame.Contour: # for contour plots expand y-axis to include all histograms
             G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)))
         if 'PWDR' in plottype:
             Plot.set_xlim(G2frame.xylim[0])
             Plot.set_ylim(G2frame.xylim[1])
         Page.toolbar.push_current()
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
         Page.ToolBarDraw()
     else:
         G2frame.xylim = Plot.get_xlim(),Plot.get_ylim()

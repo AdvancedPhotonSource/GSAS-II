@@ -596,9 +596,8 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
     from . import imports
     readerlist = []
     # configure readers that have already been imported
-    for mod_name in [i for i in sys.modules.keys() if
-                         i.startswith(f'GSASII.imports.G2{prefix}')]:
-        mod = sys.modules[mod_name]
+    for mod_name in (_ for _ in dir(imports) if _.startswith(f'G2{prefix}')):
+        mod = getattr(imports, mod_name)
         for member_name in dir(mod):
             if member_name.startswith('_'):
                 continue
@@ -655,9 +654,8 @@ def LoadExportRoutines(parent, usetraceback=False):
     exporterlist = []
     
     # configure exporters that have already been imported
-    for mod_name in [i for i in sys.modules.keys() if
-                         i.startswith('GSASII.exports.G2export')]:
-        mod = sys.modules[mod_name]
+    for mod_name in (_ for _ in dir(exports) if _.startswith('G2export')):
+        mod = getattr(exports, mod_name)
         for member_name in dir(mod):
             if member_name.startswith('_'):
                 continue

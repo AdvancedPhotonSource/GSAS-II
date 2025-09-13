@@ -317,6 +317,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['Offset'][1] += 1.
         elif event.key in ['L','shift+l']:    # controls legend
             if G2frame.Contour: return
+            if not plotOpt['obsInCaption'] and len(PlotList) > 20:
+                dlg = wx.MessageDialog(G2frame,
+                    f'You have {len(PlotList)} histograms in this plot. Are you sure you want a legend?',
+                    'Confirm legend',wx.YES_NO | wx.ICON_QUESTION)
+                try:
+                    result = dlg.ShowModal()
+                finally:
+                    dlg.Destroy()
+                if result != wx.ID_YES: return
             # include the observed, calc,... items in the plot caption (PlotPatterns)
             plotOpt['obsInCaption'] = not plotOpt['obsInCaption']
         elif event.key in ['o','O','shift+o']:    # resets offsets
@@ -1929,9 +1938,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             ParmList = [Parms,]
             SampleList = [Sample,]
             LimitsList = [Limits,]
-            Title = data[0].get('histTitle')
-            if not Title: 
-                Title = Pattern[-1]
+            Title = Pattern[-1]
+            if data[0].get('histTitle'): Title = data[0]['histTitle']
         except AttributeError:
             pass
     else:     #G2frame.selection   
@@ -2425,7 +2433,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                     picker=False,label=incCptn('calc'),linewidth=1.5)                  #Ic
                             else: # waterfall mode=3: plot 1st pattern like others, name in legend?
                                 name = Pattern[2]
-                                if Pattern[0]['histTitle']: name = Pattern[0]['histTitle']
+                                if Pattern[0].get('histTitle'): name = Pattern[0]['histTitle']
                                 ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=1.5,
                                     picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn(name))    #Io
                         else:
@@ -2546,7 +2554,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     if 'PWDR' in plottype:
                         # waterfall mode=3: name in legend?
                         name = Pattern[2]
-                        if 'histTitle' in Pattern[0] and Pattern[0]['histTitle']: name = Pattern[0]['histTitle']
+                        if Pattern[0].get('histTitle'): name = Pattern[0]['histTitle']
                         Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False,label=incCptn(name))
                     elif plottype in ['SASD','REFD']:
                         try:
@@ -2722,8 +2730,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     msg = 'Phases & Data'
                 else:
                     msg = 'Phases'
-                Plot.legend(handles,legends,title=msg,loc='best')
-    
+                siz = None
+                if len(legends) > 50:  # make an attempt to make legend contents fit
+                    siz = 4
+                elif len(legends) > 25:
+                    siz = 6
+                elif len(legends) > 15:
+                    siz = 8
+                lngd = Plot.legend(handles,legends,title=msg,loc='best',
+                                       fontsize=siz)
     if G2frame.Contour:
         time0 = time.time()
         acolor = G2plt.GetColorMap(G2frame.ContourColor)

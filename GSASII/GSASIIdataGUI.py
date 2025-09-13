@@ -1104,7 +1104,7 @@ class GSASII(wx.Frame):
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Phase','Import phase data')
         for reader in self.ImportPhaseReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import phase data, use file to try to determine format')
@@ -1291,7 +1291,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu, 'Image','Import image file')
         for reader in self.ImportImageReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import image data, use file to try to determine format')
@@ -1321,7 +1321,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Structure Factor','Import Structure Factor data')
         for reader in self.ImportSfactReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import Structure Factor, use file to try to determine format')
@@ -1437,7 +1437,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Powder Data','Import Powder data')
         for reader in self.ImportPowderReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import powder data, use file to try to determine format')
@@ -2371,7 +2371,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Small Angle Data','Import small angle data')
         for reader in self.ImportSmallAngleReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2464,7 +2464,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Reflectometry Data','Import reflectometry data')
         for reader in self.ImportReflectometryReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2559,7 +2559,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'PDF G(R) Data','Import PDF G(R) data')
         for reader in self.ImportPDFReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPDF, id=item.GetId())
         submenu.AppendSeparator()
@@ -7511,6 +7511,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             SetDataMenuBar(G2frame,self.DataGeneral)
         self.DataGeneral = _makemenu
     # end of GSAS-II menu definitions
+
+def readFromFile(reader):
+    '''Define a caption for a file import menu item'''
+    nam = reader.formatName
+    if nam.startswith('(user'):
+        return nam.replace('(user)','(user) from')+' file'
+    else:
+        return f'from {reader.formatName} file'
 
 ####  Notebook Tree Item editor ##############################################
 NBinfo = {}

@@ -636,8 +636,9 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                     reader.longFormatName = '(user supplied) ' + reader.longFormatName
                     if reader.UseReader:
                         readerlist.append(reader)
-        except ImportError as msg:
-            print(f'Failed to import importer {f} with error\n{msg}')
+        except Exception as msg:
+            G2Print(f'\nImporter init: error with importer file {f!r}')
+            G2Print ('Error message: {}\n'.format(msg))
     return readerlist
 
 def LoadExportRoutines(parent, usetraceback=False):
@@ -694,7 +695,7 @@ def LoadExportRoutines(parent, usetraceback=False):
             # not sure if I want to do this or not
             sys.modules[f"GSASII.userexports.{nam}"] = module
         except Exception as exc:
-            G2Print (f'\nExport init: Error with file {f}')
+            G2Print (f'\nExport init: Error with exporter file {f!r}')
             G2Print ('Error message: {}\n'.format(exc))
             if usetraceback:
                 import traceback

@@ -25,9 +25,14 @@ be written.
 A file containing one or more export routine can be placed
 either in the ``GSASII/exports`` directory (which requires
 modification of the ``__init__.py`` file or the file can be placed in
-the ``~/.GSASII/exports`` directory.   
+the ``~/.GSASII/exports`` directory.
+(Note that ``~`` here is translated to the 
+user's home directory; for Windows this is usually taken from the
+USERPROFILE setting or a combination of HOMEPATH and HOMEDRIVE,
+so this directory will usually have form
+``C:\\Users\\YourUsername\\.GSASII\\exports``.
 The next time GSAS-II is started,
-the file will loaded when the GSAS-II files are read by the Python and
+the file will be loaded with all the other GSAS-II files and
 the new data format will appear in the appropriate exporter menu. 
 
 .. _export_routines: 

@@ -41,11 +41,17 @@ named with the appropriate file name prefix:
 This file can be placed
 either in the ``GSASII/imports`` directory (which requires
 modification of the ``__init__.py`` file or the file can be placed in
-the ``~/.GSASII/imports`` directory.   The importer file may contain a
-single import class or several. 
+the ``~/.GSASII/imports`` directory.
+(Note that ``~`` here is translated to the 
+user's home directory; for Windows this is usually taken from the
+USERPROFILE setting or a combination of HOMEPATH and HOMEDRIVE,
+so this directory will usually have form
+``C:\\Users\\YourUsername\\.GSASII\\imports``.
 The next time GSAS-II is started,
-the file will loaded when the GSAS-II files are read by the Python and
+the file will be loaded with all the other GSAS-II files and
 the new data format(s) will appear in the appropriate importer menu. 
+The importer file may contain a
+single importer class or several. 
 
 Importers are documented below, separated by type. Importers tend to
 be fairly simple files, where many are in the range of 50-100 lines,

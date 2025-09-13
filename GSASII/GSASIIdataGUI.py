@@ -8280,7 +8280,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         Should be straight line of slope 1 - never is'''
         def OnPlotFoFcVsFc():
             ''' Extinction check, plots Fo-Fc & 1/ExtC vs Fo for single crystal data '''
-            test = lambda xy:(xy[iFlg+Super]>0 and (xy[iFc+Super]>0 or xy[iFo+Super]>0))
+            test = lambda xy:(xy[iFlg+Super]>0 and xy[iFo+Super]>0)
             iFlg,iFo,iSig,iFc,iFcT,iExt = 3,5,6,7,9,11
             refList = data[1]['RefList']
             wtFctr = data[0]['wtFactor']
@@ -8290,6 +8290,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             Sig = np.array([xy[iSig+Super] for xy in refList if test(xy)])/wtFctr      #sig(fo^2)/wtFactor (1/GOF)
             XE = [[xy[iFcT+Super],xy[iExt+Super]] for xy in refList if test(xy)]
             XE = np.array([[np.sqrt(xe[0]),xe[1]] for xe in XE]).T
+            XE[1] = np.where(XE[1]>0.,XE[1],1.0)
             G2plt.PlotXY(G2frame,[[FcT,2.*Fo*(Fo-Fc)/Sig],],XY2=[XE,],labelX='Fc',labelY=GkDelta+'F/sig, ExtC',newPlot=False,
                Title='Extinction check',lines=False,points2=True,names=[GkDelta+'F/sig',],names2=['ExtC',])
             

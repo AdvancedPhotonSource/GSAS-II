@@ -1892,7 +1892,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
         sumWdelt = 0.0
         Nobs = 0
         for ref in refl:
-            if ref[6+im] > 0.:
+            if ref[5+im] > 0.:
                 if ref[3+im] > 0:
                     Nobs += 1
                     w2 = 1./ref[6+im]

@@ -955,7 +955,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[G2frame.hist]['Use'])
         useBox.Add(useData,0,WACV)
-        Htype = UseList[G2frame.hist]['Type']
+        Htype = UseList[G2frame.hist].get('Type','SXC')
         useBox.Add(wx.StaticText(DData,label=' Histogram type: '+Htype))
         if not generalData['doPawley'] and 'PWDR' in G2frame.hist[:4]:
             lbLabel = 'Start Le Bail extraction?   '

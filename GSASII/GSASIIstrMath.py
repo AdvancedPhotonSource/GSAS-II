@@ -2723,11 +2723,10 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
     return dFdvDict
 
 def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
-    ''' Single crystal extinction function; returns extinction & derivative
+    ''' Single crystal extinction function; returns extinction & derivatives
     '''
     extCor = 1.0
     dervDict = {}
-    dervCor = 1.0
     if 'microED' in calcControls[phfx+'EType']:
         FPone = np.sqrt(ref[9+im])
         PA = np.exp(-parmDict[phfx+'Ma']*FPone)
@@ -2737,7 +2736,7 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         dervDict[phfx+'Ma'] = -PA*FPone/3.
         dervDict[phfx+'Mb'] = -PB*FPone**2/3.
         dervDict[phfx+'Mc'] = -PC*FPone**3/3.
-        return extCor,dervDict,dervCor
+        return extCor,dervDict
         
     if calcControls[phfx+'EType'] != 'None':
         SQ = 1/(4.*ref[4+im]**2)
@@ -2798,7 +2797,6 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
             extCor = np.sqrt(PF4)
             PF3 = 0.5*(CL+2.*AL*PF/(1.+BL*PF)-AL*PF**2*BL/(1.+BL*PF)**2)/(PF4*extCor)
 
-        dervCor = (1.+PF)*PF3/DScorr   #extinction corr for other derivatives
         if 'Primary' in calcControls[phfx+'EType']:
             if phfx+'Ep' in varyList:
                 dervDict[phfx+'Ep'] = -ref[7+im]*PLZ*PF3/DScorr
@@ -2808,7 +2806,7 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         if 'I' in calcControls[phfx+'EType'] and phfx+'Eg' in varyList:
             dervDict[phfx+'Eg'] = -ref[7+im]*PLZ*PF3*(PSIG/parmDict[phfx+'Eg'])**3*PL**2
 
-    return 1./extCor,dervDict,dervCor
+    return 1./extCor,dervDict
 
 def Dict2Values(parmdict, varylist):
     '''Use before call to leastsq to setup list of values for the parameters
@@ -4593,7 +4591,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     if calcControls['F**2']:
         for iref,ref in enumerate(refDict['RefList']):
             if ref[6+im] > 0:
-                dervDict,dervCor = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1:]
+                dervDict = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1]
                 w = 1.0/ref[6+im]
                 if ref[3+im] > 0:
                     wdf[iref] = w*(ref[5+im]-ref[7+im])
@@ -4607,7 +4605,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']  #OK
                     elif phfx+'Scale' in dependentVars:
                         depDerivDict[phfx+'Scale'][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']   #OK
-                    for item in ['Ep','Es','Eg','Ma','Mb']:
+                    for item in ['Ep','Es','Eg','Ma','Mb','Mc']:
                         if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11+im]  #OK
                         elif phfx+item in dependentVars and phfx+item in dervDict:
@@ -4620,7 +4618,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     else:   #F refinement
         for iref,ref in enumerate(refDict['RefList']):
             if ref[5+im] > 0.:
-                dervDict,dervCor = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1:]
+                dervDict = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1]
                 Fo = np.sqrt(ref[5+im])
                 Fc = np.sqrt(ref[7+im])
                 w = 1.0/ref[6+im]
@@ -4636,7 +4634,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']  #OK
                     elif phfx+'Scale' in dependentVars:
                         depDerivDict[phfx+'Scale'][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']   #OK
-                    for item in ['Ep','Es','Eg','Ma','Mb']:   #OK!
+                    for item in ['Ep','Es','Eg','Ma','Mb','Mc']:   #OK!
                         if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11+im]
                         elif phfx+item in dependentVars and phfx+item in dervDict:
@@ -4969,7 +4967,7 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
             maxH = 0
             if calcControls['F**2']:
                 for i,ref in enumerate(refDict['RefList']):
-                    if ref[6+im] > 0:
+                    if ref[5+im] > 0:
                         ref[11+im] = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist)[0]
                         w = wtFactor/ref[6+im]   # 1/sig(F^2)
                         ref[7+im] *= parmDict[phfx+'Scale']*ref[11+im]  #correct Fc^2 for extinction
@@ -4996,6 +4994,7 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
                                 SSnobs[ind] += 1
                                 maxH = max(maxH,ind)
                         else:
+                            ref[11+im] = 1.0
                             if ref[3+im]:
                                 ref[3+im] = -abs(ref[3+im])      #mark as rejected
                                 nrej += 1
@@ -5009,7 +5008,7 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
                         Fo = np.sqrt(ref[5+im])
                         Fc = np.sqrt(ref[7+im])
-                        w = 2.0*wtFactor*Fo/ref[6+im]    # 1/sig(F)?
+                        w = 2.0*wtFactor*Fo/ref[6+im]
                         if UserRejectHKL(ref,im,calcControls['UsrReject']) and ref[3+im]:    #skip sp.gp. absences (mul=0)
                             ref[3+im] = abs(ref[3+im])      #mark as allowed
                             sumFo += Fo
@@ -5031,6 +5030,7 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
                                 SSnobs[ind] += 1
                                 maxH = max(maxH,ind)
                         else:
+                            ref[11+im] = 1.0
                             if ref[3+im]:
                                 ref[3+im] = -abs(ref[3+im])      #mark as rejected
                                 nrej += 1

@@ -5506,6 +5506,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 cif_fn_part1 = radio_val.split()[0]
                 cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
                 cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
+                cif_fn_part1 = cif_fn_part1.replace('/', '_')
+                cif_fn_part2 = cif_fn_part2.replace('/', '_')
                 cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
                 cif_fn = os.path.join(proj_pth, cif_fn)
                 with open(cif_fn, 'wb') as fl:

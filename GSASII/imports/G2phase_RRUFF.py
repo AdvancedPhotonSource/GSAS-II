@@ -7,8 +7,6 @@ import sys
 import numpy as np
 import random as ran
 from .. import GSASIIobj as G2obj
-from .. import GSASIIspc as G2spc
-from .. import GSASIIlattice as G2lat
 
 class PhaseReaderClass(G2obj.ImportPhase):
     '''A quickly-written importer to open a .txt file from the RRUFF database 
@@ -45,6 +43,8 @@ class PhaseReaderClass(G2obj.ImportPhase):
     def Reader(self,filename,ParentFrame=None, **unused):
         'Read a DIF file from RRUFF'
         #self.errors = 'Error opening file'
+        from .. import GSASIIspc as G2spc
+        from .. import GSASIIlattice as G2lat
         Title = ''
         atomsmode = False
         fp = open(filename, 'r')

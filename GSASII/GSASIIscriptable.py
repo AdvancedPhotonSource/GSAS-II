@@ -5588,16 +5588,22 @@ class G2Phase(G2ObjectWrapper):
         return count
     
     def Origin1to2Shift(self):
-        '''Applied an Origin 1 to Origin 2 shift to the selected phase
+        '''Applies an Origin 1 to Origin 2 shift to the selected phase, 
+        if defined. Note that GSAS-II only uses Origin 2 settings when 
+        both are offered in the International Tables. 
+        (These are space groups where the centre of symmetry is not 
+        at the highest symmetry site in the cell.) 
+        If the structure is not in the Origin 1 setting, 
+        this routine will create garbage.
 
         A copy of the phase is made where the new phase name has the string 
         "_shifted" added to it. The routine returns a reference to the 
         new :class:`G2Phase` object for the new phase. 
 
         If the phase is not one of the space groups that has Origin 1 & Origin 2
-        settings, None is return.
+        settings, None is returned.
 
-        :returns: returns a newly created phase object or None
+        :returns: the newly created phase object or None
         '''
         gpx = self.proj
         SGData = self.data['General']['SGData']

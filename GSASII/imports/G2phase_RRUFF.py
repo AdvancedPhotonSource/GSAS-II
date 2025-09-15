@@ -6,7 +6,7 @@ import numpy as np
 import random as ran
 from .. import GSASIIobj as G2obj
 
-class PhaseReaderClass(G2obj.ImportPhase):
+class RRUFFReader(G2obj.ImportPhase):
     '''A fairly quickly-written importer to pull out the phase info from a 
     RRUFF database (https://rruff.info) text file. 
     '''

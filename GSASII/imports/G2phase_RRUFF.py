@@ -10,13 +10,14 @@ class RRUFFReader(G2obj.ImportPhase):
     '''A fairly quickly-written importer to pull out the phase info from a 
     RRUFF database (https://rruff.info) text file. 
     '''
-    def __init__(self):
-        super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
-            extensionlist=('.txt'),
-            strictExtension=True,
-            formatName = 'RRUFF DIF file',
-            longFormatName = 'RRUFF database DIF file download (*.txt)'
-            )
+    pass
+    # def __init__(self):
+    #     super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
+    #         extensionlist=('.txt'),
+    #         strictExtension=True,
+    #         formatName = 'RRUFF DIF file',
+    #         longFormatName = 'RRUFF database DIF file download (*.txt)'
+    #         )
         
     # def ContentsValidator(self, filename):
     #     "Test if the file has CELL PARAMETERS: and SPACE GROUP: entries"

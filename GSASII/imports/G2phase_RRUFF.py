@@ -4,7 +4,7 @@ text files or .rtf files that somehow are generated
 import sys
 import numpy as np
 import random as ran
-from .. import GSASIIobj as G2obj
+#from .. import GSASIIobj as G2obj
 
 class RRUFFReader(G2obj.ImportPhase):
     '''A fairly quickly-written importer to pull out the phase info from a 

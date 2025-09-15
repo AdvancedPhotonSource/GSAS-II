@@ -500,12 +500,13 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 repeat = False
                 block += 1
                 rd.objname = os.path.basename(filename)
-                try:
+                if GSASIIpath.GetConfigValue('debug'):
                     flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
-                except Exception as msg:
-                    if GSASIIpath.GetConfigValue('debug'):
-                        print('Reader exception',msg)
-                    flag = False
+                else:
+                    try:
+                        flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
+                    except Exception as msg:
+                        flag = False
                 if flag:
                     # Omitting image loading special cases
                     rd.readfilename = filename
@@ -1391,6 +1392,8 @@ class G2Project(G2ObjectWrapper):
         phaseNameList = [p.name for p in self.phases()]
         phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
         phObj['General']['Name'] = phasename
+        if phasereader.warnings:
+            phObj['warnings'] = phasereader.warnings
 
         if 'Phases' not in self.data:
             self.data['Phases'] = { 'data': None }
@@ -5583,6 +5586,50 @@ class G2Phase(G2ObjectWrapper):
                 count += 1
                 bondRestData['Bonds'].append(newBond)
         return count
+    
+    def Origin1to2Shift(self):
+        '''Applied an Origin 1 to Origin 2 shift to the selected phase
+
+        A copy of the phase is made where the new phase name has the string 
+        "_shifted" added to it. The routine returns a reference to the 
+        new :class:`G2Phase` object for the new phase. 
+
+        If the phase is not one of the space groups that has Origin 1 & Origin 2
+        settings, None is return.
+
+        :returns: returns a newly created phase object or None
+        '''
+        gpx = self.proj
+        SGData = self.data['General']['SGData']
+        if SGData['SpGrp'] not in G2spc.spg2origins:
+            return
+        T = G2spc.spg2origins[SGData['SpGrp']]
+        # create a new phase
+        phaseNameList = [p.name for p in gpx.phases()]
+        phasename = G2obj.MakeUniqueLabel(self.name+'_shifted', phaseNameList)
+        gpx.data['Phases'][phasename] = G2obj.SetNewPhase(Name=phasename,
+                        SGData=SGData)
+        nphase = gpx.data['Phases'][phasename]
+        for obj in gpx.names: # add new phase to tree
+            if obj[0] == 'Phases':
+                obj.append(phasename)
+                break
+        # duplicate phase info
+        for key in self.data: # copy all phase info over to new phase
+            if key == 'ranId': continue
+            nphase[key] = copy.deepcopy(self.data[key])
+        nphase['General']['Name'] = phasename # reset
+        # apply shift (T)
+        O2atoms = nphase['Atoms']
+        cx,ct,cs,cia = nphase['General']['AtomPtrs']
+        for atom in O2atoms:
+            for i in [0,1,2]:
+                atom[cx+i] += T[i]
+            atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update sym
+        SetupGeneral(nphase, None)
+        gpx.index_ids()
+        gpx.update_ids()
+        return gpx.phase(phasename)
 
 class G2SeqRefRes(G2ObjectWrapper):
     '''Wrapper for a Sequential Refinement Results tree entry, containing the

@@ -8445,7 +8445,7 @@ def ChooseOrigin(G2frame,rd):
     for atom in O2atoms:
         for i in [0,1,2]:
             atom[cx+i] += T[i]
-            atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update symmetry & mult
+        atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update symmetry & mult
     #get density & distances
     DisAglData = {}
     DisAglData['SGData'] = rd.Phase['General']['SGData']

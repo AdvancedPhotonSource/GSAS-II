@@ -668,7 +668,7 @@ def LoadExportRoutines(parent, usetraceback=False):
                 if parent is None: # scripting, must also have Writer
                     if not hasattr(member, 'Writer'):
                         continue
-                    exporter = member()
+                    exporter = member(None)
                 else: # from GUI, must also have loadParmDict
                     if not hasattr(member, 'loadParmDict'):
                         continue
@@ -711,7 +711,7 @@ def LoadExportRoutines(parent, usetraceback=False):
                 if parent is None: # scripting, must also have Writer
                         if not hasattr(member, 'Writer'):
                             continue
-                        exporter = member()
+                        exporter = member(None)
                 else: # from GUI, must also have loadParmDict
                         if not hasattr(member, 'loadParmDict'):
                             continue

@@ -1,19 +1,142 @@
 *GSAS-II Export Modules*
 ====================================
 
+Many of the data files written by GSAS-II for use by other software is
+written using a layer of routines called exporters. Exporters usually require quite
+simple code, so they can be written quickly to allow GSAS-II to
+provide output in new data formats. 
+The interface to the exporters 
+is self-configuring, so all supplied exporters are available once the
+exporter is added to the code base. This allows GSAS-II to be quite
+flexible in adapting to use many data formats without need for
+extensive coding. 
+
 Exports are implemented by deriving a class from 
 :class:`~GSASII.GSASIIfiles.ExportBaseclass` in module
-:mod:`~GSASII.GSASIIfiles`. Initialization of 
-``self.exporttype`` determines the type of export that will be performed
-('project', 'phase', 'single', 'powder', 'image', 'map' or (someday)
-'pdf') and of ``self.multiple``
-determines if only a single phase, data set, etc. can be exported at a
-time (when False) or more than one can be selected.
+:mod:`~GSASII.GSASIIfiles`.      
+Export routines commonly access the GUI to determine information on
+the contents of the file(s) to be written, but for powder diffraction
+and phase data export, a routine named ``Writer()`` may be defined. If this is
+present, the exporter can be used from: mod:`~GSASII.GSASIIscriptable`
+without GUI access. Note that the arguments for the``Writer()`` method
+include a histogram tree name as well as a file name to
+be written.
 
-Powder export routines may optionally define a ``Writer()``
-method that accepts the histogram tree name as well as a file name to
-be written. This allows :mod:`~GSASII.GSASIIscriptable` to use the exporters
-independent of the GUI.
+A file containing one or more export routine can be placed
+either in the ``GSASII/exports`` directory (which requires
+modification of the ``__init__.py`` file or the file can be placed in
+the ``~/.GSASII/exports`` directory.
+(Note that ``~`` here is translated to the 
+user's home directory; for Windows this is usually taken from the
+USERPROFILE setting or a combination of HOMEPATH and HOMEDRIVE,
+so this directory will usually have form
+``C:\\Users\\YourUsername\\.GSASII\\exports``.
+The next time GSAS-II is started,
+the file will be loaded with all the other GSAS-II files and
+the new data format will appear in the appropriate exporter menu. 
+
+.. _export_routines: 
+
+======================================
+ Writing an Exporter Routine
+======================================
+
+When writing a exporter routine, one should create a new class derived
+from class `~GSASII.GSASIIfiles.ExportBaseclass`.
+The name of the class is arbitrary, but if more than one class is
+placed in file, each class must have a different name. The same name
+can be repeated if it is in different files. 
+As described below, this class will implement
+an ``__init__()`` and an ``Exporter()`` method, and many will supply a 
+``Writer()`` method, too. The purpose of each of these
+routines is described below. The easiest way to craft a new exporter
+will be to use the other exporters of the same data type as a model
+for where to find the data values that will be written, but the documentation 
+for the parent class (`~GSASII.GSASIIfiles.ExportBaseclass`) provides
+useful information on support routines that pull information from the
+GSAS-II data structures into the exporter. 
+
+__init__()
+--------------
+ 
+The ``__init__`` method will follow standard boilerplate largely independent
+of the data type: 
+
+.. code-block:: python
+
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            G2frame=G2frame,
+            formatName = 'Format name for menu',
+            extension='.extn',
+            longFormatName = 'Longer more detailed format name for status line'
+           )
+
+The first line in the ``__init__`` method calls the parent class 
+``__init__`` method with the following parameters: 
+
+  * ``G2frame``: a reference to the main GSAS-II GUI window or None
+    when run scripted.
+  * ``formatName``: a string to be used in the menu. Should be short. 
+  * ``extension``: a string to be used in the file name. All files
+    produced by the exporter will have this extension.
+  * ``longFormatName``: a longer string to be used to describe the
+    format in help. 
+
+In addition, one instance variables must be defined:
+
+.. code-block:: python
+
+        self.exporttype = ['phase']
+
+The value for ``self.exporttype`` determines the type of export that will be performed
+('project', 'phase', 'single', 'powder', 'image', 'map', 'sasd', 'refd' or (someday)
+'pdf') and the menu where the exporter will be placed.  Note that
+'project' exports are those that include all data from a
+.gpx file (all phases, histograms, etc.)
+
+Another item is optional. 
+
+.. code-block:: python
+
+        self.multiple = True
+
+The value specified for ``self.multiple``
+determines if only a single phase, data set, etc. can be exported at a
+time (when False) or when True, a file can be produced with multiple
+histograms, phases, etc.
+
+Exporter()
+--------------
+
+The class must supply a ``Exporter`` method that will write a
+file. Depending on the settings for ``self.exporttype`` and
+``self.multiple`` and the contents of the Data Tree, will dictate 
+what dialogs will be presented to the user to select what will be
+written. 
+
+Writer()
+--------------
+
+For powder and phase exports, if the class supplies a ``Writer()``
+module, then the export format
+will be available for scripted output (with
+:mod:`GSASIIscriptable`). These modules are supplied a histogram name
+or a phase name and should not attempt to access the GUI. It is not
+required that that this method be supplied, but usually it is not hard to do, 
+unless information from the user is required.
+
+Note that for phase exports the ``Writer()`` should be declared as follows:
+
+.. code-block:: python
+
+       def Writer(self,hist,phasenam,mode='w'):
+
+while for histogram exports the ``Writer()`` should be declared as follows:
+
+.. code-block:: python
+
+     def Writer(self,hist,filename=None,mode='w'):
 
 -------------------------------------------
 *Module G2export_examples: Examples*

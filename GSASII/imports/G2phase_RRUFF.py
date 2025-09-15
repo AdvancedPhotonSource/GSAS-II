@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
 '''Reads structure files downloaded from the RRUFF database either as ASCII
 text files or .rtf files that somehow are generated
 '''
-from __future__ import division, print_function
 import sys
 import numpy as np
 import random as ran
 from .. import GSASIIobj as G2obj
 
 class PhaseReaderClass(G2obj.ImportPhase):
-    '''A quickly-written importer to open a .txt file from the RRUFF database 
-    https://rruff.info
-    and pull out the phase info
+    '''A fairly quickly-written importer to pull out the phase info from a 
+    RRUFF database (https://rruff.info) text file. 
     '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__

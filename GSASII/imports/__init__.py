@@ -17,6 +17,7 @@ from . import G2phase_CIF
 from . import G2phase_GPX
 from . import G2phase_INS
 from . import G2phase_rmc6f
+from . import G2phase_RRUFF
 from . import G2phase_xyz
 from . import G2pwd_BrukerBRML
 from . import G2pwd_BrukerRAW
@@ -56,6 +57,7 @@ __all__ = [
     "G2phase_GPX",
     "G2phase_INS",
     "G2phase_rmc6f",
+    "G2phase_RRUFF",
     "G2phase_xyz",
     "G2pwd_BrukerBRML",
     "G2pwd_BrukerRAW",

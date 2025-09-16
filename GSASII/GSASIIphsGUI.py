@@ -2456,6 +2456,7 @@ def UpdatePhaseData(G2frame,Item,data):
         def FlipSizer():
             #patches
             if 'k-Max' not in Flip: Flip['k-Max'] = 20.
+            if 'MScorr' not in Flip: Flip['MScorr'] = 0.0
             if 'Resolution' in Flip:
                 Flip['GridStep'] = Flip['Resolution']
 
@@ -2493,7 +2494,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     Flip['testHKL'][Id] = HKL
                 except ValueError:
                     HKL = Flip['testHKL'][Id]
-                Obj.SetValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
+                Obj.ChangeValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
 
             refsList = [item for item in G2gd.GetGPXtreeDataNames(G2frame,['HKLF','PWDR']) if item in data['Histograms'].keys()]
             flipSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2501,6 +2502,10 @@ def UpdatePhaseData(G2frame,Item,data):
             lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection sets: '),0,WACV)
             if 'list' not in str(type(Flip['RefList'])):     #patch
                 Flip['RefList'] = [Flip['RefList'],]
+            refName = Flip['RefList'][0]
+            refType = ''
+            if refName and refName in data['Histograms']:
+                refType = data['Histograms'][refName]['Type']
             lineSizer.Add(wx.ComboBox(General,value=Flip['RefList'][0],choices=Flip['RefList'],
                 style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
             refList = wx.Button(General,label='Select reflection sets')
@@ -2521,6 +2526,9 @@ def UpdatePhaseData(G2frame,Item,data):
             line2Sizer.Add(wx.StaticText(General,label=' k-Max (>=10.0): '),0,WACV)
             kMax = G2G.ValidatedTxtCtrl(General,Flip,'k-Max',nDig=(10,1),xmin=10.)
             line2Sizer.Add(kMax,0,WACV)
+            if refType == 'SEC':
+                line2Sizer.Add(wx.StaticText(General,label=' MScorr (0-0.1): '),0,WACV)
+                line2Sizer.Add(G2G.ValidatedTxtCtrl(General,Flip,'MScorr',nDig=(10,4),xmin=0.,xmax=0.10),0,WACV)
             flipSizer.Add(line2Sizer,0)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line3Sizer.Add(wx.StaticText(General,label=' Test HKLs:'),0,WACV)

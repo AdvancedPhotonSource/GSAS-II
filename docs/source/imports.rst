@@ -38,9 +38,10 @@ named with the appropriate file name prefix:
 * 'sad' (small-angle scattering) or 
 * 'sfact' (single crystal).
 
-This file can be placed
+The importer file can be placed
 either in the ``GSASII/imports`` directory (which requires
-modification of the ``__init__.py`` file or the file can be placed in
+modification of the ``__init__.py`` and the ``meson.build`` files
+or the importer file can be placed in
 the ``~/.GSASII/imports`` directory.
 (Note that ``~`` here is translated to the 
 user's home directory; for Windows this is usually taken from the

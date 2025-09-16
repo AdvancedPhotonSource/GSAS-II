@@ -24,7 +24,8 @@ be written.
 
 A file containing one or more export routine can be placed
 either in the ``GSASII/exports`` directory (which requires
-modification of the ``__init__.py`` file or the file can be placed in
+modification of the ``__init__.py`` and the ``meson.build`` files)
+or the file can be placed in
 the ``~/.GSASII/exports`` directory.
 (Note that ``~`` here is translated to the 
 user's home directory; for Windows this is usually taken from the

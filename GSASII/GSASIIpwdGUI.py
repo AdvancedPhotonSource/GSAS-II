@@ -20,6 +20,7 @@ import copy
 import random as ran
 import pickle
 import scipy.interpolate as si
+from fractions import Fraction
 from . import GSASIIpath
 from . import GSASIImath as G2mth
 from . import GSASIIpwd as G2pwd
@@ -38,7 +39,15 @@ from . import GSASIIElem as G2elem
 from . import GSASIIsasd as G2sasd
 from . import G2shapes
 from . import SUBGROUPS as kSUB
-from . import k_vector_search as kvs
+from GSASII.imports.G2phase_CIF import CIFPhaseReader as CIFpr
+from . import GSASIIscriptable as G2sc
+from . import GSASIImiscGUI as G2IO
+try:
+    from sympy import symbols, nsimplify, Rational as SRational
+except ImportError:
+        G2fil.NeededPackage({'ISODISTORT k-vector search':['sympy']})
+        symbols = None
+
 try:
     VERY_LIGHT_GREY = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
     WACV = wx.ALIGN_CENTER_VERTICAL
@@ -2910,6 +2919,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     insVal['Type'] = 'SEC'      # in 3 places!
                     Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId) 
                     Pattern[0]['Type'] = 'SEC'
+                    Pattern[1]['Type'] = 'SEC'          #Here, too!
         updateData(insVal,insRef)
         wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
 
@@ -4503,7 +4513,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
     # TODO: I think this used to work, but this needs to be revisited due to
     # AttributeError: 'G2DataWindow' object has no attribute 'ReImportMenuId'
-    # from: 
+    # from:
     #    reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
     #
     # def ImportUnitCell(event):
@@ -4601,6 +4611,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         Generates & plots reflections
         '''
+        from . import k_vector_search as kvs
         data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         cells,dminx = data[2:4]
         if event is None:
@@ -5164,8 +5175,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def OnISODISTORT_kvec(phase_nam):   # needs attention from Yuanpeng
-        '''Search for k-vector using the ISODISTORT web service
+    def OnISODISTORT_kvec(event):
+        '''Search for k-vector using the ISODISTORT web service.
+        Developed by Yuanpeng Zhang with help from Branton Campbell.
         '''
         def _showWebPage(event):
             'Show a web page when the user presses the "show" button'
@@ -5173,36 +5185,180 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             txt = event.GetEventObject().page
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
             with open(tmp.name,'w') as fp:
-                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/iso/">',))
+                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
+
         def showWebtext(txt):
             import tempfile
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
             with open(tmp.name,'w') as fp:
-                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/iso/">',))
+                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
+        def _get_opt_val(opt_name, out):
+            opt_pattern = rf'NAME="{opt_name}" VALUE="(.*?)"'
+            opt_match = re.search(opt_pattern, out)
+
+            return opt_match.group(1)
+
+        def grab_all_kvecs(out_html):
+            """Extract all k-vectors from the ISODISTORT output HTML."""
+            import re
+            from k_vec_solve import k_vec_solve as kvsolve
+
+            kvec1_pattern = r'<SELECT NAME="kvec1">(.*?)</SELECT>'
+            kvec1_match = re.search(kvec1_pattern, out_html, re.DOTALL)
+
+            if kvec1_match:
+                select_content = kvec1_match.group(1)
+
+                # Extract option values
+                option_pattern = r'<OPTION VALUE="([^"]*)"[^>]*>([^<]*)</OPTION>'
+                options = re.findall(option_pattern, select_content)
+
+                final_kvec_keys = []
+                for value, _ in options:
+                    final_kvec_keys.append(value)
+
+                all_kvecs = {}
+                for key in final_kvec_keys:
+                    pattern_str = f"({key.split('(')[1]}"
+                    k_form = kvsolve.parse_expression_string(pattern_str)
+                    all_kvecs[key] = k_form
+
+                return all_kvecs
+            else:
+                return None
+
+        a, b, g = symbols('a b g')
+
+        def frac_str(value, max_den=1000):
+            # Try to get a rational exactly; if huge, fall back to bounded approximation
+            try:
+                rat = nsimplify(value, rational=True, maxsteps=50)
+                if isinstance(rat, SRational):
+                    num, den = rat.as_numer_denom()
+                    num, den = int(num), int(den)
+                    if den <= max_den:
+                        return f"{num}/{den}" if den != 1 else str(num)
+            except Exception:
+                pass
+
+            # Best rational with denominator <= max_den
+            try:
+                f = Fraction(value).limit_denominator(max_den)
+            except TypeError:
+                f = Fraction(float(value)).limit_denominator(max_den)
+
+            return f"{f.numerator}/{f.denominator}" if f.denominator != 1 else str(f.numerator)
+
+        def to_fraction_strs(d, keys=(a, b, g), max_den=1000):
+            out = {}
+            for k in keys:
+                if k in d:
+                    out[str(k)] = frac_str(d[k], max_den)
+            return out
+
+        def setup_kvec_input(k_vec, k_vec_dict, isocif_cif):
+            """Set up the input for isodistort post request
+
+            Args:
+                k_vec (str): The k-vector to use for the isodistort request.
+                k_vec_dict (dict): The dictionary containing the k-vector
+                    form extracted from isodistort.
+                isocif_cif (str): The CIF file content exported from ISOCIF.
+
+            Returns:
+                dict: New entries and those need to be corrected in the data
+                to be used in the post request.
+            """
+            from k_vec_solve import k_vec_solve as kvsolve
+            k_forms = k_vec_dict.items()
+            all_keys = list(k_forms)
+
+            spg_num = kvsolve.grab_spg_num(isocif_cif)
+            k_vec_sol = kvsolve.find_kvec_form_param(spg_num, isocif_cif, k_vec, k_forms)
+            k_vec_form = all_keys[k_vec_sol[0]]
+
+            data_update = dict()
+            data_update['kvec1'] = k_vec_form[0]
+            k_vec_params = to_fraction_strs(k_vec_sol[1], max_den=1000)
+
+            if "a" in k_vec_params:
+                data_update['kparam11'] = k_vec_params["a"]
+            if "b" in k_vec_params:
+                data_update['kparam21'] = k_vec_params["b"]
+            if "g" in k_vec_params:
+                data_update['kparam31'] = k_vec_params["g"]
+
+            return data_update
+
+        # start of OnISODISTORT_kvec computations
+        if symbols is None:
+            G2G.G2MessageBox(G2frame,
+                    'Unable to perform ISODISTORT kvec search without the sympy module. Use Help/Add packages... to address','No sympy')
+            return
+        try:
+            import requests
+        except:
+            G2G.G2MessageBox(G2frame,
+                    'Unable to perform ISODISTORT kvec search without the requests module. Use Help/Add packages... to address','No requests')
+            return
         import tempfile
         import re
-        import requests
-        from exports import G2export_CIF
+        from GSASII.exports import G2export_CIF
         from . import ISODISTORT as ISO
-        isoformsite = 'https://iso.byu.edu/iso/isodistortform.php'
+        isoformsite = 'https://iso.byu.edu/isodistortform.php'
+        isocifformsite = 'https://iso.byu.edu/isocifform.php'
+        isocifuploadsite = 'https://iso.byu.edu/isocifuploadfile.php'
 
-        #isoscript='isocifform.php'
-        #isoCite = ('For use of this please cite\n'+
-        #    G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...',wrap=60,indent=5)+
-        #    G2G.GetCite('ISODISPLACE',wrap=60,indent=5))
+        if not G2frame.kvecSearch['mode']:
+            return
 
-        #latTol,coordTol,occTol = 0.001, 0.01, 0.1
+        k_table = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        k_cells, _ = k_table[2:4]
+        kpoint = None
+        for row in range(len(k_cells)):
+            if UnitCellsTable.GetValue(row, 0):
+                kpoint = cells[row][3:6]
+                break
+
+        if kpoint is None:
+            wx.MessageBox(
+                "Please select a k-vector from the table.",
+                style=wx.ICON_INFORMATION,
+                caption='Isotropic Subgroup Generation'
+            )
+
+            return
+
+        isoCite = G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...',wrap=60,indent=5)  # reuse saved citation
+
+        info_str = '''CIF files of the isotropic subgroups associated with the
+            selected k-vector will be created.
+            Generated CIF files will be saved in the same directory as the
+            current project file.
+            This can take up to a few minutes. Check the terminal for progress.
+        '''
+        wx.MessageBox(
+            f"{isoCite}\n\n{info_str}",
+            style=wx.ICON_INFORMATION,
+            caption='Isotropic Subgroup Generation'
+        )
+
+        wx.GetApp().Yield()
+
+        info_msg = "Processing IRREPs for the selected k-vector. "
+        info_msg += "This can take up to a few minutes."
+        print(info_msg)
+
+        # find tree item for current phase
         phaseID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
-        Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
-            G2frame,phaseID,phase_nam))
-        data = Phase
-        #oacomp,occomp = G2mth.phaseContents(data)
-        #ophsnam = data['General']['Name']
+        phase_nam = G2frame.kvecSearch['phase']
+        phaseTreeId = G2gd.GetGPXtreeItemId(G2frame, phaseID, phase_nam) # save reference
+        Phase = G2frame.GPXtree.GetItemPyData(phaseTreeId)
         fileList = []
         # write a CIF as a scratch file
         obj = G2export_CIF.ExportPhaseCIF(G2frame)
@@ -5211,8 +5367,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         obj.loadTree()
         tmp = tempfile.NamedTemporaryFile(suffix='.cif', delete=False)
         obj.dirname,obj.filename = os.path.split(tmp.name)
-        obj.phasenam = data['General']['Name']
-        obj.Writer('', data['General']['Name'])
+        obj.phasenam = Phase['General']['Name']
+        obj.Writer('', Phase['General']['Name'])
         parentcif = tmp.name
         ISOparentcif = ISO.UploadCIF(parentcif)
         up2 = {'filename': ISOparentcif, 'input': 'uploadparentcif'}
@@ -5237,11 +5393,47 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             except ValueError:
                 break
 
-        # TODO: bring in the searched k-vector.
-        # we can use the `use` check box to select the k-vector to use.
+        phase_sel = G2frame.kvecSearch['phase']
+        _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        Phase = Phases[phase_sel]
+
         data['input'] = 'kvector'
         data['irrepcount'] = '1'
-        data['kvec1'] = ' 1 *GM, k16 (0,0,0)'
+
+        # We need to upload the CIF file to ISOCIF and export from there, since
+        # some of the routines for k vector form solving only works with the
+        # CIF coming out from ISOCIF.
+        init_cif = ISO.UploadCIF(parentcif, upload_site=isocifuploadsite)
+        isocif_up = {'submit': 'OK', 'input': 'uploadcif', 'filename': init_cif}
+        isocif_out_1 = requests.post(isocifformsite, data=isocif_up).text
+
+        isocif_form = re.split(
+            '</form',
+            next(
+                i for i in re.split('<form', isocif_out_1, flags=re.IGNORECASE)
+                if 'Detect higher' in i
+            ),
+            flags=re.IGNORECASE
+        )[0]
+
+        isocif_formDict = {}
+        for f in isocif_form.split('<'):
+            try:
+                name = re.split('name=',f,flags=re.IGNORECASE)[1].split('"')[1]
+                value = re.split('value=',f,flags=re.IGNORECASE)[1].split('"')[1]
+                isocif_formDict[name] = value
+            except IndexError:
+                pass
+        isocif_formDict['input'] = 'savecif'
+
+        isocif_out_cif = requests.post(isocifformsite, data=isocif_formDict).text
+
+        kvec_dict = grab_all_kvecs(out2)
+        #lat_sym = Phase['General']['SGData']
+        data_update = setup_kvec_input(kpoint, kvec_dict, isocif_out_cif)
+        for key, value in data_update.items():
+            data[key] = value
+
         data['nmodstar1'] = '0'
         out3 = requests.post(isoformsite, data=data).text
 
@@ -5250,12 +5442,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         except ValueError:
             ISO.HandleError(out3)
             return [],[]
-
-        def _get_opt_val(opt_name, out):
-            opt_pattern = rf'NAME="{opt_name}" VALUE="(.*?)"'
-            opt_match = re.search(opt_pattern, out)
-
-            return opt_match.group(1)
 
         kvec1 = _get_opt_val('kvec1', out3)
         kvecnumber1 = _get_opt_val('kvecnumber1', out3)
@@ -5269,9 +5455,29 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         pos = out3.index("irrep1")
         pos1 = out3[pos:].index("</SELECT>")
         str_tmp = out3[pos:][:pos1]
-        ir_options = re.findall(r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp)
+        ir_options = re.findall(
+            r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp
+        )
+
+        proj_pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
+
+        G2frame.OnFileSave(None)
+        orgFilName = G2frame.GSASprojectfile
+        phsnam = phase_sel
+        # get restraints & clear geometrical restraints
+        resId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
+        Restraints = G2frame.GPXtree.GetItemPyData(resId)
+        resId = G2gd.GetGPXtreeItemId(G2frame, resId, phsnam)
+        #savedRestraints = None
+        if phsnam in Restraints:
+            Restraints[phsnam]['Bond']['Bonds'] = []
+            Restraints[phsnam]['Angle']['Angles'] = []
+            #savedRestraints = Restraints[phsnam]
+            del Restraints[phsnam]
+        #orgData = copy.deepcopy(data)
 
         for ir_opt, _ in ir_options:
+            print("Processing irrep:", ir_opt)
             data["input"] = "irrep"
             data['irrep1'] = ir_opt
             out4 = requests.post(isoformsite, data=data).text
@@ -5286,30 +5492,86 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
             radio_vals = radio_val_pattern.findall(out4)
             cleaned_radio_vals = [value.strip() for value in radio_vals]
+            iso_fn = _get_opt_val('isofilename', out4).strip()
+            data["isofilename"] = iso_fn
 
             for radio_val in cleaned_radio_vals:
+                print("Processing mode:", radio_val)
                 data["input"] = "distort"
                 data["origintype"] = "method2"
                 data["orderparam"] = radio_val + '" CHECKED'
-                data["isofilename"] = ""
-                requests.post(isoformsite, data=data).text
+                out5 = requests.post(isoformsite, data=data).text
 
-                continue
+                out_cif = ISO.GetISOcif(out5, 2)
+                cif_fn_part1 = radio_val.split()[0]
+                cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
+                cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
+                cif_fn_part1 = cif_fn_part1.replace('/', '_')
+                cif_fn_part2 = cif_fn_part2.replace('/', '_')
+                cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
+                cif_fn = os.path.join(proj_pth, cif_fn)
+                with open(cif_fn, 'wb') as fl:
+                    fl.write(out_cif.encode("utf-8"))
 
-                # TODO: parse out the distortion info from out5
-                # 1. download the CIF file for each search result
-                # 2. load the CIF file as a phase and create a project for it
-                # 3. we may want to package up all the project files and save
-                #    to a user specified location for later use.
+                try:
+                    rdlist = G2sc.import_generic(
+                        cif_fn, [CIFpr()], fmthint='CIF'
+                    )
+                except Exception:
+                    continue
 
-        os.unlink(tmp.name)
+                rd = rdlist[0]
+
+                key_list = [
+                    'General', 'Atoms', 'Drawing',
+                    'Histograms', 'Pawley ref', 'RBModels'
+                ]
+                for key in key_list:
+                    Phase[key] = rd.Phase[key]
+
+                newname = rd.Phase['General']['Name']
+                Phase['General']['Name'] = phsnam
+
+                # rename the phase in the data tree
+                G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)
+
+                G2frame.GSASprojectfile = os.path.splitext(
+                    orgFilName
+                )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
+                G2IO.ProjFileSave(G2frame)
+
+        # restore the original saved project
+        G2frame.OnFileOpen(None, filename=orgFilName, askSave=False)
+
+        # reopen tree to the original phase
+        def _ShowPhase():
+            phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
+            G2frame.GPXtree.Expand(phId)
+            phId = G2gd.GetGPXtreeItemId(G2frame, phId, phsnam)
+            G2frame.GPXtree.SelectItem(phId)
+
+        wx.CallLater(100, _ShowPhase)
+
+        info_msg = f'''Done with subgroup output for the selected k-vector.
+            Please check output files in the following directory,
+            {os.getcwd()}
+        '''
+        wx.MessageBox(
+            info_msg,
+            style=wx.ICON_INFORMATION,
+            caption='Isotropic Subgroup Generation'
+        )
+
+        try:
+            os.unlink(tmp.name)
+        except PermissionError:
+            pass
 
         return
 
     def updateCellsWindow(event):
         'called when k-vec mode is selected'
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
-
 
     def OnClearCells(event):
         'remove previous search results'
@@ -5389,7 +5651,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             event.Skip()
         except: # can fail after window is destroyed
             pass
-
 # Display of Autoindexing controls
     def firstSizer():
 
@@ -5445,6 +5706,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         def OnKvecSearch(event):
             'Run the k-vector search'
+            from . import k_vector_search as kvs
 
             try:
                 import seekpath
@@ -6866,15 +7128,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         if mode == 2:
-            #OnISODISTORT_kvec(phase_sel) # TODO: not ready yet
-
             hSizer = wx.BoxSizer(wx.HORIZONTAL)
             hSizer.Add(gridDisplay)
 
-            # TODO: Add a button to call ISODISTORT
-            # ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
-            # ISObut.Bind(wx.EVT_BUTTON,OnISODIST)
-            # hSizer.Add(ISObut)
+            ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
+            ISObut.Bind(wx.EVT_BUTTON, OnISODISTORT_kvec)
+            hSizer.Add(ISObut)
 
             mainSizer.Add(hSizer)
         else:
@@ -7206,7 +7465,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     def OnToggleExt(event):
         G2frame.Hide = not G2frame.Hide
         UpdateReflectionGrid(G2frame,data,HKLF=True,Name=Name)
-        
+
     def OnPageChanged(event):
         '''Respond to a press on a phase tab by displaying the reflections. This
         routine is needed because the reflection table may not have been created yet.
@@ -9481,45 +9740,46 @@ def UpdatePDFGrid(G2frame,data):
             wx.CallAfter(OnComputePDF,None)
 
         def OnDetType(event):
+            #TODO: to be removed
             data['DetType'] = detType.GetValue()
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
             wx.CallAfter(OnComputePDF,None)
 
         def OnFlatSpin(event):
             data['Flat Bkg'] += flatSpin.GetValue()*0.01*data['IofQmin']
-            G2frame.flatBkg.SetValue(data['Flat Bkg'])
+            G2frame.flatBkg.ChangeValue(data['Flat Bkg'])
             flatSpin.SetValue(0)
             wx.CallAfter(OnComputePDF,None)
 
         def OnBackSlider(event):
             value = int(backSldr.GetValue())/100.
             data['BackRatio'] = value
-            backVal.SetValue(data['BackRatio'])
+            backVal.ChangeValue(data['BackRatio'])
             wx.CallAfter(OnComputePDF,None)
 
         def OnRulSlider(event):
             value = int(rulandSldr.GetValue())/100.
             data['Ruland'] = max(0.001,value)
-            rulandWdt.SetValue(data['Ruland'])
+            rulandWdt.ChangeValue(data['Ruland'])
             wx.CallAfter(OnComputePDF,None)
 
         def OnGRscaleSlider(event):
             value = int(gscaleSldr.GetValue())/50.
             data['GR Scale'] = max(0.1,min(2.,value))
-            gscale.SetValue(data['GR Scale'])
+            gscale.ChangeValue(data['GR Scale'])
             wx.CallAfter(OnComputePDF,None)
 
         def NewQmax(invalid,value,tc):
             if invalid: return
             data['QScaleLim'][0] = 0.9*value
-            SQmin.SetValue(data['QScaleLim'][0])
+            SQmin.ChangeValue(data['QScaleLim'][0])
             wx.CallAfter(OnComputePDF,None)
 
         def OnResetQ(event):
             data['QScaleLim'][1] = qLimits[1]
-            SQmax.SetValue(data['QScaleLim'][1])
+            SQmax.ChangeValue(data['QScaleLim'][1])
             data['QScaleLim'][0] = 0.9*qLimits[1]
-            SQmin.SetValue(data['QScaleLim'][0])
+            SQmin.ChangeValue(data['QScaleLim'][0])
             wx.CallAfter(OnComputePDF,None)
 
         def OnLorch(event):
@@ -9542,6 +9802,7 @@ def UpdatePDFGrid(G2frame,data):
 
         sfgSizer.Add((5,5),0)
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
+        #TODO: this should be removed
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Detector type: '),0,WACV)
         choice = ['Area detector','Point detector']
         detType = wx.ComboBox(G2frame.dataWindow,value=data['DetType'],choices=choice,
@@ -9553,6 +9814,7 @@ def UpdatePDFGrid(G2frame,data):
             obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'ObliqCoeff',nDig=(10,3),xmin=0.0,xmax=1.0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
             sqBox.Add(obliqCoeff,0)
+        #TODO: end of proposed removal
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Flat Bkg.: '),0,WACV)
         G2frame.flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
@@ -9568,6 +9830,8 @@ def UpdatePDFGrid(G2frame,data):
                 xmin=0.01,typeHint=float,size=wx.Size(50,20))
         sqBox.Add(rmin,0,WACV)
         sfgSizer.Add(sqBox,0,wx.EXPAND)
+        if data['DetType'] == 'Area detector' and fullLimits[1] > 80.:
+            sfgSizer.Add(wx.StaticText(G2frame.dataWindow,label=' NB: Detector choice may be in error; use Point detector instead'))
 
         bkBox = wx.BoxSizer(wx.HORIZONTAL)
         bkBox.Add(wx.StaticText(G2frame.dataWindow,label=' Background ratio: '),0,WACV)
@@ -9877,7 +10141,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='g(r)')
 
-    # Routine UpdatePDFGrid starts here
+    #### Routine UpdatePDFGrid starts here
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PDFMenu)
     global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
@@ -9925,6 +10189,7 @@ def UpdatePDFGrid(G2frame,data):
             data['diffMult'] = 1.0
         if 'GR Scale' not in data:
             data['GR Scale'] = 1.0
+            
     if powId:
         G2frame.dataWindow.PDFMenu.EnableTop(0,enable=True)
     else:
@@ -9955,7 +10220,7 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataWindow.SetDataSize()
 
 ###############################################################################################################
-#UpdatePDFPeaks: peaks in G(r)
+####UpdatePDFPeaks: peaks in G(r)
 ###############################################################################################################
 def UpdatePDFPeaks(G2frame,peaks,data):
 
@@ -10136,6 +10401,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     G2frame.Bind(wx.EVT_MENU, OnFitPDFpeaks, id=G2G.wxID_PDFPKSFIT)
     G2frame.Bind(wx.EVT_MENU, OnFitAllPDFpeaks, id=G2G.wxID_PDFPKSFITALL)
     G2frame.Bind(wx.EVT_MENU, OnClearPDFpeaks, id=G2G.wxID_CLEARPDFPEAKS)
+    G2frame.dataWindow.ClearData()
     mainSizer =  wx.BoxSizer(wx.VERTICAL)
     G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add((5,5),0)

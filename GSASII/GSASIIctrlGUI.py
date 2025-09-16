@@ -7691,6 +7691,15 @@ def ShowHelp(helpType,frame,helpMode=None):
         helplink = os.path.join(path2GSAS2,'help',helplink)
         pfx = "file://"
         if sys.platform.lower().startswith('win'):
+            # really don't understand what urlunsplit is doing, but this seems
+            # to prevent windows from encoding the # for the anchor
+            # (suggested by Google's AI!) 
+            from urllib.parse import urlunsplit
+            f = helplink.split('#')[0]
+            a = ''
+            if '#' in helplink:
+                a = helplink.split('#')[1]
+            helplink = urlunsplit(['file','',f,'',a])
             pfx = ''
         #if GSASIIpath.GetConfigValue('debug'): print 'DBG_Help link=',pfx+helplink
         if htmlFirstUse:
@@ -8436,7 +8445,7 @@ def ChooseOrigin(G2frame,rd):
     for atom in O2atoms:
         for i in [0,1,2]:
             atom[cx+i] += T[i]
-            atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update symmetry & mult
+        atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update symmetry & mult
     #get density & distances
     DisAglData = {}
     DisAglData['SGData'] = rd.Phase['General']['SGData']
@@ -8563,7 +8572,7 @@ def makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plottype):
             G2frame.Cmax = val
         else:
             G2frame.Cmin = val
-        obj.txt.SetValue(int(Ymax*val))
+        obj.txt.ChangeValue(int(Ymax*val))
         updatePlot()
     def OnNewVal(*args,**kwargs):
         'respond when a value is placed in the min or max text box'

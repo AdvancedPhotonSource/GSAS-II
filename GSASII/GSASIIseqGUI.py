@@ -7,6 +7,7 @@ from __future__ import division, print_function
 import platform
 import copy
 import re
+import os
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
@@ -256,6 +257,260 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         'export the selected columns to a .csv file from menu command'
         OnSaveSelSeq(event,csv=True)
 
+    def OnSaveCinema(event):
+        '''This routine creates/modifies files to run Cinema: Debye-Scherrer 
+        https://github.com/cinemascience/cinema_debye_scherrer
+        https://cinemascience.github.io/publications.html
+        (https://journals.iucr.org/j/issues/2018/03/00/ks5597/ks5597.pdf)
+
+        Routine developed by Andrew Kuncevich (see https://github.com/AdvancedPhotonSource/GSAS-II/issues/11)
+
+        Note that cinema is installed and run with commands like:
+          git clone https://github.com/cinemascience/cinema_debye_scherrer.git
+          cd cinema_debye_scherrer
+          python -m http.server
+          open http://localhost:8000/ in browser
+        Perhaps if there is demand, we could have GSAS-II install and launch 
+        Cinema: Debye-Scherrer, but for now let's leave this for users to 
+        do. 
+        '''
+
+        IMAGES_SUBDIR = "images"
+        DB_JSON_FILENAME = "databases.json"
+        DATA_CSV_FILENAME = "data.csv"
+        def show_project_dialog():
+            dialog = wx.MessageDialog(
+                G2frame,
+                "Reuse previous Cinema project or create a new one?",
+                "Project Selection",
+                wx.OK | wx.CANCEL | wx.ICON_QUESTION
+            )
+            dialog.SetOKCancelLabels("Reuse", "New Project")
+            dialog.CenterOnParent()
+            result = dialog.ShowModal()
+            dialog.Destroy()
+            if result == wx.ID_OK:
+                return True
+            else:
+                return False
+        # at present this only has been tested with PWDR sequential fits
+        if not histNames[0].startswith('PWDR'):
+            G2G.G2MessageBox(G2frame,
+                'Cinema export is only available at present for PWDR fits',
+                'Sorry')
+            return
+
+        # create a table of values from sequential table, copying 
+        # the number of displayed digits and removing unneeded entries
+        nRows=len(G2frame.SeqTable.GetData())
+        colLabels = ['File']
+        colDecimals = []
+        useCol = []
+        for i,lbl in enumerate(G2frame.seqResults_colLabels):
+            typ = G2frame.SeqTable.GetTypeName(0,i)
+            if typ in ['long','bool']:
+                colDecimals.append(None)
+                useCol.append(False)
+                continue
+            colLabels.append(lbl)
+            useCol.append(True)
+            if ',' in typ:
+                colDecimals.append(typ.split(',')[1])
+            else:
+                colDecimals.append('6')
+        table_data = []
+        for r in range(nRows):
+            row = [G2frame.SeqTable.GetRowLabelValue(r)]
+            for i,val in enumerate(G2frame.SeqTable.GetData()[r]):
+                if not useCol[i]: continue
+                row.append(f"{val:.{colDecimals[i]}f}")
+            table_data.append(row)
+        
+        # Get location where Cinema software is installed
+        # must have the index.html file
+        selected_dir = GSASIIpath.GetConfigValue('CINEMA_DS_directory')
+        while ((selected_dir is None) or (not os.path.exists(selected_dir))
+            or (not os.path.exists(os.path.join(selected_dir,'index.html')))
+            ):
+            with wx.DirDialog(
+                G2frame,
+                message="Select Cinema directory containing index.html",  # Dialog title
+                defaultPath="",  # Initial directory (empty = current)
+                style=wx.DD_DEFAULT_STYLE  # Dialog style
+            ) as dialogDir:
+                dialogDir.CenterOnParent()
+                if dialogDir.ShowModal() == wx.ID_OK:
+                    selected_dir = dialogDir.GetPath()
+                else:
+                    print('Cancelling Cinema export')
+                    return
+            if not (os.path.exists(selected_dir) and
+                    os.path.exists(os.path.join(selected_dir,'index.html'))):
+                G2G.G2MessageBox(G2frame,
+                f'Directory {selected_dir!r} does not exist or '+
+                'does not contain an index.html file. Try again',
+                'Invalid location')
+                continue             # don't save if not valid
+            GSASIIpath.SetConfigValue({'CINEMA_DS_directory':
+                                           [None,selected_dir]})
+            config = G2G.GetConfigValsDocs()
+            G2G.SaveConfigVars(config)
+
+        # Work with Cinema json file
+        import json
+        db_directory = None
+        Repeat = True
+        while Repeat:
+            Repeat = False
+            if show_project_dialog():
+                # Actions when continuing work with a previous project
+                import glob
+                f1 = os.path.join('data','*',DATA_CSV_FILENAME)
+                choices = [os.path.split(i)[0] for i in glob.glob(f1,root_dir=selected_dir)]
+                dlg = G2G.G2SingleChoiceDialog(G2frame,
+                                                   'Select previously used location',
+                                                   'Select directory',choices)
+                dlg.CenterOnParent()
+                if dlg.ShowModal() == wx.ID_OK:
+                    val = choices[dlg.GetSelection()]
+                    db_directory = os.path.join(selected_dir,val)
+                    dlg.Destroy()
+                else:
+                    dlg.Destroy()
+                    print('Cancelling Cinema export')
+                    return
+                #file_path = os.path.join(db_directory, DATA_CSV_FILENAME)
+
+            else:
+                # Actions when creating a new project
+                json_path = os.path.join(selected_dir, DB_JSON_FILENAME)
+
+                dlg = wx.Dialog(G2frame, title="New Cinema:D-S Project", size=(400, 200))
+                panel = wx.Panel(dlg)
+                main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+                # Flexible grid layout (2 columns, 2 rows, 5px spacing)
+                grid_sizer = wx.FlexGridSizer(2, 2, 5, 5)
+                grid_sizer.AddGrowableCol(1)
+
+                # Project name field
+                name_label = wx.StaticText(panel, label="Project Name:")
+                name_ctrl = wx.TextCtrl(panel, value="GSAS-II Cinema Export")
+                name_ctrl.SetMinSize((200, -1))
+                grid_sizer.Add(name_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                grid_sizer.Add(name_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
+
+                # Database directory field
+                dir_label = wx.StaticText(panel, label="DB Directory: data/...")
+                dir_ctrl = wx.TextCtrl(panel, value="g2db.cdb")
+                grid_sizer.Add(dir_label, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                grid_sizer.Add(dir_ctrl, 1, wx.EXPAND|wx.ALIGN_LEFT)
+
+                main_sizer.Add(grid_sizer, 0, wx.EXPAND|wx.ALL, 10)
+
+                # Buttons
+                btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                btn_sizer.AddStretchSpacer(1)
+                btn_ok = wx.Button(panel, wx.ID_OK, "OK")
+                btn_ok.SetDefault()
+                btn_cancel = wx.Button(panel, wx.ID_CANCEL, "Cancel")
+                btn_sizer.Add(btn_ok, 0, wx.RIGHT, 10)
+                btn_sizer.Add(btn_cancel, 0)
+                btn_sizer.AddStretchSpacer(1)
+                main_sizer.Add(btn_sizer, 0, wx.EXPAND|wx.ALL, 10)
+
+                panel.SetSizer(main_sizer)
+                main_sizer.Fit(dlg)
+                dlg.CenterOnParent()
+
+                if dlg.ShowModal() == wx.ID_OK:
+                    project_name = name_ctrl.GetValue()
+                    db_directory = os.path.join("data", dir_ctrl.GetValue())
+                    dlg.Destroy()
+                    new_loc = os.path.join(selected_dir,db_directory)
+                    if os.path.exists(new_loc):
+                        G2G.G2MessageBox(G2frame,
+                f'This file has already been created, specify a new DB directory or reuse {dir_ctrl.GetValue()}',
+                'In use')
+                        Repeat = True
+                        continue
+                    try:
+                        os.makedirs(new_loc, exist_ok=True)
+                    except OSError as e:
+                        print(f"Directory creation failed: {e}")
+                        wx.MessageBox(f"Failed to create directory: {e}", "Error", wx.OK|wx.ICON_ERROR)
+                        return  # Terminate execution if directory creation failed
+
+                    try:
+                        print('Open and reuse json')
+                        with open(json_path, 'r', encoding='utf-8') as fil:
+                            data = json.load(fil)
+                        new_entry = {
+                            "name": project_name,
+                            "directory": db_directory,
+                            "smoothLines": True,
+                            "lineOpacity": 1.0
+                        }
+                        data.append(new_entry)
+                        # rewrite data to json file
+                        with open(json_path, 'w', encoding='utf-8') as file:
+                            json.dump(data, file, indent=8, ensure_ascii=False)
+                    except FileNotFoundError:
+                        print(f"File {json_path} not found")
+                    except json.JSONDecodeError:
+                        print(f"Error reading JSON file {json_path}")
+                    except Exception as e:
+                        print(f"An error occurred: {e}")
+                else:
+                    dlg.Destroy()
+                    print('Cancelling Cinema export')
+                    return
+
+            file_path = os.path.join(selected_dir, db_directory, DATA_CSV_FILENAME)
+
+        with open(file_path, 'w', encoding='utf-8') as fil:
+            fil.write(", ".join(colLabels))
+            fil.write(", FILE\n")
+
+            for r in range(nRows):
+                fil.write(", ".join(table_data[r]))
+                fil.write("," + IMAGES_SUBDIR + "/PWDR_" + G2frame.SeqTable.rowLabels[r].replace('.', '_').replace(' ', '_') + ".png")
+                fil.write("\n")
+        print(f"Cinema {DATA_CSV_FILENAME} saved at: {file_path}")
+
+        output_dir = os.path.join(selected_dir, db_directory, IMAGES_SUBDIR)
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+        except OSError as e:
+            print(f"images directory creation failed: {e}")
+            wx.MessageBox(f"Failed to create directory images: {e}", "Error", wx.OK|wx.ICON_ERROR)
+            return  # Terminate execution if directory creation failed
+
+        ExportSequentialImages(G2frame,histNames,output_dir,100)
+        print('Export to Cinema: Debye-Scherrer completed successfully')
+        
+    def OnSaveSeqImg(event):
+        'export plots from all rows, called from menu command'
+        # save currently selected row, if any
+        prevSelected = G2frame.dataDisplay.GetSelectedRows()
+        # location for output files
+        import tempfile
+        tmpdir = tempfile.mkdtemp()
+        def cleanup():
+            '''cleanup is a routine to be called to delete the directory 
+            with the files created here. Call this to clean up 
+            after using or copying the files created here.'''
+            import shutil
+            shutil.rmtree(tmpdir)
+        res = ExportSequentialImages(G2frame,histNames,tmpdir,100)
+        # reset the selection and replot
+        for row in prevSelected: # expect this to be length 0 or 1
+            G2frame.dataDisplay.SelectRow(row)
+            PlotSelectedColRow('left')
+            break
+        #breakpoint()
+        cleanup()
+    
     def OnSaveSeqCSV(event):
         'export all columns to a .csv file from menu command'
         OnSaveSelSeq(event,csv=True,allcols=True)
@@ -1124,6 +1379,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.Bind(wx.EVT_MENU, DoSequentialExport, id=id)
     G2frame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=G2G.wxID_XPORTSEQCSV)
     G2frame.Bind(wx.EVT_MENU, DoSequentialExport, id=G2G.wxID_XPORTSEQFCIF)
+    G2frame.Bind(wx.EVT_MENU, OnSaveSeqImg, id=G2G.wxID_XPORTSEQIMG)
+    G2frame.Bind(wx.EVT_MENU, OnSaveCinema, id=G2G.wxID_XPORTCINEMA)
 
     EnablePseudoVarMenus()
     EnableParFitEqMenus()
@@ -1531,6 +1788,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
         colLabels=displayLabels,rowLabels=rowLabels,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
+    G2frame.seqResults_colLabels = colLabels #need for Cinema export in OnSaveCinema()
     # make all Use editable all others ReadOnly
     for c in range(len(colLabels)):
         for r in range(nRows):
@@ -2106,3 +2364,36 @@ def UpdateClusterAnalysis(G2frame,ClusData,shoNum=-1):
     G2frame.dataWindow.SetSizer(bigSizer)
     G2frame.dataWindow.SetDataSize()
     G2frame.SendSizeEvent()
+
+def ExportSequentialImages(G2frame,histNames,outdir,dpi='figure'):
+    '''Used to create plot images as PNG for each fit in the sequential results
+    table. 
+    For PWDR entries only. 
+    Used in Cinema: D-S to create refinement thumbnails.
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    :param list histNames: a list of the tree name entries
+      corresponding to each row in the table
+    :param str outdir: Name of a directory (path). Files created by 
+      this routine are placed here.
+    :param int dpi: dots per inch for the output. Defaults to the 
+      screen resolution
+    :returns: a list of the files created by this routine
+    '''
+    import os
+    files = []
+    for i in range(G2frame.dataDisplay.GetNumberRows()):
+        G2frame.dataDisplay.SelectRow(i)
+        name = histNames[i]       #only does 1st one selected
+        if name.startswith('PWDR'):
+            # plot a powder pattern and reset tree selection
+            pickId = G2frame.PickId
+            G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
+            G2pwpl.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
+            G2frame.PickId = pickId
+            wx.GetApp().Yield()
+            new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',False)
+            f = os.path.join(outdir,f"{histNames[i].replace('.', '_').replace(' ', '_')}.png")
+            files.append(f)
+            Plot.figure.savefig(f,dpi=dpi)
+    return files

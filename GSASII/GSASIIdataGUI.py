@@ -83,7 +83,7 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(240,240,240)
 DULL_YELLOW = (230,230,190)
-
+GkDelta = chr(0x0394)
 # transformation matrices
 commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.]]),
     'ba-c':np.array([[0.,1.,0.],[1.,0.,0.],[0.,0.,-1.]]),'-cba':np.array([[0.,0.,-1.],[0.,1.,0.],[1.,0.,0.]]),
@@ -129,10 +129,12 @@ class MergeDialog(wx.Dialog):
             self.Trans = np.eye(4)
         else:
             self.Trans = np.eye(3)
+        self.Type = data[0]['Type']
         self.Cent = 'noncentrosymmetric'
         self.Laue = '1'
         self.Class = 'triclinic'
         self.Common = 'abc'
+        self.Smart = False
         self.Draw()
 
     def Draw(self):
@@ -159,6 +161,9 @@ class MergeDialog(wx.Dialog):
             self.Common = Obj.GetValue()
             self.Trans = commonTrans[self.Common]
             wx.CallAfter(self.Draw)
+            
+        def OnSmart(event):
+            self.Smart = not self.Smart
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -215,6 +220,10 @@ class MergeDialog(wx.Dialog):
         Laue.Bind(wx.EVT_COMBOBOX,OnLaue)
         mergeSizer.Add(Laue,0,WACV)
         mainSizer.Add(mergeSizer)
+        if self.Type == 'SEC':
+            Smart = wx.CheckBox(self.panel,label=' Do smart merge for microED?')
+            Smart.Bind(wx.EVT_CHECKBOX,OnSmart)
+        mainSizer.Add(Smart,0)    
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -234,7 +243,7 @@ class MergeDialog(wx.Dialog):
         self.Fit()
 
     def GetSelection(self):
-        return self.Trans,self.Cent,self.Laue
+        return self.Trans,self.Cent,self.Laue,self.Smart
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -1180,7 +1189,7 @@ class GSASII(wx.Frame):
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Phase','Import phase data')
         for reader in self.ImportPhaseReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import phase data, use file to try to determine format')
@@ -1367,7 +1376,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu, 'Image','Import image file')
         for reader in self.ImportImageReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import image data, use file to try to determine format')
@@ -1397,7 +1406,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Structure Factor','Import Structure Factor data')
         for reader in self.ImportSfactReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import Structure Factor, use file to try to determine format')
@@ -1513,7 +1522,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Powder Data','Import Powder data')
         for reader in self.ImportPowderReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import powder data, use file to try to determine format')
@@ -2447,7 +2456,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Small Angle Data','Import small angle data')
         for reader in self.ImportSmallAngleReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2540,7 +2549,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Reflectometry Data','Import reflectometry data')
         for reader in self.ImportReflectometryReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2635,7 +2644,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'PDF G(R) Data','Import PDF G(R) data')
         for reader in self.ImportPDFReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPDF, id=item.GetId())
         submenu.AppendSeparator()
@@ -6725,6 +6734,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                     if  lbl == 'Project':
                         submenu.Append(G2G.wxID_XPORTSEQFCIF,'... as full CIF',
                                 'Save all sequential refinement results as a CIF file')
+                        G2G.Define_wxId('wxID_XPORTCINEMA')
+                        submenu.Append(G2G.wxID_XPORTCINEMA,'... to CINEMA: Debye-Scherrer',
+                                'Pass sequential refinement results for plotting in CINEMA: Debye-Scherrer')                        
                     for obj in objlist:
                         item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                         self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
@@ -6732,6 +6744,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
             self.SequentialEx.Append(G2G.wxID_XPORTSEQCSV,'Save table as CSV',
                 'Save all sequential refinement results as a CSV spreadsheet file')
+            G2G.Define_wxId('wxID_XPORTSEQIMG')
+            self.SequentialEx.Append(G2G.wxID_XPORTSEQIMG,'Save histogram images',
+                'Save all sequential refinements as a series of images')
             self.PostfillDataMenu()
             SetDataMenuBar(G2frame,self.SequentialMenu)
         self.SequentialMenu = _makemenu
@@ -7585,6 +7600,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DataGeneral = _makemenu
     # end of GSAS-II menu definitions
 
+def readFromFile(reader):
+    '''Define a caption for a file import menu item'''
+    nam = reader.formatName
+    if nam.startswith('(user'):
+        return nam.replace('(user)','(user) from')+' file'
+    else:
+        return f'from {reader.formatName} file'
+
 ####  Notebook Tree Item editor ##############################################
 NBinfo = {}
 def UpdateNotebook(G2frame,data):
@@ -8307,7 +8330,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         dlg = MergeDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                Trans,Cent,Laue = dlg.GetSelection()
+                Trans,Cent,Laue,Smart = dlg.GetSelection()
             else:
                 return
         finally:
@@ -8338,8 +8361,17 @@ def UpdatePWHKPlot(G2frame,kind,item):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         sumDf = 0.
         sumFo = 0.
+        Nmerge = {1:[0,0],}
+        MaxN = 1
         for ih,hkl in enumerate(HKLdict):
             HKL = HKLdict[hkl]
+            Nhkl = len(HKL[1])
+            if Nhkl not in Nmerge:
+                Nmerge.update({Nhkl:[1,0],})
+                MaxN = max(MaxN,Nhkl)
+                
+            else:
+                Nmerge[Nhkl][0] += 1
             newHKL = list(HKL[0])+list(HKL[1][0])
             if len(HKL[1]) > 1:
                 fos = np.array(HKL[1])
@@ -8347,6 +8379,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 Fo = np.average(fos[:,2],weights=wFo)
                 std = np.std(fos[:,2])
                 sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
+                if Smart:
+                    test = np.abs(fos[:,2]-Fo)/std
+                    Nmerge[Nhkl][1] += len(fos[:,2][test >2.0])
+                    fos[:,2] = np.where(test > 2.0,Fo,fos[:,2])
+                    Fo = np.average(fos[:,2],weights=wFo)
+                    std = np.std(fos[:,2])
+                    sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
                 sumFo += np.sum(fos[:,2])
                 sumDf += np.sum(np.abs(fos[:,2]-Fo))
                 dlg.Update(ih)
@@ -8356,6 +8395,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
             if newHKL[5+Super] > 0.:
                 mergeRef.append(list(newHKL))
         dlg.Destroy()
+        print(' Duplicate reflection statistics:')
+        for ihkl in range(MaxN):
+            try:
+                print('Ndup hkl:',ihkl+1,' Number: ',Nmerge[ihkl+1][0],' Rej:',Nmerge[ihkl+1][1])
+            except KeyError:
+                print('Ndup hkl:',ihkl+1,' Number: ',0)
         if Super:
             mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,3),2),1),0)
         else:
@@ -8436,19 +8481,25 @@ def UpdatePWHKPlot(G2frame,kind,item):
     def OnErrorAnalysis(event):
         '''Plots an "Abrams" plot - sorted delta/sig across data set.
         Should be straight line of slope 1 - never is'''
-        def OnPlotFoFcVsFc(kind):
+        def OnPlotFoFcVsFc():
             ''' Extinction check, plots Fo-Fc & 1/ExtC vs Fo for single crystal data '''
-            iFo,iFc,iExt = 5,7,11
+            test = lambda xy:(xy[iFlg+Super]>0 and xy[iFo+Super]>0)
+            iFlg,iFo,iSig,iFc,iFcT,iExt = 3,5,6,7,9,11
             refList = data[1]['RefList']
-            XY = np.array([[xy[iFo+Super],xy[iFo+Super]-xy[iFc+Super]] for xy in refList if xy[3+Super]>0])
-            XY = np.sqrt(np.abs(XY)).T
-            XE = [[xy[iFo+Super],xy[iExt+Super]] for xy in refList if xy[3+Super]>0]
-            XE = np.array([[np.sqrt(xe[0]),1./xe[1]] for xe in XE]).T
-            G2plt.PlotXY(G2frame,[[XY[0],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fo|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
-               Title='Extinction check',lines=False,points2=True,names=['|Fo|-|Fc|',],names2=['1/ExtC',])
+            wtFctr = data[0]['wtFactor']
+            Fo = np.sqrt(np.array([xy[iFo+Super] for xy in refList if test(xy)]))
+            Fc = np.sqrt(np.array([xy[iFc+Super] for xy in refList if test(xy)]))
+            FcT = np.sqrt(np.array([xy[iFcT+Super] for xy in refList if test(xy)]))
+            Sig = np.array([xy[iSig+Super] for xy in refList if test(xy)])/wtFctr      #sig(fo^2)/wtFactor (1/GOF)
+            XE = [[xy[iFcT+Super],xy[iExt+Super]] for xy in refList if test(xy)]
+            XE = np.array([[np.sqrt(xe[0]),xe[1]] for xe in XE]).T
+            XE[1] = np.where(XE[1]>0.,XE[1],1.0)
+            G2plt.PlotXY(G2frame,[[FcT,2.*Fo*(Fo-Fc)/Sig],],XY2=[XE,],labelX='Fc',labelY=GkDelta+'F/sig, ExtC',newPlot=False,
+               Title='Extinction check',lines=False,points2=True,names=[GkDelta+'F/sig',],names2=['ExtC',])
+            
         G2plt.PlotDeltSig(G2frame,kind)
         if kind in ['HKLF',]:
-            OnPlotFoFcVsFc(kind)
+            OnPlotFoFcVsFc()
         
 #    def OnCompression(event):
 #        data[0] = int(comp.GetValue())

@@ -3156,7 +3156,9 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     controlDict[pfx+'Tbar'] = extParms['Tbar']
                     controlDict[pfx+'Cos2TM'] = extParms['Cos2TM']
                 if 'Primary' in extType:         #makes no sense to have dynamical effects with anything but primary
-                    Ekey = ['Ep','Ma','Mb']
+                    Ekey = ['Ep']
+                elif 'microED' in extType:
+                    Ekey = ['Ma','Mb','Mc']
                 elif 'I & II' in extType:
                     Ekey = ['Eg','Es']
                 elif 'Secondary Type II' == extType:
@@ -3502,7 +3504,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,Print=
                         hapData[item][0] = parmDict[pfx+item]
                         if pfx+item in sigDict:
                             ScalExtSig[pfx+item] = sigDict[pfx+item]
-                for item in ['Ep','Eg','Es','Ma','Mb']:
+                for item in ['Ep','Eg','Es','Ma','Mb','Mc']:
                     if parmDict.get(pfx+item):
                         hapData['Extinction'][2][item][0] = parmDict[pfx+item]
                         if pfx+item in sigDict:

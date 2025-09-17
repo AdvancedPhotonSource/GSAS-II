@@ -30,5 +30,6 @@ del sys, make_path_watcher, os
 
 
 from .GSASIIGUI import main  # noqa: E402
+from .GSASIIGUI import __version__
 
 __all__ = ['main']

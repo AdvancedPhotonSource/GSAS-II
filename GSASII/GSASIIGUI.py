@@ -16,7 +16,9 @@ from . import GSASIIpath
 __version__ = '5.0.0'
 gv = GSASIIpath.getSavedVersionInfo()
 if gv is not None:
-    if len(gv.git_tags):
+    if len(gv.git_versiontag):
+        __version__ = gv.git_versiontag[1:]
+    elif len(gv.git_tags):
         __version__ = gv.git_tags[0]
     elif len(gv.git_prevtags):
         __version__ = gv.git_prevtags[0]
@@ -94,7 +96,18 @@ files, please reset or reinstall''')
     if sys.platform == "darwin":
         wx.CallLater(50,application.ClearStartup)
     GSASIIpath.InvokeDebugOpts()
+    wx.GetApp().Yield()
+    wx.CallLater(2000,DoStuff)
     application.MainLoop()
 
+def DoStuff():
+    import wx
+    wx.GetApp().Yield()
+    print('entering DoStuff')
+    wx.Sleep(1)
+    print('after wait')
+    wx.Sleep(2)
+    print('leaving DoStuff')
+    wx.GetApp().Yield()
 if __name__ == '__main__':
     main()

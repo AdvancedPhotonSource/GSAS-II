@@ -99,6 +99,11 @@ commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.
 commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P','P->C','C->P',
     'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*','setting 1->2']          #don't put any new ones after the setting one!
 
+loggingExitCommands = []
+# clear out any old commamnds in the file
+with open('/tmp/G2logging.txt','w') as fp:
+    fp.write(f'# GSAS-II event logging file {time.ctime()}\n')
+    
 def GetDisplay(pos):
     '''Gets display number (0=main display) for window position (pos). If pos outside all displays
     returns None
@@ -617,6 +622,7 @@ def GSASIImain(application):
             dlg.ShowModal()
         finally:
             dlg.Destroy()
+        for cmd in loggingExitCommands: cmd()  # cleanup logging
         sys.exit()
 
     application.main = GSASII(None)  # application.main is the main wx.Frame (G2frame in most places)
@@ -634,6 +640,11 @@ def GSASIImain(application):
 class G2EventLogger(wx.EvtHandler):
     '''This is used to record all wx events
     '''
+    def log2File(self,txt):
+        with open('/tmp/G2logging.txt','a') as fp:
+            fp.write(txt)
+            fp.write('\n')
+
     def ProcessEvent(self, event):
         # how to log "action" widgets (checkbuttons, buttons, etc.)?
         # How to log info supplied in dialogs
@@ -650,6 +661,7 @@ class G2EventLogger(wx.EvtHandler):
                 txt = tree.GetItemText(sel)
                 print('  parent',txt)
             print('Tree selection (after)',l)
+            self.log2File(f'Tree_selection: {l}')
         #fp = open('/tmp/events.txt','a')
         #print(f"Event {event.GetEventType()} Obj {event.GetEventObject()}")
         #fp.write(f"Event {event.GetEventType()} Obj {event.GetEventObject()}\n")
@@ -710,11 +722,12 @@ class G2EventLogger(wx.EvtHandler):
         self.eventLog = {}
         self.start = time.time()
         self.G2frame = frame
-        frame.PushEventHandler(self)
+        self.G2frame.PushEventHandler(self)
+        loggingExitCommands.append(self.unlogFrame)
     def unlogFrame(self):
         # note that we need to do a PopEventHandler before the
         # frame is deleted
-        frame.PopEventHandler(self)
+        self.G2frame.PopEventHandler()
 
 #### Create main frame (window) for GUI; main menu items here #######################################
 class GSASII(wx.Frame):
@@ -2448,6 +2461,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 project = None
             G2fil.openInNewTerm(project)
             print ('exiting GSAS-II')
+            for cmd in loggingExitCommands: cmd()  # cleanup logging
             sys.exit()
 
     def _Add_ImportMenu_smallangle(self,parent):
@@ -4684,6 +4698,7 @@ If you continue from this point, it is quite likely that all intensity computati
             self.G2plotNB.Destroy()
         if self.undofile and os.path.exists(self.undofile):
             os.remove(self.undofile)
+        for cmd in loggingExitCommands: cmd()  # cleanup logging
         sys.exit()
 
     def OnExportMTZ(self,event):

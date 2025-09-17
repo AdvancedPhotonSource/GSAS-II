@@ -4305,7 +4305,9 @@ def ChargeFlip(data,reflDict,pgbar):
                 SQ = 0.25/dsp**2
                 ff *= G2el.ScatFac(FFtable,SQ)[0]
             if ref[8+im] > 0.:         #use only +ve Fobs**2
-                E = np.sqrt(ref[8+im])/ff
+                E = np.sqrt(ref[8+im])
+                if reflDict['Type'] == 'SEC':
+                    E *= np.exp(-flipData['MScorr']*E)
             else:
                 E = 0.
             ph = ref[10]

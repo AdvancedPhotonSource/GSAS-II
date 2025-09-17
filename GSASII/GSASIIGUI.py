@@ -96,18 +96,7 @@ files, please reset or reinstall''')
     if sys.platform == "darwin":
         wx.CallLater(50,application.ClearStartup)
     GSASIIpath.InvokeDebugOpts()
-    wx.GetApp().Yield()
-    wx.CallLater(2000,DoStuff)
     application.MainLoop()
 
-def DoStuff():
-    import wx
-    wx.GetApp().Yield()
-    print('entering DoStuff')
-    wx.Sleep(1)
-    print('after wait')
-    wx.Sleep(2)
-    print('leaving DoStuff')
-    wx.GetApp().Yield()
 if __name__ == '__main__':
     main()

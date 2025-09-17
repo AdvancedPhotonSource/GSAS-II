@@ -3194,10 +3194,14 @@ If you continue from this point, it is quite likely that all intensity computati
                 print (traceback.format_exc())
         elif any('SPYDER' in name for name in os.environ):
             self.OnFileReopen(None)
-        # register the event logger
+        # register event logging
         self.event_logger = []
-        self.event_logger.append(G2EventLogger())
-        self.event_logger[-1].logFrame(self)
+        #self.event_logger.append(G2EventLogger())
+        #self.event_logger[-1].logFrame(self)
+        print('Queing doPlayBack')
+        wx.CallAfter(self.doPlayBack)
+#        wx.CallLater(2000,self.doPlayBack)
+#        self.doPlayBack()
 
     def GetTreeItemsList(self,item):
         ''' returns a list of all GSAS-II tree items
@@ -3235,7 +3239,7 @@ If you continue from this point, it is quite likely that all intensity computati
             pltNum = self.G2plotNB.nb.GetSelection()
             if pltNum >= 0:                         #to avoid the startup with no plot!
                 self.G2plotNB.nb.GetPage(pltNum)
-            item = event.GetItem()
+            item = event.GetItem()  # this is the DataTree object
             wx.CallAfter(SelectDataTreeItem,self,item,self.oldFocus)
             #if self.oldFocus: # now done via last parameter on SelectDataTreeItem
             #    wx.CallAfter(self.oldFocus.SetFocus)
@@ -6281,6 +6285,40 @@ Do you want to transfer the cell refinement flag to the Dij terms?
         data = self.GPXtree.GetItemPyData(Id)
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         G2IO.ExportSequentialFullCIF(self,data,Controls)
+
+    def doPlayBack(self):
+        '''Playback logging commands (eventually)
+        '''
+        # use with /Users/toby/Scratch/logging/Aminoffite__R100055-9__Powder__DIF_File__10335.gpx
+        cmdlist = [
+            ('Tree_selection:',['Controls']),
+            ('Tree_selection:',['Aminoffite', 'Phases']),
+            ('Tree_selection:',['Controls']),
+            ('Tree_selection:',['Aminoffite_shifted', 'Phases']),
+            ]
+
+        wx.GetApp().Yield()
+        print('entering doPlayBack')
+        for cmd in cmdlist:
+            if 'Tree_selection' in cmd[0]:
+                print('\n*** selecting tree item',reversed(cmd[1]))
+                Id = GetGPXtreeItemId(self,self.root, cmd[1][-1])
+                if Id == 0:
+                    print('Tree item not found',cmd[1][-1])
+                    return
+                if len(cmd[1]) == 2:
+                    Id = GetGPXtreeItemId(self,Id, cmd[1][0])
+                    if Id == 0:
+                        print('Tree item not found',cmd[1][0])
+                        return
+                print('selecting',Id)
+                self.GPXtree.SelectItem(Id)
+            print('before wait')
+            for i in range(50):
+                wx.GetApp().Yield()
+                time.sleep(0.1)
+            print('after wait')
+        print('leaving doPlayBack')
 
 #### Data window side of main GUI; menu definitions here #########################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):

@@ -3227,6 +3227,15 @@ def UpdateInstrumentGrid(G2frame,data):
             plotIndex['plotX'] = event.GetEventObject().rbindex
             onPrmPlot(event)
 
+        def onCopySelRow(event):
+            row = event.GetEventObject().row
+            for i,h in enumerate(histnames):
+                if i == 0:
+                    val = histdict[h][row][2]
+                else:
+                    histdict[h][row][2] = val
+            wx.CallAfter(MakeMultiParameterWindow,selected)
+
         def onPrmPlot(event):
             '''Callback after a change to X or Y plot contents
             plots multiple instrument param values vs selected X value.
@@ -3281,26 +3290,27 @@ def UpdateInstrumentGrid(G2frame,data):
         parent = G2frame.dataWindow.topPanel
         topSizer.Add(wx.StaticText(parent,wx.ID_ANY,lbl))
         if hlist:
-            btn = wx.Button(parent, wx.ID_ANY,'Select\nHistograms')
+            btn = wx.Button(parent, wx.ID_ANY,'Select Histograms')
             topSizer.Add(btn,0,wx.LEFT|wx.RIGHT,15)
             btn.Bind(wx.EVT_BUTTON,onSelectHists)
-        topSizer.Add((20,-1))
+        topSizer.Add((20,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer =  wx.BoxSizer(wx.VERTICAL)
         G2frame.dataWindow.SetSizer(mainSizer)
 
         # create table w/headers
         sdlg = G2frame.dataWindow
-        fgs = wx.FlexGridSizer(0,len(histnames)+3,0,0)
+        fgs = wx.FlexGridSizer(0,len(histnames)+4,0,0)
         fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'plot\nas X'),0,wx.LEFT|wx.RIGHT,1)
         fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'plot\nas Y'),0,wx.LEFT|wx.RIGHT,1)
         fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'Histogram  '),0,WACV|wx.LEFT,14)
         for i,h in enumerate(histnames):
-            if len(h[:5].strip()) > 20:
-                fgs.Add(G2G.ScrolledStaticText(sdlg,label=h[5:],dots=False,lbllen=20),
+            if len(h[5:].strip()) > 15:
+                fgs.Add(G2G.ScrolledStaticText(sdlg,label=h[5:],dots=False,lbllen=15),
                     0,WACV|wx.LEFT|wx.RIGHT,5)
             else:
                 fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,h[5:]),0,WACV|wx.LEFT|wx.RIGHT,5)
+            if i == 0: fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'copy\nright'),0,wx.LEFT|wx.RIGHT,1)
         firstRadio = wx.RB_GROUP
         # put non-editable values at top of table (plot as x but not y)
         keylist = ['num']
@@ -3320,7 +3330,7 @@ def UpdateInstrumentGrid(G2frame,data):
             fgs.Add((-1,-1)) # skip y checkbutton
             fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,lbl),0,WACV|wx.LEFT,14)
             plotvals = []
-            for h in histnames:
+            for i,h in enumerate(histnames):
                 if key == 'num':
                     val = histnum[h]
                 else:
@@ -3328,6 +3338,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,str(val)),
                     0,wx.ALIGN_CENTER|WACV,0)
                 plotvals.append(val)
+                if i == 0: fgs.Add((-1,-1)) # skip copy row button
             plotTbl.append(plotvals)
 
         # determine what items will be shown based on histogram type
@@ -3364,14 +3375,24 @@ def UpdateInstrumentGrid(G2frame,data):
             plotIndex[k] = rb.rbindex
             fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,l),0,WACV|wx.LEFT,14)
             plotvals = []
-            for h in histnames:
+            for i,h in enumerate(histnames):
                 miniSizer = wx.BoxSizer(wx.HORIZONTAL)
                 itemVal = G2G.ValidatedTxtCtrl(sdlg,histdict[h][k],1,nDig=(10,4),typeHint=float)
                 plotvals.append(histdict[h][k][1])
                 miniSizer.Add(itemVal)
                 miniSizer.Add((2,-1))
-                miniSizer.Add(G2G.G2CheckBox(sdlg,'',histdict[h][k],2),0,WACV|wx.RIGHT,15)
-                fgs.Add(miniSizer,0,wx.ALIGN_CENTER)
+                if i == 0:
+                    miniSizer.Add(G2G.G2CheckBox(sdlg,'',histdict[h][k],2),0,WACV|wx.RIGHT,3)
+                    fgs.Add(miniSizer,0,wx.ALIGN_RIGHT)
+                    # copy row button
+                    but = wx.Button(sdlg,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
+                    #but.SetBackgroundColour('yellow')
+                    fgs.Add(but,0,wx.RIGHT,15)
+                    but.Bind(wx.EVT_BUTTON, onCopySelRow)
+                    but.row = k
+                else:
+                    miniSizer.Add(G2G.G2CheckBox(sdlg,'',histdict[h][k],2),0,WACV|wx.RIGHT,15)
+                    fgs.Add(miniSizer,0,wx.ALIGN_CENTER)
             plotTbl.append(plotvals)
 
         mainSizer.Add(fgs)

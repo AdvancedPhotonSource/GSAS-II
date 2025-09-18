@@ -83,6 +83,7 @@ plotOpt['phaseLabels']  = {}
 plotOpt['lineWid'] = '1'
 plotOpt['saveCSV'] = False
 plotOpt['CSVfile'] = None
+plotOpt['GroupedX'] = False
 for xy in 'x','y':
     for minmax in 'min','max':
         key = f'{xy}{minmax}'
@@ -224,6 +225,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['title'] = not Page.plotStyle.get('title',True)
         elif event.key == 'f' and 'PWDR' in plottype: # short or full length tick-marks
             Page.plotStyle['flTicks'] = not Page.plotStyle.get('flTicks',False)
+        elif event.key == 'x'and groupName is not None:
+            plotOpt['GroupedX'] = not plotOpt['GroupedX']
+            if not plotOpt['GroupedX']: # reset scale
+                newPlot = True
         elif event.key == 'x'and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
@@ -2014,7 +2019,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.Choice = [' key press',
                 'f: toggle full-length ticks','g: toggle grid',
                 's: toggle sqrt plot',
-                'q: toggle Q plot','t: toggle d-spacing plot']
+                'q: toggle Q plot','t: toggle d-spacing plot',
+                'x: share x-axes']
         Plot.set_visible(False) # removes "big" plot
         gXmin = {}
         gXmax = {}
@@ -2072,8 +2078,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         # apportion axes lengths so that units are equal
         xfrac = [(gXmax[i]-gXmin[i])/totalrange for i in range(nx)]
         GS_kw = {'height_ratios':[4, 1], 'width_ratios':xfrac,}
-
-        Plots = Page.figure.subplots(2,nx,sharey='row',sharex='col',
+        if plotOpt['GroupedX']:
+            Plots = Page.figure.subplots(2,nx,sharey='row',sharex=True,
+                                         gridspec_kw=GS_kw)
+        else:
+            Plots = Page.figure.subplots(2,nx,sharey='row',sharex='col',
                                          gridspec_kw=GS_kw)
         Page.figure.subplots_adjust(left=5/100.,bottom=16/150.,
             right=.99,top=1.-3/200.,hspace=0,wspace=0)

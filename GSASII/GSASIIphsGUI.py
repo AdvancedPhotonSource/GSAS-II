@@ -1560,7 +1560,7 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
 #        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
     if G2frame.testRBObjSizers.get('OnOrien') is None: return
-    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj']['drawMode'])
+    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))
 
 def GetReflData(G2frame,phaseName,reflNames):
     ReflData = {'RefList':[],'Type':''}

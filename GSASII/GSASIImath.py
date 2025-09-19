@@ -5875,6 +5875,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     parmDict['nfixAt'] = len(fixAtoms)
     MCSA = generalData['MCSA controls']
     reflName = MCSA['Data source']
+    Htype = data['Histograms'][reflName]['Type']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
     upper = []
     lower = []
@@ -5898,7 +5899,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     Xdata = GetAtomX(RBdata,parmDict)
     Mdata = GetAtomM(Xdata,SGData)
     allT,allM = getAllTX(Tdata,Mdata,Xdata,SGM,SGT)[:2]
-    FFtables = G2el.GetFFtable(aTypes)
+    if Htype == 'SEC':
+        FFtables = G2el.GetEFFtable(aTypes)
+    else:    
+        FFtables = G2el.GetFFtable(aTypes)
     refs = []
     allFF = []
     cosTable = []
@@ -5974,7 +5978,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     allFF = np.array(allFF).T
     refs = np.array(refs).T
     if start:
+        
         G2fil.G2Print (' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef))
+        G2fil.G2Print (' Histogram type: %s'%Htype)
         G2fil.G2Print (' Number of parameters varied: %d'%(len(varyList)))
         start = False
     parmDict['sumFosq'] = sumFosq

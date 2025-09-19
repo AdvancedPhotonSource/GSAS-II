@@ -7562,7 +7562,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         mcsaTypes = []
         neqv = 0
         for xyz,atyp in zip(XYZs,Types):
-            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=False))
+            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))
             neqv = max(neqv,len(equiv))
             for item in equiv:
                 mcsaXYZ.append(item[0])

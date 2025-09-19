@@ -5206,7 +5206,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             txt = event.GetEventObject().page
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
             with open(tmp.name,'w') as fp:
-                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/">',))
+                fp.write(txt.replace('<HEAD>','<head><base href="https://iso.byu.edu/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
@@ -5214,7 +5214,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             import tempfile
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
             with open(tmp.name,'w') as fp:
-                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/">',))
+                fp.write(txt.replace('<HEAD>','<head><base href="https://iso.byu.edu/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 

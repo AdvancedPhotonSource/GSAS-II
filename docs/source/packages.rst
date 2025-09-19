@@ -448,7 +448,7 @@ with GSAS-II.
     computation of space group subgroups, color (magnetic) subgroups &
     lattice search.
 
-  **BYU ISOTROPY Software Suite** (https://stokes.byu.edu/iso/isotropy.php):
+  **BYU ISOTROPY Software Suite** (https://iso.byu.edu/isotropy.php):
     GSAS-II directly accesses capabilities in the ISOTROPY Software
     Suite from Brigham Young University for representational analysis
     and magnetism analysis.

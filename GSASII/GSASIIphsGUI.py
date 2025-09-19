@@ -3020,7 +3020,7 @@ def UpdatePhaseData(G2frame,Item,data):
             with open(tmp.name,'w') as fp:
                 fp.write(txt.replace(
                 '<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',
+                '<head><base href="https://iso.byu.edu/">',
                 ))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
@@ -3028,7 +3028,7 @@ def UpdatePhaseData(G2frame,Item,data):
         import re
         import requests
         from GSASII.exports import G2export_CIF
-        isosite="https://stokes.byu.edu/iso/"
+        isosite="https://iso.byu.edu/"
         upscript='isocifuploadfile.php'
         isoscript='isocifform.php'
         isoSubCite = ('For use of this supergroup search, please cite:\n'+
@@ -3078,7 +3078,7 @@ def UpdatePhaseData(G2frame,Item,data):
             with open(tmp1.name,'w') as fp:
                 fp.write(r1.text.replace(
                 '<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',
+                '<head><base href="https://iso.byu.edu/">',
                 ))
             G2G.ShowWebPage('file://'+tmp1.name,G2frame)
             G2G.G2MessageBox(G2frame,

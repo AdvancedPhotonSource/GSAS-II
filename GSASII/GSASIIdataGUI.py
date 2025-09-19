@@ -2335,6 +2335,7 @@ If you continue from this point, it is quite likely that all intensity computati
         try:
             dlg.ShowModal() == wx.ID_OK
             restart = dlg.restart
+            reload = dlg.reload
         finally:
             dlg.Destroy()
         # trigger a restart if the var description asks for that
@@ -2364,6 +2365,11 @@ If you continue from this point, it is quite likely that all intensity computati
             G2fil.openInNewTerm(project)
             print ('exiting GSAS-II')
             sys.exit()
+        if reload:
+            ans = self.OnFileSave(None)
+            if not ans: return
+            self.clearProject() # clear out data tree
+            self.StartProject()
 
     def _Add_ImportMenu_smallangle(self,parent):
         '''configure the Small Angle Data menus accord to the readers found in _init_Imports
@@ -4225,10 +4231,7 @@ If you continue from this point, it is quite likely that all intensity computati
             GetGPX()
             filename = self.GSASprojectfile
         else:
-            try:
-                self.GSASprojectfile = os.path.splitext(filename)[0]+u'.gpx'
-            except:
-                self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
+            self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
 
 #        if self.G2plotNB.plotList:
@@ -4356,21 +4359,25 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.OnFileSaveMenu(event)
             if result != wx.ID_CANCEL:
                 self.GSASprojectfile = ''
-                self.GPXtree.SetItemText(self.root,'Project: ')
-                self.GPXtree.DeleteChildren(self.root)
-                self.dataWindow.ClearData()
-                if len(self.HKL):
-                    self.HKL = np.array([])
-                    self.Extinct = []
-                if self.G2plotNB.plotList:
-                    self.G2plotNB.clear()
-                self.SetTitleByGPX()
-                self.EnableRefineCommand()
-                self.init_vars()
-                G2obj.IndexAllIds({},{}) # clear old index info
+                self.clearProject()
         finally:
             dlg.Destroy()
 
+    def clearProject(self):
+        'Initializes the data tree etc.'
+        self.GPXtree.SetItemText(self.root,'Project: ')
+        self.GPXtree.DeleteChildren(self.root)
+        self.dataWindow.ClearData()
+        if len(self.HKL):
+            self.HKL = np.array([])
+            self.Extinct = []
+        if self.G2plotNB.plotList:
+            self.G2plotNB.clear()
+        self.SetTitleByGPX()
+        self.EnableRefineCommand()
+        self.init_vars()
+        G2obj.IndexAllIds({},{}) # clear old index info
+                
     def OnFileSave(self, event):
         '''Save the current project in response to the
         File/Save Project menu button
@@ -8943,6 +8950,10 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2pdG.UpdateLimitsGrid(G2frame,data,datatype)
         G2pwpl.PlotPatterns(G2frame,plotType=datatype,newPlot=True,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Instrument Parameters':
+        # if GSASIIpath.GetConfigValue('debug'):
+        #    from importlib import reload
+        #    reload(G2pdG)
+        #    print('reloading G2pwdGUI')
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)[0]
         G2pdG.UpdateInstrumentGrid(G2frame,data)

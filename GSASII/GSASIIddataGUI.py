@@ -1522,6 +1522,8 @@ def MakeHistPhaseWin(G2frame):
         HAPBook.AddPage(HAPtab,phaseName)
         DData.append(HAPtab)
     HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    # must setup all Phase tabs to get the DataMenu
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataGeneral)
     # set up "Select tab" menu contents
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
     mid = G2frame.dataWindow.DataMenu.FindMenu('Select tab')

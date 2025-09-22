@@ -1132,51 +1132,25 @@ def exceptHook(*args):
 
     This routine is only used when debug=True is set in the configuration settings
     '''
-    try:
-        #from IPython.core import ultratb
-        import IPython.core.ultratb
-    except:
-        pass
-
-    try:
-        from IPython.terminal.embed import InteractiveShellEmbed
-        import IPython.core
-        if sys.platform.startswith('win'):
-            IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='NoColor')(*args)
-        else:
-            IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='LightBG')(*args)
-        from IPython.core import getipython
-        if getipython.get_ipython() is None:
-            ipshell = InteractiveShellEmbed.instance()
-        else:
-            ipshell = InteractiveShellEmbed()
-    except ImportError:
-        print ('IPython not installed or is really old')
-        return
-    except TypeError:  # Ipython 9.x removes color_scheme
-        try:
-            IPython.core.ultratb.FormattedTB(call_pdb=False)(*args)
-            from IPython.core import getipython
-            if getipython.get_ipython() is None:
-                ipshell = InteractiveShellEmbed.instance()
-            else:
-                ipshell = InteractiveShellEmbed()
-        except Exception as msg:
-            print('IPython patch failed, msg=',msg)
-    import inspect
-    frame = inspect.getinnerframes(args[2])[-1][0]
-    msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
+    import IPython.core
     savehook = sys.excepthook # save the exception hook
+    # show the error
+    tb_formatter = IPython.core.ultratb.VerboseTB()
+    print(tb_formatter.text(*args))
+    # get the Ipython shell routine
+    if IPython.core.getipython.get_ipython() is None:
+        ipshell = IPython.terminal.embed.InteractiveShellEmbed.instance()
+    else:
+        ipshell = IPython.terminal.embed.InteractiveShellEmbed()
+    # get to the right frame
     try:
+        import inspect
+        frame = inspect.getinnerframes(args[2])[-1][0]
+        msg = f'Entering IPython console at {frame.f_code.co_filename} at line {frame.f_lineno}\n'
         ipshell(msg,local_ns=frame.f_locals,global_ns=frame.f_globals) # newest (IPython >= 8)
-    except DeprecationWarning: # IPython <=7
-        try: # IPython >=5
-            class c(object): pass
-            pseudomod = c() # create something that acts like a module
-            pseudomod.__dict__ = frame.f_locals
-            InteractiveShellEmbed(banner1=msg)(module=pseudomod,global_ns=frame.f_globals)
-        except: # 'IPython <5
-            InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)
+    except:
+        msg = 'Entering IPython console (no contex)'
+        ipshell(msg)
     sys.excepthook = savehook # reset IPython's change to the exception hook
 
 def DoNothing():

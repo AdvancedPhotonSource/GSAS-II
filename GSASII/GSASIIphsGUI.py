@@ -2505,7 +2505,7 @@ def UpdatePhaseData(G2frame,Item,data):
             refName = Flip['RefList'][0]
             refType = ''
             if refName and refName in data['Histograms']:
-                refType = data['Histograms'][refName]['Type']
+                refType = data['Histograms'][refName].get('Type','')
             lineSizer.Add(wx.ComboBox(General,value=Flip['RefList'][0],choices=Flip['RefList'],
                 style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
             refList = wx.Button(General,label='Select reflection sets')

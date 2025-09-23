@@ -5988,7 +5988,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     ifInv = SGData['SGInv']
     bounds = np.array(list(zip(lower,upper)))
     if MCSA['Algorithm'] == 'Basin Hopping':
-#        import basinhopping as bs
         take_step = RandomDisplacementBounds(np.array(lower), np.array(upper))
         results = so.basinhopping(mcsaCalc,x0,take_step=take_step,disp=True,T=MCSA['Annealing'][0],
                 interval=MCSA['Annealing'][2]/10,niter=MCSA['Annealing'][2],minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,

@@ -1278,6 +1278,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
       DistArray item which gives the distance from the central atom and the applied
       symmetry transformation for the two target atoms.
     '''
+    RBlist = []
     SGData = DisAglData['SGData']
     Cell = DisAglData['Cell']
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
@@ -1329,7 +1330,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
             tRBdist = Tatom[0] in RBlist   # is atom in RB?
             Xvcov = []
             TxyzNames = ''
-            if 'covData':
+            if covData:
                 TxyzNames = [pfx+'dAx:%d'%(Tatom[0]),pfx+'dAy:%d'%(Tatom[0]),pfx+'dAz:%d'%(Tatom[0])]
                 Xvcov = G2mth.getVCov(OxyzNames+TxyzNames,varyList,covMatrix)
             BsumR = (Radii[Oatom[2]][0]+Radii[Tatom[2]][0])*Factor[0]

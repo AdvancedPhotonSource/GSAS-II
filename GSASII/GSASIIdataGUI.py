@@ -2487,6 +2487,7 @@ If you continue from this point, it is quite likely that all intensity computati
         try:
             dlg.ShowModal() == wx.ID_OK
             restart = dlg.restart
+            reload = dlg.reload
         finally:
             dlg.Destroy()
         # trigger a restart if the var description asks for that
@@ -2517,6 +2518,11 @@ If you continue from this point, it is quite likely that all intensity computati
             print ('exiting GSAS-II')
             if hasattr(self,'logger'): self.PopEventHandler()
             sys.exit()
+        if reload:
+            ans = self.OnFileSave(None)
+            if not ans: return
+            self.clearProject() # clear out data tree
+            self.StartProject()
 
     def _Add_ImportMenu_smallangle(self,parent):
         '''configure the Small Angle Data menus accord to the readers found in _init_Imports
@@ -3466,61 +3472,15 @@ If you continue from this point, it is quite likely that all intensity computati
         if new:
             self.GPXtree.Expand(self.GPXtree.root)
 
-    class CopyDialog(wx.Dialog):
-        '''Creates a dialog for copying control settings between
-        data tree items'''
-        def __init__(self,parent,title,text,data):
-            wx.Dialog.__init__(self,parent,-1,title,
-                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-            self.data = data
-            panel = wx.Panel(self)
-            mainSizer = wx.BoxSizer(wx.VERTICAL)
-            topLabl = wx.StaticText(panel,-1,text)
-            mainSizer.Add((10,10),1)
-            mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
-            mainSizer.Add((10,10),1)
-            ncols = len(data)/40+1
-            dataGridSizer = wx.FlexGridSizer(cols=ncols,hgap=2,vgap=2)
-            for Id,item in enumerate(self.data):
-                ckbox = wx.CheckBox(panel,Id,item[1])
-                ckbox.Bind(wx.EVT_CHECKBOX,self.OnCopyChange)
-                dataGridSizer.Add(ckbox,0,wx.LEFT,10)
-            mainSizer.Add(dataGridSizer,0,wx.EXPAND)
-            OkBtn = wx.Button(panel,-1,"Ok")
-            OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-            cancelBtn = wx.Button(panel,-1,"Cancel")
-            cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
-            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-            btnSizer.Add((20,20),1)
-            btnSizer.Add(OkBtn)
-            btnSizer.Add((20,20),1)
-            btnSizer.Add(cancelBtn)
-            btnSizer.Add((20,20),1)
-
-            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-            panel.SetSizer(mainSizer)
-            panel.Fit()
-            self.Fit()
-
-        def OnCopyChange(self,event):
-            Id = event.GetId()
-            self.data[Id][0] = self.FindWindowById(Id).GetValue()
-
-        def OnOk(self,event):
-            parent = self.GetParent()
-            if parent is not None: parent.Raise()
-            self.EndModal(wx.ID_OK)
-
-        def OnCancel(self,event):
-            parent = self.GetParent()
-            if parent is not None: parent.Raise()
-            self.EndModal(wx.ID_CANCEL)
-
-        def GetData(self):
-            return self.data
-
     class SumDialog(wx.Dialog):
-        '''Allows user to supply scale factor(s) when summing data
+        '''Used to sum images or powder patterns. Allows user to supply 
+        scale factor(s) when summing data.
+
+        TODO: clean up the scrolling & resize on this dialog
+              Can we use the copy down button from CIF?
+        TODO: move it to GSASIIctrlGUI?
+        BHT: this class should not be in the middle of the (already too complex)
+        GSASIImain class. 
         '''
         def __init__(self,parent,title,text,dataType,data,dataList,Limits=None):
             wx.Dialog.__init__(self,parent,-1,title,size=(400,250),
@@ -4431,10 +4391,7 @@ If you continue from this point, it is quite likely that all intensity computati
             GetGPX()
             filename = self.GSASprojectfile
         else:
-            try:
-                self.GSASprojectfile = os.path.splitext(filename)[0]+u'.gpx'
-            except:
-                self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
+            self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
 
 #        if self.G2plotNB.plotList:
@@ -4568,21 +4525,25 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.OnFileSaveMenu(event)
             if result != wx.ID_CANCEL:
                 self.GSASprojectfile = ''
-                self.GPXtree.SetItemText(self.root,'Project: ')
-                self.GPXtree.DeleteChildren(self.root)
-                self.dataWindow.ClearData()
-                if len(self.HKL):
-                    self.HKL = np.array([])
-                    self.Extinct = []
-                if self.G2plotNB.plotList:
-                    self.G2plotNB.clear()
-                self.SetTitleByGPX()
-                self.EnableRefineCommand()
-                self.init_vars()
-                G2obj.IndexAllIds({},{}) # clear old index info
+                self.clearProject()
         finally:
             dlg.Destroy()
 
+    def clearProject(self):
+        'Initializes the data tree etc.'
+        self.GPXtree.SetItemText(self.root,'Project: ')
+        self.GPXtree.DeleteChildren(self.root)
+        self.dataWindow.ClearData()
+        if len(self.HKL):
+            self.HKL = np.array([])
+            self.Extinct = []
+        if self.G2plotNB.plotList:
+            self.G2plotNB.clear()
+        self.SetTitleByGPX()
+        self.EnableRefineCommand()
+        self.init_vars()
+        G2obj.IndexAllIds({},{}) # clear old index info
+                
     def OnFileSave(self, event):
         '''Save the current project in response to the
         File/Save Project menu button
@@ -9170,6 +9131,10 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2pdG.UpdateLimitsGrid(G2frame,data,datatype)
         G2pwpl.PlotPatterns(G2frame,plotType=datatype,newPlot=True,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Instrument Parameters':
+        # if GSASIIpath.GetConfigValue('debug'):
+        #    from importlib import reload
+        #    reload(G2pdG)
+        #    print('reloading G2pwdGUI')
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)[0]
         G2pdG.UpdateInstrumentGrid(G2frame,data)

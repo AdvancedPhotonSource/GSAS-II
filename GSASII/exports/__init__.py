@@ -1,3 +1,4 @@
+# if you add something here, make sure to also add it to the meson.build file
 from . import G2export_Bracket
 from . import G2export_CIF
 from . import G2export_FIT2D

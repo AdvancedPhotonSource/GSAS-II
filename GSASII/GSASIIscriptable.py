@@ -5637,6 +5637,78 @@ class G2Phase(G2ObjectWrapper):
         gpx.update_ids()
         return gpx.phase(phasename)
 
+    def InitDisAgl(self,useAll=True):
+        '''Create the default controls used for distance and angle 
+        searching. Perform distance and angle searching by passing
+        the results from this to  :func:`GSASIIstrMain.RetDistAngle` 
+        or :func:`GSASIIstrMain.PrintDistAngle`
+        At present, this does not populate the values needed for 
+        uncertainty computations. 
+
+        :param bool useAll: when True (default) all atoms are included 
+          in the origin atom list. When False, only atoms with full 
+          occupancy are included. All atoms are included in the target
+          atom list.
+
+        :returns: DisAglCtls, DisAglData. See the 
+          :ref:`Distance/Angle controls documentation <DisAgl_table>` for 
+          a description of these.
+        '''
+        phObj = self.data
+        generalData = phObj['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        # template for controls & search data
+        DisAglData = {}
+        DisAglData['SGData'] = phObj['General']['SGData']
+        DisAglData['Cell'] = phObj['General']['Cell'][1:] #+ volume
+        DisAglCtls = {'Factors': [0.85, 0.85],
+                          'BondRadii': [], 'AngleRadii': [], 'AtomTypes': []}
+        # now populate search radii
+        radii = dict(zip(generalData['AtomTypes'],generalData['BondRadii']))
+        for atom in phObj['Atoms']:
+            typ = atom[ct]
+            dis = radii.get(typ,1.5) # 
+            if atom[ct] in DisAglCtls['AtomTypes']: continue
+            DisAglCtls['BondRadii'].append(dis)
+            DisAglCtls['AngleRadii'].append(dis)
+            DisAglCtls['AtomTypes'].append(typ)
+        DisAglData['OrigAtoms'] = []
+        DisAglData['TargAtoms'] = []
+        for i,atom in enumerate(phObj['Atoms']):
+            rec = [i]+atom[ct-1:ct+1]+atom[cx:cx+3]
+            DisAglData['TargAtoms'].append(rec)
+            if atom[cx+3] == 1. or useAll: 
+                DisAglData['OrigAtoms'].append(rec)
+        return DisAglCtls, DisAglData
+
+    def ShortDistances(self,useAll=False):
+        '''Looks for unrealistic distances in a structure, which are
+        atom-atom distances < 1.1 A for non-H(D) atoms. 
+        To reduce the likelihood of distances between disordered 
+        fragments being noted, set useAll=False (the default) so that 
+        disordered atoms are ignored. 
+        '''
+        cx,ct,cs,cia = self.data['General']['AtomPtrs']
+        #get interatomic distances
+        DisAglCtls, DisAglData = self.InitDisAgl(useAll)
+        DisAglCtls['Factors'][1] = 0 # no angles
+        AtomLabels, DistArray, _ = G2strMain.RetDistAngle(DisAglCtls,DisAglData)
+        # now reorganize into a single list & sort
+        alldists = []
+        for cntr in DistArray:
+            for dl in DistArray[cntr]:
+                alldists.append([(cntr,dl[0])]+dl[1:])
+        alldists.sort(key=lambda item:item[-2])
+        baddists = []
+        for (i,j),_,_,d,_ in alldists:
+            if d > 1.1: break
+            if self.data['Atoms'][i][ct][0] in ['H','D']: continue
+            if self.data['Atoms'][j][ct][0] in ['H','D']: continue
+            baddists.append([self.data['Atoms'][i][ct],
+                             self.data['Atoms'][j][ct],
+                             float(d)])
+        return baddists
+
 class G2SeqRefRes(G2ObjectWrapper):
     '''Wrapper for a Sequential Refinement Results tree entry, containing the
     results for a refinement

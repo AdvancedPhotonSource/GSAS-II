@@ -2280,7 +2280,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif G2frame.plusPlot == 1:
                 pP = '+'
                 lW = 0
-            elif G2frame.plusPlot == 2:
+            elif G2frame.plusPlot == 2: # same as 0 for multiplot, TODO: rethink
                 pP = ''
                 lW = 1.5
             else:

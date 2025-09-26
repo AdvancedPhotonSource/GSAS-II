@@ -6706,6 +6706,7 @@ class SelectConfigSetting(wx.Dialog):
         self.vars = GetConfigValsDocs()
         self.G2frame = parent
         self.restart = False
+        self.reload = False
 
         label = wx.StaticText(
             self,  wx.ID_ANY,
@@ -6754,6 +6755,8 @@ class SelectConfigSetting(wx.Dialog):
                 self.saveBtn.Enable(True)
                 if 'restart' in self.vars[var][3].lower():
                     self.restart  = True
+                elif 'reload' in self.vars[var][3].lower():
+                    self.reload  = True
                 break
         else:
             self.saveBtn.Enable(False)

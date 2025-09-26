@@ -1,3 +1,4 @@
+# if you add something here, make sure to also add it to the meson.build file
 from . import G2img_1TIF
 from . import G2img_ADSC
 from . import G2img_CBF

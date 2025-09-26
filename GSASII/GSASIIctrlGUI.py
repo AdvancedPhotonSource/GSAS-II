@@ -1747,9 +1747,11 @@ class G2MultiChoiceDialog(wx.Dialog):
       the presence of the eponymous buttons in the dialog.
     :returns: the name of the created dialog
     '''
-    def __init__(self,parent, title, header, ChoiceList, toggle=True,
+    def __init__(self, parent, title, header, ChoiceList, toggle=True,
                  monoFont=False, filterBox=True, extraOpts={}, selected=[],
                  **kw):
+        self.G2frame = wx.App.GetMainTopWindow()
+        if parent is None: parent = self.G2frame
         # process keyword parameters, notably style
         options = {'size':(320,310), # default Frame keywords
                    'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
@@ -1855,24 +1857,37 @@ class G2MultiChoiceDialog(wx.Dialog):
         self.SetSizer(Sizer)
         Sizer.Fit(self)
         self.CenterOnParent()
+        if hasattr(self.G2frame,'logger'): # log if main window is logged
+            G2gd.G2EventLogger(self)         # setup logging on this dialog
 
     def onOk(self,event):
+        def _end(): 
+            self.PopEventHandler()
+            self.EndModal(wx.ID_OK)
+        event.Skip()
         parent = self.GetParent()
         if parent is not None: parent.Raise()
-        self.EndModal(wx.ID_OK)
+        if hasattr(self,'logger'): # delay close to allow logging of event
+            wx.CallAfter(_end)
+        else:
+            self.EndModal(wx.ID_OK)
 
     def onCancel(self,event):
+        event.Skip()
         parent = self.GetParent()
         if parent is not None: parent.Raise()
+        if hasattr(self,'logger'): self.PopEventHandler()
         self.EndModal(wx.ID_CANCEL)
 
     def OnStride(self,event):
+        event.Skip()
         self.Stride = int(self.stride.GetValue())
 
     def SetRange(self,event):
         '''Respond to a press of the Set Range button. Set the range flag and
         the caption next to the button
         '''
+        event.Skip()
         self.settingRange = self.rangeBut.GetValue()
         if self.settingRange:
             self.rangeCapt.SetLabel('Select range start')
@@ -1914,15 +1929,14 @@ class G2MultiChoiceDialog(wx.Dialog):
 
     def _SetAll(self,event):
         'Set all viewed choices on'
-        if 'phoenix' in wx.version():
-            self.clb.SetCheckedItems(range(0,len(self.filterlist),self.Stride))
-        else:
-            self.clb.SetChecked(range(0,len(self.filterlist),self.Stride))
+        event.Skip()
+        self.clb.SetCheckedItems(range(0,len(self.filterlist),self.Stride))
         self.stride.SetValue('1')
         self.Stride = 1
 
     def _ToggleAll(self,event):
         'flip the state of all viewed choices'
+        event.Skip()
         for i in range(len(self.filterlist)):
             self.clb.Check(i,not self.clb.IsChecked(i))
 
@@ -1941,6 +1955,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         the range copy.
         The caption next to the button is updated on the first button press.
         '''
+        event.Skip()
         if self.settingRange:
             id = event.GetInt()
             if self.rangeFirst is None:
@@ -1960,6 +1975,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         '''Read text from filter control and select entries that match. Called by
         Timer after a delay with no input or if Enter is pressed.
         '''
+        event.Skip()
         if self.timer.IsRunning():
             self.timer.Stop()
         self.GetSelections() # record current selections
@@ -1984,6 +2000,16 @@ class G2MultiChoiceDialog(wx.Dialog):
         self.clb.AppendItems(ChoiceList)
         self._ShowSelections()
         self.OKbtn.Enable(True)
+
+    def ShowModal(self,*args,**kwargs):
+        print('Show Modal called')
+        if hasattr(self.G2frame,'Playback') and self.G2frame.Playback:
+            #raise Exception('needs work to replace ShowModal')
+            #print('in playback')
+            ShowAsNonModal(self)
+            
+        else:
+            wx.Dialog.ShowModal(self,*args,**kwargs)
 
 ###############################################  Multichoice in a sizer with set all, toggle & filter options
 class G2MultiChoiceWindow(wx.BoxSizer):
@@ -10119,6 +10145,53 @@ If "Yes", GSAS-II will reopen the project after the update.
     G2fil.openInNewTerm(project)
     print ('exiting GSAS-II')
     sys.exit()
+
+dlgResults = {}
+def ShowAsNonModal(dlg):
+    '''For playback of commands, use this in place of wx.Dialog.ShowModal
+    because ShowModal should not be used inside a wx.CallAfter call
+
+    This retrieves the results of the dialog and places them
+    into dlgResults['selected']
+    '''
+    def handle_dialog_end_ok():
+        dlgResults['selected'] = dlg.GetSelections()
+        print('Selected:', dlgResults['selected'])
+        dlg.Destroy()
+        parent.Enable()
+    def handle_dialog_end_cancel():
+        dlgResults['selected'] = None
+        dlg.Destroy()
+        parent.Enable()
+        raise Exception("Cancel button pressed")
+
+    def on_ok(event):
+        event.Skip()
+        handle_dialog_end_ok()
+    
+    def on_cancel(event):
+        event.Skip()
+        handle_dialog_end_cancel()
+    
+    def on_close(event):
+        event.Skip()
+        handle_dialog_end_cancel()
+        
+    # Bind to both button events and window close
+    dlg.Bind(wx.EVT_BUTTON, on_ok, id=wx.ID_OK)
+    dlg.Bind(wx.EVT_BUTTON, on_cancel, id=wx.ID_CANCEL)
+    dlg.Bind(wx.EVT_CLOSE, on_close)
+
+    parent = dlg.GetParent()
+    parent.Disable()  # Disable main window while dialog is open
+    dlg.Show()
+#     time.sleep(0.1)
+#     count = 0
+#     while len(asyncResults) == 0:
+#         count += 1
+#         time.sleep(0.05)
+#         if count > 1000: raise Exception('too many waits')
+
 
 if __name__ == '__main__':
     app = wx.App()

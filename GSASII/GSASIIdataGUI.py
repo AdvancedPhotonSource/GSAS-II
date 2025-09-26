@@ -98,11 +98,6 @@ commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.
     'abc*':np.eye(3), }
 commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P','P->C','C->P',
     'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*','setting 1->2']          #don't put any new ones after the setting one!
-
-loggingExitCommands = []
-# clear out any old commamnds in the file
-with open('/tmp/G2logging.txt','w') as fp:
-    fp.write(f'# GSAS-II event logging file {time.ctime()}\n')
     
 def GetDisplay(pos):
     '''Gets display number (0=main display) for window position (pos). If pos outside all displays
@@ -622,7 +617,6 @@ def GSASIImain(application):
             dlg.ShowModal()
         finally:
             dlg.Destroy()
-        for cmd in loggingExitCommands: cmd()  # cleanup logging
         sys.exit()
 
     application.main = GSASII(None)  # application.main is the main wx.Frame (G2frame in most places)
@@ -637,11 +631,37 @@ def GSASIImain(application):
     application.GetTopWindow().Show(True)
     application.main.UpdateTask = GSASIIpath.GetRepoUpdatesInBackground()
 
+# create a lookup table for events
+G2EventLogger_evtCode = None
 class G2EventLogger(wx.EvtHandler):
     '''This is used to record all wx events
     '''
+    def __init__(self, frame, *args, **kwargs):
+        self.logFile = os.path.expanduser('~/.GSASII/G2logging.txt')
+        if wx.GetApp().GetTopWindow() == frame:
+            G2G.G2MessageBox(frame,
+                f'Logging actions to {self.logFile!r}. Exit GSAS-II to end logging',
+                'Starting Logging')
+            # clear out any old commamnds in the file
+            with open(self.logFile,'w') as fp:
+                fp.write(f'# GSAS-II event logging file {time.ctime()}\n')
+        print(f'Logging events for {frame}')
+        super(self.__class__,self).__init__(*args, **kwargs)
+        self.frame = frame
+        self.frame.logger = self  # flag that frame needs frame.PopEventHandler()
+                                  # before delete
+        global G2EventLogger_evtCode
+        if G2EventLogger_evtCode is None:
+            print('*** populating event table')
+            names = [n for n in dir(wx) if n.startswith('EVT_')]
+            evtdict = {n:getattr(wx,n) for n in names}
+            G2EventLogger_evtCode = {evt.typeId:n for n,evt in evtdict.items() if isinstance(evt, wx.PyEventBinder)}
+        self.eventLog = {}
+        self.start = time.time()
+        self.frame.PushEventHandler(self)
+
     def log2File(self,txt):
-        with open('/tmp/G2logging.txt','a') as fp:
+        with open(self.logFile,'a') as fp:
             fp.write(txt)
             fp.write('\n')
 
@@ -650,7 +670,12 @@ class G2EventLogger(wx.EvtHandler):
         # How to log info supplied in dialogs
         def ShowTreeSelection(tree):
             'respond to a tree event (after done)'
-            G2frame = self.G2frame
+            G2frame = self.frame
+            try:
+                G2frame.root
+            except:
+                print('how did ShowTreeSelection get called other than from G2frame?')
+                return
             sel = tree.GetSelection()
             txt = tree.GetItemText(sel)
             l = []
@@ -661,7 +686,7 @@ class G2EventLogger(wx.EvtHandler):
                 txt = tree.GetItemText(sel)
                 print('  parent',txt)
             print('Tree selection (after)',l)
-            self.log2File(f'Tree_selection: {l}')
+            self.log2File(f'Tree_selection: {l}') # log tree entry hierarchy
         #fp = open('/tmp/events.txt','a')
         #print(f"Event {event.GetEventType()} Obj {event.GetEventObject()}")
         #fp.write(f"Event {event.GetEventType()} Obj {event.GetEventObject()}\n")
@@ -696,14 +721,37 @@ class G2EventLogger(wx.EvtHandler):
                 self.LastTextObj = event.GetEventObject()
                 print('TEXT obj,id,',event.GetEventObject().GetClassName(),
                           event.GetEventObject().GetScreenPosition()
-                          - self.G2frame.GetScreenPosition())
+                          - self.frame.GetScreenPosition())
                 #breakpoint()
             # isinstance(o, G2G.ValidatedTxtCtrl)
             print(event.GetEventObject().GetValue())
             #breakpoint()
+        elif evtNum == wx.EVT_BUTTON.typeId:   # 10007
+            b = event.GetEventObject()
+            pos = b.GetPosition() # button position -- relative?
+            print(f'Button event in {b.GetTopLevelParent().GetTitle()!r}',
+                      'lbl=',b.GetLabelText())
+#                      'pos',b.GetPosition(),
+#                      b.GetSize(),
+#                      b.GetTopLevelParent().GetPosition(),
+#                      'mouse pos=',wx.GetMousePosition(),
+#                      'rel pos=',wx.GetMousePosition()-b.GetTopLevelParent().GetPosition()
+#                      )
+            #b = event.GetEventObject()
+            #b.GetSize()
+            #b.GetParent().GetPosition() # window position -- absolute?
+            #wx.App.GetMainTopWindow().GetPosition()
+            l = [b.GetTopLevelParent().GetTitle(), # window name
+                     b.GetLabelText()] # button name
+#                     b.GetPosition() + b.GetSize()/2]  # button position relative to window
+            self.log2File(f'Button_press: {l}') # log window & button name
+            #breakpoint()
+        elif evtNum == wx.EVT_CHECKLISTBOX.typeId:   # 10012
+            print('EVT_CHECKLISTBOX event')
+            #breakpoint()
         elif evtNum not in self.eventLog: # note 1st time we see any other event
             self.eventLog[evtNum] = time.time() - self.start
-            print(f"Event {evtNum} ({self.evtCode.get(evtNum,'?')}) @ {self.eventLog[evtNum]} {event.GetEventObject()}")
+            print(f"Event {evtNum} ({G2EventLogger_evtCode.get(evtNum,'?')}) @ {self.eventLog[evtNum]} {event.GetEventObject()}")
             #try:
             #    print(event.GetEventObject().Id)
             #except:
@@ -711,23 +759,25 @@ class G2EventLogger(wx.EvtHandler):
             #breakpoint()
         return super().ProcessEvent(event)
     
-    def logFrame(self,frame):
-        self.LastTextObj = None
-        print(f'Logging events for {frame}')
-        # create a lookup table for events
-        names = [n for n in dir(wx) if n.startswith('EVT_')]
-        evtdict = {n:getattr(wx,n) for n in names}
-        
-        self.evtCode = {evt.typeId:n for n,evt in evtdict.items() if isinstance(evt, wx.PyEventBinder)}
-        self.eventLog = {}
-        self.start = time.time()
-        self.G2frame = frame
-        self.G2frame.PushEventHandler(self)
-        loggingExitCommands.append(self.unlogFrame)
-    def unlogFrame(self):
-        # note that we need to do a PopEventHandler before the
-        # frame is deleted
-        self.G2frame.PopEventHandler()
+    # def logFrame(self,frame):
+    #     self.LastTextObj = None
+    #     print(f'Logging events for {frame}')
+    #     # create a lookup table for events once
+    #     global G2EventLogger_evtCode
+    #     if G2EventLogger_evtCode is None:
+    #         print('*** populating event table')
+    #         names = [n for n in dir(wx) if n.startswith('EVT_')]
+    #         evtdict = {n:getattr(wx,n) for n in names}
+    #         G2EventLogger_evtCode = {evt.typeId:n for n,evt in evtdict.items() if isinstance(evt, wx.PyEventBinder)}
+    #     self.eventLog = {}
+    #     self.start = time.time()
+    #     self.G2frame = frame
+    #     self.G2frame.PushEventHandler(self)
+    #     loggingExitCommands.append(self.unlogFrame)
+    # def unlogFrame(self):
+    #     # note that we need to do a PopEventHandler before the
+    #     # frame is deleted
+    #     self.G2frame.PopEventHandler()
 
 #### Create main frame (window) for GUI; main menu items here #######################################
 class GSASII(wx.Frame):
@@ -773,6 +823,10 @@ class GSASII(wx.Frame):
             self.Bind(wx.EVT_MENU, OnwxInspect, item)
             item = parent.Append(wx.ID_ANY,'Reopen current\tCtrl+0','Reread the current GSAS-II project (.gpx) file')
             self.Bind(wx.EVT_MENU, self.OnFileReread, id=item.GetId())
+            item = parent.Append(wx.ID_ANY,'Start playback\tCtrl+8','Playback a log previous log of mouse and keyboard commands')
+            self.Bind(wx.EVT_MENU, self.startPlayback, id=item.GetId())
+            item = parent.Append(wx.ID_ANY,'Start logging\tCtrl+9','Save a log of mouse and keyboard commands')
+            self.Bind(wx.EVT_MENU, self.startLogging, id=item.GetId())
 
         # if Git install assume GSAS-II was not installed into Python
         if GSASIIpath.HowIsG2Installed().startswith('git'):
@@ -2461,7 +2515,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 project = None
             G2fil.openInNewTerm(project)
             print ('exiting GSAS-II')
-            for cmd in loggingExitCommands: cmd()  # cleanup logging
+            if hasattr(self,'logger'): self.PopEventHandler()
             sys.exit()
 
     def _Add_ImportMenu_smallangle(self,parent):
@@ -3137,7 +3191,6 @@ If you continue from this point, it is quite likely that all intensity computati
         self.RMCchoice = 'RMCProfile'
         self.ifSetLimitsMode = 0
 
-
     def __init__(self, parent):
         self.ExportLookup = {}
         self.exporterlist = []
@@ -3154,7 +3207,13 @@ If you continue from this point, it is quite likely that all intensity computati
             self.SetIcon(wx.Icon(img))
         else:
             self.SetIcon(wx.IconFromBitmap(img))
-        self.Bind(wx.EVT_CLOSE, self.ExitMain)
+        #self.Bind(wx.EVT_CLOSE, self.ExitMain)
+        def ExitNow(event):  # hacking for playback
+            if self.G2plotNB:
+                self.G2plotNB.Destroy()
+            if hasattr(self,'logger'): self.PopEventHandler()
+            sys.exit()
+        self.Bind(wx.EVT_CLOSE, ExitNow)
         self.GSASprojectfile = ''
         self.dirname = os.path.abspath(os.path.expanduser('~'))       #start in the users home directory by default; may be meaningless
         self.TutorialImportDir = None  # location to read tutorial files, set when a tutorial is viewed
@@ -3194,14 +3253,9 @@ If you continue from this point, it is quite likely that all intensity computati
                 print (traceback.format_exc())
         elif any('SPYDER' in name for name in os.environ):
             self.OnFileReopen(None)
-        # register event logging
-        self.event_logger = []
-        #self.event_logger.append(G2EventLogger())
-        #self.event_logger[-1].logFrame(self)
-        print('Queing doPlayBack')
-        wx.CallAfter(self.doPlayBack)
-#        wx.CallLater(2000,self.doPlayBack)
-#        self.doPlayBack()
+        import playback
+        import threading
+        threading.Thread(target=playback.Playback, args=(self,)).start()
 
     def GetTreeItemsList(self,item):
         ''' returns a list of all GSAS-II tree items
@@ -4392,6 +4446,12 @@ If you continue from this point, it is quite likely that all intensity computati
             print ('\nError opening file '+filename)
             import traceback
             print (traceback.format_exc())
+        # Playback after read of .gpx
+        import playback
+        import threading
+        threading.Thread(target=playback.Playback, args=(self,)).start()
+        #wx.CallAfter(doAfterFileLoad,G2frame)   # logging playback test
+        #wx.CallAfter(self.doAfterFileLoad)   # place automatic playback here
 
     def OnFileBrowse(self, event):
         '''Gets a GSAS-II .gpx project using the GPX browser, in response
@@ -4702,7 +4762,7 @@ If you continue from this point, it is quite likely that all intensity computati
             self.G2plotNB.Destroy()
         if self.undofile and os.path.exists(self.undofile):
             os.remove(self.undofile)
-        for cmd in loggingExitCommands: cmd()  # cleanup logging
+        if hasattr(self,'logger'): self.PopEventHandler()
         sys.exit()
 
     def OnExportMTZ(self,event):
@@ -6286,39 +6346,19 @@ Do you want to transfer the cell refinement flag to the Dij terms?
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
         G2IO.ExportSequentialFullCIF(self,data,Controls)
 
-    def doPlayBack(self):
-        '''Playback logging commands (eventually)
+    def startLogging(self,event):
+        '''Under development
         '''
-        # use with /Users/toby/Scratch/logging/Aminoffite__R100055-9__Powder__DIF_File__10335.gpx
-        cmdlist = [
-            ('Tree_selection:',['Controls']),
-            ('Tree_selection:',['Aminoffite', 'Phases']),
-            ('Tree_selection:',['Controls']),
-            ('Tree_selection:',['Aminoffite_shifted', 'Phases']),
-            ]
+        G2EventLogger(self)
 
-        wx.GetApp().Yield()
-        print('entering doPlayBack')
-        for cmd in cmdlist:
-            if 'Tree_selection' in cmd[0]:
-                print('\n*** selecting tree item',reversed(cmd[1]))
-                Id = GetGPXtreeItemId(self,self.root, cmd[1][-1])
-                if Id == 0:
-                    print('Tree item not found',cmd[1][-1])
-                    return
-                if len(cmd[1]) == 2:
-                    Id = GetGPXtreeItemId(self,Id, cmd[1][0])
-                    if Id == 0:
-                        print('Tree item not found',cmd[1][0])
-                        return
-                print('selecting',Id)
-                self.GPXtree.SelectItem(Id)
-            print('before wait')
-            for i in range(50):
-                wx.GetApp().Yield()
-                time.sleep(0.1)
-            print('after wait')
-        print('leaving doPlayBack')
+    def startPlayback(self,event):
+        '''Under development
+        '''
+        from importlib import reload
+        import playback
+        reload(playback)
+        import threading
+        threading.Thread(target=playback.Playback, args=(self,)).start()
 
 #### Data window side of main GUI; menu definitions here #########################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
@@ -8148,113 +8188,6 @@ def UpdateControls(G2frame,data):
         mainSizer.Add(subSizer)
     btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Test stuff')
     mainSizer.Add(btn)
-
-    
-    def TestStuff(event):
-        #============================================================
-        # animation code: open menu and invoke mouse command
-        from time import sleep
-        menupos = (132, 15)
-        cmdpos= (159, 186)
-        sim = wx.UIActionSimulator()
-        print('move to menu')
-        sim.MouseMove(menupos)
-        wx.Yield()
-        if sys.platform == "darwin":
-            dlg = wx.PopupTransientWindow(G2frame, wx.BORDER_RAISED)
-            wx.StaticText(dlg, label='Click on the "Save Project" entry')
-            dlg.SetPosition((cmdpos[0]+250,cmdpos[1]))
-            dlg.SetSize((250,40))
-            dlg.SetBackgroundColour(wx.YELLOW)
-            dlg.Show()
-            wx.Yield()
-            #breakpoint()
-            print('click on menu')
-            sim.MouseClick(wx.MOUSE_BTN_LEFT)
-            print('menu open')
-            wx.Yield()
-            dlg.Destroy()
-            return
-        # this is untested but might work on Linux/Windows
-        print('click on menu')
-        sim.MouseClick(wx.MOUSE_BTN_LEFT)
-        print('menu open')
-        for i in range(10): # move mouse slowly
-            nextpos = (np.array(cmdpos)-menupos)*(1+i)/10+menupos
-            print('move to ',nextpos)
-            sim.MouseMove(nextpos)
-            wx.Yield()
-            sleep(0.2)
-        # invoke the menu
-        sim.MouseClick(wx.MOUSE_BTN_LEFT)
-        return
-        #============================================================
-        # put text into a widget
-        typ = 'wxTextCtrl'
-        pos = (562, 69)
-        txt = "0.1234"
-        # get all windows in a frame
-        def get_all_windows(parent_window):
-            """
-            Recursively gets all child windows of a given wx.Window instance.
-
-            Args:
-            parent_window (wx.Window): The starting window to begin the traversal.
-
-            Returns:
-            list: A list containing all child windows found.
-            """
-            all_children = []
-            children = parent_window.GetChildren()
-            if children:
-                for child in children:
-                    all_children.append(child)
-                    # Recursively call for each child
-                    all_children.extend(get_all_windows(child))
-            return all_children
-        #============================================================
-        # select a tree item
-        # need to find item
-        #item = GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
-        #item = GetGPXtreeItemId(G2frame,item,'silicon')
-        item = GetGPXtreeItemId(G2frame,G2frame.root,'Notebook')
-        G2frame.GPXtree.SelectItem(item)
-        return
-        #============================================================
-        # generate event code lookup table
-        names = [n for n in dir(wx) if n.startswith('EVT_')]
-        evtdict = {n:getattr(wx,n) for n in names}
-        evtCode = {}
-        for n,evt in evtdict.items():
-            if not isinstance(evt, wx.PyEventBinder):
-                #print('skip',n,evt)
-                continue
-            i = evt.typeId
-            if i in evtCode:
-                print('duplicate',i,n,evtCode[i])
-            else:
-                evtCode[i] = n
-        return
-        #============================================================
-        # executes 'Save project' from File Menu
-        # need to find menu
-        fileMenu = G2frame.dataMenuBars[0].GetMenu(0)
-        # need to find menu item
-        menuId = None
-        for o in fileMenu.GetMenuItems():
-            if o.GetItemLabelText() == 'Save project':
-                menuId = o.Id
-                break
-        else:
-            print('Not found')
-        itemId = eval('wx.EVT_MENU').typeId
-        sim = wx.CommandEvent(itemId,menuId)
-        wx.PostEvent(G2frame,sim)
-        #============================================================
-        #breakpoint()
-    btn.Bind(wx.EVT_BUTTON,TestStuff)
-    G2frame.dataWindow.SetDataSize()
-#    G2frame.SendSizeEvent()
 
 ####  Main PWDR panel ########################################################
 def UpdatePWHKPlot(G2frame,kind,item):

@@ -245,7 +245,7 @@ def sortCells(cells,col):
         X.append(D[key])
     return X
     
-def findMV(peaks,controls,ssopt,Inst,dlg):
+def findMV(peaks,controls,ssopt,Inst,deltM,dlg):
         
     def Val2Vec(vec,Vref,values):
         Vec = []
@@ -294,7 +294,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     Vref = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
     values = []
     ranges = []
-    dT = 0.01       #seems to be a good choice
+    dT = deltM       #seems to be a good choice
     for v,r in zip(ssopt['ModVec'],Vref):
         if r:
             ranges += [slice(dT,1.-dT,dT),] #NB: unique part for (00g) & (a0g); (abg)?

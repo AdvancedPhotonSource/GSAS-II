@@ -4345,9 +4345,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         result = None
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
-        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
-        Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-        Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
         if 'T' in Inst['Type'][0]:
             dmin = G2lat.Pos2dsp(Inst,Limits[0])
         else:
@@ -6088,7 +6085,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
             try:
-                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
+                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,deltM,dlg)
                 if len(result[0]) == 2:
                     G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',newPlot=True,
                         Title='Modulation vector search for %s%s'%(controls[13],ssopt['ssSymb']),
@@ -6119,9 +6116,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 dlg = wx.ProgressDialog('Elapsed time','Modulation vector search with %s'%ssSym,
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
                 try:
-                    ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
-                    ssopt['SSgResults'].append([ssSym,ssopt['ModVec'],])
-                    OnHklShow(event,indexFrom='  Indexing from best modulation vector')
+                    ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,deltM,dlg)
+                    M20,X20 = OnHklShow(event,indexFrom='  Indexing from best modulation vector')[2:4]
+                    Ma,Mb,Mg = ssopt['ModVec']
+                    ssopt['SSgResults'].append([ssSym,False,M20,X20,Ma,Mb,Mg,])
                 finally:
                     dlg.Destroy()
                 if result[1] < best:
@@ -6129,7 +6127,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     best = result[1]
             if bestSS != '':
                 ssopt['ssSymb'] = bestSS
-                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
+                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,deltM,dlg=None)
                 G2plt.PlotXY(G2frame,[[result[2],1./result[3]],],labelX='k',labelY='fit',
                     newPlot=True,Title='Modulation vector search for %s'%bestSS)
 
@@ -6432,6 +6430,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
         unitSizerWidgetList.append(shiftSel)
         shiftSel.SetSelection(3)
+        deltM = float(shiftChoices[shiftSel.GetSelection()][:-1])/100.
         vcSizer.Add(shiftSel)
         hSizer.Add(vcSizer,0,WACV)
         if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
@@ -6607,8 +6606,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             OnHklShow(event,True,indexFrom=' Space group selection %s #%d'%(controls[13],r))
 
         SpGrpGrid = wx.BoxSizer(wx.VERTICAL)
-        lbl = (' Space group search results from "Try all"'+
-                   '\n  '+ssopt.get('SgSettings',''))
+        lbl = (' Space group search results from "Try all"'+ssopt.get('SgSettings',''))
         SpGrpGrid.Add(wx.StaticText(parent=G2frame.dataWindow,label=lbl))
         colLabels = ['Sp Grp','show','M20','X20','Nhkl','fr. found']
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
@@ -6644,30 +6642,36 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 clearShowFlags()
                 r = event.GetRow()
                 for i in range(len(ssopt['SSgResults'])):
-                    ssopt['SSgResults'][i][1] = False
+                    results[i][1] = False
                     SSgTable.SetValue(i,1,False)
                 SSgTable.SetValue(r,1,True)
-#                controls[13] = ssopt['SgResults'][r][0]
+                ssopt['ModVec'] = results[r][4:]
+                ssopt['ssSymb'] = results[r][0]
+                result = results[r]
             else:
-                for r in range(len(ssopt['SSgResults'])):
-                    if ssopt['SSgResults'][r][1]:
-#                        controls[13] = ssopt['SSgResults'][r][0]
+                for r,result in enumerate(results):
+                    if result[1]:
+                        ssopt['ModVec'] = result[4:]
+                        ssopt['ssSymb'] = result[0]
                         break
-            SSDisplay.ForceRefresh()
-#            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
-            # G2frame.dataWindow.RefineCell.Enable(True)
-            OnHklShow(event,True,indexFrom=' Super Space group selection %s #%d'%(controls[13],r))
+#            SSDisplay.ForceRefresh()        #repaints the grids only
+            OnHklShow(event,True,indexFrom=' Super Space group selection %s #%d'%(controls[13]+result[0],r))
 
         SSGrpGrid = wx.BoxSizer(wx.VERTICAL)
-        lbl = (' Super Space group search results from "Try all"'+
-                   '\n  '+ssopt.get('SgSettings',''))
+        lbl = (' Super Space group search results for '+controls[5])
         SSGrpGrid.Add(wx.StaticText(parent=G2frame.dataWindow,label=lbl))
-        colLabels = ['SSp Grp','show','M20','X20','Nhkl','fr. found']
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
-            wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
+        results = ssopt['SSgResults']
+        if len(results[0]) == 6:
+            colLabels = ['SSp Grp','show','M20','X20','Nhkl','fr. found']
+            Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
+                wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
+        else:
+            colLabels = ['SSp Grp','show','M20','X20','\u03B1','\u03B2','\u03B3']
+            Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
+                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3']
         rowLabels = []
         table = []
-        for result in ssopt['SSgResults']:
+        for result in results:
             rowLabels.append('')
             row = result
             table.append(row)
@@ -7164,6 +7168,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             setGrid = gridDisplay
             gridDisplay.SetCellValue(setRow,2,'True')   # set flag in grid
             disableCellEntries()
+            
+    # G@ Modulation vector results list
+    if len(ssopt['SSgResults']):
+        mainSizer.Add(SSGrid())
 
     # Subgroup/magnetic s.g. search results
     if magcells and len(controls) > 16:
@@ -7173,6 +7181,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
     G2frame.Contour = False
     if New:
        OnHklShow(None,indexFrom=' Indexing from unit cell & symmetry settings')
+       New = False
     G2frame.dataWindow.SetDataSize()
     if callSeaResSelected:
         SeaResSelected(None)  # select 1st item in table

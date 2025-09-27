@@ -5692,7 +5692,8 @@ class G2Phase(G2ObjectWrapper):
         #get interatomic distances
         DisAglCtls, DisAglData = self.InitDisAgl(useAll)
         DisAglCtls['Factors'][1] = 0 # no angles
-        AtomLabels, DistArray, _ = G2strMain.RetDistAngle(DisAglCtls,DisAglData)
+        AtomLabels, DistArray, _ = G2strMain.RetDistAngle(
+            DisAglCtls,DisAglData,dmin=0.01)
         # now reorganize into a single list & sort
         alldists = []
         for cntr in DistArray:

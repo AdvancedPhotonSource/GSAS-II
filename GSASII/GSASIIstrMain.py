@@ -1220,7 +1220,7 @@ def dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList):
                 parmFrozenList.append(v)
     return freeze
 
-def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
+def RetDistAngle(DisAglCtls,DisAglData,dlg=None,dmin=0.5):
     '''Compute and return distances and angles
 
     :param dict DisAglCtls: contains distance/angle radii usually defined using
@@ -1250,6 +1250,11 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
        * 'Phases' has the phase information for all used phases in the
          data tree. Only the current phase is needed, but this is easy.
        * 'parmDict' is the GSAS-II parameter dict
+
+    :param dlg: an optional wx progress window that is updated as 
+        search progresses
+    :param float dmin: distances less than this distance are not reported as 
+        unrealistic (defaults to 0.5 A)
 
     :returns: AtomLabels, DistArray, AngArray where:
 
@@ -1338,7 +1343,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
             for [Txyz,Top,Tunit,Spn] in G2spc.GenAtom(Tatom[3:6],SGData,False,Move=False):
                 Dx = (Txyz-np.array(Oatom[3:6]))+Units
                 dx = np.inner(Amat,Dx)
-                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
+                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),dmin)
                 IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
                 if not np.any(IndB): continue
                 for indb in IndB:

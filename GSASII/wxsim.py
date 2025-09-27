@@ -70,7 +70,7 @@ def invokeButton(frame, btn):
     asyncResults['done'] = True
 
 def pressButtonsInWindow(winname,bnlList):
-    '''Run this in a thread to "press buttons" in a dialog
+    '''Run this in a thread to "press buttons" in a modal dialog
     that is opened just after this is started. Note that 
     final button should close the dialog.
 
@@ -91,9 +91,14 @@ def pressButtonsInWindow(winname,bnlList):
         wx.CallAfter(invokeButton,frame,b)
         print(f'button {i} pressed')
         count = waitForDone(True)
-        #if i < len(buttons) - 1:  # If not the last button
-        #    time.sleep(0.3)  # Wait between button clicks
-        time.sleep(0.3)  # Wait between button clicks
+        if i < len(buttons) - 1:  # If not the last button
+        # final button closes window and there is no reason
+        # to keep thread alive any longer.
+#            time.sleep(0.5)  # Wait between button clicks -- works
+#            time.sleep(0.05)  # Wait between button clicks -- works
+#            time.sleep(1.05)  # Wait between button clicks # too long
+            time.sleep(0.25)  # Wait between button clicks
+            pass
     
 def GetPhaseItem(G2frame,findname=None,findcount=None):
     '''Select a phase from the data tree by name or by count.

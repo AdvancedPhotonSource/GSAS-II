@@ -2001,15 +2001,19 @@ class G2MultiChoiceDialog(wx.Dialog):
         self._ShowSelections()
         self.OKbtn.Enable(True)
 
-    def ShowModal(self,*args,**kwargs):
-        print('Show Modal called')
-        if hasattr(self.G2frame,'Playback') and self.G2frame.Playback:
-            #raise Exception('needs work to replace ShowModal')
-            #print('in playback')
-            ShowAsNonModal(self)
-            
-        else:
-            wx.Dialog.ShowModal(self,*args,**kwargs)
+    # this was used to make a modal dialog into a non-modal one
+    # while in playback mode when trying to playback in a thread.
+    # I have given up on threads for now. 
+    #
+    # def ShowModal(self,*args,**kwargs):
+    #     print('Show Modal called')
+    #     if hasattr(self.G2frame,'Playback') and self.G2frame.Playback:
+    #         #raise Exception('needs work to replace ShowModal')
+    #         #print('in playback')
+    #         ShowAsNonModal(self)
+    #        
+    #     else:
+    #         wx.Dialog.ShowModal(self,*args,**kwargs)
 
 ###############################################  Multichoice in a sizer with set all, toggle & filter options
 class G2MultiChoiceWindow(wx.BoxSizer):
@@ -10148,52 +10152,50 @@ If "Yes", GSAS-II will reopen the project after the update.
     G2fil.openInNewTerm(project)
     print ('exiting GSAS-II')
     sys.exit()
-
-dlgResults = {}
-def ShowAsNonModal(dlg):
-    '''For playback of commands, use this in place of wx.Dialog.ShowModal
-    because ShowModal should not be used inside a wx.CallAfter call
-
-    This retrieves the results of the dialog and places them
-    into dlgResults['selected']
-    '''
-    def handle_dialog_end_ok():
-        dlgResults['selected'] = dlg.GetSelections()
-        print('Selected:', dlgResults['selected'])
-        dlg.Destroy()
-        parent.Enable()
-    def handle_dialog_end_cancel():
-        dlgResults['selected'] = None
-        dlg.Destroy()
-        parent.Enable()
-        raise Exception("Cancel button pressed")
-
-    def on_ok(event):
-        event.Skip()
-        handle_dialog_end_ok()
-    
-    def on_cancel(event):
-        event.Skip()
-        handle_dialog_end_cancel()
-    
-    def on_close(event):
-        event.Skip()
-        handle_dialog_end_cancel()
-        
-    # Bind to both button events and window close
-    dlg.Bind(wx.EVT_BUTTON, on_ok, id=wx.ID_OK)
-    dlg.Bind(wx.EVT_BUTTON, on_cancel, id=wx.ID_CANCEL)
-    dlg.Bind(wx.EVT_CLOSE, on_close)
-
-    parent = dlg.GetParent()
-    parent.Disable()  # Disable main window while dialog is open
-    dlg.Show()
-#     time.sleep(0.1)
-#     count = 0
-#     while len(asyncResults) == 0:
-#         count += 1
-#         time.sleep(0.05)
-#         if count > 1000: raise Exception('too many waits')
+ 
+# this was used to make a modal dialog into a non-modal one,
+# but have the OK etc buttons trigger things anyway. I'm not 100% sure
+# why this was needed.
+#
+# dlgResults = {}
+# def ShowAsNonModal(dlg):
+#     '''For playback of commands, use this in place of wx.Dialog.ShowModal
+#     because ShowModal should not be used inside a wx.CallAfter call
+#
+#     This retrieves the results of the dialog and places them
+#     into dlgResults['selected']
+#     '''
+#     def handle_dialog_end_ok():
+#         dlgResults['selected'] = dlg.GetSelections()
+#         print('Selected:', dlgResults['selected'])
+#         dlg.Destroy()
+#         parent.Enable()
+#     def handle_dialog_end_cancel():
+#         dlgResults['selected'] = None
+#         dlg.Destroy()
+#         parent.Enable()
+#         raise Exception("Cancel button pressed")
+#
+#     def on_ok(event):
+#         event.Skip()
+#         handle_dialog_end_ok()
+#    
+#     def on_cancel(event):
+#         event.Skip()
+#         handle_dialog_end_cancel()
+#    
+#     def on_close(event):
+#         event.Skip()
+#         handle_dialog_end_cancel()
+#        
+#     # Bind to both button events and window close
+#     dlg.Bind(wx.EVT_BUTTON, on_ok, id=wx.ID_OK)
+#     dlg.Bind(wx.EVT_BUTTON, on_cancel, id=wx.ID_CANCEL)
+#     dlg.Bind(wx.EVT_CLOSE, on_close)
+#
+#     parent = dlg.GetParent()
+#     parent.Disable()  # Disable main window while dialog is open
+#     dlg.Show()
 
 
 if __name__ == '__main__':

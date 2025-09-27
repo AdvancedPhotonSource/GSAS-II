@@ -3259,9 +3259,10 @@ If you continue from this point, it is quite likely that all intensity computati
                 print (traceback.format_exc())
         elif any('SPYDER' in name for name in os.environ):
             self.OnFileReopen(None)
-        import playback
-        import threading
-        threading.Thread(target=playback.Playback, args=(self,)).start()
+#        import playback
+#        import threading
+#        threading.Thread(target=playback.Playback, args=(self,)).start()
+#        playback.Playback(self)
 
     def GetTreeItemsList(self,item):
         ''' returns a list of all GSAS-II tree items
@@ -4403,12 +4404,11 @@ If you continue from this point, it is quite likely that all intensity computati
             print ('\nError opening file '+filename)
             import traceback
             print (traceback.format_exc())
-        # Playback after read of .gpx
-        import playback
-        import threading
-        threading.Thread(target=playback.Playback, args=(self,)).start()
-        #wx.CallAfter(doAfterFileLoad,G2frame)   # logging playback test
-        #wx.CallAfter(self.doAfterFileLoad)   # place automatic playback here
+        # Playback after read of .gpx from menu command
+        #import playback
+        #import threading
+        #threading.Thread(target=playback.Playback, args=(self,)).start()
+        #playback.Playback(self)
 
     def OnFileBrowse(self, event):
         '''Gets a GSAS-II .gpx project using the GPX browser, in response
@@ -6318,8 +6318,9 @@ Do you want to transfer the cell refinement flag to the Dij terms?
         from importlib import reload
         import playback
         reload(playback)
-        import threading
-        threading.Thread(target=playback.Playback, args=(self,)).start()
+        #import threading
+        #threading.Thread(target=playback.Playback, args=(self,)).start()
+        playback.Playback(self)
 
 #### Data window side of main GUI; menu definitions here #########################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):

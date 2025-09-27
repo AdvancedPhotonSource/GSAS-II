@@ -70,25 +70,31 @@ def invokeButton(frame, btn):
     asyncResults['done'] = True
 
 def pressButtonsInWindow(winname,bnlList):
-    '''Runs this in a thread to "press buttons" in a dialog
+    '''Run this in a thread to "press buttons" in a dialog
     that is opened just after this is started. Note that 
     final button should close the dialog.
 
     This will need more development to do more things in a
     "semi-modal" dialog
     '''
-    time.sleep(0.2) # wait for the window to open
+    time.sleep(0.25) # wait for the window to open
+    
+    asyncResults.clear()
     wx.CallAfter(getButtons,winname,bnlList)
-    count = waitForDone()
-    #print('getButtons',asyncResults, count)
+    count = waitForDone(True)
+    print('getButtons',asyncResults, count)
     buttons,frame = asyncResults['buttons'],asyncResults['frame']
+    #wx.CallAfter(wx.Yield)
     
     for i, b in enumerate(buttons):
+        asyncResults.clear()
         wx.CallAfter(invokeButton,frame,b)
-        if i < len(buttons) - 1:  # If not the last button
-            time.sleep(0.3)  # Wait between button clicks
-        #print(f'button {i} pressed')
-
+        print(f'button {i} pressed')
+        count = waitForDone(True)
+        #if i < len(buttons) - 1:  # If not the last button
+        #    time.sleep(0.3)  # Wait between button clicks
+        time.sleep(0.3)  # Wait between button clicks
+    
 def GetPhaseItem(G2frame,findname=None,findcount=None):
     '''Select a phase from the data tree by name or by count.
     Specify a name for the phase or the number of the phase.

@@ -13,71 +13,107 @@ def Playback(G2frame):
     '''This is a "demo" routine that loads the first and then the 
     second phase from a .gpx file
 
-    This will be run in a thread, so it should use CallAfter for 
-    any actions that call wx routines.
+    This will be run from a command callback so GUI routines can be called
+    directly.
     '''
+    i = 0
     G2frame.Playback = True
     try:
         for count in range(2): # cycle through two phases
-            wx.CallAfter(wxsim.GetPhaseItem,G2frame,None,count)
+            wxsim.GetPhaseItem(G2frame,None,count)
+            wx.Yield()
             wxsim.waitForDone()
-            wx.CallAfter(wxsim.GetTab,G2frame,'Draw Atoms')
+            wxsim.GetTab(G2frame,'Draw Atoms')
+            wx.Yield()
             wxsim.waitForDone()
-            wx.CallAfter(wxsim.GetTab,G2frame,'Draw Atoms')
-            wxsim.waitForDone()
-            # select all atoms
-            wx.CallAfter(wxsim.SelectRowsInPhaseGrid,G2frame)
-            # fill the cell
-            wxsim.waitForDone()
-            wx.CallAfter(wxsim.InvokeMenuCommand,G2frame,'Edit Figure','Fill unit cell')
-            wxsim.waitForDone()
+            threading.Thread(target=wxsim.pressButtonsInWindow,
+                        args=('Select atoms for action',['Set All','OK']),
+                        ).start()
+            wxsim.InvokeMenuCommand(G2frame,'Edit Figure','Fill unit cell')
+            wx.Yield()
+            #wxsim.waitForDone(True)
             #pause(2.1)
             #print(wxsim.asyncResults)
             #pause(0.1)
-            # split the window
-        wx.CallAfter(G2frame.G2plotNB.nb.Split,0,wx.Right)
+        # split the window
+        #G2frame.G2plotNB.nb.Split(0,wx.Right)
     finally:
     # done, reset the playback flag
         G2frame.Playback = False
-    #import GSASII.GSASIIpath
-    #GSASII.GSASIIpath.IPyBreak()
-    
-def doAfterFileLoad(G2frame): # not exactly logging playback, but a start
-    # runs 
-    pause(0.2)
-    # get Phase tab
-    launch = wx.CallAfter
-    #def launch(function,*args,**kwargs):
-    #    function(*args,**kwargs)
-    #    wx.Yield()
-    for count in range(2): # cycle through two phases
-        launch(GetPhaseItem,G2frame,None,count)
-        pause(0.5)
-        if 'error' in asyncResults: return False
-        if 'done' in asyncResults: break
-        #print(asyncResults)
-        launch(GetTab,G2frame,'Draw Atoms')
-        pause(0.1)
-        if 'error' in asyncResults: return False
-        #print(asyncResults)
-        launch(GetMenuCommand,G2frame,'Edit Figure','Fill unit cell')
-        pause(0.1)
-        if 'error' in asyncResults: return False
-        #print(asyncResults)
-        # menuitem = 
-        # launch(InvokeMenuCommand,G2frame,menuitem,
-        #                  pressButtonsInWindow,
-        #                  ('Select atoms for action',('Set All','OK')))
 
-        # launch thread to run commands in created window
-        threading.Thread(target=doInWindow,
-            args=('Select atoms for action',['Set All','OK']),
-            #kwargs=None
-            ).start()
-        # open window. command above should close it
-        launch(InvokeMenuCommand,G2frame,asyncResults['menuitem'])
-        return
-        #breakpoint()
+
+
+
+# asyncResults = {}
+# def Playback(G2frame):
+#     '''This is a "demo" routine that loads the first and then the 
+#     second phase from a .gpx file
+
+#     This will be run in a thread, so it should use CallAfter for 
+#     any actions that call wx routines.
+#     '''
+#     G2frame.Playback = True
+#     try:
+#         for count in range(2): # cycle through two phases
+#             wx.CallAfter(wxsim.GetPhaseItem,G2frame,None,count)
+#             wxsim.waitForDone()
+#             wx.CallAfter(wxsim.GetTab,G2frame,'Draw Atoms')
+#             wxsim.waitForDone()
+#             wx.CallAfter(wxsim.GetTab,G2frame,'Draw Atoms')
+#             wxsim.waitForDone()
+#             # select all atoms
+#             wx.CallAfter(wxsim.SelectRowsInPhaseGrid,G2frame)
+#             # fill the cell
+#             wxsim.waitForDone()
+#             wx.CallAfter(wxsim.InvokeMenuCommand,G2frame,'Edit Figure','Fill unit cell')
+#             wxsim.waitForDone()
+#             #pause(2.1)
+#             #print(wxsim.asyncResults)
+#             #pause(0.1)
+#             # split the window
+#         wx.CallAfter(G2frame.G2plotNB.nb.Split,0,wx.Right)
+#     finally:
+#     # done, reset the playback flag
+#         G2frame.Playback = False
+#     #import GSASII.GSASIIpath
+#     #GSASII.GSASIIpath.IPyBreak()
+    
+# def doAfterFileLoad(G2frame): # not exactly logging playback, but a start
+#     # runs 
+#     pause(0.2)
+#     # get Phase tab
+#     launch = wx.CallAfter
+#     #def launch(function,*args,**kwargs):
+#     #    function(*args,**kwargs)
+#     #    wx.Yield()
+#     for count in range(2): # cycle through two phases
+#         launch(GetPhaseItem,G2frame,None,count)
+#         pause(0.5)
+#         if 'error' in asyncResults: return False
+#         if 'done' in asyncResults: break
+#         #print(asyncResults)
+#         launch(GetTab,G2frame,'Draw Atoms')
+#         pause(0.1)
+#         if 'error' in asyncResults: return False
+#         #print(asyncResults)
+#         launch(GetMenuCommand,G2frame,'Edit Figure','Fill unit cell')
+#         pause(0.1)
+#         if 'error' in asyncResults: return False
+#         #print(asyncResults)
+#         # menuitem = 
+#         # launch(InvokeMenuCommand,G2frame,menuitem,
+#         #                  pressButtonsInWindow,
+#         #                  ('Select atoms for action',('Set All','OK')))
+
+#         # launch thread to run commands in created window
+#         threading.Thread(target=doInWindow,
+#             args=('Select atoms for action',['Set All','OK']),
+#             #kwargs=None
+#             ).start()
+#         # open window. command above should close it
+#         launch(InvokeMenuCommand,G2frame,asyncResults['menuitem'])
+#         return
+#         #breakpoint()
 
 
 
@@ -115,119 +151,119 @@ def doAfterFileLoad(G2frame): # not exactly logging playback, but a start
 #         asyncResults['error'] = f'Error from InvokeMenuCommand: {msg}'
 
 
-def InvokeMenuCommand(G2frame,menuitem):
-    '''Executes a menu found in :func:`GetMenuCommand`
+# def InvokeMenuCommand(G2frame,menuitem):
+#     '''Executes a menu found in :func:`GetMenuCommand`
 
-    :param wx.Frame G2frame: reference to main GSASII frame
-    :param wx.MenuItem menuitem: reference to a menu item
+#     :param wx.Frame G2frame: reference to main GSASII frame
+#     :param wx.MenuItem menuitem: reference to a menu item
 
-    This is intended to be called from wx.CallAfter(),
-    so results are placed in dict asyncResults which
-    must be defined before this is called:
-     * asyncResults['error'] has error information, if an error occurs
+#     This is intended to be called from wx.CallAfter(),
+#     so results are placed in dict asyncResults which
+#     must be defined before this is called:
+#      * asyncResults['error'] has error information, if an error occurs
 
-    '''
-    asyncResults.clear()
-    try:
-        menuevent = wx.CommandEvent(wx.EVT_MENU.typeId, menuitem.Id)
-        G2frame.ProcessEvent(menuevent)
-    except Exception as msg:
-        asyncResults['error'] = f'Error from InvokeMenuCommand: {msg}'
+#     '''
+#     asyncResults.clear()
+#     try:
+#         menuevent = wx.CommandEvent(wx.EVT_MENU.typeId, menuitem.Id)
+#         G2frame.ProcessEvent(menuevent)
+#     except Exception as msg:
+#         asyncResults['error'] = f'Error from InvokeMenuCommand: {msg}'
 
-def getButtons(winname, btnList):
-    '''Get one or more button from a window name and a 
-    list of button names
+# def getButtons(winname, btnList):
+#     '''Get one or more button from a window name and a 
+#     list of button names
 
-    This should be called by CallAfter
-    '''
-    def getAllChildren(parent):
-        '''Recursively finds all child windows of a given parent window.
+#     This should be called by CallAfter
+#     '''
+#     def getAllChildren(parent):
+#         '''Recursively finds all child windows of a given parent window.
 
-        :Returns: A list containing all descendant wx.Window objects.
-        '''
-        all_children = []
-        for child in parent.GetChildren():
-            all_children.append(child)
-            all_children.extend(getAllChildren(child))
-        return all_children
+#         :Returns: A list containing all descendant wx.Window objects.
+#         '''
+#         all_children = []
+#         for child in parent.GetChildren():
+#             all_children.append(child)
+#             all_children.extend(getAllChildren(child))
+#         return all_children
     
-    asyncResults.clear()
-    # find window
-    for w in wx.GetTopLevelWindows():
-        #print(w.GetTitle())
-        if w.GetTitle() == winname:
-            #print(f"Window {winname!r} found")
-            win = w
-            asyncResults['frame'] = win
-            break
-    else:
-        asyncResults['error'] = f"Window {winname!r} not found"        
-        return
-    # find each button
-    btns = []
-    for btnname in btnList:
-        for b in getAllChildren(win):
-            if not hasattr(b,'GetLabelText'): continue # not button
-            if not issubclass(b.__class__,wx.Button): continue # not button
-            if b.GetLabelText() == btnname:
-                btns.append(b)
-                break
-        else:
-            asyncResults['error'] = f'Button {btnname} not found'
-            return
-    asyncResults['buttons'] = btns
+#     asyncResults.clear()
+#     # find window
+#     for w in wx.GetTopLevelWindows():
+#         #print(w.GetTitle())
+#         if w.GetTitle() == winname:
+#             #print(f"Window {winname!r} found")
+#             win = w
+#             asyncResults['frame'] = win
+#             break
+#     else:
+#         asyncResults['error'] = f"Window {winname!r} not found"        
+#         return
+#     # find each button
+#     btns = []
+#     for btnname in btnList:
+#         for b in getAllChildren(win):
+#             if not hasattr(b,'GetLabelText'): continue # not button
+#             if not issubclass(b.__class__,wx.Button): continue # not button
+#             if b.GetLabelText() == btnname:
+#                 btns.append(b)
+#                 break
+#         else:
+#             asyncResults['error'] = f'Button {btnname} not found'
+#             return
+#     asyncResults['buttons'] = btns
 
-def invokeButton(frame, btn):
-    '''"press" button from a window name and a button name
+# def invokeButton(frame, btn):
+#     '''"press" button from a window name and a button name
 
-    This should be called by CallAfter
-    '''
-    asyncResults.clear()
-    print(f'Invoking button {btn} id={btn.GetId()} lbl={btn.GetLabelText()}')
-    # why does this not work for "Set All" button?
-    #buttonevt = wx.PyCommandEvent(wx.EVT_BUTTON.typeId, btn.GetId())
-    #btn.GetTopLevelParent().ProcessEvent(buttonevt)
-    #frame.ProcessEvent(buttonevt)
-    #simulate mouse press on button
-    # G2frame = wx.GetApp().GetMainTopWindow()
-    # print('btn.GetPosition()',btn.GetPosition(),
-    #         '\nbtn.GetSize()',btn.GetSize(),
-    #         '\nframe.GetPosition()',frame.GetPosition(),
-    #         '\nG2frame.GetPosition()',G2frame.GetPosition(),)
-    # #pos = btn.GetPosition() + btn.GetSize()/2
-    # winpos = frame.GetPosition()
-    pos = frame.ClientToScreen(btn.GetPosition() + btn.GetSize()/2)
-    sim = wx.UIActionSimulator()
-    sim.MouseMove(pos.x,pos.y)
-    pause(0.05)
-    sim.MouseClick(wx.MOUSE_BTN_LEFT)
-    print('invoke done @',pos)
-    asyncResults['done'] = True
+#     This should be called by CallAfter
+#     '''
+#     asyncResults.clear()
+#     print(f'Invoking button {btn} id={btn.GetId()} lbl={btn.GetLabelText()}')
+#     # why does this not work for "Set All" button?
+#     #buttonevt = wx.PyCommandEvent(wx.EVT_BUTTON.typeId, btn.GetId())
+#     #btn.GetTopLevelParent().ProcessEvent(buttonevt)
+#     #frame.ProcessEvent(buttonevt)
+#     #simulate mouse press on button
+#     # G2frame = wx.GetApp().GetMainTopWindow()
+#     # print('btn.GetPosition()',btn.GetPosition(),
+#     #         '\nbtn.GetSize()',btn.GetSize(),
+#     #         '\nframe.GetPosition()',frame.GetPosition(),
+#     #         '\nG2frame.GetPosition()',G2frame.GetPosition(),)
+#     # #pos = btn.GetPosition() + btn.GetSize()/2
+#     # winpos = frame.GetPosition()
+#     pos = frame.ClientToScreen(btn.GetPosition() + btn.GetSize()/2)
+#     sim = wx.UIActionSimulator()
+#     sim.MouseMove(pos.x,pos.y)
+#     pause(0.05)
+#     sim.MouseClick(wx.MOUSE_BTN_LEFT)
+#     print('invoke done @',pos)
+#     asyncResults['done'] = True
 
-def doInWindow(winname,bnlList):
-    pause(0.5) # wait for window to open
-    wx.CallAfter(getButtons,winname,bnlList)
-    pause(0.51)
-    print('getButtons',asyncResults)
-    if 'error' in asyncResults: return False
-    buttons,frame = asyncResults['buttons'],asyncResults['frame']
-    for btxt,b in zip(bnlList,buttons):
-        wx.CallAfter(invokeButton,frame,b)
-        count = 0
-        while len(asyncResults) == 0:
-            count += 1
-            pause(0.05)
-        print('invoke done',btxt,b,count)
-        #if 'error' in asyncResults: return False
+# def doInWindow(winname,bnlList):
+#     pause(0.5) # wait for window to open
+#     wx.CallAfter(getButtons,winname,bnlList)
+#     pause(0.51)
+#     print('getButtons',asyncResults)
+#     if 'error' in asyncResults: return False
+#     buttons,frame = asyncResults['buttons'],asyncResults['frame']
+#     for btxt,b in zip(bnlList,buttons):
+#         wx.CallAfter(invokeButton,frame,b)
+#         count = 0
+#         while len(asyncResults) == 0:
+#             count += 1
+#             pause(0.05)
+#         print('invoke done',btxt,b,count)
+#         #if 'error' in asyncResults: return False
 
 
         
-        #wx.CallAfter(InvokeMenuCommand,G2frame,menuitem,
-        #                 concurrentCommands,(G2frame,))
-        pause(0.1)
-        print(asyncResults)
-        if 'error' in asyncResults: return False
-    return
+#         #wx.CallAfter(InvokeMenuCommand,G2frame,menuitem,
+#         #                 concurrentCommands,(G2frame,))
+#         pause(0.1)
+#         print(asyncResults)
+#         if 'error' in asyncResults: return False
+#     return
     
     # if False:
     #     # select tab on data window
@@ -269,48 +305,48 @@ def doInWindow(winname,bnlList):
     #     #win.GetPosition()
 
     #     # go on to next phase entry
-def concurrentCommands(G2frame):
-    'finds a window and presses buttons in that window'
-    print('start concurrentCommands')
-    pause(0.5)
-    # button press find window named 'Select atoms for action'
-    # ['Select atoms for action', wx.Point(54, 191)]
-    winname = 'Select atoms for action'
-    pos = wx.Point(54, 191)
-    OKpos = wx.Point(175, 267)
-    for w in wx.GetTopLevelWindows():
-        if w.GetTitle() == winname:
-            print(f"Window {winname!r} found")
-            win = w
-            break
-    else:
-        print(f"Window {winname!r} not found")
-        return
-    winpos = win.GetPosition()
-    G2pos = G2frame.GetPosition()
-    print('modal,main',winpos,G2pos)
-    sim = wx.UIActionSimulator()
-    wx.CallAfter(sim.MouseMove,winpos.x+pos.x,winpos.y+pos.y)
-    pause(0.5)
-    print('before mouse click')
-    wx.CallAfter(sim.MouseClick,wx.MOUSE_BTN_LEFT)
-    pause(0.5)
-    print('mouse click')
-    wx.CallAfter(sim.MouseMove,winpos.x+OKpos.x,winpos.y+OKpos.y)
-    pause(0.5)
-    print('before mouse click')
-    wx.CallAfter(sim.MouseClick,wx.MOUSE_BTN_LEFT)
-    print('mouse click')
+# def concurrentCommands(G2frame):
+#     'finds a window and presses buttons in that window'
+#     print('start concurrentCommands')
+#     pause(0.5)
+#     # button press find window named 'Select atoms for action'
+#     # ['Select atoms for action', wx.Point(54, 191)]
+#     winname = 'Select atoms for action'
+#     pos = wx.Point(54, 191)
+#     OKpos = wx.Point(175, 267)
+#     for w in wx.GetTopLevelWindows():
+#         if w.GetTitle() == winname:
+#             print(f"Window {winname!r} found")
+#             win = w
+#             break
+#     else:
+#         print(f"Window {winname!r} not found")
+#         return
+#     winpos = win.GetPosition()
+#     G2pos = G2frame.GetPosition()
+#     print('modal,main',winpos,G2pos)
+#     sim = wx.UIActionSimulator()
+#     wx.CallAfter(sim.MouseMove,winpos.x+pos.x,winpos.y+pos.y)
+#     pause(0.5)
+#     print('before mouse click')
+#     wx.CallAfter(sim.MouseClick,wx.MOUSE_BTN_LEFT)
+#     pause(0.5)
+#     print('mouse click')
+#     wx.CallAfter(sim.MouseMove,winpos.x+OKpos.x,winpos.y+OKpos.y)
+#     pause(0.5)
+#     print('before mouse click')
+#     wx.CallAfter(sim.MouseClick,wx.MOUSE_BTN_LEFT)
+#     print('mouse click')
 
-    print('done concurrentCommands')
-    return
+#     print('done concurrentCommands')
+#     return
 
     
-    pause(0.5)
-    print('before mouse click')
-    wx.CallAfter(sim.MouseClick,wx.MOUSE_BTN_LEFT)
-    pause(0.5)
-    print('mouse click')
+#     pause(0.5)
+#     print('before mouse click')
+#     wx.CallAfter(sim.MouseClick,wx.MOUSE_BTN_LEFT)
+#     pause(0.5)
+#     print('mouse click')
 
 
     # from importlib import reload

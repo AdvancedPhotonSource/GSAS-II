@@ -1783,7 +1783,7 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
     if 'pdabc' in parmDict: 
         Pdabc = parmDict['pdabc']
     alpName = 'alp'+str(iPeak)
-    if alpName in varyList or not peakInstPrmMode:
+    if alpName in varyList or (not peakInstPrmMode and alpName in parmDict):
         alp = parmDict[alpName]
     elif len(Pdabc):
         alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
@@ -1791,7 +1791,7 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
         alp = G2mth.getTOFalpha(parmDict,dsp)
     alp = max(0.1,alp)
     betName = 'bet'+str(iPeak)
-    if betName in varyList or not peakInstPrmMode:
+    if betName in varyList or (not peakInstPrmMode and betName in parmDict):
         bet = parmDict[betName]
     elif len(Pdabc):
         bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
@@ -1799,14 +1799,15 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
         bet = G2mth.getTOFbeta(parmDict,dsp)
     bet = max(0.01,bet)
     sigName = 'sig'+str(iPeak)
-    if sigName in varyList or not peakInstPrmMode:
+    if sigName in varyList or (not peakInstPrmMode and sigName in parmDict):
         sig = parmDict[sigName]
     elif len(Pdabc):
         sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
     else:
         sig = G2mth.getTOFsig(parmDict,dsp)
+    sig = max(0.01,sig)
     gamName = 'gam'+str(iPeak)
-    if gamName in varyList or not peakInstPrmMode:
+    if gamName in varyList or (not peakInstPrmMode and gamName in parmDict):
         gam = parmDict[gamName]
     else:
         gam = G2mth.getTOFgamma(parmDict,dsp)

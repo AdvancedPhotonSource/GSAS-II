@@ -1745,9 +1745,6 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
             except KeyError:        #no more peaks to process
                 return yb+yc
     else:
-        Pdabc = []
-        if 'pdabc' in parmDict: 
-            Pdabc = parmDict['pdabc']
         difC = parmDict['difC']
         iPeak = 0
         while True:
@@ -1756,35 +1753,7 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 tof = pos-parmDict['Zero']
                 dsp = tof/difC
                 intens = parmDict['int'+str(iPeak)]
-                alpName = 'alp'+str(iPeak)
-                if alpName in varyList or not peakInstPrmMode:
-                    alp = parmDict[alpName]
-                elif len(Pdabc):
-                    alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
-                else:
-                    alp = G2mth.getTOFalpha(parmDict,dsp)
-                alp = max(0.1,alp)
-                betName = 'bet'+str(iPeak)
-                if betName in varyList or not peakInstPrmMode:
-                    bet = parmDict[betName]
-                elif len(Pdabc):
-                    bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
-                else:
-                    bet = G2mth.getTOFbeta(parmDict,dsp)
-                bet = max(0.0001,bet)
-                sigName = 'sig'+str(iPeak)
-                if sigName in varyList or not peakInstPrmMode:
-                    sig = parmDict[sigName]
-                elif len(Pdabc):
-                    sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
-                else:
-                    sig = G2mth.getTOFsig(parmDict,dsp)
-                gamName = 'gam'+str(iPeak)
-                if gamName in varyList or not peakInstPrmMode:
-                    gam = parmDict[gamName]
-                else:
-                    gam = G2mth.getTOFgamma(parmDict,dsp)
-                gam = max(gam,0.001)             #avoid neg gamma
+                alp,bet,gam,sig = getTOFwids(dsp,varyList,iPeak,parmDict)
                 Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig,gam)
                 iBeg = np.searchsorted(xdata,pos-fmin)
                 iFin = np.searchsorted(xdata,pos+fmax)
@@ -1804,6 +1773,45 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 return yb+yc
+
+def getTOFwids(dsp,varyList,iPeak,parmDict):
+    '''For TOF peaks: determine the values for the four peak width parameters
+    from either the lookup table (in parmDict['pdabc']) or from the instrument 
+    parameters, unless the peak is varied or peakInstPrmMode is set, 
+    in which case the value is taken from the parameter dictionary 
+    '''
+    if 'pdabc' in parmDict: 
+        Pdabc = parmDict['pdabc']
+    alpName = 'alp'+str(iPeak)
+    if alpName in varyList or not peakInstPrmMode:
+        alp = parmDict[alpName]
+    elif len(Pdabc):
+        alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
+    else:
+        alp = G2mth.getTOFalpha(parmDict,dsp)
+    alp = max(0.1,alp)
+    betName = 'bet'+str(iPeak)
+    if betName in varyList or not peakInstPrmMode:
+        bet = parmDict[betName]
+    elif len(Pdabc):
+        bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
+    else:
+        bet = G2mth.getTOFbeta(parmDict,dsp)
+    bet = max(0.01,bet)
+    sigName = 'sig'+str(iPeak)
+    if sigName in varyList or not peakInstPrmMode:
+        sig = parmDict[sigName]
+    elif len(Pdabc):
+        sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
+    else:
+        sig = G2mth.getTOFsig(parmDict,dsp)
+    gamName = 'gam'+str(iPeak)
+    if gamName in varyList or not peakInstPrmMode:
+        gam = parmDict[gamName]
+    else:
+        gam = G2mth.getTOFgamma(parmDict,dsp)
+    gam = max(gam,0.001)             #avoid neg gamma
+    return alp,bet,gam,sig
 
 def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
     '''Computes the profile derivatives for a powder pattern for single peak fitting
@@ -2050,42 +2058,33 @@ def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):
                 tof = pos-parmDict['Zero']
                 dsp = tof/difC
                 intens = parmDict['int'+str(iPeak)]
+                alp,bet,gam,sig = getTOFwids(dsp,varyList,iPeak,parmDict)
                 alpName = 'alp'+str(iPeak)
                 if alpName in varyList or not peakInstPrmMode:
-                    alp = parmDict[alpName]
+                    pass
                 elif len(Pdabc):
-                    alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
                     dada0 = 0
                 else:
-                    alp = G2mth.getTOFalpha(parmDict,dsp)
                     dada0 = G2mth.getTOFalphaDeriv(dsp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList or not peakInstPrmMode:
-                    bet = parmDict[betName]
+                    pass
                 elif len(Pdabc):
-                    bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
                     dbdb0 = dbdb1 = dbdb2 = 0
                 else:
-                    bet = G2mth.getTOFbeta(parmDict,dsp)
                     dbdb0,dbdb1,dbdb2 = G2mth.getTOFbetaDeriv(dsp)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList or not peakInstPrmMode:
-                    sig = parmDict[sigName]
                     dsds0 = dsds1 = dsds2 = dsds3 = 0
                 elif len(Pdabc):
-                    sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
                     dsds0 = dsds1 = dsds2 = dsds3 = 0
                 else:
-                    sig = G2mth.getTOFsig(parmDict,dsp)
                     dsds0,dsds1,dsds2,dsds3 = G2mth.getTOFsigDeriv(dsp)
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList or not peakInstPrmMode:
-                    gam = parmDict[gamName]
                     dsdX = dsdY = dsdZ = 0
                 else:
-                    gam = G2mth.getTOFgamma(parmDict,dsp)
                     dsdX,dsdY,dsdZ = G2mth.getTOFgammaDeriv(dsp)
-                gam = max(gam,0.001)             #avoid neg gamma
                 Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig,gam)
                 iBeg = np.searchsorted(xdata,pos-fmin)
                 lenX = len(xdata)
@@ -2524,9 +2523,6 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         '''
         for name in Inst:
             Inst[name][1] = parmDict[name]
-        Pdabc = []
-        if 'pdabc' in parmDict: 
-            Pdabc = parmDict['pdabc']
         iPeak = 0
         while True:
             try:
@@ -2534,11 +2530,10 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 pos = parmDict['pos'+str(iPeak)]
                 if 'T' in Inst['Type'][0]:
                     dsp = G2lat.Pos2dsp(Inst,pos)
+                    alp,bet,gam,sig = getTOFwids(dsp,varyList,iPeak,parmDict)
                 if sigName not in varyList and peakInstPrmMode:
-                    if 'T' in Inst['Type'][0] and len(Pdabc):
-                        parmDict[sigName] = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
-                    elif 'T' in Inst['Type'][0]:
-                        parmDict[sigName] = G2mth.getTOFsig(parmDict,dsp)
+                    if 'T' in Inst['Type'][0]:
+                        parmDict[sigName] = sig
                     elif 'E' in Inst['Type'][0]:
                         parmDict[sigName] = G2mth.getEDsig(parmDict,pos)
                     else:
@@ -2546,8 +2541,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
                 gamName = 'gam'+str(iPeak)
                 if gamName not in varyList and peakInstPrmMode:
                     if 'T' in Inst['Type'][0]:
-                        # N.B. Gamma is not in the lookup table
-                        parmDict[gamName] = G2mth.getTOFgamma(parmDict,dsp)
+                        parmDict[gamName] = gam
                     elif 'E' in Inst['Type'][0]:
                         parmDict[gamName] = G2mth.getEDgam(parmDict,pos)
                     else:
@@ -2616,9 +2610,6 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             for i,peak in enumerate(Peaks):
                 if type(peak) is dict: continue
                 parmDict['ttheta'+str(i)] = peak[-1]
-        Pdabc = []
-        if 'pdabc' in parmDict: 
-            Pdabc = parmDict['pdabc']
         for i,peak in enumerate(Peaks):
             if type(peak) is dict:
                 continue
@@ -2634,35 +2625,30 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             if 'difC' in Inst:
                 dsp = pos/Inst['difC'][1]
             for j in range(len(names)):
+                if 'T' in Inst['Type'][0]:
+                    alp,bet,gam,sig = getTOFwids(dsp,varyList,i,parmDict)
                 parName = names[j]+str(i)
                 if peak[2*j+off + 1] or not peakInstPrmMode: continue
                 if 'alp' in parName:
-                    if 'T' in Inst['Type'][0] and len(Pdabc):
-                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
-                    elif 'T' in Inst['Type'][0]:
-                        peak[2*j+off] = G2mth.getTOFalpha(parmDict,dsp)
+                    if 'T' in Inst['Type'][0]:
+                        peak[2*j+off] = alp
                     else: #'B'
                         peak[2*j+off] = G2mth.getPinkAlpha(parmDict,pos)
                 elif 'bet' in parName:
-                    if 'T' in Inst['Type'][0] and len(Pdabc):
-                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
-                    elif 'T' in Inst['Type'][0]:
-                        peak[2*j+off] = G2mth.getTOFbeta(parmDict,dsp)
+                    if 'T' in Inst['Type'][0]:
+                        peak[2*j+off] = bet
                     else:   #'B'
                         peak[2*j+off] = G2mth.getPinkBeta(parmDict,pos)
                 elif 'sig' in parName:
-                    if 'T' in Inst['Type'][0] and len(Pdabc):
-                        peak[2*j+off] = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
-                    elif 'T' in Inst['Type'][0]:
-                        peak[2*j+off] = G2mth.getTOFsig(parmDict,dsp)
+                    if 'T' in Inst['Type'][0]:
+                        peak[2*j+off] = sig
                     elif 'E' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getEDsig(parmDict,pos)
                     else:   #'C' & 'B'
                         peak[2*j+off] = G2mth.getCWsig(parmDict,pos)
                 elif 'gam' in parName:
                     if 'T' in Inst['Type'][0]:
-                        # N.B. Gamma is not in the pdabc lookup table
-                        peak[2*j+off] = G2mth.getTOFgamma(parmDict,dsp)
+                        peak[2*j+off] = gam
                     elif 'E' in Inst['Type'][0]:
                         peak[2*j+off] = G2mth.getEDgam(parmDict,pos)
                     else:   #'C' & 'B'

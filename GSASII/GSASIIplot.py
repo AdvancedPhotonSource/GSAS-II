@@ -213,7 +213,7 @@ class G2PlotMpl(_tabPlotWin):
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,publish=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
-        mpl.rcParams['legend.fontsize'] = 10
+        mpl.rcParams['legend.fontsize'] = 12
         mpl.rcParams['axes.grid'] = False
         self.figure = mplfig.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
@@ -956,7 +956,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         i = zones.index(Data['Zone'])
         newPlot = False
         pwdrChoice = {'f':'Fo','s':'Fosq','u':'Unit Fc'}
-        hklfChoice = {'1':'|DFsq|>sig','3':'|DFsq|>3sig','w':'|DFsq|/sig','f':'Fo','s':'Fosq','i':'Unit Fc'}
+        hklfChoice = {'1':'|DFsq|>sig','3':'|DFsq|>3sig','w':'|DFsq|/sig','f':'Fo','s':'Fosq','u':'Unit Fc','o':'Fo only'}
         if event.key == 'h':
             Data['Zone'] = '100'
             newPlot = True
@@ -1044,7 +1044,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             'f: select Fo','s: select Fosq','u: select unit Fc',
             '+: increase index','-: decrease index','0: zero layer',)
         if 'HKLF' in Name:
-            Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
+            Page.Choice += ('o: select Fo only','w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
     try:
         Plot.set_aspect(aspect='equal')
     except: #broken in mpl 3.1.1; worked in mpl 3.0.3
@@ -1096,6 +1096,9 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 B = scale*math.sqrt(max(0,Fcsq))/FoMax
                 C = abs(A-B)
                 sumDF += C
+            elif Type == 'Fo only':
+                A = scale*Fosq/FosqMax
+                sumFo += A
             elif Type == 'Unit Fc':
                 A = scale/2
                 B = scale/2
@@ -1889,7 +1892,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
         sumWdelt = 0.0
         Nobs = 0
         for ref in refl:
-            if ref[6+im] > 0.:
+            if ref[5+im] > 0.:
                 if ref[3+im] > 0:
                     Nobs += 1
                     w2 = 1./ref[6+im]
@@ -2440,7 +2443,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 
 #### PlotXY ##################################################################
 def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
-    Title='',lines=False,names=[],names2=[],vertLines=[]):
+    Title='',lines=False,points2=False,names=[],names2=[],vertLines=[]):
     '''simple plot of xy data
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
@@ -2451,6 +2454,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     :param bool newPlot: =True if new plot is to be made
     :param str Title: title for plot
     :param bool lines: = True if lines desired for XY plot; XY2 always plotted as lines
+    :param bool points2: = False if XY2 is plotted as points despite lines
     :param list names: legend names for each XY plot as list a of str values
     :param list names2: legend names for each XY2 plot as list a of str values
     :param list vertLines: lists of vertical line x-positions; can be one for each XY
@@ -2493,9 +2497,10 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     def Draw():
         global xylim
         Plot.clear()
-        Plot.set_title(Title)
-        Plot.set_xlabel(r''+labelX,fontsize=14)
-        Plot.set_ylabel(r''+labelY,fontsize=14)
+        Plot.set_title(Title,fontsize=16)
+        Plot.set_xlabel(r''+labelX,fontsize=16)
+        Plot.set_ylabel(r''+labelY,fontsize=16)
+        Plot.tick_params(labelsize=14)
         colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
             'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
         NC = len(colors)
@@ -2525,12 +2530,18 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 X,Y = XY2[ixy]
                 dX = Page.Offset[0]*(ixy+1)*Xmax/500.
                 dY = Page.Offset[1]*(ixy+1)*Ymax/100.
-                if len(names2):
-                    Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False,label=names2[ixy])
-                else:
-                    Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False)
-        if len(names):
-            Plot.legend(names,loc='best')
+                if points2:
+                    if len(names2):
+                        Plot.scatter(X,Y,marker='+',color=colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                    else:
+                        Plot.scatter(X,Y,marker='+',color=colors[(ixy+1)%NC],picker=False)
+                else:    
+                    if len(names2):
+                        Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                    else:
+                        Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False)
+        if len(names)+len(names2):
+            Plot.legend(names+names2,loc='best')
         if not newPlot:
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])
@@ -4553,12 +4564,12 @@ def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     if azm1-azm0 > 180: aR[2] //= 2  # for more than 180 degrees, steps can be 2 deg.
     Azm = np.linspace(*aR)
     for azm in Azm:
-        XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angI),wave),azm,Data)
+        XY = G2img.GetDetectorXY(Dsp(np.squeeze(angI),wave),azm,Data)
         if np.any(XY):
-            xy1.append(XY)      #what about hyperbola
-        XY = G2img.GetDetectorXY2(Dsp(np.squeeze(angO),wave),azm,Data)
+            xy1.append(XY)
+        XY = G2img.GetDetectorXY(Dsp(np.squeeze(angO),wave),azm,Data)
         if np.any(XY):
-            xy2.append(XY)      #what about hyperbola
+            xy2.append(XY)
     return np.array(xy1).T,np.array(xy2).T
 
 def UpdatePolygon(pick,event,polygon):
@@ -4837,7 +4848,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY2(dspI,azm,Data)
+                    xy = G2img.GetDetectorXY(dspI,azm,Data)
                     if np.any(xy):
                         xyI.append(xy)
                 if len(xyI):
@@ -4846,7 +4857,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellO:
                 xyO = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY2(dspO,azm,Data)
+                    xy = G2img.GetDetectorXY(dspO,azm,Data)
                     if np.any(xy):
                         xyO.append(xy)
                 if len(xyO):
@@ -4865,9 +4876,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             elif 'linescan' in itemPicked:
                 xlim = Plot1.get_xlim()
                 azm = Data['linescan'][1]-AzmthOff
-                dspI = wave/(2.0*sind(0.1/2.0))
+                dspI = wave/(2.0*sind(IOtth[0]/2.0))
                 xyI = G2img.GetDetectorXY(dspI,azm,Data)
-                dspO = wave/(2.0*sind(60./2.0))
+                dspO = wave/(2.0*sind(IOtth[1]/2.0))
                 xyO = G2img.GetDetectorXY(dspO,azm,Data)
                 pick.set_data([[xyI[0],xyO[0]],[xyI[1],xyO[1]]])
                 xy = G2img.GetLineScan(G2frame.ImageZ,Data)
@@ -5439,21 +5450,21 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
 
         Plot.plot(xcent,ycent,'x')
         if Data['showLines']: # draw integration range arc/circles/lines
-            LRAzim = Data['LRazimuth']                  #NB: integers
+            LRAzim = Data['LRazimuth']
             Nazm = Data['outAzimuths']
             delAzm = float(LRAzim[1]-LRAzim[0])/Nazm
             AzmthOff = Data['azmthOff']
             IOtth = Data['IOtth']
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
-            ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
+            ellI = G2img.GetEllipse(dspI,Data)           
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
-            ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
+            ellO = G2img.GetEllipse(dspO,Data)
             Azm = np.arange(LRAzim[0],LRAzim[1]+1.)-AzmthOff
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY2(dspI,azm,Data)
+                    xy = G2img.GetDetectorXY(dspI,azm,Data)
                     if np.any(xy):
                         xyI.append(xy)
                 if len(xyI):
@@ -5464,7 +5475,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xyO = []
                 arcxO = []
                 for azm in Azm:
-                    xy = G2img.GetDetectorXY2(dspO,azm,Data)
+                    xy = G2img.GetDetectorXY(dspO,azm,Data)
                     if np.any(xy):
                         xyO.append(xy)
                 if len(xyO):
@@ -5485,15 +5496,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
         if 'linescan' in Data and Data['linescan'][0] and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             azm = Data['linescan'][1]-Data['azmthOff']
-            IOtth = [0.1,60.]
+            IOtth = Data['IOtth']
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))
             xyI = G2img.GetDetectorXY(dspI,azm,Data)
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
             xyO = G2img.GetDetectorXY(dspO,azm,Data)
-            Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],
-#                picker=True,pickradius=3,label='linescan')
-                picker=False,label='linescan')
+            Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],picker=False,label='linescan')
 
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             for xring,yring in Data['ring']:
@@ -5505,13 +5514,33 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.plot(xring,yring,'.',color=colors[N%NC])
                     N += 1
             for ellipse in Data['ellipses']:      #what about hyperbola?
-                cent,phi,[width,height],col = ellipse
+                try:
+                    cent,phi,[width,height,tth],col = ellipse
+                except ValueError:
+                    cent,phi,[width,height],col = ellipse
+                    tth = 0.0
                 if width > 0:       #ellipses
                     try:  # angle was changed to a keyword at some point, needed in mpl 3.8
                         Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,angle=phi,ec=col,fc='none'))
                     except: # but keep the old version as a patch (5/20/24) in case old call needed for old MPL
                         Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+                elif tth:       #future hyperbola plot
+                    dsp =0.5*Data['wavelength']/npsind(tth/2.0)
+                    darc = Data['rotation']
+#                    Azm = np.arange(-10.-darc,190.5-darc,.5)
+                    Azm = np.arange(0.,360.5,.5)
+                    xyH = []
+                    for azm in Azm:
+                        xy = G2img.GetDetectorXY(dsp,azm,Data)
+                        if np.any(xy):
+                            xyH.append(xy)
+                    if len(xyH):
+                        xyH = np.array(xyH)
+                        xH,yH = xyH.T
+                        Plot.plot(xH,yH,color=col)
+                    Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+                    continue
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
             for N,ring in enumerate(StrSta['d-zero']):
                 if 'ImxyCalc' in ring:
@@ -7533,7 +7562,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         mcsaTypes = []
         neqv = 0
         for xyz,atyp in zip(XYZs,Types):
-            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=False))
+            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))
             neqv = max(neqv,len(equiv))
             for item in equiv:
                 mcsaXYZ.append(item[0])

@@ -1220,7 +1220,7 @@ def dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList):
                 parmFrozenList.append(v)
     return freeze
 
-def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
+def RetDistAngle(DisAglCtls,DisAglData,dlg=None,dmin=0.5):
     '''Compute and return distances and angles
 
     :param dict DisAglCtls: contains distance/angle radii usually defined using
@@ -1251,6 +1251,11 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
          data tree. Only the current phase is needed, but this is easy.
        * 'parmDict' is the GSAS-II parameter dict
 
+    :param dlg: an optional wx progress window that is updated as 
+        search progresses
+    :param float dmin: distances less than this distance are not reported as 
+        unrealistic (defaults to 0.5 A)
+
     :returns: AtomLabels, DistArray, AngArray where:
 
       **AtomLabels** is a dict of atom labels, keys are the atom number
@@ -1278,6 +1283,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
       DistArray item which gives the distance from the central atom and the applied
       symmetry transformation for the two target atoms.
     '''
+    RBlist = []
     SGData = DisAglData['SGData']
     Cell = DisAglData['Cell']
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
@@ -1329,7 +1335,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
             tRBdist = Tatom[0] in RBlist   # is atom in RB?
             Xvcov = []
             TxyzNames = ''
-            if 'covData':
+            if covData:
                 TxyzNames = [pfx+'dAx:%d'%(Tatom[0]),pfx+'dAy:%d'%(Tatom[0]),pfx+'dAz:%d'%(Tatom[0])]
                 Xvcov = G2mth.getVCov(OxyzNames+TxyzNames,varyList,covMatrix)
             BsumR = (Radii[Oatom[2]][0]+Radii[Tatom[2]][0])*Factor[0]
@@ -1337,7 +1343,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
             for [Txyz,Top,Tunit,Spn] in G2spc.GenAtom(Tatom[3:6],SGData,False,Move=False):
                 Dx = (Txyz-np.array(Oatom[3:6]))+Units
                 dx = np.inner(Amat,Dx)
-                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
+                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),dmin)
                 IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
                 if not np.any(IndB): continue
                 for indb in IndB:

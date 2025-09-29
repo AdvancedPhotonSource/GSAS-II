@@ -302,8 +302,9 @@ SeparateHistPhaseTreeItem = False
 '''When this is set to True, the parameters specific to each histogram 
 and phase together (such as peak shapes & phase fractions) 
 are shown as a 1st-level tree item rather than inside each Phase's
-Data tab. After changing this, GSAS-II needs to be restarted for the 
-change to take effect. Default is False.
+Data tab. If this is changed, the current GSAS-II project will be saved 
+and will be reloaded for the change to take effect. 
+Default is False.
 '''
 
 G2RefinementWindow = False
@@ -336,4 +337,10 @@ BRML_T_col = -1
 '''When zero or positive, this indicates a column where the temperature
 is stored in a Bruker BRML file. With the default value (-1), the columns 
 8, 6, and 5 are tried, in that order.
+'''
+
+CINEMA_DS_directory=None
+'''Location where CINEMA: Debye-Scherrer is installed. This is the location 
+where the index.html file is located. If not set, if the export for this 
+is used, you will be asked to supply the directory, which will be saved here.
 '''

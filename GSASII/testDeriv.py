@@ -231,7 +231,7 @@ class testDeriv(wx.Frame):
             G2stMth.errRefine(self.values,self.HistoPhases,
                 self.parmDict,{},self.varylist,self.calcControls,
                 self.pawleyLookup,None)
-            dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
+            dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,{},
                 self.names,self.calcControls,self.pawleyLookup,None)
             if doProfile and self.timingOn:
                 pr.disable()

@@ -31,12 +31,6 @@ import copy
 import random as ran
 import numpy as np
 
-#import matplotlib as mpl
-try:
-    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
-except ImportError:
-    from matplotlib.backends.backend_wx import FigureCanvas as Canvas
-
 from . import GSASIIpath
 from . import GSASIIdataGUI as G2gd
 from . import GSASIIpwdGUI as G2pdG
@@ -475,7 +469,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
         if GSASIIpath.GetConfigValue('debug') and warn:
-            print('ValidatedTxtCtrl.SetValue using in callback?')
+            print('ValidatedTxtCtrl.SetValue used in callback?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val
@@ -6686,6 +6680,7 @@ class SelectConfigSetting(wx.Dialog):
         self.vars = GetConfigValsDocs()
         self.G2frame = parent
         self.restart = False
+        self.reload = False
 
         label = wx.StaticText(
             self,  wx.ID_ANY,
@@ -6734,6 +6729,8 @@ class SelectConfigSetting(wx.Dialog):
                 self.saveBtn.Enable(True)
                 if 'restart' in self.vars[var][3].lower():
                     self.restart  = True
+                elif 'reload' in self.vars[var][3].lower():
+                    self.reload  = True
                 break
         else:
             self.saveBtn.Enable(False)
@@ -7016,6 +7013,11 @@ class G2RefinementProgress(wx.Dialog):
     '''
     def __init__(self, title='Refinement progress', message='All data Rw =',
         maximum=101, parent=None, trialMode=False,seqLen=0, seqShow=3,style=None):
+        #import matplotlib as mpl
+        try:
+            from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
+        except ImportError:
+            from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 
         self.trialRw = trialMode # used for Levenberg-Marquardt fitting
         self.SeqLen = seqLen
@@ -7692,6 +7694,15 @@ def ShowHelp(helpType,frame,helpMode=None):
         helplink = os.path.join(path2GSAS2,'help',helplink)
         pfx = "file://"
         if sys.platform.lower().startswith('win'):
+            # really don't understand what urlunsplit is doing, but this seems
+            # to prevent windows from encoding the # for the anchor
+            # (suggested by Google's AI!) 
+            from urllib.parse import urlunsplit
+            f = helplink.split('#')[0]
+            a = ''
+            if '#' in helplink:
+                a = helplink.split('#')[1]
+            helplink = urlunsplit(['file','',f,'',a])
             pfx = ''
         #if GSASIIpath.GetConfigValue('debug'): print 'DBG_Help link=',pfx+helplink
         if htmlFirstUse:
@@ -8437,7 +8448,7 @@ def ChooseOrigin(G2frame,rd):
     for atom in O2atoms:
         for i in [0,1,2]:
             atom[cx+i] += T[i]
-            atom[cs:cs+2] = G2spc.SytSym(atom[3:6],SGData)[0:2] # update symmetry & mult
+        atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update symmetry & mult
     #get density & distances
     DisAglData = {}
     DisAglData['SGData'] = rd.Phase['General']['SGData']
@@ -8451,10 +8462,11 @@ def ChooseOrigin(G2frame,rd):
     txt = ''
     for i,phObj in enumerate([rd.Phase,O2Phase]):
         if i:
-            txt += "\n\nWith origin shift applied\n"
+            txt += "\n\nWith origin 1->2 shift applied\n"
         else:
             txt += "\nWith current coordinates and original origin\n"
         cellContents = {}
+        G2elem.SetupGeneral(phObj,phObj['General']['Mydir'])
         for atom in phObj['Atoms']:
             if atom[ct] in cellContents:
                 cellContents[atom[ct]] += atom[cs+1]
@@ -8563,7 +8575,7 @@ def makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plottype):
             G2frame.Cmax = val
         else:
             G2frame.Cmin = val
-        obj.txt.SetValue(int(Ymax*val))
+        obj.txt.ChangeValue(int(Ymax*val))
         updatePlot()
     def OnNewVal(*args,**kwargs):
         'respond when a value is placed in the min or max text box'
@@ -9486,7 +9498,7 @@ def gitCheckUpdates(G2frame):
         else:
             msg = ('You have made a local branch and have switched to that.'+
                    ' Do you want to update anyway? Doing so will return'+
-                   ' you to the master branch. This may be better handled'+
+                   ' you to the main branch. This may be better handled'+
                    ' manually.\n\nPress "Yes" to continue with update\n'+
                    'Press "Cancel" to stop the update.')
         dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
@@ -9505,7 +9517,7 @@ def gitCheckUpdates(G2frame):
                     "changes locally. Your local commits will be difficult "+
                     "to locate if you update. SUGGESTION: if your changes "+
                     "are meaningful, create a new git branch and return "+
-                    "to the master branch.\n\n"+
+                    "to the main branch.\n\n"+
                     'Press "Yes" to continue, stranding your local changes\n'+
                     'Press "Cancel" to stop the update.')
             dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
@@ -9524,13 +9536,31 @@ def gitCheckUpdates(G2frame):
             return
         if len(lc) != 0:
             msg = ('You have made local changes and committed them '+
-                   'into the master branch. GUI-based updates cannot '+
+                   'into the main branch. GUI-based updates cannot '+
                    'be made. You should perform a git merge manually')
             G2MessageBox(G2frame,msg,title='Do manual update')
             return
 
     cmds = ['--git-update']
-    if localChanges:
+    if localChanges and GSASIIpath.GetConfigValue('debug'):
+        msg = ('You have locally-made changes to the GSAS-II source '+
+            'code files. Do you want to stash them before updating?\n\n'+
+            'If you select "Yes" the update will be applied after '+
+            'using git stash. You will need to use "git stash pop" '+
+            'to get these changes back.'+
+            '\n\nIf you select "No" no update will '+
+            'be performed.')
+        dlg = wx.MessageDialog(G2frame, msg, 'Stash Local Changes?',
+                wx.YES_NO|wx.NO_DEFAULT|wx.CENTRE|wx.ICON_QUESTION)
+        ans = dlg.ShowModal()
+        dlg.Destroy()
+        if ans != wx.ID_YES:
+            return
+        g2repo = GSASIIpath.openGitRepo(path2GSAS2)
+        import datetime as dt
+        now = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
+        g2repo.git.stash(f'-m "preserving local changes prior to update from GUI @ {now}"')
+    elif localChanges:
         if gitAskLocalChanges(G2frame,cmds): return
     if gitAskSave(G2frame,regressmsg,cmds): return
     # launch changes and restart
@@ -9604,11 +9634,11 @@ def gitSelectVersion(G2frame):
         if localChanges:
             msg =  ('You have switched to a local branch and have '+
                     'uncommited changes. Save, stash or restore and switch '+
-                    'back to the master branch. Regression is not possible '+
+                    'back to the main branch. Regression is not possible '+
                     'from the GUI when on any other branch.')
         else:
             msg =  ('You have made and switched to a local branch. '+
-                    'You must manually switch back to the master branch.'+
+                    'You must manually switch back to the main branch.'+
                     ' Regression is not possible '+
                     'from the GUI when on any other branch.')
         G2MessageBox(G2frame,msg,title='update not possible')
@@ -9624,7 +9654,7 @@ def gitSelectVersion(G2frame):
                     "changes locally. Your local commits will be difficult "+
                     "to locate if you update. SUGGESTION: if your changes "+
                     "are meaningful, create a new git branch and return "+
-                    "to the master branch.\n\n"+
+                    "to the main branch.\n\n"+
                     'Press "Yes" to continue, stranding your local changes\n'+
                     'Press "Cancel" to stop the update.')
             dlg = wx.MessageDialog(G2frame, msg, 'Confirm update?',
@@ -9638,7 +9668,7 @@ def gitSelectVersion(G2frame):
         rc,lc,_ = GSASIIpath.gitCheckForUpdates(False)
         if len(lc) != 0:
             msg = ('You have made local changes and committed them '+
-                   'into the master branch. GUI-based regression cannot '+
+                   'into the main branch. GUI-based regression cannot '+
                    'be done. You should perform a "git checkout" to the '+
                    'desired version manually')
             G2MessageBox(G2frame,msg,title='Do manual update')

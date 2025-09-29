@@ -643,59 +643,62 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Image integration controls','Select images to integrate:',Names)
         try:
-            if dlg.ShowModal() == wx.ID_OK:
-                items = dlg.GetSelections()
-                G2frame.EnablePlot = False
-                dlgp = wx.ProgressDialog("Elapsed time","2D image integrations",len(items)+1,
-                    style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,parent=G2frame)
-                try:
-                    pId = 0
-                    oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.,'det2theta':0.}
-                    oldMhash = 0
-                    for icnt,item in enumerate(items):
-                        dlgp.Raise()
-                        GoOn = dlgp.Update(icnt)
-                        if not GoOn[0]:
-                            break
-                        name = Names[item]
-                        G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
-                        CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
-                        Data = G2frame.GPXtree.GetItemPyData(CId)
-                        same = True
-                        for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta']:
-                            if Data[item] != oldData[item]:
-                                same = False
-                        if (Data['center'][0] != oldData['center'][0] or
-                            Data['center'][1] != oldData['center'][1]):
-                                same = False
-                        if not same:
-                            t0 = time.time()
-                            useTA = G2img.MakeUseTA(Data,blkSize)
-                            print(' Use new image controls; new xy -> th,azm time %.3f'%(time.time()-t0))
-                        Masks = G2frame.GPXtree.GetItemPyData(
-                            G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks'))
-                        Mhash = copy.deepcopy(Masks)
-                        Mhash.pop('Thresholds')
-                        Mhash = hash(str(Mhash))
-                        if  Mhash != oldMhash:
-                            t0 = time.time()
-                            useMask = G2img.MakeUseMask(Data,Masks,blkSize)
-                            print(' Use new mask; make mask time: %.3f'%(time.time()-t0))
-                            oldMhash = Mhash
-                        image = GetImageZ(G2frame,Data)
-                        if not Masks['SpotMask']['spotMask'] is None:
-                            image = ma.array(image,mask=Masks['SpotMask']['spotMask'])
-                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,useTA=useTA,useMask=useMask)
-                        del image   #force cleanup
-                        pId = G2IO.SaveIntegration(G2frame,CId,Data)
-                        oldData = Data
-                finally:
-                    dlgp.Destroy()
-                    G2frame.EnablePlot = True
-                    if pId:
-                        G2frame.GPXtree.SelectItem(pId)
-                        G2frame.GPXtree.Expand(pId)
-                        G2frame.PatternId = pId
+            if dlg.ShowModal() != wx.ID_OK: return
+            items = dlg.GetSelections()
+            G2frame.EnablePlot = False
+            dlgp = wx.ProgressDialog("Elapsed time","2D image integrations",len(items)+1,
+                style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT,parent=G2frame)
+            try:
+                pId = 0
+                oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.,'det2theta':0.}
+                oldMhash = 0
+                for icnt,item in enumerate(items):
+                    dlgp.Raise()
+                    GoOn = dlgp.Update(icnt)
+                    if not GoOn[0]:
+                        break
+                    name = Names[item]
+                    G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                    CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
+                    Data = G2frame.GPXtree.GetItemPyData(CId)
+                    same = True
+                    for item in ['tilt','distance','rotation','DetDepth','azmthOff','det2theta']:
+                        if Data[item] != oldData[item]:
+                            same = False
+                    if (Data['center'][0] != oldData['center'][0] or
+                        Data['center'][1] != oldData['center'][1]):
+                            same = False
+                    if not same:
+                        t0 = time.time()
+                        useTA = G2img.MakeUseTA(Data,blkSize)
+                        print(' Use new image controls; new xy -> th,azm time %.3f'%(time.time()-t0))
+                    Masks = G2frame.GPXtree.GetItemPyData(
+                        G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks'))
+                    Mhash = copy.deepcopy(Masks)
+                    Mhash.pop('Thresholds')
+                    Mhash = hash(str(Mhash))
+                    if Mhash != oldMhash:
+                        t0 = time.time()
+                        useMask = G2img.MakeUseMask(Data,Masks,blkSize)
+                        savedMask = copy.deepcopy(useMask)
+                        print(' Use new mask; make mask time: %.3f'%(time.time()-t0))
+                        oldMhash = Mhash
+                    else:
+                        useMask = copy.deepcopy(savedMask)
+                    image = GetImageZ(G2frame,Data)
+                    if not Masks['SpotMask']['spotMask'] is None:
+                        image = ma.array(image,mask=Masks['SpotMask']['spotMask'])
+                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,useTA=useTA,useMask=useMask)
+                    del image   #force cleanup
+                    pId = G2IO.SaveIntegration(G2frame,CId,Data)
+                    oldData = Data
+            finally:
+                dlgp.Destroy()
+                G2frame.EnablePlot = True
+                if pId:
+                    G2frame.GPXtree.SelectItem(pId)
+                    G2frame.GPXtree.Expand(pId)
+                    G2frame.PatternId = pId
         finally:
             dlg.Destroy()
 
@@ -1997,6 +2000,55 @@ def UpdateMasks(G2frame,data):
         finally:
             dlg.Destroy()
 
+    def OnLoadPixelMask(event):
+        Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
+        img = G2frame.GPXtree.GetItemText(G2frame.Image)
+        if img not in Names: # remove current entry from list of names
+            print(f'Strange: {img} not in IMG entries')
+        else:
+            del Names[Names.index(img)]
+        # if nothing left, provide error & quit
+        if not Names:
+            G2G.G2MessageBox(G2frame,
+                             'Before you can use this command you must import the mask you want to use as an image',
+                             'No mask image')
+            return
+        elif len(Names) == 1:
+            sel = Names[0]
+        else:
+            dlg = G2G.G2SingleChoiceDialog(G2frame,
+                    'Select an image as a pixel mask:',
+                    'Load Pixel Mask',Names)
+            dlg.CenterOnParent()
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+        # Got our mask identified
+        maskID = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,sel)
+        maskdata = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,maskID,'Image Controls'))
+        formatName = maskdata.get('formatName','')
+        Npix,maskfile,imagetag = G2IO.GetCheckImageFile(G2frame,maskID)
+        # check it matches
+        imgdim = G2frame.GPXtree.GetItemPyData(G2frame.Image)[0]
+        if Npix != imgdim:
+            G2G.G2MessageBox(G2frame,
+                             f'Mask dimensions ({Npix}) != Image ({imgdim}). Images do not match',
+                             'Mask image wrong dimensions')
+            return
+        maskImage = np.array(G2fil.GetImageData(G2frame,maskfile,True,ImageTag=imagetag,FormatName=formatName),dtype=np.float32)
+        data['SpotMask']['MaskLoaded'] = sel # provides a record that this
+                                             # was loaded rather than a search
+        data['SpotMask']['spotMask'] = maskImage > 0
+        nmasked = sum(data['SpotMask']['spotMask'].flatten())
+        frac = nmasked/data['SpotMask']['spotMask'].size
+        G2G.G2MessageBox(G2frame,
+                             f'Mask removes {nmasked} pixels ({frac:.3f}%)',
+                             'Mask loaded')
+
     def OnFindPixelMask(event):
         '''Do auto search for pixels to mask
         Called from (Masks) Operations->"Pixel mask search"
@@ -2008,8 +2060,8 @@ def UpdateMasks(G2frame,data):
             LUtth = np.array(Controls['IOtth'])
             dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
             dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
-            x0 = G2img.GetDetectorXY2(dsp0,0.0,Controls)[0]
-            x1 = G2img.GetDetectorXY2(dsp1,0.0,Controls)[0]
+            x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+            x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
             if not np.any(x0) or not np.any(x1):
                 raise Exception
             nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
@@ -2074,8 +2126,8 @@ def UpdateMasks(G2frame,data):
                 LUtth = np.array(Controls['IOtth'])
                 dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
                 dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
-                x0 = G2img.GetDetectorXY2(dsp0,0.0,Controls)[0]
-                x1 = G2img.GetDetectorXY2(dsp1,0.0,Controls)[0]
+                x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+                x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
                 if not np.any(x0) or not np.any(x1):
                     raise Exception
                 nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
@@ -2340,6 +2392,7 @@ def UpdateMasks(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOADNOT)
     G2frame.Bind(wx.EVT_MENU, OnSaveMask, id=G2G.wxID_MASKSAVE)
     G2frame.Bind(wx.EVT_MENU, OnFindPixelMask, id=G2G.wxID_FINDSPOTS)
+    G2frame.Bind(wx.EVT_MENU, OnLoadPixelMask, id=G2G.wxID_LOADSPOTS)
     G2frame.Bind(wx.EVT_MENU, OnAutoFindPixelMask, id=G2G.wxID_AUTOFINDSPOTS)
     G2frame.Bind(wx.EVT_MENU, OnDeleteSpotMask, id=G2G.wxID_DELETESPOTS)
     G2frame.Bind(wx.EVT_MENU, ToggleSpotMaskMode, id=G2G.wxID_NEWMASKSPOT)

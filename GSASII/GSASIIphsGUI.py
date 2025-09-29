@@ -1560,7 +1560,7 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
 #        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
     if G2frame.testRBObjSizers.get('OnOrien') is None: return
-    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj']['drawMode'])
+    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))
 
 def GetReflData(G2frame,phaseName,reflNames):
     ReflData = {'RefList':[],'Type':''}
@@ -1645,7 +1645,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 'called when the phase name is changed in "General"'
                 event.Skip()
                 newName = NameTxt.GetValue().strip()
-                renamePhaseName(Item,generalData,newName)
+                renamePhaseName(G2frame,data,Item,generalData,newName)
                 NameTxt.SetValue(newName)
                                                 
             def OnPhaseType(event):
@@ -1881,14 +1881,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 if laue in ['m3','m3m']:
                     cell[1] = cell[2] = cell[3] = value
                     cell[4] = cell[5] = cell[6] = 90.0
-                    Obj.SetValue(cell[1])
+                    Obj.ChangeValue(cell[1])
                 elif laue in ['3R','3mR']:
                     if ObjId == 0:
                         cell[1] = cell[2] = cell[3] = value
-                        Obj.SetValue(cell[1])
+                        Obj.ChangeValue(cell[1])
                     else:
                         cell[4] = cell[5] = cell[6] = value
-                        Obj.SetValue(cell[4])
+                        Obj.ChangeValue(cell[4])
                 elif laue in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:
                     cell[4] = cell[5] = 90.
                     cell[6] = 120.
@@ -1896,48 +1896,48 @@ def UpdatePhaseData(G2frame,Item,data):
                         cell[6] = 90.
                     if ObjId == 0:
                         cell[1] = cell[2] = value
-                        Obj.SetValue(cell[1])
+                        Obj.ChangeValue(cell[1])
                     else:
                         cell[3] = value
-                        Obj.SetValue(cell[3])
+                        Obj.ChangeValue(cell[3])
                 elif laue in ['mmm']:
                     cell[ObjId+1] = value
                     cell[4] = cell[5] = cell[6] = 90.
-                    Obj.SetValue(cell[ObjId+1])
+                    Obj.ChangeValue(cell[ObjId+1])
                 elif laue in ['2/m'+'a']:
                     cell[5] = cell[6] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue(cell[ObjId+1])
+                        Obj.ChangeValue(cell[ObjId+1])
                     else:
                         cell[4] = value
-                        Obj.SetValue(cell[4])
+                        Obj.ChangeValue(cell[4])
                 elif laue in ['2/m'+'b']:
                     cell[4] = cell[6] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue(cell[ObjId+1])
+                        Obj.ChangeValue(cell[ObjId+1])
                     else:
                         cell[5] = value
-                        Obj.SetValue(cell[5])
+                        Obj.ChangeValue(cell[5])
                 elif laue in ['2/m'+'c']:
                     cell[4] = cell[5] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue(cell[ObjId+1])
+                        Obj.ChangeValue(cell[ObjId+1])
                     else:
                         cell[6] = value
-                        Obj.SetValue(cell[6])
+                        Obj.ChangeValue(cell[6])
                 else:
                     cell[ObjId+1] = value
-                    Obj.SetValue(cell[1+ObjId])
+                    Obj.ChangeValue(cell[1+ObjId])
                 cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
-                volVal.SetValue("%.3f"%(cell[7]))
+                volVal.ChangeValue("%.3f"%(cell[7]))
                 density,mattCoeff = G2mth.getDensity(generalData)
                 if denSizer:
-                    denSizer[1].SetValue('%.3f'%(density))
+                    denSizer[1].ChangeValue('%.3f'%(density))
                     if denSizer[2]:
-                        denSizer[2].SetValue('%.3f'%(mattCoeff))
+                        denSizer[2].ChangeValue('%.3f'%(mattCoeff))
 
             cell = generalData['Cell']
             laue = generalData['SGData']['SGLaue']
@@ -1978,12 +1978,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 data['General']['Isotope'][item] = isotope
                 indx = generalData['AtomTypes'].index(item)
                 wt = generalData['Isotopes'][item][isotope]['Mass']
-                elemSizer.GetChildren()[indx+3*nCols+1].Window.SetValue('%.3f'%(wt))    #tricky
+                elemSizer.GetChildren()[indx+3*nCols+1].Window.ChangeValue('%.3f'%(wt))    #tricky
                 data['General']['AtomMass'][indx] = wt
                 density,mattCoeff = G2mth.getDensity(generalData)
-                denSizer[1].SetValue('%.3f'%(density))
+                denSizer[1].ChangeValue('%.3f'%(density))
                 if denSizer[2]:
-                    denSizer[2].SetValue('%.3f'%(mattCoeff))
+                    denSizer[2].ChangeValue('%.3f'%(mattCoeff))
 
             def onDefColor(event):
                 '''Called when a color bar in elements table is clicked on.
@@ -2456,6 +2456,7 @@ def UpdatePhaseData(G2frame,Item,data):
         def FlipSizer():
             #patches
             if 'k-Max' not in Flip: Flip['k-Max'] = 20.
+            if 'MScorr' not in Flip: Flip['MScorr'] = 0.0
             if 'Resolution' in Flip:
                 Flip['GridStep'] = Flip['Resolution']
 
@@ -2493,7 +2494,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     Flip['testHKL'][Id] = HKL
                 except ValueError:
                     HKL = Flip['testHKL'][Id]
-                Obj.SetValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
+                Obj.ChangeValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
 
             refsList = [item for item in G2gd.GetGPXtreeDataNames(G2frame,['HKLF','PWDR']) if item in data['Histograms'].keys()]
             flipSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2501,6 +2502,10 @@ def UpdatePhaseData(G2frame,Item,data):
             lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection sets: '),0,WACV)
             if 'list' not in str(type(Flip['RefList'])):     #patch
                 Flip['RefList'] = [Flip['RefList'],]
+            refName = Flip['RefList'][0]
+            refType = ''
+            if refName and refName in data['Histograms']:
+                refType = data['Histograms'][refName].get('Type','')
             lineSizer.Add(wx.ComboBox(General,value=Flip['RefList'][0],choices=Flip['RefList'],
                 style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
             refList = wx.Button(General,label='Select reflection sets')
@@ -2515,12 +2520,15 @@ def UpdatePhaseData(G2frame,Item,data):
             line2Sizer.Add(wx.StaticText(General,label=' Map grid step: '),0,WACV)
             flipRes = G2G.ValidatedTxtCtrl(General,Flip,'GridStep',nDig=(10,2),xmin=0.10,xmax=2.)
             line2Sizer.Add(flipRes,0,WACV)
-            line2Sizer.Add(wx.StaticText(General,label=' k-Factor (0.1-1.2): '),0,WACV)
-            kFactor = G2G.ValidatedTxtCtrl(General,Flip,'k-factor',nDig=(10,3),xmin=0.1,xmax=1.2)
+            line2Sizer.Add(wx.StaticText(General,label=' k-Factor (0.01-1.2): '),0,WACV)
+            kFactor = G2G.ValidatedTxtCtrl(General,Flip,'k-factor',nDig=(10,3),xmin=0.01,xmax=1.2)
             line2Sizer.Add(kFactor,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' k-Max (>=10.0): '),0,WACV)
             kMax = G2G.ValidatedTxtCtrl(General,Flip,'k-Max',nDig=(10,1),xmin=10.)
             line2Sizer.Add(kMax,0,WACV)
+            if refType == 'SEC':
+                line2Sizer.Add(wx.StaticText(General,label=' MScorr (0-0.1): '),0,WACV)
+                line2Sizer.Add(G2G.ValidatedTxtCtrl(General,Flip,'MScorr',nDig=(10,4),xmin=0.,xmax=0.10),0,WACV)
             flipSizer.Add(line2Sizer,0)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line3Sizer.Add(wx.StaticText(General,label=' Test HKLs:'),0,WACV)
@@ -3012,7 +3020,7 @@ def UpdatePhaseData(G2frame,Item,data):
             with open(tmp.name,'w') as fp:
                 fp.write(txt.replace(
                 '<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',
+                '<head><base href="https://iso.byu.edu/">',
                 ))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
@@ -3020,7 +3028,7 @@ def UpdatePhaseData(G2frame,Item,data):
         import re
         import requests
         from GSASII.exports import G2export_CIF
-        isosite="https://stokes.byu.edu/iso/"
+        isosite="https://iso.byu.edu/"
         upscript='isocifuploadfile.php'
         isoscript='isocifform.php'
         isoSubCite = ('For use of this supergroup search, please cite:\n'+
@@ -3070,7 +3078,7 @@ def UpdatePhaseData(G2frame,Item,data):
             with open(tmp1.name,'w') as fp:
                 fp.write(r1.text.replace(
                 '<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',
+                '<head><base href="https://iso.byu.edu/">',
                 ))
             G2G.ShowWebPage('file://'+tmp1.name,G2frame)
             G2G.G2MessageBox(G2frame,
@@ -3802,6 +3810,108 @@ program; Please cite:
         # Restore the original saved project
         wx.CallLater(100,_GetPhase)
 
+    def OnSubSearch(event):
+        '''Search for a lower symmetry structure consistent with the
+        current phase using the Bilbao SUBGROUPS web service
+
+        Based on GSASIIpwdGUI.OnRunSubs
+        '''
+        generalData = data['General']
+        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
+        Ky = [' ','0','1/2','1/3','2/3','1']
+        Kz = [' ','0','1/2','3/2','1/3','2/3','1']
+        kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
+        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
+            ' Use whole star',' Filter by','preserve axes','max unique'],
+            values=kvec+[False,'',True,100],
+            limits=[[Kx[1:],Ky[1:],Kz[1:]],[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
+                [True,False],[1,100]],
+            formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
+                    'bool','%d',])
+        dlg.CenterOnParent()
+        if dlg.ShowModal() != wx.ID_OK: return
+            
+        subcells = []
+        newVals = dlg.GetValues()
+        kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
+        nkvec = kvec.index(' ')
+        star = newVals[3]
+        filterby = newVals[4]
+        keepaxes = newVals[5]
+        maxequiv = newVals[6]
+        if 'maximal' in filterby:
+            maximal = True
+            Landau = False
+        elif 'Landau' in filterby:
+            maximal = False
+            Landau = True
+        else:
+            maximal = False
+            Landau = False
+        if nkvec not in [0,3,6,9]:
+            wx.MessageBox('Error: check your propagation vector(s)',
+                caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+            return
+        if nkvec in [6,9] and Landau:
+            wx.MessageBox('Error, multi k-vectors & Landau not compatible',
+                caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+            return
+        wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
+                          G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
+                          caption='Bilbao SUBGROUPS',
+                          style=wx.ICON_INFORMATION)
+        wx.BeginBusyCursor()
+        SGData = generalData['SGData']
+        from . import SUBGROUPS as kSUB
+        SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
+        wx.EndBusyCursor()
+        if SubGroups is None:
+            wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+            return
+        if not SubGroups:
+            if Landau:
+                wx.MessageBox('No results from SUBGROUPS, multi k-vectors & Landau not compatible',
+                    caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+            else:
+                wx.MessageBox('No results from SUBGROUPS, check your propagation vector(s)',
+                    caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+            return
+
+        # emulate indexing controls 
+        controls = 16*[None]
+        controls[6:12] = generalData['Cell'][1:7] # cell
+        cx,ct,cs,cia = data['General']['AtomPtrs']
+        controls[15] = [atom[:cx+3] for atom in data['Atoms']]
+        
+        dlg = wx.ProgressDialog('SUBGROUPS results',f'Processing {SubGroups[0][0]}',len(SubGroups),
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
+        import GSASII.GSASIIpwdGUI
+        for ir,result in enumerate(SubGroups):
+            dlg.Update(ir,newmsg='Processing '+result[0])
+            Trans = np.array(eval(result[1][0]))
+            Uvec = np.array(eval(result[1][1]))
+            phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
+            phase['gid'] = result[2]
+            phase['altList'] = result[3]
+            phase['supList'] = eval(result[4])
+            RVT = None
+            if keepaxes:
+                RVT = G2lat.FindNonstandard(controls,phase)
+            if RVT is not None:
+                result,Uvec,Trans = RVT
+            phase.update(G2lat.makeBilbaoPhase(result,Uvec,Trans))
+            phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)
+            phase['maxequiv'] = maxequiv
+            phase['nAtoms'] = len(GSASII.GSASIIpwdGUI.TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv,maximal))
+            subcells.append(phase)
+        dlg.Destroy()
+        data['SUBGROUPS'] = (subcells,baseList)
+        msg = f'''{len(subcells)} subgroup entries were generated. Use menu commands 
+"Select magnetic/subgroup phase" or "Make subgroup project file(s)"
+to use these entries'''
+        G2G.G2MessageBox(G2frame,msg,'Sugbroups stored')
+        wx.CallAfter(UpdatePhaseData,G2frame,Item,data)
+
     def OnTransform2Std(event):
         '''Uses the Bilbao web site to transform a space group and coordinates
         to a standard setting
@@ -3992,15 +4102,19 @@ program; Please cite:
         '''Select and apply a transformation matrix from the Bilbao web site
         to create a new phase
         '''
-        PatternName = data['magPhases']
-        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
-        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
-        UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
-        magData = UCdata[5]
-        if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
-            baseList = range(1,len(magData)+1)
+        if 'SUBGROUPS' in data:
+            magData,baseList = data['SUBGROUPS']
         else:
-            baseList = UCdata[0][16]
+            PatternName = data['magPhases']
+            PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
+            UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
+            UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
+            magData = UCdata[5]
+            if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
+                baseList = range(1,len(magData)+1)
+            else:
+                baseList = UCdata[0][16]
+        
         magKeep = []
         magIds = []
         magchoices = []
@@ -4035,8 +4149,10 @@ program; Please cite:
             else:
                 phaseName = '%s-sub_%d'%(data['General']['Name'],magchoice['No.'])
             newPhase = copy.deepcopy(data)
-            newPhase['ranId'] = ran.randint(0,sys.maxsize),
-            del newPhase['magPhases']
+            newPhase['ranId'] = ran.randint(0,sys.maxsize)
+            # remove subgroup info on parent from new phase
+            if 'magPhases' in newPhase: del newPhase['magPhases']
+            if 'SUBGROUPS' in newPhase: del newPhase['SUBGROUPS']
             generalData = newPhase['General']
             generalData['Name'] = phaseName
             generalData['SGData'] = copy.deepcopy(magchoice['SGData'])
@@ -4109,20 +4225,25 @@ program; Please cite:
         '''Select and apply a transformation matrix from the Bilbao web site
         to replace current phase with a subgroup
         '''
-        PatternName = data['magPhases']
-        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
-        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
-        UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
-        if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
-            baseList = range(1,len(UCdata[5])+1)
+        if 'SUBGROUPS' in data:
+            subPhases,baseList = data['SUBGROUPS']
+            UnitCellsId = None
         else:
-            baseList = UCdata[0][16]
+            PatternName = data['magPhases']
+            PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
+            UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
+            UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
+            if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
+                baseList = range(1,len(UCdata[5])+1)
+            else:
+                baseList = UCdata[0][16]
+            subPhases = UCdata[5]
         subKeep = []
         subIds = []
         subchoices = []
         ifMag = False
-        itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(UCdata[5])]
-        phaseDict = dict(zip(itemList,UCdata[5]))
+        itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(subPhases)]
+        phaseDict = dict(zip(itemList,subPhases))
         for im,mid in enumerate(baseList):
             if phaseDict[mid]['Keep']:
                 phaseDict[mid]['No.'] = im+1
@@ -4218,8 +4339,10 @@ program; Please cite:
             data.update(newPhase)
             #clear away prev subgroup choices
             if 'magPhases' in data: del data['magPhases']
-            UCdata[5] = []
-            G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
+            if 'SUBGROUPS' in data: del data['SUBGROUPS']
+            if UnitCellsId:
+                UCdata[5] = []
+                G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
             # save new file
             G2frame.GSASprojectfile = os.path.splitext(orgFilName
                             )[0]+'_'+spg.replace('/','_')+'.gpx'
@@ -5659,7 +5782,7 @@ program; Please cite:
         newname = rd.Phase['General']['Name']
         data['General']['Name'] = phsnam
         # rename phase to new name from file
-        renamePhaseName(G2frame.PickId, data['General'],newname)
+        renamePhaseName(G2frame,data,G2frame.PickId, data['General'],newname)
         # force a reload of current tree item
         G2frame.PickIdText = []
         wx.CallAfter(G2gd.SelectDataTreeItem,G2frame,G2frame.PickId)
@@ -12843,11 +12966,8 @@ tab, use Operations->"Pawley create")''')
         '''
         page = event.GetSelection()
         G2frame.phaseDisplay.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
-        ChangePage(page)
-
-    def ChangePage(page):
-        newlist = []
         # force edits in open grids to complete
+        newlist = []
         for p in G2frame.phaseDisplay.gridList:
             if not p: continue   # skip deleted grids
             try:
@@ -12855,7 +12975,11 @@ tab, use Operations->"Pawley create")''')
                 newlist.append(p)
             except:
                 pass
-        G2frame.phaseDisplay.gridList = newlist  # remove deleted grids from list
+        G2frame.phaseDisplay.gridList = newlist  # remove deleted grids from lis
+        # let the pending events clear before posting the new NB page
+        wx.CallAfter(ChangePage,page)
+
+    def ChangePage(page):
         text = G2frame.phaseDisplay.GetPageText(page)
         G2frame.lastSelectedPhaseTab = text
         G2frame.dataWindow.helpKey = 'Phase-'+text # use name of Phase tab for help lookup
@@ -12934,6 +13058,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnTransform2Std, id=G2G.wxID_TRANSFORMSTD)
         G2frame.Bind(wx.EVT_MENU, OnSuperSearch, id=G2G.wxID_SUPERSRCH)
         G2frame.Bind(wx.EVT_MENU, OnISOSearch, id=G2G.wxID_ISOSRCH)
+        G2frame.Bind(wx.EVT_MENU, OnSubSearch, id=G2G.wxID_SUBSRCH)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnCompareCells, id=G2G.wxID_COMPARECELLS)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
@@ -13148,39 +13273,6 @@ tab, use Operations->"Pawley create")''')
         G2frame.Raise()
         return
 
-    def renamePhaseName(phaseItem,generalData,newName):
-        '''Called to rename the phase. Updates the tree and items that
-        reference the file name. 
-        '''
-        oldName = generalData['Name']
-        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
-        phaseNameList = usedHistograms.keys() # phase names in use
-        if newName and newName != oldName:
-            newName = G2obj.MakeUniqueLabel(newName,list(phaseNameList))
-            generalData['Name'] = newName
-            G2frame.G2plotNB.Rename(oldName,generalData['Name'])
-            G2frame.GPXtree.SetItemText(phaseItem,generalData['Name'])
-            # change phase name key in Reflection Lists for each histogram
-            for hist in data['Histograms']:
-                ht = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
-                rt = G2gd.GetGPXtreeItemId(G2frame,ht,'Reflection Lists')
-                if not rt: continue
-                RfList = G2frame.GPXtree.GetItemPyData(rt)
-                if oldName not in RfList:
-                    print('Warning: '+oldName+' not in Reflection List for '+
-                          hist)
-                    continue
-                RfList[newName] = RfList[oldName]
-                del RfList[oldName]
-            # rename Restraints
-            resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
-            Restraints = G2frame.GPXtree.GetItemPyData(resId)
-            i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
-            if i: G2frame.GPXtree.SetItemText(i,newName)
-            if len(Restraints) and oldName in Restraints:
-                Restraints[newName] = Restraints[oldName]
-                del Restraints[oldName]
-
     #### UpdatePhaseData execution starts here
     # make sure that the phase menu bars get created before selecting
     # any (this will only be true on the first call to UpdatePhaseData)
@@ -13318,13 +13410,19 @@ tab, use Operations->"Pawley create")''')
         else:
             del data['magPhases']
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOSUB,flag)
+    if not flag and 'SUBGROUPS' in data:
+        G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOSUB,True)
+        G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOMAG,True)
     G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:
         ind = Pages.index(G2frame.lastSelectedPhaseTab)
         if ind:
             UpdateGeneral(SkipDraw=ind)
-            G2frame.phaseDisplay.SetSelection(ind)
+            #G2frame.phaseDisplay.SetSelection(ind)
+            # on windows, need to wait for previous to finish before
+            # going to selected tab
+            wx.CallAfter(G2frame.phaseDisplay.SetSelection,ind)
             return
     ChangePage(0)
     
@@ -13384,7 +13482,7 @@ def CheckAddHKLF(G2frame,data):
     for i in result:
         histoName = TextList[i]
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
-        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
+        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)[:2]
         G2mth.UpdateHKLFvals(histoName, data, reflData)
 
     wx.EndBusyCursor()
@@ -13533,3 +13631,36 @@ def saveIsoNewPhase(G2frame,phData,newPhase,orgFilName):
             G2frame.GSASprojectfile = f'{s[0]}_{num}.gpx'
     G2IO.ProjFileSave(G2frame)
     return G2frame.GSASprojectfile
+
+def renamePhaseName(G2frame,data,phaseItem,generalData,newName):
+        '''Called to rename the phase. Updates the tree and items that
+        reference the file name. 
+        '''
+        oldName = generalData['Name']
+        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+        phaseNameList = usedHistograms.keys() # phase names in use
+        if newName and newName != oldName:
+            newName = G2obj.MakeUniqueLabel(newName,list(phaseNameList))
+            generalData['Name'] = newName
+            G2frame.G2plotNB.Rename(oldName,generalData['Name'])
+            G2frame.GPXtree.SetItemText(phaseItem,generalData['Name'])
+            # change phase name key in Reflection Lists for each histogram
+            for hist in data['Histograms']:
+                ht = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+                rt = G2gd.GetGPXtreeItemId(G2frame,ht,'Reflection Lists')
+                if not rt: continue
+                RfList = G2frame.GPXtree.GetItemPyData(rt)
+                if oldName not in RfList:
+                    print('Warning: '+oldName+' not in Reflection List for '+
+                          hist)
+                    continue
+                RfList[newName] = RfList[oldName]
+                del RfList[oldName]
+            # rename Restraints
+            resId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+            Restraints = G2frame.GPXtree.GetItemPyData(resId)
+            i = G2gd.GetGPXtreeItemId(G2frame,resId,oldName)
+            if i: G2frame.GPXtree.SetItemText(i,newName)
+            if len(Restraints) and oldName in Restraints:
+                Restraints[newName] = Restraints[oldName]
+                del Restraints[oldName]

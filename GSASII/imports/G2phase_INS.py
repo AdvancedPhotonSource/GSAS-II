@@ -26,8 +26,8 @@ class PhaseReaderClass(G2obj.ImportPhase):
             if l.startswith('CELL'):
                 break
         else:
-            self.errors = 'no CELL record found'
-            self.errors = 'This is not a valid .ins file.'
+            self.errors = 'no CELL record found. '
+            self.errors += 'This is not a valid .ins file.'
             fp.close()
             return False
         fp.close()
@@ -35,6 +35,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read a ins file using :meth:`ReadINSPhase`'
+        self.MPhase = None
         self.Phase = self.ReadINSPhase(filename, ParentFrame)
         return True
 
@@ -119,7 +120,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
                     else:
                         IA = 'A'
                         Uiso = 0.
-                        Ustr = AtRec[6:8]
+                        Ustr = AtRec[6:9]
                         S = fp.readline()
                         if '!' in S:
                             S = S.split('!')[0]

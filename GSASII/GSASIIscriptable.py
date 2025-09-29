@@ -431,7 +431,7 @@ def downloadFile(URL,download_loc=None):
     return filename
 
 def import_generic(filename, readerlist, fmthint=None, bank=None,
-                       URL=False, download_loc=None):
+                       URL=False, download_loc=None, useNet=True):
     """Attempt to import a filename, using a list of reader objects.
 
     Returns the first reader object which worked."""
@@ -483,6 +483,7 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                     rd.selections = [bank-1]
             rd.dnames = []
             rd.ReInitialize()
+            rd.useNet = useNet  # matters only for phase importers
             # Rewind file
             rd.errors = ""
             if not rd.ContentsValidator(filename):
@@ -499,12 +500,13 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 repeat = False
                 block += 1
                 rd.objname = os.path.basename(filename)
-                try:
+                if GSASIIpath.GetConfigValue('debug'):
                     flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
-                except Exception as msg:
-                    if GSASIIpath.GetConfigValue('debug'):
-                        print('Reader exception',msg)
-                    flag = False
+                else:
+                    try:
+                        flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
+                    except Exception as msg:
+                        flag = False
                 if flag:
                     # Omitting image loading special cases
                     rd.readfilename = filename
@@ -781,7 +783,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
                 sumImg += np.array(backImage*backScale,dtype=np.int32)
     if 'Gain map' in Controls:
         gainMap = Controls['Gain map']
-        if gainMap:
+        if gainMap.strip():
             gImgObj = proj.image(gainMap)
             formatName = gImgObj.data['Image Controls'].get('formatName','')
             imagefile = gImgObj.data['data'][1]
@@ -1290,7 +1292,8 @@ class G2Project(G2ObjectWrapper):
 
     def add_phase(self, phasefile=None, phasename=None, histograms=[],
                       fmthint=None, mag=False,
-                      spacegroup='P 1',cell=None, URL=False):
+                      spacegroup='P 1',cell=None, URL=False,
+                      useNet = False):
         """Loads a phase into the project, usually from a .cif file
 
         :param str phasefile: The CIF file (or other file type, see fmthint)
@@ -1320,7 +1323,12 @@ class G2Project(G2ObjectWrapper):
           If URL is specified and the Python requests package is 
           not installed, a `ModuleNotFoundError` Exception will occur. 
           will occur. 
-
+        :param bool useNet: if True, when an incompatible 
+          space group setting is detected (at present this is only 
+          tested with CIFs, where symmetry operators are supplied), which is 
+          most likely to occur with origin-1 settings, where allowed, 
+          the importer will call Bilbao "CIF to Standard Setting" web service.
+          (Default is False).
         :returns: A :class:`G2Phase` object representing the
             new phase.
         """
@@ -1369,9 +1377,10 @@ class G2Project(G2ObjectWrapper):
                 raise G2ImportException(f'File {phasefile} does not exist')
         else:
             print(f'reading phase from URL {phasefile}')
-        # TODO: handle multiple phases in a file
+        # TODO: handle multiple phases in a file (CIF, others?)
         phasereaders = import_generic(phasefile, Readers['Phase'],
-                                          fmthint=fmthint, URL=URL)
+                                          fmthint=fmthint, URL=URL,
+                                          useNet=useNet)
         phasereader = phasereaders[0]
 
         if phasereader.MPhase and mag:
@@ -1383,6 +1392,8 @@ class G2Project(G2ObjectWrapper):
         phaseNameList = [p.name for p in self.phases()]
         phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
         phObj['General']['Name'] = phasename
+        if phasereader.warnings:
+            phObj['warnings'] = phasereader.warnings
 
         if 'Phases' not in self.data:
             self.data['Phases'] = { 'data': None }
@@ -1758,9 +1769,9 @@ class G2Project(G2ObjectWrapper):
             imageRef = self._images()[num]
             return G2Image(self.data[imageRef], imageRef, self)
         except ValueError:
-            errmsg = "imageRef {imageRef} not an object, name or image index in current selected project"
+            errmsg = f"imageRef {imageRef} not an object, name or image index in current selected project"
         except IndexError:
-            errmsg = "imageRef {imageRef} out of range (max={len(self._images())-1)}) in current selected project"
+            errmsg = f"imageRef {imageRef} out of range (max={len(self._images())-1}) in current selected project"
         if errmsg: raise G2ScriptException(errmsg)
 
     def images(self):
@@ -2738,6 +2749,7 @@ class G2Project(G2ObjectWrapper):
         if imageList is None:
             imageList = self.images()
 
+        LoadG2fil()
         # code based on GSASIIimgGUI..OnDistRecalib
         obsArr = np.array([]).reshape(0,4)
         parmDict = {}
@@ -5574,6 +5586,129 @@ class G2Phase(G2ObjectWrapper):
                 count += 1
                 bondRestData['Bonds'].append(newBond)
         return count
+    
+    def Origin1to2Shift(self):
+        '''Applies an Origin 1 to Origin 2 shift to the selected phase, 
+        if defined. Note that GSAS-II only uses Origin 2 settings when 
+        both are offered in the International Tables. 
+        (These are space groups where the centre of symmetry is not 
+        at the highest symmetry site in the cell.) 
+        If the structure is not in the Origin 1 setting, 
+        this routine will create garbage.
+
+        A copy of the phase is made where the new phase name has the string 
+        "_shifted" added to it. The routine returns a reference to the 
+        new :class:`G2Phase` object for the new phase. 
+
+        If the phase is not one of the space groups that has Origin 1 & Origin 2
+        settings, None is returned.
+
+        :returns: the newly created phase object or None
+        '''
+        gpx = self.proj
+        SGData = self.data['General']['SGData']
+        if SGData['SpGrp'] not in G2spc.spg2origins:
+            return
+        T = G2spc.spg2origins[SGData['SpGrp']]
+        # create a new phase
+        phaseNameList = [p.name for p in gpx.phases()]
+        phasename = G2obj.MakeUniqueLabel(self.name+'_shifted', phaseNameList)
+        gpx.data['Phases'][phasename] = G2obj.SetNewPhase(Name=phasename,
+                        SGData=SGData)
+        nphase = gpx.data['Phases'][phasename]
+        for obj in gpx.names: # add new phase to tree
+            if obj[0] == 'Phases':
+                obj.append(phasename)
+                break
+        # duplicate phase info
+        for key in self.data: # copy all phase info over to new phase
+            if key == 'ranId': continue
+            nphase[key] = copy.deepcopy(self.data[key])
+        nphase['General']['Name'] = phasename # reset
+        # apply shift (T)
+        O2atoms = nphase['Atoms']
+        cx,ct,cs,cia = nphase['General']['AtomPtrs']
+        for atom in O2atoms:
+            for i in [0,1,2]:
+                atom[cx+i] += T[i]
+            atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update sym
+        SetupGeneral(nphase, None)
+        gpx.index_ids()
+        gpx.update_ids()
+        return gpx.phase(phasename)
+
+    def InitDisAgl(self,useAll=True):
+        '''Create the default controls used for distance and angle 
+        searching. Perform distance and angle searching by passing
+        the results from this to  :func:`GSASIIstrMain.RetDistAngle` 
+        or :func:`GSASIIstrMain.PrintDistAngle`
+        At present, this does not populate the values needed for 
+        uncertainty computations. 
+
+        :param bool useAll: when True (default) all atoms are included 
+          in the origin atom list. When False, only atoms with full 
+          occupancy are included. All atoms are included in the target
+          atom list.
+
+        :returns: DisAglCtls, DisAglData. See the 
+          :ref:`Distance/Angle controls documentation <DisAgl_table>` for 
+          a description of these.
+        '''
+        phObj = self.data
+        generalData = phObj['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        # template for controls & search data
+        DisAglData = {}
+        DisAglData['SGData'] = phObj['General']['SGData']
+        DisAglData['Cell'] = phObj['General']['Cell'][1:] #+ volume
+        DisAglCtls = {'Factors': [0.85, 0.85],
+                          'BondRadii': [], 'AngleRadii': [], 'AtomTypes': []}
+        # now populate search radii
+        radii = dict(zip(generalData['AtomTypes'],generalData['BondRadii']))
+        for atom in phObj['Atoms']:
+            typ = atom[ct]
+            dis = radii.get(typ,1.5) # 
+            if atom[ct] in DisAglCtls['AtomTypes']: continue
+            DisAglCtls['BondRadii'].append(dis)
+            DisAglCtls['AngleRadii'].append(dis)
+            DisAglCtls['AtomTypes'].append(typ)
+        DisAglData['OrigAtoms'] = []
+        DisAglData['TargAtoms'] = []
+        for i,atom in enumerate(phObj['Atoms']):
+            rec = [i]+atom[ct-1:ct+1]+atom[cx:cx+3]
+            DisAglData['TargAtoms'].append(rec)
+            if atom[cx+3] == 1. or useAll: 
+                DisAglData['OrigAtoms'].append(rec)
+        return DisAglCtls, DisAglData
+
+    def ShortDistances(self,useAll=False):
+        '''Looks for unrealistic distances in a structure, which are
+        atom-atom distances < 1.1 A for non-H(D) atoms. 
+        To reduce the likelihood of distances between disordered 
+        fragments being noted, set useAll=False (the default) so that 
+        disordered atoms are ignored. 
+        '''
+        cx,ct,cs,cia = self.data['General']['AtomPtrs']
+        #get interatomic distances
+        DisAglCtls, DisAglData = self.InitDisAgl(useAll)
+        DisAglCtls['Factors'][1] = 0 # no angles
+        AtomLabels, DistArray, _ = G2strMain.RetDistAngle(
+            DisAglCtls,DisAglData,dmin=0.01)
+        # now reorganize into a single list & sort
+        alldists = []
+        for cntr in DistArray:
+            for dl in DistArray[cntr]:
+                alldists.append([(cntr,dl[0])]+dl[1:])
+        alldists.sort(key=lambda item:item[-2])
+        baddists = []
+        for (i,j),_,_,d,_ in alldists:
+            if d > 1.1: break
+            if self.data['Atoms'][i][ct][0] in ['H','D']: continue
+            if self.data['Atoms'][j][ct][0] in ['H','D']: continue
+            baddists.append([self.data['Atoms'][i][ct],
+                             self.data['Atoms'][j][ct],
+                             float(d)])
+        return baddists
 
 class G2SeqRefRes(G2ObjectWrapper):
     '''Wrapper for a Sequential Refinement Results tree entry, containing the
@@ -6443,6 +6578,7 @@ class G2Image(G2ObjectWrapper):
     def initMasks(self):
         '''Initialize Masks, including resetting the Thresholds values
         '''
+        LoadG2fil()
         self.data['Masks'] = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
         if self.image is not None:
             ImageZ = self.image
@@ -6466,6 +6602,7 @@ class G2Image(G2ObjectWrapper):
           dict are ignored. The default is False which means Threshold
           Masks are retained.
         '''
+        LoadG2fil()
         self.data['Masks'] = copy.deepcopy(maskDict)
         if resetThresholds:
             if self.image is not None:
@@ -6520,6 +6657,7 @@ class G2Image(G2ObjectWrapper):
         results computed here can be reused for other images that have the
         same calibration parameters.
         '''
+        LoadG2fil()
         Controls = self.getControls()
         Masks = self.getMasks()
         frame = Masks['Frames']
@@ -6609,6 +6747,7 @@ class G2Image(G2ObjectWrapper):
         :param list ThetaAzimMap: from :meth:`G2Image.IntThetaAzMap`
         :returns: a list of created histogram (:class:`G2PwdrData` or :class:`G2SmallAngle`) objects.
         '''
+        LoadG2fil()
         if self.image is not None:
             ImageZ = self.image
         else:
@@ -6832,6 +6971,7 @@ class G2Image(G2ObjectWrapper):
           can be tuned by combining different searches.
         '''
         import math
+        LoadG2fil()
         sind = lambda x: math.sin(x*math.pi/180.)
         if self.image is not None:
             Image = self.image
@@ -6854,8 +6994,8 @@ class G2Image(G2ObjectWrapper):
         wave = Controls['wavelength']
         dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
         dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
-        x0 = G2img.GetDetectorXY2(dsp0,0.0,Controls)[0]
-        x1 = G2img.GetDetectorXY2(dsp1,0.0,Controls)[0]
+        x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+        x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]
         if not np.any(x0) or not np.any(x1):
             raise Exception
         numChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
@@ -6890,7 +7030,32 @@ class G2Image(G2ObjectWrapper):
         '''Removes a pixel map from an image, to reduce the .gpx file
         size & memory use
         '''
+        if 'SpotMask' not in self.getMasks(): return
         self.getMasks()['SpotMask']['spotMask'] = None
+        if 'MaskLoaded' in self.getMasks()['SpotMask']:
+            del self.getMasks()['SpotMask']['MaskLoaded']
+            
+    def loadPixelMask(self,mask,tag="loaded in G2sc.loadPixelMask"):
+        '''Loads a pixel map from an array supplied by the user
+
+        :param np.array mask: An array that has a True or False
+          value for each pixel. True means that the pixel should
+          be masked. The array dimensions must match the current image.
+        :param str tag: provides a name that is saved to indicate
+          the source of the mask. At present this name is not used.
+        '''
+        LoadG2fil()
+        if mask.dtype != np.bool_:
+            raise G2ScriptException("loadPixelMask Error: mask must be a logical numpy.array")
+        if self.image is not None:
+            Image = self.image
+        else:
+            Image = _getCorrImage(Readers['Image'],self.proj,self)
+        Controls = self.getControls()
+        if mask.shape != Image.shape:
+            raise G2ScriptException(f"loadPixelMask Error: mask shape {mask.shape} must match image {Image.shape}")
+        self.getMasks()['SpotMask']['spotMask'] = mask
+        self.getMasks()['SpotMask']['MaskLoaded'] = tag
 
 class G2SmallAngle(G2ObjectWrapper):
     """Wrapper for SASD histograms (and hopefully, in the future, other

@@ -464,7 +464,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             for txt,fmt,ifEdit,Id in zip(*useGUI[2:]):
                 if cellstr: cellstr += ", "
                 cellstr += txt+fmt.format(cell[Id])
-            cellstr += ', Vol = {:.3f}'.format(G2lat.calc_V(newA))
+            cellstr += f', Vol = {G2lat.calc_V(newA):.3f}'
+            den = G2mth.getDensity(data['General'],G2frame.hist,data)[0]
+            cellstr += f', \u03C1 = {den:.3f}'
             hSizer.Add(wx.StaticText(DData,wx.ID_ANY,'     '+cellstr),0)
         return hSizer
 
@@ -560,7 +562,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         shPenalty.Add(shToler,0,WACV)
         return shPenalty
 
-    def ExtSizer(Type):
+    def ExtSizer(Type,Htype):
 
         def OnSCExtType(event):
             Obj = event.GetEventObject()
@@ -576,26 +578,47 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         def OnExtRef(event):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Extinction'][1] = Obj.GetValue()
+            
+        def ExtVal(Ekey,valSizer,fmt,lim):
+            for ekey in Ekey:
+                Eref = wx.CheckBox(DData,wx.ID_ANY,label=ekey+' : ')
+                Eref.SetValue(UseList[G2frame.hist]['Extinction'][2][ekey][1])
+                Indx[Eref.GetId()] = [G2frame.hist,ekey]
+                Eref.Bind(wx.EVT_CHECKBOX, OnEref)
+                valSizer.Add(Eref,0,WACV|wx.LEFT,5)
+                Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,xmax=lim[1],
+                    xmin=lim[0],nDig=(10,4,fmt),typeHint=float)
+                valSizer.Add(Eval,0,WACV)
+            return valSizer
 
         if Type == 'HKLF':
             extSizer = wx.BoxSizer(wx.VERTICAL)
             typeSizer = wx.BoxSizer(wx.HORIZONTAL)
             typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Extinction type: '),0,WACV)
-            Choices = ['None','Primary','Secondary Type I','Secondary Type II',]    # remove 'Secondary Type I & II'
+            Choices = ['None','Primary','Secondary Type I','Secondary Type II','microED']    # remove 'Secondary Type I & II'
+            if Htype == 'SEC':
+                Choices = ['None','microED']
             typeTxt = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][1],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[typeTxt.GetId()] = [G2frame.hist,1]
             typeTxt.Bind(wx.EVT_COMBOBOX,OnSCExtType)
             typeSizer.Add(typeTxt)
-            typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Approx: '),0,WACV)
-            Choices=['Lorentzian','Gaussian']
-            approxTxT = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][0],
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Indx[approxTxT.GetId()] = [G2frame.hist,0]
-            approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
-            typeSizer.Add(approxTxT)
+            if Htype != 'SEC':
+                typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Approx: '),0,WACV)
+                Choices=['Lorentzian','Gaussian']
+                approxTxT = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][0],
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                Indx[approxTxT.GetId()] = [G2frame.hist,0]
+                approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
+                typeSizer.Add(approxTxT)
             if UseList[G2frame.hist]['Extinction'][1] == 'None':
                 extSizer.Add(typeSizer,0)
+            elif UseList[G2frame.hist]['Extinction'][1] == 'microED':
+                extSizer.Add(typeSizer,0)
+                extSizer.Add(wx.StaticText(DData,label=' Small F microED dynamical scattering correction:'))
+                val3Sizer =wx.BoxSizer(wx.HORIZONTAL)
+                Ekey = ['Ma','Mb','Mc']
+                extSizer.Add(ExtVal(Ekey,val3Sizer,'g',[-1.,10.]),0,)
             else:
                 extSizer.Add(typeSizer,0,wx.BOTTOM,5)
                 if 'Tbar' in UseList[G2frame.hist]['Extinction'][2]:       #skipped for TOF
@@ -618,16 +641,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     Ekey = ['Eg',]
                 else:
                     Ekey = ['Eg','Es']
-                for ekey in Ekey:
-                    Eref = wx.CheckBox(DData,wx.ID_ANY,label=ekey+' : ')
-                    Eref.SetValue(UseList[G2frame.hist]['Extinction'][2][ekey][1])
-                    Indx[Eref.GetId()] = [G2frame.hist,ekey]
-                    Eref.Bind(wx.EVT_CHECKBOX, OnEref)
-                    val2Sizer.Add(Eref,0,WACV|wx.LEFT,5)
-                    Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,
-                        xmin=0.,nDig=(10,3,'g'),typeHint=float)
-                    val2Sizer.Add(Eval,0,WACV)
-                extSizer.Add(val2Sizer,0)
+                extSizer.Add(ExtVal(Ekey,val2Sizer,'g',[0.,100.]),0)
         else:   #PWDR
             extSizer = wx.BoxSizer(wx.HORIZONTAL)
             extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
@@ -911,20 +925,27 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
 #patch
         if 'Use' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Use'] = True
-        if 'LeBail' not in UseList[G2frame.hist]:
-            UseList[G2frame.hist]['LeBail'] = False
         if 'Babinet' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         if 'Fix FXU' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Fix FXU'] = ' '
         if 'FixedSeqVars' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['FixedSeqVars'] = []
-        if 'Flack' not in UseList[G2frame.hist]:
-            UseList[G2frame.hist]['Flack'] = [0.0,False]
-        if 'Twins' not in UseList[G2frame.hist]:
-            UseList[G2frame.hist]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
-        if 'Layer Disp' not in UseList[G2frame.hist]:
-            UseList[G2frame.hist]['Layer Disp'] = [0.0,False]
+        if 'HKLF' in UseList[G2frame.hist]['Histogram']:
+            if 'Flack' not in UseList[G2frame.hist]:
+                UseList[G2frame.hist]['Flack'] = [0.0,False]
+            if 'Twins' not in UseList[G2frame.hist]:
+                UseList[G2frame.hist]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
+            if 'Ma' not in UseList[G2frame.hist]['Extinction'][2]:
+                UseList[G2frame.hist]['Extinction'][2].update({'Ma':[1.0,False]})
+                UseList[G2frame.hist]['Extinction'][2].update({'Mb':[0.0,False]})
+            if 'Mc' not in UseList[G2frame.hist]['Extinction'][2]:
+                UseList[G2frame.hist]['Extinction'][2].update({'Mc':[1.0,False]})
+        elif 'PWDR' in UseList[G2frame.hist]['Histogram']:
+            if 'LeBail' not in UseList[G2frame.hist]:
+                UseList[G2frame.hist]['LeBail'] = False
+            if 'Layer Disp' not in UseList[G2frame.hist]:
+                UseList[G2frame.hist]['Layer Disp'] = [0.0,False]
 #end patch
         ifkeV = 'E' in UseList[G2frame.hist].get('Type','')
         offMsg = ''
@@ -934,6 +955,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[G2frame.hist]['Use'])
         useBox.Add(useData,0,WACV)
+        Htype = UseList[G2frame.hist].get('Type','SXC')
+        useBox.Add(wx.StaticText(DData,label=' Histogram type: '+Htype))
         if not generalData['doPawley'] and 'PWDR' in G2frame.hist[:4]:
             lbLabel = 'Start Le Bail extraction?   '
             if UseList[G2frame.hist]['LeBail']:
@@ -969,7 +992,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     fixBox.Add(wx.StaticText(DData,label=' (currently {} fixed)'.format(len(fixedVars))),0,WACV)
                 bottomSizer.Add(fixBox)
 
-        if not UseList[G2frame.hist]['LeBail'] or 'HKLF' in G2frame.hist[:4]:
+        if  'HKLF' in G2frame.hist[:4] or not UseList[G2frame.hist]['LeBail']:
             bottomSizer.Add(ScaleSizer(),0,wx.BOTTOM,5)
         else:
             # if phase fraction/scale is hidden, turn off flag
@@ -1056,7 +1079,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                         except:
                             print('SHPenalty error occurred')
                 bottomSizer.Add(poSizer)    #,0,wx.TOP|wx.BOTTOM,5)
-                bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
+                bottomSizer.Add(ExtSizer('PWDR',Htype),0,wx.TOP|wx.BOTTOM,5)
                 if generalData['Type'] != 'magnetic':
                     bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
             else:
@@ -1067,7 +1090,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 # TODO: should turn off all Extinction refinement flags
                 UseList[G2frame.hist]['Extinction'][1] = False
         elif G2frame.hist[:4] == 'HKLF':
-            bottomSizer.Add(ExtSizer('HKLF'))  #,0,wx.BOTTOM,5)
+            bottomSizer.Add(ExtSizer('HKLF',Htype))  #,0,wx.BOTTOM,5)
             bottomSizer.Add(BabSizer())  #,0,wx.BOTTOM,5)
             if not SGData['SGInv'] and len(UseList[G2frame.hist]['Twins']) < 2:
                 bottomSizer.Add(FlackSizer())  #,0,wx.BOTTOM,5)
@@ -1499,6 +1522,8 @@ def MakeHistPhaseWin(G2frame):
         HAPBook.AddPage(HAPtab,phaseName)
         DData.append(HAPtab)
     HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    # must setup all Phase tabs to get the DataMenu
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataGeneral)
     # set up "Select tab" menu contents
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
     mid = G2frame.dataWindow.DataMenu.FindMenu('Select tab')

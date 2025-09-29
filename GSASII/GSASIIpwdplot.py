@@ -66,9 +66,9 @@ Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
 Gkchisq = chr(0x03C7)+chr(0xb2)
 plotDebug = False
 timeDebug = GSASIIpath.GetConfigValue('Show_timing',False)
-obsInCaption = True # include the observed, calc,... items in the plot caption (PlotPatterns)
 # options for publication-quality Rietveld plots
 plotOpt = {}
+plotOpt['obsInCaption'] = True # include the observed, calc,... items in the plot caption (PlotPatterns)
 plotOpt['labelSize'] = '11'
 plotOpt['dpi'] = 600
 plotOpt['width'] = 8.
@@ -134,7 +134,7 @@ def plotVline(Page,Plot,Lines,Parms,pos,color,pick,style='dotted'):
             picker=pick,pickradius=2.,linestyle=style))
         
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
-                     extraKeys=[],refineMode=False,indexFrom=''):
+                     extraKeys=[],refineMode=False,indexFrom='',fromTree=False):
     '''Powder pattern plotting package - displays single or multiple powder 
     patterns as intensity vs 2-theta, q or TOF. Can display multiple patterns 
     as "waterfall plots" or contour plots. Log I plotting available.
@@ -152,6 +152,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         reflection list.
       * G2frame.Extinct: used for display of extinct reflections (in blue) 
         for generated reflections when "show extinct" is selected.
+
+    :param wx.Frame G2frame: main GSAS-II window
+    :param newPlot: Set to True when a new type of plot is drawn (default False)
+    :param plotType: Type of data entry to be plotted (SASD, REFD, PWDR) 
+       (default is 'PWDR')
+    :param list data: Contents of histogram
+    :param list extraKeys: list of str values with extra "command" keys to 
+       act on plot
+    :param bool refineMode: Set to True when called from inside a refinement 
+      default is False
+    :param str indexFrom: Status line message used to label indexing results
+    :param bool fromTree: will be set to True when called from the data tree
+
+    :returns: if refineMode is True, returns a reference to 
+      :func:`refPlotUpdate`. Otherwise, nothing is returned
     '''
     global PlotList,IndxFrom
     IndxFrom = indexFrom
@@ -193,14 +208,23 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif 'PWDR' in plottype: # Turning on Weight plot clears previous limits
                 G2frame.FixedLimits['dylims'] = ['','']                
             newPlot = True
+        elif event.key in ['shift+1','!']: # save current plot settings as defaults
+            # shift+1 assumes US keyboard
+            print('saving plotting defaults for',G2frame.GPXtree.GetItemText(G2frame.PatternId))
+            data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+            data[0]['PlotDefaults'] = copy.deepcopy([
+                Plot.get_xlim(),Plot.get_ylim(),Page.plotStyle,
+                G2frame.SinglePlot, G2frame.Contour, G2frame.Weight,
+                G2frame.plusPlot, G2frame.SubBack])
         elif event.key == 'X' and plottype == 'PWDR':
             G2frame.CumeChi = not G2frame.CumeChi 
         elif event.key == 'e' and plottype in ['SASD','REFD']:
             G2frame.ErrorBars = not G2frame.ErrorBars
         elif event.key == 'T' and 'PWDR' in plottype:
             Page.plotStyle['title'] = not Page.plotStyle.get('title',True)
-        elif event.key == 'f' and 'PWDR' in plottype: # short or full length tick-marks
-            Page.plotStyle['flTicks'] = not Page.plotStyle.get('flTicks',False)
+        elif event.key == 'f' and 'PWDR' in plottype: # short,full length or no tick-marks
+            if G2frame.Contour: return
+            Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
         elif event.key == 'x'and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
@@ -225,13 +249,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.SubBack = False
             YmaxS = max(Pattern[1][1])
             if Page.plotStyle['sqrtPlot']:
-                Page.plotStyle['delOffset'] = .02*np.sqrt(YmaxS)
-                Page.plotStyle['refOffset'] = -0.1*np.sqrt(YmaxS)
-                Page.plotStyle['refDelt'] = .1*np.sqrt(YmaxS)
+                Page.plotStyle['delOffset'] = float(.02*np.sqrt(YmaxS))
+                Page.plotStyle['refOffset'] = float(-0.1*np.sqrt(YmaxS))
+                Page.plotStyle['refDelt'] = float(.1*np.sqrt(YmaxS))
             else:
-                Page.plotStyle['delOffset'] = .02*YmaxS
-                Page.plotStyle['refOffset'] = -0.1*YmaxS
-                Page.plotStyle['refDelt'] = .1*YmaxS
+                Page.plotStyle['delOffset'] = float(.02*YmaxS)
+                Page.plotStyle['refOffset'] = float(-0.1*YmaxS)
+                Page.plotStyle['refDelt'] = float(.1*YmaxS)
             newPlot = True
         elif event.key == 'S' and 'PWDR' in plottype:
             choice = [m for m in mpl.cm.datad.keys()]+['GSPaired','GSPaired_r',]   # if not m.endswith("_r")
@@ -291,16 +315,28 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['Offset'][1] -= 1.
         elif event.key == 'r' and not G2frame.SinglePlot:
             Page.plotStyle['Offset'][1] += 1.
-        elif event.key == 'o':
-            if G2frame.SinglePlot and not G2frame.Contour:
-                global obsInCaption # include the observed, calc,... items in the plot caption (PlotPatterns)
-                obsInCaption = not obsInCaption
-            elif not G2frame.SinglePlot: 
+        elif event.key in ['L','shift+l']:    # controls legend
+            if G2frame.Contour: return
+            if not plotOpt['obsInCaption'] and len(PlotList) > 20:
+                dlg = wx.MessageDialog(G2frame,
+                    f'You have {len(PlotList)} histograms in this plot. Are you sure you want a legend?',
+                    'Confirm legend',wx.YES_NO | wx.ICON_QUESTION)
+                try:
+                    result = dlg.ShowModal()
+                finally:
+                    dlg.Destroy()
+                if result != wx.ID_YES: return
+            # include the observed, calc,... items in the plot caption (PlotPatterns)
+            plotOpt['obsInCaption'] = not plotOpt['obsInCaption']
+        elif event.key in ['o','O','shift+o']:    # resets offsets
+            if G2frame.Contour: return
+            if not G2frame.SinglePlot: # waterfall: reset the offsets
                 G2frame.Cmax = 1.0
                 G2frame.Cmin = 0.0
                 Page.plotStyle['Offset'] = [0,0]
         elif event.key == 'C' and 'PWDR' in plottype and G2frame.Contour:
-            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plotType)
+            #G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plotType)
+            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,True,plotType) # force newPlot=True, prevents blank plot on Mac
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
@@ -337,11 +373,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     plotType=plottype,extraKeys=extraKeys)
                 if abs(Page.startExclReg - event.xdata) < 0.1: return
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
-                data = G2frame.GPXtree.GetItemPyData(LimitId)
+                limdat = G2frame.GPXtree.GetItemPyData(LimitId)
                 mn = min(Page.startExclReg, event.xdata)
                 mx = max(Page.startExclReg, event.xdata)
-                data.append([mn,mx])
-                G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
+                limdat.append([mn,mx])
+                G2pdG.UpdateLimitsGrid(G2frame,limdat,plottype)
             return
         elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
                  Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
@@ -388,7 +424,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['chanPlot'] = False
         elif event.key == 'm':
             if not G2frame.Contour:                
-                G2frame.SinglePlot = not G2frame.SinglePlot                
+                G2frame.SinglePlot = not G2frame.SinglePlot
+                if not G2frame.SinglePlot: plotOpt['obsInCaption'] = False # remove caption from waterfall
             G2frame.Contour = False
             newPlot = True
         elif event.key == 'F' and not G2frame.SinglePlot:
@@ -406,11 +443,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     G2frame.selections = None
             dlg.Destroy()
             newPlot = True
-        elif event.key in ['+','=']:
-            G2frame.plusPlot = (G2frame.plusPlot+1)%3
+        elif event.key in ['+','=','shift+=']: # assumes US keyboard
+            if G2frame.Contour: return
+            if G2frame.SinglePlot:
+                G2frame.plusPlot = (G2frame.plusPlot+1)%3
+            else:
+                G2frame.plusPlot = (G2frame.plusPlot+1)%4
         elif event.key == '/':
             Page.plotStyle['Normalize'] = not Page.plotStyle['Normalize']
-            newPlot=True
+            newPlot = True
         elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
@@ -434,6 +475,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             #print('no binding for key',event.key)
             return
+        if G2frame.Contour: newPlot = True # needed or plot disappears, at least on Mac
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):
@@ -1163,7 +1205,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if DifLine[0] is G2frame.itemPicked:   # respond to dragging of the difference curve
             data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
             ypos = event.ydata
-            Page.plotStyle['delOffset'] = -ypos
+            Page.plotStyle['delOffset'] = float(-ypos)
             G2frame.itemPicked = None
             wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
@@ -1297,6 +1339,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             dbox[i].Enable(checked)
         def applyLims(event):
             Page.toolbar.push_current()
+            # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+            # Page.canvas.draw_idle() # schedule an MPL update (needs test)
             CurLims = {}
             CurLims['xlims'] = list(Plot.get_xlim())
             if G2frame.Weight:
@@ -1326,6 +1370,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 Plot.set_ylim(CurLims['ylims'])
             Page.toolbar.push_current()
+            # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+            # Page.canvas.draw_idle() # schedule an MPL update (needs test)
             Plot.figure.canvas.draw()
         
         # onSetPlotLim starts here
@@ -1386,7 +1432,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         
     def refPlotUpdate(Histograms,cycle=None,restore=False):
         '''called to update an existing plot during a Rietveld fit; it only 
-        updates the curves, not the reflection marks or the legend
+        updates the curves, not the reflection marks or the legend. 
+        It should be called with restore=True to reset plotting 
+        parameters after the refinement is done.
         '''
         if restore:
             (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
@@ -1396,7 +1444,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if plottingItem not in Histograms:
             histoList = [i for i in Histograms.keys() if i.startswith('PWDR ')]
             if len(histoList) == 0:
-                print('Skipping plot, no PWDR item found!')
+                print('Skipping plot update, no PWDR items!')
                 return
             plotItem = histoList[0]
         else:
@@ -1418,6 +1466,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Ifin = np.searchsorted(X,limits[1][1])
         if Ibeg == Ifin: # if no points are within limits bad things happen 
             Ibeg,Ifin = 0,None
+        elif Ibeg > Ifin:
+            Ifin, Ibeg = Ibeg, Ifin # TOF with order reversed
+
         if Page.plotStyle['sqrtPlot']:
             olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
             Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
@@ -1454,12 +1505,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 Plot.set_title(Title)
         Page.canvas.draw()
+        wx.GetApp().Yield()
         
     def incCptn(string):
         '''Adds a underscore to "hide" a MPL object from the legend if 
         obsInCaption is False
         '''
-        if obsInCaption:
+        if plotOpt['obsInCaption']:
             return string
         else:
             return '_'+string
@@ -1549,9 +1601,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Replot()
         configPartialDisplay(G2frame,Page.phaseColors,Replot)
             
-    #### beginning PlotPatterns execution
+    #### beginning PlotPatterns execution #####################################
     global exclLines,Page
-    global DifLine # BHT: probably does not need to be global
+    global DifLine
     global Ymax
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     global savedX
@@ -1594,8 +1646,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 #patch
     if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
-        Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
-            'refDelt':0.1*Ymax,})
+        Page.plotStyle.update({'Offset':[0.0,0.0],
+                            'delOffset':float(0.02*Ymax),
+                            'refOffset':float(-0.1*Ymax),
+                            'refDelt':float(0.1*Ymax),})
 #end patch
     if 'Normalize' not in Page.plotStyle:
         Page.plotStyle['Normalize'] = False
@@ -1613,18 +1667,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     print('triggering newplot from G2frame.lastPlotType')
                 Ymax = max(data[1][1])
                 if Page.plotStyle['sqrtPlot']:
-                    Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)
-                    Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
-                    Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
+                    Page.plotStyle['delOffset'] = float(.02*np.sqrt(Ymax))
+                    Page.plotStyle['refOffset'] = float(-0.1*np.sqrt(Ymax))
+                    Page.plotStyle['refDelt'] = float(.1*np.sqrt(Ymax))
                 else:
-                    Page.plotStyle['delOffset'] = .02*Ymax
-                    Page.plotStyle['refOffset'] = -0.1*Ymax
-                    Page.plotStyle['refDelt'] = .1*Ymax
+                    Page.plotStyle['delOffset'] = float(.02*Ymax)
+                    Page.plotStyle['refOffset'] = float(-0.1*Ymax)
+                    Page.plotStyle['refDelt'] = float(.1*Ymax)
                 newPlot = True
             G2frame.lastPlotType = Parms['Type'][1]
         except TypeError:       #bad id from GetGPXtreeItemId - skip
             pass
-        
     try:
         G2frame.FixedLimits
     except:
@@ -1634,7 +1687,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     except:
         G2frame.UseLimits = {i:[False,False] for i in ('xlims','ylims','dylims','cylims')}
     #=====================================================================================
-    # code to setup for plotting Rietveld results. Turns off multiplot,
+    # code to setup for plotting Rietveld results. Turns off multiplot (contour/waterfall),
     # sqrtplot, turn on + and weight plot, but sqrtPlot qPlot and dPlot are not changed.
     # Magnification regions are ignored.
     # the last-plotted histogram (from G2frame.PatternId) is used for this plotting
@@ -1665,9 +1718,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.GPXtree.SelectItem(G2frame.PatternId)
                 PlotPatterns(G2frame,True,plotType,None,extraKeys)
     #=====================================================================================
-    if not new:
+    elif 'PlotDefaults' in data[0] and fromTree:  # set style from defaults saved with '!'
+        #print('setting plot style defaults')
+        (xlim, ylim, styleDict, G2frame.SinglePlot, G2frame.Contour, G2frame.Weight,
+                G2frame.plusPlot, G2frame.SubBack) = data[0]['PlotDefaults']
+        Page.plotStyle = copy.copy(styleDict)
+        newPlot = True # prevent carrying limits over (may not be needed here)
+    #=====================================================================================
+    if not new:  # plotting in previously created axes
         G2frame.xylim = copy.copy(limits)
-    else:
+    else:   # 1st time plot is created
         if plottype in ['SASD','REFD']:
             Page.plotStyle['logPlot'] = True
             G2frame.ErrorBars = True
@@ -1788,10 +1848,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 'f: toggle full-length ticks','g: toggle grid',
                 'X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
-            if obsInCaption:
-                Page.Choice += ['o: remove obs, calc,... from legend',]
+            if plotOpt['obsInCaption']:
+                addrem = 'remove'
             else:
-                Page.Choice += ['o: add obs, calc,... to legend',]
+                addrem = 'add'
+            if G2frame.SinglePlot:
+                what = "obs, calc,..."
+            else:
+                what = "histogram names"                
+            Page.Choice += [f'L: {addrem} {what} in legend',]
             if ifLimits:
                 Page.Choice += ['e: create excluded region',
                         's: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
@@ -1818,6 +1883,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.Choice = Page.Choice+ ['p: toggle partials (if available)',]
             if G2frame.SinglePlot:
                 Page.Choice += ['v: CSV output of plot']
+            Page.Choice += ['!: Save settings as default for histogram']
         elif plottype in ['SASD','REFD']:
             Page.Choice = [' key press',
                 'b: toggle subtract background file','g: toggle grid',
@@ -1872,9 +1938,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             ParmList = [Parms,]
             SampleList = [Sample,]
             LimitsList = [Limits,]
-            Title = data[0].get('histTitle')
-            if not Title: 
-                Title = Pattern[-1]
+            Title = Pattern[-1]
+            if data[0].get('histTitle'): Title = data[0]['histTitle']
         except AttributeError:
             pass
     else:     #G2frame.selection   
@@ -1900,7 +1965,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Pattern.append(G2frame.GPXtree.GetItemText(pid))
             if 'Offset' not in Page.plotStyle:     #plot offset data
                 Ymax = max(Pattern[1][1])
-                Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
+                Page.plotStyle.update({'Offset':[0.0,0.0],
+                            'delOffset':float(0.02*Ymax),
+                            'refOffset':float(-0.1*Ymax),
+                            'refDelt':float(0.1*Ymax),})
             # PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
             # Pattern[0]['BackFile'] = ['',-1.0,False]
             # if PId:
@@ -2065,11 +2133,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if G2frame.Contour:
             xye0 = xye[0]   # drop mask for contouring
 
-        # convert all X values and then reapply mask
+        # convert all X values and then reapply mask if xye0 is a masked array
+        mask = None
+        if hasattr(xye0,'mask'): mask = xye0.mask
         if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
-            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,xye0.data),mask=xye0.mask)
+            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,xye0.data),mask=mask)
         elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
-            X = ma.array(G2lat.Pos2dsp(Parms,xye0.data),mask=xye0.mask)
+            X = ma.array(G2lat.Pos2dsp(Parms,xye0.data),mask=mask)
         else:
             X = copy.deepcopy(xye0)
         if ifpicked and not G2frame.Contour:
@@ -2210,6 +2280,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif G2frame.plusPlot == 1:
                 pP = '+'
                 lW = 0
+            elif G2frame.plusPlot == 2: # same as 0 for multiplot, TODO: rethink
+                pP = ''
+                lW = 1.5
             else:
                 pP = '+'
                 lW = 1.5
@@ -2311,7 +2384,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.set_yscale("log",nonpositive='mask')
                         Plot.plot(X,Y,marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,picker=True,pickradius=3.,
                             clip_on=Clip_on,label=incCptn('obs'))
-                        if G2frame.SinglePlot or G2frame.plusPlot:
+                        if G2frame.SinglePlot or G2frame.plusPlot == 1 or G2frame.plusPlot == 2:
                             Plot.plot(X,Z,pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                             if G2frame.plusPlot:
                                 Plot.plot(X,W,pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
@@ -2353,9 +2426,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
-                                picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
-                            CalcLine = Plot.plot(X,Z/ymax,pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)                 #Ic
+                            if G2frame.plusPlot != 3:
+                                ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
+                                    picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
+                                CalcLine = Plot.plot(X,Z/ymax,pwdrCol['Calc_color'],
+                                    picker=False,label=incCptn('calc'),linewidth=1.5)                  #Ic
+                            else: # waterfall mode=3: plot 1st pattern like others, name in legend?
+                                name = Pattern[2]
+                                if Pattern[0].get('histTitle'): name = Pattern[0]['histTitle']
+                                ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=1.5,
+                                    picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn(name))    #Io
                         else:
                             Plot.plot(X,YB,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
@@ -2472,7 +2552,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 picker=False,nonpositive='mask')
                 else:
                     if 'PWDR' in plottype:
-                        Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False)
+                        # waterfall mode=3: name in legend?
+                        name = Pattern[2]
+                        if Pattern[0].get('histTitle'): name = Pattern[0]['histTitle']
+                        Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False,label=incCptn(name))
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.loglog(X,Y,mcolors.cmap(icolor),
@@ -2621,13 +2704,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     xtick = peak.T[0]
                 else:
                     xtick = peak.T[1]
-                if not Page.plotStyle.get('flTicks',False):     # short tick-marks
+                if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
                     Page.tickDict[phase],_ = Plot.plot(
                         xtick,pos,'|',mew=w,ms=l,picker=True,pickradius=3.,
                         label=phase,color=plcolor)
                     # N.B. above creates two Line2D objects, 2nd is ignored.
                     # Not sure what each does.
-                else:                                           # full length tick-marks
+                elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
                     if len(xtick) > 0:
                         # create an ~hidden tickmark to create a legend entry
                         Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
@@ -2641,11 +2724,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 labels = dict(zip(legends,handles))     # remove duplicate phase entries
                 handles = [labels[item] for item in labels]
                 legends = list(labels.keys())
-                if len(Phases) and obsInCaption: 
-                    Plot.legend(handles,legends,title='Phases & Data',loc='best')
+                if len(Phases) and plotOpt['obsInCaption'] and Page.plotStyle.get('flTicks',0) != 2: 
+                    msg = 'Data'
+                elif len(Phases) and plotOpt['obsInCaption']: 
+                    msg = 'Phases & Data'
                 else:
-                    Plot.legend(handles,legends,title='Data',loc='best')
-    
+                    msg = 'Phases'
+                siz = None
+                if len(legends) > 50:  # make an attempt to make legend contents fit
+                    siz = 4
+                elif len(legends) > 25:
+                    siz = 6
+                elif len(legends) > 15:
+                    siz = 8
+                lngd = Plot.legend(handles,legends,title=msg,loc='best',
+                                       fontsize=siz)
     if G2frame.Contour:
         time0 = time.time()
         acolor = G2plt.GetColorMap(G2frame.ContourColor)
@@ -2750,15 +2843,32 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     y = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
                 Plot.plot(x,y,pcolor,picker=False,label=ph,linewidth=pwidth,
                               linestyle=pLinStyl)
+    if 'PlotDefaults' in data[0] and fromTree:  # set plot limists from defaults saved with '!'
+        #print('setting plot defaults')
+        (xlim, ylim, styleDict, G2frame.SinglePlot, G2frame.Contour, G2frame.Weight,
+                G2frame.plusPlot, G2frame.SubBack) = data[0]['PlotDefaults']
+        Page.toolbar.push_current()
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
+        Plot.set_xlim((xlim[0],xlim[1]))
+        Plot.set_ylim((ylim[0],ylim[1]))
+        Page.toolbar.push_current() # why two?
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
+        newPlot = True # prevent carrying limits over from other histograms
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
         if G2frame.Contour: # for contour plots expand y-axis to include all histograms
             G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)))
         if 'PWDR' in plottype:
             Plot.set_xlim(G2frame.xylim[0])
             Plot.set_ylim(G2frame.xylim[1])
         Page.toolbar.push_current()
+        # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
+        # Page.canvas.draw_idle() # schedule an MPL update (needs test)
         Page.ToolBarDraw()
     else:
         G2frame.xylim = Plot.get_xlim(),Plot.get_ylim()

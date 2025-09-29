@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="images/gsas2.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.20">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.7e37652d.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.e53b48f4.min.css">
       
       
 
@@ -409,6 +409,21 @@
       Restraints
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Restraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#restraint-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Restraint types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1440,6 +1455,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Restraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#restraint-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Restraint types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1516,7 +1546,7 @@ This determines how structure refinements are performed. The choices are:<ul>
 <li><strong>Min delta-M/M</strong> - A refinement will stop when the change in the minimization function, <em>M</em>,  <span class="arithmatex">\( (M=\sum[w(I_o-I_c)^2]) \)</span> is less than this value. The allowed range is <span class="arithmatex">\(10^{-9}\)</span> to 1.0, with a default of 0.001. A value of 1.0 stops the refinement after a single cycle. Values less than <span class="arithmatex">\(10^{-4}\)</span> cause refinements to continue even if there is no meaningful improvement.</li>
 <li><strong>Max cycles</strong> - This determines the maximum number of refinement cycles that will be performed. This is used only with the "analytical Hessian" and "Hessian SVD" minimizers.</li>
 <li><strong>Initial lambda</strong> - Note that here λ is the Marquardt coefficient, where a weight of 1+λ is applied to the diagonal elements of the Hessian. When λ is large, this down-weights the significance of the off-diagonal terms in the Hessian. Thus, when λ is large, the refinement is effectively one of steepest-descents, where correlation between variables is ignored. Note that steepest-descents minimization is typically slow and may not always find the local minimum. This is only used when with the "analytical Hessian" minimizer is selected.</li>
-<li><strong>SVD zero tolerance</strong> - This determines the level where SVD considers deivative values to be the same. Default is <span class="arithmatex">\(10^{-6}\)</span>. Make this larger when problems occur due to correlation. This is used only with the "analytical Hessian" and "Hessian SVD" minimizers.</li>
+<li><strong>SVD zero tolerance</strong> - This determines the level where SVD considers derivative values to be the same. Default is <span class="arithmatex">\(10^{-6}\)</span>. Make this larger when problems occur due to correlation. This is used only with the "analytical Hessian" and "Hessian SVD" minimizers.</li>
 <li><strong>Initial shift factor</strong> - This provides an initial scaling ("damping") for the first cycle of refinement. Only available for "analytic Jacobian" and "numeric" minimizers. </li>
 </ul>
 </li>
@@ -1627,7 +1657,8 @@ A set of controls is provided for control of single-crystal refinements. These o
 <p>Also included when sequential refinement is selected is a menu button labeled "Selected histogram." With this it is possible to look at constraint problems when processing a specific histogram.</p>
 <p><a name="Restraints"></a></p>
 <h2 id="restraints">Restraints</h2>
-<p>This window shows the restraints to be used in a refinement for each phase (if more than one). It is organized into several tabbed pages, one page for each type of restraint. Restraints are developed for an individual phase and act as additional observations to be "fitted" during the refinement.</p>
+<p>This window shows the restraints to be used in a refinement for each phase (if more than one). It is organized into several tabbed pages, one page for each type of restraint. Restraints are developed for an individual phase and act as additional observations to be "fitted" during the refinement. </p>
+<p>Note that a restraint "pushes" a refinement towards a target value, but does not require that to happen (unlike a constraint). The strength of the "push" is dependent on the weighting factor and the "esd" used on the target value. The ideal use of a restraint is for an aspect of a structure that is not well-determined by the data. In this case, when the weighting of a restraint is dropped, the value of the restrained parameter may move considerably from the target value, but the quality of the fit (noted by the Rietveld plot, R-factor, reduced <span class="arithmatex">\(\chi^2\)</span>, etc.) is not expected to change very much. If one places a restraint that is not consistent with the model (<em>e.g.</em> is wrong), then the fit will improve significantly as the weight is decreased. Such feedback is not possible with a constraint. </p>
 <H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
 
 <ul>
@@ -1648,6 +1679,15 @@ A set of controls is provided for control of single-crystal refinements. These o
 <li><strong>Delete restraints</strong> - this deletes selected restraints from the list. A single click in the blank box in the upper left corner of the table will select/deselect all restraints.</li>
 </ul>
 </li>
+</ul>
+<h3 id="restraint-types">Restraint types</h3>
+<ul>
+<li><strong>Bond</strong>: Defines restraints with a target distance between pairs of atoms (which are typically bonded, but this is not required). Atom pairs to be restrained are set by performing a search and then selecting the pairs to be used. </li>
+<li><strong>Angle</strong>:  Defines restraints with a target angle for a set of three atoms. Atoms to be used are located via a search and selection. </li>
+<li><strong>Plane</strong>: Used to restrain selected atoms to be approximately co-planar. This is most commonly used for macromolecular crystallography. </li>
+<li><strong>Chiral</strong>: Defines a chiral volume restraint. This is unlikely to be used other than for macromolecular crystallography. </li>
+<li><strong>Chem. Comp.</strong>: This is of use when "Frac" parameters (atom occupancies) are refined. This option allows a variety of different types of restraints to be created. More than one chemical composition restraint can be defined for a phase. Examples of how this might be used would be to "push" refinement towards an expected composition, to encourage charge balance or to conserve valences. </li>
+<li><strong>General</strong>: This allows a quantity to be restrained that is computed from a user-supplied equation, based on GSAS-II parameters. Thus, one can create any type of restraint that is desired. This restraint is used by supplying a Python equation and then to define which GSAS-II parameter is associated with each variable in the Python equation. One also supplies the target value for the restraint. Note that it is possible to use externally defined functions that contain "if" statements, which allows restraints that enforce minimum or maximum quantities rather than target values to be defined. </li>
 </ul>
 <p><a name="Rigidbodies"></a>
 <a name="Rigid_bodies"></a></p>
@@ -1747,10 +1787,10 @@ A set of controls is provided for control of single-crystal refinements. These o
     
     
       
-      <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.50899def.min.js"></script>
+      <script src="assets/javascripts/bundle.f55a23d4.min.js"></script>
       
         <script src="javascripts/mathjax.js"></script>
       

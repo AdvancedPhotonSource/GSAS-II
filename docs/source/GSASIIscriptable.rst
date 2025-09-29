@@ -329,6 +329,7 @@ method                                                      Use
 :meth:`~GSASIIscriptable.G2Phase.clearDistRestraint`        Clears any previously defined bond distance restraint(s) for the selected phase
 :meth:`~GSASIIscriptable.G2Phase.addDistRestraint`          Finds and defines new bond distance restraint(s) for the selected phase
 :meth:`~GSASIIscriptable.G2Phase.setDistRestraintWeight`    Sets the weighting factor for the bond distance restraints
+:meth:`~GSASIIscriptable.G2Phase.Origin1to2Shift`           Shifts the atom coordinates from an Origin 1 setting to the Origin 2 setting
 ========================================================    ===============================================================================================================
 
 .. _Class_G2PwdrData:
@@ -420,6 +421,7 @@ method                                                Use
 :meth:`~GSASIIscriptable.G2Image.TestFastPixelMask`   Returns True if fast pixel masking is available.
 :meth:`~GSASIIscriptable.G2Image.clearImageCache`     Clears a saved image from memory, if one is present. 
 :meth:`~GSASIIscriptable.G2Image.clearPixelMask`      Clears a saved Pixel map from the project, if one is present. 
+:meth:`~GSASIIscriptable.G2Image.loadPixelMask`       Loads a Pixel map from an array
 ====================================================  ===============================================================================================================
 
 .. _Class_G2PDF:

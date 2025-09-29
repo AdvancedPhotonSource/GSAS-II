@@ -1551,16 +1551,31 @@ def getMass(generalData):
         mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
     return max(mass,1.0)
 
-def getDensity(generalData):
-    '''calculate crystal structure density
+def getDensity(generalData,hist=None,data=None):
+    '''Calculate crystal structure density. Uses cell values only,
+    unless hist & data are supplied. In that case it uses 
+    the Dij terms as well. 
 
     :param dict generalData: The General dictionary in Phase
-
-    :returns: float density: crystal density in gm/cm^3
-
+    :param str hist: optional name of a histogram. When not None, 
+      the volume adjusted bt the Dij (hydrostatic strain terms) is 
+      used to compute the density.
+    :parm dict data: reference to entire phase data array. Required 
+      if hist is specified. Ignored otherwise. 
+    :returns: crystal density in gm/cm^3 (float) and Matthews Coeff.
+      (Vm or Volume/mass, float)
     '''
     mass = getMass(generalData)
     Volume = generalData['Cell'][7]
+    if hist is not None: # recompute the density using Dij terms
+        if data is None:
+            print('called getDensity with hist and without data')
+            raise Exception('Called getDensity with hist and without data')
+        A = G2lat.cell2A(data['General']['Cell'][1:7])
+        DijVals = data['Histograms'][hist]['HStrain'][0][:]
+        # apply the Dij values to the reciprocal cell
+        newA =  G2lat.AplusDij(A,DijVals,data['General']['SGData'])
+        Volume = G2lat.calc_V(newA)
     density = mass/(0.6022137*Volume)
     return density,Volume/mass
 
@@ -4246,16 +4261,26 @@ def ChargeFlip(data,reflDict,pgbar):
     :returns: type name: description
 
     '''
+    print('Charge flip data type: ',reflDict['Type'])
     generalData = data['General']
     mapData = generalData['Map']
     flipData = generalData['Flip']
     FFtable = {}
-    if 'None' not in flipData['Norm element']:
+    if 'None' not in flipData['Norm element'] and 'N' not in reflDict['Type']:
         normElem = flipData['Norm element'].upper()
-        FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
+        if 'X' in reflDict['Type']:
+            FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
+        else: 
+            FFs = G2el.GetEFormFactorCoeff(normElem)
         for ff in FFs:
             if ff['Symbol'] == normElem:
                 FFtable.update(ff)
+        if 'X' in reflDict['Type']:
+            print('%s normalizing form factor: fa: %s, fb: %s, fc: %s'%(FFtable['Symbol'],
+                str(FFtable['fa']),str(FFtable['fb']),str(FFtable['fc'])))
+        else:
+            print('%s normalizing form factor: fa: %s, fb: %s'%(FFtable['Symbol'],
+                str(FFtable['fa']),str(FFtable['fb'])))
     dmin = flipData['GridStep']*2.
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
@@ -4280,7 +4305,9 @@ def ChargeFlip(data,reflDict,pgbar):
                 SQ = 0.25/dsp**2
                 ff *= G2el.ScatFac(FFtable,SQ)[0]
             if ref[8+im] > 0.:         #use only +ve Fobs**2
-                E = np.sqrt(ref[8+im])/ff
+                E = np.sqrt(ref[8+im])
+                if reflDict['Type'] == 'SEC':
+                    E *= np.exp(-flipData['MScorr']*E)
             else:
                 E = 0.
             ph = ref[10]
@@ -5123,20 +5150,10 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
             pos = Parms['difC']*dsp
         else:
             dsp = pos/Parms['difC'][1]
-        if 'pdabc' in Parms2 and len(Parms2['pdabc']):
-            for x in ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
-                ins[x] = Parms.get(x,[0.0,0.0])[ind]
-            Pdabc = Parms2['pdabc']
-            alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
-            bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
-            sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
-        else:
-            for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
-                ins[x] = Parms.get(x,[0.0,0.0])[ind]
-            alp = getTOFalpha(ins,dsp)
-            bet = getTOFbeta(ins,dsp)
-            sig = getTOFsig(ins,dsp)
-        gam = getTOFgamma(ins,dsp)
+        for x in ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
+            ins[x] = Parms.get(x,[0.0,0.0])[ind]  # 
+        ins['pdabc'] = Parms2.get('pdabc',{})
+        alp,bet,gam,sig = G2pwd.getTOFwids(dsp,[],0,ins)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
     elif 'C' in Parms['Type'][0] or 'LF' in Parms['Type'][0]:
         for x in ['U','V','W','X','Y','Z']:
@@ -5848,6 +5865,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     parmDict['nfixAt'] = len(fixAtoms)
     MCSA = generalData['MCSA controls']
     reflName = MCSA['Data source']
+    Htype = data['Histograms'][reflName]['Type']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
     upper = []
     lower = []
@@ -5871,7 +5889,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     Xdata = GetAtomX(RBdata,parmDict)
     Mdata = GetAtomM(Xdata,SGData)
     allT,allM = getAllTX(Tdata,Mdata,Xdata,SGM,SGT)[:2]
-    FFtables = G2el.GetFFtable(aTypes)
+    if Htype == 'SEC':
+        FFtables = G2el.GetEFFtable(aTypes)
+    else:    
+        FFtables = G2el.GetFFtable(aTypes)
     refs = []
     allFF = []
     cosTable = []
@@ -5947,7 +5968,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     allFF = np.array(allFF).T
     refs = np.array(refs).T
     if start:
+        
         G2fil.G2Print (' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef))
+        G2fil.G2Print (' Histogram type: %s'%Htype)
         G2fil.G2Print (' Number of parameters varied: %d'%(len(varyList)))
         start = False
     parmDict['sumFosq'] = sumFosq
@@ -5955,7 +5978,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     ifInv = SGData['SGInv']
     bounds = np.array(list(zip(lower,upper)))
     if MCSA['Algorithm'] == 'Basin Hopping':
-#        import basinhopping as bs
         take_step = RandomDisplacementBounds(np.array(lower), np.array(upper))
         results = so.basinhopping(mcsaCalc,x0,take_step=take_step,disp=True,T=MCSA['Annealing'][0],
                 interval=MCSA['Annealing'][2]/10,niter=MCSA['Annealing'][2],minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,
@@ -6331,6 +6353,29 @@ def UpdateHKLFvals(histoName, phaseData, reflData):
             else:
                 ref[3] = 0
 
+def FindTrue(t):
+    '''Returns ranges of indices of array t where t is True or False
+
+    :param list t: a list or 1-D array of bool values
+    :param bool Condition: select if True values oa list of indices 
+    
+    :returns: two list of indices, one where all values in the range are 
+      True and the second where all the values are False.
+    '''
+    prev = None
+    ranges = []
+    for i in np.array(range(len(t)-1))[np.diff(t)]:
+        if prev is None:
+            ranges.append([0,int(i)])
+        else:
+            ranges.append([prev+1,int(i)])
+        prev = int(i)
+    if ranges:
+        ranges.append([ranges[-1][1]+1,len(t)-1])
+    else:
+        ranges = [[0,len(t)-1]]
+    return ([i for i in ranges if t[i[0]]],
+            [i for i in ranges if not t[i[0]]])
 
 if __name__ == '__main__':
     annealtests()

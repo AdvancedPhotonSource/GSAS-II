@@ -19,6 +19,7 @@ py.install_sources([
     'G2phase_GPX.py',
     'G2phase_INS.py',
     'G2phase_rmc6f.py',
+    'G2phase_RRUFF.py',
     'G2phase_xyz.py',
     'G2pwd_BrukerBRML.py',
     'G2pwd_BrukerRAW.py',

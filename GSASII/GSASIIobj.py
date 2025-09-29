@@ -6,8 +6,6 @@ Classes and routines defined in :mod:`GSASIIobj` follow.
 # Note that documentation for GSASIIobj.py has been moved
 # to file docs/source/GSASIIobj.rst
 
-from __future__ import division, print_function
-import platform
 import re
 import random as ran
 import sys
@@ -654,6 +652,9 @@ def CompileVarDesc():
         'Ep$' : 'Primary extinction',
         'Es$' : 'Secondary type II extinction',
         'Eg$' : 'Secondary type I extinction',
+        'Ma$' : 'microED dynamic scattering coeff A',
+        'Mb$' : 'microED dynamic scattering coeff B',
+        'Mc$' : 'microED dynamic scattering coeff C',
         'Flack' : 'Flack parameter',
         'TwinFr' : 'Twin fraction',
         'Layer Disp'  : 'Layer displacement along beam',

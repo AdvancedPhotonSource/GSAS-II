@@ -23,6 +23,10 @@ except ImportError:
     except ImportError:
         cif = None
 debug = GSASIIpath.GetConfigValue('debug')
+
+# This is a special importer that may use GUI access if it is available.
+haveGUI = None  # this is set to True if the GUI is available; False otherwise
+
 #debug = False
 
 class CIFPhaseReader(G2obj.ImportPhase):
@@ -38,6 +42,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             formatName = 'CIF',
             longFormatName = 'Crystallographic Information File import'
             )
+        self.useNet = True  # set this to False to prevent access to web (used in scriptable)
 
     def ContentsValidator(self, filename):
         fp = open(filename,'r')
@@ -47,6 +52,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
         return ok
 
     def Reader(self,filename, ParentFrame=None, usedRanIdList=[], **unused):
+        global haveGUI
         if cif is None: # unexpected, but worth a specific error message
             print('Attempting to read a CIF without PyCifRW installed')
             raise Exception('Attempting to read a CIF without PyCifRW installed')
@@ -129,11 +135,18 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 #how about checking for super/magnetic ones as well? - reject 'X'?
                 sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
-            try:
-                from .. import GSASIIctrlGUI as G2G
+            if haveGUI is None:
+                try:
+                    import wx
+                    from .. import GSASIIctrlGUI as G2G
+                    haveGUI = G2G.haveGUI()
+                except:
+                    haveGUI = False
+            if haveGUI:
                 selblk = G2G.PhaseSelector(choice,ParentFrame=ParentFrame,
                     title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
-            except: # no wxPython
+            else:
+                print('You are reading a multiblock CIF. Defaulting to the first block')
                 selblk = 0
         self.errors = 'Error during reading of selected block'
 #process selected phase
@@ -666,40 +679,55 @@ class CIFPhaseReader(G2obj.ImportPhase):
             good = G2spc.CompareSym(self.SymOps['xyz'],
                                      SGData=self.Phase['General']['SGData'])
             if not good:
-                centro = False
+                origin2 = False
                 if '-x,-y,-z' in [i.replace(' ','').lower() for i in self.SymOps['xyz']]:
-                    centro = True
+                    origin2 = True  # this has center of symmetry at origin so origin1->2 cannot fix this
                 msg = 'This CIF uses a space group setting not compatible with GSAS-II.\n'
                 if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
                     msg += '\nThis is likely due to the space group being set in Origin 1 rather than 2.\n'
-                haveGUI = False
+                if haveGUI is None:
+                    try:
+                        import wx
+                        from .. import GSASIIctrlGUI as G2G
+                        haveGUI = G2G.haveGUI()
+                    except:
+                        haveGUI = False
                 ans = True
-                try:
-                    from .. import GSASIIctrlGUI as G2G
-                    haveGUI = G2G.haveGUI()
-                except Exception as err: # fails if non-interactive (no wxPython)
-                    print(err)
-                if haveGUI:
+                if not self.useNet:
+                    ans = False
+                    print(msg)
+                    if origin2:
+                        print('\nUnable to correct this, giving up')
+                        return False
+                elif haveGUI:
                     msg += '''
 Do you want to use Bilbao's "CIF to Standard Setting" web service to
 transform this into a standard setting?
 '''
-                    if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins and not centro:
+                    if self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins and not origin2:
                         msg += '''
-If you say "no" here, later, you will get the chance to apply a simple origin
-shift later as an alternative to the above.'''
+If you say "no" here, a simple origin shift later will be applied as an alternative to the above.'''
                     else:
-                        msg += '\nIf you say "no" here you will need to do this yourself manually.'
+                        msg += '\nIf you say "no" here you will need to fix this yourself manually.'
                     try:
                         ans = G2G.askQuestion(ParentFrame,msg,'xform structure?')
                     except Exception as err: # fails if non-interactive (no wxPython)
                         print(err)
                 else:
                     print(msg)
-                print('\nCIF symops do not agree with GSAS-II, calling Bilbao "CIF to Standard Setting" web service.\n')
                 if ans:
+                    print('\nCIF symops do not agree with GSAS-II, calling Bilbao "CIF to Standard Setting" web service.\n')
                     from .. import SUBGROUPS
                     SUBGROUPS.createStdSetting(filename,self)
+                elif not origin2 and self.Phase['General']['SGData']['SpGrp'] in G2spc.spg2origins:
+                    print('\nCIF symops do not agree with GSAS-II, applying an origin 1->2 shift.\n')
+                    SGData = self.Phase['General']['SGData']
+                    T = G2spc.spg2origins[SGData['SpGrp']]
+                    for atom in self.Phase['Atoms']:
+                        for i in [0,1,2]:
+                            atom[3+i] += T[i]
+                        atom[7:9] = G2spc.SytSym(atom[3:6],SGData)[0:2]
+                    
         return returnstat
 
     def ISODISTORT_test(self,blk):

@@ -1789,7 +1789,7 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
         alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
     else:
         alp = G2mth.getTOFalpha(parmDict,dsp)
-    alp = max(0.1,alp)
+    alp = np.where(alp<0.1,0.1,alp)
     betName = 'bet'+str(iPeak)
     if betName in varyList or (not peakInstPrmMode and betName in parmDict):
         bet = parmDict[betName]
@@ -1797,7 +1797,7 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
         bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
     else:
         bet = G2mth.getTOFbeta(parmDict,dsp)
-    bet = max(0.01,bet)
+    bet = np.where(bet<0.01,0.01,bet)
     sigName = 'sig'+str(iPeak)
     if sigName in varyList or (not peakInstPrmMode and sigName in parmDict):
         sig = parmDict[sigName]
@@ -1805,13 +1805,13 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
         sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
     else:
         sig = G2mth.getTOFsig(parmDict,dsp)
-    sig = max(0.01,sig)
+    sig = np.where(sig<0.01,0.01,sig)
     gamName = 'gam'+str(iPeak)
     if gamName in varyList or (not peakInstPrmMode and gamName in parmDict):
         gam = parmDict[gamName]
     else:
         gam = G2mth.getTOFgamma(parmDict,dsp)
-    gam = max(gam,0.001)             #avoid neg gamma
+    gam = np.where(gam<0.001,0.001,gam)
     return alp,bet,gam,sig
 
 def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):

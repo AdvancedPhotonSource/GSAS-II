@@ -5150,8 +5150,9 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
             pos = Parms['difC']*dsp
         else:
             dsp = pos/Parms['difC'][1]
-        for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
-            ins[x] = Parms.get(x,[0.0,0.0])[ind]  # 
+        for x in ('alpha','beta-0','beta-1','beta-q',
+                  'sig-0','sig-1','sig-2','sig-q','X','Y','Z'):
+            ins[x] = Parms.get(x,[0.0,0.0])[ind]
         ins['pdabc'] = Parms2.get('pdabc',{})
         alp,bet,gam,sig = G2pwd.getTOFwids(dsp,[],0,ins)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]

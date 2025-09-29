@@ -6582,7 +6582,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             unitSizer.Add((5,5),0)
         return unitSizer
 
-# Space group grid
+# The various grids for Unilt Cells List
     def SpGrpGrid():
 
         def OnSelectSgrp(event):
@@ -6639,28 +6639,34 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         def OnSelectSSG(event):
             'Called when the Super Space Group Search Results show column is checked'
             if event is not None:
+                if event.GetCol() != 1:
+                    return
                 clearShowFlags()
                 r = event.GetRow()
                 for i in range(len(ssopt['SSgResults'])):
                     results[i][1] = False
-                    SSgTable.SetValue(i,1,False)
                 SSgTable.SetValue(r,1,True)
                 ssopt['ModVec'] = results[r][4:]
                 ssopt['ssSymb'] = results[r][0]
                 result = results[r]
-            else:
-                for r,result in enumerate(results):
-                    if result[1]:
-                        ssopt['ModVec'] = result[4:]
-                        ssopt['ssSymb'] = result[0]
-                        break
-#            SSDisplay.ForceRefresh()        #repaints the grids only
-            OnHklShow(event,True,indexFrom=' Super Space group selection %s #%d'%(controls[13]+result[0],r))
+            # else:
+            #     for r,result in enumerate(results):
+            #         try:
+            #             if result[1]:
+            #                 ssopt['ModVec'] = result[4:]
+            #                 ssopt['ssSymb'] = result[0]
+            #                 break
+            #         except ValueError:  #old style!
+                    
+                SSDisplay.ForceRefresh()        #repaints the grids only
+                OnHklShow(event,True,indexFrom=' Super Space group selection %s #%d'%(controls[13]+result[0],r))
 
+        results = ssopt['SSgResults']
+        if type(results[0][1]) != bool:
+            return None
         SSGrpGrid = wx.BoxSizer(wx.VERTICAL)
         lbl = (' Super Space group search results for '+controls[5])
         SSGrpGrid.Add(wx.StaticText(parent=G2frame.dataWindow,label=lbl))
-        results = ssopt['SSgResults']
         if len(results[0]) == 6:
             colLabels = ['SSp Grp','show','M20','X20','Nhkl','fr. found']
             Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
@@ -7170,8 +7176,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             disableCellEntries()
             
     # G@ Modulation vector results list
-    if len(ssopt['SSgResults']):
-        mainSizer.Add(SSGrid())
+    if ssopt and 'SSgResults' in ssopt and len(ssopt['SSgResults']) > 1:
+        ssgrid = SSGrid()
+        if ssgrid: mainSizer.Add(ssgrid)
 
     # Subgroup/magnetic s.g. search results
     if magcells and len(controls) > 16:

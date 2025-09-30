@@ -5145,6 +5145,11 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         ind = 1
     ins = {}
     if 'T' in Parms['Type'][0]:
+        try:
+            len(pos)
+            singlevalue=False
+        except TypeError:
+            singlevalue=True            
         if ifQ:
             dsp = 2.*np.pi/pos
             pos = Parms['difC']*dsp
@@ -5153,8 +5158,9 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         for x in ('alpha','beta-0','beta-1','beta-q',
                   'sig-0','sig-1','sig-2','sig-q','X','Y','Z'):
             ins[x] = Parms.get(x,[0.0,0.0])[ind]
-        ins['pdabc'] = Parms2.get('pdabc',{})
-        alp,bet,gam,sig = G2pwd.getTOFwids(dsp,[],0,ins)
+        if 'pdabc' in Parms2:
+            ins['pdabc'] = Parms2['pdabc']
+        alp,bet,gam,sig = G2pwd.getTOFwids(dsp,[],0,ins,applyMax=singlevalue)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
     elif 'C' in Parms['Type'][0] or 'LF' in Parms['Type'][0]:
         for x in ['U','V','W','X','Y','Z']:

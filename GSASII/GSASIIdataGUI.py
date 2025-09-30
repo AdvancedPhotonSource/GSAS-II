@@ -1937,7 +1937,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     'background PWDR':['',1.0,False]}]))
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Instrument Parameters'),
-                [Iparm1,Iparm2])
+                copy.deepcopy([Iparm1,Iparm2]))
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)

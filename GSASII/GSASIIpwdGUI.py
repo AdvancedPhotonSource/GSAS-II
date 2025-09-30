@@ -2871,11 +2871,12 @@ def UpdateInstrumentGrid(G2frame,data):
         updateData(insVal,insRef)
 
     def OnCopy1Val(event):
-        '''Select one instrument parameter value to edit and copy to many histograms
-        optionally allow values to be edited in a table
+        '''Select one instrument parameter value to edit and copy to many histograms.
+        Optionally allow values to be edited in a table.
         '''
         updateData(insVal,insRef)
         G2G.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
+        # change the values in the edit widgets to match data array
         insVal.update({key:data[key][1] for key in instkeys})
         insRef.update({key:data[key][2] for key in instkeys})
         wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
@@ -3272,7 +3273,10 @@ def UpdateInstrumentGrid(G2frame,data):
         h = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histnames = [h]
         histdict = {h:data}
-        histnum = {h:G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[0]['hId']}
+        if 'hId' in G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[0]:
+            histnum = {h:G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[0]['hId']}
+        elif h in histoList: # how could this not be true?
+            histnum = {h:histoList.index(h)}            
         for i in selected:
             h = hlist[i]
             if h not in histoList: # unexpected
@@ -3282,7 +3286,7 @@ def UpdateInstrumentGrid(G2frame,data):
             inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hid, 'Instrument Parameters'))
             histnames.append(h)
             histdict[h] = inst
-            histnum[h] = G2frame.GPXtree.GetItemPyData(hid)[0]['hId']
+            histnum[h] = G2frame.GPXtree.GetItemPyData(hid)[0].get('hId',i)
 
         # start posting info into window
         G2frame.dataWindow.ClearData()
@@ -3831,6 +3835,7 @@ def UpdateSampleGrid(G2frame,data):
     def OnCopy1Val(event):
         'Select one value to copy to many histograms and optionally allow values to be edited in a table'
         G2G.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
+        # TODO: check if values need to be copied to editing widgets
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
     def SearchAllComments(value,tc,*args,**kwargs):

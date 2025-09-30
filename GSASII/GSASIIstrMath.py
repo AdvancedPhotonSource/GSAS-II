@@ -3797,8 +3797,6 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
                 
     def GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict,histDict1,hfx):
 
-        #histDict1 holds pdabc entry keyed to hfx. if histDict is empty do nothing
-
         sig = parmDict[hfx+'sig-0']+parmDict[hfx+'sig-1']*refl[4+im]**2+   \
             parmDict[hfx+'sig-2']*refl[4+im]**4+parmDict[hfx+'sig-q']*refl[4+im]
         gam = parmDict[hfx+'X']*refl[4+im]+parmDict[hfx+'Y']*refl[4+im]**2+parmDict[hfx+'Z']
@@ -3806,13 +3804,13 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
         sig += Ssig
         gam += Sgam
 
+        #histDict1 holds pdabc entry keyed to hfx. if histDict is empty do nothing
         if histDict1:
-            pdabc = histDict1[hfx+'pdabc']
-            refl[4+im] #d-spacing
-            sigTable = np.interp(refl[4+im],pdabc["d"],pdabc["sig"])
-            
-            #print(f"{refl[4+im]:.4f} sig: {sig:.6f} sigTable {sigTable:.6f} total: {sig+sigTable}")
-            sig += sigTable
+            pdabc = histDict1.get(hfx+'pdabc')
+            if pdabc:
+                sigTable = np.interp(refl[4+im],pdabc["d"],pdabc["sig"])
+                #print(f"{refl[4+im]:.4f} sig: {sig:.6f} sigTable {sigTable:.6f} total: {sig+sigTable}")
+                sig += sigTable
 
         return sig,gam
 

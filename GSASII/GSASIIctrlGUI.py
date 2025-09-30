@@ -469,7 +469,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
         if GSASIIpath.GetConfigValue('debug') and warn:
-            print('ValidatedTxtCtrl.SetValue used in callback?')
+            print('ValidatedTxtCtrl.SetValue() used in callback. Batter as ChangeValue()?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val
@@ -1687,7 +1687,7 @@ class ScrolledMultiEditor(wx.Dialog):
                 val = d[k]
                 continue
             d[k] = val
-            ctrl.SetValue(val)
+            ctrl.ChangeValue(val)
         for i in range(len(self.checkdictlst)):
             if i < n: continue
             self.checkdictlst[i][self.checkelemlst[i]] = self.checkdictlst[n][self.checkelemlst[n]]
@@ -2319,8 +2319,12 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
 
     copyList = []
     lbl = copyopts['currentsel']
-    dlg = G2MultiChoiceDialog(G2frame,'Copy parameter '+lbl+' from\n'+hst,
-        'Copy parameters', histList)
+    ttl = 'Select histograms'
+    if copyopts['InTable']:
+        msg = 'Select histograms to include in table'
+    else:
+        msg = f'Select hists to copy parameter {lbl} to.\nFine w/no selections. Cancel aborts change.'
+    dlg = G2MultiChoiceDialog(G2frame,msg,ttl, histList)
     dlg.CenterOnParent()
     try:
         if dlg.ShowModal() == wx.ID_OK:

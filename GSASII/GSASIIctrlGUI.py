@@ -2266,9 +2266,6 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
     copyopts = {'InTable':False,"startvalue":None,'currentsel':None}
     hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     histList = G2pdG.GetHistsLikeSelected(G2frame)
-    if not histList:
-        G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
-        return
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'Set a parameter value',
         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2292,9 +2289,10 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
     mainSizer.Add(subSizer)
 
     mainSizer.Add((-1,20))
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add(G2CheckBox(dlg, 'Edit in table ', copyopts, 'InTable'))
-    mainSizer.Add(subSizer)
+    if histList:
+        subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        subSizer.Add(G2CheckBox(dlg, 'Edit in table ', copyopts, 'InTable'))
+        mainSizer.Add(subSizer)
 
     btnsizer = wx.StdDialogButtonSizer()
     OKbtn = wx.Button(dlg, wx.ID_OK,'Continue')
@@ -2324,18 +2322,19 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
         msg = 'Select histograms to include in table'
     else:
         msg = f'Select hists to copy parameter {lbl} to.\nFine w/no selections. Cancel aborts change.'
-    dlg = G2MultiChoiceDialog(G2frame,msg,ttl, histList)
-    dlg.CenterOnParent()
-    try:
-        if dlg.ShowModal() == wx.ID_OK:
-            for i in dlg.GetSelections():
-                copyList.append(histList[i])
-        else:
-            # reset the parameter since cancel was pressed
-            array.update(saveArray)
-            return
-    finally:
-        dlg.Destroy()
+    if histList:
+        dlg = G2MultiChoiceDialog(G2frame,msg,ttl, histList)
+        dlg.CenterOnParent()
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections():
+                    copyList.append(histList[i])
+            else:
+                # reset the parameter since cancel was pressed
+                array.update(saveArray)
+                return
+        finally:
+            dlg.Destroy()        
 
     prelbl = [hst]
     i = labelLst.index(lbl)

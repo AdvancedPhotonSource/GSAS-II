@@ -3053,7 +3053,7 @@ class MultiDataDialog(wx.Dialog):
     def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],
                      testfxns=None,formats=['%.5g',],header=None):
         wx.Dialog.__init__(self,parent,-1,title,
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.panel = None
         self.limits = limits
         self.values = values
@@ -3233,6 +3233,7 @@ class MultiDataDialog(wx.Dialog):
         self.panel.SetSizer(mainSizer)
         self.panel.Fit()
         self.Fit()
+        self.CenterOnParent()
 
     def GetValues(self):
         return self.values

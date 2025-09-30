@@ -1774,14 +1774,19 @@ def getPeakProfile(dataType,parmDict,xdata,fixback,varyList,bakType):
             except KeyError:        #no more peaks to process
                 return yb+yc
 
-def getTOFwids(dsp,varyList,iPeak,parmDict):
+def getTOFwids(dsp,varyList,iPeak,parmDict,applyMax=True):
     '''For TOF peaks: determine the values for the four peak width parameters
     from either the lookup table (in parmDict['pdabc']) or from the instrument 
     parameters, unless the peak is varied or peakInstPrmMode is set, 
-    in which case the value is taken from the parameter dictionary 
+    in which case the value is taken from the parameter dictionary
+    
+    applyMax is used in peak fitting to make sure that values stay "sane"
+    but is set to False to compute values that are used for plotting.
     '''
     if 'pdabc' in parmDict: 
         Pdabc = parmDict['pdabc']
+    else:
+        Pdabc = []
     alpName = 'alp'+str(iPeak)
     if alpName in varyList or (not peakInstPrmMode and alpName in parmDict):
         alp = parmDict[alpName]
@@ -1789,7 +1794,7 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
         alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
     else:
         alp = G2mth.getTOFalpha(parmDict,dsp)
-    alp = max(0.1,alp)
+    if applyMax: alp = max(0.1,alp)
     betName = 'bet'+str(iPeak)
     if betName in varyList or (not peakInstPrmMode and betName in parmDict):
         bet = parmDict[betName]
@@ -1797,7 +1802,7 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
         bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
     else:
         bet = G2mth.getTOFbeta(parmDict,dsp)
-    bet = max(0.01,bet)
+    if applyMax: bet = max(0.01,bet)
     sigName = 'sig'+str(iPeak)
     if sigName in varyList or (not peakInstPrmMode and sigName in parmDict):
         sig = parmDict[sigName]
@@ -1805,13 +1810,13 @@ def getTOFwids(dsp,varyList,iPeak,parmDict):
         sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
     else:
         sig = G2mth.getTOFsig(parmDict,dsp)
-    sig = max(0.01,sig)
+    if applyMax: sig = max(0.01,sig)
     gamName = 'gam'+str(iPeak)
     if gamName in varyList or (not peakInstPrmMode and gamName in parmDict):
         gam = parmDict[gamName]
     else:
         gam = G2mth.getTOFgamma(parmDict,dsp)
-    gam = max(gam,0.001)             #avoid neg gamma
+    if applyMax: gam = max(gam,0.001)             #avoid neg gamma
     return alp,bet,gam,sig
 
 def getPeakProfileDerv(dataType,parmDict,xdata,fixback,varyList,bakType):

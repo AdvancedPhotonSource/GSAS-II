@@ -347,6 +347,8 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             selblk = self.selections[self.repeatcount]
             self.repeatcount += 1
             if self.repeatcount >= len(self.selections): self.repeat = False
+        elif len(self.selections) == 0:
+            return False
         else:                       # choose from options
             selblk = self.selections[0] # select first in list
             if len(self.selections) > 1: # prepare to loop through again

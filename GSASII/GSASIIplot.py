@@ -3141,6 +3141,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
     def OnKeyPress(event):
         if event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+        elif event.key== 'e':
+            G2frame.ErrorBars  = not G2frame.ErrorBars
         elif event.key == 's':
             # write the function values (not peaks) onto a file
             dlg = wx.FileDialog(G2frame, 'Choose CSV file to write', G2G.GetExportPath(G2frame),
@@ -3163,7 +3165,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
                 Write2csv(fp,['Q','Gauss-def','Lorenz-def','FWHM-def','Gauss-fit','Lorenz-fit','FWHM-fit',],header=True)
                 for vals in zip(Q,S,G,W,Sf,Gf,Wf): Write2csv(fp,vals)
             fp.close()
-        wx.CallAfter(PlotPeakWidths,G2frame,PatternName)
+        wx.CallAfter(PlotPeakWidths,G2frame)
 
     if PatternName:
         G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PatternName)
@@ -3184,7 +3186,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
     else:
         lam = G2mth.getWave(Parms)
     try:  # PATCH: deal with older peak lists, before changed to dict to implement TOF
-        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))['peaks']
+        Pdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
+        peaks = Pdata['peaks']
+        peakEsds = Pdata.get('sigDict',{})
     except TypeError:
         print ("Your peak list needs reformatting...",end='')
         item = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List')
@@ -3195,7 +3199,10 @@ def PlotPeakWidths(G2frame,PatternName=None):
         return
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Peak Widths','mpl')
-    Page.Choice = (' key press','g: toggle grid','s: save as .csv file')
+    if len(peakEsds):
+        Page.Choice = (' key press','e: toggle error bars','g: toggle grid','s: save as .csv file')
+    else:
+        Page.Choice = (' key press','g: toggle grid','s: save as .csv file')
     Page.keyPress = OnKeyPress
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
@@ -3258,26 +3265,39 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,Gf,color='m',label='Lorentzian fit')
         Plot.plot(Q,Wf,color='g',dashes=(5,5),label='FWHM fit (GL+ab)')
 
-        Tp = []
         Ap = []
+        sAp = []
         Bp = []
+        sBp = []
         Sp = []
+        sSp = []
         Gp = []
+        sGp = []
         Wp = []
         Qp = []
-        for peak in peaks:
-            Tp.append(peak[0])
-            Ap.append(peak[4])
-            Bp.append(peak[6])
+        for ip,peak in enumerate(peaks):
             Qp.append(2.*np.pi*difC/peak[0])
-            Sp.append(1.17741*np.sqrt(peak[8])/peak[0])
+            Ap.append(peak[4])
+            sAp.append(peakEsds.get('alp%d'%ip,0.0))
+            Bp.append(peak[6])
+            sBp.append(peakEsds.get('bet%d'%ip,0.0))
+            sp = 1.17741*np.sqrt(peak[8])/peak[0]
+            Sp.append(sp)     #sqrt(8ln2)/2
+            sSp.append(0.5*sp*peakEsds.get('sig%d'%ip,0.0)/peak[8])
             Gp.append(peak[10]/peak[0])
+            sGp.append(peakEsds.get('gam%d'%ip,0.0))
 
         if Qp:
-            Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
-            Plot.plot(Qp,Bp,'+',color='orange',label='Beta peak')
-            Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
-            Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
+            if G2frame.ErrorBars:
+                Plot.errorbar(Qp,Ap,yerr=sAp,fmt='r+',label='Alpha peak')
+                Plot.errorbar(Qp,Bp,yerr=sBp,fmt='+',color='orange',label='Beta peak')
+                Plot.errorbar(Qp,Sp,yerr=sSp,fmt='b+',label='Gaussian peak')
+                Plot.errorbar(Qp,Gp,yerr=sGp,fmt='m+',label='Lorentzian peak')                
+            else:
+                Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
+                Plot.plot(Qp,Bp,'+',color='orange',label='Beta peak')
+                Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
+                Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
     elif 'E' in Parms['Type'][0]:
         Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d, \Delta E/E$',fontsize=14)

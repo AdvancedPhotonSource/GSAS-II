@@ -3259,10 +3259,10 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Sf = 1.17741*np.sqrt(fit[8])/T
         Gf = fit[10]/T
         Wf = G2pwd.getFWHM(T,Parms)/T
-        Plot.plot(Q,Af,color='r',dashes=(5,5),label='Alpha fit')
-        Plot.plot(Q,Bf,color='orange',dashes=(5,5),label='Beta fit')
-        Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
-        Plot.plot(Q,Gf,color='m',label='Lorentzian fit')
+        Plot.plot(Q,Af,color='r',dashes=(5,5),label='A fit')
+        Plot.plot(Q,Bf,color='orange',dashes=(5,5),label='B fit')
+        Plot.plot(Q,Sf,color='b',dashes=(5,5),label='G fit')
+        Plot.plot(Q,Gf,color='m',label='L fit')
         Plot.plot(Q,Wf,color='g',dashes=(5,5),label='FWHM fit (GL+ab)')
 
         Ap = []
@@ -3285,21 +3285,22 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Sp.append(sp)     #sqrt(8ln2)/2
             sSp.append(0.5*sp*peakEsds.get('sig%d'%ip,0.0)/peak[8])
             Gp.append(peak[10]/peak[0])
-            sGp.append(peakEsds.get('gam%d'%ip,0.0))
+            sGp.append(peakEsds.get('gam%d'%ip,0.0)/peak[0])
 
         if Qp:
             if G2frame.ErrorBars:
-                Plot.errorbar(Qp,Ap,yerr=sAp,fmt='r+',label='Alpha peak')
-                Plot.errorbar(Qp,Bp,yerr=sBp,fmt='+',color='orange',label='Beta peak')
-                Plot.errorbar(Qp,Sp,yerr=sSp,fmt='b+',label='Gaussian peak')
-                Plot.errorbar(Qp,Gp,yerr=sGp,fmt='m+',label='Lorentzian peak')                
+                Plot.errorbar(Qp,Ap,yerr=sAp,fmt='r+',capsize=2,label='A peak')
+                Plot.errorbar(Qp,Bp,yerr=sBp,fmt='+',color='orange',capsize=2,label='B peak')
+                Plot.errorbar(Qp,Sp,yerr=sSp,fmt='b+',capsize=2,label='G peak')
+                Plot.errorbar(Qp,Gp,yerr=sGp,fmt='m+',capsize=2,label='L peak')                
             else:
-                Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
-                Plot.plot(Qp,Bp,'+',color='orange',label='Beta peak')
-                Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
-                Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
+                Plot.plot(Qp,Ap,'+',color='r',label='A peak')
+                Plot.plot(Qp,Bp,'+',color='orange',label='B peak')
+                Plot.plot(Qp,Sp,'+',color='b',label='G peak')
+                Plot.plot(Qp,Gp,'+',color='m',label='L peak')
         Plot.legend(loc='best')
     elif 'E' in Parms['Type'][0]:
+        # TODO: add error bars to individual peak parms 
         Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d, \Delta E/E$',fontsize=14)
         isig = 4
         igam = 6
@@ -3329,8 +3330,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Yf = sq8ln2*sf/X
         Zf = gf/X
         Wf = Gf/X
-        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
-        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
+        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='G fit')
+        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='L fit')
         Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
 
         Xp = []
@@ -3388,15 +3389,18 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Yf = sq8ln2*sf/nptand(X/2.)
         Zf = gf/nptand(X/2.)
         Wf = Gf/nptand(X/2.)
-        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
-        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
+        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='G fit')
+        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='L fit')
         Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
 
         Xp = []
         Yp = []
+        sYp = []
         Zp = []
+        sZp = []
         Wp = []
-        for peak in peaks:
+        for ip,peak in enumerate(peaks):
+            tpd = tand(peak[0]/2.)
             Xp.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
             try:
                 s = math.sqrt(peak[isig])*math.pi/18000.
@@ -3404,13 +3408,20 @@ def PlotPeakWidths(G2frame,PatternName=None):
                 s = 0.01
             g = peak[igam]*math.pi/18000.
             G = G2pwd.getgamFW(g,s)         #/2.
-            Yp.append(sq8ln2*s/tand(peak[0]/2.))
-            Zp.append(g/tand(peak[0]/2.))
-            Wp.append(G/tand(peak[0]/2.))
+            yp = sq8ln2*s
+            Yp.append(yp/tpd)
+            sYp.append((math.pi/36000.)*peakEsds.get('sig%d'%ip,0.0)/yp)
+            Zp.append(g/tpd)
+            sZp.append((math.pi/18000.)*peakEsds.get('gam%d'%ip,0.0)/tpd)
+            Wp.append(G/tpd)
         if len(peaks):
-            Plot.plot(Xp,Yp,'+',color='r',label='G peak')
-            Plot.plot(Xp,Zp,'+',color='g',label='L peak')
-            Plot.plot(Xp,Wp,'+',color='b',label='G+L peak')
+            if G2frame.ErrorBars:
+                Plot.errorbar(Xp,Yp,yerr=sYp,fmt='r+',capsize=2,label='G peak')
+                Plot.errorbar(Xp,Zp,yerr=sZp,fmt='g+',capsize=2,label='L peak')                                
+            else:
+                Plot.plot(Xp,Yp,'+',color='r',label='G peak')
+                Plot.plot(Xp,Zp,'+',color='g',label='L peak')
+                Plot.plot(Xp,Wp,'+',color='b',label='G+L peak')
         legend = Plot.legend(loc='best')
         SetupLegendPick(legend,new)
         Page.canvas.draw()

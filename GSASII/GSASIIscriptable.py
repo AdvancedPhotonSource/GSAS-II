@@ -3458,6 +3458,10 @@ class G2PwdrData(G2ObjectWrapper):
     def InstrumentParameters(self):
         '''Provides a dictionary with with the Instrument Parameters
         for this histogram.
+
+        Note that the returned dict is a reference to the actual dict
+        as stored in the .gpx file; use care not to modify this unless
+        intended.
         '''
         return self.data['Instrument Parameters'][0]
 
@@ -3465,6 +3469,10 @@ class G2PwdrData(G2ObjectWrapper):
     def SampleParameters(self):
         '''Provides a dictionary with with the Sample Parameters
         for this histogram.
+
+        Note that the returned dict is a reference to the actual dict
+        as stored in the .gpx file; use care not to modify this unless
+        intended.
         '''
         return self.data['Sample Parameters']
 
@@ -3472,6 +3480,10 @@ class G2PwdrData(G2ObjectWrapper):
     def Background(self):
         '''Provides a list with with the Background parameters
         for this histogram.
+
+        Note that the returned list is a reference to the actual list
+        as stored in the .gpx file; use care not to modify this unless
+        intended.
 
         :returns: list containing a list and dict with background values
         '''
@@ -3721,12 +3733,22 @@ class G2PwdrData(G2ObjectWrapper):
         self.proj.save()
 
     def getdata(self,datatype):
-        '''Provides access to the histogram data of the selected data type
+        '''Provides access to the histogram data of the selected data type.
+ 
+        It should be noted that for TOF data, GSAS-II expects input 
+        where the TOF value is the minimum for the bin, but does computations 
+        using the TOF value for the center of each bin. The values reported 
+        using the 'X' option here are the values used in computation, while
+        the 'X-orig' option reverses the shift applied when TOF values
+        are read in. 
 
         :param str datatype: must be one of the following values
           (case is ignored):
 
            * 'X': the 2theta or TOF values for the pattern
+           * 'X-orig': for TOF, time values for the pattern shifted
+              as used as input for GSAS-II. For everything else, the values are 
+              the same as with the 'X' option (see above.)
            * 'Q': the 2theta or TOF values for the pattern transformed to Q
            * 'd': the 2theta or TOF values for the pattern transformed to d-space
            * 'Yobs': the observed intensity values
@@ -3735,24 +3757,36 @@ class G2PwdrData(G2ObjectWrapper):
            * 'Background': the computed background values
            * 'Residual': the difference between Yobs and Ycalc (obs-calc)
 
-        :returns: an numpy MaskedArray with data values of the requested type
-
+        :returns: a numpy MaskedArray with data values of the requested type. 
+           Note that the returned values are a copy of the GSAS-II histogram 
+           array, not a reference to the actual data as stored in the 
+           .gpx file.
         '''
-        enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual', 'q', 'd']
+        enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual', 'q', 'd','x-orig']
         if datatype.lower() not in enums:
             raise G2ScriptException("Invalid datatype = "+datatype+" must be one of "+str(enums))
-        if datatype.lower() == 'q':
+        if datatype.lower() == 'x-orig':
+            x = self.data['data'][1][0]
+            if 'T' in self.InstrumentParameters['Type'][1]:
+                xdiff = np.append(np.diff(x),x[-1]-x[-2]) # make same length as X by duplicating last element
+                return x-(xdiff/2) # adjust for midpoint shift on data read
+            else:
+                return copy.deepcopy(x)
+        elif datatype.lower() == 'q':
             Inst,Inst2 = self.data['Instrument Parameters']
             return  2 * np.pi / G2lat.Pos2dsp(Inst,self.data['data'][1][0])
         elif datatype.lower() == 'd':
             Inst,Inst2 = self.data['Instrument Parameters']
             return G2lat.Pos2dsp(Inst,self.data['data'][1][0])
         else:
-            return self.data['data'][1][enums.index(datatype.lower())]
+            return copy.deepcopy(self.data['data'][1][enums.index(datatype.lower())])
 
     def y_calc(self):
         '''Returns the calculated intensity values; better to
-        use :meth:`getdata`
+        use :meth:`getdata`.
+
+        Note that the returned array is a reference to the actual data 
+        as stored in the .gpx file; use care not to modify this. 
         '''
         return self.data['data'][1][3]
 
@@ -3764,6 +3798,9 @@ class G2PwdrData(G2ObjectWrapper):
         'Type' (histogram type), 'FF'
         (form factor information), 'Super' (True if this is superspace
         group).
+
+        Note that the returned array is a reference to the actual data 
+        as stored in the .gpx file; use care not to modify this. 
         '''
         return self.data['Reflection Lists']
 

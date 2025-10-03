@@ -25,8 +25,8 @@ from . import G2pwd_BrukerRAW
 from . import G2pwd_CIF
 from . import G2pwd_FP
 from . import G2pwd_GPX
-from . import G2pwd_MIDAS
 from . import G2pwd_HDF5
+from . import G2pwd_MIDAS
 from . import G2pwd_Panalytical
 from . import G2pwd_csv
 from . import G2pwd_fxye

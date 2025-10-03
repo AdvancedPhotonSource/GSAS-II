@@ -54,12 +54,17 @@ class HDF5_Reader(G2obj.ImportImage):
             return False
         imagenum = kwarg.get('blocknum')
         if imagenum is None: imagenum = 1
+        quick = False
         # do we have a image number or a map to the section with the image?
         try:
-            int(imagenum)
-            # set up an index as to where images are found
-            self.buffer = kwarg.get('buffer',{})
-            if not self.buffer.get('imagemap'):
+            int(imagenum) # test if image # is a tuple
+        except: # pull the section name and number out from the imagenum value
+            kwargs = {'name':imagenum[0],'num':imagenum[1]}
+            quick = True
+        # set up an index as to where images are found
+        self.buffer = kwarg.get('buffer',{})
+        if not quick and not self.buffer.get('imagemap'):
+            try:
                 if GSASIIpath.GetConfigValue('debug'): print('Scanning for image map')
                 self.buffer['imagemap'] = []
                 self.Comments = self.visit(fp)
@@ -93,9 +98,13 @@ class HDF5_Reader(G2obj.ImportImage):
                     self.errors = 'No images selected from file'
                     fp.close()
                     return False
+            except Exception as msg:
+                print(f'Error mapping file:\n{msg}')
+                return False
+        if not quick: 
             self.buffer['selectedImages'] = self.buffer.get('selectedImages',
                                                 list(range(len(self.buffer['imagemap']))))
-            # get the first selected image
+            # get the next selected image
             while imagenum <= len(self.buffer['imagemap']):
                 if imagenum-1 in self.buffer['selectedImages']:
                     del self.buffer['selectedImages'][self.buffer['selectedImages'].index(imagenum-1)]
@@ -107,11 +116,6 @@ class HDF5_Reader(G2obj.ImportImage):
                 fp.close()
                 return False
             kwargs = {'imagenum':imagenum}
-            quick = False
-        except:
-            kwargs = {'name':imagenum[0],'num':imagenum[1]}
-            quick = True
-        # we have been passed a map to images
         self.Data,self.Npix,self.Image = self.readDataset(fp,**kwargs)
         if quick:
             fp.close()
@@ -153,19 +157,26 @@ class HDF5_Reader(G2obj.ImportImage):
             if not hasattr(dset,'shape'): return # not array, can't be image
             if isinstance(dset, h5py.Dataset):
                 dims = dset.shape
-                if len(dims) < 2:
-                    head.append('%s: %s'%(dset.name,str(dset[()][0])))
-                elif len(dims) == 4:
-                    size = dims[2:]
-                    self.buffer['imagemap'] += [(dset.name,i,size) for i in range(dims[1])]
-                elif len(dims) == 3:
-                    size = dims[1:]
-                    self.buffer['imagemap'] += [(dset.name,i,size) for i in range(dims[0])]
-                elif len(dims) == 2:
-                    size = dims
-                    self.buffer['imagemap'] += [(dset.name,None,size)]
-                else:
-                    print('Skipping entry '+str(dset.name)+'. Shape is '+str(dims))
+                try:
+                    if len(dims) == 0:
+                        val = dset[()]
+                        if type(val) is bytes: val = val.decode()
+                        head.append(f'{dset.name}: {val}')
+                    elif len(dims) < 2:
+                        head.append(f'{dset.name}: {dset[()][0]}')
+                    elif len(dims) == 4:
+                        size = dims[2:]
+                        self.buffer['imagemap'] += [(dset.name,i,size) for i in range(dims[1])]
+                    elif len(dims) == 3:
+                        size = dims[1:]
+                        self.buffer['imagemap'] += [(dset.name,i,size) for i in range(dims[0])]
+                    elif len(dims) == 2:
+                        size = dims
+                        self.buffer['imagemap'] += [(dset.name,None,size)]
+                    else:
+                        print(f'Skipping entry {dset.name}. Shape is {dims}')
+                except Exception as msg:
+                    print(f'Skipping entry {dset.name} Error getting shape\n{msg}')
         fp.visititems(func)
         return head
 

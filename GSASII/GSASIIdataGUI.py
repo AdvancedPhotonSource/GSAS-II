@@ -1598,21 +1598,23 @@ If you continue from this point, it is quite likely that all intensity computati
                     rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
                         'DisplaceY':[0.,False]})
                 if 'Generic' in choices[res]:
-                    dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
-                        prompts=['Total FP','2-theta',],values=[25.0,150.,],
-                            limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
-                    if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
-                        FP,tth = dlg.GetValues()
-                        difC = 505.632*FP*sind(tth/2.)
-                        sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
-                        bet1 = .00226+7.76e+11/difC**4
-                        rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
-                        Inst[0]['difC'] = [difC,difC,0]
-                        Inst[0]['sig-1'] = [sig1,sig1,0]
-                        Inst[0]['beta-1'] = [bet1,bet1,0]
-                        return Inst    #this is [Inst1,Inst2] a pair of dicts
-                    dlg.Destroy()
+                    rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
+                    Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
+                    return Inst    #this is [Inst1,Inst2] a pair of dicts
+                    # The input below is now requested for each bank in OnImportPowder
+                    # dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
+                    #     prompts=['Total FP','2-theta',],values=[25.0,150.,],
+                    #         limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
+                    # if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
+                    #     FP,tth = dlg.GetValues()
+                    #     difC = 505.632*FP*sind(tth/2.)
+                    #     sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
+                    #     bet1 = .00226+7.76e+11/difC**4
+                    #     Inst[0]['difC'] = [difC,difC,0]
+                    #     Inst[0]['sig-1'] = [sig1,sig1,0]
+                    #     Inst[0]['beta-1'] = [bet1,bet1,0]
+                    #     return Inst    #this is [Inst1,Inst2] a pair of dicts
+                    # dlg.Destroy()
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
                     inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
@@ -1783,6 +1785,7 @@ If you continue from this point, it is quite likely that all intensity computati
 
         Also reads an instrument parameter file for each dataset.
         '''
+        FP,tth = 25.0,150.
         # get a list of existing histograms
         PWDRlist = []
         if self.GPXtree.GetCount():
@@ -1806,10 +1809,12 @@ If you continue from this point, it is quite likely that all intensity computati
         self.EnablePlot = False
         Iparms = {}
         self.cleanupList = []   # inst parms created in GetPowderIparm
-        for rd in rdlist:
-            if 'Instrument Parameters' in rd.pwdparms:
+        iSource = '?'
+        for ihst,rd in enumerate(rdlist):
+            if 'Instrument Parameters' in rd.pwdparms: # reader supplies InstPrms
                 Iparm1,Iparm2 = rd.pwdparms['Instrument Parameters']
-            elif Iparms and not lastIparmfile:
+                iSource = rd.instmsg
+            elif Iparms and not lastIparmfile: # have vals from previous loop
                 Iparm1,Iparm2 = Iparms
             else:
                 # get instrument parameters for each dataset, unless already set
@@ -1826,10 +1831,29 @@ If you continue from this point, it is quite likely that all intensity computati
                 else:
                     Iparms = {}
 #                    lastVals = (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0]))
-                # override any keys in read instrument parameters with ones set in import
-                for key in Iparm1:
-                    if key in rd.instdict:
-                        Iparm1[key] = rd.instdict[key]
+                iSource = rd.instmsg
+            # for defaulted TOF data, reset the default bank number & for generic get FP/2Th
+            if iSource.startswith('default:') and 'Bank' in Iparm1 and 'T' in Iparm1['Type'][0]:
+                if 'Generic' in iSource:
+                    dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
+                        prompts=['Total flight path','2-theta',],values=[FP,tth],
+                            limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',],
+                            header=f'Set detector info for\n{rd.idstring}')
+                    if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
+                        FP,tth = dlg.GetValues()
+                        difC = 505.632*FP*sind(tth/2.)
+                        sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
+                        bet1 = .00226+7.76e+11/difC**4
+                        Iparm1['difC'] = [difC,difC,0]
+                        Iparm1['sig-1'] = [sig1,sig1,0]
+                        Iparm1['beta-1'] = [bet1,bet1,0]
+                    dlg.Destroy()
+                Iparm1['Bank'][0] = Iparm1['Bank'][1] = ihst+1
+            # override any keys in read instrument parameters with ones set in import
+            for key in Iparm1:
+                if key in rd.instdict:
+                    Iparm1[key] = rd.instdict[key]
+                # 
             lastdatafile = rd.powderentry[0]
             HistName = 'PWDR '+rd.idstring
             # do some error checking
@@ -1859,7 +1883,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 print('Read powder data '+HistName+
                     ' from file '+G2obj.StripUnicode(rd.readfilename) +
                     ' (format: '+ rd.formatName +
-                    '). Inst parameters from '+G2obj.StripUnicode(rd.instmsg))
+                    '). Inst parameters from '+G2obj.StripUnicode(iSource))
             except:
                 print('Read powder data')
             # data are read, now store them in the tree

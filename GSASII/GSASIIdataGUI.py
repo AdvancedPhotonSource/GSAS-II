@@ -3736,8 +3736,8 @@ If you continue from this point, it is quite likely that all intensity computati
                             newimagefile = dlg.GetPath()
                             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
                             G2IO.PutG2Image(newimagefile,Comments,Data,Npix,newImage)
-                            Imax = np.amax(newImage)
-                            Imin = np.amin(newImage)
+                            Imax = int(np.amax(newImage))
+                            Imin = int(np.amin(newImage))
                             newImage = []
                             self.GPXtree.SetItemPyData(Id,[imSize,newimagefile])
                             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),Comments)

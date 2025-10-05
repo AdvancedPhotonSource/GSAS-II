@@ -732,6 +732,20 @@ class GSASIItoolbar(Toolbar):
     def OnHelp(self,event):
         'Respond to press of help button on plot toolbar'
         bookmark = self.Parent.helpKey  # get help category used to create plot
+        G2frame = wx.GetApp().GetMainTopWindow()
+        if bookmark != G2frame.dataWindow.helpKey:
+            # plot window and data window are different
+            try:
+                selText = '/'.join(G2frame.PickIdText)
+            except:
+                selText = G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection())
+            G2G.G2MessageBox(G2frame,
+                 'Displaying help on plot window, but you have moved to a '
+                 f'different data tree item ({selText}) where plot menu items '
+                 'and key commands are not available. '
+                 'Return to the appropriate data tree '
+                 'item for full plot functionality',
+                 'Wrong data tree selection')
         #if GSASIIpath.GetConfigValue('debug'): print 'plot help: key=',bookmark
         G2G.ShowHelp(bookmark,self.TopLevelParent)
 

@@ -215,6 +215,7 @@ class G2PlotMpl(_tabPlotWin):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
         mpl.rcParams['legend.fontsize'] = 12
         mpl.rcParams['axes.grid'] = False
+        #TODO: set dpi here via config var: this changes the size of the labeling font 72-100 is normal
         self.figure = mplfig.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
@@ -634,6 +635,11 @@ class GSASIItoolbar(Toolbar):
         '''
         pass
 
+# TODO: perhaps someday we could pull out the bitmaps and rescale there here    
+#    def AddTool(self,*args,**kwargs):
+#        print('AddTool',args,kwargs)
+#        return Toolbar.AddTool(self,*args,**kwargs)
+
     def AddToolBarTool(self,label,title,filename,callback):
         bmpFilename = GSASIIpath.getIconFile(filename)
         if bmpFilename is None:
@@ -642,10 +648,7 @@ class GSASIItoolbar(Toolbar):
         else:
             bmp = wx.Bitmap(bmpFilename)
 #            bmp = wx.Bitmap(bmpFilename,type=wx.BITMAP_TYPE_ANY) # probably better
-        if 'phoenix' in wx.version():
-            button = self.AddTool(wx.ID_ANY, label, bmp, title)
-        else:
-            button = self.AddSimpleTool(wx.ID_ANY, bmp, label, title)
+        button = self.AddTool(wx.ID_ANY, label, bmp, title)
         wx.EVT_TOOL.Bind(self, button.GetId(), button.GetId(), callback)
         return button.GetId()
 

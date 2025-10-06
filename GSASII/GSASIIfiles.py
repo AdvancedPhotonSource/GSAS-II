@@ -13,10 +13,12 @@ import platform
 import os
 import sys
 import glob
+import copy
 #import inspect
 import re
 
 import numpy as np
+import numpy.ma as ma
 
 from . import GSASIIpath
 from . import GSASIIlattice as G2lat
@@ -2165,7 +2167,8 @@ class ExportBaseclass(object):
                     # the main info goes into Data, but the 0th
                     # element contains refinement results, carry
                     # that over too now.
-                    self.Histograms[name]['Data'] = self.G2frame.GPXtree.GetItemPyData(item)[1]
+                    # make coopy so we can shift TOF
+                    self.Histograms[name]['Data'] = copy.deepcopy(self.G2frame.GPXtree.GetItemPyData(item)[1])
                     self.Histograms[name][0] = self.G2frame.GPXtree.GetItemPyData(item)[0]
                     item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
                     while item2:
@@ -2177,6 +2180,18 @@ class ExportBaseclass(object):
             for hist in self.Histograms:
                 if hist.startswith("PWDR"):
                     d = self.powderDict
+                    # shift TOF from midpoint to bin start
+                    if 'T' in self.Histograms[hist]['Instrument Parameters'][0]['Type'][0]:
+                        if hasattr(self.Histograms[hist]['Data'][0],'mask'):
+                            m = self.Histograms[hist]['Data'][0].mask
+                            x = self.Histograms[hist]['Data'][0].data
+                            # one half the averaged bin widths -- ~backs out the previous shift
+                            halfbin = (np.append(x[1]-x[0],np.diff(x)) + np.append(np.diff(x),x[-1]-x[-2]))/4
+                            self.Histograms[hist]['Data'][0] = ma.array(x-halfbin,mask=m)
+                        else:
+                            x = self.Histograms[hist]['Data'][0]
+                            halfbin = (np.append(x[1]-x[0],np.diff(x)) + np.append(np.diff(x),x[-1]-x[-2]))/4
+                            self.Histograms[hist]['Data'][0] -= halfbin
                 elif hist.startswith("HKLF"):
                     d = self.xtalDict
                 elif hist.startswith("SASD"):

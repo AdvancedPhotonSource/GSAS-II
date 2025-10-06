@@ -598,7 +598,9 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
 
     if 'T' in Iparm1['Type'][0]:
         if not reader.clockWd and reader.GSAS:
+            # following comment is wrong or code is misplaced. This is TOF (BHT)
             reader.powderdata[0] *= 100.        #put back the CW centideg correction
+        # shift TOF from bin edge to bin center
         cw = np.diff(reader.powderdata[0])
         reader.powderdata[0] = reader.powderdata[0][:-1]+cw/2.
         if reader.GSAS:     #NB: old GSAS wanted intensities*CW even if normalized!
@@ -3768,8 +3770,9 @@ class G2PwdrData(G2ObjectWrapper):
         if datatype.lower() == 'x-orig':
             x = self.data['data'][1][0]
             if 'T' in self.InstrumentParameters['Type'][1]:
-                xdiff = np.append(np.diff(x),x[-1]-x[-2]) # make same length as X by duplicating last element
-                return x-(xdiff/2) # adjust for midpoint shift on data read
+                # one half the averaged bin widths -- ~backs out the previous shift
+                d = (np.append(x[1]-x[0],np.diff(x)) + np.append(np.diff(x),x[-1]-x[-2]))/4
+                return x-d # adjust for midpoint shift on data read
             else:
                 return copy.deepcopy(x)
         elif datatype.lower() == 'q':
@@ -3850,10 +3853,27 @@ class G2PwdrData(G2ObjectWrapper):
 
         :param Exporter expObj: Exporter object
         '''
-        expObj.Histograms[self.name] =  {}
-        expObj.Histograms[self.name]['Data'] = self.data['data'][1]
+        hist = self.name
+        histObj = expObj.Histograms
+        histObj[hist] =  {}
+        histObj[hist]['Data'] = self.data['data'][1]
         for key in 'Instrument Parameters','Sample Parameters','Reflection Lists':
-            expObj.Histograms[self.name][key] = self.data[key]
+            histObj[hist][key] = self.data[key]
+        if 'T' in histObj[hist]['Instrument Parameters'][0]['Type'][0]:
+            # for TOF need to shift the times to the bin start
+            histObj[hist]['Data'] = copy.deepcopy(self.data['data'][1])
+            if hasattr(histObj[hist]['Data'][0],'mask'): # masking happens in GUI?
+                m = histObj[hist]['Data'][0].mask
+                x = histObj[hist]['Data'][0].data
+                # one half the averaged bin widths -- ~backs out the previous shift
+                halfbin = (np.append(x[1]-x[0],np.diff(x)) + np.append(np.diff(x),x[-1]-x[-2]))/4
+                histObj[hist]['Data'][0] = ma.array(x-halfbin,mask=m)
+            else:
+                x = histObj[hist]['Data'][0]
+                halfbin = (np.append(x[1]-x[0],np.diff(x)) + np.append(np.diff(x),x[-1]-x[-2]))/4
+                histObj[hist]['Data'][0] -= halfbin
+#        from GSASII.GSASIIpath import IPyBreak_base
+#        IPyBreak_base()
 
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:

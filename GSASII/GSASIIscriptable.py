@@ -2843,8 +2843,12 @@ class G2Project(G2ObjectWrapper):
         return parmDict,covData
 
     def set_Frozen(self, variable=None, histogram=None, mode='remove'):
-        '''Removes one or more Frozen variables (or adds one)
-        (See :ref:`Parameter Limits<ParameterLimits>` description.)
+        '''Removes one or more Frozen variables (or adds one),
+        where parameters are frozen after refining outside the 
+        range where their values are allowed due to parameter 
+        limits, when these limits are set.
+        (See :ref:`Parameter Limits<ParameterLimits>` description
+        and :meth:`G2Project.set_Controls` for setting limits.)
         Note that use of this
         will cause the project to be saved if not already done so.
 
@@ -2916,7 +2920,10 @@ class G2Project(G2ObjectWrapper):
             return True
 
     def get_Frozen(self, histogram=None):
-        '''Gets a list of Frozen variables.
+        '''Gets a list of Frozen variables, where parameters are
+        frozen after refining outside the range where their values
+        are allowed due to parameter limits, when these limits are 
+        set. 
         (See :ref:`Parameter Limits<ParameterLimits>` description.)
         Note that use of this
         will cause the project to be saved if not already done so.
@@ -3010,8 +3017,11 @@ class G2Project(G2ObjectWrapper):
     def set_Controls(self, control, value, variable=None):
         '''Set project controls.
 
-        Note that use of this with control set to parmMin or parmMax
-        will cause the project to be saved if not already done so.
+        Controls determine how refinements are performed, including 
+        setting lower (parmMin) or upper limits (parmMax) values
+        for parameters where you choose to set refinement limits.
+        Note that use of this with to set to parmMin or parmMax
+        will cause the project to be saved, if not already done so.
 
         :param str control: the item to be set. See below for allowed values.
         :param value: the value to be set.
@@ -3029,8 +3039,9 @@ class G2Project(G2ObjectWrapper):
           Ignored for non-sequential fits.
         * ``'Reverse Seq'``: when True, sequential refinement is performed on the
           reversed list of histograms.
-        * ``'parmMin'`` & ``'parmMax'``: set a maximum or minimum value for a refined
-          parameter. Note that variable will be a GSAS-II variable name,
+        * ``'parmMin'`` & ``'parmMax'``: set a minimum or maximum value
+          for a refined
+          parameter. Note that *variable* will be a GSAS-II variable name,
           optionally with * specified for a histogram or atom number and
           value must be a float.
           (See :ref:`Parameter Limits<ParameterLimits>` description.)

@@ -566,6 +566,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                 # add indirectly computed uncertainties into the esd dict
                 sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
                 G2stIO.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
+                # check for variables outside their allowed range, reset and freeze them
+                frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
                 G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
                 G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
                 G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
@@ -573,8 +575,6 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                 G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,
                     pFile=printFile,covMatrix=covMatrix,varyList=varyList)
                 G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
-                # check for variables outside their allowed range, reset and freeze them
-                frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
                 # covData['depSig'] = G2stIO.PhFrExtPOSig  # created in G2stIO.SetHistogramData, no longer used?
                 covData['depSigDict'] = {i:(parmDict[i],sigDict[i]) for i in parmDict if i in sigDict}
                 if len(frozen):
@@ -1201,17 +1201,20 @@ def dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList):
     if parmMinDict or parmMaxDict:
         for name in varyList:
             if name not in parmDict: continue
+            atmParNam  = name
+            if name.split(':')[2].startswith('dA'):
+                atmParNam = name.replace(':dA',':A')
             n,val = G2obj.prmLookup(name,parmMinDict)
             if n is not None:
-                if parmDict[name] < parmMinDict[n]:
-                    parmDict[name] = parmMinDict[n]
+                if parmDict[atmParNam] < parmMinDict[n]:
+                    parmDict[atmParNam] = parmMinDict[n]
                     sigDict[name] = 0.0
                     freeze.append(name)
                     continue
             n,val = G2obj.prmLookup(name,parmMaxDict)
             if n is not None:
-                if parmDict[name] > parmMaxDict[n]:
-                    parmDict[name] = parmMaxDict[n]
+                if parmDict[atmParNam] > parmMaxDict[n]:
+                    parmDict[atmParNam] = parmMaxDict[n]
                     sigDict[name] = 0.0
                     freeze.append(name)
                     continue

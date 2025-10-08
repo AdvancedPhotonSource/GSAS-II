@@ -3494,12 +3494,25 @@ class G2PwdrData(G2ObjectWrapper):
     def add_back_peak(self,pos,int,sig,gam,refflags=[]):
         '''Adds a background peak to the Background parameters
 
+        Background in diffraction patterns is usually fit 
+        with a slowly varying smooth function, such as a Chebyschev
+        polynomial, but when the background contains broad peaks
+        (for example from a Kapton sample container) those peaks
+        are usually better fit by adding extra peaks to the
+        smooth background function rather that providing enough 
+        parameters to the smooth function in order fit the
+        peak(s). Note that background peaks are typically treated 
+        as Gaussian only (``gam``=0) with very large ``sig`` 
+        values (>1000). Normally one should refine ``int`` and 
+        then ``sig`` and only after the background peak is well 
+        fit can one refine the ``pos`` value. 
+
         :param float pos: position of peak, a 2theta or TOF value
         :param float int: integrated intensity of background peak, usually large
         :param float sig: Gaussian width of background peak, usually large
-        :param float gam: Lorentzian width of background peak, usually unused (small)
+        :param float gam: Lorentzian width of background peak, usually not used (small)
         :param list refflags: a list of 1 to 4 boolean refinement flags for
-            pos,int,sig & gam, respectively (use [0,1] to refine int only).
+            pos,int,sig & gam, respectively (e.g. use [0,1] to refine int only).
             Defaults to [] which means nothing is refined.
         '''
         if 'peaksList' not in self.Background[1]:

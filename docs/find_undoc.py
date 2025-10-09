@@ -6,7 +6,7 @@ import os.path
 import git
 
 # get list of documented files (misses out on data files -- with no functions or classes)
-import glob
+#import glob
 loc = os.path.dirname(os.path.realpath(__file__)) # where is the documentation?
 G2loc = os.path.join(loc,'..')
 
@@ -16,7 +16,11 @@ documented = []
 for fil in glob.glob(os.path.join(loc,'source/*.rst')):
     for line in open(fil,'r').readlines():
         if line.strip().startswith('.. automodule::'):
-            documented.append(line.strip().split('::')[1].strip())
+            name = line.strip().split('::')[1].strip()
+            for prefix in ('GSASII.','tests.','imports.','exports.','install.'):
+                if name.startswith(prefix):
+                    name = name.replace(prefix,'')
+            documented.append(name)
 
 undoc = []
 G2repo = git.Repo(G2loc)
@@ -24,9 +28,13 @@ for entry in G2repo.commit().tree.traverse():
     fil = entry.path
     if not fil.endswith('.py'): continue
     if os.path.dirname(fil) not in (
-            'GSASII','GSASII/imports','GSASII/exports','GSASII/install'):
+            'GSASII','GSASII/imports','GSASII/exports',
+            #'GSASII/install',
+            'tests'):
         continue
-    if os.path.splitext(os.path.split(fil)[1])[0] in documented:
+    sfil = os.path.splitext(os.path.split(fil)[1])[0]
+    if sfil.startswith('__'): continue
+    if sfil in documented:
         #print(fil+' doc')
         continue
     else:

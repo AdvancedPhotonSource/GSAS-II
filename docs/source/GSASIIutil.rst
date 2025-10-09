@@ -148,9 +148,39 @@ John Badger, J. Appl. Cryst. (2019) 52, 937-944.
 *tutorialIndex: index to GSAS-II tutorials*
 --------------------------------------------
 
+The file `tutorialIndex.py` provides information on what tutorials
+are currently available in GSAS-II. The information on this is placed
+in this file and all indices to tutorials are generated from this.
+
 tutorialIndex Contents
 ------------------------------------
 
 .. automodule:: GSASII.tutorialIndex
+    :members: 
+
+--------------------------------------------
+*k_vector_search: k-vector utilities*
+--------------------------------------------
+
+This contains routines used to perform k-vector (magnetic scattering
+lattice expansion) determination. 
+
+k_vector_search Contents
+------------------------------------
+
+.. automodule:: GSASII.k_vector_search
+    :members: 
+
+--------------------------------------------
+*pathHacking utilities*
+--------------------------------------------
+
+When GSAS-II is installed via Git (gsas2main for example, as opposed
+to pixi), the location of GSAS-II is "outside" the Python file
+structure. It then becomes necessary to set the Python `sys.path`
+variable to find GSAS-II files. This practice is discouraged and
+commands to do this are "exiled" to file `pathHacking.py`.
+
+.. automodule:: GSASII.pathHacking
     :members: 
 

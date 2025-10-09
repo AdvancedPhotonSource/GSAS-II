@@ -341,6 +341,15 @@ A short routine to read in a phase from an xyz Cartesian coordinate file
 .. automodule:: GSASII.imports.G2phase_xyz
     :members: 
 
+*Module G2phase_RRUFF: read from RRUFF database*
+-------------------------------------------------------
+
+A short routine to read in a phase from the RRUFF database
+in the native format it uses.
+
+.. automodule:: GSASII.imports.G2phase_RRUFF
+    :members: 
+
 ======================================
  Powder Data Importer Routines
 ======================================
@@ -442,6 +451,16 @@ column-oriented variable. The only allowed extensions for this are
 ----------------------------------------------------------------
 
 .. automodule:: GSASII.imports.G2pwd_rigaku
+    :members:
+
+*Module G2pwd_MIDAS: Read integration results from MIDAS*
+----------------------------------------------------------------
+
+The MIDAS package can be used on to read and integrate images,
+particularly at APS Sector 1. This importer reads the Zarr container
+files created by MIDAS. 
+
+.. automodule:: GSASII.imports.G2pwd_MIDAS
     :members:
 
 
@@ -610,6 +629,14 @@ images, all are read.
 .. automodule:: GSASII.imports.G2img_SFRM
     :members: 
 
+*Module G2img_pixirad_1ID_16bit: Pixirad detector*
+----------------------------------------------------------------
+
+Reads images from the pixirad detector in use as APS Sector 1. 
+
+.. automodule:: GSASII.imports.G2img_pixirad_1ID_16bit
+    :members:
+
 
 ======================================================
  Pair Distribution Function (PDF) Importer Routines
@@ -659,3 +686,8 @@ file.
 .. automodule:: GSASII.imports.G2rfd_Panalytical
     :members: 
 
+*Module G2rdf_rigaku: reflectometry data from a Rigaku file*
+----------------------------------------------------------------
+
+.. automodule:: GSASII.imports.G2rfd_rigaku
+    :members:

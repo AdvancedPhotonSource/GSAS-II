@@ -2559,6 +2559,7 @@ def UpdateInstrumentGrid(G2frame,data):
         Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         xye = ma.array(ma.getdata(Pattern[1]))
         cw = np.diff(xye[0])
+        fitPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         IndexPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
         if 'Debye' not in Sample['Type']:

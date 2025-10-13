@@ -3292,24 +3292,26 @@ def PlotPeakWidths(G2frame,PatternName=None):
         sGp = []
         Wp = []
         Qp = []
+        sQp = []
         for ip,peak in enumerate(peaks):
             Qp.append(2.*np.pi*difC/peak[0])
+            sQp.append(2.*np.pi*difC*peakEsds.get('pos%d'%ip,0.0)/peak[0]**2)
             Ap.append(peak[4])
             sAp.append(peakEsds.get('alp%d'%ip,0.0))
             Bp.append(peak[6])
             sBp.append(peakEsds.get('bet%d'%ip,0.0))
-            sp = 1.17741*np.sqrt(peak[8])/peak[0]
+            sp = 0.5*sq8ln2*np.sqrt(peak[8])/peak[0]
             Sp.append(sp)     #sqrt(8ln2)/2
-            sSp.append(0.5*sp*peakEsds.get('sig%d'%ip,0.0)/peak[8])
+            sSp.append(0.25*sq8ln2*peakEsds.get('sig%d'%ip,0.0)/(np.sqrt(peak[8])*peak[0]))
             Gp.append(peak[10]/peak[0])
             sGp.append(peakEsds.get('gam%d'%ip,0.0)/peak[0])
 
         if Qp:
             if G2frame.ErrorBars:
-                Plot.errorbar(Qp,Ap,yerr=sAp,fmt='r+',capsize=2,label='A peak')
-                Plot.errorbar(Qp,Bp,yerr=sBp,fmt='+',color='orange',capsize=2,label='B peak')
-                Plot.errorbar(Qp,Sp,yerr=sSp,fmt='b+',capsize=2,label='G peak')
-                Plot.errorbar(Qp,Gp,yerr=sGp,fmt='m+',capsize=2,label='L peak')                
+                Plot.errorbar(Qp,Ap,xerr=sQp,yerr=sAp,fmt='r+',capsize=2,label='A peak')
+                Plot.errorbar(Qp,Bp,xerr=sQp,yerr=sBp,fmt='+',color='orange',capsize=2,label='B peak')
+                Plot.errorbar(Qp,Sp,xerr=sQp,yerr=sSp,fmt='b+',capsize=2,label='G peak')
+                Plot.errorbar(Qp,Gp,xerr=sQp,yerr=sGp,fmt='m+',capsize=2,label='L peak')                
             else:
                 Plot.plot(Qp,Ap,'+',color='r',label='A peak')
                 Plot.plot(Qp,Bp,'+',color='orange',label='B peak')
@@ -3411,6 +3413,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
 
         Xp = []
+        sXp = []
         Yp = []
         sYp = []
         Zp = []
@@ -3419,6 +3422,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         for ip,peak in enumerate(peaks):
             tpd = tand(peak[0]/2.)
             Xp.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
+            sXp.append(2.0*math.pi*cosd(peak[0]/2.0)*peakEsds.get('pos%d'%ip,0.0)/lam)
             try:
                 s = math.sqrt(peak[isig])*math.pi/18000.
             except ValueError:
@@ -3427,14 +3431,14 @@ def PlotPeakWidths(G2frame,PatternName=None):
             G = G2pwd.getgamFW(g,s)         #/2.
             yp = sq8ln2*s
             Yp.append(yp/tpd)
-            sYp.append((math.pi/36000.)*peakEsds.get('sig%d'%ip,0.0)/yp)
+            sYp.append(0.5*sq8ln2*(math.pi/18000.)**2*peakEsds.get('sig%d'%ip,0.0)/(s*tpd))
             Zp.append(g/tpd)
             sZp.append((math.pi/18000.)*peakEsds.get('gam%d'%ip,0.0)/tpd)
             Wp.append(G/tpd)
         if len(peaks):
             if G2frame.ErrorBars:
-                Plot.errorbar(Xp,Yp,yerr=sYp,fmt='r+',capsize=2,label='G peak')
-                Plot.errorbar(Xp,Zp,yerr=sZp,fmt='g+',capsize=2,label='L peak')                                
+                Plot.errorbar(Xp,Yp,xerr=sXp,yerr=sYp,fmt='r+',capsize=2,label='G peak')
+                Plot.errorbar(Xp,Zp,xerr=sXp,yerr=sZp,fmt='g+',capsize=2,label='L peak')                                
             else:
                 Plot.plot(Xp,Yp,'+',color='r',label='G peak')
                 Plot.plot(Xp,Zp,'+',color='g',label='L peak')

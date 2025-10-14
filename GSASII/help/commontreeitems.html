@@ -1738,7 +1738,8 @@ The rest of the line is ignored, but it is convenient to follow the example belo
    Note that quantity <code>"Weight factor" * (obs-calc) / esd</code> determines the impact of the restraint, 
    so the esd values are on an arbitrary scale. </li>
 </ol>
-<p>Spacing between columns does not matter and columns do not need to be aligned. 
+<p>If the columns are reorganized and the header changed to match, the code should be able to change to match, but this has not been tested. 
+Spacing between columns does not matter and columns do not need to be aligned. 
 With a file such as the one below, that contains both distances and angles, the file must be 
 read in twice, using the <strong>Add MOGUL restraints</strong> menu command from both the Bond tab and 
 the Angle tab to read in both sets of restraints. Blank lines are ignored. Note that only restraints

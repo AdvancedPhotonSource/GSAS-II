@@ -422,6 +422,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#importing-restraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing Restraints
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1467,6 +1476,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#importing-restraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing Restraints
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1668,12 +1686,21 @@ A set of controls is provided for control of single-crystal refinements. These o
 <li>You can change the search range used to find the bonds/angles that meet your criteria for restraint.</li>
 <li>You can examine the table of restraints and change individual values; grayed out regions cannot be changed. The 'calc' values are determined from the atom positions in your structure, 'obs' values are the target values for the restraint and 'esd' is the uncertainty used to weight the restraint in the refinement (multiplied by the weight factor).</li>
 <li>
-<p>Menu 'Edit' – some entries may be grayed out if not appropriate for your phase or for the selected restraint.</p>
+<p>Menu <strong>Edit</strong> – has the menu commands listed below. Note that some entries may be grayed out, if not appropriate for your phase or for the selected restraint.</p>
 <ul>
 <li><strong>Add restraints</strong> - this takes you through a sequence of dialog boxes which ask for the identities of the atoms involved in the restraint and the value to be assigned to the restraint. The esd is given a default value which can be changed after the restraints are created.</li>
-<li><strong>Add residue restraints</strong> - if the phase is a 'macromolecule' then develop the restraints from a selected 'macro' file based on those used in GSAS for this purpose. A file dialog box is shown directed to /GSASIImacros; be sure to select the correct file.</li>
-<li><strong>Add MOGUL restraints</strong> - add restraints in the style of the MOGUL program</li>
-<li><strong>Plot residue restraints</strong> - if the phase is a 'macromolecule' and the restraint type is either 'Torsion restraints' or 'Ramachandran restraints', then a plot will be made of the restraint distribution; torsions as 1-D plots of angle vs. pseudopotential energy and Ramachandran ones as 2-D plot of psi vs phi. In each case a dialog box will appear asking for the residue types or specific torsion angles to plot. Each plot will show the observed distribution (blue) obtained from a wide variety of high-resolution protein structures and those found (red dots) for your structure. The restraints are based on a pseudopotential (red curve or contours – favorable values at the peaks) which has been developed from the observed distributions for each residue type.</li>
+<li>
+<p><strong>Add residue restraints</strong> - if the phase is a 'macromolecule' then develop the restraints from a selected 'macro' file based on those used in GSAS for this purpose. A file dialog box is shown directed to /GSASIImacros; be sure to select the correct file.</p>
+</li>
+<li>
+<p><strong>Add MOGUL restraints</strong> - add restraints from a file produced by the CCDC's MOGUL program or a file prepared 
+in that style. <a href="#RestraintImports">See below</a> for more information on importing restraints. 
+Note that when used from the Bond tab, only "bond" entries are read and when used from the 
+Angle tab, only "angle" entries are read.</p>
+</li>
+<li>
+<p><strong>Plot residue restraints</strong> - if the phase is a 'macromolecule' and the restraint type is either 'Torsion restraints' or 'Ramachandran restraints', then a plot will be made of the restraint distribution; torsions as 1-D plots of angle vs. pseudopotential energy and Ramachandran ones as 2-D plot of psi vs phi. In each case a dialog box will appear asking for the residue types or specific torsion angles to plot. Each plot will show the observed distribution (blue) obtained from a wide variety of high-resolution protein structures and those found (red dots) for your structure. The restraints are based on a pseudopotential (red curve or contours – favorable values at the peaks) which has been developed from the observed distributions for each residue type.</p>
+</li>
 <li><strong>Change value</strong> - this changes the 'obsd' value for selected restraints; a dialog box will appear asking for the new value.</li>
 <li><strong>Change esd</strong> - this changes the 'esd' value for selected restraints; a dialog box will appear asking for the new value.</li>
 <li><strong>Delete restraints</strong> - this deletes selected restraints from the list. A single click in the blank box in the upper left corner of the table will select/deselect all restraints.</li>
@@ -1689,6 +1716,44 @@ A set of controls is provided for control of single-crystal refinements. These o
 <li><strong>Chem. Comp.</strong>: This is of use when "Frac" parameters (atom occupancies) are refined. This option allows a variety of different types of restraints to be created. More than one chemical composition restraint can be defined for a phase. Examples of how this might be used would be to "push" refinement towards an expected composition, to encourage charge balance or to conserve valences. </li>
 <li><strong>General</strong>: This allows a quantity to be restrained that is computed from a user-supplied equation, based on GSAS-II parameters. Thus, one can create any type of restraint that is desired. This restraint is used by supplying a Python equation and then to define which GSAS-II parameter is associated with each variable in the Python equation. One also supplies the target value for the restraint. Note that it is possible to use externally defined functions that contain "if" statements, which allows restraints that enforce minimum or maximum quantities rather than target values to be defined. </li>
 </ul>
+<p><a name="RestraintImports"></a></p>
+<h3 id="importing-restraints">Importing Restraints</h3>
+<p>For the  <strong>Add MOGUL restraints</strong> menu command, restraints are read from a supplied file. 
+The file produced by the MOGUL program has many columns, but only the first 8 are used here and a few of those do not matter. 
+If producing the file manually or with your own software, follow the following instructions. 
+The first line in the file must be a header, which must start with "Type" (note capitalization). 
+The rest of the line is ignored, but it is convenient to follow the example below. </p>
+<p>Subsequent lines should contain:</p>
+<ol>
+<li>The first column (Type) should be "bond" or "angle"</li>
+<li>The second column (Molecule)  is ignored. It can be blank, but a comma to end the field is required</li>
+<li>The third column (Fragment) specifies the atoms in the distance or angle. 
+   The atoms should be separated by at least one space. For an angle the second listed atom is the one 
+   at the apex of the angle. Capitalization of the atom name must match the name used in the atoms table. </li>
+<li>The fourth column (Classification) can be anything other than "No hits" </li>
+<li>The fifth column (No. of hits) is ignored. It can be blank, but a comma to end the field is required</li>
+<li>The sixth column (Query value) is ignored. It can be blank, but a comma to end the field is required</li>
+<li>The seventh column (Mean) is the bond distance or bond angle used in the restraint, labeled "target" in the table.</li>
+<li>The eighth column (Std. dev.) is the uncertainty on the bond distance or bond angle labeled "esd" in the table. 
+   Note that quantity <code>"Weight factor" * (obs-calc) / esd</code> determines the impact of the restraint, 
+   so the esd values are on an arbitrary scale. </li>
+</ol>
+<p>Spacing between columns does not matter and columns do not need to be aligned. 
+With a file such as the one below, that contains both distances and angles, the file must be 
+read in twice, using the <strong>Add MOGUL restraints</strong> menu command from both the Bond tab and 
+the Angle tab to read in both sets of restraints. Blank lines are ignored. Note that only restraints
+between atoms within the asymmetric unit can be generated with this type of file. If symmetry or translations are 
+needed to generate any of the atoms in the distance or angle, the <strong>Add restraints</strong> menu command must
+be used to search.</p>
+<p>This is an example file to be used to read in restraints:</p>
+<pre><code>Type, Molecule,    Fragment,  Classification, No. of hits, Query value,  Mean,   Std. dev.
+bond,   ignore,    Co1 O16,     OK,           ignore,      ignore,      2.060,     0.001
+bond,   ignore,    Co1 O20,     OK,           ignore,      ignore,      2.069,     0.001
+
+angle,  ignore,    N15 C8 C9,   OK,           ignore,      ignore,      123.38,    0.01
+angle,  ignore,    C9 C10 C11,  OK,           ignore,      ignore,      116.18,    0.01
+angle,  ignore,    C11 C12 N15, OK,           ignore,      ignore,      123.91,    0.02
+</code></pre>
 <p><a name="Rigidbodies"></a>
 <a name="Rigid_bodies"></a></p>
 <h2 id="rigid-bodies">Rigid bodies</h2>

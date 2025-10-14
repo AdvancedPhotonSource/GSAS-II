@@ -344,6 +344,7 @@ def UpdateRestraints(G2frame,data,phaseName):
     def AddMogulBondRestraint(bondRestData):
         mogul,colNums = getMOGULFile()
         badNames = []
+        badLines = []
         badCount = 0
         for line in mogul:
             items = line.split(',')
@@ -361,20 +362,29 @@ def UpdateRestraints(G2frame,data,phaseName):
                     badCount += 1
                     badNames.append(tName)
                     continue
-                if items[colNums[2]] != 'No hits':
-                    dist = float(items[colNums[4]])
-                    esd = float(items[colNums[5]])
-                else:
-                    dist = float(items[colNums[3]])
-                    esd = 0.02
+                try:
+                    if items[colNums[2]] != 'No hits':
+                        dist = float(items[colNums[4]])
+                        esd = float(items[colNums[5]])
+                    else:
+                        dist = float(items[colNums[3]])
+                        esd = 0.02
+                except:
+                    badLines.append(line.strip()[:15])
+                    continue
                 newBond = [[Ids[oInd],Ids[tInd]],['1','1'],dist,esd]
                 if newBond not in bondRestData['Bonds']:
                     bondRestData['Bonds'].append(newBond)              
         UpdateBondRestr(bondRestData)
+        msg = ''
         if badNames:
-            msg = f'{badCount} restraints were skipped beccause these atom(s) were not found: {" ".join(set(badNames))}'
+            msg += f'{badCount} restraints were skipped because these atom(s) were not found: {" ".join(set(badNames))}. '
+        if badLines:
+            msg += f'{len(badLines)} restraints were skipped because these lines(s) could not be read: {badLines}. '
+        if msg:
             wx.GetApp().Yield()
-            G2G.G2MessageBox(G2frame,msg,'Missing atoms')
+            G2G.G2MessageBox(G2frame,msg,'Read problems')
+
     def AddAngleRestraint(angleRestData):
         Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'])))
         Lists = {'A-atom':[],'B-atom':[],'C-atom':[]}
@@ -511,23 +521,34 @@ def UpdateRestraints(G2frame,data,phaseName):
         
     def AddMogulAngleRestraint(angleRestData):
         mogul,colNums = getMOGULFile()
+        badLines = []
         for line in mogul:
             items = line.split(',')
             if 'angle' == items[colNums[0]]:
-                aName,bName,cName = items[colNums[1]].split()
-                aInd = Names.index(aName)
-                bInd = Names.index(bName)
-                cInd = Names.index(cName)
-                if items[colNums[2]] != 'No hits':
-                    angle = float(items[colNums[4]])
-                    esd = float(items[colNums[5]])
-                else:
-                    angle = float(items[colNums[3]])
-                    esd = 2.00
-                newAngle = [[Ids[aInd],Ids[bInd],Ids[cInd]],['1','1','1'],angle,esd]
-                if newAngle not in angleRestData['Angles']:
-                    angleRestData['Angles'].append(newAngle)              
-        UpdateAngleRestr(angleRestData)                
+                try:
+                    aName,bName,cName = items[colNums[1]].split()
+                    aInd = Names.index(aName)
+                    bInd = Names.index(bName)
+                    cInd = Names.index(cName)
+                    if items[colNums[2]] != 'No hits':
+                        angle = float(items[colNums[4]])
+                        esd = float(items[colNums[5]])
+                    else:
+                        angle = float(items[colNums[3]])
+                        esd = 2.00
+                    newAngle = [[Ids[aInd],Ids[bInd],Ids[cInd]],['1','1','1'],angle,esd]
+                    if newAngle not in angleRestData['Angles']:
+                            angleRestData['Angles'].append(newAngle)
+                except:
+                    badLines.append(line.strip()[:30])
+                    print(f'Error reading line {line.strip()!r}')
+        UpdateAngleRestr(angleRestData)
+        msg = ''
+        if badLines:
+            msg += f'{len(badLines)} restraints were skipped because these lines(s) could not be read: {badLines}. '
+        if msg:
+            wx.GetApp().Yield()
+            G2G.G2MessageBox(G2frame,msg,'Read problems')
 
     def AddPlaneRestraint(restrData):
         ids = []

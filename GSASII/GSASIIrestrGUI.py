@@ -98,8 +98,9 @@ def UpdateRestraints(G2frame,data,phaseName):
         return macro        #advanced past 1st line
         
     def getMOGULFile():
-        colNums = [0,2,3,5,6,7] # location for these fields:
-        # Type, Fragment, No. of hits, Query value, Mean, Std. dev.
+        colNums = [0,2,3,5,6,7] # default location for these fields:
+        # Type, Fragment, Classification, Query value, Mean, Std. dev.
+        # but potentially overridden below
         dlg = wx.FileDialog(G2frame,message='Choose MOGUL csv file',
             defaultDir='.',defaultFile="",wildcard="MOGUL csv file (*.csv)|*.csv",
             style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
@@ -114,8 +115,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                     print ('**** ERROR - file selected is not a MOGUL csv file, try again ****')
                     mogul = []
                 else:
-                    for i,k in enumerate(('Type','Fragment',
-                            'No. of hits','Query value','Mean','Std. dev.')):
+                    for i,k in enumerate(('Type','Fragment','Classification',
+                            'Query value','Mean','Std. dev.')):
                         try:
                             colNums[i] = head.split(',').index(k)
                         except ValueError:
@@ -370,7 +371,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                         dist = float(items[colNums[3]])
                         esd = 0.02
                 except:
-                    badLines.append(line.strip()[:15])
+                    print(f'Error reading line {line.strip()!r}')
+                    badLines.append(line.strip()[:30])
                     continue
                 newBond = [[Ids[oInd],Ids[tInd]],['1','1'],dist,esd]
                 if newBond not in bondRestData['Bonds']:
@@ -378,9 +380,10 @@ def UpdateRestraints(G2frame,data,phaseName):
         UpdateBondRestr(bondRestData)
         msg = ''
         if badNames:
-            msg += f'{badCount} restraints were skipped because these atom(s) were not found: {" ".join(set(badNames))}. '
+            msg += f'{badCount} restraints were skipped because these atom(s) were not found: {" ".join(set(badNames))}'
         if badLines:
-            msg += f'{len(badLines)} restraints were skipped because these lines(s) could not be read: {badLines}. '
+            lines = "\n".join(badLines)
+            msg += f'{len(badLines)} restraints were skipped because these lines(s) could not be read:\n{lines}. '
         if msg:
             wx.GetApp().Yield()
             G2G.G2MessageBox(G2frame,msg,'Read problems')
@@ -545,7 +548,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         UpdateAngleRestr(angleRestData)
         msg = ''
         if badLines:
-            msg += f'{len(badLines)} restraints were skipped because these lines(s) could not be read: {badLines}. '
+            lines = "\n".join(badLines)
+            msg += f'{len(badLines)} restraints were skipped because these lines(s) could not be read:\n{lines}'
         if msg:
             wx.GetApp().Yield()
             G2G.G2MessageBox(G2frame,msg,'Read problems')

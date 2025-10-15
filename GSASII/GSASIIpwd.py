@@ -2227,11 +2227,16 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
 
     def SetInstParms():
         dataType = Inst['Type'][0]
-        insNames = ['Lam',]
-        insVals = [G2mth.getWave(Inst),]
-        insVary = []
-        if Inst.get('Lam',[1.0,1.0,False])[2]:
-            insVary.append('Lam')
+        if 'T' in dataType:
+            insNames = []
+            insVals = []
+            insVary = []
+        else:
+            insNames = ['Lam',]
+            insVals = [G2mth.getWave(Inst),]
+            insVary = []
+            if Inst.get('Lam',[1.0,1.0,False])[2]:
+                insVary.append('Lam')
         for parm in Inst:
             if parm == 'Lam':
                 continue
@@ -2264,16 +2269,17 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
     def GetInstParms(parmDict,varyList):
         for name in Inst:
             Inst[name][1] = parmDict[name]
-        for name in Sample:
-            if name in ['DisplaceX','DisplaceY','Shift']: # for CW only
-                try:
-                    Sample[name][0] = parmDict[name]
-                except:
-                    pass
+        if Inst['Type'][0][2] in ['A','B','C']:        
+            for name in Sample:
+                if name in ['DisplaceX','DisplaceY','Shift']: # for CW only
+                    try:
+                        Sample[name][0] = parmDict[name]
+                    except:
+                        pass
 
     def InstPrint(sigDict):
         print ('Instrument/Sample Parameters:')
-        if 'C' in Inst['Type'][0] or 'B' in Inst['Type'][0]:
+        if Inst['Type'][0][2] in ['A','B','C']:
             ptfmt = "%12.6f"
         else:
             ptfmt = "%12.3f"
@@ -2288,17 +2294,18 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
                     sigstr += ptfmt % (sigDict[parm])
                 else:
                     sigstr += 12*' '
-        parmList = ['Shift',]
-        if 'Debye' in Sample['Type']:
-            parmList = ['DisplaceX','DisplaceY']
-        for parm in Sample:
-            if parm in parmList:
-                ptlbls += "%s" % (parm.center(12))
-                ptstr += ptfmt % (Sample[parm][0])
-                if parm in sigDict:
-                    sigstr += ptfmt % (sigDict[parm])
-                else:
-                    sigstr += 12*' '
+        if Inst['Type'][0][2] in ['A','B','C']:
+            parmList = ['Shift',]
+            if 'Debye' in Sample['Type']:
+                parmList = ['DisplaceX','DisplaceY']
+            for parm in Sample:
+                if parm in parmList:
+                    ptlbls += "%s" % (parm.center(12))
+                    ptstr += ptfmt % (Sample[parm][0])
+                    if parm in sigDict:
+                        sigstr += ptfmt % (sigDict[parm])
+                    else:
+                        sigstr += 12*' '
         print (ptlbls)
         print (ptstr)
         print (sigstr)
@@ -2312,9 +2319,6 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
                 shft = -0.5*const*(parmDict['DisplaceX']*npcosd(calcPos)+parmDict['DisplaceY']*npsind(calcPos))+parmDict['Zero']
             else:
                 shft = -2.0*const*(parmDict['Shift']*npcosd(calcPos/2.0)+parmDict['Zero'])
-            # DThX = npasind(10**-3*parmDict['DisplaceX']*npcosd(calcPos)/parmDict['radius'])
-            # DThY = -npasind(10**-3*parmDict['DisplaceY']*npsind(calcPos)/parmDict['radius'])
-            # shft = DThX+DThY+parmDict['Zero']
             return np.sqrt(peakWt)*(calcPos+shft-peakPos)
         else:
             return np.sqrt(peakWt)*(calcPos-peakPos)

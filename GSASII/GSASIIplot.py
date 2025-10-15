@@ -2392,7 +2392,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             found = XY[np.where(np.fabs(XY.T[0]-xpos) < 0.005*wid)]
             if len(found):
                 pos = found[0][1]
-                if 'C' in Inst['Type'][0]:
+                if Inst['Type'][0][2] in ['A','B','C']:
                     Page.SetToolTipString('position=%.4f'%(pos))
                 else:
                     Page.SetToolTipString('position=%.2f'%(pos))
@@ -2413,7 +2413,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Plot.set_title(Title,fontsize=14)
     Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
-    if 'C' in Inst['Type'][0]:
+    if Inst['Type'][0][2] in ['A','B','C']:
         Plot.set_ylabel(r'$\mathsf{\Delta(2\theta)}$',fontsize=14)
     else:
         Plot.set_ylabel(r'$\mathsf{\Delta}T/T$',fontsize=14)
@@ -2425,7 +2425,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             W = 0.
         Q = 2.*np.pi/X
         Yc = G2lat.Dsp2pos(Inst,X)
-        if 'C' in Inst['Type'][0]:
+        if Inst['Type'][0][2] in ['A','B','C']:
             Y = Y-Yc
             E = Sigs[ixy]
             bin = W/2.

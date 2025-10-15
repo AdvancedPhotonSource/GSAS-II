@@ -2562,9 +2562,6 @@ def UpdateInstrumentGrid(G2frame,data):
         fitPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         IndexPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
-        # if 'Debye' not in Sample['Type']:
-        #     G2frame.ErrorDialog('Cannot calibrate','Only apropriate for Debye-Scherrer geometry')
-        #     return
         if not len(IndexPeaks[0]):
             G2frame.ErrorDialog('Cannot calibrate','Index Peak List empty')
             return
@@ -2582,8 +2579,7 @@ def UpdateInstrumentGrid(G2frame,data):
             UpdateInstrumentGrid(G2frame,data)
             const = 0.0
             if data['Type'][0][2] in ['A','B','C']:
-                const = 18.e-2/(np.pi*Sample['Gonio. radius'])
-                # const = 10**-3/Sample['Gonio. radius']
+                const = 0.18/(np.pi*Sample['Gonio. radius'])
             XY = []
             Sigs = []
             for ip,peak in enumerate(IndexPeaks[0]):
@@ -2592,9 +2588,9 @@ def UpdateInstrumentGrid(G2frame,data):
                     binwid = cw[np.searchsorted(xye[0],peak[0])]
                     if const:
                         if 'Debye' in Sample['Type']:
-                            shft = -const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                            shft -= 0.5*const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
                         else:
-                            shft = -2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
+                            shft -= 2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
                     XY.append([peak[-1],peak[0]-shft,binwid])
                     Sigs.append(IndexPeaks[1][ip])
             if len(XY):

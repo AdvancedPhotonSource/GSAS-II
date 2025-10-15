@@ -2577,27 +2577,27 @@ def UpdateInstrumentGrid(G2frame,data):
             return
         if G2pwd.DoCalibInst(IndexPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
-            const = 0.0
-            if data['Type'][0][2] in ['A','B','C']:
-                const = 0.18/(np.pi*Sample['Gonio. radius'])
-            XY = []
-            Sigs = []
-            for ip,peak in enumerate(IndexPeaks[0]):
-                shft = 0.0
-                if peak[2] and peak[3]:
-                    binwid = cw[np.searchsorted(xye[0],peak[0])]
-                    if const:
-                        if 'Debye' in Sample['Type']:
-                            shft -= 0.5*const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
-                        else:
-                            shft -= 2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
-                    XY.append([peak[-1],peak[0]-shft,binwid])
-                    Sigs.append(IndexPeaks[1][ip])
-            if len(XY):
-                XY = np.array(XY)
-                G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
         else:
             G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement or refinement failed')
+        const = 0.0
+        if data['Type'][0][2] in ['A','B','C']:
+            const = 0.18/(np.pi*Sample['Gonio. radius'])
+        XY = []
+        Sigs = []
+        for ip,peak in enumerate(IndexPeaks[0]):
+            shft = 0.0
+            if peak[2] and peak[3]:
+                binwid = cw[np.searchsorted(xye[0],peak[0])]
+                if const:
+                    if 'Debye' in Sample['Type']:
+                        shft -= 0.5*const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                    else:
+                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
+                XY.append([peak[-1],peak[0]-shft,binwid])
+                Sigs.append(IndexPeaks[1][ip])
+        if len(XY):
+            XY = np.array(XY)
+            G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file

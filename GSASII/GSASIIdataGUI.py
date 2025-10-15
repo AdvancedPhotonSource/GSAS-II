@@ -3340,11 +3340,9 @@ If you continue from this point, it is quite likely that all intensity computati
         '''Used to sum images or powder patterns. Allows user to supply 
         scale factor(s) when summing data.
 
-        TODO: clean up the scrolling & resize on this dialog
-              Can we use the copy down button from CIF?
-        TODO: move it to GSASIIctrlGUI?
-        BHT: this class should not be in the middle of the (already too complex)
-        GSASIImain class. 
+        TODO: clean up the scrolling & resize on this dialog. Can we use the copy down button from CIF?
+        TODO: move it to GSASIIctrlGUI? (BHT) this class should not be in 
+        the middle of the (already too complex) GSASIImain class. 
         '''
         def __init__(self,parent,title,text,dataType,data,dataList,Limits=None):
             wx.Dialog.__init__(self,parent,-1,title,size=(400,250),
@@ -3736,8 +3734,8 @@ If you continue from this point, it is quite likely that all intensity computati
                             newimagefile = dlg.GetPath()
                             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
                             G2IO.PutG2Image(newimagefile,Comments,Data,Npix,newImage)
-                            Imax = np.amax(newImage)
-                            Imin = np.amin(newImage)
+                            Imax = int(np.amax(newImage))
+                            Imin = int(np.amin(newImage))
                             newImage = []
                             self.GPXtree.SetItemPyData(Id,[imSize,newimagefile])
                             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),Comments)

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 '''
-*Module G2img_1ID_32bit_TIFsum.py: 1ID normalized 16bit Pixirad TIF for rapid access measurement*
---------------------------------------------------
+*Module G2img_pixirad_1ID_16bit.py: 16-bit Pixirad TIF*
+----------------------------------------------------------
 
-Adaptation of G2img_1ID_32bit_TIFsum.py revision 4902 for use with the 1ID SAXS pixirad.
-
+Adaptation of G2img_1ID_32bit_TIFsum.py for use with the 1ID SAXS pixirad.
+Used at 1-ID with normalized 16bit Pixirad TIF for rapid access measurement
 '''
 
 from __future__ import division, print_function

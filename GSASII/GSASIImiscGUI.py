@@ -266,7 +266,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     TreeName = G2obj.MakeUniqueLabel(TreeLbl,ImgNames)
     Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=TreeName)
     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
-    Imax = np.amax(Image)
+    Imax = int(np.amax(Image))
     if G2frame.imageDefault:
         Data.update(copy.deepcopy(G2frame.imageDefault))
         Data['showLines'] = True

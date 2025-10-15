@@ -1781,24 +1781,6 @@ else:
         return
     return newfil
 
-# see if a directory for local modifications is defined. If so, stick that in the path
-if os.path.exists(os.path.expanduser('~/.G2local/')):
-    sys.path.insert(0,os.path.expanduser('~/.G2local/'))
-    fl = glob.glob(os.path.expanduser('~/.G2local/GSASII*.py*'))
-    files = ""
-    prev = None
-    for f in sorted(fl): # make a list of files, dropping .pyc files where a .py exists
-        f = os.path.split(f)[1]
-        if os.path.splitext(f)[0] == prev: continue
-        prev = os.path.splitext(f)[0]
-        if files: files += ", "
-        files += f
-    if files:
-        print("*"*75)
-        print("Warning: the following source files are locally overridden in "+os.path.expanduser('~/.G2local/'))
-        print("  "+files)
-        print("*"*75)
-
 BinaryPathFailed = False
 BinaryPathLoaded = False
 binaryPath = ''

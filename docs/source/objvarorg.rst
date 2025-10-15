@@ -1213,8 +1213,8 @@ Stress/Strain               Sample phi          (float) Sample rotation about ve
 .. index::
   Distance/Angle computation controls
 
-Controls used for Distance/Angle computation 
--------------------------------------------
+Controls used for Distance/Angle computation
+----------------------------------------------
 
 Two arrays are used as input to :func:`GSASIIstrMain.RetDistAngle` and
 :func:`GSASIIstrMain.PrintDistAngle`, DisAglCtls and DisAglData. 

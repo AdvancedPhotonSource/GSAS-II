@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 '''
-
-Routines for Phase dataframes follow. Only Update routines are here
+Routines for Phase dataframes follow. Only a few Update routines are here
 all others are in GSASIIphsGUI.py
 '''
 import os

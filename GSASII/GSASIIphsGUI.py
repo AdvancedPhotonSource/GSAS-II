@@ -13377,10 +13377,9 @@ tab, use Operations->"Pawley create")''')
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')
         
-    if nhist:   
-        G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
-        G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
-        Pages.append('RMC')
+    G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
+    G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
+    Pages.append('RMC')
 
     if dataGeneral['Type'] == 'nuclear':
         G2frame.ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)

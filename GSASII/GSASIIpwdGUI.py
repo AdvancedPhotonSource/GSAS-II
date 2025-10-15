@@ -2559,11 +2559,12 @@ def UpdateInstrumentGrid(G2frame,data):
         Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         xye = ma.array(ma.getdata(Pattern[1]))
         cw = np.diff(xye[0])
+        fitPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         IndexPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
-        if 'Debye' not in Sample['Type']:
-            G2frame.ErrorDialog('Cannot calibrate','Only apropriate for Debye-Scherrer geometry')
-            return
+        # if 'Debye' not in Sample['Type']:
+        #     G2frame.ErrorDialog('Cannot calibrate','Only apropriate for Debye-Scherrer geometry')
+        #     return
         if not len(IndexPeaks[0]):
             G2frame.ErrorDialog('Cannot calibrate','Index Peak List empty')
             return
@@ -2580,7 +2581,7 @@ def UpdateInstrumentGrid(G2frame,data):
         if G2pwd.DoCalibInst(IndexPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
             const = 0.0
-            if 'C' in data['Type'][0] or 'B' in data['Type'][0]:
+            if data['Type'][0][2] in ['A','B','C']:
                 const = 18.e-2/(np.pi*Sample['Gonio. radius'])
                 # const = 10**-3/Sample['Gonio. radius']
             XY = []
@@ -2590,7 +2591,10 @@ def UpdateInstrumentGrid(G2frame,data):
                 if peak[2] and peak[3]:
                     binwid = cw[np.searchsorted(xye[0],peak[0])]
                     if const:
-                        shft = -const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                        if 'Debye' in Sample['Type']:
+                            shft = -const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                        else:
+                            shft = -2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
                     XY.append([peak[-1],peak[0]-shft,binwid])
                     Sigs.append(IndexPeaks[1][ip])
             if len(XY):

@@ -44,9 +44,6 @@ from . import GSASIImath as G2mth
 #from . import GSASIIstrMain as G2stMn
 from . import GSASIImiscGUI as G2IO
 from .tutorialIndex import tutorialIndex
-if sys.version_info[0] >= 3:
-    unicode = str
-    basestring = str
 
 # Define a short names for convenience
 DULL_YELLOW = (230,230,190)
@@ -406,7 +403,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.type = int
         elif 'float' in str(type(val)):
             self.type = float
-        elif isinstance(val,str) or isinstance(val,unicode):
+        elif isinstance(val,str):
             self.type = str
         elif val is None:
             raise Exception("ValidatedTxtCtrl error: value of "+str(key)+
@@ -4762,11 +4759,7 @@ class ShowLSParms(wx.Dialog):
             self.frozenList = []
         # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
         self.parmNames = sorted(list(parmDict.keys()))
-        if '2' in platform.python_version_tuple()[0]:
-            basestr = basestring
-        else:
-            basestr = str
-        splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],basestr)]
+        splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],str)]
         globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
         if len(globNames):
             self.choiceDict['Global'] = G2obj.SortVariables(globNames)
@@ -5022,11 +5015,7 @@ class VirtualVarBox(wx.ListCtrl):
     def SetContents(self,parent):
         self.varList = []
         for name in parent.choiceDict[parent.parmChoice]:
-            if '2' in platform.python_version_tuple()[0]:
-                basestr = basestring
-            else:
-                basestr = str
-            if isinstance(parent.parmDict[name],basestr): continue
+            if isinstance(parent.parmDict[name],str): continue
             if 'Refined' in parent.listSel and (name not in parent.fullVaryList
                                               ) and (name not in parent.varyList):
                 continue
@@ -5281,19 +5270,24 @@ class VirtualVarBox(wx.ListCtrl):
     # Callbacks to display info in table
     def OnGetItemText(self, item, col):
         name = self.varList[item]
+        atmParNam  = None
+        if name.split(':')[2].startswith('dA'):
+            atmParNam = name.replace(':dA',':A')
         if col == 0:
             return str(item)
         elif col == 1:
+            if atmParNam: return atmParNam
             return name
         elif col == 2:
             if name in self.parmWin.fullVaryList and name in self.parmWin.frozenList:
-                    return "F"
+                return "F"
             elif name in self.parmWin.varyList:
                 return "R"
             elif name in self.parmWin.fullVaryList:
                 return "C"
             return ""
         elif col == 3:
+            if atmParNam: name = atmParNam
             try:
                 value = G2fil.FormatSigFigs(self.parmWin.parmDict[name])
             except ValueError:

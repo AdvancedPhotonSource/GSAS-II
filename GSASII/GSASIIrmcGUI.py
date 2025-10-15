@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Jul  6 14:27:24 2025
-
-@author: vondreele
-"""
-
-# -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 '''
 
-Routines for Phase/RMC follow. Only Update routines are here
-all others are in GSASIIphsGUI.py
+Routines for Phase/RMC follow. Only the UpdateRMC routine is here. 
+All others are in GSASIIphsGUI.py
 '''
 import os
 import wx

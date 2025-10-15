@@ -2434,8 +2434,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             else: # waterfall mode=3: plot 1st pattern like others, name in legend?
                                 name = Pattern[2]
                                 if Pattern[0].get('histTitle'): name = Pattern[0]['histTitle']
-                                ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=1.5,
-                                    picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn(name))    #Io
+                                ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker='',linewidth=1.5,
+                                    picker=False,clip_on=Clip_on,label=incCptn(name))    #Io
                         else:
                             Plot.plot(X,YB,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
                                 picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))

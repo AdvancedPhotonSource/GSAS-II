@@ -2044,10 +2044,12 @@ def UpdateMasks(G2frame,data):
                                              # was loaded rather than a search
         data['SpotMask']['spotMask'] = maskImage > 0
         nmasked = sum(data['SpotMask']['spotMask'].flatten())
-        frac = nmasked/data['SpotMask']['spotMask'].size
+        frac = 100*nmasked/data['SpotMask']['spotMask'].size
         G2G.G2MessageBox(G2frame,
                              f'Mask removes {nmasked} pixels ({frac:.3f}%)',
                              'Mask loaded')
+        wx.CallAfter(UpdateMasks,G2frame,data)
+        wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
 
     def OnFindPixelMask(event):
         '''Do auto search for pixels to mask

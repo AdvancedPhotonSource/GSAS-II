@@ -174,9 +174,9 @@ Far fewer packages are required to run GSAS-II on a
 compute server via the scripting interface
 and without a GUI.
 
-----------------
+------------------
  GUI Requirements
-----------------
+------------------
 
 When using the GSAS-II graphical user interface (GUI), the following
 Python extension packages are required:

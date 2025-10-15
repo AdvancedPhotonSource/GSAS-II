@@ -2227,26 +2227,37 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
 
     def SetInstParms():
         dataType = Inst['Type'][0]
+        insNames = ['Lam',]
+        insVals = [G2mth.getWave(Inst),]
         insVary = []
-        insNames = []
-        insVals = []
+        if Inst.get('Lam',[1.0,1.0,False])[2]:
+            insVary.append('Lam')
         for parm in Inst:
+            if parm == 'Lam':
+                continue
             insNames.append(parm)
             insVals.append(Inst[parm][1])
-            if parm in ['Lam','difC','difA','difB','Zero','2-theta','XE','YE','ZE']:
+            if parm in ['difC','difA','difB','Zero','2-theta','XE','YE','ZE']:
                 if Inst[parm][2]:
                     insVary.append(parm)
-        if 'C' in dataType or 'B' in dataType and 'Debye' in Sample['Type']:
+        if dataType[2] in ['A','B','C']:
             insNames.append('radius')
             insVals.append(Sample['Gonio. radius'])
-            insNames.append('DisplaceX')
-            insVals.append(Sample['DisplaceX'][0])
-            if Sample['DisplaceX'][1]:
-                insVary.append('DisplaceX')
-            insNames.append('DisplaceY')
-            insVals.append(Sample['DisplaceY'][0])
-            if Sample['DisplaceY'][1]:
-                insVary.append('DisplaceY')
+            if 'Debye' in Sample['Type']:
+                insNames.append('DisplaceX')
+                insVals.append(Sample['DisplaceX'][0])
+                if Sample['DisplaceX'][1]:
+                    insVary.append('DisplaceX')
+                insNames.append('DisplaceY')
+                insVals.append(Sample['DisplaceY'][0])
+                if Sample['DisplaceY'][1]:
+                    insVary.append('DisplaceY')
+            else:
+                insNames.append('Shift')
+                insVals.append(Sample['Shift'][0])
+                if Sample['Shift'][1]:
+                    insVary.append('Shift')
+            
         instDict = dict(zip(insNames,insVals))
         return dataType,instDict,insVary
 
@@ -2254,7 +2265,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
         for name in Inst:
             Inst[name][1] = parmDict[name]
         for name in Sample:
-            if name in ['DisplaceX','DisplaceY']: # for CW only
+            if name in ['DisplaceX','DisplaceY','Shift']: # for CW only
                 try:
                     Sample[name][0] = parmDict[name]
                 except:
@@ -2277,8 +2288,11 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
                     sigstr += ptfmt % (sigDict[parm])
                 else:
                     sigstr += 12*' '
+        parmList = ['Shift',]
+        if 'Debye' in Sample['Type']:
+            parmList = ['DisplaceX','DisplaceY']
         for parm in Sample:
-            if parm in  ['DisplaceX','DisplaceY']:
+            if parm in parmList:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Sample[parm][0])
                 if parm in sigDict:
@@ -2292,9 +2306,12 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
     def errPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
         parmDict.update(zip(varyList,values))
         calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
-        if 'C' in dataType or 'B' in dataType:
-            const = 18.e-2/(np.pi*parmDict['radius'])
-            shft = -const*(parmDict['DisplaceX']*npcosd(calcPos)+parmDict['DisplaceY']*npsind(calcPos))+parmDict['Zero']
+        if dataType[2] in ['A','B','C']:
+            const = 0.18/(np.pi*parmDict['radius'])
+            if 'Debye' in Sample['Type']:
+                shft = -0.5*const*(parmDict['DisplaceX']*npcosd(calcPos)+parmDict['DisplaceY']*npsind(calcPos))+parmDict['Zero']
+            else:
+                shft = -2.0*const*(parmDict['Shift']*npcosd(calcPos/2.0)+parmDict['Zero'])
             # DThX = npasind(10**-3*parmDict['DisplaceX']*npcosd(calcPos)/parmDict['radius'])
             # DThY = -npasind(10**-3*parmDict['DisplaceY']*npsind(calcPos)/parmDict['radius'])
             # shft = DThX+DThY+parmDict['Zero']

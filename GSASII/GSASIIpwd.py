@@ -2316,7 +2316,7 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
         if dataType[2] in ['A','B','C']:
             const = 0.18/(np.pi*parmDict['radius'])
             if 'Debye' in Sample['Type']:
-                shft = -0.5*const*(parmDict['DisplaceX']*npcosd(calcPos)+parmDict['DisplaceY']*npsind(calcPos))+parmDict['Zero']
+                shft = -const*(parmDict['DisplaceX']*npcosd(calcPos)+parmDict['DisplaceY']*npsind(calcPos))+parmDict['Zero']
             else:
                 shft = -2.0*const*(parmDict['Shift']*npcosd(calcPos/2.0)+parmDict['Zero'])
             return np.sqrt(peakWt)*(calcPos+shft-peakPos)

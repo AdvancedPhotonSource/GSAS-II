@@ -2319,9 +2319,9 @@ def DoCalibInst(IndexPeaks,Inst,Sample):
                 shft = -const*(parmDict['DisplaceX']*npcosd(calcPos)+parmDict['DisplaceY']*npsind(calcPos))+parmDict['Zero']
             else:
                 shft = -2.0*const*(parmDict['Shift']*npcosd(calcPos/2.0)+parmDict['Zero'])
-            return np.sqrt(peakWt)*(calcPos+shft-peakPos)
+            return peakWt*(calcPos+shft-peakPos)
         else:
-            return np.sqrt(peakWt)*(calcPos-peakPos)
+            return peakWt*(calcPos-peakPos)
 
     peakPos = []
     peakDsp = []

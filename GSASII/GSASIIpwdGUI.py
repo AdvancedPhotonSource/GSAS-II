@@ -1045,7 +1045,7 @@ def UpdatePeakGrid(G2frame, data):
         UpdatePeakGrid(G2frame,peaks)
         G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
 
-    def OnPeakFit(oneCycle=False,noFit=False):
+    def OnPeakFit(oneCycle=False,noFit=False,noPlot=False):
         'Do peak fitting by least squares'
         SaveState()
         controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
@@ -1100,7 +1100,8 @@ def UpdatePeakGrid(G2frame, data):
             bxye = GetFileBackground(G2frame,data,background,scale=False)
         if noFit:
             results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
-            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
+            if not noPlot:
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             return
         # try:
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101,parent=G2frame,
@@ -1199,7 +1200,7 @@ def UpdatePeakGrid(G2frame, data):
         else:
             event.Skip()
             return
-        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
+        # G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
 
     def SelectVars(rows):
@@ -1278,12 +1279,13 @@ def UpdatePeakGrid(G2frame, data):
 
     def RefreshPeakGrid(event):
         'recompute & plot the peaks any time a value in the table is edited'
+        col = event.GetCol()
         if 'LF' in Inst['Type'][0]:
             for i in range(len(data['LFpeaks'])):
                 data['peaks'][i][2:] = data['LFpeaks'][i]
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
         if data['peaks']:
-            OnPeakFit(noFit=True)
+            OnPeakFit(noFit=True,noPlot=col%2)
 
     def ToggleXtraMode(event):
         '''Switch "Extra Peak" mode in response to button'''

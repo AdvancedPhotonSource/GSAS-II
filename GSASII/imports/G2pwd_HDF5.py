@@ -162,6 +162,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
         Then get file type (currently MAX IV NeXus/NXazint[12]d only)
         '''
         try:
+            definition = ''
             fp = h5py.File(filename, 'r')
             # test for MaxIV NeXus/NXazint1d & NXazint2d
             test = True
@@ -171,8 +172,53 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 if entry is None: break # not NeXus
                 if 'definition' not in fp[entry]: break # not MaxIV NXazint*
                 definition = fp[entry+'/definition'][()].decode()
-                if definition == 'NXazint1d': return True
-                if definition == 'NXazint2d': return True
+                # get names for datasets so we can select them
+                if definition == 'NXazint1d':
+                    fileItems = {
+                        'I':('NXdata','I'),
+                        'unit':('NXparameters','unit'),
+                        }
+                    buffer = {}
+                    if not self.readInNeXus(filename,buffer,fileItems,'NXazint1d-validate'):
+                        return False
+                    nhist = len(buffer['I'])
+                    self.selections = list(range(nhist))
+                    for i in range(nhist):
+                        self.dnames.append(f'#{i} {os.path.split(filename)[1][:60]}')
+                    return True
+                if definition == 'NXazint2d':
+                    fileItems = {
+                        'I':('NXdata','I'),
+                        'unit':('NXparameters','unit'),
+                        'azimuthal_axis':('NXdata','azimuthal_axis'),
+                    }
+                    buffer = {}
+                    if not self.readInNeXus(filename,buffer,fileItems,'NXazint2d-validate'):
+                        return False
+                    #numazimuth = buffer['azimuth_bins']
+                    numazimuth = len(buffer['azimuthal_axis'])
+                    numbanks = len(buffer['I'])
+                    nhist = numbanks * numazimuth
+                    self.selections = list(range(nhist))
+                    for i in range(nhist):
+                        # group by parametric variable
+                        numScan = i // numazimuth
+                        numAzim = i - (numScan * numazimuth)
+                        Azimuth = buffer['azimuthal_axis'][numAzim]
+                        self.dnames.append(f'#{numScan} Azm={Azimuth} {os.path.split(filename)[1][:60]}')
+                    return True
+            # test for MaxIV NeXus combined NXazint1d & NXazint2d
+            test = True
+            while test:
+                test = False
+                entry = getNeXusBase(fp)
+                subentry = getNeXusEntry(fp,entry,'NXsubentry')
+                if len(subentry) == 0:
+                    break # nothing to read
+                for entry in subentry:
+                    definition = fp[entry+'/definition'][()].decode()
+                    if definition == 'NXazint1d' or definition == 'NXazint2d':
+                        return True
             # test for next HDF5 type here
             #
         except IOError: # not HDF5
@@ -210,44 +256,109 @@ class HDF5_Reader(G2obj.ImportPowderData):
             if entry: # NeXus
                 if 'definition' in fp[entry]: # MaxIV NXazint*
                     definition = fp[entry+'/definition'][()].decode()
-                    fpbuffer['definition'] = definition
-                    if definition == 'NXazint1d':
-                        return self.readNXazint1d(filename, fpbuffer)
-                    elif definition == 'NXazint2d':
-                        return self.readNXazint2d(filename, fpbuffer)
-            # not a supported file type
-            return False
+                else:
+                    subentry = getNeXusEntry(fp,entry,'NXsubentry')
+                    if len(subentry) == 0:
+                        return False
+                    elif len(subentry) == 1:
+                        entry = subentry[0]
+                    elif ParentFrame:
+                        from .. import GSASIIctrlGUI as G2G
+                        choices = ('NXazint1d 1D file','NXazint1d 2D file')
+                        sel = G2G.ItemSelector(choices, ParentFrame=ParentFrame,
+                                                   header='Select file section',
+                                                   title='Select the section of the file to read')
+                        if sel is None: return False
+                        entry = subentry[sel]
+                    else:
+                        entry = subentry[1]
+                    if 'definition' not in fp[entry]: return False
+                    definition = fp[entry+'/definition'][()].decode()
+                fpbuffer['definition'] = definition
+                if definition == 'NXazint1d':
+                    return self.readNXazint1d(filename, fpbuffer, entry)
+                elif definition == 'NXazint2d':
+                    return self.readNXazint2d(filename, fpbuffer, entry)
+            return False # not a supported file type
         except IOError:
-            print ('cannot open file '+ filename)
+            print (f'cannot open file {filename}')
             return False
         finally:
             fp.close()
-
         print (f'Unknown type of HDF5 powder file {filename}')
         return False
+    
+    # def FillBuffer(self,fp,fileItems,fpbuffer,nexusDict):
+    #     '''save selected items from file in buffer
+    #     '''
+    #     savedKeys = []
+    #     for k,loc in fileItems.items():
+    #         if nexusDict[loc[0]] is None:
+    #             fpbuffer[k] = None
+    #             continue
+    #         key = '/'.join((nexusDict[loc[0]],)+loc[1:])
+    #         savedKeys.append(key)
+    #         if key not in fp:
+    #             fpbuffer[k] = None
+    #             continue
+    #         val = fp[key]
+    #         if val.shape:
+    #             fpbuffer[k] = np.array(val)
+    #         elif 'float' in str(val.dtype):
+    #             fpbuffer[k] = float(val[()])
+    #             self.comments.append(f'{k}={val[()]}')
+    #         elif 'int' in str(val.dtype):
+    #             fpbuffer[k] = int(val[()])
+    #         else:
+    #             fpbuffer[k] = val[()].decode()
+    #             self.comments.append(f'{k}={fpbuffer[k]}')
+    #     self.numparams = len(fpbuffer['I'])
+    #     # save arrays that are potentially tracking the parametric conditions
+    #     # into ParamTrackingVars.
+    #     # e.g. variables with the same length as the humber of datasets
+    #     fpbuffer['ParamTrackingVars'] = {}
+    #     paramItems = []
+    #     for loc in nexusDict.values():
+    #         self.HDF5entries = []
+    #         paramItems = self.RecurseH5Element(fp[loc],length=self.numparams)
+    #         for i in paramItems:
+    #             for j in i:
+    #                 key = loc+'/'+'/'.join(j)
+    #                 print(key)
+    #                 obj = fp.get(key)
+    #                 if obj is None: continue
+    #                 if len(obj[()].shape) != 1: continue
+    #                 # are all values the same? If so, put them into the comments
+    #                 # for the first histogram only. If they are changing, note that 
+    #                 # here and later they will be put into every histogram.
+    #                 if all(obj[0] == obj):
+    #                     self.comments.append(f'{key.split("/")[-1]}={obj[0]}')
+    #                 else:
+    #                     fpbuffer['ParamTrackingVars'][key] = np.array(obj[()])
 
-    def readNXazint1d(self, filename, fpbuffer={}):
-        '''Read HDF5 file in NeXus as produced by MAX IV as a NXazint1d
-        see https://nxazint-hdf5-nexus-3229ecbd09ba8a773fbbd8beb72cace6216dfd5063e1.gitlab-pages.esrf.fr/classes/contributed_definitions/NXazint1d.html
+    #     breakpoint()
+    
+    #     paramItems = self.RecurseH5Element(fp,node=loc,length=self.numparams)
+    #     for i in paramItems:
+    #         for j in i:
+    #             key = '/'.join(j)
+    #             if key in savedKeys: continue # standard data array
+    #             obj = fp.get(key)
+    #             if obj is None: continue
+    #             if len(obj[()].shape) != 1: continue
+    #             # are all values the same? If so, put them into the comments
+    #             # for the first histogram only. If they are changing, note that 
+    #             # here and later they will be put into every histogram.
+    #             if all(obj[0] == obj):
+    #                 self.comments.append(f'{key.split("/")[-1]}={obj[0]}')
+    #             else:
+    #                 fpbuffer['ParamTrackingVars'][key] = np.array(obj[()])
+                    
+    def readInNeXus(self,filename,fpbuffer,fileItems,fmt,entry=None):
+        '''Read in items from NeXus labeled sections of the HDF5 file
         '''
-        #self.instmsg = 'HDF file'
         self.comments = []
         doread = False # has the file already been read into a buffer?
-        fileItems = {
-            # arrays
-            'radial_axis':('NXdata','radial_axis'),
-            'I':('NXdata','I'),
-            'I_errors':('NXdata','I_errors'),
-            # floats
-            'wavelength':('NXmonochromator','wavelength'),
-            'polarization_factor':('NXparameters','polarization_factor'),
-            # strings
-            'instrument/name':('NXinstrument','name'),
-            'unit':('NXparameters','unit'),
-            'sample/name':('NXsample','name'),
-            'source/name':('NXsource','name'),
-        }
-        # test if we have what we need in the buffer
         for k in fileItems:
             if k not in fpbuffer:                
                 doread = True
@@ -256,12 +367,14 @@ class HDF5_Reader(G2obj.ImportPowderData):
             # Nope, need to fill the buffer
             try:
                 fp = h5py.File(filename, 'r')
-                entry = getNeXusBase(fp)
-                # lookup NeXus locations
+                if entry is None: entry = getNeXusBase(fp)
+                # lookup keys for NeXus labels we will use
                 nexusDict = {i:None for i in set([i[0] for i in fileItems.values()])}
                 recurseNeXusEntries(fp,entry,nexusDict)
-                # save selected items from file in buffer
-                savedKeys = []
+                # save selected items from file into buffer
+                # convert all objects into values or non-HDF5 objects so file
+                # be closed
+                savedKeys = [] # things we will not need to save in the 2nd scan
                 for k,loc in fileItems.items():
                     if nexusDict[loc[0]] is None:
                         fpbuffer[k] = None
@@ -277,55 +390,55 @@ class HDF5_Reader(G2obj.ImportPowderData):
                     elif 'float' in str(val.dtype):
                         fpbuffer[k] = float(val[()])
                         self.comments.append(f'{k}={val[()]}')
+                    elif 'int' in str(val.dtype):
+                        fpbuffer[k] = int(val[()])
                     else:
                         fpbuffer[k] = val[()].decode()
                         self.comments.append(f'{k}={fpbuffer[k]}')
-                self.numbanks = len(fpbuffer['I'])
+                if fpbuffer['unit'] != '2th':
+                    print(f'{fmt} HDF5 file has units',fpbuffer['unit'])
+                    self.errors = f'{fmt} only can be read with 2theta units'
+                    return False
+                self.numparams = len(fpbuffer['I'])
                 # save arrays that are potentially tracking the parametric conditions
                 # into ParamTrackingVars.
                 # e.g. variables with the same length as the humber of datasets
-                fpbuffer['ParamTrackingVars'] = {}
-                paramItems = self.RecurseH5Element(fp,length=self.numbanks)
-                for i in paramItems:
-                    for j in i:
-                        key = '/'.join(j)
-                        if key in savedKeys: continue # standard data array
-                        obj = fp.get(key)
-                        if obj is None: continue
-                        if len(obj[()].shape) != 1: continue
-                        # are all values the same? If so, put them into the comments
-                        # for the first histogram only. If they are changing, note that 
-                        # here and later they will be put into every histogram.
-                        if all(obj[0] == obj):
-                            self.comments.append(f'{key.split("/")[-1]}={obj[0]}')
-                        else:
-                            fpbuffer['ParamTrackingVars'][key] = np.array(obj[()])
+                if 'validate' not in fmt:
+                    fpbuffer['ParamTrackingVars'] = {}
+                    paramItems = []
+                    for loc in nexusDict.values():
+                        self.HDF5entries = []
+                        paramItems = self.RecurseH5Element(fp[loc],length=self.numparams)
+                        for i in paramItems:
+                            for j in i:
+                                key = loc+'/'+'/'.join(j)
+                                print(key)
+                                obj = fp.get(key)
+                                if obj is None: continue
+                                if len(obj[()].shape) != 1: continue
+                                # are all values the same? If so, put them into the comments
+                                # for the first histogram only. If they are changing, note that 
+                                # here and later they will be put into every histogram.
+                                if all(obj[0] == obj):
+                                    self.comments.append(f'{key.split("/")[-1]}={obj[0]}')
+                                else:
+                                    fpbuffer['ParamTrackingVars'][key] = np.array(obj[()])
             except IOError:
                 print (f'Can not open or read file {filename}')
                 return False
             finally:
                 fp.close()
-            if fpbuffer['unit'] != '2th':
-                print('NXazint1d HDF5 file has units',fpbuffer['entry/reduction/input/unit'])
-                self.errors = 'NXazint1d only can be read with 2th units'
-                return False
             # initialize the block selection
             if self.selections is None or len(self.selections) == 0:
                 self.blknum = 0
             else:
                 self.blknum = min(self.selections)
-        # now pull the selected dataset from the buffer
-        x = fpbuffer['radial_axis']
-        y = fpbuffer['I'][self.blknum]
-        try:
-            esd = fpbuffer['I_errors'][self.blknum]
-            w = np.where(esd==0,0,np.nan_to_num(1/esd**2))
-        except:
-            w = np.nan_to_num(1/y)    # best we can do, alas w/o reported s.u.'s
-        self.powderdata = [x,y,w,np.zeros_like(x),np.zeros_like(x),np.zeros_like(x)]
+        return True
+
+    def FillInParametics(self,fpbuffer,count):
         # add parametric var as a comment
         for key,arr in fpbuffer['ParamTrackingVars'].items():
-            val = arr[self.blknum]
+            val = arr[count]
             self.comments.append(f'{key.split("/")[-1]}={val}')
             if 'temperature' in key:
                 self.Sample['Temperature'] = val # in K already
@@ -337,6 +450,43 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 self.Sample['Phi'] = val
             elif 'omega' in key:
                 self.Sample['Omega'] = val
+
+    def readNXazint1d(self, filename, fpbuffer={}, entry=None):
+        '''Read HDF5 file in NeXus as produced by MAX IV as a NXazint1d.
+        In this file, multiple scans are placed in a 2-D array (I and I_errors in 
+        section NXdata), where one dimension is 2-theta and the other is a parametric 
+        value such as temperature, time, etc. 
+
+        see https://nxazint-hdf5-nexus-3229ecbd09ba8a773fbbd8beb72cace6216dfd5063e1.gitlab-pages.esrf.fr/classes/contributed_definitions/NXazint1d.html
+        '''
+        #self.instmsg = 'HDF file'
+        fileItems = {
+            # arrays
+            'radial_axis':('NXdata','radial_axis'),
+            'I':('NXdata','I'),
+            'I_errors':('NXdata','I_errors'),
+            # floats
+            'wavelength':('NXmonochromator','wavelength'),
+            'polarization_factor':('NXparameters','polarization_factor'),
+            # strings
+            'instrument/name':('NXinstrument','name'),
+            'unit':('NXparameters','unit'),
+            'sample/name':('NXsample','name'),
+            'source/name':('NXsource','name'),
+        }
+        # test if we have what we need in the buffer and if not read it in
+        if not self.readInNeXus(filename,fpbuffer,fileItems,'NXazint1d',entry): return False
+        # now pull the selected dataset from the buffer
+        self.numbanks = self.numparams 
+        x = fpbuffer['radial_axis']
+        y = fpbuffer['I'][self.blknum]
+        try:
+            esd = fpbuffer['I_errors'][self.blknum]
+            w = np.where(esd==0,0,np.nan_to_num(1/esd**2))
+        except:
+            w = np.nan_to_num(1/y)    # best we can do, alas w/o reported s.u.'s
+        self.powderdata = [x,y,w,np.zeros_like(x),np.zeros_like(x),np.zeros_like(x)]
+        self.FillInParametics(fpbuffer,self.blknum)
         self.powderentry[0] = filename
         #self.powderentry[1] = Pos # position offset (never used, I hope)
         self.powderentry[2] = self.blknum  # bank number
@@ -357,6 +507,71 @@ class HDF5_Reader(G2obj.ImportPowderData):
                     self.repeat = False
         return True
 
+    def readNXazint2d(self, filename, fpbuffer={}, entry=None):
+        '''Read HDF5 file in NeXus as produced by MAX IV as a NXazint2d
+
+        In this file, multiple scans are placed in a 3-D array (I and I_errors in 
+        section NXdata), where one dimension is 2-theta and another is the azimuthal value
+        and the third are a parametric value(s) such as temperature, time, etc.
+
+        see https://nxazint-hdf5-nexus-3229ecbd09ba8a773fbbd8beb72cace6216dfd5063e1.gitlab-pages.esrf.fr/classes/contributed_definitions/NXazint2d.html
+        '''
+        self.comments = []
+        fileItems = {
+            # arrays
+            'radial_axis':('NXdata','radial_axis'),
+            'azimuthal_axis':('NXdata','azimuthal_axis'),
+            'I':('NXdata','I'),
+            'I_errors':('NXdata','I_errors'),
+            # floats
+            'wavelength':('NXmonochromator','wavelength'),
+            'polarization_factor':('NXparameters','polarization_factor'),
+            # strings
+            'instrument/name':('NXinstrument','name'),
+            'unit':('NXparameters','unit'),
+            'azimuth_bins':('NXparameters','azimuth_bins'),
+            'sample/name':('NXsample','name'),
+            'source/name':('NXsource','name'),
+        }
+        # test if we have what we need in the buffer and if not read it in
+        if not self.readInNeXus(filename,fpbuffer,fileItems,'NXazint2d',entry): return False
+        # now pull the selected dataset from the buffer
+        self.numazimuth = fpbuffer['azimuth_bins']
+        self.numbanks = self.numparams * self.numazimuth
+        # group by parametric variable
+        numScan = self.blknum // self.numazimuth
+        numAzim = self.blknum - (numScan * self.numazimuth)
+        x = fpbuffer['radial_axis']
+        y = fpbuffer['I'][numScan][numAzim]
+        try:
+            esd = fpbuffer['I_errors'][numScan][numAzim]
+            w = np.where(esd==0,0,np.nan_to_num(1/esd**2))
+        except:
+            w = np.nan_to_num(1/y)    # best we can do, alas w/o reported s.u.'s
+        self.powderdata = [x,y,w,np.zeros_like(x),np.zeros_like(x),np.zeros_like(x)]
+        self.Sample['Azimuth'] = fpbuffer['azimuthal_axis'][numAzim]
+        # add parametric var as a comment
+        self.FillInParametics(fpbuffer,numScan)
+        self.powderentry[0] = filename
+        #self.powderentry[1] = Pos # position offset (never used, I hope)
+        self.powderentry[2] = self.blknum  # bank number
+        self.idstring = f'#{numScan} Azm={self.Sample["Azimuth"]} {os.path.split(filename)[1][:60]}'
+        self.instdict['wave'] = fpbuffer['wavelength']
+        # if not, are there more [selected] images that after this to be read?
+        self.repeat = False
+        if self.blknum < self.numbanks-1:
+            if self.selections is None or len(self.selections) == 0:
+                self.blknum += 1
+                self.repeat = True
+            else:
+                try:
+                    s = sorted(self.selections)
+                    self.blknum = s[s.index(self.blknum)+1]
+                    self.repeat = True
+                except IndexError:   # last selected image has been read
+                    self.repeat = False
+        return True
+    
 # NeXus support routines. These were influenced heavily by Frederik Holm Gjørup
 # Also see NeXus support in plaid (https://github.com/fgjorup/plaid/blob/main/plaid/nexus.py)
 
@@ -371,19 +586,22 @@ def getNeXusBase(fp):
             return key
 
 def getNeXusEntry(fp,base,target):
-    '''This returns the entry in a NeXus compilant HDF5 file matching 
-    the name target, or None, if this is not found as a child of the key `base`.
-    Not in use as it is more practical to use :func:`recurseNeXusEntries`.
+    '''This returns a list of entries in a NeXus compilant HDF5 file matching 
+    the name target, or an empty list, if this is not found. This only
+    looks for the direct children of the key `base`.
     '''
+    keyList = []
     for key in fp[base]:
         subkey = '/'.join([base,key])
         if "NX_class" in fp[subkey].attrs:
             #print(key, list(fp[subkey].attrs),fp[subkey].attrs["NX_class"])
             if ("NX_class" in fp[subkey].attrs and
                     fp[subkey].attrs["NX_class"] == target):
-                return subkey
-        else:
-            print(key)
+                keyList.append(subkey)
+    return keyList
+#        else:
+#            print(key)
+
 
 def recurseNeXusEntry(fp,node,target):
     '''Recurse through the HDF5 tree looking for NeXus class `target`. 

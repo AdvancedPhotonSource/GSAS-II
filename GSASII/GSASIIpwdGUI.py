@@ -1045,7 +1045,7 @@ def UpdatePeakGrid(G2frame, data):
         UpdatePeakGrid(G2frame,peaks)
         G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
 
-    def OnPeakFit(oneCycle=False,noFit=False):
+    def OnPeakFit(oneCycle=False,noFit=False,noPlot=False):
         'Do peak fitting by least squares'
         SaveState()
         controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
@@ -1100,7 +1100,8 @@ def UpdatePeakGrid(G2frame, data):
             bxye = GetFileBackground(G2frame,data,background,scale=False)
         if noFit:
             results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
-            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
+            if not noPlot:
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             return
         # try:
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101,parent=G2frame,
@@ -1199,7 +1200,7 @@ def UpdatePeakGrid(G2frame, data):
         else:
             event.Skip()
             return
-        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
+        # G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
 
     def SelectVars(rows):
@@ -1278,12 +1279,13 @@ def UpdatePeakGrid(G2frame, data):
 
     def RefreshPeakGrid(event):
         'recompute & plot the peaks any time a value in the table is edited'
+        col = event.GetCol()
         if 'LF' in Inst['Type'][0]:
             for i in range(len(data['LFpeaks'])):
                 data['peaks'][i][2:] = data['LFpeaks'][i]
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
         if data['peaks']:
-            OnPeakFit(noFit=True)
+            OnPeakFit(noFit=True,noPlot=col%2)
 
     def ToggleXtraMode(event):
         '''Switch "Extra Peak" mode in response to button'''
@@ -2562,9 +2564,6 @@ def UpdateInstrumentGrid(G2frame,data):
         fitPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         IndexPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
-        # if 'Debye' not in Sample['Type']:
-        #     G2frame.ErrorDialog('Cannot calibrate','Only apropriate for Debye-Scherrer geometry')
-        #     return
         if not len(IndexPeaks[0]):
             G2frame.ErrorDialog('Cannot calibrate','Index Peak List empty')
             return
@@ -2580,28 +2579,27 @@ def UpdateInstrumentGrid(G2frame,data):
             return
         if G2pwd.DoCalibInst(IndexPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
-            const = 0.0
-            if data['Type'][0][2] in ['A','B','C']:
-                const = 18.e-2/(np.pi*Sample['Gonio. radius'])
-                # const = 10**-3/Sample['Gonio. radius']
-            XY = []
-            Sigs = []
-            for ip,peak in enumerate(IndexPeaks[0]):
-                shft = 0.0
-                if peak[2] and peak[3]:
-                    binwid = cw[np.searchsorted(xye[0],peak[0])]
-                    if const:
-                        if 'Debye' in Sample['Type']:
-                            shft = -const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
-                        else:
-                            shft = -2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
-                    XY.append([peak[-1],peak[0]-shft,binwid])
-                    Sigs.append(IndexPeaks[1][ip])
-            if len(XY):
-                XY = np.array(XY)
-                G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
         else:
             G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement or refinement failed')
+        const = 0.0
+        if data['Type'][0][2] in ['A','B','C']:
+            const = 0.18/(np.pi*Sample['Gonio. radius'])
+        XY = []
+        Sigs = []
+        for ip,peak in enumerate(IndexPeaks[0]):
+            shft = 0.0
+            if peak[2] and peak[3]:
+                binwid = cw[np.searchsorted(xye[0],peak[0])]
+                if const:
+                    if 'Debye' in Sample['Type']:
+                        shft -= 0.5*const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                    else:
+                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
+                XY.append([peak[-1],peak[0]-shft,binwid])
+                Sigs.append(IndexPeaks[1][ip])
+        if len(XY):
+            XY = np.array(XY)
+            G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file

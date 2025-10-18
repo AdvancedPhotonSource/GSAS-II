@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''Use to read powder patterns from HDF5 files. At present the only supported 
-format are two NeXus variants from MaxIV named NXazint1d and NXazint1d,
+format are two NeXus variants from MaxIV named NXazint1d and NXazint2d,
 but this can be expanded to handle more HDF5/NeXus formats
 '''
 import os

@@ -1646,10 +1646,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 #patch
     if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
-        Page.plotStyle.update({'Offset':[0.0,0.0],
-                            'delOffset':float(0.02*Ymax),
-                            'refOffset':float(-0.1*Ymax),
-                            'refDelt':float(0.1*Ymax),})
+        Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':float(0.02*Ymax),
+            'refOffset':float(-0.1*Ymax),'refDelt':float(0.1*Ymax),})
 #end patch
     if 'Normalize' not in Page.plotStyle:
         Page.plotStyle['Normalize'] = False

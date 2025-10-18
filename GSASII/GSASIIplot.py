@@ -3244,23 +3244,20 @@ def PlotPeakWidths(G2frame,PatternName=None):
     Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)
     negWarn = False
     if 'T' in Parms['Type'][0]:   #'T'OF
-        Plot.set_ylabel(r'$\alpha, \beta, \Delta Q/Q, \Delta d/d$',fontsize=14)
+        Plot.set_ylabel(r'$\alpha/1000, \beta/1000, \Delta Q/Q, \Delta d/d$',fontsize=14)
         Xmin,Xmax = limits[1]
         T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
         Z = np.ones_like(T)
         data = G2mth.setPeakparms(Parms,Parms2,T,Z)
         ds = T/difC
         Q = 2.*np.pi/ds
-        # for did in [4,6,8,10]:
-        #     if np.any(data[did] < 0.):
-        #         negWarn = True
-        A = data[4]
-        B = data[6]
+        A = data[4]/1000.
+        B = data[6]/1000.
         S = 1.17741*np.sqrt(data[8])/T
         G = data[10]/T
         W = G2pwd.getFWHM(T,Parms,0)/T
-        Plot.plot(Q,A,color='r',label='Alpha')
-        Plot.plot(Q,B,color='orange',label='Beta')
+        Plot.plot(Q,A,color='r',label='Alpha/1000')
+        Plot.plot(Q,B,color='orange',label='Beta/1000')
         Plot.plot(Q,S,color='b',label='Gaussian')
         Plot.plot(Q,G,color='m',label='Lorentzian')
         Plot.plot(Q,W,color='g',label='FWHM (GL+ab)')
@@ -3271,13 +3268,13 @@ def PlotPeakWidths(G2frame,PatternName=None):
         for did in [4,6,8,10]:
             if np.any(fit[did] < 0.):
                 negWarn = True
-        Af = fit[4]
-        Bf = fit[6]
+        Af = fit[4]/1000.
+        Bf = fit[6]/1000.
         Sf = 1.17741*np.sqrt(fit[8])/T
         Gf = fit[10]/T
         Wf = G2pwd.getFWHM(T,Parms)/T
-        Plot.plot(Q,Af,color='r',dashes=(5,5),label='A fit')
-        Plot.plot(Q,Bf,color='orange',dashes=(5,5),label='B fit')
+        Plot.plot(Q,Af,color='r',dashes=(5,5),label='A/1000 fit')
+        Plot.plot(Q,Bf,color='orange',dashes=(5,5),label='B/1000 fit')
         Plot.plot(Q,Sf,color='b',dashes=(5,5),label='G fit')
         Plot.plot(Q,Gf,color='m',label='L fit')
         Plot.plot(Q,Wf,color='g',dashes=(5,5),label='FWHM fit (GL+ab)')
@@ -3296,10 +3293,10 @@ def PlotPeakWidths(G2frame,PatternName=None):
         for ip,peak in enumerate(peaks):
             Qp.append(2.*np.pi*difC/peak[0])
             sQp.append(2.*np.pi*difC*peakEsds.get('pos%d'%ip,0.0)/peak[0]**2)
-            Ap.append(peak[4])
-            sAp.append(peakEsds.get('alp%d'%ip,0.0))
-            Bp.append(peak[6])
-            sBp.append(peakEsds.get('bet%d'%ip,0.0))
+            Ap.append(peak[4]/1000.)
+            sAp.append(peakEsds.get('alp%d'%ip,0.0)/1000.)
+            Bp.append(peak[6]/1000.)
+            sBp.append(peakEsds.get('bet%d'%ip,0.0)/1000.)
             sp = 0.5*sq8ln2*np.sqrt(peak[8])/peak[0]
             Sp.append(sp)     #sqrt(8ln2)/2
             sSp.append(0.25*sq8ln2*peakEsds.get('sig%d'%ip,0.0)/(np.sqrt(peak[8])*peak[0]))
@@ -3308,13 +3305,13 @@ def PlotPeakWidths(G2frame,PatternName=None):
 
         if Qp:
             if G2frame.ErrorBars:
-                Plot.errorbar(Qp,Ap,xerr=sQp,yerr=sAp,fmt='r+',capsize=2,label='A peak')
-                Plot.errorbar(Qp,Bp,xerr=sQp,yerr=sBp,fmt='+',color='orange',capsize=2,label='B peak')
+                Plot.errorbar(Qp,Ap,xerr=sQp,yerr=sAp,fmt='r+',capsize=2,label='A/1000 peak')
+                Plot.errorbar(Qp,Bp,xerr=sQp,yerr=sBp,fmt='+',color='orange',capsize=2,label='B/1000 peak')
                 Plot.errorbar(Qp,Sp,xerr=sQp,yerr=sSp,fmt='b+',capsize=2,label='G peak')
                 Plot.errorbar(Qp,Gp,xerr=sQp,yerr=sGp,fmt='m+',capsize=2,label='L peak')                
             else:
-                Plot.plot(Qp,Ap,'+',color='r',label='A peak')
-                Plot.plot(Qp,Bp,'+',color='orange',label='B peak')
+                Plot.plot(Qp,Ap,'+',color='r',label='A/1000 peak')
+                Plot.plot(Qp,Bp,'+',color='orange',label='B/1000 peak')
                 Plot.plot(Qp,Sp,'+',color='b',label='G peak')
                 Plot.plot(Qp,Gp,'+',color='m',label='L peak')
         Plot.legend(loc='best')
@@ -3377,6 +3374,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Page.canvas.draw()
 
     else:       #'A', 'C' & 'B'
+        if Parms['Type'][0][2] in ['A','B']:
+            Plot.set_ylabel(r'$\alpha/1000, \beta/1000, \Delta Q/Q, \Delta d/d$',fontsize=14)
         isig = 4
         igam = 6
         if Parms['Type'][0][2] in ['A','B']:
@@ -3388,12 +3387,18 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Q = 4.*np.pi*npsind(X/2.)/lam
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
+        if Parms['Type'][0][2] in ['A','B']:
+            A = data[4]/1000.
+            B = data[6]/1000.
         s = np.sqrt(data[isig])*np.pi/18000.   #var -> sig(radians)
         g = data[igam]*np.pi/18000.    #centideg -> radians
         G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn
         Y = sq8ln2*s/nptand(X/2.)
         Z = g/nptand(X/2.)
         W = G/nptand(X/2.)
+        if Parms['Type'][0][2] in ['A','B']:
+            Plot.plot(Q,A,color='r',label='Alpha/1000')
+            Plot.plot(Q,B,color='orange',label='Beta/1000')
         Plot.plot(Q,Y,color='r',label='Gaussian')
         Plot.plot(Q,Z,color='g',label='Lorentzian')
         Plot.plot(Q,W,color='b',label='G+L')
@@ -3402,16 +3407,27 @@ def PlotPeakWidths(G2frame,PatternName=None):
         for did in [isig,igam]:
             if np.any(fit[did] < 0.):
                 negWarn = True
+        if Parms['Type'][0][2] in ['A','B']:
+            Af = fit[4]/1000.
+            Bf = fit[6]/1000.
         sf = np.sqrt(fit[isig])*np.pi/18000.
         gf = fit[igam]*np.pi/18000.
         Gf = G2pwd.getgamFW(gf,sf)      #/2.
         Yf = sq8ln2*sf/nptand(X/2.)
         Zf = gf/nptand(X/2.)
         Wf = Gf/nptand(X/2.)
+        if Parms['Type'][0][2] in ['A','B']:
+            Plot.plot(Q,Af,color='r',dashes=(5,5),label='A/1000 fit')
+            Plot.plot(Q,Bf,color='orange',dashes=(5,5),label='B/1000 fit')
         Plot.plot(Q,Yf,color='r',dashes=(5,5),label='G fit')
         Plot.plot(Q,Zf,color='g',dashes=(5,5),label='L fit')
         Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
 
+        if Parms['Type'][0][2] in ['A','B']:
+            Ap = []
+            sAp = []
+            Bp = []
+            sBp = []
         Xp = []
         sXp = []
         Yp = []
@@ -3423,6 +3439,11 @@ def PlotPeakWidths(G2frame,PatternName=None):
             tpd = tand(peak[0]/2.)
             Xp.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
             sXp.append(2.0*math.pi*cosd(peak[0]/2.0)*peakEsds.get('pos%d'%ip,0.0)/lam)
+            if Parms['Type'][0][2] in ['A','B']:
+                Ap.append(peak[4]/1000.)
+                sAp.append(peakEsds.get('alp%d'%ip,0.0)/1000.)
+                Bp.append(peak[6]/1000.)
+                sBp.append(peakEsds.get('bet%d'%ip,0.0)/1000.)
             try:
                 s = math.sqrt(peak[isig])*math.pi/18000.
             except ValueError:
@@ -3437,9 +3458,15 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Wp.append(G/tpd)
         if len(peaks):
             if G2frame.ErrorBars:
+                if Parms['Type'][0][2] in ['A','B']:
+                    Plot.errorbar(Xp,Ap,xerr=sQp,yerr=sAp,fmt='r+',capsize=2,label='A/1000 peak')
+                    Plot.errorbar(Xp,Bp,xerr=sQp,yerr=sBp,fmt='+',color='orange',capsize=2,label='B/1000 peak')
                 Plot.errorbar(Xp,Yp,xerr=sXp,yerr=sYp,fmt='r+',capsize=2,label='G peak')
                 Plot.errorbar(Xp,Zp,xerr=sXp,yerr=sZp,fmt='g+',capsize=2,label='L peak')                                
             else:
+                if Parms['Type'][0][2] in ['A','B']:
+                    Plot.plot(Xp,Ap,'+',color='r',label='A/1000 peak')
+                    Plot.plot(Xp,Bp,'+',color='orange',label='B/1000 peak')
                 Plot.plot(Xp,Yp,'+',color='r',label='G peak')
                 Plot.plot(Xp,Zp,'+',color='g',label='L peak')
                 Plot.plot(Xp,Wp,'+',color='b',label='G+L peak')

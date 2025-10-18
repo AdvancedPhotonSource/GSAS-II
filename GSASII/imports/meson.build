@@ -26,6 +26,7 @@ py.install_sources([
     'G2pwd_CIF.py',
     'G2pwd_FP.py',
     'G2pwd_GPX.py',
+    'G2pwd_HDF5.py',
     'G2pwd_MIDAS.py',
     'G2pwd_Panalytical.py',
     'G2pwd_csv.py',

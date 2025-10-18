@@ -13006,6 +13006,7 @@ tab, use Operations->"Pawley create")''')
         elif text == 'RMC':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.FRMCMenu)
             G2rmcG.UpdateRMC(G2frame,data)
+            G2rmcG.UpdateRMC(G2frame,data)  #TODO: apparently needs to be done twice to get a working GUI. Find a better fix.
         elif text == 'ISODISTORT':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ISODData)
             G2phsG2.UpdateISODISTORT(G2frame,data)

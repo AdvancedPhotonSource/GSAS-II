@@ -2587,14 +2587,15 @@ def UpdateInstrumentGrid(G2frame,data):
         XY = []
         Sigs = []
         for ip,peak in enumerate(IndexPeaks[0]):
+            calcPos = G2lat.Dsp2pos(data,peak[-1])
             shft = 0.0
             if peak[2] and peak[3]:
                 binwid = cw[np.searchsorted(xye[0],peak[0])]
                 if const:
                     if 'Debye' in Sample['Type']:
-                        shft -= 0.5*const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                        shft -= const*(Sample['DisplaceX'][0]*npcosd(calcPos)+Sample['DisplaceY'][0]*npsind(calcPos))
                     else:
-                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
+                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(calcPos/2.0)
                 XY.append([peak[-1],peak[0]-shft,binwid])
                 Sigs.append(IndexPeaks[1][ip])
         if len(XY):

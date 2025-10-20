@@ -1842,6 +1842,16 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
             if r.status_code == 200:
                 if GetConfigValue('debug'): print('request OK')
                 page = r.text
+                if 'cryst.ehu.es' in URL and "currently down" in page:
+                    # Bilbao is down. Tell user
+                    import re
+                    print(f"Website down? See message below:\n\n{re.sub('<.+>','',page)}")
+                    try:
+                        import wx
+                        import GSASII.GSASIIctrlGUI as G2G
+                        dlg = G2G.viewWebPage(wx.GetApp().GetMainTopWindow(),URL,HTML=page)
+                    except:
+                        pass
                 if getcookie is not None:
                     getcookie.update(r.cookies)
                 return page # success

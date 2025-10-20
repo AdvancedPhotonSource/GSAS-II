@@ -615,8 +615,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         G2plt.PlotExposedImage(G2frame,event=event)
 
     def ResetThresholds():
-        Imin = max(0.,np.min(G2frame.ImageZ))
-        Imax = np.max(G2frame.ImageZ)
+        Imin = int(max(0.,np.min(G2frame.ImageZ)))
+        Imax = int(np.max(G2frame.ImageZ))
         data['range'] = [(0,Imax),[Imin,Imax]]
         masks['Thresholds'] = [(0,Imax),[Imin,Imax]]
         G2frame.slideSizer.GetChildren()[1].Window.ChangeValue(Imax)   #tricky 

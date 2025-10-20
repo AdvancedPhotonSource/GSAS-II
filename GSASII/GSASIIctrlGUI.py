@@ -2604,7 +2604,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
       returns wx.ID_CANCEL
     :returns: the wx Id for the selected button
 
-    example::
+    Example::
 
        res = ShowScrolledInfo(self.frame,msg,header='Please Note',buttonlist=[
                ('Open', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
@@ -3691,6 +3691,14 @@ def ItemSelector(ChoiceList, ParentFrame=None,
     :returns: the selection index or None or a selection list if multiple is true
 
     Called by GSASIIdataGUI.OnReOrgSelSeq() Which is not fully implemented.
+
+    Example::
+
+            choices = ('NXazint1d 1D file','NXazint1d 2D file')
+            sel = G2G.ItemSelector(choices, ParentFrame=ParentFrame,
+                                    header='Select file section',
+                                    title='Select the section of the file to read')
+            if sel is None: return False
     '''
     if multiple:
         if useCancel:
@@ -6225,7 +6233,7 @@ def updateNotifier(G2frame,fileVersion):
     dlg.Destroy()
 
 ################################################################################
-def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
+def viewWebPage(parent,URL='',size=(750,450),newFrame=False,HTML=''):
     '''Creates a child wx.Frame with an OS-managed web browser. The window
     is modeless, so it can be left open without affecting GSAS-II operations,
     but will be closed when GSAS-II is ended if a ``parent`` window is
@@ -6264,7 +6272,7 @@ def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
                     lastWebFrame.wv.SetPage(HTML,'')
                 else:
                     lastWebFrame.wv.LoadURL(URL)
-                return
+                return dlg
         except:
             pass
     dlg = wx.Frame(parent,size=size)

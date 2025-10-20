@@ -167,7 +167,8 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
                 self.powderentry[0] = filename
                 self.comments = []
                 return True
-            except:
+            except Exception as msg:
+                self.errors = f'rasx open/read error\n{msg}'
                 return False
         else:
             fp.seek(0)

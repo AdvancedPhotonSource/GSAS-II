@@ -2577,7 +2577,7 @@ def UpdateInstrumentGrid(G2frame,data):
         if not Ok:
             G2frame.ErrorDialog('Cannot calibrate','Index Peak List not indexed')
             return
-        if G2pwd.DoCalibInst(IndexPeaks,data,Sample):
+        if G2pwd.DoCalibInst(IndexPeaks,fitPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
         else:
             G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement or refinement failed')

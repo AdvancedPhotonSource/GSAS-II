@@ -2383,13 +2383,13 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3g'%(xpos,Title,ypos),1)
+                G2frame.G2plotNB.status.SetStatusText(r'Q =%9.3f %s =%9.3g'%(xpos,'Y',ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
             found = []
             xlim = Plot.get_xlim()
             wid = xlim[1]-xlim[0]
-            found = XY[np.where(np.fabs(XY.T[0]-xpos) < 0.005*wid)]
+            found = XY[np.where(np.fabs(XY.T[0]-2.*np.pi/xpos) < 0.005*wid)]
             if len(found):
                 pos = found[0][1]
                 if Inst['Type'][0][2] in ['A','B','C']:
@@ -2414,9 +2414,10 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     Plot.set_title(Title,fontsize=14)
     Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
     if Inst['Type'][0][2] in ['A','B','C']:
-        Plot.set_ylabel(r'$\mathsf{\Delta(2\theta)}$',fontsize=14)
+        ylabel = r'$\mathsf{\Delta(2\theta)}$'
     else:
-        Plot.set_ylabel(r'$\mathsf{\Delta}T/T$',fontsize=14)
+        ylabel = r'$\mathsf{\Delta}T/T$'
+    Plot.set_ylabel(ylabel,fontsize=14)
     for ixy,xyw in enumerate(XY):
         if len(xyw) > 2:
             X,Y,W = xyw

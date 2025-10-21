@@ -2237,6 +2237,7 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         return np.array(peakPos),np.array(peakDsp),np.array(peakWt)
     
     def SetSigData():
+        sigDsp = []
         peakSig = []
         peakSigWt = []
         ig = 4
@@ -2244,28 +2245,32 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
             ig = 8
         for ip,peak in enumerate(fitPeaks['peaks']):
                 if peak[ig+1] and IndexPeaks[0][ip][2] and IndexPeaks[0][ip][3]:
+                    sigDsp.append(IndexPeaks[0][ip][-1])
                     peakSig.append(peak[ig])
                     peakSigWt.append(1./fitPeaks['sigDict']['sig%d'%ip])
-        return np.array(peakSig),np.array(peakSigWt)
+        return np.array(sigDsp),np.array(peakSig),np.array(peakSigWt)
     
     def SetAlpData():
+        alpDsp = []
         peakAlp = []
         peakAlpWt = []
         for ip,peak in enumerate(fitPeaks['peaks']):
                 if peak[5] and IndexPeaks[0][ip][2] and IndexPeaks[0][ip][3]:
+                    alpDsp.append(IndexPeaks[0][ip][-1])
                     peakAlp.append(peak[4])
                     peakAlpWt.append(1./fitPeaks['sigDict']['alp%d'%ip])
-        return np.array(peakAlp),np.array(peakAlpWt)
+        return np.array(alpDsp),np.array(peakAlp),np.array(peakAlpWt)
 
     def SetBetData():
+        betDsp = []
         peakBet = []
         peakBetWt = []
         for ip,peak in enumerate(fitPeaks['peaks']):
                 if peak[7] and IndexPeaks[0][ip][2] and IndexPeaks[0][ip][3]:
+                    betDsp.append(IndexPeaks[0][ip][-1])
                     peakBet.append(peak[6])
                     peakBetWt.append(1./fitPeaks['sigDict']['bet%d'%ip])
-        return np.array(peakBet),np.array(peakBetWt)
-
+        return np.array(betDsp),np.array(peakBet),np.array(peakBetWt)
         
     def SetPosParms():
         if 'T' in dataType:
@@ -2304,7 +2309,7 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
                 if Sample['Shift'][1]:
                     insVary.append('Shift')
             
-        instDict = dict(zip(insNames,insVals))
+        instDict = zip(insNames,insVals)
         return instDict,insVary
     
     def SetSigParms():
@@ -2317,7 +2322,7 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
             if parm in ['sig-0','sig-1','sig-2','sig-q','U','V','W']:
                 if Inst[parm][2]:
                     sigVary.append(parm)
-        sigDict = dict(zip(sigNames,sigVals))
+        sigDict = zip(sigNames,sigVals)
         return sigDict,sigVary
 
     def SetAlpParms():
@@ -2330,7 +2335,7 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
             if parm in ['alpha','alpha-0','alpha-1']:
                 if Inst[parm][2]:
                     alpVary.append(parm)
-        alpDict = dict(zip(alpNames,alpVals))
+        alpDict = zip(alpNames,alpVals)
         return alpDict,alpVary
  
     def SetBetParms():
@@ -2343,13 +2348,13 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
             if parm in ['beta-0','beta-1','beta-q']:
                 if Inst[parm][2]:
                     betVary.append(parm)
-        betDict = dict(zip(betNames,betVals))
+        betDict = zip(betNames,betVals)
         return betDict,betVary
        
     def GetInstParms(parmDict):
         for name in Inst:
             Inst[name][1] = parmDict[name]
-        if Inst['Type'][0][2] in ['A','B','C']:        
+        if dataType[2] in ['A','B','C']:        
             for name in Sample:
                 if name in ['DisplaceX','DisplaceY','Shift']: # for CW only
                     try:
@@ -2359,16 +2364,17 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
 
     def InstPrint(sigDict):
         print ('Instrument/Sample Parameters:')
-        if Inst['Type'][0][2] in ['A','B','C']:
+        if dataType[2] in ['A','B','C']:
             ptfmt = "%12.6f"
         else:
             ptfmt = "%12.3f"
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
+        ip = 0
         for parm in Inst:
             if parm in  ['Lam','difC','difA','difB','Zero','2-theta','XE','YE','ZE',
-                         'alpha','alp-0','alp-1','bet-0','bet-1','bet-2','bet-q',
+                         'alpha','alpha-0','alpha-1','beta-0','beta-1','beta-2','beta-q',
                          'sig-0','sig-1','sig-2','sig-q','U','V','W']:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Inst[parm][1])
@@ -2376,7 +2382,18 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
                     sigstr += ptfmt % (sigDict[parm])
                 else:
                     sigstr += 12*' '
-        if Inst['Type'][0][2] in ['A','B','C']:
+                ip += 1
+                if ip == 5:
+                    print (ptlbls)
+                    print (ptstr)
+                    print (sigstr)
+                    print (' ')
+                    ptlbls = 'names :'
+                    ptstr =  'values:'
+                    sigstr = 'esds  :'
+                    ip = 0
+                    
+        if dataType[2] in ['A','B','C']:
             parmList = ['Shift',]
             if 'Debye' in Sample['Type']:
                 parmList = ['DisplaceX','DisplaceY']
@@ -2393,7 +2410,7 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         print (sigstr)
 
     def errPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+        parmDict.update(dict(zip(varyList,values)))
         calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
         if dataType[2] in ['A','B','C']:
             const = 0.18/(np.pi*parmDict['radius'])
@@ -2405,39 +2422,38 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         else:
             return peakWt*(calcPos-peakPos)
         
-    def errPeakAlp(values,peakDsp,peakPos,peakAlp,peakWt,dataType,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+    def errPeakAlp(values,peakDsp,peakAlp,peakWt,dataType,parmDict,varyList):
+        parmDict.update(dict(zip(varyList,values)))
         if dataType[2] in ['A','B']:
-            calcAlp = parmDict['alpha-0']+ parmDict['alpha-1']*npsind(peakPos/2.)
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+            calcAlp = parmDict['alpha-0']+ parmDict['alpha-1']*npsind(calcPos/2.)
         else: #'T'
             calcAlp = parmDict['alpha']/peakDsp
         return peakWt*(calcAlp-peakAlp)
     
-    def errPeakBet(values,peakDsp,peakPos,peakBet,peakWt,dataType,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+    def errPeakBet(values,peakDsp,peakBet,peakWt,dataType,parmDict,varyList):
+        parmDict.update(dict(zip(varyList,values)))
         if dataType[2] in ['A','B']:
-            calcBet = parmDict['beta-0']+ parmDict['beat-1']*npsind(peakPos/2.)
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+            calcBet = parmDict['beta-0']+ parmDict['beat-1']*npsind(calcPos/2.)
         else: #'T'
             calcBet = parmDict['beta-0']+parmDict['beta-1']/peakDsp**4+parmDict['beta-q']/peakDsp**2
         return peakWt*(calcBet-peakBet)
 
-    def errPeakSig(values,peakDsp,peakPos,peakSig,peakWt,dataType,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
+    def errPeakSig(values,peakDsp,peakSig,peakWt,dataType,parmDict,varyList):
+        parmDict.update(dict(zip(varyList,values)))
         if dataType[2] in ['A','B','C']:
-            tp = tand(peakPos/2.0)
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+            tp = nptand(calcPos/2.0)
             calcSig = parmDict['U']*tp**2+parmDict['V']*tp+parmDict['W']
         else: #'T'
             calcSig = parmDict['sig-0']+parmDict['sig-1']*peakDsp**2+parmDict['sig-2']*peakDsp**4+parmDict['sig-q']*peakDsp
         return peakWt*(calcSig-peakSig)
     
-    def outResult(begin):
-        ncyc = int(result[2]['nfev']/2)
-        runtime = time.time()-begin
+    def outResult():
         chisq = np.sum(result[2]['fvec']**2)
-        Values2Dict(parmDict, posVary, result[0])
         GOF = chisq/(len(peakPos)-len(posVary))       #reduced chi^2
         G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],len(peakPos),len(posVary)))
-        G2fil.G2Print ('calib time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
         G2fil.G2Print ('chi**2 = %12.6g, reduced chi**2 = %6.2f'%(chisq,GOF))
         try:
             sig = np.sqrt(np.diag(result[1])*GOF)
@@ -2451,31 +2467,72 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
     dataType = Inst['Type'][0]
     peakPos,peakDsp,peakPosWt = SetPosData()
     posDict,posVary = SetPosParms()
-    peakSig,peakSigWt = SetSigData()
+    sigDsp,peakSig,peakSigWt = SetSigData()
     sigDict,sigVary = SetSigParms()
     if dataType[2] in ['A','B','T']:
-        peakAlp,peakAlpWt = SetAlpData()
+        alpDsp,peakAlp,peakAlpWt = SetAlpData()
         alpDict,alpVary = SetAlpParms()
-        peakBet,peakBetWt = SetBetData()
+        betDsp,peakBet,peakBetWt = SetBetData()
         betDict,betVary = SetBetParms()
         
     parmDict = {}
+    Sigmas = {}
     parmDict.update(posDict)
-    if not len(posVary):
-        G2fil.G2Print ('**** ERROR - nothing to refine! ****')
-        return False
-    begin = time.time()
-    values =  np.array(Dict2Values(parmDict, posVary))
-    result = so.leastsq(errPeakPos,values,full_output=True,ftol=0.000001,
-        args=(peakDsp,peakPos,peakPosWt,dataType,parmDict,posVary))
-    sig = outResult(begin)
-    if  len(sig):
-        sigDict = dict(zip(posVary,sig))
-        GetInstParms(parmDict)
-        InstPrint(sigDict)
-        return True
+    if len(peakPos) > 5 and len(posVary):
+        values =  np.array(Dict2Values(parmDict, posVary))
+        result = so.leastsq(errPeakPos,values,full_output=True,ftol=0.000001,
+            args=(peakDsp,peakPos,peakPosWt,dataType,parmDict,posVary))
+        G2fil.G2Print('Position calibration:')
+        Values2Dict(parmDict, posVary, result[0])
+        sig = outResult()
+        if  len(sig):
+            Sigmas.update(zip(posVary,sig))
+            GetInstParms(parmDict)
+    parmDict = {}
+    parmDict.update(sigDict)
+    if len(peakSig) > 5 and len(sigVary):
+        values =  np.array(Dict2Values(parmDict, sigVary))
+        result = so.leastsq(errPeakSig,values,full_output=True,ftol=0.000001,
+            args=(sigDsp,peakSig,peakSigWt,dataType,parmDict,sigVary))
+        G2fil.G2Print('Sigma calibration:')
+        Values2Dict(parmDict, sigVary, result[0])
+        sig = outResult()
+        if  len(sig):
+            Sigmas.update(zip(sigVary,sig))
+            GetInstParms(parmDict)
     else:
-        return False
+        G2fil.G2Print(' Sigma not calibrated: insufficient data or not selected')
+    if dataType[2] in ['A','B','T']:
+        parmDict = {}
+        parmDict.update(alpDict)
+        if len(peakAlp) > 5 and len(alpVary):
+            values =  np.array(Dict2Values(parmDict, alpVary))
+            result = so.leastsq(errPeakAlp,values,full_output=True,ftol=0.000001,
+                args=(alpDsp,peakAlp,peakAlpWt,dataType,parmDict,alpVary))
+            G2fil.G2Print('Alpha calibration:')
+            Values2Dict(parmDict, alpVary, result[0])
+            sig = outResult()
+            if  len(sig):
+                Sigmas.update(zip(alpVary,sig))
+                GetInstParms(parmDict)
+        else:
+            G2fil.G2Print(' Alpha not calibrated: insufficient data or not selected')
+        parmDict = {}
+        parmDict.update(betDict)
+        if len(peakBet) > 5 and len(betVary):
+            values =  np.array(Dict2Values(parmDict, betVary))
+            result = so.leastsq(errPeakBet,values,full_output=True,ftol=0.000001,
+                args=(betDsp,peakBet,peakBetWt,dataType,parmDict,betVary))
+            G2fil.G2Print('Beta calibration:')
+            Values2Dict(parmDict, betVary, result[0])
+            sig = outResult()
+            if  len(sig):
+                Sigmas.update(zip(betVary,sig))
+                GetInstParms(parmDict)
+        else:
+            G2fil.G2Print(' Beta not calibrated: insufficient data or not selected')
+    InstPrint(Sigmas)
+    return True
 
 def getHeaderInfo(dataType):
     '''Provide parameter name, label name and formatting information for the

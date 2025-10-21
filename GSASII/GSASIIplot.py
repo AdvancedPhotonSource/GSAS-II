@@ -3461,8 +3461,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         if len(peaks):
             if G2frame.ErrorBars:
                 if Parms['Type'][0][2] in ['A','B']:
-                    Plot.errorbar(Xp,Ap,xerr=sQp,yerr=sAp,fmt='r+',capsize=2,label=r'$\alpha/1000$ peak')
-                    Plot.errorbar(Xp,Bp,xerr=sQp,yerr=sBp,fmt='+',color='orange',capsize=2,label=r'$\beta/1000$ peak')
+                    Plot.errorbar(Xp,Ap,xerr=sXp,yerr=sAp,fmt='r+',capsize=2,label=r'$\alpha/1000$ peak')
+                    Plot.errorbar(Xp,Bp,xerr=sXp,yerr=sBp,fmt='+',color='orange',capsize=2,label=r'$\beta/1000$ peak')
                 Plot.errorbar(Xp,Yp,xerr=sXp,yerr=sYp,fmt='r+',capsize=2,label='G peak')
                 Plot.errorbar(Xp,Zp,xerr=sXp,yerr=sZp,fmt='g+',capsize=2,label='L peak')                                
             else:

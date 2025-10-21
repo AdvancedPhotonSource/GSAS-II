@@ -2435,7 +2435,7 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         parmDict.update(dict(zip(varyList,values)))
         if dataType[2] in ['A','B']:
             calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
-            calcBet = parmDict['beta-0']+ parmDict['beat-1']*npsind(calcPos/2.)
+            calcBet = parmDict['beta-0']+ parmDict['beta-1']*npsind(calcPos/2.)
         else: #'T'
             calcBet = parmDict['beta-0']+parmDict['beta-1']/peakDsp**4+parmDict['beta-q']/peakDsp**2
         return peakWt*(calcBet-peakBet)

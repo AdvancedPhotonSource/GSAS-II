@@ -2579,6 +2579,7 @@ def UpdateInstrumentGrid(G2frame,data):
             return
         if G2pwd.DoCalibInst(IndexPeaks,fitPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
+            G2plt.PlotPeakWidths(G2frame)
         else:
             G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement or refinement failed')
         const = 0.0

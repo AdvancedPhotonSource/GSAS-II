@@ -2750,8 +2750,13 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         if 'BF mult' in sigDict:
             print('Background file mult: %.3f(%d)'%(Background[1]['background PWDR'][1],int(1000*sigDict['BF mult'])))
 
-    def SetInstParms(Inst):
+    def SetInstParms(Inst,peakVary):
+        # superesses refinement of instrument parameters if any corresponding peak parameter is refined
         dataType = Inst['Type'][0]
+        noAlp = any([True for vary in peakVary if 'alp' in vary])
+        noBet = any([True for vary in peakVary if 'bet' in vary])
+        noSig = any([True for vary in peakVary if 'sig' in vary])
+#        noGam = any([True for vary in peakVary if 'gam' in vary])
         insVary = []
         insNames = []
         insVals = []
@@ -2760,7 +2765,19 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             insVals.append(Inst[parm][1])
             if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha','A','B','C',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','alpha-0','alpha-1'] and Inst[parm][2]:
-                    insVary.append(parm)
+                if 'alp' in parm and noAlp:
+                    Inst[parm][2] = False
+                    continue
+                elif 'bet' in parm and noBet:
+                    Inst[parm][2] = False
+                    continue
+                elif ('sig' in parm or parm in ['U','V','W']) and noSig:
+                    Inst[parm][2] = False
+                    continue
+                # elif parm in ['X','Y','Z'] and noGam:
+                #     Inst[parm][2] = False
+                #     continue
+                insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
         if 'SH/L' in instDict:
             instDict['SH/L'] = max(instDict['SH/L'],0.002)
@@ -2984,8 +3001,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     xFin = np.searchsorted(x,Limits[1])+1
     # find out what is varied
     bakType,bakDict,bakVary = SetBackgroundParms(Background)
-    dataType,insDict,insVary = SetInstParms(Inst)
     peakDict,peakVary = SetPeaksParms(Inst['Type'][0],Peaks)
+    dataType,insDict,insVary = SetInstParms(Inst,peakVary)
     parmDict = {}
     parmDict.update(bakDict)
     parmDict.update(insDict)

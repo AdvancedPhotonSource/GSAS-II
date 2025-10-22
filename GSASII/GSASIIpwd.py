@@ -2422,6 +2422,12 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         else:
             return peakWt*(calcPos-peakPos)
         
+    def dervPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
+        dMdv = np.zeros(shape=(len(varyList),len(peakDsp)))
+        calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+        if dataType[2] in ['A','B','C']:
+            const = 0.18/(np.pi*parmDict['radius'])
+
     def errPeakAlp(values,peakDsp,peakAlp,peakWt,dataType,parmDict,varyList):
         parmDict.update(dict(zip(varyList,values)))
         if dataType[2] in ['A','B']:
@@ -2431,6 +2437,19 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
             calcAlp = parmDict['alpha']/peakDsp
         return peakWt*(calcAlp-peakAlp)
     
+    def dervPeakAlp(values,peakDsp,peakAlp,peakWt,dataType,parmDict,varyList):
+        dMdv = np.zeros(shape=(len(varyList),len(peakDsp)))
+        if dataType[2] in ['A','B']:
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+        for iv,vary in enumerate(varyList):
+            if vary == 'alpha':
+                dMdv[iv,:] = 1.0/peakDsp
+            if vary == 'alpha-0':
+                dMdv[iv,:] = 1.0
+            if vary == 'alpha-1':
+                dMdv[iv,:] = npsind(calcPos/2.)
+        return np.sqrt(peakWt)*dMdv                 
+            
     def errPeakBet(values,peakDsp,peakBet,peakWt,dataType,parmDict,varyList):
         parmDict.update(dict(zip(varyList,values)))
         if dataType[2] in ['A','B']:
@@ -2439,6 +2458,22 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         else: #'T'
             calcBet = parmDict['beta-0']+parmDict['beta-1']/peakDsp**4+parmDict['beta-q']/peakDsp**2
         return peakWt*(calcBet-peakBet)
+    
+    def dervPeakBet(values,peakDsp,peakBet,peakWt,dataType,parmDict,varyList):
+        dMdv = np.zeros(shape=(len(varyList),len(peakDsp)))
+        if dataType[2] in ['A','B']:
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+        for iv,vary in enumerate(varyList):
+            if vary == 'beta-0':
+                dMdv[iv,:] = 1.0
+            if vary == 'beta-1':
+                if dataType[2] in ['A','B']:
+                    dMdv[iv,:] = npsind(calcPos/2.)
+                else:
+                    dMdv[iv,:] = 1.0/peakDsp**4
+            if vary == 'beta-q':
+                dMdv[iv,:] = 1.0/peakDsp**2
+        return np.sqrt(peakWt)*dMdv                                
 
     def errPeakSig(values,peakDsp,peakSig,peakWt,dataType,parmDict,varyList):
         parmDict.update(dict(zip(varyList,values)))
@@ -2449,6 +2484,30 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         else: #'T'
             calcSig = parmDict['sig-0']+parmDict['sig-1']*peakDsp**2+parmDict['sig-2']*peakDsp**4+parmDict['sig-q']*peakDsp
         return peakWt*(calcSig-peakSig)
+    
+    def dervPeakSig(values,peakDsp,peakSig,peakWt,dataType,parmDict,varyList):
+        dMdv = np.zeros(shape=(len(varyList),len(peakDsp)))
+        if dataType[2] in ['A','B','C']:
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+            tp = nptand(calcPos/2.0)
+            for iv,vary in enumerate(varyList):
+                if vary == 'U':
+                    dMdv[iv,:] = tp**2
+                if vary == 'V':
+                    dMdv[iv,:] = tp
+                if vary == 'W':
+                    dMdv[iv,:] = 1.
+        else:
+            for iv,vary in enumerate(varyList):
+                if vary == 'sig-0':
+                    dMdv[iv,:] = 1.0
+                if vary == 'sig-1':
+                    dMdv[iv,:] = peakDsp**2
+                if vary == 'sig-2':
+                    dMdv[iv,:] = peakDsp**4
+                if vary == 'sig-q':
+                    dMdv[iv,:] = peakDsp
+        return np.sqrt(peakWt)*dMdv                                                    
     
     def outResult():
         chisq = np.sum(result[2]['fvec']**2)
@@ -2480,7 +2539,7 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
     parmDict.update(posDict)
     if len(peakPos) > 5 and len(posVary):
         values =  np.array(Dict2Values(parmDict, posVary))
-        result = so.leastsq(errPeakPos,values,full_output=True,ftol=0.000001,
+        result = so.leastsq(errPeakPos,values,Dfun=None,full_output=True,ftol=0.000001,
             args=(peakDsp,peakPos,peakPosWt,dataType,parmDict,posVary))
         G2fil.G2Print('Position calibration:')
         Values2Dict(parmDict, posVary, result[0])
@@ -2492,8 +2551,8 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
     parmDict.update(sigDict)
     if len(peakSig) > 5 and len(sigVary):
         values =  np.array(Dict2Values(parmDict, sigVary))
-        result = so.leastsq(errPeakSig,values,full_output=True,ftol=0.000001,
-            args=(sigDsp,peakSig,peakSigWt,dataType,parmDict,sigVary))
+        result = so.leastsq(errPeakSig,values,Dfun=dervPeakSig,full_output=True,ftol=0.000001,
+            col_deriv=True,args=(sigDsp,peakSig,peakSigWt,dataType,parmDict,sigVary))
         G2fil.G2Print('Sigma calibration:')
         Values2Dict(parmDict, sigVary, result[0])
         sig = outResult()
@@ -2507,8 +2566,8 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         parmDict.update(alpDict)
         if len(peakAlp) > 5 and len(alpVary):
             values =  np.array(Dict2Values(parmDict, alpVary))
-            result = so.leastsq(errPeakAlp,values,full_output=True,ftol=0.000001,
-                args=(alpDsp,peakAlp,peakAlpWt,dataType,parmDict,alpVary))
+            result = so.leastsq(errPeakAlp,values,Dfun=dervPeakAlp,full_output=True,ftol=0.000001,
+                col_deriv=True,args=(alpDsp,peakAlp,peakAlpWt,dataType,parmDict,alpVary))
             G2fil.G2Print('Alpha calibration:')
             Values2Dict(parmDict, alpVary, result[0])
             sig = outResult()
@@ -2521,8 +2580,8 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         parmDict.update(betDict)
         if len(peakBet) > 5 and len(betVary):
             values =  np.array(Dict2Values(parmDict, betVary))
-            result = so.leastsq(errPeakBet,values,full_output=True,ftol=0.000001,
-                args=(betDsp,peakBet,peakBetWt,dataType,parmDict,betVary))
+            result = so.leastsq(errPeakBet,values,Dfun=dervPeakBet,full_output=True,ftol=0.000001,
+                col_deriv=True,args=(betDsp,peakBet,peakBetWt,dataType,parmDict,betVary))
             G2fil.G2Print('Beta calibration:')
             Values2Dict(parmDict, betVary, result[0])
             sig = outResult()

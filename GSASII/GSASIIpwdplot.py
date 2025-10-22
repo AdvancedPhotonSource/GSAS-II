@@ -199,7 +199,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         try:        #one way to check if key stroke will work on plot
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         except TypeError:
-            G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
+            G2frame.G2plotNB.status.SetStatusText(f'Select {plottype} pattern first',1)
             return
         newPlot = False
         if event.key == 'w':
@@ -1602,6 +1602,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     for i in 'Obs_color','Calc_color','Diff_color','Bkg_color':
         pwdrCol[i] = '#' + GSASIIpath.GetConfigValue(i,getDefault=True)
 
+    groupName = None
+    groupDict = {}
+    if plotType == 'GROUP':
+        groupName = G2frame.groupName # set in GSASIIgroupGUI.UpdateGroup
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
+        if groupName not in groupDict:
+            print(f'Unexpected: {groupName} not in groupDict')
+            return
+        # set data to first histogram in group 
+        G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, groupDict[groupName][0])
+        data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+
     if not G2frame.PatternId:
         return
     if 'PKS' in plottype: # This is probably not used anymore; PlotPowderLines seems to be called directly
@@ -1614,6 +1627,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:
         publish = None
     new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
+    # if we are changing histogram types (including group to individual, reset plot)
+    if not new and hasattr(Page,'prevPlotType'):
+        if Page.prevPlotType != plotType: new = True
+    Page.prevPlotType = plotType
+
     if G2frame.ifSetLimitsMode and G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Limits':
         # note mode
         if G2frame.ifSetLimitsMode == 1:
@@ -1641,8 +1659,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.lastPlotType
     except:
         G2frame.lastPlotType = None
-    groupDict = {}
-    if plotType == 'PWDR':
+    
+    if plotType == 'PWDR' or plotType == 'GROUP':
         try:
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 G2frame.PatternId, 'Instrument Parameters'))
@@ -1662,8 +1680,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.lastPlotType = Parms['Type'][1]
         except TypeError:       #bad id from GetGPXtreeItemId - skip
             pass
-        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
-        groupDict = Controls.get('Groups',{}).get('groupDict',{})
     try:
         G2frame.FixedLimits
     except:
@@ -2003,17 +2019,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             xLabel = 'E, keV'
         else:
             xLabel = r'$\mathsf{2\theta}$'
-    # working here
-    groupName = None
-    if groupDict:
-        histname = G2frame.GPXtree.GetItemText(G2frame.PatternId)
-        for key in groupDict:
-            if histname in groupDict[key]:
-                groupName = key
-                break
-        else:
-            print('No group for histogram',histname)
-    
     if groupName is not None:
         # plot a group of histograms
         Page.Choice = [' key press',

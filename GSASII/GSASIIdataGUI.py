@@ -67,6 +67,7 @@ from . import defaultIparms as dI
 from . import GSASIIfpaGUI as G2fpa
 from . import GSASIIseqGUI as G2seq
 from . import GSASIIddataGUI as G2ddG
+from . import GSASIIgroupGUI as G2gr
 
 try:
     wx.NewIdRef
@@ -8956,6 +8957,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             #import imp
             #imp.reload(G2ddG)
             G2ddG.MakeHistPhaseWin(G2frame)
+        elif G2frame.GPXtree.GetItemText(item).startswith('Groups/'):
+            # groupDict is defined (or item would not be in tree). 
+            # At least for now, this does nothing, so advance to first group entry
+            item, cookie = G2frame.GPXtree.GetFirstChild(item)
+            wx.CallAfter(G2frame.GPXtree.SelectItem,item)
         elif GSASIIpath.GetConfigValue('debug'):
             print('Unknown tree item',G2frame.GPXtree.GetItemText(item))
     ############################################################################
@@ -9149,6 +9155,12 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
         G2frame.dataWindow.HideShow.Enable(True)
+    elif G2frame.GPXtree.GetItemText(parentID).startswith('Groups/'):
+        # groupDict is defined. 
+        G2gr.UpdateGroup(G2frame,item)
+    elif GSASIIpath.GetConfigValue('debug'):
+            print(f'Unknown subtree item {G2frame.GPXtree.GetItemText(item)!r}',
+                  f'\n\tparent: {G2frame.GPXtree.GetItemText(parentID)!r}')
 
     if G2frame.PickId:
         G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)

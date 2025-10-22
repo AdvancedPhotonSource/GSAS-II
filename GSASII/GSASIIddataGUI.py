@@ -562,7 +562,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         shPenalty.Add(shToler,0,WACV)
         return shPenalty
 
-    def ExtSizer(Type):
+    def ExtSizer(Type,Htype):
 
         def OnSCExtType(event):
             Obj = event.GetEventObject()
@@ -595,21 +595,30 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             extSizer = wx.BoxSizer(wx.VERTICAL)
             typeSizer = wx.BoxSizer(wx.HORIZONTAL)
             typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Extinction type: '),0,WACV)
-            Choices = ['None','Primary','Secondary Type I','Secondary Type II',]    # remove 'Secondary Type I & II'
+            Choices = ['None','Primary','Secondary Type I','Secondary Type II','microED']    # remove 'Secondary Type I & II'
+            if Htype == 'SEC':
+                Choices = ['None','microED']
             typeTxt = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][1],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[typeTxt.GetId()] = [G2frame.hist,1]
             typeTxt.Bind(wx.EVT_COMBOBOX,OnSCExtType)
             typeSizer.Add(typeTxt)
-            typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Approx: '),0,WACV)
-            Choices=['Lorentzian','Gaussian']
-            approxTxT = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][0],
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Indx[approxTxT.GetId()] = [G2frame.hist,0]
-            approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
-            typeSizer.Add(approxTxT)
+            if Htype != 'SEC':
+                typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Approx: '),0,WACV)
+                Choices=['Lorentzian','Gaussian']
+                approxTxT = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][0],
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                Indx[approxTxT.GetId()] = [G2frame.hist,0]
+                approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
+                typeSizer.Add(approxTxT)
             if UseList[G2frame.hist]['Extinction'][1] == 'None':
                 extSizer.Add(typeSizer,0)
+            elif UseList[G2frame.hist]['Extinction'][1] == 'microED':
+                extSizer.Add(typeSizer,0)
+                extSizer.Add(wx.StaticText(DData,label=' Small F microED dynamical scattering correction:'))
+                val3Sizer =wx.BoxSizer(wx.HORIZONTAL)
+                Ekey = ['Ma','Mb','Mc']
+                extSizer.Add(ExtVal(Ekey,val3Sizer,'g',[-1.,10.]),0,)
             else:
                 extSizer.Add(typeSizer,0,wx.BOTTOM,5)
                 if 'Tbar' in UseList[G2frame.hist]['Extinction'][2]:       #skipped for TOF
@@ -633,11 +642,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 else:
                     Ekey = ['Eg','Es']
                 extSizer.Add(ExtVal(Ekey,val2Sizer,'g',[0.,100.]),0)
-                # extSizer.Add(wx.StaticText(DData,label=' Small F dynamical scattering correction:'))
-                # val3Sizer =wx.BoxSizer(wx.HORIZONTAL)
-                # if 'Primary' in UseList[G2frame.hist]['Extinction'][1]:
-                #     Ekey = ['Ma','Mb',]
-                #     extSizer.Add(ExtVal(Ekey,val3Sizer,'f',[-1.,10.]),0,)
         else:   #PWDR
             extSizer = wx.BoxSizer(wx.HORIZONTAL)
             extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
@@ -935,6 +939,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             if 'Ma' not in UseList[G2frame.hist]['Extinction'][2]:
                 UseList[G2frame.hist]['Extinction'][2].update({'Ma':[1.0,False]})
                 UseList[G2frame.hist]['Extinction'][2].update({'Mb':[0.0,False]})
+            if 'Mc' not in UseList[G2frame.hist]['Extinction'][2]:
+                UseList[G2frame.hist]['Extinction'][2].update({'Mc':[1.0,False]})
         elif 'PWDR' in UseList[G2frame.hist]['Histogram']:
             if 'LeBail' not in UseList[G2frame.hist]:
                 UseList[G2frame.hist]['LeBail'] = False
@@ -949,6 +955,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[G2frame.hist]['Use'])
         useBox.Add(useData,0,WACV)
+        Htype = UseList[G2frame.hist].get('Type','SXC')
+        useBox.Add(wx.StaticText(DData,label=' Histogram type: '+Htype))
         if not generalData['doPawley'] and 'PWDR' in G2frame.hist[:4]:
             lbLabel = 'Start Le Bail extraction?   '
             if UseList[G2frame.hist]['LeBail']:
@@ -1071,7 +1079,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                         except:
                             print('SHPenalty error occurred')
                 bottomSizer.Add(poSizer)    #,0,wx.TOP|wx.BOTTOM,5)
-                bottomSizer.Add(ExtSizer('PWDR'),0,wx.TOP|wx.BOTTOM,5)
+                bottomSizer.Add(ExtSizer('PWDR',Htype),0,wx.TOP|wx.BOTTOM,5)
                 if generalData['Type'] != 'magnetic':
                     bottomSizer.Add(BabSizer(),0,wx.BOTTOM,5)
             else:
@@ -1082,7 +1090,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 # TODO: should turn off all Extinction refinement flags
                 UseList[G2frame.hist]['Extinction'][1] = False
         elif G2frame.hist[:4] == 'HKLF':
-            bottomSizer.Add(ExtSizer('HKLF'))  #,0,wx.BOTTOM,5)
+            bottomSizer.Add(ExtSizer('HKLF',Htype))  #,0,wx.BOTTOM,5)
             bottomSizer.Add(BabSizer())  #,0,wx.BOTTOM,5)
             if not SGData['SGInv'] and len(UseList[G2frame.hist]['Twins']) < 2:
                 bottomSizer.Add(FlackSizer())  #,0,wx.BOTTOM,5)
@@ -1514,6 +1522,8 @@ def MakeHistPhaseWin(G2frame):
         HAPBook.AddPage(HAPtab,phaseName)
         DData.append(HAPtab)
     HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    # must setup all Phase tabs to get the DataMenu
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataGeneral)
     # set up "Select tab" menu contents
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
     mid = G2frame.dataWindow.DataMenu.FindMenu('Select tab')

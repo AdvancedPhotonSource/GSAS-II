@@ -1132,51 +1132,25 @@ def exceptHook(*args):
 
     This routine is only used when debug=True is set in the configuration settings
     '''
-    try:
-        #from IPython.core import ultratb
-        import IPython.core.ultratb
-    except:
-        pass
-
-    try:
-        from IPython.terminal.embed import InteractiveShellEmbed
-        import IPython.core
-        if sys.platform.startswith('win'):
-            IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='NoColor')(*args)
-        else:
-            IPython.core.ultratb.FormattedTB(call_pdb=False,color_scheme='LightBG')(*args)
-        from IPython.core import getipython
-        if getipython.get_ipython() is None:
-            ipshell = InteractiveShellEmbed.instance()
-        else:
-            ipshell = InteractiveShellEmbed()
-    except ImportError:
-        print ('IPython not installed or is really old')
-        return
-    except TypeError:  # Ipython 9.x removes color_scheme
-        try:
-            IPython.core.ultratb.FormattedTB(call_pdb=False)(*args)
-            from IPython.core import getipython
-            if getipython.get_ipython() is None:
-                ipshell = InteractiveShellEmbed.instance()
-            else:
-                ipshell = InteractiveShellEmbed()
-        except Exception as msg:
-            print('IPython patch failed, msg=',msg)
-    import inspect
-    frame = inspect.getinnerframes(args[2])[-1][0]
-    msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
+    import IPython.core
     savehook = sys.excepthook # save the exception hook
+    # show the error
+    tb_formatter = IPython.core.ultratb.VerboseTB()
+    print(tb_formatter.text(*args))
+    # get the Ipython shell routine
+    if IPython.core.getipython.get_ipython() is None:
+        ipshell = IPython.terminal.embed.InteractiveShellEmbed.instance()
+    else:
+        ipshell = IPython.terminal.embed.InteractiveShellEmbed()
+    # get to the right frame
     try:
+        import inspect
+        frame = inspect.getinnerframes(args[2])[-1][0]
+        msg = f'Entering IPython console at {frame.f_code.co_filename} at line {frame.f_lineno}\n'
         ipshell(msg,local_ns=frame.f_locals,global_ns=frame.f_globals) # newest (IPython >= 8)
-    except DeprecationWarning: # IPython <=7
-        try: # IPython >=5
-            class c(object): pass
-            pseudomod = c() # create something that acts like a module
-            pseudomod.__dict__ = frame.f_locals
-            InteractiveShellEmbed(banner1=msg)(module=pseudomod,global_ns=frame.f_globals)
-        except: # 'IPython <5
-            InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)
+    except:
+        msg = 'Entering IPython console (no contex)'
+        ipshell(msg)
     sys.excepthook = savehook # reset IPython's change to the exception hook
 
 def DoNothing():
@@ -1807,24 +1781,6 @@ else:
         return
     return newfil
 
-# see if a directory for local modifications is defined. If so, stick that in the path
-if os.path.exists(os.path.expanduser('~/.G2local/')):
-    sys.path.insert(0,os.path.expanduser('~/.G2local/'))
-    fl = glob.glob(os.path.expanduser('~/.G2local/GSASII*.py*'))
-    files = ""
-    prev = None
-    for f in sorted(fl): # make a list of files, dropping .pyc files where a .py exists
-        f = os.path.split(f)[1]
-        if os.path.splitext(f)[0] == prev: continue
-        prev = os.path.splitext(f)[0]
-        if files: files += ", "
-        files += f
-    if files:
-        print("*"*75)
-        print("Warning: the following source files are locally overridden in "+os.path.expanduser('~/.G2local/'))
-        print("  "+files)
-        print("*"*75)
-
 BinaryPathFailed = False
 BinaryPathLoaded = False
 binaryPath = ''
@@ -1886,6 +1842,16 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
             if r.status_code == 200:
                 if GetConfigValue('debug'): print('request OK')
                 page = r.text
+                if 'cryst.ehu.es' in URL and "currently down" in page:
+                    # Bilbao is down. Tell user
+                    import re
+                    print(f"Website down? See message below:\n\n{re.sub('<.+>','',page)}")
+                    try:
+                        import wx
+                        import GSASII.GSASIIctrlGUI as G2G
+                        dlg = G2G.viewWebPage(wx.GetApp().GetMainTopWindow(),URL,HTML=page)
+                    except:
+                        pass
                 if getcookie is not None:
                     getcookie.update(r.cookies)
                 return page # success

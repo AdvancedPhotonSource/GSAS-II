@@ -174,9 +174,9 @@ Far fewer packages are required to run GSAS-II on a
 compute server via the scripting interface
 and without a GUI.
 
-----------------
+------------------
  GUI Requirements
-----------------
+------------------
 
 When using the GSAS-II graphical user interface (GUI), the following
 Python extension packages are required:
@@ -448,7 +448,7 @@ with GSAS-II.
     computation of space group subgroups, color (magnetic) subgroups &
     lattice search.
 
-  **BYU ISOTROPY Software Suite** (https://stokes.byu.edu/iso/isotropy.php):
+  **BYU ISOTROPY Software Suite** (https://iso.byu.edu/isotropy.php):
     GSAS-II directly accesses capabilities in the ISOTROPY Software
     Suite from Brigham Young University for representational analysis
     and magnetism analysis.

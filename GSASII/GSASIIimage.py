@@ -46,15 +46,18 @@ debug = False
 
 def peneCorr(tth,dep,dist):
     ''' Compute empirical position correction due to detector absorption
+
     :param float/array tth: angle between detector normal & scattered ray vector
     :param float dep: coefficient
     :param float dist: sample to detector surface in mm
-    :returns: float/array distance: correction for penetration'''
+    :returns: float/array distance: correction for penetration
+    '''
     
     return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
 
 def GetTthP(x,y,parmDict):
     ''' Compute angle between detector normal & sample scattering ray vector
+
     :param float/array x: detector x-position in mm
     :param float/array y: detector y-position in mm
     :param dict parmDict: dictionary of detector orientation parameters in fitting routine

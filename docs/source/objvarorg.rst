@@ -260,13 +260,8 @@ General         \               (dict) Overall information for the phase
   \         Compare             (dict) Polygon comparison parameters
   \         Data plot type      (str) data plot type ('Mustrain', 'Size' or
                                 'Preferred orientation') for powder data 
-  \         DisAglCtls          (dDict) with distance/angle search controls,
-                                which has keys 'Name', 'AtomTypes',
-                                'BondRadii', 'AngleRadii' which are as above
-                                except are possibly edited. Also contains
-                                'Factors', which is a 2 element list with
-                                a multiplier for bond and angle search range
-                                [typically (0.85,0.85)].
+  \         DisAglCtls          (dict) with distance/angle search controls,
+                                see :ref:`DisAgl_table`.
   \         F000X               (float) x-ray F(000) intensity 
   \         F000N               (float) neutron F(000) intensity 
   \         Flip                (dict) Charge flip controls
@@ -1213,6 +1208,52 @@ Stress/Strain               Sample phi          (float) Sample rotation about ve
 
 ======================  ======================  ====================================================
 
+.. _DisAgl_table:
+
+.. index::
+  Distance/Angle computation controls
+
+Controls used for Distance/Angle computation
+----------------------------------------------
+
+Two arrays are used as input to :func:`GSASIIstrMain.RetDistAngle` and
+:func:`GSASIIstrMain.PrintDistAngle`, DisAglCtls and DisAglData. 
+
+  *  DisAglCtls is a dict with has keys ``Name``, ``AtomTypes``,
+     ``BondRadii``, ``AngleRadii`` which are  atomic radii to be used
+     in computation of distances. Also contains ``Factors``, which is
+     a 2 element list with a multiplier for bond and angle search
+     range [typically (0.85,0.85)]. The maximum search distance is the
+     product of the two radii and the multiplier, so raising the
+     multiplier increases the number of distances or angles that are
+     located. Example::
+
+        {'Name': 'Example',
+        'Factors': [0.85, 0.85],
+        'AtomTypes': ['Co', 'C', 'N', 'O', 'H'],
+        'BondRadii': [2.2, 1.12, 1.08, 1.09, 0.5],
+        'AngleRadii': [1.25, 0.92, 0.88, 0.89, 0.98]}
+
+  *  DisAglData is a dict containing phase & refinement data:
+
+       * 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
+         for distance/angle origins and atoms to be used as targets.
+       * 'OrigIndx' contains the index numbers for the Origin atoms.
+       * 'SGData' has the space group information (see
+         :ref:`Space Group object<SGData_table>`)
+       * 'pId' has the phase id
+       * 'Cell' has the unit cell parameters and cell volume
+       * 'covData' has the contents of Covariance data tree item
+
+       Added for use with rigid bodies:
+
+       * 'RBlist' has the index numbers for atoms in a rigid body
+       * 'rigidbodyDict' the contents of the main Rigid Body data tree item
+       * 'Phases' has the phase information for all used phases in the
+         data tree. Only the current phase is needed, but this is easy.
+       * 'parmDict' is the GSAS-II parameter dict
+
+                                
 .. _parmDict_table:
 
 .. index::
@@ -1302,7 +1343,7 @@ ISODISTORT implementation
 ==============================
 
 CIFs prepared with the ISODISTORT web site 
-https://stokes.byu.edu/iso/isodistort_version5.6.1/isodistort.php
+https://iso.byu.edu/isotropy.php
 [B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch, "ISODISPLACE: An Internet Tool for Exploring Structural Distortions." 
 J. Appl. Cryst. 39, 607-614 (2006).] can be read into GSAS-II using import CIF. This will cause constraints to be established for 
 structural distortion modes read from the CIF. At present, of the five types of modes  only displacive(``_iso_displacivemode``...) 

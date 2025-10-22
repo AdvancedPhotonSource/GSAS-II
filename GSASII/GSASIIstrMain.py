@@ -566,6 +566,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                 # add indirectly computed uncertainties into the esd dict
                 sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList))
                 G2stIO.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
+                # check for variables outside their allowed range, reset and freeze them
+                frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
                 G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
                 G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
                 G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
@@ -573,8 +575,6 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                 G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls,
                     pFile=printFile,covMatrix=covMatrix,varyList=varyList)
                 G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls,pFile=printFile)
-                # check for variables outside their allowed range, reset and freeze them
-                frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
                 # covData['depSig'] = G2stIO.PhFrExtPOSig  # created in G2stIO.SetHistogramData, no longer used?
                 covData['depSigDict'] = {i:(parmDict[i],sigDict[i]) for i in parmDict if i in sigDict}
                 if len(frozen):
@@ -1201,17 +1201,20 @@ def dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList):
     if parmMinDict or parmMaxDict:
         for name in varyList:
             if name not in parmDict: continue
+            atmParNam  = name
+            if name.split(':')[2].startswith('dA'):
+                atmParNam = name.replace(':dA',':A')
             n,val = G2obj.prmLookup(name,parmMinDict)
             if n is not None:
-                if parmDict[name] < parmMinDict[n]:
-                    parmDict[name] = parmMinDict[n]
+                if parmDict[atmParNam] < parmMinDict[n]:
+                    parmDict[atmParNam] = parmMinDict[n]
                     sigDict[name] = 0.0
                     freeze.append(name)
                     continue
             n,val = G2obj.prmLookup(name,parmMaxDict)
             if n is not None:
-                if parmDict[name] > parmMaxDict[n]:
-                    parmDict[name] = parmMaxDict[n]
+                if parmDict[atmParNam] > parmMaxDict[n]:
+                    parmDict[atmParNam] = parmMaxDict[n]
                     sigDict[name] = 0.0
                     freeze.append(name)
                     continue
@@ -1220,7 +1223,7 @@ def dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList):
                 parmFrozenList.append(v)
     return freeze
 
-def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
+def RetDistAngle(DisAglCtls,DisAglData,dlg=None,dmin=0.5):
     '''Compute and return distances and angles
 
     :param dict DisAglCtls: contains distance/angle radii usually defined using
@@ -1251,6 +1254,11 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
          data tree. Only the current phase is needed, but this is easy.
        * 'parmDict' is the GSAS-II parameter dict
 
+    :param dlg: an optional wx progress window that is updated as 
+        search progresses
+    :param float dmin: distances less than this distance are not reported as 
+        unrealistic (defaults to 0.5 A)
+
     :returns: AtomLabels, DistArray, AngArray where:
 
       **AtomLabels** is a dict of atom labels, keys are the atom number
@@ -1278,6 +1286,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
       DistArray item which gives the distance from the central atom and the applied
       symmetry transformation for the two target atoms.
     '''
+    RBlist = []
     SGData = DisAglData['SGData']
     Cell = DisAglData['Cell']
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
@@ -1329,7 +1338,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
             tRBdist = Tatom[0] in RBlist   # is atom in RB?
             Xvcov = []
             TxyzNames = ''
-            if 'covData':
+            if covData:
                 TxyzNames = [pfx+'dAx:%d'%(Tatom[0]),pfx+'dAy:%d'%(Tatom[0]),pfx+'dAz:%d'%(Tatom[0])]
                 Xvcov = G2mth.getVCov(OxyzNames+TxyzNames,varyList,covMatrix)
             BsumR = (Radii[Oatom[2]][0]+Radii[Tatom[2]][0])*Factor[0]
@@ -1337,7 +1346,7 @@ def RetDistAngle(DisAglCtls,DisAglData,dlg=None):
             for [Txyz,Top,Tunit,Spn] in G2spc.GenAtom(Tatom[3:6],SGData,False,Move=False):
                 Dx = (Txyz-np.array(Oatom[3:6]))+Units
                 dx = np.inner(Amat,Dx)
-                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)
+                dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),dmin)
                 IndB = ma.nonzero(ma.masked_greater(dist-BsumR,0.))
                 if not np.any(IndB): continue
                 for indb in IndB:

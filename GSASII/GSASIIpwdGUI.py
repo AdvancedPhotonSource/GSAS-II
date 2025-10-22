@@ -1045,7 +1045,7 @@ def UpdatePeakGrid(G2frame, data):
         UpdatePeakGrid(G2frame,peaks)
         G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
 
-    def OnPeakFit(oneCycle=False,noFit=False):
+    def OnPeakFit(oneCycle=False,noFit=False,noPlot=False):
         'Do peak fitting by least squares'
         SaveState()
         controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
@@ -1100,7 +1100,8 @@ def UpdatePeakGrid(G2frame, data):
             bxye = GetFileBackground(G2frame,data,background,scale=False)
         if noFit:
             results = G2pwd.DoPeakFit(None,peaksplus,background,limits,inst,inst2,data,bxye,[],oneCycle,controls,wtFactor,noFit=True)
-            G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
+            if not noPlot:
+                G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
             return
         # try:
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101,parent=G2frame,
@@ -1199,7 +1200,7 @@ def UpdatePeakGrid(G2frame, data):
         else:
             event.Skip()
             return
-        G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
+        # G2pwpl.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
 
     def SelectVars(rows):
@@ -1278,12 +1279,13 @@ def UpdatePeakGrid(G2frame, data):
 
     def RefreshPeakGrid(event):
         'recompute & plot the peaks any time a value in the table is edited'
+        col = event.GetCol()
         if 'LF' in Inst['Type'][0]:
             for i in range(len(data['LFpeaks'])):
                 data['peaks'][i][2:] = data['LFpeaks'][i]
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
         if data['peaks']:
-            OnPeakFit(noFit=True)
+            OnPeakFit(noFit=True,noPlot=col%2)
 
     def ToggleXtraMode(event):
         '''Switch "Extra Peak" mode in response to button'''
@@ -2559,11 +2561,9 @@ def UpdateInstrumentGrid(G2frame,data):
         Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         xye = ma.array(ma.getdata(Pattern[1]))
         cw = np.diff(xye[0])
+        fitPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         IndexPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
-        if 'Debye' not in Sample['Type']:
-            G2frame.ErrorDialog('Cannot calibrate','Only apropriate for Debye-Scherrer geometry')
-            return
         if not len(IndexPeaks[0]):
             G2frame.ErrorDialog('Cannot calibrate','Index Peak List empty')
             return
@@ -2577,27 +2577,31 @@ def UpdateInstrumentGrid(G2frame,data):
         if not Ok:
             G2frame.ErrorDialog('Cannot calibrate','Index Peak List not indexed')
             return
-        if G2pwd.DoCalibInst(IndexPeaks,data,Sample):
+        if G2pwd.DoCalibInst(IndexPeaks,fitPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
-            const = 0.0
-            if 'C' in data['Type'][0] or 'B' in data['Type'][0]:
-                const = 18.e-2/(np.pi*Sample['Gonio. radius'])
-                # const = 10**-3/Sample['Gonio. radius']
-            XY = []
-            Sigs = []
-            for ip,peak in enumerate(IndexPeaks[0]):
-                shft = 0.0
-                if peak[2] and peak[3]:
-                    binwid = cw[np.searchsorted(xye[0],peak[0])]
-                    if const:
-                        shft = -const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
-                    XY.append([peak[-1],peak[0]-shft,binwid])
-                    Sigs.append(IndexPeaks[1][ip])
-            if len(XY):
-                XY = np.array(XY)
-                G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
+            G2plt.PlotPeakWidths(G2frame)
         else:
             G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement or refinement failed')
+        const = 0.0
+        if data['Type'][0][2] in ['A','B','C']:
+            const = 0.18/(np.pi*Sample['Gonio. radius'])
+        XY = []
+        Sigs = []
+        for ip,peak in enumerate(IndexPeaks[0]):
+            calcPos = G2lat.Dsp2pos(data,peak[-1])
+            shft = 0.0
+            if peak[2] and peak[3]:
+                binwid = cw[np.searchsorted(xye[0],peak[0])]
+                if const:
+                    if 'Debye' in Sample['Type']:
+                        shft -= const*(Sample['DisplaceX'][0]*npcosd(calcPos)+Sample['DisplaceY'][0]*npsind(calcPos))
+                    else:
+                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(calcPos/2.0)
+                XY.append([peak[-1],peak[0]-shft,binwid])
+                Sigs.append(IndexPeaks[1][ip])
+        if len(XY):
+            XY = np.array(XY)
+            G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file
@@ -2871,11 +2875,12 @@ def UpdateInstrumentGrid(G2frame,data):
         updateData(insVal,insRef)
 
     def OnCopy1Val(event):
-        '''Select one instrument parameter value to edit and copy to many histograms
-        optionally allow values to be edited in a table
+        '''Select one instrument parameter value to edit and copy to many histograms.
+        Optionally allow values to be edited in a table.
         '''
         updateData(insVal,insRef)
         G2G.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
+        # change the values in the edit widgets to match data array
         insVal.update({key:data[key][1] for key in instkeys})
         insRef.update({key:data[key][2] for key in instkeys})
         wx.CallAfter(UpdateInstrumentGrid,G2frame,data)
@@ -3227,6 +3232,15 @@ def UpdateInstrumentGrid(G2frame,data):
             plotIndex['plotX'] = event.GetEventObject().rbindex
             onPrmPlot(event)
 
+        def onCopySelRow(event):
+            row = event.GetEventObject().row
+            for i,h in enumerate(histnames):
+                if i == 0:
+                    val = histdict[h][row][2]
+                else:
+                    histdict[h][row][2] = val
+            wx.CallAfter(MakeMultiParameterWindow,selected)
+
         def onPrmPlot(event):
             '''Callback after a change to X or Y plot contents
             plots multiple instrument param values vs selected X value.
@@ -3263,7 +3277,10 @@ def UpdateInstrumentGrid(G2frame,data):
         h = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histnames = [h]
         histdict = {h:data}
-        histnum = {h:G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[0]['hId']}
+        if 'hId' in G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[0]:
+            histnum = {h:G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[0]['hId']}
+        elif h in histoList: # how could this not be true?
+            histnum = {h:histoList.index(h)}            
         for i in selected:
             h = hlist[i]
             if h not in histoList: # unexpected
@@ -3273,7 +3290,7 @@ def UpdateInstrumentGrid(G2frame,data):
             inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hid, 'Instrument Parameters'))
             histnames.append(h)
             histdict[h] = inst
-            histnum[h] = G2frame.GPXtree.GetItemPyData(hid)[0]['hId']
+            histnum[h] = G2frame.GPXtree.GetItemPyData(hid)[0].get('hId',i)
 
         # start posting info into window
         G2frame.dataWindow.ClearData()
@@ -3281,26 +3298,27 @@ def UpdateInstrumentGrid(G2frame,data):
         parent = G2frame.dataWindow.topPanel
         topSizer.Add(wx.StaticText(parent,wx.ID_ANY,lbl))
         if hlist:
-            btn = wx.Button(parent, wx.ID_ANY,'Select\nHistograms')
+            btn = wx.Button(parent, wx.ID_ANY,'Select Histograms')
             topSizer.Add(btn,0,wx.LEFT|wx.RIGHT,15)
             btn.Bind(wx.EVT_BUTTON,onSelectHists)
-        topSizer.Add((20,-1))
+        topSizer.Add((20,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
         mainSizer =  wx.BoxSizer(wx.VERTICAL)
         G2frame.dataWindow.SetSizer(mainSizer)
 
         # create table w/headers
         sdlg = G2frame.dataWindow
-        fgs = wx.FlexGridSizer(0,len(histnames)+3,0,0)
+        fgs = wx.FlexGridSizer(0,len(histnames)+4,0,0)
         fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'plot\nas X'),0,wx.LEFT|wx.RIGHT,1)
         fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'plot\nas Y'),0,wx.LEFT|wx.RIGHT,1)
         fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'Histogram  '),0,WACV|wx.LEFT,14)
         for i,h in enumerate(histnames):
-            if len(h[:5].strip()) > 20:
-                fgs.Add(G2G.ScrolledStaticText(sdlg,label=h[5:],dots=False,lbllen=20),
+            if len(h[5:].strip()) > 15:
+                fgs.Add(G2G.ScrolledStaticText(sdlg,label=h[5:],dots=False,lbllen=15),
                     0,WACV|wx.LEFT|wx.RIGHT,5)
             else:
                 fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,h[5:]),0,WACV|wx.LEFT|wx.RIGHT,5)
+            if i == 0: fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,'copy\nright'),0,wx.LEFT|wx.RIGHT,1)
         firstRadio = wx.RB_GROUP
         # put non-editable values at top of table (plot as x but not y)
         keylist = ['num']
@@ -3320,7 +3338,7 @@ def UpdateInstrumentGrid(G2frame,data):
             fgs.Add((-1,-1)) # skip y checkbutton
             fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,lbl),0,WACV|wx.LEFT,14)
             plotvals = []
-            for h in histnames:
+            for i,h in enumerate(histnames):
                 if key == 'num':
                     val = histnum[h]
                 else:
@@ -3328,6 +3346,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,str(val)),
                     0,wx.ALIGN_CENTER|WACV,0)
                 plotvals.append(val)
+                if i == 0: fgs.Add((-1,-1)) # skip copy row button
             plotTbl.append(plotvals)
 
         # determine what items will be shown based on histogram type
@@ -3364,14 +3383,24 @@ def UpdateInstrumentGrid(G2frame,data):
             plotIndex[k] = rb.rbindex
             fgs.Add(wx.StaticText(sdlg,wx.ID_ANY,l),0,WACV|wx.LEFT,14)
             plotvals = []
-            for h in histnames:
+            for i,h in enumerate(histnames):
                 miniSizer = wx.BoxSizer(wx.HORIZONTAL)
                 itemVal = G2G.ValidatedTxtCtrl(sdlg,histdict[h][k],1,nDig=(10,4),typeHint=float)
                 plotvals.append(histdict[h][k][1])
                 miniSizer.Add(itemVal)
                 miniSizer.Add((2,-1))
-                miniSizer.Add(G2G.G2CheckBox(sdlg,'',histdict[h][k],2),0,WACV|wx.RIGHT,15)
-                fgs.Add(miniSizer,0,wx.ALIGN_CENTER)
+                if i == 0:
+                    miniSizer.Add(G2G.G2CheckBox(sdlg,'',histdict[h][k],2),0,WACV|wx.RIGHT,3)
+                    fgs.Add(miniSizer,0,wx.ALIGN_RIGHT)
+                    # copy row button
+                    but = wx.Button(sdlg,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
+                    #but.SetBackgroundColour('yellow')
+                    fgs.Add(but,0,wx.RIGHT,15)
+                    but.Bind(wx.EVT_BUTTON, onCopySelRow)
+                    but.row = k
+                else:
+                    miniSizer.Add(G2G.G2CheckBox(sdlg,'',histdict[h][k],2),0,WACV|wx.RIGHT,15)
+                    fgs.Add(miniSizer,0,wx.ALIGN_CENTER)
             plotTbl.append(plotvals)
 
         mainSizer.Add(fgs)
@@ -3810,6 +3839,7 @@ def UpdateSampleGrid(G2frame,data):
     def OnCopy1Val(event):
         'Select one value to copy to many histograms and optionally allow values to be edited in a table'
         G2G.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
+        # TODO: check if values need to be copied to editing widgets
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
     def SearchAllComments(value,tc,*args,**kwargs):
@@ -4324,9 +4354,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         result = None
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
-        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
-        Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-        Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
         if 'T' in Inst['Type'][0]:
             dmin = G2lat.Pos2dsp(Inst,Limits[0])
         else:
@@ -5185,7 +5212,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             txt = event.GetEventObject().page
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
             with open(tmp.name,'w') as fp:
-                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/">',))
+                fp.write(txt.replace('<HEAD>','<head><base href="https://iso.byu.edu/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
@@ -5193,7 +5220,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             import tempfile
             tmp = tempfile.NamedTemporaryFile(suffix='.html',delete=False)
             with open(tmp.name,'w') as fp:
-                fp.write(txt.replace('<HEAD>','<head><base href="https://stokes.byu.edu/">',))
+                fp.write(txt.replace('<HEAD>','<head><base href="https://iso.byu.edu/">',))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
 
@@ -5506,6 +5533,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 cif_fn_part1 = radio_val.split()[0]
                 cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
                 cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
+                cif_fn_part1 = cif_fn_part1.replace('/', '_')
+                cif_fn_part2 = cif_fn_part2.replace('/', '_')
                 cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
                 cif_fn = os.path.join(proj_pth, cif_fn)
                 with open(cif_fn, 'wb') as fl:
@@ -6065,7 +6094,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
             try:
-                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
+                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,deltM,dlg)
                 if len(result[0]) == 2:
                     G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',newPlot=True,
                         Title='Modulation vector search for %s%s'%(controls[13],ssopt['ssSymb']),
@@ -6096,9 +6125,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 dlg = wx.ProgressDialog('Elapsed time','Modulation vector search with %s'%ssSym,
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
                 try:
-                    ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
-                    ssopt['SSgResults'].append([ssSym,ssopt['ModVec'],])
-                    OnHklShow(event,indexFrom='  Indexing from best modulation vector')
+                    ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,deltM,dlg)
+                    M20,X20 = OnHklShow(event,indexFrom='  Indexing from best modulation vector')[2:4]
+                    Ma,Mb,Mg = ssopt['ModVec']
+                    ssopt['SSgResults'].append([ssSym,False,M20,X20,Ma,Mb,Mg,])
                 finally:
                     dlg.Destroy()
                 if result[1] < best:
@@ -6106,7 +6136,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     best = result[1]
             if bestSS != '':
                 ssopt['ssSymb'] = bestSS
-                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
+                ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,deltM,dlg=None)
                 G2plt.PlotXY(G2frame,[[result[2],1./result[3]],],labelX='k',labelY='fit',
                     newPlot=True,Title='Modulation vector search for %s'%bestSS)
 
@@ -6409,6 +6439,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
         unitSizerWidgetList.append(shiftSel)
         shiftSel.SetSelection(3)
+        deltM = float(shiftChoices[shiftSel.GetSelection()][:-1])/100.
         vcSizer.Add(shiftSel)
         hSizer.Add(vcSizer,0,WACV)
         if not ssopt.get('Use',False):        #zero for super lattice doesn't work!
@@ -6560,7 +6591,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             unitSizer.Add((5,5),0)
         return unitSizer
 
-# Space group grid
+# The various grids for Unilt Cells List
     def SpGrpGrid():
 
         def OnSelectSgrp(event):
@@ -6584,8 +6615,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             OnHklShow(event,True,indexFrom=' Space group selection %s #%d'%(controls[13],r))
 
         SpGrpGrid = wx.BoxSizer(wx.VERTICAL)
-        lbl = (' Space group search results from "Try all"'+
-                   '\n  '+ssopt.get('SgSettings',''))
+        lbl = (' Space group search results from "Try all"'+ssopt.get('SgSettings',''))
         SpGrpGrid.Add(wx.StaticText(parent=G2frame.dataWindow,label=lbl))
         colLabels = ['Sp Grp','show','M20','X20','Nhkl','fr. found']
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
@@ -6618,33 +6648,45 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         def OnSelectSSG(event):
             'Called when the Super Space Group Search Results show column is checked'
             if event is not None:
+                if event.GetCol() != 1:
+                    return
                 clearShowFlags()
                 r = event.GetRow()
                 for i in range(len(ssopt['SSgResults'])):
-                    ssopt['SSgResults'][i][1] = False
-                    SSgTable.SetValue(i,1,False)
+                    results[i][1] = False
                 SSgTable.SetValue(r,1,True)
-#                controls[13] = ssopt['SgResults'][r][0]
-            else:
-                for r in range(len(ssopt['SSgResults'])):
-                    if ssopt['SSgResults'][r][1]:
-#                        controls[13] = ssopt['SSgResults'][r][0]
-                        break
-            SSDisplay.ForceRefresh()
-#            ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
-            # G2frame.dataWindow.RefineCell.Enable(True)
-            OnHklShow(event,True,indexFrom=' Super Space group selection %s #%d'%(controls[13],r))
+                ssopt['ModVec'] = results[r][4:]
+                ssopt['ssSymb'] = results[r][0]
+                result = results[r]
+            # else:
+            #     for r,result in enumerate(results):
+            #         try:
+            #             if result[1]:
+            #                 ssopt['ModVec'] = result[4:]
+            #                 ssopt['ssSymb'] = result[0]
+            #                 break
+            #         except ValueError:  #old style!
+                    
+                SSDisplay.ForceRefresh()        #repaints the grids only
+                OnHklShow(event,True,indexFrom=' Super Space group selection %s #%d'%(controls[13]+result[0],r))
 
+        results = ssopt['SSgResults']
+        if type(results[0][1]) != bool:
+            return None
         SSGrpGrid = wx.BoxSizer(wx.VERTICAL)
-        lbl = (' Super Space group search results from "Try all"'+
-                   '\n  '+ssopt.get('SgSettings',''))
+        lbl = (' Super Space group search results for '+controls[5])
         SSGrpGrid.Add(wx.StaticText(parent=G2frame.dataWindow,label=lbl))
-        colLabels = ['SSp Grp','show','M20','X20','Nhkl','fr. found']
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
-            wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
+        if len(results[0]) == 6:
+            colLabels = ['SSp Grp','show','M20','X20','Nhkl','fr. found']
+            Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
+                wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_FLOAT+':10,3']
+        else:
+            colLabels = ['SSp Grp','show','M20','X20','\u03B1','\u03B2','\u03B3']
+            Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
+                wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_FLOAT+':10,3']
         rowLabels = []
         table = []
-        for result in ssopt['SSgResults']:
+        for result in results:
             rowLabels.append('')
             row = result
             table.append(row)
@@ -7141,6 +7183,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             setGrid = gridDisplay
             gridDisplay.SetCellValue(setRow,2,'True')   # set flag in grid
             disableCellEntries()
+            
+    # G@ Modulation vector results list
+    if ssopt and 'SSgResults' in ssopt and len(ssopt['SSgResults']) > 1:
+        ssgrid = SSGrid()
+        if ssgrid: mainSizer.Add(ssgrid)
 
     # Subgroup/magnetic s.g. search results
     if magcells and len(controls) > 16:
@@ -7150,6 +7197,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
     G2frame.Contour = False
     if New:
        OnHklShow(None,indexFrom=' Indexing from unit cell & symmetry settings')
+       New = False
     G2frame.dataWindow.SetDataSize()
     if callSeaResSelected:
         SeaResSelected(None)  # select 1st item in table
@@ -9738,6 +9786,7 @@ def UpdatePDFGrid(G2frame,data):
             wx.CallAfter(OnComputePDF,None)
 
         def OnDetType(event):
+            #TODO: to be removed
             data['DetType'] = detType.GetValue()
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
             wx.CallAfter(OnComputePDF,None)
@@ -9799,6 +9848,7 @@ def UpdatePDFGrid(G2frame,data):
 
         sfgSizer.Add((5,5),0)
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
+        #TODO: this should be removed
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Detector type: '),0,WACV)
         choice = ['Area detector','Point detector']
         detType = wx.ComboBox(G2frame.dataWindow,value=data['DetType'],choices=choice,
@@ -9810,6 +9860,7 @@ def UpdatePDFGrid(G2frame,data):
             obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'ObliqCoeff',nDig=(10,3),xmin=0.0,xmax=1.0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
             sqBox.Add(obliqCoeff,0)
+        #TODO: end of proposed removal
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Flat Bkg.: '),0,WACV)
         G2frame.flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),
                 typeHint=float,OnLeave=AfterChangeNoRefresh)

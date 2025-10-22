@@ -234,8 +234,8 @@ Class :class:`~GSASIIscriptable.G2Project`
 ---------------------------------------------
 
   All GSASIIscriptable scripts will need to create a :class:`~GSASIIscriptable.G2Project` object 
-  either for a new GSAS-II project or to read in an existing project (.gpx) file. 
-  The most commonly used routines in this object are:
+  either for a new GSAS-II project or to read in an existing project (.gpx) file.
+  The table below is not complete but does contain the most commonly used methods in this object:
 
 .. tabularcolumns:: |l|p{3.in}|
 
@@ -256,17 +256,25 @@ method                                                                  Use
 
 :meth:`~GSASIIscriptable.G2Project.add_single_histogram`                Used to read in a single crystal diffraction dataset into a project file.
 
-:meth:`~GSASIIscriptable.G2Project.histogram`                           Finds a histogram from an object, name or random id reference, returning a
-                                                                        a :class:`~GSASIIscriptable.G2PwdrData` or :class:`~GSASIIscriptable.G2Single` object.
+:meth:`~GSASIIscriptable.G2Project.add_SmallAngle`                      Adds a small-angle scattering histogram to a project
 
 :meth:`~GSASIIscriptable.G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`~GSASIIscriptable.G2PwdrData` or
                                                                         as :class:`~GSASIIscriptable.G2Single` objects.
+
+:meth:`~GSASIIscriptable.G2Project.histogram`                           Finds a histogram from an object, name or random id reference, returning a
+                                                                        a :class:`~GSASIIscriptable.G2PwdrData` or :class:`~GSASIIscriptable.G2Single` object.
 
 :meth:`~GSASIIscriptable.G2Project.histType`                            Determines the histogram type from an object, name or random id reference.
                                                                         
 :meth:`~GSASIIscriptable.G2Project.phases`                              Provides a list of phases defined in the current project, as :class:`~GSASIIscriptable.G2Phase` objects
 
+:meth:`~GSASIIscriptable.G2Project.phase`                               Finds a phase from an object, name or random id reference, returning a
+                                                                        a :class:`~GSASIIscriptable.G2Phase` object.
+
 :meth:`~GSASIIscriptable.G2Project.images`                              Provides a list of images in the current project, as :class:`~GSASIIscriptable.G2Image` objects
+
+:meth:`~GSASIIscriptable.G2Project.image`                               Finds an image from an object, name or random id reference, returning a
+                                                                        a :class:`~GSASIIscriptable.G2Image` object.
 
 :meth:`~GSASIIscriptable.G2Project.pdfs`                                Provides a list of PDFs in the current project, as :class:`~GSASIIscriptable.G2PDF` objects
 
@@ -281,7 +289,8 @@ method                                                                  Use
                                                                         These actions can be performed also in :meth:`~GSASIIscriptable.G2Project.do_refinements`. 
 :meth:`~GSASIIscriptable.G2Project.get_Variable`                        Retrieves the value and esd for a parameter
 :meth:`~GSASIIscriptable.G2Project.get_Covariance`                      Retrieves values and covariance for a set of refined parameters
-:meth:`~GSASIIscriptable.G2Project.set_Controls`                        Set overall GSAS-II control settings such as number of cycles and to set up a sequential
+:meth:`~GSASIIscriptable.G2Project.set_Controls`                        Set overall GSAS-II control settings such as number of cycles and to set parameter limits.
+                                                                        This is also used to set up a sequential
                                                                         fit. (Also see :meth:`~GSASIIscriptable.G2Project.get_Controls` to read values.)
 :meth:`~GSASIIscriptable.G2Project.imageMultiDistCalib`                 Performs a global calibration fit with images at multiple distance settings.
 :meth:`~GSASIIscriptable.G2Project.get_Constraints`                     Retrieves :ref:`constraint definition <Constraint_definitions_table>` entries.
@@ -290,6 +299,10 @@ method                                                                  Use
 :meth:`~GSASIIscriptable.G2Project.add_EqnConstr`                       Adds an equation-type constraint on two or more variables
 :meth:`~GSASIIscriptable.G2Project.add_NewVarConstr`                    Adds an new variable as a constraint on two or more variables
 :meth:`~GSASIIscriptable.G2Project.ComputeWorstFit`                     Determines the parameters that will have the greatest impact on the fit if refined
+:meth:`~GSASIIscriptable.G2Project.get_Frozen`                          Find variables where parameters have refined out of the parameter limit ranges.
+                                                                        Note that parameter limits are set using :meth:`~GSASIIscriptable.G2Project.set_Controls`.
+:meth:`~GSASIIscriptable.G2Project.set_Frozen`                          Adds or removes variables from the list where parameters have refined outside of their limits.
+                                                                        Note that parameter limits are set using :meth:`~GSASIIscriptable.G2Project.set_Controls`.
 ====================================================================    ===============================================================================================================
 
 .. _Class_G2Phase:
@@ -329,6 +342,7 @@ method                                                      Use
 :meth:`~GSASIIscriptable.G2Phase.clearDistRestraint`        Clears any previously defined bond distance restraint(s) for the selected phase
 :meth:`~GSASIIscriptable.G2Phase.addDistRestraint`          Finds and defines new bond distance restraint(s) for the selected phase
 :meth:`~GSASIIscriptable.G2Phase.setDistRestraintWeight`    Sets the weighting factor for the bond distance restraints
+:meth:`~GSASIIscriptable.G2Phase.Origin1to2Shift`           Shifts the atom coordinates from an Origin 1 setting to the Origin 2 setting
 ========================================================    ===============================================================================================================
 
 .. _Class_G2PwdrData:

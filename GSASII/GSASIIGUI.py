@@ -16,7 +16,9 @@ from . import GSASIIpath
 __version__ = '5.0.0'
 gv = GSASIIpath.getSavedVersionInfo()
 if gv is not None:
-    if len(gv.git_tags):
+    if len(gv.git_versiontag):
+        __version__ = gv.git_versiontag[1:]
+    elif len(gv.git_tags):
         __version__ = gv.git_tags[0]
     elif len(gv.git_prevtags):
         __version__ = gv.git_prevtags[0]

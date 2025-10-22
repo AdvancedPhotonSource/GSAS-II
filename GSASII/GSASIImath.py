@@ -4305,7 +4305,9 @@ def ChargeFlip(data,reflDict,pgbar):
                 SQ = 0.25/dsp**2
                 ff *= G2el.ScatFac(FFtable,SQ)[0]
             if ref[8+im] > 0.:         #use only +ve Fobs**2
-                E = np.sqrt(ref[8+im])/ff
+                E = np.sqrt(ref[8+im])
+                if reflDict['Type'] == 'SEC':
+                    E *= np.exp(-flipData['MScorr']*E)
             else:
                 E = 0.
             ph = ref[10]
@@ -5143,25 +5145,22 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         ind = 1
     ins = {}
     if 'T' in Parms['Type'][0]:
+        try:
+            len(pos)
+            singlevalue=False
+        except TypeError:
+            singlevalue=True            
         if ifQ:
             dsp = 2.*np.pi/pos
             pos = Parms['difC']*dsp
         else:
             dsp = pos/Parms['difC'][1]
-        if 'pdabc' in Parms2 and len(Parms2['pdabc']):
-            for x in ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
-                ins[x] = Parms.get(x,[0.0,0.0])[ind]
-            Pdabc = Parms2['pdabc']
-            alp = np.interp(dsp,Pdabc['d'],Pdabc['alp'])
-            bet = np.interp(dsp,Pdabc['d'],Pdabc['bet'])
-            sig = np.interp(dsp,Pdabc['d'],Pdabc['sig'])
-        else:
-            for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
-                ins[x] = Parms.get(x,[0.0,0.0])[ind]
-            alp = getTOFalpha(ins,dsp)
-            bet = getTOFbeta(ins,dsp)
-            sig = getTOFsig(ins,dsp)
-        gam = getTOFgamma(ins,dsp)
+        for x in ('alpha','beta-0','beta-1','beta-q',
+                  'sig-0','sig-1','sig-2','sig-q','X','Y','Z'):
+            ins[x] = Parms.get(x,[0.0,0.0])[ind]
+        if 'pdabc' in Parms2:
+            ins['pdabc'] = Parms2['pdabc']
+        alp,bet,gam,sig = G2pwd.getTOFwids(dsp,[],0,ins,applyMax=singlevalue)
         XY = [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
     elif 'C' in Parms['Type'][0] or 'LF' in Parms['Type'][0]:
         for x in ['U','V','W','X','Y','Z']:
@@ -5873,6 +5872,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     parmDict['nfixAt'] = len(fixAtoms)
     MCSA = generalData['MCSA controls']
     reflName = MCSA['Data source']
+    Htype = data['Histograms'][reflName]['Type']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
     upper = []
     lower = []
@@ -5896,7 +5896,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     Xdata = GetAtomX(RBdata,parmDict)
     Mdata = GetAtomM(Xdata,SGData)
     allT,allM = getAllTX(Tdata,Mdata,Xdata,SGM,SGT)[:2]
-    FFtables = G2el.GetFFtable(aTypes)
+    if Htype == 'SEC':
+        FFtables = G2el.GetEFFtable(aTypes)
+    else:    
+        FFtables = G2el.GetFFtable(aTypes)
     refs = []
     allFF = []
     cosTable = []
@@ -5972,7 +5975,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     allFF = np.array(allFF).T
     refs = np.array(refs).T
     if start:
+        
         G2fil.G2Print (' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef))
+        G2fil.G2Print (' Histogram type: %s'%Htype)
         G2fil.G2Print (' Number of parameters varied: %d'%(len(varyList)))
         start = False
     parmDict['sumFosq'] = sumFosq
@@ -5980,7 +5985,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     ifInv = SGData['SGInv']
     bounds = np.array(list(zip(lower,upper)))
     if MCSA['Algorithm'] == 'Basin Hopping':
-#        import basinhopping as bs
         take_step = RandomDisplacementBounds(np.array(lower), np.array(upper))
         results = so.basinhopping(mcsaCalc,x0,take_step=take_step,disp=True,T=MCSA['Annealing'][0],
                 interval=MCSA['Annealing'][2]/10,niter=MCSA['Annealing'][2],minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,

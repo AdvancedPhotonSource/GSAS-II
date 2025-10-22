@@ -15,6 +15,9 @@ data editing panel.
 GSASIIdataGUI Classes & Routines
 ---------------------------------------
 
+.. automodule:: GSASII.G2
+        :members:
+           
 .. automodule:: GSASII.GSASIIdataGUI
         :members: 
 
@@ -47,22 +50,35 @@ GSASIIseqGUI Classes & Routines
         :members: 
 
 ---------------------------
-*GSASIIphsGUI: Phase GUI*
+*Phase GUI files*
 ---------------------------
 
-Module to create the GUI for display of phase information
+Routines create the GUI for display of phase information
 in the data display window when a phase is selected.
 Phase information is stored in one or more
 :ref:`Phase Tree Item <Phase_table>` objects.
 Note that there are functions
 that respond to some tabs in the phase GUI in other modules
-(such as GSASIIddata).
+(such as GSASIIddata). This is large enough that it has been split
+into three files. 
 
 GSASIIphsGUI Classes & Routines
 ---------------------------------------
 
 .. automodule:: GSASII.GSASIIphsGUI
     :members: 
+
+GSASIIphsGUI2 Classes & Routines
+---------------------------------------
+
+.. automodule:: GSASII.GSASIIphsGUI2
+    :members: 
+
+GSASIIrmcGUI Classes & Routines
+---------------------------------------
+
+.. automodule:: GSASII.GSASIIrmcGUI
+    :members:
 
 --------------------------------------------
 *GSASIIddataGUI: Phase Diffraction Data GUI*
@@ -214,4 +230,12 @@ Absorb Classes & Routines
 ---------------------------------------
 
 .. automodule:: GSASII.Absorb
+    :members: 
+
+
+-------------------------------------------------
+*PlotXNFF: Show Form Factors*
+-------------------------------------------------
+
+.. automodule:: GSASII.PlotXNFF
     :members: 

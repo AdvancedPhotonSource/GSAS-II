@@ -2,6 +2,16 @@
 *GSAS-II Importer Modules*
 --------------------------------------------------------
 
+Almost all the types of data files that GSAS-II can accept are read
+using a layer of routines called importers. (The one exception is the
+reading of powder peak positions.)  Importers usually require quite
+simple code, so they can be written quickly for new data formats. 
+The interface to the importers 
+is self-configuring, so all supplied importers are available once the
+importer is added to the code base. This allows GSAS-II to be quite
+flexible in adapting to use many data formats without need for
+extensive coding. 
+
 Imports are implemented by deriving a class from 
 :class:`GSASIIobj.ImportPhase`, :class:`GSASIIobj.ImportStructFactor`,
 :class:`GSASIIobj.ImportPowderData` ,
@@ -10,18 +20,40 @@ Imports are implemented by deriving a class from
 :class:`GSASIIobj.ImportPDFData`,  
 or :class:`GSASIIobj.ImportImage`. These classes are in turn 
 derived from :class:`GSASIIobj.ImportBaseclass`.
-
 Module file names (`G2phase_`, `G2pwd_` and `G2sfact_`, etc.) are used to
-determine which menu an importer routine should be placed
-into. (N.B. in retrospect this
+determine which type of data will be read and which menu an importer
+routine should be placed into. (N.B. in retrospect this
 naming was an unnecessary choice; importer types could have been determined
-from the base class.)
+from the base class as is done for exporters.)
+
 To implement the import of 
 a phase, a single crystal or a powder dataset, etc., create a file
-named with the appropriate file name prefix and place the file anywhere in the
-path defined in ``sys.path``. The next time GSAS-II is started,
-the file should be read by Python and the new format will appear in
-the appropriate importer menu. 
+named with the appropriate file name prefix:
+
+* 'img' (images), 
+* 'pdf' (pair distribution function), 
+* 'phase' (cell/coordinates), 
+* 'pwd' (powder diffraction), 
+* 'rfd' (reflectivity), 
+* 'sad' (small-angle scattering) or 
+* 'sfact' (single crystal).
+
+The importer file can be placed
+either in the ``GSASII/imports`` directory (which requires
+modification of the ``__init__.py`` and the ``meson.build`` files
+or the importer file can be placed in
+the ``~/.GSASII/imports`` directory.
+(Note that ``~`` here is translated to the 
+user's home directory; for Windows this is usually taken from the
+USERPROFILE setting or a combination of HOMEPATH and HOMEDRIVE,
+so this directory will usually have form
+``C:\\Users\\YourUsername\\.GSASII\\imports``.
+The next time GSAS-II is started,
+the file will be loaded with all the other GSAS-II files and
+the new data format(s) will appear in the appropriate importer menu. 
+The importer file may contain a
+single importer class or several. 
+
 Importers are documented below, separated by type. Importers tend to
 be fairly simple files, where many are in the range of 50-100 lines,
 and where more than half of those lines are directly copied from other
@@ -42,18 +74,27 @@ from
 :class:`GSASIIobj.ImportSmallAngleData`,  
 :class:`GSASIIobj.ImportReflectometryData`,  
 :class:`GSASIIobj.ImportPDFData`,  
-or :class:`GSASIIobj.ImportImage`. As described below, 
-all these classes will implement
-an ``__init__()`` and a ``Reader()`` method, and most will supply a 
-``ContentsValidator()`` method, too.
-See the appropriate class documentation 
+or :class:`GSASIIobj.ImportImage`.
+The name of the class is arbitrary, but if more than one class is
+placed in file, each class must have a different name. The same name
+can be repeated if it is in different files. 
+As described below, 
+to implement an importer class, you must implement
+an ``__init__()`` and a ``Reader()`` method, and many will supply a 
+``ContentsValidator()`` method, too. The purpose of each of these
+routines is described below. The easiest way to craft a new importer
+will be to use the other importers of the same data type as a model
+for what values should be set inside each routine, with most of the
+work needed to create a ``Reader()`` routine. The documentation 
+for the parent class may also have some useful information. See the appropriate class 
 for details on what values each type of ``Reader()`` should
-set. General principles on how an importer works are described below. 
+set. 
 
 __init__()
 --------------
  
-The ``__init__`` method will follow standard boilerplate: 
+The ``__init__`` method will follow standard boilerplate largely independent
+of the data type: 
 
 .. code-block:: python
 
@@ -70,7 +111,7 @@ The first line in the ``__init__`` method calls the parent class
 
   * ``extensionlist``: a list of extensions that may be used for this type of file.
   * ``strictExtension``: Should be True if only files with extensions in
-    ``extensionlist`` are allows; False if all file types should be offered
+    ``extensionlist`` are allowed; False if all file types should be offered
     in the file browser. Also if False, the importer class will be
     used on all files when "guess from format" is tried, though 
     readers with matching extensions will be tried first. 
@@ -86,7 +127,7 @@ set the value of ``self.UseReader`` to False. Another possible use for
 this would be an importer that requires a network connection to a
 remote site. Setting ``self.UseReader`` to False must be done in the 
 ``__init__`` method and will prevent the
-importer from being used or included in the expected menu. 
+importer from being accessed or included in the appropriate GUI menu. 
 
 Reader()
 --------------
@@ -104,10 +145,10 @@ where the arguments have the following uses:
    called. 
  * ``ParentFrame``: a reference to the main GSAS-II (tree) windows, for
    the unusual ``Reader`` routines that will create GUI windows to ask
-   questions. The Reader should do something reasonable such as take a
-   reasonable default if ``ParentFrame`` is None, which indicates that
-   GUI should not be accessed. 
-
+   questions. For use with scripting, the Reader should do something
+   reasonable such as assume a default if ``ParentFrame`` is None,
+   which indicates that the GUI should not be accessed.
+   
 In addition, the following keyword parameters are defined that ``Reader``
 routines may optionally use:
 
@@ -124,7 +165,9 @@ to hold information that will speed repeated calls.
 As an example, the ``buffer`` dict is used in CIF reading to hold the parsed CIF file,
 so that when reading multiple datasets or phases from a multi-block
 CIF, the parsed information can be reused without having to reread and
-reparse the file for subsequent calls.
+reparse the file for subsequent calls. For multi-image files, the
+indexing of where images are to be found is done once and saved. This
+greatly speeds the time needed to process image file. 
 
 Some additional information specific to on what a ``Reader()`` method
 should do for images and single-crystal datasets can be found in the
@@ -298,6 +341,15 @@ A short routine to read in a phase from an xyz Cartesian coordinate file
 .. automodule:: GSASII.imports.G2phase_xyz
     :members: 
 
+*Module G2phase_RRUFF: read from RRUFF database*
+-------------------------------------------------------
+
+A short routine to read in a phase from the RRUFF database
+in the native format it uses.
+
+.. automodule:: GSASII.imports.G2phase_RRUFF
+    :members: 
+
 ======================================
  Powder Data Importer Routines
 ======================================
@@ -399,6 +451,16 @@ column-oriented variable. The only allowed extensions for this are
 ----------------------------------------------------------------
 
 .. automodule:: GSASII.imports.G2pwd_rigaku
+    :members:
+
+*Module G2pwd_MIDAS: Read integration results from MIDAS*
+----------------------------------------------------------------
+
+The MIDAS package can be used on to read and integrate images,
+particularly at APS Sector 1. This importer reads the Zarr container
+files created by MIDAS. 
+
+.. automodule:: GSASII.imports.G2pwd_MIDAS
     :members:
 
 
@@ -567,6 +629,14 @@ images, all are read.
 .. automodule:: GSASII.imports.G2img_SFRM
     :members: 
 
+*Module G2img_pixirad_1ID_16bit: Pixirad detector*
+----------------------------------------------------------------
+
+Reads images from the pixirad detector in use as APS Sector 1. 
+
+.. automodule:: GSASII.imports.G2img_pixirad_1ID_16bit
+    :members:
+
 
 ======================================================
  Pair Distribution Function (PDF) Importer Routines
@@ -616,3 +686,8 @@ file.
 .. automodule:: GSASII.imports.G2rfd_Panalytical
     :members: 
 
+*Module G2rdf_rigaku: reflectometry data from a Rigaku file*
+----------------------------------------------------------------
+
+.. automodule:: GSASII.imports.G2rfd_rigaku
+    :members:

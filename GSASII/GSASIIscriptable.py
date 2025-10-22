@@ -500,12 +500,13 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 repeat = False
                 block += 1
                 rd.objname = os.path.basename(filename)
-                try:
+                if GSASIIpath.GetConfigValue('debug'):
                     flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
-                except Exception as msg:
-                    if GSASIIpath.GetConfigValue('debug'):
-                        print('Reader exception',msg)
-                    flag = False
+                else:
+                    try:
+                        flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
+                    except Exception as msg:
+                        flag = False
                 if flag:
                     # Omitting image loading special cases
                     rd.readfilename = filename
@@ -597,7 +598,9 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
 
     if 'T' in Iparm1['Type'][0]:
         if not reader.clockWd and reader.GSAS:
+            # following comment is wrong or code is misplaced. This is TOF (BHT)
             reader.powderdata[0] *= 100.        #put back the CW centideg correction
+        # shift TOF from bin edge to bin center
         cw = np.diff(reader.powderdata[0])
         reader.powderdata[0] = reader.powderdata[0][:-1]+cw/2.
         if reader.GSAS:     #NB: old GSAS wanted intensities*CW even if normalized!
@@ -1391,6 +1394,8 @@ class G2Project(G2ObjectWrapper):
         phaseNameList = [p.name for p in self.phases()]
         phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
         phObj['General']['Name'] = phasename
+        if phasereader.warnings:
+            phObj['warnings'] = phasereader.warnings
 
         if 'Phases' not in self.data:
             self.data['Phases'] = { 'data': None }
@@ -2838,8 +2843,12 @@ class G2Project(G2ObjectWrapper):
         return parmDict,covData
 
     def set_Frozen(self, variable=None, histogram=None, mode='remove'):
-        '''Removes one or more Frozen variables (or adds one)
-        (See :ref:`Parameter Limits<ParameterLimits>` description.)
+        '''Removes one or more Frozen variables (or adds one),
+        where parameters are frozen after refining outside the 
+        range where their values are allowed due to parameter 
+        limits, when these limits are set.
+        (See :ref:`Parameter Limits<ParameterLimits>` description
+        and :meth:`G2Project.set_Controls` for setting limits.)
         Note that use of this
         will cause the project to be saved if not already done so.
 
@@ -2911,7 +2920,10 @@ class G2Project(G2ObjectWrapper):
             return True
 
     def get_Frozen(self, histogram=None):
-        '''Gets a list of Frozen variables.
+        '''Gets a list of Frozen variables, where parameters are
+        frozen after refining outside the range where their values
+        are allowed due to parameter limits, when these limits are 
+        set. 
         (See :ref:`Parameter Limits<ParameterLimits>` description.)
         Note that use of this
         will cause the project to be saved if not already done so.
@@ -3005,8 +3017,11 @@ class G2Project(G2ObjectWrapper):
     def set_Controls(self, control, value, variable=None):
         '''Set project controls.
 
-        Note that use of this with control set to parmMin or parmMax
-        will cause the project to be saved if not already done so.
+        Controls determine how refinements are performed, including 
+        setting lower (parmMin) or upper limits (parmMax) values
+        for parameters where you choose to set refinement limits.
+        Note that use of this with to set to parmMin or parmMax
+        will cause the project to be saved, if not already done so.
 
         :param str control: the item to be set. See below for allowed values.
         :param value: the value to be set.
@@ -3024,8 +3039,9 @@ class G2Project(G2ObjectWrapper):
           Ignored for non-sequential fits.
         * ``'Reverse Seq'``: when True, sequential refinement is performed on the
           reversed list of histograms.
-        * ``'parmMin'`` & ``'parmMax'``: set a maximum or minimum value for a refined
-          parameter. Note that variable will be a GSAS-II variable name,
+        * ``'parmMin'`` & ``'parmMax'``: set a minimum or maximum value
+          for a refined
+          parameter. Note that *variable* will be a GSAS-II variable name,
           optionally with * specified for a histogram or atom number and
           value must be a float.
           (See :ref:`Parameter Limits<ParameterLimits>` description.)
@@ -3455,6 +3471,10 @@ class G2PwdrData(G2ObjectWrapper):
     def InstrumentParameters(self):
         '''Provides a dictionary with with the Instrument Parameters
         for this histogram.
+
+        Note that the returned dict is a reference to the actual dict
+        as stored in the .gpx file; use care not to modify this unless
+        intended.
         '''
         return self.data['Instrument Parameters'][0]
 
@@ -3462,6 +3482,10 @@ class G2PwdrData(G2ObjectWrapper):
     def SampleParameters(self):
         '''Provides a dictionary with with the Sample Parameters
         for this histogram.
+
+        Note that the returned dict is a reference to the actual dict
+        as stored in the .gpx file; use care not to modify this unless
+        intended.
         '''
         return self.data['Sample Parameters']
 
@@ -3470,6 +3494,10 @@ class G2PwdrData(G2ObjectWrapper):
         '''Provides a list with with the Background parameters
         for this histogram.
 
+        Note that the returned list is a reference to the actual list
+        as stored in the .gpx file; use care not to modify this unless
+        intended.
+
         :returns: list containing a list and dict with background values
         '''
         return self.data['Background']
@@ -3477,12 +3505,25 @@ class G2PwdrData(G2ObjectWrapper):
     def add_back_peak(self,pos,int,sig,gam,refflags=[]):
         '''Adds a background peak to the Background parameters
 
+        Background in diffraction patterns is usually fit 
+        with a slowly varying smooth function, such as a Chebyschev
+        polynomial, but when the background contains broad peaks
+        (for example from a Kapton sample container) those peaks
+        are usually better fit by adding extra peaks to the
+        smooth background function rather that providing enough 
+        parameters to the smooth function in order fit the
+        peak(s). Note that background peaks are typically treated 
+        as Gaussian only (``gam``=0) with very large ``sig`` 
+        values (>1000). Normally one should refine ``int`` and 
+        then ``sig`` and only after the background peak is well 
+        fit can one refine the ``pos`` value. 
+
         :param float pos: position of peak, a 2theta or TOF value
         :param float int: integrated intensity of background peak, usually large
         :param float sig: Gaussian width of background peak, usually large
-        :param float gam: Lorentzian width of background peak, usually unused (small)
+        :param float gam: Lorentzian width of background peak, usually not used (small)
         :param list refflags: a list of 1 to 4 boolean refinement flags for
-            pos,int,sig & gam, respectively (use [0,1] to refine int only).
+            pos,int,sig & gam, respectively (e.g. use [0,1] to refine int only).
             Defaults to [] which means nothing is refined.
         '''
         if 'peaksList' not in self.Background[1]:
@@ -3718,12 +3759,22 @@ class G2PwdrData(G2ObjectWrapper):
         self.proj.save()
 
     def getdata(self,datatype):
-        '''Provides access to the histogram data of the selected data type
+        '''Provides access to the histogram data of the selected data type.
+ 
+        It should be noted that for TOF data, GSAS-II expects input 
+        where the TOF value is the minimum for the bin, but does computations 
+        using the TOF value for the center of each bin. The values reported 
+        using the 'X' option here are the values used in computation, while
+        the 'X-orig' option reverses the shift applied when TOF values
+        are read in. 
 
         :param str datatype: must be one of the following values
           (case is ignored):
 
            * 'X': the 2theta or TOF values for the pattern
+           * 'X-orig': for TOF, time values for the pattern shifted
+              as used as input for GSAS-II. For everything else, the values are 
+              the same as with the 'X' option (see above.)
            * 'Q': the 2theta or TOF values for the pattern transformed to Q
            * 'd': the 2theta or TOF values for the pattern transformed to d-space
            * 'Yobs': the observed intensity values
@@ -3732,24 +3783,37 @@ class G2PwdrData(G2ObjectWrapper):
            * 'Background': the computed background values
            * 'Residual': the difference between Yobs and Ycalc (obs-calc)
 
-        :returns: an numpy MaskedArray with data values of the requested type
-
+        :returns: a numpy MaskedArray with data values of the requested type. 
+           Note that the returned values are a copy of the GSAS-II histogram 
+           array, not a reference to the actual data as stored in the 
+           .gpx file.
         '''
-        enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual', 'q', 'd']
+        enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual', 'q', 'd','x-orig']
         if datatype.lower() not in enums:
             raise G2ScriptException("Invalid datatype = "+datatype+" must be one of "+str(enums))
-        if datatype.lower() == 'q':
+        if datatype.lower() == 'x-orig':
+            x = self.data['data'][1][0]
+            if 'T' in self.InstrumentParameters['Type'][1]:
+                # one half the averaged bin widths -- ~backs out the previous shift
+                d = (np.append(x[1]-x[0],np.diff(x)) + np.append(np.diff(x),x[-1]-x[-2]))/4
+                return x-d # adjust for midpoint shift on data read
+            else:
+                return copy.deepcopy(x)
+        elif datatype.lower() == 'q':
             Inst,Inst2 = self.data['Instrument Parameters']
             return  2 * np.pi / G2lat.Pos2dsp(Inst,self.data['data'][1][0])
         elif datatype.lower() == 'd':
             Inst,Inst2 = self.data['Instrument Parameters']
             return G2lat.Pos2dsp(Inst,self.data['data'][1][0])
         else:
-            return self.data['data'][1][enums.index(datatype.lower())]
+            return copy.deepcopy(self.data['data'][1][enums.index(datatype.lower())])
 
     def y_calc(self):
         '''Returns the calculated intensity values; better to
-        use :meth:`getdata`
+        use :meth:`getdata`.
+
+        Note that the returned array is a reference to the actual data 
+        as stored in the .gpx file; use care not to modify this. 
         '''
         return self.data['data'][1][3]
 
@@ -3761,6 +3825,9 @@ class G2PwdrData(G2ObjectWrapper):
         'Type' (histogram type), 'FF'
         (form factor information), 'Super' (True if this is superspace
         group).
+
+        Note that the returned array is a reference to the actual data 
+        as stored in the .gpx file; use care not to modify this. 
         '''
         return self.data['Reflection Lists']
 
@@ -3810,10 +3877,27 @@ class G2PwdrData(G2ObjectWrapper):
 
         :param Exporter expObj: Exporter object
         '''
-        expObj.Histograms[self.name] =  {}
-        expObj.Histograms[self.name]['Data'] = self.data['data'][1]
+        hist = self.name
+        histObj = expObj.Histograms
+        histObj[hist] =  {}
+        histObj[hist]['Data'] = self.data['data'][1]
         for key in 'Instrument Parameters','Sample Parameters','Reflection Lists':
-            expObj.Histograms[self.name][key] = self.data[key]
+            histObj[hist][key] = self.data[key]
+        if 'T' in histObj[hist]['Instrument Parameters'][0]['Type'][0]:
+            # for TOF need to shift the times to the bin start
+            histObj[hist]['Data'] = copy.deepcopy(self.data['data'][1])
+            if hasattr(histObj[hist]['Data'][0],'mask'): # masking happens in GUI?
+                m = histObj[hist]['Data'][0].mask
+                x = histObj[hist]['Data'][0].data
+                # one half the averaged bin widths -- ~backs out the previous shift
+                halfbin = (np.append(x[1]-x[0],np.diff(x)) + np.append(np.diff(x),x[-1]-x[-2]))/4
+                histObj[hist]['Data'][0] = ma.array(x-halfbin,mask=m)
+            else:
+                x = histObj[hist]['Data'][0]
+                halfbin = (np.append(x[1]-x[0],np.diff(x)) + np.append(np.diff(x),x[-1]-x[-2]))/4
+                histObj[hist]['Data'][0] -= halfbin
+#        from GSASII.GSASIIpath import IPyBreak_base
+#        IPyBreak_base()
 
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:
@@ -5583,6 +5667,129 @@ class G2Phase(G2ObjectWrapper):
                 count += 1
                 bondRestData['Bonds'].append(newBond)
         return count
+    
+    def Origin1to2Shift(self):
+        '''Applies an Origin 1 to Origin 2 shift to the selected phase, 
+        if defined. Note that GSAS-II only uses Origin 2 settings when 
+        both are offered in the International Tables. 
+        (These are space groups where the centre of symmetry is not 
+        at the highest symmetry site in the cell.) 
+        If the structure is not in the Origin 1 setting, 
+        this routine will create garbage.
+
+        A copy of the phase is made where the new phase name has the string 
+        "_shifted" added to it. The routine returns a reference to the 
+        new :class:`G2Phase` object for the new phase. 
+
+        If the phase is not one of the space groups that has Origin 1 & Origin 2
+        settings, None is returned.
+
+        :returns: the newly created phase object or None
+        '''
+        gpx = self.proj
+        SGData = self.data['General']['SGData']
+        if SGData['SpGrp'] not in G2spc.spg2origins:
+            return
+        T = G2spc.spg2origins[SGData['SpGrp']]
+        # create a new phase
+        phaseNameList = [p.name for p in gpx.phases()]
+        phasename = G2obj.MakeUniqueLabel(self.name+'_shifted', phaseNameList)
+        gpx.data['Phases'][phasename] = G2obj.SetNewPhase(Name=phasename,
+                        SGData=SGData)
+        nphase = gpx.data['Phases'][phasename]
+        for obj in gpx.names: # add new phase to tree
+            if obj[0] == 'Phases':
+                obj.append(phasename)
+                break
+        # duplicate phase info
+        for key in self.data: # copy all phase info over to new phase
+            if key == 'ranId': continue
+            nphase[key] = copy.deepcopy(self.data[key])
+        nphase['General']['Name'] = phasename # reset
+        # apply shift (T)
+        O2atoms = nphase['Atoms']
+        cx,ct,cs,cia = nphase['General']['AtomPtrs']
+        for atom in O2atoms:
+            for i in [0,1,2]:
+                atom[cx+i] += T[i]
+            atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update sym
+        SetupGeneral(nphase, None)
+        gpx.index_ids()
+        gpx.update_ids()
+        return gpx.phase(phasename)
+
+    def InitDisAgl(self,useAll=True):
+        '''Create the default controls used for distance and angle 
+        searching. Perform distance and angle searching by passing
+        the results from this to  :func:`GSASIIstrMain.RetDistAngle` 
+        or :func:`GSASIIstrMain.PrintDistAngle`
+        At present, this does not populate the values needed for 
+        uncertainty computations. 
+
+        :param bool useAll: when True (default) all atoms are included 
+          in the origin atom list. When False, only atoms with full 
+          occupancy are included. All atoms are included in the target
+          atom list.
+
+        :returns: DisAglCtls, DisAglData. See the 
+          :ref:`Distance/Angle controls documentation <DisAgl_table>` for 
+          a description of these.
+        '''
+        phObj = self.data
+        generalData = phObj['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        # template for controls & search data
+        DisAglData = {}
+        DisAglData['SGData'] = phObj['General']['SGData']
+        DisAglData['Cell'] = phObj['General']['Cell'][1:] #+ volume
+        DisAglCtls = {'Factors': [0.85, 0.85],
+                          'BondRadii': [], 'AngleRadii': [], 'AtomTypes': []}
+        # now populate search radii
+        radii = dict(zip(generalData['AtomTypes'],generalData['BondRadii']))
+        for atom in phObj['Atoms']:
+            typ = atom[ct]
+            dis = radii.get(typ,1.5) # 
+            if atom[ct] in DisAglCtls['AtomTypes']: continue
+            DisAglCtls['BondRadii'].append(dis)
+            DisAglCtls['AngleRadii'].append(dis)
+            DisAglCtls['AtomTypes'].append(typ)
+        DisAglData['OrigAtoms'] = []
+        DisAglData['TargAtoms'] = []
+        for i,atom in enumerate(phObj['Atoms']):
+            rec = [i]+atom[ct-1:ct+1]+atom[cx:cx+3]
+            DisAglData['TargAtoms'].append(rec)
+            if atom[cx+3] == 1. or useAll: 
+                DisAglData['OrigAtoms'].append(rec)
+        return DisAglCtls, DisAglData
+
+    def ShortDistances(self,useAll=False):
+        '''Looks for unrealistic distances in a structure, which are
+        atom-atom distances < 1.1 A for non-H(D) atoms. 
+        To reduce the likelihood of distances between disordered 
+        fragments being noted, set useAll=False (the default) so that 
+        disordered atoms are ignored. 
+        '''
+        cx,ct,cs,cia = self.data['General']['AtomPtrs']
+        #get interatomic distances
+        DisAglCtls, DisAglData = self.InitDisAgl(useAll)
+        DisAglCtls['Factors'][1] = 0 # no angles
+        AtomLabels, DistArray, _ = G2strMain.RetDistAngle(
+            DisAglCtls,DisAglData,dmin=0.01)
+        # now reorganize into a single list & sort
+        alldists = []
+        for cntr in DistArray:
+            for dl in DistArray[cntr]:
+                alldists.append([(cntr,dl[0])]+dl[1:])
+        alldists.sort(key=lambda item:item[-2])
+        baddists = []
+        for (i,j),_,_,d,_ in alldists:
+            if d > 1.1: break
+            if self.data['Atoms'][i][ct][0] in ['H','D']: continue
+            if self.data['Atoms'][j][ct][0] in ['H','D']: continue
+            baddists.append([self.data['Atoms'][i][ct],
+                             self.data['Atoms'][j][ct],
+                             float(d)])
+        return baddists
 
 class G2SeqRefRes(G2ObjectWrapper):
     '''Wrapper for a Sequential Refinement Results tree entry, containing the

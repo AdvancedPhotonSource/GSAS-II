@@ -84,7 +84,7 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(240,240,240)
 DULL_YELLOW = (230,230,190)
-
+GkDelta = chr(0x0394)
 # transformation matrices
 commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.]]),
     'ba-c':np.array([[0.,1.,0.],[1.,0.,0.],[0.,0.,-1.]]),'-cba':np.array([[0.,0.,-1.],[0.,1.,0.],[1.,0.,0.]]),
@@ -1105,7 +1105,7 @@ class GSASII(wx.Frame):
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Phase','Import phase data')
         for reader in self.ImportPhaseReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import phase data, use file to try to determine format')
@@ -1292,7 +1292,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu, 'Image','Import image file')
         for reader in self.ImportImageReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import image data, use file to try to determine format')
@@ -1322,7 +1322,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Structure Factor','Import Structure Factor data')
         for reader in self.ImportSfactReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import Structure Factor, use file to try to determine format')
@@ -1438,7 +1438,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Powder Data','Import Powder data')
         for reader in self.ImportPowderReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
         item = submenu.Append(wx.ID_ANY,'guess format from file','Import powder data, use file to try to determine format')
@@ -1599,21 +1599,23 @@ If you continue from this point, it is quite likely that all intensity computati
                     rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
                         'DisplaceY':[0.,False]})
                 if 'Generic' in choices[res]:
-                    dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
-                        prompts=['Total FP','2-theta',],values=[25.0,150.,],
-                            limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
-                    if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
-                        FP,tth = dlg.GetValues()
-                        difC = 505.632*FP*sind(tth/2.)
-                        sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
-                        bet1 = .00226+7.76e+11/difC**4
-                        rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
-                        Inst[0]['difC'] = [difC,difC,0]
-                        Inst[0]['sig-1'] = [sig1,sig1,0]
-                        Inst[0]['beta-1'] = [bet1,bet1,0]
-                        return Inst    #this is [Inst1,Inst2] a pair of dicts
-                    dlg.Destroy()
+                    rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
+                    Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
+                    return Inst    #this is [Inst1,Inst2] a pair of dicts
+                    # The input below is now requested for each bank in OnImportPowder
+                    # dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
+                    #     prompts=['Total FP','2-theta',],values=[25.0,150.,],
+                    #         limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
+                    # if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
+                    #     FP,tth = dlg.GetValues()
+                    #     difC = 505.632*FP*sind(tth/2.)
+                    #     sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
+                    #     bet1 = .00226+7.76e+11/difC**4
+                    #     Inst[0]['difC'] = [difC,difC,0]
+                    #     Inst[0]['sig-1'] = [sig1,sig1,0]
+                    #     Inst[0]['beta-1'] = [bet1,bet1,0]
+                    #     return Inst    #this is [Inst1,Inst2] a pair of dicts
+                    # dlg.Destroy()
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
                     inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
@@ -1784,6 +1786,7 @@ If you continue from this point, it is quite likely that all intensity computati
 
         Also reads an instrument parameter file for each dataset.
         '''
+        FP,tth = 25.0,150.
         # get a list of existing histograms
         PWDRlist = []
         if self.GPXtree.GetCount():
@@ -1807,10 +1810,12 @@ If you continue from this point, it is quite likely that all intensity computati
         self.EnablePlot = False
         Iparms = {}
         self.cleanupList = []   # inst parms created in GetPowderIparm
-        for rd in rdlist:
-            if 'Instrument Parameters' in rd.pwdparms:
+        iSource = '?'
+        for ihst,rd in enumerate(rdlist):
+            if 'Instrument Parameters' in rd.pwdparms: # reader supplies InstPrms
                 Iparm1,Iparm2 = rd.pwdparms['Instrument Parameters']
-            elif Iparms and not lastIparmfile:
+                iSource = rd.instmsg
+            elif Iparms and not lastIparmfile: # have vals from previous loop
                 Iparm1,Iparm2 = Iparms
             else:
                 # get instrument parameters for each dataset, unless already set
@@ -1827,10 +1832,29 @@ If you continue from this point, it is quite likely that all intensity computati
                 else:
                     Iparms = {}
 #                    lastVals = (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0]))
-                # override any keys in read instrument parameters with ones set in import
-                for key in Iparm1:
-                    if key in rd.instdict:
-                        Iparm1[key] = rd.instdict[key]
+                iSource = rd.instmsg
+            # for defaulted TOF data, reset the default bank number & for generic get FP/2Th
+            if iSource.startswith('default:') and 'Bank' in Iparm1 and 'T' in Iparm1['Type'][0]:
+                if 'Generic' in iSource:
+                    dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
+                        prompts=['Total flight path','2-theta',],values=[FP,tth],
+                            limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',],
+                            header=f'Set detector info for\n{rd.idstring}')
+                    if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
+                        FP,tth = dlg.GetValues()
+                        difC = 505.632*FP*sind(tth/2.)
+                        sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
+                        bet1 = .00226+7.76e+11/difC**4
+                        Iparm1['difC'] = [difC,difC,0]
+                        Iparm1['sig-1'] = [sig1,sig1,0]
+                        Iparm1['beta-1'] = [bet1,bet1,0]
+                    dlg.Destroy()
+                Iparm1['Bank'][0] = Iparm1['Bank'][1] = ihst+1
+            # override any keys in read instrument parameters with ones set in import
+            for key in Iparm1:
+                if key in rd.instdict:
+                    Iparm1[key] = rd.instdict[key]
+                # 
             lastdatafile = rd.powderentry[0]
             HistName = 'PWDR '+rd.idstring
             # do some error checking
@@ -1860,7 +1884,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 print('Read powder data '+HistName+
                     ' from file '+G2obj.StripUnicode(rd.readfilename) +
                     ' (format: '+ rd.formatName +
-                    '). Inst parameters from '+G2obj.StripUnicode(rd.instmsg))
+                    '). Inst parameters from '+G2obj.StripUnicode(iSource))
             except:
                 print('Read powder data')
             # data are read, now store them in the tree
@@ -1938,7 +1962,7 @@ If you continue from this point, it is quite likely that all intensity computati
                     'background PWDR':['',1.0,False]}]))
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Instrument Parameters'),
-                [Iparm1,Iparm2])
+                copy.deepcopy([Iparm1,Iparm2]))
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)
@@ -2336,6 +2360,7 @@ If you continue from this point, it is quite likely that all intensity computati
         try:
             dlg.ShowModal() == wx.ID_OK
             restart = dlg.restart
+            reload = dlg.reload
         finally:
             dlg.Destroy()
         # trigger a restart if the var description asks for that
@@ -2365,6 +2390,11 @@ If you continue from this point, it is quite likely that all intensity computati
             G2fil.openInNewTerm(project)
             print ('exiting GSAS-II')
             sys.exit()
+        if reload:
+            ans = self.OnFileSave(None)
+            if not ans: return
+            self.clearProject() # clear out data tree
+            self.StartProject()
 
     def _Add_ImportMenu_smallangle(self,parent):
         '''configure the Small Angle Data menus accord to the readers found in _init_Imports
@@ -2372,7 +2402,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Small Angle Data','Import small angle data')
         for reader in self.ImportSmallAngleReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2465,7 +2495,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'Reflectometry Data','Import reflectometry data')
         for reader in self.ImportReflectometryReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2560,7 +2590,7 @@ If you continue from this point, it is quite likely that all intensity computati
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'PDF G(R) Data','Import PDF G(R) data')
         for reader in self.ImportPDFReaderlist:
-            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
+            item = submenu.Append(wx.ID_ANY,readFromFile(reader),reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPDF, id=item.GetId())
         submenu.AppendSeparator()
@@ -3307,61 +3337,13 @@ If you continue from this point, it is quite likely that all intensity computati
         if new:
             self.GPXtree.Expand(self.GPXtree.root)
 
-    class CopyDialog(wx.Dialog):
-        '''Creates a dialog for copying control settings between
-        data tree items'''
-        def __init__(self,parent,title,text,data):
-            wx.Dialog.__init__(self,parent,-1,title,
-                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-            self.data = data
-            panel = wx.Panel(self)
-            mainSizer = wx.BoxSizer(wx.VERTICAL)
-            topLabl = wx.StaticText(panel,-1,text)
-            mainSizer.Add((10,10),1)
-            mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
-            mainSizer.Add((10,10),1)
-            ncols = len(data)/40+1
-            dataGridSizer = wx.FlexGridSizer(cols=ncols,hgap=2,vgap=2)
-            for Id,item in enumerate(self.data):
-                ckbox = wx.CheckBox(panel,Id,item[1])
-                ckbox.Bind(wx.EVT_CHECKBOX,self.OnCopyChange)
-                dataGridSizer.Add(ckbox,0,wx.LEFT,10)
-            mainSizer.Add(dataGridSizer,0,wx.EXPAND)
-            OkBtn = wx.Button(panel,-1,"Ok")
-            OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-            cancelBtn = wx.Button(panel,-1,"Cancel")
-            cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
-            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-            btnSizer.Add((20,20),1)
-            btnSizer.Add(OkBtn)
-            btnSizer.Add((20,20),1)
-            btnSizer.Add(cancelBtn)
-            btnSizer.Add((20,20),1)
-
-            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-            panel.SetSizer(mainSizer)
-            panel.Fit()
-            self.Fit()
-
-        def OnCopyChange(self,event):
-            Id = event.GetId()
-            self.data[Id][0] = self.FindWindowById(Id).GetValue()
-
-        def OnOk(self,event):
-            parent = self.GetParent()
-            if parent is not None: parent.Raise()
-            self.EndModal(wx.ID_OK)
-
-        def OnCancel(self,event):
-            parent = self.GetParent()
-            if parent is not None: parent.Raise()
-            self.EndModal(wx.ID_CANCEL)
-
-        def GetData(self):
-            return self.data
-
     class SumDialog(wx.Dialog):
-        '''Allows user to supply scale factor(s) when summing data
+        '''Used to sum images or powder patterns. Allows user to supply 
+        scale factor(s) when summing data.
+
+        TODO: clean up the scrolling & resize on this dialog. Can we use the copy down button from CIF?
+        TODO: move it to GSASIIctrlGUI? (BHT) this class should not be in 
+        the middle of the (already too complex) GSASIImain class. 
         '''
         def __init__(self,parent,title,text,dataType,data,dataList,Limits=None):
             wx.Dialog.__init__(self,parent,-1,title,size=(400,250),
@@ -3753,8 +3735,8 @@ If you continue from this point, it is quite likely that all intensity computati
                             newimagefile = dlg.GetPath()
                             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
                             G2IO.PutG2Image(newimagefile,Comments,Data,Npix,newImage)
-                            Imax = np.amax(newImage)
-                            Imin = np.amin(newImage)
+                            Imax = int(np.amax(newImage))
+                            Imin = int(np.amin(newImage))
                             newImage = []
                             self.GPXtree.SetItemPyData(Id,[imSize,newimagefile])
                             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),Comments)
@@ -4272,10 +4254,7 @@ If you continue from this point, it is quite likely that all intensity computati
             GetGPX()
             filename = self.GSASprojectfile
         else:
-            try:
-                self.GSASprojectfile = os.path.splitext(filename)[0]+u'.gpx'
-            except:
-                self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
+            self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
 
 #        if self.G2plotNB.plotList:
@@ -4403,21 +4382,25 @@ If you continue from this point, it is quite likely that all intensity computati
                 self.OnFileSaveMenu(event)
             if result != wx.ID_CANCEL:
                 self.GSASprojectfile = ''
-                self.GPXtree.SetItemText(self.root,'Project: ')
-                self.GPXtree.DeleteChildren(self.root)
-                self.dataWindow.ClearData()
-                if len(self.HKL):
-                    self.HKL = np.array([])
-                    self.Extinct = []
-                if self.G2plotNB.plotList:
-                    self.G2plotNB.clear()
-                self.SetTitleByGPX()
-                self.EnableRefineCommand()
-                self.init_vars()
-                G2obj.IndexAllIds({},{}) # clear old index info
+                self.clearProject()
         finally:
             dlg.Destroy()
 
+    def clearProject(self):
+        'Initializes the data tree etc.'
+        self.GPXtree.SetItemText(self.root,'Project: ')
+        self.GPXtree.DeleteChildren(self.root)
+        self.dataWindow.ClearData()
+        if len(self.HKL):
+            self.HKL = np.array([])
+            self.Extinct = []
+        if self.G2plotNB.plotList:
+            self.G2plotNB.clear()
+        self.SetTitleByGPX()
+        self.EnableRefineCommand()
+        self.init_vars()
+        G2obj.IndexAllIds({},{}) # clear old index info
+                
     def OnFileSave(self, event):
         '''Save the current project in response to the
         File/Save Project menu button
@@ -7513,6 +7496,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DataGeneral = _makemenu
     # end of GSAS-II menu definitions
 
+def readFromFile(reader):
+    '''Define a caption for a file import menu item'''
+    nam = reader.formatName
+    if nam.startswith('(user'):
+        return nam.replace('(user)','(user) from')+' file'
+    else:
+        return f'from {reader.formatName} file'
+
 ####  Notebook Tree Item editor ##############################################
 NBinfo = {}
 def UpdateNotebook(G2frame,data):
@@ -8361,19 +8352,25 @@ def UpdatePWHKPlot(G2frame,kind,item):
     def OnErrorAnalysis(event):
         '''Plots an "Abrams" plot - sorted delta/sig across data set.
         Should be straight line of slope 1 - never is'''
-        def OnPlotFoFcVsFc(kind):
+        def OnPlotFoFcVsFc():
             ''' Extinction check, plots Fo-Fc & 1/ExtC vs Fo for single crystal data '''
-            iFo,iFc,iExt = 5,7,11
+            test = lambda xy:(xy[iFlg+Super]>0 and xy[iFo+Super]>0)
+            iFlg,iFo,iSig,iFc,iFcT,iExt = 3,5,6,7,9,11
             refList = data[1]['RefList']
-            XY = np.array([[xy[iFo+Super],xy[iFo+Super]-xy[iFc+Super]] for xy in refList if xy[3+Super]>0])
-            XY = np.sqrt(np.abs(XY)).T
-            XE = [[xy[iFo+Super],xy[iExt+Super]] for xy in refList if xy[3+Super]>0]
-            XE = np.array([[np.sqrt(xe[0]),1./xe[1]] for xe in XE]).T
-            G2plt.PlotXY(G2frame,[[XY[0],XY[0]-XY[1]],],XY2=[XE,],labelX='|Fo|',labelY='|Fo|-|Fc|, 1/ExtC',newPlot=False,
-               Title='Extinction check',lines=False,points2=True,names=['|Fo|-|Fc|',],names2=['1/ExtC',])
+            wtFctr = data[0]['wtFactor']
+            Fo = np.sqrt(np.array([xy[iFo+Super] for xy in refList if test(xy)]))
+            Fc = np.sqrt(np.array([xy[iFc+Super] for xy in refList if test(xy)]))
+            FcT = np.sqrt(np.array([xy[iFcT+Super] for xy in refList if test(xy)]))
+            Sig = np.array([xy[iSig+Super] for xy in refList if test(xy)])/wtFctr      #sig(fo^2)/wtFactor (1/GOF)
+            XE = [[xy[iFcT+Super],xy[iExt+Super]] for xy in refList if test(xy)]
+            XE = np.array([[np.sqrt(xe[0]),xe[1]] for xe in XE]).T
+            XE[1] = np.where(XE[1]>0.,XE[1],1.0)
+            G2plt.PlotXY(G2frame,[[FcT,2.*Fo*(Fo-Fc)/Sig],],XY2=[XE,],labelX='Fc',labelY=GkDelta+'F/sig, ExtC',newPlot=False,
+               Title='Extinction check',lines=False,points2=True,names=[GkDelta+'F/sig',],names2=['ExtC',])
+            
         G2plt.PlotDeltSig(G2frame,kind)
         if kind in ['HKLF',]:
-            OnPlotFoFcVsFc(kind)
+            OnPlotFoFcVsFc()
         
 #    def OnCompression(event):
 #        data[0] = int(comp.GetValue())
@@ -9063,6 +9060,10 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2pdG.UpdateLimitsGrid(G2frame,data,datatype)
         G2pwpl.PlotPatterns(G2frame,plotType=datatype,newPlot=True,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Instrument Parameters':
+        # if GSASIIpath.GetConfigValue('debug'):
+        #    from importlib import reload
+        #    reload(G2pdG)
+        #    print('reloading G2pwdGUI')
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)[0]
         G2pdG.UpdateInstrumentGrid(G2frame,data)

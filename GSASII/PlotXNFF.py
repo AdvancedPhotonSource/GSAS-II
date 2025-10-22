@@ -2,7 +2,7 @@
 #PlotXNFF.py
 '''
 *PlotXNFF: Check x-ray & neutron form factor computation*
-=========================================
+===========================================================
 
 Use this to check form factors used in x-ray & neutron scattering
 

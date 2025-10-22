@@ -25,6 +25,18 @@ Software packaging systems require version numbers of the form X.Y.Z, where the 
 
 Not every change (git commit) for GSAS-II will be assigned a new micro version. If the change is a development that is not completed or does not introduce any new functionality (for example improvements to documentation) or is otherwise not of general interest, while a new git commit tag will be always generated, the mini version number will not be incremented. 
 
+Version number location
+------------------------
+
+When GSAS-II is installed via git, the version number can be obtained from a git
+command, but this is relatively slow, so the file `git_verinfo.py` is used to
+find this information quickly. When GSAS-II is installed directlywithout git,
+(for example with pixi), this becomes the only way to determine what version of
+GSAS-II is being run. 
+
+.. automodule:: GSASII.git_verinfo
+    :members: 
+
 Tools
 --------
 

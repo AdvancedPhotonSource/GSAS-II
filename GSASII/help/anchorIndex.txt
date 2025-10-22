@@ -1,6 +1,6 @@
 applicationwindow.html: Data_tree, Data_frame, Data_Frame, Plots, Console
 cluster.html: Cluster_Analysis, Cluster-PlotSel
-commontreeitems.html: Notebook, Controls, RefinementControls, RefineType, SingleXtlSettings, SequentialSettings, Covariance, Constraints, Constraints-SeqRef, Restraints, Rigidbodies, Rigid_bodies
+commontreeitems.html: Notebook, Controls, RefinementControls, RefineType, SingleXtlSettings, SequentialSettings, Covariance, Constraints, Constraints-SeqRef, Restraints, RestraintImports, RestraintWeights, Rigidbodies, Rigid_bodies
 datatree.html: DataTreeOverview
 image.html: IMG, IMG_parent, IMG_Comments, IMG_Image_Controls, IMG_Masks, makemask, IMG_StressStrain, IMG_Stress/Strain
 index.html: HelpIntro, Index

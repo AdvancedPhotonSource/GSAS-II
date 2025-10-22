@@ -213,8 +213,9 @@ class G2PlotMpl(_tabPlotWin):
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,publish=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
-        mpl.rcParams['legend.fontsize'] = 12
+        mpl.rcParams['legend.fontsize'] = 10
         mpl.rcParams['axes.grid'] = False
+        #TODO: set dpi here via config var: this changes the size of the labeling font 72-100 is normal
         self.figure = mplfig.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
@@ -634,6 +635,11 @@ class GSASIItoolbar(Toolbar):
         '''
         pass
 
+# TODO: perhaps someday we could pull out the bitmaps and rescale there here    
+#    def AddTool(self,*args,**kwargs):
+#        print('AddTool',args,kwargs)
+#        return Toolbar.AddTool(self,*args,**kwargs)
+
     def AddToolBarTool(self,label,title,filename,callback):
         bmpFilename = GSASIIpath.getIconFile(filename)
         if bmpFilename is None:
@@ -642,10 +648,7 @@ class GSASIItoolbar(Toolbar):
         else:
             bmp = wx.Bitmap(bmpFilename)
 #            bmp = wx.Bitmap(bmpFilename,type=wx.BITMAP_TYPE_ANY) # probably better
-        if 'phoenix' in wx.version():
-            button = self.AddTool(wx.ID_ANY, label, bmp, title)
-        else:
-            button = self.AddSimpleTool(wx.ID_ANY, bmp, label, title)
+        button = self.AddTool(wx.ID_ANY, label, bmp, title)
         wx.EVT_TOOL.Bind(self, button.GetId(), button.GetId(), callback)
         return button.GetId()
 
@@ -732,6 +735,20 @@ class GSASIItoolbar(Toolbar):
     def OnHelp(self,event):
         'Respond to press of help button on plot toolbar'
         bookmark = self.Parent.helpKey  # get help category used to create plot
+        G2frame = wx.GetApp().GetMainTopWindow()
+        if bookmark != G2frame.dataWindow.helpKey:
+            # plot window and data window are different
+            try:
+                selText = '/'.join(G2frame.PickIdText)
+            except:
+                selText = G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection())
+            G2G.G2MessageBox(G2frame,
+                 'Displaying help on plot window, but you have moved to a '
+                 f'different data tree item ({selText}) where plot menu items '
+                 'and key commands are not available. '
+                 'Return to the appropriate data tree '
+                 'item for full plot functionality',
+                 'Wrong data tree selection')
         #if GSASIIpath.GetConfigValue('debug'): print 'plot help: key=',bookmark
         G2G.ShowHelp(bookmark,self.TopLevelParent)
 
@@ -1160,8 +1177,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
 #    print 'plot time: %.3f'%(time.time()-time0)
     HKL = np.array(HKL)
     HKLF = np.array(HKLF)
-    Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
-    Plot.set_ylabel(ylabel[izone],fontsize=12)
+    Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=14)
+    Plot.set_ylabel(ylabel[izone],fontsize=14)
     if sumFo and sumDF:
         G2frame.G2plotNB.status.SetStatusText(xlabel[izone].split(',')[1]+str(Data['Layer'])+   \
             ' layer R = %6.2f%s'%(100.*sumDF/sumFo,'%'),1)
@@ -1892,7 +1909,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
         sumWdelt = 0.0
         Nobs = 0
         for ref in refl:
-            if ref[6+im] > 0.:
+            if ref[5+im] > 0.:
                 if ref[3+im] > 0:
                     Nobs += 1
                     w2 = 1./ref[6+im]
@@ -2211,7 +2228,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 ContourZ.append(Y)
                 ContourX = X
                 Nseq += 1
-                Plot.set_ylabel('Data sequence',fontsize=12)
+                Plot.set_ylabel('Data sequence',fontsize=14)
         else:
             ifCalc = False
             X = xye[0]+Page.Offset[0]*.005*N
@@ -2366,16 +2383,16 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             ypos = event.ydata
             SetCursor(Page)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3g'%(xpos,Title,ypos),1)
+                G2frame.G2plotNB.status.SetStatusText(r'Q =%9.3f %s =%9.3g'%(xpos,'Y',ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
             found = []
             xlim = Plot.get_xlim()
             wid = xlim[1]-xlim[0]
-            found = XY[np.where(np.fabs(XY.T[0]-xpos) < 0.005*wid)]
+            found = XY[np.where(np.fabs(XY.T[0]-2.*np.pi/xpos) < 0.005*wid)]
             if len(found):
                 pos = found[0][1]
-                if 'C' in Inst['Type'][0]:
+                if Inst['Type'][0][2] in ['A','B','C']:
                     Page.SetToolTipString('position=%.4f'%(pos))
                 else:
                     Page.SetToolTipString('position=%.2f'%(pos))
@@ -2396,10 +2413,11 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Plot.set_title(Title,fontsize=14)
     Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
-    if 'C' in Inst['Type'][0]:
-        Plot.set_ylabel(r'$\mathsf{\Delta(2\theta)}$',fontsize=14)
+    if Inst['Type'][0][2] in ['A','B','C']:
+        ylabel = r'$\mathsf{\Delta(2\theta)}$'
     else:
-        Plot.set_ylabel(r'$\mathsf{\Delta}T/T$',fontsize=14)
+        ylabel = r'$\mathsf{\Delta}T/T$'
+    Plot.set_ylabel(ylabel,fontsize=14)
     for ixy,xyw in enumerate(XY):
         if len(xyw) > 2:
             X,Y,W = xyw
@@ -2408,7 +2426,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             W = 0.
         Q = 2.*np.pi/X
         Yc = G2lat.Dsp2pos(Inst,X)
-        if 'C' in Inst['Type'][0]:
+        if Inst['Type'][0][2] in ['A','B','C']:
             Y = Y-Yc
             E = Sigs[ixy]
             bin = W/2.
@@ -2497,9 +2515,9 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     def Draw():
         global xylim
         Plot.clear()
-        Plot.set_title(Title,fontsize=16)
-        Plot.set_xlabel(r''+labelX,fontsize=16)
-        Plot.set_ylabel(r''+labelY,fontsize=16)
+        Plot.set_title(Title,fontsize=14)
+        Plot.set_xlabel(r''+labelX,fontsize=14)
+        Plot.set_ylabel(r''+labelY,fontsize=14)
         Plot.tick_params(labelsize=14)
         colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
             'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
@@ -3141,6 +3159,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
     def OnKeyPress(event):
         if event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+        elif event.key== 'e':
+            G2frame.ErrorBars  = not G2frame.ErrorBars
         elif event.key == 's':
             # write the function values (not peaks) onto a file
             dlg = wx.FileDialog(G2frame, 'Choose CSV file to write', G2G.GetExportPath(G2frame),
@@ -3163,7 +3183,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
                 Write2csv(fp,['Q','Gauss-def','Lorenz-def','FWHM-def','Gauss-fit','Lorenz-fit','FWHM-fit',],header=True)
                 for vals in zip(Q,S,G,W,Sf,Gf,Wf): Write2csv(fp,vals)
             fp.close()
-        wx.CallAfter(PlotPeakWidths,G2frame,PatternName)
+        wx.CallAfter(PlotPeakWidths,G2frame)
 
     if PatternName:
         G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PatternName)
@@ -3184,7 +3204,9 @@ def PlotPeakWidths(G2frame,PatternName=None):
     else:
         lam = G2mth.getWave(Parms)
     try:  # PATCH: deal with older peak lists, before changed to dict to implement TOF
-        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))['peaks']
+        Pdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
+        peaks = Pdata['peaks']
+        peakEsds = Pdata.get('sigDict',{})
     except TypeError:
         print ("Your peak list needs reformatting...",end='')
         item = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List')
@@ -3195,7 +3217,10 @@ def PlotPeakWidths(G2frame,PatternName=None):
         return
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Peak Widths','mpl')
-    Page.Choice = (' key press','g: toggle grid','s: save as .csv file')
+    if len(peakEsds):
+        Page.Choice = (' key press','e: toggle error bars','g: toggle grid','s: save as .csv file')
+    else:
+        Page.Choice = (' key press','g: toggle grid','s: save as .csv file')
     Page.keyPress = OnKeyPress
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
@@ -3215,28 +3240,25 @@ def PlotPeakWidths(G2frame,PatternName=None):
     Y = []
     Z = []
     W = []
-    Plot.set_title('Instrument peak widths')
+    Plot.set_title('%s Instrument peak widths'%Parms['Type'][0],fontsize=14)
     Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
     Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)
     negWarn = False
     if 'T' in Parms['Type'][0]:   #'T'OF
-        Plot.set_ylabel(r'$\alpha, \beta, \Delta Q/Q, \Delta d/d$',fontsize=14)
+        Plot.set_ylabel(r'$\alpha/1000, \beta/1000, \Delta Q/Q, \Delta d/d$',fontsize=14)
         Xmin,Xmax = limits[1]
         T = np.linspace(Xmin,Xmax,num=101,endpoint=True)
         Z = np.ones_like(T)
         data = G2mth.setPeakparms(Parms,Parms2,T,Z)
         ds = T/difC
         Q = 2.*np.pi/ds
-        # for did in [4,6,8,10]:
-        #     if np.any(data[did] < 0.):
-        #         negWarn = True
-        A = data[4]
-        B = data[6]
+        A = data[4]/1000.
+        B = data[6]/1000.
         S = 1.17741*np.sqrt(data[8])/T
         G = data[10]/T
         W = G2pwd.getFWHM(T,Parms,0)/T
-        Plot.plot(Q,A,color='r',label='Alpha')
-        Plot.plot(Q,B,color='orange',label='Beta')
+        Plot.plot(Q,A,color='r',label=r'$\alpha/1000$')
+        Plot.plot(Q,B,color='orange',label=r'$\beta/1000$')
         Plot.plot(Q,S,color='b',label='Gaussian')
         Plot.plot(Q,G,color='m',label='Lorentzian')
         Plot.plot(Q,W,color='g',label='FWHM (GL+ab)')
@@ -3247,39 +3269,56 @@ def PlotPeakWidths(G2frame,PatternName=None):
         for did in [4,6,8,10]:
             if np.any(fit[did] < 0.):
                 negWarn = True
-        Af = fit[4]
-        Bf = fit[6]
+        Af = fit[4]/1000.
+        Bf = fit[6]/1000.
         Sf = 1.17741*np.sqrt(fit[8])/T
         Gf = fit[10]/T
         Wf = G2pwd.getFWHM(T,Parms)/T
-        Plot.plot(Q,Af,color='r',dashes=(5,5),label='Alpha fit')
-        Plot.plot(Q,Bf,color='orange',dashes=(5,5),label='Beta fit')
-        Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
-        Plot.plot(Q,Gf,color='m',label='Lorentzian fit')
+        Plot.plot(Q,Af,color='r',dashes=(5,5),label=r'$\alpha/1000$ fit')
+        Plot.plot(Q,Bf,color='orange',dashes=(5,5),label=r'$\beta/1000$ fit')
+        Plot.plot(Q,Sf,color='b',dashes=(5,5),label='G fit')
+        Plot.plot(Q,Gf,color='m',label='L fit')
         Plot.plot(Q,Wf,color='g',dashes=(5,5),label='FWHM fit (GL+ab)')
 
-        Tp = []
         Ap = []
+        sAp = []
         Bp = []
+        sBp = []
         Sp = []
+        sSp = []
         Gp = []
+        sGp = []
         Wp = []
         Qp = []
-        for peak in peaks:
-            Tp.append(peak[0])
-            Ap.append(peak[4])
-            Bp.append(peak[6])
+        sQp = []
+        for ip,peak in enumerate(peaks):
             Qp.append(2.*np.pi*difC/peak[0])
-            Sp.append(1.17741*np.sqrt(peak[8])/peak[0])
+            sQp.append(2.*np.pi*difC*peakEsds.get('pos%d'%ip,0.0)/peak[0]**2)
+            Ap.append(peak[4]/1000.)
+            sAp.append(peakEsds.get('alp%d'%ip,0.0)/1000.)
+            Bp.append(peak[6]/1000.)
+            sBp.append(peakEsds.get('bet%d'%ip,0.0)/1000.)
+            sp = 0.5*sq8ln2*np.sqrt(peak[8])/peak[0]
+            Sp.append(sp)     #sqrt(8ln2)/2
+            sSp.append(0.25*sq8ln2*peakEsds.get('sig%d'%ip,0.0)/(np.sqrt(peak[8])*peak[0]))
             Gp.append(peak[10]/peak[0])
+            sGp.append(peakEsds.get('gam%d'%ip,0.0)/peak[0])
 
         if Qp:
-            Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
-            Plot.plot(Qp,Bp,'+',color='orange',label='Beta peak')
-            Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
-            Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
+            if G2frame.ErrorBars:
+                Plot.errorbar(Qp,Ap,xerr=sQp,yerr=sAp,fmt='r+',capsize=2,label=r'$\alpha/1000$ peak')
+                Plot.errorbar(Qp,Bp,xerr=sQp,yerr=sBp,fmt='+',color='orange',capsize=2,label=r'$\beta/1000$ peak')
+                Plot.errorbar(Qp,Sp,xerr=sQp,yerr=sSp,fmt='b+',capsize=2,label='G peak')
+                Plot.errorbar(Qp,Gp,xerr=sQp,yerr=sGp,fmt='m+',capsize=2,label='L peak')                
+            else:
+                Plot.plot(Qp,Ap,'+',color='r',label=r'$\alpha/1000$ peak')
+                Plot.plot(Qp,Bp,'+',color='orange',label=r'$\beta/1000$ peak')
+                Plot.plot(Qp,Sp,'+',color='b',label='G peak')
+                Plot.plot(Qp,Gp,'+',color='m',label='L peak')
+        Plot.tick_params(labelsize=14)
         Plot.legend(loc='best')
     elif 'E' in Parms['Type'][0]:
+        # TODO: add error bars to individual peak parms 
         Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d, \Delta E/E$',fontsize=14)
         isig = 4
         igam = 6
@@ -3309,8 +3348,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Yf = sq8ln2*sf/X
         Zf = gf/X
         Wf = Gf/X
-        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
-        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
+        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='G fit')
+        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='L fit')
         Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
 
         Xp = []
@@ -3332,11 +3371,13 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Plot.plot(Xp,Yp,'+',color='r',label='G peak')
             Plot.plot(Xp,Zp,'+',color='g',label='L peak')
             Plot.plot(Xp,Wp,'+',color='b',label='G+L peak')
-        legend = Plot.legend(loc='best')
-        SetupLegendPick(legend,new)
+        Plot.tick_params(labelsize=14)
+        Plot.legend(loc='best')
         Page.canvas.draw()
 
     else:       #'A', 'C' & 'B'
+        if Parms['Type'][0][2] in ['A','B']:
+            Plot.set_ylabel(r'$\alpha/1000, \beta/1000, \Delta Q/Q, \Delta d/d$',fontsize=14)
         isig = 4
         igam = 6
         if Parms['Type'][0][2] in ['A','B']:
@@ -3348,12 +3389,18 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Q = 4.*np.pi*npsind(X/2.)/lam
         Z = np.ones_like(X)
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
+        if Parms['Type'][0][2] in ['A','B']:
+            A = data[4]/1000.
+            B = data[6]/1000.
         s = np.sqrt(data[isig])*np.pi/18000.   #var -> sig(radians)
         g = data[igam]*np.pi/18000.    #centideg -> radians
         G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn
         Y = sq8ln2*s/nptand(X/2.)
         Z = g/nptand(X/2.)
         W = G/nptand(X/2.)
+        if Parms['Type'][0][2] in ['A','B']:
+            Plot.plot(Q,A,color='r',label=r'$\alpha/1000$')
+            Plot.plot(Q,B,color='orange',label=r'$\beta/1000$')
         Plot.plot(Q,Y,color='r',label='Gaussian')
         Plot.plot(Q,Z,color='g',label='Lorentzian')
         Plot.plot(Q,W,color='b',label='G+L')
@@ -3362,37 +3409,71 @@ def PlotPeakWidths(G2frame,PatternName=None):
         for did in [isig,igam]:
             if np.any(fit[did] < 0.):
                 negWarn = True
+        if Parms['Type'][0][2] in ['A','B']:
+            Af = fit[4]/1000.
+            Bf = fit[6]/1000.
         sf = np.sqrt(fit[isig])*np.pi/18000.
         gf = fit[igam]*np.pi/18000.
         Gf = G2pwd.getgamFW(gf,sf)      #/2.
         Yf = sq8ln2*sf/nptand(X/2.)
         Zf = gf/nptand(X/2.)
         Wf = Gf/nptand(X/2.)
-        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
-        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
+        if Parms['Type'][0][2] in ['A','B']:
+            Plot.plot(Q,Af,color='r',dashes=(5,5),label=r'$\alpha/1000$ fit')
+            Plot.plot(Q,Bf,color='orange',dashes=(5,5),label=r'$\beta/1000$ fit')
+        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='G fit')
+        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='L fit')
         Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
 
+        if Parms['Type'][0][2] in ['A','B']:
+            Ap = []
+            sAp = []
+            Bp = []
+            sBp = []
         Xp = []
+        sXp = []
         Yp = []
+        sYp = []
         Zp = []
+        sZp = []
         Wp = []
-        for peak in peaks:
+        for ip,peak in enumerate(peaks):
+            tpd = tand(peak[0]/2.)
             Xp.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
+            sXp.append(2.0*math.pi*cosd(peak[0]/2.0)*peakEsds.get('pos%d'%ip,0.0)/lam)
+            if Parms['Type'][0][2] in ['A','B']:
+                Ap.append(peak[4]/1000.)
+                sAp.append(peakEsds.get('alp%d'%ip,0.0)/1000.)
+                Bp.append(peak[6]/1000.)
+                sBp.append(peakEsds.get('bet%d'%ip,0.0)/1000.)
             try:
                 s = math.sqrt(peak[isig])*math.pi/18000.
             except ValueError:
                 s = 0.01
             g = peak[igam]*math.pi/18000.
             G = G2pwd.getgamFW(g,s)         #/2.
-            Yp.append(sq8ln2*s/tand(peak[0]/2.))
-            Zp.append(g/tand(peak[0]/2.))
-            Wp.append(G/tand(peak[0]/2.))
+            yp = sq8ln2*s
+            Yp.append(yp/tpd)
+            sYp.append(0.5*sq8ln2*(math.pi/18000.)**2*peakEsds.get('sig%d'%ip,0.0)/(s*tpd))
+            Zp.append(g/tpd)
+            sZp.append((math.pi/18000.)*peakEsds.get('gam%d'%ip,0.0)/tpd)
+            Wp.append(G/tpd)
         if len(peaks):
-            Plot.plot(Xp,Yp,'+',color='r',label='G peak')
-            Plot.plot(Xp,Zp,'+',color='g',label='L peak')
-            Plot.plot(Xp,Wp,'+',color='b',label='G+L peak')
-        legend = Plot.legend(loc='best')
-        SetupLegendPick(legend,new)
+            if G2frame.ErrorBars:
+                if Parms['Type'][0][2] in ['A','B']:
+                    Plot.errorbar(Xp,Ap,xerr=sXp,yerr=sAp,fmt='r+',capsize=2,label=r'$\alpha/1000$ peak')
+                    Plot.errorbar(Xp,Bp,xerr=sXp,yerr=sBp,fmt='+',color='orange',capsize=2,label=r'$\beta/1000$ peak')
+                Plot.errorbar(Xp,Yp,xerr=sXp,yerr=sYp,fmt='r+',capsize=2,label='G peak')
+                Plot.errorbar(Xp,Zp,xerr=sXp,yerr=sZp,fmt='g+',capsize=2,label='L peak')                                
+            else:
+                if Parms['Type'][0][2] in ['A','B']:
+                    Plot.plot(Xp,Ap,'+',color='r',label=r'$\alpha/1000$ peak')
+                    Plot.plot(Xp,Bp,'+',color='orange',label=r'$\beta/1000$ peak')
+                Plot.plot(Xp,Yp,'+',color='r',label='G peak')
+                Plot.plot(Xp,Zp,'+',color='g',label='L peak')
+                Plot.plot(Xp,Wp,'+',color='b',label='G+L peak')
+        Plot.tick_params(labelsize=14)
+        Plot.legend(loc='best')
         Page.canvas.draw()
     if negWarn:
         Plot.set_title('WARNING: profile coefficients yield negative peak widths; peaks may be skipped in calcuations')
@@ -3657,7 +3738,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
             Plot.plot(X,Y,color='k',label=str(PH))
             Plot.legend(loc='best')
             Plot.set_title('Axial distribution for HKL='+str(PH)+' in '+phase+'\n'+hist)
-            Plot.set_xlabel(r'$\psi$',fontsize=16)
+            Plot.set_xlabel(r'$\psi$',fontsize=14)
             Plot.set_ylabel('MRD',fontsize=14)
     elif 'Inv. pole figure' in plotType:
         sq2 = 1.0/math.sqrt(2.0)
@@ -3843,7 +3924,7 @@ def PlotTexture(G2frame,data,Start=False):
         Plot.legend(loc='best')
         h,k,l = SHData['PFhkl']
         Plot.set_title('%d %d %d Axial distribution for %s'%(h,k,l,pName))
-        Plot.set_xlabel(r'$\psi$',fontsize=16)
+        Plot.set_xlabel(r'$\psi$',fontsize=14)
         Plot.set_ylabel('MRD',fontsize=14)
 
     else:
@@ -4229,8 +4310,8 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
         Plot.plot(Angles,Eval,'ro',picker=True,pickradius=5)
     Plot.set_xlim((0.,360.))
     Plot.set_title('Torsion angles for '+TorName+' in '+phaseName)
-    Plot.set_xlabel('angle',fontsize=16)
-    Plot.set_ylabel('Energy',fontsize=16)
+    Plot.set_xlabel('angle',fontsize=14)
+    Plot.set_ylabel('Energy',fontsize=14)
     Page.canvas.draw()
 
 #### PlotRama ################################################################################
@@ -4320,8 +4401,8 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
         Plot.set_xlim((0.,360.))
         Plot.set_ylim((0.,360.))
     Plot.set_title('Ramachandran for '+RamaName+' in '+phaseName)
-    Plot.set_xlabel(r'$\phi$',fontsize=16)
-    Plot.set_ylabel(r'$\psi$',fontsize=16)
+    Plot.set_xlabel(r'$\phi$',fontsize=14)
+    Plot.set_ylabel(r'$\psi$',fontsize=14)
     Page.figure.colorbar(Img)
     Page.canvas.draw()
 
@@ -5354,15 +5435,15 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         # try:
         Plot1,Plot = Page.figure.subplots(1,2,gridspec_kw=GS_kw)
         Plot1.set_title('Line scan at azm= %6.1f'%Data['linescan'][1])
-        Plot1.set_xlabel(r'$\mathsf{2\Theta}$',fontsize=12)
-        Plot1.set_ylabel('Intensity',fontsize=12)
+        Plot1.set_xlabel(r'$\mathsf{2\Theta}$',fontsize=14)
+        Plot1.set_ylabel('Intensity',fontsize=14)
         xy = G2img.GetLineScan(G2frame.ImageZ,Data)
         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
         if Page.plotStyle['logPlot']:
             xy[1] = np.log(xy[1])
-            Plot1.set_ylabel('log(Intensity)',fontsize=12)
+            Plot1.set_ylabel('log(Intensity)',fontsize=14)
         elif Page.plotStyle['sqrtPlot']:
-            Plot1.set_ylabel(r'$\sqrt{Intensity}$',fontsize=12)
+            Plot1.set_ylabel(r'$\sqrt{Intensity}$',fontsize=14)
             xy[1] = np.sqrt(xy[1])
         np.seterr(invalid=olderr['invalid'])
         Plot1.plot(xy[0],xy[1])
@@ -5419,8 +5500,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     xcent,ycent = Data['center']
     if Data['det2theta']:
         xcent += Data['distance']*nptand(Data['tilt']*npsind(Data['rotation'])+Data['det2theta'])
-    Plot.set_xlabel('Image x-axis, mm',fontsize=12)
-    Plot.set_ylabel('Image y-axis, mm',fontsize=12)
+    Plot.set_xlabel('Image x-axis, mm',fontsize=14)
+    Plot.set_ylabel('Image y-axis, mm',fontsize=14)
     #do threshold mask - "real" mask - others are just boundaries
     Zlim = Masks['Thresholds'][1]
     wx.BeginBusyCursor()
@@ -5706,8 +5787,8 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     Imin,Imax = Data['range'][1]
     acolor = GetColorMap(Data['color'])
     Plot.set_title(G2frame.GPXtree.GetItemText(G2frame.Image)[4:])
-    Plot.set_ylabel('azimuth',fontsize=12)
-    Plot.set_xlabel('2-theta',fontsize=12)
+    Plot.set_ylabel('azimuth',fontsize=14)
+    Plot.set_xlabel('2-theta',fontsize=14)
     Img = Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
         extent=[ysc[0],ysc[-1],xsc[-1],xsc[0]],aspect='auto')
     Page.figure.colorbar(Img)
@@ -5767,8 +5848,8 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     V = np.arange(Imin,Imax,step)
     acolor = GetColorMap(Data['color'])
     Plot.set_title(G2frame.GPXtree.GetItemText(G2frame.Image)[4:])
-    Plot.set_xlabel('azimuth',fontsize=12)
-    Plot.set_ylabel('2-theta',fontsize=12)
+    Plot.set_xlabel('azimuth',fontsize=14)
+    Plot.set_ylabel('2-theta',fontsize=14)
     Plot.contour(tax,tay,taz,V,cmap=acolor)
     if Data['showLines']:
         IOtth = Data['IOtth']
@@ -7562,7 +7643,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         mcsaTypes = []
         neqv = 0
         for xyz,atyp in zip(XYZs,Types):
-            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=False))
+            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))
             neqv = max(neqv,len(equiv))
             for item in equiv:
                 mcsaXYZ.append(item[0])
@@ -8755,8 +8836,8 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
             bbox_transform=Plot.transAxes,borderpad=0)
         Page.figure.colorbar(Page.ImgObj, cax=cax)
         Plot.set_title(Title+' distances')
-        Plot.set_xlabel('Data set',fontsize=12)
-        Plot.set_ylabel('Data set',fontsize=12)
+        Plot.set_xlabel('Data set',fontsize=14)
+        Plot.set_ylabel('Data set',fontsize=14)
     elif CLuDict['plots'] == 'Suprise':
         Suprise = []
         for I in CLuDict['DataMatrix']:
@@ -8766,18 +8847,18 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
             Suprise.append(S)
         Plot.plot(Suprise)
         Plot.set_title('Suprise factor')
-        Plot.set_xlabel('Data no.',fontsize=12)
-        Plot.set_ylabel('Suprise factor',fontsize=12)
+        Plot.set_xlabel('Data no.',fontsize=14)
+        Plot.set_ylabel('Suprise factor',fontsize=14)
     elif CLuDict['plots'] == 'Dendrogram':
         SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=Plot)
         Plot.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
-        Plot.set_xlabel(r''+'data set no.',fontsize=12)
-        Plot.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=12)
+        Plot.set_xlabel(r''+'data set no.',fontsize=14)
+        Plot.set_ylabel(r''+CLuDict['Method']+' distance',fontsize=14)
     elif CLuDict['plots'] == 'Diffs' and YM is not None:
         Plot.plot(neighD)
         Plot.set_title('Distance to next data set')
-        Plot.set_xlabel('Data no.',fontsize=12)
-        Plot.set_ylabel('dist to next',fontsize=12)
+        Plot.set_xlabel('Data no.',fontsize=14)
+        Plot.set_ylabel('dist to next',fontsize=14)
     elif CLuDict['plots'] == '2D PCA':
         if Codes is not None:
             for ixyz,xyz in enumerate(XYZ.T):
@@ -8795,9 +8876,9 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
         else:
             for ixyz,xyz in enumerate(XYZ.T):
                 Plot.scatter(xyz[0],xyz[1],xyz[2],color=Colors[0],picker=True)
-        Plot.set_xlabel('PCA axis-1',fontsize=12)
-        Plot.set_ylabel('PCA axis-2',fontsize=12)
-        Plot.set_zlabel('PCA axis-3',fontsize=12)
+        Plot.set_xlabel('PCA axis-1',fontsize=14)
+        Plot.set_ylabel('PCA axis-2',fontsize=14)
+        Plot.set_zlabel('PCA axis-3',fontsize=14)
     else:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         gs = mpl.gridspec.GridSpec(2,2,figure=Page.figure)
@@ -8810,27 +8891,27 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
             bbox_transform=ax1.transAxes,borderpad=0)
         Page.figure.colorbar(Page.ImgObj, cax=cax)
         ax1.set_title(Title+' distances')
-        ax1.set_xlabel('Data set',fontsize=12)
-        ax1.set_ylabel('Data set',fontsize=12)
+        ax1.set_xlabel('Data set',fontsize=14)
+        ax1.set_ylabel('Data set',fontsize=14)
         if Codes is not None:
             for ixyz,xyz in enumerate(XYZ.T):
                 ax2.scatter(xyz[0],xyz[1],color=Colors[Codes[ixyz]],picker=True)
         else:
             for ixyz,xyz in enumerate(XYZ.T):
                 ax2.scatter(xyz[0],xyz[1],color=Colors[0],picker=True)
-        ax2.set_xlabel('PCA axis-1',fontsize=12)
-        ax2.set_ylabel('PCA axis-2',fontsize=12)
+        ax2.set_xlabel('PCA axis-1',fontsize=14)
+        ax2.set_ylabel('PCA axis-2',fontsize=14)
         if YM is not None:
             ax4.plot(neighD)
-            ax4.set_xlabel('Data no.',fontsize=12)
-            ax4.set_ylabel('dist to next',fontsize=12)
+            ax4.set_xlabel('Data no.',fontsize=14)
+            ax4.set_ylabel('dist to next',fontsize=14)
         if CLuDict['CLuZ'] is not None:
             SCH.dendrogram(CLuDict['CLuZ'],orientation='right',ax=ax3)
             ax3.set_title('%s %s'%(CLuDict['LinkMethod'],Title))
-            ax3.set_ylabel(r''+'data set no.',fontsize=12)
-            ax3.set_xlabel(r''+CLuDict['Method']+' distance',fontsize=12)
+            ax3.set_ylabel(r''+'data set no.',fontsize=14)
+            ax3.set_xlabel(r''+CLuDict['Method']+' distance',fontsize=14)
         else:
             ax3.plot(100.*CLuDict['PCA'][:10]/np.sum(CLuDict['PCA']))
-            ax3.set_xlabel('PCA index',fontsize=12)
-            ax3.set_ylabel('% of total',fontsize=12)
+            ax3.set_xlabel('PCA index',fontsize=14)
+            ax3.set_ylabel('% of total',fontsize=14)
     Page.canvas.draw()

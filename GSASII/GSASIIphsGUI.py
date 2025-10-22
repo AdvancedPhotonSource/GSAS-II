@@ -1560,7 +1560,7 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
 #        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
     if G2frame.testRBObjSizers.get('OnOrien') is None: return
-    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj']['drawMode'])
+    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))
 
 def GetReflData(G2frame,phaseName,reflNames):
     ReflData = {'RefList':[],'Type':''}
@@ -2456,6 +2456,7 @@ def UpdatePhaseData(G2frame,Item,data):
         def FlipSizer():
             #patches
             if 'k-Max' not in Flip: Flip['k-Max'] = 20.
+            if 'MScorr' not in Flip: Flip['MScorr'] = 0.0
             if 'Resolution' in Flip:
                 Flip['GridStep'] = Flip['Resolution']
 
@@ -2493,7 +2494,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     Flip['testHKL'][Id] = HKL
                 except ValueError:
                     HKL = Flip['testHKL'][Id]
-                Obj.SetValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
+                Obj.ChangeValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
 
             refsList = [item for item in G2gd.GetGPXtreeDataNames(G2frame,['HKLF','PWDR']) if item in data['Histograms'].keys()]
             flipSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2501,6 +2502,10 @@ def UpdatePhaseData(G2frame,Item,data):
             lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection sets: '),0,WACV)
             if 'list' not in str(type(Flip['RefList'])):     #patch
                 Flip['RefList'] = [Flip['RefList'],]
+            refName = Flip['RefList'][0]
+            refType = ''
+            if refName and refName in data['Histograms']:
+                refType = data['Histograms'][refName].get('Type','')
             lineSizer.Add(wx.ComboBox(General,value=Flip['RefList'][0],choices=Flip['RefList'],
                 style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
             refList = wx.Button(General,label='Select reflection sets')
@@ -2521,6 +2526,9 @@ def UpdatePhaseData(G2frame,Item,data):
             line2Sizer.Add(wx.StaticText(General,label=' k-Max (>=10.0): '),0,WACV)
             kMax = G2G.ValidatedTxtCtrl(General,Flip,'k-Max',nDig=(10,1),xmin=10.)
             line2Sizer.Add(kMax,0,WACV)
+            if refType == 'SEC':
+                line2Sizer.Add(wx.StaticText(General,label=' MScorr (0-0.1): '),0,WACV)
+                line2Sizer.Add(G2G.ValidatedTxtCtrl(General,Flip,'MScorr',nDig=(10,4),xmin=0.,xmax=0.10),0,WACV)
             flipSizer.Add(line2Sizer,0)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line3Sizer.Add(wx.StaticText(General,label=' Test HKLs:'),0,WACV)
@@ -3012,7 +3020,7 @@ def UpdatePhaseData(G2frame,Item,data):
             with open(tmp.name,'w') as fp:
                 fp.write(txt.replace(
                 '<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',
+                '<head><base href="https://iso.byu.edu/">',
                 ))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
@@ -3020,7 +3028,7 @@ def UpdatePhaseData(G2frame,Item,data):
         import re
         import requests
         from GSASII.exports import G2export_CIF
-        isosite="https://stokes.byu.edu/iso/"
+        isosite="https://iso.byu.edu/"
         upscript='isocifuploadfile.php'
         isoscript='isocifform.php'
         isoSubCite = ('For use of this supergroup search, please cite:\n'+
@@ -3070,7 +3078,7 @@ def UpdatePhaseData(G2frame,Item,data):
             with open(tmp1.name,'w') as fp:
                 fp.write(r1.text.replace(
                 '<HEAD>',
-                '<head><base href="https://stokes.byu.edu/iso/">',
+                '<head><base href="https://iso.byu.edu/">',
                 ))
             G2G.ShowWebPage('file://'+tmp1.name,G2frame)
             G2G.G2MessageBox(G2frame,
@@ -12998,6 +13006,7 @@ tab, use Operations->"Pawley create")''')
         elif text == 'RMC':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.FRMCMenu)
             G2rmcG.UpdateRMC(G2frame,data)
+            G2rmcG.UpdateRMC(G2frame,data)  #TODO: apparently needs to be done twice to get a working GUI. Find a better fix.
         elif text == 'ISODISTORT':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ISODData)
             G2phsG2.UpdateISODISTORT(G2frame,data)
@@ -13369,10 +13378,9 @@ tab, use Operations->"Pawley create")''')
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')
         
-    if nhist:   
-        G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
-        G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
-        Pages.append('RMC')
+    G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
+    G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
+    Pages.append('RMC')
 
     if dataGeneral['Type'] == 'nuclear':
         G2frame.ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)
@@ -13411,7 +13419,10 @@ tab, use Operations->"Pawley create")''')
         ind = Pages.index(G2frame.lastSelectedPhaseTab)
         if ind:
             UpdateGeneral(SkipDraw=ind)
-            G2frame.phaseDisplay.SetSelection(ind)
+            #G2frame.phaseDisplay.SetSelection(ind)
+            # on windows, need to wait for previous to finish before
+            # going to selected tab
+            wx.CallAfter(G2frame.phaseDisplay.SetSelection,ind)
             return
     ChangePage(0)
     

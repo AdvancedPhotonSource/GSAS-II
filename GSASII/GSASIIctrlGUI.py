@@ -44,9 +44,6 @@ from . import GSASIImath as G2mth
 #from . import GSASIIstrMain as G2stMn
 from . import GSASIImiscGUI as G2IO
 from .tutorialIndex import tutorialIndex
-if sys.version_info[0] >= 3:
-    unicode = str
-    basestring = str
 
 # Define a short names for convenience
 DULL_YELLOW = (230,230,190)
@@ -406,7 +403,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.type = int
         elif 'float' in str(type(val)):
             self.type = float
-        elif isinstance(val,str) or isinstance(val,unicode):
+        elif isinstance(val,str):
             self.type = str
         elif val is None:
             raise Exception("ValidatedTxtCtrl error: value of "+str(key)+
@@ -469,7 +466,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
         if GSASIIpath.GetConfigValue('debug') and warn:
-            print('ValidatedTxtCtrl.SetValue used in callback?')
+            print('ValidatedTxtCtrl.SetValue() used in callback. Batter as ChangeValue()?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val
@@ -2266,9 +2263,6 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
     copyopts = {'InTable':False,"startvalue":None,'currentsel':None}
     hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     histList = G2pdG.GetHistsLikeSelected(G2frame)
-    if not histList:
-        G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
-        return
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'Set a parameter value',
         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2292,9 +2286,10 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
     mainSizer.Add(subSizer)
 
     mainSizer.Add((-1,20))
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add(G2CheckBox(dlg, 'Edit in table ', copyopts, 'InTable'))
-    mainSizer.Add(subSizer)
+    if histList:
+        subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        subSizer.Add(G2CheckBox(dlg, 'Edit in table ', copyopts, 'InTable'))
+        mainSizer.Add(subSizer)
 
     btnsizer = wx.StdDialogButtonSizer()
     OKbtn = wx.Button(dlg, wx.ID_OK,'Continue')
@@ -2319,19 +2314,24 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
 
     copyList = []
     lbl = copyopts['currentsel']
-    dlg = G2MultiChoiceDialog(G2frame,'Copy parameter '+lbl+' from\n'+hst,
-        'Copy parameters', histList)
-    dlg.CenterOnParent()
-    try:
-        if dlg.ShowModal() == wx.ID_OK:
-            for i in dlg.GetSelections():
-                copyList.append(histList[i])
-        else:
-            # reset the parameter since cancel was pressed
-            array.update(saveArray)
-            return
-    finally:
-        dlg.Destroy()
+    ttl = 'Select histograms'
+    if copyopts['InTable']:
+        msg = 'Select histograms to include in table'
+    else:
+        msg = f'Select hists to copy parameter {lbl} to.\nFine w/no selections. Cancel aborts change.'
+    if histList:
+        dlg = G2MultiChoiceDialog(G2frame,msg,ttl, histList)
+        dlg.CenterOnParent()
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections():
+                    copyList.append(histList[i])
+            else:
+                # reset the parameter since cancel was pressed
+                array.update(saveArray)
+                return
+        finally:
+            dlg.Destroy()        
 
     prelbl = [hst]
     i = labelLst.index(lbl)
@@ -2604,7 +2604,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
       returns wx.ID_CANCEL
     :returns: the wx Id for the selected button
 
-    example::
+    Example::
 
        res = ShowScrolledInfo(self.frame,msg,header='Please Note',buttonlist=[
                ('Open', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
@@ -3050,7 +3050,7 @@ class MultiDataDialog(wx.Dialog):
     def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],
                      testfxns=None,formats=['%.5g',],header=None):
         wx.Dialog.__init__(self,parent,-1,title,
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.panel = None
         self.limits = limits
         self.values = values
@@ -3230,6 +3230,7 @@ class MultiDataDialog(wx.Dialog):
         self.panel.SetSizer(mainSizer)
         self.panel.Fit()
         self.Fit()
+        self.CenterOnParent()
 
     def GetValues(self):
         return self.values
@@ -3690,6 +3691,14 @@ def ItemSelector(ChoiceList, ParentFrame=None,
     :returns: the selection index or None or a selection list if multiple is true
 
     Called by GSASIIdataGUI.OnReOrgSelSeq() Which is not fully implemented.
+
+    Example::
+
+            choices = ('NXazint1d 1D file','NXazint1d 2D file')
+            sel = G2G.ItemSelector(choices, ParentFrame=ParentFrame,
+                                    header='Select file section',
+                                    title='Select the section of the file to read')
+            if sel is None: return False
     '''
     if multiple:
         if useCancel:
@@ -4758,11 +4767,7 @@ class ShowLSParms(wx.Dialog):
             self.frozenList = []
         # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
         self.parmNames = sorted(list(parmDict.keys()))
-        if '2' in platform.python_version_tuple()[0]:
-            basestr = basestring
-        else:
-            basestr = str
-        splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],basestr)]
+        splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],str)]
         globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
         if len(globNames):
             self.choiceDict['Global'] = G2obj.SortVariables(globNames)
@@ -5018,11 +5023,7 @@ class VirtualVarBox(wx.ListCtrl):
     def SetContents(self,parent):
         self.varList = []
         for name in parent.choiceDict[parent.parmChoice]:
-            if '2' in platform.python_version_tuple()[0]:
-                basestr = basestring
-            else:
-                basestr = str
-            if isinstance(parent.parmDict[name],basestr): continue
+            if isinstance(parent.parmDict[name],str): continue
             if 'Refined' in parent.listSel and (name not in parent.fullVaryList
                                               ) and (name not in parent.varyList):
                 continue
@@ -5277,19 +5278,24 @@ class VirtualVarBox(wx.ListCtrl):
     # Callbacks to display info in table
     def OnGetItemText(self, item, col):
         name = self.varList[item]
+        atmParNam  = None
+        if name.split(':')[2].startswith('dA'):
+            atmParNam = name.replace(':dA',':A')
         if col == 0:
             return str(item)
         elif col == 1:
+            if atmParNam: return atmParNam
             return name
         elif col == 2:
             if name in self.parmWin.fullVaryList and name in self.parmWin.frozenList:
-                    return "F"
+                return "F"
             elif name in self.parmWin.varyList:
                 return "R"
             elif name in self.parmWin.fullVaryList:
                 return "C"
             return ""
         elif col == 3:
+            if atmParNam: name = atmParNam
             try:
                 value = G2fil.FormatSigFigs(self.parmWin.parmDict[name])
             except ValueError:
@@ -6227,7 +6233,7 @@ def updateNotifier(G2frame,fileVersion):
     dlg.Destroy()
 
 ################################################################################
-def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
+def viewWebPage(parent,URL='',size=(750,450),newFrame=False,HTML=''):
     '''Creates a child wx.Frame with an OS-managed web browser. The window
     is modeless, so it can be left open without affecting GSAS-II operations,
     but will be closed when GSAS-II is ended if a ``parent`` window is
@@ -6266,7 +6272,7 @@ def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
                     lastWebFrame.wv.SetPage(HTML,'')
                 else:
                     lastWebFrame.wv.LoadURL(URL)
-                return
+                return dlg
         except:
             pass
     dlg = wx.Frame(parent,size=size)
@@ -6680,6 +6686,7 @@ class SelectConfigSetting(wx.Dialog):
         self.vars = GetConfigValsDocs()
         self.G2frame = parent
         self.restart = False
+        self.reload = False
 
         label = wx.StaticText(
             self,  wx.ID_ANY,
@@ -6728,6 +6735,8 @@ class SelectConfigSetting(wx.Dialog):
                 self.saveBtn.Enable(True)
                 if 'restart' in self.vars[var][3].lower():
                     self.restart  = True
+                elif 'reload' in self.vars[var][3].lower():
+                    self.reload  = True
                 break
         else:
             self.saveBtn.Enable(False)
@@ -7691,6 +7700,15 @@ def ShowHelp(helpType,frame,helpMode=None):
         helplink = os.path.join(path2GSAS2,'help',helplink)
         pfx = "file://"
         if sys.platform.lower().startswith('win'):
+            # really don't understand what urlunsplit is doing, but this seems
+            # to prevent windows from encoding the # for the anchor
+            # (suggested by Google's AI!) 
+            from urllib.parse import urlunsplit
+            f = helplink.split('#')[0]
+            a = ''
+            if '#' in helplink:
+                a = helplink.split('#')[1]
+            helplink = urlunsplit(['file','',f,'',a])
             pfx = ''
         #if GSASIIpath.GetConfigValue('debug'): print 'DBG_Help link=',pfx+helplink
         if htmlFirstUse:
@@ -8436,7 +8454,7 @@ def ChooseOrigin(G2frame,rd):
     for atom in O2atoms:
         for i in [0,1,2]:
             atom[cx+i] += T[i]
-            atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update symmetry & mult
+        atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[0:2] # update symmetry & mult
     #get density & distances
     DisAglData = {}
     DisAglData['SGData'] = rd.Phase['General']['SGData']
@@ -8563,7 +8581,7 @@ def makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plottype):
             G2frame.Cmax = val
         else:
             G2frame.Cmin = val
-        obj.txt.SetValue(int(Ymax*val))
+        obj.txt.ChangeValue(int(Ymax*val))
         updatePlot()
     def OnNewVal(*args,**kwargs):
         'respond when a value is placed in the min or max text box'

@@ -22,7 +22,7 @@ import math
 import os
 import re
 import copy
-import platform
+#import platform
 import pickle
 import sys
 import random as ran
@@ -719,7 +719,7 @@ def ProjFileSave(G2frame):
                 commit = g2repo.head.commit
                 Controls['LastSavedUsing'] += f" git {commit.hexsha[:8]}"
             else:
-                gv = getSavedVersionInfo()
+                gv = GSASIIpath.getSavedVersionInfo()
                 if gv is not None:
                     Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
         except:
@@ -730,7 +730,7 @@ def ProjFileSave(G2frame):
             while item:
                 data = []
                 name = G2frame.GPXtree.GetItemText(item)
-                if name.startswith('Hist/Phase'):  # skip over this
+                if name.startswith('Hist/Phase') or name.startswith('Groups'):  # skip over this
                     item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
                     continue
                 data.append([name,G2frame.GPXtree.GetItemPyData(item)])

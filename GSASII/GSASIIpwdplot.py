@@ -2020,8 +2020,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
     if Ymax is None: return # nothing to plot
-    offsetX = Page.plotStyle['Offset'][1]
-    offsetY = Page.plotStyle['Offset'][0]
+    offsetY,offsetX = Page.plotStyle.get('Offset',(0,0))[:2]
     if Page.plotStyle['logPlot']:
         Title = 'log('+Title+')'
     elif Page.plotStyle['sqrtPlot']:
@@ -2116,32 +2115,44 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                          gridspec_kw=GS_kw)
         Page.figure.subplots_adjust(left=5/100.,bottom=16/150.,
             right=.99,top=1.-3/200.,hspace=0,wspace=0)
-        for i in range(nx):
-            Plots[0,i].set_xlim(gXmin[i],gXmax[i])
-            Plots[1,i].set_xlim(gXmin[i],gXmax[i])
-            Plots[1,i].set_ylim(DZmin,DZmax)
-            if not Page.plotStyle.get('flTicks',False):
-                Plots[0,i].set_ylim(-len(Page.phaseList)*5,102)
+        def adjustDim(i,nx):
+            '''MPL creates a 1-D array when nx=1, 2-D otherwise.
+            This adjusts the array addressing.
+            '''
+            if nx == 1:
+                return (0,1)
             else:
-                Plots[0,i].set_ylim(-1,102)
+                return ((0,i),(1,i))
+        for i in range(nx):
+            up,down = adjustDim(i,nx)
+            Plots[up].set_xlim(gXmin[i],gXmax[i])
+            Plots[down].set_xlim(gXmin[i],gXmax[i])
+            Plots[down].set_ylim(DZmin,DZmax)
+            if not Page.plotStyle.get('flTicks',False):
+                Plots[up].set_ylim(-len(Page.phaseList)*5,102)
+            else:
+                Plots[up].set_ylim(-1,102)
                 
         # pretty up the tick labels
-        Plots[0,0].tick_params(axis='y', direction='inout', left=True, right=True)
-        Plots[1,0].tick_params(axis='y', direction='inout', left=True, right=True)
-        for ax in Plots[:,1:].ravel():
-            ax.tick_params(axis='y', direction='in', left=True, right=True)
+        up,down = adjustDim(0,nx)
+        Plots[up].tick_params(axis='y', direction='inout', left=True, right=True)
+        Plots[down].tick_params(axis='y', direction='inout', left=True, right=True)
+        if nx > 1:
+            for ax in Plots[:,1:].ravel():
+                ax.tick_params(axis='y', direction='in', left=True, right=True)
         # remove 1st upper y-label so that it does not overlap with lower box
-        Plots[0,0].get_yticklabels()[0].set_visible(False)
-        Plots[1,0].set_ylabel(r'$\mathsf{\Delta I/\sigma_I}$',fontsize=12)
+        Plots[up].get_yticklabels()[0].set_visible(False)
+        Plots[down].set_ylabel(r'$\mathsf{\Delta I/\sigma_I}$',fontsize=12)
         if Page.plotStyle['sqrtPlot']:
-            Plots[0,0].set_ylabel(r'$\rm\sqrt{Normalized\ intensity}$',fontsize=12)
+            Plots[up].set_ylabel(r'$\rm\sqrt{Normalized\ intensity}$',fontsize=12)
         else:
-            Plots[0,0].set_ylabel('Normalized Intensity',fontsize=12)
+            Plots[up].set_ylabel('Normalized Intensity',fontsize=12)
         Page.figure.text(0.001,0.03,commonltrs,fontsize=13)
         Page.figure.supxlabel(xLabel)
         for i,h in enumerate(groupDict[groupName]):
-            Plot = Plots[0,i]
-            Plot1 = Plots[1,i]
+            up,down = adjustDim(i,nx)
+            Plot = Plots[up]
+            Plot1 = Plots[down]
             if Page.plotStyle['qPlot']:
                 pos = 0.98
                 ha = 'right'
@@ -2208,10 +2219,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.axvline(xt,color=plcolor,
                                         picker=True,pickradius=3.,
                                         label='_FLT_'+phase,lw=0.5)
-        # Not sure if this does anything
-        G2frame.dataWindow.moveTickLoc.Enable(False)
-        G2frame.dataWindow.moveTickSpc.Enable(False)
+        try: # try used as in PWDR menu not Groups
+            # Not sure if this does anything
+            G2frame.dataWindow.moveTickLoc.Enable(False)
+            G2frame.dataWindow.moveTickSpc.Enable(False)
         #     G2frame.dataWindow.moveDiffCurve.Enable(True)
+        except:
+            pass
         Page.canvas.draw()
         return
     elif G2frame.Weight and not G2frame.Contour:

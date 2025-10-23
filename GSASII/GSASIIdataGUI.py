@@ -4300,13 +4300,14 @@ If you continue from this point, it is quite likely that all intensity computati
             print (traceback.format_exc())
 
 
-    def StartProject(self):
+    def StartProject(self,selectItem=True):
         '''Opens a GSAS-II project file & selects the 1st available data set to
         display (PWDR, HKLF, REFD or SASD)
         '''
 
         Id = 0
         phaseId = None
+        GroupId = None
         seqId = None
         G2IO.ProjFileOpen(self)
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
@@ -4326,6 +4327,8 @@ If you continue from this point, it is quite likely that all intensity computati
                 seqId = item
             elif name == "Phases":
                 phaseId = item
+            elif name.startswith("Groups"):
+                GroupId = item
             elif name == 'Controls':
                 data = self.GPXtree.GetItemPyData(item)
                 if data:
@@ -4333,19 +4336,27 @@ If you continue from this point, it is quite likely that all intensity computati
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         if phaseId: # show all phases
             self.GPXtree.Expand(phaseId)
-        if seqId:
+        if GroupId:
+            self.GPXtree.Expand(GroupId)
+        # select an item
+        if seqId and selectItem:
             self.EnablePlot = True
             SelectDataTreeItem(self,seqId)
             self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
-        elif Id:
+        elif GroupId and selectItem:
+            self.EnablePlot = True
+            self.GPXtree.Expand(GroupId)
+            SelectDataTreeItem(self,GroupId)
+            self.GPXtree.SelectItem(GroupId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+        elif Id and selectItem:
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
-        elif phaseId:
+        elif phaseId and selectItem:
             Id = phaseId
             # open 1st phase
-            Id, unused = self.GPXtree.GetFirstChild(phaseId)
+            Id,_ = self.GPXtree.GetFirstChild(phaseId)
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id) # as before for OSX
         self.CheckNotebook()
@@ -7924,6 +7935,8 @@ def UpdateControls(G2frame,data):
         is judged by a common string that matches a template
         supplied by the user
         '''
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         for hist in Histograms:
             if hist.startswith('PWDR '):
@@ -7932,6 +7945,8 @@ def UpdateControls(G2frame,data):
             G2G.G2MessageBox(G2frame,'No PWDR histograms found to group',
                                      'Cannot group')
             return
+        repeat = True
+        srchStr = hist[5:]
         msg = ('Edit the histogram name below placing a question mark (?) '
                 'at the location '
                 'of characters that change between groups of '
@@ -7940,40 +7955,71 @@ def UpdateControls(G2frame,data):
                 'vary within a histogram group (e.g. Bank 1). '
                 'Be sure to leave enough characters so the string '
                 'can be uniquely matched.')
-        res = G2G.StringSearchTemplate(G2frame,'Set match template',msg,hist[5:])
-        re_res = re.compile(res.replace('.',r'\.').replace('?','.'))
-        setDict = {}
-        keyList = []
-        noMatchCount = 0
-        for hist in Histograms:
-            if hist.startswith('PWDR '):
-                m = re_res.search(hist)
-                if m:
-                    key = hist[m.start():m.end()]
-                    setDict[hist] = key
-                    if key not in keyList: keyList.append(key)
-                else:
-                    noMatchCount += 1
-        groupDict = {}
-        groupCount = {}
-        for k in keyList:
-            groupDict[k] = [hist for hist,key in setDict.items() if k == key]
-            groupCount[k] = len(groupDict[k])
+        while repeat:
+            srchStr = G2G.StringSearchTemplate(G2frame,'Set match template',
+                                                   msg,srchStr)
+            if srchStr is None: return # cancel pressed
+            reSrch = re.compile(srchStr.replace('.',r'\.').replace('?','.'))
+            setDict = {}
+            keyList = []
+            noMatchCount = 0
+            for hist in Histograms:
+                if hist.startswith('PWDR '):
+                    m = reSrch.search(hist)
+                    if m:
+                        key = hist[m.start():m.end()]
+                        setDict[hist] = key
+                        if key not in keyList: keyList.append(key)
+                    else:
+                        noMatchCount += 1
+            groupDict = {}
+            groupCount = {}
+            for k in keyList:
+                groupDict[k] = [hist for hist,key in setDict.items() if k == key]
+                groupCount[k] = len(groupDict[k])
             
-        msg = f'With template {res!r} found '
-        if min(groupCount.values()) == max(groupCount.values()):
-            msg += f'{len(groupDict)} groups with {min(groupCount.values())} histograms each'
-        else:
-            msg += (f'{len(groupDict)} groups with between {min(groupCount.values())}'
-                       f' and {min(groupCount.values())} histograms in each')
-        if noMatchCount:
-            msg += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups"
-        G2G.G2MessageBox(G2frame,msg,'Grouping result')
-        data['Groups'] = {'groupDict':groupDict,'notGrouped':noMatchCount,
-                              'template':res}
-        wx.CallAfter(UpdateControls,G2frame,data)
+            msg1 = f'With template {srchStr!r} found '
+            if min(groupCount.values()) == max(groupCount.values()):
+                msg1 += f'{len(groupDict)} groups with {min(groupCount.values())} histograms each'
+            else:
+                msg1 += (f'{len(groupDict)} groups with between {min(groupCount.values())}'
+                           f' and {min(groupCount.values())} histograms in each')
+            if noMatchCount:
+                msg1 += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups"
+            #G2G.G2MessageBox(G2frame,msg1,'Grouping result')
+            res = G2G.ShowScrolledInfo(G2frame,msg1,header='Grouping result',
+                        buttonlist=[
+               ('OK', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
+               ('try again', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))
+              ],
+                height=150)
+            if res == wx.ID_OK:
+                repeat = False
 
-    # start of UpdateControls
+        data['Groups'] = {'groupDict':groupDict,'notGrouped':noMatchCount,
+                              'template':srchStr}
+#        wx.CallAfter(UpdateControls,G2frame,data)
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        G2frame.clearProject() # clear out data tree
+        G2frame.StartProject(False)
+        #self.EnablePlot = True
+        Id = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+        SelectDataTreeItem(G2frame,Id)
+        G2frame.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+
+    def ClearGroups(event):
+        del data['Groups']
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        G2frame.clearProject() # clear out data tree
+        G2frame.StartProject(False)
+        #self.EnablePlot = True
+        Id = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+        SelectDataTreeItem(G2frame,Id)
+        G2frame.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+        
+    #======= start of UpdateControls ===========================================
     if 'SVD' in data['deriv type']:
         G2frame.GetStatusBar().SetStatusText('Hessian SVD not recommended for initial refinements; use analytic Hessian or Jacobian',1)
     else:
@@ -8037,6 +8083,11 @@ def UpdateControls(G2frame,data):
         btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
     btn.Bind(wx.EVT_BUTTON,SearchGroups)
     subSizer.Add(btn)
+    if groupDict:
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear groupings')
+        subSizer.Add((5,-1))
+        subSizer.Add(btn)
+        btn.Bind(wx.EVT_BUTTON,ClearGroups)
     subSizer.Add((-1,-1),1,wx.EXPAND)
     mainSizer.Add(subSizer,0,wx.EXPAND)
     mainSizer.Add((-1,8))

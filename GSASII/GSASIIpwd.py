@@ -2427,6 +2427,27 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
         if dataType[2] in ['A','B','C']:
             const = 0.18/(np.pi*parmDict['radius'])
+        for iv,vary in enumerate(varyList):
+            if vary == 'Zero':
+                dMdv[iv,:] = 1.0
+            if vary == 'DisplaceX':
+                dMdv[iv,:] = -const*npcosd(calcPos)
+            if vary == 'DisplaceY':
+                dMdv[iv,:] = -const*npsind(calcPos)
+            if vary == 'Shift':
+                dMdv[iv,:] = -const*npcosd(calcPos/2.0)
+            if vary == 'Lam':
+                dpr = 180./np.pi
+                k = 1.0-parmDict['Lam']**2/(4.0*peakDsp**2)
+                k = dpr/np.sqrt(k)
+                dMdv[iv,:] = k/peakDsp
+            if vary == 'DifC':
+                dMdv[iv,:] = peakDsp
+            if vary == 'DifA':
+                dMdv[iv,:] = peakDsp**2
+            if vary == 'DifB':
+                dMdv[iv,:] = 1.0/peakDsp
+        return np.sqrt(peakWt)*dMdv                 
 
     def errPeakAlp(values,peakDsp,peakAlp,peakWt,dataType,parmDict,varyList):
         parmDict.update(dict(zip(varyList,values)))
@@ -2523,31 +2544,25 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
             return []
         return sig
         
-    dataType = Inst['Type'][0]
-    peakPos,peakDsp,peakPosWt = SetPosData()
-    posDict,posVary = SetPosParms()
-    sigDsp,peakSig,peakSigWt = SetSigData()
-    sigDict,sigVary = SetSigParms()
-    if dataType[2] in ['A','B','T']:
-        alpDsp,peakAlp,peakAlpWt = SetAlpData()
-        alpDict,alpVary = SetAlpParms()
-        betDsp,peakBet,peakBetWt = SetBetData()
-        betDict,betVary = SetBetParms()
-        
+    dataType = Inst['Type'][0]       
     parmDict = {}
     Sigmas = {}
+    peakPos,peakDsp,peakPosWt = SetPosData()
+    posDict,posVary = SetPosParms()
     parmDict.update(posDict)
     if len(peakPos) > 5 and len(posVary):
         values =  np.array(Dict2Values(parmDict, posVary))
-        result = so.leastsq(errPeakPos,values,Dfun=None,full_output=True,ftol=0.000001,
-            args=(peakDsp,peakPos,peakPosWt,dataType,parmDict,posVary))
+        result = so.leastsq(errPeakPos,values,Dfun=dervPeakPos,full_output=True,ftol=0.000001,
+            col_deriv=True,args=(peakDsp,peakPos,peakPosWt,dataType,parmDict,posVary))
         G2fil.G2Print('Position calibration:')
         Values2Dict(parmDict, posVary, result[0])
         sig = outResult()
         if  len(sig):
             Sigmas.update(zip(posVary,sig))
             GetInstParms(parmDict)
-    parmDict = {}
+    # parmDict = {}
+    sigDsp,peakSig,peakSigWt = SetSigData()
+    sigDict,sigVary = SetSigParms()
     parmDict.update(sigDict)
     if len(peakSig) > 5 and len(sigVary):
         values =  np.array(Dict2Values(parmDict, sigVary))
@@ -2562,7 +2577,9 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
     else:
         G2fil.G2Print(' Sigma not calibrated: insufficient data or not selected')
     if dataType[2] in ['A','B','T']:
-        parmDict = {}
+        # parmDict = {}
+        alpDsp,peakAlp,peakAlpWt = SetAlpData()
+        alpDict,alpVary = SetAlpParms()
         parmDict.update(alpDict)
         if len(peakAlp) > 5 and len(alpVary):
             values =  np.array(Dict2Values(parmDict, alpVary))
@@ -2576,7 +2593,9 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
                 GetInstParms(parmDict)
         else:
             G2fil.G2Print(' Alpha not calibrated: insufficient data or not selected')
-        parmDict = {}
+        # parmDict = {}
+        betDsp,peakBet,peakBetWt = SetBetData()
+        betDict,betVary = SetBetParms()
         parmDict.update(betDict)
         if len(peakBet) > 5 and len(betVary):
             values =  np.array(Dict2Values(parmDict, betVary))

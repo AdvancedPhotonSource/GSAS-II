@@ -577,7 +577,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 #    GSASIIpath.IPyBreak()
             # insert groups before any individual PDWR items
             if datum[0].startswith('PWDR') and groupDict and not groupInserted:
-                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Groups/PWDR')
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Groups/Powder')
                 G2frame.GPXtree.SetItemPyData(Id,{})
                 for nam in groupDict:
                     sub = G2frame.GPXtree.AppendItem(parent=Id,text=nam)

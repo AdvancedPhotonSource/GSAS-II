@@ -83,7 +83,7 @@ plotOpt['phaseLabels']  = {}
 plotOpt['lineWid'] = '1'
 plotOpt['saveCSV'] = False
 plotOpt['CSVfile'] = None
-plotOpt['GroupedX'] = False
+plotOpt['sharedX'] = False
 for xy in 'x','y':
     for minmax in 'min','max':
         key = f'{xy}{minmax}'
@@ -226,9 +226,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif event.key == 'f' and 'PWDR' in plottype: # short,full length or no tick-marks
             if G2frame.Contour: return
             Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
-        elif event.key == 'x' and groupName is not None:
-            plotOpt['GroupedX'] = not plotOpt['GroupedX']
-            if not plotOpt['GroupedX']: # reset scale
+        elif event.key == 'x' and groupName is not None: # share X axis scale for Pattern Groups
+            plotOpt['sharedX'] = not plotOpt['sharedX']
+            if not plotOpt['sharedX']: # reset scale
                 newPlot = True
         elif event.key == 'x' and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
@@ -408,7 +408,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return
         elif event.key == 'q' and not ifLimits: 
             newPlot = True
-            if 'PWDR' in plottype:
+            if 'PWDR' in plottype or plottype.startswith('GROUP'):
                 Page.plotStyle['qPlot'] = not Page.plotStyle['qPlot']
                 Page.plotStyle['dPlot'] = False
                 Page.plotStyle['chanPlot'] = False
@@ -422,7 +422,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif event.key == 'e' and G2frame.Contour:
             newPlot = True
             G2frame.TforYaxis = not G2frame.TforYaxis
-        elif event.key == 't' and 'PWDR' in plottype and not ifLimits:
+        elif event.key == 't' and ('PWDR' in plottype or plottype.startswith('GROUP')
+                                   ) and not ifLimits:
             newPlot = True      
             Page.plotStyle['dPlot'] = not Page.plotStyle['dPlot']
             Page.plotStyle['qPlot'] = False
@@ -2046,10 +2047,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if groupName is not None:
         # plot a group of histograms
         Page.Choice = [' key press',
-                'f: toggle full-length ticks','g: toggle grid',
+                'f: toggle full-length ticks',
+                'g: toggle grid',
                 's: toggle sqrt plot',
-                'q: toggle Q plot','t: toggle d-spacing plot',
-                'x: share x-axes']
+                'q: toggle Q plot',
+                't: toggle d-spacing plot',
+                'x: share x-axes (Q/d only)']
         Plot.set_visible(False) # removes "big" plot
         gXmin = {}
         gXmax = {}
@@ -2069,7 +2072,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         for h in groupDict[groupName][1:]:
             msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h,msk)]
         # place centered-dot in loc of non-common letters
-        commonltrs = ''.join([h0i if m else '\u00B7' for (h0i,m) in zip(h0,msk)])
+        #commonltrs = ''.join([h0i if m else '\u00B7' for (h0i,m) in zip(h0,msk)])
+        # place rectangular box in the loc of non-common letter(s)
+        commonltrs = ''.join([h0i if m else '\u25A1' for (h0i,m) in zip(h0,msk)])
         for i,h in enumerate(groupDict[groupName]):
             histlbl[i] = ''.join([hi for (hi,m) in zip(h,msk) if not m]) # unique letters
             gPatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, h)
@@ -2107,7 +2112,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         # apportion axes lengths so that units are equal
         xfrac = [(gXmax[i]-gXmin[i])/totalrange for i in range(nx)]
         GS_kw = {'height_ratios':[4, 1], 'width_ratios':xfrac,}
-        if plotOpt['GroupedX']:
+        if plotOpt['sharedX'] and (
+                Page.plotStyle['qPlot'] or Page.plotStyle['dPlot']):
+            Page.figure.text(0.001,0.94,'X shared',fontsize=11,
+                                 color='g')
             Plots = Page.figure.subplots(2,nx,sharey='row',sharex=True,
                                          gridspec_kw=GS_kw)
         else:

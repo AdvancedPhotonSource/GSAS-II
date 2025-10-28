@@ -66,8 +66,8 @@ Details for GSAS-II use on these specific platforms follows below:
 
   **Raspberry Pi** (ARM) Linux: GSAS-II has been installed on both 32-bit
   and the 64-bit version of the Raspberry Pi OS (formerly
-  called Raspbian) and compiled binaries are provided at present for
-  both, but the 32-bit support may not continue. It is expected that
+  called Raspbian) and some older compiled binaries are provided at present for
+  both, but 32-bit support may not continue. It is expected that
   these binaries will also function on Ubuntu Linux for Raspberry Pi,
   but this has not been tried.
   The performance of GSAS-II on a Raspberry Pi is not blindingly fast,
@@ -81,30 +81,27 @@ Details for GSAS-II use on these specific platforms follows below:
   versions of Python and its packages, `see here   for more information
   <https://advancedphotonsource.github.io/GSAS-II-tutorials/install-pip.html>`_.
   With
-  64-bit Pi OS it may be possible for us to provide a GSAS2FULL installer
+  64-bit Pi OS it may be possible for us to provide a GSAS2MAIN installer
   (which will need to include a custom-supplied wxPython wheel, since
   that is not available in conda-forge) or else pip must be used to
-  download and build wx. Please let us know if you are intending to
+  download and build wxpython (quite slow). Please let Brian know if you are intending to
   use GSAS-II on a Raspberry Pi for a classroom, etc and would need
-  this.
+  help with this.
 
-Version Control
+Source Code Management
 -----------------------
+
 The master version of the source code for GSAS-II resides on
-GitHub at URL and the git
+GitHub at URL (in branch main) and the git
 version control system (VCS) is usually used to install the files needed by GSAS-II. When
 GSAS-II is installed in this manner, the software can be easily
 updated, as git commands can download only the changed sections of files
 that need to be updated. It is likewise possible to use git to regress
 to an older version of GSAS-II, though there are some limitations on
 how far back older versions of GSAS-II will be with current versions
-of Python. While git is not required for use of GSAS-II, special
+of Python and associated packages. While git is not required for use of GSAS-II, special
 procedures must be used to install GSAS-II without it and once
 installed without git, updates of GSAS-II must be done manually.
-
-We are currently in a transition period to GitHub from
-a previous subversion server. As we migrate to GitHub, updates will be
-made in parallel to both servers.
 
 Python Requirements
 -----------------------
@@ -120,12 +117,16 @@ as defined in variable :attr:`GSASIIdataGUI.versionDict`,
 but for new installations we are currently recommending the following
 interpreter/package versions:
 
- * Python 3.11, 3.12 or 3.13 is recommended. GSAS-II should run with any Python
-   version from 3.7 or later, but you will need to locate (from the
-   old subversion server) or locate binaries to match that Python version.
+ * Python 3.11, 3.12 or 3.13 is recommended. No testing has yet been
+   done with Python 3.14, but no problems are expected.
+   GSAS-II should run with any Python
+   version from 3.7 or later, but we do not create binaries for
+   all versions of Python and numpy. You will need to locate (from the
+   old subversion server) older binaries to match older Python
+   versions or compile them yourself. 
  * wxPython 4.2 or later is recommended, but with Python <=3.9 any
-   wx4.x version should be OK. However, there may be problems with
-   newer sections of the GUI with wx <4.0.
+   wx4.x version should be OK. Problems with
+   newer sections of the GUI are expected for wx <4.0.
  * NumPy 1.26 recommended with Python 3.11 and 2.2 with 3.12 or 3.13,
    but anything from 1.17 on is likely fine,
    but if you do not match the supplied GSAS-II binaries you will
@@ -139,7 +140,7 @@ interpreter/package versions:
  * SciPy: no version-related problems have been seen, but in at least one
    case multiple imports are tried to account for where function
    names have changed.
- * PyCifRW: no version issues are known. We have been using an older
+ * PyCifRW: no version issues are known. We had been using an older
    version for a long time, but in 2025 switched to the latest version
    and did not see any problems.
  * pybaselines: no version issues are known.
@@ -149,12 +150,7 @@ and Python packages, see comments below and details here:
 :attr:`GSASIIdataGUI.versionDict`,
 
 Note that GSAS-II is currently being developed using Python 3.11
-through 3.13. We
-have just adopted a build process using meson (replacing scons) for
-Python 3.12+ and
-is not fully documented. If you need to build the GSAS-II binaries at
-this time, please contact Brian.
-
+through 3.13. 
 We are no longer
 supporting Python 2.7 and <=3.6, and strongly encourage that
 systems running GSAS-II under these older Python versions reinstall
@@ -194,6 +190,10 @@ Python extension packages are required:
 GSAS-II will not start or will start but will not be able to do much
 if the above packages are not available.
 
+----------------------------------
+ Recommended Packages for GUI Use
+----------------------------------
+
 In addition to the previous required packages, several Python packages
 are utilized in limited sections of the GUI code, but are not
 required. If these packages are not present, warning
@@ -220,13 +220,13 @@ optional packages are:
   (http://www.pythonware.com/products/pil/). This is used to read and
   save certain types of images.
   
-* h5py is the HDF5 interface and hdf5 is the support package. These
+* h5py and hdf5: h5py is the HDF5 interface and hdf5 is the support package. These
   packages are (not surprisingly) required
   to import images from HDF5 files. If these libraries are not present,
-  the HDF5 importer(s) will not appear in the import menu and a
+  the HDF5 importers will not appear in the import menu and a
   warning message appears on GSAS-II startup.
   
-* imageio is used to make movies. This is optional and is offered for plotting
+* imageio is used to make movies. This is optional and is utilized for plotting
   superspace (modulated) structures.
   
 * seekpath is used for magnetic lattice (k-vector) searches
@@ -301,7 +301,13 @@ installing the SciPy is recommended:
 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/).
 
-These packages fortunately are common and are easy to install. There are
+These packages fortunately are common and are easy to install.
+
+------------------------------------
+ Recommended Packages for Scripting
+------------------------------------
+
+There are
 some relatively minor scripting capabilities that will only run when a few
 additional packages are installed:
 
@@ -316,7 +322,55 @@ additional packages are installed:
 but none of these are required to run scripts and the vast
 majority of scripts will not need these packages.
 
-**Installing a minimal Python configuration**:
+---------------------------
+ Optional Python Packages
+---------------------------
+
+* Sphinx (https://www.sphinx-doc.org) is used to generate the
+  documentation you are currently reading. Generation of this documentation
+  is not generally something needed by users or even most code
+  developers, since the prepared documentation on
+  https://gsas-ii.readthedocs.io is usually reasonably up to date.
+
+* The sphinx-rtd-theme is required to build the documentation in
+  standard the format (though this can be changed with minor editing.) 
+
+--------------------------
+ Compilation Requirements
+--------------------------
+
+Most users on Windows and Mac will not need to compile
+GSAS-II. Binaries are supplied as part of the gsas2main
+self-installer. Linux users may need to install the software in a
+manner that allows for local compilation. Developers may wish to
+perform all installation steps for themselves. These are the
+requirements:
+
+* The gfortran complier is required. There has been some work done
+  with glang, and I think this passes the self-tests but it is unknown
+  if there are other problems. This can be installed in a number of
+  ways. For Windows and Mac, conda-forge is a good choice. (For MacOS,
+  Apple's XCode must also be installed). For Linux,
+  dist-supplied versions are probably a better choice. 
+
+* gcc or other c compiler is required to build one binary for image
+  processing. For Windows use Microsoft Visual C/C++. On Mac, use of
+  conda-forge to install gcc is a good installation choice (again
+  XCode is required). For Linux, dist-supplied versions are probably a
+  better choice.
+
+* meson (https://mesonbuild.com/meson-python/) is used to compile the
+  relatively small amount of Fortran, C and Cython code that is included with
+  GSAS-II. This is a Python package typically installed with conda or
+  pip. On Linux, a dist-supplied version (Debian, RedHat, etc.) is
+  likely available too.
+
+* Cython is needed to build one binary used for magnetism (k-vector
+  searching). Install this typically with conda or pip.
+
+--------------------------------------------------------
+ Installation Notes for Minimal Python configuration
+--------------------------------------------------------
 
 There are many ways to install a minimal Python configuration.
 Below, I show some example commands used to install using the
@@ -355,24 +409,7 @@ Notes on these commands:
 * the 2nd command (python) is used to invoke GSAS-II scriptable for the first time, which is needed to load the binary files from the server.
 
 
----------------------------
- Optional Python Packages
----------------------------
-
-* Sphinx (https://www.sphinx-doc.org) is used to generate the
-  documentation you are currently reading. Generation of this documentation
-  is not generally something needed by users or even most code
-  developers, since the prepared documentation on
-  https://gsas-ii.readthedocs.io is usually reasonably up to date.
-
-* meson (https://mesonbuild.com/meson-python/) is used to compile the
-  relatively small amount of Fortran code that is included with
-  GSAS-II.
-
-* SCons (https://scons.org/) was used to compile the relatively small amount of
-   Fortran code that is included with GSAS-II. Use of this is only for
-   Python 3.11 and previous. It should no longer be needed.
-
+  
 Required Binary Files
 --------------------------------
 
@@ -406,10 +443,8 @@ Should one wish to run GSAS-II where binary files are not
 supplied (such as 32-bit Windows or Linux) or with other combinations of
 Python/NumPy, compilation will be need to be done by the user. See
 the `compilation information <https://advancedphotonsource.github.io/GSAS-II-tutorials/compile.html>`_ for more information.
-We have just adopted a build process using meson (in place of scons) for
-Python 3.12+. This is incorporated in the "main" branch, but 
-is not fully documented. If you need to build the GSAS-II binaries at
-this time, please contact Brian.
+The build process was recently updated to use meson (in place of
+scons). 
 
 Supported Externally-Developed Software
 ----------------------------------------------------
@@ -495,6 +530,6 @@ as part of the GSAS-II distribution and must be installed separately:
     Python environment for PDFfit2, so that there is no possibility for
     conflict between package versions. When GSAS-II is run from a
     Python installation that includes the conda package manager (which
-    is the case with the GSAS2FULL installer), the GUI will offer an option to
+    is the case with the GSAS2MAIN installer), the GUI will offer an option to
     install PDFfit2 via a separate environment when the
     PDFfit2 option is selected on the Phase/RMC tab.

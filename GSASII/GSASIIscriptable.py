@@ -588,13 +588,32 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     HistName = 'PWDR ' + G2obj.StripUnicode(reader.idstring, '_')
     HistName = G2obj.MakeUniqueLabel(HistName, existingnames)
 
-    try:
-        Iparm1, Iparm2 = instprm
-    except ValueError:
+    # get instrumental parameters from reader...
+    if instprm is None:
+        try:
+            Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
+        except KeyError as err:
+            msg  = "The reader does not have any instrument params associated with it."
+            raise Exception(msg) from err
+    
+    # ...or from a file...
+    elif isinstance(instprm, str):
         Iparm1, Iparm2 = load_iprms(instprm, reader, bank=bank)
         G2fil.G2Print('Instrument parameters read:',reader.instmsg)
-    except TypeError:  # instprm is None, get iparms from reader
-        Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
+
+    # ...or from an input...
+    elif (
+        isinstance(instprm, (list, tuple)) 
+        and len(instprm) == 2 
+        and all(isinstance(i, dict) for i in instprm)
+        ):
+            Iparm1, Iparm2 = instprm
+
+    # ...else raise an error.
+    else:
+        msg = "Invalid 'instprm' entered"
+        raise Exception(msg)
+
 
     if 'T' in Iparm1['Type'][0]:
         if not reader.clockWd and reader.GSAS:
@@ -1058,14 +1077,15 @@ class G2Project(G2ObjectWrapper):
         if not multiple: pwdrreaders = pwdrreaders[0:1]
         histlist = []
         if URL:
-            iparmfile = downloadFile(iparams)
+            instprm = downloadFile(iparams)
         else:
             try:
-                iparmfile = os.path.abspath(os.path.expanduser(iparams))
-            except:
-                pass
+                instprm = os.path.abspath(os.path.expanduser(iparams))
+            except TypeError: # iparams is not a file path
+                    instprm = iparams
+    
         for r in pwdrreaders:
-            histname, new_names, pwdrdata = load_pwd_from_reader(r, iparmfile,
+            histname, new_names, pwdrdata = load_pwd_from_reader(r, instprm,
                                           [h.name for h in self.histograms()],bank=instbank)
             if histname in self.data:
                 G2fil.G2Print("Warning - redefining histogram", histname)

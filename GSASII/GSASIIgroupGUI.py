@@ -79,6 +79,16 @@ def histLabels(G2frame):
 def HAPframe(G2frame):
     def OnPageChanged(event):
         'respond to a notebook tab'
+        def OnScroll(event):
+            'Synchronize vertical scrolling between the two scrolled windows'
+            obj = event.GetEventObject()
+            pos = obj.GetViewStart()[1]
+            if obj == lblScroll:
+                HAPScroll.Scroll(-1, pos)
+            else:
+                lblScroll.Scroll(-1, pos)
+            event.Skip()
+        
         if event:
             page = event.GetSelection()
             print('page selected',page,phaseList[page])
@@ -93,7 +103,35 @@ def HAPframe(G2frame):
             if panel.GetSizer():
                 panel.GetSizer().Destroy()                
         panel = HAPtabs[page]
-        HAPSizer = wx.FlexGridSizer(0,len(HAPtable)+1,2,10)
+        bigSizer = wx.BoxSizer(wx.HORIZONTAL)
+        panel.SetSizer(bigSizer)
+        
+        # Create scrolled window for labels
+        #lblScroll = wx.ScrolledWindow(panel, style=wx.VSCROLL)
+        lblScroll = wx.ScrolledWindow(panel, style=wx.VSCROLL|wx.HSCROLL
+                                      |wx.ALWAYS_SHOW_SB
+                                      )
+        lblScroll.SetScrollRate(0, 10)
+        hpad = 10
+        lblSizer = wx.FlexGridSizer(0,1,hpad,10)
+        lblScroll.SetSizer(lblSizer)
+        bigSizer.Add(lblScroll,0,wx.EXPAND,0)
+#        bigSizer.Add(lblScroll)
+        
+        # Create scrolled window for data
+        HAPScroll = wx.ScrolledWindow(panel, style=wx.VSCROLL|wx.HSCROLL
+                                      |wx.ALWAYS_SHOW_SB
+                                      )
+        #HAPScroll.ShowScrollbars(wx.SHOW_SB_ALWAYS, wx.SHOW_SB_ALWAYS)
+        HAPScroll.SetScrollRate(10, 10)
+        HAPSizer = wx.FlexGridSizer(0,len(HAPtable),hpad,10)
+        HAPScroll.SetSizer(HAPSizer)
+        bigSizer.Add(HAPScroll,1,wx.EXPAND,1)
+#        bigSizer.Add(HAPScroll)
+        
+        # Bind scroll events to synchronize scrolling
+        lblScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
+        HAPScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
         # construct a list of row labels, attempting to keep the
         # order they appear in the original array
         rowsLbls = []
@@ -110,45 +148,80 @@ def HAPframe(G2frame):
                 prevkey = key
         # label columns with histograms
         common,hLbl = histLabels(G2frame)
-        HAPSizer.Add((-1,-1))
+        #HAPSizer.Add((-1,-1))
         for hist in hLbl:
-            HAPSizer.Add(wx.StaticText(panel,label=f"\u25A1 = {hist}"),0,
+            HAPSizer.Add(wx.StaticText(HAPScroll,label=f"\u25A1 = {hist}"),0,
                              wx.ALIGN_CENTER)
+        #for i in range(len(rowsLbls)+1):
+        #    HAPSizer.AddGrowableRow(i)
         for row in rowsLbls:
-            HAPSizer.Add(wx.StaticText(panel,label=row),0,WACV)
+            #HAPSizer.Add(wx.StaticText(panel,label=row),0,WACV)
             for hist in HAPtable:
                 if row not in HAPtable[hist]:
                     HAPSizer.Add((-1,-1))
                 elif 'val' in HAPtable[hist][row] and 'ref' in HAPtable[hist][row]:
                     valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
                     arr,indx = HAPtable[hist][row]['ref']
-                    valrefsiz.Add(G2G.G2CheckBox(panel,'',arr,indx),0,WACV)
+                    valrefsiz.Add(G2G.G2CheckBox(HAPScroll,'',arr,indx),0,WACV)
                     arr,indx = HAPtable[hist][row]['val']
-                    valrefsiz.Add(G2G.ValidatedTxtCtrl(panel,
+                    valrefsiz.Add(G2G.ValidatedTxtCtrl(HAPScroll,
                                         arr,indx,size=(75,-1)),0,WACV)
                     HAPSizer.Add(valrefsiz,0,
                                      wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
                 elif 'val' in HAPtable[hist][row]:
                     arr,indx = HAPtable[hist][row]['val']
-                    HAPSizer.Add(G2G.ValidatedTxtCtrl(panel,
+                    HAPSizer.Add(G2G.ValidatedTxtCtrl(HAPScroll,
                                         arr,indx,size=(75,-1)),0,
                                      wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
 
                 elif 'ref' in HAPtable[hist][row]:
                     arr,indx = HAPtable[hist][row]['ref']
-                    HAPSizer.Add(G2G.G2CheckBox(panel,'',arr,indx),0,
+                    HAPSizer.Add(G2G.G2CheckBox(HAPScroll,'',arr,indx),0,
                                      wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
                 elif 'str' in HAPtable[hist][row]:
-                    HAPSizer.Add(wx.StaticText(panel,
+                    HAPSizer.Add(wx.StaticText(HAPScroll,
                                     label=HAPtable[hist][row]['str']),0,
                                     wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
 #                                    wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
                 else:
                     print('Should not happen',HAPtable[hist][row],hist,row)
-        panel.SetSizer(HAPSizer)
-        HAPSizer.Fit(panel)
-        panel.SetScrollbars(1, 1, HAPSizer.GetMinSize().width,
-                                  HAPSizer.GetMinSize().height)
+        HAPSizer.Layout()
+        rowHeights = HAPSizer.GetRowHeights()
+        # label rows (must be done after HAPSizer row heights are defined)
+        s = wx.Size(-1,rowHeights[0])
+        lblSizer.Add(wx.StaticText(lblScroll,label=' ',size=s))
+        #lblSizer.AddGrowableRow(0)
+        for i,row in enumerate(rowsLbls):
+            s = wx.Size(-1,rowHeights[i+1])
+            lblSizer.Add(wx.StaticText(lblScroll,label=row,size=s),0,WACV|wx.ALIGN_RIGHT)
+        #    lblSizer.AddGrowableRow(i+1)
+        #lblSizer.Add(wx.StaticText(lblScroll,label=' ',size=(-1,10))) # pad for scrollbar
+
+        # Fit the scrolled windows to their content
+        xWin,yWin = panel.GetSize()
+        xLbl,_ = lblSizer.GetMinSize()
+        xTab,yTab = HAPSizer.GetMinSize()
+        #lblScroll.SetSize((xLbl,-1))
+        #lblScroll.SetMinSize((xLbl,-1))
+        #HAPScroll.SetSize((min(xTab,xWin-xLbl),yTab))
+        #lblSizer.Fit(lblScroll)
+        #HAPSizer.Fit(HAPScroll)
+        #lblScroll.SetVirtualSize(lblSizer.GetMinSize()[0],yTab)
+        lblScroll.SetVirtualSize(lblSizer.GetMinSize())
+        HAPScroll.SetVirtualSize(HAPSizer.GetMinSize())
+        print('panel',xWin,yWin)
+        print('lblScroll.SetSize',xLbl,yTab)
+        print('HAPScroll.SetSize',min(xTab,xWin-xLbl),yTab)
+        print('lblScroll.SetVirtualSize',lblSizer.GetMinSize())
+        print('HAPScroll.SetVirtualSize',HAPSizer.GetMinSize())
+        #lblScroll.ShowScrollbars(wx.SHOW_SB_DEFAULT, wx.SHOW_SB_NEVER)
+        G2frame.SendSizeEvent()
+        pass
+        
+#        panel.SetSizer(HAPSizer)
+#        HAPSizer.Fit(panel)
+#        panel.SetScrollbars(1, 1, HAPSizer.GetMinSize().width,
+#                                  HAPSizer.GetMinSize().height)
 
         #breakpoint()
         
@@ -181,7 +254,8 @@ def HAPframe(G2frame):
     phaseList = []
     for phaseName in Phases:
         phaseList.append(phaseName)
-        HAPtabs.append(wx.ScrolledWindow(HAPBook))
+        #HAPtabs.append(wx.ScrolledWindow(HAPBook))
+        HAPtabs.append(wx.Panel(HAPBook))
         HAPBook.AddPage(HAPtabs[-1],phaseName)
     HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     #G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
@@ -198,12 +272,12 @@ def HAPframe(G2frame):
     #     menu.Append(Id,page,'')
     #     TabSelectionIdDict[Id] = page
     #     G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
+    G2frame.dataWindow.SetDataSize()
     page = 0
     HAPBook.SetSelection(page)
     OnPageChanged(None)
     #wx.CallAfter(FillDDataWindow,page)
     # done 
-    G2frame.dataWindow.SetDataSize()
 
 def getHAPvals(G2frame,phase=None):
     sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')

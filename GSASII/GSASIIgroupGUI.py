@@ -24,11 +24,11 @@ See SearchGroups in :func:`GSASIIdataGUI.UpdateControls`.
 # import sys
 # import random as ran
 
-import numpy as np
+#import numpy as np
 # import numpy.ma as ma
 import wx
 
-from . import GSASIIpath
+# from . import GSASIIpath
 from . import GSASIIdataGUI as G2gd
 # from . import GSASIIobj as G2obj
 # import GSASIIpwdGUI as G2pdG
@@ -60,8 +60,20 @@ def UpdateGroup(G2frame,item):
     G2pwpl.PlotPatterns(G2frame,plotType='GROUP')
     
 def histLabels(G2frame):
-    # find portion of hist name that is the same and different
-    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+    '''Find portion of the set of hist names that are the same for all
+    histograms in the current group (determined by ``G2frame.groupName``)
+    and then for each histogram, the characters that are different.
+
+    :Returns: commonltrs, histlbls where 
+
+      * commonltrs is a str containing the letters shared by all 
+        histograms in the group and where differing letters are 
+        replaced by a square box.
+      * histlbls is a list with an str for each histogram listing
+        the characters that differ in each histogram.
+    '''
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+        G2frame,G2frame.root, 'Controls'))
     groupName = G2frame.groupName
     groupDict = Controls.get('Groups',{}).get('groupDict',{})
     h0 = groupDict[groupName][0]
@@ -70,15 +82,55 @@ def histLabels(G2frame):
         msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h,msk)]
     # place rectangular box in the loc of non-common letter(s)
     commonltrs = ''.join([h0i if m else '\u25A1' for (h0i,m) in zip(h0,msk)])
-    #for i,h in enumerate(groupDict[groupName]):
     # make list with histogram name unique letters   
     histlbls = [''.join([hi for (hi,m) in zip(h,msk) if not m])
                    for h in groupDict[groupName]]
     return commonltrs,histlbls
 
+def displayDataTable(rowLabels,Table,Sizer,Panel):
+    '''Displays the data table in `Table` in Scrolledpanel `Panel`
+    with wx.FlexGridSizer `Sizer`.
+    '''
+    for row in rowLabels:
+        for hist in Table:
+            # format the entry depending on what is defined
+            if row not in Table[hist]:
+                Sizer.Add((-1,-1))
+            elif 'val' in Table[hist][row] and 'ref' in Table[hist][row]:
+                valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
+                arr,indx = Table[hist][row]['ref']
+                valrefsiz.Add(G2G.G2CheckBox(Panel,'',arr,indx),0,
+                                 wx.ALIGN_CENTER_VERTICAL)
+                arr,indx = Table[hist][row]['val']
+                valrefsiz.Add(G2G.ValidatedTxtCtrl(Panel,
+                                    arr,indx,size=(75,-1)),0,WACV)
+                Sizer.Add(valrefsiz,0,
+                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+            elif 'val' in Table[hist][row]:
+                arr,indx = Table[hist][row]['val']
+                Sizer.Add(G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1)),0,
+                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+
+            elif 'ref' in Table[hist][row]:
+                arr,indx = Table[hist][row]['ref']
+                Sizer.Add(G2G.G2CheckBox(Panel,'',arr,indx),0,
+                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+            elif 'str' in Table[hist][row]:
+                Sizer.Add(wx.StaticText(Panel,label=Table[hist][row]['str']),0,
+                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
+            else:
+                print('Should not happen',Table[hist][row],hist,row)
+
 def HAPframe(G2frame):
-    def OnPageChanged(event):
-        'respond to a notebook tab'
+    '''This creates two side-by-side scrolled panels, each containing 
+    a FlexGridSizer.
+    The panel to the left contains the labels for the sizer to the right.
+    This way the labels are not scrolled horizontally and are always seen.
+    The two vertical scroll bars are linked together so that the labels 
+    are synced to the table of values.
+    '''
+    def selectPhase(event):
+        'Display the selected phase'
         def OnScroll(event):
             'Synchronize vertical scrolling between the two scrolled windows'
             obj = event.GetEventObject()
@@ -88,176 +140,123 @@ def HAPframe(G2frame):
             else:
                 lblScroll.Scroll(-1, pos)
             event.Skip()
-        
+        #---------------------------------------------------------------------
+        # selectPhase starts here. Find which phase is selected.
         if event:
             page = event.GetSelection()
-            print('page selected',page,phaseList[page])
-        else:
+            #print('page selected',page,phaseList[page])
+        else:  # initial call when window is created
             page = 0
-            print('no page selected',phaseList[page])
+            #print('no page selected',phaseList[page])
+        # generate a dict with HAP values for each phase (may not be the same)
         HAPtable = getHAPvals(G2frame,phaseList[page])
-        #for hist in HAPtable:
-        #    showTable(phaseList[page],hist,HAPtable[hist])
-        # clear out old widgets
-        for panel in HAPtabs:
-            if panel.GetSizer():
-                panel.GetSizer().Destroy()                
-        panel = HAPtabs[page]
-        bigSizer = wx.BoxSizer(wx.HORIZONTAL)
-        panel.SetSizer(bigSizer)
-        
-        # Create scrolled window for labels
-        #lblScroll = wx.ScrolledWindow(panel, style=wx.VSCROLL)
-        lblScroll = wx.ScrolledWindow(panel, style=wx.VSCROLL|wx.HSCROLL
-                                      |wx.ALWAYS_SHOW_SB
-                                      )
-        lblScroll.SetScrollRate(0, 10)
-        hpad = 10
-        lblSizer = wx.FlexGridSizer(0,1,hpad,10)
-        lblScroll.SetSizer(lblSizer)
-        bigSizer.Add(lblScroll,0,wx.EXPAND,0)
-#        bigSizer.Add(lblScroll)
-        
-        # Create scrolled window for data
-        HAPScroll = wx.ScrolledWindow(panel, style=wx.VSCROLL|wx.HSCROLL
-                                      |wx.ALWAYS_SHOW_SB
-                                      )
-        #HAPScroll.ShowScrollbars(wx.SHOW_SB_ALWAYS, wx.SHOW_SB_ALWAYS)
-        HAPScroll.SetScrollRate(10, 10)
-        HAPSizer = wx.FlexGridSizer(0,len(HAPtable),hpad,10)
-        HAPScroll.SetSizer(HAPSizer)
-        bigSizer.Add(HAPScroll,1,wx.EXPAND,1)
-#        bigSizer.Add(HAPScroll)
-        
-        # Bind scroll events to synchronize scrolling
-        lblScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
-        HAPScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
+        #debug# for hist in HAPtable: printTable(phaseList[page],hist,HAPtable[hist]) # see the dict
         # construct a list of row labels, attempting to keep the
         # order they appear in the original array
-        rowsLbls = []
+        rowLabels = []
         lpos = 0
         for hist in HAPtable:
             prevkey = None
             for key in HAPtable[hist]:
-                if key not in rowsLbls:
+                if key not in rowLabels:
                     if prevkey is None:
-                        rowsLbls.insert(lpos,key)
+                        rowLabels.insert(lpos,key)
                         lpos += 1
                     else:
-                        rowsLbls.insert(rowsLbls.index(prevkey)+1,key)
+                        rowLabels.insert(rowLabels.index(prevkey)+1,key)
                 prevkey = key
-        # label columns with histograms
-        common,hLbl = histLabels(G2frame)
-        #HAPSizer.Add((-1,-1))
-        for hist in hLbl:
-            HAPSizer.Add(wx.StaticText(HAPScroll,label=f"\u25A1 = {hist}"),0,
-                             wx.ALIGN_CENTER)
-        #for i in range(len(rowsLbls)+1):
-        #    HAPSizer.AddGrowableRow(i)
-        for row in rowsLbls:
-            #HAPSizer.Add(wx.StaticText(panel,label=row),0,WACV)
-            for hist in HAPtable:
-                if row not in HAPtable[hist]:
-                    HAPSizer.Add((-1,-1))
-                elif 'val' in HAPtable[hist][row] and 'ref' in HAPtable[hist][row]:
-                    valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
-                    arr,indx = HAPtable[hist][row]['ref']
-                    valrefsiz.Add(G2G.G2CheckBox(HAPScroll,'',arr,indx),0,WACV)
-                    arr,indx = HAPtable[hist][row]['val']
-                    valrefsiz.Add(G2G.ValidatedTxtCtrl(HAPScroll,
-                                        arr,indx,size=(75,-1)),0,WACV)
-                    HAPSizer.Add(valrefsiz,0,
-                                     wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-                elif 'val' in HAPtable[hist][row]:
-                    arr,indx = HAPtable[hist][row]['val']
-                    HAPSizer.Add(G2G.ValidatedTxtCtrl(HAPScroll,
-                                        arr,indx,size=(75,-1)),0,
-                                     wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        #=======  Generate GUI ===============================================
+        for panel in HAPtabs:
+            if panel.GetSizer():
+                panel.GetSizer().Destroy()          # clear out old widgets
+        panel = HAPtabs[page]
+        bigSizer = wx.BoxSizer(wx.HORIZONTAL)
+        panel.SetSizer(bigSizer)
+        # panel for labels; show scroll bars to hold the space
+        lblScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
+                        style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
+        hpad = 3  # space between rows
+        lblSizer = wx.FlexGridSizer(0,1,hpad,10)
+        lblScroll.SetSizer(lblSizer)
+        bigSizer.Add(lblScroll,0,wx.EXPAND)
 
-                elif 'ref' in HAPtable[hist][row]:
-                    arr,indx = HAPtable[hist][row]['ref']
-                    HAPSizer.Add(G2G.G2CheckBox(HAPScroll,'',arr,indx),0,
-                                     wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-                elif 'str' in HAPtable[hist][row]:
-                    HAPSizer.Add(wx.StaticText(HAPScroll,
-                                    label=HAPtable[hist][row]['str']),0,
-                                    wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
-#                                    wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-                else:
-                    print('Should not happen',HAPtable[hist][row],hist,row)
+        # Create scrolled panel to display HAP data
+        HAPScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
+                        style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
+        HAPSizer = wx.FlexGridSizer(0,len(HAPtable),hpad,10)
+        HAPScroll.SetSizer(HAPSizer)
+        bigSizer.Add(HAPScroll,1,wx.EXPAND)
+        
+        # Bind scroll events to synchronize scrolling
+        lblScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
+        HAPScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
+        # label columns with unique part of histogram names
+        for hist in histLabels(G2frame)[1]:
+            HAPSizer.Add(wx.StaticText(HAPScroll,label=f"\u25A1 = {hist}"),
+                             0,wx.ALIGN_CENTER)
+        displayDataTable(rowLabels,HAPtable,HAPSizer,HAPScroll)
+        # get row sizes in data table
         HAPSizer.Layout()
         rowHeights = HAPSizer.GetRowHeights()
-        # label rows (must be done after HAPSizer row heights are defined)
+        # match rose sizes in Labels
+        # (must be done after HAPSizer row heights are defined)
         s = wx.Size(-1,rowHeights[0])
         lblSizer.Add(wx.StaticText(lblScroll,label=' ',size=s))
-        #lblSizer.AddGrowableRow(0)
-        for i,row in enumerate(rowsLbls):
+        for i,row in enumerate(rowLabels):
             s = wx.Size(-1,rowHeights[i+1])
-            lblSizer.Add(wx.StaticText(lblScroll,label=row,size=s),0,WACV|wx.ALIGN_RIGHT)
-        #    lblSizer.AddGrowableRow(i+1)
-        #lblSizer.Add(wx.StaticText(lblScroll,label=' ',size=(-1,10))) # pad for scrollbar
-
+            lblSizer.Add(wx.StaticText(lblScroll,label=row,size=s),0,
+                             wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         # Fit the scrolled windows to their content
-        xWin,yWin = panel.GetSize()
+        lblSizer.Layout()
         xLbl,_ = lblSizer.GetMinSize()
         xTab,yTab = HAPSizer.GetMinSize()
-        #lblScroll.SetSize((xLbl,-1))
-        #lblScroll.SetMinSize((xLbl,-1))
-        #HAPScroll.SetSize((min(xTab,xWin-xLbl),yTab))
-        #lblSizer.Fit(lblScroll)
-        #HAPSizer.Fit(HAPScroll)
-        #lblScroll.SetVirtualSize(lblSizer.GetMinSize()[0],yTab)
+        lblScroll.SetSize((xLbl,yTab))
+        lblScroll.SetMinSize((xLbl+15,yTab)) # add room for scroll bar
         lblScroll.SetVirtualSize(lblSizer.GetMinSize())
         HAPScroll.SetVirtualSize(HAPSizer.GetMinSize())
-        print('panel',xWin,yWin)
-        print('lblScroll.SetSize',xLbl,yTab)
-        print('HAPScroll.SetSize',min(xTab,xWin-xLbl),yTab)
-        print('lblScroll.SetVirtualSize',lblSizer.GetMinSize())
-        print('HAPScroll.SetVirtualSize',HAPSizer.GetMinSize())
-        #lblScroll.ShowScrollbars(wx.SHOW_SB_DEFAULT, wx.SHOW_SB_NEVER)
-        G2frame.SendSizeEvent()
-        pass
-        
-#        panel.SetSizer(HAPSizer)
-#        HAPSizer.Fit(panel)
-#        panel.SetScrollbars(1, 1, HAPSizer.GetMinSize().width,
-#                                  HAPSizer.GetMinSize().height)
-
-        #breakpoint()
-        
-        #wx.CallAfter(FillDDataWindow,page)
+        lblScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
+        HAPScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
+        wx.CallAfter(G2frame.SendSizeEvent)
 
     G2frame.dataWindow.ClearData()
-    
+
+    # layout the HAP window. This has histogram and phase info, so a
+    # notebook is needed for phase name selection. (That could
+    # be omitted for single-phase refinements, but better to remind the
+    # user of the phase
     topSizer = G2frame.dataWindow.topBox
     topParent = G2frame.dataWindow.topPanel
-    botSizer = G2frame.dataWindow.bottomBox
-    botParent = G2frame.dataWindow.bottomPanel
-    common,_ = histLabels(G2frame)
-    topSizer.Add(wx.StaticText(topParent,label=f'HAP parameters for group "{common}"'),0,WACV)
+    midPanel = G2frame.dataWindow
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    #botSizer = G2frame.dataWindow.bottomBox
+    #botParent = G2frame.dataWindow.bottomPanel
+    # label with shared portion of histogram name
+    topSizer.Add(wx.StaticText(topParent,
+            label=f'HAP parameters for group "{histLabels(G2frame)[0]}"'),
+                     0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
 
-    # based on GSASIIddataGUI.MakeHistPhaseWin
-    midPanel = G2frame.dataWindow
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
     G2G.HorizontalLine(mainSizer,midPanel)
     midPanel.SetSizer(mainSizer)
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree() # reindex
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if not Phases:
-        mainSizer.Add(wx.StaticText(midPanel,label='There are no phases in use'))
+        mainSizer.Add(wx.StaticText(midPanel,
+                           label='There are no phases in use'))
         G2frame.dataWindow.SetDataSize()
         return
+    # notebook for phases
     HAPBook = G2G.GSNoteBook(parent=midPanel)
     mainSizer.Add(HAPBook,1,wx.ALL|wx.EXPAND,1)
     HAPtabs = []
     phaseList = []
     for phaseName in Phases:
         phaseList.append(phaseName)
-        #HAPtabs.append(wx.ScrolledWindow(HAPBook))
         HAPtabs.append(wx.Panel(HAPBook))
         HAPBook.AddPage(HAPtabs[-1],phaseName)
-    HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, selectPhase)
+
+    # code to set menu bar contents
     #G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
     # fill the 'Select tab' menu
     # mid = G2frame.dataWindow.DataMenu.FindMenu('Select tab')
@@ -275,11 +274,13 @@ def HAPframe(G2frame):
     G2frame.dataWindow.SetDataSize()
     page = 0
     HAPBook.SetSelection(page)
-    OnPageChanged(None)
-    #wx.CallAfter(FillDDataWindow,page)
-    # done 
+    selectPhase(None)
 
-def getHAPvals(G2frame,phase=None):
+def getHAPvals(G2frame,phase):
+    '''Generate a dict of dicts with all HAP values for the selected phase
+    and all histograms in the selected histogram group (from G2frame.groupName).
+    This will be used to generate the contents of the is what will be 
+    '''
     sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
     item, cookie = G2frame.GPXtree.GetFirstChild(sub)
     PhaseData = None
@@ -304,16 +305,18 @@ def getHAPvals(G2frame,phase=None):
     parmDict = {}
     for hist in groupDict[groupName]:
         parmDict[hist] = makeHAPtbl(G2frame,phase,PhaseData,hist,Controls)
-        #showTable(phase,hist,parmDict[hist])
+        #printTable(phase,hist,parmDict[hist])
     return parmDict
 
 def makeHAPtbl(G2frame,phase,PhaseData,hist,Controls):
     '''Construct a dict pointing to the contents of the HAP
-    variables. The contents of the dict will be:
+    variables for one phase and histogram.
 
-       'label' : innerdict
+    The contents of the dict will be:
 
-    where innerdict can contain the following elements:
+       'label' : `innerdict`
+
+    where `innerdict` can contain the following elements:
 
        'val' : (array, key)
        'ref' : (array, key)
@@ -322,7 +325,7 @@ def makeHAPtbl(G2frame,phase,PhaseData,hist,Controls):
     One of these will be present. 
 
     The 'str' value is something that cannot be edited; If 'str' is
-    present, it will be the only entry in innerdict. 
+    present, it will be the only entry in `innerdict`. 
 
     The 'val' tuple provides a reference to the float value for the 
     defined quantity, array[key]
@@ -339,16 +342,16 @@ def makeHAPtbl(G2frame,phase,PhaseData,hist,Controls):
     cell = PhaseData['General']['Cell'][1:]
     Amat,Bmat = G2lat.cell2AB(cell[:6])
     G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist)
-    data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+    #data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
     HAPdict = PhaseData['Histograms'][hist]
 
     parmDict = {}
     # phase fraction
-    parmDict['Phase fraction'] = {
+    parmDict['Phase frac'] = {
         'val' : (HAPdict['Scale'],0),
         'ref' : (HAPdict['Scale'],1),}
 
-    parmDict['LeBail extraction'] = {
+    parmDict['LeBail extract'] = {
             'str' : "Yes" if HAPdict.get('LeBail') else '(off)'
         }
 
@@ -379,29 +382,29 @@ def makeHAPtbl(G2frame,phase,PhaseData,hist,Controls):
     # microstrain values
     arr = HAPdict['Mustrain']
     if arr[0] == 'isotropic':
-        parmDict['muStrain'] = {
+        parmDict['\u00B5Strain'] = {
             'val' : (arr[1],0),
             'ref' : (arr[2],0),}
     elif arr[0] == 'uniaxial':
-        parmDict['muStrain/Eq'] = {
+        parmDict['\u00B5Strain/Eq'] = {
             'val' : (arr[1],0),
             'ref' : (arr[2],0),}
-        parmDict['muStrain/Ax'] = {
+        parmDict['\u00B5Strain/Ax'] = {
             'val' : (arr[1],1),
             'ref' : (arr[2],1),}
-        parmDict['muStrain/dir'] = {
+        parmDict['\u00B5Strain/dir'] = {
             'str' : ','.join([str(i) for i in arr[3]])}
     else:
         Snames = G2spc.MustrainNames(SGData)
         for i,lbl in enumerate(Snames):
             if i >= len(arr[4]): break
-            parmDict[f'muStrain/{lbl}'] = {
+            parmDict[f'\u00B5Strain/{lbl}'] = {
                 'val' : (arr[4],i),
                 'ref' : (arr[5],i),}
         muMean = G2spc.MuShklMean(SGData,Amat,arr[4][:len(Snames)])
-        parmDict['muStrain/mean'] = {
+        parmDict['\u00B5Strain/mean'] = {
             'str' : f'{muMean:.2f}'}
-    parmDict['muStrain LGmix'] = {
+    parmDict['\u00B5Strain LGmix'] = {
         'val' : (arr[1],2),
         'ref' : (arr[2],2),}
 
@@ -436,7 +439,7 @@ def makeHAPtbl(G2frame,phase,PhaseData,hist,Controls):
 
     # misc: Layer Disp, Extinction
     try:
-        parmDict['Layer displacement'] = {
+        parmDict['Layer displ'] = {
         'val' : (HAPdict['Layer Disp'],0),
         'ref' : (HAPdict['Layer Disp'],1),}
     except KeyError:
@@ -461,8 +464,8 @@ def makeHAPtbl(G2frame,phase,PhaseData,hist,Controls):
         pass
     return parmDict
 
-def showTable(phase,hist,parmDict):
-    # show the variables and values
+def printTable(phase,hist,parmDict):
+    # show the variables and values in data table array -- debug use only
     print(phase,hist)
     for sel in parmDict:
         arr = parmDict[sel]
@@ -470,10 +473,10 @@ def showTable(phase,hist,parmDict):
         if 'val' in arr:
             val = arr['val'][0] [arr['val'][1]]
         if 'str' in arr:
-            val = f'"{arr['str']}"'
+            v = arr['str']
+            val = f'"{v}"'
         ref = 'N/A'
         if 'ref' in arr:
             ref = arr['ref'][0] [arr['ref'][1]]
         print(f'{sel!r:20s}  {val}  {ref}')
     print('\n')    
-    #break

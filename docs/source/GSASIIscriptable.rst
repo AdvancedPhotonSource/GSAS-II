@@ -1664,6 +1664,42 @@ and the refinement is repeated.
         hist.fit_fixed_points()
         gpx.save()
 
+Specify Instrument Parameters Directly
+-----------------------------------------
+
+Rather than read instrument parameters from a file, it is also possible
+to specify them directly in a script. See the documentation on instrument
+parameter file contents, :ref:`CWPowder_table` and :ref:`TOFPowder_table`
+for more information on the parameters supplied here. 
+
+.. code-block::  python
+
+    import G2script as G2sc
+    import os
+    datadir = os.path.expanduser("~/Scratch/peakfit")
+    PathWrap = lambda fil: os.path.join(datadir,fil)
+    gpx = G2sc.G2Project(newgpx=PathWrap('pkfit.gpx'))
+    # specify instrmental parameters dictionaries
+    inst_params = [
+        {
+            "Type": ["PXC", "PXC", 0],
+            "Lam": [1.5405, 1.5405, 0],
+            "Zero": [0.0, 0.0, 0],
+            "Polariz.": [0.7, 0.7, 0],
+            "U": [2.0, 2.0, 0],
+            "V": [-2.0, -2.0, 0],
+            "W": [5.0, 5.0, 0],
+            "X": [0.0, 0.0, 0],
+            "Y": [0.0, 0.0, 0],
+            "Z": [0.0, 0.0, 0],
+            "SH/L": [0.002, 0.002, 0],
+            "Azimuth": [0.0, 0.0, 0],
+            "Bank": [1, 1, 0],
+        },
+        {},
+    ]
+    hist = gpx.add_powder_histogram(PathWrap('FAP.XRA'), fmthint='GSAS powder',
+                                    iparams=inst_params)
             
 .. _CommandlineInterface:
 

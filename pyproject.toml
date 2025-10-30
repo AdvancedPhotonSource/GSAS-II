@@ -37,42 +37,51 @@ classifiers = [
 ]
 keywords = ["diffraction", "crystallography", "diffraction",
 	    "powder diffraction", "SAXS", "reflectometry","neutron diffraction",	     "Rietveld"]
-dependencies = [
+
+dependencies = [    # required for scripting
   "numpy",
   "scipy",
   "pycifrw",
 ]
 
 [project.optional-dependencies]
-gui = [
+gui = [             # required for GUI
   "wxPython >=4.1",
   "matplotlib",
   "pyopengl",
 ]
-misc = [
+
+useful = [          # recommended but not required
+  "requests",
   "pillow",
   "h5py",
   "hdf5",
   "imageio",
   "pybaselines",
-]
-web = [
-  "conda",
-  "requests",
-]
-git = [
-  "git",
+  "xmltodict",
+  "seekpath",
   "gitpython",
 ]
-docs = [
+
+self-install = [   # for self-installation of optional software
+  "conda",
+]
+
+git = [            # probably not needed, as likely already present
+  "git",
+]
+
+docs = [           # to build docs only
   "sphinx",
   "sphinx-rtd-theme",
 ]
 
+win = ['pywin32']  # windows only, for makeBat.py installer
+
 [project.urls]
 Homepage = "https://advancedphotonsource.github.io/GSAS-II-tutorials"
 "Bug Tracker" = "https://github.com/AdvancedPhotonSource/GSAS-II/issues"
-#Discussions = "https://github.com/AdvancedPhotonSource/GSAS-II/discussions"
+Discussions = "https://github.com/AdvancedPhotonSource/GSAS-II/discussions"
 #Changelog = "https://github.com/AdvancedPhotonSource/GSAS-II/releases"
 
 #[project.scripts]
@@ -203,4 +212,4 @@ messages_control.disable = [
 ]
 
 [project.gui-scripts]
-GSAS-II = 'GSASII.GSASII:main'
+GSAS-II = 'GSASII.GSASIIGUI:main'

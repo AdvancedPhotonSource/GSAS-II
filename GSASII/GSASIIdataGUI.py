@@ -1618,7 +1618,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
                     inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
-                    if rd.instdict.get('wave'):
+                    if rd.instdict.get('wave') and 'Lam' in inst1:
                         inst1['Lam'][0] = rd.instdict.get('wave')
                         inst1['Lam'][1] = rd.instdict.get('wave')
                     return [inst1,inst2]

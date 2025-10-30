@@ -592,9 +592,12 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     if instprm is None:
         try:
             Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
+            print('Instrument parameters supplied in data file')
         except KeyError as err:
-            msg  = "The reader does not have any instrument params associated with it."
-            raise Exception(msg) from err
+            Iparm1 = None  # signal error rather than raise exception inside an exception handler
+        if Iparm1 is None:
+            msg  = "The data file does not have any instrument params associated with it and none were provided."
+            raise Exception(msg)
     
     # ...or from a file...
     elif isinstance(instprm, str):
@@ -608,10 +611,11 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
         and all(isinstance(i, dict) for i in instprm)
         ):
             Iparm1, Iparm2 = instprm
+            print('Instrument parameters supplied in script')
 
     # ...else raise an error.
     else:
-        msg = "Invalid 'instprm' entered"
+        msg = f"load_pwd... Error: Invalid instprm entered ({instprm!r})"
         raise Exception(msg)
 
 
@@ -1078,11 +1082,16 @@ class G2Project(G2ObjectWrapper):
         histlist = []
         if URL:
             instprm = downloadFile(iparams)
-        else:
+        elif iparams:
             try:
                 instprm = os.path.abspath(os.path.expanduser(iparams))
             except TypeError: # iparams is not a file path
+                if isinstance(iparams, (list, tuple)):
                     instprm = iparams
+                else:
+                    raise Exception(f"add_powder_histogram Error: Invalid iparams supplied ({iparams!r})")
+        else:
+            instprm = None # will error out unless the reader supplies them
     
         for r in pwdrreaders:
             histname, new_names, pwdrdata = load_pwd_from_reader(r, instprm,

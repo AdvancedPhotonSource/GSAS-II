@@ -1,5 +1,5 @@
 """
-GSASII powder calibrants in dictionary ``ImageCalibrants.Calibrants`` 
+GSASII powder calibrants in dictionary ``ImageCalibrants.Calibrants``
 containing substances commonly used for powder calibrations for image data.
 
 Each entry in ``ImageCalibrants`` consists of::
@@ -14,16 +14,16 @@ As an example::
 
   'LaB6  SRM660a':([2,],['',][(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10.)),
 
-For calibrants that are mixtures, the "Bravais num" and "(a,b,...)" values are repeated, as in this case:: 
+For calibrants that are mixtures, the "Bravais num" and "(a,b,...)" values are repeated, as in this case::
 
   'LaB6 & CeO2':([2,0],['',''] [(4.1569,4.1569,4.1569,90,90,90),(5.4117,5.4117,5.4117,90,90,90)], 0, (1.0,2,1.)),
 
-Note that Si has reflections (the 4th, 11th,...) that are not extinct by 
+Note that Si has reflections (the 4th, 11th,...) that are not extinct by
 symmetry but still have zero intensity. These are supplied in the final list::
 
   'Si':([0,],['F d 3 m'],[(5.4311946,5.4311946,5.4311946,90,90,90),],0,(1.,10,10.),(3,10,13,20,23,26,33,35,40,43)),
 
-Note, the Bravais numbers are: 
+Note, the Bravais numbers are:
             * 0 F cubic
             * 1 I cubic
             * 2 P cubic
@@ -41,7 +41,7 @@ Note, the Bravais numbers are:
 
 User-Defined Calibrants
 =======================
-To expand this list with locally needed additions, do not modify this 
+To expand this list with locally needed additions, do not modify this
 ``ImageCalibrants.py`` file,
 because you may lose these changes during a software update. Instead
 duplicate the format of this file in a file named ``UserCalibrants.py``
@@ -63,7 +63,11 @@ Calibrants={
 'LaB6  SRM660a':([2,],[''],[(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10.)),
 'LaB6  SRM660a skip 1':([2,],[''],[(4.1569162,4.1569162,4.1569162,90,90,90),],1,(1.0,10,10.)),
 'LaB6  SRM660': ([2,],[''],[(4.15695,4.15695,4.15695,90,90,90),],0,(1.0,10,10.)),
+'LaB6  SRM660c': ([2,],[''],[(4.156826,4.156826,4.156826,90,90,90),],0,(1.0,10,10.)),
 'Si    SRM640c':([0,],['F d 3 m'],[(5.4311946,5.4311946,5.4311946,90,90,90),],0,(1.,10,10.),(3,10,13,20,23,26,33,35,40,43)),
+'Si    SRM640d':([0,],['F d 3 m'],[(5.43123,5.43123,5.43123,90,90,90),],0,(1.,10,10.),(3,10,13,20,23,26,33,35,40,43)),
+'Si    SRM640e':([0,],['F d 3 m'],[(5.431179,5.431179,5.431179,90,90,90),],0,(1.,10,10.),(3,10,13,20,23,26,33,35,40,43)),
+'Si    SRM640f':([0,],['F d 3 m'],[(5.431144,5.431144,5.431144,90,90,90),],0,(1.,10,10.),(3,10,13,20,23,26,33,35,40,43)),
 'CeO2  SRM674b':([0,],[''],[(5.411651,5.411651,5.411651,90,90,90),],0,(1.0,2,1.)),
 'Al2O3 SRM676a':([3,],['R -3 c'],[(4.759091,4.759091,12.991779,90,90,120),],0,(1.0,5,5.)),
 'Ni   @ 298K':([0,],[''],[(3.52475,3.52475,3.52475,90,90,90),],0,(1.0,10,10.)),
@@ -76,7 +80,7 @@ Calibrants={
 'Pt   @ 298K':([0,],[''],[(3.9231,3.9231,3.9231,90,90,90),],0,(1.0,5,1.)),
 'LaB6 & CeO2':([2,0],['','',],[(4.1569162,4.1569162,4.1569162,90,90,90),(5.411651,5.411651,5.411651,90,90,90)],0,(1.0,2,1.)),
 }
-    
+
 # this should not be duplicated in the UserCalibrants.py file:
 try:
     import UserCalibrants as userFile

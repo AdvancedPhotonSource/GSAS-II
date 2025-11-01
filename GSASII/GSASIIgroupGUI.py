@@ -27,21 +27,14 @@ where `innerdict` can contain the following elements:
  *  'ref' : (array, key)
  *  'str' : string
  *  'init' : float
+ *  'rowlbl' : (array, key)
 
-One of these elements will be present. 
+One of 'val', 'ref' or 'str' elements will be present. 
 
  *  The 'str' value is something that cannot be edited; If 'str' is
     present, it will be the only entry in `innerdict`. It is used for
     a parameter value that is typically computed or must be edited in
     the histogram section.
-
- *  The 'init' value is also something that cannot be edited. 
-    These 'init' values are used for Instrument Parameters 
-    where there is both a cuurent value for the parameter as 
-    well as an initial value (usually read from the instrument 
-    parameters file whne the histogram is read. If 'init' is 
-    present in `innerdict`, there will also be a 'val' entry 
-    in `innerdict` and likely a 'ref' entry as well.
 
  *  The 'val' tuple provides a reference to the float value for the 
     defined quantity, where array[key] provides r/w access to the
@@ -53,7 +46,20 @@ One of these elements will be present.
 
     Both 'ref' and 'val' are usually defined together, but either may 
     occur alone. These exceptions will be for parameters where a single
-    refine flag is used for a group of parameters. 
+    refine flag is used for a group of parameters.
+
+ *  The 'init' value is also something that cannot be edited. 
+    These 'init' values are used for Instrument Parameters 
+    where there is both a cuurent value for the parameter as 
+    well as an initial value (usually read from the instrument 
+    parameters file whne the histogram is read. If 'init' is 
+    present in `innerdict`, there will also be a 'val' entry 
+    in `innerdict` and likely a 'ref' entry as well.
+
+ *  The 'rowlbl' value provides a reference to a str value that 
+    will be an editable row label (FreePrm sample parametric 
+    values). 
+
 '''
 
 # import math
@@ -136,34 +142,45 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False):
     '''
     firstentry = None
     for row in rowLabels:
-        if lblRow:
-            Sizer.Add(wx.StaticText(Panel,label=row),0,
+        if lblRow:         # show the row label, when not in a separate sizer
+            arr = None
+            for hist in Table:
+                if row not in Table[hist]: continue
+                if 'rowlbl' in Table[hist][row]:
+                    arr,key = Table[hist][row]['rowlbl']
+                    break
+            if arr is None:
+                Sizer.Add(wx.StaticText(Panel,label=row),0,
                              wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+            else:
+                Sizer.Add(
+                          G2G.ValidatedTxtCtrl(Panel,arr,key,size=(125,-1)),
+                            0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)           
         for hist in Table:
             # format the entry depending on what is defined
             if row not in Table[hist]:
                 Sizer.Add((-1,-1))
             elif 'val' in Table[hist][row] and 'ref' in Table[hist][row]:
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
-                arr,indx = Table[hist][row]['ref']
-                valrefsiz.Add(G2G.G2CheckBox(Panel,'',arr,indx),0,
-                                 wx.ALIGN_CENTER_VERTICAL)
                 arr,indx = Table[hist][row]['val']
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1))
                 valrefsiz.Add(w,0,WACV)
                 if firstentry is None: firstentry = w
+                arr,indx = Table[hist][row]['ref']
+                valrefsiz.Add(G2G.G2CheckBox(Panel,'',arr,indx),0,
+                                 wx.ALIGN_CENTER_VERTICAL)
                 Sizer.Add(valrefsiz,0,
-                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
             elif 'val' in Table[hist][row]:
                 arr,indx = Table[hist][row]['val']
-                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1))
-                Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1),notBlank=False)
+                Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
                 if firstentry is None: firstentry = w
 
             elif 'ref' in Table[hist][row]:
                 arr,indx = Table[hist][row]['ref']
                 Sizer.Add(G2G.G2CheckBox(Panel,'',arr,indx),0,
-                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
             elif 'str' in Table[hist][row]:
                 Sizer.Add(wx.StaticText(Panel,label=Table[hist][row]['str']),0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
@@ -253,9 +270,7 @@ def getSampleVals(G2frame,Histograms):
         histdata = Histograms[hist]
         hpD = {}
         hpD['Inst. name'] = {
-            'str' : histdata['Sample Parameters']['InstrName']}
-            # need to make blank allowed before we can do this:
-            # 'val' : (histdata['Sample Parameters'],'InstrName')}
+            'val' : (histdata['Sample Parameters'],'InstrName')}
         hpD['Diff type'] = {
             'str' : histdata['Sample Parameters']['Type']}
         arr = histdata['Sample Parameters']['Scale']
@@ -291,9 +306,6 @@ def getSampleVals(G2frame,Histograms):
         parms.append(['Time','time',None])
         parms.append(['Temperature','Sample T',None])
         parms.append(['Pressure','Sample P',None])
-        for key in ('FreePrm1','FreePrm2','FreePrm3'):
-            parms.append([key,Controls[key],None])
-            #parms.append([key,[Controls,key],None])
 
         # and loop over them
         for key,lbl,fmt in parms:
@@ -309,12 +321,13 @@ def getSampleVals(G2frame,Histograms):
                  hpD[lbl] = {
                      'str' : f'{histdata['Sample Parameters'][key]:{fmt}}'}
 
-        # parametric parameters
-        #breakpoint()
-        #break
+        for key in ('FreePrm1','FreePrm2','FreePrm3'):
+            lbl = Controls[key]
+            hpD[lbl] = {
+                     'val' : (histdata['Sample Parameters'],key),
+                     'rowlbl' : (Controls,key)
+                }
         parmDict[hist] = hpD
-        #printTable("",hist,parmDict[hist])
-    #breakpoint()
     return parmDict
                 
 def HAPframe(G2frame):

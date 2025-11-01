@@ -3213,13 +3213,17 @@ class G2Project(G2ObjectWrapper):
             covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
 
         '''
+        for i in ('covMatrix','varyList','variables'):
+            if i not in self['Covariance']['data']:
+                raise G2ScriptException(f'No {i} found in project, has a refinement been run?')
         missing = [i for i in varList if i not in self['Covariance']['data']['varyList']]
         if missing:
             G2fil.G2Print('Warning: Variable(s) {} were not found in the varyList'.format(missing))
             return None
-        if 'parmDict' not in self['Covariance']['data']:
-            raise G2ScriptException('No parameters found in project, has a refinement been run?')
-        vals = [self['Covariance']['data']['parmDict'][i] for i in varList]
+        parmDict = dict(zip(
+            self['Covariance']['data']['varyList'],
+            self['Covariance']['data']['variables']))
+        vals = [parmDict[i] for i in varList]
         cov = G2mth.getVCov(varList,
                             self['Covariance']['data']['varyList'],
                             self['Covariance']['data']['covMatrix'])

@@ -259,6 +259,7 @@ class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
         if self.ExportSelect():    # set export parameters; ask for file name
             return
         filename = self.filename
+        Oname = os.path.splitext(filename)[0]
         self.OpenFile()
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info
@@ -269,18 +270,23 @@ class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
                 print('**** ERROR - Phase '+phasenam+' has no atoms! ****')
                 continue
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
-                self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
+                self.filename = Oname + "_" + str(i) + self.extension
             cx,ct,cs,cia = General['AtomPtrs']
             Cell = General['Cell'][1:7]
             A,B = G2lat.cell2AB(Cell)
-            self.Write('# GSAS-II generated ORCA input file\n# Basic Mode\n#')
-            self.Write('#! BLYP SVP Opt #use for simple optimization')
-            self.Write('! RHF SP def2-SVP\n\n* xyz 0 1')
+            self.Write('# GSAS-II generated ORCA input file\n# Basic Mode')
+            self.Write('# after xyz is charge & multiplicity; change as needed')
+            self.Write('* xyz 0 1')
             fmt = '{:4s}'+3*'{:12.4f}'
             for atom in Atoms:
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
                 self.Write(fmt.format(atom[ct],*xyz))
-            self.Write('*\n')
+            self.Write('*\n%%Compound\nGeometry %s;\nVariable Optimize = 0;\nVariable CC;'%Oname)
+            self.Write('if (Optimize=0) then\n  New_Step\n    ! RHF SP def2-SVP\n   Step_End')
+            self.Write('else\n  New_Step\n    ! BLYP SVP Opt\n  Step_End\nEndIf')
+            self.Write('%s.Read();'%Oname)
+            self.Write('%s.WriteXYZFile(filename="%s_ORCA.xyz");'%(Oname,Oname))
+            self.Write('End')
             self.CloseFile()
             print('Phase '+phasenam+' written to ORCA inp file '+self.fullpath)
             

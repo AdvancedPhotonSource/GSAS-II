@@ -13,6 +13,47 @@ Groups are defined in Controls entry ['Groups'] which contains three entries:
    the string used to set the grouping
 
 See SearchGroups in :func:`GSASIIdataGUI.UpdateControls`.
+
+
+** Parameter Data Table **
+Prior to display in the GUI, parameters are organized in a dict where each 
+dict entry has contents of form:
+
+ *  'label' : `innerdict`
+
+where `innerdict` can contain the following elements:
+
+ *  'val' : (array, key)
+ *  'ref' : (array, key)
+ *  'str' : string
+ *  'init' : float
+
+One of these elements will be present. 
+
+ *  The 'str' value is something that cannot be edited; If 'str' is
+    present, it will be the only entry in `innerdict`. It is used for
+    a parameter value that is typically computed or must be edited in
+    the histogram section.
+
+ *  The 'init' value is also something that cannot be edited. 
+    These 'init' values are used for Instrument Parameters 
+    where there is both a cuurent value for the parameter as 
+    well as an initial value (usually read from the instrument 
+    parameters file whne the histogram is read. If 'init' is 
+    present in `innerdict`, there will also be a 'val' entry 
+    in `innerdict` and likely a 'ref' entry as well.
+
+ *  The 'val' tuple provides a reference to the float value for the 
+    defined quantity, where array[key] provides r/w access to the
+    parameter.
+
+ *  The 'ref' tuple provides a reference to the bool value, where 
+    array[key] provides r/w access to the refine flag for the 
+    labeled quantity
+
+    Both 'ref' and 'val' are usually defined together, but either may 
+    occur alone. These exceptions will be for parameters where a single
+    refine flag is used for a group of parameters. 
 '''
 
 # import math
@@ -31,7 +72,7 @@ import wx
 # from . import GSASIIpath
 from . import GSASIIdataGUI as G2gd
 # from . import GSASIIobj as G2obj
-# import GSASIIpwdGUI as G2pdG
+from . import GSASIIpwdGUI as G2pdG
 # from . import GSASIIimgGUI as G2imG
 # from . import GSASIIElem as G2el
 # from . import GSASIIfiles as G2fil
@@ -56,7 +97,9 @@ def UpdateGroup(G2frame,item):
     # G2G.HorizontalLine(G2frame.dataWindow.GetSizer(),G2frame.dataWindow)
     # #G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
     G2frame.groupName = G2frame.GPXtree.GetItemText(item)
-    HAPframe(G2frame)
+    #HAPframe(G2frame)
+    HistFrame(G2frame)
+
     G2pwpl.PlotPatterns(G2frame,plotType='GROUP')
     
 def histLabels(G2frame):
@@ -87,11 +130,15 @@ def histLabels(G2frame):
                    for h in groupDict[groupName]]
     return commonltrs,histlbls
 
-def displayDataTable(rowLabels,Table,Sizer,Panel):
+def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False):
     '''Displays the data table in `Table` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
+    firstentry = None
     for row in rowLabels:
+        if lblRow:
+            Sizer.Add(wx.StaticText(Panel,label=row),0,
+                             wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         for hist in Table:
             # format the entry depending on what is defined
             if row not in Table[hist]:
@@ -102,14 +149,16 @@ def displayDataTable(rowLabels,Table,Sizer,Panel):
                 valrefsiz.Add(G2G.G2CheckBox(Panel,'',arr,indx),0,
                                  wx.ALIGN_CENTER_VERTICAL)
                 arr,indx = Table[hist][row]['val']
-                valrefsiz.Add(G2G.ValidatedTxtCtrl(Panel,
-                                    arr,indx,size=(75,-1)),0,WACV)
+                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1))
+                valrefsiz.Add(w,0,WACV)
+                if firstentry is None: firstentry = w
                 Sizer.Add(valrefsiz,0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
             elif 'val' in Table[hist][row]:
                 arr,indx = Table[hist][row]['val']
-                Sizer.Add(G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1)),0,
-                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1))
+                Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                if firstentry is None: firstentry = w
 
             elif 'ref' in Table[hist][row]:
                 arr,indx = Table[hist][row]['ref']
@@ -120,7 +169,154 @@ def displayDataTable(rowLabels,Table,Sizer,Panel):
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
             else:
                 print('Should not happen',Table[hist][row],hist,row)
+    return firstentry
 
+def HistFrame(G2frame):
+    '''Give up on side-by-side scrolled panels
+
+    Put everything in a single FlexGridSizer.
+    '''
+    #---------------------------------------------------------------------
+    # generate a dict with values for each histogram
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    tblType = 'Sample'
+    prmTable = getSampleVals(G2frame,Histograms)
+    #debug# for hist in prmTable: printTable(phaseList[page],hist,prmTable[hist]) # see the dict
+    # construct a list of row labels, attempting to keep the
+    # order they appear in the original array
+    rowLabels = []
+    lpos = 0
+    for hist in prmTable:
+        prevkey = None
+        for key in prmTable[hist]:
+            if key not in rowLabels:
+                if prevkey is None:
+                    rowLabels.insert(lpos,key)
+                    lpos += 1
+                else:
+                    rowLabels.insert(rowLabels.index(prevkey)+1,key)
+            prevkey = key
+    #=======  Generate GUI ===============================================
+    G2frame.dataWindow.ClearData()
+
+    # layout the window
+    topSizer = G2frame.dataWindow.topBox
+    topParent = G2frame.dataWindow.topPanel
+    midPanel = G2frame.dataWindow
+    # label with shared portion of histogram name
+    topSizer.Add(wx.StaticText(topParent,
+            label=f'{tblType} parameters for group "{histLabels(G2frame)[0]}"'),
+                     0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
+
+    panel = midPanel
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2G.HorizontalLine(mainSizer,panel)
+    panel.SetSizer(mainSizer)
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+
+    # set menu bar contents
+    #G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
+
+    valSizer = wx.FlexGridSizer(0,len(prmTable)+1,3,10)
+    mainSizer.Add(valSizer,1,wx.EXPAND)
+    valSizer.Add(wx.StaticText(midPanel,label=' '))
+    for hist in histLabels(G2frame)[1]:
+            valSizer.Add(wx.StaticText(midPanel,
+                        label=f"\u25A1 = {hist}"),
+                             0,wx.ALIGN_CENTER)
+    firstentry = displayDataTable(rowLabels,prmTable,valSizer,midPanel,True)
+    G2frame.dataWindow.SetDataSize()
+    if firstentry is not None:    # prevent scroll to show last entry
+        wx.Window.SetFocus(firstentry)
+        firstentry.SetInsertionPoint(0) # prevent selection of text in widget
+    wx.CallLater(100,G2frame.SendSizeEvent)
+
+def getSampleVals(G2frame,Histograms):
+    '''Generate the Parameter Data Table (a dict of dicts) with 
+    all Sample values for all histograms in the 
+    selected histogram group (from G2frame.groupName).
+    This will be used to generate the contents of the GUI for Sample values.
+    '''
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+    groupName = G2frame.groupName
+    groupDict = Controls.get('Groups',{}).get('groupDict',{})
+    if groupName not in groupDict:
+        print(f'Unexpected: {groupName} not in groupDict')
+        return
+    # parameters to include in table
+    parms = []
+    parmDict = {}
+   # loop over histograms in group
+    for hist in groupDict[groupName]:
+        histdata = Histograms[hist]
+        hpD = {}
+        hpD['Inst. name'] = {
+            'str' : histdata['Sample Parameters']['InstrName']}
+            # need to make blank allowed before we can do this:
+            # 'val' : (histdata['Sample Parameters'],'InstrName')}
+        hpD['Diff type'] = {
+            'str' : histdata['Sample Parameters']['Type']}
+        arr = histdata['Sample Parameters']['Scale']
+        hpD['Scale factor'] = {
+            'val' : (arr,0),
+            'ref' : (arr,1),}
+        # make a list of parameters to show
+        histType = histdata['Instrument Parameters'][0]['Type'][0]
+        dataType = histdata['Sample Parameters']['Type']
+        if histType[2] in ['A','B','C']:
+            parms.append(['Gonio. radius','Gonio radius','.3f'])
+        #if 'PWDR' in histName:
+        if dataType == 'Debye-Scherrer':
+            if 'T' in histType:
+                parms += [['Absorption','Sample abs, \xb5r/\u03bb',None,]]
+            else:
+                parms += [['DisplaceX',u'Sample X displ',None,],
+                    ['DisplaceY','Sample Y displ',None,],
+                    ['Absorption','Sample abs,\xb5\xb7r',None,]]
+        elif dataType == 'Bragg-Brentano':
+            parms += [['Shift','Sample displ',None,],
+                ['Transparency','Sample transp',None],
+                ['SurfRoughA','Surf rough A',None],
+                ['SurfRoughB','Surf rough B',None]]
+        #elif 'SASD' in histName:
+        #    parms.append(['Thick','Sample thickness (mm)',[10,3]])
+        #    parms.append(['Trans','Transmission (meas)',[10,3]])
+        #    parms.append(['SlitLen',u'Slit length (Q,\xc5'+Pwrm1+')',[10,3]])
+        parms.append(['Omega','Gonio omega',None])
+        parms.append(['Chi','Gonio chi',None])
+        parms.append(['Phi','Gonio phi',None])
+        parms.append(['Azimuth','Detect azimuth',None])
+        parms.append(['Time','time',None])
+        parms.append(['Temperature','Sample T',None])
+        parms.append(['Pressure','Sample P',None])
+        for key in ('FreePrm1','FreePrm2','FreePrm3'):
+            parms.append([key,Controls[key],None])
+            #parms.append([key,[Controls,key],None])
+
+        # and loop over them
+        for key,lbl,fmt in parms:
+            if fmt is None and type(histdata['Sample Parameters'][key]) is list:
+                arr = histdata['Sample Parameters'][key]
+                hpD[lbl] = {
+                    'val' : (arr,0),
+                    'ref' : (arr,1),}
+            elif fmt is None:
+                hpD[lbl] = {
+                     'val' : (histdata['Sample Parameters'],key)}
+            elif type(fmt) is str:
+                 hpD[lbl] = {
+                     'str' : f'{histdata['Sample Parameters'][key]:{fmt}}'}
+
+        # parametric parameters
+        #breakpoint()
+        #break
+        parmDict[hist] = hpD
+        #printTable("",hist,parmDict[hist])
+    #breakpoint()
+    return parmDict
+                
 def HAPframe(G2frame):
     '''This creates two side-by-side scrolled panels, each containing 
     a FlexGridSizer.
@@ -216,7 +412,7 @@ def HAPframe(G2frame):
         HAPScroll.SetVirtualSize(HAPSizer.GetMinSize())
         lblScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
         HAPScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
-        wx.CallAfter(G2frame.SendSizeEvent)
+        wx.CallLater(100,G2frame.SendSizeEvent)
 
     G2frame.dataWindow.ClearData()
 
@@ -277,9 +473,10 @@ def HAPframe(G2frame):
     selectPhase(None)
 
 def getHAPvals(G2frame,phase):
-    '''Generate a dict of dicts with all HAP values for the selected phase
-    and all histograms in the selected histogram group (from G2frame.groupName).
-    This will be used to generate the contents of the is what will be 
+    '''Generate the Parameter Data Table (a dict of dicts) with 
+    all HAP values for the selected phase and all histograms in the 
+    selected histogram group (from G2frame.groupName).
+    This will be used to generate the contents of the GUI for HAP values.
     '''
     sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
     item, cookie = G2frame.GPXtree.GetFirstChild(sub)
@@ -293,7 +490,7 @@ def getHAPvals(G2frame,phase):
         item, cookie = G2frame.GPXtree.GetNextChild(sub, cookie)
     if PhaseData is None:
         print(f'Unexpected: Phase {phase!r} not found')
-        return
+        return {}
 
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
     groupName = G2frame.groupName
@@ -304,44 +501,20 @@ def getHAPvals(G2frame,phase):
     # loop over histograms in group
     parmDict = {}
     for hist in groupDict[groupName]:
-        parmDict[hist] = makeHAPtbl(G2frame,phase,PhaseData,hist,Controls)
+        parmDict[hist] = makeHAPtbl(G2frame,phase,PhaseData,hist)
         #printTable(phase,hist,parmDict[hist])
     return parmDict
 
-def makeHAPtbl(G2frame,phase,PhaseData,hist,Controls):
-    '''Construct a dict pointing to the contents of the HAP
-    variables for one phase and histogram.
+def makeHAPtbl(G2frame,phase,PhaseData,hist):
+    '''Construct a Parameter Data Table dict, providing access 
+    to the HAP variables for one phase and histogram.
 
-    The contents of the dict will be:
-
-       'label' : `innerdict`
-
-    where `innerdict` can contain the following elements:
-
-       'val' : (array, key)
-       'ref' : (array, key)
-       'str' : string
-
-    One of these will be present. 
-
-    The 'str' value is something that cannot be edited; If 'str' is
-    present, it will be the only entry in `innerdict`. 
-
-    The 'val' tuple provides a reference to the float value for the 
-    defined quantity, array[key]
-
-    The 'ref' tuple provides a reference to the bool value, array[key]
-    for the refine flag defined quantity
-
-    Both 'ref' and 'val' are usually defined together, but either may 
-    occur alone.
-
-    :return: the dict, as described above.
+    :return: the Parameter Data Table dict, as described above.
     '''
     SGData = PhaseData['General']['SGData']
     cell = PhaseData['General']['Cell'][1:]
     Amat,Bmat = G2lat.cell2AB(cell[:6])
-    G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist)
+    #G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist)
     #data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
     HAPdict = PhaseData['Histograms'][hist]
 
@@ -479,4 +652,143 @@ def printTable(phase,hist,parmDict):
         if 'ref' in arr:
             ref = arr['ref'][0] [arr['ref'][1]]
         print(f'{sel!r:20s}  {val}  {ref}')
-    print('\n')    
+    print('\n')
+
+# code that did not work and is being abandoned for now
+#
+# def HistFrame(G2frame):
+#     '''This creates two side-by-side scrolled panels, each containing 
+#     a FlexGridSizer.
+#     The panel to the left contains the labels for the sizer to the right.
+#     This way the labels are not scrolled horizontally and are always seen.
+#     The two vertical scroll bars are linked together so that the labels 
+#     are synced to the table of values.
+#     '''
+#     def OnScroll(event):
+#         'Synchronize vertical scrolling between the two scrolled windows'
+#         obj = event.GetEventObject()
+#         pos = obj.GetViewStart()[1]
+#         if obj == lblScroll:
+#             SampleScroll.Scroll(-1, pos)
+#         else:
+#             lblScroll.Scroll(-1, pos)
+#         event.Skip()
+#     #---------------------------------------------------------------------
+#     # generate a dict with Sample values for each histogram
+#     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+#     HAPtable = getSampleVals(G2frame,Histograms)
+#     #debug# for hist in HAPtable: printTable(phaseList[page],hist,HAPtable[hist]) # see the dict
+#     # construct a list of row labels, attempting to keep the
+#     # order they appear in the original array
+#     rowLabels = []
+#     lpos = 0
+#     for hist in HAPtable:
+#         prevkey = None
+#         for key in HAPtable[hist]:
+#             if key not in rowLabels:
+#                 if prevkey is None:
+#                     rowLabels.insert(lpos,key)
+#                     lpos += 1
+#                 else:
+#                     rowLabels.insert(rowLabels.index(prevkey)+1,key)
+#             prevkey = key
+#     #=======  Generate GUI ===============================================
+#     #G2frame.dataWindow.ClearData()
+
+#     # layout the HAP window. This has histogram and phase info, so a
+#     # notebook is needed for phase name selection. (That could
+#     # be omitted for single-phase refinements, but better to remind the
+#     # user of the phase
+#     topSizer = G2frame.dataWindow.topBox
+#     topParent = G2frame.dataWindow.topPanel
+#     midPanel = G2frame.dataWindow
+#     # this causes a crash, but somehow I need to clean up the old contents
+#     #if midPanel.GetSizer():
+#     #    for i in midPanel.GetSizer().GetChildren():
+#     #        i.Destroy()          # clear out old widgets
+#     #botSizer = G2frame.dataWindow.bottomBox
+#     #botParent = G2frame.dataWindow.bottomPanel
+#     # label with shared portion of histogram name
+#     topSizer.Add(wx.StaticText(topParent,
+#             label=f'Sample parameters for group "{histLabels(G2frame)[0]}"'),
+#                      0,WACV)
+#     topSizer.Add((-1,-1),1,wx.EXPAND)
+#     topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
+
+#     panel = wx.Panel(midPanel)
+#     panel.SetSize(midPanel.GetSize())
+#     mainSizer = wx.BoxSizer(wx.VERTICAL)
+#     G2G.HorizontalLine(mainSizer,panel)
+#     panel.SetSizer(mainSizer)
+#     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+
+#     # code to set menu bar contents
+#     #G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
+#     # fill the 'Select tab' menu
+#     # mid = G2frame.dataWindow.DataMenu.FindMenu('Select tab')
+#     # menu = G2frame.dataWindow.DataMenu.GetMenu(mid)
+#     # items = menu.GetMenuItems()
+#     # for item in items:
+#     #      menu.Remove(item)
+#     # if len(phaseList) == 0: return
+#     # for i,page in enumerate(phaseList):
+#     #     Id = wx.NewId()
+#     #     if menu.FindItem(page) >= 0: continue # is tab already in menu?
+#     #     menu.Append(Id,page,'')
+#     #     TabSelectionIdDict[Id] = page
+#     #     G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
+#     #page = 0
+#     #HAPBook.SetSelection(page)
+#     #selectPhase(None)
+    
+#     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
+#     mainSizer.Add(bigSizer,1,wx.EXPAND)
+#     if True:
+#         # panel for labels; show scroll bars to hold the space
+#         lblScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
+#                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
+#         hpad = 3  # space between rows
+#         lblSizer = wx.FlexGridSizer(0,1,hpad,10)
+#         lblScroll.SetSizer(lblSizer)
+#         bigSizer.Add(lblScroll,0,wx.EXPAND)
+
+#         # Create scrolled panel to display HAP data
+#         SampleScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
+#                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
+#         SampleSizer = wx.FlexGridSizer(0,len(HAPtable),hpad,10)
+#         SampleScroll.SetSizer(SampleSizer)
+#         bigSizer.Add(SampleScroll,1,wx.EXPAND)
+        
+#         # Bind scroll events to synchronize scrolling
+#         lblScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
+#         SampleScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
+#         # label columns with unique part of histogram names
+#         for hist in histLabels(G2frame)[1]:
+#             SampleSizer.Add(wx.StaticText(SampleScroll,label=f"\u25A1 = {hist}"),
+#                              0,wx.ALIGN_CENTER)
+    
+#         displayDataTable(rowLabels,HAPtable,SampleSizer,SampleScroll)
+#         # get row sizes in data table
+#         SampleSizer.Layout()
+#         rowHeights = SampleSizer.GetRowHeights()
+#         # match rose sizes in Labels
+#         # (must be done after SampleSizer row heights are defined)
+#         s = wx.Size(-1,rowHeights[0])
+#         lblSizer.Add(wx.StaticText(lblScroll,label=' ',size=s))
+#         for i,row in enumerate(rowLabels):
+#             s = wx.Size(-1,rowHeights[i+1])
+#             lblSizer.Add(wx.StaticText(lblScroll,label=row,size=s),0,
+#                              wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+#         # Fit the scrolled windows to their content
+#         lblSizer.Layout()
+#         xLbl,_ = lblSizer.GetMinSize()
+#         xTab,yTab = SampleSizer.GetMinSize()
+#         lblScroll.SetSize((xLbl,yTab))
+#         lblScroll.SetMinSize((xLbl+15,yTab)) # add room for scroll bar
+#         lblScroll.SetVirtualSize(lblSizer.GetMinSize())
+#         SampleScroll.SetVirtualSize(SampleSizer.GetMinSize())
+#         lblScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
+#         SampleScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
+#         breakpoint()
+#         wx.CallLater(100,G2frame.SendSizeEvent)
+#     G2frame.dataWindow.SetDataSize()

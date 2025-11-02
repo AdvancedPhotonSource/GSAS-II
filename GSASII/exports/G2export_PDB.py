@@ -242,7 +242,7 @@ class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
             G2frame=G2frame,
             formatName = 'ORCA Cartesian inp',
             extension='.inp',
-            longFormatName = 'Export phase with basic ORCA Cartesian coordinates as .inp file'
+            longFormatName = 'Export draw atoms with basic ORCA Cartesian coordinates as .inp file'
             )
         self.exporttype = ['phase']
         self.multiple = True
@@ -265,13 +265,14 @@ class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
             phasedict = self.Phases[phasenam] # pointer to current phase info
             General = phasedict['General']
             i = self.Phases[phasenam]['pId']
-            Atoms = phasedict['Atoms']
+            drawingData = phasedict['Drawing']
+            cx,ct,cs,ci = drawingData['atomPtrs']
+            Atoms = drawingData['Atoms']
             if not len(Atoms):
                 print('**** ERROR - Phase '+phasenam+' has no atoms! ****')
                 continue
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
                 self.filename = Oname + "_" + str(i) + self.extension
-            cx,ct,cs,cia = General['AtomPtrs']
             Cell = General['Cell'][1:7]
             A,B = G2lat.cell2AB(Cell)
             self.Write('# GSAS-II generated ORCA input file\n# Basic Mode')

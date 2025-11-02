@@ -254,6 +254,13 @@ optional packages are:
   integration into Windows. Conda provides this under the name
   pywin32.
   
+* zarr: The zarr package is used to read and write compressed
+  hierarchical files. It is used by the APS MIDAS program to produce
+  files of integrated powder diffraction patterns. 
+
+* sympy: This package performs symbolic computations and is used
+  for k-vector searching with ISODISTORT.
+
 *Conda command*:
   Should you wish to install Python and the desired packages yourself,
   this is certainly possible. For Linux, ``apt`` or ``yum`` is an option, as is
@@ -316,7 +323,8 @@ additional packages are installed:
 * Pillow (https://pillow.readthedocs.org) and/or
 * h5py (requires hdf5). Used to read HDF5 files.
 * pybaselines: for auto-background (https://github.com/derb12/pybaselines)
-* xmltodict: for Bruker BRML files.
+* xmltodict: for reading Bruker BRML files.
+* zarr: reading powder data files produced MIDAS (APS)
 * seekpath: for k-vector searching
   
 but none of these are required to run scripts and the vast

@@ -55,12 +55,13 @@ useful = [          # recommended but not required
   "requests",
   "pillow",
   "h5py",
-  "hdf5",
   "imageio",
   "pybaselines",
   "xmltodict",
   "seekpath",
   "gitpython",
+  "zarr",
+  "sympy"
 ]
 
 self-install = [   # for self-installation of optional software

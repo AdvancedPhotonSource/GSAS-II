@@ -588,13 +588,36 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     HistName = 'PWDR ' + G2obj.StripUnicode(reader.idstring, '_')
     HistName = G2obj.MakeUniqueLabel(HistName, existingnames)
 
-    try:
-        Iparm1, Iparm2 = instprm
-    except ValueError:
+    # get instrumental parameters from reader...
+    if instprm is None:
+        try:
+            Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
+            print('Instrument parameters supplied in data file')
+        except KeyError as err:
+            Iparm1 = None  # signal error rather than raise exception inside an exception handler
+        if Iparm1 is None:
+            msg  = "The data file does not have any instrument params associated with it and none were provided."
+            raise Exception(msg)
+    
+    # ...or from a file...
+    elif isinstance(instprm, str):
         Iparm1, Iparm2 = load_iprms(instprm, reader, bank=bank)
         G2fil.G2Print('Instrument parameters read:',reader.instmsg)
-    except TypeError:  # instprm is None, get iparms from reader
-        Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
+
+    # ...or from an input...
+    elif (
+        isinstance(instprm, (list, tuple)) 
+        and len(instprm) == 2 
+        and all(isinstance(i, dict) for i in instprm)
+        ):
+            Iparm1, Iparm2 = instprm
+            print('Instrument parameters supplied in script')
+
+    # ...else raise an error.
+    else:
+        msg = f"load_pwd... Error: Invalid instprm entered ({instprm!r})"
+        raise Exception(msg)
+
 
     if 'T' in Iparm1['Type'][0]:
         if not reader.clockWd and reader.GSAS:
@@ -1058,14 +1081,20 @@ class G2Project(G2ObjectWrapper):
         if not multiple: pwdrreaders = pwdrreaders[0:1]
         histlist = []
         if URL:
-            iparmfile = downloadFile(iparams)
-        else:
+            instprm = downloadFile(iparams)
+        elif iparams:
             try:
-                iparmfile = os.path.abspath(os.path.expanduser(iparams))
-            except:
-                pass
+                instprm = os.path.abspath(os.path.expanduser(iparams))
+            except TypeError: # iparams is not a file path
+                if isinstance(iparams, (list, tuple)):
+                    instprm = iparams
+                else:
+                    raise Exception(f"add_powder_histogram Error: Invalid iparams supplied ({iparams!r})")
+        else:
+            instprm = None # will error out unless the reader supplies them
+    
         for r in pwdrreaders:
-            histname, new_names, pwdrdata = load_pwd_from_reader(r, iparmfile,
+            histname, new_names, pwdrdata = load_pwd_from_reader(r, instprm,
                                           [h.name for h in self.histograms()],bank=instbank)
             if histname in self.data:
                 G2fil.G2Print("Warning - redefining histogram", histname)
@@ -3184,13 +3213,17 @@ class G2Project(G2ObjectWrapper):
             covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
 
         '''
+        for i in ('covMatrix','varyList','variables'):
+            if i not in self['Covariance']['data']:
+                raise G2ScriptException(f'No {i} found in project, has a refinement been run?')
         missing = [i for i in varList if i not in self['Covariance']['data']['varyList']]
         if missing:
             G2fil.G2Print('Warning: Variable(s) {} were not found in the varyList'.format(missing))
             return None
-        if 'parmDict' not in self['Covariance']['data']:
-            raise G2ScriptException('No parameters found in project, has a refinement been run?')
-        vals = [self['Covariance']['data']['parmDict'][i] for i in varList]
+        parmDict = dict(zip(
+            self['Covariance']['data']['varyList'],
+            self['Covariance']['data']['variables']))
+        vals = [parmDict[i] for i in varList]
         cov = G2mth.getVCov(varList,
                             self['Covariance']['data']['varyList'],
                             self['Covariance']['data']['covMatrix'])

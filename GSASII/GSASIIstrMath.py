@@ -3587,7 +3587,7 @@ def GetHStrainShiftDerv(refl,im,SGData,phfx,hfx,calcControls,parmDict):
             dDijDict[item] *= refl[5+im]/refl[4+im]**2
     else:
         for item in dDijDict:
-            dDijDict[item] *= -parmDict[hfx+'difC']*refl[4+im]**3/2.
+            dDijDict[item] *= -parmDict[hfx+'difC']*refl[4+im]**2
     return dDijDict
 
 def GetDij(phfx,SGData,parmDict):

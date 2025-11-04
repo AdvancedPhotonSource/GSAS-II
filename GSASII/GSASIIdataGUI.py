@@ -1619,7 +1619,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
                     inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,rd)
-                    if rd.instdict.get('wave'):
+                    if rd.instdict.get('wave') and 'Lam' in inst1:
                         inst1['Lam'][0] = rd.instdict.get('wave')
                         inst1['Lam'][1] = rd.instdict.get('wave')
                     return [inst1,inst2]
@@ -8317,12 +8317,16 @@ def UpdatePWHKPlot(G2frame,kind,item):
             if newHKL[5+Super] > 0.:
                 mergeRef.append(list(newHKL))
         dlg.Destroy()
-        print(' Duplicate reflection statistics:')
+        mtext = ' Duplicate reflection statistics:'
+        print(mtext)
+        Comments.append(mtext)
         for ihkl in range(MaxN):
             try:
-                print('Ndup hkl:',ihkl+1,' Number: ',Nmerge[ihkl+1][0],' Rej:',Nmerge[ihkl+1][1])
+                mtext = 'Ndup hkl: %d Number: %d Rej: %d'%(ihkl+1,Nmerge[ihkl+1][0],Nmerge[ihkl+1][1])
             except KeyError:
-                print('Ndup hkl:',ihkl+1,' Number: ',0)
+                mtext = 'Ndup hkl: %d Number:  0'%(ihkl+1)
+            print(mtext)
+            Comments.append(mtext)
         if Super:
             mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,3),2),1),0)
         else:
@@ -8665,6 +8669,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
             Super = 0
             SuperVec = []
         refList = data[1]['RefList']
+        nRef = refList.shape[0]
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Total Nref: %d'%nRef))
         FoMax = np.max(refList.T[5+data[1].get('Super',0)])
         page = G2frame.G2plotNB.nb.GetSelection()
         tab = ''

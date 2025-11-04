@@ -2422,6 +2422,33 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         else:
             return peakWt*(calcPos-peakPos)
         
+    def dervPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
+        dMdv = np.zeros(shape=(len(varyList),len(peakDsp)))
+        calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+        if dataType[2] in ['A','B','C']:
+            const = 0.18/(np.pi*parmDict['radius'])
+        for iv,vary in enumerate(varyList):
+            if vary == 'Zero':
+                dMdv[iv,:] = 1.0
+            if vary == 'DisplaceX':
+                dMdv[iv,:] = -const*npcosd(calcPos)
+            if vary == 'DisplaceY':
+                dMdv[iv,:] = -const*npsind(calcPos)
+            if vary == 'Shift':
+                dMdv[iv,:] = -const*npcosd(calcPos/2.0)
+            if vary == 'Lam':
+                dpr = 180./np.pi
+                k = 1.0-parmDict['Lam']**2/(4.0*peakDsp**2)
+                k = dpr/np.sqrt(k)
+                dMdv[iv,:] = k/peakDsp
+            if vary == 'DifC':
+                dMdv[iv,:] = peakDsp
+            if vary == 'DifA':
+                dMdv[iv,:] = peakDsp**2
+            if vary == 'DifB':
+                dMdv[iv,:] = 1.0/peakDsp
+        return np.sqrt(peakWt)*dMdv                 
+
     def errPeakAlp(values,peakDsp,peakAlp,peakWt,dataType,parmDict,varyList):
         parmDict.update(dict(zip(varyList,values)))
         if dataType[2] in ['A','B']:
@@ -2431,6 +2458,19 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
             calcAlp = parmDict['alpha']/peakDsp
         return peakWt*(calcAlp-peakAlp)
     
+    def dervPeakAlp(values,peakDsp,peakAlp,peakWt,dataType,parmDict,varyList):
+        dMdv = np.zeros(shape=(len(varyList),len(peakDsp)))
+        if dataType[2] in ['A','B']:
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+        for iv,vary in enumerate(varyList):
+            if vary == 'alpha':
+                dMdv[iv,:] = 1.0/peakDsp
+            if vary == 'alpha-0':
+                dMdv[iv,:] = 1.0
+            if vary == 'alpha-1':
+                dMdv[iv,:] = npsind(calcPos/2.)
+        return np.sqrt(peakWt)*dMdv                 
+            
     def errPeakBet(values,peakDsp,peakBet,peakWt,dataType,parmDict,varyList):
         parmDict.update(dict(zip(varyList,values)))
         if dataType[2] in ['A','B']:
@@ -2439,6 +2479,22 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         else: #'T'
             calcBet = parmDict['beta-0']+parmDict['beta-1']/peakDsp**4+parmDict['beta-q']/peakDsp**2
         return peakWt*(calcBet-peakBet)
+    
+    def dervPeakBet(values,peakDsp,peakBet,peakWt,dataType,parmDict,varyList):
+        dMdv = np.zeros(shape=(len(varyList),len(peakDsp)))
+        if dataType[2] in ['A','B']:
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+        for iv,vary in enumerate(varyList):
+            if vary == 'beta-0':
+                dMdv[iv,:] = 1.0
+            if vary == 'beta-1':
+                if dataType[2] in ['A','B']:
+                    dMdv[iv,:] = npsind(calcPos/2.)
+                else:
+                    dMdv[iv,:] = 1.0/peakDsp**4
+            if vary == 'beta-q':
+                dMdv[iv,:] = 1.0/peakDsp**2
+        return np.sqrt(peakWt)*dMdv                                
 
     def errPeakSig(values,peakDsp,peakSig,peakWt,dataType,parmDict,varyList):
         parmDict.update(dict(zip(varyList,values)))
@@ -2449,6 +2505,30 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
         else: #'T'
             calcSig = parmDict['sig-0']+parmDict['sig-1']*peakDsp**2+parmDict['sig-2']*peakDsp**4+parmDict['sig-q']*peakDsp
         return peakWt*(calcSig-peakSig)
+    
+    def dervPeakSig(values,peakDsp,peakSig,peakWt,dataType,parmDict,varyList):
+        dMdv = np.zeros(shape=(len(varyList),len(peakDsp)))
+        if dataType[2] in ['A','B','C']:
+            calcPos = G2lat.getPeakPos(dataType,parmDict,peakDsp)
+            tp = nptand(calcPos/2.0)
+            for iv,vary in enumerate(varyList):
+                if vary == 'U':
+                    dMdv[iv,:] = tp**2
+                if vary == 'V':
+                    dMdv[iv,:] = tp
+                if vary == 'W':
+                    dMdv[iv,:] = 1.
+        else:
+            for iv,vary in enumerate(varyList):
+                if vary == 'sig-0':
+                    dMdv[iv,:] = 1.0
+                if vary == 'sig-1':
+                    dMdv[iv,:] = peakDsp**2
+                if vary == 'sig-2':
+                    dMdv[iv,:] = peakDsp**4
+                if vary == 'sig-q':
+                    dMdv[iv,:] = peakDsp
+        return np.sqrt(peakWt)*dMdv                                                    
     
     def outResult():
         chisq = np.sum(result[2]['fvec']**2)
@@ -2464,36 +2544,30 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
             return []
         return sig
         
-    dataType = Inst['Type'][0]
-    peakPos,peakDsp,peakPosWt = SetPosData()
-    posDict,posVary = SetPosParms()
-    sigDsp,peakSig,peakSigWt = SetSigData()
-    sigDict,sigVary = SetSigParms()
-    if dataType[2] in ['A','B','T']:
-        alpDsp,peakAlp,peakAlpWt = SetAlpData()
-        alpDict,alpVary = SetAlpParms()
-        betDsp,peakBet,peakBetWt = SetBetData()
-        betDict,betVary = SetBetParms()
-        
+    dataType = Inst['Type'][0]       
     parmDict = {}
     Sigmas = {}
+    peakPos,peakDsp,peakPosWt = SetPosData()
+    posDict,posVary = SetPosParms()
     parmDict.update(posDict)
     if len(peakPos) > 5 and len(posVary):
         values =  np.array(Dict2Values(parmDict, posVary))
-        result = so.leastsq(errPeakPos,values,full_output=True,ftol=0.000001,
-            args=(peakDsp,peakPos,peakPosWt,dataType,parmDict,posVary))
+        result = so.leastsq(errPeakPos,values,Dfun=dervPeakPos,full_output=True,ftol=0.000001,
+            col_deriv=True,args=(peakDsp,peakPos,peakPosWt,dataType,parmDict,posVary))
         G2fil.G2Print('Position calibration:')
         Values2Dict(parmDict, posVary, result[0])
         sig = outResult()
         if  len(sig):
             Sigmas.update(zip(posVary,sig))
             GetInstParms(parmDict)
-    parmDict = {}
+    # parmDict = {}
+    sigDsp,peakSig,peakSigWt = SetSigData()
+    sigDict,sigVary = SetSigParms()
     parmDict.update(sigDict)
     if len(peakSig) > 5 and len(sigVary):
         values =  np.array(Dict2Values(parmDict, sigVary))
-        result = so.leastsq(errPeakSig,values,full_output=True,ftol=0.000001,
-            args=(sigDsp,peakSig,peakSigWt,dataType,parmDict,sigVary))
+        result = so.leastsq(errPeakSig,values,Dfun=dervPeakSig,full_output=True,ftol=0.000001,
+            col_deriv=True,args=(sigDsp,peakSig,peakSigWt,dataType,parmDict,sigVary))
         G2fil.G2Print('Sigma calibration:')
         Values2Dict(parmDict, sigVary, result[0])
         sig = outResult()
@@ -2503,12 +2577,14 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
     else:
         G2fil.G2Print(' Sigma not calibrated: insufficient data or not selected')
     if dataType[2] in ['A','B','T']:
-        parmDict = {}
+        # parmDict = {}
+        alpDsp,peakAlp,peakAlpWt = SetAlpData()
+        alpDict,alpVary = SetAlpParms()
         parmDict.update(alpDict)
         if len(peakAlp) > 5 and len(alpVary):
             values =  np.array(Dict2Values(parmDict, alpVary))
-            result = so.leastsq(errPeakAlp,values,full_output=True,ftol=0.000001,
-                args=(alpDsp,peakAlp,peakAlpWt,dataType,parmDict,alpVary))
+            result = so.leastsq(errPeakAlp,values,Dfun=dervPeakAlp,full_output=True,ftol=0.000001,
+                col_deriv=True,args=(alpDsp,peakAlp,peakAlpWt,dataType,parmDict,alpVary))
             G2fil.G2Print('Alpha calibration:')
             Values2Dict(parmDict, alpVary, result[0])
             sig = outResult()
@@ -2517,12 +2593,14 @@ def DoCalibInst(IndexPeaks,fitPeaks,Inst,Sample):
                 GetInstParms(parmDict)
         else:
             G2fil.G2Print(' Alpha not calibrated: insufficient data or not selected')
-        parmDict = {}
+        # parmDict = {}
+        betDsp,peakBet,peakBetWt = SetBetData()
+        betDict,betVary = SetBetParms()
         parmDict.update(betDict)
         if len(peakBet) > 5 and len(betVary):
             values =  np.array(Dict2Values(parmDict, betVary))
-            result = so.leastsq(errPeakBet,values,full_output=True,ftol=0.000001,
-                args=(betDsp,peakBet,peakBetWt,dataType,parmDict,betVary))
+            result = so.leastsq(errPeakBet,values,Dfun=dervPeakBet,full_output=True,ftol=0.000001,
+                col_deriv=True,args=(betDsp,peakBet,peakBetWt,dataType,parmDict,betVary))
             G2fil.G2Print('Beta calibration:')
             Values2Dict(parmDict, betVary, result[0])
             sig = outResult()
@@ -2691,8 +2769,13 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         if 'BF mult' in sigDict:
             print('Background file mult: %.3f(%d)'%(Background[1]['background PWDR'][1],int(1000*sigDict['BF mult'])))
 
-    def SetInstParms(Inst):
+    def SetInstParms(Inst,peakVary):
+        # superesses refinement of instrument parameters if any corresponding peak parameter is refined
         dataType = Inst['Type'][0]
+        noAlp = any([True for vary in peakVary if 'alp' in vary])
+        noBet = any([True for vary in peakVary if 'bet' in vary])
+        noSig = any([True for vary in peakVary if 'sig' in vary])
+#        noGam = any([True for vary in peakVary if 'gam' in vary])
         insVary = []
         insNames = []
         insVals = []
@@ -2701,7 +2784,19 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
             insVals.append(Inst[parm][1])
             if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha','A','B','C',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','alpha-0','alpha-1'] and Inst[parm][2]:
-                    insVary.append(parm)
+                if 'alp' in parm and noAlp:
+                    Inst[parm][2] = False
+                    continue
+                elif 'bet' in parm and noBet:
+                    Inst[parm][2] = False
+                    continue
+                elif ('sig' in parm or parm in ['U','V','W']) and noSig:
+                    Inst[parm][2] = False
+                    continue
+                # elif parm in ['X','Y','Z'] and noGam:
+                #     Inst[parm][2] = False
+                #     continue
+                insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
         if 'SH/L' in instDict:
             instDict['SH/L'] = max(instDict['SH/L'],0.002)
@@ -2925,8 +3020,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     xFin = np.searchsorted(x,Limits[1])+1
     # find out what is varied
     bakType,bakDict,bakVary = SetBackgroundParms(Background)
-    dataType,insDict,insVary = SetInstParms(Inst)
     peakDict,peakVary = SetPeaksParms(Inst['Type'][0],Peaks)
+    dataType,insDict,insVary = SetInstParms(Inst,peakVary)
     parmDict = {}
     parmDict.update(bakDict)
     parmDict.update(insDict)

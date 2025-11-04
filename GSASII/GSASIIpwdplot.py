@@ -1629,7 +1629,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     groupName = None
     groupDict = {}
     if plotType == 'GROUP':
-        groupName = G2frame.groupName # set in GSASIIgroupGUI.UpdateGroup
+        groupName = G2frame.GroupInfo['groupName'] # set in GSASIIgroupGUI.UpdateGroup
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         groupDict = Controls.get('Groups',{}).get('groupDict',{})
         if groupName not in groupDict:

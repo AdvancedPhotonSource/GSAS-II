@@ -57,7 +57,7 @@ One of 'val', 'ref' or 'str' elements will be present.
     in `innerdict` and likely a 'ref' entry as well.
 
  *  The 'rowlbl' value provides a reference to a str value that 
-    will be an editable row label (FreePrm sample parametric 
+    will be an editable row label (FreePrmX sample parametric 
     values). 
 
 '''
@@ -92,25 +92,54 @@ from . import GSASIIctrlGUI as G2G
 from . import GSASIIpwdplot as G2pwpl
 WACV = wx.ALIGN_CENTER_VERTICAL
 
-def UpdateGroup(G2frame,item):
+def UpdateGroup(G2frame,item,plot=True):
+    def onDisplaySel(event):
+        G2frame.GroupInfo['displayMode'] = dsplType.GetValue()
+        wx.CallAfter(UpdateGroup,G2frame,item,False)
+        #UpdateGroup(G2frame,item)
+
+    if not hasattr(G2frame,'GroupInfo'):
+        G2frame.GroupInfo = {}
+    G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Sample')
+    G2frame.GroupInfo['groupName'] = G2frame.GPXtree.GetItemText(item)
     G2gd.SetDataMenuBar(G2frame)
+    G2frame.dataWindow.ClearData()
     G2frame.dataWindow.helpKey = "Groups/Powder"
-    # topSizer = G2frame.dataWindow.topBox
+    topSizer = G2frame.dataWindow.topBox
+    topParent = G2frame.dataWindow.topPanel
+    dsplType = wx.ComboBox(topParent,wx.ID_ANY,
+                               value=G2frame.GroupInfo['displayMode'],
+                               choices=['Hist/Phase','Sample','Instrument',
+                                            'Instrument-\u0394'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    dsplType.Bind(wx.EVT_COMBOBOX, onDisplaySel)
+    topSizer.Add(dsplType,0,WACV)
+    topSizer.Add(wx.StaticText(topParent,
+            label=f' parameters for group "{histLabels(G2frame)[0]}"'),
+                     0,WACV)
+    topSizer.Add((-1,-1),1,wx.EXPAND)
+    topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
+
     # parent = G2frame.dataWindow.topPanel
     # topSizer.Add(wx.StaticText(parent,label=' Group edit goes here someday'),0,WACV)
     # topSizer.Add((-1,-1),1,wx.EXPAND)
     # topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
     # G2G.HorizontalLine(G2frame.dataWindow.GetSizer(),G2frame.dataWindow)
     # #G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
-    G2frame.groupName = G2frame.GPXtree.GetItemText(item)
-    #HAPframe(G2frame)
-    HistFrame(G2frame)
+    G2frame.GroupInfo['groupName'] = G2frame.GPXtree.GetItemText(item)
+    if G2frame.GroupInfo['displayMode'].startswith('Hist'):
+        HAPframe(G2frame)
+    else:
+        HistFrame(G2frame)
+    if plot: G2pwpl.PlotPatterns(G2frame,plotType='GROUP')
+    #print('CallLater')
+    G2frame.dataWindow.SetDataSize()
+    #wx.CallLater(100,G2frame.SendSizeEvent)
+    wx.CallAfter(G2frame.SendSizeEvent)
 
-    G2pwpl.PlotPatterns(G2frame,plotType='GROUP')
-    
 def histLabels(G2frame):
     '''Find portion of the set of hist names that are the same for all
-    histograms in the current group (determined by ``G2frame.groupName``)
+    histograms in the current group (determined by ``G2frame.GroupInfo['groupName']``)
     and then for each histogram, the characters that are different.
 
     :Returns: commonltrs, histlbls where 
@@ -123,7 +152,7 @@ def histLabels(G2frame):
     '''
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
         G2frame,G2frame.root, 'Controls'))
-    groupName = G2frame.groupName
+    groupName = G2frame.GroupInfo['groupName']
     groupDict = Controls.get('Groups',{}).get('groupDict',{})
     h0 = groupDict[groupName][0]
     msk = [True] * len(h0)
@@ -136,13 +165,14 @@ def histLabels(G2frame):
                    for h in groupDict[groupName]]
     return commonltrs,histlbls
 
-def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False):
+def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
     '''Displays the data table in `Table` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
     firstentry = None
+
     for row in rowLabels:
-        if lblRow:         # show the row label, when not in a separate sizer
+        if lblRow:         # show the row labels, when not in a separate sizer
             arr = None
             for hist in Table:
                 if row not in Table[hist]: continue
@@ -160,10 +190,34 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False):
             # format the entry depending on what is defined
             if row not in Table[hist]:
                 Sizer.Add((-1,-1))
+            elif ('init' in Table[hist][row] and
+                      deltaMode and 'ref' in Table[hist][row]):
+                arr,indx = Table[hist][row]['val']
+                delta = arr[indx]
+                arr,indx = Table[hist][row]['init']
+                delta -= arr[indx]
+                if abs(delta) < 1e-9: delta = 0.
+                deltaS = f"\u0394 {delta:.4g} "
+                valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
+                valrefsiz.Add(wx.StaticText(Panel,label=deltaS),0)
+                arr,indx = Table[hist][row]['ref']
+                w = G2G.G2CheckBox(Panel,'',arr,indx)
+                valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL)
+                Sizer.Add(valrefsiz,0,
+                                 wx.EXPAND|wx.ALIGN_RIGHT)
+            elif 'init' in Table[hist][row] and deltaMode:
+                # does this ever happen?
+                arr,indx = Table[hist][row]['val']
+                delta = arr[indx]
+                arr,indx = Table[hist][row]['init']
+                delta -= arr[indx]
+                deltaS = f"\u0394 {delta:.4g}"
+                Sizer.Add(wx.StaticText(Panel,label=deltaS),0,
+                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
             elif 'val' in Table[hist][row] and 'ref' in Table[hist][row]:
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
                 arr,indx = Table[hist][row]['val']
-                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1))
+                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1))
                 valrefsiz.Add(w,0,WACV)
                 if firstentry is None: firstentry = w
                 arr,indx = Table[hist][row]['ref']
@@ -173,7 +227,7 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False):
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
             elif 'val' in Table[hist][row]:
                 arr,indx = Table[hist][row]['val']
-                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(75,-1),notBlank=False)
+                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),notBlank=False)
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
                 if firstentry is None: firstentry = w
 
@@ -189,15 +243,19 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False):
     return firstentry
 
 def HistFrame(G2frame):
-    '''Give up on side-by-side scrolled panels
-
-    Put everything in a single FlexGridSizer.
+    '''Give up on side-by-side scrolled panels. Put everything 
+    in a single FlexGridSizer.
     '''
     #---------------------------------------------------------------------
     # generate a dict with values for each histogram
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    tblType = 'Sample'
-    prmTable = getSampleVals(G2frame,Histograms)
+    if G2frame.GroupInfo['displayMode'].startswith('Sample'):
+        prmTable = getSampleVals(G2frame,Histograms)
+    elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
+        prmTable = getInstVals(G2frame,Histograms)
+    else:
+        print('Unexpected', G2frame.GroupInfo['displayMode'])
+        return
     #debug# for hist in prmTable: printTable(phaseList[page],hist,prmTable[hist]) # see the dict
     # construct a list of row labels, attempting to keep the
     # order they appear in the original array
@@ -214,27 +272,12 @@ def HistFrame(G2frame):
                     rowLabels.insert(rowLabels.index(prevkey)+1,key)
             prevkey = key
     #=======  Generate GUI ===============================================
-    G2frame.dataWindow.ClearData()
-
     # layout the window
-    topSizer = G2frame.dataWindow.topBox
-    topParent = G2frame.dataWindow.topPanel
-    midPanel = G2frame.dataWindow
-    # label with shared portion of histogram name
-    topSizer.Add(wx.StaticText(topParent,
-            label=f'{tblType} parameters for group "{histLabels(G2frame)[0]}"'),
-                     0,WACV)
-    topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
-
-    panel = midPanel
+    panel = midPanel = G2frame.dataWindow
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     G2G.HorizontalLine(mainSizer,panel)
     panel.SetSizer(mainSizer)
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-
-    # set menu bar contents
-    #G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
 
     valSizer = wx.FlexGridSizer(0,len(prmTable)+1,3,10)
     mainSizer.Add(valSizer,1,wx.EXPAND)
@@ -243,21 +286,22 @@ def HistFrame(G2frame):
             valSizer.Add(wx.StaticText(midPanel,
                         label=f"\u25A1 = {hist}"),
                              0,wx.ALIGN_CENTER)
-    firstentry = displayDataTable(rowLabels,prmTable,valSizer,midPanel,True)
-    G2frame.dataWindow.SetDataSize()
+    deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
+    firstentry = displayDataTable(rowLabels,prmTable,valSizer,midPanel,
+                                      True,deltaMode)
+    #G2frame.dataWindow.SetDataSize()
     if firstentry is not None:    # prevent scroll to show last entry
         wx.Window.SetFocus(firstentry)
         firstentry.SetInsertionPoint(0) # prevent selection of text in widget
-    wx.CallLater(100,G2frame.SendSizeEvent)
 
 def getSampleVals(G2frame,Histograms):
     '''Generate the Parameter Data Table (a dict of dicts) with 
     all Sample values for all histograms in the 
-    selected histogram group (from G2frame.groupName).
+    selected histogram group (from G2frame.GroupInfo['groupName']).
     This will be used to generate the contents of the GUI for Sample values.
     '''
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
-    groupName = G2frame.groupName
+    groupName = G2frame.GroupInfo['groupName']
     groupDict = Controls.get('Groups',{}).get('groupDict',{})
     if groupName not in groupDict:
         print(f'Unexpected: {groupName} not in groupDict')
@@ -327,6 +371,79 @@ def getSampleVals(G2frame,Histograms):
                      'val' : (histdata['Sample Parameters'],key),
                      'rowlbl' : (Controls,key)
                 }
+        parmDict[hist] = hpD
+    return parmDict
+
+def getInstVals(G2frame,Histograms):
+    '''Generate the Parameter Data Table (a dict of dicts) with 
+    all Instrument Parameter values for all histograms in the 
+    selected histogram group (from G2frame.GroupInfo['groupName']).
+    This will be used to generate the contents of the GUI values.
+    '''
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+    groupName = G2frame.GroupInfo['groupName']
+    groupDict = Controls.get('Groups',{}).get('groupDict',{})
+    if groupName not in groupDict:
+        print(f'Unexpected: {groupName} not in groupDict')
+        return
+    # parameters to include in table
+    parms = []
+    parmDict = {}
+   # loop over histograms in group
+    for hist in groupDict[groupName]:
+        histdata = Histograms[hist]
+        insVal = Histograms[hist]['Instrument Parameters'][0]
+        hpD = {}
+        insType = insVal['Type'][1]
+        try:
+            hpD['Bank'] = {
+                'str' : str(int(insVal['Bank'][1]))}
+        except:
+            pass
+        hpD['Hist type'] = {
+            'str' : insType}
+        if insType[2] in ['A','B','C']:               #constant wavelength
+            keylist = [('Azimuth','Azimuth','.3f'),]
+            if 'Lam1' in insVal:
+                keylist += [('Lam1','Lambda 1','.6f'),
+                            ('Lam2','Lambda 2','.6f'),
+                            (['Source',1],'Source','s'),
+                            ('I(L2)/I(L1)','I(L2)/I(L1)',None)]
+            else:
+                keylist += [('Lam','Lambda',None),]
+            itemList = ['Zero','Polariz.']
+            if 'C' in insType:
+                itemList += ['U','V','W','X','Y','Z','SH/L']
+            elif 'B' in insType:
+                itemList += ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1']
+            else: #'A'
+                itemList += ['U','V','W','X','Y','Z','alpha-0','alpha-1','beta-0','beta-1','SH/L']
+            for lbl in itemList:
+                keylist += [(lbl,lbl,None),]
+        elif 'E' in insType:
+            for lbl in ['XE','YE','ZE','WE']:
+                keylist += [(lbl,lbl,'.6f'),]
+            for lbl in ['A','B','C','X','Y','Z']:
+                keylist += [(lbl,lbl,None),]
+        elif 'T' in insType:
+            keylist = [('fltPath','Flight path','.3f'),
+                       ('2-theta','2\u03B8','.2f'),]
+            for lbl in ['difC','difA','difB','Zero','alpha',
+                            'beta-0','beta-1','beta-q',
+                            'sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
+                keylist += [(lbl,lbl,None),]
+        else:
+            return {}
+        for key,lbl,fmt in keylist:
+                arr = insVal[key]
+                if fmt is None:
+                    hpD[lbl] = {
+                        'init' : (arr,0),
+                        'val' : (arr,1),
+                        'ref' : (arr,2),}
+                else:
+                    hpD[lbl] = {
+                        'str' : f'{arr[1]:{fmt}}'}
         parmDict[hist] = hpD
     return parmDict
                 
@@ -403,7 +520,7 @@ def HAPframe(G2frame):
         for hist in histLabels(G2frame)[1]:
             HAPSizer.Add(wx.StaticText(HAPScroll,label=f"\u25A1 = {hist}"),
                              0,wx.ALIGN_CENTER)
-        displayDataTable(rowLabels,HAPtable,HAPSizer,HAPScroll)
+        firstentry = displayDataTable(rowLabels,HAPtable,HAPSizer,HAPScroll)
         # get row sizes in data table
         HAPSizer.Layout()
         rowHeights = HAPSizer.GetRowHeights()
@@ -425,26 +542,28 @@ def HAPframe(G2frame):
         HAPScroll.SetVirtualSize(HAPSizer.GetMinSize())
         lblScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
         HAPScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
-        wx.CallLater(100,G2frame.SendSizeEvent)
+        if firstentry is not None:    # prevent scroll to show last entry
+            wx.Window.SetFocus(firstentry)
+            firstentry.SetInsertionPoint(0) # prevent selection of text in widget
 
-    G2frame.dataWindow.ClearData()
+    #G2frame.dataWindow.ClearData()
 
     # layout the HAP window. This has histogram and phase info, so a
     # notebook is needed for phase name selection. (That could
     # be omitted for single-phase refinements, but better to remind the
     # user of the phase
-    topSizer = G2frame.dataWindow.topBox
-    topParent = G2frame.dataWindow.topPanel
+    # topSizer = G2frame.dataWindow.topBox
+    # topParent = G2frame.dataWindow.topPanel
     midPanel = G2frame.dataWindow
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     #botSizer = G2frame.dataWindow.bottomBox
     #botParent = G2frame.dataWindow.bottomPanel
     # label with shared portion of histogram name
-    topSizer.Add(wx.StaticText(topParent,
-            label=f'HAP parameters for group "{histLabels(G2frame)[0]}"'),
-                     0,WACV)
-    topSizer.Add((-1,-1),1,wx.EXPAND)
-    topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
+    # topSizer.Add(wx.StaticText(topParent,
+    #         label=f'HAP parameters for group "{histLabels(G2frame)[0]}"'),
+    #                  0,WACV)
+    # topSizer.Add((-1,-1),1,wx.EXPAND)
+    # topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
 
     G2G.HorizontalLine(mainSizer,midPanel)
     midPanel.SetSizer(mainSizer)
@@ -480,15 +599,15 @@ def HAPframe(G2frame):
     #     menu.Append(Id,page,'')
     #     TabSelectionIdDict[Id] = page
     #     G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
-    G2frame.dataWindow.SetDataSize()
     page = 0
     HAPBook.SetSelection(page)
     selectPhase(None)
+    #G2frame.dataWindow.SetDataSize()
 
 def getHAPvals(G2frame,phase):
     '''Generate the Parameter Data Table (a dict of dicts) with 
     all HAP values for the selected phase and all histograms in the 
-    selected histogram group (from G2frame.groupName).
+    selected histogram group (from G2frame.GroupInfo['groupName']).
     This will be used to generate the contents of the GUI for HAP values.
     '''
     sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
@@ -506,8 +625,8 @@ def getHAPvals(G2frame,phase):
         return {}
 
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
-    groupName = G2frame.groupName
     groupDict = Controls.get('Groups',{}).get('groupDict',{})
+    groupName = G2frame.GroupInfo['groupName']
     if groupName not in groupDict:
         print(f'Unexpected: {groupName} not in groupDict')
         return

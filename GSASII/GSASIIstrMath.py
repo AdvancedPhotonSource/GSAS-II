@@ -437,7 +437,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
     :param str hType: histogram type
     :param dict FFtables: x-ray form factor tables
     :param dict ORBtables: x-ray orbital form factor tables
-    :param dict BLtables: neutron scattering lenghts
+    :param dict BLtables: neutron scattering lengths
     :param array FF: form factors - will be modified by adding the spin/deformation RB spherical harmonics terms
     :param array SQ: 1/4d^2 for the HKL set
     :param bool ifDeriv: True if dFF/dcoff to be returned
@@ -580,7 +580,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                     for term in orbs[orb]:
                         if 'D(' in term:
                             item = term.replace('D','C')
-                            SH = G2lat.KslCalc(item,Th,Ph)
+                            SH = G2lat.KslCalc(item,Th,Ph)**2
                             FFval += SH*orbs[orb][term]*ff
                             name = 'A%s%s:%d'%(term,orb,iAt)
                             dFFdS[name] = SH*ff
@@ -597,7 +597,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                     for term in orbs[orb]:
                         if 'D(' in term:    #skip 'Ne'
                             item = term.replace('D','C')
-                            SH = G2lat.KslCalc(item,Th,Ph)
+                            SH = G2lat.KslCalc(item,Th,Ph)**2
                             FFval += SH*orbs[orb][term]*ff
                             name = 'A%s%s:%d'%(term,orb,iAt)
                             dFFdS[name] = SH*ff

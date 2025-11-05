@@ -277,7 +277,7 @@ class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
             A,B = G2lat.cell2AB(Cell)
             self.Write('# GSAS-II generated ORCA input file\n# Basic Mode')
             self.Write('#%Sym SymThresh 0.01 End')
-            self.Write('# after xyz is charge & multiplicity; change as needed')
+            self.Write('# after xyz is charge & multiplicity; change as needed for ions')
             self.Write('* xyz 0 1')
             fmt = '{:4s}'+3*'{:12.4f}'
             for atom in Atoms:

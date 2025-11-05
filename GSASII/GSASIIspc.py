@@ -1459,6 +1459,26 @@ def GetOpNum(Opr,SGData):
     opNum += cent*Nops
     return opNum
 
+def GetOpFromCode(Code,SGData):
+    "takes Sym Op code from Draw Atoms table & returns space group operation details"
+    SGOps = SGData['SGOps']
+    SGCent = SGData['SGCen']
+    if '+' not in Code:
+        SymOp = Code
+        Unit = '(0,0,0)'
+    else:
+        SymOp,Unit = Code.split('+')
+    SymOp = int(SymOp)
+    opNum = abs(SymOp)%100-1
+    cent = abs(opNum)//100
+    Unit = list(eval(Unit))
+    Cent = SGCent[cent]
+    SGM,SGT = SGOps[opNum]
+    if SymOp < 0:
+        SGM *= -1
+        SGT *= -1
+    return SGM,SGT,Cent,Unit   
+
 ################################################################################
 #### Superspace group codes
 ################################################################################

@@ -9094,7 +9094,7 @@ to use these entries'''
                             #     orbDict.update(cofTerms)
                             #     orbDict.update({'Ne':[float(orbs[orb]['Ne']),False]})
                             #     data['Deformations'][Ids[indx]].append([orb,orbDict])
-                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Y','UVmat':np.eye(3),
+                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Y','UVmat':np.eye(3),'PtGrp':'1',
                     'MUV':"A: X'=U, Y'=(UxV)xU & Z'=UxV",'Radial':radial,'fxchoice':fxchoice}
         dlg.Destroy()
         if not len(indxes):

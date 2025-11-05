@@ -271,7 +271,7 @@ def UpdateRMC(G2frame,data):
             XY = np.empty((1,2))
             while XY.shape[0] == 1:
                 try:
-                    XY = np.loadtxt(fileItem[0],skiprows=start)
+                    XY = np.loadtxt(os.path.join(G2frame.LastGPXdir,fileItem[0]),skiprows=start)
                 except ValueError:
                     start += 1
                     if start > 500:     #absurd number of header lines!

@@ -6784,7 +6784,7 @@ to use these entries'''
                     lines=True,names=Names[3:])
 
 #get atoms from rmc6f file
-            rmc6fName = os.path.join(path,pName+'.rmc6f')
+            rmc6fName = pName+'.rmc6f'
             rmc6f = open(rmc6fName,'r')
             rmc6fAtoms = []
             while True:

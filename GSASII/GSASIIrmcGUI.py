@@ -261,7 +261,10 @@ def UpdateRMC(G2frame,data):
         def OnFileFormat(event):
             Obj = event.GetEventObject()
             fil = Indx[Obj.GetId()]
-            RMCPdict['files'][fil][3] = Obj.GetStringSelection()
+            Fmt = Obj.GetStringSelection()
+            RMCPdict['files'][fil][3] = Fmt
+            if 'PDF' in Fmt:
+                RMCPdict['files'][fil][2] = 'G(r)P'
 
         def OnPlotBtn(event):
             Obj = event.GetEventObject()
@@ -346,7 +349,7 @@ def UpdateRMC(G2frame,data):
             mainSizer.Add(topSizer)
             Heads = ['Name','File','type','Plot','Delete']
             fileSizer = wx.FlexGridSizer(5,5,5)
-            Formats = ['RMC','GUDRUN','STOG']
+            Formats = ['RMC','GUDRUN','STOG','PDFGET']
             for head in Heads:
                 fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
             for fil in RMCPdict['files']:
@@ -412,7 +415,7 @@ def UpdateRMC(G2frame,data):
         if G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
 
             def OnAddPDF(event):
-                ''' Add PDF G(r)s while maintanining original sequence
+                ''' Add PDF G(r)s while maintaining original sequence
                 '''
                 usedList = RMCPdict['seqfiles']
                 PDFlist = [item[1:][0] for item in G2frame.GetFileList('PDF')]
@@ -535,7 +538,7 @@ def UpdateRMC(G2frame,data):
         # RMCProfile & PDFfit (Normal)
         Heads = ['Name','File','Format','Weight','Plot','Delete']
         fileSizer = wx.FlexGridSizer(6,5,5)
-        Formats = ['RMC','GUDRUN','STOG']
+        Formats = ['RMC','GUDRUN','STOG','PDFGET']
         for head in Heads:
             fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
         for fil in RMCPdict['files']:
@@ -548,6 +551,8 @@ def UpdateRMC(G2frame,data):
             Indx[filSel.GetId()] = fil
             fileSizer.Add(filSel,0,WACV)
             nform = 3
+            if 'G(r)' in fil:
+                nform = 4
             Name = 'Ndata'
             if 'Xray' in fil:
                 nform = 1

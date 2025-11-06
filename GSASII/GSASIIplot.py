@@ -7351,17 +7351,17 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     #### put deformation texture on sphere here
                     if atom[ci] in deformationData:
                         defCtrls = deformationData[-atom[ci]]
-                        defParms = deformationData[atom[ci]]
-                        SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
-                        SGM = np.array(G2spc.GetOpFromCode(atom[cs-1],SGData)[0])
                         if defCtrls.get('showDef',False) and defCtrls['Radial'] == 'Slater':
                             useAtColor = defCtrls.get('atColor',True) 
                             atcolor = None
                             if useAtColor:
                                 atcolor = atColor*255
+                            defParms = deformationData[atom[ci]]
+                            SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
+                            SGM = np.array(G2spc.GetOpFromCode(atom[cs-1],SGData)[0])
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
-                            UVMat = np.inner(SGM.T,defCtrls['UVmat'])
+                            UVMat = np.inner(defCtrls['UVmat'],SGM)
                             Npsi,Ngam = 90,45 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl

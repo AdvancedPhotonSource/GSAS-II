@@ -7364,7 +7364,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             UVMat = np.inner(defCtrls['UVmat'],SGM)
                             Npsi,Ngam = 90,45 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
-                            PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
+                            PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl
                             GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                             Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat) #TODO: needs symmetry operation for equiv. positions
                             P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))**2

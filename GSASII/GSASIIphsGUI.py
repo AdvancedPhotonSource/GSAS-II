@@ -6639,8 +6639,9 @@ to use these entries'''
                       '_SQ1partials.csv':[],'_SQ2partials.csv':[],'_FQ1.csv':[],'_FT_XFQ1.csv':[],
                       '_FQ1partials.csv':[],'_bragg.csv':[],'.chi2':[]}
             for item in files:
-                if os.path.exists(os.path.join(path,pName+item)):
-                    OutFile = open(pName+item,'r')
+                fileName = os.path.join(path,pName+item)
+                if os.path.exists(fileName):
+                    OutFile = open(fileName,'r')
                     files[item] = OutFile.readlines()
                     OutFile.close()
                     print('RMCProfile file %s read'%(pName+item))
@@ -6783,7 +6784,7 @@ to use these entries'''
                     lines=True,names=Names[3:])
 
 #get atoms from rmc6f file
-            rmc6fName = pName+'.rmc6f'
+            rmc6fName = os.path.join(path,pName+'.rmc6f')
             rmc6f = open(rmc6fName,'r')
             rmc6fAtoms = []
             while True:

@@ -226,13 +226,14 @@ def UpdateRMC(G2frame,data):
                 style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
             if dlg.ShowModal() == wx.ID_OK:
                 fpath,fName = os.path.split(dlg.GetPath())
-                if os.path.exists(fName): # is there a file by this name in the current directory?
+                if os.path.exists(os.path.join(G2frame.LastGPXdir,fName)): # is there a file by this name in the current directory?
                     RMCPdict['files'][fil][0] = fName
                 else: # nope, copy it
                     # TODO: is G2frame.LastGPXdir the right choice here or
                     #       do I want the current working directory (same?)
                     shutil.copy(dlg.GetPath(), os.path.join(G2frame.LastGPXdir,fName))
-                if not os.path.exists(fName): # sanity check
+                    RMCPdict['files'][fil][0] = fName
+                if not os.path.exists(os.path.join(G2frame.LastGPXdir,fName)): # sanity check
                     print(f'Error: file {fName} not found in .gpx directory ({G2frame.LastGPXdir})')
                     return
                 G2frame.LastImportDir = fpath    #set so next file is found in same place
@@ -270,7 +271,7 @@ def UpdateRMC(G2frame,data):
             XY = np.empty((1,2))
             while XY.shape[0] == 1:
                 try:
-                    XY = np.loadtxt(fileItem[0],skiprows=start)
+                    XY = np.loadtxt(os.path.join(G2frame.LastGPXdir,fileItem[0]),skiprows=start)
                 except ValueError:
                     start += 1
                     if start > 500:     #absurd number of header lines!
@@ -551,7 +552,7 @@ def UpdateRMC(G2frame,data):
             if 'Xray' in fil:
                 nform = 1
                 Name = 'Xdata'
-            if Rfile and os.path.exists(Rfile): #incase .gpx file is moved away from G(R), F(Q), etc. files
+            if Rfile and os.path.exists(os.path.join(G2frame.LastGPXdir,Rfile)): #incase .gpx file is moved away from G(R), F(Q), etc. files
                 fileFormat = wx.ComboBox(G2frame.FRMC,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
                 fileFormat.SetStringSelection(RMCPdict['files'][fil][3])
                 Indx[fileFormat.GetId()] = fil

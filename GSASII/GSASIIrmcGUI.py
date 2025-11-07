@@ -263,8 +263,21 @@ def UpdateRMC(G2frame,data):
             fil = Indx[Obj.GetId()]
             Fmt = Obj.GetStringSelection()
             RMCPdict['files'][fil][3] = Fmt
-            if 'PDF' in Fmt:
-                RMCPdict['files'][fil][2] = 'G(r)P'
+            if "G(r)" in fil:
+                if 'PDF' in Fmt:
+                    RMCPdict['files'][fil][2] = 'G(r)P'
+                else:
+                    RMCPdict['files'][fil][2] = 'G(r)'
+            elif "F(Q)" in fil:
+                if "NEUTRON" in fil.upper():
+                    if 'PDF' in Fmt:
+                        RMCPdict['files'][fil][2] = 'QF(Q) normalized'
+                    else:
+                        RMCPdict['files'][fil][2] = 'F(Q)'
+                else:                    
+                    RMCPdict['files'][fil][2] = 'F(Q)'
+            else:
+                RMCPdict['files'][fil][2] = 'S(Q)'
 
         def OnPlotBtn(event):
             Obj = event.GetEventObject()
@@ -349,7 +362,7 @@ def UpdateRMC(G2frame,data):
             mainSizer.Add(topSizer)
             Heads = ['Name','File','type','Plot','Delete']
             fileSizer = wx.FlexGridSizer(5,5,5)
-            Formats = ['RMC','GUDRUN','STOG','PDFGET']
+            Formats = ['RMC','GUDRUN','PDFGET']
             for head in Heads:
                 fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
             for fil in RMCPdict['files']:
@@ -538,7 +551,7 @@ def UpdateRMC(G2frame,data):
         # RMCProfile & PDFfit (Normal)
         Heads = ['Name','File','Format','Weight','Plot','Delete']
         fileSizer = wx.FlexGridSizer(6,5,5)
-        Formats = ['RMC','GUDRUN','STOG','PDFGET']
+        Formats = ['RMC','GUDRUN','PDFGET']
         for head in Heads:
             fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
         for fil in RMCPdict['files']:

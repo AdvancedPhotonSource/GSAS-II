@@ -6388,8 +6388,12 @@ to use these entries'''
             ascript_file = os.path.join(os.getcwd(), "runrmc.script")
             with open(ascript_file, 'w') as f:
                 f.write('tell application "Terminal"\n')
-                f.write(f'''  do script "echo 'Running RMCprofile'"\n''')
+                f.write('  if not (exists window 1) then\n')
+                f.write(f'    do script "bash {script_file}"\n')
+                f.write('  else\n')
                 f.write(f'  do script "bash {script_file}" in window 1\n')
+                f.write('  end if\n')
+                f.write('  activate\n')
                 f.write("end tell\n")
             subp.Popen(['osascript', ascript_file])
         elif sys.platform.startswith("linux"):
@@ -6607,8 +6611,12 @@ to use these entries'''
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']
             pName = generalData['Name'].replace(' ','_')
+            if sys.platform == "darwin":
+               wildcard = 'RMCProfile result csv files|' + pName + '*.csv' + '|All files|*.*'
+            else:
+               wildcard = 'RMCProfile result csv files|' + pName + '*.csv'
             dlg = wx.FileDialog(G2frame, "Choose any RMCProfile csv results file for "+pName+":",
-                defaultDir=G2frame.LastGPXdir,style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
+                defaultDir=G2frame.LastGPXdir,style=wx.FD_CHANGE_DIR,wildcard=wildcard)
             if dlg.ShowModal() == wx.ID_OK:
                 path = os.path.split(dlg.GetPath())[0]
                 dlg.Destroy()
@@ -6631,8 +6639,9 @@ to use these entries'''
                       '_SQ1partials.csv':[],'_SQ2partials.csv':[],'_FQ1.csv':[],'_FT_XFQ1.csv':[],
                       '_FQ1partials.csv':[],'_bragg.csv':[],'.chi2':[]}
             for item in files:
-                if os.path.exists(os.path.join(path,pName+item)):
-                    OutFile = open(pName+item,'r')
+                fileName = os.path.join(path,pName+item)
+                if os.path.exists(fileName):
+                    OutFile = open(fileName,'r')
                     files[item] = OutFile.readlines()
                     OutFile.close()
                     print('RMCProfile file %s read'%(pName+item))
@@ -9094,7 +9103,7 @@ to use these entries'''
                             #     orbDict.update(cofTerms)
                             #     orbDict.update({'Ne':[float(orbs[orb]['Ne']),False]})
                             #     data['Deformations'][Ids[indx]].append([orb,orbDict])
-                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Y','UVmat':np.eye(3),
+                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Y','UVmat':np.eye(3),'PtGrp':'1',
                     'MUV':"A: X'=U, Y'=(UxV)xU & Z'=UxV",'Radial':radial,'fxchoice':fxchoice}
         dlg.Destroy()
         if not len(indxes):

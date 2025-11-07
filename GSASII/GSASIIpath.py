@@ -2160,6 +2160,15 @@ to update/regress repository from git repository:
         lastver = sorted([t for t in taglist if 'v' in t])[-1]
         lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]
         #print('tags=',lastver,lastnum)
+        # make directory for config file if needed
+        localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
+        if not os.path.exists(localdir):
+            try:
+                os.mkdir(localdir)
+                print(f'Created directory {localdir}')
+            except Exception as msg:
+                print(f'Error trying to create directory {localdir}\n{msg}')
+                sys.exit()
         # add tag info to config file
         import configparser
         cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))

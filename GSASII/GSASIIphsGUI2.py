@@ -314,8 +314,9 @@ def UpdateDeformation(G2frame,data,AtdId):
         Indx[Tcheck.GetId()] = [dId,iorb,'Ne']
         orbSizer.Add(Tcheck)
         
-    def Dsizer(deformation,orbSizer,dId,orb,Indx):
-        orbSizer.Add(wx.StaticText(deformation,label=item+':'))
+    def Dsizer(deformation,orbSizer,Names,dId,orb,Indx):
+        name = Names.get(item,'') #Names only go to order = 3
+        orbSizer.Add(wx.StaticText(deformation,label=item+name+':'))
         orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,5),xmin=-1.,xmax=1.))
         Tcheck = wx.CheckBox(deformation,-1,'Refine?')
         Tcheck.SetValue(orb[1][item][1])
@@ -506,6 +507,10 @@ def UpdateDeformation(G2frame,data,AtdId):
             oriSizer.Add(delHarm,0,WACV)
         mainSizer.Add(oriSizer)
         G2G.HorizontalLine(mainSizer,deformation)
+        Names = {'D(1,-1)':'px','D(1,0)':'pz','D(1,1)':'py',
+                 'D(2,-2)':'dxy','D(2,-1)':'dxz','D(2,0)':'dz2','D(2,1)':'dyz','D(2,2)':'dx2-y2',
+                 'D(3,-3)':'fy(3x2-y2)','D(3,-2)':'fz(x2-y2)','D(3,-1':'fyz2','D(3,0)':'fz3',
+                 'D(3,1)':'fxz2','D(3,2)':'fxyz','D(3,3)':'fy(3x2-y2)',}
         mainSizer.Add(wx.StaticText(deformation,label=' Deformation parameters:'))
         orbSizer = wx.FlexGridSizer(0,9,2,2)
         for iorb,orb in enumerate(deformationData[dId]):
@@ -529,7 +534,7 @@ def UpdateDeformation(G2frame,data,AtdId):
                 for item in orb[1]:
                     if 'D' in item:                            
                         nItem += 1
-                        Dsizer(deformation,orbSizer,dId,orb,Indx)
+                        Dsizer(deformation,orbSizer,Names,dId,orb,Indx)
                         if nItem in [2,4,6,8,10]:
                             for i in range(3): orbSizer.Add((5,5),0)
                 for i in range(3): orbSizer.Add((5,5),0)
@@ -551,7 +556,7 @@ def UpdateDeformation(G2frame,data,AtdId):
                             if nItems:
                                 nB = 9-nItems
                                 for i in range(nB): orbSizer.Add((5,5),0)
-                        Dsizer(deformation,orbSizer,dId,orb,Indx)
+                        Dsizer(deformation,orbSizer,Names,dId,orb,Indx)
         mainSizer.Add(orbSizer)    
 
     G2phsG.SetPhaseWindow(deformation,mainSizer)

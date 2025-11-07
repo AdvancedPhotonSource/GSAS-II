@@ -3431,7 +3431,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     dMin = refList[-1][4]
     gsasType = 'xray2'
     if 'T' in inst['Type'][1]:
-        gsasType = 'gsas3'
+        gsasType = 'gsas3_new'
     elif 'X' in inst['Type'][1]:
         XFF = G2elem.GetFFtable(Atseq)
         Xfl = open(Name+'.xray','w')

@@ -3578,7 +3578,7 @@ def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
                 fl.write('  > FITTED_SCALE\n')
             else:
                 fl.write('  > NO_FITTED_SCALE\n')
-            if Files[File][3] !='RMC':
+            if Files[File][3] !='RMC' and "PDF" not in Files[File][3]:
                 fl.write('  > %s\n'%Files[File][3])
             if 'reciprocal' in File:
                 fl.write('  > CONVOLVE ::\n')

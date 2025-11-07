@@ -4518,6 +4518,40 @@ class G2PwdrData(G2ObjectWrapper):
         bkgDict['autoPrms']['Mode'] = 'fixed'
         return bkgdata
 
+    def ComputeMassFracs(self):
+        '''Computes the mass fractions (or equivalently the weight fractions)
+        for the phases linked to the current histogram with uncertainties 
+        from the results of the last refinement, if the phase fractions
+        were refined.
+
+        :returns: a dict where the keys are phase names and the values 
+          associated with is a tuple where the first value is the phase's
+          mass fraction and the second value is the s.u. on that value.
+        '''
+        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.proj.filename)
+        if errmsg:
+            G2fil.G2Print('Constraint error',errmsg)
+            print('ComputeMassFracs warning: uncertainties are likely wrong')
+        # if warnmsg:
+        #     G2fil.G2Print('\nNote these constraint warning(s):\n'+warnmsg)
+        #     G2fil.G2Print('Generated constraints\n'+G2mv.VarRemapShow([],True))
+        covMatrix = self.proj.data['Covariance']['data']['covMatrix']
+        varyList = self.proj.data['Covariance']['data']['varyList']
+        hId = self.data['data'][0]['hId']
+        # make a dict like the Phases dict that the GUI uses
+        Phases = {}
+        for phase in self.proj.phases():
+            Phases[phase.name] = phase.data
+        hist = self.name
+        from . import GSASIIstrMath
+        valDict,sigDict = GSASIIstrMath.calcMassFracs(varyList,covMatrix,Phases,hist,hId)
+        vals = {}
+        # reformulate the dict to be {phase-name:(val,su)}
+        for key in valDict:
+            phase = self.proj.phase(key.split(':')[0]).name
+            vals[phase] = (float(valDict[key]),float(sigDict[key]))
+        return vals
+
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
     The object contains these class variables:

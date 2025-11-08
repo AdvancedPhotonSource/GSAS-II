@@ -1135,7 +1135,10 @@ def exceptHook(*args):
     import IPython.core
     savehook = sys.excepthook # save the exception hook
     # show the error
-    tb_formatter = IPython.core.ultratb.VerboseTB()
+    # TODO: define a config var that allows selection between the following:
+    #tb_formatter = IPython.core.ultratb.VerboseTB()
+    tb_formatter = IPython.core.ultratb.FormattedTB()
+    #tb_formatter = IPython.core.ultratb.ListTB()
     print(tb_formatter.text(*args))
     # get the Ipython shell routine
     if IPython.core.getipython.get_ipython() is None:

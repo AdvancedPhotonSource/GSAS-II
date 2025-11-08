@@ -3039,10 +3039,10 @@ def SphHarmAng(L,M,P,Th,Ph):
     :returns ylmp value/array: as reals
     '''
     try:
-        ylmp = spsp.sph_harm_y(L,M,rpd*Th,rpd*Ph)
-    except AttributeError:
-    #### TODO: this will be deprecated in future scipy; new one sph_harm_y in scipy 1.15.1
+    #### TODO: this will be deprecated in scipy 1.17.0
         ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
+    except AttributeError: #new one sph_harm_y in scipy 1.15.1 but buggy?
+        ylmp = spsp.sph_harm_y(L,M,rpd*Th,rpd*Ph) #order L,M makes more sense
 
     if M > 0:
         return (-1)**M*P*np.real(ylmp)*SQ2

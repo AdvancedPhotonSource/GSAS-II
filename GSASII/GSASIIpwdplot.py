@@ -223,7 +223,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.ErrorBars = not G2frame.ErrorBars
         elif event.key == 'T' and 'PWDR' in plottype:
             Page.plotStyle['title'] = not Page.plotStyle.get('title',True)
-        elif event.key == 'f' and 'PWDR' in plottype: # short,full length or no tick-marks
+        elif event.key == 'f' and ('PWDR' in plottype or 'GROUP'  in plottype): # short,full length or no tick-marks
             if G2frame.Contour: return
             Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
         elif event.key == 'x' and groupName is not None: # share X axis scale for Pattern Groups
@@ -1607,6 +1607,58 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['partials'] = True
             Replot()
         configPartialDisplay(G2frame,Page.phaseColors,Replot)
+    def adjustDim(i,nx):
+        '''MPL creates a 1-D array when nx=1, 2-D otherwise.
+        This adjusts the array addressing.
+        '''
+        if nx == 1:
+            return (0,1)
+        else:
+            return ((0,i),(1,i))
+    def drawTicks(Phases,phaseList,group=False):
+        'Draw the tickmarcks for phases in the current histogram'
+        l = GSASIIpath.GetConfigValue('Tick_length',8.0)
+        w = GSASIIpath.GetConfigValue('Tick_width',1.)
+        for pId,phase in enumerate(phaseList):
+            if 'list' in str(type(Phases[phase])):
+                continue
+            if phase in Page.phaseColors:
+                plcolor = Page.phaseColors[phase]
+            else: # how could this happen? 
+                plcolor = 'k'
+                #continue
+            peaks = Phases[phase].get('RefList',[])
+            if not len(peaks):
+                continue
+            if Phases[phase].get('Super',False):
+                peak = np.array([[peak[5],peak[6]] for peak in peaks])
+            else:
+                peak = np.array([[peak[4],peak[5]] for peak in peaks])
+            if group:
+                pos = (2.5-len(phaseList)*5 + pId*5)**np.ones_like(peak) # tick positions hard-coded
+            else:
+                pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
+            if Page.plotStyle['qPlot']:
+                xtick = 2*np.pi/peak.T[0]
+            elif Page.plotStyle['dPlot']:
+                xtick = peak.T[0]
+            else:
+                xtick = peak.T[1]
+            if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
+                Page.tickDict[phase],_ = Plot.plot(
+                    xtick,pos,'|',mew=w,ms=l,picker=True,pickradius=3.,
+                    label=phase,color=plcolor)
+                # N.B. above creates two Line2D objects, 2nd is ignored.
+                # Not sure what each does.
+            elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
+                if len(xtick) > 0:
+                    # create an ~hidden tickmark to create a legend entry
+                    Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
+                                            label=phase,color=plcolor)[0]
+                for xt in xtick: # a separate line for each reflection position
+                        Plot.axvline(xt,color=plcolor,
+                                    picker=True,pickradius=3.,
+                                    label='_FLT_'+phase,lw=0.5)
             
     #### beginning PlotPatterns execution #####################################
     global exclLines,Page
@@ -1807,7 +1859,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
             Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
     else:
-        Page.phaseList = Phases = []
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        Page.phaseList = Phases
     # assemble a list of validated colors for tickmarks
     valid_colors = []
     invalid_colors = []
@@ -2123,21 +2176,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                          gridspec_kw=GS_kw)
         Page.figure.subplots_adjust(left=5/100.,bottom=16/150.,
             right=.99,top=1.-3/200.,hspace=0,wspace=0)
-        def adjustDim(i,nx):
-            '''MPL creates a 1-D array when nx=1, 2-D otherwise.
-            This adjusts the array addressing.
-            '''
-            if nx == 1:
-                return (0,1)
-            else:
-                return ((0,i),(1,i))
         for i in range(nx):
             up,down = adjustDim(i,nx)
             Plots[up].set_xlim(gXmin[i],gXmax[i])
             Plots[down].set_xlim(gXmin[i],gXmax[i])
             Plots[down].set_ylim(DZmin,DZmax)
             if not Page.plotStyle.get('flTicks',False):
-                Plots[up].set_ylim(-len(Page.phaseList)*5,102)
+                Plots[up].set_ylim(-len(RefTbl[i])*5,102)
             else:
                 Plots[up].set_ylim(-1,102)
                 
@@ -2182,51 +2227,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             clip_on=Clip_on,label=incCptn('obs'))
             Plot.plot(gX[i],scaleY(xye[3]),pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
             Plot.plot(gX[i],scaleY(xye[4]),pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
-
-            l = GSASIIpath.GetConfigValue('Tick_length',8.0)
-            w = GSASIIpath.GetConfigValue('Tick_width',1.)
-            for pId,phase in enumerate(Page.phaseList):
-                if 'list' in str(type(Phases[phase])):
-                    continue
-                if phase in Page.phaseColors:
-                    plcolor = Page.phaseColors[phase]
-                else: # how could this happen? 
-                    plcolor = 'k'
-                    #continue
-                peaks = []
-                if phase in RefTbl[i]:
-                    peaks = RefTbl[i][phase].get('RefList',[])
-                    super = RefTbl[i][phase].get('Super',False)
-                # else:
-                #     peaks = Phases[phase].get('RefList',[])
-                #     super = Phases[phase].get('Super',False)
-                if not len(peaks):
-                    continue
-                if super:
-                    peak = np.array([[peak[5],peak[6]] for peak in peaks])
-                else:
-                    peak = np.array([[peak[4],peak[5]] for peak in peaks])
-                pos = 2.5-len(Page.phaseList)*5 + pId*5 # tick positions hard-coded
-                if Page.plotStyle['qPlot']:
-                    xtick = 2*np.pi/peak.T[0]
-                elif Page.plotStyle['dPlot']:
-                    xtick = peak.T[0]
-                else:
-                    xtick = peak.T[1]
-                if not Page.plotStyle.get('flTicks',False):     # short tick-marks
-                    Plot.plot(
-                        xtick,pos * np.ones_like(peak),
-                        '|',mew=w,ms=l, # picker=True,pickradius=3.,
-                        label=phase,color=plcolor)
-                else:                                           # full length tick-marks
-                    if len(xtick) > 0:
-                        # create an ~hidden tickmark to create a legend entry
-                        Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
-                                                label=phase,color=plcolor)[0]
-                    for xt in xtick: # a separate line for each reflection position
-                            Plot.axvline(xt,color=plcolor,
-                                        picker=True,pickradius=3.,
-                                        label='_FLT_'+phase,lw=0.5)
+            drawTicks(RefTbl[i],list(RefTbl[i].keys()),True)
         try: # try used as in PWDR menu not Groups
             # Not sure if this does anything
             G2frame.dataWindow.moveTickLoc.Enable(False)
@@ -2894,45 +2895,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                   or (inXtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 ):
-            l = GSASIIpath.GetConfigValue('Tick_length',8.0)
-            w = GSASIIpath.GetConfigValue('Tick_width',1.)
-            for pId,phase in enumerate(Page.phaseList):
-                if 'list' in str(type(Phases[phase])):
-                    continue
-                if phase in Page.phaseColors:
-                    plcolor = Page.phaseColors[phase]
-                else: # how could this happen? 
-                    plcolor = 'k'
-                    #continue
-                peaks = Phases[phase].get('RefList',[])
-                if not len(peaks):
-                    continue
-                if Phases[phase].get('Super',False):
-                    peak = np.array([[peak[5],peak[6]] for peak in peaks])
-                else:
-                    peak = np.array([[peak[4],peak[5]] for peak in peaks])
-                pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
-                if Page.plotStyle['qPlot']:
-                    xtick = 2*np.pi/peak.T[0]
-                elif Page.plotStyle['dPlot']:
-                    xtick = peak.T[0]
-                else:
-                    xtick = peak.T[1]
-                if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
-                    Page.tickDict[phase],_ = Plot.plot(
-                        xtick,pos,'|',mew=w,ms=l,picker=True,pickradius=3.,
-                        label=phase,color=plcolor)
-                    # N.B. above creates two Line2D objects, 2nd is ignored.
-                    # Not sure what each does.
-                elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
-                    if len(xtick) > 0:
-                        # create an ~hidden tickmark to create a legend entry
-                        Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
-                                                label=phase,color=plcolor)[0]
-                    for xt in xtick: # a separate line for each reflection position
-                            Plot.axvline(xt,color=plcolor,
-                                        picker=True,pickradius=3.,
-                                        label='_FLT_'+phase,lw=0.5)
+            drawTicks(Phases,Page.phaseList)
             handles,legends = Plot.get_legend_handles_labels() 
             if handles:
                 labels = dict(zip(legends,handles))     # remove duplicate phase entries

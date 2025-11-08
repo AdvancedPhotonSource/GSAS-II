@@ -2993,7 +2993,7 @@ def SHarmcal(SytSym,SHFln,psi,gam):
     Presently only used for plotting
     Note that the the number of gam values must either be 1 or must match psi
 
-    :param str SytSym: sit symmetry - only looking for cubics - remove this
+    :param str SytSym: site symmetry - only looking for cubics
     :param dict SHFln: spherical harmonics coefficients; key has L & M
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180
@@ -3038,8 +3038,11 @@ def SphHarmAng(L,M,P,Th,Ph):
 
     :returns ylmp value/array: as reals
     '''
-    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree; not normalized
+    try:
+        ylmp = spsp.sph_harm_y(L,M,rpd*Th,rpd*Ph)
+    except AttributeError:
     #### TODO: this will be deprecated in future scipy; new one sph_harm_y in scipy 1.15.1
+        ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
 
     if M > 0:
         return (-1)**M*P*np.real(ylmp)*SQ2

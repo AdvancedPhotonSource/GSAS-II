@@ -1134,25 +1134,34 @@ def exceptHook(*args):
     '''
     import IPython.core
     savehook = sys.excepthook # save the exception hook
-    # show the error
-    # TODO: define a config var that allows selection between the following:
-    #tb_formatter = IPython.core.ultratb.VerboseTB()
+    # show the error location
     tb_formatter = IPython.core.ultratb.FormattedTB()
-    #tb_formatter = IPython.core.ultratb.ListTB()
-    print(tb_formatter.text(*args))
+    #tb_formatter = IPython.core.ultratb.ListTB() # better for windows?
+    print() # blank line
+    print(tb_formatter.text(*args,-1),end='') # show only last routine
     # get the Ipython shell routine
     if IPython.core.getipython.get_ipython() is None:
-        ipshell = IPython.terminal.embed.InteractiveShellEmbed.instance()
-    else:
+        ipshell = IPython.terminal.embed.InteractiveShellEmbed.instance(banner1='')
+    else: # older IPython (still needed?)
         ipshell = IPython.terminal.embed.InteractiveShellEmbed()
-    # get to the right frame
-    try:
+    # traceback display routines
+    def TB(): print(IPython.core.ultratb.FormattedTB().text(*args))
+    def vTB(): print(IPython.core.ultratb.VerboseTB().text(*args))
+    def bwTB(): print(IPython.core.ultratb.ListTB().text(*args)) # uncolored
+    try:     # get to the right frame
         import inspect
         frame = inspect.getinnerframes(args[2])[-1][0]
-        msg = f'Entering IPython console at {frame.f_code.co_filename} at line {frame.f_lineno}\n'
-        ipshell(msg,local_ns=frame.f_locals,global_ns=frame.f_globals) # newest (IPython >= 8)
+        import copy
+        locals = frame.f_locals  # add traceback commands to shell namespace
+        locals['TB'] = TB
+        locals['vTB'] = vTB
+        locals['bwTB'] = bwTB
+        msg = f'IPython console: {frame.f_code.co_filename}, line {frame.f_lineno}'
+        msg += '\n[TB(), vTB() & bwTB() for tracebacks]'
+        ipshell(msg,local_ns=locals,global_ns=frame.f_globals)
     except:
-        msg = 'Entering IPython console (no contex)'
+        msg = 'Entering IPython console (not in error contex)'
+        msg += '\n[TB(), vTB() & bwTB() for tracebacks]'
         ipshell(msg)
     sys.excepthook = savehook # reset IPython's change to the exception hook
 

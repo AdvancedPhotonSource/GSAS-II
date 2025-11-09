@@ -56,6 +56,13 @@ def sec2HMS(sec):
     S = sec-3600*H-60*M
     return '%d:%2d:%.2f'%(H,M,S)
 
+def CrysM2CartM(Amat,Bmat,SGM):
+    SGC = np.zeros((3,3))
+    SGC[:,0] = np.inner(Amat,np.inner(SGM,np.inner(Bmat,np.eye(3)[0])))
+    SGC[:,1] = np.inner(Amat,np.inner(SGM,np.inner(Bmat,np.eye(3)[1])))
+    SGC[:,2] = np.inner(Amat,np.inner(SGM,np.inner(Bmat,np.eye(3)[2])))
+    return SGC
+
 def rotdMat(angle,axis=0):
     """Prepare rotation matrix for angle in degrees about axis(=0,1,2)
 
@@ -1135,6 +1142,22 @@ def cell2AB(cell,alt=False):
     A[0][2] = cell[2]*cosd(cell[4])  # c cos(beta)
     A[1][1] = cell[1]*sind(cell[5])  # b sin(gamma)
     A[1][2] = -cell[2]*cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
+    A[2][2] = 1./cellstar[2]         # 1/c*
+    A = np.around(A,12)
+    B = nl.inv(A)
+    return A,B
+
+def cell2UnitAB(cell):
+    Ucell = cell[:]
+    Ucell[:3] = [1.0,1.0,1.0]
+    G,g = cell2Gmat(Ucell)
+    cellstar = Gmat2cell(G)
+    A = np.zeros(shape=(3,3))
+    A[0][0] = 1.0                # a
+    A[0][1] = cosd(cell[5])  # b cos(gamma)
+    A[0][2] = cosd(cell[4])  # c cos(beta)
+    A[1][1] = sind(cell[5])  # b sin(gamma)
+    A[1][2] = -cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
     A[2][2] = 1./cellstar[2]         # 1/c*
     A = np.around(A,12)
     B = nl.inv(A)
@@ -2970,7 +2993,7 @@ def SHarmcal(SytSym,SHFln,psi,gam):
     Presently only used for plotting
     Note that the the number of gam values must either be 1 or must match psi
 
-    :param str SytSym: sit symmetry - only looking for cubics - remove this
+    :param str SytSym: site symmetry - only looking for cubics
     :param dict SHFln: spherical harmonics coefficients; key has L & M
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180
@@ -3015,8 +3038,11 @@ def SphHarmAng(L,M,P,Th,Ph):
 
     :returns ylmp value/array: as reals
     '''
-    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree; not normalized
-    #### TODO: this will be deprecated in future scipy; new one sph_harm_y in scipy 1.15.1
+    try:
+    #### TODO: this will be deprecated in scipy 1.17.0
+        ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
+    except AttributeError: #new one sph_harm_y in scipy 1.15.1 but buggy?
+        ylmp = spsp.sph_harm_y(L,M,rpd*Th,rpd*Ph) #order L,M makes more sense
 
     if M > 0:
         return (-1)**M*P*np.real(ylmp)*SQ2

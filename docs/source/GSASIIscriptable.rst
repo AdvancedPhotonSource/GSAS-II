@@ -206,10 +206,9 @@ Scripting class name                              Description
 
 :ref:`G2PDF <Class_G2PDF>`                 :class:`~GSASIIscriptable.G2PDF`: PDF histogram info
 
-:ref:`G2SmallAngle <Class_G2SmallAngle>`          :class:`~GSASIIscriptable.G2SmallAngle`: Small Angle scattering histogram info
+:ref:`G2SmallAngle <Class_G2SmallAngle>`   :class:`~GSASIIscriptable.G2SmallAngle`: Small Angle scattering histogram info
 
-:ref:`G2SeqRefRes <Class_G2SeqRefRes>`     :class:`~GSASIIscriptable.G2SeqRefRes`:
-                                           The sequential results table
+:ref:`G2SeqRefRes <Class_G2SeqRefRes>`     :class:`~GSASIIscriptable.G2SeqRefRes`: The sequential results table
 ========================================   ===============================================================================================================
 
 Independent Functions
@@ -377,6 +376,7 @@ method                                                     Use
 :meth:`~GSASIIscriptable.G2PwdrData.Export_peaks`        Writes the peak parameters to a text file 
 :meth:`~GSASIIscriptable.G2PwdrData.Limits`              Reads or sets the region of data used in fitting (histogram limits)
 :meth:`~GSASIIscriptable.G2PwdrData.Excluded`            Reads or sets regions of powder data that will be ignored
+:meth:`~GSASIIscriptable.G2PwdrData.ComputeMassFracs`    Reports mass (weight) fractions and their uncertainties
 =======================================================  ===============================================================================================================
 
 .. _Class_G2Single:

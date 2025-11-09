@@ -3769,8 +3769,9 @@ If you continue from this point, it is quite likely that all intensity computati
     def OnAddPhase(self,event):
         'Add a new, empty phase to the tree. Called by Data/Add Phase menu'
         PhaseName = ''
-        dlg = wx.TextEntryDialog(None,'Enter a name for this phase','Phase Name Entry','New phase',
+        dlg = wx.TextEntryDialog(self,'Enter a name for this phase','Phase Name Entry','New phase',
             style=wx.OK)
+        dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             PhaseName = dlg.GetValue()
             self.CheckNotebook()
@@ -4427,7 +4428,7 @@ If you continue from this point, it is quite likely that all intensity computati
 
     def OnNewGSASII(self, event):
         '''Gets a GSAS-II .gpx project file in response to the
-        File/Open new window menu button. Runs only on Mac.
+        File/Open new window menu button.
         '''
         if self.LastGPXdir:
             pth = self.LastGPXdir

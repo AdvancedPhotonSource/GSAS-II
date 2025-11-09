@@ -445,7 +445,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = False
                 self.Bind(wx.EVT_CHAR,self._GetStringValue)
-
+        # Mac is "special" because backspace etc. does not trigger validator
+        if sys.platform == "darwin":
+            self.Bind(wx.EVT_KEY_DOWN,self.OnKeyDown)
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
         self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
@@ -549,7 +551,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         'Special callback for wx 2.9+ on Mac where backspace is not processed by validator'
         key = event.GetKeyCode()
         if key in [wx.WXK_BACK, wx.WXK_DELETE]:
-            if self.Validator: wx.CallAfter(self.Validator.TestValid,self)
+            wx.CallAfter(self._TestValidity)
         if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             self._onLoseFocus(None)
         if event: event.Skip()
@@ -562,15 +564,21 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             wx.CallAfter(self.ShowStringValidity,True) # was invalid
         else:
             wx.CallAfter(self.ShowStringValidity,False) # was valid
-
+            
+    def _TestValidity(self):
+        'Check validity and change colors accordingly'
+        if self.Validator:
+            self.Validator.TestValid(self)
+            self._IndicateValidity()
+            
     def _IndicateValidity(self):
         'Set the control colors to show invalid input'
         if self.invalid:
             ins = self.GetInsertionPoint()
             self.SetForegroundColour("red")
             self.SetBackgroundColour("yellow")
-            if not sys.platform.startswith("linux"):
-                self.SetFocus()
+            #if not sys.platform.startswith("linux"):
+            #    self.SetFocus() # was needed -- now seems to cause problems
             self.Refresh() # this selects text on some Linuxes
             self.SetSelection(0,0)   # unselect
             self.SetInsertionPoint(ins) # put insertion point back
@@ -578,8 +586,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             self.Refresh()
-            if not sys.platform.startswith("linux"):
-                self.SetFocus() # seems needed, at least on MacOS to get color change
+            #if not sys.platform.startswith("linux"):
+            #    self.SetFocus() # seems needed, at least on MacOS to get color change
 
     def _GetNumValue(self):
         'Get and where needed convert string from GetValue into int or float'
@@ -631,10 +639,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         except RuntimeError:  # ignore if control has been deleted
             return
         # always store the result
-        if self.CIFinput and '2' in platform.python_version_tuple()[0]: # Py2/CIF make results ASCII
-            self.result[self.key] = val.encode('ascii','replace')
-        else:
-            self.result[self.key] = val
+        self.result[self.key] = val
 
     def _onLeaveWindow(self,event):
         '''If the mouse leaves the text box, save the result, if valid,
@@ -647,10 +652,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self._setValue(self.result[self.key])
             except:
                 pass
+        # ignore mouse crusing
+        if self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable
+           return
         if self.type is not str:
             if not self.IsModified(): return  #ignore mouse crusing
-        elif self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable for str
-           return
+        wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
         if self.evaluated and not self.invalid: # deal with computed expressions
             if self.timer:
                 self.timer.Restart(self.delay)
@@ -671,17 +678,19 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         Evaluate and update the current control contents
         '''
         if event: event.Skip()
+        # ignore mouse crusing
+        if self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable
+           return
         if self.type is not str:
             if not self.IsModified(): return  #ignore mouse crusing
-        elif self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable for str
-           return
+        wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
         if self.evaluated: # deal with computed expressions
             if self.invalid: # don't substitute for an invalid expression
                 return
             self._setValue(self.result[self.key])
         elif self.result is not None: # show formatted result, as Bob wants
-            self.result[self.key] = self._GetNumValue()
             if not self.invalid: # don't update an invalid expression
+                self.result[self.key] = self._GetNumValue()
                 self._setValue(self.result[self.key])
 
         if self.OnLeave:
@@ -930,10 +939,7 @@ class ASCIIValidator(wxValidator):
         :param wx.TextCtrl tc: A reference to the TextCtrl that the validator
           is associated with.
         '''
-        if '2' in platform.python_version_tuple()[0]:
-            self.result[self.key] = tc.GetValue().encode('ascii','replace')
-        else:
-            self.result[self.key] = tc.GetValue()
+        self.result[self.key] = tc.GetValue()
 
     def OnChar(self, event):
         '''Called each type a key is pressed

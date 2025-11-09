@@ -445,7 +445,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = False
                 self.Bind(wx.EVT_CHAR,self._GetStringValue)
-
+        # Mac is "special" because backspace etc. does not trigger validator
+        if sys.platform == "darwin":
+            self.Bind(wx.EVT_KEY_DOWN,self.OnKeyDown)
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
         self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
@@ -549,7 +551,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         'Special callback for wx 2.9+ on Mac where backspace is not processed by validator'
         key = event.GetKeyCode()
         if key in [wx.WXK_BACK, wx.WXK_DELETE]:
-            if self.Validator: wx.CallAfter(self.Validator.TestValid,self)
+            wx.CallAfter(self._TestValidity)
         if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             self._onLoseFocus(None)
         if event: event.Skip()
@@ -562,15 +564,21 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             wx.CallAfter(self.ShowStringValidity,True) # was invalid
         else:
             wx.CallAfter(self.ShowStringValidity,False) # was valid
-
+            
+    def _TestValidity(self):
+        'Check validity and change colors accordingly'
+        if self.Validator:
+            self.Validator.TestValid(self)
+            self._IndicateValidity()
+            
     def _IndicateValidity(self):
         'Set the control colors to show invalid input'
         if self.invalid:
             ins = self.GetInsertionPoint()
             self.SetForegroundColour("red")
             self.SetBackgroundColour("yellow")
-            if not sys.platform.startswith("linux"):
-                self.SetFocus()
+            #if not sys.platform.startswith("linux"):
+            #    self.SetFocus() # was needed -- now seems to cause problems
             self.Refresh() # this selects text on some Linuxes
             self.SetSelection(0,0)   # unselect
             self.SetInsertionPoint(ins) # put insertion point back
@@ -578,8 +586,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             self.Refresh()
-            if not sys.platform.startswith("linux"):
-                self.SetFocus() # seems needed, at least on MacOS to get color change
+            #if not sys.platform.startswith("linux"):
+            #    self.SetFocus() # seems needed, at least on MacOS to get color change
 
     def _GetNumValue(self):
         'Get and where needed convert string from GetValue into int or float'
@@ -631,10 +639,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         except RuntimeError:  # ignore if control has been deleted
             return
         # always store the result
-        if self.CIFinput and '2' in platform.python_version_tuple()[0]: # Py2/CIF make results ASCII
-            self.result[self.key] = val.encode('ascii','replace')
-        else:
-            self.result[self.key] = val
+        self.result[self.key] = val
 
     def _onLeaveWindow(self,event):
         '''If the mouse leaves the text box, save the result, if valid,
@@ -647,10 +652,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self._setValue(self.result[self.key])
             except:
                 pass
+        # ignore mouse crusing
+        if self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable
+           return
         if self.type is not str:
             if not self.IsModified(): return  #ignore mouse crusing
-        elif self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable for str
-           return
+        wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
         if self.evaluated and not self.invalid: # deal with computed expressions
             if self.timer:
                 self.timer.Restart(self.delay)
@@ -671,17 +678,19 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         Evaluate and update the current control contents
         '''
         if event: event.Skip()
+        # ignore mouse crusing
+        if self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable
+           return
         if self.type is not str:
             if not self.IsModified(): return  #ignore mouse crusing
-        elif self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable for str
-           return
+        wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
         if self.evaluated: # deal with computed expressions
             if self.invalid: # don't substitute for an invalid expression
                 return
             self._setValue(self.result[self.key])
         elif self.result is not None: # show formatted result, as Bob wants
-            self.result[self.key] = self._GetNumValue()
             if not self.invalid: # don't update an invalid expression
+                self.result[self.key] = self._GetNumValue()
                 self._setValue(self.result[self.key])
 
         if self.OnLeave:
@@ -930,10 +939,7 @@ class ASCIIValidator(wxValidator):
         :param wx.TextCtrl tc: A reference to the TextCtrl that the validator
           is associated with.
         '''
-        if '2' in platform.python_version_tuple()[0]:
-            self.result[self.key] = tc.GetValue().encode('ascii','replace')
-        else:
-            self.result[self.key] = tc.GetValue()
+        self.result[self.key] = tc.GetValue()
 
     def OnChar(self, event):
         '''Called each type a key is pressed
@@ -10128,6 +10134,80 @@ If "Yes", GSAS-II will reopen the project after the update.
     G2fil.openInNewTerm(project)
     print ('exiting GSAS-II')
     sys.exit()
+
+def StringSearchTemplate(parent,title,prompt,start,help=None):
+    '''Dialog to obtain a single string value from user
+
+    :param wx.Frame parent: name of parent frame
+    :param str title: title string for dialog
+    :param str prompt: string to tell use what they are inputting
+    :param str start: default input value, if any
+    :param str help: if supplied, a help button is added to the dialog that
+      can be used to display the supplied help text/URL for setting this
+      variable. (Default is '', which is ignored.)
+    '''
+    def on_invalid():
+        G2MessageBox(parent,
+            'The pattern must retain some non-blank characters from the original string. Resetting so you can start again.','Try again')
+        valItem.SetValue(start)
+        return
+    def on_char_typed(event):
+        keycode = event.GetKeyCode()
+        if keycode == 32 or keycode == 63: # ' ' or '?' - replace with '?'
+            #has a range been selected?
+            sel = valItem.GetSelection()
+            if sel[0] == sel[1]:
+                insertion_point = valItem.GetInsertionPoint()
+                sel = (insertion_point,insertion_point+1)
+            for i in range(*sel):
+                valItem.Replace(i, i + 1, '?')
+            # Move the insertion point forward one character
+            valItem.SetInsertionPoint(i + 1)
+            # make sure some characters remain
+            if len(valItem.GetValue().replace('?','').strip()) == 0:
+                wx.CallAfter(on_invalid)
+            event.Skip(False)
+        elif keycode >= wx.WXK_SPACE: # anything else printable, ignore
+            event.Skip(False)
+        else: # arrows etc are processed naturally
+            event.Skip(True)
+    dlg = wx.Dialog(parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    dlg.CenterOnParent()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    txt = wx.StaticText(dlg,wx.ID_ANY,prompt)
+    sizer1.Add((10,-1),1,wx.EXPAND)
+    txt.Wrap(500)
+    sizer1.Add(txt,0,wx.ALIGN_CENTER)
+    sizer1.Add((10,-1),1,wx.EXPAND)
+    if help:
+        sizer1.Add(HelpButton(dlg,help),0,wx.ALL)
+    mainSizer.Add(sizer1,0,wx.EXPAND)
+    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    valItem = wx.TextCtrl(dlg,wx.ID_ANY,value=start,style=wx.TE_PROCESS_ENTER)
+    valItem.Bind(wx.EVT_CHAR, on_char_typed)
+    valItem.Bind(wx.EVT_TEXT_ENTER, lambda event: event.Skip(False))
+    wx.CallAfter(valItem.SetSelection,0,0) # clear the initial selection
+    mainSizer.Add(valItem,1,wx.EXPAND)
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_OK)
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    ans = dlg.ShowModal()
+    if ans != wx.ID_OK:
+        dlg.Destroy()
+        return
+    else:
+        val = valItem.GetValue()
+        dlg.Destroy()
+    return val
 
 if __name__ == '__main__':
     app = wx.App()

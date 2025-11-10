@@ -24,6 +24,7 @@ dict entry has contents of form:
 where `innerdict` can contain the following elements:
 
  *  'val' : (array, key)
+ *  'range' : (float,float)
  *  'ref' : (array, key)
  *  'str' : string
  *  'init' : float
@@ -39,6 +40,10 @@ One of 'val', 'ref' or 'str' elements will be present.
  *  The 'val' tuple provides a reference to the float value for the 
     defined quantity, where array[key] provides r/w access to the
     parameter.
+
+ *  The 'range' list/tuple provides min and max float value for the 
+    defined quantity to be defined. Use None for any value that
+    should not be enforced. The 'range' values will  
 
  *  The 'ref' tuple provides a reference to the bool value, where 
     array[key] provides r/w access to the refine flag for the 
@@ -110,7 +115,8 @@ def UpdateGroup(G2frame,item,plot=True):
     dsplType = wx.ComboBox(topParent,wx.ID_ANY,
                                value=G2frame.GroupInfo['displayMode'],
                                choices=['Hist/Phase','Sample','Instrument',
-                                            'Instrument-\u0394'],
+                                            'Instrument-\u0394',
+                                            'Limits','Background'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
     dsplType.Bind(wx.EVT_COMBOBOX, onDisplaySel)
     topSizer.Add(dsplType,0,WACV)
@@ -132,7 +138,6 @@ def UpdateGroup(G2frame,item,plot=True):
     else:
         HistFrame(G2frame)
     if plot: G2pwpl.PlotPatterns(G2frame,plotType='GROUP')
-    #print('CallLater')
     G2frame.dataWindow.SetDataSize()
     #wx.CallLater(100,G2frame.SendSizeEvent)
     wx.CallAfter(G2frame.SendSizeEvent)
@@ -165,14 +170,45 @@ def histLabels(G2frame):
                    for h in groupDict[groupName]]
     return commonltrs,histlbls
 
+def onRefineAll(event):
+    but = event.GetEventObject()
+    refList = but.refList
+    checkButList = but.checkButList
+    
+    print('before',[item[0][item[1]] for item in refList])
+    if but.GetLabelText() == 'S':
+        setting = True
+        but.SetLabelText('C')
+    else:
+        setting = False
+        but.SetLabelText('S')
+    for c in checkButList:
+        c.SetValue(setting)
+    for item in refList:
+        item[0][item[1]] = setting
+    print('after ',[item[0][item[1]] for item in refList])
+
 def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
     '''Displays the data table in `Table` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
     firstentry = None
 
+    checkButList = {}
     for row in rowLabels:
-        if lblRow:         # show the row labels, when not in a separate sizer
+        checkButList[row] = []
+        # show the row labels, when not in a separate sizer
+        if lblRow:
+            # is a copy across and/or a refine all button needed?
+            refList = []
+            valList = []
+            for hist in Table:
+                if row not in Table[hist]: continue
+                if 'val' in Table[hist][row]:
+                    valList.append(Table[hist][row]['val'])
+                if 'ref' in Table[hist][row]:
+                    refList.append(Table[hist][row]['ref'])
+
             arr = None
             for hist in Table:
                 if row not in Table[hist]: continue
@@ -185,24 +221,50 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
             else:
                 Sizer.Add(
                           G2G.ValidatedTxtCtrl(Panel,arr,key,size=(125,-1)),
-                            0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)           
+                            0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+
+            if len(refList) > 2:
+                refAll = wx.Button(Panel,label='S',style=wx.BU_EXACTFIT)
+                refAll.refList = refList
+                refAll.Bind(wx.EVT_BUTTON,onRefineAll)
+                refAll.checkButList = checkButList[row]
+                Sizer.Add(refAll,0,wx.ALIGN_CENTER_VERTICAL)               
+            else:
+                Sizer.Add((-1,-1))
+            if len(valList) > 2:
+                but = wx.Button(Panel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
+                but.valList = valList
+                Sizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
+            else:
+                Sizer.Add((-1,-1))
+ 
         for hist in Table:
+            minval = None
+            maxval = None
             # format the entry depending on what is defined
             if row not in Table[hist]:
                 Sizer.Add((-1,-1))
-            elif ('init' in Table[hist][row] and
+                continue
+            elif 'range' in Table[hist][row]:
+                minval, maxval = Table[hist][row]['range']
+            if ('init' in Table[hist][row] and
                       deltaMode and 'ref' in Table[hist][row]):
                 arr,indx = Table[hist][row]['val']
                 delta = arr[indx]
                 arr,indx = Table[hist][row]['init']
                 delta -= arr[indx]
                 if abs(delta) < 1e-9: delta = 0.
-                deltaS = f"\u0394 {delta:.4g} "
+                if delta == 0:
+#                    deltaS = "0.0  "
+                    deltaS = ""
+                else:
+                    deltaS = f"\u0394 {delta:.4g} "
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
                 valrefsiz.Add(wx.StaticText(Panel,label=deltaS),0)
                 arr,indx = Table[hist][row]['ref']
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
                 valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL)
+                checkButList[row].append(w)
                 Sizer.Add(valrefsiz,0,
                                  wx.EXPAND|wx.ALIGN_RIGHT)
             elif 'init' in Table[hist][row] and deltaMode:
@@ -211,30 +273,38 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
                 delta = arr[indx]
                 arr,indx = Table[hist][row]['init']
                 delta -= arr[indx]
-                deltaS = f"\u0394 {delta:.4g}"
+                if delta == 0:
+#                    deltaS = "0.0  "
+                    deltaS = ""
+                else:
+                    deltaS = f"\u0394 {delta:.4g} "
                 Sizer.Add(wx.StaticText(Panel,label=deltaS),0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
             elif 'val' in Table[hist][row] and 'ref' in Table[hist][row]:
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
                 arr,indx = Table[hist][row]['val']
-                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1))
+                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
+                                    xmin=minval,xmax=maxval)
                 valrefsiz.Add(w,0,WACV)
                 if firstentry is None: firstentry = w
                 arr,indx = Table[hist][row]['ref']
-                valrefsiz.Add(G2G.G2CheckBox(Panel,'',arr,indx),0,
-                                 wx.ALIGN_CENTER_VERTICAL)
+                w = G2G.G2CheckBox(Panel,'',arr,indx)
+                valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL)
+                checkButList[row].append(w)
                 Sizer.Add(valrefsiz,0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
             elif 'val' in Table[hist][row]:
                 arr,indx = Table[hist][row]['val']
-                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),notBlank=False)
+                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
+                            xmin=minval,xmax=maxval,notBlank=False)
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
                 if firstentry is None: firstentry = w
 
             elif 'ref' in Table[hist][row]:
                 arr,indx = Table[hist][row]['ref']
-                Sizer.Add(G2G.G2CheckBox(Panel,'',arr,indx),0,
-                                 wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                w = G2G.G2CheckBox(Panel,'',arr,indx)
+                valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                checkButList[row].append(w)
             elif 'str' in Table[hist][row]:
                 Sizer.Add(wx.StaticText(Panel,label=Table[hist][row]['str']),0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
@@ -253,6 +323,10 @@ def HistFrame(G2frame):
         prmTable = getSampleVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
         prmTable = getInstVals(G2frame,Histograms)
+    elif G2frame.GroupInfo['displayMode'].startswith('Limits'):
+        prmTable = getLimitVals(G2frame,Histograms)
+    elif G2frame.GroupInfo['displayMode'].startswith('Background'):
+        prmTable = getBkgVals(G2frame,Histograms)
     else:
         print('Unexpected', G2frame.GroupInfo['displayMode'])
         return
@@ -279,9 +353,11 @@ def HistFrame(G2frame):
     panel.SetSizer(mainSizer)
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
 
-    valSizer = wx.FlexGridSizer(0,len(prmTable)+1,3,10)
+    valSizer = wx.FlexGridSizer(0,len(prmTable)+3,3,10)
     mainSizer.Add(valSizer,1,wx.EXPAND)
     valSizer.Add(wx.StaticText(midPanel,label=' '))
+    valSizer.Add(wx.StaticText(midPanel,label=' Ref '))
+    valSizer.Add(wx.StaticText(midPanel,label=' Copy '))
     for hist in histLabels(G2frame)[1]:
             valSizer.Add(wx.StaticText(midPanel,
                         label=f"\u25A1 = {hist}"),
@@ -446,7 +522,74 @@ def getInstVals(G2frame,Histograms):
                         'str' : f'{arr[1]:{fmt}}'}
         parmDict[hist] = hpD
     return parmDict
-                
+
+def getLimitVals(G2frame,Histograms):
+    '''Generate the Limits Data Table (a dict of dicts) with 
+    all limits values for all histograms in the 
+    selected histogram group (from G2frame.GroupInfo['groupName']).
+    This will be used to generate the contents of the GUI for limits values.
+    '''
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+    groupName = G2frame.GroupInfo['groupName']
+    groupDict = Controls.get('Groups',{}).get('groupDict',{})
+    if groupName not in groupDict:
+        print(f'Unexpected: {groupName} not in groupDict')
+        return
+    # parameters to include in table
+    parms = []
+    parmDict = {}
+   # loop over histograms in group
+    for hist in groupDict[groupName]:
+        histdata = Histograms[hist]
+        hpD = {}
+        #breakpoint()
+        hpD['Tmin'] = {
+            'val' : (histdata['Limits'][1],0),
+            'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]
+            }
+        hpD['Tmax'] = {
+            'val' : (histdata['Limits'][1],1),
+            'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]
+            }
+        for i,item in enumerate(histdata['Limits'][2:]):
+            hpD[f'excl Low {i+1}'] = {
+                'val' : (item,0),
+                'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]}
+            hpD[f'excl High {i+1}'] = {
+                'val' : (item,1),
+                'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]}
+        parmDict[hist] = hpD
+    return parmDict
+
+
+def getBkgVals(G2frame,Histograms):
+    '''Generate the Background Data Table (a dict of dicts) with 
+    all Background values for all histograms in the 
+    selected histogram group (from G2frame.GroupInfo['groupName']).
+    This will be used to generate the contents of the GUI for 
+    Background values.
+    '''
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+    groupName = G2frame.GroupInfo['groupName']
+    groupDict = Controls.get('Groups',{}).get('groupDict',{})
+    if groupName not in groupDict:
+        print(f'Unexpected: {groupName} not in groupDict')
+        return
+    # parameters to include in table
+    parms = []
+    parmDict = {}
+   # loop over histograms in group
+    for hist in groupDict[groupName]:
+        histdata = Histograms[hist]
+        hpD = {}
+        hpD['Inst. name'] = {
+            'val' : (histdata['Sample Parameters'],'InstrName')}
+
+        #...
+        parmDict[hist] = hpD
+    return parmDict
+
+
 def HAPframe(G2frame):
     '''This creates two side-by-side scrolled panels, each containing 
     a FlexGridSizer.

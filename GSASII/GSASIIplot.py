@@ -7369,7 +7369,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl
                             GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                             Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat) #TODO: needs symmetry operation for equiv. positions
-                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam-1))
+                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                             if np.min(P) < np.max(P):
                                 P = (P-np.min(P))/(np.max(P)-np.min(P))
                             RenderTextureSphere(x,y,z,radius,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)

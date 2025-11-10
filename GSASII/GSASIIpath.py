@@ -1135,8 +1135,10 @@ def exceptHook(*args):
     import IPython.core
     savehook = sys.excepthook # save the exception hook
     # show the error location
-    tb_formatter = IPython.core.ultratb.FormattedTB()
-    #tb_formatter = IPython.core.ultratb.ListTB() # better for windows?
+    if sys.platform == "win32":
+        tb_formatter = IPython.core.ultratb.ListTB() # better for windows?
+    else:
+        tb_formatter = IPython.core.ultratb.FormattedTB()
     print() # blank line
     print(tb_formatter.text(*args,-1),end='') # show only last routine
     # get the Ipython shell routine
@@ -1146,12 +1148,11 @@ def exceptHook(*args):
         ipshell = IPython.terminal.embed.InteractiveShellEmbed()
     # traceback display routines
     def TB(): print(IPython.core.ultratb.FormattedTB().text(*args))
-    def vTB(): print(IPython.core.ultratb.VerboseTB().text(*args))
+    def vTB(): print(IPython.core.ultratb.VerboseTB().text(*args,-1))
     def bwTB(): print(IPython.core.ultratb.ListTB().text(*args)) # uncolored
     try:     # get to the right frame
         import inspect
-        frame = inspect.getinnerframes(args[2])[-1][0]
-        import copy
+        frame = inspect.getinnerframes(args[2])[-2][0]
         locals = frame.f_locals  # add traceback commands to shell namespace
         locals['TB'] = TB
         locals['vTB'] = vTB

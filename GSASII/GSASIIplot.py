@@ -7364,12 +7364,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
                             SGC = G2lat.CrysM2CartM(Amat,Bmat,SGM)
                             UVMat = np.inner(defCtrls['UVmat'],SGC)
-                            Npsi,Ngam = 91,46 
+                            Npsi,Ngam = 90,45 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
-                            PSI = PSI.flatten()*360./(Npsi-1)  #azimuth 0-360 incl
-                            GAM = GAM.flatten()*180./(Ngam-1)  #polar 0-180 incl
+                            PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl
+                            GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                             Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat) #TODO: needs symmetry operation for equiv. positions
-                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
+                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam-1))
                             if np.min(P) < np.max(P):
                                 P = (P-np.min(P))/(np.max(P)-np.min(P))
                             RenderTextureSphere(x,y,z,radius,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)

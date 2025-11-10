@@ -171,11 +171,17 @@ def histLabels(G2frame):
     return commonltrs,histlbls
 
 def onRefineAll(event):
+    '''Respond to the Refine All button. On the first press, all 
+    refine check buttons are set as "on" and the button is relabeled 
+    as 'C' (for clear). On the second press,  all refine check 
+    buttons are set as "off" and the button is relabeled as 'S' (for 
+    set).
+    '''
     but = event.GetEventObject()
     refList = but.refList
     checkButList = but.checkButList
     
-    print('before',[item[0][item[1]] for item in refList])
+    #print('before',[item[0][item[1]] for item in refList])
     if but.GetLabelText() == 'S':
         setting = True
         but.SetLabelText('C')
@@ -186,17 +192,36 @@ def onRefineAll(event):
         c.SetValue(setting)
     for item in refList:
         item[0][item[1]] = setting
-    print('after ',[item[0][item[1]] for item in refList])
+    #print('after ',[item[0][item[1]] for item in refList])
 
-def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
+def onSetAll(event):
+    '''Respond to the copy right button. Copies the first value to 
+    all edit widgets
+    '''
+    but = event.GetEventObject()
+    valList = but.valList
+    valEditList = but.valEditList
+    #print('before',[item[0][item[1]] for item in valList])
+    firstVal = valList[0][0][valList[0][1]]
+    for c in valEditList:
+        c.ChangeValue(firstVal)
+    #print('after',[item[0][item[1]] for item in valList])
+
+    
+def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,lblSizer=None,lblPanel=None):
     '''Displays the data table in `Table` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
     firstentry = None
-
+    #lblRow = True
+    if lblSizer is None: lblSizer = Sizer
+    if lblPanel is None: lblPanel = Panel
     checkButList = {}
+    valEditList = {}
+    lblDict = {}
     for row in rowLabels:
         checkButList[row] = []
+        valEditList[row] = []
         # show the row labels, when not in a separate sizer
         if lblRow:
             # is a copy across and/or a refine all button needed?
@@ -216,27 +241,28 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
                     arr,key = Table[hist][row]['rowlbl']
                     break
             if arr is None:
-                Sizer.Add(wx.StaticText(Panel,label=row),0,
-                             wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                w = wx.StaticText(lblPanel,label=row)
             else:
-                Sizer.Add(
-                          G2G.ValidatedTxtCtrl(Panel,arr,key,size=(125,-1)),
-                            0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+                w = G2G.ValidatedTxtCtrl(lblPanel,arr,key,size=(125,-1))
+            lblSizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+            lblDict[row] = w
 
             if len(refList) > 2:
-                refAll = wx.Button(Panel,label='S',style=wx.BU_EXACTFIT)
+                refAll = wx.Button(lblPanel,label='S',style=wx.BU_EXACTFIT)
                 refAll.refList = refList
-                refAll.Bind(wx.EVT_BUTTON,onRefineAll)
                 refAll.checkButList = checkButList[row]
-                Sizer.Add(refAll,0,wx.ALIGN_CENTER_VERTICAL)               
+                lblSizer.Add(refAll,0,wx.ALIGN_CENTER_VERTICAL)               
+                refAll.Bind(wx.EVT_BUTTON,onRefineAll)
             else:
-                Sizer.Add((-1,-1))
+                lblSizer.Add((-1,-1))
             if len(valList) > 2:
-                but = wx.Button(Panel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
+                but = wx.Button(lblPanel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
                 but.valList = valList
-                Sizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
+                but.valEditList = valEditList[row] 
+                lblSizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
+                but.Bind(wx.EVT_BUTTON,onSetAll)
             else:
-                Sizer.Add((-1,-1))
+                lblSizer.Add((-1,-1))
  
         for hist in Table:
             minval = None
@@ -285,6 +311,7 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
                 arr,indx = Table[hist][row]['val']
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
                                     xmin=minval,xmax=maxval)
+                valEditList[row].append(w)
                 valrefsiz.Add(w,0,WACV)
                 if firstentry is None: firstentry = w
                 arr,indx = Table[hist][row]['ref']
@@ -297,6 +324,7 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
                 arr,indx = Table[hist][row]['val']
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
                             xmin=minval,xmax=maxval,notBlank=False)
+                valEditList[row].append(w)
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
                 if firstentry is None: firstentry = w
 
@@ -310,7 +338,8 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False):
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
             else:
                 print('Should not happen',Table[hist][row],hist,row)
-    return firstentry
+    return firstentry,lblDict
+
 
 def HistFrame(G2frame):
     '''Give up on side-by-side scrolled panels. Put everything 
@@ -363,8 +392,9 @@ def HistFrame(G2frame):
                         label=f"\u25A1 = {hist}"),
                              0,wx.ALIGN_CENTER)
     deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
-    firstentry = displayDataTable(rowLabels,prmTable,valSizer,midPanel,
-                                      True,deltaMode)
+    firstentry,lblDict = displayDataTable(rowLabels,prmTable,valSizer,midPanel,
+                                      lblRow=True,
+                                      deltaMode=deltaMode)
     #G2frame.dataWindow.SetDataSize()
     if firstentry is not None:    # prevent scroll to show last entry
         wx.Window.SetFocus(firstentry)
@@ -645,7 +675,7 @@ def HAPframe(G2frame):
         lblScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
         hpad = 3  # space between rows
-        lblSizer = wx.FlexGridSizer(0,1,hpad,10)
+        lblSizer = wx.FlexGridSizer(0,3,hpad,2)
         lblScroll.SetSizer(lblSizer)
         bigSizer.Add(lblScroll,0,wx.EXPAND)
 
@@ -663,18 +693,31 @@ def HAPframe(G2frame):
         for hist in histLabels(G2frame)[1]:
             HAPSizer.Add(wx.StaticText(HAPScroll,label=f"\u25A1 = {hist}"),
                              0,wx.ALIGN_CENTER)
-        firstentry = displayDataTable(rowLabels,HAPtable,HAPSizer,HAPScroll)
+        w0 = wx.StaticText(lblScroll,label=' ')
+        lblSizer.Add(w0)
+        lblSizer.Add(wx.StaticText(lblScroll,label=' Ref '))
+        lblSizer.Add(wx.StaticText(lblScroll,label=' Copy '))
+        firstentry,lblDict = displayDataTable(rowLabels,HAPtable,HAPSizer,HAPScroll,
+                    lblRow=True,lblSizer=lblSizer,lblPanel=lblScroll)
         # get row sizes in data table
         HAPSizer.Layout()
         rowHeights = HAPSizer.GetRowHeights()
-        # match rose sizes in Labels
+        # set row sizes in Labels
         # (must be done after HAPSizer row heights are defined)
         s = wx.Size(-1,rowHeights[0])
-        lblSizer.Add(wx.StaticText(lblScroll,label=' ',size=s))
+        w0.SetMinSize(s)
+        # for i,row in enumerate(rowLabels):
+        #     s = wx.Size(-1,rowHeights[i+1])
+        #     w = wx.StaticText(lblScroll,label=row,size=s)
+        #     lblSizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        # lblDict = {}
+        # for i,row in enumerate(rowLabels):
+        #     w = wx.StaticText(lblScroll,label=row)
+        #     lblDict[row] = w
+        #     lblSizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         for i,row in enumerate(rowLabels):
             s = wx.Size(-1,rowHeights[i+1])
-            lblSizer.Add(wx.StaticText(lblScroll,label=row,size=s),0,
-                             wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+            lblDict[row].SetMinSize(s)
         # Fit the scrolled windows to their content
         lblSizer.Layout()
         xLbl,_ = lblSizer.GetMinSize()

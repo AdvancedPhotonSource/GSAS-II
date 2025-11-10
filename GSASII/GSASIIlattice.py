@@ -2989,8 +2989,8 @@ def SetUVvec(Neigh):
     return UVvec,UVchoice
 
 def SHarmcal(SytSym,SHFln,psi,gam):
-    '''Perform a surface spherical harmonics computation.
-    Presently only used for plotting
+    '''Perform a surface spherical harmonics computation & return sum of squares.
+    Only used for plotting
     Note that the the number of gam values must either be 1 or must match psi
 
     :param str SytSym: site symmetry - only looking for cubics
@@ -3008,9 +3008,8 @@ def SHarmcal(SytSym,SHFln,psi,gam):
             if SytSym in ['m3m','m3','43m','432','23'] or 'c' in trm:
                 Ksl = CubicSHarm(l,m,psi,gam)
             else:
-                # p = SHFln[term][2]
                 Ksl = SphHarmAng(l,m,1.0,psi,gam)
-            SHVal += SHFln[term][0]*Ksl
+            SHVal += (SHFln[term][0]*Ksl)**2
     return SHVal
 
 def KslCalc(trm,psi,gam):

@@ -340,8 +340,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.Cmin = 0.0
                 Page.plotStyle['Offset'] = [0,0]
         elif event.key == 'C' and 'PWDR' in plottype and G2frame.Contour:
-            #G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plotType)
-            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,True,plotType) # force newPlot=True, prevents blank plot on Mac
+            #G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plottype)
+            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,True,plottype) # force newPlot=True, prevents blank plot on Mac
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
@@ -435,7 +435,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.Contour = False
             newPlot = True
         elif event.key == 'F' and not G2frame.SinglePlot:
-            choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
+            choices = G2gd.GetGPXtreeDataNames(G2frame,plottype)
             dlg = G2G.G2MultiChoiceDialog(G2frame,
                 'Select dataset(s) to plot\n(select all or none to reset)', 
                 'Multidata plot selection',choices)
@@ -648,7 +648,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.SetToolTipString(s)
 
         except TypeError:
-            G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
+            G2frame.G2plotNB.status.SetStatusText(f'Select {plottype} pattern first',1)
                 
     def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots
         np.seterr(invalid='ignore')
@@ -1680,7 +1680,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
     groupName = None
     groupDict = {}
-    if plotType == 'GROUP':
+    if plottype == 'GROUP':
         groupName = G2frame.GroupInfo['groupName'] # set in GSASIIgroupGUI.UpdateGroup
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         groupDict = Controls.get('Groups',{}).get('groupDict',{})
@@ -1705,8 +1705,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
     # if we are changing histogram types (including group to individual, reset plot)
     if not new and hasattr(Page,'prevPlotType'):
-        if Page.prevPlotType != plotType: new = True
-    Page.prevPlotType = plotType
+        if Page.prevPlotType != plottype: new = True
+    Page.prevPlotType = plottype
 
     if G2frame.ifSetLimitsMode and G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Limits':
         # note mode
@@ -1721,7 +1721,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Page.excludeMode = False  # True when defining an excluded region
     Page.savedplot = None
 #patch
-    if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
+    if 'Offset' not in Page.plotStyle and plottype in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
         Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':float(0.02*Ymax),
             'refOffset':float(-0.1*Ymax),'refDelt':float(0.1*Ymax),})
@@ -1734,7 +1734,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     except:
         G2frame.lastPlotType = None
     
-    if plotType == 'PWDR' or plotType == 'GROUP':
+    if plottype == 'PWDR' or plottype == 'GROUP':
         try:
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 G2frame.PatternId, 'Instrument Parameters'))
@@ -1792,7 +1792,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
                 G2frame.GPXtree.SelectItem(G2frame.PatternId)
-                PlotPatterns(G2frame,True,plotType,None,extraKeys)
+                PlotPatterns(G2frame,True,plottype,None,extraKeys)
     #=====================================================================================
     elif 'PlotDefaults' in data[0] and fromTree:  # set style from defaults saved with '!'
         #print('setting plot style defaults')
@@ -1810,17 +1810,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         newPlot = True
         G2frame.Cmin = 0.0
         G2frame.Cmax = 1.0
-        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-        Page.canvas.mpl_connect('pick_event', OnPickPwd)
-        Page.canvas.mpl_connect('button_release_event', OnRelease)
-        Page.canvas.mpl_connect('button_press_event',OnPress)
-        Page.bindings = []
-    # redo OnPlotKeyPress binding each time the Plot is updated
-    # since needs values that may have been changed after 1st call
-    for b in Page.bindings:
+    # redo plot binding each time the Plot is updated since values
+    # may have been changed after 1st call
+    try:
+        G2frame.PlotBindings
+    except:
+        G2frame.PlotBindings = []
+    for b in G2frame.PlotBindings:
         Page.canvas.mpl_disconnect(b)
-    Page.bindings = []
-    Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
+    G2frame.PlotBindings = []
+    for e,r in [('motion_notify_event', OnMotion),
+                ('pick_event', OnPickPwd),
+                ('button_release_event', OnRelease),
+                ('button_press_event',OnPress),
+                ('key_press_event', OnPlotKeyPress)]:
+        G2frame.PlotBindings.append(Page.canvas.mpl_connect(e,r))
     if not G2frame.PickId:
         print('No plot, G2frame.PickId,G2frame.PatternId=',G2frame.PickId,G2frame.PatternId)
         return
@@ -1888,7 +1892,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if G2frame.PickId:
                 kwargs['PickName'] = G2frame.GPXtree.GetItemText(G2frame.PickId)
             wx.CallAfter(G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
-                (G2frame,newPlot,plotType),kwargs))
+                (G2frame,newPlot,plottype),kwargs))
     except:         #skip a C++ error
         pass
     # now start plotting
@@ -2022,7 +2026,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:     #G2frame.selection   
         Title = os.path.split(G2frame.GSASprojectfile)[1]
         if G2frame.selections is None:
-            choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
+            choices = G2gd.GetGPXtreeDataNames(G2frame,plottype)
         else:
             choices = G2frame.selections
         PlotList = []

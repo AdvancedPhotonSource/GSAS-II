@@ -1148,17 +1148,17 @@ def exceptHook(*args):
         ipshell = IPython.terminal.embed.InteractiveShellEmbed()
     # traceback display routines
     def TB(): print(IPython.core.ultratb.FormattedTB().text(*args))
-    def vTB(): print(IPython.core.ultratb.VerboseTB().text(*args,-1))
+    def vTB(depth=-1): print(IPython.core.ultratb.VerboseTB().text(*args,depth))
     def bwTB(): print(IPython.core.ultratb.ListTB().text(*args)) # uncolored
     try:     # get to the right frame
         import inspect
-        frame = inspect.getinnerframes(args[2])[-2][0]
+        frame = inspect.getinnerframes(args[2])[-1][0]
         locals = frame.f_locals  # add traceback commands to shell namespace
         locals['TB'] = TB
         locals['vTB'] = vTB
         locals['bwTB'] = bwTB
         msg = f'IPython console: {frame.f_code.co_filename}, line {frame.f_lineno}'
-        msg += '\n[TB(), vTB() & bwTB() for tracebacks]'
+        msg += '\n[TB(), vTB()/vTB(0) & bwTB() for tracebacks]'
         ipshell(msg,local_ns=locals,global_ns=frame.f_globals)
     except:
         msg = 'Entering IPython console (not in error contex)'

@@ -429,6 +429,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = True
                 self._IndicateValidity()
+            wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
         else:
             if self.CIFinput:
                 wx.TextCtrl.__init__(
@@ -468,7 +469,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
         if GSASIIpath.GetConfigValue('debug') and warn:
-            print('ValidatedTxtCtrl.SetValue() used in callback. Batter as ChangeValue()?')
+            print('ValidatedTxtCtrl.SetValue() used in callback. Better as ChangeValue()?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val

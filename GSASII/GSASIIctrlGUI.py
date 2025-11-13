@@ -429,7 +429,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = True
                 self._IndicateValidity()
-#            wx.CallAfter(self._TestValidity)    # test/show validity
+            wx.CallAfter(self._TestValidity)    # test/show validity
         else:
             if self.CIFinput:
                 wx.TextCtrl.__init__(
@@ -568,9 +568,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             
     def _TestValidity(self):
         'Check validity and change colors accordingly'
-        if self.Validator:
-            self.Validator.TestValid(self)
-            self._IndicateValidity()
+        try:
+            if self.Validator:
+                self.Validator.TestValid(self)
+                self._IndicateValidity()
+        except RuntimeError:
+            pass
             
     def _IndicateValidity(self):
         'Set the control colors to show invalid input'

@@ -429,7 +429,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = True
                 self._IndicateValidity()
-            wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
+#            wx.CallAfter(self._TestValidity)    # test/show validity
         else:
             if self.CIFinput:
                 wx.TextCtrl.__init__(

@@ -1158,7 +1158,7 @@ def exceptHook(*args):
         locals['vTB'] = vTB
         locals['bwTB'] = bwTB
         msg = f'IPython console: {frame.f_code.co_filename}, line {frame.f_lineno}'
-        msg += '\n[TB(), vTB()/vTB(0) & bwTB() for tracebacks]'
+        msg += '\n[TB(), vTB(-n)/vTB(0) & bwTB() for tracebacks to n levels back]'
         ipshell(msg,local_ns=locals,global_ns=frame.f_globals)
     except:
         msg = 'Entering IPython console (not in error contex)'

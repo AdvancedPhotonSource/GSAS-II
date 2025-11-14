@@ -572,7 +572,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             if self.Validator:
                 self.Validator.TestValid(self)
                 self._IndicateValidity()
-        except RuntimeError:
+        except RuntimeError:    #bandaid to avoid C++ error; deleted self.Validator?
             pass
             
     def _IndicateValidity(self):

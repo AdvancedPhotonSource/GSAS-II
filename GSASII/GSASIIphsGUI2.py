@@ -207,15 +207,15 @@ def UpdateDeformation(G2frame,data,AtdId):
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
     
     def MakeUVmat(defData,U,V):
-        MX = U
+        MX = U/nl.norm(U)
         if 'A' in defData['MUV']:
-            MY = V
+            MY = V/nl.norm(V)
             MZ = np.cross(MX,MY)
             MZ /= nl.norm(MZ)
             MY = np.cross(MZ,MX)
             MY /= nl.norm(MY)
         else:
-            MZ = V
+            MZ = V/nl.norm(V)
             MY = np.cross(MZ,MX)
             MY /= nl.norm(MY)
             MZ = np.cross(MX,MY)

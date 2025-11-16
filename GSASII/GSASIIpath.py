@@ -1147,9 +1147,9 @@ def exceptHook(*args):
     else: # older IPython (still needed?)
         ipshell = IPython.terminal.embed.InteractiveShellEmbed()
     # traceback display routines
-    def TB(): print(IPython.core.ultratb.FormattedTB().text(*args))
+    def TB(depth=None): print(IPython.core.ultratb.FormattedTB().text(*args,depth))
     def vTB(depth=-1): print(IPython.core.ultratb.VerboseTB().text(*args,depth))
-    def bwTB(): print(IPython.core.ultratb.ListTB().text(*args)) # uncolored
+    def bwTB(depth=None): print(IPython.core.ultratb.ListTB().text(*args,depth)) # uncolored
     try:     # get to the right frame
         import inspect
         frame = inspect.getinnerframes(args[2])[-1][0]
@@ -1158,7 +1158,7 @@ def exceptHook(*args):
         locals['vTB'] = vTB
         locals['bwTB'] = bwTB
         msg = f'IPython console: {frame.f_code.co_filename}, line {frame.f_lineno}'
-        msg += '\n[TB(), vTB(-n)/vTB(0) & bwTB() for tracebacks to n levels back]'
+        msg += '\n[TB()/TB(-n), vTB()/vTB(-n)/vTB(0) & bwTB() for tracebacks to n levels back]'
         ipshell(msg,local_ns=locals,global_ns=frame.f_globals)
     except:
         msg = 'Entering IPython console (not in error contex)'
@@ -1855,16 +1855,6 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
             if r.status_code == 200:
                 if GetConfigValue('debug'): print('request OK')
                 page = r.text
-                if 'cryst.ehu.es' in URL and "currently down" in page:
-                    # Bilbao is down. Tell user
-                    import re
-                    print(f"Website down? See message below:\n\n{re.sub('<.+>','',page)}")
-                    try:
-                        import wx
-                        import GSASII.GSASIIctrlGUI as G2G
-                        dlg = G2G.viewWebPage(wx.GetApp().GetMainTopWindow(),URL,HTML=page)
-                    except:
-                        pass
                 if getcookie is not None:
                     getcookie.update(r.cookies)
                 return page # success

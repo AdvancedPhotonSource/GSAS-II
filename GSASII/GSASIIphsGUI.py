@@ -3252,7 +3252,7 @@ def UpdatePhaseData(G2frame,Item,data):
             with open(tmp.name,'w') as fp:
                 fp.write(pagelist[num].replace(
                 '<head>',
-                '<head><base href="https://www.cryst.ehu.es/">',
+               f'<head><base href="{SUBGROUPS.bilbaoURL}/">',
                 ))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
@@ -3439,7 +3439,7 @@ program; Please cite:
                 with open(tmp.name,'w') as fp:
                     fp.write(f.replace(
                         '<head>',
-                        '<head><base href="https://www.cryst.ehu.es/">',
+                        f'<head><base href="{SUBGROUPS.bilbaoURL}/">',
                         ))
                 fileList.append(tmp.name)
                 G2G.ShowWebPage('file://'+tmp.name,G2frame)
@@ -3919,6 +3919,9 @@ to use these entries'''
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(generalData['SGData'])
+        if xmat is None:
+            G2G.G2MessageBox(G2frame,"Unable to reach web site.",'No connection')
+            return
         if np.allclose(np.eye(3),xmat) and np.allclose(xoff,np.zeros_like(xoff)):
             msg = "Nothing to do. Structure is already set in the standard setting."
             G2G.G2MessageBox(G2frame,msg,'No change needed')

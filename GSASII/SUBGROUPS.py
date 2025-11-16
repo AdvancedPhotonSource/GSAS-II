@@ -5,6 +5,7 @@ import copy
 import random as ran
 import sys
 import os
+import wx
 import numpy as np
 import numpy.linalg as nl
 from . import GSASIIpath
@@ -13,10 +14,24 @@ from . import GSASIIspc as G2spc
 from . import GSASIIlattice as G2lat
 from . import GSASIIElem as G2elem
 from . import GSASIIctrlGUI as G2G
-bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
-submagSite = bilbaoSite + 'subgrmag1_general_GSAS.pl?'
+bilbaoURL = "http://webbdcrista2.ehu.es"
+bilbaoSite = f'{bilbaoURL}/cgi-bin/cryst/programs/'
 pseudosym = 'pseudosym/nph-pseudosym'
-timeout=150  # time to wait for www.cryst.ehu.es to respond; 2.5 minutes
+timeout=150  # time to wait for Bilbao to respond; 2.5 minutes
+
+def postpostURL(page):
+    '''warn on Bilbao down
+    '''
+    if "currently down" in page:
+        # Bilbao is down. Tell user
+        import re
+        print(f"Website down? See message below:\n\n{re.sub('<.+>','',page)}")
+        try:
+            dlg = G2G.viewWebPage(wx.GetApp().GetMainTopWindow(),URL,HTML=page)
+        except:
+            pass
+        return True
+    return False
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilbao's SUBGROUPS for a non-standard space group. 
@@ -72,7 +87,8 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
-    page = GSASIIpath.postURL(submagSite,postdict)
+    page = GSASIIpath.postURL(bilbaoSite+'subgrmag1_general_GSAS.pl?',postdict)
+    if postpostURL(page): return None,None
     if not page:
         print('connection error - not on internet?')
         return None,None
@@ -185,7 +201,8 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
-    page = GSASIIpath.postURL(submagSite,postdict)
+    page = GSASIIpath.postURL(bilbaoSite+'subgrmag1_general_GSAS.pl?',postdict)
+    if postpostURL(page): return None,None
     if not page:
         print('connection error - not on internet?')
         return None,None
@@ -246,7 +263,9 @@ def subBilbaoCheckLattice(spgNum,cell,tol=5):
     cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
     datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
         str(int(spgNum)),cellstr,str(int(tol)))
+    # self-tested?
     page = GSASIIpath.postURL(psSite,datastr,timeout=timeout)
+    if postpostURL(page): return None
     if not page:
         print('connection error - not on internet?')
         return None
@@ -303,7 +322,7 @@ def GetStdSGset(SGData=None, oprList=[]):
               G2G.GetCite('Bilbao: k-SUBGROUPSMAG',wrap=70,indent=5))
     postdict = {'tipog':'gesp','generators':'\n'.join(oprList)}
     page = GSASIIpath.postURL(Site,postdict,timeout=timeout)
-    if not page:
+    if not page or postpostURL(page):
         print('error:','No response')
         return [None,None,None,None]
 
@@ -349,7 +368,9 @@ def GetSupergroup(SGnum,dlg=None):
     import re
     Site = bilbaoSite + 'nph-minsup'
     if dlg: dlg.Update(0,newmsg='Waiting for initial web response')
+    # self-tested?
     out = GSASIIpath.postURL(Site,{'gnum':f'{SGnum:}'},timeout=timeout)
+    if postpostURL(out): return None
     if not out: return None
         
     if dlg: dlg.Update(1,newmsg='Initial table of supergroups returned')
@@ -375,8 +396,10 @@ def GetSupergroup(SGnum,dlg=None):
     for i,line in enumerate(xforms):
         click = line[-1]
         print(SGnum,click)
+        # self-tested?
         out1 = GSASIIpath.postURL(Site,{'gnum':SGnum,'show':'show','click':click}
                                 ,timeout=timeout)
+        if postpostURL(out1): return None
         if not out1: return None
         #with open(f'/tmp/{click}.html','w') as fp:
         #    fp.write(out1)
@@ -549,8 +572,10 @@ program; Please cite:
         postdict["stru"] += f"{el:4s} {i} - {atom[cx]:.5f} {atom[cx+1]:.5f} {atom[cx+2]:.5f}\n"
 #    if GSASIIpath.GetConfigValue('debug'): print(postdict["stru"])
     savedcookies = {}
+    # self-tested?
     page0 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                              getcookie=savedcookies,timeout=timeout)
+    if postpostURL(page0): return None
     if not page0: return None
     if pagelist is not None:
         pagelist[0] = page0
@@ -641,9 +666,10 @@ def BilbaoLowSymSea1(valsdict,row,savedcookies,pagelist=None):
     num = row[0]
     if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num}")
     postdict['lattice'] = num
+    # self-tested?
     page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
-    if not page1: return None,None,None,None
+    if postpostURL(page1) or not page1: return None,None,None,None
 
     lbl = f'cell{num}'
     if pagelist is not None:
@@ -677,9 +703,10 @@ def BilbaoLowSymSea2(num,valsdict,row,savedcookies,pagelist=None):
     postdict.update(valsdict)
     postdict['super_numind'] = row[1]
     if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num} supergroup {row[1]}")
+    # self-tested?
     page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
-    if page1 is None: return '',None
+    if postpostURL(page1) or page1 is None: return '',None
     lbl = f'cell{num}_{row[1]}'
     if pagelist is not None: 
         pagelist[lbl] = page1
@@ -707,9 +734,10 @@ def BilbaoSymSearch2(valsdict,csdict,rowdict,savedcookies,
             postdict = {}
             postdict.update(valsdict)
             postdict['cs'] = num
+            # self-tested?
             page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
-            if pagelist is not None:
+            if postpostURL(page1) or pagelist is not None:
                 pagelist[num] = page1
             if page1 is None:
                 structures[num] = "No response, likely web timeout"
@@ -769,9 +797,10 @@ def BilbaoReSymSearch(key,postdict,pagelist=None):
 
     '''
     savedcookies = {}
+    # self-tested?
     page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict
                              ,getcookie=savedcookies,timeout=timeout)
-    if pagelist is not None:
+    if postpostURL(page1) or pagelist is not None:
         pagelist[key] = page1
     if page1 is None: return {},{},{},savedcookies
     valsdict,csdict,rowdict = scanBilbaoSymSearch1(page1,postdict)
@@ -830,6 +859,22 @@ def test():
     are accessible and produce output that we can parse. The output 
     is displayed but not checked to see that it agrees with what 
     has been provided previously.
+
+
+    The list of routines that access the Bilbao site and are tested here are:
+    * GetNonStdSubgroupsmag (uses subgrmag1_general_GSAS.pl)
+    * GetNonStdSubgroups (subgrmag1_general_GSAS.pl)
+    * GetStdSGset (checkgr.pl)
+
+    The other routines are not yet tested that access the Bilbao site are:
+
+    * subBilbaoCheckLattice
+    * GetSupergroup
+    * BilbaoSymSearch1
+    * BilbaoSymSearch2
+    * BilbaoReSymSearch
+    * createStdSetting
+
     '''    
     SGData = G2spc.SpcGroup('f d -3 m')[1]
     

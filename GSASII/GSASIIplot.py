@@ -153,7 +153,7 @@ try:
         1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
     '''In matplotlib 2.0.x+ the Paired color map was dumbed down to 16 colors.
     _Old_Paired_data is the pre-2.0 Paired color map found in
-    matplotlib._cm.py and is used to creat color map GSPaired.
+    matplotlib._cm.py and is used to create color map GSPaired.
 
     This can be done on request for other color maps. N.B. any new names
     must be explicitly added to the color list obtained from
@@ -2877,6 +2877,11 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
 def PlotStrain(G2frame,data,newPlot=False):
     '''plot of strain data, used for diagnostic purposes
     '''
+    def OnKeyPress(event):
+        if event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+            PlotStrain(G2frame,data,True)
+            
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -2894,8 +2899,10 @@ def PlotStrain(G2frame,data,newPlot=False):
     else:
         newPlot = True
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+        Page.Choice = ('g: toggle grid',)
 
-    Page.Choice = None
+    Page.keyPress = OnKeyPress
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Plot.set_title('Strain')
     Plot.set_ylabel(r'd-spacing',fontsize=14)
@@ -3216,13 +3223,13 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Page.Choice = (' key press','e: toggle error bars','g: toggle grid','s: save as .csv file')
     else:
         Page.Choice = (' key press','g: toggle grid','s: save as .csv file')
-    Page.keyPress = OnKeyPress
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
             xylim = copy.copy(lim)
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+    Page.keyPress = OnKeyPress
     G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)
     # save information needed to reload from tree and redraw
     G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,
@@ -5598,7 +5605,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
                 elif tth:       #future hyperbola plot
                     dsp =0.5*Data['wavelength']/npsind(tth/2.0)
-                    darc = Data['rotation']
+#                    darc = Data['rotation']
 #                    Azm = np.arange(-10.-darc,190.5-darc,.5)
                     Azm = np.arange(0.,360.5,.5)
                     xyH = []

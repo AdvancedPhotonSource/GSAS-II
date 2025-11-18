@@ -220,7 +220,7 @@ def UpdateDeformation(G2frame,data,AtdId):
             MY /= nl.norm(MY)
             MZ = np.cross(MX,MY)
             MZ /= nl.norm(MZ)
-        return np.array([MX,MY,MZ])
+        return np.array([MX,MY,MZ]).T
     
     def OnDeformRef(event):
         Obj = event.GetEventObject()
@@ -507,10 +507,10 @@ def UpdateDeformation(G2frame,data,AtdId):
             oriSizer.Add(delHarm,0,WACV)
         mainSizer.Add(oriSizer)
         G2G.HorizontalLine(mainSizer,deformation)
-        Names = {'D(1,-1)':'px','D(1,0)':'pz','D(1,1)':'py',
-                 'D(2,-2)':'dxy','D(2,-1)':'dxz','D(2,0)':'dz2','D(2,1)':'dyz','D(2,2)':'dx2-y2',
-                 'D(3,-3)':'fy(3x2-y2)','D(3,-2)':'fz(x2-y2)','D(3,-1':'fyz2','D(3,0)':'fz3',
-                 'D(3,1)':'fxz2','D(3,2)':'fxyz','D(3,3)':'fy(3x2-y2)',}
+        Names = {'D(1,-1)':'py','D(1,0)':'pz','D(1,1)':'px',
+                 'D(2,-2)':'dxy','D(2,-1)':'dyz','D(2,0)':'dz2','D(2,1)':'dxz','D(2,2)':'dx2-y2',
+                 'D(3,-3)':'fy(3x2-y2)','D(3,-2)':'fxyz','D(3,-1)':'fyz2','D(3,0)':'fz3',
+                 'D(3,1)':'fxz2','D(3,2)':'fz(x2-y2)','D(3,3)':'fx(x2-3y2)',}
         mainSizer.Add(wx.StaticText(deformation,label=' Deformation parameters:'))
         orbSizer = wx.FlexGridSizer(0,9,2,2)
         for iorb,orb in enumerate(deformationData[dId]):

@@ -3523,6 +3523,7 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
     Y = 0.5*np.outer(npsind(PHI),npsind(PSI))
     Z = 0.5*np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     XYZ = np.array([X.flatten(),Y.flatten(),Z.flatten()])
+#    XYZ = np.inner(UVmat,XYZ.T)
     RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
     P  = np.zeros((31,31))
     for shc in SHC:

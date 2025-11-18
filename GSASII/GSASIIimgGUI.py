@@ -3036,12 +3036,8 @@ def UpdateStressStrain(G2frame,data):
         StrainGrid.SetTable(StrainTable,True)
         StrainGrid.AutoSizeColumns(True)
         for r in range(len(data['d-zero'])):
-            StrainGrid.SetCellStyle(r,2,VERY_LIGHT_GREY,True)
-            StrainGrid.SetCellStyle(r,5,VERY_LIGHT_GREY,True)
-            StrainGrid.SetCellStyle(r,6,VERY_LIGHT_GREY,True)
-            StrainGrid.SetCellStyle(r,7,VERY_LIGHT_GREY,True)
-            StrainGrid.SetCellStyle(r,9,VERY_LIGHT_GREY,True)
-            StrainGrid.SetCellStyle(r,10,VERY_LIGHT_GREY,True)
+            for c in [2,5,6,7,9,10]:
+                StrainGrid.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
         if 'phoenix' in wx.version():
             StrainGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnStrainChange)
         else:

@@ -5625,7 +5625,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     xringc,yringc = ring['ImxyCalc']
                     Plot.plot(xringc,yringc,Colors[N%NC])
                 xring,yring = ring['ImxyObs']
-                Plot.plot(xring,yring,'.',Colors[N%NC])
+                Plot.plot(xring,yring,'.',color=Colors[N%NC])
         # display the Masks
         if 'Frames' not in Masks: Masks['Frames'] = []  # patch
         for i,spot in enumerate(Masks['Points']):   # drawing spot masks

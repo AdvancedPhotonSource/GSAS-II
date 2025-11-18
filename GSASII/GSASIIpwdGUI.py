@@ -4840,11 +4840,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         else:
             dlg.Destroy()
             return
-        wx.BeginBusyCursor()
         wx.MessageBox(' For use of PSEUDOLATTICE, please cite:\n\n'+
                           G2G.GetCite('Bilbao: PSEUDOLATTICE'),
                           caption='Bilbao PSEUDOLATTICE',
                           style=wx.ICON_INFORMATION)
+        wx.BeginBusyCursor()
         page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
         wx.EndBusyCursor()
         if not page: return

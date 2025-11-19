@@ -553,7 +553,8 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             else:
                 orKeys = [item for item in orKeys if 'Sl' in item]
             orbs = SHCdict[iAt]
-            UVmat = np.inner(nl.inv(SHCdict[-iAt]['UVmat']),Bmat)
+            # UVmat = np.inner(nl.inv(SHCdict[-iAt]['UVmat']),Bmat)
+            UVmat = np.inner(SHCdict[-iAt]['UVmat'],Bmat)
             R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),UVmat)
             R = 1/R     # correct dspacings
             atFlg.append(1.0)

@@ -8126,9 +8126,9 @@ def UpdateControls(G2frame,data):
     G2frame.dataWindow.SetDataSize()
 #    G2frame.SendSizeEvent()
 
-####  Main PWDR panel ########################################################
+####  Main PWDR & HKLF panel ########################################################
 def UpdatePWHKPlot(G2frame,kind,item):
-    '''Called when the histogram main tree entry is called. Displays the
+    '''Called when the PWDR & HKLF histogram main tree entry is called. Displays the
     histogram weight factor, refinement statistics for the histogram
     and the range of data for a simulation.
 

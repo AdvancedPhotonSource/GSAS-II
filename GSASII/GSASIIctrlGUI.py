@@ -429,6 +429,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = True
                 self._IndicateValidity()
+            wx.CallAfter(self._TestValidity)    # test/show validity
         else:
             if self.CIFinput:
                 wx.TextCtrl.__init__(
@@ -468,7 +469,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
         if GSASIIpath.GetConfigValue('debug') and warn:
-            print('ValidatedTxtCtrl.SetValue() used in callback. Batter as ChangeValue()?')
+            print('ValidatedTxtCtrl.SetValue() used in callback. Better as ChangeValue()?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val
@@ -567,9 +568,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             
     def _TestValidity(self):
         'Check validity and change colors accordingly'
-        if self.Validator:
-            self.Validator.TestValid(self)
-            self._IndicateValidity()
+        try:
+            if self.Validator:
+                self.Validator.TestValid(self)
+                self._IndicateValidity()
+        except RuntimeError:    #bandaid to avoid C++ error; deleted self.Validator?
+            pass
             
     def _IndicateValidity(self):
         'Set the control colors to show invalid input'

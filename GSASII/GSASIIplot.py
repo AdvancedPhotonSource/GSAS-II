@@ -107,6 +107,9 @@ Pwrm1 = chr(0x207b)+chr(0x0b9)
 # misc global vars
 nxs = np.newaxis
 plotDebug = False
+Colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+    'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',
+    'xkcd:aqua','xkcd:blueberry','xkcd:bordeaux'] #need 15 colors for cluster analysis!
 
 #matplotlib 2.0.x dumbed down Paired to 16 colors -
 #   this restores the pre 2.0 Paired color map found in matplotlib._cm.py
@@ -150,7 +153,7 @@ try:
         1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
     '''In matplotlib 2.0.x+ the Paired color map was dumbed down to 16 colors.
     _Old_Paired_data is the pre-2.0 Paired color map found in
-    matplotlib._cm.py and is used to creat color map GSPaired.
+    matplotlib._cm.py and is used to create color map GSPaired.
 
     This can be done on request for other color maps. N.B. any new names
     must be explicitly added to the color list obtained from
@@ -2519,9 +2522,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
         Plot.set_xlabel(r''+labelX,fontsize=14)
         Plot.set_ylabel(r''+labelY,fontsize=14)
         Plot.tick_params(labelsize=14)
-        colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
-            'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
-        NC = len(colors)
+        NC = len(Colors)
         Page.keyPress = OnKeyPress
         Xmax = 0.
         Ymax = 0.
@@ -2533,16 +2534,16 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 dX = Page.Offset[0]*(ixy)*Xmax/500.
                 dY = Page.Offset[1]*(ixy)*Ymax/100.
                 if len(names):
-                    Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False,label=names[ixy])
+                    Plot.plot(X+dX,Y+dY,Colors[ixy%NC],picker=False,label=names[ixy])
                 else:
-                    Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False)
+                    Plot.plot(X+dX,Y+dY,Colors[ixy%NC],picker=False)
             else:
-                Plot.scatter(X,Y,marker='+',color=colors[ixy%NC],picker=False)
+                Plot.scatter(X,Y,marker='+',color=Colors[ixy%NC],picker=False)
         if len(vertLines):
             for ixy,X in enumerate(vertLines):
                 dX = Page.Offset[0]*(ixy)*Xmax/500.
                 for x in X:
-                    Plot.axvline(x+dX,color=colors[ixy%NC],dashes=(5,5),picker=False)
+                    Plot.axvline(x+dX,color=Colors[ixy%NC],dashes=(5,5),picker=False)
         if XY2 is not None and len(XY2):
             for ixy,xy in enumerate(XY2):
                 X,Y = XY2[ixy]
@@ -2550,14 +2551,14 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 dY = Page.Offset[1]*(ixy+1)*Ymax/100.
                 if points2:
                     if len(names2):
-                        Plot.scatter(X,Y,marker='+',color=colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                        Plot.scatter(X,Y,marker='+',color=Colors[(ixy+1)%NC],picker=False,label=names2[ixy])
                     else:
-                        Plot.scatter(X,Y,marker='+',color=colors[(ixy+1)%NC],picker=False)
+                        Plot.scatter(X,Y,marker='+',color=Colors[(ixy+1)%NC],picker=False)
                 else:    
                     if len(names2):
-                        Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                        Plot.plot(X+dX,Y+dY,Colors[(ixy+1)%NC],picker=False,label=names2[ixy])
                     else:
-                        Plot.plot(X+dX,Y+dY,colors[(ixy+1)%NC],picker=False)
+                        Plot.plot(X+dX,Y+dY,Colors[(ixy+1)%NC],picker=False)
         if len(names)+len(names2):
             Plot.legend(names+names2,loc='best')
         if not newPlot:
@@ -2876,6 +2877,11 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
 def PlotStrain(G2frame,data,newPlot=False):
     '''plot of strain data, used for diagnostic purposes
     '''
+    def OnKeyPress(event):
+        if event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+            PlotStrain(G2frame,data,True)
+            
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -2893,22 +2899,21 @@ def PlotStrain(G2frame,data,newPlot=False):
     else:
         newPlot = True
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+        Page.Choice = ('g: toggle grid',)
 
-    Page.Choice = None
+    Page.keyPress = OnKeyPress
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Plot.set_title('Strain')
     Plot.set_ylabel(r'd-spacing',fontsize=14)
     Plot.set_xlabel(r'Azimuth',fontsize=14)
-#    colors=['b','g','r','c','m','k']
-    colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
-        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
-    NC = len(colors)
+    NC = len(Colors)
     for N,item in enumerate(data['d-zero']):
         Y,X = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
-        Plot.plot(X,Y,marker='+',color=colors[N%NC],picker=False,linewidth=0)
+        Plot.plot(X,Y,marker='+',color=Colors[N%NC],picker=False,linewidth=0)
         Y,X = np.array(item['ImtaCalc'])
-        Plot.plot(X,Y,colors[N%NC],picker=False)
-        Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],colors[5],dashes=(5,5))
+        Plot.plot(X,Y,Colors[N%NC],picker=False)
+        Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5))
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -3040,15 +3045,12 @@ def PlotSASDSizeDist(G2frame):
         Plot.set_xscale("log",nonpositive='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
     Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='white',edgecolor='green')       #plot diameters
-#    colors=['b','r','c','m','k']
-    colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
-        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
-    NC = len(colors)
+    NC = len(Colors)
     if 'Size Calc' in data:
         Rbins,Dist = data['Size Calc']
         for i in range(len(Rbins)):
             if len(Rbins[i]):
-                Plot.plot(2.*Rbins[i],Dist[i],color=colors[i%NC])       #plot diameters
+                Plot.plot(2.*Rbins[i],Dist[i],color=Colors[i%NC])       #plot diameters
     Page.canvas.draw()
 
 #### PlotSASDPairDist ################################################################################
@@ -3221,13 +3223,13 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Page.Choice = (' key press','e: toggle error bars','g: toggle grid','s: save as .csv file')
     else:
         Page.Choice = (' key press','g: toggle grid','s: save as .csv file')
-    Page.keyPress = OnKeyPress
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
             xylim = copy.copy(lim)
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+    Page.keyPress = OnKeyPress
     G2frame.G2plotNB.SetHelpButton(G2frame.dataWindow.helpKey)
     # save information needed to reload from tree and redraw
     G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,
@@ -3492,6 +3494,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
 def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
     ''' Plot deformation atoms & neighbors
     '''
+    Bohr = 0.529177
     SHC = {}
     for item in deform:
         if 'Be' in radial and 'Sl' not in item[0]:
@@ -3520,14 +3523,15 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
     Y = 0.5*np.outer(npsind(PHI),npsind(PSI))
     Z = 0.5*np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     XYZ = np.array([X.flatten(),Y.flatten(),Z.flatten()])
+#    XYZ = np.inner(UVmat,XYZ.T)
     RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
     P  = np.zeros((31,31))
     for shc in SHC:
         p = 2.*SHC[shc][0]*SHC[shc][2]**3*(G2lat.KslCalc(shc,RAP[1],RAP[2])**2).reshape((31,31))
         P += p
     if not np.any(P):
-        P = np.ones((31,31))
-#    P *= P
+        P = np.zeros((31,31))
+    P += Bohr
     color = np.array(general['Color'][general['AtomTypes'].index(atType)])/255.
     Plot.plot_surface(X*P,Y*P,Z*P,rstride=1,cstride=1,color=color,linewidth=1)
     for atm in neigh[0]:
@@ -4448,10 +4452,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         G2frame.G2plotNB.status.SetStatusText(
             'press L to toggle lines, S to select X axis, T to change titles (reselect column to show?)',1)
         Plot.clear()
-#        colors=['b','g','r','c','m','k']
-        colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
-            'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
-        NC = len(colors)
+        NC = len(Colors)
         uselist = G2frame.SeqTable.GetColValues(1)
         X = np.arange(0,G2frame.SeqTable.GetNumberRows(),1)
         xName = 'Data sequence number'
@@ -4464,7 +4465,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                 print('X column no longer in table, resetting')
                 G2frame.seqXaxis = None
         for ic,col in enumerate(Page.seqYaxisList):
-            Ncol = colors[ic%NC]
+            Ncol = Colors[ic%NC]
             name,Y,sig = Page.seqTableGet(col)
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Y = Y[::-1]
@@ -4497,7 +4498,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         if Page.fitvals:
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Page.fitvals = Page.fitvals[::-1]
-            Plot.plot(X,Page.fitvals,label='Fit',color=colors[(ic+2)%NC])
+            Plot.plot(X,Page.fitvals,label='Fit',color=Colors[(ic+2)%NC])
 
         #### Begin self.testSeqRefineMode() =====================
         Plot.legend(loc='best')
@@ -4688,10 +4689,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     G2frame.cid = None
     #Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
     global Data,Masks,StrSta,Plot1,Page  # RVD: these are needed for multiple image controls/masks
-#    colors=['b','g','r','c','m','k']
-    colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
-        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
-    NC = len(colors)
+    NC = len(Colors)
     Data = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))
     G2frame.spotSize = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
@@ -5592,7 +5590,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 N = 0
                 for ring in Data['rings']:
                     xring,yring = np.array(ring).T[:2]
-                    Plot.plot(xring,yring,'.',color=colors[N%NC])
+                    Plot.plot(xring,yring,'.',color=Colors[N%NC])
                     N += 1
             for ellipse in Data['ellipses']:      #what about hyperbola?
                 try:
@@ -5608,7 +5606,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
                 elif tth:       #future hyperbola plot
                     dsp =0.5*Data['wavelength']/npsind(tth/2.0)
-                    darc = Data['rotation']
+#                    darc = Data['rotation']
 #                    Azm = np.arange(-10.-darc,190.5-darc,.5)
                     Azm = np.arange(0.,360.5,.5)
                     xyH = []
@@ -5626,9 +5624,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             for N,ring in enumerate(StrSta['d-zero']):
                 if 'ImxyCalc' in ring:
                     xringc,yringc = ring['ImxyCalc']
-                    Plot.plot(xringc,yringc,colors[N%NC])
+                    Plot.plot(xringc,yringc,Colors[N%NC])
                 xring,yring = ring['ImxyObs']
-                Plot.plot(xring,yring,'.',colors[N%NC])
+                Plot.plot(xring,yring,'.',color=Colors[N%NC])
         # display the Masks
         if 'Frames' not in Masks: Masks['Frames'] = []  # patch
         for i,spot in enumerate(Masks['Points']):   # drawing spot masks
@@ -7363,12 +7361,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
                             SGC = G2lat.CrysM2CartM(Amat,Bmat,SGM)
                             UVMat = np.inner(defCtrls['UVmat'],SGC)
+#                            print(atom[ct-1],atom[cs-1],'\n',UVMat,'\n',SGC)
                             Npsi,Ngam = 90,45 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl
                             GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                             Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat) #TODO: needs symmetry operation for equiv. positions
-                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))**2
+                            P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                             if np.min(P) < np.max(P):
                                 P = (P-np.min(P))/(np.max(P)-np.min(P))
                             RenderTextureSphere(x,y,z,radius,atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=False)
@@ -8806,10 +8805,6 @@ def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
             SetPick = False
             print(text)
 
-    Colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan',
-              'xkcd:magenta','xkcd:black','xkcd:pink','xkcd:brown',
-              'xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',
-              'xkcd:aqua','xkcd:blueberry','xkcd:bordeaux'] #need 15 colors!
     G2frame.G2plotNB.Delete(PlotName)       #A cluge: to avoid AccessExceptions on replot
     if CLuDict['plots'] == '3D PCA':
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(PlotName,'3d')

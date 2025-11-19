@@ -4689,10 +4689,10 @@ def dervRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawle
         else:
             continue        #skip non-histogram entries
         if First:
-            dMdV = np.sqrt(wtFactor)*dMdvh
+            dMdV = wtFactor*dMdvh
             First = False
         else:
-            dMdV = np.concatenate((dMdV.T,np.sqrt(wtFactor)*dMdvh.T)).T
+            dMdV = np.concatenate((dMdV.T,wtFactor*dMdvh.T)).T
 
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
     pNames,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
@@ -4797,6 +4797,7 @@ def HessRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawle
             hId = Histogram['hId']
             hfx = ':%d:'%(Histogram['hId'])
             wtFactor = calcControls[hfx+'wtFactor']
+            wdf *= wtFactor
             # now process derivatives in constraints
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
 #            print 'matrix build time: %.3f'%(time.time()-time0)
@@ -4813,11 +4814,11 @@ def HessRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawle
                     raise G2obj.G2RefineCancel('Cancel pressed')
                 #dlg.Raise()
             if len(Hess):
-                Vec += wtFactor*np.sum(dMdvh*wdf,axis=1)
-                Hess += wtFactor*np.inner(dMdvh,dMdvh)
+                Vec += np.sum(dMdvh*wdf,axis=1)
+                Hess += np.inner(dMdvh,dMdvh)
             else:
-                Vec = wtFactor*np.sum(dMdvh*wdf,axis=1)
-                Hess = wtFactor*np.inner(dMdvh,dMdvh)
+                Vec = np.sum(dMdvh*wdf,axis=1)
+                Hess = np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
     GetFobsSq(Histograms,Phases,parmDict,calcControls)

@@ -829,7 +829,8 @@ def createStdSetting(cifFile,rd):
     if not os.path.exists(cifFile):
         print(f'createStdSetting error: file {cifFile} not found')
         return False
-    files = {'cifile': open(cifFile,'rb')}
+    fil = open(cifFile,'rb')
+    files = {'cifile': fil}
     values = {'strtidy':''}
     print(f'''Submitting structure to Bilbao "CIF to Standard Setting" (strtidy)
 web service. Please cite:
@@ -859,6 +860,7 @@ web service. Please cite:
         rd.Phase['Atoms'].append(atomlist)
         if i == int(natom)-1: break
     del rd.SymOps['xyz'] # as-read sym ops now obsolete
+    fil.close()
 
 #if __name__ == '__main__':
     # Note that self-tests have been moved to file ``tests/run_bilbao.py``.

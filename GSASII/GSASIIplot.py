@@ -3523,7 +3523,6 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
     Y = 0.5*np.outer(npsind(PHI),npsind(PSI))
     Z = 0.5*np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     XYZ = np.array([X.flatten(),Y.flatten(),Z.flatten()])
-#    XYZ = np.inner(UVmat,XYZ.T)
     RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
     P  = np.zeros((31,31))
     for shc in SHC:
@@ -7359,9 +7358,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SGM = np.array(G2spc.GetOpFromCode(atom[cs-1],SGData)[0])
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
-                            SGC = G2lat.CrysM2CartM(Amat,Bmat,SGM)
-                            UVMat = np.inner(defCtrls['UVmat'],SGC)
-#                            print(atom[ct-1],atom[cs-1],'\n',UVMat,'\n',SGC)
+                            SGC = nl.inv(G2lat.CrysM2CartM(Amat,Bmat,SGM))
+                            UVMat = np.inner(defCtrls['UVmat'],SGC.T)
+        #                    print(nl.det(UVMat),atom[ct-1],atom[cs-1],'\n',UVMat,'\n',SGC)
                             Npsi,Ngam = 90,45 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl

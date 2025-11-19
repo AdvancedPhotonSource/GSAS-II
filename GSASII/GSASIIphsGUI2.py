@@ -355,11 +355,13 @@ def UpdateDeformation(G2frame,data,AtdId):
     def OnDelHarm(event):
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
+        minL = 1  #always an "Ne"
         for harm in data['Deformations'][dId]:
             if 'Sl' in harm[0]:
                 Harm = harm
+                minL = 2    # & 'kappa'
         Hkeys = list(Harm[1].keys())
-        if len(Hkeys) > 1:  #always an "Ne"
+        if len(Hkeys) > minL:
             maxord = max([int(item[2]) for item in Hkeys if 'D' in item])
             for item in Hkeys:
                 if 'D' in item and int(item[2]) == maxord:

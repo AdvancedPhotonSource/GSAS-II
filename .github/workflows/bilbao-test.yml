@@ -1,0 +1,31 @@
+name: Bilbao Test
+
+on:
+  schedule:
+    # Run weekly on Mondays at 5:00 AM UTC
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+# Default to bash
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: set up pixi
+      uses: prefix-dev/setup-pixi@v0.8.1
+      with:
+          environments: ${{ matrix.env }}
+          pixi-version: v0.39.5
+          manifest-path: pixi/pixi.toml
+
+      - name: test
+        run: |
+          cd tests
+          pixi run --manifest-path ../pixi/pixi.toml python -m pytest run_bilbao.py

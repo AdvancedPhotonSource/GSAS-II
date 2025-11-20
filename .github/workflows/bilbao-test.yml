@@ -25,7 +25,7 @@ jobs:
           pixi-version: v0.39.5
           manifest-path: pixi/pixi.toml
 
-      - name: test
-        run: |
+    - name: test
+      run: |
           cd tests
           pixi run --manifest-path ../pixi/pixi.toml python -m pytest run_bilbao.py

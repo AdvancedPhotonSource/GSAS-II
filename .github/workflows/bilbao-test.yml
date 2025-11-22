@@ -21,11 +21,14 @@ jobs:
     - name: set up pixi
       uses: prefix-dev/setup-pixi@v0.8.1
       with:
-          environments: ${{ matrix.env }}
-          pixi-version: v0.39.5
           manifest-path: pixi/pixi.toml
 
-    - name: test
+    - name: run Bilbao self-test
+      run: |
+          cd pixi
+          pixi run python -m pytest ../tests/run_bilbao.py
+          
+    - name: run Bilbao self-test
       run: |
           cd tests
           pixi run --manifest-path ../pixi/pixi.toml python -m pytest run_bilbao.py

@@ -23,6 +23,11 @@ jobs:
       with:
           manifest-path: pixi/pixi.toml
 
+    - name: Install GSAS-II with pixi
+      run: |
+          cd pixi
+          pixi run install 
+
     - name: diagnose GSAS-II issues
       run: |
           cd pixi
@@ -30,10 +35,10 @@ jobs:
           pixi run python -c "import GSASII.pyspg; print(GSASII.pyspg.__file__)"
           pixi run python -c "from GSASII import GSASIIspc as G2spc; G2spc.SpcGroup('R 3 C r')"
 
-#    - name: run Bilbao self-test
-#      run: |
-#          cd pixi
-#          pixi run python -m pytest ../tests/run_bilbao.py
+    - name: run Bilbao self-test
+      run: |
+          cd pixi
+          pixi run python -m pytest ../tests/run_bilbao.py
           
 #    - name: run Bilbao self-test
 #      run: |

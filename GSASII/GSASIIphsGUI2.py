@@ -317,7 +317,7 @@ def UpdateDeformation(G2frame,data,AtdId):
     def Dsizer(deformation,orbSizer,Names,dId,orb,Indx):
         name = Names.get(item,'') #Names only go to order = 3
         orbSizer.Add(wx.StaticText(deformation,label=item+name+':'))
-        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,5),xmin=-1.,xmax=1.))
+        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,5),xmin=-1.5,xmax=1.5))
         Tcheck = wx.CheckBox(deformation,-1,'Refine?')
         Tcheck.SetValue(orb[1][item][1])
         Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
@@ -478,6 +478,10 @@ def UpdateDeformation(G2frame,data,AtdId):
         matSel.Bind(wx.EVT_COMBOBOX,OnMatSel)
         Indx[matSel.GetId()] = dId
         matSizer.Add(matSel,0,WACV)
+        localSytSym = ['1','-1','2(z)','m(z)','2/m(z)','222','mm2','mmm','4','-4','4/m','422','4mm','-4m2','4/mmm',
+                       '3','-3','321','3m1','-3m1','312','31m','-31m','32(x)','32(y)','3m','-3m',
+                       '6','-6','6/m','622','6mm','-6m2','6/mmm','23','m-3','432','-43m','m-3m']
+        
         deformationData[-dId]['Radial'] = deformationData[-dId].get('Radial','Bessel')
         topSizer.Add(wx.StaticText(deformation,label=' Select radial fxn: '),0,WACV)
         fxchoice = deformationData[-dId].get('fxchoice',['Bessel',])

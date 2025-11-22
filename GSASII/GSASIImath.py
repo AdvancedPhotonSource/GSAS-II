@@ -6045,7 +6045,6 @@ def RotPolbyM(R,Az,Pl,M):
     nXYZ = np.inner(XYZ,M).T
     return(Cart2Polar(nXYZ[0],nXYZ[1],nXYZ[2]))
 
-
 def RotPolbyQ(R,Az,Pl,Q):
     '''Rotate polar coordinates by quaternion
     '''

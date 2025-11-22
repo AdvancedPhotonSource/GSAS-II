@@ -3009,7 +3009,7 @@ def SHarmcal(SytSym,SHFln,psi,gam):
                 Ksl = CubicSHarm(l,m,psi,gam)
             else:
                 Ksl = SphHarmAng(l,m,1.0,psi,gam)
-            SHVal += (SHFln[term][0]*Ksl)**2
+            SHVal += (SHFln[term][0]*Ksl)
     return SHVal
 
 def KslCalc(trm,psi,gam):

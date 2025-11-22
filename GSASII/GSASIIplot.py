@@ -3526,7 +3526,7 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
     RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
     P  = np.zeros((31,31))
     for shc in SHC:
-        p = 2.*SHC[shc][0]*SHC[shc][2]**3*(G2lat.KslCalc(shc,RAP[1],RAP[2])**2).reshape((31,31))
+        p = 2.*SHC[shc][0]*SHC[shc][2]**3*(G2lat.KslCalc(shc,RAP[1],RAP[2])).reshape((31,31))
         P += p
     if not np.any(P):
         P = np.zeros((31,31))
@@ -7359,13 +7359,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
                             SGC = nl.inv(G2lat.CrysM2CartM(Amat,Bmat,SGM))
-                            UVMat = np.inner(defCtrls['UVmat'],SGC.T)
+                            UVMat = np.inner(defCtrls['UVmat'].T,SGC.T)
         #                    print(nl.det(UVMat),atom[ct-1],atom[cs-1],'\n',UVMat,'\n',SGC)
                             Npsi,Ngam = 90,45 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl
                             GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
-                            Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat) #TODO: needs symmetry operation for equiv. positions
+                            Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat)
                             P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                             if np.min(P) < np.max(P):
                                 P = (P-np.min(P))/(np.max(P)-np.min(P))

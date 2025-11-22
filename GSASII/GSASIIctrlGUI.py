@@ -2915,7 +2915,7 @@ class SingleFloatDialog(wx.Dialog):
         try:
             w = int(a)
         except:
-            w = 3+d
+            w = 5+d
         self.OKbtn = wx.Button(self,wx.ID_OK)
         CancelBtn = wx.Button(self,wx.ID_CANCEL)
         valItem = ValidatedTxtCtrl(self,self.buffer,0,nDig=(w,d,f),

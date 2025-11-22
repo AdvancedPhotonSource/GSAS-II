@@ -5206,6 +5206,13 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         '''Search for k-vector using the ISODISTORT web service.
         Developed by Yuanpeng Zhang with help from Branton Campbell.
         '''
+        if symbols is None:
+            G2G.G2MessageBox(G2frame,
+                    'Unable to perform ISODISTORT kvec search without the sympy module. Use Help/Add packages... to address','No sympy')
+            return
+        # symbolic "variables" needed below for routine to_fraction_strs()
+        a, b, g = symbols('a b g')
+
         def _showWebPage(event):
             'Show a web page when the user presses the "show" button'
             import tempfile
@@ -5258,8 +5265,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 return all_kvecs
             else:
                 return None
-
-        a, b, g = symbols('a b g')
 
         def frac_str(value, max_den=1000):
             # Try to get a rational exactly; if huge, fall back to bounded approximation
@@ -5323,10 +5328,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             return data_update
 
         # start of OnISODISTORT_kvec computations
-        if symbols is None:
-            G2G.G2MessageBox(G2frame,
-                    'Unable to perform ISODISTORT kvec search without the sympy module. Use Help/Add packages... to address','No sympy')
-            return
         try:
             import requests
         except:

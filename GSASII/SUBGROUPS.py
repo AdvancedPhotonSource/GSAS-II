@@ -829,36 +829,37 @@ def createStdSetting(cifFile,rd):
     if not os.path.exists(cifFile):
         print(f'createStdSetting error: file {cifFile} not found')
         return False
-    files = {'cifile': open(cifFile,'rb')}
-    values = {'strtidy':''}
-    print(f'''Submitting structure to Bilbao "CIF to Standard Setting" (strtidy)
-web service. Please cite:
-{G2G.GetCite('Bilbao: PSEUDOLATTICE',wrap=70,indent=5)}''')
-    r0 = requests.post(bilbaoSite+cif2std, files=files, data=values)
-    structure = r0.text[r0.text.lower().find('<pre>')+5:r0.text.lower().find('</pre>')].strip()
-    spnum,celllist,natom = structure.split('\n')[:3]
-    #spgNam = G2spc.spgbyNum[int(spnum)]
-    cell = [float(i) for i in celllist.split()]
-    # replace cell, space group and atom info with info from Bilbao
-    # could try to xfer Uiso (Uij needs xform), but that would be too involved
-    rd.Phase['General']['SGData'] = SGData = G2spc.SpcGroup(G2spc.spgbyNum[int(spnum)])[1]
-    rd.Phase['General']['Cell'] = [False] + list(cell) + [G2lat.calc_V(G2lat.cell2A(cell))]
-    rd.Phase['Atoms'] = []
-    for i,line in enumerate(structure.split('\n')[3:]):
-        atomlist = ['','Xe','',0.,0.,0.,1.0,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
-        elem,lbl,wyc,x,y,z = line.split()
-        elem = elem.rstrip('0123456789-+')
-        atomlist[0] = elem + lbl
-        if G2elem.CheckElement(elem):
-            atomlist[1] = elem
-        atomlist[3:6] = [float(i) for i in (x,y,z)]
-        atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
-        atomlist[1] = G2elem.FixValence(atomlist[1])
+    with open(cifFile,'rb') as fil:
+        files = {'cifile': fil}
+        values = {'strtidy':''}
+        print(f'''Submitting structure to Bilbao "CIF to Standard Setting" (strtidy)
+    web service. Please cite:
+    {G2G.GetCite('Bilbao: PSEUDOLATTICE',wrap=70,indent=5)}''')
+        r0 = requests.post(bilbaoSite+cif2std, files=files, data=values)
+        structure = r0.text[r0.text.lower().find('<pre>')+5:r0.text.lower().find('</pre>')].strip()
+        spnum,celllist,natom = structure.split('\n')[:3]
+        #spgNam = G2spc.spgbyNum[int(spnum)]
+        cell = [float(i) for i in celllist.split()]
+        # replace cell, space group and atom info with info from Bilbao
+        # could try to xfer Uiso (Uij needs xform), but that would be too involved
+        rd.Phase['General']['SGData'] = SGData = G2spc.SpcGroup(G2spc.spgbyNum[int(spnum)])[1]
+        rd.Phase['General']['Cell'] = [False] + list(cell) + [G2lat.calc_V(G2lat.cell2A(cell))]
+        rd.Phase['Atoms'] = []
+        for i,line in enumerate(structure.split('\n')[3:]):
+            atomlist = ['','Xe','',0.,0.,0.,1.0,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
+            elem,lbl,wyc,x,y,z = line.split()
+            elem = elem.rstrip('0123456789-+')
+            atomlist[0] = elem + lbl
+            if G2elem.CheckElement(elem):
+                atomlist[1] = elem
+            atomlist[3:6] = [float(i) for i in (x,y,z)]
+            atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
+            atomlist[1] = G2elem.FixValence(atomlist[1])
 
-        atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
-        rd.Phase['Atoms'].append(atomlist)
-        if i == int(natom)-1: break
-    del rd.SymOps['xyz'] # as-read sym ops now obsolete
+            atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
+            rd.Phase['Atoms'].append(atomlist)
+            if i == int(natom)-1: break
+        del rd.SymOps['xyz'] # as-read sym ops now obsolete
 
 #if __name__ == '__main__':
     # Note that self-tests have been moved to file ``tests/run_bilbao.py``.

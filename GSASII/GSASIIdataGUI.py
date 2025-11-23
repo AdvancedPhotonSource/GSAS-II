@@ -4346,6 +4346,7 @@ If you continue from this point, it is quite likely that all intensity computati
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)
+            #wx.CallAfter(SelectDataTreeItem,self,Id)
             if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.2b')
             if sys.platform == "darwin":
                 self.GPXtree.SelectItem(Id)  # OSX, as before

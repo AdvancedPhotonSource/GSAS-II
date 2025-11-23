@@ -4309,6 +4309,7 @@ If you continue from this point, it is quite likely that all intensity computati
         phaseId = None
         seqId = None
         G2IO.ProjFileOpen(self)
+        if GSASIIpath.GetConfigValue('debug'): print('StartProject 1')
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
         self.GPXtree.Expand(self.root)
         self.HKL = np.array([])
@@ -4331,6 +4332,7 @@ If you continue from this point, it is quite likely that all intensity computati
                 if data:
                     for item in self.Refine: item.Enable(True)
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        if GSASIIpath.GetConfigValue('debug'): print('StartProject 2')
         if phaseId: # show all phases
             self.GPXtree.Expand(phaseId)
         if seqId:
@@ -4348,6 +4350,7 @@ If you continue from this point, it is quite likely that all intensity computati
             Id, unused = self.GPXtree.GetFirstChild(phaseId)
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id) # as before for OSX
+        if GSASIIpath.GetConfigValue('debug'): print('StartProject 3')
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]
@@ -4366,6 +4369,7 @@ If you continue from this point, it is quite likely that all intensity computati
 #                    print(txt)
                     exec(txt)
                 wx.CallLater(100,exectxt)
+        if GSASIIpath.GetConfigValue('debug'): print('StartProject 4')
 
     def OnFileClose(self, event):
         '''Clears the data tree in response to the

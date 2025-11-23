@@ -4335,23 +4335,32 @@ If you continue from this point, it is quite likely that all intensity computati
         if GSASIIpath.GetConfigValue('debug'): print('StartProject 2')
         if phaseId: # show all phases
             self.GPXtree.Expand(phaseId)
+        if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.1')
         if seqId:
             self.EnablePlot = True
             SelectDataTreeItem(self,seqId)
-            self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+            if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.2a')
+            if sys.platform == "darwin":
+                self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
         elif Id:
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)
-            self.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+            if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.2b')
+            if sys.platform == "darwin":
+                self.GPXtree.SelectItem(Id)  # OSX, as before
         elif phaseId:
             Id = phaseId
             # open 1st phase
             Id, unused = self.GPXtree.GetFirstChild(phaseId)
+            if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.3')
             SelectDataTreeItem(self,Id)
-            self.GPXtree.SelectItem(Id) # as before for OSX
+            if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.4')
+            if sys.platform == "darwin":
+                self.GPXtree.SelectItem(Id) # OSX, as before
         if GSASIIpath.GetConfigValue('debug'): print('StartProject 3')
         self.CheckNotebook()
+        if GSASIIpath.GetConfigValue('debug'): print('StartProject 3.1')
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]
         if GSASIIpath.GetConfigValue('Save_paths'):

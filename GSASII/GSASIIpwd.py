@@ -74,7 +74,8 @@ is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 #### Powder utilities ################################################################################
 def PhaseWtSum(G2frame,histo):
     '''
-    Calculate sum of phase mass*phase fraction for PWDR data (exclude magnetic phases)
+    Calculate sum of phase mass*phase fraction for PWDR data (exclude 
+    magnetic phases)
 
     :param G2frame: GSASII main frame structure
     :param str histo: histogram name
@@ -127,6 +128,7 @@ def Transmission(Geometry,Abs,Diam):
 
 def SurfaceRough(SRA,SRB,Tth):
     ''' Suortti (J. Appl. Cryst, 5,325-331, 1972) surface roughness correction
+
     :param float SRA: Suortti surface roughness parameter
     :param float SRB: Suortti surface roughness parameter
     :param float Tth: 2-theta(deg) - can be numpy array
@@ -139,6 +141,7 @@ def SurfaceRough(SRA,SRB,Tth):
 
 def SurfaceRoughDerv(SRA,SRB,Tth):
     ''' Suortti surface roughness correction derivatives
+
     :param float SRA: Suortti surface roughness parameter (dimensionless)
     :param float SRB: Suortti surface roughness parameter (dimensionless)
     :param float Tth: 2-theta(deg) - can be numpy array
@@ -154,6 +157,7 @@ def SurfaceRoughDerv(SRA,SRB,Tth):
 
 def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
     '''Calculate sample absorption
+
     :param str Geometry: one of 'Cylinder','Bragg-Brentano','Tilting Flat Plate in transmission','Fixed flat plate'
     :param float MuR: absorption coeff * sample thickness/2 or radius
     :param Tth: 2-theta scattering angle - can be numpy array

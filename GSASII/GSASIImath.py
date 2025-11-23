@@ -1779,11 +1779,11 @@ def NCScattDen(Elements,vol,wave=0.):
     return 100.*rho/vol,mu/vol,100.*bpp/vol
 
 def wavekE(wavekE):
-    '''Convert wavelength to energy & vise versa
+    '''Convert wavelength to energy & vice versa
 
-    :param float waveKe:wavelength in A or energy in kE
+    :param float waveKe: wavelength in A or energy in kE
 
-    :returns float waveKe:the other one
+    :returns float waveKe: the other one
 
     '''
     return 12.397639/wavekE
@@ -3421,6 +3421,7 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
 def GetMag(mag,Cell):
     '''
     Compute magnetic moment magnitude.
+
     :param list mag: atom magnetic moment parms (must be magnetic!)
     :param list Cell: lattice parameters
 
@@ -3437,6 +3438,7 @@ def GetMag(mag,Cell):
 def GetMagDerv(mag,Cell):
     '''
     Compute magnetic moment derivatives numerically
+
     :param list mag: atom magnetic moment parms (must be magnetic!)
     :param list Cell: lattice parameters
 

@@ -4124,6 +4124,7 @@ class G2PwdrData(G2ObjectWrapper):
 
     def add_peak(self,area,dspace=None,Q=None,ttheta=None):
         '''Adds a single peak to the peak list
+
         :param float area: peak area
         :param float dspace: peak position as d-space (A)
         :param float Q: peak position as Q (A-1)

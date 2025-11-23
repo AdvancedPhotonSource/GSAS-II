@@ -356,6 +356,7 @@ class G2PlotNoteBook(wx.Panel):
 
     def RegisterRedrawRoutine(self,name,routine=None,args=(),kwargs={}):
         '''Save information to determine how to redraw a plot
+
         :param str name: label on tab of plot
         :param Object routine: a function to be called
         :param args: a list of positional parameters for the function
@@ -472,6 +473,7 @@ class G2PlotNoteBook(wx.Panel):
 
     def _addPage(self,name,page):
         '''Add the newly created page to the notebook and associated lists.
+
         :param name: the label placed on the tab, which should be unique
         :param page: the wx.Frame for the matplotlib, openGL, etc. window
         '''
@@ -2719,6 +2721,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
 #### PlotXYZvect ################################################################################
 def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotName=None):
     ''' To plot a quiver of quaternion vectors colored by the rotation
+
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param list X,Y,Z: list of X,Y,Z arrays
     :param list R: a list of rotations (0-90) for each X,Y,Z in degrees
@@ -8776,6 +8779,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
 
 def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
     ''' To plot cluster analysis results
+
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param array YM: data matrix; plotted as contour
     :param array XYZ: array of 3D PCA coordinates; plotted as 3D scatter plot

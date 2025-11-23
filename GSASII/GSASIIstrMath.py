@@ -430,6 +430,7 @@ def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
 
 def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,ifDeriv=False):
     ''' Computes hkl dependent form factors & derivatives from spinning rigid bodies
+
     :param array HKL: reflection hkl set to be considered
     :param array Bmat: inv crystal to Cartesian transfomation matrix
     :param dict SHCdict: RB spin/deformation data
@@ -3123,6 +3124,7 @@ def GetIntensityDerv(refl,im,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parm
 def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     '''Computes the sample-dependent Lorentzian & Gaussian peak width contributions from
     size & microstrain parameters
+
     :param float wave: wavelength for CW data, 2-theta for EDX data
     '''
     if calcControls[hfx+'histType'][2] in ['A','B','C']:     #All checked & OK
@@ -3229,6 +3231,7 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
 def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     '''Computes the derivatives on sample-dependent Lorentzian & Gaussian peak widths contributions
     from size & microstrain parameters
+
     :param float wave: wavelength for CW data, 2-theta for EDX data
     '''
     gamDict = {}

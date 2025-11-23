@@ -2532,6 +2532,7 @@ def RBsymChk(RBsym,cubic,coefNames,L=18):
 def GenRBCoeff(sytsym,RBsym,L):
     '''imposes rigid body symmetry on spherical harmonics terms
     Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
+
     :param str sytsym: atom position site symmetry symbol
     :param str RBsym: molecular point symmetry symbol
     :param int L: spherical harmonic order no.
@@ -2559,6 +2560,7 @@ def GenRBCoeff(sytsym,RBsym,L):
 
 def GenShCoeff(sytsym,L):
     '''Generate spherical harmonic coefficient names for atom site symmetry
+
     :param str sytsym: site symmetry or perhaps molecular symmetry
     :param int L:spherical harmonic order no.
     :returns list newNames: spherical harmonic term of order L as either C(L,M) or C(L,M)c for cubic terms
@@ -2582,6 +2584,7 @@ def GenShCoeff(sytsym,L):
 
 def OdfChk(SGLaue,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for Laue groups
+
     :param str SGLaue: Laue symbol
     :param int L: principal harmonic term; only evens are used
     :param int M: second harmonic term; can be -L <= M <= L
@@ -2624,6 +2627,7 @@ def OdfChk(SGLaue,L,M):
 
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     '''Generate spherical harmonics coefficient names for texture
+
     :param str SGLaue: Laue symbol
     :param str SamSym: sample symmetry symbol
     :param int L: spherical harmonic order no.
@@ -2644,6 +2648,7 @@ def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
 
 def CrsAng(H,cell,SGData):
     '''Convert HKL to polar coordinates with proper orientation WRT space group point group
+
     :param array H: hkls
     :param list cell: lattice parameters
     :param dict SGData: space group data
@@ -2893,7 +2898,7 @@ def GetKsl(L,M,SamSym,psi,gam):
 def GetKclKsl(L,N,SGLaue,psi,phi,beta):
     """
     This is used for spherical harmonics description of preferred orientation;
-        cylindrical symmetry only (M=0) and no sample angle derivatives returned
+    cylindrical symmetry only (M=0) and no sample angle derivatives returned
     """
 #    from . import pytexture as ptx
     Ksl,x = ptx.pyplmpsi(L,0,1,psi)
@@ -2968,7 +2973,7 @@ def H2ThPh2(H,Bmat):
 def SetUVvec(Neigh):
     ''' Set deformation coordinate choices from neighbors; called in G2phsGUI/UpdateDeformation
     
-    param: list neigh: list of neighboring atoms; each with name, dist & cartesian vector
+    :param list Neigh: list of neighboring atoms; each with name, dist & cartesian vector
 
     :returns list UVvec: list of normalized vectors
     :returns list UVchoice: list of names for each
@@ -2990,7 +2995,7 @@ def SetUVvec(Neigh):
 
 def SHarmcal(SytSym,SHFln,psi,gam):
     '''Perform a surface spherical harmonics computation & return sum of squares.
-    Only used for plotting
+    Only used for plotting.
     Note that the the number of gam values must either be 1 or must match psi
 
     :param str SytSym: site symmetry - only looking for cubics
@@ -3014,6 +3019,7 @@ def SHarmcal(SytSym,SHFln,psi,gam):
 
 def KslCalc(trm,psi,gam):
     '''Compute one angular part term in spherical harmonics
+
     :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180

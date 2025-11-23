@@ -39,6 +39,7 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 def SphereFF(Q,R,args=()):
     ''' Compute hard sphere form factor - can use numpy arrays
+
     :param float Q: Q value array (usually in A-1)
     :param float R: sphere radius (Usually in A - must match Q-1 units)
     :param array args: ignored
@@ -49,6 +50,7 @@ def SphereFF(Q,R,args=()):
     
 def SphericalShellFF(Q,R,args=()):
     ''' Compute spherical shell form factor - can use numpy arrays
+
     :param float Q: Q value array (usually in A-1)
     :param float R: sphere radius (Usually in A - must match Q-1 units)
     :param array args: [float r]: controls the shell thickness: R_inner = min(r*R,R), R_outer = max(r*R,R)
@@ -938,8 +940,9 @@ def IPG(datum,sigma,G,Bins,Dbins,IterMax,Qvec=[],approach=0.8,Power=-1,report=Fa
     Appl. Math., Rice Univ., Houston, Texas 77005, U.S.A. found on the web at
     http://www.caam.rice.edu/caam/trs/2004/TR04-08.pdf
     Problem addressed: Total Non-Negative Least Squares (TNNLS)
-    :param float datum[]:
-    :param float sigma[]:
+
+    :param float[] datum:
+    :param float[] sigma:
     :param float[][] G: transformation matrix
     :param int IterMax:
     :param float Qvec: data positions for Power = 0-4

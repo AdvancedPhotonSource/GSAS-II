@@ -389,6 +389,7 @@ def GetPhasesforHistogram(G2frame,histoName):
 def SetupSampleLabels(histName,dataType,histType):
     '''Setup a list of labels and number formatting for use in
     labeling sample parameters.
+
     :param str histName: Name of histogram, ("PWDR ...")
     :param str dataType:
     '''

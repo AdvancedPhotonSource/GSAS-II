@@ -24,7 +24,7 @@ import math
 import os
 import re
 import copy
-import platform
+#import platform
 import pickle
 import sys
 import random as ran
@@ -709,7 +709,7 @@ def ProjFileSave(G2frame):
                 commit = g2repo.head.commit
                 Controls['LastSavedUsing'] += f" git {commit.hexsha[:8]}"
             else:
-                gv = getSavedVersionInfo()
+                gv = GSASIIpath.getSavedVersionInfo()
                 if gv is not None:
                     Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
         except:

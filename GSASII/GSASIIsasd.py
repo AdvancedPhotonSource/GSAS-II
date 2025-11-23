@@ -267,7 +267,7 @@ def CylinderVol(R,args):
 
     :param float R: diameter (A)
     :param array args: [float L]: length (A)
-    :returns float:volume (A^3)
+    :returns float: volume (A^3)
     '''
     L = args[0]
     return np.pi*L*R**2
@@ -278,7 +278,7 @@ def CylinderDVol(L,args):
 
     :param float: L half length (A)
     :param array args: [float D]: diameter (A)
-    :returns float:volume (A^3)
+    :returns float: volume (A^3)
     '''
     D = args[0]
     return CylinderVol(D/2.,[2.*L,])
@@ -289,7 +289,7 @@ def CylinderARVol(R,args):
 
     :param float: R radius (A)
     :param array args: [float AR]: =L/D=L/2R aspect ratio
-    :returns float:volume
+    :returns float: volume
     '''
     AR = args[0]
     return CylinderVol(R,[2.*R*AR,])
@@ -310,7 +310,7 @@ def UniRodVol(R,args):
 
     :param float R: diameter (A)
     :param array args: [float L]: length (A)
-    :returns float:volume (A^3)
+    :returns float: volume (A^3)
     '''
     L = args[0]
     return CylinderVol(R,[L,])
@@ -321,7 +321,7 @@ def UniRodARVol(R,args):
 
     :param float R: diameter (A)
     :param array args: [float AR]: =L/D=L/2R aspect ratio
-    :returns float:volume (A^3)
+    :returns float: volume (A^3)
     '''
     AR = args[0]
     return CylinderARVol(R,[AR,])
@@ -332,7 +332,7 @@ def UniDiskVol(R,args):
 
     :param float R: diameter (A)
     :param array args: [float T]: thickness
-    :returns float:volume (A^3)
+    :returns float: volume (A^3)
     '''
     T = args[0]
     return CylinderVol(R,[T,])
@@ -491,7 +491,7 @@ def HardSpheresSF(Q,args):
     
     :param float Q: Q value array (A-1)
     :param array args: [float R, float VolFrac]: interparticle distance & volume fraction
-    :returns numpy array S(Q)
+    :returns numpy array: S(Q)
     '''
     
     R,VolFr = args
@@ -522,7 +522,7 @@ def SquareWellSF(Q,args):
     :param array args: [float R, float VolFrac, float depth, float width]: 
         interparticle distance, volume fraction (<0.08), well depth (e/kT<1.5kT),
         well width
-    :returns: numpy array S(Q)
+    :returns: numpy array: S(Q)
       well depth > 0 attractive & values outside above limits nonphysical cf. 
       Monte Carlo simulations 
     '''
@@ -557,7 +557,7 @@ def StickyHardSpheresSF(Q,args):
     
     :param float Q: Q value array (A-1)
     :param array args: [float R, float VolFrac]: sphere radius & volume fraction
-    :returns numpy array S(Q)
+    :returns numpy array: S(Q)
     '''
     R,VolFr,epis,sticky = args
     eta = VolFr/(1.0-epis)/(1.0-epis)/(1.0-epis)	
@@ -606,7 +606,7 @@ def InterPrecipitateSF(Q,args):
 
     :param float Q: Q value array (A-1)
     :param array args: [float R, float VolFr]: "radius" & volume fraction
-    :returns numpy array S(Q)
+    :returns numpy array: S(Q)
     '''
     R,VolFr = args
     QV2 = Q**2*VolFr**2

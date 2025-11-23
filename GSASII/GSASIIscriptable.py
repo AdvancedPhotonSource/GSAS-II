@@ -505,7 +505,8 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 else:
                     try:
                         flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
-                    except Exception as msg:
+                    #except Exception as msg:
+                    except Exception:
                         flag = False
                 if flag:
                     # Omitting image loading special cases
@@ -593,7 +594,8 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
         try:
             Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
             print('Instrument parameters supplied in data file')
-        except KeyError as err:
+        #except KeyError as err:
+        except KeyError:
             Iparm1 = None  # signal error rather than raise exception inside an exception handler
         if Iparm1 is None:
             msg  = "The data file does not have any instrument params associated with it and none were provided."
@@ -1007,9 +1009,9 @@ class G2Project(G2ObjectWrapper):
                 commit = g2repo.head.commit
                 controls_data['LastSavedUsing'] += f" git {commit.hexsha[:8]} script"
             else:
-                gv = getSavedVersionInfo()
+                gv = GSASIIpath.getSavedVersionInfo()
                 if gv is not None:
-                    Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
+                    controls_data['LastSavedUsing'] += f" static {gv.git_version[:8]}"
         except:
             pass
         #    .gpx name
@@ -5620,7 +5622,6 @@ class G2Phase(G2ObjectWrapper):
     def _getBondRest(self,nam):
         if 'Restraints' not in self.proj.data:
             raise G2ScriptException(f"{nam} error: Restraints entry not in data tree")
-        errmsg = ''
         try:
             return self.proj.data['Restraints']['data'][self.name]['Bond']
         except:
@@ -7200,7 +7201,7 @@ class G2Image(G2ObjectWrapper):
             Image = self.image
         else:
             Image = _getCorrImage(Readers['Image'],self.proj,self)
-        Controls = self.getControls()
+        #Controls = self.getControls()
         if mask.shape != Image.shape:
             raise G2ScriptException(f"loadPixelMask Error: mask shape {mask.shape} must match image {Image.shape}")
         self.getMasks()['SpotMask']['spotMask'] = mask

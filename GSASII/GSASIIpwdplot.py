@@ -1602,6 +1602,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         configPartialDisplay(G2frame,Page.phaseColors,Replot)
             
     #### beginning PlotPatterns execution #####################################
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 0')
     global exclLines,Page
     global DifLine
     global Ymax
@@ -1652,6 +1653,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if 'Normalize' not in Page.plotStyle:
         Page.plotStyle['Normalize'] = False
     # reset plot when changing between different data types
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 1')
     try:
         G2frame.lastPlotType
     except:
@@ -1684,6 +1686,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.UseLimits
     except:
         G2frame.UseLimits = {i:[False,False] for i in ('xlims','ylims','dylims','cylims')}
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 2')
     #=====================================================================================
     # code to setup for plotting Rietveld results. Turns off multiplot (contour/waterfall),
     # sqrtplot, turn on + and weight plot, but sqrtPlot qPlot and dPlot are not changed.
@@ -1723,6 +1726,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.plotStyle = copy.copy(styleDict)
         newPlot = True # prevent carrying limits over (may not be needed here)
     #=====================================================================================
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 3')
     if not new:  # plotting in previously created axes
         G2frame.xylim = copy.copy(limits)
     else:   # 1st time plot is created
@@ -1743,6 +1747,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.canvas.mpl_disconnect(b)
     Page.bindings = []
     Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 4')
     if not G2frame.PickId:
         print('No plot, G2frame.PickId,G2frame.PatternId=',G2frame.PickId,G2frame.PatternId)
         return
@@ -1782,6 +1787,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
     else:
         Page.phaseList = Phases = []
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 5')
     # assemble a list of validated colors for tickmarks
     valid_colors = []
     invalid_colors = []
@@ -1812,6 +1818,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 (G2frame,newPlot,plotType),kwargs))
     except:         #skip a C++ error
         pass
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 6')
     # now start plotting
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     G2frame.G2plotNB.status.SetStatusText(IndxFrom,1)
@@ -1892,6 +1899,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     ['u: offset up','d: offset down','l: offset left',
                      'r: offset right','o: reset offset',]
                     
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 7')
     for KeyItem in extraKeys:
         Page.Choice = Page.Choice + [KeyItem[0] + ': '+KeyItem[2],]
     magLineList = [] # null value indicates no magnification
@@ -1920,6 +1928,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Lines = []
     exclLines = []
     time0 = time.time()
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 8')
     if G2frame.SinglePlot and G2frame.PatternId:
         try:
             Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
@@ -1984,6 +1993,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             ParmList.reverse()
             SampleList.reverse()
             LimitsList.reverse()
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9')
     if timeDebug:
         print('plot build time: %.3f for %dx%d patterns'%(time.time()-time0,len(PlotList[0][1][1]),len(PlotList)))
     lenX = 0  # length of first histogram, used for contour plots
@@ -2566,6 +2576,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if Page.plotStyle['logPlot'] and 'PWDR' in plottype:
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
     #============================================================
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 10')
     # plot HKL labels
     data[0]['HKLconfig'] = data[0].get('HKLconfig',{})
     alpha = data[0]['HKLconfig'].get('alpha',2)
@@ -2882,6 +2893,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if DifLine[0]:
             G2frame.dataWindow.moveDiffCurve.Enable(True)
     if refineMode: return refPlotUpdate
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns done')
 
 def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
     '''Creates a window to show a customizable "Rietveld" plot. Exports that 

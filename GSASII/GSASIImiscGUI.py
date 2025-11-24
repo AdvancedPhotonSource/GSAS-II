@@ -649,7 +649,6 @@ def ProjFileOpen(G2frame,showProvenance=True):
             print('GPX load successful. Last saved with GSAS-II revision '+LastSavedUsing)
         else:
             print('project load successful')
-        if GSASIIpath.GetConfigValue('debug'): print('ProjFileOpen 1')
         if GSASIIpath.GetConfigValue('show_gpxSize'):
             print(50*'=')
             print('File section sizes (Kb)')
@@ -671,7 +670,6 @@ def ProjFileOpen(G2frame,showProvenance=True):
         filep.close()
         wx.EndBusyCursor()
         G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
-    if GSASIIpath.GetConfigValue('debug'): print('ProjFileOpen 2')
     if deleteSeq:
         if hist: hist.close()
         try:
@@ -683,13 +681,11 @@ def ProjFileOpen(G2frame,showProvenance=True):
         except:
             print('Warning: unable to delete {}'.format(GPXhist))
     G2frame.SetTitleByGPX()
-    if GSASIIpath.GetConfigValue('debug'): print('ProjFileOpen 3')
     if LastSavedUsing:
         try:
             G2G.updateNotifier(G2frame,int(LastSavedUsing.split()[0]))
         except:
             pass
-    if GSASIIpath.GetConfigValue('debug'): print('ProjFileOpen 4')
 
 def ProjFileSave(G2frame):
     'Save a GSAS-II project file'

@@ -4309,7 +4309,6 @@ If you continue from this point, it is quite likely that all intensity computati
         phaseId = None
         seqId = None
         G2IO.ProjFileOpen(self)
-        if GSASIIpath.GetConfigValue('debug'): print('StartProject 1')
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
         self.GPXtree.Expand(self.root)
         self.HKL = np.array([])
@@ -4332,15 +4331,12 @@ If you continue from this point, it is quite likely that all intensity computati
                 if data:
                     for item in self.Refine: item.Enable(True)
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
-        if GSASIIpath.GetConfigValue('debug'): print('StartProject 2')
         if phaseId: # show all phases
             self.GPXtree.Expand(phaseId)
-        if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.1')
         if seqId:
             self.EnablePlot = True
             #SelectDataTreeItem(self,seqId)
             wx.CallAfter(SelectDataTreeItem,self,Id)
-            if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.2a')
             if sys.platform == "darwin":
                 self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
         elif Id:
@@ -4348,22 +4344,17 @@ If you continue from this point, it is quite likely that all intensity computati
             self.GPXtree.Expand(Id)
             #SelectDataTreeItem(self,Id)
             wx.CallAfter(SelectDataTreeItem,self,Id)
-            if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.2b')
             if sys.platform == "darwin":
                 self.GPXtree.SelectItem(Id)  # OSX, as before
         elif phaseId:
             Id = phaseId
             # open 1st phase
             Id, unused = self.GPXtree.GetFirstChild(phaseId)
-            if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.3')
             #SelectDataTreeItem(self,Id)
             wx.CallAfter(SelectDataTreeItem,self,Id)
-            if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.4')
             if sys.platform == "darwin":
                 self.GPXtree.SelectItem(Id) # OSX, as before
-        if GSASIIpath.GetConfigValue('debug'): print('StartProject 3')
         self.CheckNotebook()
-        if GSASIIpath.GetConfigValue('debug'): print('StartProject 3.1')
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]
         if GSASIIpath.GetConfigValue('Save_paths'):
@@ -4381,7 +4372,7 @@ If you continue from this point, it is quite likely that all intensity computati
 #                    print(txt)
                     exec(txt)
                 wx.CallLater(100,exectxt)
-        if GSASIIpath.GetConfigValue('debug'): print('StartProject 4')
+        if GSASIIpath.GetConfigValue('debug'): print('StartProject done')
 
     def OnFileClose(self, event):
         '''Clears the data tree in response to the

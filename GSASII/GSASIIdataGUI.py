@@ -4338,15 +4338,16 @@ If you continue from this point, it is quite likely that all intensity computati
         if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.1')
         if seqId:
             self.EnablePlot = True
-            SelectDataTreeItem(self,seqId)
+            #SelectDataTreeItem(self,seqId)
+            wx.CallAfter(SelectDataTreeItem,self,Id)
             if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.2a')
             if sys.platform == "darwin":
                 self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
         elif Id:
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
-            SelectDataTreeItem(self,Id)
-            #wx.CallAfter(SelectDataTreeItem,self,Id)
+            #SelectDataTreeItem(self,Id)
+            wx.CallAfter(SelectDataTreeItem,self,Id)
             if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.2b')
             if sys.platform == "darwin":
                 self.GPXtree.SelectItem(Id)  # OSX, as before
@@ -4355,7 +4356,8 @@ If you continue from this point, it is quite likely that all intensity computati
             # open 1st phase
             Id, unused = self.GPXtree.GetFirstChild(phaseId)
             if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.3')
-            SelectDataTreeItem(self,Id)
+            #SelectDataTreeItem(self,Id)
+            wx.CallAfter(SelectDataTreeItem,self,Id)
             if GSASIIpath.GetConfigValue('debug'): print('StartProject 2.4')
             if sys.platform == "darwin":
                 self.GPXtree.SelectItem(Id) # OSX, as before

@@ -2403,40 +2403,41 @@ def RBChk(sytsym,L,M):
                 elif L%2 and (M//3)%2: return True,-1.**M
         elif sytsym == '6/mmm':
             if not L%2 and not M%6: return True,1.0
-        elif sytsym == '4(z)':
+        elif sytsym in ['4(z)','4']:
             if not M%4: return True,1.0     #P?
-        elif sytsym == '-4(z)':   #m=2l-4j
+        elif sytsym in ['-4(z)','-4']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0    #P?
             if not L%2 and not (M//2)%2: return True,1.0
-        elif sytsym == '4/m(z)':
+        elif sytsym in ['4/m(z)','4/m']:
             if not M%4: return True,1.0   #P?
-        elif sytsym == '422(z)':
+        elif sytsym in ['422(z)','422']:
             if not M%4: return True,-1.0**L
-        elif sytsym == '4mm(z)':
+        elif sytsym in ['4mm(z)','4mm']:
             if not M%4: return True,1.0
         elif sytsym in ['-42m(z)','-42m']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0
             if not L%2 and not (M//2)%2: return True,-1.0**L
-        elif sytsym == '-4m2(z)':   #m=2l-4j
+        elif sytsym in ['-4m2(z)','-4m2']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0
             if not L%2 and not (M//2)%2: return True,1.0
-        elif sytsym == '4/mmm(z)':
+        elif sytsym in ['4/mmm(z)','4/mmm']:
             if not L%2 and not M%4: return True,1.0
         elif sytsym in ['3','3(111)']:
             if not M%3: return True,1.0     #P?
         elif sytsym in ['-3','-3(111)']:
             if not L%2 and not M%3: return True,1.0    #P?
         elif sytsym in ['32','32(100)','32(111)']:
-            if not M%3: return True,-1.0**(L-M)
-        elif sytsym == '32(120)':
+            if [L,M] in [[2,0],[3,3],[4,-3],[4,0],[5,3]]:
+                return True,-1.0**(L-M)
+        elif sytsym in ['32(120)','32(y)']:
             if not M%3: return True,-1.0**(L-M)
         elif sytsym in ['3m','3m(100)','3m(111)']:
             if not M%3: return True,-1.0**M
-        elif sytsym == '3m(120)':
+        elif sytsym in ['3m(120)','3m(y)']:
             if not M%3: return True,1.0
-        elif sytsym in ['-3m(100)','-3m(111)','-3m']:
+        elif sytsym in ['-3m','-3m(100)','-3m(111)']:
             if not L%2 and not M%3: return True,-1.0**M
-        elif sytsym == '-3m(120)':
+        elif sytsym in ['-3m(120)','-3m(y)']:
             if not L%2 and not M%3: return True,1.0
         elif '222' in sytsym:
             if M%2: return True,-1.0**L
@@ -2446,7 +2447,7 @@ def RBChk(sytsym,L,M):
         elif 'mm2(y)' in sytsym:  #m=l-2j
             if L%2 and M%2: return True,-1.0**L  #both odd
             if not L%2 and not M%2: return True,-1.0**L     #both even
-        elif 'mm2(z)' in sytsym:
+        elif sytsym in ['mm2(z)','mm2']:
             if M%2: return True,1.0
         elif 'mmm' in sytsym :
             if not L%2 and not M%2: return True,1.0

@@ -8529,7 +8529,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         #     for lbl in G2frame.G2plotNB.plotList:
         #         G2frame.G2plotNB.Delete(lbl)
         #     G2frame.lastPlotType = None
-        G2pwpl.PlotPatterns(G2frame,plotType=kind,newPlot=NewPlot,fromTree=True)
+        wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType=kind,newPlot=NewPlot,fromTree=True)
     elif kind == 'HKLF':
         Name = G2frame.GPXtree.GetItemText(item)
         phaseName = G2pdG.IsHistogramInAnyPhase(G2frame,Name)

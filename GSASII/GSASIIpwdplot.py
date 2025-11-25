@@ -2004,6 +2004,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if xye[1] is None: continue
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.1')
     if Ymax is None: return # nothing to plot
     offsetX = Page.plotStyle['Offset'][1]
     offsetY = Page.plotStyle['Offset'][0]
@@ -2030,6 +2031,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             xLabel = r'$\mathsf{2\theta}$'
 
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.2')
     if G2frame.Weight and not G2frame.Contour:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         GS_kw = {'height_ratios':[4, 1],}
@@ -2043,6 +2045,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             right=.98,top=1.-16/200.,hspace=0)
     else:
         Plot.set_xlabel(xLabel,fontsize=16)
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.3')
     if G2frame.Weight and G2frame.Contour:
         Title = r'$\mathsf{\Delta(I)/\sigma(I)}$ for '+Title
     if 'T' in ParmList[0]['Type'][0] or (Page.plotStyle['Normalize'] and not G2frame.SinglePlot):
@@ -2069,7 +2072,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if Page.plotStyle['sqPlot']:
                 Plot.set_ylabel(r'$S(Q)=R*Q^{4}$',fontsize=16)
             else:
-                Plot.set_ylabel(r'$Reflectivity$',fontsize=16)                
+                Plot.set_ylabel(r'$Reflectivity$',fontsize=16)        
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.4')
     mpl.rcParams['image.cmap'] = G2frame.ContourColor
     mcolors = mpl.cm.ScalarMappable()       #wants only default as defined in previous line!!
     mcolors.set_array([]) # needed for MPL <=3.0.x
@@ -2089,6 +2093,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Plot.set_ylabel('Data sequence',fontsize=14)
     unequalArrays = False # set to True for contour plots with unequal pixels
     avgStep = None
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.5')
     if G2frame.Contour:  # detect unequally spaced points in a contour plot
         for N,Pattern in enumerate(PlotList):
             xye = np.array(ma.getdata(Pattern[1])) # strips mask = X,Yo,W,Yc,Yb,Yd
@@ -2112,6 +2117,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif not unequalArrays and abs(avgStep - (X[-1]-X[0])/(len(X)-1)) > 0.05 * avgStep:
                 unequalArrays = True
 
+    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.6')
     ExMask = []
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
@@ -2141,6 +2147,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if G2frame.Contour:
             xye0 = xye[0]   # drop mask for contouring
 
+        if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.61',N)
         # convert all X values and then reapply mask if xye0 is a masked array
         mask = None
         if hasattr(xye0,'mask'): mask = xye0.mask
@@ -2159,6 +2166,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         magMarkers = []
         Plot.magLbls = []
         multArray = np.ones_like(Pattern[1][0])
+        if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.62',N)
         if 'PWDR' in plottype and G2frame.SinglePlot and not (
                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
             if not refineMode:
@@ -2209,6 +2217,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Plot.magLbls.append(lbl)
                 Page.toolbar.updateActions = (PlotPatterns,G2frame)
             multArray = ma.getdata(multArray)
+        if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.63',N)
         if 'PWDR' in plottype:
             YI = copy.copy(xye[1])      #yo
             if G2frame.SubBack:
@@ -2236,6 +2245,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Page.plotStyle['exclude']:
             Y = ma.array(Y,mask=ma.getmask(X))
                 
+        if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.64',N)
         if ifpicked and not G2frame.Contour: # draw limit & excluded region lines
             lims = limits[1:]
             if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
@@ -2250,6 +2260,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=True,pickradius=3.))    
                 Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=True,pickradius=3.))
                 exclLines += [2*i+2,2*i+3]
+        if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.65',N)
         if G2frame.Contour:
             if Page.plotStyle['chanPlot']:
                 if unequalArrays:
@@ -2418,6 +2429,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         Plot.plot(X,W,pwdrCol['Calc_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #const. background
                         Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                 else:  # not logPlot
+                    if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.66',N)
                     ymax = 1.
                     if Page.plotStyle['Normalize'] and Y.max() != 0 and not G2frame.SinglePlot:
                         ymax = Y.max()
@@ -2495,6 +2507,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         fp.close()
                         print('file',plotOpt['CSVfile'],'written')
                         
+                if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.67',N)
                 Page.SetToolTipString('')
                 if G2frame.PickId:
                     if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
@@ -2539,6 +2552,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))  # used anywhere?
                         
             else:   #not picked
+                if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.68',N)
                 ymax = 1.
                 if Page.plotStyle['Normalize'] and Y.max() != 0:
                     ymax = Y.max()

@@ -2349,7 +2349,7 @@ def LaueUnique(Laue,HKLF):
 def RBChk(sytsym,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for site symmetries
     :param str sytsym: atom site symmetry symbol
-    :param int L: principal harmonic term L>0
+    :param int L: principal harmonic term L>0 none beyond L=5; not considered
     :param int M: second harmonic term; can be -L <= M <= L
     :returns True if allowed and sign for term
     NB: not complete for all possible site symmetries! Many are missing

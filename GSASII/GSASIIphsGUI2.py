@@ -479,8 +479,8 @@ def UpdateDeformation(G2frame,data,AtdId):
         Indx[matSel.GetId()] = dId
         matSizer.Add(matSel,0,WACV)
         localSytSym = ['1','-1','2(z)','m(z)','2/m(z)','222','mm2','mmm','4','-4','4/m','422','4mm','-4m2','4/mmm',
-                       '3','-3','321','3m1','-3m1','312','31m','-31m','32(x)','32(y)','3m','-3m',
-                       '6','-6','6/m','622','6mm','-6m2','6/mmm','23','m-3','432','-43m','m-3m']
+                       '3','-3','32','32(y)','3m','3m(y)','-3m','-3m(y)','6','-6','6/m','622','6mm','-6m2','6/mmm',
+                       '23','m3','432','-43m','m3m'] #32 pt gps + 3 extras
         
         deformationData[-dId]['Radial'] = deformationData[-dId].get('Radial','Bessel')
         topSizer.Add(wx.StaticText(deformation,label=' Select radial fxn: '),0,WACV)

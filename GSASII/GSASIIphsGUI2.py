@@ -205,6 +205,12 @@ def UpdateDeformation(G2frame,data,AtdId):
         dId = Indx[Obj.GetId()]
         deformationData[-dId]['Radial'] = radFxn.GetStringSelection()
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
+        
+    def OnSSchoice(event):
+        Obj = event.GetEventObject()
+        dId = Indx[Obj.GetId()]
+        deformationData[-dId]['LocSS'] = SSchoice.GetStringSelection()
+        wx.CallAfter(UpdateDeformation,G2frame,data,dId)
     
     def MakeUVmat(defData,U,V):
         MX = U/nl.norm(U)
@@ -470,18 +476,24 @@ def UpdateDeformation(G2frame,data,AtdId):
         NUVvec,NUVchoice = G2lat.SetUVvec(neigh)
         UVchoice[dId] += NUVchoice
         UVvec[dId] += NUVvec
+        lineSizer.Add(wx.StaticText(deformation,label=' Local site sym:'),0,WACV)
+        SSchoices = G2spc.GetSytSymChoice(atom[cs])
+        deformationData[-dId]['LocSS'] = deformationData[-dId].get('LocSS',atom[cs][:])
+        SSchoice = wx.ComboBox(deformation,value=deformationData[-dId]['LocSS'],
+            choices=SSchoices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Indx[SSchoice.GetId()] = dId
+        SSchoice.Bind(wx.EVT_COMBOBOX,OnSSchoice)
+        lineSizer.Add(SSchoice,0,WACV)
         mainSizer.Add(lineSizer)
+        mainSizer.Add(wx.StaticText(deformation,
+            label=" NB: Local site sym always has unique axis || Z' and second axis || X'; choose U && V carefully"))
         matSizer = wx.BoxSizer(wx.HORIZONTAL)
         Mchoice = ["A: X'=U, Y'=(UxV)xU & Z'=UxV","B: X'=U, Y'=UxV & Z'=Ux(UxV)"]
         matSizer.Add(wx.StaticText(deformation,label=' Orbital Cartesian axes:'),0,WACV)
         matSel = wx.ComboBox(deformation,choices=Mchoice,value=deformationData[-dId]['MUV'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
         matSel.Bind(wx.EVT_COMBOBOX,OnMatSel)
         Indx[matSel.GetId()] = dId
-        matSizer.Add(matSel,0,WACV)
-        localSytSym = ['1','-1','2(z)','m(z)','2/m(z)','222','mm2','mmm','4','-4','4/m','422','4mm','-4m2','4/mmm',
-                       '3','-3','32','32(y)','3m','3m(y)','-3m','-3m(y)','6','-6','6/m','622','6mm','-6m2','6/mmm',
-                       '23','m3','432','-43m','m3m'] #32 pt gps + 3 extras
-        
+        matSizer.Add(matSel,0,WACV)        
         deformationData[-dId]['Radial'] = deformationData[-dId].get('Radial','Bessel')
         topSizer.Add(wx.StaticText(deformation,label=' Select radial fxn: '),0,WACV)
         fxchoice = deformationData[-dId].get('fxchoice',['Bessel',])

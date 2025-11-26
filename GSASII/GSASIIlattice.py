@@ -2532,7 +2532,6 @@ def RBsymChk(RBsym,cubic,coefNames,L=18):
 
 def GenRBCoeff(sytsym,RBsym,L):
     '''imposes rigid body symmetry on spherical harmonics terms
-    Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
 
     :param str sytsym: atom position site symmetry symbol
     :param str RBsym: molecular point symmetry symbol
@@ -2543,11 +2542,14 @@ def GenRBCoeff(sytsym,RBsym,L):
     coefNames = []
     coefSgns = []
     cubic = False
-    if sytsym in ['23','m3','432','-43m','m3m']:
+    rbSym = sytsym
+    if RBsym:
+        rbSym = RBsym
+    if rbSym in ['23','m3','432','-43m','m3m']:
         cubic = True
     for iord in range(1,L+1):
         for n in range(-iord,iord+1):
-            rbChk,sgn = RBChk(sytsym,iord,n)
+            rbChk,sgn = RBChk(rbSym,iord,n)
             if rbChk:
                 if cubic:
                     coefNames.append('C(%d,%d)c'%(iord,n))
@@ -2556,7 +2558,7 @@ def GenRBCoeff(sytsym,RBsym,L):
                 coefSgns.append(sgn)
     if RBsym == '1':
         return coefNames,coefSgns
-    newNames,newSgns = RBsymChk(RBsym,cubic,coefNames,L)
+    newNames,newSgns = RBsymChk(rbSym,cubic,coefNames,L)
     return newNames,newSgns
 
 def GenShCoeff(sytsym,L):

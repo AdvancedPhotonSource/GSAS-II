@@ -335,6 +335,7 @@ def UpdateDeformation(G2frame,data,AtdId):
         dId = Indx[Obj.GetId()]
         atom = atomData[AtLookUp[dId]]
         sytsym = atom[cs].strip()
+        rbSym = deformationData[-dId]['LocSS']
         for harm in data['Deformations'][dId]:
             if 'Sl' in harm[0]:
                 Harm = harm
@@ -346,7 +347,7 @@ def UpdateDeformation(G2frame,data,AtdId):
         cofNames = []
         notFound = True
         while notFound and Order < 6:
-            cofNames,cofSgns = G2lat.GenRBCoeff(sytsym,'1',Order)      #sytsym, RBsym = '1'
+            cofNames,cofSgns = G2lat.GenRBCoeff(sytsym,rbSym,Order)
             cofNames = [name.replace('C','D') for name in cofNames]
             for name in cofNames:
                 if name not in Hkeys:   #new names found

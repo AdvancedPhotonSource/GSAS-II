@@ -2245,7 +2245,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Page.plotStyle['exclude']:
             Y = ma.array(Y,mask=ma.getmask(X))
                 
-        if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.64a',lims)
+        if GSASIIpath.GetConfigValue('debug'): print('PlotPatterns 9.64a',limits[1:])
         if ifpicked and not G2frame.Contour: # draw limit & excluded region lines
             lims = limits[1:]
             if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:

@@ -2233,12 +2233,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = G2lat.Pos2dsp(Parms,lims)
             # limit lines
-            Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),picker=True,pickradius=3.))    
-            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),picker=True,pickradius=3.))
+            Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),picker=3.))    
+            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),picker=3.))
             # excluded region lines
             for i,item in enumerate(lims[1:]):
-                Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=True,pickradius=3.))    
-                Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=True,pickradius=3.))
+                Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=3.))    
+                Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=3.))
                 exclLines += [2*i+2,2*i+3]
         if G2frame.Contour:
             if Page.plotStyle['chanPlot']:

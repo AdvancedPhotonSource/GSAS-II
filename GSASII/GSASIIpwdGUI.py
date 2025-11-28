@@ -1834,8 +1834,11 @@ def UpdateBackground(G2frame,data):
         PatternId = G2frame.PatternId
         background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
-        auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
+        xmin = np.searchsorted(pwddata[0,:],limits[0])
+        xmax = np.searchsorted(pwddata[0,:],limits[1])
+        auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata[:,xmin:xmax])
         for plot in auxPlot:
             XY = np.array(plot[:2])
             if 'D(R)' in plot[2]:

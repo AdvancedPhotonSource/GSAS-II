@@ -569,12 +569,16 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 Ne = orbs[orb].get('Ne',1.0) # not there for non <j0> orbs
                 if 'kappa' in orbs[orb]:
                     kappa = orbs[orb]['kappa']
+                    kappap = orbs[orb]["kappa'"]
                     SQk = SQR/kappa**2
+                    SQkp = SQR/kappap**2
                     korb = orb
                 orbTable = ORBtables[Atype][orKeys[int(orb)]]
                 ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
                 ff = Ne*G2el.ScatFac(ffOrb,SQk)
                 dffdk = G2el.ScatFacDer(ffOrb,SQk)
+                ffp = Ne*G2el.ScatFac(ffOrb,SQkp)
+                dffdkp = G2el.ScatFacDer(ffOrb,SQkp)
                 dSH = 0.0
                 if 'B' in radial:       #'Bessel' - works ok, I think
                     if '<j0>' in orKeys[int(orb)]:
@@ -596,13 +600,19 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                     dFFdS[name] = ff/Ne
                     FFval += ff
                     dSH = 1.0
+                    lmin = 0
                     for term in orbs[orb]:
                         if 'D(' in term:    #skip 'Ne'
+                            name = 'A%s%s:%d'%(term,orb,iAt)
+                            if not lmin: lmin = eval(term[1:])[0]
                             item = term.replace('D','C')
                             SH = G2lat.KslCalc(item,Th,Ph)**2
-                            FFval += SH*orbs[orb][term]*ff
-                            name = 'A%s%s:%d'%(term,orb,iAt)
-                            dFFdS[name] = SH*ff
+                            if eval(term[1:])[0] > lmin:
+                                FFval += SH*orbs[orb][term]*ffp
+                                dFFdS[name] = SH*ffp
+                            else:
+                                FFval += SH*orbs[orb][term]*ff
+                                dFFdS[name] = SH*ff
                             dSH += SH*orbs[orb][term]
                 name = 'Akappa%s:%d'%(korb,iAt)
                 if name in dFFdS:

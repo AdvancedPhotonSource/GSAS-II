@@ -1838,16 +1838,19 @@ def UpdateBackground(G2frame,data):
         pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         xmin = np.searchsorted(pwddata[0,:],limits[0])
         xmax = np.searchsorted(pwddata[0,:],limits[1])
-        auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata[:,xmin:xmax])
-        for plot in auxPlot:
-            XY = np.array(plot[:2])
-            if 'D(R)' in plot[2]:
-                xlabel = r'$R, \AA$'
-                ylabel = r'$D(R), arb. units$'
-            else:
-                xlabel = r'$Q,\AA$'+superMinusOne
-                ylabel = r'$I(Q)$'
-            G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=xlabel,labelY=ylabel,lines=True)
+        if pwddata[0,xmin] > 0:
+            auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata[:,xmin:xmax])
+            for plot in auxPlot:
+                XY = np.array(plot[:2])
+                if 'D(R)' in plot[2]:
+                    xlabel = r'$R, \AA$'
+                    ylabel = r'$D(R), arb. units$'
+                else:
+                    xlabel = r'$Q,\AA$'+superMinusOne
+                    ylabel = r'$I(Q)$'
+                G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=xlabel,labelY=ylabel,lines=True)
+        else:
+            G2frame.ErrorDialog('RDF calculation failure','Negative 2-thetas/TOF; choose better limits')
 
     def BackSizer():
 

@@ -2008,6 +2008,7 @@ class ExpressionCalcObj(object):
 
     def UpdateVars(self,varList,valList):
         '''Update the dict for the expression with a set of values
+
         :param list varList: a list of variable names
         :param list valList: a list of corresponding values
         '''
@@ -2016,6 +2017,7 @@ class ExpressionCalcObj(object):
 
     def UpdateDict(self,parmDict):
         '''Update the dict for the expression with values in a dict
+
         :param dict parmDict: a dict of values, items not in use are ignored
         '''
         if self.eObj.expression.startswith('Dist') or self.eObj.expression.startswith('Angle'):

@@ -5865,7 +5865,8 @@ No: least-squares fitting starts with previously fit structure factors.'''
     def reloadFromGPX(self,rtext=None,Rvals={}):
         '''Deletes current data tree & reloads it from GPX file (after a
         refinement.) Done after events are completed to avoid crashes.
-        :param rtext str: string info from caller to be put in Notebook after reload
+
+        :param str rtext: string info from caller to be put in Notebook after reload
         '''
         self.GPXtree.DeleteChildren(self.root)
         self.HKL = np.array([])

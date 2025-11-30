@@ -7,7 +7,6 @@ import numpy.linalg as nl
 import scipy.optimize as so
 import sys
 import copy
-import os.path as ospath
 
 from . import GSASIIpath
 GSASIIpath.SetBinaryPath()
@@ -1193,7 +1192,7 @@ def Trans2Text(Trans):
     return Text[:-1]
 
 def getlattSym(Trans):
-    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb','cabab':'cab','abcab':'acb'}
+#    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb','cabab':'cab','abcab':'acb'}
     transText = Trans2Text(Trans)
     lattSym = ''
     for fld in transText.split(','):
@@ -3451,10 +3450,101 @@ def SytSym(XYZ,SGData):
 
     return GetKNsym(str(Isym)),Mult,Ndup,dupDir
 
+def GetSytSymChoice(sytsym):
+    '''
+    Get local sytsyms compatible with crystallographic sytsym - may be higher
+    in sub-super point groups
+
+    Parameters
+    ----------
+    sytsym : str
+        DESCRIPTION.
+
+    Returns
+    -------
+   list of allowed point groups
+
+    '''
+    PtGrps = ['1','-1','2(z)','m(z)','2/m(z)',      #0-4
+              '222','mm2','mmm','4','-4',           #5-9
+              '4/m','422','4mm','-4m2','4/mmm',     #10-14
+              '3','-3','32','3m','-3m',             #15-19
+              '6','-6','6/m','622','6mm',           #20-24
+              '-6m2','6/mmm','23','m3','432',       #25-29
+              '-43m','m3m'                          #30-31
+              ] #32 pt groups
+    PtGpLst = []
+    if sytsym == '-1':
+        PtGpLst = [1,4,7,10,14,19,22,24,26,28,31]
+    elif sytsym in ['2(x)','2(100)','2(y)','2(z)']:
+        PtGpLst = [2,4,5,6,7,8,9,10,11,12,13,14,19,22,24,26,27,28,29,30,31]
+    elif sytsym in ['m(x)','m(y)','m(z)']:
+        PtGpLst = [3,4,6,7,10,12,13,14,18,19,21,22,24,25,26,28,30,31]
+    elif sytsym in ['2/m','2/m(x)','2/m(y)','2/m(z)']:
+        PtGpLst = [4,7,10,14,19,22,24,26,28,31]
+    elif sytsym == '222':
+        PtGpLst = [5,7,11,13,14,23,26,27,28,29,30,31]
+    elif sytsym in ['mm2','mm2(x)','mm2(y)','mm2(z)']:
+        PtGpLst = [6,7,12,13,14,25,26,28,30,31]
+    elif sytsym == 'mmm':
+        PtGpLst = [7,14,26,28,31]
+    elif sytsym in ['4(z)','4']:
+        PtGpLst = [8,10,11,12,14,29,31]
+    elif sytsym in ['-4(z)','-4']:
+        PtGpLst = [9,10,13,14,30,31]
+    elif sytsym in ['4/m(z)','4/m']:
+        PtGpLst = [10,14,31]
+    elif sytsym in ['422(z)','422']:
+        PtGpLst = [11,14,29,31]
+    elif sytsym in ['4mm(z)','4mm']:
+        PtGpLst = [12,14,31]
+    elif sytsym in ['-4m2(z)','-4m2']:
+        PtGpLst = [13,14,30,31]
+    elif sytsym in ['4/mmm(z)','4/mmm']:
+        PtGpLst = [14,31]
+    elif sytsym in ['3','3(111)']:
+        PtGpLst = [15,16,17,18,19,20,21,22,23,24,25,26]
+    elif sytsym in ['-3','-3(111)']:
+        PtGpLst = [16,19,22,24,26,28,31]
+    elif sytsym in ['32','32(100)','32(111)','32(120)','32(y)']:
+        PtGpLst = [17,19,23,25,26,29,31]
+    elif sytsym in ['3m','3m(100)','3m(111)','3m(120)','3m(y)']:
+        PtGpLst = [18,19,25,26,30,31]
+    elif sytsym in ['-3m','-3m(100)','-3m(111)','-3m(120)','-3m(y)']:
+        PtGpLst = [1926,31]
+    elif sytsym == '6':
+        PtGpLst = [20,22,23,24,26]
+    elif sytsym == '-6':
+        PtGpLst = [21,22,25,26]
+    elif sytsym == '6/m':
+        PtGpLst = [22,26,]
+    elif sytsym == '622':
+        PtGpLst = [23,26,]
+    elif sytsym == '6mm':
+        PtGpLst = [24,26,]
+    elif sytsym in ['-6m2(100)','-6m2(120)','-6m2']:
+        PtGpLst = [25,26]
+    elif sytsym == '6/mmm':
+        PtGpLst = [26,]
+    elif sytsym == '23':
+        PtGpLst = [27,28,29,30,31]
+    elif sytsym == 'm3':
+        PtGpLst = [28.31,]
+    elif sytsym == '432':
+        PtGpLst = [30,31,]
+    elif sytsym == '-43m':
+        PtGpLst = [31,]
+    if len(PtGpLst):
+        return [PtGrps[i] for i in PtGpLst]
+    else: #'1' and unknown point group symbol
+        return PtGrps
+        
+    
+
+
 def AtomDxSymFix(Dx,SytSym,CSIX):
     ''' Applies site symmetry restrictions to atom position shifts. 1st parameter value
     of each kind encountered is assumed to be the independent one. Needed for ISODISTORT mode shifts.
-
 
     '''
     if SytSym == '1':
@@ -3467,8 +3557,6 @@ def AtomDxSymFix(Dx,SytSym,CSIX):
         else:
             newDx.append(0.0)
     return np.array(newDx)
-
-
 
 def MagSytSym(SytSym,dupDir,SGData):
     '''

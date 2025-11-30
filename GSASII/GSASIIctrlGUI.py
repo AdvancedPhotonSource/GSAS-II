@@ -1146,6 +1146,7 @@ def HorizontalLine(sizer,parent):
 class G2Button(wx.Button):
     '''A version of wx.Button. Bindings are saved
     in the object, and are looked up rather than directly set with a bind.
+
     :param wx.Panel parent: parent widget
     :param int id: Id for button
     :param str label: label for button
@@ -2752,7 +2753,7 @@ def G2ScrolledGrid(G2frame,lbl,title,tbl,colLbls,colTypes,maxSize=(600,300),comm
       wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT)
     :param list maxSize: Maximum size for the table in points. Defaults to
       (600,300)
-      :param str comment: optional text that appears below table
+    :param str comment: optional text that appears below table
 
     Example::
 

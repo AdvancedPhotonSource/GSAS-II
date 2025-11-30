@@ -356,6 +356,7 @@ class G2PlotNoteBook(wx.Panel):
 
     def RegisterRedrawRoutine(self,name,routine=None,args=(),kwargs={}):
         '''Save information to determine how to redraw a plot
+
         :param str name: label on tab of plot
         :param Object routine: a function to be called
         :param args: a list of positional parameters for the function
@@ -472,6 +473,7 @@ class G2PlotNoteBook(wx.Panel):
 
     def _addPage(self,name,page):
         '''Add the newly created page to the notebook and associated lists.
+
         :param name: the label placed on the tab, which should be unique
         :param page: the wx.Frame for the matplotlib, openGL, etc. window
         '''
@@ -1313,7 +1315,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             lines = mplC.LineCollection(XD,color=colors[2])
             Plot.add_collection(lines)
         else:
-            Plot.errorbar(X, Y, yerr=Z, fmt='.', color='b',picker=True,pickradius=5)
+            Plot.errorbar(X, Y, yerr=Z, fmt='.', color='b',picker=5)
             Plot.plot(X, X, color='r')
 
         xylim = np.array([[np.min(X),np.max(X)],[np.min(Y-Z-Ymax/10.),np.max(np.concatenate((Y,Z)))]])
@@ -2250,9 +2252,9 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             else:
                 XYlist.append(list(zip(X,Y)))
 #            if G2frame.Legend:
-#                Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
+#                Plot.plot(X,Y,colors[N%6],label='Azm:'+Pattern[2].split('=')[1])
 #            else:
-#                Plot.plot(X,Y,colors[N%6],picker=False)
+#                Plot.plot(X,Y,colors[N%6])
     if G2frame.Contour and len(PlotList)>1:
         acolor = GetColorMap(G2frame.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,
@@ -2348,17 +2350,14 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             G2frame.Lines = []
             X = XYlist[0].T[0]
             Y = XYlist[0].T[1]
-            Plot.plot(X,Y,color='b',picker=True,pickradius=3)
+            Plot.plot(X,Y,color='b',picker=3)
             if 'calc' in Peaks and len(Peaks['calc']):
                 XC,YC= Peaks['calc']
                 Plot.plot(XC,YC,color='g')
-            G2frame.Lines.append(Plot.axvline(peaks['Limits'][0],color='g',dashes=(5,5),
-                                picker=True,pickradius=2.))
-            G2frame.Lines.append(Plot.axvline(peaks['Limits'][1],color='r',dashes=(5,5),
-                                picker=True,pickradius=2.))
+            G2frame.Lines.append(Plot.axvline(peaks['Limits'][0],color='g',dashes=(5,5),picker=2.))
+            G2frame.Lines.append(Plot.axvline(peaks['Limits'][1],color='r',dashes=(5,5),picker=2.))
             for peak in Peaks['Peaks']:
-                G2frame.Lines.append(Plot.axvline(peak[0],color='r',
-                                picker=True,pickradius=2.))
+                G2frame.Lines.append(Plot.axvline(peak[0],color='r',picker=2.))
             Xb = [0.,peaks['Limits'][1]]
             Yb = [0.,Xb[1]*peaks['Background'][1][1]]
             Plot.plot(Xb,Yb,color='k',dashes=(5,5))
@@ -2440,7 +2439,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
         if E:
             Plot.errorbar(Q,Y,ecolor='k',yerr=E)
         if ixy:
-            Plot.plot(Q,Y,'kx',picker=True,pickradius=3)
+            Plot.plot(Q,Y,'kx',picker=3)
         else:
             Plot.plot(Q,Y,'kx',label='peak')
         if W:
@@ -2534,16 +2533,16 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 dX = Page.Offset[0]*(ixy)*Xmax/500.
                 dY = Page.Offset[1]*(ixy)*Ymax/100.
                 if len(names):
-                    Plot.plot(X+dX,Y+dY,Colors[ixy%NC],picker=False,label=names[ixy])
+                    Plot.plot(X+dX,Y+dY,Colors[ixy%NC],label=names[ixy])
                 else:
-                    Plot.plot(X+dX,Y+dY,Colors[ixy%NC],picker=False)
+                    Plot.plot(X+dX,Y+dY,Colors[ixy%NC])
             else:
-                Plot.scatter(X,Y,marker='+',color=Colors[ixy%NC],picker=False)
+                Plot.scatter(X,Y,marker='+',color=Colors[ixy%NC])
         if len(vertLines):
             for ixy,X in enumerate(vertLines):
                 dX = Page.Offset[0]*(ixy)*Xmax/500.
                 for x in X:
-                    Plot.axvline(x+dX,color=Colors[ixy%NC],dashes=(5,5),picker=False)
+                    Plot.axvline(x+dX,color=Colors[ixy%NC],dashes=(5,5))
         if XY2 is not None and len(XY2):
             for ixy,xy in enumerate(XY2):
                 X,Y = XY2[ixy]
@@ -2551,14 +2550,14 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 dY = Page.Offset[1]*(ixy+1)*Ymax/100.
                 if points2:
                     if len(names2):
-                        Plot.scatter(X,Y,marker='+',color=Colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                        Plot.scatter(X,Y,marker='+',color=Colors[(ixy+1)%NC],label=names2[ixy])
                     else:
-                        Plot.scatter(X,Y,marker='+',color=Colors[(ixy+1)%NC],picker=False)
+                        Plot.scatter(X,Y,marker='+',color=Colors[(ixy+1)%NC])
                 else:    
                     if len(names2):
-                        Plot.plot(X+dX,Y+dY,Colors[(ixy+1)%NC],picker=False,label=names2[ixy])
+                        Plot.plot(X+dX,Y+dY,Colors[(ixy+1)%NC],label=names2[ixy])
                     else:
-                        Plot.plot(X+dX,Y+dY,Colors[(ixy+1)%NC],picker=False)
+                        Plot.plot(X+dX,Y+dY,Colors[(ixy+1)%NC])
         if len(names)+len(names2):
             Plot.legend(names+names2,loc='best')
         if not newPlot:
@@ -2719,6 +2718,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
 #### PlotXYZvect ################################################################################
 def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotName=None):
     ''' To plot a quiver of quaternion vectors colored by the rotation
+
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param list X,Y,Z: list of X,Y,Z arrays
     :param list R: a list of rotations (0-90) for each X,Y,Z in degrees
@@ -2856,7 +2856,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
         Plot1.bar(resNums,Probs1,color=colors,linewidth=0,picker=True)
         if thresh is not None:
             for item in thresh[0]:
-                Plot1.axhline(item,dashes=(5,5),picker=False)
+                Plot1.axhline(item,dashes=(5,5))
         Plot2 = Page.figure.add_subplot(212,sharex=Plot1)
         Plot2.set_ylabel(r'Error score 2',fontsize=14)
         Plot2.set_xlabel(r'Residue',fontsize=14)
@@ -2864,7 +2864,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
         Plot2.bar(resNums,Probs2,color=colors,linewidth=0,picker=True)
         if thresh is not None:
             for item in thresh[1]:
-                Plot2.axhline(item,dashes=(5,5),picker=False)
+                Plot2.axhline(item,dashes=(5,5))
         Page.xylim = [Plot1.get_xlim(),Plot1.get_ylim(),Plot2.get_ylim()]
         Page.canvas.draw()
 
@@ -2910,9 +2910,9 @@ def PlotStrain(G2frame,data,newPlot=False):
     NC = len(Colors)
     for N,item in enumerate(data['d-zero']):
         Y,X = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
-        Plot.plot(X,Y,marker='+',color=Colors[N%NC],picker=False,linewidth=0)
+        Plot.plot(X,Y,marker='+',color=Colors[N%NC],linewidth=0)
         Y,X = np.array(item['ImtaCalc'])
-        Plot.plot(X,Y,Colors[N%NC],picker=False)
+        Plot.plot(X,Y,Colors[N%NC])
         Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],Colors[5],dashes=(5,5))
     if not newPlot:
         Page.toolbar.push_current()
@@ -3501,16 +3501,24 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
             if '<j0>' in item[0]:
                 continue
             if 'kappa' in item[1]:
-                kappa = item[1]['kappa'][0]
+                kappa = 1./item[1]['kappa'][0]
             for trm in item[1]:
                 if 'D(' in trm:
                     SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappa]
         elif 'Sl' in radial and 'Sl' in item[0]:
             if 'kappa' in item[1]:
-                kappa = item[1]['kappa'][0]
+                kappa = 1./item[1]['kappa'][0]
+                kappap = kappa
+            if "kappa'" in item[1]:
+                kappap = 1./item[1]["kappa'"][0]
+            lmin = 0
             for trm in item[1]:
                 if 'D(' in trm:
-                    SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappa]            
+                    if not lmin: lmin = eval(trm[1:])[0]
+                    if eval(trm[1:])[0] > lmin:
+                        SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappap]
+                    else:
+                        SHC[trm.replace('D','C')] = [item[1][trm][0],True,kappa]
     plotType = atName+' deformation'
     G2frame.G2plotNB.Delete(plotType)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'3d')
@@ -3526,7 +3534,7 @@ def PlotDeform(G2frame,general,atName,atType,deform,UVmat,radial,neigh):
     RAP = G2mth.Cart2Polar(XYZ[0],XYZ[1],XYZ[2])
     P  = np.zeros((31,31))
     for shc in SHC:
-        p = 2.*SHC[shc][0]*SHC[shc][2]**3*(G2lat.KslCalc(shc,RAP[1],RAP[2])**2).reshape((31,31))
+        p = 2.*SHC[shc][0]*SHC[shc][2]**3*(G2lat.KslCalc(shc,RAP[1],RAP[2])).reshape((31,31))
         P += p
     if not np.any(P):
         P = np.zeros((31,31))
@@ -3824,7 +3832,7 @@ def PlotSizeStrainPO(G2frame,data,hist=''):
             pass
         acolor = GetColorMap(G2frame.ContourColor)
         Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1],interpolation='bilinear')
-        Plot.plot(y,x,'+',picker=True,pickradius=3)
+        Plot.plot(y,x,'+',picker=3)
         Page.figure.colorbar(Img)
         Plot.axis('off')
         Plot.set_title('0 0 1 Inverse pole figure for %s\n%s'%(phase,hist))
@@ -4015,8 +4023,7 @@ def PlotTexture(G2frame,data,Start=False):
                 Xdet = list(npcosd(Pdet)*Rdet)
                 Ydet = list(npsind(Pdet)*Rdet)
                 for i,[x,y] in enumerate(zip(Xdet,Ydet)):
-                    Plot.plot(x,-y,'k+',
-                                picker=True,pickradius=5,gid=textureData['det Angles'][i][0])
+                    Plot.plot(x,-y,'k+',picker=5,gid=textureData['det Angles'][i][0])
             h,k,l = SHData['PFhkl']
             Plot.axis('off')
             Plot.set_title('%d %d %d Pole figure for %s'%(h,k,l,pName))
@@ -4310,7 +4317,7 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
         Plot.plot(X2,Y2,'r')
     if len(Angles):
         Eval = np.array([-G2mth.calcTorsionEnergy(x,Coeff)[1] for x in Angles])
-        Plot.plot(Angles,Eval,'ro',picker=True,pickradius=5)
+        Plot.plot(Angles,Eval,'ro',picker=5)
     Plot.set_xlim((0.,360.))
     Plot.set_title('Torsion angles for '+TorName+' in '+phaseName)
     Plot.set_xlabel('angle',fontsize=14)
@@ -4388,7 +4395,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
         if len(PhiPsi):
             PhiPsi = np.where(PhiPsi>180.,PhiPsi-360.,PhiPsi)
             Phi,Psi = PhiPsi.T
-            Plot.plot(Phi,Psi,'ro',picker=True,pickradius=5)
+            Plot.plot(Phi,Psi,'ro',picker=5)
         Plot.set_xlim((-180.,180.))
         Plot.set_ylim((-180.,180.))
     else:
@@ -4400,7 +4407,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
             extent=[0,360,0,360],origin='lower')
         if len(PhiPsi):
             Phi,Psi = PhiPsi.T
-            Plot.plot(Phi,Psi,'ro',picker=True,pickradius=5)
+            Plot.plot(Phi,Psi,'ro',picker=5)
         Plot.set_xlim((0.,360.))
         Plot.set_ylim((0.,360.))
     Plot.set_title('Ramachandran for '+RamaName+' in '+phaseName)
@@ -4786,8 +4793,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 return
             elif event.key == ' ':     # space key: ask for spot size
                 dlg = G2G.SingleFloatDialog(G2frame.G2plotNB,'Spot Size',
-                                            'Enter new value for spot size',
-                                            G2frame.spotSize,[.1,50])
+                    'Enter new value for spot size',G2frame.spotSize,[.1,50])
                 if dlg.ShowModal() == wx.ID_OK:
                     G2frame.spotSize = dlg.GetValue()
                     print('Spot size set to {} mm'.format(G2frame.spotSize))
@@ -4804,8 +4810,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if not (event.xdata and event.ydata): return
                 spot = [event.xdata,event.ydata,G2frame.spotSize]
                 Masks['Points'].append(spot)
-                artist = Circle(spot[:2],radius=spot[2]/2,fc='none',ec='r',
-                                picker=True)
+                artist = Circle(spot[:2],radius=spot[2]/2,fc='none',ec='r')
                 Page.figure.gca().add_artist(artist)
                 artist.itemNumber = len(Masks['Points'])-1
                 artist.itemType = 'Spot'
@@ -5243,8 +5248,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         Xpos,Ypos,sig = result
                     spot = [Xpos,Ypos,sig]
                     Masks['Points'].append(spot)
-                    artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',
-                                        picker=True)
+                    artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',picker=True)
                     #GSASIIpath.IPyBreak()
                     Page.figure.gca().add_artist(artist)
                     artist.itemNumber = len(Masks['Points'])-1
@@ -5548,7 +5552,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if len(xyI):
                     xyI = np.array(xyI)
                     arcxI,arcyI = xyI.T
-                    Plot.plot(arcxI,arcyI,picker=True,pickradius=3,label='Itth')
+                    Plot.plot(arcxI,arcyI,picker=3,label='Itth')
             if ellO:
                 xyO = []
                 arcxO = []
@@ -5559,12 +5563,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if len(xyO):
                     xyO = np.array(xyO)
                     arcxO,arcyO = xyO.T
-                    Plot.plot(arcxO,arcyO,picker=True,pickradius=3,label='Otth')
+                    Plot.plot(arcxO,arcyO,picker=3,label='Otth')
             if ellO and ellI and len(arcxO):
-                Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],
-                                picker=True,pickradius=3,label='Lazm')
-                Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],
-                                picker=True,pickradius=3,label='Uazm')
+                Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3,label='Lazm')
+                Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3,label='Uazm')
             for i in range(Nazm):
                 cake = LRAzim[0]+i*delAzm-AzmthOff
                 if Data.get('centerAzm',False):
@@ -5580,11 +5582,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             xyI = G2img.GetDetectorXY(dspI,azm,Data)
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
             xyO = G2img.GetDetectorXY(dspO,azm,Data)
-            Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],picker=False,label='linescan')
+            Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],label='linescan')
 
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             for xring,yring in Data['ring']:
-                Plot.plot(xring,yring,'r+',picker=True,pickradius=3)
+                Plot.plot(xring,yring,'r+',picker=3)
             if Data['setRings']:
                 N = 0
                 for ring in Data['rings']:
@@ -5631,8 +5633,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         for i,spot in enumerate(Masks['Points']):   # drawing spot masks
             if len(spot):
                 x,y,d = spot
-                artist = Circle((x,y),radius=d/2,fc='none',ec='r',
-                                picker=True)
+                artist = Circle((x,y),radius=d/2,fc='none',ec='r',picker=True)
                 Plot.add_artist(artist)
                 artist.itemNumber = i
                 artist.itemType = 'Spot'
@@ -5641,8 +5642,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         try:
             for tth,rColor,rWidth,rStype in G2frame.PhaseRing2Th:
                 (x1,y1),(x2,y2) = ComputeArc(tth-.1/2.,tth+.1/2.,Data['wavelength'])
-                Plot.plot(x1,y1,rColor,picker=False,
-                              linestyle=rStype,linewidth=rWidth)
+                Plot.plot(x1,y1,rColor,linestyle=rStype,linewidth=rWidth)
         except:
             pass
 
@@ -5651,10 +5651,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ring:
                 tth,thick = ring
                 (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,Data['wavelength'])
-                artistO, = Plot.plot(x1,y1,'r',picker=True,pickradius=3)
+                artistO, = Plot.plot(x1,y1,'r',picker=3)
                 artistO.itemNumber = iring
                 artistO.itemType = 'RingOuter'
-                artistI, = Plot.plot(x2,y2,'r',picker=True,pickradius=3)
+                artistI, = Plot.plot(x2,y2,'r',picker=3)
                 artistI.itemNumber = iring
                 artistI.itemType = 'RingInner'
                 G2frame.ringList.append([artistI,artistO])
@@ -5666,18 +5666,16 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 azm = np.squeeze(azm)
                 (x1,y1),(x2,y2) = ComputeArc(tth-thick/2.,tth+thick/2.,Data['wavelength'],azm[0],azm[1])
                 arcList = []
-                arcList.append(Plot.plot(x2,y2,'r',picker=True,pickradius=3)[0]) # 'inner'
+                arcList.append(Plot.plot(x2,y2,'r',picker=3)[0]) # 'inner'
                 arcList[-1].itemNumber = iarc
                 arcList[-1].itemType = 'ArcInner'
-                arcList.append(Plot.plot(x1,y1,'r',picker=True,pickradius=3)[0]) # 'outer'
+                arcList.append(Plot.plot(x1,y1,'r',picker=3)[0]) # 'outer'
                 arcList[-1].itemNumber = iarc
                 arcList[-1].itemType = 'ArcOuter'
-                arcList.append(Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',
-                    picker=True,pickradius=3)[0]) # 'lower'
+                arcList.append(Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3)[0]) # 'lower'
                 arcList[-1].itemNumber = iarc
                 arcList[-1].itemType = 'ArcLower'
-                arcList.append(Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',
-                    picker=True,pickradius=3)[0]) # 'upper'
+                arcList.append(Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3)[0]) # 'upper'
                 arcList[-1].itemNumber = iarc
                 arcList[-1].itemType = 'ArcUpper'
                 G2frame.arcList.append(arcList)
@@ -5691,7 +5689,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             xl,yl = np.hsplit(np.array(polygon),2)
             G2frame.polyList.append(Plot.plot(xl,yl,'r')[0])            # line
             for i,(x,y) in enumerate(zip(xl[:-1],yl[:-1])):
-                artist = Plot.plot(x,y,'r+',picker=True,pickradius=10)[0] # point (plus sign)
+                artist = Plot.plot(x,y,'r+',picker=10)[0] # point (plus sign)
                 artist.itemNumber = ipoly
                 artist.itemType = 'Polygon'
                 artist.pointNumber = i
@@ -5705,21 +5703,19 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             xl,yl = np.hsplit(np.array(polygon),2)
             G2frame.frameArtist = Plot.plot(xl,yl,'g')[0]
             for i,(x,y) in enumerate(zip(xl[:-1],yl[:-1])):
-                artist = Plot.plot(x,y,'g+',picker=True,pickradius=10)[0] # point (plus sign)
+                artist = Plot.plot(x,y,'g+',picker=10)[0] # point (plus sign)
                 artist.itemType = 'Frame'
                 artist.pointNumber = i
         # Line mask display
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Masks',]:
             for i,xline in enumerate(Masks.get('Xlines',[])):
                 ypos = xline*pixelSize[1]/1000. # pixel to mm
-                a = Plot.axhline(ypos,color='g',picker=True,pickradius=2.,
-                                     linewidth=0.25,linestyle=(0,(10,10)))
+                a = Plot.axhline(ypos,color='g',picker=2.,linewidth=0.25,linestyle=(0,(10,10)))
                 a.itemType = 'Xline'
                 a.itemNumber = i
             for i,yline in enumerate(Masks.get('Ylines',[])):
                 xpos = yline*pixelSize[0]/1000. # pixel to mm
-                a = Plot.axvline(xpos,color='g',picker=True,pickradius=2.,
-                                     linewidth=0.5,linestyle=(0,(5,5)))
+                a = Plot.axvline(xpos,color='g',picker=2.,linewidth=0.5,linestyle=(0,(5,5)))
                 a.itemType = 'Yline'
                 a.itemNumber = i
         if newImage:
@@ -7359,13 +7355,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
                             SGC = nl.inv(G2lat.CrysM2CartM(Amat,Bmat,SGM))
-                            UVMat = np.inner(defCtrls['UVmat'],SGC.T)
+                            UVMat = np.inner(defCtrls['UVmat'].T,SGC.T)
         #                    print(nl.det(UVMat),atom[ct-1],atom[cs-1],'\n',UVMat,'\n',SGC)
                             Npsi,Ngam = 90,45 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl
                             GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
-                            Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat) #TODO: needs symmetry operation for equiv. positions
+                            Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat)
                             P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                             if np.min(P) < np.max(P):
                                 P = (P-np.min(P))/(np.max(P)-np.min(P))
@@ -8776,6 +8772,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
 
 def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
     ''' To plot cluster analysis results
+
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param array YM: data matrix; plotted as contour
     :param array XYZ: array of 3D PCA coordinates; plotted as 3D scatter plot

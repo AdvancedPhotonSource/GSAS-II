@@ -6,7 +6,7 @@ authors = [
 channels = ["conda-forge"]
 description = "Structural analysis from neutron and x-ray diffraction"
 name = "pixi"
-platforms = ["linux-64", "win-64", "osx-arm64"]
+platforms = ["linux-64", "win-64", "osx-arm64", "osx-64"]
 
 
 [pypi-dependencies]

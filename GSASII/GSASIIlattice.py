@@ -2349,7 +2349,7 @@ def LaueUnique(Laue,HKLF):
 def RBChk(sytsym,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for site symmetries
     :param str sytsym: atom site symmetry symbol
-    :param int L: principal harmonic term L>0
+    :param int L: principal harmonic term L>0 none beyond L=5; not considered
     :param int M: second harmonic term; can be -L <= M <= L
     :returns True if allowed and sign for term
     NB: not complete for all possible site symmetries! Many are missing
@@ -2403,40 +2403,41 @@ def RBChk(sytsym,L,M):
                 elif L%2 and (M//3)%2: return True,-1.**M
         elif sytsym == '6/mmm':
             if not L%2 and not M%6: return True,1.0
-        elif sytsym == '4(z)':
+        elif sytsym in ['4(z)','4']:
             if not M%4: return True,1.0     #P?
-        elif sytsym == '-4(z)':   #m=2l-4j
+        elif sytsym in ['-4(z)','-4']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0    #P?
             if not L%2 and not (M//2)%2: return True,1.0
-        elif sytsym == '4/m(z)':
+        elif sytsym in ['4/m(z)','4/m']:
             if not M%4: return True,1.0   #P?
-        elif sytsym == '422(z)':
+        elif sytsym in ['422(z)','422']:
             if not M%4: return True,-1.0**L
-        elif sytsym == '4mm(z)':
+        elif sytsym in ['4mm(z)','4mm']:
             if not M%4: return True,1.0
         elif sytsym in ['-42m(z)','-42m']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0
             if not L%2 and not (M//2)%2: return True,-1.0**L
-        elif sytsym == '-4m2(z)':   #m=2l-4j
+        elif sytsym in ['-4m2(z)','-4m2']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0
             if not L%2 and not (M//2)%2: return True,1.0
-        elif sytsym == '4/mmm(z)':
+        elif sytsym in ['4/mmm(z)','4/mmm']:
             if not L%2 and not M%4: return True,1.0
         elif sytsym in ['3','3(111)']:
             if not M%3: return True,1.0     #P?
         elif sytsym in ['-3','-3(111)']:
             if not L%2 and not M%3: return True,1.0    #P?
         elif sytsym in ['32','32(100)','32(111)']:
-            if not M%3: return True,-1.0**(L-M)
-        elif sytsym == '32(120)':
+            if [L,M] in [[2,0],[3,3],[4,-3],[4,0],[5,3]]:
+                return True,-1.0**(L-M)
+        elif sytsym in ['32(120)','32(y)']:
             if not M%3: return True,-1.0**(L-M)
         elif sytsym in ['3m','3m(100)','3m(111)']:
             if not M%3: return True,-1.0**M
-        elif sytsym == '3m(120)':
+        elif sytsym in ['3m(120)','3m(y)']:
             if not M%3: return True,1.0
-        elif sytsym in ['-3m(100)','-3m(111)','-3m']:
+        elif sytsym in ['-3m','-3m(100)','-3m(111)']:
             if not L%2 and not M%3: return True,-1.0**M
-        elif sytsym == '-3m(120)':
+        elif sytsym in ['-3m(120)','-3m(y)']:
             if not L%2 and not M%3: return True,1.0
         elif '222' in sytsym:
             if M%2: return True,-1.0**L
@@ -2446,7 +2447,7 @@ def RBChk(sytsym,L,M):
         elif 'mm2(y)' in sytsym:  #m=l-2j
             if L%2 and M%2: return True,-1.0**L  #both odd
             if not L%2 and not M%2: return True,-1.0**L     #both even
-        elif 'mm2(z)' in sytsym:
+        elif sytsym in ['mm2(z)','mm2']:
             if M%2: return True,1.0
         elif 'mmm' in sytsym :
             if not L%2 and not M%2: return True,1.0
@@ -2531,7 +2532,7 @@ def RBsymChk(RBsym,cubic,coefNames,L=18):
 
 def GenRBCoeff(sytsym,RBsym,L):
     '''imposes rigid body symmetry on spherical harmonics terms
-    Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
+
     :param str sytsym: atom position site symmetry symbol
     :param str RBsym: molecular point symmetry symbol
     :param int L: spherical harmonic order no.
@@ -2541,11 +2542,14 @@ def GenRBCoeff(sytsym,RBsym,L):
     coefNames = []
     coefSgns = []
     cubic = False
-    if sytsym in ['23','m3','432','-43m','m3m']:
+    rbSym = sytsym
+    if RBsym:
+        rbSym = RBsym
+    if rbSym in ['23','m3','432','-43m','m3m']:
         cubic = True
     for iord in range(1,L+1):
         for n in range(-iord,iord+1):
-            rbChk,sgn = RBChk(sytsym,iord,n)
+            rbChk,sgn = RBChk(rbSym,iord,n)
             if rbChk:
                 if cubic:
                     coefNames.append('C(%d,%d)c'%(iord,n))
@@ -2554,11 +2558,12 @@ def GenRBCoeff(sytsym,RBsym,L):
                 coefSgns.append(sgn)
     if RBsym == '1':
         return coefNames,coefSgns
-    newNames,newSgns = RBsymChk(RBsym,cubic,coefNames,L)
+    newNames,newSgns = RBsymChk(rbSym,cubic,coefNames,L)
     return newNames,newSgns
 
 def GenShCoeff(sytsym,L):
     '''Generate spherical harmonic coefficient names for atom site symmetry
+
     :param str sytsym: site symmetry or perhaps molecular symmetry
     :param int L:spherical harmonic order no.
     :returns list newNames: spherical harmonic term of order L as either C(L,M) or C(L,M)c for cubic terms
@@ -2582,6 +2587,7 @@ def GenShCoeff(sytsym,L):
 
 def OdfChk(SGLaue,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for Laue groups
+
     :param str SGLaue: Laue symbol
     :param int L: principal harmonic term; only evens are used
     :param int M: second harmonic term; can be -L <= M <= L
@@ -2624,6 +2630,7 @@ def OdfChk(SGLaue,L,M):
 
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     '''Generate spherical harmonics coefficient names for texture
+
     :param str SGLaue: Laue symbol
     :param str SamSym: sample symmetry symbol
     :param int L: spherical harmonic order no.
@@ -2644,6 +2651,7 @@ def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
 
 def CrsAng(H,cell,SGData):
     '''Convert HKL to polar coordinates with proper orientation WRT space group point group
+
     :param array H: hkls
     :param list cell: lattice parameters
     :param dict SGData: space group data
@@ -2893,7 +2901,7 @@ def GetKsl(L,M,SamSym,psi,gam):
 def GetKclKsl(L,N,SGLaue,psi,phi,beta):
     """
     This is used for spherical harmonics description of preferred orientation;
-        cylindrical symmetry only (M=0) and no sample angle derivatives returned
+    cylindrical symmetry only (M=0) and no sample angle derivatives returned
     """
 #    from . import pytexture as ptx
     Ksl,x = ptx.pyplmpsi(L,0,1,psi)
@@ -2968,7 +2976,7 @@ def H2ThPh2(H,Bmat):
 def SetUVvec(Neigh):
     ''' Set deformation coordinate choices from neighbors; called in G2phsGUI/UpdateDeformation
     
-    param: list neigh: list of neighboring atoms; each with name, dist & cartesian vector
+    :param list Neigh: list of neighboring atoms; each with name, dist & cartesian vector
 
     :returns list UVvec: list of normalized vectors
     :returns list UVchoice: list of names for each
@@ -2990,7 +2998,7 @@ def SetUVvec(Neigh):
 
 def SHarmcal(SytSym,SHFln,psi,gam):
     '''Perform a surface spherical harmonics computation & return sum of squares.
-    Only used for plotting
+    Only used for plotting.
     Note that the the number of gam values must either be 1 or must match psi
 
     :param str SytSym: site symmetry - only looking for cubics
@@ -3009,11 +3017,12 @@ def SHarmcal(SytSym,SHFln,psi,gam):
                 Ksl = CubicSHarm(l,m,psi,gam)
             else:
                 Ksl = SphHarmAng(l,m,1.0,psi,gam)
-            SHVal += (SHFln[term][0]*Ksl)**2
+            SHVal += (SHFln[term][0]*Ksl)
     return SHVal
 
 def KslCalc(trm,psi,gam):
     '''Compute one angular part term in spherical harmonics
+
     :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180

@@ -430,6 +430,7 @@ def computeRBsu(parmDict,Phases,rigidbodyDict,covMatrix,CvaryList,Csig):
 
 def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,FF,SQ,ifDeriv=False):
     ''' Computes hkl dependent form factors & derivatives from spinning rigid bodies
+
     :param array HKL: reflection hkl set to be considered
     :param array Bmat: inv crystal to Cartesian transfomation matrix
     :param dict SHCdict: RB spin/deformation data
@@ -568,12 +569,16 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 Ne = orbs[orb].get('Ne',1.0) # not there for non <j0> orbs
                 if 'kappa' in orbs[orb]:
                     kappa = orbs[orb]['kappa']
+                    kappap = orbs[orb]["kappa'"]
                     SQk = SQR/kappa**2
+                    SQkp = SQR/kappap**2
                     korb = orb
                 orbTable = ORBtables[Atype][orKeys[int(orb)]]
                 ffOrb = {item:orbTable[item] for item in orbTable if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']}
                 ff = Ne*G2el.ScatFac(ffOrb,SQk)
                 dffdk = G2el.ScatFacDer(ffOrb,SQk)
+                ffp = Ne*G2el.ScatFac(ffOrb,SQkp)
+                dffdkp = G2el.ScatFacDer(ffOrb,SQkp)
                 dSH = 0.0
                 if 'B' in radial:       #'Bessel' - works ok, I think
                     if '<j0>' in orKeys[int(orb)]:
@@ -595,13 +600,19 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                     dFFdS[name] = ff/Ne
                     FFval += ff
                     dSH = 1.0
+                    lmin = 0
                     for term in orbs[orb]:
                         if 'D(' in term:    #skip 'Ne'
+                            name = 'A%s%s:%d'%(term,orb,iAt)
+                            if not lmin: lmin = eval(term[1:])[0]
                             item = term.replace('D','C')
                             SH = G2lat.KslCalc(item,Th,Ph)**2
-                            FFval += SH*orbs[orb][term]*ff
-                            name = 'A%s%s:%d'%(term,orb,iAt)
-                            dFFdS[name] = SH*ff
+                            if eval(term[1:])[0] > lmin:
+                                FFval += SH*orbs[orb][term]*ffp
+                                dFFdS[name] = SH*ffp
+                            else:
+                                FFval += SH*orbs[orb][term]*ff
+                                dFFdS[name] = SH*ff
                             dSH += SH*orbs[orb][term]
                 name = 'Akappa%s:%d'%(korb,iAt)
                 if name in dFFdS:
@@ -3123,6 +3134,7 @@ def GetIntensityDerv(refl,im,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parm
 def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     '''Computes the sample-dependent Lorentzian & Gaussian peak width contributions from
     size & microstrain parameters
+
     :param float wave: wavelength for CW data, 2-theta for EDX data
     '''
     if calcControls[hfx+'histType'][2] in ['A','B','C']:     #All checked & OK
@@ -3229,6 +3241,7 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
 def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     '''Computes the derivatives on sample-dependent Lorentzian & Gaussian peak widths contributions
     from size & microstrain parameters
+
     :param float wave: wavelength for CW data, 2-theta for EDX data
     '''
     gamDict = {}

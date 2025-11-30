@@ -389,6 +389,7 @@ def GetPhasesforHistogram(G2frame,histoName):
 def SetupSampleLabels(histName,dataType,histType):
     '''Setup a list of labels and number formatting for use in
     labeling sample parameters.
+
     :param str histName: Name of histogram, ("PWDR ...")
     :param str dataType:
     '''
@@ -1833,17 +1834,23 @@ def UpdateBackground(G2frame,data):
         PatternId = G2frame.PatternId
         background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
-        auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
-        for plot in auxPlot:
-            XY = np.array(plot[:2])
-            if 'D(R)' in plot[2]:
-                xlabel = r'$R, \AA$'
-                ylabel = r'$D(R), arb. units$'
-            else:
-                xlabel = r'$Q,\AA$'+superMinusOne
-                ylabel = r'$I(Q)$'
-            G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=xlabel,labelY=ylabel,lines=True)
+        xmin = np.searchsorted(pwddata[0,:],limits[0])
+        xmax = np.searchsorted(pwddata[0,:],limits[1])
+        if pwddata[0,xmin] > 0:
+            auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata[:,xmin:xmax])
+            for plot in auxPlot:
+                XY = np.array(plot[:2])
+                if 'D(R)' in plot[2]:
+                    xlabel = r'$R, \AA$'
+                    ylabel = r'$D(R), arb. units$'
+                else:
+                    xlabel = r'$Q,\AA$'+superMinusOne
+                    ylabel = r'$I(Q)$'
+                G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=xlabel,labelY=ylabel,lines=True)
+        else:
+            G2frame.ErrorDialog('RDF calculation failure','Negative 2-thetas/TOF; choose better limits')
 
     def BackSizer():
 

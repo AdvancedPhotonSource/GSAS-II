@@ -67,6 +67,7 @@ from . import defaultIparms as dI
 from . import GSASIIfpaGUI as G2fpa
 from . import GSASIIseqGUI as G2seq
 from . import GSASIIddataGUI as G2ddG
+from . import GSASIIgroupGUI as G2gr
 
 try:
     wx.NewIdRef
@@ -4300,13 +4301,14 @@ If you continue from this point, it is quite likely that all intensity computati
             print (traceback.format_exc())
 
 
-    def StartProject(self):
+    def StartProject(self,selectItem=True):
         '''Opens a GSAS-II project file & selects the 1st available data set to
         display (PWDR, HKLF, REFD or SASD)
         '''
 
         Id = 0
         phaseId = None
+        GroupId = None
         seqId = None
         G2IO.ProjFileOpen(self)
         self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
@@ -4326,6 +4328,8 @@ If you continue from this point, it is quite likely that all intensity computati
                 seqId = item
             elif name == "Phases":
                 phaseId = item
+            elif name.startswith("Groups"):
+                GroupId = item
             elif name == 'Controls':
                 data = self.GPXtree.GetItemPyData(item)
                 if data:
@@ -4333,19 +4337,27 @@ If you continue from this point, it is quite likely that all intensity computati
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         if phaseId: # show all phases
             self.GPXtree.Expand(phaseId)
-        if seqId:
+        if GroupId:
+            self.GPXtree.Expand(GroupId)
+        # select an item
+        if seqId and selectItem:
             self.EnablePlot = True
             SelectDataTreeItem(self,seqId)
             self.GPXtree.SelectItem(seqId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
-        elif Id:
+        elif GroupId and selectItem:
+            self.EnablePlot = True
+            self.GPXtree.Expand(GroupId)
+            SelectDataTreeItem(self,GroupId)
+            self.GPXtree.SelectItem(GroupId)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+        elif Id and selectItem:
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
-        elif phaseId:
+        elif phaseId and selectItem:
             Id = phaseId
             # open 1st phase
-            Id, unused = self.GPXtree.GetFirstChild(phaseId)
+            Id,_ = self.GPXtree.GetFirstChild(phaseId)
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id) # as before for OSX
         self.CheckNotebook()
@@ -7901,26 +7913,115 @@ def UpdateControls(G2frame,data):
                 ShklSizer.Add(usrrej,0,WACV)
         return LSSizer,ShklSizer
 
-    def AuthSizer():
-        def OnAuthor(event):
-            event.Skip()
-            data['Author'] = auth.GetValue()
-
-        Author = data['Author']
-        authSizer = wx.BoxSizer(wx.HORIZONTAL)
-        authSizer.Add(wx.StaticText(G2frame.dataWindow,label=' CIF Author (last, first):'),0,WACV)
-        auth = wx.TextCtrl(G2frame.dataWindow,-1,value=Author,style=wx.TE_PROCESS_ENTER)
-        auth.Bind(wx.EVT_TEXT_ENTER,OnAuthor)
-        auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
-        authSizer.Add(auth,0,WACV)
-        return authSizer
+    # def AuthSizer():
+    #     def OnAuthor(event):
+    #         event.Skip()
+    #         data['Author'] = auth.GetValue()
+    #
+    #     Author = data['Author']
+    #     authSizer = wx.BoxSizer(wx.HORIZONTAL)
+    #     authSizer.Add(wx.StaticText(G2frame.dataWindow,label=' CIF Author (last, first):'),0,WACV)
+    #     auth = wx.TextCtrl(G2frame.dataWindow,-1,value=Author,style=wx.TE_PROCESS_ENTER)
+    #     auth.Bind(wx.EVT_TEXT_ENTER,OnAuthor)
+    #     auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
+    #     authSizer.Add(auth,0,WACV)
+    #     return authSizer
 
     def ClearFrozen(event):
         'Removes all frozen parameters by clearing the entire dict'
         Controls['parmFrozen'] = {}
         wx.CallAfter(UpdateControls,G2frame,data)
 
-    # start of UpdateControls
+    def SearchGroups(event):
+        '''Create a dict to group similar histograms. Similarity
+        is judged by a common string that matches a template
+        supplied by the user
+        '''
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        for hist in Histograms:
+            if hist.startswith('PWDR '):
+                break
+        else:
+            G2G.G2MessageBox(G2frame,'No PWDR histograms found to group',
+                                     'Cannot group')
+            return
+        repeat = True
+        srchStr = hist[5:]
+        msg = ('Edit the histogram name below placing a question mark (?) '
+                'at the location '
+                'of characters that change between groups of '
+                'histograms. Use backspace or delete to remove '
+                'characters that should be ignored as they will '
+                'vary within a histogram group (e.g. Bank 1). '
+                'Be sure to leave enough characters so the string '
+                'can be uniquely matched.')
+        while repeat:
+            srchStr = G2G.StringSearchTemplate(G2frame,'Set match template',
+                                                   msg,srchStr)
+            if srchStr is None: return # cancel pressed
+            reSrch = re.compile(srchStr.replace('.',r'\.').replace('?','.'))
+            setDict = {}
+            keyList = []
+            noMatchCount = 0
+            for hist in Histograms:
+                if hist.startswith('PWDR '):
+                    m = reSrch.search(hist)
+                    if m:
+                        key = hist[m.start():m.end()]
+                        setDict[hist] = key
+                        if key not in keyList: keyList.append(key)
+                    else:
+                        noMatchCount += 1
+            groupDict = {}
+            groupCount = {}
+            for k in keyList:
+                groupDict[k] = [hist for hist,key in setDict.items() if k == key]
+                groupCount[k] = len(groupDict[k])
+            
+            msg1 = f'With template {srchStr!r} found '
+            if min(groupCount.values()) == max(groupCount.values()):
+                msg1 += f'{len(groupDict)} groups with {min(groupCount.values())} histograms each'
+            else:
+                msg1 += (f'{len(groupDict)} groups with between {min(groupCount.values())}'
+                           f' and {min(groupCount.values())} histograms in each')
+            if noMatchCount:
+                msg1 += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups"
+            #G2G.G2MessageBox(G2frame,msg1,'Grouping result')
+            res = G2G.ShowScrolledInfo(G2frame,msg1,header='Grouping result',
+                        buttonlist=[
+               ('OK', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
+               ('try again', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))
+              ],
+                height=150)
+            if res == wx.ID_OK:
+                repeat = False
+
+        data['Groups'] = {'groupDict':groupDict,'notGrouped':noMatchCount,
+                              'template':srchStr}
+#        wx.CallAfter(UpdateControls,G2frame,data)
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        G2frame.clearProject() # clear out data tree
+        G2frame.StartProject(False)
+        #self.EnablePlot = True
+        Id = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+        SelectDataTreeItem(G2frame,Id)
+        G2frame.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+
+    def ClearGroups(event):
+        del data['Groups']
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        G2frame.clearProject() # clear out data tree
+        G2frame.StartProject(False)
+        #self.EnablePlot = True
+        Id = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
+        SelectDataTreeItem(G2frame,Id)
+        G2frame.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
+        
+    #======= start of UpdateControls ===========================================
     if 'SVD' in data['deriv type']:
         G2frame.GetStatusBar().SetStatusText('Hessian SVD not recommended for initial refinements; use analytic Hessian or Jacobian',1)
     else:
@@ -7961,11 +8062,44 @@ def UpdateControls(G2frame,data):
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     subSizer = wx.BoxSizer(wx.HORIZONTAL)
     subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Global Settings'),0,WACV)
+    subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Histogram Grouping'),0,WACV)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND)    
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    groupDict = data.get('Groups',{}).get('groupDict',{})
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    if groupDict:
+        groupCount = [len(groupDict[k]) for k in groupDict]
+        if min(groupCount) == max(groupCount):
+            msg = f'Have {len(groupDict)} group(s) with {min(groupCount)} histograms in each'
+        else:
+            msg = (f'Have {len(groupDict)} group(s) with {min(groupCount)}'
+                       f' to {min(groupCount)} histograms in each')
+        notGrouped = data.get('Groups',{}).get('notGrouped',0)
+        if notGrouped:
+            msg += f". {notGrouped} not in a group"
+        subSizer.Add(wx.StaticText(G2frame.dataWindow,label=msg),0,WACV)
+        subSizer.Add((5,-1))
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Redefine groupings')
+    else:
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Define groupings')
+    btn.Bind(wx.EVT_BUTTON,SearchGroups)
+    subSizer.Add(btn)
+    if groupDict:
+        btn = wx.Button(G2frame.dataWindow, wx.ID_ANY,'Clear groupings')
+        subSizer.Add((5,-1))
+        subSizer.Add(btn)
+        btn.Bind(wx.EVT_BUTTON,ClearGroups)
     subSizer.Add((-1,-1),1,wx.EXPAND)
     mainSizer.Add(subSizer,0,wx.EXPAND)
-    mainSizer.Add(AuthSizer())
-    mainSizer.Add((5,5),0)
+    mainSizer.Add((-1,8))
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    # subSizer.Add(wx.StaticText(G2frame.dataWindow,label='Global Settings'),0,WACV)
+    # subSizer.Add((-1,-1),1,wx.EXPAND)
+    # mainSizer.Add(subSizer,0,wx.EXPAND)
+    # mainSizer.Add(AuthSizer())
     Controls = data
     # count frozen variables (in appropriate place)
     for key in ('parmMinDict','parmMaxDict','parmFrozen'):
@@ -8879,6 +9013,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             #import imp
             #imp.reload(G2ddG)
             G2ddG.MakeHistPhaseWin(G2frame)
+        elif G2frame.GPXtree.GetItemText(item).startswith('Groups/'):
+            # groupDict is defined (or item would not be in tree). 
+            # At least for now, this does nothing, so advance to first group entry
+            item, cookie = G2frame.GPXtree.GetFirstChild(item)
+            wx.CallAfter(G2frame.GPXtree.SelectItem,item)
         elif GSASIIpath.GetConfigValue('debug'):
             print('Unknown tree item',G2frame.GPXtree.GetItemText(item))
     ############################################################################
@@ -9076,6 +9215,12 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
         G2frame.dataWindow.HideShow.Enable(True)
+    elif G2frame.GPXtree.GetItemText(parentID).startswith('Groups/'):
+        # groupDict is defined. 
+        G2gr.UpdateGroup(G2frame,item)
+    elif GSASIIpath.GetConfigValue('debug'):
+            print(f'Unknown subtree item {G2frame.GPXtree.GetItemText(item)!r}',
+                  f'\n\tparent: {G2frame.GPXtree.GetItemText(parentID)!r}')
 
     if G2frame.PickId:
         G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)

@@ -208,7 +208,8 @@ def onSetAll(event):
     #print('after',[item[0][item[1]] for item in valList])
 
     
-def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,lblSizer=None,lblPanel=None):
+def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
+                     lblSizer=None,lblPanel=None,CopyCtrl=True):
     '''Displays the data table in `Table` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
@@ -240,31 +241,41 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,lb
                 if 'rowlbl' in Table[hist][row]:
                     arr,key = Table[hist][row]['rowlbl']
                     break
-            if arr is None:
+            if arr is None: # text row labels
                 w = wx.StaticText(lblPanel,label=row)
-            else:
+            else: # used for "renameable" sample vars (str)
                 w = G2G.ValidatedTxtCtrl(lblPanel,arr,key,size=(125,-1))
             lblSizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
             lblDict[row] = w
 
             if len(refList) > 2:
-                refAll = wx.Button(lblPanel,label='S',style=wx.BU_EXACTFIT)
+                lbl = 'S'
+                if all([l[i] for l,i in refList]): lbl = 'C'
+                refAll = wx.Button(lblPanel,label=lbl,style=wx.BU_EXACTFIT)
                 refAll.refList = refList
                 refAll.checkButList = checkButList[row]
                 lblSizer.Add(refAll,0,wx.ALIGN_CENTER_VERTICAL)               
                 refAll.Bind(wx.EVT_BUTTON,onRefineAll)
             else:
                 lblSizer.Add((-1,-1))
-            if len(valList) > 2:
-                but = wx.Button(lblPanel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
-                but.valList = valList
-                but.valEditList = valEditList[row] 
-                lblSizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
-                but.Bind(wx.EVT_BUTTON,onSetAll)
-            else:
-                lblSizer.Add((-1,-1))
+            # if len(valList) > 2:
+            #     but = wx.Button(lblPanel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
+            #     but.valList = valList
+            #     but.valEditList = valEditList[row] 
+            #     lblSizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
+            #     but.Bind(wx.EVT_BUTTON,onSetAll)
+            # else:
+            #     lblSizer.Add((-1,-1))
  
-        for hist in Table:
+        for i,hist in enumerate(Table):
+            if i == 1 and len(valList) > 2 and not deltaMode and CopyCtrl:
+                but = wx.Button(Panel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
+                but.valList = valList
+                but.valEditList = valEditList[row]
+                Sizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
+                but.Bind(wx.EVT_BUTTON,onSetAll)
+            elif i == 1 and CopyCtrl:
+                Sizer.Add((-1,-1))
             minval = None
             maxval = None
             # format the entry depending on what is defined
@@ -279,9 +290,8 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,lb
                 delta = arr[indx]
                 arr,indx = Table[hist][row]['init']
                 delta -= arr[indx]
-                if abs(delta) < 1e-9: delta = 0.
+                if abs(delta) < 9e-6: delta = 0.
                 if delta == 0:
-#                    deltaS = "0.0  "
                     deltaS = ""
                 else:
                     deltaS = f"\u0394 {delta:.4g} "
@@ -300,7 +310,6 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,lb
                 arr,indx = Table[hist][row]['init']
                 delta -= arr[indx]
                 if delta == 0:
-#                    deltaS = "0.0  "
                     deltaS = ""
                 else:
                     deltaS = f"\u0394 {delta:.4g} "
@@ -310,6 +319,7 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,lb
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
                 arr,indx = Table[hist][row]['val']
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
+                                         nDig=[9,7,'g'],
                                     xmin=minval,xmax=maxval)
                 valEditList[row].append(w)
                 valrefsiz.Add(w,0,WACV)
@@ -322,7 +332,10 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,lb
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
             elif 'val' in Table[hist][row]:
                 arr,indx = Table[hist][row]['val']
+                nDig = [9,7,'g']
+                if type(arr[indx]) is str: nDig = None
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
+                            nDig=nDig,
                             xmin=minval,xmax=maxval,notBlank=False)
                 valEditList[row].append(w)
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
@@ -348,11 +361,13 @@ def HistFrame(G2frame):
     #---------------------------------------------------------------------
     # generate a dict with values for each histogram
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    CopyCtrl = True
     if G2frame.GroupInfo['displayMode'].startswith('Sample'):
         prmTable = getSampleVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
         prmTable = getInstVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Limits'):
+        CopyCtrl = False
         prmTable = getLimitVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Background'):
         prmTable = getBkgVals(G2frame,Histograms)
@@ -381,20 +396,26 @@ def HistFrame(G2frame):
     G2G.HorizontalLine(mainSizer,panel)
     panel.SetSizer(mainSizer)
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-
-    valSizer = wx.FlexGridSizer(0,len(prmTable)+3,3,10)
+    deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
+    n = 2
+    if CopyCtrl: n += 1 # add column for copy
+    valSizer = wx.FlexGridSizer(0,len(prmTable)+n,3,10)
     mainSizer.Add(valSizer,1,wx.EXPAND)
     valSizer.Add(wx.StaticText(midPanel,label=' '))
     valSizer.Add(wx.StaticText(midPanel,label=' Ref '))
-    valSizer.Add(wx.StaticText(midPanel,label=' Copy '))
-    for hist in histLabels(G2frame)[1]:
+    #valSizer.Add(wx.StaticText(midPanel,label=' Copy '))
+    for i,hist in enumerate(histLabels(G2frame)[1]):
+            if i == 1 and CopyCtrl:
+                if deltaMode:
+                    valSizer.Add((-1,-1))
+                elif CopyCtrl:
+                    valSizer.Add(wx.StaticText(midPanel,label=' Copy '))
             valSizer.Add(wx.StaticText(midPanel,
                         label=f"\u25A1 = {hist}"),
                              0,wx.ALIGN_CENTER)
-    deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
     firstentry,lblDict = displayDataTable(rowLabels,prmTable,valSizer,midPanel,
                                       lblRow=True,
-                                      deltaMode=deltaMode)
+                                      deltaMode=deltaMode,CopyCtrl=CopyCtrl)
     #G2frame.dataWindow.SetDataSize()
     if firstentry is not None:    # prevent scroll to show last entry
         wx.Window.SetFocus(firstentry)
@@ -469,7 +490,7 @@ def getSampleVals(G2frame,Histograms):
                      'val' : (histdata['Sample Parameters'],key)}
             elif type(fmt) is str:
                  hpD[lbl] = {
-                     'str' : f'{histdata['Sample Parameters'][key]:{fmt}}'}
+                     'str' : f"{histdata['Sample Parameters'][key]:{fmt}}"}
 
         for key in ('FreePrm1','FreePrm2','FreePrm3'):
             lbl = Controls[key]
@@ -566,7 +587,6 @@ def getLimitVals(G2frame,Histograms):
         print(f'Unexpected: {groupName} not in groupDict')
         return
     # parameters to include in table
-    parms = []
     parmDict = {}
    # loop over histograms in group
     for hist in groupDict[groupName]:
@@ -589,6 +609,12 @@ def getLimitVals(G2frame,Histograms):
                 'val' : (item,1),
                 'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]}
         parmDict[hist] = hpD
+    # for i in parmDict:
+    #     print(i)
+    #     for j in  parmDict[i]:
+    #         print('\t',j)
+    #         for k in parmDict[i][j]:
+    #             print('\t\t',k,parmDict[i][j][k])
     return parmDict
 
 
@@ -675,14 +701,16 @@ def HAPframe(G2frame):
         lblScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
         hpad = 3  # space between rows
-        lblSizer = wx.FlexGridSizer(0,3,hpad,2)
+        #lblSizer = wx.FlexGridSizer(0,3,hpad,2)
+        lblSizer = wx.FlexGridSizer(0,2,hpad,2)
         lblScroll.SetSizer(lblSizer)
         bigSizer.Add(lblScroll,0,wx.EXPAND)
 
         # Create scrolled panel to display HAP data
         HAPScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
-        HAPSizer = wx.FlexGridSizer(0,len(HAPtable),hpad,10)
+        #HAPSizer = wx.FlexGridSizer(0,len(HAPtable),hpad,10)
+        HAPSizer = wx.FlexGridSizer(0,len(HAPtable)+1,hpad,10)
         HAPScroll.SetSizer(HAPSizer)
         bigSizer.Add(HAPScroll,1,wx.EXPAND)
         
@@ -690,13 +718,16 @@ def HAPframe(G2frame):
         lblScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
         HAPScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
         # label columns with unique part of histogram names
-        for hist in histLabels(G2frame)[1]:
+        for i,hist in enumerate(histLabels(G2frame)[1]):
+            if i == 1:
+                HAPSizer.Add(wx.StaticText(HAPScroll,label='Copy'),
+                             0,wx.ALIGN_CENTER)
             HAPSizer.Add(wx.StaticText(HAPScroll,label=f"\u25A1 = {hist}"),
                              0,wx.ALIGN_CENTER)
         w0 = wx.StaticText(lblScroll,label=' ')
         lblSizer.Add(w0)
         lblSizer.Add(wx.StaticText(lblScroll,label=' Ref '))
-        lblSizer.Add(wx.StaticText(lblScroll,label=' Copy '))
+        #lblSizer.Add(wx.StaticText(lblScroll,label=' Copy '))
         firstentry,lblDict = displayDataTable(rowLabels,HAPtable,HAPSizer,HAPScroll,
                     lblRow=True,lblSizer=lblSizer,lblPanel=lblScroll)
         # get row sizes in data table

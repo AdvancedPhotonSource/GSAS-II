@@ -819,12 +819,16 @@ class NumberValidator(wxValidator):
             if val >= self.xmax and self.exclLim[1]:
                 tc.invalid = True
             elif val > self.xmax:
-                tc.invalid = True
+                # ignore difference if due to rounding
+                if val != float(G2fil.FormatValue(self.xmax,tc.nDig)):
+                    tc.invalid = True
         if self.xmin != None:
             if val <= self.xmin and self.exclLim[0]:
                 tc.invalid = True
             elif val < self.xmin:
-                tc.invalid = True  # invalid
+                # ignore difference if due to rounding
+                if val != float(G2fil.FormatValue(self.xmin,tc.nDig)):
+                    tc.invalid = True  # invalid
         if self.key is not None and self.result is not None and not tc.invalid:
             self.result[self.key] = val
 

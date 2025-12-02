@@ -347,7 +347,8 @@ def getG2VersionInfo():
         if rc is None:
             return f"  GSAS-II:    {gversion} posted {ctim} (updates unknown) [{commit.hexsha[:8]}]{msg}"
         elif len(rc) > 0:
-            return f"  GSAS-II:    {gversion} posted {ctim} (\u2265{len(rc)} new updates) [{commit.hexsha[:8]}]{msg}"
+            #return f"  GSAS-II:    {gversion} posted {ctim} (\u2265{len(rc)} new updates) [{commit.hexsha[:8]}]{msg}"
+            return f"  GSAS-II:    {gversion} posted {ctim} (>={len(rc)} pending updates) [{commit.hexsha[:8]}]{msg}"
         else:
 #            return f"  GSAS-II:    {gversion} posted {ctim} (no new updates) [{commit.hexsha[:8]}]{msg}"
             return f"  GSAS-II:    {gversion} posted {ctim} [{commit.hexsha[:8]}]{msg}"

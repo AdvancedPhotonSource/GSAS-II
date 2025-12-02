@@ -1,6 +1,6 @@
-# when run, this starts GitHub Actions workflow in another repo (GSAS-II-buildtools)
+# Triggers buildtools workflow when a new version tag is created in GSAS-II
 
-# 1) This will trigger all GitHub Actions in workflows that has
+# 1) This will trigger GitHub Actions in GSAS-II-buildtools workflows that have
 #           on: repository_dispatch:
 # 2) an authorized user (Brian, or perhaps organization) creates a
 #    personal access token.
@@ -10,24 +10,28 @@
 #     Finally select "Fine-grained tokens"
 #  Personal access token settings:
 #     select owner: APS;
-#     select APS/G2-bld;
+#     select APS/GSAS-II-buildtools;
 #     Repo permissions: contents r/w & metadata: r/o.
-# 3) Save the created token in this (G2) project. 
+# 3) Save the created token in this (GSAS-II) project. 
 #     Use repo-level settings on 2nd line from top (may be in ... menu). 
 #     Select Actions in Secrets & variables and create a repository secret. 
 #     Name assigned must match ${{ secrets.XXX }} in workflow's curl 
 #     call ("Authorization:" setting)
 
-name: Test of triggering GSASII-buildtools actions
+name: Trigger buildtools on new version tag
 
-on: workflow_dispatch
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Matches version tags like v5.6.7
+  workflow_dispatch:  # Allows manual triggering for testing
 
 jobs:
-  trigger:
+  trigger-buildtools:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger Workflow in GSAS-II-buildtools
+      - name: Trigger buildtools workflow
         run: |
           # config var follows
           repo_owner="AdvancedPhotonSource" 
@@ -38,5 +42,4 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.PAT }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/$repo_owner/GSAS-II-buildtools/dispatches \
-            -d '{"event_type": "remote build", "client_payload": {"service": "remote build", "unit": false, "integration": true}}'
-            
+            -d "{\"event_type\": \"new-version-tag\", \"client_payload\": {\"tag\": \"${{ github.ref_name }}\", \"sha\": \"${{ github.sha }}\"}}"

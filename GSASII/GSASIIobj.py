@@ -628,7 +628,8 @@ def CompileVarDesc():
         'Amul': 'Atomic site multiplicity value',
         'AM([xyz])$' : 'Atomic magnetic moment parameter, \\1',
         # Atom deformation parameters
-        'Akappa([0-6])'  : ' Atomic orbital softness for orbital, \\1',
+        'Akappa([0-6])'  : ' Atomic orbital softness for valence radial fxn, \\1',
+        "Akappa'([0-6])"  : ' Atomic orbital softness for deformation radial fxn, \\1',
         'ANe([01])' : ' Atomic <j0> orbital population for orbital, \\1',
         'AD\\([0-6],[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',
         'AD\\([0-6],-[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',     #need both!

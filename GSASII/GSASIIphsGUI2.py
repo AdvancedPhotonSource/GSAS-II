@@ -373,6 +373,8 @@ def UpdateDeformation(G2frame,data,AtdId):
             for item in Hkeys:
                 if 'D' in item and int(item[2]) == maxord:
                     del Harm[1][item]
+            if len(Harm[1]) == 3:
+                del Harm[1]["kappa'"]
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
         
     def OnShowDef(event):
@@ -495,9 +497,9 @@ def UpdateDeformation(G2frame,data,AtdId):
         matSel.Bind(wx.EVT_COMBOBOX,OnMatSel)
         Indx[matSel.GetId()] = dId
         matSizer.Add(matSel,0,WACV)        
-        deformationData[-dId]['Radial'] = deformationData[-dId].get('Radial','Bessel')
+        deformationData[-dId]['Radial'] = deformationData[-dId].get('Radial','Slater')
         topSizer.Add(wx.StaticText(deformation,label=' Select radial fxn: '),0,WACV)
-        fxchoice = deformationData[-dId].get('fxchoice',['Bessel',])
+        fxchoice = deformationData[-dId].get('fxchoice',['Slater',])
         radFxn = wx.ComboBox(deformation,value=deformationData[-dId]['Radial'],
             choices=fxchoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Indx[radFxn.GetId()] = dId
@@ -533,37 +535,36 @@ def UpdateDeformation(G2frame,data,AtdId):
         mainSizer.Add(wx.StaticText(deformation,label=' Deformation parameters:'))
         orbSizer = wx.FlexGridSizer(0,9,2,2)
         for iorb,orb in enumerate(deformationData[dId]):
-            if deformationData[-dId]['Radial'] == 'Bessel' and 'Sl ' not in orb[0]:
-                if '<j0>' in orb[0]:
-                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
-                    NeSizer(deformation,orbSizer,dId,orb,Indx)
-                    if 'kappa' in orb[1]:
-                        orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
-                        Kappa(deformation,orbSizer,dId,orb,'kappa',Indx)
-                    for i in range(3): orbSizer.Add((5,5),0)
-                    continue
-                if 'kappa' in orb[1]:
-                    for i in range(3): orbSizer.Add((5,5),0)
-                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+" kappa':"))
-                    Kappa(deformation,orbSizer,dId,orb,"kappa'",Indx)
-                if 'kappa' not in orb[1]:
-                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+':'))
-                    for i in range(2): orbSizer.Add((5,5),0)
-                nItem = 0
-                for item in orb[1]:
-                    if 'D' in item:                            
-                        nItem += 1
-                        Dsizer(deformation,orbSizer,Names,dId,orb,Indx)
-                        if nItem in [2,4,6,8,10]:
-                            for i in range(3): orbSizer.Add((5,5),0)
-                for i in range(3): orbSizer.Add((5,5),0)
-            elif deformationData[-dId]['Radial'] == 'Slater' and 'Sl ' in orb[0]: 
+            # if deformationData[-dId]['Radial'] == 'Bessel' and 'Sl ' not in orb[0]:
+            #     if '<j0>' in orb[0]:
+            #         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
+            #         NeSizer(deformation,orbSizer,dId,orb,Indx)
+            #         if 'kappa' in orb[1]:
+            #             orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
+            #             Kappa(deformation,orbSizer,dId,orb,'kappa',Indx)
+            #         for i in range(3): orbSizer.Add((5,5),0)
+            #         continue
+            #     if 'kappa' in orb[1]:
+            #         for i in range(3): orbSizer.Add((5,5),0)
+            #         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+" kappa':"))
+            #         Kappa(deformation,orbSizer,dId,orb,"kappa'",Indx)
+            #     if 'kappa' not in orb[1]:
+            #         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+':'))
+            #         for i in range(2): orbSizer.Add((5,5),0)
+            #     nItem = 0
+            #     for item in orb[1]:
+            #         if 'D' in item:                            
+            #             nItem += 1
+            #             Dsizer(deformation,orbSizer,Names,dId,orb,Indx)
+            #             if nItem in [2,4,6,8,10]:
+            #                 for i in range(3): orbSizer.Add((5,5),0)
+            #     for i in range(3): orbSizer.Add((5,5),0)
+            # elif deformationData[-dId]['Radial'] == 'Slater' and 'Sl ' in orb[0]: 
                 orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
                 NeSizer(deformation,orbSizer,dId,orb,Indx)
-                if 'kappa' in orb[1]:
-                    orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
-                    Kappa(deformation,orbSizer,dId,orb,'kappa',Indx)
-                if 'kappa' in orb[1]:
+                orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
+                Kappa(deformation,orbSizer,dId,orb,'kappa',Indx)
+                if len(orb[1]) > 2:
                     orb[1]["kappa'"] = orb[1].get("kappa'",[1.0,False])
                     orbSizer.Add(wx.StaticText(deformation,label=" kappa':"))
                     Kappa(deformation,orbSizer,dId,orb,"kappa'",Indx)

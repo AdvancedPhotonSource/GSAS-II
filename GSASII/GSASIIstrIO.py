@@ -1398,10 +1398,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                     values = 12*' '+'values: '
                     refine = 12*' '+'refine: '
                     for item in orb[1]:
-                        if 'kappa' in item:
+                        if "kappa'" in item:
+                            names += "kappa'".rjust(10)
+                        elif 'kappa' in item:
                             name = 'kappa'.rjust(10)
-                            if '<j0>' not in orb[0]:
-                                name = "kappa'".rjust(10)
                             names += name
                         else:
                             names += item.rjust(10)
@@ -1871,10 +1871,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                         ('S' in radial and 'S' in orb[0]):
                             ip += 1
                             for parm in orb[1]:
-                                    name = pfx+'A%s%d:%d'%(parm,ip,AtId)
-                                    phaseDict[name] = orb[1][parm][0]
-                                    if orb[1][parm][1]:
-                                        phaseVary.append(name)
+                                name = pfx+'A%s%d:%d'%(parm,ip,AtId)
+                                phaseDict[name] = orb[1][parm][0]
+                                if orb[1][parm][1]:
+                                    phaseVary.append(name)
                     
             textureData = General['SH Texture']
             if textureData['Order']:    # and seqHistName is not None:
@@ -2293,10 +2293,10 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr = 12*' '+'esds  : '
                     for item in orb[1]:
                         pName = 'A%s%d:%d'%(item,iorb,AtId)
-                        if 'kappa' in item:
+                        if "kappa'" in item:
+                            names += "kappa'".rjust(10)
+                        elif 'kappa' in item:
                             name = 'kappa'.rjust(10)
-                            if '<j0>' not in orb[0]:
-                                name = "kappa'".rjust(10)
                             names += name
                         else:
                             names += item.rjust(10)

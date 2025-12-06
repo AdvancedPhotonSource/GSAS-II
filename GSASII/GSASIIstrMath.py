@@ -567,23 +567,22 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             ffk = Ne*G2el.ScatFac(fvOrb,SQk)
             FFval += ffk
             dffdk = G2el.ScatFacDer(fvOrb,SQk)
-            dFFdS["ANe1:%d"%iAt] = ffk/Ne
-            dFFdS["Akappa1:%d"%iAt] = -2.0*Ne*SQk*dffdk/kappa
+            dFFdS["ANe1:%d"%iAt] = ffk/Ne       #ok
+            dFFdS["Akappa1:%d"%iAt] = -2.0*Ne*SQk*dffdk/kappa       #ok
             if len(orbs) > 2: #more than just Ne & kappa
                 kappap = orbs["kappa'1"]
                 SQkp = SQR/kappap**2
                 ffkp = G2el.ScatFac(fvOrb,SQkp)
-                dffdkp = G2el.ScatFacDer(fvOrb,SQkp)
-                dSH = 1.0
+                dffdkp = G2el.ScatFacDer(fvOrb,SQkp)    
+                dFFdS["Akappa'1:%d"%iAt] = 0.0
                 for term in orbs:
                     if 'D(' in term:    #skip 'Ne' & 'kappa's
                         name = 'A%s:%d'%(term,iAt)
                         item = term.replace('D','C')[:-1]
-                        SH = G2lat.KslCalc(item,Th,Ph)**2
+                        SH = 2.0*twopi*G2lat.KslCalc(item,Th,Ph)**2
                         FFSH += SH*orbs[term]*ffkp
-                        dFFdS[name] = SH*ffkp
-                        dSH += SH*orbs[term]
-                    dFFdS["Akappa'1:%d"%iAt] = -2.0*SQkp*dSH*dffdkp/kappap
+                        dFFdS[name] = SH*ffkp       #ok
+                        dFFdS["Akappa'1:%d"%iAt] += -2.0*SQkp*SH*orbs[term]*dffdkp/kappap   #ok
             FF[:,iAt] = FFcore+FFval+FFSH
         else:
             atFlg.append(0.)

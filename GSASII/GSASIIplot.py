@@ -7355,11 +7355,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
                             SGC = nl.inv(G2lat.CrysM2CartM(Amat,Bmat,SGM))
-                            UVMat = np.inner(defCtrls['UVmat'].T,SGC.T)
+                            UVMat = np.inner(defCtrls['UVmat'],SGC.T)
         #                    print(nl.det(UVMat),atom[ct-1],atom[cs-1],'\n',UVMat,'\n',SGC)
-                            Npsi,Ngam = 90,45 
+                            Npsi,Ngam = 60,30 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl
+                            PSI += 90.
                             GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                             Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat)
                             P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))

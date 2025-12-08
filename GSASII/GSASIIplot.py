@@ -7356,7 +7356,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
                             SGC = nl.inv(G2lat.CrysM2CartM(Amat,Bmat,SGM))
                             UVMat = np.inner(defCtrls['UVmat'],SGC.T)
-        #                    print(nl.det(UVMat),atom[ct-1],atom[cs-1],'\n',UVMat,'\n',SGC)
                             Npsi,Ngam = 60,30 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl

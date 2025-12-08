@@ -213,19 +213,36 @@ def UpdateDeformation(G2frame,data,AtdId):
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
     
     def MakeUVmat(defData,U,V):
-        MX = U/nl.norm(U)
-        if 'A' in defData['MUV']:
+        "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+        "                C: X'=UxV, Y'=Ux(UxV) & Z'=U, D: X'=(UxV)xU, Y=(UxV) & Z'=U"
+        if 'A' in defData['MUV']:   #"X'=U, Y'=(UxV)xU & Z'=UxV"
+            MX = U/nl.norm(U)
             MY = V/nl.norm(V)
             MZ = np.cross(MX,MY)
             MZ /= nl.norm(MZ)
             MY = np.cross(MZ,MX)
             MY /= nl.norm(MY)
-        else:
+        elif 'B' in defData['MUV']: #"X'=U, Y'=UxV & Z'=Ux(UxV)"
+            MX = U/nl.norm(U)
             MZ = V/nl.norm(V)
             MY = np.cross(MZ,MX)
             MY /= nl.norm(MY)
             MZ = np.cross(MX,MY)
             MZ /= nl.norm(MZ)
+        elif 'C' in defData['MUV']: #"X'=UxV, Y'=Ux(UxV) & Z'=U"
+            MZ = U/nl.norm(U)
+            MY = V/nl.norm(V)
+            MX = np.cross(MZ,MY)
+            MX /= nl.norm(MX)
+            MY = np.cross(MZ,MX)
+            MY /= nl.norm(MY)
+        elif 'D' in defData['MUV']: #"X'=(UxV)xU, Y=(UxV) & Z'=U"
+            MZ = U/nl.norm(U)
+            MX = V/nl.norm(V)
+            MY = np.cross(MZ,MX)
+            MY /= nl.norm(MY)
+            MX = np.cross(MY,MZ)
+            MX /= nl.norm(MX)
         return np.array([MX,MY,MZ]).T
     
     def OnDeformRef(event):
@@ -251,6 +268,7 @@ def UpdateDeformation(G2frame,data,AtdId):
 
     def OnMatSel(event):
         "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+        "                C: X'=UxV, Y'=Ux(UxV) & Z'=U, D: X'=(UxV)xU, Y=(UxV) & Z'=U"
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
         deformationData[-dId]['MUV'] = Obj.GetValue()
@@ -262,6 +280,7 @@ def UpdateDeformation(G2frame,data,AtdId):
 
     def OnUvec(event):
         "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+        "                C: X'=UxV, Y'=Ux(UxV) & Z'=U, D: X'=(UxV)xU, Y=(UxV) & Z'=U"
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
         if Obj.GetValue() == deformationData[-dId]['V']:
@@ -282,6 +301,7 @@ def UpdateDeformation(G2frame,data,AtdId):
         
     def OnVvec(event):
         "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+        "                C: X'=UxV, Y'=Ux(UxV) & Z'=U, D: X'=(UxV)xU, Y=(UxV) & Z'=U"
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
         if Obj.GetValue() == deformationData[-dId]['U']:
@@ -491,7 +511,8 @@ def UpdateDeformation(G2frame,data,AtdId):
         mainSizer.Add(wx.StaticText(deformation,
             label=" NB: Local site sym always has unique axis || Z' and second axis || X'; choose U && V carefully"))
         matSizer = wx.BoxSizer(wx.HORIZONTAL)
-        Mchoice = ["A: X'=U, Y'=(UxV)xU & Z'=UxV","B: X'=U, Y'=UxV & Z'=Ux(UxV)"]
+        Mchoice = ["A: X'=U, Y'=(UxV)xU & Z'=UxV","B: X'=U, Y'=UxV & Z'=Ux(UxV)",
+                   "C: X'=UxV, Y'=Ux(UxV) & Z'=U","D: X'=(UxV)xU, Y=(UxV) & Z'=U"]
         matSizer.Add(wx.StaticText(deformation,label=' Orbital Cartesian axes:'),0,WACV)
         matSel = wx.ComboBox(deformation,choices=Mchoice,value=deformationData[-dId]['MUV'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
         matSel.Bind(wx.EVT_COMBOBOX,OnMatSel)

@@ -1474,9 +1474,9 @@ def GetOpFromCode(Code,SGData):
     Cent = SGCent[cent]
     SGM,SGT = SGOps[opNum]
     if SymOp < 0:
-        SGM *= -1
-        SGT *= -1
-    return SGM,SGT,Cent,Unit   
+        return -1*SGM,-1*SGT,Cent,Unit
+    else:
+        return SGM,SGT,Cent,Unit   
 
 ################################################################################
 #### Superspace group codes

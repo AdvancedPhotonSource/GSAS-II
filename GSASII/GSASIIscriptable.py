@@ -12,6 +12,8 @@ or setting parameters and performing a refinement
 
 To change settings within histograms, images and phases, one usually needs to use
 methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
+
+.. py:module:: GSASII
 """
 # Note that documentation for GSASIIscriptable.py has been moved
 # to file docs/source/GSASIIscriptable.rst
@@ -437,7 +439,7 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
     Returns the first reader object which worked."""
     if URL is True:
         filename = downloadFile(filename,download_loc)
-    # Translated from OnImportGeneric method in GSASII.py
+    # Translated from OnImportGeneric method in GSASIIGUI.py
     primaryReaders, secondaryReaders = [], []
     hintcount = 0
     for reader in readerlist:
@@ -717,7 +719,7 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
              'Unit Cells List',
              'Reflection Lists']
 
-    # TODO controls?? GSASII.py:1664-7
+    # TODO controls?? GSASIIGUI.py:1664-7
 
     return HistName, [HistName] + names, output_dict
 

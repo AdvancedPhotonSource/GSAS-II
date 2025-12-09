@@ -5,30 +5,46 @@
 =========================================
 
 .. py:currentmodule:: GSASII
-
-.. tip::
-
-   Note that with the transition from the "master" branch to the "main" branch of GSAS-II, `described here <https://advancedphotonsource.github.io/GSAS-II-tutorials/master2main.html>`_, the initial code needed to access the GSAS-II scripting module changes. Older scripts may require minor changes to import GSASIIscriptable, as described in :ref:`ScriptingShortcut`. The instructions below have been updated for use of the current ("main") branch. 
    
 *Summary/Contents*
 ==================
 
-Routines to use an increasing amount of GSAS-II's capabilities from scripts, 
+GSASIIscriptable provides routines to use an increasing amount of
+GSAS-II's capabilities from Python scripts, 
 without use of the graphical user interface (GUI). GSASIIscriptable can create and access
-GSAS-II project (.gpx) files and can directly perform image handling and refinements.  
-The module defines wrapper classes (inheriting from
-:class:`~GSASIIscriptable.G2ObjectWrapper`) for a growing number  
-of data tree items.
+GSAS-II project (.gpx) files and can directly perform image handling,
+peak fits, refinements... The .gpx files are completely compatible
+with the GUI, so one can move back and forth between the GUI and
+scripting when developing scripts.  This mode of code development is
+encouraged to get started with GSAS-II scripting. 
 
 GSASIIscriptable is normally used by writing Python commands via
-this module's application programming interface (API). There is also a mechanism
-where GSASIIscriptable can be accessed via shell/batch commands (see :ref:`CommandlineInterface`), called command-line mode. Access to GSASIIscriptable via the API is used more widely than via command-line mode and offers many more features. The material below introduces and summarizes use of GSASIIscriptable via the API. Following that, detailed descriptions of all routines are provided in the :ref:`complete API documentation <API>` section.
+this module's application programming interface (API). (There is also
+an older mechanism where GSASIIscriptable can be accessed via
+shell/batch commands, see :ref:`CommandlineInterface`,
+called command-line mode.) Access to GSASIIscriptable via the API is
+used more widely than via command-line mode and offers many more
+features. The material below introduces and summarizes use of
+GSASIIscriptable via the API. Following that, detailed descriptions of
+all routines are provided in the :ref:`complete API documentation
+<API>` section.  
 
 While the command-line mode 
 provides access a number of features without writing Python scripts 
 via shell/batch commands (see :ref:`CommandlineInterface`), use in practice
 seems somewhat clumsy. Command-line mode
 is no longer being developed and its use is discouraged.
+
+GSASIIscriptable is designed around the hierarchical structure of .gpx
+files, that is seen in the GUI as the GSAS-II data tree. The module
+defines wrapper classes 
+(inheriting from :class:`~GSASIIscriptable.G2ObjectWrapper`) for most
+GSAS-II data tree items, so most scripting is done with
+object-oriented code that operate on different types of data tree
+objects. At the top level one has a project 
+(:class:`~GSASIIscriptable.G2Project`) which contains 
+phases (:class:`~GSASIIscriptable.G2Phase`) powder diffraction
+histograms ( :class:`~GSASIIscriptable.G2PwdrData`). 
 
 .. contents:: Scripting Documentation Contents
    :depth: 2

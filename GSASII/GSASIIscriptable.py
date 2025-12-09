@@ -7075,16 +7075,17 @@ class G2Image(G2ObjectWrapper):
         within a small 2theta window and then the median difference is computed
         from magnitude of the difference for those pixels from that median. The
         medians are used for this rather than a standard deviation as the
-        computation used here is less sensitive to outliers.
+        computation used here is less sensitive to outliers. The image must
+        be properly calibrated so that radial averaging is possible. 
         (See :func:`GSASIIimage.AutoPixelMask` and
         :func:`scipy.stats.median_abs_deviation` for more details.)
 
-        Mask is placed into the G2image object where it will be
+        The mask is placed into the G2image object, where it will be
         accessed during integration. Note that this increases the .gpx file
         size significantly; use :meth:`~G2Image.clearPixelMask` to delete
-        this, if it need not be saved.
+        this, if it need not be retained if the .gpx file is to be saved.
 
-        This code is based on :func:`GSASIIimage.FastAutoPixelMask`
+        This code is based on :func:`GSASIIimage.FastAutoPixelMask`,
         but has been modified to recycle expensive computations
         where possible.
 

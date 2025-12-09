@@ -9496,7 +9496,7 @@ def gitCheckUpdates(G2frame):
         gitFetch(G2frame)  # download latest updates from server
     except:
         G2MessageBox(G2frame,
-                    'Unable to access updates: no internet connection?',
+                    'Unable to perform update: if you have an internet connection, do you have write access to installation?',
                     title='git error')
         return
 

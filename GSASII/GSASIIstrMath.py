@@ -3784,11 +3784,14 @@ def getPowderProfile(parmDict,histDict1,x,varylist,Histogram,Phases,calcControls
 
         #histDict1 holds pdabc entry keyed to hfx. if histDict is empty do nothing
         if histDict1:
-            pdabc = histDict1.get(hfx+'pdabc')
-            if pdabc:
+            pdabc = histDict1.get(hfx+'pdabc')  # this is a peak lookup table
+            #if pdabc:
+            try:  # I am seeing an unexpected list of values for this in one .gpx file
                 sigTable = np.interp(refl[4+im],pdabc["d"],pdabc["sig"])
                 #print(f"{refl[4+im]:.4f} sig: {sig:.6f} sigTable {sigTable:.6f} total: {sig+sigTable}")
                 sig += sigTable
+            except:
+                pass
 
         return sig,gam
 

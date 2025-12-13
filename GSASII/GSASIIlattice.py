@@ -2938,7 +2938,7 @@ def H2ThPh2(H,Bmat):
     :returns array Ph: HKL polar angles
     '''
     Hcart = np.inner(H,Bmat)
-    R = np.sqrt(np.sum(np.square(Hcart),axis=1))
+    R = nl.norm(Hcart,axis=1)
     Hcart /= R[:,nxs]
     Pl = acosd(Hcart[:,2])
     Az = atan2d(Hcart[:,1],Hcart[:,0])
@@ -2991,7 +2991,7 @@ def SHarmcal(SytSym,SHFln,psi,gam):
             SHVal += (SHFln[term][0]*Ksl)
     return SHVal
 
-def KslCalc(trm,psi,gam):
+def KslCalc(trm,psi,gam,RI=False):
     '''Compute one angular part term in spherical harmonics
 
     :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
@@ -3002,9 +3002,21 @@ def KslCalc(trm,psi,gam):
     '''
     l,m = eval(trm.strip('C').strip('c'))
     if 'c' in trm:
-        return CubicSHarm(l,m,psi,gam)
+        if not RI:
+            return CubicSHarm(l,m,psi,gam)
+        else:
+            return CubicSHarm(l,m,psi,gam),0.0
+
     else:
-        return SphHarmAng(l,m,1.0,psi,gam)
+        if not RI:
+            return SphHarmAng(l,m,1.0,psi,gam)
+        else:
+            try:
+            #### TODO: this will be deprecated in scipy 1.17.0
+                ylmp = SQ2*spsp.sph_harm(m,l,rpd*psi,rpd*gam)*(-1)**m   #wants radians; order then degree
+            except AttributeError: #new one sph_harm_y in scipy 1.15.1 but buggy?
+                ylmp = SQ2*spsp.sph_harm_y(l,m,rpd*psi,rpd*gam)*(-1)**m #order L,M makes more sense
+            return np.real(ylmp),np.imag(ylmp)
 
 def SphHarmAng(L,M,P,Th,Ph):
     ''' Compute spherical harmonics values using scipy.special.sph_harm

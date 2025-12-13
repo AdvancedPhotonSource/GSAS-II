@@ -450,10 +450,11 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
         QA = G2mth.invQ(Orient)       #rotates about chosen axis
         Q = G2mth.prodQQ(QA,QB)     #might be switched? QB,QA is order for plotting
         M = np.inner(G2mth.Q2Mat(Q),Bmat)
-        return G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),M)[1:]
+        return G2lat.H2ThPh2(hkl,M)[1:]
 
     dFFdS = {}
     atFlg = []
+    hkl = np.reshape(HKL,(-1,3))
     SQR = np.repeat(SQ,HKL.shape[1])
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:        #spinning RB
@@ -551,9 +552,9 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             orKeys = [item for item in ORBtables[Atype] if item not in ['Slater','ZSlater','NSlater','SZE','popCore','popVal']]
             orKeys = [item for item in orKeys if 'Sl' in item]
             orbs = SHCdict[iAt]['1']
-            UVmat = np.inner(SHCdict[-iAt]['UVmat'],Bmat)
-            R,Th,Ph = G2lat.H2ThPh2(np.reshape(HKL,(-1,3)),UVmat) #radius,azimuth,polar
-#            R = 1/R     # correct dspacings - not used
+            UVmat = np.inner(SHCdict[-iAt]['UVmat'],Bmat) #OK
+            R,Th,Ph = G2lat.H2ThPh2(hkl,UVmat) #radius,azimuth,polar - OK
+            R = 1./R  # d-spacing for diagnostics - OK
             atFlg.append(1.0)
             orbTable = ORBtables[Atype]  # should point at Sl core
             ffOrb = orbTable['Sl core']

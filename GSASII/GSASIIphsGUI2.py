@@ -243,7 +243,7 @@ def UpdateDeformation(G2frame,data,AtdId):
             MY /= nl.norm(MY)
             MX = np.cross(MY,MZ)
             MX /= nl.norm(MX)
-        return np.array([MX,MY,MZ]).T
+        return np.vstack((MX,MY,MZ)).T
     
     def OnDeformRef(event):
         Obj = event.GetEventObject()

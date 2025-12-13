@@ -207,7 +207,6 @@ def onSetAll(event):
         c.ChangeValue(firstVal)
     #print('after',[item[0][item[1]] for item in valList])
 
-    
 def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
                      lblSizer=None,lblPanel=None,CopyCtrl=True):
     '''Displays the data table in `Table` in Scrolledpanel `Panel`
@@ -344,7 +343,7 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
             elif 'ref' in Table[hist][row]:
                 arr,indx = Table[hist][row]['ref']
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
-                valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
                 checkButList[row].append(w)
             elif 'str' in Table[hist][row]:
                 Sizer.Add(wx.StaticText(Panel,label=Table[hist][row]['str']),0,
@@ -371,6 +370,7 @@ def HistFrame(G2frame):
         prmTable = getLimitVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Background'):
         prmTable = getBkgVals(G2frame,Histograms)
+        CopyCtrl = False
     else:
         print('Unexpected', G2frame.GroupInfo['displayMode'])
         return
@@ -634,14 +634,56 @@ def getBkgVals(G2frame,Histograms):
     # parameters to include in table
     parms = []
     parmDict = {}
-   # loop over histograms in group
+    # loop over histograms in group
     for hist in groupDict[groupName]:
         histdata = Histograms[hist]
         hpD = {}
-        hpD['Inst. name'] = {
-            'val' : (histdata['Sample Parameters'],'InstrName')}
-
-        #...
+        hpD['Function'] = {
+            'str' : histdata['Background'][0][0]}
+        hpD['ref flag'] = {
+            'ref' : (histdata['Background'][0],1)}
+        hpD['# Bkg terms'] = {
+            'str' : str(int(histdata['Background'][0][2]))}
+        hpD['# Debye terms'] = {
+            'str' : str(int(histdata['Background'][1]['nDebye']))}
+        for i,term in enumerate(histdata['Background'][1]['debyeTerms']):
+            hpD[f'A #{i+1}'] = {
+                'val' : (histdata['Background'][1]['debyeTerms'][i],0),
+                'ref' : (histdata['Background'][1]['debyeTerms'][i],1),
+                }
+            hpD[f'R #{i+1}'] = {
+                'val' : (histdata['Background'][1]['debyeTerms'][i],2),
+                'ref' : (histdata['Background'][1]['debyeTerms'][i],3),
+                }
+            hpD[f'U #{i+1}'] = {
+                'val' : (histdata['Background'][1]['debyeTerms'][i],4),
+                'ref' : (histdata['Background'][1]['debyeTerms'][i],5),
+                }
+        hpD['# Bkg Peaks'] = {
+            'str' : str(int(histdata['Background'][1]['nPeaks']))}
+        for i,term in enumerate(histdata['Background'][1]['peaksList']):
+            hpD[f'pos #{i+1}'] = {
+                'val' : (histdata['Background'][1]['peaksList'][i],0),
+                'ref' : (histdata['Background'][1]['peaksList'][i],1),
+                }
+            hpD[f'int #{i+1}'] = {
+                'val' : (histdata['Background'][1]['peaksList'][i],2),
+                'ref' : (histdata['Background'][1]['peaksList'][i],3),
+                }
+            hpD[f'sig #{i+1}'] = {
+                'val' : (histdata['Background'][1]['peaksList'][i],4),
+                'ref' : (histdata['Background'][1]['peaksList'][i],5),
+                }
+            hpD[f'gam #{i+1}'] = {
+                'val' : (histdata['Background'][1]['peaksList'][i],6),
+                'ref' : (histdata['Background'][1]['peaksList'][i],7),
+                }
+        if histdata['Background'][1]['background PWDR'][0]:
+            val = 'yes'
+        else:
+            val = 'no'
+        hpD['Fixed bkg file'] = {
+            'str' : val}
         parmDict[hist] = hpD
     return parmDict
 

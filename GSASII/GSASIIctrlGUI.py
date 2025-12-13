@@ -7387,6 +7387,7 @@ class gitVersionSelector(wx.Dialog):
         self.initial_commit_info = self.docCommit(self.initial_commit)
         if parent is None:
             parent = wx.GetApp().GetMainTopWindow()
+        self.parent = parent
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select GSAS-II Version',
                             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -7515,9 +7516,18 @@ class gitVersionSelector(wx.Dialog):
 
         :returns: a multi-line string
         '''
-        #import datetime
+        import datetime
         fmtdate = lambda c:"{:%d-%b-%Y %H:%M}".format(c.committed_datetime)
         commit = self.g2repo.commit(commit)  # converts a hash, if supplied
+        # do not allow regression before May 1, 2025 so we don't go back to 
+        # master branch reorg. Switch was actually ~22 Apr 2025, but leave a 
+        # bit of room
+        if datetime.datetime(2025,5,1, tzinfo=commit.committed_datetime.tzinfo
+                             ) > commit.committed_datetime:
+            msg = 'Unable to regress automatically to versions prior to last source reorg. If you do need to use an older GSAS-II version please ask for help on mailing list or GitHub Issues.'
+            G2MessageBox(self.parent,msg,'Too old')
+            self.spin.SetValue(self.spin.GetValue()+1)
+            raise IndexError
         msg = f'git {commit.hexsha[:10]} from {fmtdate(commit)}'
         tags = self.g2repo.git.tag('--points-at',commit).split('\n')
         if tags != ['']:
@@ -9496,7 +9506,7 @@ def gitCheckUpdates(G2frame):
         gitFetch(G2frame)  # download latest updates from server
     except:
         G2MessageBox(G2frame,
-                    'Unable to access updates: no internet connection?',
+                    'Unable to perform update: if you have an internet connection, do you have write access to installation?',
                     title='git error')
         return
 

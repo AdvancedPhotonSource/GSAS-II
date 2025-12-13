@@ -2117,7 +2117,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Ymax = None
     for ip,Pattern in enumerate(PlotList):
         xye = Pattern[1]
-        xye = np.nan_to_num(xye)
+        try:
+            xye = np.nan_to_num(xye)
+        except ValueError:
+            print('Error in diffraction pattern',ip,'skipping plot')
+            continue
         if xye[1] is None: continue
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))

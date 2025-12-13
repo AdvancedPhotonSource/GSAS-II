@@ -2944,35 +2944,6 @@ def H2ThPh2(H,Bmat):
     Az = atan2d(Hcart[:,1],Hcart[:,0])
     return R,Az,Pl
 
-# def H2ThPh(H,Bmat,Q):
-#     '''Convert HKL to spherical polar & azimuth angles - wrong!
-
-#     :param array H: array of hkl as [n,3]
-#     :param [3,3] array Bmat: inv crystal to Cartesian transformation
-#     :param array Q: quaternion for rotation of HKL to new polar axis
-#     :returns array Th: HKL azimuth angles
-#     :returns array Ph: HKL polar angles
-#     '''
-#     # A,V = G2mth.Q2AVdeg(Q)
-#     # QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
-#     # QA = G2mth.AVdeg2Q(A,np.array([0.,0.,1.0]))
-#     # Q2 = G2mth.prodQQ(QR,QA)
-#     Qmat = G2mth.Q2Mat(Q)
-#     CH1 = np.inner(H,Bmat.T)
-#     CH = np.inner(CH1,Qmat.T)
-#     N = nl.norm(CH,axis=1)
-#     CH /= N[:,nxs]
-#     H3 = np.array([0,0,1.])
-#     DHR = np.inner(CH,H3)
-#     Ph = np.where(DHR <= 1.0,acosd(DHR),0.0)    #polar angle 0<=Ph<=180.; correct
-#     TH = CH*np.array([1.,1.,0.])[nxs,:]     #projection of CH onto xy plane
-#     N = nl.norm(TH,axis=1)
-#     N = np.where(N > 1.e-5,N,1.)
-#     TH /= N[:,nxs]
-#     Th = atan2d(TH[:,1],TH[:,0])                #azimuth angle 0<=Th<360<
-#     Th = np.where(Th<0.,Th+360.,Th)
-#     return Th,Ph        #azimuth,polar angles
-
 def SetUVvec(Neigh):
     ''' Set deformation coordinate choices from neighbors; called in G2phsGUI/UpdateDeformation
     

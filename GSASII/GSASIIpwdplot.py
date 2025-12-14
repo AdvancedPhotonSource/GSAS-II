@@ -2186,9 +2186,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         msk = [True] * l
         for h in groupDict[groupName][1:]:
             msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h.ljust(l),msk)]
-        if not hasattr(Page,'groupMax'): Page.groupMax = 10
+        if not hasattr(Page,'groupMax'): Page.groupMax = min(10,len(groupDict[groupName]))
         if not hasattr(Page,'groupOff'): Page.groupOff = 0
-        groupPlotList = groupDict[groupName][Page.groupOff:][:Page.groupMax]
+        groupPlotList = groupDict[groupName][Page.groupOff:]
+        groupPlotList += groupDict[groupName] # pad with more from beginning
+        groupPlotList = groupPlotList[:Page.groupMax]
         Page.groupN = len(groupPlotList)
         # place centered-dot in loc of non-common letters
         #commonltrs = ''.join([h0i if m else '\u00B7' for (h0i,m) in zip(h0,msk)])

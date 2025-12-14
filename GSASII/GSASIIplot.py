@@ -695,6 +695,7 @@ class GSASIItoolbar(Toolbar):
             elif event.Id == self.arrows['Expand X']:
                 Page.groupMax += 1
             elif event.Id == self.arrows['Shrink X']:
+                if Page.groupMax == 2: return
                 Page.groupMax -= 1
             else:
                 return

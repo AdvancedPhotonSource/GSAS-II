@@ -1405,6 +1405,7 @@ If you continue from this point, it is quite likely that all intensity computati
         header = 'Select phase(s) to add the new\nsingle crystal dataset(s) to:'
         for Name in newHistList:
             header += '\n  '+str(Name)
+        if len(header) > 200: header = header[:200]+'...'
         result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
@@ -1998,7 +1999,7 @@ If you continue from this point, it is quite likely that all intensity computati
         header = 'Select phase(s) to link\nto the newly-read data:'
         for Name in newHistList:
             header += '\n  '+str(Name)
-
+        if len(header) > 200: header = header[:200]+'...'
         result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
@@ -7981,6 +7982,8 @@ def UpdateControls(G2frame,data):
                 groupCount[k] = len(groupDict[k])
             
             msg1 = f'With template {srchStr!r} found '
+            
+            buttons = []
             if min(groupCount.values()) == max(groupCount.values()):
                 msg1 += f'{len(groupDict)} groups with {min(groupCount.values())} histograms each'
             else:
@@ -7989,12 +7992,14 @@ def UpdateControls(G2frame,data):
             if noMatchCount:
                 msg1 += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups"
             #G2G.G2MessageBox(G2frame,msg1,'Grouping result')
+            # place a sanity check limit on the number of histograms in a group
+            if max(groupCount.values()) < 150:
+                buttons += [('OK', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK))]
+            else:
+                msg1 += '\n\nThis exceeds the maximum group length of 150 histograms'
+            buttons += [('try again', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))]
             res = G2G.ShowScrolledInfo(G2frame,msg1,header='Grouping result',
-                        buttonlist=[
-               ('OK', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
-               ('try again', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))
-              ],
-                height=150)
+                        buttonlist=buttons,height=150)
             if res == wx.ID_OK:
                 repeat = False
 
@@ -9216,7 +9221,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
         G2frame.dataWindow.HideShow.Enable(True)
     elif G2frame.GPXtree.GetItemText(parentID).startswith('Groups/'):
-        # groupDict is defined. 
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     print('Debug: reloading',G2gr)
+        #     from importlib import reload
+        #     reload(G2G)
+        #     reload(G2gr)
         G2gr.UpdateGroup(G2frame,item)
     elif GSASIIpath.GetConfigValue('debug'):
             print(f'Unknown subtree item {G2frame.GPXtree.GetItemText(item)!r}',

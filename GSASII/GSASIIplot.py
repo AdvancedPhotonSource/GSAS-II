@@ -214,14 +214,14 @@ class _tabPlotWin(wx.Panel):
 
 class G2PlotMpl(_tabPlotWin):
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
-    def __init__(self,parent,id=-1,dpi=None,publish=None,**kwargs):
+    def __init__(self,parent,id=-1,dpi=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
         mpl.rcParams['legend.fontsize'] = 10
         mpl.rcParams['axes.grid'] = False
         #TODO: set dpi here via config var: this changes the size of the labeling font 72-100 is normal
         self.figure = mplfig.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
-        self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
+        self.toolbar = GSASIItoolbar(self.canvas)
         self.toolbar.Realize()
         self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,
             'logPlot':False,'exclude':False,'partials':True,'chanPlot':False}
@@ -395,7 +395,7 @@ class G2PlotNoteBook(wx.Panel):
     #     if plotNum is not None:
     #         wx.CallAfter(self.SetSelectionNoRefresh,plotNum)
 
-    def FindPlotTab(self,label,Type,newImage=True,publish=None):
+    def FindPlotTab(self,label,Type,newImage=True):
         '''Open a plot tab for initial plotting, or raise the tab if it already exists
         Set a flag (Page.plotInvalid) that it has been redrawn
         Record the name of the this plot in self.lastRaisedPlotTab
@@ -409,9 +409,6 @@ class G2PlotNoteBook(wx.Panel):
 
         :param bool newImage: forces creation of a new graph for matplotlib
           plots only (defaults as True)
-        :param function publish: reference to routine used to create a
-          publication version of the current mpl plot (default is None,
-          which prevents use of this).
         :returns: new,plotNum,Page,Plot,limits where
 
           * new: will be True if the tab was just created
@@ -444,7 +441,7 @@ class G2PlotNoteBook(wx.Panel):
         except (ValueError,AttributeError):
             new = True
             if Type == 'mpl':
-                Plot = self.addMpl(label,publish=publish).gca()
+                Plot = self.addMpl(label).gca()
             elif Type == 'ogl':
                 Plot = self.addOgl(label)
             elif Type == '3d':
@@ -469,6 +466,7 @@ class G2PlotNoteBook(wx.Panel):
             Page.helpKey = self.G2frame.dataWindow.helpKey
         except AttributeError:
             Page.helpKey = 'HelpIntro'
+        Page.toolbar.enableArrows() # Disable Arrow keys if present
         return new,plotNum,Page,Plot,limits
 
     def _addPage(self,name,page):
@@ -493,9 +491,9 @@ class G2PlotNoteBook(wx.Panel):
         #page.replotKWargs = {}
         #self.skipPageChange = False
 
-    def addMpl(self,name="",publish=None):
+    def addMpl(self,name=""):
         'Add a tabbed page with a matplotlib plot'
-        page = G2PlotMpl(self.nb,publish=publish)
+        page = G2PlotMpl(self.nb)
         self._addPage(name,page)
         return page.figure
 
@@ -606,7 +604,7 @@ class G2PlotNoteBook(wx.Panel):
 
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
-    def __init__(self,plotCanvas,publish=None,Arrows=True):
+    def __init__(self,plotCanvas,Arrows=True):
         '''Adds additional icons to toolbar'''
         self.arrows = {}
         # try to remove a button from the bar
@@ -631,16 +629,25 @@ class GSASIItoolbar(Toolbar):
                     prfx = 'Shift plot '
                 fil = ''.join([i[0].lower() for i in direc.split()]+['arrow.ico'])
                 self.arrows[direc] = self.AddToolBarTool(sprfx+direc,prfx+direc,fil,self.OnArrow)
-        if publish:
-            self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',publish)
+        self.publishId = self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',self.Publish)
+        self.publishRoutine = None
+        self.EnableTool(self.publishId,False)
         self.Realize()
+    def setPublish(self,publish=None):
+        'Set the routine to be used to publsh the plot'
+        self.publishRoutine = publish
+        self.EnableTool(self.publishId,bool(publish))
+    def Publish(self,*args,**kwargs):
+        'Called to publish the current plot'
+        if not self.publishRoutine: return
+        self.publishRoutine(*args,**kwargs)
 
     def set_message(self,s):
         ''' this removes spurious text messages from the tool bar
         '''
         pass
 
-# TODO: perhaps someday we could pull out the bitmaps and rescale there here    
+# TODO: perhaps someday we could pull out the bitmaps and rescale them here    
 #    def AddTool(self,*args,**kwargs):
 #        print('AddTool',args,kwargs)
 #        return Toolbar.AddTool(self,*args,**kwargs)
@@ -679,6 +686,21 @@ class GSASIItoolbar(Toolbar):
 
     def OnArrow(self,event):
         'reposition limits to scan or zoom by button press'
+        if self.arrows.get('_groupMode'):
+            Page = self.arrows['_groupMode']
+            if event.Id == self.arrows['right']:
+                Page.groupOff += 1
+            elif event.Id == self.arrows['left']:
+                Page.groupOff -= 1
+            elif event.Id == self.arrows['Expand X']:
+                Page.groupMax += 1
+            elif event.Id == self.arrows['Shrink X']:
+                Page.groupMax -= 1
+            else:
+                return
+            if self.updateActions:
+                wx.CallLater(100,*self.updateActions)
+            return
         axlist = self.plotCanvas.figure.get_axes()
         if len(axlist) == 1:
              ax = axlist[0]
@@ -736,6 +758,21 @@ class GSASIItoolbar(Toolbar):
 #        self.parent.toolbar.push_current()
         if self.updateActions:
             wx.CallAfter(*self.updateActions)
+    def enableArrows(self,mode='',updateActions=None):
+        '''Disable/Enable arrow keys.
+        Disables when updateActions is None.
+        mode='group' turns on 'x' buttons only
+        '''
+        if not self.arrows: return
+        self.updateActions = updateActions
+        if mode == 'group':
+            # assumes that all arrows previously disabled
+            for lbl in ('left', 'right', 'Expand X', 'Shrink X'):
+                self.EnableTool(self.arrows[lbl],True)
+        else:
+            for lbl in ('left','right','up','down', 'Expand X',
+                                'Shrink X','Expand Y','Shrink Y'):
+                self.EnableTool(self.arrows[lbl],bool(updateActions))
 
     def OnHelp(self,event):
         'Respond to press of help button on plot toolbar'

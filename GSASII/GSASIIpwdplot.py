@@ -1747,7 +1747,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         publish = PublishPlot
     else:
         publish = None
-    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
+    if G2frame.Contour: publish = None
+
+    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl')
+    Page.toolbar.setPublish(publish)
+    Page.toolbar.arrows['_groupMode'] = None
     # if we are changing histogram types (including group to individual, reset plot)
     if not new and hasattr(Page,'prevPlotType'):
         if Page.prevPlotType != plottype: new = True
@@ -1965,6 +1969,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             'C: contour plot control window',
             )
     else:
+#       Page.toolbar.updateActions = (PlotPatterns,G2frame) # command used to refresh after arrow key is pressed
         if 'PWDR' in plottype:
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
@@ -2022,7 +2027,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     for KeyItem in extraKeys:
         Page.Choice = Page.Choice + [KeyItem[0] + ': '+KeyItem[2],]
     magLineList = [] # null value indicates no magnification
-    Page.toolbar.updateActions = None # no update actions
+    #Page.toolbar.updateActions = None # no update actions, used with the arrow keys
     G2frame.cid = None
     Page.keyPress = OnPlotKeyPress
     # assemble a list of validated colors (not currently needed)
@@ -2151,6 +2156,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             xLabel = r'$\mathsf{2\theta}$'
     if groupName is not None:
         # plot a group of histograms
+        Page.toolbar.arrows['_groupMode'] = Page # set up  use of arrow keys
+#        Page.toolbar.updateActions = (PlotPatterns,G2frame,False,plotType,data
+#                                      ) # command used to refresh after arrow key is pressed
+        Page.toolbar.enableArrows('group',(PlotPatterns,G2frame,False,plotType,data))
+
         Page.Choice = [' key press',
                 'f: toggle full-length ticks',
                 'g: toggle grid',
@@ -2170,17 +2180,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         DZmin = 0
         RefTbl = {}
         histlbl = {}
-        nx = len(groupDict[groupName])
         # find portion of hist name that is the same and different
-        h0 = groupDict[groupName][0]
-        msk = [True] * len(h0)
+        l = max([len(i) for i in groupDict[groupName]])
+        h0 = groupDict[groupName][0].ljust(l)
+        msk = [True] * l
         for h in groupDict[groupName][1:]:
-            msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h,msk)]
+            msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h.ljust(l),msk)]
+        if not hasattr(Page,'groupMax'): Page.groupMax = 10
+        if not hasattr(Page,'groupOff'): Page.groupOff = 0
+        groupPlotList = groupDict[groupName][Page.groupOff:][:Page.groupMax]
+        Page.groupN = len(groupPlotList)
         # place centered-dot in loc of non-common letters
         #commonltrs = ''.join([h0i if m else '\u00B7' for (h0i,m) in zip(h0,msk)])
         # place rectangular box in the loc of non-common letter(s)
         commonltrs = ''.join([h0i if m else '\u25A1' for (h0i,m) in zip(h0,msk)])
-        for i,h in enumerate(groupDict[groupName]):
+        for i,h in enumerate(groupPlotList):
             histlbl[i] = ''.join([hi for (hi,m) in zip(h,msk) if not m]) # unique letters
             gPatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, h)
             gParms,_ = G2frame.GPXtree.GetItemPyData(
@@ -2215,21 +2229,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             DZmax = max(DZmax,DZ.max())
             totalrange += gXmax[i]-gXmin[i]
         # apportion axes lengths so that units are equal
-        xfrac = [(gXmax[i]-gXmin[i])/totalrange for i in range(nx)]
+        xfrac = [(gXmax[i]-gXmin[i])/totalrange for i in range(Page.groupN)]
         GS_kw = {'height_ratios':[4, 1], 'width_ratios':xfrac,}
         if plotOpt['sharedX'] and (
                 Page.plotStyle['qPlot'] or Page.plotStyle['dPlot']):
             Page.figure.text(0.001,0.94,'X shared',fontsize=11,
                                  color='g')
-            Plots = Page.figure.subplots(2,nx,sharey='row',sharex=True,
+            Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex=True,
                                          gridspec_kw=GS_kw)
         else:
-            Plots = Page.figure.subplots(2,nx,sharey='row',sharex='col',
+            Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex='col',
                                          gridspec_kw=GS_kw)
         Page.figure.subplots_adjust(left=5/100.,bottom=16/150.,
             right=.99,top=1.-3/200.,hspace=0,wspace=0)
-        for i in range(nx):
-            up,down = adjustDim(i,nx)
+        for i in range(Page.groupN):
+            up,down = adjustDim(i,Page.groupN)
             Plots[up].set_xlim(gXmin[i],gXmax[i])
             Plots[down].set_xlim(gXmin[i],gXmax[i])
             Plots[down].set_ylim(DZmin,DZmax)
@@ -2239,10 +2253,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Plots[up].set_ylim(-1,102)
                 
         # pretty up the tick labels
-        up,down = adjustDim(0,nx)
+        up,down = adjustDim(0,Page.groupN)
         Plots[up].tick_params(axis='y', direction='inout', left=True, right=True)
         Plots[down].tick_params(axis='y', direction='inout', left=True, right=True)
-        if nx > 1:
+        if Page.groupN > 1:
             for ax in Plots[:,1:].ravel():
                 ax.tick_params(axis='y', direction='in', left=True, right=True)
         # remove 1st upper y-label so that it does not overlap with lower box
@@ -2254,8 +2268,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plots[up].set_ylabel('Normalized Intensity',fontsize=12)
         Page.figure.text(0.001,0.03,commonltrs,fontsize=13)
         Page.figure.supxlabel(xLabel)
-        for i,h in enumerate(groupDict[groupName]):
-            up,down = adjustDim(i,nx)
+        for i,h in enumerate(groupPlotList):
+            up,down = adjustDim(i,Page.groupN)
             Plot = Plots[up]
             Plot1 = Plots[down]
             if Page.plotStyle['qPlot']:
@@ -2302,6 +2316,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             right=.98,top=1.-16/200.,hspace=0)
     else:
         Plot.set_xlabel(xLabel,fontsize=16)
+    if not G2frame.Contour:
+        Page.toolbar.enableArrows('',(PlotPatterns,G2frame))
     if G2frame.Weight and G2frame.Contour:
         Title = r'$\mathsf{\Delta(I)/\sigma(I)}$ for '+Title
     if 'T' in ParmList[0]['Type'][0] or (Page.plotStyle['Normalize'] and not G2frame.SinglePlot):
@@ -2465,7 +2481,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 lbl = Plot.annotate("x{}".format(ml0), xy=(tcorner, tpos), xycoords="axes fraction",
                     verticalalignment='bottom',horizontalalignment=halign,label='_maglbl')
                 Plot.magLbls.append(lbl)
-                Page.toolbar.updateActions = (PlotPatterns,G2frame)
             multArray = ma.getdata(multArray)
         if 'PWDR' in plottype:
             YI = copy.copy(xye[1])      #yo

@@ -581,6 +581,11 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         name = 'A%s:%d'%(term,iAt)
                         item = term.replace('D','C')[:-1]
                         SH = 2.0*twopi*G2lat.KslCalc(item,Th,Ph)**2
+                        #test
+                        SHR,SHI = G2lat.KslCalc(item,Th,Ph,True)
+                        SHT = SHR**2-SHI**2
+                        SHT *= (2.0*twopi)
+                        #end test
                         FFSH += SH*orbs[term]*ffkp
                         dFFdS[name] = SH*ffkp       #ok
                         dFFdS["Akappa'1:%d"%iAt] += -2.0*SQkp*SH*orbs[term]*dffdkp/kappap   #ok

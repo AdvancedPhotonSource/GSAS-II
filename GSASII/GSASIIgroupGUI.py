@@ -102,12 +102,77 @@ def UpdateGroup(G2frame,item,plot=True):
         G2frame.GroupInfo['displayMode'] = dsplType.GetValue()
         wx.CallAfter(UpdateGroup,G2frame,item,False)
         #UpdateGroup(G2frame,item)
+    def OnCopyAll(event):
+        G2G.G2MessageBox(G2frame,
+                    f'Sorry, not fully implemented yet',
+                                     'In progress')
+        return
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
+        groupName = G2frame.GroupInfo['groupName']
+        # make a list of groups of the same length as the current
+        curLen = len(groupDict[groupName])
+        matchGrps = []
+        for g in groupDict:
+            if g == groupName: continue
+            if curLen != len(groupDict[g]): continue
+            matchGrps.append(g)
+        if len(matchGrps) == 0:
+            G2G.G2MessageBox(G2frame,
+                    f'No groups found with {curLen} histograms',
+                                     'No matching groups')
+            return
+        elif len(matchGrps) > 1:
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Copy to which groups?', 'Copy to?', matchGrps)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    selList = [matchGrps[i] for i in dlg.GetSelections()]
+            finally:
+                dlg.Destroy()
+        else:
+            selList = matchGrps
+        if len(selList) == 0: return
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        if G2frame.GroupInfo['displayMode'].startswith('Sample'):
+            prmTable = getSampleVals(G2frame,Histograms)
+        elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
+            prmTable = getInstVals(G2frame,Histograms)
+        elif G2frame.GroupInfo['displayMode'].startswith('Limits'):
+            CopyCtrl = False
+            prmTable = getLimitVals(G2frame,Histograms)
+        elif G2frame.GroupInfo['displayMode'].startswith('Background'):
+            prmTable = getBkgVals(G2frame,Histograms)
+            CopyCtrl = False
+        else:
+            print('Unexpected', G2frame.GroupInfo['displayMode'])
+            return
+        for h in selList: # group
+            for src,dst in zip(groupDict[groupName],groupDict[h]):
+                print('copy',src,'to',dst)
+                for i in prmTable[src]:
+                    #if i not in prmTable[dst]:
+                    #    print
+                    #    continue
+                    if 'val' in  prmTable[src][i]:
+                        breakpoint()
+        # so what do we copy?
+        #breakpoint()
+        print('OnCopyAll')
+    def OnCopySel(event):
+        print('OnCopySel')
+        G2G.G2MessageBox(G2frame,
+                    f'Sorry, not fully implemented yet',
+                                     'In progress')
+        return
 
     if not hasattr(G2frame,'GroupInfo'):
         G2frame.GroupInfo = {}
     G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Sample')
     G2frame.GroupInfo['groupName'] = G2frame.GPXtree.GetItemText(item)
-    G2gd.SetDataMenuBar(G2frame)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.GroupMenu)
+    G2frame.Bind(wx.EVT_MENU, OnCopyAll, id=G2G.wxID_GRPALL)
+    G2frame.Bind(wx.EVT_MENU, OnCopySel, id=G2G.wxID_GRPSEL)
+
     G2frame.dataWindow.ClearData()
     G2frame.dataWindow.helpKey = "Groups/Powder"
     topSizer = G2frame.dataWindow.topBox
@@ -126,13 +191,6 @@ def UpdateGroup(G2frame,item,plot=True):
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
 
-    # parent = G2frame.dataWindow.topPanel
-    # topSizer.Add(wx.StaticText(parent,label=' Group edit goes here someday'),0,WACV)
-    # topSizer.Add((-1,-1),1,wx.EXPAND)
-    # topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
-    # G2G.HorizontalLine(G2frame.dataWindow.GetSizer(),G2frame.dataWindow)
-    # #G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
-    G2frame.GroupInfo['groupName'] = G2frame.GPXtree.GetItemText(item)
     if G2frame.GroupInfo['displayMode'].startswith('Hist'):
         HAPframe(G2frame)
     else:
@@ -159,10 +217,11 @@ def histLabels(G2frame):
         G2frame,G2frame.root, 'Controls'))
     groupName = G2frame.GroupInfo['groupName']
     groupDict = Controls.get('Groups',{}).get('groupDict',{})
-    h0 = groupDict[groupName][0]
-    msk = [True] * len(h0)
+    l = max([len(i) for i in groupDict[groupName]])
+    h0 = groupDict[groupName][0].ljust(l)
+    msk = [True] * l
     for h in groupDict[groupName][1:]:
-        msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h,msk)]
+        msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h.ljust(l),msk)]
     # place rectangular box in the loc of non-common letter(s)
     commonltrs = ''.join([h0i if m else '\u25A1' for (h0i,m) in zip(h0,msk)])
     # make list with histogram name unique letters   
@@ -436,18 +495,29 @@ def getSampleVals(G2frame,Histograms):
     # parameters to include in table
     parms = []
     parmDict = {}
+    #indexDict = {}
    # loop over histograms in group
     for hist in groupDict[groupName]:
+        #indexDict[hist] = {}
         histdata = Histograms[hist]
         hpD = {}
         hpD['Inst. name'] = {
             'val' : (histdata['Sample Parameters'],'InstrName')}
+        #indexDict[hist]['Inst. name'] = {
+        #    'val' : (hist,'Sample Parameters','InstrName')}
         hpD['Diff type'] = {
             'str' : histdata['Sample Parameters']['Type']}
+        #indexDict[hist]['Diff type'] = {
+        #    'str' : (hist,'Sample Parameters','Type')}
         arr = histdata['Sample Parameters']['Scale']
         hpD['Scale factor'] = {
             'val' : (arr,0),
             'ref' : (arr,1),}
+        #indexDict[hist]['Scale factor'] = {
+        #    'val' : (hist,'Sample Parameters','Scale',0),
+        #    'ref' : (hist,1),}
+        #breakpoint()
+        #return
         # make a list of parameters to show
         histType = histdata['Instrument Parameters'][0]['Type'][0]
         dataType = histdata['Sample Parameters']['Type']
@@ -843,21 +913,6 @@ def HAPframe(G2frame):
         HAPBook.AddPage(HAPtabs[-1],phaseName)
     HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, selectPhase)
 
-    # code to set menu bar contents
-    #G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
-    # fill the 'Select tab' menu
-    # mid = G2frame.dataWindow.DataMenu.FindMenu('Select tab')
-    # menu = G2frame.dataWindow.DataMenu.GetMenu(mid)
-    # items = menu.GetMenuItems()
-    # for item in items:
-    #      menu.Remove(item)
-    # if len(phaseList) == 0: return
-    # for i,page in enumerate(phaseList):
-    #     Id = wx.NewId()
-    #     if menu.FindItem(page) >= 0: continue # is tab already in menu?
-    #     menu.Append(Id,page,'')
-    #     TabSelectionIdDict[Id] = page
-    #     G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
     page = 0
     HAPBook.SetSelection(page)
     selectPhase(None)
@@ -1113,24 +1168,6 @@ def printTable(phase,hist,parmDict):
 #     panel.SetSizer(mainSizer)
 #     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
 
-#     # code to set menu bar contents
-#     #G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
-#     # fill the 'Select tab' menu
-#     # mid = G2frame.dataWindow.DataMenu.FindMenu('Select tab')
-#     # menu = G2frame.dataWindow.DataMenu.GetMenu(mid)
-#     # items = menu.GetMenuItems()
-#     # for item in items:
-#     #      menu.Remove(item)
-#     # if len(phaseList) == 0: return
-#     # for i,page in enumerate(phaseList):
-#     #     Id = wx.NewId()
-#     #     if menu.FindItem(page) >= 0: continue # is tab already in menu?
-#     #     menu.Append(Id,page,'')
-#     #     TabSelectionIdDict[Id] = page
-#     #     G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
-#     #page = 0
-#     #HAPBook.SetSelection(page)
-#     #selectPhase(None)
     
 #     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
 #     mainSizer.Add(bigSizer,1,wx.EXPAND)

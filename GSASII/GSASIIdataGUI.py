@@ -7508,6 +7508,20 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             # don't know which menu was selected, but should be General on first phase use
             SetDataMenuBar(G2frame,self.DataGeneral)
         self.DataGeneral = _makemenu
+
+        # Groups
+        G2G.Define_wxId('wxID_GRPALL','wxID_GRPSEL','wxID_HIDESAME')
+        def _makemenu():     # routine to create menu when first used
+            self.GroupMenu = wx.MenuBar()
+            self.PrefillDataMenu(self.GroupMenu)
+            self.GroupCmd = wx.Menu(title='')
+            self.GroupMenu.Append(menu=self.GroupCmd, title='Grp Cmds')
+            self.GroupCmd.Append(G2G.wxID_GRPALL,'Copy all','Copy all parameters by group')
+            self.GroupCmd.Append(G2G.wxID_GRPSEL,'Copy selected','Copy elected parameters by group')
+#            self.GroupCmd.Append(G2G.wxID_HIDESAME,'Hide identical rows','Omit rows that are the same and are not refinable from table')
+            self.PostfillDataMenu()
+            SetDataMenuBar(G2frame,self.GroupMenu)
+        self.GroupMenu = _makemenu
     # end of GSAS-II menu definitions
 
 def readFromFile(reader):
@@ -7945,7 +7959,7 @@ def UpdateControls(G2frame,data):
             if hist.startswith('PWDR '):
                 break
         else:
-            G2G.G2MessageBox(G2frame,'No PWDR histograms found to group',
+            G2G.G2MessageBox(G2frame,'No used PWDR histograms found to group. Histograms must be assigned phase(s).',
                                      'Cannot group')
             return
         repeat = True

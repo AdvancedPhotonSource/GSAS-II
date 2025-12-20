@@ -3535,9 +3535,9 @@ def GetSytSymChoice(sytsym):
     elif sytsym == '-43m':
         PtGpLst = [31,]
     if len(PtGpLst):
-        return [PtGrps[i] for i in PtGpLst]
+        return [' ',]+[PtGrps[i] for i in PtGpLst]
     else: #'1' and unknown point group symbol
-        return PtGrps
+        return [' ']+PtGrps
         
     
 

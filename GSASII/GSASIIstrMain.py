@@ -162,7 +162,7 @@ def IgnoredLatticePrms(Phases):
             ignore += [pfx+'A3',pfx+'A4',pfx+'A5']
         elif laue in ['4/m','4/mmm']:
             ignore += [pfx+'A1',pfx+'A3',pfx+'A4',pfx+'A5']
-            copydict[pfx+'A0':[pfx+'A1']]
+            copydict[pfx+'A0'] = [pfx+'A1']
         elif laue in ['6/m','6/mmm','3m1', '31m', '3']:
             ignore += [pfx+'A1',pfx+'A3',pfx+'A4',pfx+'A5']
             copydict[pfx+'A0'] = [pfx+'A1',pfx+'A3']

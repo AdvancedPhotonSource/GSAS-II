@@ -2042,9 +2042,9 @@ def UpdateBackground(G2frame,data):
             for i in range(len(data[1]['peaksList'])): rowLabels.append(str(i))
             colLabels = ['pos','refine','int','refine','sig','refine','gam','refine']
             Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
+            wg.GRID_VALUE_FLOAT+':12,5,g',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':12,3,g',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':12,5,g',wg.GRID_VALUE_BOOL]
             peaksTable = G2G.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
             peaksGrid = G2G.GSGrid(parent=G2frame.dataWindow)
             peaksGrid.SetRowLabelSize(45)
@@ -2052,7 +2052,7 @@ def UpdateBackground(G2frame,data):
             peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             peaksGrid.Bind(wg.EVT_GRID_CELL_CHANGED,OnCellChange)
             peaksGrid.AutoSizeColumns(False)
-            peaksSizer.Add(peaksGrid)
+            peaksSizer.Add(peaksGrid,0,wx.EXPAND)
         return peaksSizer
 
     def BackFileSizer():
@@ -2254,7 +2254,7 @@ def UpdateBackground(G2frame,data):
     mainSizer.Add((0,5),0)
     mainSizer.Add(DebyeSizer())
     mainSizer.Add((0,5),0)
-    mainSizer.Add(PeaksSizer())
+    mainSizer.Add(PeaksSizer(),0,wx.EXPAND)
     mainSizer.Add((0,5),0)
     mainSizer.Add(BackFileSizer())
     G2frame.dataWindow.SetDataSize()

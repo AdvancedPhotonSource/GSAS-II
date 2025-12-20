@@ -7397,8 +7397,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                             Npsi,Ngam = 60,30 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl
-                            PSI += 90.
                             GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
+                            PSI += 90.
                             Rp,PSIp,GAMp = G2mth.RotPolbyM(np.ones_like(PSI),PSI,GAM,UVMat)
                             P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                             if np.min(P) < np.max(P):

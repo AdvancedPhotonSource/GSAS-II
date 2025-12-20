@@ -209,7 +209,25 @@ def UpdateDeformation(G2frame,data,AtdId):
     def OnSSchoice(event):
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
-        deformationData[-dId]['LocSS'] = SSchoice.GetStringSelection()
+        rbSym = deformationData[-dId]['LocSS'] = SSchoice.GetStringSelection()        
+        sytsym = atom[cs].strip()        
+        for harm in data['Deformations'][dId]:
+            if 'Sl' in harm[0]:
+                Harm = harm
+        Hkeys = list(Harm[1].keys())
+        orders = [int(item[2]) for item in Hkeys if 'D' in item]
+        if len(orders):
+            Order = max(orders)
+            newHarms = {item:Harm[1][item] for item in ['Ne','kappa',"kappa'"]}
+            for order in np.arange(Order+1):
+                cofNames,cofSgns = G2lat.GenRBCoeff(sytsym,rbSym,order)
+                cofNames = [name.replace('C','D') for name in cofNames]
+                for name in cofNames:
+                    if name in Hkeys:
+                        newHarms[name] = Harm[1][name]
+                    else:
+                        newHarms.update({name:[0.0,False],})
+            Harm[1] = newHarms                
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
     
     def MakeUVmat(defData,U,V):
@@ -243,7 +261,7 @@ def UpdateDeformation(G2frame,data,AtdId):
             MY /= nl.norm(MY)
             MX = np.cross(MY,MZ)
             MX /= nl.norm(MX)
-        return np.array([MX,MY,MZ]).T
+        return np.vstack((MX,MY,MZ)).T
     
     def OnDeformRef(event):
         Obj = event.GetEventObject()

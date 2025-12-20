@@ -1102,7 +1102,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixback=None):
                 alp = max(0.1,parmDict[pfx+'alpha-0']+parmDict[pfx+'alpha-1']*sinPos)
                 bet = max(0.001,parmDict[pfx+'beta-0']+parmDict[pfx+'beta-1']*sinPos)
                 Wd,fmin,fmax = getWidthsCWB(pkP,alp,bet,pkS,pkG)
-            elif 'A'' in dataType':
+            elif 'A' in dataType:
                 shl = parmDict[pfx+'SH/L']
                 sinPos = npsind(pkP/2.0)
                 alp = max(0.1,parmDict[pfx+'alpha-0']+parmDict[pfx+'alpha-1']*sinPos)

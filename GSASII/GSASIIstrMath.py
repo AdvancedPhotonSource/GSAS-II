@@ -1199,13 +1199,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             TwMask = np.any(H,axis=-1)
         SQ = 1./(2.*refl.T[4])**2               #array(blkSize)
         SQfactor = 4.0*SQ*twopisq               #ditto prev.
-        if 'T' in hType:
-            if 'P' in calcControls[hfx+'histType']:
-                FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[14])
-            else:
-                FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[12])
-            FP = np.repeat(FP.T,len(SGT)*len(TwinLaw),axis=0)
-            FPP = np.repeat(FPP.T,len(SGT)*len(TwinLaw),axis=0)
         Uniq = np.inner(H,SGMT)
         Phi = np.inner(H,SGT)
         nOps = len(SGMT)
@@ -1213,6 +1206,13 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             Uniq = np.hstack((Uniq,-Uniq))
             Phi = np.hstack((Phi,Phi))
             nOps *= 2
+        if 'T' in hType:
+            if 'P' in calcControls[hfx+'histType']:
+                FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[14])
+            else:
+                FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[12])
+            FP = np.repeat(FP.T,nOps*len(TwinLaw),axis=0)
+            FPP = np.repeat(FPP.T,nOps*len(TwinLaw),axis=0)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
         sinp = np.sin(phase)
         cosp = np.cos(phase)
@@ -1334,8 +1334,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[14])
             else:
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[12])
-            FP = np.repeat(FP.T,len(SGMT),axis=0)
-            FPP = np.repeat(FPP.T,len(SGMT),axis=0)
+            FP = np.repeat(FP.T,nOps,axis=0)
+            FPP = np.repeat(FPP.T,nOps,axis=0)
         Uniq = np.inner(H,SGMT)             # array(nSGOp,3,3)
         Phi = np.inner(H,SGT)
         if SGData['SGInv']:

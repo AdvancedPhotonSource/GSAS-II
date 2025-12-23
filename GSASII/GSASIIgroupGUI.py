@@ -12,52 +12,58 @@ Groups are defined in Controls entry ['Groups'] which contains three entries:
 * Controls['Groups']['template'] 
    the string used to set the grouping
 
-See SearchGroups in :func:`GSASIIdataGUI.UpdateControls`.
-
-
 ** Parameter Data Table **
-Prior to display in the GUI, parameters are organized in a dict where each 
-dict entry has contents of form:
 
- *  'label' : `innerdict`
+For use to create GUI tables and to copy values between histograms, parameters 
+are organized in a dict where each dict entry has contents of form:
 
-where `innerdict` can contain the following elements:
+ *  dict['__dataSource'] : SourceArray
 
- *  'val' : (array, key)
- *  'range' : (float,float)
- *  'ref' : (array, key)
- *  'str' : string
- *  'init' : float
+ *  dict[histogram]['label'] : `innerdict`
+
+where `label` is the text shown on the row label and `innerdict` can contain
+one or more of the following elements:
+
+ *  'val'    : (key1,key2,...)
+ *  'ref'    : (key1, key2,...)
+ *  'range'  : (float,float)
+ *  'str'    : (key1,key2,...)
+ *  'fmt'    : str
+ *  'txt'    : str
+ *  'init'   : float
  *  'rowlbl' : (array, key)
 
 One of 'val', 'ref' or 'str' elements will be present. 
 
- *  The 'str' value is something that cannot be edited; If 'str' is
-    present, it will be the only entry in `innerdict`. It is used for
-    a parameter value that is typically computed or must be edited in
-    the histogram section.
-
  *  The 'val' tuple provides a reference to the float value for the 
-    defined quantity, where array[key] provides r/w access to the
-    parameter.
-
- *  The 'range' list/tuple provides min and max float value for the 
-    defined quantity to be defined. Use None for any value that
-    should not be enforced. The 'range' values will  
+    defined quantity, where SourceArray[histogram][key1][key2][...] 
+    provides r/w access to the parameter.
 
  *  The 'ref' tuple provides a reference to the bool value, where 
-    array[key] provides r/w access to the refine flag for the 
-    labeled quantity
+    SourceArray[histogram][key1][key2][...] provides r/w access to the 
+    refine flag for the labeled quantity
 
     Both 'ref' and 'val' are usually defined together, but either may 
     occur alone. These exceptions will be for parameters where a single
-    refine flag is used for a group of parameters.
+    refine flag is used for a group of parameters or for non-refined 
+    parameters.
+
+ *  The 'str' value is something that cannot be edited from the GUI; If 'str' is
+    present, the only other possible entries that can be present is either 'fmt' 
+    or 'txt. 
+    'str' is used for a parameter value that is typically computed or must be 
+    edited in the histogram section.
+
+ *  The 'fmt' value is a string used to format the 'str' value to 
+    convert it to a string, if it is a float or int value.
+
+ *  The 'txt' value is a string that replaces the value in 'str'.
 
  *  The 'init' value is also something that cannot be edited. 
     These 'init' values are used for Instrument Parameters 
-    where there is both a cuurent value for the parameter as 
+    where there is both a current value for the parameter as 
     well as an initial value (usually read from the instrument 
-    parameters file whne the histogram is read. If 'init' is 
+    parameters file when the histogram is read. If 'init' is 
     present in `innerdict`, there will also be a 'val' entry 
     in `innerdict` and likely a 'ref' entry as well.
 
@@ -65,11 +71,16 @@ One of 'val', 'ref' or 'str' elements will be present.
     will be an editable row label (FreePrmX sample parametric 
     values). 
 
+ *  The 'range' list/tuple provides min and max float value for the 
+    defined quantity to be defined. Use None for any value that
+    should not be enforced. The 'range' values will be used as limits
+    for the entry widget.
+
 '''
 
 # import math
 # import os
-# import re
+import re
 # import copy
 # import platform
 # import pickle
@@ -83,7 +94,7 @@ import wx
 # from . import GSASIIpath
 from . import GSASIIdataGUI as G2gd
 # from . import GSASIIobj as G2obj
-from . import GSASIIpwdGUI as G2pdG
+# from . import GSASIIpwdGUI as G2pdG
 # from . import GSASIIimgGUI as G2imG
 # from . import GSASIIElem as G2el
 # from . import GSASIIfiles as G2fil
@@ -97,6 +108,75 @@ from . import GSASIIctrlGUI as G2G
 from . import GSASIIpwdplot as G2pwpl
 WACV = wx.ALIGN_CENTER_VERTICAL
 
+def SearchGroups(G2frame,Histograms,hist):
+    '''Determine which histograms are in groups, called by SearchGroups in 
+    :func:`GSASIIdataGUI.UpdateControls`.
+    '''
+    repeat = True
+    srchStr = hist[5:]
+    msg = ('Edit the histogram name below placing a question mark (?) '
+            'at the location '
+            'of characters that change between groups of '
+            'histograms. Use backspace or delete to remove '
+            'characters that should be ignored as they will '
+            'vary within a histogram group (e.g. Bank 1). '
+            'Be sure to leave enough characters so the string '
+            'can be uniquely matched.')
+    while repeat:
+        srchStr = G2G.StringSearchTemplate(G2frame,'Set match template',
+                                               msg,srchStr)
+        if srchStr is None: return {} # cancel pressed
+        reSrch = re.compile(srchStr.replace('.',r'\.').replace('?','.'))
+        setDict = {}
+        keyList = []
+        noMatchCount = 0
+        for hist in Histograms:
+            if hist.startswith('PWDR '):
+                m = reSrch.search(hist)
+                if m:
+                    key = hist[m.start():m.end()]
+                    setDict[hist] = key
+                    if key not in keyList: keyList.append(key)
+                else:
+                    noMatchCount += 1
+        groupDict = {}
+        groupCount = {}
+        for k in keyList:
+            groupDict[k] = [hist for hist,key in setDict.items() if k == key]
+            groupCount[k] = len(groupDict[k])
+
+        msg1 = f'With search template "{srchStr}", '
+
+        buttons = []
+        OK = True
+        if len(groupCount) == 0:
+            msg1 += f'there are ho histograms in any groups.'
+        elif min(groupCount.values()) == max(groupCount.values()):
+            msg1 += f'there are {len(groupDict)} groups with {min(groupCount.values())} histograms each.'
+        else:
+            msg1 += (f'there are {len(groupDict)} groups with between {min(groupCount.values())}'
+                       f' and {min(groupCount.values())} histograms in each.')
+        if noMatchCount:
+            msg1 += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups."
+        # place a sanity check limit on the number of histograms in a group
+        if len(groupCount) == 0:
+            OK = False
+        elif max(groupCount.values()) >= 150:
+            OK = False
+            msg1 += '\n\nThis exceeds the maximum group length of 150 histograms'
+        elif min(groupCount.values()) == max(groupCount.values()) == 1:
+            OK = False
+            msg1 += '\n\nEach histogram is in a separate group. Grouping histograms only makes sense with multiple histograms in at least some groups.'
+        if OK:
+            buttons += [('OK', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK))]
+        buttons += [('try again', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))]
+        res = G2G.ShowScrolledInfo(G2frame,msg1,header='Grouping result',
+                    buttonlist=buttons,height=150)
+        if res == wx.ID_OK:
+            repeat = False
+
+    return {'groupDict':groupDict,'notGrouped':noMatchCount,'template':srchStr}
+
 def UpdateGroup(G2frame,item,plot=True):
     def onDisplaySel(event):
         G2frame.GroupInfo['displayMode'] = dsplType.GetValue()
@@ -104,7 +184,7 @@ def UpdateGroup(G2frame,item,plot=True):
         #UpdateGroup(G2frame,item)
     def OnCopyAll(event):
         G2G.G2MessageBox(G2frame,
-                    f'Sorry, not fully implemented yet',
+                    'Sorry, not fully implemented yet',
                                      'In progress')
         return
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
@@ -133,28 +213,27 @@ def UpdateGroup(G2frame,item,plot=True):
             selList = matchGrps
         if len(selList) == 0: return
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        prmArray = None
         if G2frame.GroupInfo['displayMode'].startswith('Sample'):
-            prmTable = getSampleVals(G2frame,Histograms)
+            prmArray = getSampleVals(G2frame,Histograms)
         elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
-            prmTable = getInstVals(G2frame,Histograms)
+            prmArray = getInstVals(G2frame,Histograms)
         elif G2frame.GroupInfo['displayMode'].startswith('Limits'):
-            CopyCtrl = False
-            prmTable = getLimitVals(G2frame,Histograms)
+            prmArray = getLimitVals(G2frame,Histograms)
         elif G2frame.GroupInfo['displayMode'].startswith('Background'):
-            prmTable = getBkgVals(G2frame,Histograms)
-            CopyCtrl = False
+            prmArray = getBkgVals(G2frame,Histograms)
         else:
             print('Unexpected', G2frame.GroupInfo['displayMode'])
             return
         for h in selList: # group
             for src,dst in zip(groupDict[groupName],groupDict[h]):
                 print('copy',src,'to',dst)
-                for i in prmTable[src]:
-                    #if i not in prmTable[dst]:
-                    #    print
-                    #    continue
-                    if 'val' in  prmTable[src][i]:
-                        breakpoint()
+                # for i in prmTable[src]:
+                #     #if i not in prmTable[dst]:
+                #     #    print
+                #     #    continue
+                #     if 'val' in  prmTable[src][i]:
+                #         breakpoint()
         # so what do we copy?
         #breakpoint()
         print('OnCopyAll')
@@ -229,6 +308,20 @@ def histLabels(G2frame):
                    for h in groupDict[groupName]]
     return commonltrs,histlbls
 
+def indexArrayRef(dataSource,hist,arrayIndices):
+    indx = arrayIndices[-1]
+    arr = dataSource[hist]
+    for i in  arrayIndices[:-1]:
+        arr = arr[i]
+    return arr,indx
+
+def indexArrayVal(dataSource,hist,arrayIndices):
+    if arrayIndices is None: return None
+    arr = dataSource[hist]
+    for i in  arrayIndices:
+        arr = arr[i]
+    return arr
+
 def onRefineAll(event):
     '''Respond to the Refine All button. On the first press, all 
     refine check buttons are set as "on" and the button is relabeled 
@@ -237,10 +330,9 @@ def onRefineAll(event):
     set).
     '''
     but = event.GetEventObject()
-    refList = but.refList
+    dataSource = but.refDict['dataSource']
     checkButList = but.checkButList
     
-    #print('before',[item[0][item[1]] for item in refList])
     if but.GetLabelText() == 'S':
         setting = True
         but.SetLabelText('C')
@@ -249,26 +341,26 @@ def onRefineAll(event):
         but.SetLabelText('S')
     for c in checkButList:
         c.SetValue(setting)
-    for item in refList:
-        item[0][item[1]] = setting
-    #print('after ',[item[0][item[1]] for item in refList])
+    for item,hist in zip(but.refDict['arrays'],but.refDict['hists']):
+        arr,indx = indexArrayRef(dataSource,hist,item)
+        arr[indx] = setting
 
 def onSetAll(event):
     '''Respond to the copy right button. Copies the first value to 
     all edit widgets
     '''
     but = event.GetEventObject()
-    valList = but.valList
-    valEditList = but.valEditList
-    #print('before',[item[0][item[1]] for item in valList])
-    firstVal = valList[0][0][valList[0][1]]
+    dataSource = but.valDict['dataSource']
+    valList = but.valDict['arrays']
+    histList = but.valDict['hists']
+    valEditList = but.valDict['valEditList']
+    firstVal = indexArrayVal(dataSource,histList[0],valList[0])
     for c in valEditList:
         c.ChangeValue(firstVal)
-    #print('after',[item[0][item[1]] for item in valList])
 
-def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
+def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=False,
                      lblSizer=None,lblPanel=None,CopyCtrl=True):
-    '''Displays the data table in `Table` in Scrolledpanel `Panel`
+    '''Displays the data table in `DataArray` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
     firstentry = None
@@ -278,6 +370,7 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
     checkButList = {}
     valEditList = {}
     lblDict = {}
+    dataSource = DataArray['_dataSource']
     for row in rowLabels:
         checkButList[row] = []
         valEditList[row] = []
@@ -286,18 +379,20 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
             # is a copy across and/or a refine all button needed?
             refList = []
             valList = []
-            for hist in Table:
-                if row not in Table[hist]: continue
-                if 'val' in Table[hist][row]:
-                    valList.append(Table[hist][row]['val'])
-                if 'ref' in Table[hist][row]:
-                    refList.append(Table[hist][row]['ref'])
+            for hist in DataArray:
+                if row not in DataArray[hist]: continue
+                if 'val' in DataArray[hist][row]:
+                    valList.append(DataArray[hist][row]['val'])
+                if 'ref' in DataArray[hist][row]:
+                    refList.append(DataArray[hist][row]['ref'])
 
             arr = None
-            for hist in Table:
-                if row not in Table[hist]: continue
-                if 'rowlbl' in Table[hist][row]:
-                    arr,key = Table[hist][row]['rowlbl']
+            histList = []
+            for hist in DataArray:
+                if row not in DataArray[hist]: continue
+                histList.append(hist)
+                if 'rowlbl' in DataArray[hist][row]:
+                    arr,key = DataArray[hist][row]['rowlbl']
                     break
             if arr is None: # text row labels
                 w = wx.StaticText(lblPanel,label=row)
@@ -308,28 +403,25 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
 
             if len(refList) > 2:
                 lbl = 'S'
-                if all([l[i] for l,i in refList]): lbl = 'C'
+                if all([indexArrayVal(dataSource,hist,i) for i in refList]): lbl = 'C'
                 refAll = wx.Button(lblPanel,label=lbl,style=wx.BU_EXACTFIT)
-                refAll.refList = refList
+                refAll.refDict = {'arrays': refList, 'hists': histList,
+                                  'dataSource':dataSource}
                 refAll.checkButList = checkButList[row]
                 lblSizer.Add(refAll,0,wx.ALIGN_CENTER_VERTICAL)               
                 refAll.Bind(wx.EVT_BUTTON,onRefineAll)
             else:
                 lblSizer.Add((-1,-1))
-            # if len(valList) > 2:
-            #     but = wx.Button(lblPanel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
-            #     but.valList = valList
-            #     but.valEditList = valEditList[row] 
-            #     lblSizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
-            #     but.Bind(wx.EVT_BUTTON,onSetAll)
-            # else:
-            #     lblSizer.Add((-1,-1))
- 
-        for i,hist in enumerate(Table):
+
+        i = -1
+        for hist in DataArray:
+            if hist == '_dataSource': continue
+            i += 1
             if i == 1 and len(valList) > 2 and not deltaMode and CopyCtrl:
                 but = wx.Button(Panel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
-                but.valList = valList
-                but.valEditList = valEditList[row]
+                but.valDict = {'arrays': valList, 'hists': histList,
+                                  'dataSource':dataSource,
+                                   'valEditList' :valEditList[row]}
                 Sizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
                 but.Bind(wx.EVT_BUTTON,onSetAll)
             elif i == 1 and CopyCtrl:
@@ -337,16 +429,16 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
             minval = None
             maxval = None
             # format the entry depending on what is defined
-            if row not in Table[hist]:
+            if row not in DataArray[hist]:
                 Sizer.Add((-1,-1))
                 continue
-            elif 'range' in Table[hist][row]:
-                minval, maxval = Table[hist][row]['range']
-            if ('init' in Table[hist][row] and
-                      deltaMode and 'ref' in Table[hist][row]):
-                arr,indx = Table[hist][row]['val']
+            elif 'range' in DataArray[hist][row]:
+                minval, maxval = DataArray[hist][row]['range']
+            if ('init' in DataArray[hist][row] and
+                      deltaMode and 'ref' in DataArray[hist][row]):
+                arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 delta = arr[indx]
-                arr,indx = Table[hist][row]['init']
+                arr,indx = DataArray[hist][row]['init']
                 delta -= arr[indx]
                 if abs(delta) < 9e-6: delta = 0.
                 if delta == 0:
@@ -355,17 +447,17 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
                     deltaS = f"\u0394 {delta:.4g} "
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
                 valrefsiz.Add(wx.StaticText(Panel,label=deltaS),0)
-                arr,indx = Table[hist][row]['ref']
+                arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
                 valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL)
                 checkButList[row].append(w)
                 Sizer.Add(valrefsiz,0,
                                  wx.EXPAND|wx.ALIGN_RIGHT)
-            elif 'init' in Table[hist][row] and deltaMode:
+            elif 'init' in DataArray[hist][row] and deltaMode:
                 # does this ever happen?
-                arr,indx = Table[hist][row]['val']
+                arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 delta = arr[indx]
-                arr,indx = Table[hist][row]['init']
+                arr,indx = DataArray[hist][row]['init']
                 delta -= arr[indx]
                 if delta == 0:
                     deltaS = ""
@@ -373,23 +465,23 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
                     deltaS = f"\u0394 {delta:.4g} "
                 Sizer.Add(wx.StaticText(Panel,label=deltaS),0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-            elif 'val' in Table[hist][row] and 'ref' in Table[hist][row]:
+            elif 'val' in DataArray[hist][row] and 'ref' in DataArray[hist][row]:
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
-                arr,indx = Table[hist][row]['val']
+                arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
                                          nDig=[9,7,'g'],
                                     xmin=minval,xmax=maxval)
                 valEditList[row].append(w)
                 valrefsiz.Add(w,0,WACV)
                 if firstentry is None: firstentry = w
-                arr,indx = Table[hist][row]['ref']
+                arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
                 valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL)
                 checkButList[row].append(w)
                 Sizer.Add(valrefsiz,0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
-            elif 'val' in Table[hist][row]:
-                arr,indx = Table[hist][row]['val']
+            elif 'val' in DataArray[hist][row]:
+                arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 nDig = [9,7,'g']
                 if type(arr[indx]) is str: nDig = None
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
@@ -399,48 +491,59 @@ def displayDataTable(rowLabels,Table,Sizer,Panel,lblRow=False,deltaMode=False,
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
                 if firstentry is None: firstentry = w
 
-            elif 'ref' in Table[hist][row]:
-                arr,indx = Table[hist][row]['ref']
+            elif 'ref' in DataArray[hist][row]:
+                arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
                 checkButList[row].append(w)
-            elif 'str' in Table[hist][row]:
-                Sizer.Add(wx.StaticText(Panel,label=Table[hist][row]['str']),0,
+            elif 'str' in DataArray[hist][row]:
+                val = indexArrayVal(dataSource,hist,DataArray[hist][row]['str'])
+                if 'txt' in DataArray[hist][row]:
+                    val = DataArray[hist][row]['txt']
+                elif 'fmt' in DataArray[hist][row]:
+                    f = DataArray[hist][row]['fmt']
+                    val = f'{val:{f}}'
+                Sizer.Add(wx.StaticText(Panel,label=val),0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
             else:
-                print('Should not happen',Table[hist][row],hist,row)
+                print('Should not happen',DataArray[hist][row],hist,row)
     return firstentry,lblDict
 
-
 def HistFrame(G2frame):
-    '''Give up on side-by-side scrolled panels. Put everything 
-    in a single FlexGridSizer.
+    '''Put everything in a single FlexGridSizer.
     '''
     #---------------------------------------------------------------------
     # generate a dict with values for each histogram
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     CopyCtrl = True
     if G2frame.GroupInfo['displayMode'].startswith('Sample'):
-        prmTable = getSampleVals(G2frame,Histograms)
+        prmArray = getSampleVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
-        prmTable = getInstVals(G2frame,Histograms)
+        prmArray = getInstVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Limits'):
         CopyCtrl = False
-        prmTable = getLimitVals(G2frame,Histograms)
+        prmArray = getLimitVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Background'):
-        prmTable = getBkgVals(G2frame,Histograms)
+        prmArray = getBkgVals(G2frame,Histograms)
         CopyCtrl = False
     else:
         print('Unexpected', G2frame.GroupInfo['displayMode'])
         return
-    #debug# for hist in prmTable: printTable(phaseList[page],hist,prmTable[hist]) # see the dict
-    # construct a list of row labels, attempting to keep the
-    # order they appear in the original array
     rowLabels = []
     lpos = 0
-    for hist in prmTable:
+    nonZeroRows = []
+    dataSource = prmArray['_dataSource']
+    for hist in prmArray:
+        if hist == '_dataSource': continue
+        cols = len(prmArray)
         prevkey = None
-        for key in prmTable[hist]:
+        for key in prmArray[hist]:
+            # find delta-terms that are non-zero
+            if '\u0394' in G2frame.GroupInfo['displayMode']:
+                if 'val' in prmArray[hist][key] and 'init' in prmArray[hist][key]:
+                    arr,indx = prmArray[hist][key]['init']
+                    val = indexArrayVal(dataSource,hist,prmArray[hist][key]['val'])
+                    if abs(val-arr[indx]) > 1e-5: nonZeroRows.append(key)
             if key not in rowLabels:
                 if prevkey is None:
                     rowLabels.insert(lpos,key)
@@ -448,6 +551,9 @@ def HistFrame(G2frame):
                 else:
                     rowLabels.insert(rowLabels.index(prevkey)+1,key)
             prevkey = key
+    # remove rows where delta-terms are all zeros
+    if '\u0394' in G2frame.GroupInfo['displayMode']:
+        rowLabels = [i for i in rowLabels if i in nonZeroRows]
     #=======  Generate GUI ===============================================
     # layout the window
     panel = midPanel = G2frame.dataWindow
@@ -457,12 +563,11 @@ def HistFrame(G2frame):
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
     n = 2
-    if CopyCtrl: n += 1 # add column for copy
-    valSizer = wx.FlexGridSizer(0,len(prmTable)+n,3,10)
+    if CopyCtrl and len(prmArray) > 2: n += 1 # add column for copy (when more than one histogram)
+    valSizer = wx.FlexGridSizer(0,len(prmArray)+n-1,3,10)
     mainSizer.Add(valSizer,1,wx.EXPAND)
     valSizer.Add(wx.StaticText(midPanel,label=' '))
     valSizer.Add(wx.StaticText(midPanel,label=' Ref '))
-    #valSizer.Add(wx.StaticText(midPanel,label=' Copy '))
     for i,hist in enumerate(histLabels(G2frame)[1]):
             if i == 1 and CopyCtrl:
                 if deltaMode:
@@ -472,10 +577,9 @@ def HistFrame(G2frame):
             valSizer.Add(wx.StaticText(midPanel,
                         label=f"\u25A1 = {hist}"),
                              0,wx.ALIGN_CENTER)
-    firstentry,lblDict = displayDataTable(rowLabels,prmTable,valSizer,midPanel,
+    firstentry,lblDict = displayDataArray(rowLabels,prmArray,valSizer,midPanel,
                                       lblRow=True,
                                       deltaMode=deltaMode,CopyCtrl=CopyCtrl)
-    #G2frame.dataWindow.SetDataSize()
     if firstentry is not None:    # prevent scroll to show last entry
         wx.Window.SetFocus(firstentry)
         firstentry.SetInsertionPoint(0) # prevent selection of text in widget
@@ -494,33 +598,25 @@ def getSampleVals(G2frame,Histograms):
         return
     # parameters to include in table
     parms = []
-    parmDict = {}
-    #indexDict = {}
+    indexDict = {'_dataSource':Histograms}
+    def histderef(hist,l):
+        a = Histograms[hist]
+        for i in l:
+            a = a[i]
+        return a
    # loop over histograms in group
     for hist in groupDict[groupName]:
-        #indexDict[hist] = {}
-        histdata = Histograms[hist]
-        hpD = {}
-        hpD['Inst. name'] = {
-            'val' : (histdata['Sample Parameters'],'InstrName')}
-        #indexDict[hist]['Inst. name'] = {
-        #    'val' : (hist,'Sample Parameters','InstrName')}
-        hpD['Diff type'] = {
-            'str' : histdata['Sample Parameters']['Type']}
-        #indexDict[hist]['Diff type'] = {
-        #    'str' : (hist,'Sample Parameters','Type')}
-        arr = histdata['Sample Parameters']['Scale']
-        hpD['Scale factor'] = {
-            'val' : (arr,0),
-            'ref' : (arr,1),}
-        #indexDict[hist]['Scale factor'] = {
-        #    'val' : (hist,'Sample Parameters','Scale',0),
-        #    'ref' : (hist,1),}
-        #breakpoint()
-        #return
+        indexDict[hist] = {}
+        indexDict[hist]['Inst. name'] = {
+            'val' : ('Sample Parameters','InstrName')}
+        indexDict[hist]['Diff type'] = {
+            'str' : ('Sample Parameters','Type')}
+        indexDict[hist]['Scale factor'] = {
+            'val' : ('Sample Parameters','Scale',0),
+            'ref' : ('Sample Parameters','Scale',1),}
         # make a list of parameters to show
-        histType = histdata['Instrument Parameters'][0]['Type'][0]
-        dataType = histdata['Sample Parameters']['Type']
+        histType = Histograms[hist]['Instrument Parameters'][0]['Type'][0]
+        dataType = Histograms[hist]['Sample Parameters']['Type']
         if histType[2] in ['A','B','C']:
             parms.append(['Gonio. radius','Gonio radius','.3f'])
         #if 'PWDR' in histName:
@@ -550,26 +646,26 @@ def getSampleVals(G2frame,Histograms):
 
         # and loop over them
         for key,lbl,fmt in parms:
-            if fmt is None and type(histdata['Sample Parameters'][key]) is list:
-                arr = histdata['Sample Parameters'][key]
-                hpD[lbl] = {
-                    'val' : (arr,0),
-                    'ref' : (arr,1),}
-            elif fmt is None:
-                hpD[lbl] = {
-                     'val' : (histdata['Sample Parameters'],key)}
-            elif type(fmt) is str:
-                 hpD[lbl] = {
-                     'str' : f"{histdata['Sample Parameters'][key]:{fmt}}"}
+            if fmt is None and type(Histograms[hist]['Sample Parameters'][key]) is list:
+                indexDict[hist][lbl] = {
+                    'val' : ('Sample Parameters',key,0),
+                    'ref' : ('Sample Parameters',key,1),}
 
+            elif fmt is None:
+                indexDict[hist][lbl] = {
+                    'val' : ('Sample Parameters',key)}
+            elif type(fmt) is str:
+                indexDict[hist][lbl] = {
+                    'str' : ('Sample Parameters',key),
+                    'fmt' : fmt}
+            
         for key in ('FreePrm1','FreePrm2','FreePrm3'):
             lbl = Controls[key]
-            hpD[lbl] = {
-                     'val' : (histdata['Sample Parameters'],key),
+            indexDict[hist][lbl] = {
+                    'val' : ('Sample Parameters',key),
                      'rowlbl' : (Controls,key)
                 }
-        parmDict[hist] = hpD
-    return parmDict
+    return indexDict
 
 def getInstVals(G2frame,Histograms):
     '''Generate the Parameter Data Table (a dict of dicts) with 
@@ -584,21 +680,20 @@ def getInstVals(G2frame,Histograms):
         print(f'Unexpected: {groupName} not in groupDict')
         return
     # parameters to include in table
-    parms = []
-    parmDict = {}
+    indexDict = {'_dataSource':Histograms}
    # loop over histograms in group
     for hist in groupDict[groupName]:
-        histdata = Histograms[hist]
+        indexDict[hist] = {}
         insVal = Histograms[hist]['Instrument Parameters'][0]
-        hpD = {}
         insType = insVal['Type'][1]
-        try:
-            hpD['Bank'] = {
-                'str' : str(int(insVal['Bank'][1]))}
-        except:
-            pass
-        hpD['Hist type'] = {
-            'str' : insType}
+        if 'Bank' in Histograms[hist]['Instrument Parameters'][0]:
+            indexDict[hist]['Bank'] = {
+                'str' : ('Instrument Parameters',0,'Bank',1),
+                'fmt' : '.0f'
+                }
+        indexDict[hist]['Hist type'] = {
+                'str' : ('Instrument Parameters',0,'Type',1),
+                }
         if insType[2] in ['A','B','C']:               #constant wavelength
             keylist = [('Azimuth','Azimuth','.3f'),]
             if 'Lam1' in insVal:
@@ -632,17 +727,17 @@ def getInstVals(G2frame,Histograms):
         else:
             return {}
         for key,lbl,fmt in keylist:
-                arr = insVal[key]
                 if fmt is None:
-                    hpD[lbl] = {
-                        'init' : (arr,0),
-                        'val' : (arr,1),
-                        'ref' : (arr,2),}
+                    indexDict[hist][lbl] = {
+                        'init' : (insVal[key],0),
+                        'val' : ('Instrument Parameters',0,key,1),
+                        'ref' : ('Instrument Parameters',0,key,2),}
                 else:
-                    hpD[lbl] = {
-                        'str' : f'{arr[1]:{fmt}}'}
-        parmDict[hist] = hpD
-    return parmDict
+                    indexDict[hist][lbl] = {
+                        'str' : ('Instrument Parameters',0,key,1),
+                        'fmt' : fmt
+                }
+    return indexDict
 
 def getLimitVals(G2frame,Histograms):
     '''Generate the Limits Data Table (a dict of dicts) with 
@@ -657,36 +752,24 @@ def getLimitVals(G2frame,Histograms):
         print(f'Unexpected: {groupName} not in groupDict')
         return
     # parameters to include in table
-    parmDict = {}
+    indexDict = {'_dataSource':Histograms}
    # loop over histograms in group
     for hist in groupDict[groupName]:
-        histdata = Histograms[hist]
-        hpD = {}
-        #breakpoint()
-        hpD['Tmin'] = {
-            'val' : (histdata['Limits'][1],0),
-            'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]
-            }
-        hpD['Tmax'] = {
-            'val' : (histdata['Limits'][1],1),
-            'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]
-            }
-        for i,item in enumerate(histdata['Limits'][2:]):
-            hpD[f'excl Low {i+1}'] = {
-                'val' : (item,0),
-                'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]}
-            hpD[f'excl High {i+1}'] = {
-                'val' : (item,1),
-                'range': [histdata['Limits'][0][0],histdata['Limits'][0][1]]}
-        parmDict[hist] = hpD
-    # for i in parmDict:
-    #     print(i)
-    #     for j in  parmDict[i]:
-    #         print('\t',j)
-    #         for k in parmDict[i][j]:
-    #             print('\t\t',k,parmDict[i][j][k])
-    return parmDict
-
+        indexDict[hist] = {}
+        for lbl,indx in [('Tmin',0),('Tmax',1)]:
+            indexDict[hist][lbl] = {
+                'val' : ('Limits',1,indx),
+                'range': [Histograms[hist]['Limits'][0][0],
+                          Histograms[hist]['Limits'][0][1]]
+                }
+        for i,item in enumerate(Histograms[hist]['Limits'][2:]):
+            for l,indx in [('Low',0),('High',1)]:
+                lbl = f'excl {l} {i+1}'
+                indexDict[hist][lbl] = {
+                    'val' : ('Limits',2+i,indx),
+                    'range': [Histograms[hist]['Limits'][0][0],
+                              Histograms[hist]['Limits'][0][1]]}
+    return indexDict
 
 def getBkgVals(G2frame,Histograms):
     '''Generate the Background Data Table (a dict of dicts) with 
@@ -702,61 +785,44 @@ def getBkgVals(G2frame,Histograms):
         print(f'Unexpected: {groupName} not in groupDict')
         return
     # parameters to include in table
-    parms = []
-    parmDict = {}
+    indexDict = {'_dataSource':Histograms}
     # loop over histograms in group
     for hist in groupDict[groupName]:
-        histdata = Histograms[hist]
-        hpD = {}
-        hpD['Function'] = {
-            'str' : histdata['Background'][0][0]}
-        hpD['ref flag'] = {
-            'ref' : (histdata['Background'][0],1)}
-        hpD['# Bkg terms'] = {
-            'str' : str(int(histdata['Background'][0][2]))}
-        hpD['# Debye terms'] = {
-            'str' : str(int(histdata['Background'][1]['nDebye']))}
-        for i,term in enumerate(histdata['Background'][1]['debyeTerms']):
-            hpD[f'A #{i+1}'] = {
-                'val' : (histdata['Background'][1]['debyeTerms'][i],0),
-                'ref' : (histdata['Background'][1]['debyeTerms'][i],1),
+        indexDict[hist] = {}
+        for lbl,indx,typ in [('Function',0,'str'),
+                             ('ref flag',1,'ref'),
+                             ('# Bkg terms',2,'str')]:
+            indexDict[hist][lbl] = {
+                typ : ('Background',0,indx)
                 }
-            hpD[f'R #{i+1}'] = {
-                'val' : (histdata['Background'][1]['debyeTerms'][i],2),
-                'ref' : (histdata['Background'][1]['debyeTerms'][i],3),
-                }
-            hpD[f'U #{i+1}'] = {
-                'val' : (histdata['Background'][1]['debyeTerms'][i],4),
-                'ref' : (histdata['Background'][1]['debyeTerms'][i],5),
-                }
-        hpD['# Bkg Peaks'] = {
-            'str' : str(int(histdata['Background'][1]['nPeaks']))}
-        for i,term in enumerate(histdata['Background'][1]['peaksList']):
-            hpD[f'pos #{i+1}'] = {
-                'val' : (histdata['Background'][1]['peaksList'][i],0),
-                'ref' : (histdata['Background'][1]['peaksList'][i],1),
-                }
-            hpD[f'int #{i+1}'] = {
-                'val' : (histdata['Background'][1]['peaksList'][i],2),
-                'ref' : (histdata['Background'][1]['peaksList'][i],3),
-                }
-            hpD[f'sig #{i+1}'] = {
-                'val' : (histdata['Background'][1]['peaksList'][i],4),
-                'ref' : (histdata['Background'][1]['peaksList'][i],5),
-                }
-            hpD[f'gam #{i+1}'] = {
-                'val' : (histdata['Background'][1]['peaksList'][i],6),
-                'ref' : (histdata['Background'][1]['peaksList'][i],7),
-                }
-        if histdata['Background'][1]['background PWDR'][0]:
+            if indx == 2:
+                indexDict[hist][lbl]['fmt'] = '.0f'
+        indexDict[hist]['# Debye terms'] = {
+            'str' : ('Background',1,'nDebye'),
+            'fmt' : '.0f'}
+        for i,term in enumerate(Histograms[hist]['Background'][1]['debyeTerms']):
+            for indx,l in enumerate(['A','R','U']):
+                lbl = f'{l} #{i+1}'
+                indexDict[hist][lbl] = {
+                    'val' : ('Background',1,'debyeTerms',i,2*indx),
+                    'ref' : ('Background',1,'debyeTerms',i,2*indx+1)}
+        indexDict[hist]['# Bkg Peaks'] = {
+            'str' : ('Background',1,'nPeaks'),
+            'fmt' : '.0f'}
+        for i,term in enumerate(Histograms[hist]['Background'][1]['peaksList']):
+            for indx,l in enumerate(['pos','int','sig','gam']):
+                lbl = f'{l} #{i+1}'
+                indexDict[hist][lbl] = {
+                    'val' : ('Background',1,'peaksList',i,2*indx),
+                    'ref' : ('Background',1,'peaksList',i,2*indx+1)}
+        if Histograms[hist]['Background'][1]['background PWDR'][0]:
             val = 'yes'
         else:
             val = 'no'
-        hpD['Fixed bkg file'] = {
-            'str' : val}
-        parmDict[hist] = hpD
-    return parmDict
-
+        indexDict[hist]['Fixed bkg file'] = {
+            'str' : ('Background',1,'background PWDR',0),
+            'txt' : val}
+    return indexDict
 
 def HAPframe(G2frame):
     '''This creates two side-by-side scrolled panels, each containing 
@@ -786,15 +852,15 @@ def HAPframe(G2frame):
             page = 0
             #print('no page selected',phaseList[page])
         # generate a dict with HAP values for each phase (may not be the same)
-        HAPtable = getHAPvals(G2frame,phaseList[page])
-        #debug# for hist in HAPtable: printTable(phaseList[page],hist,HAPtable[hist]) # see the dict
+        HAParray = getHAPvals(G2frame,phaseList[page])
         # construct a list of row labels, attempting to keep the
         # order they appear in the original array
         rowLabels = []
         lpos = 0
-        for hist in HAPtable:
+        for hist in HAParray:
+            if hist == '_dataSource': continue
             prevkey = None
-            for key in HAPtable[hist]:
+            for key in HAParray[hist]:
                 if key not in rowLabels:
                     if prevkey is None:
                         rowLabels.insert(lpos,key)
@@ -813,7 +879,6 @@ def HAPframe(G2frame):
         lblScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
         hpad = 3  # space between rows
-        #lblSizer = wx.FlexGridSizer(0,3,hpad,2)
         lblSizer = wx.FlexGridSizer(0,2,hpad,2)
         lblScroll.SetSizer(lblSizer)
         bigSizer.Add(lblScroll,0,wx.EXPAND)
@@ -821,8 +886,7 @@ def HAPframe(G2frame):
         # Create scrolled panel to display HAP data
         HAPScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
-        #HAPSizer = wx.FlexGridSizer(0,len(HAPtable),hpad,10)
-        HAPSizer = wx.FlexGridSizer(0,len(HAPtable)+1,hpad,10)
+        HAPSizer = wx.FlexGridSizer(0,len(HAParray),hpad,10)
         HAPScroll.SetSizer(HAPSizer)
         bigSizer.Add(HAPScroll,1,wx.EXPAND)
         
@@ -839,8 +903,7 @@ def HAPframe(G2frame):
         w0 = wx.StaticText(lblScroll,label=' ')
         lblSizer.Add(w0)
         lblSizer.Add(wx.StaticText(lblScroll,label=' Ref '))
-        #lblSizer.Add(wx.StaticText(lblScroll,label=' Copy '))
-        firstentry,lblDict = displayDataTable(rowLabels,HAPtable,HAPSizer,HAPScroll,
+        firstentry,lblDict = displayDataArray(rowLabels,HAParray,HAPSizer,HAPScroll,
                     lblRow=True,lblSizer=lblSizer,lblPanel=lblScroll)
         # get row sizes in data table
         HAPSizer.Layout()
@@ -849,15 +912,6 @@ def HAPframe(G2frame):
         # (must be done after HAPSizer row heights are defined)
         s = wx.Size(-1,rowHeights[0])
         w0.SetMinSize(s)
-        # for i,row in enumerate(rowLabels):
-        #     s = wx.Size(-1,rowHeights[i+1])
-        #     w = wx.StaticText(lblScroll,label=row,size=s)
-        #     lblSizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-        # lblDict = {}
-        # for i,row in enumerate(rowLabels):
-        #     w = wx.StaticText(lblScroll,label=row)
-        #     lblDict[row] = w
-        #     lblSizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         for i,row in enumerate(rowLabels):
             s = wx.Size(-1,rowHeights[i+1])
             lblDict[row].SetMinSize(s)
@@ -887,12 +941,6 @@ def HAPframe(G2frame):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     #botSizer = G2frame.dataWindow.bottomBox
     #botParent = G2frame.dataWindow.bottomPanel
-    # label with shared portion of histogram name
-    # topSizer.Add(wx.StaticText(topParent,
-    #         label=f'HAP parameters for group "{histLabels(G2frame)[0]}"'),
-    #                  0,WACV)
-    # topSizer.Add((-1,-1),1,wx.EXPAND)
-    # topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
 
     G2G.HorizontalLine(mainSizer,midPanel)
     midPanel.SetSizer(mainSizer)
@@ -938,285 +986,123 @@ def getHAPvals(G2frame,phase):
         print(f'Unexpected: Phase {phase!r} not found')
         return {}
 
+    SGData = PhaseData['General']['SGData']
+    cell = PhaseData['General']['Cell'][1:]
+    Amat,Bmat = G2lat.cell2AB(cell[:6])
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
     groupDict = Controls.get('Groups',{}).get('groupDict',{})
     groupName = G2frame.GroupInfo['groupName']
     if groupName not in groupDict:
         print(f'Unexpected: {groupName} not in groupDict')
         return
-    # loop over histograms in group
-    parmDict = {}
+    indexDict = {'_dataSource':PhaseData['Histograms']}
     for hist in groupDict[groupName]:
-        parmDict[hist] = makeHAPtbl(G2frame,phase,PhaseData,hist)
-        #printTable(phase,hist,parmDict[hist])
-    return parmDict
+        indexDict[hist] = {}
+        # phase fraction
+        indexDict[hist]['Phase frac'] = {
+            'val' : ('Scale',0),
+            'ref' : ('Scale',1),}
+        PhaseData['Histograms'][hist]['LeBail'] = PhaseData['Histograms'][hist].get('LeBail',False)
+        indexDict[hist]['LeBail extract'] = {
+            'str' : ('LeBail',),
+            'txt' : "Yes" if PhaseData['Histograms'][hist]['LeBail'] else '(off)'}
+        # size values
+        if PhaseData['Histograms'][hist]['Size'][0] == 'isotropic':
+            indexDict[hist]['Size'] = {
+                'val' : ('Size',1,0),
+                'ref' : ('Size',2,0),}
+        elif PhaseData['Histograms'][hist]['Size'][0] == 'uniaxial':
+            indexDict[hist]['Size/Eq'] = {
+                'val' : ('Size',1,0),
+                'ref' : ('Size',2,0),}
+            indexDict[hist]['Size/Ax'] = {
+                'val' : ('Size',1,1),
+                'ref' : ('Size',2,1),}
+            indexDict[hist]['Size/dir'] = {
+                'str' : ('Size',3),
+                'txt' : ','.join([str(i) for i in PhaseData['Histograms'][hist]['Size'][3]])}
+        else:
+            for i,lbl in enumerate(['S11','S22','S33','S12','S13','S23']):
+                indexDict[hist][f'Size/{lbl}'] = {
+                    'val' : ('Size',4,i),
+                    'ref' : ('Size',5,i),}
+        indexDict[hist]['Size LGmix'] = {
+            'val' : ('Size',1,2),
+            'ref' : ('Size',2,2),}
+        # microstrain values
+        if PhaseData['Histograms'][hist]['Mustrain'][0] == 'isotropic':
+            indexDict[hist]['\u00B5Strain'] = {
+                'val' : ('Mustrain',1,0),
+                'ref' : ('Mustrain',2,0),}
+        elif PhaseData['Histograms'][hist]['Mustrain'][0] == 'uniaxial':
+            indexDict[hist]['\u00B5Strain/Eq'] = {
+                'val' : ('Mustrain',1,0),
+                'ref' : ('Mustrain',2,0),}
+            indexDict[hist]['\u00B5Strain/Ax'] = {
+                'val' : ('Mustrain',1,1),
+                'ref' : ('Mustrain',2,1),}
+            indexDict[hist]['\u00B5Strain/dir'] = {
+                'str' : ('Mustrain',3),
+                'txt' : ','.join([str(i) for i in PhaseData['Histograms'][hist]['Mustrain'][3]])}
+        else:
+            Snames = G2spc.MustrainNames(SGData)
+            for i,lbl in enumerate(Snames):
+                if i >= len(PhaseData['Histograms'][hist]['Mustrain'][4]): break
+                indexDict[hist][f'\u00B5Strain/{lbl}'] = {
+                    'val' : ('Mustrain',4,i),
+                    'ref' : ('Mustrain',5,i),}
+            muMean = G2spc.MuShklMean(SGData,Amat,PhaseData['Histograms'][hist]['Mustrain'][4][:len(Snames)])
+            indexDict[hist]['\u00B5Strain/mean'] = {
+                'str' : None,
+                'txt' : f'{muMean:.2f}'}
+        indexDict[hist]['\u00B5Strain LGmix'] = {
+            'val' : ('Mustrain',1,2),
+            'ref' : ('Mustrain',2,2),}
 
-def makeHAPtbl(G2frame,phase,PhaseData,hist):
-    '''Construct a Parameter Data Table dict, providing access 
-    to the HAP variables for one phase and histogram.
+        # Hydrostatic terms
+        Hsnames = G2spc.HStrainNames(SGData)
+        for i,lbl in enumerate(Hsnames):
+            if i >= len(PhaseData['Histograms'][hist]['HStrain'][0]): break
+            indexDict[hist][f'Size/{lbl}'] = {
+                'val' : ('HStrain',0,i),
+                'ref' : ('HStrain',1,i),}
 
-    :return: the Parameter Data Table dict, as described above.
-    '''
-    SGData = PhaseData['General']['SGData']
-    cell = PhaseData['General']['Cell'][1:]
-    Amat,Bmat = G2lat.cell2AB(cell[:6])
-    #G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist)
-    #data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
-    HAPdict = PhaseData['Histograms'][hist]
+        # Preferred orientation terms
+        if PhaseData['Histograms'][hist]['Pref.Ori.'][0] == 'MD':
+            indexDict[hist]['March-Dollase'] = {
+                'val' : ('Pref.Ori.',1),
+                'ref' : ('Pref.Ori.',2),}
+            indexDict[hist]['M-D/dir'] = {
+                'str' : ('Pref.Ori.',3),
+                'txt' : ','.join([str(i) for i in PhaseData['Histograms'][hist]['Pref.Ori.'][3]])}
+        else:
+            indexDict[hist]['Spherical harmonics'] = {
+                'ref' : ('Pref.Ori.',2),}
+            indexDict[hist]['SH order'] = {
+                'str' : str('Pref.Ori.',4)}
+            for lbl in arr[5]:
+                indexDict[hist][f'SP {lbl}']= {
+                    'val' : ('Pref.Ori.',5,lbl),
+                    }
+            indexDict[hist]['SH text indx'] = {
+                'str' : None,
+                'txt' : f'{G2lat.textureIndex('Pref.Ori.'[5]):.3f}'}
 
-    parmDict = {}
-    # phase fraction
-    parmDict['Phase frac'] = {
-        'val' : (HAPdict['Scale'],0),
-        'ref' : (HAPdict['Scale'],1),}
-
-    parmDict['LeBail extract'] = {
-            'str' : "Yes" if HAPdict.get('LeBail') else '(off)'
-        }
-
-    # size values
-    arr = HAPdict['Size']
-    if arr[0] == 'isotropic':
-        parmDict['Size'] = {
-            'val' : (arr[1],0),
-            'ref' : (arr[2],0),}
-    elif arr[0] == 'uniaxial':
-        parmDict['Size/Eq'] = {
-            'val' : (arr[1],0),
-            'ref' : (arr[2],0),}
-        parmDict['Size/Ax'] = {
-            'val' : (arr[1],1),
-            'ref' : (arr[2],1),}
-        parmDict['Size/dir'] = {
-            'str' : ','.join([str(i) for i in arr[3]])}
-    else:
-        for i,lbl in enumerate(['S11','S22','S33','S12','S13','S23']):
-            parmDict[f'Size/{lbl}'] = {
-            'val' : (arr[4],i),
-            'ref' : (arr[5],i),}
-    parmDict['Size LGmix'] = {
-        'val' : (arr[1],2),
-        'ref' : (arr[2],2),}
-
-    # microstrain values
-    arr = HAPdict['Mustrain']
-    if arr[0] == 'isotropic':
-        parmDict['\u00B5Strain'] = {
-            'val' : (arr[1],0),
-            'ref' : (arr[2],0),}
-    elif arr[0] == 'uniaxial':
-        parmDict['\u00B5Strain/Eq'] = {
-            'val' : (arr[1],0),
-            'ref' : (arr[2],0),}
-        parmDict['\u00B5Strain/Ax'] = {
-            'val' : (arr[1],1),
-            'ref' : (arr[2],1),}
-        parmDict['\u00B5Strain/dir'] = {
-            'str' : ','.join([str(i) for i in arr[3]])}
-    else:
-        Snames = G2spc.MustrainNames(SGData)
-        for i,lbl in enumerate(Snames):
-            if i >= len(arr[4]): break
-            parmDict[f'\u00B5Strain/{lbl}'] = {
-                'val' : (arr[4],i),
-                'ref' : (arr[5],i),}
-        muMean = G2spc.MuShklMean(SGData,Amat,arr[4][:len(Snames)])
-        parmDict['\u00B5Strain/mean'] = {
-            'str' : f'{muMean:.2f}'}
-    parmDict['\u00B5Strain LGmix'] = {
-        'val' : (arr[1],2),
-        'ref' : (arr[2],2),}
-
-    # Hydrostatic terms
-    Hsnames = G2spc.HStrainNames(SGData)
-    arr = HAPdict['HStrain']
-    for i,lbl in enumerate(Hsnames):
-        if i >= len(arr[0]): break
-        parmDict[f'Size/{lbl}'] = {
-            'val' : (arr[0],i),
-            'ref' : (arr[1],i),}
-
-    # Preferred orientation terms
-    arr = HAPdict['Pref.Ori.']
-    if arr[0] == 'MD':
-        parmDict['March-Dollase'] = {
-            'val' : (arr,1),
-            'ref' : (arr,2),}
-        parmDict['M-D/dir'] = {
-            'str' : ','.join([str(i) for i in arr[3]])}
-    else:
-        parmDict['Spherical harmonics'] = {
-            'ref' : (arr,2),}
-        parmDict['SH order'] = {
-            'str' : str(arr[4])}
-        for lbl in arr[5]:
-            parmDict[f'SP {lbl}']= {
-                'val' : (arr[5],lbl),
-                }
-        parmDict['SH text indx'] = {
-            'str' : f'{G2lat.textureIndex(arr[5]):.3f}'}
-
-    # misc: Layer Disp, Extinction
-    try:
-        parmDict['Layer displ'] = {
-        'val' : (HAPdict['Layer Disp'],0),
-        'ref' : (HAPdict['Layer Disp'],1),}
-    except KeyError:
-        pass
-    try:
-        parmDict['Extinction'] = {
-            'val' : (HAPdict['Extinction'],0),
-            'ref' : (HAPdict['Extinction'],1),}
-    except KeyError:
-        pass
-    try:
-        parmDict['Babinet A'] = {
-            'val' : (HAPdict['Babinet']['BabA'],0),
-            'ref' : (HAPdict['Babinet']['BabA'],1),}
-    except KeyError:
-        pass
-    try:
-        parmDict['Babinet U'] = {
-            'val' : (HAPdict['Babinet']['BabU'],0),
-            'ref' : (HAPdict['Babinet']['BabU'],1),}
-    except KeyError:
-        pass
-    return parmDict
-
-def printTable(phase,hist,parmDict):
-    # show the variables and values in data table array -- debug use only
-    print(phase,hist)
-    for sel in parmDict:
-        arr = parmDict[sel]
-        val = 'N/A'
-        if 'val' in arr:
-            val = arr['val'][0] [arr['val'][1]]
-        if 'str' in arr:
-            v = arr['str']
-            val = f'"{v}"'
-        ref = 'N/A'
-        if 'ref' in arr:
-            ref = arr['ref'][0] [arr['ref'][1]]
-        print(f'{sel!r:20s}  {val}  {ref}')
-    print('\n')
-
-# code that did not work and is being abandoned for now
-#
-# def HistFrame(G2frame):
-#     '''This creates two side-by-side scrolled panels, each containing 
-#     a FlexGridSizer.
-#     The panel to the left contains the labels for the sizer to the right.
-#     This way the labels are not scrolled horizontally and are always seen.
-#     The two vertical scroll bars are linked together so that the labels 
-#     are synced to the table of values.
-#     '''
-#     def OnScroll(event):
-#         'Synchronize vertical scrolling between the two scrolled windows'
-#         obj = event.GetEventObject()
-#         pos = obj.GetViewStart()[1]
-#         if obj == lblScroll:
-#             SampleScroll.Scroll(-1, pos)
-#         else:
-#             lblScroll.Scroll(-1, pos)
-#         event.Skip()
-#     #---------------------------------------------------------------------
-#     # generate a dict with Sample values for each histogram
-#     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-#     HAPtable = getSampleVals(G2frame,Histograms)
-#     #debug# for hist in HAPtable: printTable(phaseList[page],hist,HAPtable[hist]) # see the dict
-#     # construct a list of row labels, attempting to keep the
-#     # order they appear in the original array
-#     rowLabels = []
-#     lpos = 0
-#     for hist in HAPtable:
-#         prevkey = None
-#         for key in HAPtable[hist]:
-#             if key not in rowLabels:
-#                 if prevkey is None:
-#                     rowLabels.insert(lpos,key)
-#                     lpos += 1
-#                 else:
-#                     rowLabels.insert(rowLabels.index(prevkey)+1,key)
-#             prevkey = key
-#     #=======  Generate GUI ===============================================
-#     #G2frame.dataWindow.ClearData()
-
-#     # layout the HAP window. This has histogram and phase info, so a
-#     # notebook is needed for phase name selection. (That could
-#     # be omitted for single-phase refinements, but better to remind the
-#     # user of the phase
-#     topSizer = G2frame.dataWindow.topBox
-#     topParent = G2frame.dataWindow.topPanel
-#     midPanel = G2frame.dataWindow
-#     # this causes a crash, but somehow I need to clean up the old contents
-#     #if midPanel.GetSizer():
-#     #    for i in midPanel.GetSizer().GetChildren():
-#     #        i.Destroy()          # clear out old widgets
-#     #botSizer = G2frame.dataWindow.bottomBox
-#     #botParent = G2frame.dataWindow.bottomPanel
-#     # label with shared portion of histogram name
-#     topSizer.Add(wx.StaticText(topParent,
-#             label=f'Sample parameters for group "{histLabels(G2frame)[0]}"'),
-#                      0,WACV)
-#     topSizer.Add((-1,-1),1,wx.EXPAND)
-#     topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
-
-#     panel = wx.Panel(midPanel)
-#     panel.SetSize(midPanel.GetSize())
-#     mainSizer = wx.BoxSizer(wx.VERTICAL)
-#     G2G.HorizontalLine(mainSizer,panel)
-#     panel.SetSizer(mainSizer)
-#     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-
-    
-#     bigSizer = wx.BoxSizer(wx.HORIZONTAL)
-#     mainSizer.Add(bigSizer,1,wx.EXPAND)
-#     if True:
-#         # panel for labels; show scroll bars to hold the space
-#         lblScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
-#                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
-#         hpad = 3  # space between rows
-#         lblSizer = wx.FlexGridSizer(0,1,hpad,10)
-#         lblScroll.SetSizer(lblSizer)
-#         bigSizer.Add(lblScroll,0,wx.EXPAND)
-
-#         # Create scrolled panel to display HAP data
-#         SampleScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
-#                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
-#         SampleSizer = wx.FlexGridSizer(0,len(HAPtable),hpad,10)
-#         SampleScroll.SetSizer(SampleSizer)
-#         bigSizer.Add(SampleScroll,1,wx.EXPAND)
-        
-#         # Bind scroll events to synchronize scrolling
-#         lblScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
-#         SampleScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
-#         # label columns with unique part of histogram names
-#         for hist in histLabels(G2frame)[1]:
-#             SampleSizer.Add(wx.StaticText(SampleScroll,label=f"\u25A1 = {hist}"),
-#                              0,wx.ALIGN_CENTER)
-    
-#         displayDataTable(rowLabels,HAPtable,SampleSizer,SampleScroll)
-#         # get row sizes in data table
-#         SampleSizer.Layout()
-#         rowHeights = SampleSizer.GetRowHeights()
-#         # match rose sizes in Labels
-#         # (must be done after SampleSizer row heights are defined)
-#         s = wx.Size(-1,rowHeights[0])
-#         lblSizer.Add(wx.StaticText(lblScroll,label=' ',size=s))
-#         for i,row in enumerate(rowLabels):
-#             s = wx.Size(-1,rowHeights[i+1])
-#             lblSizer.Add(wx.StaticText(lblScroll,label=row,size=s),0,
-#                              wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-#         # Fit the scrolled windows to their content
-#         lblSizer.Layout()
-#         xLbl,_ = lblSizer.GetMinSize()
-#         xTab,yTab = SampleSizer.GetMinSize()
-#         lblScroll.SetSize((xLbl,yTab))
-#         lblScroll.SetMinSize((xLbl+15,yTab)) # add room for scroll bar
-#         lblScroll.SetVirtualSize(lblSizer.GetMinSize())
-#         SampleScroll.SetVirtualSize(SampleSizer.GetMinSize())
-#         lblScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
-#         SampleScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
-#         breakpoint()
-#         wx.CallLater(100,G2frame.SendSizeEvent)
-#     G2frame.dataWindow.SetDataSize()
+        # misc: Layer Disp, Extinction
+        if 'Layer Disp' in PhaseData['Histograms'][hist]:
+            indexDict[hist]['Layer displ'] = {
+                'val' : ('Layer Disp',0),
+                'ref' : ('Layer Disp',1),}                
+        if 'Extinction' in PhaseData['Histograms'][hist]:
+            indexDict[hist]['Extinction'] = {
+                'val' : ('Extinction',0),
+                'ref' : ('Extinction',1),}
+        if 'Babinet' in PhaseData['Histograms'][hist]:
+            indexDict[hist]['Babinet A'] = {
+                'val' : ('Babinet','BabA',0),
+                'ref' : ('Babinet','BabA',1),}
+        if 'Babinet' in PhaseData['Histograms'][hist]:
+            indexDict[hist]['Babinet U'] = {
+                'val' : ('Babinet','BabU',0),
+                'ref' : ('Babinet','BabU',1),}
+    return indexDict

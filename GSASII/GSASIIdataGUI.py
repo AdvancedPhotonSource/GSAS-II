@@ -7952,8 +7952,6 @@ def UpdateControls(G2frame,data):
         is judged by a common string that matches a template
         supplied by the user
         '''
-        ans = G2frame.OnFileSave(None)
-        if not ans: return
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         for hist in Histograms:
             if hist.startswith('PWDR '):
@@ -7962,63 +7960,9 @@ def UpdateControls(G2frame,data):
             G2G.G2MessageBox(G2frame,'No used PWDR histograms found to group. Histograms must be assigned phase(s).',
                                      'Cannot group')
             return
-        repeat = True
-        srchStr = hist[5:]
-        msg = ('Edit the histogram name below placing a question mark (?) '
-                'at the location '
-                'of characters that change between groups of '
-                'histograms. Use backspace or delete to remove '
-                'characters that should be ignored as they will '
-                'vary within a histogram group (e.g. Bank 1). '
-                'Be sure to leave enough characters so the string '
-                'can be uniquely matched.')
-        while repeat:
-            srchStr = G2G.StringSearchTemplate(G2frame,'Set match template',
-                                                   msg,srchStr)
-            if srchStr is None: return # cancel pressed
-            reSrch = re.compile(srchStr.replace('.',r'\.').replace('?','.'))
-            setDict = {}
-            keyList = []
-            noMatchCount = 0
-            for hist in Histograms:
-                if hist.startswith('PWDR '):
-                    m = reSrch.search(hist)
-                    if m:
-                        key = hist[m.start():m.end()]
-                        setDict[hist] = key
-                        if key not in keyList: keyList.append(key)
-                    else:
-                        noMatchCount += 1
-            groupDict = {}
-            groupCount = {}
-            for k in keyList:
-                groupDict[k] = [hist for hist,key in setDict.items() if k == key]
-                groupCount[k] = len(groupDict[k])
-            
-            msg1 = f'With template {srchStr!r} found '
-            
-            buttons = []
-            if min(groupCount.values()) == max(groupCount.values()):
-                msg1 += f'{len(groupDict)} groups with {min(groupCount.values())} histograms each'
-            else:
-                msg1 += (f'{len(groupDict)} groups with between {min(groupCount.values())}'
-                           f' and {min(groupCount.values())} histograms in each')
-            if noMatchCount:
-                msg1 += f"\n\nNote that {noMatchCount} PWDR histograms were not included in any groups"
-            #G2G.G2MessageBox(G2frame,msg1,'Grouping result')
-            # place a sanity check limit on the number of histograms in a group
-            if max(groupCount.values()) < 150:
-                buttons += [('OK', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK))]
-            else:
-                msg1 += '\n\nThis exceeds the maximum group length of 150 histograms'
-            buttons += [('try again', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_CANCEL))]
-            res = G2G.ShowScrolledInfo(G2frame,msg1,header='Grouping result',
-                        buttonlist=buttons,height=150)
-            if res == wx.ID_OK:
-                repeat = False
-
-        data['Groups'] = {'groupDict':groupDict,'notGrouped':noMatchCount,
-                              'template':srchStr}
+        ans = G2frame.OnFileSave(None)
+        if not ans: return
+        data['Groups'] = G2gr.SearchGroups(G2frame,Histograms,hist)
 #        wx.CallAfter(UpdateControls,G2frame,data)
         ans = G2frame.OnFileSave(None)
         if not ans: return

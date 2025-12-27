@@ -229,8 +229,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
         elif event.key == 'x' and groupName is not None: # share X axis scale for Pattern Groups
             plotOpt['sharedX'] = not plotOpt['sharedX']
-            if not plotOpt['sharedX']: # reset scale
-                newPlot = True
+            # Clear saved x-limits when toggling sharedX mode
+            if hasattr(G2frame, 'groupXlim'):
+                del G2frame.groupXlim
+            if hasattr(G2frame, 'groupPlotMode'):
+                del G2frame.groupPlotMode
+            newPlot = True
+        elif event.key == 'r' and groupName is not None: # reset to full range for Pattern Groups
+            # Clear saved GROUP plot x-limits so plot uses full data range
+            if hasattr(G2frame, 'groupXlim'):
+                del G2frame.groupXlim
+            if hasattr(G2frame, 'groupPlotMode'):
+                del G2frame.groupPlotMode
+            newPlot = True
         elif event.key == 'x' and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
@@ -1490,7 +1501,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         '''
         if restore:
             (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
-                G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot']) = savedSettings
+                G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot'],
+                Page.plotStyle['qPlot'],Page.plotStyle['dPlot']) = savedSettings
+            # Also save to G2frame so settings survive Page recreation during ResetPlots
+            G2frame.savedPlotStyle = {'qPlot': Page.plotStyle['qPlot'], 
+                                       'dPlot': Page.plotStyle['dPlot'],
+                                       'logPlot': Page.plotStyle['logPlot']}
             return
 
         if plottingItem not in Histograms:
@@ -1756,6 +1772,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if not new and hasattr(Page,'prevPlotType'):
         if Page.prevPlotType != plottype: new = True
     Page.prevPlotType = plottype
+    
+    # Restore saved plot style settings (qPlot, dPlot, logPlot) if they were preserved 
+    # across a refinement cycle. These get saved in refPlotUpdate(restore=True) and
+    # need to be applied here because Page may have been recreated by ResetPlots.
+    if hasattr(G2frame, 'savedPlotStyle') and G2frame.savedPlotStyle:
+        for key in ('qPlot', 'dPlot', 'logPlot'):
+            if key in G2frame.savedPlotStyle:
+                Page.plotStyle[key] = G2frame.savedPlotStyle[key]
+        G2frame.savedPlotStyle = None  # Clear after applying
 
     if G2frame.ifSetLimitsMode and G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Limits':
         # note mode
@@ -1823,7 +1848,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         plottingItem = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         # save settings to be restored after refinement with repPlotUpdate({},restore=True)
         savedSettings = (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
-                            G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot'])
+                            G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot'],
+                            Page.plotStyle['qPlot'],Page.plotStyle['dPlot'])
         G2frame.SinglePlot = True
         G2frame.Contour = False
         G2frame.Weight = True
@@ -2143,7 +2169,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Title += ' - background'
     if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         xLabel = r'$Q, \AA^{-1}$'
-    elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
+    elif Page.plotStyle['dPlot'] and ('PWDR' in plottype or plottype == 'GROUP'):
         xLabel = r'$d, \AA$'
     elif Page.plotStyle['chanPlot'] and G2frame.Contour:
         xLabel = 'Channel no.'
@@ -2167,7 +2193,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 's: toggle sqrt plot',
                 'q: toggle Q plot',
                 't: toggle d-spacing plot',
-                'x: share x-axes (Q/d only)']
+                'x: share x-axes (Q/d only)',
+                'r: reset to full range']
         Plot.set_visible(False) # removes "big" plot
         gXmin = {}
         gXmax = {}
@@ -2215,8 +2242,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     gdat[i][j] = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
                 else:
                     gdat[i][j] = y
-            gYmax[i] = max(max(gdat[i][1]),max(gdat[i][3]))
-            gYmin[i] = min(min(gdat[i][1]),min(gdat[i][3]))
             if Page.plotStyle['qPlot']:
                 gX[i] = 2.*np.pi/G2lat.Pos2dsp(gParms,gdat[i][0])
             elif Page.plotStyle['dPlot']:
@@ -2225,6 +2250,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 gX[i] = gdat[i][0]
             gXmin[i] = min(gX[i])
             gXmax[i] = max(gX[i])
+            # Calculate Y range from full data initially (may be updated later for zoom)
+            gYmax[i] = max(max(gdat[i][1]),max(gdat[i][3]))
+            gYmin[i] = min(min(gdat[i][1]),min(gdat[i][3]))
             # obs-calc/sigma
             DZ = (gdat[i][1]-gdat[i][3])*np.sqrt(gdat[i][2])
             DZmin = min(DZmin,DZ.min())
@@ -2237,22 +2265,111 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.plotStyle['qPlot'] or Page.plotStyle['dPlot']):
             Page.figure.text(0.001,0.94,'X shared',fontsize=11,
                                  color='g')
-            Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex=True,
+            # Don't use sharey='row' when sharedX - we'll manage y-limits manually
+            # This avoids conflicts between sharey and our dynamic y-limit updates
+            Plots = Page.figure.subplots(2,Page.groupN,sharex=True,
                                          gridspec_kw=GS_kw)
         else:
             Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex='col',
                                          gridspec_kw=GS_kw)
         Page.figure.subplots_adjust(left=5/100.,bottom=16/150.,
             right=.99,top=1.-3/200.,hspace=0,wspace=0)
-        for i in range(Page.groupN):
-            up,down = adjustDim(i,Page.groupN)
-            Plots[up].set_xlim(gXmin[i],gXmax[i])
-            Plots[down].set_xlim(gXmin[i],gXmax[i])
-            Plots[down].set_ylim(DZmin,DZmax)
-            if not Page.plotStyle.get('flTicks',False):
-                Plots[up].set_ylim(-len(RefTbl[i])*5,102)
+        # Check if we have a saved shared x-range to restore (for Q/d-space with sharedX)
+        useSharedLim = (plotOpt['sharedX'] and 
+                        (Page.plotStyle['qPlot'] or Page.plotStyle['dPlot']))
+        savedGroupXlim = getattr(G2frame, 'groupXlim', None)
+        # Check if saved limits need conversion to current plot mode
+        savedPlotMode = getattr(G2frame, 'groupPlotMode', None)
+        currentPlotMode = ('q' if Page.plotStyle['qPlot'] else 
+                          'd' if Page.plotStyle['dPlot'] else 'tof')
+        if savedPlotMode != currentPlotMode and savedGroupXlim is not None:
+            # Convert saved x-limits to current units
+            # d = 2π/Q, so Q = 2π/d
+            if savedPlotMode == 'q' and currentPlotMode == 'd':
+                # Converting Q limits to d limits: d = 2π/Q (inverts order)
+                newMin = 2.0 * np.pi / savedGroupXlim[1]  # Q_max -> d_min
+                newMax = 2.0 * np.pi / savedGroupXlim[0]  # Q_min -> d_max
+                savedGroupXlim = (newMin, newMax)
+                G2frame.groupXlim = savedGroupXlim
+                G2frame.groupPlotMode = currentPlotMode
+            elif savedPlotMode == 'd' and currentPlotMode == 'q':
+                # Converting d limits to Q limits: Q = 2π/d (inverts order)
+                newMin = 2.0 * np.pi / savedGroupXlim[1]  # d_max -> Q_min
+                newMax = 2.0 * np.pi / savedGroupXlim[0]  # d_min -> Q_max
+                savedGroupXlim = (newMin, newMax)
+                G2frame.groupXlim = savedGroupXlim
+                G2frame.groupPlotMode = currentPlotMode
             else:
-                Plots[up].set_ylim(-1,102)
+                # TOF mode or other transitions - reset limits
+                savedGroupXlim = None
+        
+        # Add callback to update y-limits when user zooms interactively
+        def onGroupXlimChanged(ax):
+            '''Callback to update y-limits for all panels when x-range changes.
+            We calculate the global y-range across all panels for the visible x-range,
+            then explicitly set y-limits on ALL panels.
+            '''
+            xlim = ax.get_xlim()
+            # Save x-limits for persistence across refinements
+            if useSharedLim:
+                G2frame.groupXlim = xlim
+                G2frame.groupPlotMode = currentPlotMode
+            
+            # Calculate global y-range across ALL panels for visible x-range
+            global_ymin = float('inf')
+            global_ymax = float('-inf')
+            global_dzmin = float('inf')
+            global_dzmax = float('-inf')
+            max_tick_space = 0
+            
+            for i in range(Page.groupN):
+                xarr = np.array(gX[i])
+                xye = gdat[i]
+                mask = (xarr >= xlim[0]) & (xarr <= xlim[1])
+                if np.any(mask):
+                    # Calculate scaled y-values for visible data
+                    scaleY = lambda Y, idx=i: (Y - gYmin[idx]) / (gYmax[idx] - gYmin[idx]) * 100
+                    visible_obs = scaleY(xye[1][mask])
+                    visible_calc = scaleY(xye[3][mask])
+                    visible_bkg = scaleY(xye[4][mask])
+                    ymin_visible = min(visible_obs.min(), visible_calc.min(), visible_bkg.min())
+                    ymax_visible = max(visible_obs.max(), visible_calc.max(), visible_bkg.max())
+                    global_ymin = min(global_ymin, ymin_visible)
+                    global_ymax = max(global_ymax, ymax_visible)
+                    # Track tick space needed
+                    if not Page.plotStyle.get('flTicks', False):
+                        max_tick_space = max(max_tick_space, len(RefTbl[i]) * 5)
+                    else:
+                        max_tick_space = max(max_tick_space, 1)
+                    # Calculate diff y-limits
+                    DZ_visible = (xye[1][mask] - xye[3][mask]) * np.sqrt(xye[2][mask])
+                    global_dzmin = min(global_dzmin, DZ_visible.min())
+                    global_dzmax = max(global_dzmax, DZ_visible.max())
+            
+            # Apply global y-limits to ALL panels explicitly
+            if global_ymax > global_ymin:
+                yrange = global_ymax - global_ymin
+                ypad = max(yrange * 0.05, 1.0)
+                ylim_upper = (global_ymin - ypad - max_tick_space, global_ymax + ypad)
+                for i in range(Page.groupN):
+                    up, down = adjustDim(i, Page.groupN)
+                    Plots[up].set_ylim(ylim_upper)
+                    Plots[up].autoscale(enable=False, axis='y')
+            if global_dzmax > global_dzmin:
+                dzrange = global_dzmax - global_dzmin
+                dzpad = max(dzrange * 0.05, 0.5)
+                ylim_lower = (global_dzmin - dzpad, global_dzmax + dzpad)
+                for i in range(Page.groupN):
+                    up, down = adjustDim(i, Page.groupN)
+                    Plots[down].set_ylim(ylim_lower)
+                    Plots[down].autoscale(enable=False, axis='y')
+            # Force canvas redraw to apply new limits
+            Page.canvas.draw_idle()
+        
+        # Connect callback for all panels when sharedX is enabled
+        if useSharedLim:
+            up, down = adjustDim(0, Page.groupN)
+            Plots[up].callbacks.connect('xlim_changed', onGroupXlimChanged)
                 
         # pretty up the tick labels
         up,down = adjustDim(0,Page.groupN)
@@ -2270,6 +2387,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plots[up].set_ylabel('Normalized Intensity',fontsize=12)
         Page.figure.text(0.001,0.03,commonltrs,fontsize=13)
         Page.figure.supxlabel(xLabel)
+        
         for i,h in enumerate(groupPlotList):
             up,down = adjustDim(i,Page.groupN)
             Plot = Plots[up]
@@ -2296,6 +2414,84 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plot.plot(gX[i],scaleY(xye[3]),pwdrCol['Calc_color'],picker=0.,label=incCptn('calc'),linewidth=1.5)
             Plot.plot(gX[i],scaleY(xye[4]),pwdrCol['Bkg_color'],picker=0.,label=incCptn('bkg'),linewidth=1.5)     #background
             drawTicks(RefTbl[i],list(RefTbl[i].keys()),True)
+        
+        # Set axis limits AFTER plotting data to prevent autoscaling from overriding them
+        # When sharedX is enabled, calculate common x-range encompassing all histograms
+        if useSharedLim:
+            if savedGroupXlim is not None:
+                commonXlim = savedGroupXlim
+            else:
+                # Calculate union of all histogram x-ranges
+                commonXmin = min(gXmin.values())
+                commonXmax = max(gXmax.values())
+                commonXlim = (commonXmin, commonXmax)
+        
+        # First pass: set x-limits and calculate global y-range for visible data
+        # Since sharey='row', all upper panels share y-limits, all lower panels share y-limits
+        global_ymin = float('inf')
+        global_ymax = float('-inf')
+        global_dzmin = float('inf')
+        global_dzmax = float('-inf')
+        max_tick_space = 0
+        
+        for i in range(Page.groupN):
+            up, down = adjustDim(i, Page.groupN)
+            if useSharedLim:
+                xlim = commonXlim
+                Plots[up].set_xlim(xlim)
+                Plots[down].set_xlim(xlim)
+            else:
+                xlim = (gXmin[i], gXmax[i])
+                Plots[up].set_xlim(xlim)
+                Plots[down].set_xlim(xlim)
+            
+            # Calculate y-range for this panel's visible data
+            xarr = np.array(gX[i])
+            xye = gdat[i]
+            mask = (xarr >= xlim[0]) & (xarr <= xlim[1])
+            if np.any(mask):
+                scaleY = lambda Y, idx=i: (Y - gYmin[idx]) / (gYmax[idx] - gYmin[idx]) * 100
+                visible_obs = scaleY(xye[1][mask])
+                visible_calc = scaleY(xye[3][mask])
+                visible_bkg = scaleY(xye[4][mask])
+                ymin_visible = min(visible_obs.min(), visible_calc.min(), visible_bkg.min())
+                ymax_visible = max(visible_obs.max(), visible_calc.max(), visible_bkg.max())
+                global_ymin = min(global_ymin, ymin_visible)
+                global_ymax = max(global_ymax, ymax_visible)
+                # Track tick space needed
+                if not Page.plotStyle.get('flTicks', False):
+                    max_tick_space = max(max_tick_space, len(RefTbl[i]) * 5)
+                else:
+                    max_tick_space = max(max_tick_space, 1)
+                # Calculate diff y-limits
+                DZ_visible = (xye[1][mask] - xye[3][mask]) * np.sqrt(xye[2][mask])
+                global_dzmin = min(global_dzmin, DZ_visible.min())
+                global_dzmax = max(global_dzmax, DZ_visible.max())
+        
+        # Apply global y-limits to ALL panels explicitly (sharey may not propagate properly)
+        if global_ymax > global_ymin:
+            yrange = global_ymax - global_ymin
+            ypad = max(yrange * 0.05, 1.0)
+            ylim_upper = (global_ymin - ypad - max_tick_space, global_ymax + ypad)
+        else:
+            # Fallback to full range
+            if not Page.plotStyle.get('flTicks', False):
+                ylim_upper = (-max_tick_space, 102)
+            else:
+                ylim_upper = (-1, 102)
+        if global_dzmax > global_dzmin:
+            dzrange = global_dzmax - global_dzmin
+            dzpad = max(dzrange * 0.05, 0.5)
+            ylim_lower = (global_dzmin - dzpad, global_dzmax + dzpad)
+        else:
+            ylim_lower = (DZmin, DZmax)
+        
+        # Set y-limits on ALL panels
+        for i in range(Page.groupN):
+            up, down = adjustDim(i, Page.groupN)
+            Plots[up].set_ylim(ylim_upper)
+            Plots[down].set_ylim(ylim_lower)
+                
         try: # try used as in PWDR menu not Groups
             # Not sure if this does anything
             G2frame.dataWindow.moveTickLoc.Enable(False)
@@ -2303,6 +2499,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         #     G2frame.dataWindow.moveDiffCurve.Enable(True)
         except:
             pass
+        # Save the current x-limits for GROUP plots so they can be restored after refinement
+        # When sharedX is enabled in Q/d-space, all panels share the same x-range
+        if useSharedLim:
+            up,down = adjustDim(0,Page.groupN)
+            G2frame.groupXlim = Plots[up].get_xlim()
+            G2frame.groupPlotMode = currentPlotMode
         Page.canvas.draw()
         return
     elif G2frame.Weight and not G2frame.Contour:

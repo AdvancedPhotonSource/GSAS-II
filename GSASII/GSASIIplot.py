@@ -671,6 +671,27 @@ class GSASIItoolbar(Toolbar):
             wx.CallAfter(*self.updateActions)
         Toolbar._update_view(self)
 
+    def home(self, *args):
+        '''Override home button to clear saved GROUP plot limits and trigger replot.
+        This ensures that pressing home resets to full data range while retaining x-units.
+        For GROUP plots, we need to replot rather than use matplotlib's home because
+        matplotlib's home would restore the original shared limits, not per-histogram limits.
+        '''
+        G2frame = wx.GetApp().GetMainTopWindow()
+        # Clear saved GROUP plot x-limits so PlotPatterns will use full data range
+        if hasattr(G2frame, 'groupXlim'):
+            del G2frame.groupXlim
+        if hasattr(G2frame, 'groupPlotMode'):
+            del G2frame.groupPlotMode
+        # Check if we're in GROUP plot mode - if so, trigger a replot
+        if self.arrows.get('_groupMode'):
+            # Trigger a full replot for GROUP plots
+            if self.updateActions:
+                wx.CallAfter(*self.updateActions)
+            return
+        # For non-GROUP plots, call the parent's home method
+        Toolbar.home(self, *args)
+
     def AnyActive(self):
         for Itool in range(self.GetToolsCount()):
             if self.GetToolState(self.GetToolByPos(Itool).GetId()):

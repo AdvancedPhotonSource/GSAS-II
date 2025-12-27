@@ -181,18 +181,15 @@ def UpdateGroup(G2frame,item,plot=True):
     def onDisplaySel(event):
         G2frame.GroupInfo['displayMode'] = dsplType.GetValue()
         wx.CallAfter(UpdateGroup,G2frame,item,False)
-        #UpdateGroup(G2frame,item)
-    def OnCopyAll(event):
-        G2G.G2MessageBox(G2frame,
-                    'Sorry, not fully implemented yet',
-                                     'In progress')
-        return
+
+    def copyPrep():
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         groupDict = Controls.get('Groups',{}).get('groupDict',{})
         groupName = G2frame.GroupInfo['groupName']
         # make a list of groups of the same length as the current
         curLen = len(groupDict[groupName])
         matchGrps = []
+        selList = []
         for g in groupDict:
             if g == groupName: continue
             if curLen != len(groupDict[g]): continue
@@ -212,38 +209,63 @@ def UpdateGroup(G2frame,item,plot=True):
         else:
             selList = matchGrps
         if len(selList) == 0: return
-        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        prmArray = None
-        if G2frame.GroupInfo['displayMode'].startswith('Sample'):
-            prmArray = getSampleVals(G2frame,Histograms)
-        elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
-            prmArray = getInstVals(G2frame,Histograms)
-        elif G2frame.GroupInfo['displayMode'].startswith('Limits'):
-            prmArray = getLimitVals(G2frame,Histograms)
-        elif G2frame.GroupInfo['displayMode'].startswith('Background'):
-            prmArray = getBkgVals(G2frame,Histograms)
-        else:
-            print('Unexpected', G2frame.GroupInfo['displayMode'])
-            return
-        for h in selList: # group
-            for src,dst in zip(groupDict[groupName],groupDict[h]):
-                print('copy',src,'to',dst)
-                # for i in prmTable[src]:
-                #     #if i not in prmTable[dst]:
-                #     #    print
-                #     #    continue
-                #     if 'val' in  prmTable[src][i]:
-                #         breakpoint()
-        # so what do we copy?
-        #breakpoint()
-        print('OnCopyAll')
-    def OnCopySel(event):
-        print('OnCopySel')
-        G2G.G2MessageBox(G2frame,
-                    f'Sorry, not fully implemented yet',
-                                     'In progress')
-        return
+        return selList,groupDict,groupName
 
+    def OnCopyAll(event):
+        res = copyPrep()
+        if res is None: return
+        selList,groupDict,groupName = res
+        dataSource = prmArray['_dataSource']
+        for h in selList: # selected groups
+            for src,dst in zip(groupDict[groupName],groupDict[h]): # histograms in groups (same length enforced)
+                for i in prmArray[src]:
+                    for j in ('ref','val','str'):
+                        if j in prmArray[src][i]:
+                            if prmArray[src][i][j] is None: continue
+                            try:
+                                arr,indx = indexArrayRef(dataSource,dst,prmArray[src][i][j])
+                                arr[indx] = indexArrayVal(dataSource,src,prmArray[src][i][j])
+                            except Exception as msg: # could hit an error if an array element is not defined
+                                pass
+                                #print(msg)
+                                #print('error with',i,dst)
+    def OnCopySel(event):
+        res = copyPrep()
+        if res is None: return
+        selList,groupDict,groupName = res
+        dataSource = prmArray['_dataSource']
+        choices = []
+        for src in groupDict[groupName]:
+            for i in prmArray[src]:
+                for j in ('ref','val','str'):
+                    if prmArray[src][i].get(j) is None: 
+                        continue
+                    if i not in choices:
+                        choices.append(i)
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Copy which items?', 'Copy what?', choices)
+        itemList = []
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                itemList = [choices[i] for i in dlg.GetSelections()]
+        finally:
+            dlg.Destroy()
+        if len(itemList) == 0: return
+        for h in selList: # selected groups
+            for src,dst in zip(groupDict[groupName],groupDict[h]): # histograms in groups (same length enforced)
+                for i in prmArray[src]:
+                    if i not in itemList: continue
+                    for j in ('ref','val','str'):
+                        if j in prmArray[src][i]:
+                            if prmArray[src][i][j] is None: continue
+                            try:
+                                arr,indx = indexArrayRef(dataSource,dst,prmArray[src][i][j])
+                                arr[indx] = indexArrayVal(dataSource,src,prmArray[src][i][j])
+                            except Exception as msg: # could hit an error if an array element is not defined
+                                pass
+                                #print(msg)
+                                #print('error with',i,dst)
+
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if not hasattr(G2frame,'GroupInfo'):
         G2frame.GroupInfo = {}
     G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Sample')
@@ -271,9 +293,9 @@ def UpdateGroup(G2frame,item,plot=True):
     topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
 
     if G2frame.GroupInfo['displayMode'].startswith('Hist'):
-        HAPframe(G2frame)
+        HAPframe(G2frame,Histograms,Phases)
     else:
-        HistFrame(G2frame)
+        HistFrame(G2frame,Histograms)
     if plot: G2pwpl.PlotPatterns(G2frame,plotType='GROUP')
     G2frame.dataWindow.SetDataSize()
     #wx.CallLater(100,G2frame.SendSizeEvent)
@@ -509,13 +531,13 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 print('Should not happen',DataArray[hist][row],hist,row)
     return firstentry,lblDict
 
-def HistFrame(G2frame):
+def HistFrame(G2frame,Histograms):
     '''Put everything in a single FlexGridSizer.
     '''
     #---------------------------------------------------------------------
     # generate a dict with values for each histogram
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     CopyCtrl = True
+    global prmArray
     if G2frame.GroupInfo['displayMode'].startswith('Sample'):
         prmArray = getSampleVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
@@ -527,6 +549,7 @@ def HistFrame(G2frame):
         prmArray = getBkgVals(G2frame,Histograms)
         CopyCtrl = False
     else:
+        prmArray = None
         print('Unexpected', G2frame.GroupInfo['displayMode'])
         return
     rowLabels = []
@@ -560,7 +583,6 @@ def HistFrame(G2frame):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     G2G.HorizontalLine(mainSizer,panel)
     panel.SetSizer(mainSizer)
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
     n = 2
     if CopyCtrl and len(prmArray) > 2: n += 1 # add column for copy (when more than one histogram)
@@ -824,7 +846,7 @@ def getBkgVals(G2frame,Histograms):
             'txt' : val}
     return indexDict
 
-def HAPframe(G2frame):
+def HAPframe(G2frame,Histograms,Phases):
     '''This creates two side-by-side scrolled panels, each containing 
     a FlexGridSizer.
     The panel to the left contains the labels for the sizer to the right.
@@ -852,15 +874,16 @@ def HAPframe(G2frame):
             page = 0
             #print('no page selected',phaseList[page])
         # generate a dict with HAP values for each phase (may not be the same)
-        HAParray = getHAPvals(G2frame,phaseList[page])
+        global prmArray
+        prmArray = getHAPvals(G2frame,phaseList[page],Histograms,Phases)
         # construct a list of row labels, attempting to keep the
         # order they appear in the original array
         rowLabels = []
         lpos = 0
-        for hist in HAParray:
+        for hist in prmArray:
             if hist == '_dataSource': continue
             prevkey = None
-            for key in HAParray[hist]:
+            for key in prmArray[hist]:
                 if key not in rowLabels:
                     if prevkey is None:
                         rowLabels.insert(lpos,key)
@@ -886,7 +909,7 @@ def HAPframe(G2frame):
         # Create scrolled panel to display HAP data
         HAPScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
                         style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
-        HAPSizer = wx.FlexGridSizer(0,len(HAParray),hpad,10)
+        HAPSizer = wx.FlexGridSizer(0,len(prmArray),hpad,10)
         HAPScroll.SetSizer(HAPSizer)
         bigSizer.Add(HAPScroll,1,wx.EXPAND)
         
@@ -903,7 +926,7 @@ def HAPframe(G2frame):
         w0 = wx.StaticText(lblScroll,label=' ')
         lblSizer.Add(w0)
         lblSizer.Add(wx.StaticText(lblScroll,label=' Ref '))
-        firstentry,lblDict = displayDataArray(rowLabels,HAParray,HAPSizer,HAPScroll,
+        firstentry,lblDict = displayDataArray(rowLabels,prmArray,HAPSizer,HAPScroll,
                     lblRow=True,lblSizer=lblSizer,lblPanel=lblScroll)
         # get row sizes in data table
         HAPSizer.Layout()
@@ -944,7 +967,6 @@ def HAPframe(G2frame):
 
     G2G.HorizontalLine(mainSizer,midPanel)
     midPanel.SetSizer(mainSizer)
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if not Phases:
         mainSizer.Add(wx.StaticText(midPanel,
                            label='There are no phases in use'))
@@ -966,26 +988,13 @@ def HAPframe(G2frame):
     selectPhase(None)
     #G2frame.dataWindow.SetDataSize()
 
-def getHAPvals(G2frame,phase):
+def getHAPvals(G2frame,phase,Histograms,Phases):
     '''Generate the Parameter Data Table (a dict of dicts) with 
     all HAP values for the selected phase and all histograms in the 
     selected histogram group (from G2frame.GroupInfo['groupName']).
     This will be used to generate the contents of the GUI for HAP values.
     '''
-    sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
-    item, cookie = G2frame.GPXtree.GetFirstChild(sub)
-    PhaseData = None
-    while item: # loop over phases
-        phaseName = G2frame.GPXtree.GetItemText(item)
-        if phase is None: phase = phaseName
-        if phase == phaseName:
-            PhaseData = G2frame.GPXtree.GetItemPyData(item)
-            break
-        item, cookie = G2frame.GPXtree.GetNextChild(sub, cookie)
-    if PhaseData is None:
-        print(f'Unexpected: Phase {phase!r} not found')
-        return {}
-
+    PhaseData = Phases[phase]
     SGData = PhaseData['General']['SGData']
     cell = PhaseData['General']['Cell'][1:]
     Amat,Bmat = G2lat.cell2AB(cell[:6])
@@ -1079,15 +1088,15 @@ def getHAPvals(G2frame,phase):
             indexDict[hist]['Spherical harmonics'] = {
                 'ref' : ('Pref.Ori.',2),}
             indexDict[hist]['SH order'] = {
-                'str' : str('Pref.Ori.',4)}
-            for lbl in arr[5]:
+                'str' : ('Pref.Ori.',4),
+                'fmt' : '.0f'}
+            for lbl in PhaseData['Histograms'][hist]['Pref.Ori.'][5]:
                 indexDict[hist][f'SP {lbl}']= {
                     'val' : ('Pref.Ori.',5,lbl),
                     }
-            indexDict[hist]['SH text indx'] = {
+            indexDict[hist]['SH txtr indx'] = {
                 'str' : None,
-                'txt' : f'{G2lat.textureIndex('Pref.Ori.'[5]):.3f}'}
-
+                'txt' : f'{G2lat.textureIndex(PhaseData['Histograms'][hist]['Pref.Ori.'][5]):.3f}'}
         # misc: Layer Disp, Extinction
         if 'Layer Disp' in PhaseData['Histograms'][hist]:
             indexDict[hist]['Layer displ'] = {

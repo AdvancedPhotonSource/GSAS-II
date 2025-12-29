@@ -1503,13 +1503,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         updates the curves, not the reflection marks or the legend. 
         It should be called with restore=True to reset plotting 
         parameters after the refinement is done.
+
+        Note that the Page.plotStyle values are stashed in G2frame
+        to be restored later
         '''
         if restore:
             (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
-                G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot'],
-                Page.plotStyle['qPlot'],Page.plotStyle['dPlot']) = savedSettings
-            # Also save to G2frame so settings survive Page recreation during ResetPlots (MG/Cl Sonnet)
-            G2frame.savedPlotStyle = copy.copy(Page.plotStyle)
+                G2frame.plusPlot,G2frame.SubBack,G2frame.savedPlotStyle) = savedSettings
             return
 
         if plottingItem not in Histograms:
@@ -1832,19 +1832,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if G2frame.Contour: publish = None
 
     new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl')
+    if hasattr(G2frame, 'savedPlotStyle'):
+        Page.plotStyle.update(G2frame.savedPlotStyle)
+        del G2frame.savedPlotStyle  # do this only once
     Page.toolbar.setPublish(publish)
     Page.toolbar.arrows['_groupMode'] = None
     # if we are changing histogram types (including group to individual, reset plot)
     if not new and hasattr(Page,'prevPlotType'):
         if Page.prevPlotType != plottype: new = True
     Page.prevPlotType = plottype
-    
-    # Restore saved plot style settings (qPlot, dPlot, logPlot) if they were preserved 
-    # across a refinement cycle. These get saved in refPlotUpdate(restore=True) and
-    # need to be applied here because Page may have been recreated by ResetPlots. (based on MG/Cl Sonnet)
-    if hasattr(G2frame, 'savedPlotStyle'):
-        Page.plotStyle.update(G2frame.savedPlotStyle)
-        del G2frame.savedPlotStyle  # Clear after applying
 
     if G2frame.ifSetLimitsMode and G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Limits':
         # note mode
@@ -1912,8 +1908,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         plottingItem = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         # save settings to be restored after refinement with repPlotUpdate({},restore=True)
         savedSettings = (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
-                            G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot'],
-                            Page.plotStyle['qPlot'],Page.plotStyle['dPlot'])
+                            G2frame.plusPlot,G2frame.SubBack,
+                            copy.deepcopy(Page.plotStyle))
         G2frame.SinglePlot = True
         G2frame.Contour = False
         G2frame.Weight = True
@@ -2321,13 +2317,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             DZmin = min(DZmin,DZ.min())
             DZmax = max(DZmax,DZ.max())
             totalrange += gXmax[i]-gXmin[i]
-        # apportion axes lengths so that units are equal
-        xfrac = [(gXmax[i]-gXmin[i])/totalrange for i in range(Page.groupN)]
-        GS_kw = {'height_ratios':[4, 1], 'width_ratios':xfrac,}
         if plotOpt['sharedX'] and (
                 Page.plotStyle['qPlot'] or Page.plotStyle['dPlot']):
             Page.figure.text(0.001,0.94,'X shared',fontsize=11,
                                  color='g')
+            GS_kw = {'height_ratios':[4, 1]}
             #Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex=True,
             #                             gridspec_kw=GS_kw)
             # Don't use sharey='row' when sharedX - we'll manage y-limits manually
@@ -2335,6 +2329,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plots = Page.figure.subplots(2,Page.groupN,sharex=True,
                                          gridspec_kw=GS_kw)
         else:
+            # apportion axes lengths making some plots bigger so that initially units are equal
+            xfrac = [(gXmax[i]-gXmin[i])/totalrange for i in range(Page.groupN)]
+            GS_kw = {'height_ratios':[4, 1], 'width_ratios':xfrac,}
             Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex='col',
                                          gridspec_kw=GS_kw)
         Page.figure.subplots_adjust(left=5/100.,bottom=16/150.,

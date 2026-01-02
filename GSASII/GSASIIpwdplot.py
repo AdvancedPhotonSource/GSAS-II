@@ -1705,6 +1705,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 # N.B. above creates two Line2D objects, 2nd is ignored.
                 # Not sure what each does.
             elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
+                # axvline changes plot limits, triggering onGroupXlimChanged
+                # so turn that off for now. 
+                G2frame.stop_onGroupXlimChanged = True
                 if len(xtick) > 0:
                     # create an ~hidden tickmark to create a legend entry
                     Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
@@ -1713,6 +1716,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         Plot.axvline(xt,color=plcolor,
                                     picker=3.,
                                     label='_FLT_'+phase,lw=0.5)
+                del G2frame.stop_onGroupXlimChanged
 
     # Callback used to update y-limits when user zooms interactively (from MG/Cl Sonnet)
     def onGroupXlimChanged(ax):
@@ -1720,10 +1724,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         We calculate the global y-range across all panels for the visible x-range,
         then explicitly set y-limits on ALL panels.
         
-        This currently allows the y-limit to be set manually for one plot. If
-        a second one is changed, the previous manual change is lost.
-        I wonder if we can identify which plots have manual changes.
+        This code behaves a bit funny w/r to zoom or pan of one plot in a group
+        in that the plot that is modified can have its y-axis range changed, 
+        but if the another plot is changed, then the previous plot is given the
+        same y-range as all the others, so only one y-range can be changed. 
+        Perhaps this is because the zoom/pan is applied after the changes 
+        here are applied.
+
+        To do better, we probably need a mode that unlocks the coupling of 
+        the y-axes ranges.
         '''
+        if getattr(G2frame,'stop_onGroupXlimChanged',False):
+            return    # disable this routine when needed
         xlim = ax.get_xlim()
         # Save x-limits for persistence across refinements
         if (plotOpt['sharedX'] and 

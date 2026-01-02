@@ -1204,7 +1204,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         nOps = len(SGMT)
         if SGData['SGInv']:
             Uniq = np.hstack((Uniq,-Uniq))
-            Phi = np.hstack((Phi,Phi))
+            Phi = np.hstack((Phi,-Phi))
             nOps *= 2
         if 'T' in hType:
             if 'P' in calcControls[hfx+'histType']:

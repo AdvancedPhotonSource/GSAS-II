@@ -605,14 +605,14 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         dFFdSR[name] = SHR*ffkp       #ok
                         dFFdSR["Akappa'1:%d"%iAt] += -2.0*SQkp*SHR*orbs[term]*dffdkp/kappap   #ok
                         dFFdSI[name] = SHI*ffkp       #ok
-                        dFFdSI["Akappa'1:%d"%iAt] += 2.0*SQkp*SHI*orbs[term]*dffdkp/kappap   #ok                        
+                        dFFdSI["Akappa'1:%d"%iAt] += -2.0*SQkp*SHI*orbs[term]*dffdkp/kappap   #ok                        
                         #end test
                         FFSH += SH*orbs[term]*ffkp
                         dFFdS[name] = SH*ffkp       #ok
                         dFFdS["Akappa'1:%d"%iAt] += -2.0*SQkp*SH*orbs[term]*dffdkp/kappap   #ok
             FF[:,iAt] = FFcore+FFval+FFSH
             FFR[:,iAt] = FFcore+FFval+FFSHR
-            FFI[:,iAt] = FFSHI
+            FFI[:,iAt] = np.round(FFSHI,10)
         else:
             FFR[:,iAt] = FF[:,iAt]
             atFlg.append(0.)
@@ -1232,12 +1232,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),nOps*len(TwinLaw))
         fp = np.reshape(((FFR+FP).T-Bab).T,cosp.shape)*Tcorr
         fpp = np.reshape(Flack*(FFI+FPP),sinp.shape)*Tcorr
-        if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
-            fa = np.array([fp*cosp,-fpp*sinp])
-            fb = np.array([fp*sinp,fpp*cosp])
-        else:
-            fa = np.array([fp*cosp,-fpp*sinp])
-            fb = np.array([fp*sinp,fpp*cosp])
+        fa = np.array([fp*cosp,-fpp*sinp])
+        fb = np.array([fp*sinp,fpp*cosp])
         fas = np.sum(np.sum(fa,axis=-1),axis=-1)  #real 2 x blkSize x nTwin; sum over atoms & uniq hkl
         fbs = np.sum(np.sum(fb,axis=-1),axis=-1)  #imag
         if 'P' in hType:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
@@ -1308,7 +1304,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     bij = Mast*Uij.T
     dFdvDict = {}
     dFdfr = np.zeros((nRef,mSize))
-    dFdff = np.zeros((nRef,nOps,mSize))
+    dFdff = np.zeros((2,nRef,nOps,mSize))
     dFdx = np.zeros((nRef,mSize,3))
     dFdui = np.zeros((nRef,mSize))
     dFdua = np.zeros((nRef,mSize,6))
@@ -1360,33 +1356,32 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             if len(dffdSHR):
                 for item in dFFdSR:
                     dffdSHR[item] = np.hstack((dffdSHR[item],dFFdSR[item]))
-                    dffdSHI[item] = np.hstack((dffdSHI[item],dFFdSI[item]))
             else:
                 dffdSHR.update(dFFdSR)
+            if len(dffdSHI):
+                for item in dFFdSI:
+                    dffdSHI[item] = np.hstack((dffdSHI[item],dFFdSI[item]))
+            else:
                 dffdSHI.update(dFFdSI)
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),nOps)
-        dBabdA = np.repeat(np.exp(-parmDict[phfx+'BabU']*SQfactor),nOps)
+        dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
         fotr = np.reshape(((FFR+FP).T-Bab).T,cosp.shape)*Tcorr
         foti = np.reshape(Flack*(FFI+FPP),sinp.shape)*Tcorr
-        if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
-            fa = np.array([fotr*cosp,-foti*sinp])
-            fb = np.array([fotr*sinp,foti*cosp])
-        else:
-            fa = np.array([fotr*cosp,-foti*sinp])
-            fb = np.array([fotr*sinp,foti*cosp])
+        fa = np.array([fotr*cosp,-foti*sinp])
+        fb = np.array([fotr*sinp,foti*cosp])
         fas = np.sum(np.sum(fa,axis=-1),axis=-1)      #real sum over atoms & unique hkl array(2,refBlk,nTwins)
         fbs = np.sum(np.sum(fb,axis=-1),axis=-1)      #imag sum over atoms & uniq hkl
         fax = np.array([-fotr*sinp,-foti*cosp])   #positions array(2,refBlk,nEqv,nAtoms)
         fbx = np.array([fotr*cosp,-foti*sinp])
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,nAtom) Fdata != 0 avoids /0. problem
-        dfadff = fa[0]*Tcorr*atFlg/fotr           #ignores resonant scattering? no sum on Uniq; array(refBlk,nEqv,nAtom)
+        dfadff = np.array([cosp*Tcorr*atFlg,-Flack*sinp*Tcorr*atFlg])   # no sum on Uniq; array(2,refBlk,nEqv,nAtom)
         dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
         dfadx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[:,:,:,:,nxs],axis=-2)
         dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nAtoms)
         dfadua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fa,-2,-1)[:,:,:,:,nxs],axis=-2)
         dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
-        dfbdff = fb[0]*Tcorr*atFlg/fotr         #ignores resonant scattering? no sum on Uniq; array(refBlk,nEqv,nAtom)
+        dfbdff = np.array([sinp*Tcorr*atFlg,Flack*cosp*Tcorr*atFlg])
         dfbdba = np.sum(-sinp*Tcorr,axis=-2)
         dfadfl = np.sum(np.sum(-foti*sinp,axis=-1),axis=-1)
         dfbdfl = np.sum(np.sum(foti*cosp,axis=-1),axis=-1)
@@ -1398,19 +1393,20 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         SB = fbs[0]+fbs[1]
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadfr+fbs[:,:,nxs]*dfbdfr,axis=0)*Mdata/nOps
-            dFdff[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadff[nxs,:,:,:]+fbs[:,:,nxs,nxs]*dfbdff[nxs,:,:,:],axis=0) #not summed on Uniq yet
+            dFdff[:,iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadff+fbs[:,:,nxs,nxs]*dfbdff,axis=0) #not summed on Uniq yet
             dFdx[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadx+fbs[:,:,nxs,nxs]*dfbdx,axis=0)
             dFdui[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs]*dfadui+fbs[:,:,nxs]*dfbdui,axis=0)
             dFdua[iBeg:iFin] = 2.*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)
         else:
             dFdfr[iBeg:iFin] = (2.*SA[:,nxs]*(dfadfr[0]+dfadfr[1])+2.*SB[:,nxs]*(dfbdfr[0]+dfbdfr[1]))*Mdata/nOps
-            dFdff[iBeg:iFin] = (2.*SA[:,nxs,nxs]*dfadff+2.*SB[:,nxs,nxs]*dfbdff)      #not summed on Uniq yet array(Nref,nEqv,nAtom)
+            dFdff[:,iBeg:iFin] = [2.*(fas[0,:,nxs,nxs]*dfadff[0]+fbs[0,:,nxs,nxs]*dfbdff[0]),
+                2.*(fas[1,:,nxs,nxs]*dfadff[1]+fbs[1,:,nxs,nxs]*dfbdff[1])] #not summed on Uniq yet array(Nref,nEqv,nAtom)
             dFdx[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadx[0]+dfadx[1])+2.*SB[:,nxs,nxs]*(dfbdx[0]+dfbdx[1])
             dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])
             dFdua[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadua[0]+dfadua[1])+2.*SB[:,nxs,nxs]*(dfbdua[0]+dfbdua[1])
             dFdfl[iBeg:iFin] = -SA*dfadfl-SB*dfbdfl  #array(nRef,)
-        # dFdbab[iBeg:iFin] = 2.*(fas[0,nxs]*np.array([np.sum(dfadba.T*dBabdA,axis=0),np.sum(-dfadba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])+ \
-        #                     fbs[0,nxs]*np.array([np.sum(dfbdba.T*dBabdA,axis=0),np.sum(-dfbdba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])).T
+        dFdbab[iBeg:iFin] = 2.*(fas[0,nxs]*np.array([np.sum(dfadba.T*dBabdA,axis=0),np.sum(-dfadba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])+ \
+                            fbs[0,nxs]*np.array([np.sum(dfbdba.T*dBabdA,axis=0),np.sum(-dfbdba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])).T
         iBeg += blkSize
 #    print 'derv time %.4f, nref %d, blkSize %d'%(time.time()-time0,nRef,blkSize)
         #loop over atoms - each dict entry is list of derivatives for all the reflections
@@ -1429,11 +1425,11 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         for item in dffdSHR:
             if 'Sh' in item or 'O' in item:
                 if i == int(item.split(':')[1]):
-                    dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSHR[item],(nRef,-1)),axis=1)
+                    dFdvDict[pfx+'RBS'+item] = np.sum(dFdff[0,:,:,i]*np.reshape(dffdSHR[item],(nRef,-1)),axis=1)
             else:
                 if i == int(item.split(':')[1]):
-                    dFdvDict[pfx+item] = np.sum(dFdff[:,:,i]*np.reshape(dffdSHR[item],(nRef,-1)),axis=1)- \
-                    np.sum(dFdff[:,:,i]*np.reshape(dffdSHI[item],(nRef,-1)),axis=1)
+                    dFdvDict[pfx+item] = np.sum(dFdff[0,:,:,i]*np.reshape(dffdSHR[item],(nRef,-1)),axis=1)- \
+                    np.sum(dFdff[1,:,:,i]*np.reshape(dffdSHI[item],(nRef,-1)),axis=1)
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]

@@ -325,6 +325,7 @@ class G2PlotNoteBook(wx.Panel):
         self.allowZoomReset = True # this indicates plot should be updated not initialized
                                    # (BHT: should this be in tabbed panel rather than here?)
         self.lastRaisedPlotTab = None
+        self.savedPlotLims = None
 
     def OnNotebookKey(self,event):
         '''Called when a keystroke event gets picked up by the notebook window
@@ -395,7 +396,7 @@ class G2PlotNoteBook(wx.Panel):
     #     if plotNum is not None:
     #         wx.CallAfter(self.SetSelectionNoRefresh,plotNum)
 
-    def FindPlotTab(self,label,Type,newImage=True):
+    def FindPlotTab(self,label,Type,newImage=True,saveLimits=False):
         '''Open a plot tab for initial plotting, or raise the tab if it already exists
         Set a flag (Page.plotInvalid) that it has been redrawn
         Record the name of the this plot in self.lastRaisedPlotTab
@@ -409,6 +410,8 @@ class G2PlotNoteBook(wx.Panel):
 
         :param bool newImage: forces creation of a new graph for matplotlib
           plots only (defaults as True)
+        :param bool saveLimits: When True, limits for all MPL axes (plots)
+          are saved in self.savedPlotLims.
         :returns: new,plotNum,Page,Plot,limits where
 
           * new: will be True if the tab was just created
@@ -417,8 +420,9 @@ class G2PlotNoteBook(wx.Panel):
             the plot appears
           * Plot: the mpl.Axes object for the graphic (mpl) or the figure for
             openGL.
-          * limits: for mpl plots, when a plot already exists, this will be a tuple
-            with plot scaling. None otherwise.
+          * limits: for mpl plots, when a plot already exists, this 
+            will be a tuple with plot scaling. None otherwise. Only appropriate
+            for plots with one set of axes. 
         '''
         limits = None
         Plot = None
@@ -426,6 +430,7 @@ class G2PlotNoteBook(wx.Panel):
             new = False
             plotNum,Page = self.GetTabIndex(label)
             if Type == 'mpl' or Type == '3d':
+                if saveLimits: self.savePlotLims(Page)
                 Axes = Page.figure.get_axes()
                 Plot = Page.figure.gca()          #get previous plot
                 limits = [Plot.get_xlim(),Plot.get_ylim()] # save previous limits
@@ -469,6 +474,46 @@ class G2PlotNoteBook(wx.Panel):
         Page.toolbar.enableArrows() # Disable Arrow keys if present
         return new,plotNum,Page,Plot,limits
 
+    def savePlotLims(self,Page):
+        '''Make a copy of all the current axes in the notebook object
+        '''
+        self.savedPlotLims = [
+            [i.get_xlim() for i in Page.figure.get_axes()],
+            [i.get_ylim() for i in Page.figure.get_axes()]]
+        #print(f'saved {len(self.savedPlotLims[1])} axes limits')
+
+    def restoreSavedPlotLims(self,Page):
+        '''Restore the plot limits, when previously saved, and when 
+        ``G2frame.restorePlotLimits`` is set to True, which 
+        is done when ``GSASIIpwdplot.refPlotUpdate`` is called with
+        ``restore=True``, which indicates that "live plotting" is done.
+        The restore operation can only be done once, as the limits
+        are deleted after use in this method.
+        '''
+        if self.savedPlotLims is None:
+            #print('---- nothing to restore')
+            return
+        if not hasattr(self.G2frame,'restorePlotLimits'):
+            #print('---- restorePlotLimits not set')
+            return
+        if not self.G2frame.restorePlotLimits:
+            #print('---- restorePlotLimits: not yet')
+            return
+        savedPlotLims = self.savedPlotLims
+        axesList = Page.figure.get_axes()
+        if len(axesList) != len(savedPlotLims[0]):
+            #print('saved lengths differ',len(axesList),len(savedPlotLims[0]))
+            return
+        for i,ax in enumerate(axesList):
+            ax.set_xlim(savedPlotLims[0][i])
+            ax.set_ylim(savedPlotLims[1][i])
+            #print(i,
+            #            savedPlotLims[0][i][0],savedPlotLims[0][i][1],
+            #            savedPlotLims[1][i][0],savedPlotLims[1][i][1])
+        self.savedPlotLims = None
+        self.G2frame.restorePlotLimits = False
+        Page.canvas.draw()
+    
     def _addPage(self,name,page):
         '''Add the newly created page to the notebook and associated lists.
 

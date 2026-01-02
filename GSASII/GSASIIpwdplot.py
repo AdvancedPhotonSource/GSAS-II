@@ -121,20 +121,6 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     G2frame.Extinct = [] # array of extinct reflections
     PlotPatterns(G2frame,plotType=plotType)
 
-def plotVline(Page,Plot,Lines,Parms,pos,color,pickrad,style='dotted'):
-    '''shortcut to plot vertical lines for limits & Laue satellites.
-    Was used for extrapeaks'''
-    if not pickrad: pickrad = 0.0
-    if Page.plotStyle['qPlot']:
-        Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pickrad,linestyle=style))
-    elif Page.plotStyle['dPlot']:
-        Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pickrad,linestyle=style))
-    else:
-        Lines.append(Plot.axvline(pos,color=color,
-            picker=pickrad,linestyle=style))
-        
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      extraKeys=[],refineMode=False,indexFrom='',fromTree=False):
     '''Powder pattern plotting package - displays single or multiple powder 
@@ -209,7 +195,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.SinglePlot = True
             elif 'PWDR' in plottype: # Turning on Weight plot clears previous limits
                 G2frame.FixedLimits['dylims'] = ['','']                
-            newPlot = True
+            #newPlot = True # this resets the x & y limits, not wanted!
         elif event.key in ['shift+1','!']: # save current plot settings as defaults
             # shift+1 assumes US keyboard
             print('saving plotting defaults for',G2frame.GPXtree.GetItemText(G2frame.PatternId))
@@ -1501,15 +1487,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     def refPlotUpdate(Histograms,cycle=None,restore=False):
         '''called to update an existing plot during a Rietveld fit; it only 
         updates the curves, not the reflection marks or the legend. 
-        It should be called with restore=True to reset plotting 
-        parameters after the refinement is done.
+        After the refinement is complete it is called with restore=True to
+        reset plotting parameters.
 
-        Note that the Page.plotStyle values are stashed in G2frame
-        to be restored later
+        Note that the ``Page.plotStyle`` values are stashed in 
+        ``G2frame.savedPlotStyle`` to be restored after FindPlotTab is 
+        called and ``G2frame.restorePlotLimits`` is set so that 
+        saved plot limits will be applied when 
+        ``G2frame.G2plotNB.restoreSavedPlotLims`` is called.
         '''
         if restore:
             (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
                 G2frame.plusPlot,G2frame.SubBack,G2frame.savedPlotStyle) = savedSettings
+            G2frame.restorePlotLimits = True
             return
 
         if plottingItem not in Histograms:
@@ -1724,11 +1714,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                     picker=3.,
                                     label='_FLT_'+phase,lw=0.5)
 
-    # Callback used to update y-limits when user zooms interactively (MG/Cl Sonnet)
+    # Callback used to update y-limits when user zooms interactively (from MG/Cl Sonnet)
     def onGroupXlimChanged(ax):
-        '''Callback to update y-limits for all panels when x-range changes.
+        '''Callback to update y-limits for all panels in group plot when x-range changes.
         We calculate the global y-range across all panels for the visible x-range,
         then explicitly set y-limits on ALL panels.
+        
+        This currently allows the y-limit to be set manually for one plot. If
+        a second one is changed, the previous manual change is lost.
+        I wonder if we can identify which plots have manual changes.
         '''
         xlim = ax.get_xlim()
         # Save x-limits for persistence across refinements
@@ -1831,10 +1825,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         publish = None
     if G2frame.Contour: publish = None
 
-    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl')
+    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab(
+        'Powder Patterns','mpl',saveLimits=refineMode)
     if hasattr(G2frame, 'savedPlotStyle'):
         Page.plotStyle.update(G2frame.savedPlotStyle)
-        del G2frame.savedPlotStyle  # do this only once
+        del G2frame.savedPlotStyle  # do this only once & after Page is defined
     Page.toolbar.setPublish(publish)
     Page.toolbar.arrows['_groupMode'] = None
     # if we are changing histogram types (including group to individual, reset plot)
@@ -2338,13 +2333,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             right=.99,top=1.-3/200.,hspace=0,wspace=0)
                 
         # Connect callback for all panels when sharedX is enabled
+        up,down = adjustDim(0,Page.groupN)
         if (plotOpt['sharedX'] and 
                         (Page.plotStyle['qPlot'] or Page.plotStyle['dPlot'])):
-            up, down = adjustDim(0, Page.groupN)
             Plots[up].callbacks.connect('xlim_changed', onGroupXlimChanged)
                 
         # pretty up the tick labels
-        up,down = adjustDim(0,Page.groupN)
         Plots[up].tick_params(axis='y', direction='inout', left=True, right=True)
         Plots[down].tick_params(axis='y', direction='inout', left=True, right=True)
         if Page.groupN > 1:
@@ -2479,7 +2473,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             up,down = adjustDim(0,Page.groupN)
             G2frame.groupXlim = Plots[up].get_xlim()
         Page.canvas.draw()
-        return
+        wx.CallLater(100,G2frame.G2plotNB.restoreSavedPlotLims,Page)  # restore limits to previous, if saved
+        return # end of group plot
     elif G2frame.Weight and not G2frame.Contour:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         GS_kw = {'height_ratios':[4, 1],}
@@ -2489,10 +2484,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         #     Plot,Plot1 = MPLsubplots(Page.figure, 2, 1, sharex=True, gridspec_kw=GS_kw)
         Plot1.set_ylabel(r'$\mathsf{\Delta(I)/\sigma(I)}$',fontsize=16)
         Plot1.set_xlabel(xLabel,fontsize=16)
-        Page.figure.subplots_adjust(left=16/100.,bottom=16/150.,
-            right=.98,top=1.-16/200.,hspace=0)
     else:
         Plot.set_xlabel(xLabel,fontsize=16)
+    Page.figure.subplots_adjust(left=8/100.,bottom=16/150.,
+            right=.98,top=1.-8/100.,hspace=0,wspace=0)
     if not G2frame.Contour:
         Page.toolbar.enableArrows('',(PlotPatterns,G2frame))
     if G2frame.Weight and G2frame.Contour:
@@ -3293,7 +3288,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.dataWindow.moveTickSpc.Enable(True)
         if DifLine[0]:
             G2frame.dataWindow.moveDiffCurve.Enable(True)
-    if refineMode: return refPlotUpdate
+    if refineMode:
+        return refPlotUpdate
+    else:
+        wx.CallLater(100,G2frame.G2plotNB.restoreSavedPlotLims,Page)  # restore limits to previous, if saved
 
 def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
     '''Creates a window to show a customizable "Rietveld" plot. Exports that 
@@ -4810,3 +4808,17 @@ def configPartialDisplay(G2frame,phaseColors,RefreshPlot):
     mainSizer.Fit(dlg)
     dlg.ShowModal()
     StyleChange()
+
+def plotVline(Page,Plot,Lines,Parms,pos,color,pickrad,style='dotted'):
+    '''shortcut to plot vertical lines for limits & Laue satellites.
+    Was used for extrapeaks'''
+    if not pickrad: pickrad = 0.0
+    if Page.plotStyle['qPlot']:
+        Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
+            picker=pickrad,linestyle=style))
+    elif Page.plotStyle['dPlot']:
+        Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,pos),color=color,
+            picker=pickrad,linestyle=style))
+    else:
+        Lines.append(Plot.axvline(pos,color=color,
+            picker=pickrad,linestyle=style))

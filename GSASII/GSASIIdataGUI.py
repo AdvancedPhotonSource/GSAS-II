@@ -5538,6 +5538,8 @@ No: least-squares fitting starts with previously fit structure factors.'''
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
+            # true when a pattern is selected for plotting, which includes
+            # when a group is selected.
             refPlotUpdate = G2pwpl.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
             refPlotUpdate = None
@@ -9182,7 +9184,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         # if GSASIIpath.GetConfigValue('debug'):
         #     print('Debug: reloading',G2gr)
         #     from importlib import reload
-        #     reload(G2G)
+        #     reload(G2pwpl)
         #     reload(G2gr)
         G2gr.UpdateGroup(G2frame,item)
     elif GSASIIpath.GetConfigValue('debug'):

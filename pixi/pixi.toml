@@ -67,6 +67,10 @@ gcc = ">=14.2.0,<14.3"
 compilers = ">=1.11.0,<2"
 clang = ">=19.1.7,<22"
 
+[target.osx-64.dependencies]
+compilers = ">=1.11.0,<2"
+clang = ">=19.1.7,<22"
+
 # for now assume gcc & gfortran already installed in Linux
 
 # The list above contains a number of items that are needed only for

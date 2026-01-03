@@ -188,15 +188,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         except TypeError:
             G2frame.G2plotNB.status.SetStatusText(f'Select {plottype} pattern first',1)
             return
+        if 'GROUP' in plottype: # save plot limits in case we want to restore them 
+            G2frame.G2plotNB.savePlotLims(Page)
         newPlot = False
-        if event.key == 'w':
+        if event.key == 'w' and not 'GROUP' in plottype:
             G2frame.Weight = not G2frame.Weight
             if not G2frame.Weight and not G2frame.Contour and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
             elif 'PWDR' in plottype: # Turning on Weight plot clears previous limits
                 G2frame.FixedLimits['dylims'] = ['','']                
             #newPlot = True # this resets the x & y limits, not wanted!
-        elif event.key in ['shift+1','!']: # save current plot settings as defaults
+        elif event.key in ['shift+1','!'] and not 'GROUP' in plottype: # save current plot settings as defaults
             # shift+1 assumes US keyboard
             print('saving plotting defaults for',G2frame.GPXtree.GetItemText(G2frame.PatternId))
             data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
@@ -213,6 +215,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif event.key == 'f' and ('PWDR' in plottype or 'GROUP'  in plottype): # short,full length or no tick-marks
             if G2frame.Contour: return
             Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
+            if 'GROUP' in plottype: G2frame.restorePlotLimits = True
         elif event.key == 'x' and groupName is not None: # share X axis scale for Pattern Groups
             plotOpt['sharedX'] = not plotOpt['sharedX']
             # Clear saved x-limits when toggling sharedX mode (MG/Cl Sonnet)
@@ -304,6 +307,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif Page.plotStyle['Offset'][0] > -100.:
                 Page.plotStyle['Offset'][0] -= 10.
         elif event.key == 'g':
+            if 'GROUP' in plottype: G2frame.restorePlotLimits = True
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         elif event.key == 'l' and not G2frame.SinglePlot:
             Page.plotStyle['Offset'][1] -= 1.
@@ -2257,7 +2261,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.Choice = [' key press',
                 'f: toggle full-length ticks',
                 'g: toggle grid',
-                's: toggle sqrt plot',
+                #'s: toggle sqrt plot',  # TODO: implement this
                 'q: toggle Q plot',
                 't: toggle d-spacing plot',
                 'x: share x-axes (Q/d only)']
@@ -2326,7 +2330,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             totalrange += gXmax[i]-gXmin[i]
         if plotOpt['sharedX'] and (
                 Page.plotStyle['qPlot'] or Page.plotStyle['dPlot']):
-            Page.figure.text(0.001,0.94,'X shared',fontsize=11,
+            Page.figure.text(0.94,0.03,'X shared',fontsize=10,
                                  color='g')
             GS_kw = {'height_ratios':[4, 1]}
             #Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex=True,
@@ -2484,8 +2488,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         (Page.plotStyle['qPlot'] or Page.plotStyle['dPlot'])):
             up,down = adjustDim(0,Page.groupN)
             G2frame.groupXlim = Plots[up].get_xlim()
+        wx.CallAfter(G2frame.G2plotNB.restoreSavedPlotLims,Page)  # restore limits to previous, if saved & requested
         Page.canvas.draw()
-        wx.CallLater(100,G2frame.G2plotNB.restoreSavedPlotLims,Page)  # restore limits to previous, if saved
         return # end of group plot
     elif G2frame.Weight and not G2frame.Contour:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below

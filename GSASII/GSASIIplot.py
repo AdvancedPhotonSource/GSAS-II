@@ -474,30 +474,30 @@ class G2PlotNoteBook(wx.Panel):
         Page.toolbar.enableArrows() # Disable Arrow keys if present
         return new,plotNum,Page,Plot,limits
 
-    def savePlotLims(self,Page):
+    def savePlotLims(self,Page,debug=False):
         '''Make a copy of all the current axes in the notebook object
         '''
         self.savedPlotLims = [
             [i.get_xlim() for i in Page.figure.get_axes()],
             [i.get_ylim() for i in Page.figure.get_axes()]]
-        #print(f'saved {len(self.savedPlotLims[1])} axes limits')
-
+        if debug:
+            print(f'saved {len(self.savedPlotLims[1])} axes limits')
+            #print( self.savedPlotLims)
     def restoreSavedPlotLims(self,Page):
         '''Restore the plot limits, when previously saved, and when 
         ``G2frame.restorePlotLimits`` is set to True, which 
         is done when ``GSASIIpwdplot.refPlotUpdate`` is called with
-        ``restore=True``, which indicates that "live plotting" is done.
+        ``restore=True``, which indicates that "live plotting" is 
+        finished. This is also set for certain plot key-press
+        combinations.
         The restore operation can only be done once, as the limits
         are deleted after use in this method.
         '''
         if self.savedPlotLims is None:
             #print('---- nothing to restore')
             return
-        if not hasattr(self.G2frame,'restorePlotLimits'):
+        if not getattr(self.G2frame,'restorePlotLimits',False):
             #print('---- restorePlotLimits not set')
-            return
-        if not self.G2frame.restorePlotLimits:
-            #print('---- restorePlotLimits: not yet')
             return
         savedPlotLims = self.savedPlotLims
         axesList = Page.figure.get_axes()

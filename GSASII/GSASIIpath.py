@@ -1923,6 +1923,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
         count += 1
         r = None
         repeat = False
+        if GetConfigValue('debug'): print('request to',URL)
         try:
             if timeout is not None:
                 r = reqopt(URL,params=postdict,cookies=usecookie,

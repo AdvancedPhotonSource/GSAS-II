@@ -107,10 +107,10 @@ def test_GetStdSGset():
     
 if __name__ == '__main__':
     # run self-tests
-    test_GetStdSGset()
-    test_SUBGROUPSMAG()
-    test_SUBGROUPS()
-    test_pseudosym()
-    test_CheckLattice()
-    test_createStdSetting()
+    test_GetStdSGset()      # checkgr_gsas.pl
+    test_SUBGROUPSMAG()     # subgrmag1_general_GSAS.pl 
+    test_SUBGROUPS()        # subgrmag1_general_GSAS.pl 
+    test_pseudosym()        # nph-pseudosym
+    #test_CheckLattice()     # nph-pseudolattice (removed from Bilbao)
+    test_createStdSetting() # nph-cif2std
     print ("OK")

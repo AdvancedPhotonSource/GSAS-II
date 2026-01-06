@@ -1225,7 +1225,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FFR = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,nOps*len(TwinLaw),axis=0)
         FFI = np.zeros_like(FFR)
-        #FFR,FFI have to have the Slater*Sph.Har.*atm form factor for each refletion in Uniq for Q atoms; otherwise just normal FF
+        #FFR,FFI have to have the Slater*Sph.Har.*atm form factor for each reflection in Uniq for Q atoms; otherwise just normal FF
         #this must be done here. NB: same place for non-spherical atoms; same math except no Bessel part.
         if pfx in SHCdict:
             FFR,FFI = MakeSpHarmFF(Uniq,Amat,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FFR,SQ)
@@ -1422,9 +1422,9 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]    #"should" be *2.0 but not true
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for item in dffdSHR:
             if 'Sh' in item or 'O' in item:
                 if i == int(item.split(':')[1]):
@@ -1736,9 +1736,9 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
     return dFdvDict
 
 def StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
@@ -1898,9 +1898,9 @@ def StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU11:'+str(i)] = np.sum(dFdua.T[0][i]*TwinFr[:,nxs],axis=0)
         dFdvDict[pfx+'AU22:'+str(i)] = np.sum(dFdua.T[1][i]*TwinFr[:,nxs],axis=0)
         dFdvDict[pfx+'AU33:'+str(i)] = np.sum(dFdua.T[2][i]*TwinFr[:,nxs],axis=0)
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*np.sum(dFdua.T[3][i]*TwinFr[:,nxs],axis=0)
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*np.sum(dFdua.T[4][i]*TwinFr[:,nxs],axis=0)
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*np.sum(dFdua.T[5][i]*TwinFr[:,nxs],axis=0)
+        dFdvDict[pfx+'AU12:'+str(i)] = np.sum(dFdua.T[3][i]*TwinFr[:,nxs],axis=0)
+        dFdvDict[pfx+'AU13:'+str(i)] = np.sum(dFdua.T[4][i]*TwinFr[:,nxs],axis=0)
+        dFdvDict[pfx+'AU23:'+str(i)] = np.sum(dFdua.T[5][i]*TwinFr[:,nxs],axis=0)
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
     for i in range(nTwin):
@@ -2452,9 +2452,9 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for j in range(FSSdata.shape[1]):        #loop over waves Fzero & Fwid?
             dFdvDict[pfx+'Fsin:'+str(i)+':'+str(j)] = dFdGf.T[0][j][i]
             dFdvDict[pfx+'Fcos:'+str(i)+':'+str(j)] = dFdGf.T[1][j][i]
@@ -2692,9 +2692,9 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for j in range(FSSdata.shape[1]):        #loop over waves Fzero & Fwid?
             dFdvDict[pfx+'Fsin:'+str(i)+':'+str(j)] = dFdGf.T[0][j][i]
             dFdvDict[pfx+'Fcos:'+str(i)+':'+str(j)] = dFdGf.T[1][j][i]

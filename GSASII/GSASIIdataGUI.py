@@ -8512,11 +8512,20 @@ def UpdatePWHKPlot(G2frame,kind,item):
     G2frame.GPXtree.SetItemPyData(item,data)
     G2frame.PatternId = item
     if kind in ['PWDR','SASD','REFD',]:
-        NewPlot = True
-        if 'Contour' in dir(G2frame) and G2frame.Contour:
-            pass
-        elif 'xylim' in dir(G2frame):
+        # When I added code to allow for contour plots from unequally spaced data
+        # I forced all contour plots to replot with newPlot=True. I'm not sure if
+        # this is actually needed and for autointegration we really don't want 
+        # plots to rescale.
+        # NewPlot = True
+        # if getattr(G2frame,'Contour',False):
+        #     pass
+        # if hasattr(G2frame,'xylim'):
+        #    NewPlot = False
+        # now only rescale when needed
+        if hasattr(G2frame,'xylim'):
             NewPlot = False
+        else:
+            NewPlot = True
         # if GSASIIpath.GetConfigValue('debug'):
         #     from importlib import reload
         #     reload(G2pwpl)
@@ -8964,16 +8973,21 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2pdG.UpdatePeakGrid(G2frame,data)
         for i in G2frame.ExportPeakList: i.Enable(True)
         newPlot = False
-        if hasattr(G2frame,'Contour'):
-            if G2frame.Contour:
-                G2frame.Contour = False
-                newPlot = True
+        if getattr(G2frame,'Contour','False'):
+            G2frame.Contour = False
+            newPlot = True
         G2pwpl.PlotPatterns(G2frame,newPlot,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Background':
+        NewPlot = False  # plot using previous limits
+        if getattr(G2frame,'Contour',False):  # except if contour plot
+            G2frame.Contour = False
+            NewPlot = True
+        elif not hasattr(G2frame,'xylim'):   # or no limits present
+            NewPlot = True
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
         G2pdG.UpdateBackground(G2frame,data)
-        G2pwpl.PlotPatterns(G2frame,True,fromTree=True)
+        G2pwpl.PlotPatterns(G2frame,newPlot=NewPlot,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Limits':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         datatype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
@@ -9035,10 +9049,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2plt.PlotPowderLines(G2frame)
         else:
             newPlot = False
-            if hasattr(G2frame,'Contour'):
-                if G2frame.Contour:
-                    G2frame.Contour = False
-                    newPlot = True
+            if getattr(G2frame,'Contour','False'):
+                G2frame.Contour = False
+                newPlot = True
             G2pwpl.PlotPatterns(G2frame,newPlot,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Unit Cells List':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
@@ -9066,10 +9079,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2pdG.UpdateReflectionGrid(G2frame,data)
         G2frame.dataWindow.HideShow.Enable(False)
         newPlot = False
-        if hasattr(G2frame,'Contour'):
-            if G2frame.Contour:
-                G2frame.Contour = False
-                newPlot = True
+        if getattr(G2frame,'Contour','False'):
+            G2frame.Contour = False
+            newPlot = True
         G2pwpl.PlotPatterns(G2frame,newPlot,fromTree=True)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection List':    #HKLF reflections
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)

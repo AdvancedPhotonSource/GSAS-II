@@ -2991,7 +2991,7 @@ def SHarmcal(SytSym,SHFln,psi,gam):
             SHVal += (SHFln[term][0]*Ksl)
     return SHVal
 
-def KslCalc(trm,psi,gam,RI=False):
+def KslCalc(trm,psi,gam):
     '''Compute one angular part term in spherical harmonics
 
     :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
@@ -3002,21 +3002,9 @@ def KslCalc(trm,psi,gam,RI=False):
     '''
     l,m = eval(trm.strip('C').strip('c'))
     if 'c' in trm:
-        if not RI:
-            return CubicSHarm(l,m,psi,gam)
-        else:
-            return CubicSHarm(l,m,psi,gam),0.0
-
+        return CubicSHarm(l,m,psi,gam)
     else:
-        if not RI:
-            return SphHarmAng(l,m,1.0,psi,gam)
-        else:
-            try:
-            #### TODO: this will be deprecated in scipy 1.17.0
-                ylmp = SQ2*spsp.sph_harm(m,l,rpd*psi,rpd*gam)*(-1)**m   #wants radians; order then degree
-            except AttributeError: #new one sph_harm_y in scipy 1.15.1 but buggy?
-                ylmp = SQ2*spsp.sph_harm_y(l,m,rpd*psi,rpd*gam)*(-1)**m #order L,M makes more sense
-            return np.real(ylmp),np.imag(ylmp)
+        return SphHarmAng(l,m,1.0,psi,gam)
 
 def SphHarmAng(L,M,P,Th,Ph):
     ''' Compute spherical harmonics values using scipy.special.sph_harm

@@ -2044,7 +2044,7 @@ def UpdateBackground(G2frame,data):
             Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':12,5,g',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':12,3,g',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':12,5,g',wg.GRID_VALUE_BOOL]
+            wg.GRID_VALUE_FLOAT+':12,3,g',wg.GRID_VALUE_BOOL]
             peaksTable = G2G.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
             peaksGrid = G2G.GSGrid(parent=G2frame.dataWindow)
             peaksGrid.SetRowLabelSize(45)
@@ -4825,45 +4825,45 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         OnHklShow(None,indexFrom=' Indexing from transformed unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def OnLatSym(event):
-        'Run Bilbao PseudoLattice cell search'
-        # look up a space group matching Bravais lattice (should not matter which one)
-        bravaisSPG = {'Fm3m':225,'Im3m':229,'Pm3m':221,'R3-H':146,'P6/mmm':191,
-                       'I4/mmm':139,'P4/mmm':123,'Fmmm':69,'Immm':71,
-                       'Cmmm':65,'Pmmm':47,'C2/m':12,'P2/m':10,'P1':2}
-        pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
-        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
-        sgNum = bravaisSPG.get(controls[5],0)
-        if sgNum < 1:
-            wx.MessageBox('Sorry, only standard cell settings are allowed, please transform axes',caption='Bilbao requires standard settings',style=wx.ICON_EXCLAMATION)
-            return
-        cell = controls[6:12]
-        tolerance = 5.
-        dlg = G2G.SingleFloatDialog(G2frame,'Tolerance',
-                'Enter angular tolerance for search',5.0,[.1,30.],"%.1f")
-        if dlg.ShowModal() == wx.ID_OK:
-            tolerance = dlg.GetValue()
-            dlg.Destroy()
-        else:
-            dlg.Destroy()
-            return
-        wx.MessageBox(' For use of PSEUDOLATTICE, please cite:\n\n'+
-                          G2G.GetCite('Bilbao: PSEUDOLATTICE'),
-                          caption='Bilbao PSEUDOLATTICE',
-                          style=wx.ICON_INFORMATION)
-        wx.BeginBusyCursor()
-        page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
-        wx.EndBusyCursor()
-        if not page: return
-        cells.clear()
-        for i,(cell,mat) in enumerate(kSUB.parseBilbaoCheckLattice(page)):
-            cells.append([])
-            cells[-1] += [mat,0,16]
-            cells[-1] += cell
-            cells[-1] += [G2lat.calc_V(G2lat.cell2A(cell)),False,False]
-        G2frame.GPXtree.SetItemPyData(pUCid,data)
-        G2frame.OnFileSave(event)
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+    # def OnLatSym(event):
+    #     'Run Bilbao PseudoLattice cell search'
+    #     # look up a space group matching Bravais lattice (should not matter which one)
+    #     bravaisSPG = {'Fm3m':225,'Im3m':229,'Pm3m':221,'R3-H':146,'P6/mmm':191,
+    #                    'I4/mmm':139,'P4/mmm':123,'Fmmm':69,'Immm':71,
+    #                    'Cmmm':65,'Pmmm':47,'C2/m':12,'P2/m':10,'P1':2}
+    #     pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+    #     controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
+    #     sgNum = bravaisSPG.get(controls[5],0)
+    #     if sgNum < 1:
+    #         wx.MessageBox('Sorry, only standard cell settings are allowed, please transform axes',caption='Bilbao requires standard settings',style=wx.ICON_EXCLAMATION)
+    #         return
+    #     cell = controls[6:12]
+    #     tolerance = 5.
+    #     dlg = G2G.SingleFloatDialog(G2frame,'Tolerance',
+    #             'Enter angular tolerance for search',5.0,[.1,30.],"%.1f")
+    #     if dlg.ShowModal() == wx.ID_OK:
+    #         tolerance = dlg.GetValue()
+    #         dlg.Destroy()
+    #     else:
+    #         dlg.Destroy()
+    #         return
+    #     wx.MessageBox(' For use of PSEUDOLATTICE, please cite:\n\n'+
+    #                       G2G.GetCite('Bilbao: PSEUDOLATTICE'),
+    #                       caption='Bilbao PSEUDOLATTICE',
+    #                       style=wx.ICON_INFORMATION)
+    #     wx.BeginBusyCursor()
+    #     page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
+    #     wx.EndBusyCursor()
+    #     if not page: return
+    #     cells.clear()
+    #     for i,(cell,mat) in enumerate(kSUB.parseBilbaoCheckLattice(page)):
+    #         cells.append([])
+    #         cells[-1] += [mat,0,16]
+    #         cells[-1] += cell
+    #         cells[-1] += [G2lat.calc_V(G2lat.cell2A(cell)),False,False]
+    #     G2frame.GPXtree.SetItemPyData(pUCid,data)
+    #     G2frame.OnFileSave(event)
+    #     wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def OnNISTLatSym(event):
         'Run NIST*LATTICE cell search'
@@ -6990,7 +6990,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnRunSubs, id=G2G.wxID_RUNSUB)
     G2frame.Bind(wx.EVT_MENU, OnRunSubsMag, id=G2G.wxID_RUNSUBMAG)
-    G2frame.Bind(wx.EVT_MENU, OnLatSym, id=G2G.wxID_LATSYM)
+    #G2frame.Bind(wx.EVT_MENU, OnLatSym, id=G2G.wxID_LATSYM) # removed from site
     G2frame.Bind(wx.EVT_MENU, OnNISTLatSym, id=G2G.wxID_NISTLATSYM)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)

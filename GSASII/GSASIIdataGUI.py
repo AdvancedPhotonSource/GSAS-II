@@ -6882,7 +6882,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # PWDR / Unit Cells List
         G2G.Define_wxId('wxID_INDEXPEAKS', 'wxID_REFINECELL', 'wxID_COPYCELL', 'wxID_MAKENEWPHASE',
             'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL',
-            'wxID_RUNSUB','wxID_RUNSUBMAG','wxID_LATSYM')
+            'wxID_RUNSUB','wxID_RUNSUBMAG')
+        #G2G.Define_wxId('wxID_LATSYM')
         G2G.Define_wxId('wxID_NISTLATSYM')
         G2G.Define_wxId('wxID_SHOWGENHKLS')
         G2G.Define_wxId('wxID_CLEARCELLS')
@@ -6893,9 +6894,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
             self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell',
                 'Find cells that index fitted peaks')
-            self.IndexEdit.Append(G2G.wxID_LATSYM,'Cell Symmetry Search-Bilbao',
-                'Run Bilbao "Lattice Symmetry" to find higher symmetry cells')
-            self.IndexEdit.Append(G2G.wxID_NISTLATSYM,'Cell Symmetry Search-NIST*LATTICE',
+            # self.IndexEdit.Append(G2G.wxID_LATSYM,'Cell Symmetry Search-Bilbao',
+            #     'Run Bilbao "Lattice Symmetry" to find higher symmetry cells')
+            self.IndexEdit.Append(G2G.wxID_NISTLATSYM,'Cell Symmetry Search',
                 'Run NIST*LATTICE to find higher symmetry cells')
             self.RunSubGroups = self.IndexEdit.Append(G2G.wxID_RUNSUB,'Run SUBGROUPS',
                 'If disabled, do Load Phase first')

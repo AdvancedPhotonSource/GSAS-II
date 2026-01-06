@@ -24,9 +24,15 @@ from . import GSASIIspc as G2spc
 from . import GSASIIlattice as G2lat
 from . import GSASIIElem as G2elem
 from . import GSASIIctrlGUI as G2G
-bilbaoURL = "http://webbdcrista2.ehu.es"
+bilbaoURL = "http://cryst.ehu.es"
 bilbaoSite = f'{bilbaoURL}/cgi-bin/cryst/programs/'
+# routines used here:
 pseudosym = 'pseudosym/nph-pseudosym'
+#pseudolattice = "pseudosym/nph-pseudolattice"
+cif2std = 'nph-cif2std'
+subgrmag1 = 'subgrmag1_general_GSAS.pl?'
+checkgr = 'checkgr_gsas.pl'
+minsup = 'nph-minsup' # coded but not used
 timeout=150  # time to wait for Bilbao to respond; 2.5 minutes
 
 def postpostURL(page):
@@ -38,7 +44,7 @@ def postpostURL(page):
         import re
         print(f"Website down? See message below:\n\n{re.sub('<.+>','',page)}")
         try:
-            dlg = G2G.viewWebPage(wx.GetApp().GetMainTopWindow(),URL,HTML=page)
+            G2G.viewWebPage(wx.GetApp().GetMainTopWindow(),HTML=page)
         except:
             pass
         return True
@@ -98,7 +104,7 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
-    page = GSASIIpath.postURL(bilbaoSite+'subgrmag1_general_GSAS.pl?',postdict)
+    page = GSASIIpath.postURL(bilbaoSite+subgrmag1,postdict)
     if postpostURL(page): return None,None
     if not page:
         print('connection error - not on internet?')
@@ -212,7 +218,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
-    page = GSASIIpath.postURL(bilbaoSite+'subgrmag1_general_GSAS.pl?',postdict)
+    page = GSASIIpath.postURL(bilbaoSite+subgrmag1,postdict)
     if postpostURL(page): return None,None
     if not page:
         print('connection error - not on internet?')
@@ -267,20 +273,20 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
     result = list(zip(SPGPs,BNSs,MVs,itemList,altList,superList))
     return result,baseList
 
-def subBilbaoCheckLattice(spgNum,cell,tol=5):
-    '''submit a unit cell to  Bilbao PseudoLattice
-    '''
-    psSite = bilbaoSite + "pseudosym/nph-pseudolattice"
-    cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
-    datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
-        str(int(spgNum)),cellstr,str(int(tol)))
-    page = GSASIIpath.postURL(psSite,datastr,timeout=timeout)
-    if postpostURL(page): return None
-    if not page:
-        print('connection error - not on internet?')
-        return None
-    page = page.replace('<font style= "text-decoration: overline;">','<font>-')
-    return page
+# def subBilbaoCheckLattice(spgNum,cell,tol=5):
+#     '''submit a unit cell to  Bilbao PseudoLattice
+#     '''
+#     psSite = bilbaoSite + pseudolattice
+#     cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
+#     datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
+#         str(int(spgNum)),cellstr,str(int(tol)))
+#     page = GSASIIpath.postURL(psSite,datastr,timeout=timeout)
+#     if postpostURL(page): return None
+#     if not page:
+#         print('connection error - not on internet?')
+#         return None
+#     page = page.replace('<font style= "text-decoration: overline;">','<font>-')
+#     return page
 
 def parseBilbaoCheckLattice(page):
     '''find the cell options from the web page returned by Bilbao PseudoLattice
@@ -320,7 +326,7 @@ def GetStdSGset(SGData=None, oprList=[]):
       Note that the new cell is given by G2lat.TransformCell([a,b,...],xformM)
     '''
     import re
-    Site = bilbaoSite + 'checkgr.pl'
+    Site = bilbaoSite + checkgr
 
     if not bool(oprList) ^ bool(SGData):
         raise ValueError('GetStdSGset: Must specify oprList or SGData and not both')
@@ -376,7 +382,7 @@ def GetSupergroup(SGnum,dlg=None):
         Note that the new cell is given by G2lat.TransformCell([a,b,...],M)
     '''
     import re
-    Site = bilbaoSite + 'nph-minsup'
+    Site = bilbaoSite + minsup
     if dlg: dlg.Update(0,newmsg='Waiting for initial web response')
     out = GSASIIpath.postURL(Site,{'gnum':f'{SGnum:}'},timeout=timeout)
     if postpostURL(out): return None
@@ -825,7 +831,6 @@ def createStdSetting(cifFile,rd):
         # macs; it should not!
         print('Warning: failed to import requests. Python config error')
         return None
-    cif2std = 'nph-cif2std'
     if not os.path.exists(cifFile):
         print(f'createStdSetting error: file {cifFile} not found')
         return False
@@ -835,6 +840,8 @@ def createStdSetting(cifFile,rd):
         print(f'''Submitting structure to Bilbao "CIF to Standard Setting" (strtidy)
     web service. Please cite:
     {G2G.GetCite('Bilbao: PSEUDOLATTICE',wrap=70,indent=5)}''')
+        if GSASIIpath.GetConfigValue('debug'): print('request to',bilbaoSite+cif2std)
+
         r0 = requests.post(bilbaoSite+cif2std, files=files, data=values)
         structure = r0.text[r0.text.lower().find('<pre>')+5:r0.text.lower().find('</pre>')].strip()
         spnum,celllist,natom = structure.split('\n')[:3]

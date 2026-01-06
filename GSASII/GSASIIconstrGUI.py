@@ -1444,11 +1444,17 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             btn = wx.Button(panel, wx.ID_ANY, 'Show Errors')
             btn.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(panel,errmsg,header='Error info'))
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
-            btn.Enable(len(errmsg) > 0)
+            try:
+                btn.Enable(len(errmsg) > 0)
+            except NameError:
+                pass
             btn = wx.Button(panel, wx.ID_ANY, 'Show Warnings')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
             btn.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(panel,warnmsg.replace('&','&&')))
-            btn.Enable(len(warnmsg) > 0)
+            try:
+                btn.Enable(len(warnmsg) > 0)
+            except NameError:
+                pass
             btn = wx.Button(panel, wx.ID_ANY, 'Show generated constraints')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
             txt = G2mv.VarRemapShow(linelen=999).replace('&','&&')

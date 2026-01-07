@@ -8,6 +8,7 @@ import os
 import sys
 import numpy as np
 import pytest
+import warnings
 
 import importlib.util
 if importlib.util.find_spec('GSASII') is None:
@@ -78,15 +79,19 @@ brav_type = "hR"
 
 try:
     import seekpath
-    k_search = kvs.kVector(
-        brav_type,
-        pcell,
-        ppos,
-        nums,
-        nuc_p,
-        spos,
-        threshold
-    )
+    # Suppress DeprecationWarning from spglib during module-level initialization
+    # to prevent pytest from treating it as an error during test collection
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        k_search = kvs.kVector(
+            brav_type,
+            pcell,
+            ppos,
+            nums,
+            nuc_p,
+            spos,
+            threshold
+        )
 except ModuleNotFoundError:
     k_search = None
 

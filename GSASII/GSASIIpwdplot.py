@@ -2605,12 +2605,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             xye0 = xye[0]   # drop mask for contouring
 
         # convert all X values and then reapply mask if xye0 is a masked array
-        mask = None
-        if hasattr(xye0,'mask'): mask = xye0.mask
+        if hasattr(xye0,'mask'): 
+            mask = xye0.mask
+            X = xye0.data
+        else:
+            mask = None
+            X = xye0
         if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
-            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,xye0.data),mask=mask)
+            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,X),mask=mask)
         elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
-            X = ma.array(G2lat.Pos2dsp(Parms,xye0.data),mask=mask)
+            X = ma.array(G2lat.Pos2dsp(Parms,X),mask=mask)
         else:
             X = copy.deepcopy(xye0)
         if ifpicked and not G2frame.Contour:
@@ -2950,7 +2954,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
                         G2plt.Write2csv(fp,['masked X','X','obs','calc','bkg','diff'],header=True)
                         for i in range(len(X)):
-                            G2plt.Write2csv(fp,[X[i],X.data[i],Y[i],Z[i],W[i],D[i]],header=False)
+                            if hasattr(X,'mask'): 
+                                G2plt.Write2csv(fp,[X[i],X.data[i],Y[i],Z[i],W[i],D[i]],header=False)
+                            else:
+                                G2plt.Write2csv(fp,[X[i],X[i],Y[i],Z[i],W[i],D[i]],header=False)
                         fp.close()
                         print('file',plotOpt['CSVfile'],'written')
                         
@@ -3159,7 +3166,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     siz = 6
                 elif len(legends) > 15:
                     siz = 8
-                lngd = Plot.legend(handles,legends,title=msg,loc='best',
+                Plot.legend(handles,legends,title=msg,loc='best',
                                        fontsize=siz)
     if G2frame.Contour:
         time0 = time.time()
@@ -3283,7 +3290,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
         # Page.canvas.draw_idle() # schedule an MPL update (needs test)
         if G2frame.Contour: # for contour plots expand y-axis to include all histograms
-            G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)))
+            G2frame.xylim = (G2frame.xylim[0], (-0.5,len(PlotList)-0.5))
         if 'PWDR' in plottype:
             Plot.set_xlim(G2frame.xylim[0])
             Plot.set_ylim(G2frame.xylim[1])
@@ -3293,6 +3300,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.ToolBarDraw()
     else:
         G2frame.xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.canvas.draw()
+    if G2frame.Contour: # for contour plots remove non-integer yaxis labels as they are a distraction
+        labels = []
+        vals = []
+        for item in Plot.get_yticklabels():
+            lbl = item.get_text()
+            try:
+                val = float(lbl.replace('\u2212', '-'))
+                if int(val) != val: 
+                    continue
+                elif val < 0 or val > G2frame.xylim[1][1]: # out of range labels not needed
+                    continue
+                else:
+                    vals.append(val)
+                    labels.append(str(int(val)))
+            except:
+                pass
+        Plot.yaxis.set_ticks(vals,labels)
         Page.canvas.draw()
     olderr = np.seterr(invalid='ignore') #ugh - this removes a matplotlib error for mouse clicks in log plots
     # and sqrt(-ve) in np.where usage               

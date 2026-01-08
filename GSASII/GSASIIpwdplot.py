@@ -2605,15 +2605,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             xye0 = xye[0]   # drop mask for contouring
 
         # convert all X values and then reapply mask if xye0 is a masked array
+        mask = None
         if hasattr(xye0,'mask'): 
             mask = xye0.mask
             X = xye0.data
         else:
             mask = None
             X = xye0
-        if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
+        if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
             X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,X),mask=mask)
-        elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
+        elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
             X = ma.array(G2lat.Pos2dsp(Parms,X),mask=mask)
         else:
             X = copy.deepcopy(xye0)

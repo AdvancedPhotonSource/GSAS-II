@@ -494,6 +494,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             plotOpt['CSVfile'] = G2G.askSaveFile(G2frame,'','.csv',
                                         'Comma separated variable file')
             if plotOpt['CSVfile']: plotOpt['saveCSV'] = True
+        elif event.key == 'k':    # toggle use of crosshair cursor
+            if getattr(G2frame,'CrossHairs',False):
+                G2frame.CrossHairs = False
+            else:
+                G2frame.CrossHairs = True
         else:
             #print('no binding for key',event.key)
             return
@@ -1846,6 +1851,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if hasattr(G2frame, 'savedPlotStyle'):
         Page.plotStyle.update(G2frame.savedPlotStyle)
         del G2frame.savedPlotStyle  # do this only once & after Page is defined
+    if not getattr(G2frame,'CrossHairs',False):
+        if getattr(G2frame,'cursor',False): del G2frame.cursor
+    else:
+        G2frame.cursor = mpl.widgets.Cursor(Plot, useblit=True, color='red', linewidth=0.5)
     Page.toolbar.setPublish(publish)
     Page.toolbar.arrows['_groupMode'] = None
     # if we are changing histogram types (including group to individual, reset plot)
@@ -2052,13 +2061,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
         ifLimits = True
     # keys in use for graphics control:
-    #    a,b,c,d,e,f,g,i,l,m,n,o,p,q,r,s,t,u,w,x, (unused: j, k, y, z)
+    #    a,b,c,d,e,f,g,i,k,l,m,n,o,p,q,r,s,t,u,w,x, (unused: j, y, z)
     #    also: +,/, C,D,S,U
     if G2frame.Contour:
         Page.Choice = (' key press','b: toggle subtract background',
             'd: lower contour max','u: raise contour max',
             'D: lower contour min','U: raise contour min',
             'o: reset contour limits','g: toggle grid',
+            'k: toggle cross-hair cursor',
             'i: interpolation method','S: color scheme','c: contour off',
             'e: toggle temperature for y-axis','s: toggle sqrt plot',
             'w: toggle w(Yo-Yc) contour plot','h: toggle channel # plot',
@@ -2072,6 +2082,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 'a: add magnification region','b: toggle subtract background',
                 'c: contour on','x: toggle excluded regions','T: toggle plot title',
                 'f: toggle full-length ticks','g: toggle grid',
+                'k: toggle cross-hair cursor',
                 'X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
             if plotOpt['obsInCaption']:
@@ -2114,6 +2125,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif plottype in ['SASD','REFD']:
             Page.Choice = [' key press',
                 'b: toggle subtract background file','g: toggle grid',
+                'k: toggle cross-hair cursor',
                 'm: toggle multidata plot','n: toggle semilog/loglog',
                 'q: toggle S(q) plot','w: toggle (Io-Ic)/sig plot','+: toggle obs line plot',]
             if not G2frame.SinglePlot:
@@ -2261,6 +2273,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.Choice = [' key press',
                 'f: toggle full-length ticks',
                 'g: toggle grid',
+                'k: toggle cross-hair cursor',
                 #'s: toggle sqrt plot',  # TODO: implement this
                 'q: toggle Q plot',
                 't: toggle d-spacing plot',

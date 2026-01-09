@@ -344,23 +344,25 @@ def indexArrayVal(dataSource,hist,arrayIndices):
         arr = arr[i]
     return arr
 
+ClearAllLbl = '☐' # previously 'C'
+SetAllLbl = '☑'   # previously 'S'
 def onRefineAll(event):
     '''Respond to the Refine All button. On the first press, all 
     refine check buttons are set as "on" and the button is relabeled 
-    as 'C' (for clear). On the second press,  all refine check 
-    buttons are set as "off" and the button is relabeled as 'S' (for 
+    as ClearAllLbl (for clear). On the second press,  all refine check 
+    buttons are set as "off" and the button is relabeled as SetAllLbl (for 
     set).
     '''
     but = event.GetEventObject()
     dataSource = but.refDict['dataSource']
     checkButList = but.checkButList
     
-    if but.GetLabelText() == 'S':
+    if but.GetLabelText() == SetAllLbl:
         setting = True
-        but.SetLabelText('C')
+        but.SetLabelText(ClearAllLbl)
     else:
         setting = False
-        but.SetLabelText('S')
+        but.SetLabelText(SetAllLbl)
     for c in checkButList:
         c.SetValue(setting)
     for item,hist in zip(but.refDict['arrays'],but.refDict['hists']):
@@ -424,9 +426,12 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
             lblDict[row] = w
 
             if len(refList) > 2:
-                lbl = 'S'
-                if all([indexArrayVal(dataSource,hist,i) for i in refList]): lbl = 'C'
+                lbl = SetAllLbl
+                if all([indexArrayVal(dataSource,hist,i) for i in refList]): lbl = ClearAllLbl
                 refAll = wx.Button(lblPanel,label=lbl,style=wx.BU_EXACTFIT)
+                font = refAll.GetFont()
+                font.PointSize += 5
+                refAll.SetFont(font)
                 refAll.refDict = {'arrays': refList, 'hists': histList,
                                   'dataSource':dataSource}
                 refAll.checkButList = checkButList[row]

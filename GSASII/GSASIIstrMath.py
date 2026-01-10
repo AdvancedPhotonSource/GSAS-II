@@ -1403,8 +1403,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdua[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)
         else:
             dFdfr[iBeg:iFin] = (2.*SA[:,nxs]*(dfadfr[0]+dfadfr[1])+2.*SB[:,nxs]*(dfbdfr[0]+dfbdfr[1]))*Mdata/nOps
-            dFdff[:,iBeg:iFin] = [2.*(fas[0,:,nxs,nxs]*dfadff[0]+fbs[1,:,nxs,nxs]*dfbdff[0]),
-                                  2.*(fas[0,:,nxs,nxs]*dfadff[1]+fbs[1,:,nxs,nxs]*dfbdff[1])] #not summed on Uniq yet array(Nref,nEqv,nAtom)
+            dFdff[:,iBeg:iFin] = [2.*(fas[0,:,nxs,nxs]*dfadff[0]+fbs[0,:,nxs,nxs]*dfbdff[0]),
+                                  2.*(fas[0,:,nxs,nxs]*dfadff[1]+fbs[0,:,nxs,nxs]*dfbdff[1])] #not summed on Uniq yet array(Nref,nEqv,nAtom)
             dFdx[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadx[0]+dfadx[1])+2.*SB[:,nxs,nxs]*(dfbdx[0]+dfbdx[1])
             dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])
             dFdua[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadua[0]+dfadua[1])+2.*SB[:,nxs,nxs]*(dfbdua[0]+dfbdua[1])

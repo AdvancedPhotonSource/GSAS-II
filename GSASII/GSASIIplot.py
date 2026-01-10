@@ -474,9 +474,20 @@ class G2PlotNoteBook(wx.Panel):
         Page.toolbar.enableArrows() # Disable Arrow keys if present
         return new,plotNum,Page,Plot,limits
 
-    def savePlotLims(self,Page,debug=False):
+    def savePlotLims(self,Page=None,debug=False,label=None):
         '''Make a copy of all the current axes in the notebook object
         '''
+        if label and Page:
+            print('Warning: label and Page defined in savePlotLims')
+        elif label:
+            try:
+                plotNum,Page = self.GetTabIndex(label)
+            except ValueError:
+                print(f'Warning: plot {label} not found in savePlotLims')
+                return
+        elif not Page:
+            print('Error: neither label nor Page defined in savePlotLims')
+            return
         self.savedPlotLims = [
             [i.get_xlim() for i in Page.figure.get_axes()],
             [i.get_ylim() for i in Page.figure.get_axes()]]

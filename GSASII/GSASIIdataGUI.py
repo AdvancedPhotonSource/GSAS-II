@@ -5537,7 +5537,15 @@ No: least-squares fitting starts with previously fit structure factors.'''
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
-        if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
+        # if we are currently on a PWDR tree item or a child of one, engage "liveplot" mode
+        liveplot = False
+        if self.PickId:
+            for item in self.PickId,self.GPXtree.GetItemParent(self.PickId):
+                if self.GPXtree.GetItemText(item).startswith('PWDR'):
+                    liveplot = True
+                    break
+        if liveplot:
+            if GSASIIpath.GetConfigValue('debug'): print('liveplot is on')
             # true when a pattern is selected for plotting, which includes
             # when a group is selected.
             refPlotUpdate = G2pwpl.PlotPatterns(self,refineMode=True) # prepare for plot updating

@@ -344,3 +344,10 @@ CINEMA_DS_directory=None
 where the index.html file is located. If not set, if the export for this 
 is used, you will be asked to supply the directory, which will be saved here.
 '''
+
+LogAllVars = False
+'''When True, up to 50 refined parameters will be saved after each 
+refinement run in the GSAS-II Notebook tree entry. This setting will 
+be ignored if individual variables are set to be logged in the 
+Calculate/View LS Parameters window. 
+'''

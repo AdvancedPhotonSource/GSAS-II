@@ -641,6 +641,15 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
 
     # document the refinement further: RB, constraints, restraints, what's varied
     Rvals['varyList'] = 'Varied: ' + ', '.join(varyList)
+    newValDict = {}
+    if Controls.get('LoggedVars'): # parameter logging
+        newValDict = {i:float(parmDict[i]) for i in
+                          sorted(Controls['LoggedVars'])
+                          if i in parmDict}
+    elif GSASIIpath.GetConfigValue('LogAllVars'):
+        newValDict = {i:float(parmDict[i]) for c,i in enumerate(varyList)
+                          if c<50 and i in parmDict}
+    if newValDict: Rvals['LoggedVals'] = newValDict
     s = G2mv.VarRemapSumm()
     if s: Rvals['contrSumm'] = f'Constraints: {s}'
     Rvals['restrSumm'] = G2stIO.SummRestraints(restraintDict)

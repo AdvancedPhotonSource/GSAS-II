@@ -5559,6 +5559,12 @@ No: least-squares fitting starts with previously fit structure factors.'''
                 if dlg2.ShowModal() == wx.ID_OK:
                     self.reloadFromGPX(rtext,Rvals)
                     G2IO.LogCellChanges(self)
+                    if Rvals.get('LoggedVals'):
+                        txt = ''
+                        for p,v in Rvals['LoggedVals'].items():
+                            if txt: txt += ', '
+                            txt += (f'{p} : {v:.7g}')
+                        self.AddToNotebook(txt,'VALS',False)
                 if refPlotUpdate:
                     refPlotUpdate({},restore=True)
                     refPlotUpdate = None
@@ -7507,7 +7513,6 @@ def readFromFile(reader):
         return f'from {reader.formatName} file'
 
 ####  Notebook Tree Item editor ##############################################
-NBinfo = {}
 def UpdateNotebook(G2frame,data):
     '''Called when the data tree notebook entry is selected. Allows for
     editing of the text in that tree entry
@@ -7532,42 +7537,82 @@ other than being included in the Notebook section of the project file.''')
         filename = os.path.join(G2frame.dirname,filename)
         with open(filename,'w') as fp:
             fp.write(textBox.GetText())
-        print(f'Notebook contents written into {filename}')
+        G2G.G2MessageBox(G2frame,
+                    f'Displayed notebook contents written into {filename}',
+                    'file written')
+
     def onPlotNotebook():
-        'Locate R values from the Notebook and plot them'
-        NBinfo['plotLbl']
-        if NBinfo['plotLbl']['GOF']:
-            target = 'GOF'
-        elif NBinfo['plotLbl']['Rw']:
-            target = 'Rw'
-        else:
-            G2frame.G2plotNB.Delete('fit results')
-            return
-        vals = []
-        for i,l in enumerate(data):
-            ls = l.split()
-            if len(ls) < 1: # empty line
-                continue
-            elif '[' not in ls[0] or '[REF]' in ls[0]:
-                if target not in l: continue
-                try:
-                    vals.append(float(l.split(target)[1].split(',')[0].replace('=','').replace('%','')))
-                except:
+        'Locate values from the Notebook and plot them'
+        if NBplotLbl['GOF'] or NBplotLbl['Rw']:
+            if NBplotLbl['GOF']:
+                target = 'GOF'
+            elif NBplotLbl['Rw']:
+                target = 'Rw'
+            vals = []
+            for i,l in enumerate(data):
+                ls = l.split()
+                if len(ls) < 1: # empty line
                     continue
-        Y = np.array(vals)
-        XY = [np.arange(len(Y)),Y]
-        G2plt.PlotXY(G2frame,[XY,],Title='fit results',labelX='seq',labelY=target,lines=True)
+                elif '[' not in ls[0] or '[REF]' in ls[0]:
+                    if target not in l: continue
+                    try:
+                        vals.append(float(l.split(target)[1].split(',')[0].replace('=','').replace('%','')))
+                    except:
+                        continue
+            X = np.arange(len(vals))
+            Y = np.array(vals)
+        else:
+            # find what we are plotting if not Rw or GOF
+            for i,j in NBplotLbl.items():
+                if j:
+                 target = i
+                 break
+            else:
+                target = 'none'
+            if target == 'none':
+                G2frame.G2plotNB.Delete('fit results')
+                return
+            c = 0
+            vals = []
+            pos = []
+            for l in data:
+                if '[REF]' in l: c += 1
+                if '[VALS]' not in l: continue
+                v = {i.split(' : ')[0].strip() : i.split(' : ')[1]
+                            for i in l[6:].split(',')}
+                if target not in v: continue
+                try:
+                    vals.append(float(v[target]))
+                    pos.append(c)
+                except:
+                    pass
+            X = np.array(pos)
+            Y = np.array(vals)
+        if len(Y) == 0:
+            G2G.G2MessageBox(G2frame,'There are no values to plot','No points')
+            return
+        elif len(Y) == 1:
+            G2G.G2MessageBox(G2frame,'There is only one value to plot','One point')
+            return
+        XY = [X,Y]
+        G2plt.PlotXY(G2frame,[XY,],Title='fit results',newPlot=True,
+                         labelX='seq',labelY=target,lines=True)
     ##### === UpdateNotebook starts here
-    filterLbls = ['all',
+    filterLbls = ['all', # must be 1st
                       'Timestamps','Refinement results','Variables',
                       'Comments','Charge flip','Fourier','Peak fit',
                       'Constraints','Restraints','Rigid Bodies',
-                      'Cell params','GSAS-II version #']
-    filterPrefix = ['',
+                      'Cell params','GSAS-II version #','Logged vars',
+                      '(clear)' # must be last
+                      ]
+    filterPrefix = ['',  # should match filterLbls
                         'TS', 'REF','VARS',
                         'CM', 'CF', 'FM', 'PF',
                         'CNSTR','RSTR','RB',
-                        'CEL','VER']
+                        'CEL','VER','VALS',
+                        ' ']
+    G2frame.G2plotNB.Delete('fit results') # clear any old plot since we
+                                           # start out with None selected
     cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
     if cId:
         controls = G2frame.GPXtree.GetItemPyData(cId)
@@ -7598,17 +7643,38 @@ other than being included in the Notebook section of the project file.''')
     botSizer.Add(G2G.EnumSelector(parent,controls['Notebook'],
                          'order',['oldest-1st','newest-1st'],[False,True],
                          OnChange=onUpdateWindow))
-    controls['Notebook']['filterSel'] = controls['Notebook'].get(
-        'filterSel',[False]+(len(filterLbls)-1)*[True])
-    NBinfo['plotLbl'] = NBinfo.get('plotLbl',{'none':True,'Rw':False,'GOF':False})
-    for i in range(len(filterPrefix)-len(controls['Notebook']['filterSel'])):
-        controls['Notebook']['filterSel'] += [True]    # pad list if needed
+    # initize filter settings on 1st use
+    controls['Notebook']['filterSel'] = controls['Notebook'].get('filterSel',[])
+    # initialize if list has changed or this is new
+    if len(controls['Notebook']['filterSel']) != len(filterLbls):
+        controls['Notebook']['filterSel'] = [False]+(len(filterLbls)-1)*[True]
+        controls['Notebook']['filterSel'][filterPrefix.index('VER')] = False
+        controls['Notebook']['filterSel'][filterPrefix.index('VALS')] = False
+        controls['Notebook']['filterSel'][filterPrefix.index(' ')] = False
+    # set all if all selected
+    if controls['Notebook']['filterSel'][0]:
+        controls['Notebook']['filterSel'] = [True for i in controls['Notebook']['filterSel']]
+        controls['Notebook']['filterSel'][0] = False
+        controls['Notebook']['filterSel'][-1] = False
+    # reset all if (clear) selected
+    elif controls['Notebook']['filterSel'][-1]:
+        controls['Notebook']['filterSel'] = [False for i in controls['Notebook']['filterSel']]
+    # find recorded parameters
+    v = []
+    for l in data:
+        if '[VALS]' not in l: continue
+        v += [i.split(' : ')[0].strip()  for i in l[6:].split(',') if i.strip()]
+    plotable = ['Rw','GOF']
+    plotable += sorted(list(set(v)))
+    NBplotLbl = {'none':True}
+    NBplotLbl.update(dict.fromkeys(plotable,False))
     botSizer.Add((20,-1))
     fBtn = G2G.popupSelectorButton(parent,'Set filters',
-                        filterLbls,controls['Notebook']['filterSel'],
+                        filterLbls,
+                        controls['Notebook']['filterSel'],
                         OnChange=onUpdateWindow)
     botSizer.Add(fBtn,0,WACV)
-    fBtn = G2G.popupSelectorButton(parent,'Plot',choiceDict=NBinfo['plotLbl'],
+    fBtn = G2G.popupSelectorButton(parent,'Plot',choiceDict=NBplotLbl,
                         OnChange=onPlotNotebook)
     botSizer.Add((20,-1))
     botSizer.Add(fBtn,0,WACV)

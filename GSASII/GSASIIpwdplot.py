@@ -889,6 +889,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if G2frame.itemPicked is not None:  # only allow one selection 
                 return
             pick = event.artist
+            hist = pick.get_gid()
+            if hist:    # is this a group histogram label?
+                if 'PWDR' in hist:
+                    showHistogram(G2frame,hist,Page,Plot)
+                    return
             xpos,ypos = pick.get_position()
             if event.mouseevent.button == 3: # right click, delete HKL label
                 # but only 1st of the picked items, if multiple
@@ -1689,54 +1694,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return (0,1)
         else:
             return ((0,i),(1,i))
-    def drawTicks(Phases,phaseList,group=False):
-        'Draw the tickmarcks for phases in the current histogram'
-        l = GSASIIpath.GetConfigValue('Tick_length',8.0)
-        w = GSASIIpath.GetConfigValue('Tick_width',1.)
-        for pId,phase in enumerate(phaseList):
-            if 'list' in str(type(Phases[phase])):
-                continue
-            if phase in Page.phaseColors:
-                plcolor = Page.phaseColors[phase]
-            else: # how could this happen? 
-                plcolor = 'k'
-                #continue
-            peaks = Phases[phase].get('RefList',[])
-            if not len(peaks):
-                continue
-            if Phases[phase].get('Super',False):
-                peak = np.array([[peak[5],peak[6]] for peak in peaks])
-            else:
-                peak = np.array([[peak[4],peak[5]] for peak in peaks])
-            if group:
-                pos = (2.5-len(phaseList)*5 + pId*5)**np.ones_like(peak) # tick positions hard-coded
-            else:
-                pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
-            if Page.plotStyle['qPlot']:
-                xtick = 2*np.pi/peak.T[0]
-            elif Page.plotStyle['dPlot']:
-                xtick = peak.T[0]
-            else:
-                xtick = peak.T[1]
-            if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
-                Page.tickDict[phase],_ = Plot.plot(
-                    xtick,pos,'|',mew=w,ms=l,picker=3.,
-                    label=phase,color=plcolor)
-                # N.B. above creates two Line2D objects, 2nd is ignored.
-                # Not sure what each does.
-            elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
-                # axvline changes plot limits, triggering onGroupXlimChanged
-                # so turn that off for now. 
-                G2frame.stop_onGroupXlimChanged = True
-                if len(xtick) > 0:
-                    # create an ~hidden tickmark to create a legend entry
-                    Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
-                                            label=phase,color=plcolor)[0]
-                for xt in xtick: # a separate line for each reflection position
-                        Plot.axvline(xt,color=plcolor,
-                                    picker=3.,
-                                    label='_FLT_'+phase,lw=0.5)
-                del G2frame.stop_onGroupXlimChanged
 
     # Callback used to update y-limits when user zooms interactively (from MG/Cl Sonnet)
     def onGroupXlimChanged(ax):
@@ -2288,7 +2245,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 's: toggle sqrt plot',  # TODO: implement this
                 'q: toggle Q plot',
                 't: toggle d-spacing plot',
-                'x: share x-axes (Q/d only)']
+                'x: share x-axes (Q/d only)',
+                '+: toggle obs line plot']
         Plot.set_visible(False) # removes "big" plot
         gXmin = {}
         gXmax = {}
@@ -2317,6 +2275,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         #commonltrs = ''.join([h0i if m else '\u00B7' for (h0i,m) in zip(h0,msk)])
         # place rectangular box in the loc of non-common letter(s)
         commonltrs = ''.join([h0i if m else '\u25A1' for (h0i,m) in zip(h0,msk)])
+        pP = '+'
+        lW = 1.5
+        if not G2frame.plusPlot:
+            pP = ''
+            lW = 1.5
+        elif G2frame.plusPlot == 1:
+            pP = '+'
+            lW = 0
+        elif G2frame.plusPlot == 2: # same as 0 for multiplot, TODO: rethink
+            pP = ''
+            lW = 1.5
         for i,h in enumerate(groupPlotList):
             histlbl[i] = ''.join([hi for (hi,m) in zip(h,msk) if not m]) # unique letters
             gPatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, h)
@@ -2408,14 +2377,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 pos = 0.95
                 ha = 'right'
             Plot.text(pos,0.98,histlbl[i],
-                              transform=Plot.transAxes,
+                              transform=Plot.transAxes,gid=h,
                               verticalalignment='top',
                               horizontalalignment=ha,
-                              fontsize=14,color='g',fontweight='bold')
+                              fontsize=14,color='g',fontweight='bold',picker=4)
             xye = gdat[i]
             DifLine = Plot1.plot(gX[i],gdat[f'DZ{i}'],pwdrCol['Diff_color']) #,picker=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
-            pP = '+'
-            lW = 1.5
             if G2frame.SubBack:
                 scaleY = lambda Y: Y/(gYmax[i]-gYmin[i])*100
             else:
@@ -2425,7 +2392,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Plot.plot(gX[i],scaleY(xye[3]),pwdrCol['Calc_color'],picker=0.,label=incCptn('calc'),linewidth=1.5)
             if not G2frame.SubBack:
                 Plot.plot(gX[i],scaleY(xye[4]),pwdrCol['Bkg_color'],picker=0.,label=incCptn('bkg'),linewidth=1.5)     #background
-            drawTicks(RefTbl[i],list(RefTbl[i].keys()),True)
+            drawTicks(G2frame,RefTbl[i],Page,Plot,group=True)
         
         # Set axis limits AFTER plotting data to prevent autoscaling from overriding them (MG/Cl Sonnet)
         # When sharedX is enabled, calculate common x-range encompassing all histograms
@@ -3181,7 +3148,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                   or (inXtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 ):
-            drawTicks(Phases,Page.phaseList)
+            drawTicks(G2frame,Phases,Page,Plot,Page.phaseList)
             handles,legends = Plot.get_legend_handles_labels() 
             if handles:
                 labels = dict(zip(legends,handles))     # remove duplicate phase entries
@@ -4897,3 +4864,209 @@ def plotVline(Page,Plot,Lines,Parms,pos,color,pickrad,style='dotted'):
     else:
         Lines.append(Plot.axvline(pos,color=color,
             picker=pickrad,linestyle=style))
+
+def drawTicks(G2frame,RefList,Page,MPLaxes,phaseList=None,group=False):
+    'Draw the tickmarks for phases in the current histogram'
+    if phaseList is None: phaseList = list(RefList.keys())
+    l = GSASIIpath.GetConfigValue('Tick_length',8.0)
+    w = GSASIIpath.GetConfigValue('Tick_width',1.)
+    for pId,phase in enumerate(phaseList):
+        if 'list' in str(type(RefList[phase])):
+            continue
+        if phase in Page.phaseColors:
+            plcolor = Page.phaseColors[phase]
+        else: # how could this happen? 
+            plcolor = 'k'
+            #continue
+        peaks = RefList[phase].get('RefList',[])
+        if not len(peaks):
+            continue
+        if RefList[phase].get('Super',False):
+            peak = np.array([[peak[5],peak[6]] for peak in peaks])
+        else:
+            peak = np.array([[peak[4],peak[5]] for peak in peaks])
+        if group:
+            pos = (2.5-len(phaseList)*5 + pId*5)**np.ones_like(peak) # tick positions hard-coded
+        else:
+            pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
+        if Page.plotStyle['qPlot']:
+            xtick = 2*np.pi/peak.T[0]
+        elif Page.plotStyle['dPlot']:
+            xtick = peak.T[0]
+        else:
+            xtick = peak.T[1]
+        if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
+            Page.tickDict[phase],_ = MPLaxes.plot(
+                xtick,pos,'|',mew=w,ms=l,picker=3.,
+                label=phase,color=plcolor)
+            # N.B. above creates two Line2D objects, 2nd is ignored.
+            # Not sure what each does.
+        elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
+            # axvline changes plot limits, triggering onGroupXlimChanged
+            # so turn that off for now. 
+            G2frame.stop_onGroupXlimChanged = True
+            if len(xtick) > 0:
+                # create an ~hidden tickmark to create a legend entry
+                Page.tickDict[phase] = MPLaxes.plot(xtick[0],0,'|',mew=0.5,ms=l,
+                                        label=phase,color=plcolor)[0]
+            for xt in xtick: # a separate line for each reflection position
+                    MPLaxes.axvline(xt,color=plcolor,
+                                picker=3.,
+                                label='_FLT_'+phase,lw=0.5)
+            del G2frame.stop_onGroupXlimChanged
+
+def showHistogram(G2frame,hist,Page,Plot):
+    'Make a plot of a single histogram in a modal window'
+    # get histogram data
+    try:
+        pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist)
+        if not pId: 
+            print(f'Histogram {hist} not found. How did this happen?')
+            return
+        Pattern = G2frame.GPXtree.GetItemPyData(pId)
+        #Pattern.append(hist)
+    except:
+        print(f'Error accessing Histogram {hist}. How did this happen?')
+        return
+    #backDict = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId, 'Background'))[1]
+    try:
+        Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId, 'Instrument Parameters'))
+    except TypeError:
+        Parms = None
+    limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Limits'))
+    RefTbl = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
+
+    dlg = wx.Dialog(G2frame,size=(650,550),
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(
+        wx.StaticText(dlg,wx.ID_ANY,'Quick view: '+hist,
+                          style=wx.ALIGN_CENTER),
+        0,wx.ALIGN_CENTER)
+    mainSizer.Add((-1,10))
+    figure = mplfig.Figure(figsize=(6,8))
+    canvas = G2plt.Canvas(dlg,-1,figure)
+    toolbar = G2plt.Toolbar(canvas)
+    toolbar.Realize()
+    #self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,
+    #    'logPlot':False,'exclude':False,'partials':True,'chanPlot':False}
+
+    mainSizer.Add(canvas,1,wx.EXPAND)
+    mainSizer.Add(toolbar,0,)
+
+    pwdrCol = {}
+    for i in 'Obs_color','Calc_color','Diff_color','Bkg_color':
+        pwdrCol[i] = '#' + GSASIIpath.GetConfigValue(i,getDefault=True)
+    #gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[4, 1])
+    #ax0 = figure.add_subplot(gs[0])
+    #ax1 = figure.add_subplot(gs[1])
+    ax0,ax1 = figure.subplots(2,1,sharex=True,gridspec_kw={'height_ratios':[4, 1],})
+
+    #figure.subplots_adjust(left=int(plotOpt['labelSize'])/100.,bottom=int(plotOpt['labelSize'])/150.,
+    #                       right=.98,top=1.-int(plotOpt['labelSize'])/200.,hspace=0.0)
+    figure.subplots_adjust(left=11/100.,bottom=16/150.,
+            right=.99,top=1.-3/200.,hspace=0,wspace=0)
+    ax0.tick_params('x',direction='in',labelbottom=False)
+    ax0.tick_params(labelsize=plotOpt['labelSize'])
+    ax1.tick_params(labelsize=plotOpt['labelSize'])
+    ax1.set_xlabel(Plot.get_xlabel(),fontsize=plotOpt['labelSize'])
+    ax0.set_ylabel(Plot.get_ylabel(),fontsize=plotOpt['labelSize'])
+    ax1.set_ylabel(r'$\Delta/\sigma$',fontsize=plotOpt['labelSize'])
+
+    if Page.plotStyle['sqrtPlot']:
+        ax0.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
+    else:
+        ax0.set_ylabel(r'$Intensity$',fontsize=16)
+    if Page.plotStyle['qPlot']:
+        xLabel = r'$Q, \AA^{-1}$'
+    elif Page.plotStyle['dPlot']:
+        xLabel = r'$d, \AA$'
+    elif 'T' in Parms['Type'][0]:
+        xLabel = r'$TOF, \mathsf{\mu}$s'
+    elif 'E' in Parms['Type'][0]:
+        xLabel = 'E, keV'
+    else:
+        xLabel = r'$\mathsf{2\theta}$'
+    ax1.set_xlabel(xLabel,fontsize=16)
+    lims = limits[1:]
+    # limit lines
+    ax0.axvline(lims[0][0],color='g',dashes=(5,5),picker=3.)
+    ax0.axvline(lims[0][1],color='r',dashes=(5,5),picker=3.)
+    # excluded region lines
+    for i,item in enumerate(lims[1:]):
+        Plot.axvline(item[0],color='m',dashes=(5,5),picker=3.)
+        Plot.axvline(item[1],color='m',dashes=(5,5),picker=3.)
+    pP = '+'
+    lW = 1.5
+    if not G2frame.plusPlot:
+        pP = ''
+        lW = 1.5
+    elif G2frame.plusPlot == 1:
+        pP = '+'
+        lW = 0
+    elif G2frame.plusPlot == 2: # same as 0 for multiplot, TODO: rethink
+        pP = ''
+        lW = 1.5
+
+    #ExMask = np.full(len(xye[0]),False)
+    # recompute mask from excluded regions, in case they have changed
+    xye = np.array(ma.getdata(Pattern[1])) # strips mask = X,Yo,W,Yc,Yb,Yd
+    xye0 = xye[0]  # no mask in case there are no limits
+    for excl in limits[2:]:
+        xye0 = ma.masked_inside(xye[0],excl[0],excl[1],copy=False)                   #excluded region mask
+    xye0 = ma.masked_outside(xye0,limits[1][0],limits[1][1],copy=False) #now mask for limits
+    if Page.plotStyle['qPlot']:
+        X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
+        lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
+        if 'T' in Parms['Type'][0]: xlim = (lims[0][1],lims[0][0])
+    elif Page.plotStyle['dPlot']:
+        X = G2lat.Pos2dsp(Parms,xye0)
+        lims = G2lat.Pos2dsp(Parms,lims)
+        xlim = (lims[0][0],lims[0][1])
+    else:
+        X = copy.deepcopy(xye0)
+        xlim = (lims[0][0],lims[0][1])
+    #breakpoint()
+    Y = copy.copy(xye[1])      #yo
+    Z = copy.copy(xye[3])      #Yc
+    DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
+
+    if G2frame.SubBack:
+        Y -= xye[4]            #background subtract
+        Z -= xye[4]            #background "
+        W = np.zeros_like(Y)   #yb
+    elif Page.plotStyle['sqrtPlot']:
+        olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
+        Y = np.where(Y>=0.,np.sqrt(Y),-np.sqrt(-Y))
+        Z = np.where(Z>=0.,np.sqrt(Z),-np.sqrt(-Z))
+        W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))      #yb
+        np.seterr(invalid=olderr['invalid'])
+    else:
+        W = xye[4]             #yb
+    ax0.plot(X.data,Y,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
+              clip_on=Clip_on,label='obs-bkg')  #Io-Ib
+    if np.any(Z):       #only if there is a calc pattern
+        ax0.plot(X,Z,pwdrCol['Calc_color'],
+                                    label='calc-bkg',linewidth=1.5)               #Ic-Ib
+    ax0.plot(X,W,pwdrCol['Bkg_color'],picker=0.,label='calc',linewidth=1.5)
+    ax0.axhline(0.,color='k',label='_zero')
+    ax1.plot(X,DZ,pwdrCol['Diff_color'],label='diff')
+    drawTicks(G2frame,RefTbl,Page,ax0,group=True)
+    # zoom in to data limits with slight margin, but allow home button to zoom to full data range
+    toolbar.push_current()
+    r = xlim[1]-xlim[0]
+    ax0.set_xlim(xlim[0]-r/50,xlim[1]+r/50)
+    toolbar.push_current()
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_CLOSE)
+    OKbtn.Bind(wx.EVT_BUTTON,lambda event:dlg.EndModal(wx.ID_OK))
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,0,wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER,1)
+    mainSizer.Layout()
+    dlg.SetSizer(mainSizer)
+    #mainSizer.Fit(dlg)
+    dlg.CenterOnParent()
+    dlg.ShowModal()
+    dlg.Destroy()

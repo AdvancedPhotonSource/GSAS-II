@@ -1397,7 +1397,9 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         SB = fbs[0]+fbs[1]
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs]*dfadfr+fbs[:,:,nxs]*dfbdfr,axis=0)*Mdata/nOps
-            dFdff[:,iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadff+fbs[:,:,nxs,nxs]*dfbdff,axis=0) #not summed on Uniq yet
+            # dFdff[:,iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadff+fbs[:,:,nxs,nxs]*dfbdff,axis=0) #not summed on Uniq yet
+            dFdff[:,iBeg:iFin] = [2.*(fas[0,:,nxs,nxs]*dfadff[0]+fbs[0,:,nxs,nxs]*dfbdff[0]),
+                                  2.*(fas[0,:,nxs,nxs]*dfadff[1]+fbs[0,:,nxs,nxs]*dfbdff[1])] #not summed on Uniq yet array(Nref,nEqv,nAtom)
             dFdx[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadx+fbs[:,:,nxs,nxs]*dfbdx,axis=0)
             dFdui[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs]*dfadui+fbs[:,:,nxs]*dfbdui,axis=0)
             dFdua[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)

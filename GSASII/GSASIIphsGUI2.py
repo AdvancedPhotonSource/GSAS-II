@@ -332,7 +332,7 @@ def UpdateDeformation(G2frame,data,AtdId):
                 Obj.SetValue(deformationData[-dId]['V'])
                 G2G.G2MessageBox(G2frame,'ERROR: V-vector zero or parallel to U','Invalid vector choice')
                 return
-            if nl.det(UVmat) < 0.:  #ensure right hand
+            if nl.det(UVmat) < 0.:  #insure right hand
                 UVmat *= -1.
             deformationData[-dId]['V'] =  Obj.GetValue()
             data['Deformations'][-dId]['UVmat'] = UVmat
@@ -343,7 +343,7 @@ def UpdateDeformation(G2frame,data,AtdId):
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
         
     def Kappa(deformation,orbSizer,dId,orb,kname,Indx):
-        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][kname],0,nDig=(8,3),xmin=0.5,xmax=1.5))
+        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][kname],0,nDig=(8,3),xmin=0.5,xmax=3.0))
         Tcheck = wx.CheckBox(deformation,-1,'Refine?')
         Tcheck.SetValue(orb[1][kname][1])
         Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
@@ -618,6 +618,7 @@ def UpdateDeformation(G2frame,data,AtdId):
                                 for i in range(nB): orbSizer.Add((5,5),0)
                         Dsizer(deformation,orbSizer,Names,dId,orb,Indx)
         mainSizer.Add(orbSizer)    
+    G2frame.GetStatusBar().SetStatusText('On plot: RGB = XYZ',1)
 
     G2phsG.SetPhaseWindow(deformation,mainSizer)
 

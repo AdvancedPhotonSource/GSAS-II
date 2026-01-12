@@ -5030,7 +5030,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
             if SubGroups is None:
-                wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+                wx.MessageBox('Internet connection problem? Check console output.',
+                            caption='Bilbao SUBGROUPS error',
+                              style=wx.ICON_EXCLAMATION)
                 return
             if not SubGroups:
                 if Landau:

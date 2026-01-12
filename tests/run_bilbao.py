@@ -71,6 +71,7 @@ def test_pseudosym():
     print('test PSEUDOSYM')
     page0 = GSASIIpath.postURL(URL,postdict,
                              getcookie=savedcookies,timeout=SUBGROUPS.timeout)
+    if page0 is None: assert False,"Web access failed"
     res = SUBGROUPS.scanBilbaoSymSearch1(page0,postdict)+[savedcookies]
     assert res[2]['1'][0] == 'Pn-3m'
     assert abs(float(res[2]['1'][5].split()[0]) -  5.43123/2) < 2e-5
@@ -81,6 +82,7 @@ def test_SUBGROUPSMAG():
     print('test SUBGROUPSMAG')
     results,baseList = SUBGROUPS.GetNonStdSubgroupsmag(
         SGData,('0','0','0',' ',' ',' ',' ',' ',' ',' '))
+    assert results is not None,'web access failed'
     assert len(results) == 322
     assert results[0][0] == "Fd'-3'm'"
     assert results[1][0] == "Fd-3m'"
@@ -91,6 +93,7 @@ def test_SUBGROUPS():
     print('\n\ntest SUBGROUPS')
     results,baseList = SUBGROUPS.GetNonStdSubgroups(
         SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
+    assert results is not None,'web access failed'
     assert len(results) == 51
     assert results[0][0] == "P21/c"
     assert results[-1][0] == "P1"
@@ -98,6 +101,7 @@ def test_SUBGROUPS():
 def test_GetStdSGset():
     print('\n\ntest Bilbao IDENTIFY GROUP')
     sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(G2spc.SpcGroup('R 3 C r')[1])
+    assert sgnum is not None,'web access failed'
     assert sgnum == 161
     assert sgsym == 'R 3 c'
     assert xoff == [0,0,0]

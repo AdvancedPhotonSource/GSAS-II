@@ -31,14 +31,20 @@ pseudosym = 'pseudosym/nph-pseudosym'
 #pseudolattice = "pseudosym/nph-pseudolattice"
 cif2std = 'nph-cif2std'
 subgrmag1 = 'subgrmag1_general_GSAS.pl?'
+#checkgr = 'checkgr.pl'   # to be replaced with following:
 checkgr = 'checkgr_gsas.pl'
 minsup = 'nph-minsup' # coded but not used
 timeout=150  # time to wait for Bilbao to respond; 2.5 minutes
+timeout=15  # time to wait for Bilbao to respond; short since probably broken
 
 def postpostURL(page):
     '''warn on Bilbao down
     '''
-    if page is None: return
+    if page is None:
+        print('\n'+70*'*')
+        print("GSAS-II access Bilbao website is currently (as of mid-January, 2026)\nbeing repaired. Please check for updates and try again later in\nthe month.")
+        print(70*'*'+'\n')
+        return
     if "currently down" in page:
         # Bilbao is down. Tell user
         import re
@@ -338,7 +344,7 @@ def GetStdSGset(SGData=None, oprList=[]):
               G2G.GetCite('Bilbao: k-SUBGROUPSMAG',wrap=70,indent=5))
     postdict = {'tipog':'gesp','generators':'\n'.join(oprList)}
     page = GSASIIpath.postURL(Site,postdict,timeout=timeout)
-    if not page or postpostURL(page):
+    if postpostURL(page):
         print('error:','No response')
         return [None,None,None,None]
 

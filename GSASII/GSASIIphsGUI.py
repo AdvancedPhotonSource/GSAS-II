@@ -3628,6 +3628,11 @@ program; Please cite:
             # need to convert non-standard space group settings
             print('*** Checking space group setting')
             sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(data['General']['SGData'])
+            if sgnum is None:
+                G2G.G2MessageBox(G2frame,
+                        'Standard setting check failed. Check console output.',
+                        'Bilbao error')
+                return
             newPhase = copy.deepcopy(data)
             try:
                 if np.allclose(np.eye(3),xmat) and np.allclose(xoff,np.zeros_like(xoff)):
@@ -3866,7 +3871,9 @@ program; Please cite:
         SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
         wx.EndBusyCursor()
         if SubGroups is None:
-            wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+            wx.MessageBox('Internet connection problem? Check console output.',
+                            caption='Bilbao SUBGROUPS error',
+                              style=wx.ICON_EXCLAMATION)
             return
         if not SubGroups:
             if Landau:
@@ -3919,6 +3926,11 @@ to use these entries'''
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(generalData['SGData'])
+        if sgnum is None:
+            G2G.G2MessageBox(G2frame,
+                        'Standard setting check failed. Check console output.',
+                        'Bilbao error')
+            return
         if xmat is None:
             G2G.G2MessageBox(G2frame,"Unable to reach web site.",'No connection')
             return

@@ -5538,10 +5538,10 @@ No: least-squares fitting starts with previously fit structure factors.'''
             rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Nvar = %d'%(Rvals['Rwp'],Rvals['GOF'],Rvals['Nobs'],Rvals['Nvars'])
             lamMax = Rvals.get('lamMax',0.001)
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
-            text = 'Detailed results are in ' + lst + '.lst\n'
+            text = f'Detailed results are in file {os.path.split(lst)[1]}.lst in directory {os.path.split(lst)[0]}\n'
             if 'GOF0' in Rvals and 'GOF' in Rvals:
-                text += '\nFinal Reduced Chi^2: {:.3f} (before ref: {:.3f})\n'.format(
-                    Rvals['GOF']**2,Rvals['GOF0']**2)
+                text += f"\nFinal Reduced Chi^2: {Rvals['GOF']**2:.3f}"
+                text += f"\n   (before refinement: {Rvals['GOF0']**2:.3f})\n"
             if Rvals.get('Max shft/sig') is not None:
                 rtext += ', Max delt/sig = {:.3f}'.format(Rvals['Max shft/sig'])
                 text += '\nMax shift/sigma={:.3f}\n'.format(Rvals['Max shft/sig'])
@@ -5549,22 +5549,46 @@ No: least-squares fitting starts with previously fit structure factors.'''
             if 'Aborted' in Rvals:
                 text += '\nWARNING: Minimizer halted because chi**2 increased\n'
             if lamMax >= 10.:
-                text += '\nWARNING: Steepest descents dominates;'+   \
-                ' minimum may not have been reached or result may be false minimum.'+  \
-                ' You should reconsider which parameters you refine. Check covariance matrix.\n'
+                text += ('\nWARNING: Marquardt factor raised to point where steepest descents dominates fitting;'+
+                ' minimum may not have been reached or your result may be a false minimum.'+
+                ' You should reconsider which parameters you refine: check covariance matrix.\n')
             text += '\nLoad new result?'
-            dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
+            #breakpoint()
+            # assemble a list of changed parameters
+            # tbl = []
+            # for i in Rvals['parmDictAfterFit']:
+            #     if i not in Rvals['parmDictBeforeFit']: continue
+            #     if (Rvals['parmDictAfterFit'][i] != Rvals['parmDictBeforeFit'][i] or
+            #         #np.isclose(Rvals['parmDictAfterFit'][i],Rvals['parmDictBeforeFit'][i])
+            #             i in Rvals['parmDictvaryList']):
+            #         txt = ''
+            #         v = G2obj.getVarDescr(i)
+            #         if v is not None and v[-1] is not None:
+            #             txt = G2obj.fmtVarDescr(i)
+            #         tbl.append((i,Rvals['parmDictBeforeFit'][i],Rvals['parmDictAfterFit'][i],txt))
+            dlg2 = wx.MessageDialog(self,text,
+                            f'Refinement results, Rw={Rw:.3f}',
+                            wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     self.reloadFromGPX(rtext,Rvals)
                     G2IO.LogCellChanges(self)
-                    if Rvals.get('LoggedVals'):
+                    # parameter logging into notebook
+                    txt = ''
+                    if Controls.get('LoggedVars') and 'parmDictAfterFit' in Rvals:
                         txt = ''
-                        for p,v in Rvals['LoggedVals'].items():
+                        for i in sorted(Controls['LoggedVars']):
+                            if i not in Rvals['parmDictAfterFit']: continue
                             if txt: txt += ', '
-                            txt += (f'{p} : {v:.7g}')
-                        self.AddToNotebook(txt,'VALS',False)
+                            txt += (f'{i} : {Rvals["parmDictAfterFit"][i]:.7g}')
+                    elif GSASIIpath.GetConfigValue('LogAllVars') and 'parmDictAfterFit' in Rvals:
+                        txt = ''
+                        for c,i in enumerate(Rvals['parmDictvaryList']):
+                            if i not in Rvals['parmDictAfterFit']: continue
+                            if txt: txt += ', '
+                            txt += (f'{i} : {Rvals["parmDictAfterFit"][i]:.7g}')
+                    if txt: self.AddToNotebook(txt,'VALS',False)
                 if refPlotUpdate:
                     refPlotUpdate({},restore=True)
                     refPlotUpdate = None

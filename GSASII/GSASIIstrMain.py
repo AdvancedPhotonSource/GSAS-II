@@ -544,6 +544,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
     printFile.write(135*'-'+'\n')
     Rvals = {}
     G2mv.Dict2Map(parmDict)  # impose constraints initially
+    parmDictBefore = copy.deepcopy(parmDict)
     if allDerivs: #=============  develop partial derivative map
         derivDict = AllPrmDerivs(Controls, Histograms, Phases, restraintDict,
             rigidbodyDict, parmDict, varyList, calcControls,pawleyLookup,symHold,dlg)
@@ -641,15 +642,9 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
 
     # document the refinement further: RB, constraints, restraints, what's varied
     Rvals['varyList'] = 'Varied: ' + ', '.join(varyList)
-    newValDict = {}
-    if Controls.get('LoggedVars'): # parameter logging
-        newValDict = {i:float(parmDict[i]) for i in
-                          sorted(Controls['LoggedVars'])
-                          if i in parmDict}
-    elif GSASIIpath.GetConfigValue('LogAllVars'):
-        newValDict = {i:float(parmDict[i]) for c,i in enumerate(varyList)
-                          if c<50 and i in parmDict}
-    if newValDict: Rvals['LoggedVals'] = newValDict
+    Rvals['parmDictBeforeFit'] = parmDictBefore
+    Rvals['parmDictAfterFit'] = copy.deepcopy(parmDict)
+    Rvals['parmDictvaryList'] = copy.copy(varyList)
     s = G2mv.VarRemapSumm()
     if s: Rvals['contrSumm'] = f'Constraints: {s}'
     Rvals['restrSumm'] = G2stIO.SummRestraints(restraintDict)

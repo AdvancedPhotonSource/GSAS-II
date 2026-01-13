@@ -5,7 +5,6 @@ Classes and routines defined in :mod:`GSASIIplot` follow.
 # Note that documentation for GSASIIplot.py has been moved
 # to file docs/source/GSASIIplot.rst
 
-from __future__ import division, print_function
 import copy
 import math
 import sys

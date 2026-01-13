@@ -5552,49 +5552,52 @@ No: least-squares fitting starts with previously fit structure factors.'''
                 text += ('\nWARNING: Marquardt factor raised to point where steepest descents dominates fitting;'+
                 ' minimum may not have been reached or your result may be a false minimum.'+
                 ' You should reconsider which parameters you refine: check covariance matrix.\n')
-            text += '\nLoad new result?'
             #breakpoint()
-            # assemble a list of changed parameters
-            # tbl = []
-            # for i in Rvals['parmDictAfterFit']:
-            #     if i not in Rvals['parmDictBeforeFit']: continue
-            #     if (Rvals['parmDictAfterFit'][i] != Rvals['parmDictBeforeFit'][i] or
-            #         #np.isclose(Rvals['parmDictAfterFit'][i],Rvals['parmDictBeforeFit'][i])
-            #             i in Rvals['parmDictvaryList']):
-            #         txt = ''
-            #         v = G2obj.getVarDescr(i)
-            #         if v is not None and v[-1] is not None:
-            #             txt = G2obj.fmtVarDescr(i)
-            #         tbl.append((i,Rvals['parmDictBeforeFit'][i],Rvals['parmDictAfterFit'][i],txt))
-            dlg2 = wx.MessageDialog(self,text,
-                            f'Refinement results, Rw={Rw:.3f}',
-                            wx.OK|wx.CANCEL)
+            tbl = []              # assemble a list of changed parameters
+            for i in Rvals.get('parmDictAfterFit',{}):
+                if i not in Rvals['parmDictBeforeFit']: continue
+                mag = max(abs(Rvals['parmDictAfterFit'][i]),
+                          abs(Rvals['parmDictBeforeFit'][i]))
+                diff = abs(Rvals['parmDictAfterFit'][i]-Rvals['parmDictBeforeFit'][i])
+                if mag < 1e-5 and diff < 1e-7: continue
+                if diff/mag < 1e-5: continue
+                txt = ''
+                v = G2obj.getVarDescr(i)
+                if v is not None and v[-1] is not None:
+                    txt = G2obj.fmtVarDescr(i)
+                tbl.append((i,Rvals['parmDictBeforeFit'][i],Rvals['parmDictAfterFit'][i],txt))
+            lbl = f'Refinement results, Rw={Rw:.3f}'
+            #ans = G2G.G2AfterFit(self,text,lbl,tbl)
+            text += '\nLoad new result?'
+            dlg2 = wx.MessageDialog(self,text,lbl,wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
+            ans = False
             try:
-                if dlg2.ShowModal() == wx.ID_OK:
-                    self.reloadFromGPX(rtext,Rvals)
-                    G2IO.LogCellChanges(self)
-                    # parameter logging into notebook
-                    txt = ''
-                    if Controls.get('LoggedVars') and 'parmDictAfterFit' in Rvals:
-                        txt = ''
-                        for i in sorted(Controls['LoggedVars']):
-                            if i not in Rvals['parmDictAfterFit']: continue
-                            if txt: txt += ', '
-                            txt += (f'{i} : {Rvals["parmDictAfterFit"][i]:.7g}')
-                    elif GSASIIpath.GetConfigValue('LogAllVars') and 'parmDictAfterFit' in Rvals:
-                        txt = ''
-                        for c,i in enumerate(Rvals['parmDictvaryList']):
-                            if i not in Rvals['parmDictAfterFit']: continue
-                            if txt: txt += ', '
-                            txt += (f'{i} : {Rvals["parmDictAfterFit"][i]:.7g}')
-                    if txt: self.AddToNotebook(txt,'VALS',False)
-                if refPlotUpdate:
-                    refPlotUpdate({},restore=True)
-                    refPlotUpdate = None
-                self.ResetPlots()
+                ans = dlg2.ShowModal()
             finally:
                 dlg2.Destroy()
+            if ans == wx.ID_OK:  # refinement has been accepted save, log & display
+                self.reloadFromGPX(rtext,Rvals)
+                G2IO.LogCellChanges(self)
+                # log parameters into notebook
+                txt = ''
+                if Controls.get('LoggedVars') and 'parmDictAfterFit' in Rvals:
+                    txt = ''
+                    for i in sorted(Controls['LoggedVars']):
+                        if i not in Rvals['parmDictAfterFit']: continue
+                        if txt: txt += ', '
+                        txt += (f'{i} : {Rvals["parmDictAfterFit"][i]:.7g}')
+                elif GSASIIpath.GetConfigValue('LogAllVars') and 'parmDictAfterFit' in Rvals:
+                    txt = ''
+                    for c,i in enumerate(Rvals['parmDictvaryList']):
+                        if i not in Rvals['parmDictAfterFit']: continue
+                        if txt: txt += ', '
+                        txt += (f'{i} : {Rvals["parmDictAfterFit"][i]:.7g}')
+                if txt: self.AddToNotebook(txt,'VALS',False)
+            if refPlotUpdate:  # restore plot if liveplot in use
+                refPlotUpdate({},restore=True)
+                refPlotUpdate = None
+            self.ResetPlots()  # delete any plots that have not been updated
         elif 'psing' in Rvals:
             if 'msg' in Rvals:
                 msg = 'Refinement results:\n\n'
@@ -7601,15 +7604,28 @@ other than being included in the Notebook section of the project file.''')
             pos = []
             for l in data:
                 if '[REF]' in l: c += 1
-                if '[VALS]' not in l: continue
-                v = {i.split(' : ')[0].strip() : i.split(' : ')[1]
-                            for i in l[6:].split(',')}
-                if target not in v: continue
-                try:
-                    vals.append(float(v[target]))
-                    pos.append(c)
-                except:
-                    pass
+                if '[VALS]' in l: 
+                    v = {i.split(' : ')[0].strip() : i.split(' : ')[1]
+                             for i in l[6:].split(',')}
+                    if target not in v:
+                        continue
+                    try:
+                        vals.append(float(v[target]))
+                        pos.append(c)
+                    except:
+                        pass
+                if '[CEL]' in l:
+                    ph = l.split('Phase')[1].split()[0]
+                    hst = l.split('Hist')[1].split(':')[0].strip()
+                    vars = [i.split('=')[0] for i in l.split(':')[1].split()]
+                    vars = [f'{v}[p{ph}_h{hst}]' for v in vars]
+                    if target not in vars: continue
+                    values = [i.split('=')[1].split('(')[0] for i in l.split(':')[1].split()]
+                    try:
+                        vals.append(float(dict(zip(vars,values))[target]))
+                        pos.append(c)
+                    except:
+                        pass
             X = np.array(pos)
             Y = np.array(vals)
         if len(Y) == 0:
@@ -7686,8 +7702,13 @@ other than being included in the Notebook section of the project file.''')
     # find recorded parameters
     v = []
     for l in data:
-        if '[VALS]' not in l: continue
-        v += [i.split(' : ')[0].strip()  for i in l[6:].split(',') if i.strip()]
+        if '[VALS]' in l:
+            v += [i.split(' : ')[0].strip()  for i in l[6:].split(',') if i.strip()]
+        if '[CEL]' in l:
+            ph = l.split('Phase')[1].split()[0]
+            hst = l.split('Hist')[1].split(':')[0].strip()
+            vars = [i.split('=')[0] for i in l.split(':')[1].split()]
+            v += [f'{v}[p{ph}_h{hst}]' for v in vars]
     plotable = ['Rw','GOF']
     plotable += sorted(list(set(v)))
     NBplotLbl = {'none':True}
@@ -7749,6 +7770,8 @@ other than being included in the Notebook section of the project file.''')
                 # indent all but timestamps
                 for l in line.strip().split('\n'):
                     if not first: textBox.AppendText("\n")
+                    if prefix == 'VALS':
+                        l = 'Values: '+l.replace(' : ','=')
                     textBox.AppendText('    '+l.strip())
                     first = False
             else:

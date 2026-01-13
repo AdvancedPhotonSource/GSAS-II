@@ -2609,6 +2609,67 @@ def G2MessageBox(parent,msg,title='Error'):
     dlg.ShowModal()
     dlg.Destroy()
 
+################################################################################
+def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
+    '''Shows the results from a refinement
+
+    :param wx.Frame parent: pointer to parent of window, usually G2frame
+    :param str msg: text from refinement results
+    :param str title: text to label window
+    :param list vartbl: a list of lists. The contents of each inner list
+      item will be [var-name, val-before, val-after, meaning]
+    :param int txtwidth: width (in pixesl) to display msg. Defaults to 300
+    '''
+
+    displayTable = [     # create table to show from input
+            (var,
+            f'{before:.6g}',
+            f'{after:.6g}',
+            f'{after-before:.6g}',
+            what) for (var,before,after,what) in vartbl]
+    labels = ('var','before','after','change','parameter description')
+    just =   (0    , 1      , 1     , 1      , 0)
+    dlg = wx.Dialog(parent.GetTopLevelParent(), wx.ID_ANY, title,
+                        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+
+    txtSizer = wx.BoxSizer(wx.HORIZONTAL)
+    txt = wx.StaticText(dlg,wx.ID_ANY,msg)
+    txt.Wrap(txtwidth-20)
+    #txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+    txtSizer.Add(txt,0,wx.RIGHT|wx.LEFT,5)
+    
+    if displayTable:
+        results = SortableLstCtrl(dlg)
+        results.PopulateHeader(labels, just)
+        for i,l in enumerate(displayTable): results.PopulateLine(i,l)
+        for i,j in enumerate(labels): results.SetColWidth(i) # set widths to automatic
+    else:
+        results = wx.StaticText(dlg,wx.ID_ANY,'no results to display')
+    txtSizer.Add(results,1,wx.EXPAND,0)
+    mainSizer.Add(txtSizer,1,wx.EXPAND)
+
+    mainSizer.Add((-1,5))
+    txt = wx.StaticText(dlg,wx.ID_ANY,'Load new result?')
+    mainSizer.Add(txt,0,wx.CENTER)
+    
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+    btnsizer.Add(btn)
+    btn = wx.Button(dlg, wx.ID_OK)
+    btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_OK))
+    btnsizer.Add(btn)
+    mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+
+    dlg.Layout()
+    dlg.CentreOnParent()
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    return ans
+    
 def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
                          buttonlist=None):
     '''Simple code to display possibly extensive error or warning text
@@ -7621,6 +7682,19 @@ class SortableLstCtrl(wx.Panel):
     widths.
 
     :param wx.Frame parent: parent object for control
+
+    Example::
+
+       data = [
+          (':0:sig-0', '30.7906', '30.7907', 'Pwd=SNAP066555: TOF profile term'),
+          (':0:sig-1', '208.419', '208.419', 'Pwd=SNAP066555: TOF profile term'),
+          (':0:Scale', '582006', '582006', 'Pwd=SNAP066555: Scale factor'),
+          (':1:Scale', '592440', '592440', 'Pwd=SNAP06 (1): Scale factor'),
+       ]
+       sortPanel = G2G.SortableLstCtrl(G2frame)
+       sortPanel.PopulateHeader([f'label{i}' for i in range(4)],4*[0])
+       for i,l in enumerate(data): sortPanel.PopulateLine(i,l)
+       for i in range(4): sortPanel.SetColWidth(i) # set width to automatic
     '''
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY)#, style=wx.WANTS_CHARS)

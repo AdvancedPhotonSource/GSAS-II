@@ -5,7 +5,6 @@ Classes and routines defined in :mod:`GSASIIplot` follow.
 # Note that documentation for GSASIIplot.py has been moved
 # to file docs/source/GSASIIplot.rst
 
-from __future__ import division, print_function
 import copy
 import math
 import sys
@@ -6747,6 +6746,34 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
 
+    def RenderTriplet(orig,Rmat,Bmat):
+        '''draw an axes triplet located at the origin of a deformation atom
+        and with the x, y & z axes drawn as red, green and blue.
+        '''
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.7,.7,.7,1])
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(3)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glPushMatrix()
+        GL.glTranslate(*orig)
+        GL.glBegin(GL.GL_LINES)
+        lines = np.inner(np.inner(np.eye(3),Rmat),Bmat)*.75
+        colors = [Rd,Gr,Bl]
+        # lines along axial directions
+        for line,color in zip(lines,colors):
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(np.zeros(3))
+            GL.glVertex3fv(line)
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
+
     def RenderPlane(plane,color):
         fade = list(color) + [.25,]
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,fade)
@@ -7351,11 +7378,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                 atcolor = atColor*255
                             defParms = deformationData[atom[ci]]
                             SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
-                            SGM = np.array(G2spc.GetOpFromCode(atom[cs-1],SGData)[0])
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
+                            SGM = np.array(G2spc.GetOpFromCode(atom[cs-1],SGData)[0])
                             SGC = nl.inv(G2lat.CrysM2CartM(Amat,Bmat,SGM))
                             UVMat = np.inner(defCtrls['UVmat'],SGC.T)
+                            UVMat1 = np.inner(defCtrls['UVmat'].T,SGC.T).T
+                            RenderTriplet([x,y,z],UVMat1,Bmat)
                             Npsi,Ngam = 60,30 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl

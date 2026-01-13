@@ -2643,9 +2643,20 @@ def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
         results = SortableLstCtrl(dlg)
         results.PopulateHeader(labels, just)
         for i,l in enumerate(displayTable): results.PopulateLine(i,l)
-        for i,j in enumerate(labels): results.SetColWidth(i) # set widths to automatic
+        # set widths to automatic
+        results.SetColWidth(0) 
+        results.SetColWidth(1,sortType='float') 
+        results.SetColWidth(2,sortType='float') 
+        results.SetColWidth(3,sortType='abs') 
+        results.SetColWidth(4)
+        results.SetInitialSortColumn(3,False)
+        results.SetClientSize((450,250))
+        results.SetMinSize((450,250))
     else:
-        results = wx.StaticText(dlg,wx.ID_ANY,'no results to display')
+        results = wx.BoxSizer(wx.VERTICAL)
+        results.Add((-1,-1),1,wx.EXPAND)
+        results.Add(wx.StaticText(dlg,wx.ID_ANY,'  (no parameter changes\nto display)  ',size=(350,-1),style=wx.ALIGN_CENTER))
+        results.Add((-1,-1),1,wx.EXPAND)
     txtSizer.Add(results,1,wx.EXPAND,0)
     mainSizer.Add(txtSizer,1,wx.EXPAND)
 
@@ -2669,7 +2680,9 @@ def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
     ans = dlg.ShowModal()
     dlg.Destroy()
     return ans
-    
+    #ans = dlg.Show()
+    #breakpoint()
+
 def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
                          buttonlist=None):
     '''Simple code to display possibly extensive error or warning text
@@ -7695,6 +7708,7 @@ class SortableLstCtrl(wx.Panel):
        sortPanel.PopulateHeader([f'label{i}' for i in range(4)],4*[0])
        for i,l in enumerate(data): sortPanel.PopulateLine(i,l)
        for i in range(4): sortPanel.SetColWidth(i) # set width to automatic
+       sortPanel.SetColWidth(1,sortType='float') # sort 1st column by numeric value not str
     '''
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY)#, style=wx.WANTS_CHARS)
@@ -7740,7 +7754,8 @@ class SortableLstCtrl(wx.Panel):
         self.list.SetItemData(index, key)
         self.list.itemDataMap[key] = data
 
-    def SetColWidth(self,col,width=None,auto=True,minwidth=0,maxwidth=None):
+    def SetColWidth(self,col,width=None,auto=True,minwidth=0,maxwidth=None,
+                        sortType='str'):
         '''Sets the column width.
 
         :param int width: the column width in pixels
@@ -7761,6 +7776,67 @@ class SortableLstCtrl(wx.Panel):
                 self.list.SetColumnWidth(col, maxwidth)
         else:
             print('Error in SetColWidth: use either auto or width')
+        if sortType == 'float':
+            self.list.FloatCols.append(col)
+        elif sortType == 'abs':
+            self.list.AbsFloatCols.append(col)
+        elif sortType != 'str':
+            printf('SortableLstCtrl.SetColWidth warning: unexpected sortType value ({sortType})')
+
+    def SetInitialSortColumn(self, col, ascending=True):
+        '''Sets the initial column to be used for sorting when the table is first displayed.
+        This method should be called after all PopulateLine calls are complete.
+
+        :param int col: the column index (0-based) to sort by initially
+        :param bool ascending: if True (default), sort in ascending order; if False, descending
+        '''
+        # Get the sort function
+        sorter = self.list.GetColumnSorter()
+        
+        # Get all keys from itemDataMap
+        keys = list(self.list.itemDataMap.keys())
+        
+        # Sort the keys using the comparison function
+        from functools import cmp_to_key
+        
+        def make_cmp(col_idx, asc):
+            """Create a comparison function for the given column"""
+            def cmp_func(key1, key2):
+                data1 = self.list.itemDataMap[key1][col_idx]
+                data2 = self.list.itemDataMap[key2][col_idx]
+                
+                # For columns designated as self.AbsFloatCols, sort by absolute numerical value
+                if col_idx in self.list.AbsFloatCols:
+                    try:
+                        val1 = abs(float(data1))
+                        val2 = abs(float(data2))
+                        result = (val1 > val2) - (val1 < val2)
+                    except (ValueError, TypeError):
+                        result = (data1 > data2) - (data1 < data2)
+                elif col_idx in self.list.FloatCols:
+                    try:
+                        val1 = float(data1)
+                        val2 = float(data2)
+                        result = (val1 > val2) - (val1 < val2)
+                    except (ValueError, TypeError):
+                        result = (data1 > data2) - (data1 < data2)
+                else:
+                    # For other columns, use string comparison
+                    result = (data1 > data2) - (data1 < data2)
+                
+                return result if asc else -result
+            return cmp_func
+        
+        sorted_keys = sorted(keys, key=cmp_to_key(make_cmp(col, ascending)))
+        
+        # Rebuild the list in sorted order
+        self.list.DeleteAllItems()
+        for key in sorted_keys:
+            data = self.list.itemDataMap[key]
+            index = self.list.InsertItem(self.list.GetItemCount(), data[0])
+            for i, d in enumerate(data[1:]):
+                self.list.SetItem(index, i+1, d)
+            self.list.SetItemData(index, key)
 
 try:
     class G2LstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin):
@@ -7785,12 +7861,48 @@ try:
             self.DownArrow = self.il.Add(SmallDnArrow.GetBitmap())
             self.parent=parent
             self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+            self.FloatCols = []
+            self.AbsFloatCols = []
 
         def GetListCtrl(self): # needed for sorting
             return self
         def GetSortImages(self):
             #return (self.parent.DownArrow, self.parent.UpArrow)
             return (self.DownArrow, self.UpArrow)
+        def GetColumnSorter(self):
+            """Custom sorter that handles absolute numerical values for columns 1, 2, 3 (2nd, 3rd, 4th columns)"""
+            def compare_func(key1, key2):
+                col = self.GetSortState()[0]
+                ascending = self.GetSortState()[1]
+                
+                # Get data for both rows
+                data1 = self.itemDataMap[key1][col]
+                data2 = self.itemDataMap[key2][col]
+                
+                # For columns designated as self.AbsFloatCols, sort by absolute numerical value
+                if col in self.AbsFloatCols:
+                    try:
+                        val1 = abs(float(data1))
+                        val2 = abs(float(data2))
+                        result = (val1 > val2) - (val1 < val2)
+                    except (ValueError, TypeError):
+                        # Fall back to string comparison if conversion fails
+                        result = (data1 > data2) - (data1 < data2)
+                elif col in self.FloatCols:
+                    try:
+                        val1 = float(data1)
+                        val2 = float(data2)
+                        result = (val1 > val2) - (val1 < val2)
+                    except (ValueError, TypeError):
+                        # Fall back to string comparison if conversion fails
+                        result = (data1 > data2) - (data1 < data2)
+                else:
+                    # For other columns, use string comparison
+                    result = (data1 > data2) - (data1 < data2)
+                
+                return result if ascending else -result
+            
+            return compare_func
 except TypeError:
     # avoid "duplicate base class _MockObject" error in class G2LstCtrl():
     # where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same

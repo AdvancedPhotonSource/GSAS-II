@@ -5556,18 +5556,21 @@ No: least-squares fitting starts with previously fit structure factors.'''
             tbl = []              # assemble a list of changed parameters
             for i in Rvals.get('parmDictAfterFit',{}):
                 if i not in Rvals['parmDictBeforeFit']: continue
-                mag = max(abs(Rvals['parmDictAfterFit'][i]),
-                          abs(Rvals['parmDictBeforeFit'][i]))
-                diff = abs(Rvals['parmDictAfterFit'][i]-Rvals['parmDictBeforeFit'][i])
-                if mag < 1e-5 and diff < 1e-7: continue
-                if diff/mag < 1e-5: continue
-                txt = ''
+                try:
+                    mag = max(abs(Rvals['parmDictAfterFit'][i]),
+                              abs(Rvals['parmDictBeforeFit'][i]))
+                    diff = abs(Rvals['parmDictAfterFit'][i]-Rvals['parmDictBeforeFit'][i])
+                    if mag < 1e-5 and diff < 1e-7: continue
+                    if diff/mag < 1e-5: continue
+                except:
+                    continue
+                txt = '?'
                 v = G2obj.getVarDescr(i)
                 if v is not None and v[-1] is not None:
                     txt = G2obj.fmtVarDescr(i)
                 tbl.append((i,Rvals['parmDictBeforeFit'][i],Rvals['parmDictAfterFit'][i],txt))
             lbl = f'Refinement results, Rw={Rw:.3f}'
-            #ans = G2G.G2AfterFit(self,text,lbl,tbl)
+            #ans = G2G.G2AfterFit(self,text,lbl,tbl)  # this replaces the next 8 lines
             text += '\nLoad new result?'
             dlg2 = wx.MessageDialog(self,text,lbl,wx.OK|wx.CANCEL)
             dlg2.CenterOnParent()
@@ -5576,6 +5579,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
                 ans = dlg2.ShowModal()
             finally:
                 dlg2.Destroy()
+            # replace above with G2G.G2AfterFit line
             if ans == wx.ID_OK:  # refinement has been accepted save, log & display
                 self.reloadFromGPX(rtext,Rvals)
                 G2IO.LogCellChanges(self)

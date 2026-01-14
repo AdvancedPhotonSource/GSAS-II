@@ -8676,7 +8676,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             controls = Page.controls
             G2plt.Plot3DSngl(G2frame,newPlot=False,Data=controls,hklRef=refList,Title=phaseName)
         else:
-            controls = {'Type' : 'Fo','ifFc' : True,
+            controls = {'Type' : 'Fo','ifFc' : True,'dType':data[1]['Type'],
                 'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
                 'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
                 'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}

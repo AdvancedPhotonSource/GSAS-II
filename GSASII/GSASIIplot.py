@@ -1448,27 +1448,49 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         elif key in 'R':
             Data['Shell'][1] = not Data['Shell'][1]
         elif key in ['+','=']:
-            if Data['Shell'][1]:
-                Data['Shell'][0] += 0.1
+            if 'microED' in Data and Data['microED']['Ztilt'][0]:
+                Data['microED']['Ztilt'][1] += 1
             else:
-                Data['Scale'] *= 1.25
+                if Data['Shell'][1]:
+                    Data['Shell'][0] += 0.1
+                else:
+                    Data['Scale'] *= 1.25
         elif key == '-':
-            if Data['Shell'][1]:
-                Data['Shell'][0] = max(Data['Shell'][0]-0.1,0.0)
+            if 'microED' in Data and Data['microED']['Ztilt'][0]:
+                Data['microED']['Ztilt'][1] -= 1
             else:
-                Data['Scale'] /= 1.25
+                if Data['Shell'][1]:
+                    Data['Shell'][0] = max(Data['Shell'][0]-0.1,0.0)
+                else:
+                    Data['Scale'] /= 1.25
         elif key == 'P':
-            vec = viewChoice[Data['viewKey']][0]
-            drawingData['viewPoint'][0] += vec
+            if 'microED' in Data and Data['microED']['Nexp'][0]:
+                Data['microED']['Nexp'][1] += 1
+                Data['microED']['Nexp'][1] = min(Data['microED']['Nexp'][1],np.max(hklRef.T[12]))
+                Data['Scale'] = 1.0
+            else:
+                vec = viewChoice[Data['viewKey']][0]
+                drawingData['viewPoint'][0] += vec
         elif key == 'M':
-            vec = viewChoice[Data['viewKey']][0]
-            drawingData['viewPoint'][0] -= vec
+            if 'microED' in Data and Data['microED']['Nexp'][0]:
+                Data['microED']['Nexp'][1] -= 1
+                Data['microED']['Nexp'][1] = max(Data['microED']['Nexp'][1],0)
+                Data['Scale'] = 1.0
+            else:
+                vec = viewChoice[Data['viewKey']][0]
+                drawingData['viewPoint'][0] -= vec
         elif key == '0':
             drawingData['viewPoint'][0] = np.array([0,0,0])
             Data['Scale'] = 1.0
             Data['Shell'][0] = 0.0
         elif key == 'I':
             Data['Iscale'] = not Data['Iscale']
+        elif key == 'E':
+            if 'microED' in Data:
+                Data['microED']['Nexp'][0] = not Data['microED']['Nexp'][0]
+        elif key == 'T':
+            if 'microED' in Data:
+                Data['microED']['Ztilt'][0] = not Data['microED']['Ztilt'][0]
         elif key in Choice:
             Data['Type'] = Choice[key]
         Draw('key')
@@ -1513,6 +1535,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         C = []
         HKL = []
         for i,refl in enumerate(hklRef):
+            if Data.get('dType','') == 'SEC' and hklRef.shape[1] > 12:
+                Nexp = Data['microED']['Nexp']
+                Ztilt = Data['microED']['Ztilt']
+                if Nexp[0]:
+                    if refl[12] != Nexp[1]:
+                        continue
             if Data['Shell'][1]:
                 if not (Data['Shell'][0] <= 0.5/refl[4+Super] <= Data['Shell'][0]+.1):
                     continue
@@ -1790,13 +1818,20 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 
         HKL,RC,RF,RF2 = FillHKLRC()
         if Data['Zone']:
+            vX,vY,vZ = list(drawingData['viewPoint'][0])
             G2frame.G2plotNB.status.SetStatusText   \
-                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% layer %s'%    \
-                (Data['Type'],Name,len(HKL),RF,super2,RF2,str(list(drawingData['viewPoint'][0]))),1)
+                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% layer %d %d %d'%    \
+                (Data['Type'],Name,len(HKL),RF,super2,RF2,vX,vY,vZ),1)
         elif Data['Shell'][1]:
             G2frame.G2plotNB.status.SetStatusText   \
                 ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% shell %.1f'%    \
                 (Data['Type'],Name,len(HKL),RF,super2,RF2,Data['Shell'][0]),1)
+        elif 'microED' in Data and Data['microED']['Nexp'][0]:
+            Nexp = Data['microED']['Nexp'][1]
+            Ztilt = Data['microED']['Ztilt'][1]
+            G2frame.G2plotNB.status.SetStatusText   \
+                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% Nexp %d Ztilt %d'%    \
+                (Data['Type'],Name,len(HKL),RF,super2,RF2,Nexp,Ztilt),1)
         else:
             G2frame.G2plotNB.status.SetStatusText   \
                 ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%%'%     \
@@ -1848,6 +1883,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l','r: plot radial shell',
     'z: zero zone toggle','p: increment layer','m: decrement layer','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
     'f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
+    if Data.get('dType','') == 'SEC' and hklRef.shape[1] > 12:
+        choice += ['e: toggle Nexp','t: toggle Ztilt']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
                          size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)

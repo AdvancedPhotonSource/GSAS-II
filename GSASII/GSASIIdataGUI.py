@@ -5570,15 +5570,15 @@ No: least-squares fitting starts with previously fit structure factors.'''
                     txt = G2obj.fmtVarDescr(i)
                 tbl.append((i,Rvals['parmDictBeforeFit'][i],Rvals['parmDictAfterFit'][i],txt))
             lbl = f'Refinement results, Rw={Rw:.3f}'
-            #ans = G2G.G2AfterFit(self,text,lbl,tbl)  # this replaces the next 8 lines
-            text += '\nLoad new result?'
-            dlg2 = wx.MessageDialog(self,text,lbl,wx.OK|wx.CANCEL)
-            dlg2.CenterOnParent()
-            ans = False
-            try:
-                ans = dlg2.ShowModal()
-            finally:
-                dlg2.Destroy()
+            ans = G2G.G2AfterFit(self,text,lbl,tbl)  # this replaces the next 8 lines
+            # text += '\nLoad new result?'
+#             dlg2 = wx.MessageDialog(self,text,lbl,wx.OK|wx.CANCEL)
+            # dlg2.CenterOnParent()
+            # ans = False
+            # try:
+            #     ans = dlg2.ShowModal()
+            # finally:
+            #     dlg2.Destroy()
             # replace above with G2G.G2AfterFit line
             if ans == wx.ID_OK:  # refinement has been accepted save, log & display
                 self.reloadFromGPX(rtext,Rvals)
@@ -8178,18 +8178,19 @@ def UpdatePWHKPlot(G2frame,kind,item):
         refList = data[1]['RefList']
         G2plt.Plot1DSngl(G2frame,newPlot=True,hklRef=refList,Super=Super,Title=phaseName)
 
-    def OnPlot3DHKL(event):
-        '''Plots in 3D reciprocal space with green dots proportional to F^2, etc. from single histogram'''
-        refList = data[1]['RefList']
-        FoMax = np.max(refList.T[8+Super])
-        Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
-        Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
-        Vpoint = np.array([int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))])
-        controls = {'Type' : 'Fosq','Iscale' : False,'HKLmax' : Hmax,'HKLmin' : Hmin,'Zone':False,'viewKey':'L',
-            'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
-            'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
-            'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
-        G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+    # def OnPlot3DHKL(event):
+    #     '''Plots in 3D reciprocal space with green dots proportional to F^2, etc. from single histogram'''
+    #     refList = data[1]['RefList']
+    #     FoMax = np.max(refList.T[8+Super])
+    #     Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+    #     Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+    #     Vpoint = np.array([int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))])
+    #     controls = {'Type' : 'Fosq','Iscale' : False,'HKLmax' : Hmax,'HKLmin' : Hmin,'Zone':False,'viewKey':'L',
+    #         'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
+    #         'microED':{'Nexp':[False,0],'Ztilt':[False,0]},
+    #         'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
+    #         'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
+    #     G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
 
     def OnPlotAll3DHKL(event):
         '''Plots in 3D reciprocal space with green dots proportional to F^2, etc. from all SHKL histograms'''
@@ -8478,7 +8479,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=G2G.wxID_PWDANALYSIS)
         G2frame.Bind(wx.EVT_MENU, OnMergeHKL, id=G2G.wxID_MERGEHKL)
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
-        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
+#        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
 #        G2frame.Bind(wx.EVT_MENU, OnPlotFoVsFc, id=G2G.wxID_FOVSFCPLOT)
         G2frame.Bind(wx.EVT_MENU, OnFixFsqFsq, id=G2G.wxID_FIXFSQSQDATA)
@@ -8679,6 +8680,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             controls = {'Type' : 'Fo','ifFc' : True,'dType':data[1]['Type'],
                 'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
                 'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
+                'microED':{'Nexp':[False,0],'Ztilt':[False,0]},
                 'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}
             G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList)
     G2frame.dataWindow.SetDataSize()

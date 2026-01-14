@@ -2926,7 +2926,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     data['Type'][0] = 'SXC'
                     insVal['Type'] = 'SXC'
                 elif 'micro' in lamType:
-                    insVal['Lam'] = 0.025079 # @200keV
+                    insVal['Lam'] = insVal.get('Lam',0.025079) # @200keV
                     data['Type'][0] = 'SEC'      #change to electron diffraction
                     insVal['Type'] = 'SEC'      # in 3 places!
                     Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId) 
@@ -7304,6 +7304,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
         Vpoint = np.array([int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))])
         controls = {'Type':'Fosq','Iscale':False,'HKLmax':Hmax,'HKLmin':Hmin,'Zone':False,'viewKey':'L',
+            'microED':{'Nexp':[False,0],'Ztilt':[False,0]},'dType':data[1]['Type'],
             'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
             'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
             'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
@@ -7431,9 +7432,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             if 'T' in Inst['Type'][0]:
                 colLabels = ['H','K','L','flag','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
                 Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]
-            elif 'E' in Inst['Type'][0]:                
-                colLabels = ['H','K','L','flag','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','Nexp','Zpos']
-                Types += [wg.GRID_VALUE_LONG,wg.GRID_VALUE_FLOAT+':10,3',]
+            elif 'E' in Inst['Type'][0]:
+                colLabels = ['H','K','L','flag','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC']
+                if refs.shape[1] > 12:                
+                    colLabels += ['Nexp','Zpos']
+                    Types += [wg.GRID_VALUE_LONG,wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
         else:

@@ -502,7 +502,22 @@ as part of the GSAS-II distribution and must be installed separately:
 
   **Dysnomia**
     Computes enhanced Fourier maps with Maximum Entropy estimated
-    extension of the reflection sphere. See https://jp-minerals.org/dysnomia/en/.
+    extension of the reflection sphere. See
+    https://jp-minerals.org/dysnomia/en/.
+    The appropriate zip/dmg/tar file must be downloaded from that web
+    site and the directory Dysnomia from that download must be placed
+    in one of the following locations:
+    
+      * the user's home directory (``~/.``),
+      * the directory ``~/.GSASII`` or
+      * the ``GSASII`` directory where GSAS-II has been installed
+        (this will be where the GSAS-II Python files are found).
+        
+    For Windows the home directory, ``~``, is usually
+    taken from the USERPROFILE setting or a combination of HOMEPATH
+    and HOMEDRIVE, so these directories will usually have form 
+    ``C:\\Users\\YourUsername`` or
+    ``C:\\Users\\YourUsername\\.GSASII``. 
 
   **RMCProfile**
     Provides large-box PDF & S(Q) fitting. The GSAS-II interface was originally

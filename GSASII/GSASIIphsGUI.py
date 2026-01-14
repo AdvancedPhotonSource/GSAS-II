@@ -2392,8 +2392,8 @@ def UpdatePhaseData(G2frame,Item,data):
                         # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnLoadDysnomia(event,G2frame,data), id=G2G.wxID_LOADDYSNOMIA)
                         # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnSaveDysnomia(event,G2frame,data), id=G2G.wxID_SAVEDYSNOMIA)
                         # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnRunDysnomia(event,G2frame,data), id=G2G.wxID_RUNDYSNOMIA)
-                        G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
-                        G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
+                        # G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
+                        # G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
                         G2frame.Bind(wx.EVT_MENU, OnRunDysnomia, id=G2G.wxID_RUNDYSNOMIA)
                         G2frame.phaseDisplay.InsertPage(7,G2frame.MEMData,'Dysnomia')
                         Id = wx.NewId()
@@ -5854,25 +5854,45 @@ to use these entries'''
 
 #### Dysnomia (MEM) Data page ##############################################################################
 
-    def OnLoadDysnomia(event):
-        print('Load MEM - might not be implemented')
+    # def OnLoadDysnomia(event):
+    #     print('Load MEM - might not be implemented')
 
-    def OnSaveDysnomia(event):
-        print('Save MEM - might not be implemented')
+    # def OnSaveDysnomia(event):
+    #     print('Save MEM - might not be implemented')
 
     def OnRunDysnomia(event):
 
-        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
-        DysData = data['Dysnomia']
+        if sys.platform == "win32":
+            binimage = 'Dysnomia64.exe'
+        else:
+            binimage = 'Dysnomia'
+        is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
-        if not os.path.exists(DYSNOMIA):
-            wx.MessageBox(''' Dysnomia is not installed. Please download it from
-    https://jp-minerals.org/dysnomia/en/
-    and install it at.'''+DYSNOMIA,
-                caption='Dysnomia not installed',style=wx.ICON_ERROR)
+        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+        pathlist = (GSASIIpath.path2GSAS2,
+                    os.path.expanduser('~'),
+                    os.path.expanduser(os.path.join('~','.GSASII')))
+        locations = []
+        for path in pathlist:
+            DYSNOMIA = os.path.join(path,'Dysnomia',binimage)
+            locations.append(DYSNOMIA)
+            if not os.path.exists(DYSNOMIA): continue
+            if is_exe(DYSNOMIA):
+                break
+        else:
+            print(f"File {binimage!r} not found."
+                  f"\nThe following locations were checked:\n\t{'\n\t'.join(locations)}")
+            msg = f'''Dysnomia is not installed. Please download it from
+https://jp-minerals.org/dysnomia/en/ and install the 
+downloaded directory (which includes file {binimage!r})
+at one of the following locations:
+\t{'\n\t'.join(pathlist)}'''
+            G2G.ShowWebPage("https://jp-minerals.org/dysnomia/en/",G2frame)
+            G2G.ShowScrolledInfo(G2frame,msg,header='Install Dysnomia',
+                                     width=350,height=150)
             return
 
+        DysData = data['Dysnomia']
         generalData = data['General']
         Map = generalData['Map']
         UseList = Map['RefList']
@@ -13145,8 +13165,8 @@ tab, use Operations->"Pawley create")''')
         # Dysnomia (MEM)
         if data['General']['doDysnomia']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MEMMenu)
-            G2frame.Bind(wx.EVT_MENU,OnLoadDysnomia,id=G2G.wxID_LOADDYSNOMIA)
-            G2frame.Bind(wx.EVT_MENU,OnSaveDysnomia,id=G2G.wxID_SAVEDYSNOMIA)
+            #G2frame.Bind(wx.EVT_MENU,OnLoadDysnomia,id=G2G.wxID_LOADDYSNOMIA)
+            #G2frame.Bind(wx.EVT_MENU,OnSaveDysnomia,id=G2G.wxID_SAVEDYSNOMIA)
             G2frame.Bind(wx.EVT_MENU,OnRunDysnomia,id=G2G.wxID_RUNDYSNOMIA)
         # Stacking faults
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.LayerData)

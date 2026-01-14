@@ -7321,9 +7321,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.MEMMenu.Append(menu=wx.Menu(title=''),title='Select tab')
             self.MEMDataEdit = wx.Menu(title='')
             self.MEMMenu.Append(menu=self.MEMDataEdit, title='Operations')
-            self.MEMDataEdit.Append(G2G.wxID_LOADDYSNOMIA,'Load from Dysnomia file','Load MEM info from Dysnomia file')
-            self.MEMDataEdit.Append(G2G.wxID_SAVEDYSNOMIA,'Save Dysnomia file','Save MEM info in Dysnomia file')
-            self.MEMDataEdit.Append(G2G.wxID_RUNDYSNOMIA,'Run Dysonmia','Run Dysnomia to make new Fobs map')
+            #self.MEMDataEdit.Append(G2G.wxID_LOADDYSNOMIA,'Load from Dysnomia file','Load MEM info from Dysnomia file')
+            #self.MEMDataEdit.Append(G2G.wxID_SAVEDYSNOMIA,'Save Dysnomia file','Save MEM info in Dysnomia file')
+            self.MEMDataEdit.Append(G2G.wxID_RUNDYSNOMIA,'Run Dysnomia','Run Dysnomia to make new Fobs map')
             self.PostfillDataMenu()
 
             #Phase / fullrmc & RMCprofile (Reverse Monte Carlo method) tab

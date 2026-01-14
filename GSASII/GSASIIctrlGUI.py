@@ -5160,7 +5160,7 @@ class VirtualVarBox(wx.ListCtrl):
             self.parmWin.Controls['LoggedVars'].remove(var)
         else:
             self.parmWin.Controls['LoggedVars'].append(var)
-        if GSASIIpath.GetConfigValue('debug'): print(self.parmWin.Controls['LoggedVars'])
+        #if GSASIIpath.GetConfigValue('debug'): print(self.parmWin.Controls['LoggedVars'])
         self.parmWin.SendSizeEvent()  # redraws the window
         wx.CallAfter(RightClickClear)
 

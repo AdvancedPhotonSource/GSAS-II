@@ -29,13 +29,14 @@ jobs:
           repository: AdvancedPhotonSource/GSAS-II-tutorials.git
           path: _docs
           ref: main
+          sparse-checkout: MDhelp/docs
+          sparse-checkout-cone-mode: true
 
       - name: Compare files
         id: compare
         run: |
-          # Check if any files in _docs/MDhelp/docs are newer than GSASII/help
-          # Since mkdocs converts all MD files to HTML, compare the most recent commit
-          # date in each directory
+          # Check if any .md files in _docs/MDhelp/docs are newer than GSASII/help
+          # Only compare markdown source files, not directory metadata
           files_changed="false"
           
           if [ ! -d "GSASII/help" ]; then
@@ -45,14 +46,14 @@ jobs:
             echo "docs directory does not exist"
             files_changed="false"
           else
-            # Get the most recent commit date for the docs directory
-            docs_latest=$(cd _docs && git log -1 --format=%cI -- "MDhelp/docs/" 2>/dev/null || echo "")
+            # Get the most recent commit date for .md files in docs directory
+            docs_latest=$(cd _docs && find MDhelp/docs -name "*.md" -type f | xargs git log -1 --format=%cI -- 2>/dev/null | sort -r | head -1)
             
             # Get the most recent commit date for the help directory
             help_latest=$(git log -1 --format=%cI -- "GSASII/help/" 2>/dev/null || echo "")
             
             if [ -z "$docs_latest" ]; then
-              echo "Could not get commit date for docs directory"
+              echo "Could not get commit date for markdown files in docs directory"
               files_changed="false"
             elif [ -z "$help_latest" ]; then
               echo "help directory has no commit history, will build"
@@ -60,7 +61,7 @@ jobs:
             else
               # Compare ISO 8601 dates (they sort correctly as strings)
               if [ "$docs_latest" > "$help_latest" ]; then
-                echo "Docs directory is newer (docs: $docs_latest, help: $help_latest)"
+                echo "Markdown docs are newer (docs: $docs_latest, help: $help_latest)"
                 files_changed="true"
               else
                 echo "help directory is current (docs: $docs_latest, help: $help_latest)"

@@ -34,6 +34,7 @@ jobs:
         id: compare
         run: |
           # Check if any files in _docs/MDhelp/docs are newer than GSASII/help
+          # Use git log to get actual modification dates from commit history
           files_changed="false"
           
           if [ ! -d "GSASII/help" ]; then
@@ -43,7 +44,7 @@ jobs:
             echo "docs directory does not exist"
             files_changed="false"
           else
-            # Compare modification times of files
+            # Compare git commit dates for files
             for doc_file in $(find _docs/MDhelp/docs -type f); do
               relative_path="${doc_file#_docs/MDhelp/docs/}"
               help_file="GSASII/help/$relative_path"
@@ -54,9 +55,24 @@ jobs:
                 break
               fi
               
-              # Compare modification times
-              if [ "$doc_file" -nt "$help_file" ]; then
-                echo "File is newer: $relative_path"
+              # Get git commit dates using git log
+              doc_commit_date=$(cd _docs && git log -1 --format=%cI -- "MDhelp/docs/$relative_path" 2>/dev/null || echo "")
+              help_commit_date=$(git log -1 --format=%cI -- "GSASII/help/$relative_path" 2>/dev/null || echo "")
+              
+              if [ -z "$doc_commit_date" ]; then
+                echo "Could not get commit date for: $relative_path"
+                continue
+              fi
+              
+              if [ -z "$help_commit_date" ]; then
+                echo "New file detected: $relative_path"
+                files_changed="true"
+                break
+              fi
+              
+              # Compare ISO 8601 dates (they sort correctly as strings)
+              if [ "$doc_commit_date" > "$help_commit_date" ]; then
+                echo "File is newer in tutorials repo: $relative_path (docs: $doc_commit_date, help: $help_commit_date)"
                 files_changed="true"
                 break
               fi

@@ -34,7 +34,8 @@ jobs:
         id: compare
         run: |
           # Check if any files in _docs/MDhelp/docs are newer than GSASII/help
-          # Use git log to get actual modification dates from commit history
+          # Since mkdocs converts all MD files to HTML, compare the most recent commit
+          # date in each directory
           files_changed="false"
           
           if [ ! -d "GSASII/help" ]; then
@@ -44,39 +45,28 @@ jobs:
             echo "docs directory does not exist"
             files_changed="false"
           else
-            # Compare git commit dates for files
-            for doc_file in $(find _docs/MDhelp/docs -type f); do
-              relative_path="${doc_file#_docs/MDhelp/docs/}"
-              help_file="GSASII/help/$relative_path"
-              
-              if [ ! -f "$help_file" ]; then
-                echo "New file detected: $relative_path"
-                files_changed="true"
-                break
-              fi
-              
-              # Get git commit dates using git log
-              doc_commit_date=$(cd _docs && git log -1 --format=%cI -- "MDhelp/docs/$relative_path" 2>/dev/null || echo "")
-              help_commit_date=$(git log -1 --format=%cI -- "GSASII/help/$relative_path" 2>/dev/null || echo "")
-              
-              if [ -z "$doc_commit_date" ]; then
-                echo "Could not get commit date for: $relative_path"
-                continue
-              fi
-              
-              if [ -z "$help_commit_date" ]; then
-                echo "New file detected: $relative_path"
-                files_changed="true"
-                break
-              fi
-              
+            # Get the most recent commit date for the docs directory
+            docs_latest=$(cd _docs && git log -1 --format=%cI -- "MDhelp/docs/" 2>/dev/null || echo "")
+            
+            # Get the most recent commit date for the help directory
+            help_latest=$(git log -1 --format=%cI -- "GSASII/help/" 2>/dev/null || echo "")
+            
+            if [ -z "$docs_latest" ]; then
+              echo "Could not get commit date for docs directory"
+              files_changed="false"
+            elif [ -z "$help_latest" ]; then
+              echo "help directory has no commit history, will build"
+              files_changed="true"
+            else
               # Compare ISO 8601 dates (they sort correctly as strings)
-              if [ "$doc_commit_date" > "$help_commit_date" ]; then
-                echo "File is newer in tutorials repo: $relative_path (docs: $doc_commit_date, help: $help_commit_date)"
+              if [ "$docs_latest" > "$help_latest" ]; then
+                echo "Docs directory is newer (docs: $docs_latest, help: $help_latest)"
                 files_changed="true"
-                break
+              else
+                echo "help directory is current (docs: $docs_latest, help: $help_latest)"
+                files_changed="false"
               fi
-            done
+            fi
           fi
           
           echo "files_changed=$files_changed" >> $GITHUB_OUTPUT

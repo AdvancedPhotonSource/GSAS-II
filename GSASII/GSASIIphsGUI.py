@@ -5880,13 +5880,14 @@ to use these entries'''
             if is_exe(DYSNOMIA):
                 break
         else:
+            newline = '\n\t'
             print(f"File {binimage!r} not found."
-                  f"\nThe following locations were checked:\n\t{'\n\t'.join(locations)}")
+                  f"\nThe following locations were checked:\n\t{newline.join(locations)}")
             msg = f'''Dysnomia is not installed. Please download it from
 https://jp-minerals.org/dysnomia/en/ and install the 
 downloaded directory (which includes file {binimage!r})
 at one of the following locations:
-\t{'\n\t'.join(pathlist)}'''
+\t{newline.join(pathlist)}'''
             G2G.ShowWebPage("https://jp-minerals.org/dysnomia/en/",G2frame)
             G2G.ShowScrolledInfo(G2frame,msg,header='Install Dysnomia',
                                      width=350,height=150)

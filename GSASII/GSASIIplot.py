@@ -1360,7 +1360,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     '''3D Structure factor plotting package - displays reflections as spots proportional
         to F, F**2, etc. as requested as 3D array via pyOpenGl
     '''
-    global ifBox
+    global ifBox,HKL
     ifBox = False
     def OnKeyBox(event):
         mode = cb.GetValue()
@@ -1519,6 +1519,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
+    Yl = np.array([255,255,0])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]],
@@ -1527,11 +1528,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     uColors = [Rd,Gr,Bl, Wt,Wt,Wt, Wt,Wt,Wt, Wt,Wt,Wt]
 
     def FillHKLRC():
+        global HKL
         sumFo2 = 0.
         sumDF2 = 0.
         sumFo = 0.
         sumDF = 0.
-        R = np.zeros(len(hklRef))
+        R = []
         C = []
         HKL = []
         for i,refl in enumerate(hklRef):
@@ -1540,6 +1542,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 Ztilt = Data['microED']['Ztilt']
                 if Nexp[0]:
                     if refl[12] != Nexp[1]:
+                        continue
+                if Ztilt[0]:
+                    if round(refl[13]) != Ztilt[1]:
                         continue
             if Data['Shell'][1]:
                 if not (Data['Shell'][0] <= 0.5/refl[4+Super] <= Data['Shell'][0]+.1):
@@ -1561,60 +1566,73 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             else:
                 HKL.append(H)
             if Data['Type'] == 'Unit':
-                R[i] = 0.1
+                R.append(0.1)
                 C.append(Gr)
             elif Data['Type'] == 'Fosq':
                 if Fosq > 0:
-                    R[i] = Fosq
+                    R.append(Fosq)
                     C.append(Gr)
                 else:
-                    R[i] = -Fosq
+                    R.append(-Fosq)
                     C.append(Rd)
             elif Data['Type'] == 'Fo':
                 if Fosq > 0:
-                    R[i] = np.sqrt(Fosq)
+                    R.append(np.sqrt(Fosq))
                     C.append(Gr)
                 else:
-                    R[i] = np.sqrt(-Fosq)
+                    R.append(np.sqrt(-Fosq))
                     C.append(Rd)
             elif Data['Type'] == 'dFsq/sig':
                 dFsig = (Fosq-Fcsq)/sig
                 if dFsig > 0:
-                    R[i] = dFsig
-                    C.append(Gr)
+                    R.append(dFsig)
+                    dFsig = min(10.,dFsig)
+                    dw = int(255.*(1.0-(dFsig/10.)))
+                    color = np.array([dw,255,0])
                 else:
-                    R[i] = -dFsig
-                    C.append(Rd)
+                    R.append(-dFsig)
+                    dFsig = max(-10.,dFsig)
+                    dw = int(255.*(1.0+(dFsig/10.)))
+                    color = np.array([255,dw,0])
+                C.append(color)
             elif Data['Type'] == 'dFsq':
                 dF = Fosq-Fcsq
                 if dF > 0:
-                    R[i] = dF
+                    R.append(dF)
                     C.append(Gr)
                 else:
-                    R[i] = -dF
+                    R.append(-dF)
                     C.append(Rd)
-        R /= np.max(R)
-        R *= Data['Scale']
-        R = np.where(R<1.e-5,1.e-5,R)
-        if Data['Iscale']:
-            R = np.where(R<=1.,R,1.)
-            C = np.array(C)
-            C = (C.T*R).T
-            R = np.ones_like(R)*0.05
-        RF = 100.
-        RF2 = 100.
-        if sumFo and sumDF:
-            RF = 100.*sumDF/sumFo
-            RF2 = 100.*sumDF2/sumFo2
-        return HKL,zip(list(R),C),RF,RF2
+        if len(R):
+            R = np.array(R)
+            if Data['Type'] == 'dFsq/sig':
+                R /= 10.
+            else:
+                R /= np.max(np.array(R))
+            R *= Data['Scale']
+            R = np.where(R<1.e-5,1.e-5,R)
+            if Data['Iscale']:
+                R = np.where(R<=1.,R,1.)
+                C = np.array(C)
+                C = (C.T*R).T
+                R = np.ones_like(R)*0.05
+            RF = 100.
+            RF2 = 100.
+            if sumFo and sumDF:
+                RF = 100.*sumDF/sumFo
+                RF2 = 100.*sumDF2/sumFo2
+            return HKL,zip(list(R),C),RF,RF2
+        else:
+            return HKL,[],-100.,-100.
 
     def GetTruePosition(xy):
+        global HKL
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         Proj = GL.glGetDoublev(GL.GL_PROJECTION_MATRIX)
         Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
         Zmax = 1.
         xy = [int(xy[0]),int(View[3]-xy[1])]
-        for i,ref in enumerate(hklRef):
+        for i,ref in enumerate(HKL):
             h,k,l = ref[:3]
             try:
                 X,Y,Z = GLU.gluProject(h,k,l,Model,Proj,View)
@@ -1624,7 +1642,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                     return [int(h),int(k),int(l)]
             except ValueError:
                 return [int(h),int(k),int(l)]
-
 
     def SetTranslation(newxy):
 #first get translation vector in screen coords.
@@ -1880,6 +1897,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
+    
     choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l','r: plot radial shell',
     'z: zero zone toggle','p: increment layer','m: decrement layer','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
     'f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']

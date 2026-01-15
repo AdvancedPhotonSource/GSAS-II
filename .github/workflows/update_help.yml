@@ -1,11 +1,13 @@
 name: xfer help info from GSAS-II docs repo
 # This updates the help file to match the contents of the MDhelp directory
 # in the GSAS-II-tutorials repo. It is triggered from the builddocsite.yml
-# workflow in the GSAS-II-tutorials repo.
+# workflow in the GSAS-II-tutorials repo, or runs daily, or can be triggered manually.
 
 on:
   repository_dispatch: # run from Web API
-  workflow_dispatch:
+  workflow_dispatch: # manual trigger for testing
+  schedule:
+    - cron: '0 0 * * *' # Run daily at midnight UTC
 
 permissions:
   contents: write
@@ -13,7 +15,60 @@ permissions:
   pages: write
 
 jobs:
-  build:       # Build web pages
+  check_files:  # Check if files need updating
+    runs-on: ubuntu-latest
+    outputs:
+      files_changed: ${{ steps.compare.outputs.files_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout tutorials repo
+        uses: actions/checkout@v4
+        with:
+          repository: AdvancedPhotonSource/GSAS-II-tutorials.git
+          path: _docs
+          ref: main
+
+      - name: Compare files
+        id: compare
+        run: |
+          # Check if any files in _docs/MDhelp/docs are newer than GSASII/help
+          files_changed="false"
+          
+          if [ ! -d "GSASII/help" ]; then
+            echo "help directory does not exist, will build"
+            files_changed="true"
+          elif [ ! -d "_docs/MDhelp/docs" ]; then
+            echo "docs directory does not exist"
+            files_changed="false"
+          else
+            # Compare modification times of files
+            for doc_file in $(find _docs/MDhelp/docs -type f); do
+              relative_path="${doc_file#_docs/MDhelp/docs/}"
+              help_file="GSASII/help/$relative_path"
+              
+              if [ ! -f "$help_file" ]; then
+                echo "New file detected: $relative_path"
+                files_changed="true"
+                break
+              fi
+              
+              # Compare modification times
+              if [ "$doc_file" -nt "$help_file" ]; then
+                echo "File is newer: $relative_path"
+                files_changed="true"
+                break
+              fi
+            done
+          fi
+          
+          echo "files_changed=$files_changed" >> $GITHUB_OUTPUT
+          echo "Files changed: $files_changed"
+
+  build:       # Build web pages (only if files changed)
+    needs: check_files
+    if: needs.check_files.outputs.files_changed == 'true'
     runs-on: ubuntu-latest
     steps:
 

@@ -33,6 +33,8 @@ For example::
     float_config = 0.0
     string_config = None (or)
     string_config = 'value'
+
+Below are the configuration settings that can be used in GSAS-II. 
 '''
 
 debug = False

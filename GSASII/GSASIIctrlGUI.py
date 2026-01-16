@@ -2610,6 +2610,37 @@ def G2MessageBox(parent,msg,title='Error'):
     dlg.Destroy()
 
 ################################################################################
+def findValsInNotebook(data,target):
+    'Pull a string of values from saved values in the GSAS-II notebook'
+    c = 0
+    vals = []
+    pos = []
+    for l in data:
+        if '[REF]' in l: c += 1
+        if '[VALS]' in l: 
+            v = {i.split(' : ')[0].strip() : i.split(' : ')[1]
+                     for i in l[6:].split(',')}
+            if target not in v:
+                continue
+            try:
+                vals.append(float(v[target]))
+                pos.append(c)
+            except:
+                pass
+        if '[CEL]' in l:
+            ph = l.split('Phase')[1].split()[0]
+            hst = l.split('Hist')[1].split(':')[0].strip()
+            vars = [i.split('=')[0] for i in l.split(':')[1].split()]
+            vars = [f'{v}[p{ph}_h{hst}]' for v in vars]
+            if target not in vars: continue
+            values = [i.split('=')[1].split('(')[0] for i in l.split(':')[1].split()]
+            try:
+                vals.append(float(dict(zip(vars,values))[target]))
+                pos.append(c)
+            except:
+                pass
+    return pos,vals
+        
 def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
     '''Shows the results from a refinement
 
@@ -2617,22 +2648,52 @@ def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
     :param str msg: text from refinement results
     :param str title: text to label window
     :param list vartbl: a list of lists. The contents of each inner list
-      item will be [var-name, val-before, val-after, meaning]
+      item will be [var-name, val-before, val-after, sigma, meaning]
     :param int txtwidth: width (in pixesl) to display msg. Defaults to 300
     '''
-
-    displayTable = [     # create table to show from input
-            (var,
-            f'{before:.6g}',
-            f'{after:.6g}',
-            f'{after-before:.6g}',
-            what) for (var,before,after,what) in vartbl]
-    labels = ('var','before','after','change','parameter description')
-    just =   (0    , 1      , 1     , 1      , 0)
+    def OnRowSelected(event):
+        '''plot the parameter results if it has been recorded
+        this is called when one clicks on a row in the parameter table
+        '''
+        row = event.GetIndex()
+        var = results.list.GetItemText(row)
+        val = valDict.get(var)
+        G2frame = wx.App.GetMainTopWindow()
+        G2frame.G2plotNB.Delete('fit results')
+        if val is None: return
+        nId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Notebook')
+        if not nId: return
+        Notebook = G2frame.GPXtree.GetItemPyData(nId)
+        pos,vals = findValsInNotebook(Notebook,var)
+        if len(pos) < 2: return
+        pos.append(pos[-1]+1)
+        try:
+            vals.append(float(val))
+        except:
+            return
+        XY = [np.array(pos),np.array(vals)]
+        from . import GSASIIplot as G2plt
+        G2plt.PlotXY(G2frame,[XY,],Title='fit results',newPlot=True,
+                                     labelX='seq',labelY=var,lines=True)
+    # create table to show from input
+    displayTable = []
+    valDict = {}
+    for (var,before,after,sig,what) in vartbl:
+        valDict[var] = after # save lookup table of values
+        try:
+            d = f'{(after-before)/sig:.3g}'
+            b = G2mth.ValEsd(before,-abs(sig)/10,True)
+            a = G2mth.ValEsd(after,-abs(sig)/10,True)
+        except:
+            d = '0'
+            b = f'{before:.6g}'
+            a = f'{after:.6g}'
+        displayTable.append((var,b,a,d,what))
+    labels = ('var','before','after','del/sig','parameter description')
+    just =   (0    , 1      , 1     , 1      , 0) # 0 left, 1 right
     dlg = wx.Dialog(parent.GetTopLevelParent(), wx.ID_ANY, title,
                         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-
     txtSizer = wx.BoxSizer(wx.HORIZONTAL)
     txt = wx.StaticText(dlg,wx.ID_ANY,msg)
     txt.Wrap(txtwidth-20)
@@ -2652,14 +2713,16 @@ def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
         results.SetInitialSortColumn(3,False)
         results.SetClientSize((450,250))
         results.SetMinSize((450,250))
+        results.Bind(wx.EVT_LIST_ITEM_SELECTED, OnRowSelected) # plot
     else:
         results = wx.BoxSizer(wx.VERTICAL)
         results.Add((-1,-1),1,wx.EXPAND)
-        results.Add(wx.StaticText(dlg,wx.ID_ANY,'  (no parameter changes\nto display)  ',size=(350,-1),style=wx.ALIGN_CENTER))
+        results.Add(wx.StaticText(dlg,wx.ID_ANY,
+                        '  (no parameter changes\nto display)  ',
+                        size=(350,-1),style=wx.ALIGN_CENTER))
         results.Add((-1,-1),1,wx.EXPAND)
     txtSizer.Add(results,1,wx.EXPAND,0)
     mainSizer.Add(txtSizer,1,wx.EXPAND)
-
     mainSizer.Add((-1,5))
     txt = wx.StaticText(dlg,wx.ID_ANY,'Load new result?')
     mainSizer.Add(txt,0,wx.CENTER)
@@ -2680,8 +2743,6 @@ def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
     ans = dlg.ShowModal()
     dlg.Destroy()
     return ans
-    #ans = dlg.Show()
-    #breakpoint()
 
 def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
                          buttonlist=None):
@@ -7786,57 +7847,13 @@ class SortableLstCtrl(wx.Panel):
     def SetInitialSortColumn(self, col, ascending=True):
         '''Sets the initial column to be used for sorting when the table is first displayed.
         This method should be called after all PopulateLine calls are complete.
+        The up or down arrow indicator will be displayed on the specified column.
 
         :param int col: the column index (0-based) to sort by initially
         :param bool ascending: if True (default), sort in ascending order; if False, descending
         '''
-        # Get the sort function
-        sorter = self.list.GetColumnSorter()
-        
-        # Get all keys from itemDataMap
-        keys = list(self.list.itemDataMap.keys())
-        
-        # Sort the keys using the comparison function
-        from functools import cmp_to_key
-        
-        def make_cmp(col_idx, asc):
-            """Create a comparison function for the given column"""
-            def cmp_func(key1, key2):
-                data1 = self.list.itemDataMap[key1][col_idx]
-                data2 = self.list.itemDataMap[key2][col_idx]
-                
-                # For columns designated as self.AbsFloatCols, sort by absolute numerical value
-                if col_idx in self.list.AbsFloatCols:
-                    try:
-                        val1 = abs(float(data1))
-                        val2 = abs(float(data2))
-                        result = (val1 > val2) - (val1 < val2)
-                    except (ValueError, TypeError):
-                        result = (data1 > data2) - (data1 < data2)
-                elif col_idx in self.list.FloatCols:
-                    try:
-                        val1 = float(data1)
-                        val2 = float(data2)
-                        result = (val1 > val2) - (val1 < val2)
-                    except (ValueError, TypeError):
-                        result = (data1 > data2) - (data1 < data2)
-                else:
-                    # For other columns, use string comparison
-                    result = (data1 > data2) - (data1 < data2)
-                
-                return result if asc else -result
-            return cmp_func
-        
-        sorted_keys = sorted(keys, key=cmp_to_key(make_cmp(col, ascending)))
-        
-        # Rebuild the list in sorted order
-        self.list.DeleteAllItems()
-        for key in sorted_keys:
-            data = self.list.itemDataMap[key]
-            index = self.list.InsertItem(self.list.GetItemCount(), data[0])
-            for i, d in enumerate(data[1:]):
-                self.list.SetItem(index, i+1, d)
-            self.list.SetItemData(index, key)
+        # Use SortListItems to both sort the items and display the sort indicator arrow
+        self.list.SortListItems(col, ascending)
 
 try:
     class G2LstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin):
@@ -7867,10 +7884,10 @@ try:
         def GetListCtrl(self): # needed for sorting
             return self
         def GetSortImages(self):
-            #return (self.parent.DownArrow, self.parent.UpArrow)
             return (self.DownArrow, self.UpArrow)
         def GetColumnSorter(self):
-            """Custom sorter that handles absolute numerical values for columns 1, 2, 3 (2nd, 3rd, 4th columns)"""
+            """Custom sorter that handles absolute numerical values for columns 1, 2, 
+            and 3 (2nd, 3rd, 4th columns)"""
             def compare_func(key1, key2):
                 col = self.GetSortState()[0]
                 ascending = self.GetSortState()[1]

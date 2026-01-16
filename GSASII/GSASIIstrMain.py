@@ -644,7 +644,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
     Rvals['varyList'] = 'Varied: ' + ', '.join(varyList)
     Rvals['parmDictBeforeFit'] = parmDictBefore
     Rvals['parmDictAfterFit'] = copy.deepcopy(parmDict)
-    Rvals['parmDictvaryList'] = copy.copy(varyList)
+    Rvals['parmDictSigDict'] = dict(zip(varyList,sig))
     s = G2mv.VarRemapSumm()
     if s: Rvals['contrSumm'] = f'Constraints: {s}'
     Rvals['restrSumm'] = G2stIO.SummRestraints(restraintDict)

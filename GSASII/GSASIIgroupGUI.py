@@ -32,6 +32,7 @@ one or more of the following elements:
  *  'txt'    : str
  *  'init'   : float
  *  'rowlbl' : (array, key)
+ *  'setintfunc' : function
 
 One of 'val', 'ref' or 'str' elements will be present. 
 
@@ -76,6 +77,9 @@ One of 'val', 'ref' or 'str' elements will be present.
     should not be enforced. The 'range' values will be used as limits
     for the entry widget.
 
+ *  The 'setintfunc' value defines a function that is executed when the 
+    'ref' tuple is changed. When this is supplied, a spin box is used 
+    to set the value rather than a TextCtrl.
 '''
 
 # import math
@@ -269,6 +273,7 @@ def UpdateGroup(G2frame,item,plot=True):
     if not hasattr(G2frame,'GroupInfo'):
         G2frame.GroupInfo = {}
     G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Sample')
+    #G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Background')
     G2frame.GroupInfo['groupName'] = G2frame.GPXtree.GetItemText(item)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.GroupMenu)
     G2frame.Bind(wx.EVT_MENU, OnCopyAll, id=G2G.wxID_GRPALL)
@@ -374,30 +379,35 @@ def onSetAll(event):
     all edit widgets
     '''
     but = event.GetEventObject()
-    dataSource = but.valDict['dataSource']
-    valList = but.valDict['arrays']
-    histList = but.valDict['hists']
-    valEditList = but.valDict['valEditList']
-    firstVal = indexArrayVal(dataSource,histList[0],valList[0])
-    for c in valEditList:
-        c.ChangeValue(firstVal)
+    firstVal = indexArrayVal(but.valDict['dataSource'],
+                    but.valDict['hists'][0],but.valDict['arrays'][0])
+    for f in but.valDict['valSetFxnList']:
+        f(firstVal)
 
 def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=False,
                      lblSizer=None,lblPanel=None,CopyCtrl=True):
     '''Displays the data table in `DataArray` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
+    def OnSpin(evt):
+        '''respond when a SpinButton entry is changed (currently used for 
+        background terms only)
+        '''
+        spin = (evt.GetEventObject())
+        spin.arr[spin.indx] = evt.GetEventObject().GetValue()
+        spin.txt.SetLabel(str(spin.arr[spin.indx]))
+        spin.setTermsFnx()
     firstentry = None
     #lblRow = True
     if lblSizer is None: lblSizer = Sizer
     if lblPanel is None: lblPanel = Panel
     checkButList = {}
-    valEditList = {}
+    valSetFxnList = {}
     lblDict = {}
     dataSource = DataArray['_dataSource']
     for row in rowLabels:
         checkButList[row] = []
-        valEditList[row] = []
+        valSetFxnList[row] = []
         # show the row labels, when not in a separate sizer
         if lblRow:
             # is a copy across and/or a refine all button needed?
@@ -409,7 +419,6 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                     valList.append(DataArray[hist][row]['val'])
                 if 'ref' in DataArray[hist][row]:
                     refList.append(DataArray[hist][row]['ref'])
-
             arr = None
             histList = []
             for hist in DataArray:
@@ -425,7 +434,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
             lblSizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
             lblDict[row] = w
 
-            if len(refList) > 2:
+            if len(refList) > 2: # >two refinement flags in this row. Include ste/clear all button
                 lbl = SetAllLbl
                 if all([indexArrayVal(dataSource,hist,i) for i in refList]): lbl = ClearAllLbl
                 refAll = wx.Button(lblPanel,label=lbl,style=wx.BU_EXACTFIT)
@@ -445,10 +454,11 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
             if hist == '_dataSource': continue
             i += 1
             if i == 1 and len(valList) > 2 and not deltaMode and CopyCtrl:
+                # copy button; place after 0th column 
                 but = wx.Button(Panel,wx.ID_ANY,'\u2192',style=wx.BU_EXACTFIT)
                 but.valDict = {'arrays': valList, 'hists': histList,
                                   'dataSource':dataSource,
-                                   'valEditList' :valEditList[row]}
+                                   'valSetFxnList' :valSetFxnList[row]}
                 Sizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
                 but.Bind(wx.EVT_BUTTON,onSetAll)
             elif i == 1 and CopyCtrl:
@@ -481,7 +491,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 Sizer.Add(valrefsiz,0,
                                  wx.EXPAND|wx.ALIGN_RIGHT)
             elif 'init' in DataArray[hist][row] and deltaMode:
-                # does this ever happen?
+                # I don't think this ever happens
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 delta = arr[indx]
                 arr,indx = DataArray[hist][row]['init']
@@ -492,13 +502,35 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                     deltaS = f"\u0394 {delta:.4g} "
                 Sizer.Add(wx.StaticText(Panel,label=deltaS),0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+            elif 'setintfunc' in DataArray[hist][row]:
+                spinsiz = wx.BoxSizer(wx.HORIZONTAL)
+                spin = wx.SpinButton(Panel, wx.ID_ANY)
+                spin.Bind(wx.EVT_SPIN, OnSpin)
+                spin.txt = wx.StaticText(Panel,label='?')                
+                spinsiz.Add(spin.txt,0,wx.ALIGN_CENTER_VERTICAL)
+                spinsiz.Add((5,-1))
+                spinsiz.Add(spin,0,wx.ALIGN_CENTER_VERTICAL)
+                Sizer.Add(spinsiz,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
+
+                spin.SetRange(1,36)
+                spin.arr,spin.indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
+                spin.setTermsFnx = DataArray[hist][row]['setintfunc']
+                spin.SetValue(spin.arr[spin.indx])
+                spin.txt.SetLabel(str(spin.arr[spin.indx]))
+                def SetVal(newval,spin=spin):
+                    'Used to set a value for the current spinbutton & associated StaticText'
+                    spin.arr[spin.indx] = newval
+                    spin.SetValue(spin.arr[spin.indx])
+                    spin.txt.SetLabel(str(newval))
+                    spin.setTermsFnx()
+                valSetFxnList[row].append(SetVal)
             elif 'val' in DataArray[hist][row] and 'ref' in DataArray[hist][row]:
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
                                          nDig=[9,7,'g'],
                                     xmin=minval,xmax=maxval)
-                valEditList[row].append(w)
+                valSetFxnList[row].append(w.ChangeValue)
                 valrefsiz.Add(w,0,WACV)
                 if firstentry is None: firstentry = w
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
@@ -514,7 +546,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
                             nDig=nDig,
                             xmin=minval,xmax=maxval,notBlank=False)
-                valEditList[row].append(w)
+                valSetFxnList[row].append(w.ChangeValue)
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
                 if firstentry is None: firstentry = w
 
@@ -552,7 +584,7 @@ def HistFrame(G2frame,Histograms):
         prmArray = getLimitVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Background'):
         prmArray = getBkgVals(G2frame,Histograms)
-        CopyCtrl = False
+        CopyCtrl = True
     else:
         prmArray = None
         print('Unexpected', G2frame.GroupInfo['displayMode'])
@@ -818,12 +850,19 @@ def getBkgVals(G2frame,Histograms):
         indexDict[hist] = {}
         for lbl,indx,typ in [('Function',0,'str'),
                              ('ref flag',1,'ref'),
-                             ('# Bkg terms',2,'str')]:
+                             ('# Bkg terms',2,'val')]:
             indexDict[hist][lbl] = {
                 typ : ('Background',0,indx)
                 }
             if indx == 2:
                 indexDict[hist][lbl]['fmt'] = '.0f'
+                def OnChangeBkgTerms(Histograms=Histograms,hist=hist):
+                    'set the number of terms to match the new number'
+                    nterms = Histograms[hist]['Background'][0][2]
+                    Histograms[hist]['Background'][0][3:] = (
+                        Histograms[hist]['Background'][0][3:] +
+                        36*[0.0])[:nterms]
+                indexDict[hist][lbl]['setintfunc'] = OnChangeBkgTerms
         indexDict[hist]['# Debye terms'] = {
             'str' : ('Background',1,'nDebye'),
             'fmt' : '.0f'}

@@ -1585,12 +1585,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             elif Data['Type'] == 'dFsq/sig':
                 dFsig = (Fosq-Fcsq)/sig
                 if dFsig > 0:
-                    R.append(dFsig)
+                    R.append(Fosq)
                     dFsig = min(10.,dFsig)
                     dw = int(255.*(1.0-(dFsig/10.)))
                     color = np.array([dw,255,0])
                 else:
-                    R.append(-dFsig)
+                    R.append(Fosq)
                     dFsig = max(-10.,dFsig)
                     dw = int(255.*(1.0+(dFsig/10.)))
                     color = np.array([255,dw,0])
@@ -1606,7 +1606,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         if len(R):
             R = np.array(R)
             if Data['Type'] == 'dFsq/sig':
-                R /= 10.
+#                R /= 20.
+                R /= np.max(np.array(R))
             else:
                 R /= np.max(np.array(R))
             R *= Data['Scale']
@@ -1615,7 +1616,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 R = np.where(R<=1.,R,1.)
                 C = np.array(C)
                 C = (C.T*R).T
-                R = np.ones_like(R)*0.05
+                R = np.ones_like(R)*0.1
             RF = 100.
             RF2 = 100.
             if sumFo and sumDF:
@@ -1751,12 +1752,14 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         except:
             if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
             return
-#        GL.glShadeModel(GL.GL_SMOOTH)
+        GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)
         GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,1])
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_SPECULAR,[1,1,1,1])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_POSITION,[0,0,1,1])
 
     def RenderBox(x,y,z):
         GL.glEnable(GL.GL_COLOR_MATERIAL)

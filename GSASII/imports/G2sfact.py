@@ -2,7 +2,6 @@
 '''Classes to read single crystal reflection files in formats used by:
 Shelx, Jana, REMOS, TOPAS (SNS), HB-3A (HIFR)
 '''
-from __future__ import division, print_function
 import sys
 import numpy as np
 from .. import GSASIIobj as G2obj

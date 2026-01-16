@@ -1601,7 +1601,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 dF = Fosq-Fcsq
                 if dF > 0:
                     R.append(Fosq)
-                    dw = int(255.*(1.0-(dF/dFmin)))
+                    dw = int(255.*(1.0-(dF/-dFmin)))
                     color = np.array([dw,255,0])
                 else:
                     R.append(Fosq)

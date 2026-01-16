@@ -1526,6 +1526,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]],
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     uColors = [Rd,Gr,Bl, Wt,Wt,Wt, Wt,Wt,Wt, Wt,Wt,Wt]
+    dFmin = np.min(hklRef.T[8+Super]-hklRef.T[9+Super])
+    dFmax = np.max(hklRef.T[8+Super]-hklRef.T[9+Super])
 
     def FillHKLRC():
         global HKL
@@ -1598,11 +1600,14 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             elif Data['Type'] == 'dFsq':
                 dF = Fosq-Fcsq
                 if dF > 0:
-                    R.append(dF)
-                    C.append(Gr)
+                    R.append(Fosq)
+                    dw = int(255.*(1.0-(dF/dFmin)))
+                    color = np.array([dw,255,0])
                 else:
-                    R.append(-dF)
-                    C.append(Rd)
+                    R.append(Fosq)
+                    dw = int(255.*(1.0+(dF/dFmax)))
+                    color = np.array([255,dw,0])
+                C.append(color)
         if len(R):
             R = np.array(R)
             if Data['Type'] == 'dFsq/sig':

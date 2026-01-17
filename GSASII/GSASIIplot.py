@@ -471,7 +471,10 @@ class G2PlotNoteBook(wx.Panel):
             Page.helpKey = self.G2frame.dataWindow.helpKey
         except AttributeError:
             Page.helpKey = 'HelpIntro'
-        Page.toolbar.enableArrows() # Disable Arrow keys if present
+        try:
+            Page.toolbar.enableArrows() # Disable Arrow keys if present
+        except AttributeError:
+            pass
         return new,plotNum,Page,Plot,limits
 
     def savePlotLims(self,Page=None,debug=False,label=None):

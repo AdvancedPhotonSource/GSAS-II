@@ -178,6 +178,9 @@ def SearchGroups(G2frame,Histograms,hist):
     return {'groupDict':groupDict,'notGrouped':noMatchCount,'template':srchStr}
 
 def UpdateGroup(G2frame,item,plot=True):
+    def refreshWindow():
+        wx.CallAfter(UpdateGroup,G2frame,item,False)
+        
     def onDisplaySel(event):
         G2frame.GroupInfo['displayMode'] = dsplType.GetValue()
         wx.CallAfter(UpdateGroup,G2frame,item,False)
@@ -268,6 +271,7 @@ def UpdateGroup(G2frame,item,plot=True):
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if not hasattr(G2frame,'GroupInfo'):
         G2frame.GroupInfo = {}
+    # start with Sample but reuse the last displayed item
     G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Sample')
     G2frame.GroupInfo['groupName'] = G2frame.GPXtree.GetItemText(item)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.GroupMenu)
@@ -295,7 +299,7 @@ def UpdateGroup(G2frame,item,plot=True):
     if G2frame.GroupInfo['displayMode'].startswith('Hist'):
         HAPframe(G2frame,Histograms,Phases)
     else:
-        HistFrame(G2frame,Histograms)
+        HistFrame(G2frame,Histograms,refresh=refreshWindow)
     if plot: G2pwpl.PlotPatterns(G2frame,plotType='GROUP')
     G2frame.dataWindow.SetDataSize()
     #wx.CallLater(100,G2frame.SendSizeEvent)
@@ -382,8 +386,24 @@ def onSetAll(event):
     for c in valEditList:
         c.ChangeValue(firstVal)
 
+def onResetAll(event):
+    '''Respond to the Reset button. Copies the initial setting (which 
+    should be index 0) to the current setting (which should be index 1) 
+    for all histograms in the current row. This is only used for 
+    instrument parameters. 
+    '''
+    but = event.GetEventObject()
+    dataSource = but.valDict['dataSource']
+    for item,hist in zip(but.valDict['arrays'],but.valDict['hists']):
+        arr,indx = indexArrayRef(dataSource,hist,item)
+        if indx == 1:
+            arr[1] = arr[0]
+    refresh = but.valDict.get('refresh')
+    if refresh:
+        refresh()
+        
 def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=False,
-                     lblSizer=None,lblPanel=None,CopyCtrl=True):
+                     lblSizer=None,lblPanel=None,CopyCtrl=True,refresh=None):
     '''Displays the data table in `DataArray` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
@@ -439,6 +459,13 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 refAll.Bind(wx.EVT_BUTTON,onRefineAll)
             else:
                 lblSizer.Add((-1,-1))
+        if deltaMode:
+            resetBut = wx.Button(lblPanel,label='↩',style=wx.BU_EXACTFIT)
+            resetBut.valDict = {'arrays': valList, 'hists': histList,
+                                  'dataSource':dataSource,
+                                  'refresh': refresh}
+            lblSizer.Add(resetBut,0,wx.ALIGN_CENTER_VERTICAL)               
+            resetBut.Bind(wx.EVT_BUTTON,onResetAll)
 
         i = -1
         for hist in DataArray:
@@ -536,7 +563,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 print('Should not happen',DataArray[hist][row],hist,row)
     return firstentry,lblDict
 
-def HistFrame(G2frame,Histograms):
+def HistFrame(G2frame,Histograms,refresh=None):
     '''Put everything in a single FlexGridSizer.
     '''
     #---------------------------------------------------------------------
@@ -563,7 +590,7 @@ def HistFrame(G2frame,Histograms):
     dataSource = prmArray['_dataSource']
     for hist in prmArray:
         if hist == '_dataSource': continue
-        cols = len(prmArray)
+        #cols = len(prmArray)
         prevkey = None
         for key in prmArray[hist]:
             # find delta-terms that are non-zero
@@ -579,9 +606,11 @@ def HistFrame(G2frame,Histograms):
                 else:
                     rowLabels.insert(rowLabels.index(prevkey)+1,key)
             prevkey = key
+    n = 2 # extra columns
     # remove rows where delta-terms are all zeros
     if '\u0394' in G2frame.GroupInfo['displayMode']:
         rowLabels = [i for i in rowLabels if i in nonZeroRows]
+        n += 1
     #=======  Generate GUI ===============================================
     # layout the window
     panel = midPanel = G2frame.dataWindow
@@ -589,12 +618,13 @@ def HistFrame(G2frame,Histograms):
     G2G.HorizontalLine(mainSizer,panel)
     panel.SetSizer(mainSizer)
     deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
-    n = 2
     if CopyCtrl and len(prmArray) > 2: n += 1 # add column for copy (when more than one histogram)
     valSizer = wx.FlexGridSizer(0,len(prmArray)+n-1,3,10)
     mainSizer.Add(valSizer,1,wx.EXPAND)
     valSizer.Add(wx.StaticText(midPanel,label=' '))
     valSizer.Add(wx.StaticText(midPanel,label=' Ref '))
+    if '\u0394' in G2frame.GroupInfo['displayMode']:
+        valSizer.Add(wx.StaticText(midPanel,label=' reset '))
     for i,hist in enumerate(histLabels(G2frame)[1]):
             if i == 1 and CopyCtrl:
                 if deltaMode:
@@ -606,7 +636,8 @@ def HistFrame(G2frame,Histograms):
                              0,wx.ALIGN_CENTER)
     firstentry,lblDict = displayDataArray(rowLabels,prmArray,valSizer,midPanel,
                                       lblRow=True,
-                                      deltaMode=deltaMode,CopyCtrl=CopyCtrl)
+                                      deltaMode=deltaMode,CopyCtrl=CopyCtrl,
+                                      refresh=refresh)
     if firstentry is not None:    # prevent scroll to show last entry
         wx.Window.SetFocus(firstentry)
         firstentry.SetInsertionPoint(0) # prevent selection of text in widget
@@ -1101,7 +1132,7 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
                     }
             indexDict[hist]['SH txtr indx'] = {
                 'str' : None,
-                'txt' : f'{G2lat.textureIndex(PhaseData['Histograms'][hist]['Pref.Ori.'][5]):.3f}'}
+                'txt' : f'{G2lat.textureIndex(PhaseData["Histograms"][hist]["Pref.Ori."][5]):.3f}'}
         # misc: Layer Disp, Extinction
         if 'Layer Disp' in PhaseData['Histograms'][hist]:
             indexDict[hist]['Layer displ'] = {

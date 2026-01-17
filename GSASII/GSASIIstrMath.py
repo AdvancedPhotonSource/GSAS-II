@@ -2745,7 +2745,7 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         PA = np.exp(-parmDict[phfx+'Ma']*FPone)
         PB = np.exp(-parmDict[phfx+'Mb']*FPone**2)
         PC = np.exp(-parmDict[phfx+'Mc']*FPone**3)
-        extCor = (PA+ + PB + PC)/3.            
+        extCor = (PA + PB + PC)/3.            
         dervDict[phfx+'Ma'] = -4.*PA*FPone**2
         dervDict[phfx+'Mb'] = -PB*FPone**4
         dervDict[phfx+'Mc'] = -PC*FPone**6

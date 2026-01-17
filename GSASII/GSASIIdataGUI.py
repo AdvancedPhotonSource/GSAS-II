@@ -8223,11 +8223,14 @@ def UpdatePWHKPlot(G2frame,kind,item):
         dlg = wx.ProgressDialog('Build HKL dictonary','',len(refList)+1,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         HKLdict = {}
+        lenhkl = len(refList[0])
+        if lenhkl == 14+Super:  #remove extra columns from extended microED data
+            lenhkl -= 2
         for ih,hkl in enumerate(refList):
             if str(hkl[:3+Super]) not in HKLdict:
-                HKLdict[str(hkl[:3+Super])] = [hkl[:3+Super],[hkl[3+Super:],]]
+                HKLdict[str(hkl[:3+Super])] = [hkl[:3+Super],[hkl[3+Super:lenhkl],]]
             else:
-                HKLdict[str(hkl[:3+Super])][1].append(hkl[3+Super:])
+                HKLdict[str(hkl[:3+Super])][1].append(hkl[3+Super:lenhkl])
             dlg.Update(ih)
         dlg.Destroy()
         mergeRef = []

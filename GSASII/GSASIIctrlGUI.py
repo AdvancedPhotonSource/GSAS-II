@@ -387,7 +387,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.timer = None      # tracks pending updates for expressions in float textctrls
         self.delay = 2000      # delay for timer update (2 sec)
         self.type = str
-
+        self.defaultBackgroundColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         val = loc[key]
         if 'style' in kw: # add a "Process Enter" to style
             kw['style'] |= wx.TE_PROCESS_ENTER
@@ -574,7 +574,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self._IndicateValidity()
         except RuntimeError:    #bandaid to avoid C++ error; deleted self.Validator?
             pass
-            
+
+    def SaveBackgroundColor(self,color):
+        'Use this color when valid rather than default'
+        self.defaultBackgroundColor = color
+        self._IndicateValidity()
+
     def _IndicateValidity(self):
         'Set the control colors to show invalid input'
         if self.invalid:
@@ -587,7 +592,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetSelection(0,0)   # unselect
             self.SetInsertionPoint(ins) # put insertion point back
         else: # valid input
-            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+            self.SetBackgroundColour(self.defaultBackgroundColor)
             self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             self.Refresh()
             #if not sys.platform.startswith("linux"):
@@ -849,7 +854,7 @@ class NumberValidator(wxValidator):
             tc.SetInsertionPoint(ins) # put insertion point back
             return False
         else: # valid input
-            tc.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+            tc.SetBackgroundColour(tc.defaultBackgroundColor)
             tc.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             tc.Refresh()
             return True
@@ -1636,7 +1641,7 @@ class ScrolledMultiEditor(wx.Dialog):
                     but = (-1,-1)
                 else:
                     import wx.lib.colourselect as wscs  # is there a way to test?
-                    but = wscs.ColourSelect(label='v', # would like to use u'\u2193' or u'\u25BC' but not in WinXP
+                    but = wscs.ColourSelect(label='v', # would like to use '\u2193' or '\u25BC' but not in WinXP
                                             parent=panel,colour=(255,255,200),size=wx.Size(30,23),
                                             style=wx.RAISED_BORDER)
                     but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
@@ -9186,7 +9191,7 @@ def Load2Cells(G2frame,phase):
     sizer.Add((-1,15))
     tableSizer = wx.FlexGridSizer(0,9,0,0)
     tableSizer.Add((-1,-1))
-    for l in u'abc\u03B1\u03B2\u03B3':
+    for l in 'abc\u03B1\u03B2\u03B3':
         tableSizer.Add(wx.StaticText(dlg,label=l),0,WACV|wx.ALIGN_CENTER)
     tableSizer.Add(wx.StaticText(dlg,label='Centering'),0,WACV|wx.ALIGN_LEFT)
     tableSizer.Add((-1,-1))

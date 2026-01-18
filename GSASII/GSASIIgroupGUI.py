@@ -33,8 +33,9 @@ one or more of the following elements:
  *  'init'   : float
  *  'rowlbl' : (array, key)
  *  'setintfunc' : function
+ *  'prmname': str
 
-One of 'val', 'ref' or 'str' elements will be present. 
+One of 'val', 'ref' or 'str' elements must be present. 
 
  *  The 'val' tuple provides a reference to the float value for the 
     defined quantity, where SourceArray[histogram][key1][key2][...] 
@@ -54,6 +55,8 @@ One of 'val', 'ref' or 'str' elements will be present.
     or 'txt. 
     'str' is used for a parameter value that is typically computed or must be 
     edited in the histogram section.
+
+Optional elements in the array:
 
  *  The 'fmt' value is a string used to format the 'str' value to 
     convert it to a string, if it is a float or int value.
@@ -80,9 +83,12 @@ One of 'val', 'ref' or 'str' elements will be present.
  *  The 'setintfunc' value defines a function that is executed when the 
     'ref' tuple is changed. When this is supplied, a spin box is used 
     to set the value rather than a TextCtrl.
+
+ *  The 'prmname' name entry lists the parameter name, as used in 
+    varyList, parmDict etc. 
 '''
 
-# import math
+import math
 # import os
 import re
 # import copy
@@ -111,6 +117,8 @@ from . import GSASIIlattice as G2lat
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIpwdplot as G2pwpl
 WACV = wx.ALIGN_CENTER_VERTICAL
+
+shiftInfo = {'colorMode':False}
 
 def SearchGroups(G2frame,Histograms,hist):
     '''Determine which histograms are in groups, called by SearchGroups in 
@@ -182,14 +190,37 @@ def SearchGroups(G2frame,Histograms,hist):
     return {'groupDict':groupDict,'notGrouped':noMatchCount,'template':srchStr}
 
 def UpdateGroup(G2frame,item,plot=True):
+    '''Code to display parameters from all sets of grouped histograms
+    '''
     def refreshWindow():
+        'repaints this window'
         wx.CallAfter(UpdateGroup,G2frame,item,False)
+
+    def OnColorMode(event):
+        if event.GetId() == G2G.wxID_GRPLOG:
+            shiftInfo['colorMode'] = 'log'
+        elif event.GetId() == G2G.wxID_GRPLIN:
+            shiftInfo['colorMode'] = 'linear'
+        else:
+            shiftInfo['colorMode'] = False
+        refreshWindow()
         
     def onDisplaySel(event):
+        '''Change the type of parameters that are shown in response to the 
+        pulldown in the upper left
+        '''
         G2frame.GroupInfo['displayMode'] = dsplType.GetValue()
         wx.CallAfter(UpdateGroup,G2frame,item,False)
 
     def copyPrep():
+        '''Prepare to copy parameters by locating groups that have the
+        same number of histograms as the currently selected group and 
+        then select from those groups. Initiated by copy all/copy selected 
+        menu command.
+
+        Could check even more closely that histograms match up properly,
+        but for now I don't think that is needed.
+        '''
         Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         groupDict = Controls.get('Groups',{}).get('groupDict',{})
         groupName = G2frame.GroupInfo['groupName']
@@ -219,6 +250,10 @@ def UpdateGroup(G2frame,item,plot=True):
         return selList,groupDict,groupName
 
     def OnCopyAll(event):
+        '''Copy all displayed parameters to the selected histograms.
+
+        Called by menu command.
+        '''
         res = copyPrep()
         if res is None: return
         selList,groupDict,groupName = res
@@ -237,6 +272,11 @@ def UpdateGroup(G2frame,item,plot=True):
                                 #print(msg)
                                 #print('error with',i,dst)
     def OnCopySel(event):
+        '''Copy selected parameters from a list based on what is displayed 
+        to the selected histograms.
+
+        Called by menu command.
+        '''
         res = copyPrep()
         if res is None: return
         selList,groupDict,groupName = res
@@ -269,12 +309,12 @@ def UpdateGroup(G2frame,item,plot=True):
                                 arr[indx] = indexArrayVal(dataSource,src,prmArray[src][i][j])
                             except Exception as msg: # could hit an error if an array element is not defined
                                 pass
-                                #print(msg)
-                                #print('error with',i,dst)
-
+                                
+    ##### beginning of code to display Groups of Histograms ###
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     if not hasattr(G2frame,'GroupInfo'):
         G2frame.GroupInfo = {}
+    computeShiftInfo(G2frame) # Setup for color by shift/sigma
     # start with Sample but reuse the last displayed item
     G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Sample')
     #G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Background')
@@ -282,7 +322,8 @@ def UpdateGroup(G2frame,item,plot=True):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.GroupMenu)
     G2frame.Bind(wx.EVT_MENU, OnCopyAll, id=G2G.wxID_GRPALL)
     G2frame.Bind(wx.EVT_MENU, OnCopySel, id=G2G.wxID_GRPSEL)
-
+    for i in (G2G.wxID_GRPNONE, G2G.wxID_GRPLOG, G2G.wxID_GRPLIN):
+        G2frame.Bind(wx.EVT_MENU, OnColorMode, id=i)
     G2frame.dataWindow.ClearData()
     G2frame.dataWindow.helpKey = "Groups/Powder"
     topSizer = G2frame.dataWindow.topBox
@@ -340,6 +381,10 @@ def histLabels(G2frame):
     return commonltrs,histlbls
 
 def indexArrayRef(dataSource,hist,arrayIndices):
+    '''Find the array and key for a refinement flag. (From a 'ref' entry.)
+
+    :returns: arr, indx where arr[indx] is the refinement flag value (bool)
+    '''
     indx = arrayIndices[-1]
     arr = dataSource[hist]
     for i in  arrayIndices[:-1]:
@@ -347,6 +392,11 @@ def indexArrayRef(dataSource,hist,arrayIndices):
     return arr,indx
 
 def indexArrayVal(dataSource,hist,arrayIndices):
+    '''Find the array and key for a GSAS-II parameter in the data tree 
+    from a 'val' entry.
+
+    :returns: arr, indx where arr[indx] is the parameter value (usually float)
+    '''
     if arrayIndices is None: return None
     arr = dataSource[hist]
     for i in  arrayIndices:
@@ -500,6 +550,8 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 minval, maxval = DataArray[hist][row]['range']
             if ('init' in DataArray[hist][row] and
                       deltaMode and 'ref' in DataArray[hist][row]):
+                # instrument parameter (has 'init' value) and in "delta"
+                # mode: show difference
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 delta = arr[indx]
                 arr,indx = DataArray[hist][row]['init']
@@ -518,6 +570,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 Sizer.Add(valrefsiz,0,
                                  wx.EXPAND|wx.ALIGN_RIGHT)
             elif 'init' in DataArray[hist][row] and deltaMode:
+                # a non-refined instrument parameter that has an initial value
                 # I don't think this ever happens
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 delta = arr[indx]
@@ -530,6 +583,9 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 Sizer.Add(wx.StaticText(Panel,label=deltaS),0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
             elif 'setintfunc' in DataArray[hist][row]:
+                # integer value that has a function to be called when changed
+                # GUI: provide a Spin Box to increment or decrement
+                # Currently used for background terms only.
                 spinsiz = wx.BoxSizer(wx.HORIZONTAL)
                 spin = wx.SpinButton(Panel, wx.ID_ANY)
                 spin.Bind(wx.EVT_SPIN, OnSpin)
@@ -552,21 +608,24 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                     spin.setTermsFnx()
                 valSetFxnList[row].append(SetVal)
             elif 'val' in DataArray[hist][row] and 'ref' in DataArray[hist][row]:
+                # a value that has a refine flag
                 valrefsiz = wx.BoxSizer(wx.HORIZONTAL)
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
-                w = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
+                txtctrl = G2G.ValidatedTxtCtrl(Panel,arr,indx,size=(80,-1),
                                          nDig=[9,7,'g'],
                                     xmin=minval,xmax=maxval)
-                valSetFxnList[row].append(w.ChangeValue)
-                valrefsiz.Add(w,0,WACV)
-                if firstentry is None: firstentry = w
+                valSetFxnList[row].append(txtctrl.ChangeValue)
+                valrefsiz.Add(txtctrl,0,WACV)
+                if firstentry is None: firstentry = txtctrl
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
                 valrefsiz.Add(w,0,wx.ALIGN_CENTER_VERTICAL)
                 checkButList[row].append(w)
                 Sizer.Add(valrefsiz,0,
                                  wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+                ColorTxtbox(txtctrl,DataArray[hist][row],row)
             elif 'val' in DataArray[hist][row]:
+                # a value that is not refined, but can be edited
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['val'])
                 nDig = [9,7,'g']
                 if type(arr[indx]) is str: nDig = None
@@ -576,13 +635,16 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 valSetFxnList[row].append(w.ChangeValue)
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
                 if firstentry is None: firstentry = w
+                ColorTxtbox(w,DataArray[hist][row],row)
 
             elif 'ref' in DataArray[hist][row]:
+                # a refinement flag for a group of parameters
                 arr,indx = indexArrayRef(dataSource,hist,DataArray[hist][row]['ref'])
                 w = G2G.G2CheckBox(Panel,'',arr,indx)
                 Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
                 checkButList[row].append(w)
             elif 'str' in DataArray[hist][row]:
+                # a value that is not refined and cannot be edited
                 val = indexArrayVal(dataSource,hist,DataArray[hist][row]['str'])
                 if 'txt' in DataArray[hist][row]:
                     val = DataArray[hist][row]['txt']
@@ -596,7 +658,8 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
     return firstentry,lblDict
 
 def HistFrame(G2frame,Histograms,refresh=None):
-    '''Put everything in a single FlexGridSizer.
+    '''Display all the parameters of the selected type. 
+    This puts everything in a single FlexGridSizer.
     '''
     #---------------------------------------------------------------------
     # generate a dict with values for each histogram
@@ -673,6 +736,7 @@ def HistFrame(G2frame,Histograms,refresh=None):
     if firstentry is not None:    # prevent scroll to show last entry
         wx.Window.SetFocus(firstentry)
         firstentry.SetInsertionPoint(0) # prevent selection of text in widget
+    colorCaption(G2frame)
 
 def getSampleVals(G2frame,Histograms):
     '''Generate the Parameter Data Table (a dict of dicts) with 
@@ -696,6 +760,7 @@ def getSampleVals(G2frame,Histograms):
         return a
    # loop over histograms in group
     for hist in groupDict[groupName]:
+        prmPrefix = f':{Histograms[hist]['hId']}:'
         indexDict[hist] = {}
         indexDict[hist]['Inst. name'] = {
             'val' : ('Sample Parameters','InstrName')}
@@ -703,7 +768,9 @@ def getSampleVals(G2frame,Histograms):
             'str' : ('Sample Parameters','Type')}
         indexDict[hist]['Scale factor'] = {
             'val' : ('Sample Parameters','Scale',0),
-            'ref' : ('Sample Parameters','Scale',1),}
+            'ref' : ('Sample Parameters','Scale',1),
+            'prmname': prmPrefix+'Scale',
+            }
         # make a list of parameters to show
         histType = Histograms[hist]['Instrument Parameters'][0]['Type'][0]
         dataType = Histograms[hist]['Sample Parameters']['Type']
@@ -712,16 +779,18 @@ def getSampleVals(G2frame,Histograms):
         #if 'PWDR' in histName:
         if dataType == 'Debye-Scherrer':
             if 'T' in histType:
-                parms += [['Absorption','Sample abs, \xb5r/\u03bb',None,]]
+                parms += [['Absorption','Sample abs, \xb5r/\u03bb',None,'Absorption']]
             else:
-                parms += [['DisplaceX',u'Sample X displ',None,],
-                    ['DisplaceY','Sample Y displ',None,],
-                    ['Absorption','Sample abs,\xb5\xb7r',None,]]
+                parms += [
+                    ['DisplaceX','Sample X displ',None,'DisplaceX'],
+                    ['DisplaceY','Sample Y displ',None,'DisplaceY'],
+                    ['Absorption','Sample abs,\xb5\xb7r',None,'Absorption']]
         elif dataType == 'Bragg-Brentano':
-            parms += [['Shift','Sample displ',None,],
-                ['Transparency','Sample transp',None],
-                ['SurfRoughA','Surf rough A',None],
-                ['SurfRoughB','Surf rough B',None]]
+            parms += [
+                ['Shift','Sample displ',None,'Shift'],
+                ['Transparency','Sample transp',None,'Transparency'],
+                ['SurfRoughA','Surf rough A',None,'SurfRoughA'],
+                ['SurfRoughB','Surf rough B',None,'SurfRoughB']]
         #elif 'SASD' in histName:
         #    parms.append(['Thick','Sample thickness (mm)',[10,3]])
         #    parms.append(['Trans','Transmission (meas)',[10,3]])
@@ -735,11 +804,18 @@ def getSampleVals(G2frame,Histograms):
         parms.append(['Pressure','Sample P',None])
 
         # and loop over them
-        for key,lbl,fmt in parms:
+        for entry in parms:
+            prmNam = None
+            if len(entry) == 3:
+                key,lbl,fmt = entry
+            else:
+                key,lbl,fmt,prmNam = entry
             if fmt is None and type(Histograms[hist]['Sample Parameters'][key]) is list:
                 indexDict[hist][lbl] = {
                     'val' : ('Sample Parameters',key,0),
                     'ref' : ('Sample Parameters',key,1),}
+                if prmNam:
+                    indexDict[hist][lbl]['prmname'] = prmPrefix+prmNam
 
             elif fmt is None:
                 indexDict[hist][lbl] = {
@@ -773,6 +849,7 @@ def getInstVals(G2frame,Histograms):
     indexDict = {'_dataSource':Histograms}
    # loop over histograms in group
     for hist in groupDict[groupName]:
+        prmPrefix = f':{Histograms[hist]['hId']}:'
         indexDict[hist] = {}
         insVal = Histograms[hist]['Instrument Parameters'][0]
         insType = insVal['Type'][1]
@@ -822,6 +899,8 @@ def getInstVals(G2frame,Histograms):
                         'init' : (insVal[key],0),
                         'val' : ('Instrument Parameters',0,key,1),
                         'ref' : ('Instrument Parameters',0,key,2),}
+                    # for instrument parameters assume prmname is based on key
+                    indexDict[hist][lbl]['prmname'] = prmPrefix+key
                 else:
                     indexDict[hist][lbl] = {
                         'str' : ('Instrument Parameters',0,key,1),
@@ -878,9 +957,10 @@ def getBkgVals(G2frame,Histograms):
     indexDict = {'_dataSource':Histograms}
     # loop over histograms in group
     for hist in groupDict[groupName]:
+        prmPrefix = f':{Histograms[hist]['hId']}:'
         indexDict[hist] = {}
-        for lbl,indx,typ in [('Function',0,'str'),
-                             ('ref flag',1,'ref'),
+        for lbl,indx,typ in [('Function type',0,'str'),
+                             ('bkg refine flag',1,'ref'),
                              ('# Bkg terms',2,'val')]:
             indexDict[hist][lbl] = {
                 typ : ('Background',0,indx)
@@ -902,7 +982,8 @@ def getBkgVals(G2frame,Histograms):
                 lbl = f'{l} #{i+1}'
                 indexDict[hist][lbl] = {
                     'val' : ('Background',1,'debyeTerms',i,2*indx),
-                    'ref' : ('Background',1,'debyeTerms',i,2*indx+1)}
+                    'ref' : ('Background',1,'debyeTerms',i,2*indx+1),
+                    'prmname': f'{prmPrefix}Debye{l};{i}'}
         indexDict[hist]['# Bkg Peaks'] = {
             'str' : ('Background',1,'nPeaks'),
             'fmt' : '.0f'}
@@ -911,7 +992,8 @@ def getBkgVals(G2frame,Histograms):
                 lbl = f'{l} #{i+1}'
                 indexDict[hist][lbl] = {
                     'val' : ('Background',1,'peaksList',i,2*indx),
-                    'ref' : ('Background',1,'peaksList',i,2*indx+1)}
+                    'ref' : ('Background',1,'peaksList',i,2*indx+1),
+                    'prmname': f'{prmPrefix}BkPk{l};{i}'}
         if Histograms[hist]['Background'][1]['background PWDR'][0]:
             val = 'yes'
         else:
@@ -919,6 +1001,11 @@ def getBkgVals(G2frame,Histograms):
         indexDict[hist]['Fixed bkg file'] = {
             'str' : ('Background',1,'background PWDR',0),
             'txt' : val}
+        if Histograms[hist]['Background'][1]['background PWDR'][0]:
+            indexDict[hist]['Fixed bkg mult'] = {
+                'ref' : ('Background',1,'background PWDR',2),
+                'val' : ('Background',1,'background PWDR',1),
+                'prmname': f'{prmPrefix}BF mult'}
     return indexDict
 
 def HAPframe(G2frame,Histograms,Phases):
@@ -1062,6 +1149,7 @@ def HAPframe(G2frame,Histograms,Phases):
     HAPBook.SetSelection(page)
     selectPhase(None)
     #G2frame.dataWindow.SetDataSize()
+    colorCaption(G2frame)
 
 def getHAPvals(G2frame,phase,Histograms,Phases):
     '''Generate the Parameter Data Table (a dict of dicts) with 
@@ -1070,6 +1158,7 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
     This will be used to generate the contents of the GUI for HAP values.
     '''
     PhaseData = Phases[phase]
+    pId = Phases[phase]['pId']
     SGData = PhaseData['General']['SGData']
     cell = PhaseData['General']['Cell'][1:]
     Amat,Bmat = G2lat.cell2AB(cell[:6])
@@ -1081,11 +1170,14 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
         return
     indexDict = {'_dataSource':PhaseData['Histograms']}
     for hist in groupDict[groupName]:
+        prmPrefix = f'{pId}:{Histograms[hist]['hId']}:'
         indexDict[hist] = {}
         # phase fraction
         indexDict[hist]['Phase frac'] = {
             'val' : ('Scale',0),
-            'ref' : ('Scale',1),}
+            'ref' : ('Scale',1),
+            'prmname': prmPrefix+'Scale',
+            }
         PhaseData['Histograms'][hist]['LeBail'] = PhaseData['Histograms'][hist].get('LeBail',False)
         indexDict[hist]['LeBail extract'] = {
             'str' : ('LeBail',),
@@ -1094,14 +1186,18 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
         if PhaseData['Histograms'][hist]['Size'][0] == 'isotropic':
             indexDict[hist]['Size'] = {
                 'val' : ('Size',1,0),
-                'ref' : ('Size',2,0),}
+                'ref' : ('Size',2,0),
+                'prmname': prmPrefix+'Size;i',
+                }
         elif PhaseData['Histograms'][hist]['Size'][0] == 'uniaxial':
             indexDict[hist]['Size/Eq'] = {
                 'val' : ('Size',1,0),
-                'ref' : ('Size',2,0),}
+                'ref' : ('Size',2,0),
+                'prmname': prmPrefix+'Size;i',}
             indexDict[hist]['Size/Ax'] = {
                 'val' : ('Size',1,1),
-                'ref' : ('Size',2,1),}
+                'ref' : ('Size',2,1),
+                'prmname': prmPrefix+'Size;a',}
             indexDict[hist]['Size/dir'] = {
                 'str' : ('Size',3),
                 'txt' : ','.join([str(i) for i in PhaseData['Histograms'][hist]['Size'][3]])}
@@ -1109,22 +1205,27 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
             for i,lbl in enumerate(['S11','S22','S33','S12','S13','S23']):
                 indexDict[hist][f'Size/{lbl}'] = {
                     'val' : ('Size',4,i),
-                    'ref' : ('Size',5,i),}
+                    'ref' : ('Size',5,i),
+                    'prmname': prmPrefix+f'Size;{i}',}
         indexDict[hist]['Size LGmix'] = {
             'val' : ('Size',1,2),
-            'ref' : ('Size',2,2),}
+            'ref' : ('Size',2,2),
+            'prmname': prmPrefix+'Size;mx',}
         # microstrain values
         if PhaseData['Histograms'][hist]['Mustrain'][0] == 'isotropic':
             indexDict[hist]['\u00B5Strain'] = {
                 'val' : ('Mustrain',1,0),
-                'ref' : ('Mustrain',2,0),}
+                'ref' : ('Mustrain',2,0),
+                'prmname': prmPrefix+'Mustrain;i',}
         elif PhaseData['Histograms'][hist]['Mustrain'][0] == 'uniaxial':
             indexDict[hist]['\u00B5Strain/Eq'] = {
                 'val' : ('Mustrain',1,0),
-                'ref' : ('Mustrain',2,0),}
+                'ref' : ('Mustrain',2,0),
+                'prmname': prmPrefix+'Mustrain;i',}
             indexDict[hist]['\u00B5Strain/Ax'] = {
                 'val' : ('Mustrain',1,1),
-                'ref' : ('Mustrain',2,1),}
+                'ref' : ('Mustrain',2,1),
+                'prmname': prmPrefix+'Mustrain;a',}
             indexDict[hist]['\u00B5Strain/dir'] = {
                 'str' : ('Mustrain',3),
                 'txt' : ','.join([str(i) for i in PhaseData['Histograms'][hist]['Mustrain'][3]])}
@@ -1134,28 +1235,31 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
                 if i >= len(PhaseData['Histograms'][hist]['Mustrain'][4]): break
                 indexDict[hist][f'\u00B5Strain/{lbl}'] = {
                     'val' : ('Mustrain',4,i),
-                    'ref' : ('Mustrain',5,i),}
+                    'ref' : ('Mustrain',5,i),
+                    'prmname': prmPrefix+f'Mustrain;{i}',}
             muMean = G2spc.MuShklMean(SGData,Amat,PhaseData['Histograms'][hist]['Mustrain'][4][:len(Snames)])
             indexDict[hist]['\u00B5Strain/mean'] = {
                 'str' : None,
                 'txt' : f'{muMean:.2f}'}
         indexDict[hist]['\u00B5Strain LGmix'] = {
             'val' : ('Mustrain',1,2),
-            'ref' : ('Mustrain',2,2),}
+            'ref' : ('Mustrain',2,2),
+            'prmname': prmPrefix+'Mustrain;mx',}
 
         # Hydrostatic terms
         Hsnames = G2spc.HStrainNames(SGData)
         for i,lbl in enumerate(Hsnames):
             if i >= len(PhaseData['Histograms'][hist]['HStrain'][0]): break
-            indexDict[hist][f'Size/{lbl}'] = {
+            indexDict[hist][f'Recip Cell/{lbl}'] = {
                 'val' : ('HStrain',0,i),
-                'ref' : ('HStrain',1,i),}
-
+                'ref' : ('HStrain',1,i),
+                'prmname': prmPrefix+f'{lbl}',}
         # Preferred orientation terms
         if PhaseData['Histograms'][hist]['Pref.Ori.'][0] == 'MD':
             indexDict[hist]['March-Dollase'] = {
                 'val' : ('Pref.Ori.',1),
-                'ref' : ('Pref.Ori.',2),}
+                'ref' : ('Pref.Ori.',2),
+                'prmname': prmPrefix+'MD',}
             indexDict[hist]['M-D/dir'] = {
                 'str' : ('Pref.Ori.',3),
                 'txt' : ','.join([str(i) for i in PhaseData['Histograms'][hist]['Pref.Ori.'][3]])}
@@ -1168,7 +1272,7 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
             for lbl in PhaseData['Histograms'][hist]['Pref.Ori.'][5]:
                 indexDict[hist][f'SP {lbl}']= {
                     'val' : ('Pref.Ori.',5,lbl),
-                    }
+                    'prmname': prmPrefix+f'{lbl}',}
             indexDict[hist]['SH txtr indx'] = {
                 'str' : None,
                 'txt' : f'{G2lat.textureIndex(PhaseData["Histograms"][hist]["Pref.Ori."][5]):.3f}'}
@@ -1176,17 +1280,109 @@ def getHAPvals(G2frame,phase,Histograms,Phases):
         if 'Layer Disp' in PhaseData['Histograms'][hist]:
             indexDict[hist]['Layer displ'] = {
                 'val' : ('Layer Disp',0),
-                'ref' : ('Layer Disp',1),}                
+                'ref' : ('Layer Disp',1),
+                'prmname': prmPrefix+'LayerDisp'}
         if 'Extinction' in PhaseData['Histograms'][hist]:
             indexDict[hist]['Extinction'] = {
                 'val' : ('Extinction',0),
-                'ref' : ('Extinction',1),}
+                'ref' : ('Extinction',1),
+                'prmname': prmPrefix+'Extinction',}
         if 'Babinet' in PhaseData['Histograms'][hist]:
             indexDict[hist]['Babinet A'] = {
                 'val' : ('Babinet','BabA',0),
-                'ref' : ('Babinet','BabA',1),}
+                'ref' : ('Babinet','BabA',1),
+                'prmname': prmPrefix+'BabA',}
         if 'Babinet' in PhaseData['Histograms'][hist]:
             indexDict[hist]['Babinet U'] = {
                 'val' : ('Babinet','BabU',0),
-                'ref' : ('Babinet','BabU',1),}
+                'ref' : ('Babinet','BabU',1),
+                'prmname': prmPrefix+'BabU',}
     return indexDict
+
+def computeShiftInfo(G2frame):
+    '''Define the contents of the array used to color 
+    ValidatedTextCtrls by shift/sigma
+    '''
+    covdata = G2frame.GPXtree.GetItemPyData(
+                  G2gd.GetGPXtreeItemId(G2frame,
+                                        G2frame.root,'Covariance'))
+    shiftOsig = {}
+    if len(covdata['varyList']) == len(covdata['sig']) == len(covdata['Lastshft']):
+        for var,sig,shift in zip(covdata['varyList'],covdata['sig'],covdata['Lastshft']):
+            try:
+                shiftOsig[var] = float(shift/sig)
+            except:
+                pass
+    else:
+        print('Warning: in Covariance, varyList, sig and Lastshft do not have same lengths!')
+    vmin = vmax = None
+    for v in shiftOsig.values():
+        v = abs(v)
+        if vmin is None:
+            vmin = v
+            vmax = v
+        vmin = min(vmin,v)
+        vmax = max(vmax,v)
+    shiftLinearLevels = []
+    shiftLogLevels = []
+    shiftColors = []
+    if shiftOsig: # come up with levels and colors
+        shiftSteps = 5
+        for i in range(shiftSteps):
+            shiftLinearLevels.append(vmin+i*(vmax-vmin)/shiftSteps)
+        lmin = math.log(max(vmin,1e-8))
+        lmax = math.log(max(vmax,1e-8))
+        for i in range(shiftSteps):
+            shiftLogLevels.append(math.exp(lmin + i*(lmax-lmin)/shiftSteps))
+        for i in range(shiftSteps):
+            #g = int(255.5-i*255/(shiftSteps-1))
+            #shiftColors.append((255,g,0,255))  # yellow to red
+            #shiftColors.append((255-g,g,0,255))  # green to red
+            # generate light pink to dark pink
+            g = int(230.5-i*130/(shiftSteps-1))
+            shiftColors.append((255,g,g,255))  # white to red
+    shiftInfo['shiftLinearLevels'] = shiftLinearLevels
+    shiftInfo['shiftLogLevels'] = shiftLogLevels
+    shiftInfo['shiftColors'] = shiftColors
+    shiftInfo['colorCaption'] = colorCaption
+    shiftInfo['shiftOsig'] = shiftOsig
+
+def colorCaption(G2frame):
+    'Create legend info showing the range of shifts'
+    colorSizer = G2frame.dataWindow.bottomBox
+    colorSizer.Clear(True)
+    cp = G2frame.dataWindow.bottomPanel
+    if shiftInfo['colorMode'] == 'log':
+        levels = shiftInfo['shiftLogLevels']
+    elif shiftInfo['colorMode'] == 'linear':
+        levels = shiftInfo['shiftLinearLevels']
+    else:
+        return None
+    colorSizer.Add(wx.StaticText(cp,label='Shift/\u03c3 by color:'),0,WACV)
+    for i,(level,color) in enumerate(zip(levels,shiftInfo['shiftColors'])):
+        colorSizer.Add((15,-1))
+        #b = wx.StaticText(cp,label=f'{i}: >{level:.4g}')
+        b = wx.StaticText(cp,label=f'>{level:.4g}')
+        b.SetBackgroundColour(color)
+        colorSizer.Add(b,0,WACV)
+
+def ColorTxtbox(txtctrl,DataArray,row):
+    '''Color a ValidatedTextCtrl textbox based on shift-over-sigma values
+    '''
+    if shiftInfo['colorMode'] == 'log':
+        levels = shiftInfo['shiftLogLevels']
+    elif shiftInfo['colorMode'] == 'linear':
+        levels = shiftInfo['shiftLinearLevels']
+    else:
+        return
+    if 'prmname' in DataArray:
+        prmname = DataArray['prmname']
+        if prmname in shiftInfo['shiftOsig']:
+            val = abs(shiftInfo['shiftOsig'][prmname])            
+            for (level,color) in reversed(list(
+                zip(levels,shiftInfo['shiftColors']))):
+                if val >= level:
+                    txtctrl.SaveBackgroundColor(color)
+                    break
+            else: # unexpected
+                txtctrl.SaveBackgroundColor(color)

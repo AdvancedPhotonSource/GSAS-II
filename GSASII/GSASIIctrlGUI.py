@@ -2732,6 +2732,7 @@ def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
     btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
     btnsizer.Add(btn)
     btn = wx.Button(dlg, wx.ID_OK)
+    btn.SetDefault()
     btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_OK))
     btnsizer.Add(btn)
     mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)

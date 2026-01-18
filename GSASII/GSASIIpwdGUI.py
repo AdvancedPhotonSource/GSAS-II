@@ -83,9 +83,9 @@ cellGUIlist = [
     [[3,4,5,6],6,([" a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
     [[7,8,9,10,11,12],8,([" a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
         [True,True,True,False],[0,1,2,0])],
-    [[13,14,15,16],10,([" a = "," b = "," c = ",u'\u03B2 = '," Vol = "],
+    [[13,14,15,16],10,([" a = "," b = "," c = ",'\u03B2 = '," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-    [[17,18],8,([" a = "," b = "," c = ",u'\u03B1 = ',u'\u03B2 = ',u'\u03B3 = '," Vol = "],
+    [[17,18],8,([" a = "," b = "," c = ",'\u03B1 = ','\u03B2 = ','\u03B3 = '," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),(10,3),(10,3),"%.3f"],
         [True,True,True,True,True,True,False],[0,1,2,3,4,5,0])]]
 bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
@@ -400,20 +400,20 @@ def SetupSampleLabels(histName,dataType,histType):
     if 'PWDR' in histName:
         if dataType == 'Debye-Scherrer':
             if 'T' in histType:
-                parms += [['Absorption',u'Sample absorption (\xb5r/'+Gklambda+'): ',[10,4]],]
+                parms += [['Absorption','Sample absorption (\xb5r/'+Gklambda+'): ',[10,4]],]
             else:
-                parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
-                    ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],
-                    ['Absorption',u'Sample absorption (\xb5\xb7r): ',[10,4]],]
+                parms += [['DisplaceX','Sample X displ. perp. to beam (\xb5m): ',[10,3]],
+                    ['DisplaceY','Sample Y displ. || to beam (\xb5m): ',[10,3]],
+                    ['Absorption','Sample absorption (\xb5\xb7r): ',[10,4]],]
         elif dataType == 'Bragg-Brentano':
-            parms += [['Shift',u'Sample displacement(\xb5m): ',[10,4]],
-                ['Transparency',u'Sample transparency(1/\xb5eff, cm): ',[10,3]],
+            parms += [['Shift','Sample displacement(\xb5m): ',[10,4]],
+                ['Transparency','Sample transparency(1/\xb5eff, cm): ',[10,3]],
                 ['SurfRoughA','Surface roughness A: ',[10,4]],
                 ['SurfRoughB','Surface roughness B: ',[10,4]]]
     elif 'SASD' in histName:
         parms.append(['Thick','Sample thickness (mm)',[10,3]])
         parms.append(['Trans','Transmission (meas)',[10,3]])
-        parms.append(['SlitLen',u'Slit length (Q,\xc5'+Pwrm1+')',[10,3]])
+        parms.append(['SlitLen','Slit length (Q,\xc5'+Pwrm1+')',[10,3]])
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
@@ -2945,7 +2945,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 txt = '%7.2f'%(insVal['Azimuth'])
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'   Ka1/Ka2: '),0,WACV)
-                txt = u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
+                txt = '  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                 waveSizer = wx.BoxSizer(wx.HORIZONTAL)
                 waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
@@ -2978,9 +2978,9 @@ def UpdateInstrumentGrid(G2frame,data):
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                 instSizer.Add((5,5),0)
                 key = 'Lam'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                labelLst.append(u'Lam (\xc5)')
+                labelLst.append('Lam (\xc5)')
                 elemKeysLst.append([key,1])
                 dspLst.append([10,6])
                 instSizer.Add(waveVal,0,WACV)
@@ -3059,9 +3059,9 @@ def UpdateInstrumentGrid(G2frame,data):
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'E' in insVal['Type']:
                 key = '2-theta'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' 2-theta (%10.6f):'%(insDef[key])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' 2-theta (%10.6f):'%(insDef[key])),0,WACV)
                 tthVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                labelLst.append(u'2-theta')
+                labelLst.append('2-theta')
                 elemKeysLst.append([key,1])
                 dspLst.append([10,3])
                 instSizer.Add(tthVal,0,WACV)
@@ -3142,9 +3142,9 @@ def UpdateInstrumentGrid(G2frame,data):
             elif 'PKS' in insVal['Type']:   #peak positions only
                 Reference = ''
                 key = 'Lam'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                labelLst.append(u'Lam (\xc5)')
+                labelLst.append('Lam (\xc5)')
                 elemKeysLst.append([key,1])
                 dspLst.append([10,6])
                 instSizer.Add(waveVal,0,WACV)
@@ -3166,13 +3166,13 @@ def UpdateInstrumentGrid(G2frame,data):
         elif 'S' in insVal['Type']:                       #single crystal data
             Reference = ''
             if 'C' in insVal['Type']:               #constant wavelength
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 if 'EC' in insVal['Type']:
                     waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChangeEC)
                 else:
                     waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
-                labelLst.append(u'Lam (\xc5)')
+                labelLst.append('Lam (\xc5)')
                 waveSizer = wx.BoxSizer(wx.HORIZONTAL)
                 waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
                 # PATCH?: for now at least, Source is not saved anywhere before here
@@ -3190,10 +3190,10 @@ def UpdateInstrumentGrid(G2frame,data):
         elif insVal['Type'][0] in ['L','R',]:
             Reference = ''
             if 'C' in insVal['Type']:
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
-                labelLst.append(u'Lam (\xc5)')
+                labelLst.append('Lam (\xc5)')
                 elemKeysLst.append(['Lam',1])
                 dspLst.append([10,6])
                 refFlgElem.append(None)
@@ -5872,7 +5872,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 err_title = "Invalid tolerance input"
                 err_msg = "The tolerance value should be a float number, "
                 err_msg += "representing the instrument resolution "
-                err_msg += ("level " + u"\u03B4" + "d/d.")
+                err_msg += ("level \u03B4d/d.")
                 G2G.G2MessageBox(G2frame, err_msg, err_title)
                 wx.EndBusyCursor()
                 return
@@ -7110,9 +7110,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             Types = [wg.GRID_VALUE_BOOL]
             colLabels += [
                 'kx', 'ky', 'kz',
-                'Ave. ' + u'\u03B4' + 'd/d',
-                'Ave. ' + u'\u03B4' + 'd',
-                'Max. ' + u'\u03B4' + 'd'
+                'Ave. \u03B4d/d',
+                'Ave. \u03B4d',
+                'Max. \u03B4d'
             ]
             Types += (6 * [wg.GRID_VALUE_FLOAT + ':10, 5'])
             mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n k-vector search results:'))

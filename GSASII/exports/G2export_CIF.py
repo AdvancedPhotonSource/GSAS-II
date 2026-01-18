@@ -2234,7 +2234,7 @@ class ExportCIF(G2fil.ExportBaseclass):
                     generalData['DisAglCtls'],
                     DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
-                print(u'**** ERROR computing distances & angles for phase {} ****\nresetting to default values'.format(phasenam))
+                print('**** ERROR computing distances & angles for phase {} ****\nresetting to default values'.format(phasenam))
                 data = generalData['DisAglCtls'] = {}
                 data['Name'] = generalData['Name']
                 data['Factors'] = [0.85,0.85]

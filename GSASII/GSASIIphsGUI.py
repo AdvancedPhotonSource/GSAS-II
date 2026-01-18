@@ -9006,17 +9006,17 @@ at one of the following locations:
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key1,
                 xmin=0.0,xmax=5.0,nDig=(10,1),size=(50,-1),
                 typeHint=float,OnLeave=onLeave))
-            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,"\u212B"),0,WACV)
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show atoms within:'),0,WACV)
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key2,
                 xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1),
                 typeHint=float,OnLeave=onLeave))
-            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,"\u212B"),0,WACV)
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Label distance to atoms within:'),0,WACV)
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key3,
                 xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1),
                 typeHint=float,OnLeave=onLeave))
-            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,"\u212B"),0,WACV)
             return mapSizer
 
         # UpdateDrawOptions exectable code starts here
@@ -9200,7 +9200,7 @@ at one of the following locations:
         for name in copyNames:
             if name not in sourceDict: continue
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
                 'Copy phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -9251,7 +9251,7 @@ at one of the following locations:
         if not keyList:
             G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy phase/histogram flags\nfrom '+hist[5:][:35],
                 'Copy phase/hist flags', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -9319,7 +9319,7 @@ at one of the following locations:
         for parm in selectedItems:
             if parm not in sourceDict: continue
             copyDict[parm] = copy.deepcopy(sourceDict[parm])
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
             'Copy selected phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:

@@ -54,7 +54,7 @@ class ExportMapASCII(G2fil.ExportBaseclass):
                     for k in range(nz):
                         self.Write(str(rho[i,j,k]))
             self.CloseFile()
-            print(u'map from Phase '+phasenam+u' written to file '+self.fullpath)
+            print(f'map from Phase {phasenam} written to file {self.fullpath}')
 
 class ExportMapCCP4(G2fil.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -126,4 +126,4 @@ class ExportMapCCP4(G2fil.ExportBaseclass):
             for x in rho.flatten('F'):
                 self.Write(x,'f')
             self.CloseFile()
-            print(u'map from Phase '+phasenam+u' written to file '+self.fullpath)
+            print(f'map from Phase {phasenam} written to file {self.fullpath}')

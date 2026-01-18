@@ -866,7 +866,7 @@ def UpdateISODISTORT(G2frame,data,Scroll=0):
         txt.Wrap(500)
         mainSizer.Add(txt)
         mainSizer.Add(wx.StaticText(G2frame.ISODIST,label=
-u''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
+''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
  display mode values. The positions in the Atoms and Draw Atoms tabs, as well as the atom
  positions shown in the Plot Window are changed to reflect the display mode values. The
  range of the slider corresponds to making a maximum atomic displacement between -2 && +2 \u212B.'''))
@@ -1101,7 +1101,7 @@ def UpdateLayerData(G2frame,data,Scroll=0):
         flags = Layers['Width'][1]
         widthSizer = wx.BoxSizer(wx.HORIZONTAL)
         for i in range(2):
-            widthSizer.Add(wx.StaticText(layerData,label=u' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
+            widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
             widthVal = G2G.ValidatedTxtCtrl(layerData,Layers['Width'][0],i,nDig=(10,3),xmin=0.005,xmax=1.0)
             widthSizer.Add(widthVal,0,WACV)
             widthRef = wx.CheckBox(layerData,label='Refine?')

@@ -8187,7 +8187,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
-        
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''
@@ -8246,7 +8245,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
             if Nhkl not in Nmerge:
                 Nmerge.update({Nhkl:[1,0],})
                 MaxN = max(MaxN,Nhkl)
-                
             else:
                 Nmerge[Nhkl][0] += 1
             newHKL = list(HKL[0])+list(HKL[1][0])

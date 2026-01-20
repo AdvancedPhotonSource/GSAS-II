@@ -2745,11 +2745,12 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         PA = np.exp(-parmDict[phfx+'Ma']*FPone)
         PB = np.exp(-parmDict[phfx+'Mb']*FPone**2)
         PC = np.exp(-parmDict[phfx+'Mc']*FPone**3)
-        extCor = (PA + PB + PC)/3.            
-        dervDict[phfx+'Ma'] = -4.*PA*FPone**2
-        dervDict[phfx+'Mb'] = -PB*FPone**4
-        dervDict[phfx+'Mc'] = -PC*FPone**6
-        return extCor,dervDict
+        extCor = (PA + PB + PC)/3.
+        dE2 = 6./extCor**2       
+        dervDict[phfx+'Ma'] = dE2*PA*FPone**2
+        dervDict[phfx+'Mb'] = dE2*PB*FPone**3
+        dervDict[phfx+'Mc'] = dE2*PC*FPone**4
+        return 1./extCor,dervDict
         
     if calcControls[phfx+'EType'] != 'None':
         SQ = 1/(4.*ref[4+im]**2)
@@ -2774,7 +2775,6 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         DScorr = 1.0
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
-            FPone = ref[9+im]+1.0
             DScorr = 1.
         else:
             if 'C' in parmDict[hfx+'Type']:

@@ -740,28 +740,37 @@ def HistFrame(G2frame,Histograms,Phases):
     midPanel.SetSizer(mainSizer)
     deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
     if CopyCtrl and len(prmArray) > 2: n += 1 # add column for copy (when more than one histogram)
-    valSizer = wx.FlexGridSizer(0,len(prmArray)+n-1,3,10)
-    mainSizer.Add(valSizer,1,wx.EXPAND)
-    valSizer.Add(wx.StaticText(midPanel,label=' '))
-    if '\u0394' in G2frame.GroupInfo['displayMode']:
-        valSizer.Add(wx.StaticText(midPanel,label='Reset'))
-    valSizer.Add(wx.StaticText(midPanel,label=' Ref '))
-    for i,hist in enumerate(histLabels(G2frame)[1]):
-            if i == 1 and CopyCtrl:
-                if deltaMode:
-                    valSizer.Add((-1,-1))
-                elif CopyCtrl:
-                    valSizer.Add(wx.StaticText(midPanel,label=' Copy '))
-            valSizer.Add(wx.StaticText(midPanel,
-                        label=f"\u25A1 = {hist}"),
-                             0,wx.ALIGN_CENTER)
-    firstentry,lblDict = displayDataArray(rowLabels,prmArray,valSizer,midPanel,
-                                      deltaMode=deltaMode,CopyCtrl=CopyCtrl,
-                                      )
-    if firstentry is not None:    # prevent scroll to show last entry
-        wx.Window.SetFocus(firstentry)
-        firstentry.SetInsertionPoint(0) # prevent selection of text in widget
-    colorCaption(G2frame)
+    if deltaMode and not rowLabels:
+        mainSizer.Add(wx.StaticText(midPanel,
+                                    label='No parameters deviate from initial values'),
+                      0,wx.ALL,10)
+    elif not rowLabels:  # I don't think this can happen
+        mainSizer.Add(wx.StaticText(midPanel,label='No parameters to display'))
+    else:
+        valSizer = wx.FlexGridSizer(0,len(prmArray)+n-1,3,10)
+        mainSizer.Add(valSizer,1,wx.EXPAND)
+        # place column headers into table
+        valSizer.Add(wx.StaticText(midPanel,label=' '))
+        if '\u0394' in G2frame.GroupInfo['displayMode']:
+            valSizer.Add(wx.StaticText(midPanel,label='Reset'))
+        valSizer.Add(wx.StaticText(midPanel,label=' Ref '))
+        for i,hist in enumerate(histLabels(G2frame)[1]):
+                if i == 1 and CopyCtrl:
+                    if deltaMode:
+                        valSizer.Add((-1,-1))
+                    elif CopyCtrl:
+                        valSizer.Add(wx.StaticText(midPanel,label=' Copy '))
+                valSizer.Add(wx.StaticText(midPanel,
+                            label=f"\u25A1 = {hist}"),
+                                 0,wx.ALIGN_CENTER)
+        # fill the remaining rows in the table
+        firstentry,lblDict = displayDataArray(rowLabels,prmArray,valSizer,midPanel,
+                                      deltaMode=deltaMode,CopyCtrl=CopyCtrl)
+        
+        if firstentry is not None:    # prevent scroll to show last entry
+            wx.Window.SetFocus(firstentry)
+            firstentry.SetInsertionPoint(0) # prevent selection of text in widget
+        colorCaption(G2frame)
 
 def getSampleVals(G2frame,Histograms):
     '''Generate the Parameter Data Table (a dict of dicts) with 

@@ -491,6 +491,7 @@ def ShowVersions():
         G2fil.NeededPackage({'Accessing web resources':['requests']})
     try:
         import pybaselines.whittaker
+        pybaselines.whittaker
     except:
         G2fil.NeededPackage({'Auto background capability':['pybaselines']})
 
@@ -1581,8 +1582,8 @@ If you continue from this point, it is quite likely that all intensity computati
             param: rd: importer data structure
             returns: dict: Instrument parameter dictionary
             '''
-            sind = lambda x: math.sin(x*math.pi/180.)
-            tand = lambda x: math.tan(x*math.pi/180.)
+            #sind = lambda x: math.sin(x*math.pi/180.)
+            #tand = lambda x: math.tan(x*math.pi/180.)
             while True: # loop until we get a choice
                 choices = []
                 head = 'Select from default instrument parameters for '+rd.idstring
@@ -1985,10 +1986,11 @@ If you continue from this point, it is quite likely that all intensity computati
             newHistList.append(HistName)
             rd.repeat_instparm = False  #clear the iparm reuse flag
         else:
+            # there are no break statements in this while loop so these are always run:
             self.EnablePlot = True
             if Id:
                 self.GPXtree.Expand(Id)
-                self.GPXtree.SelectItem(Id)
+                self.GPXtree.SelectItem(Id)  # perhaps this is better as a CallAfter (See #282)
 
         G2fil.CleanupFromZip('instprm',self.cleanupList)
         if not newHistList: return # somehow, no new histograms
@@ -5583,6 +5585,7 @@ No: least-squares fitting starts with previously fit structure factors.'''
                     diff = ((Rvals['parmDictAfterFit'][i]-
                                    Rvals['parmDictBeforeFit'][i])
                                    / Rvals['parmDictSigDict'][i])
+                    diff
                 except:
                     continue
                 txt = '?'
@@ -7423,7 +7426,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMLABEL,'Atom label','Select atoms first')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMCOLOR,'Atom color','Select atoms first')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMRESETCOLOR,'Reset atom colors','Resets all atom colors to defaults')
-            self.DrawAtomEdit.Append(G2G.wxID_DRWAEDITRADII,'Edit atom radii','Edit drawing atom radii') # TODO: removed until it can be made to do something
+            self.DrawAtomEdit.Append(G2G.wxID_DRWAEDITRADII,'Edit atom radii','Edit drawing atom radii')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWVIEWPOINT,'View point','View point is 1st atom selected')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWSETSEL,'Select from list','Select atoms from a filtered listbox')
             self.DrawAtomEdit.Append(G2G.wxID_DRAWADDEQUIV,'Add atoms','Add symmetry & cell equivalents to drawing set from selected atoms')

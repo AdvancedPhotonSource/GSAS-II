@@ -8,7 +8,7 @@ follows.
 from __future__ import division, print_function
 import os
 import sys
-import platform
+#import platform
 try:
     import wx
     import wx.grid as wg
@@ -7848,7 +7848,7 @@ class SortableLstCtrl(wx.Panel):
         elif sortType == 'abs':
             self.list.AbsFloatCols.append(col)
         elif sortType != 'str':
-            printf('SortableLstCtrl.SetColWidth warning: unexpected sortType value ({sortType})')
+            print(f'SortableLstCtrl.SetColWidth warning: unexpected sortType value ({sortType})')
 
     def SetInitialSortColumn(self, col, ascending=True):
         '''Sets the initial column to be used for sorting when the table is first displayed.
@@ -9468,7 +9468,7 @@ def Load2Cells(G2frame,phase):
     sizer.Add((-1,15))
     tableSizer = wx.FlexGridSizer(0,9,0,0)
     tableSizer.Add((-1,-1))
-    for l in 'abc\u03B1\u03B2\u03B3':
+    for l in G2lat.cellUlbl:
         tableSizer.Add(wx.StaticText(dlg,label=l),0,WACV|wx.ALIGN_CENTER)
     tableSizer.Add(wx.StaticText(dlg,label='Centering'),0,WACV|wx.ALIGN_LEFT)
     tableSizer.Add((-1,-1))

@@ -1,10 +1,21 @@
 # -*- coding: utf-8 -*-
+'''
+Module SUBGROUPS
+========================
+
+Routines that access the Bilbao Crystallographic Server. 
+
+Note that there is a test for some of these routines in 
+file ``tests/run_bilbao.py``.
+'''
+
 from __future__ import division, print_function
 import re
 import copy
 import random as ran
 import sys
 import os
+import wx
 import numpy as np
 import numpy.linalg as nl
 from . import GSASIIpath
@@ -13,10 +24,37 @@ from . import GSASIIspc as G2spc
 from . import GSASIIlattice as G2lat
 from . import GSASIIElem as G2elem
 from . import GSASIIctrlGUI as G2G
-bilbaoSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/'
-submagSite = bilbaoSite + 'subgrmag1_general_GSAS.pl?'
+bilbaoURL = "http://cryst.ehu.es"
+bilbaoSite = f'{bilbaoURL}/cgi-bin/cryst/programs/'
+# routines used here:
 pseudosym = 'pseudosym/nph-pseudosym'
-timeout=150  # time to wait for www.cryst.ehu.es to respond; 2.5 minutes
+#pseudolattice = "pseudosym/nph-pseudolattice"
+cif2std = 'nph-cif2std'
+subgrmag1 = 'subgrmag1_general_GSAS.pl?'
+#checkgr = 'checkgr.pl'   # to be replaced with following:
+checkgr = 'checkgr_gsas.pl'
+minsup = 'nph-minsup' # coded but not used
+timeout=150  # time to wait for Bilbao to respond; 2.5 minutes
+timeout=15  # time to wait for Bilbao to respond; short since probably broken
+
+def postpostURL(page):
+    '''warn on Bilbao down
+    '''
+    if page is None:
+        print('\n'+70*'*')
+        print("GSAS-II access Bilbao website is currently (as of mid-January, 2026)\nbeing repaired. Please check for updates and try again later in\nthe month.")
+        print(70*'*'+'\n')
+        return
+    if "currently down" in page:
+        # Bilbao is down. Tell user
+        import re
+        print(f"Website down? See message below:\n\n{re.sub('<.+>','',page)}")
+        try:
+            G2G.viewWebPage(wx.GetApp().GetMainTopWindow(),HTML=page)
+        except:
+            pass
+        return True
+    return False
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilbao's SUBGROUPS for a non-standard space group. 
@@ -72,7 +110,8 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
-    page = GSASIIpath.postURL(submagSite,postdict)
+    page = GSASIIpath.postURL(bilbaoSite+subgrmag1,postdict)
+    if postpostURL(page): return None,None
     if not page:
         print('connection error - not on internet?')
         return None,None
@@ -185,7 +224,8 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
-    page = GSASIIpath.postURL(submagSite,postdict)
+    page = GSASIIpath.postURL(bilbaoSite+subgrmag1,postdict)
+    if postpostURL(page): return None,None
     if not page:
         print('connection error - not on internet?')
         return None,None
@@ -239,19 +279,20 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
     result = list(zip(SPGPs,BNSs,MVs,itemList,altList,superList))
     return result,baseList
 
-def subBilbaoCheckLattice(spgNum,cell,tol=5):
-    '''submit a unit cell to  Bilbao PseudoLattice
-    '''
-    psSite = bilbaoSite + "pseudosym/nph-pseudolattice"
-    cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
-    datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
-        str(int(spgNum)),cellstr,str(int(tol)))
-    page = GSASIIpath.postURL(psSite,datastr,timeout=timeout)
-    if not page:
-        print('connection error - not on internet?')
-        return None
-    page = page.replace('<font style= "text-decoration: overline;">','<font>-')
-    return page
+# def subBilbaoCheckLattice(spgNum,cell,tol=5):
+#     '''submit a unit cell to  Bilbao PseudoLattice
+#     '''
+#     psSite = bilbaoSite + pseudolattice
+#     cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
+#     datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
+#         str(int(spgNum)),cellstr,str(int(tol)))
+#     page = GSASIIpath.postURL(psSite,datastr,timeout=timeout)
+#     if postpostURL(page): return None
+#     if not page:
+#         print('connection error - not on internet?')
+#         return None
+#     page = page.replace('<font style= "text-decoration: overline;">','<font>-')
+#     return page
 
 def parseBilbaoCheckLattice(page):
     '''find the cell options from the web page returned by Bilbao PseudoLattice
@@ -291,7 +332,7 @@ def GetStdSGset(SGData=None, oprList=[]):
       Note that the new cell is given by G2lat.TransformCell([a,b,...],xformM)
     '''
     import re
-    Site = bilbaoSite + 'checkgr.pl'
+    Site = bilbaoSite + checkgr
 
     if not bool(oprList) ^ bool(SGData):
         raise ValueError('GetStdSGset: Must specify oprList or SGData and not both')
@@ -303,7 +344,7 @@ def GetStdSGset(SGData=None, oprList=[]):
               G2G.GetCite('Bilbao: k-SUBGROUPSMAG',wrap=70,indent=5))
     postdict = {'tipog':'gesp','generators':'\n'.join(oprList)}
     page = GSASIIpath.postURL(Site,postdict,timeout=timeout)
-    if not page:
+    if postpostURL(page):
         print('error:','No response')
         return [None,None,None,None]
 
@@ -347,9 +388,10 @@ def GetSupergroup(SGnum,dlg=None):
         Note that the new cell is given by G2lat.TransformCell([a,b,...],M)
     '''
     import re
-    Site = bilbaoSite + 'nph-minsup'
+    Site = bilbaoSite + minsup
     if dlg: dlg.Update(0,newmsg='Waiting for initial web response')
     out = GSASIIpath.postURL(Site,{'gnum':f'{SGnum:}'},timeout=timeout)
+    if postpostURL(out): return None
     if not out: return None
         
     if dlg: dlg.Update(1,newmsg='Initial table of supergroups returned')
@@ -377,6 +419,7 @@ def GetSupergroup(SGnum,dlg=None):
         print(SGnum,click)
         out1 = GSASIIpath.postURL(Site,{'gnum':SGnum,'show':'show','click':click}
                                 ,timeout=timeout)
+        if postpostURL(out1): return None
         if not out1: return None
         #with open(f'/tmp/{click}.html','w') as fp:
         #    fp.write(out1)
@@ -551,6 +594,7 @@ program; Please cite:
     savedcookies = {}
     page0 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                              getcookie=savedcookies,timeout=timeout)
+    if postpostURL(page0): return None
     if not page0: return None
     if pagelist is not None:
         pagelist[0] = page0
@@ -643,7 +687,7 @@ def BilbaoLowSymSea1(valsdict,row,savedcookies,pagelist=None):
     postdict['lattice'] = num
     page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
-    if not page1: return None,None,None,None
+    if postpostURL(page1) or not page1: return None,None,None,None
 
     lbl = f'cell{num}'
     if pagelist is not None:
@@ -679,7 +723,7 @@ def BilbaoLowSymSea2(num,valsdict,row,savedcookies,pagelist=None):
     if GSASIIpath.GetConfigValue('debug'): print(f"processing cell #{num} supergroup {row[1]}")
     page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
-    if page1 is None: return '',None
+    if postpostURL(page1) or page1 is None: return '',None
     lbl = f'cell{num}_{row[1]}'
     if pagelist is not None: 
         pagelist[lbl] = page1
@@ -709,7 +753,7 @@ def BilbaoSymSearch2(valsdict,csdict,rowdict,savedcookies,
             postdict['cs'] = num
             page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict,
                                      usecookie=savedcookies,timeout=timeout)
-            if pagelist is not None:
+            if postpostURL(page1) or pagelist is not None:
                 pagelist[num] = page1
             if page1 is None:
                 structures[num] = "No response, likely web timeout"
@@ -771,7 +815,7 @@ def BilbaoReSymSearch(key,postdict,pagelist=None):
     savedcookies = {}
     page1 = GSASIIpath.postURL(bilbaoSite+pseudosym,postdict
                              ,getcookie=savedcookies,timeout=timeout)
-    if pagelist is not None:
+    if postpostURL(page1) or pagelist is not None:
         pagelist[key] = page1
     if page1 is None: return {},{},{},savedcookies
     valsdict,csdict,rowdict = scanBilbaoSymSearch1(page1,postdict)
@@ -781,7 +825,10 @@ def BilbaoReSymSearch(key,postdict,pagelist=None):
 def createStdSetting(cifFile,rd):
     '''Use the Bilbao "CIF to Standard Setting" web service to obtain a 
     structure in a standard setting. Then update the reader object with
-    the space group, cell and atom positions from this.
+    the space group, cell and atom positions from this. This is called
+    from the CIF importer in :mod:`G2phase_CIF` when a structure is 
+    encountered that has different symmetry operators from what GSAS-II 
+    generates.
     '''
     try:
         import requests # delay this until now, since rarely needed
@@ -790,80 +837,42 @@ def createStdSetting(cifFile,rd):
         # macs; it should not!
         print('Warning: failed to import requests. Python config error')
         return None
-    cif2std = 'nph-cif2std'
     if not os.path.exists(cifFile):
         print(f'createStdSetting error: file {cifFile} not found')
         return False
-    files = {'cifile': open(cifFile,'rb')}
-    values = {'strtidy':''}
-    print(f'''Submitting structure to Bilbao "CIF to Standard Setting" (strtidy)
-web service. Please cite:
-{G2G.GetCite('Bilbao: PSEUDOLATTICE',wrap=70,indent=5)}''')
-    r0 = requests.post(bilbaoSite+cif2std, files=files, data=values)
-    structure = r0.text[r0.text.lower().find('<pre>')+5:r0.text.lower().find('</pre>')].strip()
-    spnum,celllist,natom = structure.split('\n')[:3]
-    #spgNam = G2spc.spgbyNum[int(spnum)]
-    cell = [float(i) for i in celllist.split()]
-    # replace cell, space group and atom info with info from Bilbao
-    # could try to xfer Uiso (Uij needs xform), but that would be too involved
-    rd.Phase['General']['SGData'] = SGData = G2spc.SpcGroup(G2spc.spgbyNum[int(spnum)])[1]
-    rd.Phase['General']['Cell'] = [False] + list(cell) + [G2lat.calc_V(G2lat.cell2A(cell))]
-    rd.Phase['Atoms'] = []
-    for i,line in enumerate(structure.split('\n')[3:]):
-        atomlist = ['','Xe','',0.,0.,0.,1.0,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
-        elem,lbl,wyc,x,y,z = line.split()
-        elem = elem.rstrip('0123456789-+')
-        atomlist[0] = elem + lbl
-        if G2elem.CheckElement(elem):
-            atomlist[1] = elem
-        atomlist[3:6] = [float(i) for i in (x,y,z)]
-        atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
-        atomlist[1] = G2elem.FixValence(atomlist[1])
+    with open(cifFile,'rb') as fil:
+        files = {'cifile': fil}
+        values = {'strtidy':''}
+        print(f'''Submitting structure to Bilbao "CIF to Standard Setting" (strtidy)
+    web service. Please cite:
+    {G2G.GetCite('Bilbao: PSEUDOLATTICE',wrap=70,indent=5)}''')
+        if GSASIIpath.GetConfigValue('debug'): print('request to',bilbaoSite+cif2std)
 
-        atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
-        rd.Phase['Atoms'].append(atomlist)
-        if i == int(natom)-1: break
-    del rd.SymOps['xyz'] # as-read sym ops now obsolete
+        r0 = requests.post(bilbaoSite+cif2std, files=files, data=values)
+        structure = r0.text[r0.text.lower().find('<pre>')+5:r0.text.lower().find('</pre>')].strip()
+        spnum,celllist,natom = structure.split('\n')[:3]
+        #spgNam = G2spc.spgbyNum[int(spnum)]
+        cell = [float(i) for i in celllist.split()]
+        # replace cell, space group and atom info with info from Bilbao
+        # could try to xfer Uiso (Uij needs xform), but that would be too involved
+        rd.Phase['General']['SGData'] = SGData = G2spc.SpcGroup(G2spc.spgbyNum[int(spnum)])[1]
+        rd.Phase['General']['Cell'] = [False] + list(cell) + [G2lat.calc_V(G2lat.cell2A(cell))]
+        rd.Phase['Atoms'] = []
+        for i,line in enumerate(structure.split('\n')[3:]):
+            atomlist = ['','Xe','',0.,0.,0.,1.0,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
+            elem,lbl,wyc,x,y,z = line.split()
+            elem = elem.rstrip('0123456789-+')
+            atomlist[0] = elem + lbl
+            if G2elem.CheckElement(elem):
+                atomlist[1] = elem
+            atomlist[3:6] = [float(i) for i in (x,y,z)]
+            atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
+            atomlist[1] = G2elem.FixValence(atomlist[1])
 
-def test():
-    '''This tests that routines in Bilbao Crystallographic Server 
-    are accessible and produce output that we can parse. The output 
-    is displayed but not checked to see that it agrees with what 
-    has been provided previously.
-    '''    
-    SGData = G2spc.SpcGroup('f d -3 m')[1]
-    
-    print('test SUBGROUPSMAG')
-    results,baseList = GetNonStdSubgroupsmag(SGData,('0','0','0',' ',' ',' ',' ',' ',' ',' '))
-    print(results)
-    if results:
-        for [spgp,bns,mv,gid,altList,supList] in results:
-            if gid in baseList:
-                print('Space group: %d %s BNS: %s'%(gid,spgp,bns))
-                print('MV',mv)
-                print('altList:',altList)
-                print('superList: ',supList)
-                
-    print('\n\ntest SUBGROUPS')
-    results,baseList = GetNonStdSubgroups(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
-    print(results)
-    if results:
-        for [spgp,mv,gid,altList,supList] in results:
-            if gid in baseList:
-                print('Space group: %d %s'%(gid,spgp))
-                print('MV',mv)
-                print('altList:',altList)
-                print('superList: ',supList)
-                
-    print('\n\ntest Bilbao IDENTIFY GROUP')
-    sgnum,sgsym,xmat,xoff = GetStdSGset(G2spc.SpcGroup('R 3 C r')[1])
-    if sgnum:
-        print(f'Space group R3c (rhomb) transforms to std setting: {sgsym} (#{sgnum})')
-        print('  xform matrix',xmat)
-        print('  coord offset:',xoff)
+            atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
+            rd.Phase['Atoms'].append(atomlist)
+            if i == int(natom)-1: break
+        del rd.SymOps['xyz'] # as-read sym ops now obsolete
 
-if __name__ == '__main__':
-    # run self-tests
-    selftestquiet = False
-    test()
-    print ("OK")
+#if __name__ == '__main__':
+    # Note that self-tests have been moved to file ``tests/run_bilbao.py``.

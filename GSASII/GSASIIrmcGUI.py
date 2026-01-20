@@ -226,13 +226,14 @@ def UpdateRMC(G2frame,data):
                 style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
             if dlg.ShowModal() == wx.ID_OK:
                 fpath,fName = os.path.split(dlg.GetPath())
-                if os.path.exists(fName): # is there a file by this name in the current directory?
+                if os.path.exists(os.path.join(G2frame.LastGPXdir,fName)): # is there a file by this name in the current directory?
                     RMCPdict['files'][fil][0] = fName
                 else: # nope, copy it
                     # TODO: is G2frame.LastGPXdir the right choice here or
                     #       do I want the current working directory (same?)
                     shutil.copy(dlg.GetPath(), os.path.join(G2frame.LastGPXdir,fName))
-                if not os.path.exists(fName): # sanity check
+                    RMCPdict['files'][fil][0] = fName
+                if not os.path.exists(os.path.join(G2frame.LastGPXdir,fName)): # sanity check
                     print(f'Error: file {fName} not found in .gpx directory ({G2frame.LastGPXdir})')
                     return
                 G2frame.LastImportDir = fpath    #set so next file is found in same place
@@ -260,7 +261,23 @@ def UpdateRMC(G2frame,data):
         def OnFileFormat(event):
             Obj = event.GetEventObject()
             fil = Indx[Obj.GetId()]
-            RMCPdict['files'][fil][3] = Obj.GetStringSelection()
+            Fmt = Obj.GetStringSelection()
+            RMCPdict['files'][fil][3] = Fmt
+            if "G(r)" in fil:
+                if 'PDF' in Fmt:
+                    RMCPdict['files'][fil][2] = 'G(r)P'
+                else:
+                    RMCPdict['files'][fil][2] = 'G(r)'
+            elif "F(Q)" in fil:
+                if "NEUTRON" in fil.upper():
+                    if 'PDF' in Fmt:
+                        RMCPdict['files'][fil][2] = 'QF(Q) normalized'
+                    else:
+                        RMCPdict['files'][fil][2] = 'F(Q)'
+                else:                    
+                    RMCPdict['files'][fil][2] = 'F(Q)'
+            else:
+                RMCPdict['files'][fil][2] = 'S(Q)'
 
         def OnPlotBtn(event):
             Obj = event.GetEventObject()
@@ -270,7 +287,7 @@ def UpdateRMC(G2frame,data):
             XY = np.empty((1,2))
             while XY.shape[0] == 1:
                 try:
-                    XY = np.loadtxt(fileItem[0],skiprows=start)
+                    XY = np.loadtxt(os.path.join(G2frame.LastGPXdir,fileItem[0]),skiprows=start)
                 except ValueError:
                     start += 1
                     if start > 500:     #absurd number of header lines!
@@ -345,7 +362,7 @@ def UpdateRMC(G2frame,data):
             mainSizer.Add(topSizer)
             Heads = ['Name','File','type','Plot','Delete']
             fileSizer = wx.FlexGridSizer(5,5,5)
-            Formats = ['RMC','GUDRUN','STOG']
+            Formats = ['RMC','GUDRUN','PDFGET']
             for head in Heads:
                 fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
             for fil in RMCPdict['files']:
@@ -411,7 +428,7 @@ def UpdateRMC(G2frame,data):
         if G2frame.RMCchoice == 'PDFfit' and RMCPdict['refinement'] == 'sequential':
 
             def OnAddPDF(event):
-                ''' Add PDF G(r)s while maintanining original sequence
+                ''' Add PDF G(r)s while maintaining original sequence
                 '''
                 usedList = RMCPdict['seqfiles']
                 PDFlist = [item[1:][0] for item in G2frame.GetFileList('PDF')]
@@ -534,7 +551,7 @@ def UpdateRMC(G2frame,data):
         # RMCProfile & PDFfit (Normal)
         Heads = ['Name','File','Format','Weight','Plot','Delete']
         fileSizer = wx.FlexGridSizer(6,5,5)
-        Formats = ['RMC','GUDRUN','STOG']
+        Formats = ['RMC','GUDRUN','PDFGET']
         for head in Heads:
             fileSizer.Add(wx.StaticText(G2frame.FRMC,label=head),0,WACV)
         for fil in RMCPdict['files']:
@@ -547,11 +564,13 @@ def UpdateRMC(G2frame,data):
             Indx[filSel.GetId()] = fil
             fileSizer.Add(filSel,0,WACV)
             nform = 3
+            if 'G(r)' in fil:
+                nform = 4
             Name = 'Ndata'
             if 'Xray' in fil:
                 nform = 1
                 Name = 'Xdata'
-            if Rfile and os.path.exists(Rfile): #incase .gpx file is moved away from G(R), F(Q), etc. files
+            if Rfile and os.path.exists(os.path.join(G2frame.LastGPXdir,Rfile)): #incase .gpx file is moved away from G(R), F(Q), etc. files
                 fileFormat = wx.ComboBox(G2frame.FRMC,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
                 fileFormat.SetStringSelection(RMCPdict['files'][fil][3])
                 Indx[fileFormat.GetId()] = fil

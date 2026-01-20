@@ -24,7 +24,7 @@ import math
 import os
 import re
 import copy
-import platform
+#import platform
 import pickle
 import sys
 import random as ran
@@ -194,41 +194,41 @@ def EditImageParms(parent,Data,Comments,Image,filename):
         0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Wavelength (\xC5) '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Wavelength (\xC5) '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data,'wavelength')
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Pixel size (\xb5m). Width '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Pixel size (\xb5m). Width '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],0,size=(50,-1))
     vsizer.Add(wdgt)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Height '),wx.ALIGN_LEFT|wx.ALL, 2)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  Height '),wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],1,size=(50,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Sample to detector (mm) '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Sample to detector (mm) '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data,'distance')
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Beam center (pixels). X = '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Beam center (pixels). X = '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],0,size=(75,-1))
     vsizer.Add(wdgt)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Y = '),wx.ALIGN_LEFT|wx.ALL, 2)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  Y = '),wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],1,size=(75,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Comments '),
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Comments '),
         0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Comments,0,size=(250,-1))
     vsizer.Add(wdgt)
@@ -709,7 +709,7 @@ def ProjFileSave(G2frame):
                 commit = g2repo.head.commit
                 Controls['LastSavedUsing'] += f" git {commit.hexsha[:8]}"
             else:
-                gv = getSavedVersionInfo()
+                gv = GSASIIpath.getSavedVersionInfo()
                 if gv is not None:
                     Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
         except:

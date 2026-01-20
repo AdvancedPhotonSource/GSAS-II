@@ -170,7 +170,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         var = colLabels[col]
         lbl = variableLabels.get(var,G2obj.fmtVarDescr(var))
-        head = u'Set a new name for variable {} (column {})'.format(var,col)
+        head = 'Set a new name for variable {var} (column {col})'
         dlg = G2G.SingleStringDialog(G2frame,'Set variable label',
                                  head,lbl,size=(400,-1))
         if dlg.Show():
@@ -213,7 +213,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 info = ma.array(items,mask=useCol+noneMask)
                 ave = ma.mean(ma.compressed(info))
                 sig = ma.std(ma.compressed(info))
-                print (u' Average for '+G2frame.SeqTable.GetColLabelValue(col)+u': '+'%.6g'%(ave)+u' +/- '+u'%.6g'%(sig))
+                print (' Average for '+G2frame.SeqTable.GetColLabelValue(col)+': '+'%.6g'%(ave)+' +/- '+'%.6g'%(sig))
         else:
             G2frame.ErrorDialog('Select columns',
                 'No columns selected in table. Click on column labels to select fields for averaging.')
@@ -643,10 +643,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def plotSpCharFix(lbl):
         'Change selected unicode characters to their matplotlib equivalent'
         for u,p in [
-            (u'\u03B1',r'$\alpha$'),
-            (u'\u03B2',r'$\beta$'),
-            (u'\u03B3',r'$\gamma$'),
-            (u'\u0394\u03C7',r'$\Delta\chi$'),
+            ('\u03B1',r'$\alpha$'),
+            ('\u03B2',r'$\beta$'),
+            ('\u03B3',r'$\gamma$'),
+            ('\u0394\u03C7',r'$\Delta\chi$'),
             ]:
             lbl = lbl.replace(u,p)
         return lbl
@@ -982,16 +982,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         for obj in eqObjList:
             obj.UpdateVariedVars(varyList,values)
             ind = '      '
-            print(u'  '+obj.GetDepVar()+u' = '+obj.expression)
+            print('  '+obj.GetDepVar()+' = '+obj.expression)
             for var in obj.assgnVars:
-                print(ind+var+u' = '+obj.assgnVars[var])
+                print(ind+var+' = '+obj.assgnVars[var])
             for var in obj.freeVars:
                 avar = "::"+obj.freeVars[var][0]
                 val = obj.freeVars[var][1]
                 if obj.freeVars[var][2]:
-                    print(ind+var+u' = '+avar + " = " + G2mth.ValEsd(val,esdDict[avar]))
+                    print(ind+var+' = '+avar + " = " + G2mth.ValEsd(val,esdDict[avar]))
                 else:
-                    print(ind+var+u' = '+avar + u" =" + G2mth.ValEsd(val,0))
+                    print(ind+var+' = '+avar + " =" + G2mth.ValEsd(val,0))
         # create a plot for each parametric variable
         for fitnum,obj in enumerate(eqObjList):
             calcobj = G2obj.ExpressionCalcObj(obj)
@@ -1099,7 +1099,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         '''
         if G2frame.colSigs[col]:
             if G2frame.colSigs[col][row] == -0.1: return 'frozen'
-            return u'\u03c3 = '+str(G2frame.colSigs[col][row])
+            return '\u03c3 = '+str(G2frame.colSigs[col][row])
         return ''
 
     def GridColLblToolTip(col):
@@ -1168,7 +1168,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         parmDict = data[histNames[sel]]['parmDict']
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         for phase in Phases:
-            print('Updating {} from Seq. Ref. row {}'.format(phase,histNames[sel]))
+            print('Updating {phase} from Seq. Ref. row {histNames[sel]}')
             Phase = Phases[phase]
             General = Phase['General']
             SGData = General['SGData']
@@ -1271,9 +1271,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         phaseKeys = [i for i in parmDict if ':' in i and i.split(':')[1] == '']
         phaseKeys = [i for i in phaseKeys if type(parmDict[i]) not in (int,str,bool)]
         if len(selRows) == 1:
-            lbl = "\nin {}      ".format(histNames[selRows[0]])
+            lbl = "\nin {histNames[selRows[0]]}      "
         else:
-            lbl = "\nin {} histograms".format(len(selRows))
+            lbl = "\nin {len(selRows)} histograms"
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase parmDict item(s) to set'+lbl,
                                       'Choose items to edit', phaseKeys)
         if dlg.ShowModal() == wx.ID_OK:
@@ -1489,7 +1489,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     if histNames[0][:4] not in ['SASD','IMG ','REFD'] and Controls.get('ShowCell'):
         G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
         G2frame.colSigs += [None]
-        colLabels += [u'\u0394\u03C7\u00B2 (%)']
+        colLabels += ['\u0394\u03C7\u00B2 (%)']
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
     deltaChiCol = len(colLabels)-1
     # frozen variables?
@@ -1738,7 +1738,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # create a set of values for example evaluation of parametric equation fitting
     VarDict = {}
     for i,var in enumerate(colLabels):
-        if var in ['Use','Rwp',u'\u0394\u03C7\u00B2 (%)']: continue
+        if var in ['Use','Rwp','\u0394\u03C7\u00B2 (%)']: continue
         if G2frame.colList[i][0] is None:
             val,sig = firstValueDict.get(var,[None,None])
         elif G2frame.colSigs[i]:

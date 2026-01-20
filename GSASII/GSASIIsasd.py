@@ -39,6 +39,7 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 
 def SphereFF(Q,R,args=()):
     ''' Compute hard sphere form factor - can use numpy arrays
+
     :param float Q: Q value array (usually in A-1)
     :param float R: sphere radius (Usually in A - must match Q-1 units)
     :param array args: ignored
@@ -49,6 +50,7 @@ def SphereFF(Q,R,args=()):
     
 def SphericalShellFF(Q,R,args=()):
     ''' Compute spherical shell form factor - can use numpy arrays
+
     :param float Q: Q value array (usually in A-1)
     :param float R: sphere radius (Usually in A - must match Q-1 units)
     :param array args: [float r]: controls the shell thickness: R_inner = min(r*R,R), R_outer = max(r*R,R)
@@ -67,10 +69,11 @@ def SphericalShellFF(Q,R,args=()):
 def SpheroidFF(Q,R,args):
     ''' Compute form factor of cylindrically symmetric ellipsoid (spheroid) 
     - can use numpy arrays for R & AR; will return corresponding numpy array
-    param float Q : Q value array (usually in A-1)
-    param float R: radius along 2 axes of spheroid
-    param array args: [float AR]: aspect ratio so 3rd axis = R*AR
-    returns float: form factors as array as needed
+
+    :param float Q: Q value array (usually in A-1)
+    :param float R: radius along 2 axes of spheroid
+    :param array args: [float AR]: aspect ratio so 3rd axis = R*AR
+    :returns float: form factors as array as needed
     '''
     NP = 50
     AR = args[0]
@@ -86,10 +89,11 @@ def SpheroidFF(Q,R,args):
             
 def CylinderFF(Q,R,args):
     ''' Compute form factor for cylinders - can use numpy arrays
-    param float Q: Q value array (A-1)
-    param float R: cylinder radius (A)
-    param array args: [float L]: cylinder length (A)
-    returns float: form factor
+
+    :param float Q: Q value array (A-1)
+    :param float R: cylinder radius (A)
+    :param array args: [float L]: cylinder length (A)
+    :returns float: form factor
     '''
     L = args[0]
     NP = 200
@@ -105,30 +109,33 @@ def CylinderFF(Q,R,args):
     
 def CylinderDFF(Q,L,args):
     ''' Compute form factor for cylinders - can use numpy arrays
-    param float Q: Q value array (A-1)
-    param float L: cylinder half length (A)
-    param array args: [float R]: cylinder radius (A)
-    returns float: form factor
+
+    :param float Q: Q value array (A-1)
+    :param float L: cylinder half length (A)
+    :param array args: [float R]: cylinder radius (A)
+    :returns float: form factor
     '''
     R = args[0]
     return CylinderFF(Q,R,args=[2.*L])    
     
 def CylinderARFF(Q,R,args): 
     ''' Compute form factor for cylinders - can use numpy arrays
-    param float Q: Q value array (A-1)
-    param float R: cylinder radius (A)
-    param array args: [float AR]: cylinder aspect ratio = L/D = L/2R
-    returns float: form factor
+
+    :param float Q: Q value array (A-1)
+    :param float R: cylinder radius (A)
+    :param array args: [float AR]: cylinder aspect ratio = L/D = L/2R
+    :returns float: form factor
     '''
     AR = args[0]
     return CylinderFF(Q,R,args=[2.*R*AR])    
     
 def UniSphereFF(Q,R,args=0):
     ''' Compute form factor for unified sphere - can use numpy arrays
-    param float Q: Q value array (A-1)
-    param float R: cylinder radius (A)
-    param array args: ignored
-    returns float: form factor
+
+    :param float Q: Q value array (A-1)
+    :param float R: cylinder radius (A)
+    :param array args: ignored
+    :returns float: form factor
     '''
     Rg = np.sqrt(3./5.)*R
     B = np.pi*1.62/(Rg**4)    #are we missing *np.pi? 1.62 = 6*(3/5)**2/(4/3) sense?
@@ -137,10 +144,11 @@ def UniSphereFF(Q,R,args=0):
     
 def UniRodFF(Q,R,args):
     ''' Compute form factor for unified rod - can use numpy arrays
-    param float Q: Q value array (A-1)
-    param float R: cylinder radius (A)
-    param array args: [float R]: cylinder radius (A)
-    returns float: form factor
+
+    :param float Q: Q value array (A-1)
+    :param float R: cylinder radius (A)
+    :param array args: [float R]: cylinder radius (A)
+    :returns float: form factor
     '''
     L = args[0]
     Rg2 = np.sqrt(R**2/2+L**2/12)
@@ -156,20 +164,22 @@ def UniRodFF(Q,R,args):
     
 def UniRodARFF(Q,R,args):
     ''' Compute form factor for unified rod of fixed aspect ratio - can use numpy arrays
-    param float Q: Q value array (A-1)
-    param float R: cylinder radius (A)
-    param array args: [float AR]: cylinder aspect ratio = L/D = L/2R
-    returns float: form factor
+
+    :param float Q: Q value array (A-1)
+    :param float R: cylinder radius (A)
+    :param array args: [float AR]: cylinder aspect ratio = L/D = L/2R
+    :returns float: form factor
     '''
     AR = args[0]
     return UniRodFF(Q,R,args=[2.*AR*R,])
     
 def UniDiskFF(Q,R,args):
     ''' Compute form factor for unified disk - can use numpy arrays
-    param float Q: Q value array (A-1)
-    param float R: cylinder radius (A)
-    param array args: [float T]: disk thickness (A)
-    returns float: form factor
+
+    :param float Q: Q value array (A-1)
+    :param float R: cylinder radius (A)
+    :param array args: [float T]: disk thickness (A)
+    :returns float: form factor
     '''
     T = args[0]
     Rg2 = np.sqrt(R**2/2.+T**2/12.)
@@ -188,10 +198,11 @@ def UniTubeFF(Q,R,args):
     ''' Compute form factor for unified tube - can use numpy arrays
     assumes that core of tube is same as the matrix/solvent so contrast
     is from tube wall vs matrix
-    param float Q: Q value array (A-1)
-    param float R: cylinder radius (A)
-    param array args: [float L,T]: tube length & wall thickness(A)
-    returns float: form factor
+
+    :param float Q: Q value array (A-1)
+    :param float R: cylinder radius (A)
+    :param array args: [float L,T]: tube length & wall thickness(A)
+    :returns float: form factor
     '''
     L,T = args[:2]
     Ri = R-T
@@ -216,18 +227,20 @@ def UniTubeFF(Q,R,args):
 def SphereVol(R,args=()):
     ''' Compute volume of sphere
     - numpy array friendly
-    param float R: sphere radius
-    param array args: ignored
-    returns float: volume
+
+    :param float R: sphere radius
+    :param array args: ignored
+    :returns float: volume
     '''
     return (4./3.)*np.pi*R**3
 
 def SphericalShellVol(R,args):
     ''' Compute volume of spherical shell
     - numpy array friendly
-    param float R: sphere radius
-    param array args: [float r]: controls shell thickness, see SphericalShellFF description
-    returns float: volume
+
+    :param float R: sphere radius
+    :param array args: [float r]: controls shell thickness, see SphericalShellFF description
+    :returns float: volume
     '''
     r = args[0]
     if r < 0:
@@ -240,9 +253,10 @@ def SphericalShellVol(R,args):
 def SpheroidVol(R,args):
     ''' Compute volume of cylindrically symmetric ellipsoid (spheroid) 
     - numpy array friendly
-    param float R: radius along 2 axes of spheroid
-    param array args: [float AR]: aspect ratio so radius of 3rd axis = R*AR
-    returns float: volume
+
+    :param float R: radius along 2 axes of spheroid
+    :param array args: [float AR]: aspect ratio so radius of 3rd axis = R*AR
+    :returns float: volume
     '''
     AR = args[0]
     return AR*SphereVol(R)
@@ -250,9 +264,10 @@ def SpheroidVol(R,args):
 def CylinderVol(R,args):
     ''' Compute cylinder volume for radius & length
     - numpy array friendly
-    param float R: diameter (A)
-    param array args: [float L]: length (A)
-    returns float:volume (A^3)
+
+    :param float R: diameter (A)
+    :param array args: [float L]: length (A)
+    :returns float: volume (A^3)
     '''
     L = args[0]
     return np.pi*L*R**2
@@ -260,9 +275,10 @@ def CylinderVol(R,args):
 def CylinderDVol(L,args):
     ''' Compute cylinder volume for length & diameter
     - numpy array friendly
-    param float: L half length (A)
-    param array args: [float D]: diameter (A)
-    returns float:volume (A^3)
+
+    :param float: L half length (A)
+    :param array args: [float D]: diameter (A)
+    :returns float: volume (A^3)
     '''
     D = args[0]
     return CylinderVol(D/2.,[2.*L,])
@@ -270,9 +286,10 @@ def CylinderDVol(L,args):
 def CylinderARVol(R,args):
     ''' Compute cylinder volume for radius & aspect ratio = L/D
     - numpy array friendly
-    param float: R radius (A)
-    param array args: [float AR]: =L/D=L/2R aspect ratio
-    returns float:volume
+
+    :param float: R radius (A)
+    :param array args: [float AR]: =L/D=L/2R aspect ratio
+    :returns float: volume
     '''
     AR = args[0]
     return CylinderVol(R,[2.*R*AR,])
@@ -280,18 +297,20 @@ def CylinderARVol(R,args):
 def UniSphereVol(R,args=()):
     ''' Compute volume of sphere
     - numpy array friendly
-    param float R: sphere radius
-    param array args: ignored
-    returns float: volume
+
+    :param float R: sphere radius
+    :param array args: ignored
+    :returns float: volume
     '''
     return SphereVol(R)
     
 def UniRodVol(R,args):
     ''' Compute cylinder volume for radius & length
     - numpy array friendly
-    param float R: diameter (A)
-    param array args: [float L]: length (A)
-    returns float:volume (A^3)
+
+    :param float R: diameter (A)
+    :param array args: [float L]: length (A)
+    :returns float: volume (A^3)
     '''
     L = args[0]
     return CylinderVol(R,[L,])
@@ -299,9 +318,10 @@ def UniRodVol(R,args):
 def UniRodARVol(R,args):
     ''' Compute rod volume for radius & aspect ratio
     - numpy array friendly
-    param float R: diameter (A)
-    param array args: [float AR]: =L/D=L/2R aspect ratio
-    returns float:volume (A^3)
+
+    :param float R: diameter (A)
+    :param array args: [float AR]: =L/D=L/2R aspect ratio
+    :returns float: volume (A^3)
     '''
     AR = args[0]
     return CylinderARVol(R,[AR,])
@@ -309,9 +329,10 @@ def UniRodARVol(R,args):
 def UniDiskVol(R,args):
     ''' Compute disk volume for radius & thickness
     - numpy array friendly
-    param float R: diameter (A)
-    param array args: [float T]: thickness
-    returns float:volume (A^3)
+
+    :param float R: diameter (A)
+    :param array args: [float T]: thickness
+    :returns float: volume (A^3)
     '''
     T = args[0]
     return CylinderVol(R,[T,])
@@ -319,9 +340,10 @@ def UniDiskVol(R,args):
 def UniTubeVol(R,args):
     ''' Compute tube volume for radius, length & wall thickness
     - numpy array friendly
-    param float R: diameter (A)
-    param array args: [float L,T]: tube length & wall thickness(A)
-    returns float: volume (A^3) of tube wall
+
+    :param float R: diameter (A)
+    :param array args: [float L,T]: tube length & wall thickness(A)
+    :returns float: volume (A^3) of tube wall
     '''
     L,T = args[:2]
     return CylinderVol(R,[L,])-CylinderVol(R-T,[L,])
@@ -333,22 +355,24 @@ def UniTubeVol(R,args):
 def LogNormalDist(x,pos,args):
     ''' Standard LogNormal distribution - numpy friendly on x axis
     ref: http://www.itl.nist.gov/div898/handbook/index.htm 1.3.6.6.9
-    param float x: independent axis (can be numpy array)
-    param float pos: location of distribution
-    param float scale: width of distribution (m)
-    param float shape: shape - (sigma of log(LogNormal))
-    returns float: LogNormal distribution
+
+    :param float x: independent axis (can be numpy array)
+    :param float pos: location of distribution
+    :param float scale: width of distribution (m)
+    :param float shape: shape - (sigma of log(LogNormal))
+    :returns float: LogNormal distribution
     '''
     scale,shape = args
     return np.exp(-np.log((x-pos)/scale)**2/(2.*shape**2))/(np.sqrt(2.*np.pi)*(x-pos)*shape)
     
 def GaussDist(x,pos,args):
     ''' Standard Normal distribution - numpy friendly on x axis
-    param float x: independent axis (can be numpy array)
-    param float pos: location of distribution
-    param float scale: width of distribution (sigma)
-    param float shape: not used
-    returns float: Normal distribution
+
+    :param float x: independent axis (can be numpy array)
+    :param float pos: location of distribution
+    :param float scale: width of distribution (sigma)
+    :param float shape: not used
+    :returns float: Normal distribution
     '''
     scale = args[0]
     return (1./(scale*np.sqrt(2.*np.pi)))*np.exp(-(x-pos)**2/(2.*scale**2))
@@ -356,11 +380,12 @@ def GaussDist(x,pos,args):
 def LSWDist(x,pos,args=[]):
     ''' Lifshitz-Slyozov-Wagner Ostwald ripening distribution - numpy friendly on x axis
     ref: 
-    param float x: independent axis (can be numpy array)
-    param float pos: location of distribution
-    param float scale: not used
-    param float shape: not used
-    returns float: LSW distribution    
+
+    :param float x: independent axis (can be numpy array)
+    :param float pos: location of distribution
+    :param float scale: not used
+    :param float shape: not used
+    :returns float: LSW distribution    
     '''
     redX = x/pos
     result = (81.*2**(-5/3.))*(redX**2*np.exp(-redX/(1.5-redX)))/((1.5-redX)**(11/3.)*(3.-redX)**(7/3.))
@@ -370,11 +395,12 @@ def LSWDist(x,pos,args=[]):
 def SchulzZimmDist(x,pos,args):
     ''' Schulz-Zimm macromolecule distribution - numpy friendly on x axis
     ref: http://goldbook.iupac.org/S05502.html
-    param float x: independent axis (can be numpy array)
-    param float pos: location of distribution
-    param float scale: width of distribution (sigma)
-    param float shape: not used
-    returns float: Schulz-Zimm distribution
+
+    :param float x: independent axis (can be numpy array)
+    :param float pos: location of distribution
+    :param float scale: width of distribution (sigma)
+    :param float shape: not used
+    :returns float: Schulz-Zimm distribution
     '''
     scale = args[0]
     b = (2.*pos/scale)**2
@@ -387,11 +413,12 @@ def SchulzZimmDist(x,pos,args):
 def LogNormalCume(x,pos,args):
     ''' Standard LogNormal cumulative distribution - numpy friendly on x axis
     ref: http://www.itl.nist.gov/div898/handbook/index.htm 1.3.6.6.9
-    param float x: independent axis (can be numpy array)
-    param float pos: location of distribution
-    param float scale: width of distribution (sigma)
-    param float shape: shape parameter
-    returns float: LogNormal cumulative distribution
+
+    :param float x: independent axis (can be numpy array)
+    :param float pos: location of distribution
+    :param float scale: width of distribution (sigma)
+    :param float shape: shape parameter
+    :returns float: LogNormal cumulative distribution
     '''
     scale,shape = args
     lredX = np.log((x-pos)/scale)
@@ -399,11 +426,12 @@ def LogNormalCume(x,pos,args):
     
 def GaussCume(x,pos,args):
     ''' Standard Normal cumulative distribution - numpy friendly on x axis
-    param float x: independent axis (can be numpy array)
-    param float pos: location of distribution
-    param float scale: width of distribution (sigma)
-    param float shape: not used
-    returns float: Normal cumulative distribution
+
+    :param float x: independent axis (can be numpy array)
+    :param float pos: location of distribution
+    :param float scale: width of distribution (sigma)
+    :param float shape: not used
+    :returns float: Normal cumulative distribution
     '''
     scale = args[0]
     redX = (x-pos)/scale
@@ -411,11 +439,12 @@ def GaussCume(x,pos,args):
     
 def LSWCume(x,pos,args=[]):
     ''' Lifshitz-Slyozov-Wagner Ostwald ripening cumulative distribution - numpy friendly on x axis
-    param float x: independent axis (can be numpy array)
-    param float pos: location of distribution
-    param float scale: not used
-    param float shape: not used
-    returns float: LSW cumulative distribution
+
+    :param float x: independent axis (can be numpy array)
+    :param float pos: location of distribution
+    :param float scale: not used
+    :param float shape: not used
+    :returns float: LSW cumulative distribution
     '''
     nP = 500
     xMin,xMax = [0.,2.*pos]
@@ -427,11 +456,12 @@ def LSWCume(x,pos,args=[]):
     
 def SchulzZimmCume(x,pos,args):
     ''' Schulz-Zimm cumulative distribution - numpy friendly on x axis
-    param float x: independent axis (can be numpy array)
-    param float pos: location of distribution
-    param float scale: width of distribution (sigma)
-    param float shape: not used
-    returns float: Normal distribution
+
+    :param float x: independent axis (can be numpy array)
+    :param float pos: location of distribution
+    :param float scale: width of distribution (sigma)
+    :param float shape: not used
+    :returns float: Normal distribution
     '''
     scale = args[0]
     nP = 500
@@ -459,9 +489,9 @@ def HardSpheresSF(Q,args):
     Refs.: PERCUS,YEVICK PHYS. REV. 110 1 (1958),THIELE J. CHEM PHYS. 39 474 (1968),
     WERTHEIM  PHYS. REV. LETT. 47 1462 (1981)
     
-    param float Q: Q value array (A-1)
-    param array args: [float R, float VolFrac]: interparticle distance & volume fraction
-    returns numpy array S(Q)
+    :param float Q: Q value array (A-1)
+    :param array args: [float R, float VolFrac]: interparticle distance & volume fraction
+    :returns numpy array: S(Q)
     '''
     
     R,VolFr = args
@@ -492,7 +522,7 @@ def SquareWellSF(Q,args):
     :param array args: [float R, float VolFrac, float depth, float width]: 
         interparticle distance, volume fraction (<0.08), well depth (e/kT<1.5kT),
         well width
-    :returns: numpy array S(Q)
+    :returns: numpy array: S(Q)
       well depth > 0 attractive & values outside above limits nonphysical cf. 
       Monte Carlo simulations 
     '''
@@ -525,9 +555,9 @@ def StickyHardSpheresSF(Q,args):
     Refs.: PERCUS,YEVICK PHYS. REV. 110 1 (1958),THIELE J. CHEM PHYS. 39 474 (1968),
     WERTHEIM  PHYS. REV. LETT. 47 1462 (1981)
     
-    param float Q: Q value array (A-1)
-    param array args: [float R, float VolFrac]: sphere radius & volume fraction
-    returns numpy array S(Q)
+    :param float Q: Q value array (A-1)
+    :param array args: [float R, float VolFrac]: sphere radius & volume fraction
+    :returns numpy array: S(Q)
     '''
     R,VolFr,epis,sticky = args
     eta = VolFr/(1.0-epis)/(1.0-epis)/(1.0-epis)	
@@ -573,9 +603,10 @@ def InterPrecipitateSF(Q,args):
     Refs.: E-Wen Huang, Peter K. Liaw, Lionel Porcar, Yun Liu, Yee-Lang Liu, 
     Ji-Jung Kai, and Wei-Ren Chen,APPLIED PHYSICS LETTERS 93, 161904 (2008)
     R. Giordano, A. Grasso, and J. Teixeira, Phys. Rev. A 43, 6894    1991    
-    param float Q: Q value array (A-1)
-    param array args: [float R, float VolFr]: "radius" & volume fraction
-    returns numpy array S(Q)
+
+    :param float Q: Q value array (A-1)
+    :param array args: [float R, float VolFr]: "radius" & volume fraction
+    :returns numpy array: S(Q)
     '''
     R,VolFr = args
     QV2 = Q**2*VolFr**2
@@ -938,8 +969,9 @@ def IPG(datum,sigma,G,Bins,Dbins,IterMax,Qvec=[],approach=0.8,Power=-1,report=Fa
     Appl. Math., Rice Univ., Houston, Texas 77005, U.S.A. found on the web at
     http://www.caam.rice.edu/caam/trs/2004/TR04-08.pdf
     Problem addressed: Total Non-Negative Least Squares (TNNLS)
-    :param float datum[]:
-    :param float sigma[]:
+
+    :param float[] datum:
+    :param float[] sigma:
     :param float[][] G: transformation matrix
     :param int IterMax:
     :param float Qvec: data positions for Power = 0-4

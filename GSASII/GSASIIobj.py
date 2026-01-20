@@ -628,7 +628,8 @@ def CompileVarDesc():
         'Amul': 'Atomic site multiplicity value',
         'AM([xyz])$' : 'Atomic magnetic moment parameter, \\1',
         # Atom deformation parameters
-        'Akappa([0-6])'  : ' Atomic orbital softness for orbital, \\1',
+        'Akappa([0-6])'  : ' Atomic orbital softness for valence radial fxn, \\1',
+        "Akappa'([0-6])"  : ' Atomic orbital softness for deformation radial fxn, \\1',
         'ANe([01])' : ' Atomic <j0> orbital population for orbital, \\1',
         'AD\\([0-6],[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',
         'AD\\([0-6],-[0-6]\\)([0-6])' : ' Atomic sp. harm. coeff for orbital, \\1',     #need both!
@@ -2008,6 +2009,7 @@ class ExpressionCalcObj(object):
 
     def UpdateVars(self,varList,valList):
         '''Update the dict for the expression with a set of values
+
         :param list varList: a list of variable names
         :param list valList: a list of corresponding values
         '''
@@ -2016,6 +2018,7 @@ class ExpressionCalcObj(object):
 
     def UpdateDict(self,parmDict):
         '''Update the dict for the expression with values in a dict
+
         :param dict parmDict: a dict of values, items not in use are ignored
         '''
         if self.eObj.expression.startswith('Dist') or self.eObj.expression.startswith('Angle'):

@@ -232,6 +232,71 @@ class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
             self.CloseFile()
             print('Phase '+phasenam+' written to XYZ file '+self.fullpath)
             
+class ExportPhaseCartXYZ(G2fil.ExportBaseclass):
+    '''Used to create a basic ORCA6 Cartesian inp file for a phase
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
+            G2frame=G2frame,
+            formatName = 'ORCA Cartesian inp',
+            extension='.inp',
+            longFormatName = 'Export draw atoms with basic ORCA Cartesian coordinates as .inp file'
+            )
+        self.exporttype = ['phase']
+        self.multiple = True
+
+    def Exporter(self,event=None):
+        '''Export as a XYZ file
+        '''
+        # the export process starts here
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        # create a dict with refined values and their uncertainties
+        self.loadParmDict()
+        if self.ExportSelect():    # set export parameters; ask for file name
+            return
+        filename = self.filename
+        Oname = os.path.splitext(filename)[0]
+        self.OpenFile()
+        for phasenam in self.phasenam:
+            phasedict = self.Phases[phasenam] # pointer to current phase info
+            General = phasedict['General']
+            i = self.Phases[phasenam]['pId']
+            drawingData = phasedict['Drawing']
+            cx,ct,cs,ci = drawingData['atomPtrs']
+            Atoms = drawingData['Atoms']
+            if not len(Atoms):
+                print('**** ERROR - Phase '+phasenam+' has no atoms! ****')
+                continue
+            if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
+                self.filename = Oname + "_" + str(i) + self.extension
+            Cell = General['Cell'][1:7]
+            A,B = G2lat.cell2AB(Cell)
+            self.Write('# GSAS-II generated ORCA input file\n# Basic Mode')
+            self.Write('#%Sym SymThresh 0.01 End')
+            self.Write('# after xyz is charge & multiplicity; change as needed for ions')
+            self.Write('* xyz 0 1')
+            fmt = '{:4s}'+3*'{:12.4f}'
+            for atom in Atoms:
+                xyz = np.inner(A,np.array(atom[cx:cx+3]))
+                self.Write(fmt.format(atom[ct],*xyz))
+            self.Write('*\n%%Compound\nGeometry %s;\nVariable Optimize = 0;Variable CC;'%Oname)
+            self.Write('if (Optimize=0) then\n  New_Step\n    ! RHF SP def2-SVP')
+            self.Write('    #%Sym SymThresh 0.01 End\n    # uncomment to do symmetry check')
+            self.Write('  Step_End')
+            self.Write('else\n  New_Step\n    ! BLYP SVP Opt')
+            self.Write('    #%Sym SymThresh 0.01 End\n    # uncomment to do symmetry check')
+            self.Write('  Step_End')
+            self.Write('EndIf')
+            self.Write('%s.Read();'%Oname)
+            self.Write('%s.WriteXYZFile(filename="%s_ORCA.xyz");'%(Oname,Oname))
+            self.Write('End')
+            self.CloseFile()
+            print('Phase '+phasenam+' written to ORCA inp file '+self.fullpath)
+            
 class ExportDrawPhaseCartXYZ(G2fil.ExportBaseclass):
     '''Used to create a Cartesian XYZ file for a phase draw atoms
 

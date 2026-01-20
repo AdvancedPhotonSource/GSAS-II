@@ -229,6 +229,7 @@ class ExportPowderCSV(G2fil.ExportBaseclass):
 class ExportMultiPowderCSV(G2fil.ExportBaseclass):
     '''Used to create a csv file for a stack of powder data sets suitable for display 
     purposes only; no y-calc or weights are exported only x & y-obs
+
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):

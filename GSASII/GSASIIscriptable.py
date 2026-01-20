@@ -12,6 +12,8 @@ or setting parameters and performing a refinement
 
 To change settings within histograms, images and phases, one usually needs to use
 methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
+
+.. py:module:: GSASII
 """
 # Note that documentation for GSASIIscriptable.py has been moved
 # to file docs/source/GSASIIscriptable.rst
@@ -437,7 +439,7 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
     Returns the first reader object which worked."""
     if URL is True:
         filename = downloadFile(filename,download_loc)
-    # Translated from OnImportGeneric method in GSASII.py
+    # Translated from OnImportGeneric method in GSASIIGUI.py
     primaryReaders, secondaryReaders = [], []
     hintcount = 0
     for reader in readerlist:
@@ -505,7 +507,8 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
                 else:
                     try:
                         flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
-                    except Exception as msg:
+                    #except Exception as msg:
+                    except Exception:
                         flag = False
                 if flag:
                     # Omitting image loading special cases
@@ -588,13 +591,37 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     HistName = 'PWDR ' + G2obj.StripUnicode(reader.idstring, '_')
     HistName = G2obj.MakeUniqueLabel(HistName, existingnames)
 
-    try:
-        Iparm1, Iparm2 = instprm
-    except ValueError:
+    # get instrumental parameters from reader...
+    if instprm is None:
+        try:
+            Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
+            print('Instrument parameters supplied in data file')
+        #except KeyError as err:
+        except KeyError:
+            Iparm1 = None  # signal error rather than raise exception inside an exception handler
+        if Iparm1 is None:
+            msg  = "The data file does not have any instrument params associated with it and none were provided."
+            raise Exception(msg)
+    
+    # ...or from a file...
+    elif isinstance(instprm, str):
         Iparm1, Iparm2 = load_iprms(instprm, reader, bank=bank)
         G2fil.G2Print('Instrument parameters read:',reader.instmsg)
-    except TypeError:  # instprm is None, get iparms from reader
-        Iparm1, Iparm2 = reader.pwdparms['Instrument Parameters']
+
+    # ...or from an input...
+    elif (
+        isinstance(instprm, (list, tuple)) 
+        and len(instprm) == 2 
+        and all(isinstance(i, dict) for i in instprm)
+        ):
+            Iparm1, Iparm2 = instprm
+            print('Instrument parameters supplied in script')
+
+    # ...else raise an error.
+    else:
+        msg = f"load_pwd... Error: Invalid instprm entered ({instprm!r})"
+        raise Exception(msg)
+
 
     if 'T' in Iparm1['Type'][0]:
         if not reader.clockWd and reader.GSAS:
@@ -692,7 +719,7 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
              'Unit Cells List',
              'Reflection Lists']
 
-    # TODO controls?? GSASII.py:1664-7
+    # TODO controls?? GSASIIGUI.py:1664-7
 
     return HistName, [HistName] + names, output_dict
 
@@ -984,9 +1011,9 @@ class G2Project(G2ObjectWrapper):
                 commit = g2repo.head.commit
                 controls_data['LastSavedUsing'] += f" git {commit.hexsha[:8]} script"
             else:
-                gv = getSavedVersionInfo()
+                gv = GSASIIpath.getSavedVersionInfo()
                 if gv is not None:
-                    Controls['LastSavedUsing'] += f" static {gv.git_version[:8]}"
+                    controls_data['LastSavedUsing'] += f" static {gv.git_version[:8]}"
         except:
             pass
         #    .gpx name
@@ -1058,14 +1085,20 @@ class G2Project(G2ObjectWrapper):
         if not multiple: pwdrreaders = pwdrreaders[0:1]
         histlist = []
         if URL:
-            iparmfile = downloadFile(iparams)
-        else:
+            instprm = downloadFile(iparams)
+        elif iparams:
             try:
-                iparmfile = os.path.abspath(os.path.expanduser(iparams))
-            except:
-                pass
+                instprm = os.path.abspath(os.path.expanduser(iparams))
+            except TypeError: # iparams is not a file path
+                if isinstance(iparams, (list, tuple)):
+                    instprm = iparams
+                else:
+                    raise Exception(f"add_powder_histogram Error: Invalid iparams supplied ({iparams!r})")
+        else:
+            instprm = None # will error out unless the reader supplies them
+    
         for r in pwdrreaders:
-            histname, new_names, pwdrdata = load_pwd_from_reader(r, iparmfile,
+            histname, new_names, pwdrdata = load_pwd_from_reader(r, instprm,
                                           [h.name for h in self.histograms()],bank=instbank)
             if histname in self.data:
                 G2fil.G2Print("Warning - redefining histogram", histname)
@@ -3184,13 +3217,17 @@ class G2Project(G2ObjectWrapper):
             covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
 
         '''
+        for i in ('covMatrix','varyList','variables'):
+            if i not in self['Covariance']['data']:
+                raise G2ScriptException(f'No {i} found in project, has a refinement been run?')
         missing = [i for i in varList if i not in self['Covariance']['data']['varyList']]
         if missing:
             G2fil.G2Print('Warning: Variable(s) {} were not found in the varyList'.format(missing))
             return None
-        if 'parmDict' not in self['Covariance']['data']:
-            raise G2ScriptException('No parameters found in project, has a refinement been run?')
-        vals = [self['Covariance']['data']['parmDict'][i] for i in varList]
+        parmDict = dict(zip(
+            self['Covariance']['data']['varyList'],
+            self['Covariance']['data']['variables']))
+        vals = [parmDict[i] for i in varList]
         cov = G2mth.getVCov(varList,
                             self['Covariance']['data']['varyList'],
                             self['Covariance']['data']['covMatrix'])
@@ -4091,6 +4128,7 @@ class G2PwdrData(G2ObjectWrapper):
 
     def add_peak(self,area,dspace=None,Q=None,ttheta=None):
         '''Adds a single peak to the peak list
+
         :param float area: peak area
         :param float dspace: peak position as d-space (A)
         :param float Q: peak position as Q (A-1)
@@ -4484,6 +4522,40 @@ class G2PwdrData(G2ObjectWrapper):
                 bkgdata.data[::npts//100])]
         bkgDict['autoPrms']['Mode'] = 'fixed'
         return bkgdata
+
+    def ComputeMassFracs(self):
+        '''Computes the mass fractions (or equivalently the weight fractions)
+        for the phases linked to the current histogram with uncertainties 
+        from the results of the last refinement, if the phase fractions
+        were refined.
+
+        :returns: a dict where the keys are phase names and the values 
+          associated with is a tuple where the first value is the phase's
+          mass fraction and the second value is the s.u. on that value.
+        '''
+        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.proj.filename)
+        if errmsg:
+            G2fil.G2Print('Constraint error',errmsg)
+            print('ComputeMassFracs warning: uncertainties are likely wrong')
+        # if warnmsg:
+        #     G2fil.G2Print('\nNote these constraint warning(s):\n'+warnmsg)
+        #     G2fil.G2Print('Generated constraints\n'+G2mv.VarRemapShow([],True))
+        covMatrix = self.proj.data['Covariance']['data']['covMatrix']
+        varyList = self.proj.data['Covariance']['data']['varyList']
+        hId = self.data['data'][0]['hId']
+        # make a dict like the Phases dict that the GUI uses
+        Phases = {}
+        for phase in self.proj.phases():
+            Phases[phase.name] = phase.data
+        hist = self.name
+        from . import GSASIIstrMath
+        valDict,sigDict = GSASIIstrMath.calcMassFracs(varyList,covMatrix,Phases,hist,hId)
+        vals = {}
+        # reformulate the dict to be {phase-name:(val,su)}
+        for key in valDict:
+            phase = self.proj.phase(key.split(':')[0]).name
+            vals[phase] = (float(valDict[key]),float(sigDict[key]))
+        return vals
 
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
@@ -5552,7 +5624,6 @@ class G2Phase(G2ObjectWrapper):
     def _getBondRest(self,nam):
         if 'Restraints' not in self.proj.data:
             raise G2ScriptException(f"{nam} error: Restraints entry not in data tree")
-        errmsg = ''
         try:
             return self.proj.data['Restraints']['data'][self.name]['Bond']
         except:
@@ -7006,16 +7077,17 @@ class G2Image(G2ObjectWrapper):
         within a small 2theta window and then the median difference is computed
         from magnitude of the difference for those pixels from that median. The
         medians are used for this rather than a standard deviation as the
-        computation used here is less sensitive to outliers.
+        computation used here is less sensitive to outliers. The image must
+        be properly calibrated so that radial averaging is possible. 
         (See :func:`GSASIIimage.AutoPixelMask` and
         :func:`scipy.stats.median_abs_deviation` for more details.)
 
-        Mask is placed into the G2image object where it will be
+        The mask is placed into the G2image object, where it will be
         accessed during integration. Note that this increases the .gpx file
         size significantly; use :meth:`~G2Image.clearPixelMask` to delete
-        this, if it need not be saved.
+        this, if it need not be retained if the .gpx file is to be saved.
 
-        This code is based on :func:`GSASIIimage.FastAutoPixelMask`
+        This code is based on :func:`GSASIIimage.FastAutoPixelMask`,
         but has been modified to recycle expensive computations
         where possible.
 
@@ -7132,7 +7204,7 @@ class G2Image(G2ObjectWrapper):
             Image = self.image
         else:
             Image = _getCorrImage(Readers['Image'],self.proj,self)
-        Controls = self.getControls()
+        #Controls = self.getControls()
         if mask.shape != Image.shape:
             raise G2ScriptException(f"loadPixelMask Error: mask shape {mask.shape} must match image {Image.shape}")
         self.getMasks()['SpotMask']['spotMask'] = mask

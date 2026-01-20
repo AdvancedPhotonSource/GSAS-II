@@ -83,9 +83,9 @@ cellGUIlist = [
     [[3,4,5,6],6,([" a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
     [[7,8,9,10,11,12],8,([" a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
         [True,True,True,False],[0,1,2,0])],
-    [[13,14,15,16],10,([" a = "," b = "," c = ",u'\u03B2 = '," Vol = "],
+    [[13,14,15,16],10,([" a = "," b = "," c = ",'\u03B2 = '," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-    [[17,18],8,([" a = "," b = "," c = ",u'\u03B1 = ',u'\u03B2 = ',u'\u03B3 = '," Vol = "],
+    [[17,18],8,([" a = "," b = "," c = ",'\u03B1 = ','\u03B2 = ','\u03B3 = '," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),(10,3),(10,3),"%.3f"],
         [True,True,True,True,True,True,False],[0,1,2,3,4,5,0])]]
 bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
@@ -389,6 +389,7 @@ def GetPhasesforHistogram(G2frame,histoName):
 def SetupSampleLabels(histName,dataType,histType):
     '''Setup a list of labels and number formatting for use in
     labeling sample parameters.
+
     :param str histName: Name of histogram, ("PWDR ...")
     :param str dataType:
     '''
@@ -399,20 +400,20 @@ def SetupSampleLabels(histName,dataType,histType):
     if 'PWDR' in histName:
         if dataType == 'Debye-Scherrer':
             if 'T' in histType:
-                parms += [['Absorption',u'Sample absorption (\xb5r/'+Gklambda+'): ',[10,4]],]
+                parms += [['Absorption','Sample absorption (\xb5r/'+Gklambda+'): ',[10,4]],]
             else:
-                parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
-                    ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],
-                    ['Absorption',u'Sample absorption (\xb5\xb7r): ',[10,4]],]
+                parms += [['DisplaceX','Sample X displ. perp. to beam (\xb5m): ',[10,3]],
+                    ['DisplaceY','Sample Y displ. || to beam (\xb5m): ',[10,3]],
+                    ['Absorption','Sample absorption (\xb5\xb7r): ',[10,4]],]
         elif dataType == 'Bragg-Brentano':
-            parms += [['Shift',u'Sample displacement(\xb5m): ',[10,4]],
-                ['Transparency',u'Sample transparency(1/\xb5eff, cm): ',[10,3]],
+            parms += [['Shift','Sample displacement(\xb5m): ',[10,4]],
+                ['Transparency','Sample transparency(1/\xb5eff, cm): ',[10,3]],
                 ['SurfRoughA','Surface roughness A: ',[10,4]],
                 ['SurfRoughB','Surface roughness B: ',[10,4]]]
     elif 'SASD' in histName:
         parms.append(['Thick','Sample thickness (mm)',[10,3]])
         parms.append(['Trans','Transmission (meas)',[10,3]])
-        parms.append(['SlitLen',u'Slit length (Q,\xc5'+Pwrm1+')',[10,3]])
+        parms.append(['SlitLen','Slit length (Q,\xc5'+Pwrm1+')',[10,3]])
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
@@ -1833,17 +1834,23 @@ def UpdateBackground(G2frame,data):
         PatternId = G2frame.PatternId
         background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
-        auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
-        for plot in auxPlot:
-            XY = np.array(plot[:2])
-            if 'D(R)' in plot[2]:
-                xlabel = r'$R, \AA$'
-                ylabel = r'$D(R), arb. units$'
-            else:
-                xlabel = r'$Q,\AA$'+superMinusOne
-                ylabel = r'$I(Q)$'
-            G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=xlabel,labelY=ylabel,lines=True)
+        xmin = np.searchsorted(pwddata[0,:],limits[0])
+        xmax = np.searchsorted(pwddata[0,:],limits[1])
+        if pwddata[0,xmin] > 0:
+            auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata[:,xmin:xmax])
+            for plot in auxPlot:
+                XY = np.array(plot[:2])
+                if 'D(R)' in plot[2]:
+                    xlabel = r'$R, \AA$'
+                    ylabel = r'$D(R), arb. units$'
+                else:
+                    xlabel = r'$Q,\AA$'+superMinusOne
+                    ylabel = r'$I(Q)$'
+                G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=xlabel,labelY=ylabel,lines=True)
+        else:
+            G2frame.ErrorDialog('RDF calculation failure','Negative 2-thetas/TOF; choose better limits')
 
     def BackSizer():
 
@@ -2035,9 +2042,9 @@ def UpdateBackground(G2frame,data):
             for i in range(len(data[1]['peaksList'])): rowLabels.append(str(i))
             colLabels = ['pos','refine','int','refine','sig','refine','gam','refine']
             Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
-            wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
+            wg.GRID_VALUE_FLOAT+':12,5,g',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':12,3,g',wg.GRID_VALUE_BOOL,
+            wg.GRID_VALUE_FLOAT+':12,3,g',wg.GRID_VALUE_BOOL]
             peaksTable = G2G.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
             peaksGrid = G2G.GSGrid(parent=G2frame.dataWindow)
             peaksGrid.SetRowLabelSize(45)
@@ -2045,7 +2052,7 @@ def UpdateBackground(G2frame,data):
             peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             peaksGrid.Bind(wg.EVT_GRID_CELL_CHANGED,OnCellChange)
             peaksGrid.AutoSizeColumns(False)
-            peaksSizer.Add(peaksGrid)
+            peaksSizer.Add(peaksGrid,0,wx.EXPAND)
         return peaksSizer
 
     def BackFileSizer():
@@ -2247,7 +2254,7 @@ def UpdateBackground(G2frame,data):
     mainSizer.Add((0,5),0)
     mainSizer.Add(DebyeSizer())
     mainSizer.Add((0,5),0)
-    mainSizer.Add(PeaksSizer())
+    mainSizer.Add(PeaksSizer(),0,wx.EXPAND)
     mainSizer.Add((0,5),0)
     mainSizer.Add(BackFileSizer())
     G2frame.dataWindow.SetDataSize()
@@ -2577,8 +2584,9 @@ def UpdateInstrumentGrid(G2frame,data):
         if not Ok:
             G2frame.ErrorDialog('Cannot calibrate','Index Peak List not indexed')
             return
-        if G2pwd.DoCalibInst(IndexPeaks,data,Sample):
+        if G2pwd.DoCalibInst(IndexPeaks,fitPeaks,data,Sample):
             UpdateInstrumentGrid(G2frame,data)
+            G2plt.PlotPeakWidths(G2frame)
         else:
             G2frame.ErrorDialog('Cannot calibrate','Nothing selected for refinement or refinement failed')
         const = 0.0
@@ -2587,14 +2595,15 @@ def UpdateInstrumentGrid(G2frame,data):
         XY = []
         Sigs = []
         for ip,peak in enumerate(IndexPeaks[0]):
+            calcPos = G2lat.Dsp2pos(data,peak[-1])
             shft = 0.0
             if peak[2] and peak[3]:
                 binwid = cw[np.searchsorted(xye[0],peak[0])]
                 if const:
                     if 'Debye' in Sample['Type']:
-                        shft -= 0.5*const*(Sample['DisplaceX'][0]*npcosd(peak[0])+Sample['DisplaceY'][0]*npsind(peak[0]))
+                        shft -= const*(Sample['DisplaceX'][0]*npcosd(calcPos)+Sample['DisplaceY'][0]*npsind(calcPos))
                     else:
-                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(peak[0]/2.0)
+                        shft -= 2.0*const*Sample['Shift'][0]*npcosd(calcPos/2.0)
                 XY.append([peak[-1],peak[0]-shft,binwid])
                 Sigs.append(IndexPeaks[1][ip])
         if len(XY):
@@ -2917,7 +2926,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     data['Type'][0] = 'SXC'
                     insVal['Type'] = 'SXC'
                 elif 'micro' in lamType:
-                    insVal['Lam'] = 0.025079 # @200keV
+                    insVal['Lam'] = insVal.get('Lam',0.025079) # @200keV
                     data['Type'][0] = 'SEC'      #change to electron diffraction
                     insVal['Type'] = 'SEC'      # in 3 places!
                     Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId) 
@@ -2936,7 +2945,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 txt = '%7.2f'%(insVal['Azimuth'])
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'   Ka1/Ka2: '),0,WACV)
-                txt = u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
+                txt = '  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
                 subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                 waveSizer = wx.BoxSizer(wx.HORIZONTAL)
                 waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
@@ -2969,9 +2978,9 @@ def UpdateInstrumentGrid(G2frame,data):
                 instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                 instSizer.Add((5,5),0)
                 key = 'Lam'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                labelLst.append(u'Lam (\xc5)')
+                labelLst.append('Lam (\xc5)')
                 elemKeysLst.append([key,1])
                 dspLst.append([10,6])
                 instSizer.Add(waveVal,0,WACV)
@@ -3050,9 +3059,9 @@ def UpdateInstrumentGrid(G2frame,data):
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'E' in insVal['Type']:
                 key = '2-theta'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' 2-theta (%10.6f):'%(insDef[key])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' 2-theta (%10.6f):'%(insDef[key])),0,WACV)
                 tthVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                labelLst.append(u'2-theta')
+                labelLst.append('2-theta')
                 elemKeysLst.append([key,1])
                 dspLst.append([10,3])
                 instSizer.Add(tthVal,0,WACV)
@@ -3133,9 +3142,9 @@ def UpdateInstrumentGrid(G2frame,data):
             elif 'PKS' in insVal['Type']:   #peak positions only
                 Reference = ''
                 key = 'Lam'
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
-                labelLst.append(u'Lam (\xc5)')
+                labelLst.append('Lam (\xc5)')
                 elemKeysLst.append([key,1])
                 dspLst.append([10,6])
                 instSizer.Add(waveVal,0,WACV)
@@ -3157,13 +3166,13 @@ def UpdateInstrumentGrid(G2frame,data):
         elif 'S' in insVal['Type']:                       #single crystal data
             Reference = ''
             if 'C' in insVal['Type']:               #constant wavelength
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 if 'EC' in insVal['Type']:
                     waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChangeEC)
                 else:
                     waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
-                labelLst.append(u'Lam (\xc5)')
+                labelLst.append('Lam (\xc5)')
                 waveSizer = wx.BoxSizer(wx.HORIZONTAL)
                 waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
                 # PATCH?: for now at least, Source is not saved anywhere before here
@@ -3181,10 +3190,10 @@ def UpdateInstrumentGrid(G2frame,data):
         elif insVal['Type'][0] in ['L','R',]:
             Reference = ''
             if 'C' in insVal['Type']:
-                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),0,WACV)
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
-                labelLst.append(u'Lam (\xc5)')
+                labelLst.append('Lam (\xc5)')
                 elemKeysLst.append(['Lam',1])
                 dspLst.append([10,6])
                 refFlgElem.append(None)
@@ -4816,45 +4825,45 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         OnHklShow(None,indexFrom=' Indexing from transformed unit cell & symmetry settings')
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def OnLatSym(event):
-        'Run Bilbao PseudoLattice cell search'
-        # look up a space group matching Bravais lattice (should not matter which one)
-        bravaisSPG = {'Fm3m':225,'Im3m':229,'Pm3m':221,'R3-H':146,'P6/mmm':191,
-                       'I4/mmm':139,'P4/mmm':123,'Fmmm':69,'Immm':71,
-                       'Cmmm':65,'Pmmm':47,'C2/m':12,'P2/m':10,'P1':2}
-        pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
-        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
-        sgNum = bravaisSPG.get(controls[5],0)
-        if sgNum < 1:
-            wx.MessageBox('Sorry, only standard cell settings are allowed, please transform axes',caption='Bilbao requires standard settings',style=wx.ICON_EXCLAMATION)
-            return
-        cell = controls[6:12]
-        tolerance = 5.
-        dlg = G2G.SingleFloatDialog(G2frame,'Tolerance',
-                'Enter angular tolerance for search',5.0,[.1,30.],"%.1f")
-        if dlg.ShowModal() == wx.ID_OK:
-            tolerance = dlg.GetValue()
-            dlg.Destroy()
-        else:
-            dlg.Destroy()
-            return
-        wx.BeginBusyCursor()
-        wx.MessageBox(' For use of PSEUDOLATTICE, please cite:\n\n'+
-                          G2G.GetCite('Bilbao: PSEUDOLATTICE'),
-                          caption='Bilbao PSEUDOLATTICE',
-                          style=wx.ICON_INFORMATION)
-        page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
-        wx.EndBusyCursor()
-        if not page: return
-        cells.clear()
-        for i,(cell,mat) in enumerate(kSUB.parseBilbaoCheckLattice(page)):
-            cells.append([])
-            cells[-1] += [mat,0,16]
-            cells[-1] += cell
-            cells[-1] += [G2lat.calc_V(G2lat.cell2A(cell)),False,False]
-        G2frame.GPXtree.SetItemPyData(pUCid,data)
-        G2frame.OnFileSave(event)
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+    # def OnLatSym(event):
+    #     'Run Bilbao PseudoLattice cell search'
+    #     # look up a space group matching Bravais lattice (should not matter which one)
+    #     bravaisSPG = {'Fm3m':225,'Im3m':229,'Pm3m':221,'R3-H':146,'P6/mmm':191,
+    #                    'I4/mmm':139,'P4/mmm':123,'Fmmm':69,'Immm':71,
+    #                    'Cmmm':65,'Pmmm':47,'C2/m':12,'P2/m':10,'P1':2}
+    #     pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+    #     controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
+    #     sgNum = bravaisSPG.get(controls[5],0)
+    #     if sgNum < 1:
+    #         wx.MessageBox('Sorry, only standard cell settings are allowed, please transform axes',caption='Bilbao requires standard settings',style=wx.ICON_EXCLAMATION)
+    #         return
+    #     cell = controls[6:12]
+    #     tolerance = 5.
+    #     dlg = G2G.SingleFloatDialog(G2frame,'Tolerance',
+    #             'Enter angular tolerance for search',5.0,[.1,30.],"%.1f")
+    #     if dlg.ShowModal() == wx.ID_OK:
+    #         tolerance = dlg.GetValue()
+    #         dlg.Destroy()
+    #     else:
+    #         dlg.Destroy()
+    #         return
+    #     wx.MessageBox(' For use of PSEUDOLATTICE, please cite:\n\n'+
+    #                       G2G.GetCite('Bilbao: PSEUDOLATTICE'),
+    #                       caption='Bilbao PSEUDOLATTICE',
+    #                       style=wx.ICON_INFORMATION)
+    #     wx.BeginBusyCursor()
+    #     page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
+    #     wx.EndBusyCursor()
+    #     if not page: return
+    #     cells.clear()
+    #     for i,(cell,mat) in enumerate(kSUB.parseBilbaoCheckLattice(page)):
+    #         cells.append([])
+    #         cells[-1] += [mat,0,16]
+    #         cells[-1] += cell
+    #         cells[-1] += [G2lat.calc_V(G2lat.cell2A(cell)),False,False]
+    #     G2frame.GPXtree.SetItemPyData(pUCid,data)
+    #     G2frame.OnFileSave(event)
+    #     wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def OnNISTLatSym(event):
         'Run NIST*LATTICE cell search'
@@ -5021,7 +5030,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
             if SubGroups is None:
-                wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+                wx.MessageBox('Internet connection problem? Check console output.',
+                            caption='Bilbao SUBGROUPS error',
+                              style=wx.ICON_EXCLAMATION)
                 return
             if not SubGroups:
                 if Landau:
@@ -5204,6 +5215,13 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         '''Search for k-vector using the ISODISTORT web service.
         Developed by Yuanpeng Zhang with help from Branton Campbell.
         '''
+        if symbols is None:
+            G2G.G2MessageBox(G2frame,
+                    'Unable to perform ISODISTORT kvec search without the sympy module. Use Help/Add packages... to address','No sympy')
+            return
+        # symbolic "variables" needed below for routine to_fraction_strs()
+        a, b, g = symbols('a b g')
+
         def _showWebPage(event):
             'Show a web page when the user presses the "show" button'
             import tempfile
@@ -5256,8 +5274,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 return all_kvecs
             else:
                 return None
-
-        a, b, g = symbols('a b g')
 
         def frac_str(value, max_den=1000):
             # Try to get a rational exactly; if huge, fall back to bounded approximation
@@ -5321,10 +5337,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             return data_update
 
         # start of OnISODISTORT_kvec computations
-        if symbols is None:
-            G2G.G2MessageBox(G2frame,
-                    'Unable to perform ISODISTORT kvec search without the sympy module. Use Help/Add packages... to address','No sympy')
-            return
         try:
             import requests
         except:
@@ -5860,7 +5872,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 err_title = "Invalid tolerance input"
                 err_msg = "The tolerance value should be a float number, "
                 err_msg += "representing the instrument resolution "
-                err_msg += ("level " + u"\u03B4" + "d/d.")
+                err_msg += ("level \u03B4d/d.")
                 G2G.G2MessageBox(G2frame, err_msg, err_title)
                 wx.EndBusyCursor()
                 return
@@ -6980,7 +6992,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnRunSubs, id=G2G.wxID_RUNSUB)
     G2frame.Bind(wx.EVT_MENU, OnRunSubsMag, id=G2G.wxID_RUNSUBMAG)
-    G2frame.Bind(wx.EVT_MENU, OnLatSym, id=G2G.wxID_LATSYM)
+    #G2frame.Bind(wx.EVT_MENU, OnLatSym, id=G2G.wxID_LATSYM) # removed from site
     G2frame.Bind(wx.EVT_MENU, OnNISTLatSym, id=G2G.wxID_NISTLATSYM)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
@@ -7098,9 +7110,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             Types = [wg.GRID_VALUE_BOOL]
             colLabels += [
                 'kx', 'ky', 'kz',
-                'Ave. ' + u'\u03B4' + 'd/d',
-                'Ave. ' + u'\u03B4' + 'd',
-                'Max. ' + u'\u03B4' + 'd'
+                'Ave. \u03B4d/d',
+                'Ave. \u03B4d',
+                'Max. \u03B4d'
             ]
             Types += (6 * [wg.GRID_VALUE_FLOAT + ':10, 5'])
             mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n k-vector search results:'))
@@ -7291,10 +7303,17 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
         Vpoint = np.array([int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))])
-        controls = {'Type':'Fosq','Iscale':False,'HKLmax':Hmax,'HKLmin':Hmin,'Zone':False,'viewKey':'L',
-            'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
-            'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
-            'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
+        if len(data) > 1:   #single crystal data
+            controls = {'Type':'Fosq','Iscale':False,'HKLmax':Hmax,'HKLmin':Hmin,'Zone':False,'viewKey':'L',
+                'microED':{'Nexp':[False,0],'Ztilt':[False,0]},'dType':data[1]['Type'],
+                'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
+                'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
+                'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
+        else:   #powder data
+            controls = {'Type':'Fosq','Iscale':False,'HKLmax':Hmax,'HKLmin':Hmin,'Zone':False,'viewKey':'L',
+                'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
+                'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
+                'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
 
     def OnWilsonStat(event):
@@ -7419,6 +7438,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             if 'T' in Inst['Type'][0]:
                 colLabels = ['H','K','L','flag','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
                 Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]
+            elif 'E' in Inst['Type'][0]:
+                colLabels = ['H','K','L','flag','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC']
+                if refs.shape[1] > 12:                
+                    colLabels += ['Nexp','Zpos']
+                    Types += [wg.GRID_VALUE_LONG,wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
         else:

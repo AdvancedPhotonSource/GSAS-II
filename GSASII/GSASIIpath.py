@@ -161,7 +161,7 @@ def GetBinaryPrefix(pyver=None):
     elif sys.platform.startswith("linux"):
         prefix = 'linux'
     else:
-        print(u'Unknown platform: '+sys.platform)
+        print(f'Unknown platform: {sys.platform}')
         raise Exception('Unknown platform')
     if 'arm' in platform.machine() and sys.platform == "darwin":
         bits = 'arm'
@@ -347,9 +347,11 @@ def getG2VersionInfo():
         if rc is None:
             return f"  GSAS-II:    {gversion} posted {ctim} (updates unknown) [{commit.hexsha[:8]}]{msg}"
         elif len(rc) > 0:
-            return f"  GSAS-II:    {gversion} posted {ctim} (\u2265{len(rc)} new updates) [{commit.hexsha[:8]}]{msg}"
+            #return f"  GSAS-II:    {gversion} posted {ctim} (\u2265{len(rc)} new updates) [{commit.hexsha[:8]}]{msg}"
+            return f"  GSAS-II:    {gversion} posted {ctim} (>={len(rc)} pending updates) [{commit.hexsha[:8]}]{msg}"
         else:
-            return f"  GSAS-II:    {gversion} posted {ctim} (no new updates) [{commit.hexsha[:8]}]{msg}"
+#            return f"  GSAS-II:    {gversion} posted {ctim} (no new updates) [{commit.hexsha[:8]}]{msg}"
+            return f"  GSAS-II:    {gversion} posted {ctim} [{commit.hexsha[:8]}]{msg}"
     elif gv is not None:
         vt = ''
         cvt = ''
@@ -1095,34 +1097,109 @@ def runScript(cmds=[], wait=False, G2frame=None):
         sys.exit()
 
 def IPyBreak_base(userMsg=None):
-    '''A routine that invokes an IPython session at the calling location
+    '''A routine that invokes an IPython session at the calling location.
+    Called by a call to :func:`IPyBreak` or command ``breakpoint()``.
     This routine is only used when debug=True is set in the configuration
-    settings
+    settings.
     '''
     savehook = sys.excepthook # save the exception hook
     try:
-        from IPython.terminal.embed import InteractiveShellEmbed
+        import IPython.core
+        # get the Ipython shell routine
+        if IPython.core.getipython.get_ipython() is None:
+            ipshell = IPython.terminal.embed.InteractiveShellEmbed.instance(banner1='')
+        else: # older IPython (still needed?)
+            ipshell = IPython.terminal.embed.InteractiveShellEmbed()
+        import inspect
     except ImportError:
-        try:
-            # try the IPython 0.12 approach
-            from IPython.frontend.terminal.embed import InteractiveShellEmbed
-        except ImportError:
-            print ('IPython InteractiveShellEmbed not found')
-            return
-    import inspect
-    #from IPython import __version__
-    #if __version__.startswith('8.12.'): # see https://github.com/ipython/ipython/issues/13966
-    from IPython.core import getipython
-    if getipython.get_ipython() is None:
-        ipshell = InteractiveShellEmbed.instance()
-    else:
-        ipshell = InteractiveShellEmbed()
+        return
+
+    stack = inspect.stack()     # Get the full stack
+    current_level = [1]  # mutable so inner function can modify it
+    
+    def up(levels=1):
+        '''Move the IPython shell environment up the call stack.
+        Initially coded by Claude Sonnet 4.5
+        '''
+        new_level = current_level[0] + levels
+        if new_level < len(stack):
+            current_level[0] = new_level
+            frame = stack[current_level[0]].frame
+            print(f"Moving to: {stack[current_level[0]].filename}:{stack[current_level[0]].lineno} in {stack[current_level[0]].function}")
+            # Replace the IPython namespace (not update), but preserve IPython internals
+            # Save IPython internal variables and built-in commands
+            ipython_preserve = {k: v for k, v in ipshell.user_ns.items() 
+                              if k.startswith('_') or k in ('exit', 'quit', 'get_ipython')}
+            ipshell.user_ns.clear()
+            ipshell.user_ns.update(ipython_preserve)  # Restore IPython internals
+            ipshell.user_ns.update(frame.f_globals)
+            ipshell.user_ns.update(frame.f_locals)
+            ipshell.user_ns['TB'] = TB
+            ipshell.user_ns['up'] = up
+            ipshell.user_ns['down'] = down
+            ipshell.user_ns['where'] = where
+        else:
+            print(f"Already at top of stack (level {current_level[0]} of {len(stack)-1})")
+    
+    def down(levels=1):
+        '''Move the IPython shell environment down the call stack.
+        Initially coded by Claude Sonnet 4.5
+        '''
+        new_level = current_level[0] - levels
+        if new_level >= 0:
+            current_level[0] = new_level
+            frame = stack[current_level[0]].frame
+            print(f"Moving to: {stack[current_level[0]].filename}:{stack[current_level[0]].lineno} in {stack[current_level[0]].function}")
+            # Replace the IPython namespace (not update), but preserve IPython internals
+            # Save IPython internal variables and built-in commands
+            ipython_preserve = {k: v for k, v in ipshell.user_ns.items() 
+                              if k.startswith('_') or k in ('exit', 'quit', 'get_ipython')}
+            ipshell.user_ns.clear()
+            ipshell.user_ns.update(ipython_preserve)  # Restore IPython internals
+            ipshell.user_ns.update(frame.f_globals)
+            ipshell.user_ns.update(frame.f_locals)
+            ipshell.user_ns['TB'] = TB
+            ipshell.user_ns['up'] = up
+            ipshell.user_ns['down'] = down
+            ipshell.user_ns['where'] = where
+        else:
+            print(f"Already at bottom of stack (level 0)")
+    
+    def where():
+        '''Show current position in stack related to up/down commands.
+        Initially coded by Claude Sonnet 4.5 & revised to reverse display order.
+        '''
+        i = len(stack)
+        for frame_info in reversed(stack):
+            i -= 1
+            marker = ">>>" if i == current_level[0] else "   "
+            print(f"{marker} [{i}] {frame_info.filename}:{frame_info.lineno} in {frame_info.function}")
+
+    def TB(depth=None):
+        '''Show a traceback (to the optional specified depth) to how we got to
+        the breakpoint. Omit the current level as the calling level to here 
+        and above is likely all that we would be interested in.
+        '''
+        if depth is not None: depth += 1
+        for frame_info in reversed(stack[1:depth]):
+            print(f'  File "{frame_info.filename}", line {frame_info.lineno}, in {frame_info.function}')
+            if frame_info.code_context:
+                print(f'    {frame_info.code_context[0].strip()}')
 
     frame = inspect.currentframe().f_back
     msg   = 'Entering IPython console inside {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
+    msg += '\n[up()/down()/where() to navigate stack; TB()/TB(n) for n level tracebacks]'
     if userMsg: msg += userMsg
+    
+    # Add commands to shell namespace
+    locals = frame.f_locals
+    locals['TB'] = TB
+    locals['up'] = up
+    locals['down'] = down
+    locals['where'] = where
+    
     # globals().update(locals()) # This might help with vars inside list comprehensions, etc.
-    ipshell(msg,stack_depth=2) # Go up one level, to see the calling routine
+    ipshell(msg,stack_depth=2,local_ns=locals,global_ns=frame.f_globals)
     sys.excepthook = savehook # reset IPython's change to the exception hook
 
 def exceptHook(*args):
@@ -1130,26 +1207,39 @@ def exceptHook(*args):
     with fancy formatting and then calls an IPython shell with the environment
     of the exception location.
 
-    This routine is only used when debug=True is set in the configuration settings
+    This routine is only used when debug=True is set in the configuration 
+    settings.
     '''
     import IPython.core
     savehook = sys.excepthook # save the exception hook
-    # show the error
-    tb_formatter = IPython.core.ultratb.VerboseTB()
-    print(tb_formatter.text(*args))
+    # show the error location
+    if sys.platform == "win32":
+        tb_formatter = IPython.core.ultratb.ListTB() # better for windows?
+    else:
+        tb_formatter = IPython.core.ultratb.FormattedTB()
+    print(tb_formatter.text(*args,-1),end='') # show only last routine
     # get the Ipython shell routine
     if IPython.core.getipython.get_ipython() is None:
-        ipshell = IPython.terminal.embed.InteractiveShellEmbed.instance()
-    else:
+        ipshell = IPython.terminal.embed.InteractiveShellEmbed.instance(banner1='')
+    else: # older IPython (still needed?)
         ipshell = IPython.terminal.embed.InteractiveShellEmbed()
-    # get to the right frame
-    try:
+    # traceback display routines
+    def TB(depth=None): print(IPython.core.ultratb.FormattedTB().text(*args,depth))
+    def vTB(depth=-1): print(IPython.core.ultratb.VerboseTB().text(*args,depth))
+    def bwTB(depth=None): print(IPython.core.ultratb.ListTB().text(*args,depth)) # uncolored
+    try:     # get to the right frame
         import inspect
         frame = inspect.getinnerframes(args[2])[-1][0]
-        msg = f'Entering IPython console at {frame.f_code.co_filename} at line {frame.f_lineno}\n'
-        ipshell(msg,local_ns=frame.f_locals,global_ns=frame.f_globals) # newest (IPython >= 8)
+        locals = frame.f_locals  # add traceback commands to shell namespace
+        locals['TB'] = TB
+        locals['vTB'] = vTB
+        locals['bwTB'] = bwTB
+        msg = f'IPython console: {frame.f_code.co_filename}, line {frame.f_lineno}'
+        msg += '\n[TB()/TB(-n), vTB()/vTB(-n)/vTB(0) & bwTB() for tracebacks to n levels back]'
+        ipshell(msg,local_ns=locals,global_ns=frame.f_globals)
     except:
-        msg = 'Entering IPython console (no contex)'
+        msg = 'Entering IPython console (not in error contex)'
+        msg += '\n[TB(), vTB() & bwTB() for tracebacks]'
         ipshell(msg)
     sys.excepthook = savehook # reset IPython's change to the exception hook
 
@@ -1833,6 +1923,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
         count += 1
         r = None
         repeat = False
+        if GetConfigValue('debug'): print('request to',URL)
         try:
             if timeout is not None:
                 r = reqopt(URL,params=postdict,cookies=usecookie,
@@ -2150,6 +2241,15 @@ to update/regress repository from git repository:
         lastver = sorted([t for t in taglist if 'v' in t])[-1]
         lastnum = sorted([t for t in taglist if 'v' not in t],key=int)[-1]
         #print('tags=',lastver,lastnum)
+        # make directory for config file if needed
+        localdir = os.path.expanduser(os.path.normpath('~/.GSASII'))
+        if not os.path.exists(localdir):
+            try:
+                os.mkdir(localdir)
+                print(f'Created directory {localdir}')
+            except Exception as msg:
+                print(f'Error trying to create directory {localdir}\n{msg}')
+                sys.exit()
         # add tag info to config file
         import configparser
         cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))

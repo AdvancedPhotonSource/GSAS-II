@@ -445,8 +445,12 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             namelist = ['dAx','dAy','dAz']
         elif 'AU' in name:
             namelist = ['AUiso','AU11','AU22','AU33','AU12','AU13','AU23']
+        elif "Akappa'" in name:
+            orb = name.split(':')[2][-1]
+            namelist = ["Akappa'"+orb,]
         elif 'Akappa' in name:
-            namelist = ['Akappa%d'%i for i in range(6)]
+            orb = name.split(':')[2][-1]
+            namelist = ['Akappa'+orb,]
         elif 'ANe' in name:
             namelist = ['ANe0','ANe1']
         elif 'AD(1' in name:
@@ -455,6 +459,10 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         elif 'AD(2' in name:
             orb = name.split(':')[2][-1]
             namelist = ['AD(2,0)'+orb,'AD(2,1)'+orb,'AD(2,-1)'+orb,'AD(2,2)'+orb,'AD(2,-2)'+orb]
+        elif 'AD(3' in name:
+             orb = name.split(':')[2][-1]
+             namelist = ['AD(3,0)'+orb,'AD(31)'+orb,'AD(3,-1)'+orb,'AD(3,2)'+orb,'AD(3,-2)'+orb,
+                'AD(3,3)'+orb,'AD(3,-3)'+orb]
         elif 'AD(4' in name:
             orb = name.split(':')[2][-1]
             namelist = ['AD(4,0)'+orb,'AD(4,1)'+orb,'AD(4,-1)'+orb,'AD(4,2)'+orb,'AD(4,-2)'+orb,
@@ -1436,11 +1444,17 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             btn = wx.Button(panel, wx.ID_ANY, 'Show Errors')
             btn.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(panel,errmsg,header='Error info'))
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
-            btn.Enable(len(errmsg) > 0)
+            try:
+                btn.Enable(len(errmsg) > 0)
+            except NameError:
+                pass
             btn = wx.Button(panel, wx.ID_ANY, 'Show Warnings')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
             btn.Bind(wx.EVT_BUTTON,lambda event: G2G.ShowScrolledInfo(panel,warnmsg.replace('&','&&')))
-            btn.Enable(len(warnmsg) > 0)
+            try:
+                btn.Enable(len(warnmsg) > 0)
+            except NameError:
+                pass
             btn = wx.Button(panel, wx.ID_ANY, 'Show generated constraints')
             butSizer.Add(btn,0,wx.ALIGN_CENTER_VERTICAL)
             txt = G2mv.VarRemapShow(linelen=999).replace('&','&&')

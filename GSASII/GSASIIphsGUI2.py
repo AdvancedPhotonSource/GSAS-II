@@ -205,22 +205,63 @@ def UpdateDeformation(G2frame,data,AtdId):
         dId = Indx[Obj.GetId()]
         deformationData[-dId]['Radial'] = radFxn.GetStringSelection()
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
+        
+    def OnSSchoice(event):
+        Obj = event.GetEventObject()
+        dId = Indx[Obj.GetId()]
+        rbSym = deformationData[-dId]['LocSS'] = SSchoice.GetStringSelection()        
+        sytsym = atom[cs].strip()        
+        for harm in data['Deformations'][dId]:
+            if 'Sl' in harm[0]:
+                Harm = harm
+        Hkeys = list(Harm[1].keys())
+        orders = [int(item[2]) for item in Hkeys if 'D' in item]
+        if len(orders):
+            Order = max(orders)
+            newHarms = {item:Harm[1][item] for item in ['Ne','kappa',"kappa'"]}
+            for order in np.arange(Order+1):
+                cofNames,cofSgns = G2lat.GenRBCoeff(sytsym,rbSym,order)
+                cofNames = [name.replace('C','D') for name in cofNames]
+                for name in cofNames:
+                    if name in Hkeys:
+                        newHarms[name] = Harm[1][name]
+                    else:
+                        newHarms.update({name:[0.0,False],})
+            Harm[1] = newHarms                
+        wx.CallAfter(UpdateDeformation,G2frame,data,dId)
     
     def MakeUVmat(defData,U,V):
-        MX = U
-        if 'A' in defData['MUV']:
-            MY = V
+        "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+        "                C: X'=UxV, Y'=Ux(UxV) & Z'=U, D: X'=(UxV)xU, Y=(UxV) & Z'=U"
+        if 'A' in defData['MUV']:   #"X'=U, Y'=(UxV)xU & Z'=UxV"
+            MX = U/nl.norm(U)
+            MY = V/nl.norm(V)
             MZ = np.cross(MX,MY)
             MZ /= nl.norm(MZ)
             MY = np.cross(MZ,MX)
             MY /= nl.norm(MY)
-        else:
-            MZ = V
+        elif 'B' in defData['MUV']: #"X'=U, Y'=UxV & Z'=Ux(UxV)"
+            MX = U/nl.norm(U)
+            MZ = V/nl.norm(V)
             MY = np.cross(MZ,MX)
             MY /= nl.norm(MY)
             MZ = np.cross(MX,MY)
             MZ /= nl.norm(MZ)
-        return np.array([MX,MY,MZ])
+        elif 'C' in defData['MUV']: #"X'=UxV, Y'=Ux(UxV) & Z'=U"
+            MZ = U/nl.norm(U)
+            MY = V/nl.norm(V)
+            MX = np.cross(MZ,MY)
+            MX /= nl.norm(MX)
+            MY = np.cross(MZ,MX)
+            MY /= nl.norm(MY)
+        elif 'D' in defData['MUV']: #"X'=(UxV)xU, Y=(UxV) & Z'=U"
+            MZ = U/nl.norm(U)
+            MX = V/nl.norm(V)
+            MY = np.cross(MZ,MX)
+            MY /= nl.norm(MY)
+            MX = np.cross(MY,MZ)
+            MX /= nl.norm(MX)
+        return np.vstack((MX,MY,MZ)).T
     
     def OnDeformRef(event):
         Obj = event.GetEventObject()
@@ -245,6 +286,7 @@ def UpdateDeformation(G2frame,data,AtdId):
 
     def OnMatSel(event):
         "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+        "                C: X'=UxV, Y'=Ux(UxV) & Z'=U, D: X'=(UxV)xU, Y=(UxV) & Z'=U"
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
         deformationData[-dId]['MUV'] = Obj.GetValue()
@@ -256,6 +298,7 @@ def UpdateDeformation(G2frame,data,AtdId):
 
     def OnUvec(event):
         "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+        "                C: X'=UxV, Y'=Ux(UxV) & Z'=U, D: X'=(UxV)xU, Y=(UxV) & Z'=U"
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
         if Obj.GetValue() == deformationData[-dId]['V']:
@@ -276,6 +319,7 @@ def UpdateDeformation(G2frame,data,AtdId):
         
     def OnVvec(event):
         "Cartesian axes: A: X'=U, Y'=(UxV)xU & Z'=UxV,B: X'=U, Y'=UxV & Z'=Ux(UxV)"
+        "                C: X'=UxV, Y'=Ux(UxV) & Z'=U, D: X'=(UxV)xU, Y=(UxV) & Z'=U"
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
         if Obj.GetValue() == deformationData[-dId]['U']:
@@ -288,7 +332,7 @@ def UpdateDeformation(G2frame,data,AtdId):
                 Obj.SetValue(deformationData[-dId]['V'])
                 G2G.G2MessageBox(G2frame,'ERROR: V-vector zero or parallel to U','Invalid vector choice')
                 return
-            if nl.det(UVmat) < 0.:  #ensure right hand
+            if nl.det(UVmat) < 0.:  #insure right hand
                 UVmat *= -1.
             deformationData[-dId]['V'] =  Obj.GetValue()
             data['Deformations'][-dId]['UVmat'] = UVmat
@@ -298,12 +342,12 @@ def UpdateDeformation(G2frame,data,AtdId):
         dId = atomList[atSel.GetValue()]
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
         
-    def Kappa(deformation,orbSizer,dId,orb,Indx):
-        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1]['kappa'],0,nDig=(8,3),xmin=0.5,xmax=1.5))
+    def Kappa(deformation,orbSizer,dId,orb,kname,Indx):
+        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][kname],0,nDig=(8,3),xmin=0.5,xmax=3.0))
         Tcheck = wx.CheckBox(deformation,-1,'Refine?')
-        Tcheck.SetValue(orb[1]['kappa'][1])
+        Tcheck.SetValue(orb[1][kname][1])
         Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
-        Indx[Tcheck.GetId()] = [dId,iorb,'kappa']
+        Indx[Tcheck.GetId()] = [dId,iorb,kname]
         orbSizer.Add(Tcheck)
         
     def NeSizer(deformation,orbSizer,dId,orb,Indx):
@@ -314,9 +358,10 @@ def UpdateDeformation(G2frame,data,AtdId):
         Indx[Tcheck.GetId()] = [dId,iorb,'Ne']
         orbSizer.Add(Tcheck)
         
-    def Dsizer(deformation,orbSizer,dId,orb,Indx):
-        orbSizer.Add(wx.StaticText(deformation,label=item+':'))
-        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,5),xmin=-1.,xmax=1.))
+    def Dsizer(deformation,orbSizer,Names,dId,orb,Indx):
+        name = Names.get(item,'') #Names only go to order = 3
+        orbSizer.Add(wx.StaticText(deformation,label=item+name+':'))
+        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][item],0,nDig=(8,5),xmin=-1.5,xmax=1.5))
         Tcheck = wx.CheckBox(deformation,-1,'Refine?')
         Tcheck.SetValue(orb[1][item][1])
         Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
@@ -328,6 +373,7 @@ def UpdateDeformation(G2frame,data,AtdId):
         dId = Indx[Obj.GetId()]
         atom = atomData[AtLookUp[dId]]
         sytsym = atom[cs].strip()
+        rbSym = deformationData[-dId]['LocSS']
         for harm in data['Deformations'][dId]:
             if 'Sl' in harm[0]:
                 Harm = harm
@@ -339,7 +385,7 @@ def UpdateDeformation(G2frame,data,AtdId):
         cofNames = []
         notFound = True
         while notFound and Order < 6:
-            cofNames,cofSgns = G2lat.GenRBCoeff(sytsym,'1',Order)      #sytsym, RBsym = '1'
+            cofNames,cofSgns = G2lat.GenRBCoeff(sytsym,rbSym,Order)
             cofNames = [name.replace('C','D') for name in cofNames]
             for name in cofNames:
                 if name not in Hkeys:   #new names found
@@ -354,15 +400,19 @@ def UpdateDeformation(G2frame,data,AtdId):
     def OnDelHarm(event):
         Obj = event.GetEventObject()
         dId = Indx[Obj.GetId()]
+        minL = 1  #always an "Ne"
         for harm in data['Deformations'][dId]:
             if 'Sl' in harm[0]:
                 Harm = harm
+                minL = 2    # & 'kappa'
         Hkeys = list(Harm[1].keys())
-        if len(Hkeys) > 1:  #always an "Ne"
+        if len(Hkeys) > minL:
             maxord = max([int(item[2]) for item in Hkeys if 'D' in item])
             for item in Hkeys:
                 if 'D' in item and int(item[2]) == maxord:
                     del Harm[1][item]
+            if len(Harm[1]) == 3:
+                del Harm[1]["kappa'"]
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
         
     def OnShowDef(event):
@@ -467,17 +517,28 @@ def UpdateDeformation(G2frame,data,AtdId):
         NUVvec,NUVchoice = G2lat.SetUVvec(neigh)
         UVchoice[dId] += NUVchoice
         UVvec[dId] += NUVvec
+        lineSizer.Add(wx.StaticText(deformation,label=' Local site sym:'),0,WACV)
+        SSchoices = G2spc.GetSytSymChoice(atom[cs])
+        deformationData[-dId]['LocSS'] = deformationData[-dId].get('LocSS',atom[cs][:])
+        SSchoice = wx.ComboBox(deformation,value=deformationData[-dId]['LocSS'],
+            choices=SSchoices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Indx[SSchoice.GetId()] = dId
+        SSchoice.Bind(wx.EVT_COMBOBOX,OnSSchoice)
+        lineSizer.Add(SSchoice,0,WACV)
         mainSizer.Add(lineSizer)
+        mainSizer.Add(wx.StaticText(deformation,
+            label=" NB: Local site sym always has unique axis || Z' and second axis || X'; choose U && V carefully"))
         matSizer = wx.BoxSizer(wx.HORIZONTAL)
-        Mchoice = ["A: X'=U, Y'=(UxV)xU & Z'=UxV","B: X'=U, Y'=UxV & Z'=Ux(UxV)"]
+        Mchoice = ["A: X'=U, Y'=(UxV)xU & Z'=UxV","B: X'=U, Y'=UxV & Z'=Ux(UxV)",
+                   "C: X'=UxV, Y'=Ux(UxV) & Z'=U","D: X'=(UxV)xU, Y=(UxV) & Z'=U"]
         matSizer.Add(wx.StaticText(deformation,label=' Orbital Cartesian axes:'),0,WACV)
         matSel = wx.ComboBox(deformation,choices=Mchoice,value=deformationData[-dId]['MUV'],style=wx.CB_READONLY|wx.CB_DROPDOWN)
         matSel.Bind(wx.EVT_COMBOBOX,OnMatSel)
         Indx[matSel.GetId()] = dId
-        matSizer.Add(matSel,0,WACV)
-        deformationData[-dId]['Radial'] = deformationData[-dId].get('Radial','Bessel')
+        matSizer.Add(matSel,0,WACV)        
+        deformationData[-dId]['Radial'] = deformationData[-dId].get('Radial','Slater')
         topSizer.Add(wx.StaticText(deformation,label=' Select radial fxn: '),0,WACV)
-        fxchoice = deformationData[-dId].get('fxchoice',['Bessel',])
+        fxchoice = deformationData[-dId].get('fxchoice',['Slater',])
         radFxn = wx.ComboBox(deformation,value=deformationData[-dId]['Radial'],
             choices=fxchoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Indx[radFxn.GetId()] = dId
@@ -506,42 +567,46 @@ def UpdateDeformation(G2frame,data,AtdId):
             oriSizer.Add(delHarm,0,WACV)
         mainSizer.Add(oriSizer)
         G2G.HorizontalLine(mainSizer,deformation)
+        Names = {'D(1,-1)':'py','D(1,0)':'pz','D(1,1)':'px',
+                 'D(2,-2)':'dxy','D(2,-1)':'dyz','D(2,0)':'dz2','D(2,1)':'dxz','D(2,2)':'dx2-y2',
+                 'D(3,-3)':'fy(3x2-y2)','D(3,-2)':'fxyz','D(3,-1)':'fyz2','D(3,0)':'fz3',
+                 'D(3,1)':'fxz2','D(3,2)':'fz(x2-y2)','D(3,3)':'fx(x2-3y2)',}
         mainSizer.Add(wx.StaticText(deformation,label=' Deformation parameters:'))
         orbSizer = wx.FlexGridSizer(0,9,2,2)
         for iorb,orb in enumerate(deformationData[dId]):
-            if deformationData[-dId]['Radial'] == 'Bessel' and 'Sl ' not in orb[0]:
-                if '<j0>' in orb[0]:
-                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
-                    NeSizer(deformation,orbSizer,dId,orb,Indx)
-                    if 'kappa' in orb[1]:
-                        orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
-                        Kappa(deformation,orbSizer,dId,orb,Indx)
-                    for i in range(3): orbSizer.Add((5,5),0)
-                    continue
-                if 'kappa' in orb[1]:
-                    for i in range(3): orbSizer.Add((5,5),0)
-                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+" kappa':"))
-                    Kappa(deformation,orbSizer,dId,orb,Indx)
-                if 'kappa' not in orb[1]:
-                    orbSizer.Add(wx.StaticText(deformation,label=orb[0]+':'))
-                    for i in range(2): orbSizer.Add((5,5),0)
-                nItem = 0
-                for item in orb[1]:
-                    if 'D' in item:                            
-                        nItem += 1
-                        Dsizer(deformation,orbSizer,dId,orb,Indx)
-                        if nItem in [2,4,6,8,10]:
-                            for i in range(3): orbSizer.Add((5,5),0)
-                for i in range(3): orbSizer.Add((5,5),0)
-            elif deformationData[-dId]['Radial'] == 'Slater' and 'Sl ' in orb[0]: 
+            # if deformationData[-dId]['Radial'] == 'Bessel' and 'Sl ' not in orb[0]:
+            #     if '<j0>' in orb[0]:
+            #         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
+            #         NeSizer(deformation,orbSizer,dId,orb,Indx)
+            #         if 'kappa' in orb[1]:
+            #             orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
+            #             Kappa(deformation,orbSizer,dId,orb,'kappa',Indx)
+            #         for i in range(3): orbSizer.Add((5,5),0)
+            #         continue
+            #     if 'kappa' in orb[1]:
+            #         for i in range(3): orbSizer.Add((5,5),0)
+            #         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+" kappa':"))
+            #         Kappa(deformation,orbSizer,dId,orb,"kappa'",Indx)
+            #     if 'kappa' not in orb[1]:
+            #         orbSizer.Add(wx.StaticText(deformation,label=orb[0]+':'))
+            #         for i in range(2): orbSizer.Add((5,5),0)
+            #     nItem = 0
+            #     for item in orb[1]:
+            #         if 'D' in item:                            
+            #             nItem += 1
+            #             Dsizer(deformation,orbSizer,Names,dId,orb,Indx)
+            #             if nItem in [2,4,6,8,10]:
+            #                 for i in range(3): orbSizer.Add((5,5),0)
+            #     for i in range(3): orbSizer.Add((5,5),0)
+            # elif deformationData[-dId]['Radial'] == 'Slater' and 'Sl ' in orb[0]: 
                 orbSizer.Add(wx.StaticText(deformation,label=orb[0]+' Ne:'))
                 NeSizer(deformation,orbSizer,dId,orb,Indx)
-                Np = 2
-                if 'kappa' in orb[1]:
-                    orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
-                    Kappa(deformation,orbSizer,dId,orb,Indx)
-                    Np = 1
-                for i in range(3*Np): orbSizer.Add((5,5),0)
+                orbSizer.Add(wx.StaticText(deformation,label=' kappa:'))
+                Kappa(deformation,orbSizer,dId,orb,'kappa',Indx)
+                if len(orb[1]) > 2:
+                    orb[1]["kappa'"] = orb[1].get("kappa'",[1.0,False])
+                    orbSizer.Add(wx.StaticText(deformation,label=" kappa':"))
+                    Kappa(deformation,orbSizer,dId,orb,"kappa'",Indx)
                 iD = 1
                 for item in orb[1]:
                     if 'D' in item:
@@ -551,8 +616,9 @@ def UpdateDeformation(G2frame,data,AtdId):
                             if nItems:
                                 nB = 9-nItems
                                 for i in range(nB): orbSizer.Add((5,5),0)
-                        Dsizer(deformation,orbSizer,dId,orb,Indx)
+                        Dsizer(deformation,orbSizer,Names,dId,orb,Indx)
         mainSizer.Add(orbSizer)    
+    G2frame.GetStatusBar().SetStatusText('On plot: RGB = XYZ',1)
 
     G2phsG.SetPhaseWindow(deformation,mainSizer)
 
@@ -800,7 +866,7 @@ def UpdateISODISTORT(G2frame,data,Scroll=0):
         txt.Wrap(500)
         mainSizer.Add(txt)
         mainSizer.Add(wx.StaticText(G2frame.ISODIST,label=
-u''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
+''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
  display mode values. The positions in the Atoms and Draw Atoms tabs, as well as the atom
  positions shown in the Plot Window are changed to reflect the display mode values. The
  range of the slider corresponds to making a maximum atomic displacement between -2 && +2 \u212B.'''))
@@ -1035,7 +1101,7 @@ def UpdateLayerData(G2frame,data,Scroll=0):
         flags = Layers['Width'][1]
         widthSizer = wx.BoxSizer(wx.HORIZONTAL)
         for i in range(2):
-            widthSizer.Add(wx.StaticText(layerData,label=u' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
+            widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
             widthVal = G2G.ValidatedTxtCtrl(layerData,Layers['Width'][0],i,nDig=(10,3),xmin=0.005,xmax=1.0)
             widthSizer.Add(widthVal,0,WACV)
             widthRef = wx.CheckBox(layerData,label='Refine?')

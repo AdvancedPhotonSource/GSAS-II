@@ -8,7 +8,7 @@ follows.
 from __future__ import division, print_function
 import os
 import sys
-import platform
+#import platform
 try:
     import wx
     import wx.grid as wg
@@ -387,7 +387,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.timer = None      # tracks pending updates for expressions in float textctrls
         self.delay = 2000      # delay for timer update (2 sec)
         self.type = str
-
+        self.defaultBackgroundColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         val = loc[key]
         if 'style' in kw: # add a "Process Enter" to style
             kw['style'] |= wx.TE_PROCESS_ENTER
@@ -429,6 +429,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = True
                 self._IndicateValidity()
+            wx.CallAfter(self._TestValidity)    # test/show validity
         else:
             if self.CIFinput:
                 wx.TextCtrl.__init__(
@@ -445,7 +446,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = False
                 self.Bind(wx.EVT_CHAR,self._GetStringValue)
-
+        # Mac is "special" because backspace etc. does not trigger validator
+        if sys.platform == "darwin":
+            self.Bind(wx.EVT_KEY_DOWN,self.OnKeyDown)
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
         self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
@@ -466,7 +469,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # for debugging flag calls. Set warn to False for calls that are not in callbacks
         # and thus are OK
         if GSASIIpath.GetConfigValue('debug') and warn:
-            print('ValidatedTxtCtrl.SetValue() used in callback. Batter as ChangeValue()?')
+            print('ValidatedTxtCtrl.SetValue() used in callback. Better as ChangeValue()?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
             self.result[self.key] = val
@@ -549,7 +552,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         'Special callback for wx 2.9+ on Mac where backspace is not processed by validator'
         key = event.GetKeyCode()
         if key in [wx.WXK_BACK, wx.WXK_DELETE]:
-            if self.Validator: wx.CallAfter(self.Validator.TestValid,self)
+            wx.CallAfter(self._TestValidity)
         if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             self._onLoseFocus(None)
         if event: event.Skip()
@@ -562,6 +565,20 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             wx.CallAfter(self.ShowStringValidity,True) # was invalid
         else:
             wx.CallAfter(self.ShowStringValidity,False) # was valid
+            
+    def _TestValidity(self):
+        'Check validity and change colors accordingly'
+        try:
+            if self.Validator:
+                self.Validator.TestValid(self)
+                self._IndicateValidity()
+        except RuntimeError:    #bandaid to avoid C++ error; deleted self.Validator?
+            pass
+
+    def SaveBackgroundColor(self,color):
+        'Use this color when valid rather than default'
+        self.defaultBackgroundColor = color
+        self._IndicateValidity()
 
     def _IndicateValidity(self):
         'Set the control colors to show invalid input'
@@ -569,17 +586,17 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             ins = self.GetInsertionPoint()
             self.SetForegroundColour("red")
             self.SetBackgroundColour("yellow")
-            if not sys.platform.startswith("linux"):
-                self.SetFocus()
+            #if not sys.platform.startswith("linux"):
+            #    self.SetFocus() # was needed -- now seems to cause problems
             self.Refresh() # this selects text on some Linuxes
             self.SetSelection(0,0)   # unselect
             self.SetInsertionPoint(ins) # put insertion point back
         else: # valid input
-            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+            self.SetBackgroundColour(self.defaultBackgroundColor)
             self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             self.Refresh()
-            if not sys.platform.startswith("linux"):
-                self.SetFocus() # seems needed, at least on MacOS to get color change
+            #if not sys.platform.startswith("linux"):
+            #    self.SetFocus() # seems needed, at least on MacOS to get color change
 
     def _GetNumValue(self):
         'Get and where needed convert string from GetValue into int or float'
@@ -631,10 +648,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         except RuntimeError:  # ignore if control has been deleted
             return
         # always store the result
-        if self.CIFinput and '2' in platform.python_version_tuple()[0]: # Py2/CIF make results ASCII
-            self.result[self.key] = val.encode('ascii','replace')
-        else:
-            self.result[self.key] = val
+        self.result[self.key] = val
 
     def _onLeaveWindow(self,event):
         '''If the mouse leaves the text box, save the result, if valid,
@@ -647,10 +661,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self._setValue(self.result[self.key])
             except:
                 pass
+        # ignore mouse crusing
+        if self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable
+           return
         if self.type is not str:
             if not self.IsModified(): return  #ignore mouse crusing
-        elif self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable for str
-           return
+        wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
         if self.evaluated and not self.invalid: # deal with computed expressions
             if self.timer:
                 self.timer.Restart(self.delay)
@@ -671,17 +687,19 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         Evaluate and update the current control contents
         '''
         if event: event.Skip()
+        # ignore mouse crusing
+        if self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable
+           return
         if self.type is not str:
             if not self.IsModified(): return  #ignore mouse crusing
-        elif self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable for str
-           return
+        wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
         if self.evaluated: # deal with computed expressions
             if self.invalid: # don't substitute for an invalid expression
                 return
             self._setValue(self.result[self.key])
         elif self.result is not None: # show formatted result, as Bob wants
-            self.result[self.key] = self._GetNumValue()
             if not self.invalid: # don't update an invalid expression
+                self.result[self.key] = self._GetNumValue()
                 self._setValue(self.result[self.key])
 
         if self.OnLeave:
@@ -806,12 +824,16 @@ class NumberValidator(wxValidator):
             if val >= self.xmax and self.exclLim[1]:
                 tc.invalid = True
             elif val > self.xmax:
-                tc.invalid = True
+                # ignore difference if due to rounding
+                if val != float(G2fil.FormatValue(self.xmax,tc.nDig)):
+                    tc.invalid = True
         if self.xmin != None:
             if val <= self.xmin and self.exclLim[0]:
                 tc.invalid = True
             elif val < self.xmin:
-                tc.invalid = True  # invalid
+                # ignore difference if due to rounding
+                if val != float(G2fil.FormatValue(self.xmin,tc.nDig)):
+                    tc.invalid = True  # invalid
         if self.key is not None and self.result is not None and not tc.invalid:
             self.result[self.key] = val
 
@@ -832,7 +854,7 @@ class NumberValidator(wxValidator):
             tc.SetInsertionPoint(ins) # put insertion point back
             return False
         else: # valid input
-            tc.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+            tc.SetBackgroundColour(tc.defaultBackgroundColor)
             tc.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
             tc.Refresh()
             return True
@@ -930,10 +952,7 @@ class ASCIIValidator(wxValidator):
         :param wx.TextCtrl tc: A reference to the TextCtrl that the validator
           is associated with.
         '''
-        if '2' in platform.python_version_tuple()[0]:
-            self.result[self.key] = tc.GetValue().encode('ascii','replace')
-        else:
-            self.result[self.key] = tc.GetValue()
+        self.result[self.key] = tc.GetValue()
 
     def OnChar(self, event):
         '''Called each type a key is pressed
@@ -1136,6 +1155,7 @@ def HorizontalLine(sizer,parent):
 class G2Button(wx.Button):
     '''A version of wx.Button. Bindings are saved
     in the object, and are looked up rather than directly set with a bind.
+
     :param wx.Panel parent: parent widget
     :param int id: Id for button
     :param str label: label for button
@@ -1277,11 +1297,18 @@ class popupSelectorButton(wx.Button):
             for i in self.choiceDict: self.choiceDict[i] = False
             self.choiceDict[self.choices[new]] = True
             self.selected[new] = True
-        elif self.choices[0] == "all":
-            # special handling when 1st item is all: turn on everything
-            # when all is selected.
-            if new == 0:
-                self.selected[:] = [False] + (len(self.selected)-1)*[True]
+#        elif self.choices[0] == "all":
+#            # special handling when 1st item is all: turn on everything
+#            # when all is selected.
+#            if new == 0:
+#                self.selected[:] = [False] + (len(self.selected)-1)*[True]
+#                if self.choices[-1] == "(clear)":
+#                    self.selected[-1] = [False]
+#        elif self.choices[-1] == "(clear)":
+#            # special handling when last item is all: clear off everything
+#            # when that is selected.
+#            if new == len:
+#                self.selected[:] = (len(self.selected))*[False]
 
         menu.Destroy()
         if self.OnChange: wx.CallAfter(self.OnChange,**self.kw)
@@ -1621,7 +1648,7 @@ class ScrolledMultiEditor(wx.Dialog):
                     but = (-1,-1)
                 else:
                     import wx.lib.colourselect as wscs  # is there a way to test?
-                    but = wscs.ColourSelect(label='v', # would like to use u'\u2193' or u'\u25BC' but not in WinXP
+                    but = wscs.ColourSelect(label='v', # would like to use '\u2193' or '\u25BC' but not in WinXP
                                             parent=panel,colour=(255,255,200),size=wx.Size(30,23),
                                             style=wx.RAISED_BORDER)
                     but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
@@ -2587,6 +2614,142 @@ def G2MessageBox(parent,msg,title='Error'):
     dlg.ShowModal()
     dlg.Destroy()
 
+################################################################################
+def findValsInNotebook(data,target):
+    'Pull a string of values from saved values in the GSAS-II notebook'
+    c = 0
+    vals = []
+    pos = []
+    for l in data:
+        if '[REF]' in l: c += 1
+        if '[VALS]' in l: 
+            v = {i.split(' : ')[0].strip() : i.split(' : ')[1]
+                     for i in l[6:].split(',')}
+            if target not in v:
+                continue
+            try:
+                vals.append(float(v[target]))
+                pos.append(c)
+            except:
+                pass
+        if '[CEL]' in l:
+            ph = l.split('Phase')[1].split()[0]
+            hst = l.split('Hist')[1].split(':')[0].strip()
+            vars = [i.split('=')[0] for i in l.split(':')[1].split()]
+            vars = [f'{v}[p{ph}_h{hst}]' for v in vars]
+            if target not in vars: continue
+            values = [i.split('=')[1].split('(')[0] for i in l.split(':')[1].split()]
+            try:
+                vals.append(float(dict(zip(vars,values))[target]))
+                pos.append(c)
+            except:
+                pass
+    return pos,vals
+        
+def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
+    '''Shows the results from a refinement
+
+    :param wx.Frame parent: pointer to parent of window, usually G2frame
+    :param str msg: text from refinement results
+    :param str title: text to label window
+    :param list vartbl: a list of lists. The contents of each inner list
+      item will be [var-name, val-before, val-after, sigma, meaning]
+    :param int txtwidth: width (in pixesl) to display msg. Defaults to 300
+    '''
+    def OnRowSelected(event):
+        '''plot the parameter results if it has been recorded
+        this is called when one clicks on a row in the parameter table
+        '''
+        row = event.GetIndex()
+        var = results.list.GetItemText(row)
+        val = valDict.get(var)
+        G2frame = wx.App.GetMainTopWindow()
+        G2frame.G2plotNB.Delete('fit results')
+        if val is None: return
+        nId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Notebook')
+        if not nId: return
+        Notebook = G2frame.GPXtree.GetItemPyData(nId)
+        pos,vals = findValsInNotebook(Notebook,var)
+        if len(pos) < 2: return
+        pos.append(pos[-1]+1)
+        try:
+            vals.append(float(val))
+        except:
+            return
+        XY = [np.array(pos),np.array(vals)]
+        from . import GSASIIplot as G2plt
+        G2plt.PlotXY(G2frame,[XY,],Title='fit results',newPlot=True,
+                                     labelX='seq',labelY=var,lines=True)
+    # create table to show from input
+    displayTable = []
+    valDict = {}
+    for (var,before,after,sig,what) in vartbl:
+        valDict[var] = after # save lookup table of values
+        try:
+            d = f'{(after-before)/sig:.3g}'
+            b = G2mth.ValEsd(before,-abs(sig)/10,True)
+            a = G2mth.ValEsd(after,-abs(sig)/10,True)
+        except:
+            d = '0'
+            b = f'{before:.6g}'
+            a = f'{after:.6g}'
+        displayTable.append((var,b,a,d,what))
+    labels = ('var','before','after','del/sig','parameter description')
+    just =   (0    , 1      , 1     , 1      , 0) # 0 left, 1 right
+    dlg = wx.Dialog(parent.GetTopLevelParent(), wx.ID_ANY, title,
+                        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    txtSizer = wx.BoxSizer(wx.HORIZONTAL)
+    txt = wx.StaticText(dlg,wx.ID_ANY,msg)
+    txt.Wrap(txtwidth-20)
+    #txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+    txtSizer.Add(txt,0,wx.RIGHT|wx.LEFT,5)
+    
+    if displayTable:
+        results = SortableLstCtrl(dlg)
+        results.PopulateHeader(labels, just)
+        for i,l in enumerate(displayTable): results.PopulateLine(i,l)
+        # set widths to automatic
+        results.SetColWidth(0) 
+        results.SetColWidth(1,sortType='float') 
+        results.SetColWidth(2,sortType='float') 
+        results.SetColWidth(3,sortType='abs') 
+        results.SetColWidth(4)
+        results.SetInitialSortColumn(3,False)
+        results.SetClientSize((450,250))
+        results.SetMinSize((450,250))
+        results.Bind(wx.EVT_LIST_ITEM_SELECTED, OnRowSelected) # plot
+    else:
+        results = wx.BoxSizer(wx.VERTICAL)
+        results.Add((-1,-1),1,wx.EXPAND)
+        results.Add(wx.StaticText(dlg,wx.ID_ANY,
+                        '  (no parameter changes\nto display)  ',
+                        size=(350,-1),style=wx.ALIGN_CENTER))
+        results.Add((-1,-1),1,wx.EXPAND)
+    txtSizer.Add(results,1,wx.EXPAND,0)
+    mainSizer.Add(txtSizer,1,wx.EXPAND)
+    mainSizer.Add((-1,5))
+    txt = wx.StaticText(dlg,wx.ID_ANY,'Load new result?')
+    mainSizer.Add(txt,0,wx.CENTER)
+    
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+    btnsizer.Add(btn)
+    btn = wx.Button(dlg, wx.ID_OK)
+    btn.SetDefault()
+    btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_OK))
+    btnsizer.Add(btn)
+    mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+
+    dlg.Layout()
+    dlg.CentreOnParent()
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    return ans
+
 def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
                          buttonlist=None):
     '''Simple code to display possibly extensive error or warning text
@@ -2604,7 +2767,7 @@ def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
       returns wx.ID_CANCEL
     :returns: the wx Id for the selected button
 
-    example::
+    Example::
 
        res = ShowScrolledInfo(self.frame,msg,header='Please Note',buttonlist=[
                ('Open', lambda event: event.GetEventObject().GetParent().EndModal(wx.ID_OK)),
@@ -2742,7 +2905,7 @@ def G2ScrolledGrid(G2frame,lbl,title,tbl,colLbls,colTypes,maxSize=(600,300),comm
       wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT)
     :param list maxSize: Maximum size for the table in points. Defaults to
       (600,300)
-      :param str comment: optional text that appears below table
+    :param str comment: optional text that appears below table
 
     Example::
 
@@ -2905,7 +3068,7 @@ class SingleFloatDialog(wx.Dialog):
         try:
             w = int(a)
         except:
-            w = 3+d
+            w = 5+d
         self.OKbtn = wx.Button(self,wx.ID_OK)
         CancelBtn = wx.Button(self,wx.ID_CANCEL)
         valItem = ValidatedTxtCtrl(self,self.buffer,0,nDig=(w,d,f),
@@ -3691,6 +3854,14 @@ def ItemSelector(ChoiceList, ParentFrame=None,
     :returns: the selection index or None or a selection list if multiple is true
 
     Called by GSASIIdataGUI.OnReOrgSelSeq() Which is not fully implemented.
+
+    Example::
+
+            choices = ('NXazint1d 1D file','NXazint1d 2D file')
+            sel = G2G.ItemSelector(choices, ParentFrame=ParentFrame,
+                                    header='Select file section',
+                                    title='Select the section of the file to read')
+            if sel is None: return False
     '''
     if multiple:
         if useCancel:
@@ -4986,6 +5157,9 @@ class ShowLSParms(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
 class VirtualVarBox(wx.ListCtrl):
+    '''This is used to construct the parameter list display for viewing
+    least squares parameters
+    '''
     def __init__(self, parent):
         self.parmWin = parent
         #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
@@ -4997,8 +5171,8 @@ class VirtualVarBox(wx.ListCtrl):
             )
 
         for i,(lbl,wid) in enumerate(zip(
-                ('#', "Parameter", "Ref", "Value", "Min", "Max", "Explanation"),
-                (40 , 125        , 30    ,  100   ,  75  ,  75  , 700),)):
+                ('#', "Parameter", "Ref", 'Log', "Value", "Min", "Max", "Explanation"),
+                (40 , 125        , 30    ,  30 ,   75   ,  75  ,  75  , 700),)):
             self.InsertColumn(i, lbl)
             self.SetColumnWidth(i, wid)
 
@@ -5011,6 +5185,7 @@ class VirtualVarBox(wx.ListCtrl):
         self.attr1.SetBackgroundColour((255,255,150))
 
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnRowSelected)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.OnRowRightClick)
 
     def SetContents(self,parent):
         self.varList = []
@@ -5031,6 +5206,30 @@ class VirtualVarBox(wx.ListCtrl):
             self.varList.append(name)
         #oldlen = self.GetItemCount()
         self.SetItemCount(len(self.varList))
+
+    def OnRowRightClick(self, event, row=None):
+        '''This adds or removes a variable from the list of logged 
+        paremeters.
+
+        When a row is right-clicked this seems to be called twice, once 
+        event.GetIndex() of -1, then OnRowSelected is called and then this 
+        is called again, but where event.GetIndex() is the row that was 
+        selected.
+        '''
+        def RightClickClear():
+            self.RightClick = False
+        row = event.GetIndex()
+        self.RightClick = True   # inhibit use of OnRowSelected
+        if row < 0: return
+        var = self.varList[row]
+        self.parmWin.Controls['LoggedVars'] = self.parmWin.Controls.get('LoggedVars',[])
+        if var in self.parmWin.Controls['LoggedVars']:
+            self.parmWin.Controls['LoggedVars'].remove(var)
+        else:
+            self.parmWin.Controls['LoggedVars'].append(var)
+        #if GSASIIpath.GetConfigValue('debug'): print(self.parmWin.Controls['LoggedVars'])
+        self.parmWin.SendSizeEvent()  # redraws the window
+        wx.CallAfter(RightClickClear)
 
     def OnRowSelected(self, event, row=None):
         'Creates an edit window when a parameter is selected'
@@ -5117,6 +5316,10 @@ class VirtualVarBox(wx.ListCtrl):
             self.OnRowSelected(None, row)
 
         # start of OnRowSelected
+        if getattr(self,'RightClick',False):   # ignore calls generated by right-click
+            self.RightClick = False
+            return
+        self.RightClick = False
         if event is not None:
             row = event.Index
         elif row is None:
@@ -5196,18 +5399,18 @@ class VirtualVarBox(wx.ListCtrl):
                 subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Minimum limit'),0,wx.CENTER)
                 subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMinDict'],n,nDig=(10,2,'g')),0,WACV)
                 delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
-                subSizer.Add((5,-1),0,WACV)
+                subSizer.Add((5,-1))
                 subSizer.Add(delMbtn,0,WACV)
                 delMbtn.Bind(wx.EVT_BUTTON, delM)
                 if name.split(':')[1]:             # is this using a histogram?
-                    subSizer.Add((5,-1),0,WACV)
+                    subSizer.Add((5,-1))
                     wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
                     wild.SetValue(str(n).split(':')[1] == '*')
                     wild.Bind(wx.EVT_CHECKBOX,SetWild)
                     wild.hist = True
                     subSizer.Add(wild,0,WACV)
                 elif len(name.split(':')) > 3:
-                    subSizer.Add((5,-1),0,WACV)
+                    subSizer.Add((5,-1))
                     wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
                     wild.SetValue(str(n).split(':')[3] == '*')
                     wild.Bind(wx.EVT_CHECKBOX,SetWild)
@@ -5226,12 +5429,12 @@ class VirtualVarBox(wx.ListCtrl):
                 subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Maximum limit'),0,wx.CENTER)
                 subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMaxDict'],n,nDig=(10,2,'g')),0,WACV)
                 delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
-                subSizer.Add((5,-1),0,WACV)
+                subSizer.Add((5,-1))
                 subSizer.Add(delMbtn,0,WACV)
                 delMbtn.Bind(wx.EVT_BUTTON, delM)
                 delMbtn.max = True
                 if name.split(':')[1]:             # is this using a histogram?
-                    subSizer.Add((5,-1),0,WACV)
+                    subSizer.Add((5,-1))
                     wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
                     wild.SetValue(str(n).split(':')[1] == '*')
                     wild.Bind(wx.EVT_CHECKBOX,SetWild)
@@ -5239,13 +5442,35 @@ class VirtualVarBox(wx.ListCtrl):
                     wild.hist = True
                     subSizer.Add(wild,0,WACV)
                 elif len(name.split(':')) > 3:
-                    subSizer.Add((5,-1),0,WACV)
+                    subSizer.Add((5,-1))
                     wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
                     wild.SetValue(str(n).split(':')[3] == '*')
                     wild.Bind(wx.EVT_CHECKBOX,SetWild)
                     wild.max = True
                     subSizer.Add(wild,0,WACV)
                 mainSizer.Add(subSizer,0)
+
+        self.parmWin.Controls['LoggedVars'] = self.parmWin.Controls.get('LoggedVars',[])
+        def LogLblButton(button):
+            if name in self.parmWin.Controls['LoggedVars']:
+                lbl = 'Remove from Logging'
+            else:
+                lbl = 'Log var'
+            button.SetLabel(lbl)
+        def LogAddRemove(event):
+            if name in self.parmWin.Controls['LoggedVars']:
+                self.parmWin.Controls['LoggedVars'].remove(name)
+            else:
+                self.parmWin.Controls['LoggedVars'].append(name)
+            LogLblButton(event.GetEventObject())
+            dlg.Layout()
+            self.parmWin.SendSizeEvent()            
+
+        mainSizer.Add((-1,10))
+        addbtn = wx.Button(dlg, wx.ID_ANY,'')
+        LogLblButton(addbtn)
+        addbtn.Bind(wx.EVT_BUTTON, LogAddRemove)
+        mainSizer.Add(addbtn,0)
 
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(dlg, wx.ID_OK)
@@ -5287,6 +5512,18 @@ class VirtualVarBox(wx.ListCtrl):
                 return "C"
             return ""
         elif col == 3:
+            logged = self.parmWin.Controls.get('LoggedVars',[])
+            if GSASIIpath.GetConfigValue('LogAllVars') and not logged:
+                if name in self.parmWin.varyList:
+                    if self.parmWin.varyList.index(name) < 50:
+                        return 'A'
+                    else:
+                        return ' '
+                return ' '
+            elif name in logged:
+                return 'Y'
+            return 'N'
+        elif col == 4:
             if atmParNam: name = atmParNam
             try:
                 value = G2fil.FormatSigFigs(self.parmWin.parmDict[name])
@@ -5295,8 +5532,8 @@ class VirtualVarBox(wx.ListCtrl):
             except TypeError:
                 value = str(self.parmWin.parmDict[name])+' -?' # unexpected
             return value
-        elif col == 4 or col == 5: # min/max value
-            if col == 4: # min
+        elif col == 5 or col == 6: # min/max value
+            if col == 5: # min
                 d = self.parmWin.Controls['parmMinDict']
             else:
                 d = self.parmWin.Controls['parmMaxDict']
@@ -5306,7 +5543,7 @@ class VirtualVarBox(wx.ListCtrl):
                 return G2fil.FormatSigFigs(val,8)
             except TypeError:
                 return "?"
-        elif col == 6:
+        elif col == 7:
             v = G2obj.getVarDescr(name)
             if v is not None and v[-1] is not None:
                 txt = G2obj.fmtVarDescr(name)
@@ -6225,7 +6462,7 @@ def updateNotifier(G2frame,fileVersion):
     dlg.Destroy()
 
 ################################################################################
-def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
+def viewWebPage(parent,URL='',size=(750,450),newFrame=False,HTML=''):
     '''Creates a child wx.Frame with an OS-managed web browser. The window
     is modeless, so it can be left open without affecting GSAS-II operations,
     but will be closed when GSAS-II is ended if a ``parent`` window is
@@ -6264,7 +6501,7 @@ def viewWebPage(parent,URL,size=(750,450),newFrame=False,HTML=''):
                     lastWebFrame.wv.SetPage(HTML,'')
                 else:
                     lastWebFrame.wv.LoadURL(URL)
-                return
+                return dlg
         except:
             pass
     dlg = wx.Frame(parent,size=size)
@@ -7364,6 +7601,7 @@ class gitVersionSelector(wx.Dialog):
         self.initial_commit_info = self.docCommit(self.initial_commit)
         if parent is None:
             parent = wx.GetApp().GetMainTopWindow()
+        self.parent = parent
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select GSAS-II Version',
                             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -7492,9 +7730,18 @@ class gitVersionSelector(wx.Dialog):
 
         :returns: a multi-line string
         '''
-        #import datetime
+        import datetime
         fmtdate = lambda c:"{:%d-%b-%Y %H:%M}".format(c.committed_datetime)
         commit = self.g2repo.commit(commit)  # converts a hash, if supplied
+        # do not allow regression before May 1, 2025 so we don't go back to 
+        # master branch reorg. Switch was actually ~22 Apr 2025, but leave a 
+        # bit of room
+        if datetime.datetime(2025,5,1, tzinfo=commit.committed_datetime.tzinfo
+                             ) > commit.committed_datetime:
+            msg = 'Unable to regress automatically to versions prior to last source reorg. If you do need to use an older GSAS-II version please ask for help on mailing list or GitHub Issues.'
+            G2MessageBox(self.parent,msg,'Too old')
+            self.spin.SetValue(self.spin.GetValue()+1)
+            raise IndexError
         msg = f'git {commit.hexsha[:10]} from {fmtdate(commit)}'
         tags = self.g2repo.git.tag('--points-at',commit).split('\n')
         if tags != ['']:
@@ -7515,6 +7762,20 @@ class SortableLstCtrl(wx.Panel):
     widths.
 
     :param wx.Frame parent: parent object for control
+
+    Example::
+
+       data = [
+          (':0:sig-0', '30.7906', '30.7907', 'Pwd=SNAP066555: TOF profile term'),
+          (':0:sig-1', '208.419', '208.419', 'Pwd=SNAP066555: TOF profile term'),
+          (':0:Scale', '582006', '582006', 'Pwd=SNAP066555: Scale factor'),
+          (':1:Scale', '592440', '592440', 'Pwd=SNAP06 (1): Scale factor'),
+       ]
+       sortPanel = G2G.SortableLstCtrl(G2frame)
+       sortPanel.PopulateHeader([f'label{i}' for i in range(4)],4*[0])
+       for i,l in enumerate(data): sortPanel.PopulateLine(i,l)
+       for i in range(4): sortPanel.SetColWidth(i) # set width to automatic
+       sortPanel.SetColWidth(1,sortType='float') # sort 1st column by numeric value not str
     '''
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY)#, style=wx.WANTS_CHARS)
@@ -7560,7 +7821,8 @@ class SortableLstCtrl(wx.Panel):
         self.list.SetItemData(index, key)
         self.list.itemDataMap[key] = data
 
-    def SetColWidth(self,col,width=None,auto=True,minwidth=0,maxwidth=None):
+    def SetColWidth(self,col,width=None,auto=True,minwidth=0,maxwidth=None,
+                        sortType='str'):
         '''Sets the column width.
 
         :param int width: the column width in pixels
@@ -7581,6 +7843,23 @@ class SortableLstCtrl(wx.Panel):
                 self.list.SetColumnWidth(col, maxwidth)
         else:
             print('Error in SetColWidth: use either auto or width')
+        if sortType == 'float':
+            self.list.FloatCols.append(col)
+        elif sortType == 'abs':
+            self.list.AbsFloatCols.append(col)
+        elif sortType != 'str':
+            print(f'SortableLstCtrl.SetColWidth warning: unexpected sortType value ({sortType})')
+
+    def SetInitialSortColumn(self, col, ascending=True):
+        '''Sets the initial column to be used for sorting when the table is first displayed.
+        This method should be called after all PopulateLine calls are complete.
+        The up or down arrow indicator will be displayed on the specified column.
+
+        :param int col: the column index (0-based) to sort by initially
+        :param bool ascending: if True (default), sort in ascending order; if False, descending
+        '''
+        # Use SortListItems to both sort the items and display the sort indicator arrow
+        self.list.SortListItems(col, ascending)
 
 try:
     class G2LstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin):
@@ -7605,12 +7884,48 @@ try:
             self.DownArrow = self.il.Add(SmallDnArrow.GetBitmap())
             self.parent=parent
             self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+            self.FloatCols = []
+            self.AbsFloatCols = []
 
         def GetListCtrl(self): # needed for sorting
             return self
         def GetSortImages(self):
-            #return (self.parent.DownArrow, self.parent.UpArrow)
             return (self.DownArrow, self.UpArrow)
+        def GetColumnSorter(self):
+            """Custom sorter that handles absolute numerical values for columns 1, 2, 
+            and 3 (2nd, 3rd, 4th columns)"""
+            def compare_func(key1, key2):
+                col = self.GetSortState()[0]
+                ascending = self.GetSortState()[1]
+                
+                # Get data for both rows
+                data1 = self.itemDataMap[key1][col]
+                data2 = self.itemDataMap[key2][col]
+                
+                # For columns designated as self.AbsFloatCols, sort by absolute numerical value
+                if col in self.AbsFloatCols:
+                    try:
+                        val1 = abs(float(data1))
+                        val2 = abs(float(data2))
+                        result = (val1 > val2) - (val1 < val2)
+                    except (ValueError, TypeError):
+                        # Fall back to string comparison if conversion fails
+                        result = (data1 > data2) - (data1 < data2)
+                elif col in self.FloatCols:
+                    try:
+                        val1 = float(data1)
+                        val2 = float(data2)
+                        result = (val1 > val2) - (val1 < val2)
+                    except (ValueError, TypeError):
+                        # Fall back to string comparison if conversion fails
+                        result = (data1 > data2) - (data1 < data2)
+                else:
+                    # For other columns, use string comparison
+                    result = (data1 > data2) - (data1 < data2)
+                
+                return result if ascending else -result
+            
+            return compare_func
 except TypeError:
     # avoid "duplicate base class _MockObject" error in class G2LstCtrl():
     # where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same
@@ -9153,7 +9468,7 @@ def Load2Cells(G2frame,phase):
     sizer.Add((-1,15))
     tableSizer = wx.FlexGridSizer(0,9,0,0)
     tableSizer.Add((-1,-1))
-    for l in u'abc\u03B1\u03B2\u03B3':
+    for l in G2lat.cellUlbl:
         tableSizer.Add(wx.StaticText(dlg,label=l),0,WACV|wx.ALIGN_CENTER)
     tableSizer.Add(wx.StaticText(dlg,label='Centering'),0,WACV|wx.ALIGN_LEFT)
     tableSizer.Add((-1,-1))
@@ -9473,7 +9788,7 @@ def gitCheckUpdates(G2frame):
         gitFetch(G2frame)  # download latest updates from server
     except:
         G2MessageBox(G2frame,
-                    'Unable to access updates: no internet connection?',
+                    'Unable to perform update: if you have an internet connection, do you have write access to installation?',
                     title='git error')
         return
 
@@ -10120,6 +10435,80 @@ If "Yes", GSAS-II will reopen the project after the update.
     G2fil.openInNewTerm(project)
     print ('exiting GSAS-II')
     sys.exit()
+
+def StringSearchTemplate(parent,title,prompt,start,help=None):
+    '''Dialog to obtain a single string value from user
+
+    :param wx.Frame parent: name of parent frame
+    :param str title: title string for dialog
+    :param str prompt: string to tell use what they are inputting
+    :param str start: default input value, if any
+    :param str help: if supplied, a help button is added to the dialog that
+      can be used to display the supplied help text/URL for setting this
+      variable. (Default is '', which is ignored.)
+    '''
+    def on_invalid():
+        G2MessageBox(parent,
+            'The pattern must retain some non-blank characters from the original string. Resetting so you can start again.','Try again')
+        valItem.SetValue(start)
+        return
+    def on_char_typed(event):
+        keycode = event.GetKeyCode()
+        if keycode == 32 or keycode == 63: # ' ' or '?' - replace with '?'
+            #has a range been selected?
+            sel = valItem.GetSelection()
+            if sel[0] == sel[1]:
+                insertion_point = valItem.GetInsertionPoint()
+                sel = (insertion_point,insertion_point+1)
+            for i in range(*sel):
+                valItem.Replace(i, i + 1, '?')
+            # Move the insertion point forward one character
+            valItem.SetInsertionPoint(i + 1)
+            # make sure some characters remain
+            if len(valItem.GetValue().replace('?','').strip()) == 0:
+                wx.CallAfter(on_invalid)
+            event.Skip(False)
+        elif keycode >= wx.WXK_SPACE: # anything else printable, ignore
+            event.Skip(False)
+        else: # arrows etc are processed naturally
+            event.Skip(True)
+    dlg = wx.Dialog(parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    dlg.CenterOnParent()
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    txt = wx.StaticText(dlg,wx.ID_ANY,prompt)
+    sizer1.Add((10,-1),1,wx.EXPAND)
+    txt.Wrap(500)
+    sizer1.Add(txt,0,wx.ALIGN_CENTER)
+    sizer1.Add((10,-1),1,wx.EXPAND)
+    if help:
+        sizer1.Add(HelpButton(dlg,help),0,wx.ALL)
+    mainSizer.Add(sizer1,0,wx.EXPAND)
+    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    valItem = wx.TextCtrl(dlg,wx.ID_ANY,value=start,style=wx.TE_PROCESS_ENTER)
+    valItem.Bind(wx.EVT_CHAR, on_char_typed)
+    valItem.Bind(wx.EVT_TEXT_ENTER, lambda event: event.Skip(False))
+    wx.CallAfter(valItem.SetSelection,0,0) # clear the initial selection
+    mainSizer.Add(valItem,1,wx.EXPAND)
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_OK)
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    ans = dlg.ShowModal()
+    if ans != wx.ID_OK:
+        dlg.Destroy()
+        return
+    else:
+        val = valItem.GetValue()
+        dlg.Destroy()
+    return val
 
 if __name__ == '__main__':
     app = wx.App()

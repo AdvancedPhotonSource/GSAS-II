@@ -1,11 +1,13 @@
 name: xfer help info from GSAS-II docs repo
 # This updates the help file to match the contents of the MDhelp directory
 # in the GSAS-II-tutorials repo. It is triggered from the builddocsite.yml
-# workflow in the GSAS-II-tutorials repo.
+# workflow in the GSAS-II-tutorials repo, or runs daily, or can be triggered manually.
 
 on:
   repository_dispatch: # run from Web API
-  workflow_dispatch:
+  workflow_dispatch: # manual trigger for testing
+  schedule:
+    - cron: '0 0 * * *' # Run daily at midnight UTC
 
 permissions:
   contents: write
@@ -13,7 +15,70 @@ permissions:
   pages: write
 
 jobs:
-  build:       # Build web pages
+  check_files:  # Check if files need updating
+    runs-on: ubuntu-latest
+    outputs:
+      files_changed: ${{ steps.compare.outputs.files_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout tutorials repo
+        uses: actions/checkout@v4
+        with:
+          repository: AdvancedPhotonSource/GSAS-II-tutorials.git
+          path: _docs
+          ref: main
+          sparse-checkout: MDhelp/docs
+          sparse-checkout-cone-mode: true
+
+      - name: Compare files
+        id: compare
+        run: |
+          # Check if any .md files in _docs/MDhelp/docs are newer than GSASII/help
+          # Only compare markdown source files, not directory metadata
+          files_changed="false"
+          
+          if [ ! -d "GSASII/help" ]; then
+            echo "help directory does not exist, will build"
+            files_changed="true"
+          elif [ ! -d "_docs/MDhelp/docs" ]; then
+            echo "docs directory does not exist"
+            files_changed="false"
+          else
+            # Get the most recent commit date for .md files in docs directory
+            docs_latest=$(cd _docs && git ls-tree --name-only -r HEAD -- MDhelp/docs | grep '\.md$' | while read filename; do echo "$(git log -1 --format="%ai" -- "$filename") $filename"; done | sort -r | head -1 | cut -d' ' -f1-3)
+            
+            # Get the most recent commit date for the help directory
+            help_latest=$(git ls-tree --name-only -r HEAD -- GSASII/help | while read filename; do echo "$(git log -1 --format="%ai" -- "$filename") $filename"; done | sort -r | head -1 | cut -d' ' -f1-3)
+            
+            if [ -z "$docs_latest" ]; then
+              echo "Could not get commit date for markdown files in docs directory"
+              files_changed="false"
+            elif [ -z "$help_latest" ]; then
+              echo "help directory has no commit history, will build"
+              files_changed="true"
+            else
+              # Convert dates to epoch seconds for reliable numeric comparison
+              docs_epoch=$(date -d "$docs_latest" +%s 2>/dev/null || echo 0)
+              help_epoch=$(date -d "$help_latest" +%s 2>/dev/null || echo 0)
+              
+              if [ "$docs_epoch" -gt "$help_epoch" ]; then
+                echo "Markdown docs are newer (docs: $docs_latest, help: $help_latest)"
+                files_changed="true"
+              else
+                echo "help directory is current (docs: $docs_latest, help: $help_latest)"
+                files_changed="false"
+              fi
+            fi
+          fi
+          
+          echo "files_changed=$files_changed" >> $GITHUB_OUTPUT
+          echo "Files changed: $files_changed"
+
+  build:       # Build web pages (only if files changed)
+    needs: check_files
+    if: needs.check_files.outputs.files_changed == 'true'
     runs-on: ubuntu-latest
     steps:
 

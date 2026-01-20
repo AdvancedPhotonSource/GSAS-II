@@ -5,30 +5,46 @@
 =========================================
 
 .. py:currentmodule:: GSASII
-
-.. tip::
-
-   Note that with the transition from the "master" branch to the "main" branch of GSAS-II, `described here <https://advancedphotonsource.github.io/GSAS-II-tutorials/master2main.html>`_, the initial code needed to access the GSAS-II scripting module changes. Older scripts may require minor changes to import GSASIIscriptable, as described in :ref:`ScriptingShortcut`. The instructions below have been updated for use of the current ("main") branch. 
    
 *Summary/Contents*
 ==================
 
-Routines to use an increasing amount of GSAS-II's capabilities from scripts, 
+GSASIIscriptable provides routines to use an increasing amount of
+GSAS-II's capabilities from Python scripts, 
 without use of the graphical user interface (GUI). GSASIIscriptable can create and access
-GSAS-II project (.gpx) files and can directly perform image handling and refinements.  
-The module defines wrapper classes (inheriting from
-:class:`~GSASIIscriptable.G2ObjectWrapper`) for a growing number  
-of data tree items.
+GSAS-II project (.gpx) files and can directly perform image handling,
+peak fits, refinements... The .gpx files are completely compatible
+with the GUI, so one can move back and forth between the GUI and
+scripting when developing scripts.  This mode of code development is
+encouraged to get started with GSAS-II scripting. 
 
 GSASIIscriptable is normally used by writing Python commands via
-this module's application programming interface (API). There is also a mechanism
-where GSASIIscriptable can be accessed via shell/batch commands (see :ref:`CommandlineInterface`), called command-line mode. Access to GSASIIscriptable via the API is used more widely than via command-line mode and offers many more features. The material below introduces and summarizes use of GSASIIscriptable via the API. Following that, detailed descriptions of all routines are provided in the :ref:`complete API documentation <API>` section.
+this module's application programming interface (API). (There is also
+an older mechanism where GSASIIscriptable can be accessed via
+shell/batch commands, see :ref:`CommandlineInterface`,
+called command-line mode.) Access to GSASIIscriptable via the API is
+used more widely than via command-line mode and offers many more
+features. The material below introduces and summarizes use of
+GSASIIscriptable via the API. Following that, detailed descriptions of
+all routines are provided in the :ref:`complete API documentation
+<API>` section.  
 
 While the command-line mode 
 provides access a number of features without writing Python scripts 
 via shell/batch commands (see :ref:`CommandlineInterface`), use in practice
 seems somewhat clumsy. Command-line mode
 is no longer being developed and its use is discouraged.
+
+GSASIIscriptable is designed around the hierarchical structure of .gpx
+files, that is seen in the GUI as the GSAS-II data tree. The module
+defines wrapper classes 
+(inheriting from :class:`~GSASIIscriptable.G2ObjectWrapper`) for most
+GSAS-II data tree items, so most scripting is done with
+object-oriented code that operate on different types of data tree
+objects. At the top level one has a project 
+(:class:`~GSASIIscriptable.G2Project`) which contains 
+phases (:class:`~GSASIIscriptable.G2Phase`) powder diffraction
+histograms ( :class:`~GSASIIscriptable.G2PwdrData`). 
 
 .. contents:: Scripting Documentation Contents
    :depth: 2
@@ -206,10 +222,9 @@ Scripting class name                              Description
 
 :ref:`G2PDF <Class_G2PDF>`                 :class:`~GSASIIscriptable.G2PDF`: PDF histogram info
 
-:ref:`G2SmallAngle <Class_G2SmallAngle>`          :class:`~GSASIIscriptable.G2SmallAngle`: Small Angle scattering histogram info
+:ref:`G2SmallAngle <Class_G2SmallAngle>`   :class:`~GSASIIscriptable.G2SmallAngle`: Small Angle scattering histogram info
 
-:ref:`G2SeqRefRes <Class_G2SeqRefRes>`     :class:`~GSASIIscriptable.G2SeqRefRes`:
-                                           The sequential results table
+:ref:`G2SeqRefRes <Class_G2SeqRefRes>`     :class:`~GSASIIscriptable.G2SeqRefRes`: The sequential results table
 ========================================   ===============================================================================================================
 
 Independent Functions
@@ -377,6 +392,7 @@ method                                                     Use
 :meth:`~GSASIIscriptable.G2PwdrData.Export_peaks`        Writes the peak parameters to a text file 
 :meth:`~GSASIIscriptable.G2PwdrData.Limits`              Reads or sets the region of data used in fitting (histogram limits)
 :meth:`~GSASIIscriptable.G2PwdrData.Excluded`            Reads or sets regions of powder data that will be ignored
+:meth:`~GSASIIscriptable.G2PwdrData.ComputeMassFracs`    Reports mass (weight) fractions and their uncertainties
 =======================================================  ===============================================================================================================
 
 .. _Class_G2Single:
@@ -1664,6 +1680,42 @@ and the refinement is repeated.
         hist.fit_fixed_points()
         gpx.save()
 
+Specify Instrument Parameters Directly
+-----------------------------------------
+
+Rather than read instrument parameters from a file, it is also possible
+to specify them directly in a script. See the documentation on instrument
+parameter file contents, :ref:`CWPowder_table` and :ref:`TOFPowder_table`
+for more information on the parameters supplied here. 
+
+.. code-block::  python
+
+    import G2script as G2sc
+    import os
+    datadir = os.path.expanduser("~/Scratch/peakfit")
+    PathWrap = lambda fil: os.path.join(datadir,fil)
+    gpx = G2sc.G2Project(newgpx=PathWrap('pkfit.gpx'))
+    # specify instrmental parameters dictionaries
+    inst_params = [
+        {
+            "Type": ["PXC", "PXC", 0],
+            "Lam": [1.5405, 1.5405, 0],
+            "Zero": [0.0, 0.0, 0],
+            "Polariz.": [0.7, 0.7, 0],
+            "U": [2.0, 2.0, 0],
+            "V": [-2.0, -2.0, 0],
+            "W": [5.0, 5.0, 0],
+            "X": [0.0, 0.0, 0],
+            "Y": [0.0, 0.0, 0],
+            "Z": [0.0, 0.0, 0],
+            "SH/L": [0.002, 0.002, 0],
+            "Azimuth": [0.0, 0.0, 0],
+            "Bank": [1, 1, 0],
+        },
+        {},
+    ]
+    hist = gpx.add_powder_histogram(PathWrap('FAP.XRA'), fmthint='GSAS powder',
+                                    iparams=inst_params)
             
 .. _CommandlineInterface:
 

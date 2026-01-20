@@ -162,7 +162,7 @@ def IgnoredLatticePrms(Phases):
             ignore += [pfx+'A3',pfx+'A4',pfx+'A5']
         elif laue in ['4/m','4/mmm']:
             ignore += [pfx+'A1',pfx+'A3',pfx+'A4',pfx+'A5']
-            copydict[pfx+'A0':[pfx+'A1']]
+            copydict[pfx+'A0'] = [pfx+'A1']
         elif laue in ['6/m','6/mmm','3m1', '31m', '3']:
             ignore += [pfx+'A1',pfx+'A3',pfx+'A4',pfx+'A5']
             copydict[pfx+'A0'] = [pfx+'A1',pfx+'A3']
@@ -544,6 +544,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
     printFile.write(135*'-'+'\n')
     Rvals = {}
     G2mv.Dict2Map(parmDict)  # impose constraints initially
+    parmDictBefore = copy.deepcopy(parmDict)
     if allDerivs: #=============  develop partial derivative map
         derivDict = AllPrmDerivs(Controls, Histograms, Phases, restraintDict,
             rigidbodyDict, parmDict, varyList, calcControls,pawleyLookup,symHold,dlg)
@@ -641,6 +642,9 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
 
     # document the refinement further: RB, constraints, restraints, what's varied
     Rvals['varyList'] = 'Varied: ' + ', '.join(varyList)
+    Rvals['parmDictBeforeFit'] = parmDictBefore
+    Rvals['parmDictAfterFit'] = copy.deepcopy(parmDict)
+    Rvals['parmDictSigDict'] = dict(zip(varyList,sig))
     s = G2mv.VarRemapSumm()
     if s: Rvals['contrSumm'] = f'Constraints: {s}'
     Rvals['restrSumm'] = G2stIO.SummRestraints(restraintDict)

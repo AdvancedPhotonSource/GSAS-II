@@ -937,10 +937,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             if 'Twins' not in UseList[G2frame.hist]:
                 UseList[G2frame.hist]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
             if 'Ma' not in UseList[G2frame.hist]['Extinction'][2]:
-                UseList[G2frame.hist]['Extinction'][2].update({'Ma':[1.0,False]})
+                UseList[G2frame.hist]['Extinction'][2].update({'Ma':[0.0,False]})
                 UseList[G2frame.hist]['Extinction'][2].update({'Mb':[0.0,False]})
             if 'Mc' not in UseList[G2frame.hist]['Extinction'][2]:
-                UseList[G2frame.hist]['Extinction'][2].update({'Mc':[1.0,False]})
+                UseList[G2frame.hist]['Extinction'][2].update({'Mc':[0.0,False]})
         elif 'PWDR' in UseList[G2frame.hist]['Histogram']:
             if 'LeBail' not in UseList[G2frame.hist]:
                 UseList[G2frame.hist]['LeBail'] = False

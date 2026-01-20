@@ -180,17 +180,15 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     y.append(float(vals[1]))
                     w.append(1.0/float(vals[1]))
             except ValueError:
-                msg = 'Error parsing number in line '+str(i+1)
+                self.errors = f'Error parsing number in line {i+1}\n{S.strip()}'
                 if GSASIIpath.GetConfigValue('debug'):
-                    print (msg)
-                    print (S.strip())
-                break
+                    print (self.errors)
+                return False
             except:
-                msg = 'Error in line '+str(i+1)
+                self.errors = f'Error processing line {i+1}\n{S.strip()}'
                 if GSASIIpath.GetConfigValue('debug'):
-                    print (msg)
-                    print (S.strip())
-                break
+                    print (self.errors)
+                return False
         N = len(x)
         if N == 0: return False
         x = np.array(x)

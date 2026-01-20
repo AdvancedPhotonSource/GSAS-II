@@ -92,10 +92,22 @@ files, please reset or reinstall''')
         # if GSASIIpath.HowIsG2Installed().startswith('git'):
         #     gitCheckUpdates(None)
     from . import GSASIIdataGUI as G2gd
+    GSASIIpath.InvokeDebugOpts()
+    # debug capability. If a Python file is on the command-line import it
+    if GSASIIpath.GetConfigValue('debug') and len(sys.argv) == 2:
+        import os
+        if os.path.splitext(sys.argv[1])[1] == '.py':
+            print (f'{60*"="}\n"Importing" file {sys.argv[1]}\n{60*"="}')
+            import importlib.util
+            spec = importlib.util.spec_from_file_location('test_module', sys.argv[1])
+            module = importlib.util.module_from_spec(spec)
+            sys.modules['test_module'] = module
+            spec.loader.exec_module(module)
+            #test_module = module
+            sys.exit()
     G2gd.GSASIImain(application) # start the GUI
     if sys.platform == "darwin":
         wx.CallLater(50,application.ClearStartup)
-    GSASIIpath.InvokeDebugOpts()
     application.MainLoop()
 
 if __name__ == '__main__':

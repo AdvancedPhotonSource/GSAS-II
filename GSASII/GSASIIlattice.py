@@ -56,6 +56,13 @@ def sec2HMS(sec):
     S = sec-3600*H-60*M
     return '%d:%2d:%.2f'%(H,M,S)
 
+def CrysM2CartM(Amat,Bmat,SGM):
+    SGC = np.zeros((3,3))
+    SGC[:,0] = np.inner(Amat,np.inner(SGM,np.inner(Bmat,np.eye(3)[0])))
+    SGC[:,1] = np.inner(Amat,np.inner(SGM,np.inner(Bmat,np.eye(3)[1])))
+    SGC[:,2] = np.inner(Amat,np.inner(SGM,np.inner(Bmat,np.eye(3)[2])))
+    return SGC
+
 def rotdMat(angle,axis=0):
     """Prepare rotation matrix for angle in degrees about axis(=0,1,2)
 
@@ -1135,6 +1142,22 @@ def cell2AB(cell,alt=False):
     A[0][2] = cell[2]*cosd(cell[4])  # c cos(beta)
     A[1][1] = cell[1]*sind(cell[5])  # b sin(gamma)
     A[1][2] = -cell[2]*cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
+    A[2][2] = 1./cellstar[2]         # 1/c*
+    A = np.around(A,12)
+    B = nl.inv(A)
+    return A,B
+
+def cell2UnitAB(cell):
+    Ucell = cell[:]
+    Ucell[:3] = [1.0,1.0,1.0]
+    G,g = cell2Gmat(Ucell)
+    cellstar = Gmat2cell(G)
+    A = np.zeros(shape=(3,3))
+    A[0][0] = 1.0                # a
+    A[0][1] = cosd(cell[5])  # b cos(gamma)
+    A[0][2] = cosd(cell[4])  # c cos(beta)
+    A[1][1] = sind(cell[5])  # b sin(gamma)
+    A[1][2] = -cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
     A[2][2] = 1./cellstar[2]         # 1/c*
     A = np.around(A,12)
     B = nl.inv(A)
@@ -2326,7 +2349,7 @@ def LaueUnique(Laue,HKLF):
 def RBChk(sytsym,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for site symmetries
     :param str sytsym: atom site symmetry symbol
-    :param int L: principal harmonic term L>0
+    :param int L: principal harmonic term L>0 none beyond L=5; not considered
     :param int M: second harmonic term; can be -L <= M <= L
     :returns True if allowed and sign for term
     NB: not complete for all possible site symmetries! Many are missing
@@ -2380,40 +2403,41 @@ def RBChk(sytsym,L,M):
                 elif L%2 and (M//3)%2: return True,-1.**M
         elif sytsym == '6/mmm':
             if not L%2 and not M%6: return True,1.0
-        elif sytsym == '4(z)':
+        elif sytsym in ['4(z)','4']:
             if not M%4: return True,1.0     #P?
-        elif sytsym == '-4(z)':   #m=2l-4j
+        elif sytsym in ['-4(z)','-4']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0    #P?
             if not L%2 and not (M//2)%2: return True,1.0
-        elif sytsym == '4/m(z)':
+        elif sytsym in ['4/m(z)','4/m']:
             if not M%4: return True,1.0   #P?
-        elif sytsym == '422(z)':
+        elif sytsym in ['422(z)','422']:
             if not M%4: return True,-1.0**L
-        elif sytsym == '4mm(z)':
+        elif sytsym in ['4mm(z)','4mm']:
             if not M%4: return True,1.0
         elif sytsym in ['-42m(z)','-42m']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0
             if not L%2 and not (M//2)%2: return True,-1.0**L
-        elif sytsym == '-4m2(z)':   #m=2l-4j
+        elif sytsym in ['-4m2(z)','-4m2']:   #m=2l-4j
             if L%2 and (M//2)%2: return True,1.0
             if not L%2 and not (M//2)%2: return True,1.0
-        elif sytsym == '4/mmm(z)':
+        elif sytsym in ['4/mmm(z)','4/mmm']:
             if not L%2 and not M%4: return True,1.0
         elif sytsym in ['3','3(111)']:
             if not M%3: return True,1.0     #P?
         elif sytsym in ['-3','-3(111)']:
             if not L%2 and not M%3: return True,1.0    #P?
         elif sytsym in ['32','32(100)','32(111)']:
-            if not M%3: return True,-1.0**(L-M)
-        elif sytsym == '32(120)':
+            if [L,M] in [[2,0],[3,3],[4,-3],[4,0],[5,3]]:
+                return True,-1.0**(L-M)
+        elif sytsym in ['32(120)','32(y)']:
             if not M%3: return True,-1.0**(L-M)
         elif sytsym in ['3m','3m(100)','3m(111)']:
             if not M%3: return True,-1.0**M
-        elif sytsym == '3m(120)':
+        elif sytsym in ['3m(120)','3m(y)']:
             if not M%3: return True,1.0
-        elif sytsym in ['-3m(100)','-3m(111)','-3m']:
+        elif sytsym in ['-3m','-3m(100)','-3m(111)']:
             if not L%2 and not M%3: return True,-1.0**M
-        elif sytsym == '-3m(120)':
+        elif sytsym in ['-3m(120)','-3m(y)']:
             if not L%2 and not M%3: return True,1.0
         elif '222' in sytsym:
             if M%2: return True,-1.0**L
@@ -2423,7 +2447,7 @@ def RBChk(sytsym,L,M):
         elif 'mm2(y)' in sytsym:  #m=l-2j
             if L%2 and M%2: return True,-1.0**L  #both odd
             if not L%2 and not M%2: return True,-1.0**L     #both even
-        elif 'mm2(z)' in sytsym:
+        elif sytsym in ['mm2(z)','mm2']:
             if M%2: return True,1.0
         elif 'mmm' in sytsym :
             if not L%2 and not M%2: return True,1.0
@@ -2508,7 +2532,7 @@ def RBsymChk(RBsym,cubic,coefNames,L=18):
 
 def GenRBCoeff(sytsym,RBsym,L):
     '''imposes rigid body symmetry on spherical harmonics terms
-    Key problem is noncubic RB symmetries in cubic site symmetries & vice versa.
+
     :param str sytsym: atom position site symmetry symbol
     :param str RBsym: molecular point symmetry symbol
     :param int L: spherical harmonic order no.
@@ -2518,11 +2542,14 @@ def GenRBCoeff(sytsym,RBsym,L):
     coefNames = []
     coefSgns = []
     cubic = False
-    if sytsym in ['23','m3','432','-43m','m3m']:
+    rbSym = sytsym
+    if RBsym:
+        rbSym = RBsym
+    if rbSym in ['23','m3','432','-43m','m3m']:
         cubic = True
     for iord in range(1,L+1):
         for n in range(-iord,iord+1):
-            rbChk,sgn = RBChk(sytsym,iord,n)
+            rbChk,sgn = RBChk(rbSym,iord,n)
             if rbChk:
                 if cubic:
                     coefNames.append('C(%d,%d)c'%(iord,n))
@@ -2531,11 +2558,12 @@ def GenRBCoeff(sytsym,RBsym,L):
                 coefSgns.append(sgn)
     if RBsym == '1':
         return coefNames,coefSgns
-    newNames,newSgns = RBsymChk(RBsym,cubic,coefNames,L)
+    newNames,newSgns = RBsymChk(rbSym,cubic,coefNames,L)
     return newNames,newSgns
 
 def GenShCoeff(sytsym,L):
     '''Generate spherical harmonic coefficient names for atom site symmetry
+
     :param str sytsym: site symmetry or perhaps molecular symmetry
     :param int L:spherical harmonic order no.
     :returns list newNames: spherical harmonic term of order L as either C(L,M) or C(L,M)c for cubic terms
@@ -2559,6 +2587,7 @@ def GenShCoeff(sytsym,L):
 
 def OdfChk(SGLaue,L,M):
     '''finds symmetry rules for spherical harmonic coefficients for Laue groups
+
     :param str SGLaue: Laue symbol
     :param int L: principal harmonic term; only evens are used
     :param int M: second harmonic term; can be -L <= M <= L
@@ -2601,6 +2630,7 @@ def OdfChk(SGLaue,L,M):
 
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     '''Generate spherical harmonics coefficient names for texture
+
     :param str SGLaue: Laue symbol
     :param str SamSym: sample symmetry symbol
     :param int L: spherical harmonic order no.
@@ -2621,6 +2651,7 @@ def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
 
 def CrsAng(H,cell,SGData):
     '''Convert HKL to polar coordinates with proper orientation WRT space group point group
+
     :param array H: hkls
     :param list cell: lattice parameters
     :param dict SGData: space group data
@@ -2870,7 +2901,7 @@ def GetKsl(L,M,SamSym,psi,gam):
 def GetKclKsl(L,N,SGLaue,psi,phi,beta):
     """
     This is used for spherical harmonics description of preferred orientation;
-        cylindrical symmetry only (M=0) and no sample angle derivatives returned
+    cylindrical symmetry only (M=0) and no sample angle derivatives returned
     """
 #    from . import pytexture as ptx
     Ksl,x = ptx.pyplmpsi(L,0,1,psi)
@@ -2907,45 +2938,16 @@ def H2ThPh2(H,Bmat):
     :returns array Ph: HKL polar angles
     '''
     Hcart = np.inner(H,Bmat)
-    R = np.sqrt(np.sum(np.square(Hcart),axis=1))
+    R = nl.norm(Hcart,axis=1)
     Hcart /= R[:,nxs]
     Pl = acosd(Hcart[:,2])
     Az = atan2d(Hcart[:,1],Hcart[:,0])
     return R,Az,Pl
 
-# def H2ThPh(H,Bmat,Q):
-#     '''Convert HKL to spherical polar & azimuth angles - wrong!
-
-#     :param array H: array of hkl as [n,3]
-#     :param [3,3] array Bmat: inv crystal to Cartesian transformation
-#     :param array Q: quaternion for rotation of HKL to new polar axis
-#     :returns array Th: HKL azimuth angles
-#     :returns array Ph: HKL polar angles
-#     '''
-#     # A,V = G2mth.Q2AVdeg(Q)
-#     # QR,R = G2mth.make2Quat(V,np.array([0.,0.,1.0]))
-#     # QA = G2mth.AVdeg2Q(A,np.array([0.,0.,1.0]))
-#     # Q2 = G2mth.prodQQ(QR,QA)
-#     Qmat = G2mth.Q2Mat(Q)
-#     CH1 = np.inner(H,Bmat.T)
-#     CH = np.inner(CH1,Qmat.T)
-#     N = nl.norm(CH,axis=1)
-#     CH /= N[:,nxs]
-#     H3 = np.array([0,0,1.])
-#     DHR = np.inner(CH,H3)
-#     Ph = np.where(DHR <= 1.0,acosd(DHR),0.0)    #polar angle 0<=Ph<=180.; correct
-#     TH = CH*np.array([1.,1.,0.])[nxs,:]     #projection of CH onto xy plane
-#     N = nl.norm(TH,axis=1)
-#     N = np.where(N > 1.e-5,N,1.)
-#     TH /= N[:,nxs]
-#     Th = atan2d(TH[:,1],TH[:,0])                #azimuth angle 0<=Th<360<
-#     Th = np.where(Th<0.,Th+360.,Th)
-#     return Th,Ph        #azimuth,polar angles
-
 def SetUVvec(Neigh):
     ''' Set deformation coordinate choices from neighbors; called in G2phsGUI/UpdateDeformation
     
-    param: list neigh: list of neighboring atoms; each with name, dist & cartesian vector
+    :param list Neigh: list of neighboring atoms; each with name, dist & cartesian vector
 
     :returns list UVvec: list of normalized vectors
     :returns list UVchoice: list of names for each
@@ -2966,11 +2968,11 @@ def SetUVvec(Neigh):
     return UVvec,UVchoice
 
 def SHarmcal(SytSym,SHFln,psi,gam):
-    '''Perform a surface spherical harmonics computation.
-    Presently only used for plotting
+    '''Perform a surface spherical harmonics computation & return sum of squares.
+    Only used for plotting.
     Note that the the number of gam values must either be 1 or must match psi
 
-    :param str SytSym: sit symmetry - only looking for cubics - remove this
+    :param str SytSym: site symmetry - only looking for cubics
     :param dict SHFln: spherical harmonics coefficients; key has L & M
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180
@@ -2985,13 +2987,13 @@ def SHarmcal(SytSym,SHFln,psi,gam):
             if SytSym in ['m3m','m3','43m','432','23'] or 'c' in trm:
                 Ksl = CubicSHarm(l,m,psi,gam)
             else:
-                # p = SHFln[term][2]
                 Ksl = SphHarmAng(l,m,1.0,psi,gam)
-            SHVal += SHFln[term][0]*Ksl
+            SHVal += (SHFln[term][0]*Ksl)
     return SHVal
 
 def KslCalc(trm,psi,gam):
     '''Compute one angular part term in spherical harmonics
+
     :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
     :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
     :param float/array gam: Polar coordinate 0<= Ph <= 180
@@ -3015,8 +3017,11 @@ def SphHarmAng(L,M,P,Th,Ph):
 
     :returns ylmp value/array: as reals
     '''
-    ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree; not normalized
-    #### TODO: this will be deprecated in future scipy; new one sph_harm_y in scipy 1.15.1
+    try:
+    #### TODO: this will be deprecated in scipy 1.17.0
+        ylmp = spsp.sph_harm(M,L,rpd*Th,rpd*Ph)   #wants radians; order then degree
+    except AttributeError: #new one sph_harm_y in scipy 1.15.1 but buggy?
+        ylmp = spsp.sph_harm_y(L,M,rpd*Th,rpd*Ph) #order L,M makes more sense
 
     if M > 0:
         return (-1)**M*P*np.real(ylmp)*SQ2
@@ -3264,5 +3269,5 @@ UniqueCellByLaue = [
 cellAlbl = ('a','b','c', 'alpha', 'beta', 'gamma')
 'ASCII labels for a, b, c, alpha, beta, gamma'
 
-cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3')
+cellUlbl = ('a','b','c','\u03B1','\u03B2','\u03B3')
 'unicode labels for a, b, c, alpha, beta, gamma'

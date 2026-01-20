@@ -120,18 +120,18 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     G2frame.Extinct = [] # array of extinct reflections
     PlotPatterns(G2frame,plotType=plotType)
 
-def plotVline(Page,Plot,Lines,Parms,pos,color,pick,style='dotted'):
+def plotVline(Page,Plot,Lines,Parms,pos,color,pickrad,style='dotted'):
     '''shortcut to plot vertical lines for limits & Laue satellites.
     Was used for extrapeaks'''
     if Page.plotStyle['qPlot']:
         Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pick,pickradius=2.,linestyle=style))
+            picker=pickrad,linestyle=style))
     elif Page.plotStyle['dPlot']:
         Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pick,pickradius=2.,linestyle=style))
+            picker=pickrad,linestyle=style))
     else:
         Lines.append(Plot.axvline(pos,color=color,
-            picker=pick,pickradius=2.,linestyle=style))
+            picker=pickrad,linestyle=style))
         
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      extraKeys=[],refineMode=False,indexFrom='',fromTree=False):
@@ -1188,7 +1188,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     axis = Page.figure.axes[1]
                 else:
                     axis = Page.figure.gca()
-                axis.plot(event.xdata,event.ydata,'rD',clip_on=Clip_on,picker=True,pickradius=3.)
+                axis.plot(event.xdata,event.ydata,'rD',clip_on=Clip_on,picker=3.)
                 Page.canvas.draw()
                 return
             elif G2frame.itemPicked is not None: # end of drag in move
@@ -1990,7 +1990,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Ymax = None
     for ip,Pattern in enumerate(PlotList):
         xye = Pattern[1]
-        xye = np.nan_to_num(xye)
+        try:
+            xye = np.nan_to_num(xye)
+        except ValueError:
+            print('Error in diffraction pattern',ip,'skipping plot')
+            continue
         if xye[1] is None: continue
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
@@ -2133,11 +2137,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
         # convert all X values and then reapply mask if xye0 is a masked array
         mask = None
-        if hasattr(xye0,'mask'): mask = xye0.mask
+        if hasattr(xye0,'mask'): 
+            mask = xye0.mask
+            X = xye0.data
+        else:
+            mask = None
+            X = xye0
         if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
-            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,xye0.data),mask=mask)
+            X = ma.array(2.*np.pi/G2lat.Pos2dsp(Parms,X),mask=mask)
         elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
-            X = ma.array(G2lat.Pos2dsp(Parms,xye0.data),mask=mask)
+            X = ma.array(G2lat.Pos2dsp(Parms,X),mask=mask)
         else:
             X = copy.deepcopy(xye0)
         if ifpicked and not G2frame.Contour:
@@ -2188,8 +2197,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     if x > xmax:
                         continue
                 # magnification region marker
-                magMarkers.append(Plot.axvline(x,color='0.5',dashes=(1,1),
-                                picker=True,pickradius=2.,label='_magline'))
+                magMarkers.append(Plot.axvline(x,color='0.5',dashes=(1,1),picker=2.,label='_magline'))
                 lbl = Plot.annotate("x{}".format(ml), xy=(x, tpos), xycoords=("data", "axes fraction"),
                     verticalalignment='bottom',horizontalalignment=halign,label='_maglbl')
                 Plot.magLbls.append(lbl)
@@ -2233,12 +2241,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
                 lims = G2lat.Pos2dsp(Parms,lims)
             # limit lines
-            Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),picker=True,pickradius=3.))    
-            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),picker=True,pickradius=3.))
+            Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),picker=3.))    
+            Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),picker=3.))
             # excluded region lines
             for i,item in enumerate(lims[1:]):
-                Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=True,pickradius=3.))    
-                Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=True,pickradius=3.))
+                Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=3.))    
+                Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=3.))
                 exclLines += [2*i+2,2*i+3]
         if G2frame.Contour:
             if Page.plotStyle['chanPlot']:
@@ -2370,7 +2378,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
                         if 'PWDR' in plottype and len(limits[2:]):
                             DZ = ma.array(DZ,mask=Emask)   # weighted difference is always masked
-                    DifLine = Plot1.plot(X,DZ,pwdrCol['Diff_color'],picker=True,pickradius=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
+                    DifLine = Plot1.plot(X,DZ,pwdrCol['Diff_color'],picker=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
                     Plot1.tick_params(labelsize=14)
                     Plot1.axhline(0.,color='k')
                     
@@ -2380,12 +2388,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.set_yscale("log",nonpositive='mask') # >=3.3
                         except:
                             Plot.set_yscale("log",nonpositive='mask')
-                        Plot.plot(X,Y,marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,picker=True,pickradius=3.,
+                        Plot.plot(X,Y,marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,picker=3.,
                             clip_on=Clip_on,label=incCptn('obs'))
                         if G2frame.SinglePlot or G2frame.plusPlot == 1 or G2frame.plusPlot == 2:
-                            Plot.plot(X,Z,pwdrCol['Calc_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
+                            Plot.plot(X,Z,pwdrCol['Calc_color'],label=incCptn('calc'),linewidth=1.5)
                             if G2frame.plusPlot:
-                                Plot.plot(X,W,pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #background
+                                Plot.plot(X,W,pwdrCol['Bkg_color'],label=incCptn('bkg'),linewidth=1.5)     #background
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.set_xscale("log",nonpositive='mask') # >=3.3
@@ -2396,17 +2404,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         if G2frame.ErrorBars:
                             if Page.plotStyle['sqPlot']:
                                 Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                    ecolor=pwdrCol['Obs_color'],
-                                picker=True,pickradius=3.,clip_on=Clip_on)
+                                    ecolor=pwdrCol['Obs_color'],picker=3.,clip_on=Clip_on)
                             else:
                                 Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                    ecolor=pwdrCol['Obs_color'],
-                                picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
+                                    ecolor=pwdrCol['Obs_color'],picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                         else:
                             Plot.plot(X,YB,marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,
-                                picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
-                        Plot.plot(X,W,pwdrCol['Calc_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)     #const. background
-                        Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
+                                picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                        Plot.plot(X,W,pwdrCol['Calc_color'],label=incCptn('bkg'),linewidth=1.5)     #const. background
+                        Plot.plot(X,ZB,pwdrCol['Bkg_color'],label=incCptn('calc'),linewidth=1.5)
                 else:  # not logPlot
                     ymax = 1.
                     if Page.plotStyle['Normalize'] and Y.max() != 0 and not G2frame.SinglePlot:
@@ -2414,29 +2420,29 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
                             ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
-                                picker=False,clip_on=Clip_on,label=incCptn('obs-bkg'))  #Io-Ib
+                               clip_on=Clip_on,label=incCptn('obs-bkg'))  #Io-Ib
                             if np.any(Z):       #only if there is a calc pattern
-                                CalcLine = Plot.plot(X,(Z-W)/ymax,pwdrCol['Calc_color'],picker=False,
+                                CalcLine = Plot.plot(X,(Z-W)/ymax,pwdrCol['Calc_color'],
                                     label=incCptn('calc-bkg'),linewidth=1.5)               #Ic-Ib
                         else:
                             Plot.plot(X,YB,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
-                                picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
-                            Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
+                                picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                            Plot.plot(X,ZB,pwdrCol['Bkg_color'],label=incCptn('calc'),linewidth=1.5)
                     else:
                         if 'PWDR' in plottype:
                             if G2frame.plusPlot != 3:
                                 ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
-                                    picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
+                                    picker=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
                                 CalcLine = Plot.plot(X,Z/ymax,pwdrCol['Calc_color'],
-                                    picker=False,label=incCptn('calc'),linewidth=1.5)                  #Ic
+                                    label=incCptn('calc'),linewidth=1.5)                  #Ic
                             else: # waterfall mode=3: plot 1st pattern like others, name in legend?
                                 name = Pattern[2]
                                 if Pattern[0].get('histTitle'): name = Pattern[0]['histTitle']
                                 ObsLine = Plot.plot(Xum,Y/ymax,color=pwdrCol['Obs_color'],marker='',linewidth=1.5,
-                                    picker=False,clip_on=Clip_on,label=incCptn(name))    #Io
+                                    clip_on=Clip_on,label=incCptn(name))    #Io
                         else:
                             Plot.plot(X,YB,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
-                                picker=True,pickradius=3.,clip_on=Clip_on,label=incCptn('obs'))
+                                picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                             Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
                         BackLine = Plot.plot(X,W/ymax,pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)                 #Ib
@@ -2481,7 +2487,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
                         G2plt.Write2csv(fp,['masked X','X','obs','calc','bkg','diff'],header=True)
                         for i in range(len(X)):
-                            G2plt.Write2csv(fp,[X[i],X.data[i],Y[i],Z[i],W[i],D[i]],header=False)
+                            if hasattr(X,'mask'): 
+                                G2plt.Write2csv(fp,[X[i],X.data[i],Y[i],Z[i],W[i],D[i]],header=False)
+                            else:
+                                G2plt.Write2csv(fp,[X[i],X[i],Y[i],Z[i],W[i],D[i]],header=False)
                         fp.close()
                         print('file',plotOpt['CSVfile'],'written')
                         
@@ -2508,21 +2517,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 if type(item) is dict: continue
                                 if i in selectedPeaks:
                                     #Ni = N+1
-                                    plotVline(Page,Plot,Lines,Parms,item[0],'yellow',False,'-')
+                                    plotVline(Page,Plot,Lines,Parms,item[0],'yellow',0,'-')
                                     Lines[-1].set_lw(Lines[-1].get_lw()+1)
-                                    plotVline(Page,Plot,Lines,Parms,item[0],color,True)
+                                    plotVline(Page,Plot,Lines,Parms,item[0],color,2)
                                     Lines[-1].set_lw(Lines[-1].get_lw()+1)
                                 else:
                                     #Ni = N
-                                    plotVline(Page,Plot,Lines,Parms,item[0],color,True)
+                                    plotVline(Page,Plot,Lines,Parms,item[0],color,2)
                         except:
                             pass
                         peaks['LaueFringe'] = peaks.get('LaueFringe',{})
                         SatLines = []
                         for pos in peaks['LaueFringe'].get('satellites',[]):
-                            plotVline(Page,Plot,SatLines,Parms,pos,'k',False)
+                            plotVline(Page,Plot,SatLines,Parms,pos,'k',2)
 #                        for pos in peaks['xtraPeaks']:
-#                            plotVline(Page,Plot,Lines,Parms,pos[0],'r',False)
+#                            plotVline(Page,Plot,Lines,Parms,pos[0],'r',0)
                     if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
                         tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                         Page.SetToolTipString(tip)
@@ -2535,19 +2544,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 icolor = 256*N//len(PlotList)
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
-                        try:
-                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor), # >=3.3
-                                picker=False,nonpositive='mask',linewidth=1.5)
+                        try: # >=3.3
+                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),nonpositive='mask',linewidth=1.5)
                         except:
-                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                picker=False,nonpositive='mask')
+                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),nonpositive='mask')
                     elif plottype in ['SASD','REFD']:
                         try:
-                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                picker=False,nonpositive='mask',linewidth=1.5)
+                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),nonpositive='mask',linewidth=1.5)
                         except:
-                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),
-                                picker=False,nonpositive='mask')
+                            Plot.semilogy(X,Y,color=mcolors.cmap(icolor),nonpositive='mask')
                 else:
                     if 'PWDR' in plottype:
                         # waterfall mode=3: name in legend?
@@ -2556,11 +2561,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False,label=incCptn(name))
                     elif plottype in ['SASD','REFD']:
                         try:
-                            Plot.loglog(X,Y,mcolors.cmap(icolor),
-                                picker=False,nonpositive='mask',linewidth=1.5)
+                            Plot.loglog(X,Y,mcolors.cmap(icolor),nonpositive='mask',linewidth=1.5)
                         except:
-                            Plot.loglog(X,Y,mcolors.cmap(icolor),
-                                picker=False,nonpositive='mask')
+                            Plot.loglog(X,Y,mcolors.cmap(icolor),nonpositive='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                             
                 if Page.plotStyle['logPlot'] and 'PWDR' in plottype:
@@ -2605,8 +2608,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if Page.plotStyle['sqrtPlot']:
                 ypos = np.sqrt(abs(ypos))*np.sign(ypos)
             artist = Plot.text(xpos,ypos,lbl,fontsize=font,c=color,ha='center',
-                      va='top',bbox=props,picker=True,rotation=angle,
-                      label='_'+ph)
+                      va='top',bbox=props,picker=True,rotation=angle,label='_'+ph)
             artist.key = (ph,key)
     #============================================================
     if timeDebug:
@@ -2621,7 +2623,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             CY = np.cumsum(W**2*(Y-Z)**2)
             scale = np.max(CY)/np.max(Y)
             CY /= scale
-            Plot.plot(X,CY,'k',picker=False,label='cum('+Gkchisq+')')
+            Plot.plot(X,CY,'k',label='cum('+Gkchisq+')')
         selectedPeaks = []
         if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List']:
             # find any peak rows that are selected
@@ -2704,19 +2706,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     xtick = peak.T[1]
                 if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
                     Page.tickDict[phase],_ = Plot.plot(
-                        xtick,pos,'|',mew=w,ms=l,picker=True,pickradius=3.,
-                        label=phase,color=plcolor)
+                        xtick,pos,'|',mew=w,ms=l,picker=3.,label=phase,color=plcolor)
                     # N.B. above creates two Line2D objects, 2nd is ignored.
                     # Not sure what each does.
                 elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
                     if len(xtick) > 0:
                         # create an ~hidden tickmark to create a legend entry
                         Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
-                                                label=phase,color=plcolor)[0]
+                            label=phase,color=plcolor)[0]
                     for xt in xtick: # a separate line for each reflection position
-                            Plot.axvline(xt,color=plcolor,
-                                        picker=True,pickradius=3.,
-                                        label='_FLT_'+phase,lw=0.5)
+                            Plot.axvline(xt,color=plcolor,picker=3.,label='_FLT_'+phase,lw=0.5)
             handles,legends = Plot.get_legend_handles_labels() 
             if handles:
                 labels = dict(zip(legends,handles))     # remove duplicate phase entries
@@ -2735,7 +2734,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     siz = 6
                 elif len(legends) > 15:
                     siz = 8
-                lngd = Plot.legend(handles,legends,title=msg,loc='best',
+                Plot.legend(handles,legends,title=msg,loc='best',
                                        fontsize=siz)
     if G2frame.Contour:
         time0 = time.time()
@@ -2815,7 +2814,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     x = G2lat.Dsp2pos(Parms,x)
                 else:
                     break
-            Plot.plot(x,y*mult,'rD',clip_on=Clip_on,picker=True,pickradius=10.)
+            Plot.plot(x,y*mult,'rD',clip_on=Clip_on,picker=10.)
 
     # plot the partials
     plotOpt['lineList']  = ['obs','calc','bkg','zero','diff']
@@ -2839,8 +2838,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     y = ypList[ph]+yb
                 if Page.plotStyle['sqrtPlot']:
                     y = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
-                Plot.plot(x,y,pcolor,picker=False,label=ph,linewidth=pwidth,
-                              linestyle=pLinStyl)
+                Plot.plot(x,y,pcolor,label=ph,linewidth=pwidth,linestyle=pLinStyl)
     if 'PlotDefaults' in data[0] and fromTree:  # set plot limists from defaults saved with '!'
         #print('setting plot defaults')
         (xlim, ylim, styleDict, G2frame.SinglePlot, G2frame.Contour, G2frame.Weight,
@@ -2860,7 +2858,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         # Page.toolbar.set_history_buttons() # this may be needed to update the zoom buttons (needs test)
         # Page.canvas.draw_idle() # schedule an MPL update (needs test)
         if G2frame.Contour: # for contour plots expand y-axis to include all histograms
-            G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)))
+            G2frame.xylim = (G2frame.xylim[0], (-0.5,len(PlotList)-0.5))
         if 'PWDR' in plottype:
             Plot.set_xlim(G2frame.xylim[0])
             Plot.set_ylim(G2frame.xylim[1])
@@ -2870,6 +2868,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.ToolBarDraw()
     else:
         G2frame.xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.canvas.draw()
+    if G2frame.Contour: # for contour plots remove non-integer yaxis labels as they are a distraction
+        labels = []
+        vals = []
+        for item in Plot.get_yticklabels():
+            lbl = item.get_text()
+            try:
+                val = float(lbl.replace('\u2212', '-'))
+                if int(val) != val: 
+                    continue
+                elif val < 0 or val > G2frame.xylim[1][1]: # out of range labels not needed
+                    continue
+                else:
+                    vals.append(val)
+                    labels.append(str(int(val)))
+            except:
+                pass
+        Plot.yaxis.set_ticks(vals,labels)
         Page.canvas.draw()
     olderr = np.seterr(invalid='ignore') #ugh - this removes a matplotlib error for mouse clicks in log plots
     # and sqrt(-ve) in np.where usage               

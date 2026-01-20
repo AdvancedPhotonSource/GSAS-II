@@ -2392,8 +2392,8 @@ def UpdatePhaseData(G2frame,Item,data):
                         # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnLoadDysnomia(event,G2frame,data), id=G2G.wxID_LOADDYSNOMIA)
                         # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnSaveDysnomia(event,G2frame,data), id=G2G.wxID_SAVEDYSNOMIA)
                         # G2frame.Bind(wx.EVT_MENU, lambda event:G2phsG2.OnRunDysnomia(event,G2frame,data), id=G2G.wxID_RUNDYSNOMIA)
-                        G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
-                        G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
+                        # G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
+                        # G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
                         G2frame.Bind(wx.EVT_MENU, OnRunDysnomia, id=G2G.wxID_RUNDYSNOMIA)
                         G2frame.phaseDisplay.InsertPage(7,G2frame.MEMData,'Dysnomia')
                         Id = wx.NewId()
@@ -3252,7 +3252,7 @@ def UpdatePhaseData(G2frame,Item,data):
             with open(tmp.name,'w') as fp:
                 fp.write(pagelist[num].replace(
                 '<head>',
-                '<head><base href="https://www.cryst.ehu.es/">',
+               f'<head><base href="{SUBGROUPS.bilbaoURL}/">',
                 ))
             fileList.append(tmp.name)
             G2G.ShowWebPage('file://'+tmp.name,G2frame)
@@ -3439,7 +3439,7 @@ program; Please cite:
                 with open(tmp.name,'w') as fp:
                     fp.write(f.replace(
                         '<head>',
-                        '<head><base href="https://www.cryst.ehu.es/">',
+                        f'<head><base href="{SUBGROUPS.bilbaoURL}/">',
                         ))
                 fileList.append(tmp.name)
                 G2G.ShowWebPage('file://'+tmp.name,G2frame)
@@ -3628,6 +3628,11 @@ program; Please cite:
             # need to convert non-standard space group settings
             print('*** Checking space group setting')
             sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(data['General']['SGData'])
+            if sgnum is None:
+                G2G.G2MessageBox(G2frame,
+                        'Standard setting check failed. Check console output.',
+                        'Bilbao error')
+                return
             newPhase = copy.deepcopy(data)
             try:
                 if np.allclose(np.eye(3),xmat) and np.allclose(xoff,np.zeros_like(xoff)):
@@ -3866,7 +3871,9 @@ program; Please cite:
         SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
         wx.EndBusyCursor()
         if SubGroups is None:
-            wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
+            wx.MessageBox('Internet connection problem? Check console output.',
+                            caption='Bilbao SUBGROUPS error',
+                              style=wx.ICON_EXCLAMATION)
             return
         if not SubGroups:
             if Landau:
@@ -3919,6 +3926,14 @@ to use these entries'''
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(generalData['SGData'])
+        if sgnum is None:
+            G2G.G2MessageBox(G2frame,
+                        'Standard setting check failed. Check console output.',
+                        'Bilbao error')
+            return
+        if xmat is None:
+            G2G.G2MessageBox(G2frame,"Unable to reach web site.",'No connection')
+            return
         if np.allclose(np.eye(3),xmat) and np.allclose(xoff,np.zeros_like(xoff)):
             msg = "Nothing to do. Structure is already set in the standard setting."
             G2G.G2MessageBox(G2frame,msg,'No change needed')
@@ -5839,25 +5854,46 @@ to use these entries'''
 
 #### Dysnomia (MEM) Data page ##############################################################################
 
-    def OnLoadDysnomia(event):
-        print('Load MEM - might not be implemented')
+    # def OnLoadDysnomia(event):
+    #     print('Load MEM - might not be implemented')
 
-    def OnSaveDysnomia(event):
-        print('Save MEM - might not be implemented')
+    # def OnSaveDysnomia(event):
+    #     print('Save MEM - might not be implemented')
 
     def OnRunDysnomia(event):
 
-        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
-        DysData = data['Dysnomia']
+        if sys.platform == "win32":
+            binimage = 'Dysnomia64.exe'
+        else:
+            binimage = 'Dysnomia'
+        is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
-        if not os.path.exists(DYSNOMIA):
-            wx.MessageBox(''' Dysnomia is not installed. Please download it from
-    https://jp-minerals.org/dysnomia/en/
-    and install it at.'''+DYSNOMIA,
-                caption='Dysnomia not installed',style=wx.ICON_ERROR)
+        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+        pathlist = (GSASIIpath.path2GSAS2,
+                    os.path.expanduser('~'),
+                    os.path.expanduser(os.path.join('~','.GSASII')))
+        locations = []
+        for path in pathlist:
+            DYSNOMIA = os.path.join(path,'Dysnomia',binimage)
+            locations.append(DYSNOMIA)
+            if not os.path.exists(DYSNOMIA): continue
+            if is_exe(DYSNOMIA):
+                break
+        else:
+            newline = '\n\t'
+            print(f"File {binimage!r} not found."
+                  f"\nThe following locations were checked:\n\t{newline.join(locations)}")
+            msg = f'''Dysnomia is not installed. Please download it from
+https://jp-minerals.org/dysnomia/en/ and install the 
+downloaded directory (which includes file {binimage!r})
+at one of the following locations:
+\t{newline.join(pathlist)}'''
+            G2G.ShowWebPage("https://jp-minerals.org/dysnomia/en/",G2frame)
+            G2G.ShowScrolledInfo(G2frame,msg,header='Install Dysnomia',
+                                     width=350,height=150)
             return
 
+        DysData = data['Dysnomia']
         generalData = data['General']
         Map = generalData['Map']
         UseList = Map['RefList']
@@ -6388,8 +6424,12 @@ to use these entries'''
             ascript_file = os.path.join(os.getcwd(), "runrmc.script")
             with open(ascript_file, 'w') as f:
                 f.write('tell application "Terminal"\n')
-                f.write(f'''  do script "echo 'Running RMCprofile'"\n''')
+                f.write('  if not (exists window 1) then\n')
+                f.write(f'    do script "bash {script_file}"\n')
+                f.write('  else\n')
                 f.write(f'  do script "bash {script_file}" in window 1\n')
+                f.write('  end if\n')
+                f.write('  activate\n')
                 f.write("end tell\n")
             subp.Popen(['osascript', ascript_file])
         elif sys.platform.startswith("linux"):
@@ -6607,8 +6647,12 @@ to use these entries'''
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']
             pName = generalData['Name'].replace(' ','_')
+            if sys.platform == "darwin":
+               wildcard = 'RMCProfile result csv files|' + pName + '*.csv' + '|All files|*.*'
+            else:
+               wildcard = 'RMCProfile result csv files|' + pName + '*.csv'
             dlg = wx.FileDialog(G2frame, "Choose any RMCProfile csv results file for "+pName+":",
-                defaultDir=G2frame.LastGPXdir,style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
+                defaultDir=G2frame.LastGPXdir,style=wx.FD_CHANGE_DIR,wildcard=wildcard)
             if dlg.ShowModal() == wx.ID_OK:
                 path = os.path.split(dlg.GetPath())[0]
                 dlg.Destroy()
@@ -6631,8 +6675,9 @@ to use these entries'''
                       '_SQ1partials.csv':[],'_SQ2partials.csv':[],'_FQ1.csv':[],'_FT_XFQ1.csv':[],
                       '_FQ1partials.csv':[],'_bragg.csv':[],'.chi2':[]}
             for item in files:
-                if os.path.exists(os.path.join(path,pName+item)):
-                    OutFile = open(pName+item,'r')
+                fileName = os.path.join(path,pName+item)
+                if os.path.exists(fileName):
+                    OutFile = open(fileName,'r')
                     files[item] = OutFile.readlines()
                     OutFile.close()
                     print('RMCProfile file %s read'%(pName+item))
@@ -8961,17 +9006,17 @@ to use these entries'''
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key1,
                 xmin=0.0,xmax=5.0,nDig=(10,1),size=(50,-1),
                 typeHint=float,OnLeave=onLeave))
-            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,"\u212B"),0,WACV)
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Show atoms within:'),0,WACV)
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key2,
                 xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1),
                 typeHint=float,OnLeave=onLeave))
-            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,"\u212B"),0,WACV)
             mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,'Label distance to atoms within:'),0,WACV)
             mapSizer.Add(G2G.ValidatedTxtCtrl(drawOptions,var,key3,
                 xmin=0.0,xmax=15.0,nDig=(10,1),size=(50,-1),
                 typeHint=float,OnLeave=onLeave))
-            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,u"\u212B"),0,WACV)
+            mapSizer.Add(wx.StaticText(drawOptions,wx.ID_ANY,"\u212B"),0,WACV)
             return mapSizer
 
         # UpdateDrawOptions exectable code starts here
@@ -9094,7 +9139,7 @@ to use these entries'''
                             #     orbDict.update(cofTerms)
                             #     orbDict.update({'Ne':[float(orbs[orb]['Ne']),False]})
                             #     data['Deformations'][Ids[indx]].append([orb,orbDict])
-                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Y','UVmat':np.eye(3),
+                data['Deformations'][-Ids[indx]] = {'U':'X','V':'Y','UVmat':np.eye(3),'PtGrp':'1',
                     'MUV':"A: X'=U, Y'=(UxV)xU & Z'=UxV",'Radial':radial,'fxchoice':fxchoice}
         dlg.Destroy()
         if not len(indxes):
@@ -9155,7 +9200,7 @@ to use these entries'''
         for name in copyNames:
             if name not in sourceDict: continue
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
                 'Copy phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -9206,7 +9251,7 @@ to use these entries'''
         if not keyList:
             G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy phase/histogram flags\nfrom '+hist[5:][:35],
                 'Copy phase/hist flags', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -9274,7 +9319,7 @@ to use these entries'''
         for parm in selectedItems:
             if parm not in sourceDict: continue
             copyDict[parm] = copy.deepcopy(sourceDict[parm])
-        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
             'Copy selected phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -13006,6 +13051,7 @@ tab, use Operations->"Pawley create")''')
         elif text == 'RMC':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.FRMCMenu)
             G2rmcG.UpdateRMC(G2frame,data)
+            G2rmcG.UpdateRMC(G2frame,data)  #TODO: apparently needs to be done twice to get a working GUI. Find a better fix.
         elif text == 'ISODISTORT':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ISODData)
             G2phsG2.UpdateISODISTORT(G2frame,data)
@@ -13120,8 +13166,8 @@ tab, use Operations->"Pawley create")''')
         # Dysnomia (MEM)
         if data['General']['doDysnomia']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MEMMenu)
-            G2frame.Bind(wx.EVT_MENU,OnLoadDysnomia,id=G2G.wxID_LOADDYSNOMIA)
-            G2frame.Bind(wx.EVT_MENU,OnSaveDysnomia,id=G2G.wxID_SAVEDYSNOMIA)
+            #G2frame.Bind(wx.EVT_MENU,OnLoadDysnomia,id=G2G.wxID_LOADDYSNOMIA)
+            #G2frame.Bind(wx.EVT_MENU,OnSaveDysnomia,id=G2G.wxID_SAVEDYSNOMIA)
             G2frame.Bind(wx.EVT_MENU,OnRunDysnomia,id=G2G.wxID_RUNDYSNOMIA)
         # Stacking faults
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.LayerData)

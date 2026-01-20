@@ -46,7 +46,7 @@ def test_refine():
     phase0 = gpx.add_phase(dataloc("PbSO4-Wyckoff.cif"),
                                phasename="PbSO4", histograms=[h1,h2])
     gpx.set_Controls('cycles', 0)
-    gpx.refine()
+    gpx.refine(makeBack=True)
     testR('Before fitting',96.681098,99.748994)
     # 
     #h1.set_refinements({'Limits': [16.,158.4]})
@@ -57,22 +57,31 @@ def test_refine():
     gpx.set_Controls('cycles', 3)  # also gains ~x1.5 in speed
     h1.set_refinements({"Background": { "no. coeffs": 6, "refine": True }})
     h2.set_refinements({"Background": { "no. coeffs": 3, "refine": True }})
-    gpx.refine()
+    gpx.refine(makeBack=True)
     testR('Fit scale & bkg',45.811562,17.864834)
     #
     phase0.set_refinements({'Cell':True})
     phase0.set_HAP_refinements({'HStrain':True},[h2])
-    gpx.refine()
+    gpx.refine(makeBack=True)
     testR('Fit cells',32.475886, 15.02412)
     #
     phase0.set_HAP_refinements({'Mustrain':{'refine':True}},[h1])
+    #gpx.refine(makeBack=True)
+    #msg = '?'
+    #print(f"*** {msg}: Rwp(h1)={h1.residuals['wR']:.5f}, Rwp(h2)={h2.residuals['wR']:.5f}")
     #phase0.set_HAP_refinements({'Size':{'refine':True}},[h1])
     h1.set_refinements({"Sample Parameters": {"Shift": True}})
+    #gpx.refine(makeBack=True)
+    #print(f"*** {msg}: Rwp(h1)={h1.residuals['wR']:.5f}, Rwp(h2)={h2.residuals['wR']:.5f}")
     h2.set_refinements({"Sample Parameters":["DisplaceX","DisplaceY"]})
+    #gpx.refine(makeBack=True)
+    #print(f"*** {msg}: Rwp(h1)={h1.residuals['wR']:.5f}, Rwp(h2)={h2.residuals['wR']:.5f}")
     phase0.set_refinements({"Atoms":{"all":"XU"}})
-    gpx.refine()
+    #gpx.refine(makeBack=True)
+    #print(f"*** {msg}: Rwp(h1)={h1.residuals['wR']:.5f}, Rwp(h2)={h2.residuals['wR']:.5f}")
+    gpx.refine(makeBack=True)
     testR('add Mustrain, Shift, Displace[XY], atomic X & Uiso',
-              13.407161,  6.360408)
+              13.40599,  6.36131)
     #
     #h1.set_refinements({'Instrument Parameters': ['U', 'V', 'W']})
     #h2.set_refinements({'Instrument Parameters': ['U', 'V', 'W']})
@@ -81,12 +90,12 @@ def test_refine():
     # change to Spherical Harmonics, order=2 for the 1st histogram & refine
     phase0.HAPvalue('PO',2,[h1])
     phase0.set_HAP_refinements({"Pref.Ori.":True})
-    gpx.refine()
+    gpx.refine(makeBack=True)
     POdict = phase0.HAPvalue('PO',targethistlist=[h1])[5]
     print('Spherical harmonics values:',POdict)
     npt.assert_allclose((POdict['C(2,0)'],POdict['C(2,2)']),
                             [0.127404, 0.09406], rtol=0.001)
-    testR('add PO',13.166705,  6.381183)
+    testR('add PO',13.16483,  6.38230)
     #
     print('OK')
     

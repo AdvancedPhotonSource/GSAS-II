@@ -3269,5 +3269,5 @@ UniqueCellByLaue = [
 cellAlbl = ('a','b','c', 'alpha', 'beta', 'gamma')
 'ASCII labels for a, b, c, alpha, beta, gamma'
 
-cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3')
+cellUlbl = ('a','b','c','\u03B1','\u03B2','\u03B3')
 'unicode labels for a, b, c, alpha, beta, gamma'

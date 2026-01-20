@@ -1637,7 +1637,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
         pfx = str(pId)+'::'
         Deformations = PhaseData[name].get('Deformations',[])
         FFtable = G2el.GetFFtable(General['AtomTypes'])
-        EFtable = G2el.GetEFFtable(General['AtomTypes'])
+        ElTypes = [G2el.StripValence(elem) for elem in General['AtomTypes']]
+        if 'D' in ElTypes or 'T' in ElTypes: ElTypes.append('H')  # D & T are ignored
+        EFtable = G2el.GetEFFtable(ElTypes)
         BLtable = G2el.GetBLtable(General)
         FFtables.update(FFtable)
         EFtables.update(EFtable)

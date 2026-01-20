@@ -332,7 +332,7 @@ def UpdateDeformation(G2frame,data,AtdId):
                 Obj.SetValue(deformationData[-dId]['V'])
                 G2G.G2MessageBox(G2frame,'ERROR: V-vector zero or parallel to U','Invalid vector choice')
                 return
-            if nl.det(UVmat) < 0.:  #ensure right hand
+            if nl.det(UVmat) < 0.:  #insure right hand
                 UVmat *= -1.
             deformationData[-dId]['V'] =  Obj.GetValue()
             data['Deformations'][-dId]['UVmat'] = UVmat
@@ -343,7 +343,7 @@ def UpdateDeformation(G2frame,data,AtdId):
         wx.CallAfter(UpdateDeformation,G2frame,data,dId)
         
     def Kappa(deformation,orbSizer,dId,orb,kname,Indx):
-        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][kname],0,nDig=(8,3),xmin=0.5,xmax=1.5))
+        orbSizer.Add(G2G.ValidatedTxtCtrl(deformation,orb[1][kname],0,nDig=(8,3),xmin=0.5,xmax=3.0))
         Tcheck = wx.CheckBox(deformation,-1,'Refine?')
         Tcheck.SetValue(orb[1][kname][1])
         Tcheck.Bind(wx.EVT_CHECKBOX,OnDeformRef)
@@ -618,6 +618,7 @@ def UpdateDeformation(G2frame,data,AtdId):
                                 for i in range(nB): orbSizer.Add((5,5),0)
                         Dsizer(deformation,orbSizer,Names,dId,orb,Indx)
         mainSizer.Add(orbSizer)    
+    G2frame.GetStatusBar().SetStatusText('On plot: RGB = XYZ',1)
 
     G2phsG.SetPhaseWindow(deformation,mainSizer)
 
@@ -865,7 +866,7 @@ def UpdateISODISTORT(G2frame,data,Scroll=0):
         txt.Wrap(500)
         mainSizer.Add(txt)
         mainSizer.Add(wx.StaticText(G2frame.ISODIST,label=
-u''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
+''' The 2nd column below shows the last saved mode values. The 3rd && 4th columns will set the
  display mode values. The positions in the Atoms and Draw Atoms tabs, as well as the atom
  positions shown in the Plot Window are changed to reflect the display mode values. The
  range of the slider corresponds to making a maximum atomic displacement between -2 && +2 \u212B.'''))
@@ -1100,7 +1101,7 @@ def UpdateLayerData(G2frame,data,Scroll=0):
         flags = Layers['Width'][1]
         widthSizer = wx.BoxSizer(wx.HORIZONTAL)
         for i in range(2):
-            widthSizer.Add(wx.StaticText(layerData,label=u' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
+            widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
             widthVal = G2G.ValidatedTxtCtrl(layerData,Layers['Width'][0],i,nDig=(10,3),xmin=0.005,xmax=1.0)
             widthSizer.Add(widthVal,0,WACV)
             widthRef = wx.CheckBox(layerData,label='Refine?')

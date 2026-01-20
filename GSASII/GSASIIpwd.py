@@ -4918,7 +4918,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             cid = str(lay)+';'
             depth[ilay] = parmDict[cid+'Thick']
             sigma[ilay] = parmDict[cid+'Rough']
-            if parmDict[cid+'Name'] == u'unit scatter':
+            if parmDict[cid+'Name'] == 'unit scatter':
                 rho[ilay] = parmDict[cid+'DenMul']
                 irho[ilay] = parmDict[cid+'iDenMul']
             elif 'vacuum' != parmDict[cid+'Name']:

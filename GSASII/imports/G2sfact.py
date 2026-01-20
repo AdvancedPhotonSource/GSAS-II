@@ -2,7 +2,6 @@
 '''Classes to read single crystal reflection files in formats used by:
 Shelx, Jana, REMOS, TOPAS (SNS), HB-3A (HIFR)
 '''
-from __future__ import division, print_function
 import sys
 import numpy as np
 from .. import GSASIIobj as G2obj
@@ -124,8 +123,8 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'HKLF 4'
             longFormatName = 'Shelx HKLF 4 [hkl, Fo2, sig(Fo2)] Structure factor text file'
         else:
-            formatName = u'Shelx HKLF 4 F\u00b2'
-            longFormatName = u'Shelx HKLF 4 [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
+            formatName = 'Shelx HKLF 4 F\u00b2'
+            longFormatName = 'Shelx HKLF 4 [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -177,8 +176,8 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'Shelx HKLF 5 F2 Tw/Incom'
             longFormatName = 'Shelx HKLF 5 [hklm, Fo2, sig(Fo2), Tind] Twin/incommensurate structure factor text file'
         else:
-            formatName = u'Shelx HKLF 5 F\u00b2 Tw/Incom'
-            longFormatName = u'Shelx HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
+            formatName = 'Shelx HKLF 5 F\u00b2 Tw/Incom'
+            longFormatName = 'Shelx HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -275,8 +274,8 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'Shelx HKLF 6 F2 Tw/Incom'
             longFormatName = 'Shelx HKLF 6 [hklm, Fo2, sig(Fo2), Tind] Twin/incommensurate structure factor text file'
         else:
-            formatName = u'Shelx HKLF 6 F\u00b2 Tw/Incom'
-            longFormatName = u'Shelx HKLF 6 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
+            formatName = 'Shelx HKLF 6 F\u00b2 Tw/Incom'
+            longFormatName = 'Shelx HKLF 6 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hk6','.HK6'),
             strictExtension=False,
@@ -361,17 +360,77 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
         except:
             return False
 
+class SHELX4ED_ReaderClass(G2obj.ImportStructFactor):
+    'Routines to import F**2, sig(F**2), exp# & Z-pos reflections from a Shelx HKLF 4 microED file'
+    def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            formatName = 'HKLF 4ed'
+            longFormatName = 'Shelx HKLF 4ed [hkl, Fo2, sig(Fo2), exp#, Z-pos] Structure factor text file'
+        else:
+            formatName = 'Shelx HKLF 4ed F\u00b2'
+            longFormatName = 'Shelx HKLF 4ed [hkl, Fo\u00b2, sig(Fo\u00b2), exp#, Z-pos] Structure factor text file'
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.hkl','.HKL'),
+            strictExtension=False,
+            formatName=formatName,
+            longFormatName=longFormatName)
+
+    def ContentsValidator(self, filename):
+        'Make sure file contains the expected columns on numbers'
+        return True
+#        return ColumnValidator(self, filepointer)
+
+    def Reader(self,filename, ParentFrame=None, **unused):
+        'Read the file'
+        try:
+            fp = open(filename,'r')
+            for line,S in enumerate(fp):
+                self.errors = '  Error reading line '+str(line+1)
+                if S[0] == '#': continue       #ignore comments, if any
+                try:   # use a simple split if possible
+                    items = S.split()
+                    if len(items) > 5:
+                        h,k,l,Fo,sigFo,Nexp,Zpos = items[:7]
+                    else:
+                        h,k,l,Fo,sigFo = items[:5]
+                        Nexp = '0'
+                        Zpos = '0.'
+                    h,k,l = [int(h),int(k),int(l)]
+                except: # but sometimes if no space between k & F
+                        # need to use some fixed formatting
+                    h,k,l = S[:12].split()
+                    h,k,l = [int(h),int(k),int(l)]
+                    Fo,sigFo = S[12:].split()[:2]
+                if not any([h,k,l]):
+                    break
+                Fo = float(Fo)
+                sigFo = float(sigFo)
+                Nexp = int(Nexp)
+                Zpos = float(Zpos)
+                # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,1,Nexp,Zpos])
+                #self.RefDict['FF'].append({}) # now done in OnImportSfact
+            fp.close()
+            self.errors = 'Error after reading reflections (unexpected!)'
+            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+            self.RefDict['Type'] = 'SEC'
+            self.RefDict['Super'] = 0
+            self.UpdateParameters(Type='SEC',Wave=0.02851) # histogram type
+            return True
+        except:
+            return False
+            
 class M90_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a JANA M90/M91 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
             longFormatName = 'JANA [hkl, Fo2, sig(Fo2)] Structure factor text file'
         else:
-            longFormatName = u'JANA [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
+            longFormatName = 'JANA [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.m90','.m91'),
             strictExtension=False,
-            formatName = u'JANA M90/1',
+            formatName = 'JANA M90/1',
             longFormatName = longFormatName
             )
         self.Super = 0
@@ -458,8 +517,8 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'Neutron SNS TOF HKL F2'
             longFormatName = 'Neutron SNS TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
         else:
-            formatName = u'Neutron SNS TOF HKL F\u00b2'
-            longFormatName = u'Neutron SNS TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            formatName = 'Neutron SNS TOF HKL F\u00b2'
+            longFormatName = 'Neutron SNS TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -538,8 +597,8 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
             formatName = 'Neutron TOF JANA2000 F2'
             longFormatName = 'Neutron TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
         else:
-            formatName = u'Neutron TOF JANA2000 F\u00b2'
-            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            formatName = 'Neutron TOF JANA2000 F\u00b2'
+            longFormatName = 'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,
@@ -608,11 +667,11 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import neutron CW F**2, sig(F**2) reflections from a NIST hb3a int file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = u'Neutron HFIR HB-3A  CW HKL F2'
-            longFormatName = u'Neutron HIFR HB-3A  CW HKL [hkl, Fo2, sig(Fo2),...] 5 column Structure factor text file'
+            formatName = 'Neutron HFIR HB-3A  CW HKL F2'
+            longFormatName = 'Neutron HIFR HB-3A  CW HKL [hkl, Fo2, sig(Fo2),...] 5 column Structure factor text file'
         else:
-            formatName = u'Neutron NIST HIFR  CW HKL F\u00b2'
-            longFormatName = u'Neutron HFIR HB-3A  CW HKL [hkl, Fo\u00b2, sig(Fo\u00b2),...] 5 column Structure factor text file'
+            formatName = 'Neutron NIST HIFR  CW HKL F\u00b2'
+            longFormatName = 'Neutron HFIR HB-3A  CW HKL [hkl, Fo\u00b2, sig(Fo\u00b2),...] 5 column Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,

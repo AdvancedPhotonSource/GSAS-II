@@ -5,7 +5,6 @@ Classes and routines defined in :mod:`GSASIIplot` follow.
 # Note that documentation for GSASIIplot.py has been moved
 # to file docs/source/GSASIIplot.rst
 
-from __future__ import division, print_function
 import copy
 import math
 import sys
@@ -1479,7 +1478,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     '''3D Structure factor plotting package - displays reflections as spots proportional
         to F, F**2, etc. as requested as 3D array via pyOpenGl
     '''
-    global ifBox
+    global ifBox,HKL
     ifBox = False
     def OnKeyBox(event):
         mode = cb.GetValue()
@@ -1567,27 +1566,49 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         elif key in 'R':
             Data['Shell'][1] = not Data['Shell'][1]
         elif key in ['+','=']:
-            if Data['Shell'][1]:
-                Data['Shell'][0] += 0.1
+            if 'microED' in Data and Data['microED']['Ztilt'][0]:
+                Data['microED']['Ztilt'][1] += 1
             else:
-                Data['Scale'] *= 1.25
+                if Data['Shell'][1]:
+                    Data['Shell'][0] += 0.1
+                else:
+                    Data['Scale'] *= 1.25
         elif key == '-':
-            if Data['Shell'][1]:
-                Data['Shell'][0] = max(Data['Shell'][0]-0.1,0.0)
+            if 'microED' in Data and Data['microED']['Ztilt'][0]:
+                Data['microED']['Ztilt'][1] -= 1
             else:
-                Data['Scale'] /= 1.25
+                if Data['Shell'][1]:
+                    Data['Shell'][0] = max(Data['Shell'][0]-0.1,0.0)
+                else:
+                    Data['Scale'] /= 1.25
         elif key == 'P':
-            vec = viewChoice[Data['viewKey']][0]
-            drawingData['viewPoint'][0] += vec
+            if 'microED' in Data and Data['microED']['Nexp'][0]:
+                Data['microED']['Nexp'][1] += 1
+                Data['microED']['Nexp'][1] = min(Data['microED']['Nexp'][1],np.max(hklRef.T[12]))
+                Data['Scale'] = 1.0
+            else:
+                vec = viewChoice[Data['viewKey']][0]
+                drawingData['viewPoint'][0] += vec
         elif key == 'M':
-            vec = viewChoice[Data['viewKey']][0]
-            drawingData['viewPoint'][0] -= vec
+            if 'microED' in Data and Data['microED']['Nexp'][0]:
+                Data['microED']['Nexp'][1] -= 1
+                Data['microED']['Nexp'][1] = max(Data['microED']['Nexp'][1],0)
+                Data['Scale'] = 1.0
+            else:
+                vec = viewChoice[Data['viewKey']][0]
+                drawingData['viewPoint'][0] -= vec
         elif key == '0':
             drawingData['viewPoint'][0] = np.array([0,0,0])
             Data['Scale'] = 1.0
             Data['Shell'][0] = 0.0
         elif key == 'I':
             Data['Iscale'] = not Data['Iscale']
+        elif key == 'E':
+            if 'microED' in Data:
+                Data['microED']['Nexp'][0] = not Data['microED']['Nexp'][0]
+        elif key == 'T':
+            if 'microED' in Data:
+                Data['microED']['Ztilt'][0] = not Data['microED']['Ztilt'][0]
         elif key in Choice:
             Data['Type'] = Choice[key]
         Draw('key')
@@ -1616,22 +1637,35 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
+    Yl = np.array([255,255,0])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]],
         [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]],
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     uColors = [Rd,Gr,Bl, Wt,Wt,Wt, Wt,Wt,Wt, Wt,Wt,Wt]
+    dFmin = np.min(hklRef.T[8+Super]-hklRef.T[9+Super])
+    dFmax = np.max(hklRef.T[8+Super]-hklRef.T[9+Super])
 
     def FillHKLRC():
+        global HKL
         sumFo2 = 0.
         sumDF2 = 0.
         sumFo = 0.
         sumDF = 0.
-        R = np.zeros(len(hklRef))
+        R = []
         C = []
         HKL = []
         for i,refl in enumerate(hklRef):
+            if Data.get('dType','') == 'SEC' and hklRef.shape[1] > 12:
+                Nexp = Data['microED']['Nexp']
+                Ztilt = Data['microED']['Ztilt']
+                if Nexp[0]:
+                    if refl[12] != Nexp[1]:
+                        continue
+                if Ztilt[0]:
+                    if round(refl[13]) != Ztilt[1]:
+                        continue
             if Data['Shell'][1]:
                 if not (Data['Shell'][0] <= 0.5/refl[4+Super] <= Data['Shell'][0]+.1):
                     continue
@@ -1652,60 +1686,77 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             else:
                 HKL.append(H)
             if Data['Type'] == 'Unit':
-                R[i] = 0.1
+                R.append(0.1)
                 C.append(Gr)
             elif Data['Type'] == 'Fosq':
                 if Fosq > 0:
-                    R[i] = Fosq
+                    R.append(Fosq)
                     C.append(Gr)
                 else:
-                    R[i] = -Fosq
+                    R.append(-Fosq)
                     C.append(Rd)
             elif Data['Type'] == 'Fo':
                 if Fosq > 0:
-                    R[i] = np.sqrt(Fosq)
+                    R.append(np.sqrt(Fosq))
                     C.append(Gr)
                 else:
-                    R[i] = np.sqrt(-Fosq)
+                    R.append(np.sqrt(-Fosq))
                     C.append(Rd)
             elif Data['Type'] == 'dFsq/sig':
                 dFsig = (Fosq-Fcsq)/sig
                 if dFsig > 0:
-                    R[i] = dFsig
-                    C.append(Gr)
+                    R.append(Fosq)
+                    dFsig = min(10.,dFsig)
+                    dw = int(255.*(1.0-(dFsig/10.)))
+                    color = np.array([dw,255,0])
                 else:
-                    R[i] = -dFsig
-                    C.append(Rd)
+                    R.append(Fosq)
+                    dFsig = max(-10.,dFsig)
+                    dw = int(255.*(1.0+(dFsig/10.)))
+                    color = np.array([255,dw,0])
+                C.append(color)
             elif Data['Type'] == 'dFsq':
                 dF = Fosq-Fcsq
                 if dF > 0:
-                    R[i] = dF
-                    C.append(Gr)
+                    R.append(Fosq)
+                    dw = int(255.*(1.0-(dF/-dFmin)))
+                    color = np.array([dw,255,0])
                 else:
-                    R[i] = -dF
-                    C.append(Rd)
-        R /= np.max(R)
-        R *= Data['Scale']
-        R = np.where(R<1.e-5,1.e-5,R)
-        if Data['Iscale']:
-            R = np.where(R<=1.,R,1.)
-            C = np.array(C)
-            C = (C.T*R).T
-            R = np.ones_like(R)*0.05
-        RF = 100.
-        RF2 = 100.
-        if sumFo and sumDF:
-            RF = 100.*sumDF/sumFo
-            RF2 = 100.*sumDF2/sumFo2
-        return HKL,zip(list(R),C),RF,RF2
+                    R.append(Fosq)
+                    dw = int(255.*(1.0+(dF/dFmax)))
+                    color = np.array([255,dw,0])
+                C.append(color)
+        if len(R):
+            R = np.array(R)
+            if Data['Type'] == 'dFsq/sig':
+#                R /= 20.
+                R /= np.max(np.array(R))
+            else:
+                R /= np.max(np.array(R))
+            R *= Data['Scale']
+            R = np.where(R<1.e-5,1.e-5,R)
+            if Data['Iscale']:
+                R = np.where(R<=1.,R,1.)
+                C = np.array(C)
+                C = (C.T*R).T
+                R = np.ones_like(R)*0.1
+            RF = 100.
+            RF2 = 100.
+            if sumFo and sumDF:
+                RF = 100.*sumDF/sumFo
+                RF2 = 100.*sumDF2/sumFo2
+            return HKL,zip(list(R),C),RF,RF2
+        else:
+            return HKL,[],-100.,-100.
 
     def GetTruePosition(xy):
+        global HKL
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         Proj = GL.glGetDoublev(GL.GL_PROJECTION_MATRIX)
         Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
         Zmax = 1.
         xy = [int(xy[0]),int(View[3]-xy[1])]
-        for i,ref in enumerate(hklRef):
+        for i,ref in enumerate(HKL):
             h,k,l = ref[:3]
             try:
                 X,Y,Z = GLU.gluProject(h,k,l,Model,Proj,View)
@@ -1715,7 +1766,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                     return [int(h),int(k),int(l)]
             except ValueError:
                 return [int(h),int(k),int(l)]
-
 
     def SetTranslation(newxy):
 #first get translation vector in screen coords.
@@ -1825,12 +1875,14 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         except:
             if GSASIIpath.GetConfigValue('debug'): print('depth test failed')
             return
-#        GL.glShadeModel(GL.GL_SMOOTH)
+        GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)
         GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,1])
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_SPECULAR,[1,1,1,1])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_POSITION,[0,0,1,1])
 
     def RenderBox(x,y,z):
         GL.glEnable(GL.GL_COLOR_MATERIAL)
@@ -1909,13 +1961,20 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 
         HKL,RC,RF,RF2 = FillHKLRC()
         if Data['Zone']:
+            vX,vY,vZ = list(drawingData['viewPoint'][0])
             G2frame.G2plotNB.status.SetStatusText   \
-                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% layer %s'%    \
-                (Data['Type'],Name,len(HKL),RF,super2,RF2,str(list(drawingData['viewPoint'][0]))),1)
+                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% layer %d %d %d'%    \
+                (Data['Type'],Name,len(HKL),RF,super2,RF2,vX,vY,vZ),1)
         elif Data['Shell'][1]:
             G2frame.G2plotNB.status.SetStatusText   \
                 ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% shell %.1f'%    \
                 (Data['Type'],Name,len(HKL),RF,super2,RF2,Data['Shell'][0]),1)
+        elif 'microED' in Data and Data['microED']['Nexp'][0]:
+            Nexp = Data['microED']['Nexp'][1]
+            Ztilt = Data['microED']['Ztilt'][1]
+            G2frame.G2plotNB.status.SetStatusText   \
+                ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%% Nexp %d Ztilt %d'%    \
+                (Data['Type'],Name,len(HKL),RF,super2,RF2,Nexp,Ztilt),1)
         else:
             G2frame.G2plotNB.status.SetStatusText   \
                 ('Plot type = %s for %s; N = %d, RF = %6.2f%%, RF%s = %6.2f%%'%     \
@@ -1964,9 +2023,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
+    
     choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l','r: plot radial shell',
     'z: zero zone toggle','p: increment layer','m: decrement layer','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
     'f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
+    if Data.get('dType','') == 'SEC' and hklRef.shape[1] > 12:
+        choice += ['e: toggle Nexp','t: toggle Ztilt']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice,
                          size=(G2frame.G2plotNB.status.firstLen,-1))
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
@@ -6865,6 +6927,34 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
 
+    def RenderTriplet(orig,Rmat,Bmat):
+        '''draw an axes triplet located at the origin of a deformation atom
+        and with the x, y & z axes drawn as red, green and blue.
+        '''
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.7,.7,.7,1])
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(3)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glPushMatrix()
+        GL.glTranslate(*orig)
+        GL.glBegin(GL.GL_LINES)
+        lines = np.inner(np.inner(np.eye(3),Rmat),Bmat)*.75
+        colors = [Rd,Gr,Bl]
+        # lines along axial directions
+        for line,color in zip(lines,colors):
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(np.zeros(3))
+            GL.glVertex3fv(line)
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
+
     def RenderPlane(plane,color):
         fade = list(color) + [.25,]
         GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,fade)
@@ -7469,11 +7559,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                 atcolor = atColor*255
                             defParms = deformationData[atom[ci]]
                             SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
-                            SGM = np.array(G2spc.GetOpFromCode(atom[cs-1],SGData)[0])
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
+                            SGM = np.array(G2spc.GetOpFromCode(atom[cs-1],SGData)[0])
                             SGC = nl.inv(G2lat.CrysM2CartM(Amat,Bmat,SGM))
                             UVMat = np.inner(defCtrls['UVmat'],SGC.T)
+                            UVMat1 = np.inner(defCtrls['UVmat'].T,SGC.T).T
+                            RenderTriplet([x,y,z],UVMat1,Bmat)
                             Npsi,Ngam = 60,30 
                             PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                             PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 incl

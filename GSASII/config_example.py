@@ -33,6 +33,8 @@ For example::
     float_config = 0.0
     string_config = None (or)
     string_config = 'value'
+
+Below are the configuration settings that can be used in GSAS-II. 
 '''
 
 debug = False
@@ -343,4 +345,11 @@ CINEMA_DS_directory=None
 '''Location where CINEMA: Debye-Scherrer is installed. This is the location 
 where the index.html file is located. If not set, if the export for this 
 is used, you will be asked to supply the directory, which will be saved here.
+'''
+
+LogAllVars = False
+'''When True, up to 50 refined parameters will be saved after each 
+refinement run in the GSAS-II Notebook tree entry. This setting will 
+be ignored if individual variables are set to be logged in the 
+Calculate/View LS Parameters window. 
 '''

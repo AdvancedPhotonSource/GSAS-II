@@ -5560,10 +5560,10 @@ No: least-squares fitting starts with previously fit structure factors.'''
             rtext = 'LS Refinement: Rw = %.3f%%, GOF = %.2f, Nobs = %d, Nvar = %d'%(Rvals['Rwp'],Rvals['GOF'],Rvals['Nobs'],Rvals['Nvars'])
             lamMax = Rvals.get('lamMax',0.001)
             lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
-            text = 'Detailed results are in ' + lst + '.lst\n'
+            text = f'Detailed results are in file {os.path.split(lst)[1]}.lst in directory {os.path.split(lst)[0]}\n'
             if 'GOF0' in Rvals and 'GOF' in Rvals:
-                text += '\nFinal Reduced Chi^2: {:.3f} (before ref: {:.3f})\n'.format(
-                    Rvals['GOF']**2,Rvals['GOF0']**2)
+                text += f"\nFinal Reduced Chi^2: {Rvals['GOF']**2:.3f}"
+                text += f"\n   (before refinement: {Rvals['GOF0']**2:.3f})\n"
             if Rvals.get('Max shft/sig') is not None:
                 rtext += ', Max delt/sig = {:.3f}'.format(Rvals['Max shft/sig'])
                 text += '\nMax shift/sigma={:.3f}\n'.format(Rvals['Max shft/sig'])
@@ -5571,22 +5571,50 @@ No: least-squares fitting starts with previously fit structure factors.'''
             if 'Aborted' in Rvals:
                 text += '\nWARNING: Minimizer halted because chi**2 increased\n'
             if lamMax >= 10.:
-                text += '\nWARNING: Steepest descents dominates;'+   \
-                ' minimum may not have been reached or result may be false minimum.'+  \
-                ' You should reconsider which parameters you refine. Check covariance matrix.\n'
-            text += '\nLoad new result?'
-            dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
-            dlg2.CenterOnParent()
-            try:
-                if dlg2.ShowModal() == wx.ID_OK:
-                    self.reloadFromGPX(rtext,Rvals)
-                    G2IO.LogCellChanges(self)
-                if refPlotUpdate:
-                    refPlotUpdate({},restore=True)
-                    refPlotUpdate = None
-                self.ResetPlots()
-            finally:
-                dlg2.Destroy()
+                text += ('\nWARNING: Marquardt factor raised to point where steepest descents dominates fitting;'+
+                ' minimum may not have been reached or your result may be a false minimum.'+
+                ' You should reconsider which parameters you refine: check covariance matrix.\n')
+            #breakpoint()
+            tbl = []              # assemble a list of varied parameters
+            for i in Rvals.get('parmDictAfterFit',{}):
+                if i not in Rvals['parmDictBeforeFit']: continue
+                if i not in Rvals['parmDictSigDict']: continue
+                try: # make ure we have valid numbers
+                    diff = ((Rvals['parmDictAfterFit'][i]-
+                                   Rvals['parmDictBeforeFit'][i])
+                                   / Rvals['parmDictSigDict'][i])
+                except:
+                    continue
+                txt = '?'
+                v = G2obj.getVarDescr(i)
+                if v is not None and v[-1] is not None:
+                    txt = G2obj.fmtVarDescr(i)
+                tbl.append((i,Rvals['parmDictBeforeFit'][i],Rvals['parmDictAfterFit'][i],
+                                Rvals['parmDictSigDict'].get(i),txt))
+            lbl = f'Refinement results, Rw={Rw:.3f}'
+            ans = G2G.G2AfterFit(self,text,lbl,tbl)  # this replaces the next 8 lines
+            if ans == wx.ID_OK:  # refinement has been accepted save, log & display
+                self.reloadFromGPX(rtext,Rvals)
+                G2IO.LogCellChanges(self)
+                # log parameters into notebook
+                txt = ''
+                if Controls.get('LoggedVars') and 'parmDictAfterFit' in Rvals:
+                    txt = ''
+                    for i in sorted(Controls['LoggedVars']):
+                        if i not in Rvals['parmDictAfterFit']: continue
+                        if txt: txt += ', '
+                        txt += (f'{i} : {Rvals["parmDictAfterFit"][i]:.7g}')
+                elif GSASIIpath.GetConfigValue('LogAllVars') and 'parmDictAfterFit' in Rvals:
+                    txt = ''
+                    for c,i in enumerate(Rvals['parmDictSigDict']):
+                        if i not in Rvals['parmDictAfterFit']: continue
+                        if txt: txt += ', '
+                        txt += (f'{i} : {Rvals["parmDictAfterFit"][i]:.7g}')
+                if txt: self.AddToNotebook(txt,'VALS',False)
+            if refPlotUpdate:  # restore plot if liveplot in use
+                refPlotUpdate({},restore=True)
+                refPlotUpdate = None
+            self.ResetPlots()  # delete any plots that have not been updated
         elif 'psing' in Rvals:
             if 'msg' in Rvals:
                 msg = 'Refinement results:\n\n'
@@ -7306,9 +7334,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.MEMMenu.Append(menu=wx.Menu(title=''),title='Select tab')
             self.MEMDataEdit = wx.Menu(title='')
             self.MEMMenu.Append(menu=self.MEMDataEdit, title='Operations')
-            self.MEMDataEdit.Append(G2G.wxID_LOADDYSNOMIA,'Load from Dysnomia file','Load MEM info from Dysnomia file')
-            self.MEMDataEdit.Append(G2G.wxID_SAVEDYSNOMIA,'Save Dysnomia file','Save MEM info in Dysnomia file')
-            self.MEMDataEdit.Append(G2G.wxID_RUNDYSNOMIA,'Run Dysonmia','Run Dysnomia to make new Fobs map')
+            #self.MEMDataEdit.Append(G2G.wxID_LOADDYSNOMIA,'Load from Dysnomia file','Load MEM info from Dysnomia file')
+            #self.MEMDataEdit.Append(G2G.wxID_SAVEDYSNOMIA,'Save Dysnomia file','Save MEM info in Dysnomia file')
+            self.MEMDataEdit.Append(G2G.wxID_RUNDYSNOMIA,'Run Dysnomia','Run Dysnomia to make new Fobs map')
             self.PostfillDataMenu()
 
             #Phase / fullrmc & RMCprofile (Reverse Monte Carlo method) tab
@@ -7552,7 +7580,6 @@ def readFromFile(reader):
         return f'from {reader.formatName} file'
 
 ####  Notebook Tree Item editor ##############################################
-NBinfo = {}
 def UpdateNotebook(G2frame,data):
     '''Called when the data tree notebook entry is selected. Allows for
     editing of the text in that tree entry
@@ -7577,42 +7604,69 @@ other than being included in the Notebook section of the project file.''')
         filename = os.path.join(G2frame.dirname,filename)
         with open(filename,'w') as fp:
             fp.write(textBox.GetText())
-        print(f'Notebook contents written into {filename}')
+        G2G.G2MessageBox(G2frame,
+                    f'Displayed notebook contents written into {filename}',
+                    'file written')
+
     def onPlotNotebook():
-        'Locate R values from the Notebook and plot them'
-        NBinfo['plotLbl']
-        if NBinfo['plotLbl']['GOF']:
-            target = 'GOF'
-        elif NBinfo['plotLbl']['Rw']:
-            target = 'Rw'
-        else:
-            G2frame.G2plotNB.Delete('fit results')
-            return
-        vals = []
-        for i,l in enumerate(data):
-            ls = l.split()
-            if len(ls) < 1: # empty line
-                continue
-            elif '[' not in ls[0] or '[REF]' in ls[0]:
-                if target not in l: continue
-                try:
-                    vals.append(float(l.split(target)[1].split(',')[0].replace('=','').replace('%','')))
-                except:
+        'Locate values from the Notebook and plot them'
+        if NBplotLbl['GOF'] or NBplotLbl['Rw']:
+            if NBplotLbl['GOF']:
+                target = 'GOF'
+            elif NBplotLbl['Rw']:
+                target = 'Rw'
+            vals = []
+            for i,l in enumerate(data):
+                ls = l.split()
+                if len(ls) < 1: # empty line
                     continue
-        Y = np.array(vals)
-        XY = [np.arange(len(Y)),Y]
-        G2plt.PlotXY(G2frame,[XY,],Title='fit results',labelX='seq',labelY=target,lines=True)
+                elif '[' not in ls[0] or '[REF]' in ls[0]:
+                    if target not in l: continue
+                    try:
+                        vals.append(float(l.split(target)[1].split(',')[0].replace('=','').replace('%','')))
+                    except:
+                        continue
+            X = np.arange(len(vals))
+            Y = np.array(vals)
+        else:
+            # find what we are plotting if not Rw or GOF
+            for i,j in NBplotLbl.items():
+                if j:
+                 target = i
+                 break
+            else:
+                target = 'none'
+            if target == 'none':
+                G2frame.G2plotNB.Delete('fit results')
+                return
+            pos,vals = G2G.findValsInNotebook(data,target)
+            X = np.array(pos)
+            Y = np.array(vals)
+        if len(Y) == 0:
+            G2G.G2MessageBox(G2frame,'There are no values to plot','No points')
+            return
+        elif len(Y) == 1:
+            G2G.G2MessageBox(G2frame,'There is only one value to plot','One point')
+            return
+        XY = [X,Y]
+        G2plt.PlotXY(G2frame,[XY,],Title='fit results',newPlot=True,
+                         labelX='seq',labelY=target,lines=True)
     ##### === UpdateNotebook starts here
-    filterLbls = ['all',
+    filterLbls = ['all', # must be 1st
                       'Timestamps','Refinement results','Variables',
                       'Comments','Charge flip','Fourier','Peak fit',
                       'Constraints','Restraints','Rigid Bodies',
-                      'Cell params','GSAS-II version #']
-    filterPrefix = ['',
+                      'Cell params','GSAS-II version #','Logged vars',
+                      '(clear)' # must be last
+                      ]
+    filterPrefix = ['',  # should match filterLbls
                         'TS', 'REF','VARS',
                         'CM', 'CF', 'FM', 'PF',
                         'CNSTR','RSTR','RB',
-                        'CEL','VER']
+                        'CEL','VER','VALS',
+                        ' ']
+    G2frame.G2plotNB.Delete('fit results') # clear any old plot since we
+                                           # start out with None selected
     cId = GetGPXtreeItemId(G2frame,G2frame.root, 'Controls')
     if cId:
         controls = G2frame.GPXtree.GetItemPyData(cId)
@@ -7643,17 +7697,43 @@ other than being included in the Notebook section of the project file.''')
     botSizer.Add(G2G.EnumSelector(parent,controls['Notebook'],
                          'order',['oldest-1st','newest-1st'],[False,True],
                          OnChange=onUpdateWindow))
-    controls['Notebook']['filterSel'] = controls['Notebook'].get(
-        'filterSel',[False]+(len(filterLbls)-1)*[True])
-    NBinfo['plotLbl'] = NBinfo.get('plotLbl',{'none':True,'Rw':False,'GOF':False})
-    for i in range(len(filterPrefix)-len(controls['Notebook']['filterSel'])):
-        controls['Notebook']['filterSel'] += [True]    # pad list if needed
+    # initize filter settings on 1st use
+    controls['Notebook']['filterSel'] = controls['Notebook'].get('filterSel',[])
+    # initialize if list has changed or this is new
+    if len(controls['Notebook']['filterSel']) != len(filterLbls):
+        controls['Notebook']['filterSel'] = [False]+(len(filterLbls)-1)*[True]
+        controls['Notebook']['filterSel'][filterPrefix.index('VER')] = False
+        controls['Notebook']['filterSel'][filterPrefix.index('VALS')] = False
+        controls['Notebook']['filterSel'][filterPrefix.index(' ')] = False
+    # set all if all selected
+    if controls['Notebook']['filterSel'][0]:
+        controls['Notebook']['filterSel'] = [True for i in controls['Notebook']['filterSel']]
+        controls['Notebook']['filterSel'][0] = False
+        controls['Notebook']['filterSel'][-1] = False
+    # reset all if (clear) selected
+    elif controls['Notebook']['filterSel'][-1]:
+        controls['Notebook']['filterSel'] = [False for i in controls['Notebook']['filterSel']]
+    # find recorded parameters
+    v = []
+    for l in data:
+        if '[VALS]' in l:
+            v += [i.split(' : ')[0].strip()  for i in l[6:].split(',') if i.strip()]
+        if '[CEL]' in l:
+            ph = l.split('Phase')[1].split()[0]
+            hst = l.split('Hist')[1].split(':')[0].strip()
+            vars = [i.split('=')[0] for i in l.split(':')[1].split()]
+            v += [f'{v}[p{ph}_h{hst}]' for v in vars]
+    plotable = ['Rw','GOF']
+    plotable += sorted(list(set(v)))
+    NBplotLbl = {'none':True}
+    NBplotLbl.update(dict.fromkeys(plotable,False))
     botSizer.Add((20,-1))
     fBtn = G2G.popupSelectorButton(parent,'Set filters',
-                        filterLbls,controls['Notebook']['filterSel'],
+                        filterLbls,
+                        controls['Notebook']['filterSel'],
                         OnChange=onUpdateWindow)
     botSizer.Add(fBtn,0,WACV)
-    fBtn = G2G.popupSelectorButton(parent,'Plot',choiceDict=NBinfo['plotLbl'],
+    fBtn = G2G.popupSelectorButton(parent,'Plot',choiceDict=NBplotLbl,
                         OnChange=onPlotNotebook)
     botSizer.Add((20,-1))
     botSizer.Add(fBtn,0,WACV)
@@ -7704,6 +7784,8 @@ other than being included in the Notebook section of the project file.''')
                 # indent all but timestamps
                 for l in line.strip().split('\n'):
                     if not first: textBox.AppendText("\n")
+                    if prefix == 'VALS':
+                        l = 'Values: '+l.replace(' : ','=')
                     textBox.AppendText('    '+l.strip())
                     first = False
             else:
@@ -8176,18 +8258,19 @@ def UpdatePWHKPlot(G2frame,kind,item):
         refList = data[1]['RefList']
         G2plt.Plot1DSngl(G2frame,newPlot=True,hklRef=refList,Super=Super,Title=phaseName)
 
-    def OnPlot3DHKL(event):
-        '''Plots in 3D reciprocal space with green dots proportional to F^2, etc. from single histogram'''
-        refList = data[1]['RefList']
-        FoMax = np.max(refList.T[8+Super])
-        Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
-        Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
-        Vpoint = np.array([int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))])
-        controls = {'Type' : 'Fosq','Iscale' : False,'HKLmax' : Hmax,'HKLmin' : Hmin,'Zone':False,'viewKey':'L',
-            'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
-            'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
-            'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
-        G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+    # def OnPlot3DHKL(event):
+    #     '''Plots in 3D reciprocal space with green dots proportional to F^2, etc. from single histogram'''
+    #     refList = data[1]['RefList']
+    #     FoMax = np.max(refList.T[8+Super])
+    #     Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+    #     Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+    #     Vpoint = np.array([int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))])
+    #     controls = {'Type' : 'Fosq','Iscale' : False,'HKLmax' : Hmax,'HKLmin' : Hmin,'Zone':False,'viewKey':'L',
+    #         'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
+    #         'microED':{'Nexp':[False,0],'Ztilt':[False,0]},
+    #         'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
+    #         'Scale':1.0,'oldxy':[],'viewDir':[0,0,1]},'Super':Super,'SuperVec':SuperVec}
+    #     G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
 
     def OnPlotAll3DHKL(event):
         '''Plots in 3D reciprocal space with green dots proportional to F^2, etc. from all SHKL histograms'''
@@ -8219,7 +8302,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
-        
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''
@@ -8255,11 +8337,14 @@ def UpdatePWHKPlot(G2frame,kind,item):
         dlg = wx.ProgressDialog('Build HKL dictonary','',len(refList)+1,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         HKLdict = {}
+        lenhkl = len(refList[0])
+        if lenhkl == 14+Super:  #remove extra columns from extended microED data
+            lenhkl -= 2
         for ih,hkl in enumerate(refList):
             if str(hkl[:3+Super]) not in HKLdict:
-                HKLdict[str(hkl[:3+Super])] = [hkl[:3+Super],[hkl[3+Super:],]]
+                HKLdict[str(hkl[:3+Super])] = [hkl[:3+Super],[hkl[3+Super:lenhkl],]]
             else:
-                HKLdict[str(hkl[:3+Super])][1].append(hkl[3+Super:])
+                HKLdict[str(hkl[:3+Super])][1].append(hkl[3+Super:lenhkl])
             dlg.Update(ih)
         dlg.Destroy()
         mergeRef = []
@@ -8275,7 +8360,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
             if Nhkl not in Nmerge:
                 Nmerge.update({Nhkl:[1,0],})
                 MaxN = max(MaxN,Nhkl)
-                
             else:
                 Nmerge[Nhkl][0] += 1
             newHKL = list(HKL[0])+list(HKL[1][0])
@@ -8476,7 +8560,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=G2G.wxID_PWDANALYSIS)
         G2frame.Bind(wx.EVT_MENU, OnMergeHKL, id=G2G.wxID_MERGEHKL)
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
-        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
+#        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
 #        G2frame.Bind(wx.EVT_MENU, OnPlotFoVsFc, id=G2G.wxID_FOVSFCPLOT)
         G2frame.Bind(wx.EVT_MENU, OnFixFsqFsq, id=G2G.wxID_FIXFSQSQDATA)
@@ -8674,9 +8758,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
             controls = Page.controls
             G2plt.Plot3DSngl(G2frame,newPlot=False,Data=controls,hklRef=refList,Title=phaseName)
         else:
-            controls = {'Type' : 'Fo','ifFc' : True,
+            controls = {'Type' : 'Fo','ifFc' : True,'dType':data[1]['Type'],
                 'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
                 'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
+                'microED':{'Nexp':[False,0],'Ztilt':[False,0]},
                 'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}
             G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList)
     G2frame.dataWindow.SetDataSize()

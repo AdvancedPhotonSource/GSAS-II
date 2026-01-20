@@ -498,12 +498,16 @@ with GSAS-II.
 
 At the request of the program authors, other programs that can be
 accessed within GSAS-II are not included
-as part of the GSAS-II distribution and must be installed separately:
+as part of the GSAS-II distribution. These are listed below. See
+`the web installation instructions
+<https://advancedphotonsource.github.io/GSAS-II-tutorials/install-external.html>`_
+for details on how they are installed.
 
   **Dysnomia**
     Computes enhanced Fourier maps with Maximum Entropy estimated
-    extension of the reflection sphere. See https://jp-minerals.org/dysnomia/en/.
-
+    extension of the reflection sphere. See
+    https://jp-minerals.org/dysnomia/en/.
+    
   **RMCProfile**
     Provides large-box PDF & S(Q) fitting. The GSAS-II interface was originally
     written for use with release 6.7.7 of RMCProfile, but updates have
@@ -518,26 +522,12 @@ as part of the GSAS-II distribution and must be installed separately:
     open-source version of fullrmc, but rather the version 5.0 must be
     used, which is distributed only as compiled versions and only for 64-bit
     Intel-compatible processors running Windows, Linux and
-    MacOS. Download this as a single executable from website
-    https://github.com/bachiraoun/fullrmc/tree/master/standalones. GSAS-II
-    will offer to install this software into the binary directory when the fullrmc
-    option is selected on the Phase/RMC tab.
-
+    MacOS.
+    
   **PDFfit2**
     For small-box fitting of PDFs; see
     https://github.com/diffpy/diffpy.pdffit2?tab=readme-ov-file#-diffpypdffit2.
     This software is no longer developed, but it is
     being maintained with respect to new Python versions.
 
-    The PDFfit2 developers recommend installing via conda, but
-    it appears that pip installation is also possible. See
-    https://pypi.org/project/diffpy.pdffit2/ for more information.
-    It is possible to install PDFfit2 into the same
-    conda environment that GSAS-II uses and if that is done, GSAS-II
-    will use the package, but it is probably best to use a separate
-    Python environment for PDFfit2, so that there is no possibility for
-    conflict between package versions. When GSAS-II is run from a
-    Python installation that includes the conda package manager (which
-    is the case with the GSAS2MAIN installer), the GUI will offer an option to
-    install PDFfit2 via a separate environment when the
-    PDFfit2 option is selected on the Phase/RMC tab.
+ 

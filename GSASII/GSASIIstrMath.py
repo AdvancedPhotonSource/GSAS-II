@@ -1368,6 +1368,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dffdSHI.update(dFFdSI)
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),nOps)
         dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
+        
         fotr = np.reshape(((FFR+FP).T-Bab).T,cosp.shape)*Tcorr
         foti = np.reshape(Flack*(FFI+FPP),sinp.shape)*Tcorr
         fa = np.array([fotr*cosp,-foti*sinp])
@@ -1378,32 +1379,34 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbx = np.array([fotr*cosp,-foti*sinp])
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,nAtom) Fdata != 0 avoids /0. problem
-        dfadff = np.array([cosp*Tcorr*atFlg,-Flack*sinp*Tcorr*atFlg])   # no sum on Uniq; array(2,refBlk,nEqv,nAtom)
-        dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
-        dfadx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[:,:,:,:,nxs],axis=-2)
-        dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nAtoms)
-        dfadua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fa,-2,-1)[:,:,:,:,nxs],axis=-2)
         dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
+        dfadff = np.array([cosp*Tcorr*atFlg,-Flack*sinp*Tcorr*atFlg])   # no sum on Uniq; array(2,refBlk,nEqv,nAtom)
         dfbdff = np.array([sinp*Tcorr*atFlg,Flack*cosp*Tcorr*atFlg])
+        dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
         dfbdba = np.sum(-sinp*Tcorr,axis=-2)
+        dfadx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[:,:,:,:,nxs],axis=-2)
+        dfbdx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fbx,-2,-1)[:,:,:,:,nxs],axis=-2)
+        dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nAtoms)
+        dfbdui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fb,axis=-2)
+        dfadua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fa,-2,-1)[:,:,:,:,nxs],axis=-2)
+        dfbdua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fb,-2,-1)[:,:,:,:,nxs],axis=-2)
         dfadfl = np.sum(np.sum(-foti*sinp,axis=-1),axis=-1)
         dfbdfl = np.sum(np.sum(foti*cosp,axis=-1),axis=-1)
-        dfbdx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fbx,-2,-1)[:,:,:,:,nxs],axis=-2)
-        dfbdui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fb,axis=-2)
-        dfbdua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fb,-2,-1)[:,:,:,:,nxs],axis=-2)
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for Al2O3!
         SA = fas[0]+fas[1]
         SB = fbs[0]+fbs[1]
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs]*dfadfr+fbs[:,:,nxs]*dfbdfr,axis=0)*Mdata/nOps
-            dFdff[:,iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadff+fbs[:,:,nxs,nxs]*dfbdff,axis=0) #not summed on Uniq yet
+            # dFdff[:,iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadff+fbs[:,:,nxs,nxs]*dfbdff,axis=0) #not summed on Uniq yet
+            dFdff[:,iBeg:iFin] = [2.*(fas[0,:,nxs,nxs]*dfadff[0]+fbs[0,:,nxs,nxs]*dfbdff[0]),
+                                  2.*(fas[0,:,nxs,nxs]*dfadff[1]+fbs[0,:,nxs,nxs]*dfbdff[1])] #not summed on Uniq yet array(Nref,nEqv,nAtom)
             dFdx[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadx+fbs[:,:,nxs,nxs]*dfbdx,axis=0)
             dFdui[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs]*dfadui+fbs[:,:,nxs]*dfbdui,axis=0)
             dFdua[iBeg:iFin] = pMul*np.sum(fas[:,:,nxs,nxs]*dfadua+fbs[:,:,nxs,nxs]*dfbdua,axis=0)
         else:
             dFdfr[iBeg:iFin] = (2.*SA[:,nxs]*(dfadfr[0]+dfadfr[1])+2.*SB[:,nxs]*(dfbdfr[0]+dfbdfr[1]))*Mdata/nOps
             dFdff[:,iBeg:iFin] = [2.*(fas[0,:,nxs,nxs]*dfadff[0]+fbs[0,:,nxs,nxs]*dfbdff[0]),
-                2.*(fas[1,:,nxs,nxs]*dfadff[1]+fbs[1,:,nxs,nxs]*dfbdff[1])] #not summed on Uniq yet array(Nref,nEqv,nAtom)
+                                  2.*(fas[0,:,nxs,nxs]*dfadff[1]+fbs[0,:,nxs,nxs]*dfbdff[1])] #not summed on Uniq yet array(Nref,nEqv,nAtom)
             dFdx[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadx[0]+dfadx[1])+2.*SB[:,nxs,nxs]*(dfbdx[0]+dfbdx[1])
             dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])
             dFdua[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadua[0]+dfadua[1])+2.*SB[:,nxs,nxs]*(dfbdua[0]+dfbdua[1])
@@ -1422,7 +1425,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]    #"should" be *2.0 but not true
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]    #should not be *2.0!
         dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for item in dffdSHR:
@@ -1432,7 +1435,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             else:
                 if i == int(item.split(':')[1]):
                     dFdvDict[pfx+item] = np.sum(dFdff[0,:,:,i]*np.reshape(dffdSHR[item],(nRef,-1)),axis=1)+ \
-                    np.sum(dFdff[1,:,:,i]*np.reshape(dffdSHI[item],(nRef,-1)),axis=1)
+                                         np.sum(dFdff[1,:,:,i]*np.reshape(dffdSHI[item],(nRef,-1)),axis=1)
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
@@ -2742,11 +2745,12 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         PA = np.exp(-parmDict[phfx+'Ma']*FPone)
         PB = np.exp(-parmDict[phfx+'Mb']*FPone**2)
         PC = np.exp(-parmDict[phfx+'Mc']*FPone**3)
-        extCor = (PA+ + PB + PC)/3.            
-        dervDict[phfx+'Ma'] = -4.*PA*FPone**2
-        dervDict[phfx+'Mb'] = -PB*FPone**4
-        dervDict[phfx+'Mc'] = -PC*FPone**6
-        return extCor,dervDict
+        extCor = (PA + PB + PC)/3.
+        dE2 = 6./extCor**2       
+        dervDict[phfx+'Ma'] = dE2*PA*FPone**2
+        dervDict[phfx+'Mb'] = dE2*PB*FPone**3
+        dervDict[phfx+'Mc'] = dE2*PC*FPone**4
+        return 1./extCor,dervDict
         
     if calcControls[phfx+'EType'] != 'None':
         SQ = 1/(4.*ref[4+im]**2)
@@ -2771,7 +2775,6 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         DScorr = 1.0
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
-            FPone = ref[9+im]+1.0
             DScorr = 1.
         else:
             if 'C' in parmDict[hfx+'Type']:

@@ -161,7 +161,7 @@ def GetBinaryPrefix(pyver=None):
     elif sys.platform.startswith("linux"):
         prefix = 'linux'
     else:
-        print(u'Unknown platform: '+sys.platform)
+        print(f'Unknown platform: {sys.platform}')
         raise Exception('Unknown platform')
     if 'arm' in platform.machine() and sys.platform == "darwin":
         bits = 'arm'

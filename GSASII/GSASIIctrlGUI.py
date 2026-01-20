@@ -1297,11 +1297,18 @@ class popupSelectorButton(wx.Button):
             for i in self.choiceDict: self.choiceDict[i] = False
             self.choiceDict[self.choices[new]] = True
             self.selected[new] = True
-        elif self.choices[0] == "all":
-            # special handling when 1st item is all: turn on everything
-            # when all is selected.
-            if new == 0:
-                self.selected[:] = [False] + (len(self.selected)-1)*[True]
+#        elif self.choices[0] == "all":
+#            # special handling when 1st item is all: turn on everything
+#            # when all is selected.
+#            if new == 0:
+#                self.selected[:] = [False] + (len(self.selected)-1)*[True]
+#                if self.choices[-1] == "(clear)":
+#                    self.selected[-1] = [False]
+#        elif self.choices[-1] == "(clear)":
+#            # special handling when last item is all: clear off everything
+#            # when that is selected.
+#            if new == len:
+#                self.selected[:] = (len(self.selected))*[False]
 
         menu.Destroy()
         if self.OnChange: wx.CallAfter(self.OnChange,**self.kw)
@@ -2606,6 +2613,142 @@ def G2MessageBox(parent,msg,title='Error'):
     dlg.CentreOnParent()
     dlg.ShowModal()
     dlg.Destroy()
+
+################################################################################
+def findValsInNotebook(data,target):
+    'Pull a string of values from saved values in the GSAS-II notebook'
+    c = 0
+    vals = []
+    pos = []
+    for l in data:
+        if '[REF]' in l: c += 1
+        if '[VALS]' in l: 
+            v = {i.split(' : ')[0].strip() : i.split(' : ')[1]
+                     for i in l[6:].split(',')}
+            if target not in v:
+                continue
+            try:
+                vals.append(float(v[target]))
+                pos.append(c)
+            except:
+                pass
+        if '[CEL]' in l:
+            ph = l.split('Phase')[1].split()[0]
+            hst = l.split('Hist')[1].split(':')[0].strip()
+            vars = [i.split('=')[0] for i in l.split(':')[1].split()]
+            vars = [f'{v}[p{ph}_h{hst}]' for v in vars]
+            if target not in vars: continue
+            values = [i.split('=')[1].split('(')[0] for i in l.split(':')[1].split()]
+            try:
+                vals.append(float(dict(zip(vars,values))[target]))
+                pos.append(c)
+            except:
+                pass
+    return pos,vals
+        
+def G2AfterFit(parent,msg,title='Error',vartbl=[],txtwidth=300):
+    '''Shows the results from a refinement
+
+    :param wx.Frame parent: pointer to parent of window, usually G2frame
+    :param str msg: text from refinement results
+    :param str title: text to label window
+    :param list vartbl: a list of lists. The contents of each inner list
+      item will be [var-name, val-before, val-after, sigma, meaning]
+    :param int txtwidth: width (in pixesl) to display msg. Defaults to 300
+    '''
+    def OnRowSelected(event):
+        '''plot the parameter results if it has been recorded
+        this is called when one clicks on a row in the parameter table
+        '''
+        row = event.GetIndex()
+        var = results.list.GetItemText(row)
+        val = valDict.get(var)
+        G2frame = wx.App.GetMainTopWindow()
+        G2frame.G2plotNB.Delete('fit results')
+        if val is None: return
+        nId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Notebook')
+        if not nId: return
+        Notebook = G2frame.GPXtree.GetItemPyData(nId)
+        pos,vals = findValsInNotebook(Notebook,var)
+        if len(pos) < 2: return
+        pos.append(pos[-1]+1)
+        try:
+            vals.append(float(val))
+        except:
+            return
+        XY = [np.array(pos),np.array(vals)]
+        from . import GSASIIplot as G2plt
+        G2plt.PlotXY(G2frame,[XY,],Title='fit results',newPlot=True,
+                                     labelX='seq',labelY=var,lines=True)
+    # create table to show from input
+    displayTable = []
+    valDict = {}
+    for (var,before,after,sig,what) in vartbl:
+        valDict[var] = after # save lookup table of values
+        try:
+            d = f'{(after-before)/sig:.3g}'
+            b = G2mth.ValEsd(before,-abs(sig)/10,True)
+            a = G2mth.ValEsd(after,-abs(sig)/10,True)
+        except:
+            d = '0'
+            b = f'{before:.6g}'
+            a = f'{after:.6g}'
+        displayTable.append((var,b,a,d,what))
+    labels = ('var','before','after','del/sig','parameter description')
+    just =   (0    , 1      , 1     , 1      , 0) # 0 left, 1 right
+    dlg = wx.Dialog(parent.GetTopLevelParent(), wx.ID_ANY, title,
+                        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    txtSizer = wx.BoxSizer(wx.HORIZONTAL)
+    txt = wx.StaticText(dlg,wx.ID_ANY,msg)
+    txt.Wrap(txtwidth-20)
+    #txt.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+    txtSizer.Add(txt,0,wx.RIGHT|wx.LEFT,5)
+    
+    if displayTable:
+        results = SortableLstCtrl(dlg)
+        results.PopulateHeader(labels, just)
+        for i,l in enumerate(displayTable): results.PopulateLine(i,l)
+        # set widths to automatic
+        results.SetColWidth(0) 
+        results.SetColWidth(1,sortType='float') 
+        results.SetColWidth(2,sortType='float') 
+        results.SetColWidth(3,sortType='abs') 
+        results.SetColWidth(4)
+        results.SetInitialSortColumn(3,False)
+        results.SetClientSize((450,250))
+        results.SetMinSize((450,250))
+        results.Bind(wx.EVT_LIST_ITEM_SELECTED, OnRowSelected) # plot
+    else:
+        results = wx.BoxSizer(wx.VERTICAL)
+        results.Add((-1,-1),1,wx.EXPAND)
+        results.Add(wx.StaticText(dlg,wx.ID_ANY,
+                        '  (no parameter changes\nto display)  ',
+                        size=(350,-1),style=wx.ALIGN_CENTER))
+        results.Add((-1,-1),1,wx.EXPAND)
+    txtSizer.Add(results,1,wx.EXPAND,0)
+    mainSizer.Add(txtSizer,1,wx.EXPAND)
+    mainSizer.Add((-1,5))
+    txt = wx.StaticText(dlg,wx.ID_ANY,'Load new result?')
+    mainSizer.Add(txt,0,wx.CENTER)
+    
+    btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+    btnsizer.Add(btn)
+    btn = wx.Button(dlg, wx.ID_OK)
+    btn.SetDefault()
+    btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_OK))
+    btnsizer.Add(btn)
+    mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+
+    dlg.Layout()
+    dlg.CentreOnParent()
+    ans = dlg.ShowModal()
+    dlg.Destroy()
+    return ans
 
 def ShowScrolledInfo(parent,txt,width=600,height=400,header='Warning info',
                          buttonlist=None):
@@ -5014,6 +5157,9 @@ class ShowLSParms(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
 class VirtualVarBox(wx.ListCtrl):
+    '''This is used to construct the parameter list display for viewing
+    least squares parameters
+    '''
     def __init__(self, parent):
         self.parmWin = parent
         #patch (added Oct 2020) convert variable names for parm limits to G2VarObj
@@ -5025,8 +5171,8 @@ class VirtualVarBox(wx.ListCtrl):
             )
 
         for i,(lbl,wid) in enumerate(zip(
-                ('#', "Parameter", "Ref", "Value", "Min", "Max", "Explanation"),
-                (40 , 125        , 30    ,  100   ,  75  ,  75  , 700),)):
+                ('#', "Parameter", "Ref", 'Log', "Value", "Min", "Max", "Explanation"),
+                (40 , 125        , 30    ,  30 ,   75   ,  75  ,  75  , 700),)):
             self.InsertColumn(i, lbl)
             self.SetColumnWidth(i, wid)
 
@@ -5039,6 +5185,7 @@ class VirtualVarBox(wx.ListCtrl):
         self.attr1.SetBackgroundColour((255,255,150))
 
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnRowSelected)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.OnRowRightClick)
 
     def SetContents(self,parent):
         self.varList = []
@@ -5059,6 +5206,30 @@ class VirtualVarBox(wx.ListCtrl):
             self.varList.append(name)
         #oldlen = self.GetItemCount()
         self.SetItemCount(len(self.varList))
+
+    def OnRowRightClick(self, event, row=None):
+        '''This adds or removes a variable from the list of logged 
+        paremeters.
+
+        When a row is right-clicked this seems to be called twice, once 
+        event.GetIndex() of -1, then OnRowSelected is called and then this 
+        is called again, but where event.GetIndex() is the row that was 
+        selected.
+        '''
+        def RightClickClear():
+            self.RightClick = False
+        row = event.GetIndex()
+        self.RightClick = True   # inhibit use of OnRowSelected
+        if row < 0: return
+        var = self.varList[row]
+        self.parmWin.Controls['LoggedVars'] = self.parmWin.Controls.get('LoggedVars',[])
+        if var in self.parmWin.Controls['LoggedVars']:
+            self.parmWin.Controls['LoggedVars'].remove(var)
+        else:
+            self.parmWin.Controls['LoggedVars'].append(var)
+        #if GSASIIpath.GetConfigValue('debug'): print(self.parmWin.Controls['LoggedVars'])
+        self.parmWin.SendSizeEvent()  # redraws the window
+        wx.CallAfter(RightClickClear)
 
     def OnRowSelected(self, event, row=None):
         'Creates an edit window when a parameter is selected'
@@ -5145,6 +5316,10 @@ class VirtualVarBox(wx.ListCtrl):
             self.OnRowSelected(None, row)
 
         # start of OnRowSelected
+        if getattr(self,'RightClick',False):   # ignore calls generated by right-click
+            self.RightClick = False
+            return
+        self.RightClick = False
         if event is not None:
             row = event.Index
         elif row is None:
@@ -5224,18 +5399,18 @@ class VirtualVarBox(wx.ListCtrl):
                 subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Minimum limit'),0,wx.CENTER)
                 subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMinDict'],n,nDig=(10,2,'g')),0,WACV)
                 delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
-                subSizer.Add((5,-1),0,WACV)
+                subSizer.Add((5,-1))
                 subSizer.Add(delMbtn,0,WACV)
                 delMbtn.Bind(wx.EVT_BUTTON, delM)
                 if name.split(':')[1]:             # is this using a histogram?
-                    subSizer.Add((5,-1),0,WACV)
+                    subSizer.Add((5,-1))
                     wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
                     wild.SetValue(str(n).split(':')[1] == '*')
                     wild.Bind(wx.EVT_CHECKBOX,SetWild)
                     wild.hist = True
                     subSizer.Add(wild,0,WACV)
                 elif len(name.split(':')) > 3:
-                    subSizer.Add((5,-1),0,WACV)
+                    subSizer.Add((5,-1))
                     wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
                     wild.SetValue(str(n).split(':')[3] == '*')
                     wild.Bind(wx.EVT_CHECKBOX,SetWild)
@@ -5254,12 +5429,12 @@ class VirtualVarBox(wx.ListCtrl):
                 subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Maximum limit'),0,wx.CENTER)
                 subSizer.Add(ValidatedTxtCtrl(dlg,self.parmWin.Controls['parmMaxDict'],n,nDig=(10,2,'g')),0,WACV)
                 delMbtn = wx.Button(dlg, wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
-                subSizer.Add((5,-1),0,WACV)
+                subSizer.Add((5,-1))
                 subSizer.Add(delMbtn,0,WACV)
                 delMbtn.Bind(wx.EVT_BUTTON, delM)
                 delMbtn.max = True
                 if name.split(':')[1]:             # is this using a histogram?
-                    subSizer.Add((5,-1),0,WACV)
+                    subSizer.Add((5,-1))
                     wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all histograms ')
                     wild.SetValue(str(n).split(':')[1] == '*')
                     wild.Bind(wx.EVT_CHECKBOX,SetWild)
@@ -5267,13 +5442,35 @@ class VirtualVarBox(wx.ListCtrl):
                     wild.hist = True
                     subSizer.Add(wild,0,WACV)
                 elif len(name.split(':')) > 3:
-                    subSizer.Add((5,-1),0,WACV)
+                    subSizer.Add((5,-1))
                     wild = wx.CheckBox(dlg,wx.ID_ANY,label='Match all atoms ')
                     wild.SetValue(str(n).split(':')[3] == '*')
                     wild.Bind(wx.EVT_CHECKBOX,SetWild)
                     wild.max = True
                     subSizer.Add(wild,0,WACV)
                 mainSizer.Add(subSizer,0)
+
+        self.parmWin.Controls['LoggedVars'] = self.parmWin.Controls.get('LoggedVars',[])
+        def LogLblButton(button):
+            if name in self.parmWin.Controls['LoggedVars']:
+                lbl = 'Remove from Logging'
+            else:
+                lbl = 'Log var'
+            button.SetLabel(lbl)
+        def LogAddRemove(event):
+            if name in self.parmWin.Controls['LoggedVars']:
+                self.parmWin.Controls['LoggedVars'].remove(name)
+            else:
+                self.parmWin.Controls['LoggedVars'].append(name)
+            LogLblButton(event.GetEventObject())
+            dlg.Layout()
+            self.parmWin.SendSizeEvent()            
+
+        mainSizer.Add((-1,10))
+        addbtn = wx.Button(dlg, wx.ID_ANY,'')
+        LogLblButton(addbtn)
+        addbtn.Bind(wx.EVT_BUTTON, LogAddRemove)
+        mainSizer.Add(addbtn,0)
 
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(dlg, wx.ID_OK)
@@ -5315,6 +5512,18 @@ class VirtualVarBox(wx.ListCtrl):
                 return "C"
             return ""
         elif col == 3:
+            logged = self.parmWin.Controls.get('LoggedVars',[])
+            if GSASIIpath.GetConfigValue('LogAllVars') and not logged:
+                if name in self.parmWin.varyList:
+                    if self.parmWin.varyList.index(name) < 50:
+                        return 'A'
+                    else:
+                        return ' '
+                return ' '
+            elif name in logged:
+                return 'Y'
+            return 'N'
+        elif col == 4:
             if atmParNam: name = atmParNam
             try:
                 value = G2fil.FormatSigFigs(self.parmWin.parmDict[name])
@@ -5323,8 +5532,8 @@ class VirtualVarBox(wx.ListCtrl):
             except TypeError:
                 value = str(self.parmWin.parmDict[name])+' -?' # unexpected
             return value
-        elif col == 4 or col == 5: # min/max value
-            if col == 4: # min
+        elif col == 5 or col == 6: # min/max value
+            if col == 5: # min
                 d = self.parmWin.Controls['parmMinDict']
             else:
                 d = self.parmWin.Controls['parmMaxDict']
@@ -5334,7 +5543,7 @@ class VirtualVarBox(wx.ListCtrl):
                 return G2fil.FormatSigFigs(val,8)
             except TypeError:
                 return "?"
-        elif col == 6:
+        elif col == 7:
             v = G2obj.getVarDescr(name)
             if v is not None and v[-1] is not None:
                 txt = G2obj.fmtVarDescr(name)
@@ -7553,6 +7762,20 @@ class SortableLstCtrl(wx.Panel):
     widths.
 
     :param wx.Frame parent: parent object for control
+
+    Example::
+
+       data = [
+          (':0:sig-0', '30.7906', '30.7907', 'Pwd=SNAP066555: TOF profile term'),
+          (':0:sig-1', '208.419', '208.419', 'Pwd=SNAP066555: TOF profile term'),
+          (':0:Scale', '582006', '582006', 'Pwd=SNAP066555: Scale factor'),
+          (':1:Scale', '592440', '592440', 'Pwd=SNAP06 (1): Scale factor'),
+       ]
+       sortPanel = G2G.SortableLstCtrl(G2frame)
+       sortPanel.PopulateHeader([f'label{i}' for i in range(4)],4*[0])
+       for i,l in enumerate(data): sortPanel.PopulateLine(i,l)
+       for i in range(4): sortPanel.SetColWidth(i) # set width to automatic
+       sortPanel.SetColWidth(1,sortType='float') # sort 1st column by numeric value not str
     '''
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY)#, style=wx.WANTS_CHARS)
@@ -7598,7 +7821,8 @@ class SortableLstCtrl(wx.Panel):
         self.list.SetItemData(index, key)
         self.list.itemDataMap[key] = data
 
-    def SetColWidth(self,col,width=None,auto=True,minwidth=0,maxwidth=None):
+    def SetColWidth(self,col,width=None,auto=True,minwidth=0,maxwidth=None,
+                        sortType='str'):
         '''Sets the column width.
 
         :param int width: the column width in pixels
@@ -7619,6 +7843,23 @@ class SortableLstCtrl(wx.Panel):
                 self.list.SetColumnWidth(col, maxwidth)
         else:
             print('Error in SetColWidth: use either auto or width')
+        if sortType == 'float':
+            self.list.FloatCols.append(col)
+        elif sortType == 'abs':
+            self.list.AbsFloatCols.append(col)
+        elif sortType != 'str':
+            printf('SortableLstCtrl.SetColWidth warning: unexpected sortType value ({sortType})')
+
+    def SetInitialSortColumn(self, col, ascending=True):
+        '''Sets the initial column to be used for sorting when the table is first displayed.
+        This method should be called after all PopulateLine calls are complete.
+        The up or down arrow indicator will be displayed on the specified column.
+
+        :param int col: the column index (0-based) to sort by initially
+        :param bool ascending: if True (default), sort in ascending order; if False, descending
+        '''
+        # Use SortListItems to both sort the items and display the sort indicator arrow
+        self.list.SortListItems(col, ascending)
 
 try:
     class G2LstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin):
@@ -7643,12 +7884,48 @@ try:
             self.DownArrow = self.il.Add(SmallDnArrow.GetBitmap())
             self.parent=parent
             self.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
+            self.FloatCols = []
+            self.AbsFloatCols = []
 
         def GetListCtrl(self): # needed for sorting
             return self
         def GetSortImages(self):
-            #return (self.parent.DownArrow, self.parent.UpArrow)
             return (self.DownArrow, self.UpArrow)
+        def GetColumnSorter(self):
+            """Custom sorter that handles absolute numerical values for columns 1, 2, 
+            and 3 (2nd, 3rd, 4th columns)"""
+            def compare_func(key1, key2):
+                col = self.GetSortState()[0]
+                ascending = self.GetSortState()[1]
+                
+                # Get data for both rows
+                data1 = self.itemDataMap[key1][col]
+                data2 = self.itemDataMap[key2][col]
+                
+                # For columns designated as self.AbsFloatCols, sort by absolute numerical value
+                if col in self.AbsFloatCols:
+                    try:
+                        val1 = abs(float(data1))
+                        val2 = abs(float(data2))
+                        result = (val1 > val2) - (val1 < val2)
+                    except (ValueError, TypeError):
+                        # Fall back to string comparison if conversion fails
+                        result = (data1 > data2) - (data1 < data2)
+                elif col in self.FloatCols:
+                    try:
+                        val1 = float(data1)
+                        val2 = float(data2)
+                        result = (val1 > val2) - (val1 < val2)
+                    except (ValueError, TypeError):
+                        # Fall back to string comparison if conversion fails
+                        result = (data1 > data2) - (data1 < data2)
+                else:
+                    # For other columns, use string comparison
+                    result = (data1 > data2) - (data1 < data2)
+                
+                return result if ascending else -result
+            
+            return compare_func
 except TypeError:
     # avoid "duplicate base class _MockObject" error in class G2LstCtrl():
     # where listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin are same

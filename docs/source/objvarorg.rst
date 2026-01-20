@@ -380,7 +380,7 @@ Histograms      \               (dict of dicts) The key for the outer dict is
 \           LeBail              (bool) Flag for LeBail extraction 
 \           Mustrain            (list) Microstrain parameters, in order:
     
-                                0. Type, one of  u'isotropic', u'uniaxial', u'generalized'
+                                0. Type, one of  'isotropic', 'uniaxial', 'generalized'
                                 1. Isotropic/uniaxial parameters - list of 3 floats
                                 2. Refinement flags - list of 3 bools
                                 3. Microstrain axis - list of 3 ints, [h, k, l]
@@ -400,7 +400,7 @@ Histograms      \               (dict of dicts) The key for the outer dict is
 \           Scale               (list of [float, bool]) Phase fraction & refine flag
 \           Size                List of crystallite size parameters, in order:
 
-                                0. (str) Type, one of  u'isotropic', u'uniaxial', u'ellipsoidal'
+                                0. (str) Type, one of  'isotropic', 'uniaxial', 'ellipsoidal'
                                 1. (list) Isotropic/uniaxial parameters - list of 3 floats
                                 2. (list) Refinement flags - list of 3 bools
                                 3. (list) Size axis - list of 3 ints, [h, k, l]

@@ -1519,7 +1519,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
-    Yl = np.array([255,255,0])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]],
@@ -1588,24 +1587,24 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 dFsig = (Fosq-Fcsq)/sig
                 if dFsig > 0:
                     R.append(Fosq)
-                    dFsig = min(10.,dFsig)
-                    dw = int(255.*(1.0-(dFsig/10.)))
+                    dFsig = min(3.,dFsig)
+                    dw = int(255.*(1.0-(dFsig/3.)))
                     color = np.array([dw,255,0])
                 else:
                     R.append(Fosq)
-                    dFsig = max(-10.,dFsig)
-                    dw = int(255.*(1.0+(dFsig/10.)))
+                    dFsig = max(-3.,dFsig)
+                    dw = int(255.*(1.0+(dFsig/3.)))
                     color = np.array([255,dw,0])
                 C.append(color)
             elif Data['Type'] == 'dFsq':
                 dF = Fosq-Fcsq
                 if dF > 0:
                     R.append(Fosq)
-                    dw = int(255.*(1.0-(dF/-dFmin)))
+                    dw = int(255.*(1.0-(dF/dFmin)))
                     color = np.array([dw,255,0])
                 else:
                     R.append(Fosq)
-                    dw = int(255.*(1.0+(dF/dFmax)))
+                    dw = int(255.*dF/dFmax)
                     color = np.array([255,dw,0])
                 C.append(color)
         if len(R):

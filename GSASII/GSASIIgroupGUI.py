@@ -1,8 +1,31 @@
 # -*- coding: utf-8 -*-
 '''
-Routines for working with groups of histograms. 
+GSASIIgroupGUI: Routines for working with groups of histograms.
 
-Groups are defined in Controls entry ['Groups'] which contains three entries:
+Outline of code in GSASIIgroupGUI:
+
+* :func:`SearchGroups` is used to define which histograms are in each 
+  group. Defines variables in Controls['Groups'] (see below)
+
+* :func:`UpdateGroup` is used to create the contents of the DataWindow
+
+* :func:`HistFrame` is called by :func:`UpdateGroup` to display the 
+  main contents of the window 
+
+* :func:`displayDataArray` is called by :func:`HistFrame` to create the 
+  parameter table shown in the window, from the **Parameter Data Table** 
+  entries, as described below.
+
+A few routines are optionally used to color parameters by the shift
+applied in the last refinement. Routine :func:`computeShiftInfo` computes
+the shifts for all parameters, creates a set of steps for them and a color
+scale. All these are placed in global array ``shiftInfo``. The 
+function :func:`colorCaption` creates a caption showing the levels and colors
+developed in :func:`computeShiftInfo`, while :func:`ColorTxtbox` applies
+those colors to ValidatedTextCtrl entry widgets.
+
+The settings in Controls entry ['Groups'] that define how histograms are 
+divided into groups are:
 
 * Controls['Groups']['groupDict'] 
    a dict where each key is the name of the group and the value is a list of 
@@ -14,15 +37,18 @@ Groups are defined in Controls entry ['Groups'] which contains three entries:
 
 ** Parameter Data Table **
 
-For use to create GUI tables and to copy values between histograms, parameters 
-are organized in a dict where each dict entry has contents of form:
+For use in creating GUI tables and to copy values between histograms, 
+a dict is created in :func:`getSampleVals`, :func:`getInstVals`, 
+:func:`getLimitVals`, :func:`getBkgVals` or :func:`getHAPvals` with 
+the parameters used in that data tree item. The dict is organized 
+with the following entries: 
 
  *  dict['__dataSource'] : SourceArray
 
  *  dict[histogram]['label'] : `innerdict`
 
-where `label` is the text shown on the row label and `innerdict` can contain
-one or more of the following elements:
+where `label` is the text shown on the row label and `innerdict` is a dict 
+containing one or more of the following elements:
 
  *  'val'    : (key1,key2,...)
  *  'ref'    : (key1, key2,...)
@@ -39,31 +65,39 @@ One of 'val', 'ref' or 'str' elements must be present.
 
  *  The 'val' tuple provides a reference to the float value for the 
     defined quantity, where SourceArray[histogram][key1][key2][...] 
-    provides r/w access to the parameter.
+    provides r/w access to the parameter. 
 
  *  The 'ref' tuple provides a reference to the bool value, where 
     SourceArray[histogram][key1][key2][...] provides r/w access to the 
-    refine flag for the labeled quantity
+    refine flag for the labeled quantity. 
 
     Both 'ref' and 'val' are usually defined together, but either may 
     occur alone. These exceptions will be for parameters where a single
     refine flag is used for a group of parameters or for non-refined 
     parameters.
 
+    Note that 
+    :func:`indexArrayVal` is used to obtain the value for the 
+    quantity from the keys in the tuple for the 'ref' and 'val' entries,
+    while :func:`indexArrayRef` 
+    is used to obtain the dict/list reference and the key/index for that
+    object from the saved info (so that the value can be changed).
+
  *  The 'str' value is something that cannot be edited from the GUI; If 'str' is
     present, the only other possible entries that can be present is either 'fmt' 
     or 'txt. 
-    'str' is used for a parameter value that is typically computed or must be 
-    edited in the histogram section.
+    'str' is used for a parameter value that is typically computed or 
+    cannot be edited in the group tables (edit by selecting the 
+    appropriate in the histogram tree entry.
 
 Optional elements in the array:
 
- *  The 'fmt' value is a string used to format the 'str' value to 
-    convert it to a string, if it is a float or int value.
+ *  The 'fmt' value is a string used to format a 'str' value to 
+    convert it to a string. Used for float or int values.
 
  *  The 'txt' value is a string that replaces the value in 'str'.
 
- *  The 'init' value is also something that cannot be edited. 
+ *  The 'init' value is also something that cannot be edited.
     These 'init' values are used for Instrument Parameters 
     where there is both a current value for the parameter as 
     well as an initial value (usually read from the instrument 
@@ -73,7 +107,7 @@ Optional elements in the array:
 
  *  The 'rowlbl' value provides a reference to a str value that 
     will be an editable row label (FreePrmX sample parametric 
-    values). 
+    values).
 
  *  The 'range' list/tuple provides min and max float value for the 
     defined quantity to be defined. Use None for any value that
@@ -86,39 +120,23 @@ Optional elements in the array:
 
  *  The 'prmname' name entry lists the parameter name, as used in 
     varyList, parmDict etc. 
+
+The full list of routines used in mod:`GSASIIgroupGUI` are:
 '''
 
 import math
-# import os
 import re
-# import copy
-# import platform
-# import pickle
-# import sys
-# import random as ran
-
-#import numpy as np
-# import numpy.ma as ma
 import wx
 
-# from . import GSASIIpath
 from . import GSASIIdataGUI as G2gd
-# from . import GSASIIobj as G2obj
-# from . import GSASIIpwdGUI as G2pdG
-# from . import GSASIIimgGUI as G2imG
-# from . import GSASIIElem as G2el
-# from . import GSASIIfiles as G2fil
-# from . import GSASIIctrlGUI as G2G
-# from . import GSASIImath as G2mth
-# from . import GSASIIElem as G2elem
 from . import GSASIIspc as G2spc
 from . import GSASIIlattice as G2lat
-# from . import GSASIIpwd as G2pwd
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIpwdplot as G2pwpl
+
 WACV = wx.ALIGN_CENTER_VERTICAL
 
-shiftInfo = {'colorMode':False}
+shiftInfo = {'colorMode':False}  # home for into to color TextCtrls
 
 def SearchGroups(G2frame,Histograms,hist):
     '''Determine which histograms are in groups, called by SearchGroups in 
@@ -189,13 +207,9 @@ def SearchGroups(G2frame,Histograms,hist):
 
     return {'groupDict':groupDict,'notGrouped':noMatchCount,'template':srchStr}
 
-def UpdateGroup(G2frame,item,plot=True):
+def UpdateGroup(G2frame,selectedGrp,plot=True):
     '''Code to display parameters from all sets of grouped histograms
     '''
-    def refreshWindow():
-        'repaints this window'
-        wx.CallAfter(UpdateGroup,G2frame,item,False)
-
     def OnColorMode(event):
         if event.GetId() == G2G.wxID_GRPLOG:
             shiftInfo['colorMode'] = 'log'
@@ -203,14 +217,20 @@ def UpdateGroup(G2frame,item,plot=True):
             shiftInfo['colorMode'] = 'linear'
         else:
             shiftInfo['colorMode'] = False
-        refreshWindow()
+        wx.CallAfter(UpdateGroup,G2frame,selectedGrp,False)
         
     def onDisplaySel(event):
         '''Change the type of parameters that are shown in response to the 
         pulldown in the upper left
         '''
         G2frame.GroupInfo['displayMode'] = dsplType.GetValue()
-        wx.CallAfter(UpdateGroup,G2frame,item,False)
+        wx.CallAfter(UpdateGroup,G2frame,selectedGrp,False)
+
+    def onPhaseSel(event):
+        '''Change the selected phase (in Hist/Phase mode only)
+        '''
+        G2frame.GroupInfo['selectedPhase'] = G2frame.GroupInfo['phaseSel'].GetValue()
+        wx.CallAfter(UpdateGroup,G2frame,selectedGrp,False)
 
     def copyPrep():
         '''Prepare to copy parameters by locating groups that have the
@@ -269,8 +289,7 @@ def UpdateGroup(G2frame,item,plot=True):
                                 arr[indx] = indexArrayVal(dataSource,src,prmArray[src][i][j])
                             except Exception as msg: # could hit an error if an array element is not defined
                                 pass
-                                #print(msg)
-                                #print('error with',i,dst)
+
     def OnCopySel(event):
         '''Copy selected parameters from a list based on what is displayed 
         to the selected histograms.
@@ -317,8 +336,11 @@ def UpdateGroup(G2frame,item,plot=True):
     computeShiftInfo(G2frame) # Setup for color by shift/sigma
     # start with Sample but reuse the last displayed item
     G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Sample')
-    #G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Background')
-    G2frame.GroupInfo['groupName'] = G2frame.GPXtree.GetItemText(item)
+    #G2frame.GroupInfo['displayMode'] = G2frame.GroupInfo.get('displayMode','Hist/Phase') # debug code
+    G2frame.GroupInfo['groupName'] = G2frame.GPXtree.GetItemText(selectedGrp)
+    G2frame.GroupInfo['selectedPhase'] = G2frame.GroupInfo.get('selectedPhase',
+                                                list(Phases.keys())[0])
+    G2frame.GroupInfo['Redraw'] = (UpdateGroup,G2frame,selectedGrp,False)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.GroupMenu)
     G2frame.Bind(wx.EVT_MENU, OnCopyAll, id=G2G.wxID_GRPALL)
     G2frame.Bind(wx.EVT_MENU, OnCopySel, id=G2G.wxID_GRPSEL)
@@ -336,19 +358,21 @@ def UpdateGroup(G2frame,item,plot=True):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
     dsplType.Bind(wx.EVT_COMBOBOX, onDisplaySel)
     topSizer.Add(dsplType,0,WACV)
+    G2frame.GroupInfo['phaseSel'] = wx.ComboBox(topParent,wx.ID_ANY,
+                                value=G2frame.GroupInfo['selectedPhase'],
+                                choices=list(Phases),
+                                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    G2frame.GroupInfo['phaseSel'].Bind(wx.EVT_COMBOBOX, onPhaseSel)
+    topSizer.Add(G2frame.GroupInfo['phaseSel'],0,wx.RIGHT|wx.LEFT|WACV,10)
     topSizer.Add(wx.StaticText(topParent,
-            label=f' parameters for group "{histLabels(G2frame)[0]}"'),
+            label=f' Group "{histLabels(G2frame)[0]}" parameters'),
                      0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(topParent,helpIndex=G2frame.dataWindow.helpKey))
 
-    if G2frame.GroupInfo['displayMode'].startswith('Hist'):
-        HAPframe(G2frame,Histograms,Phases)
-    else:
-        HistFrame(G2frame,Histograms,refresh=refreshWindow)
+    HistFrame(G2frame,Histograms,Phases)
     if plot: G2pwpl.PlotPatterns(G2frame,plotType='GROUP')
     G2frame.dataWindow.SetDataSize()
-    #wx.CallLater(100,G2frame.SendSizeEvent)
     wx.CallAfter(G2frame.SendSizeEvent)
 
 def histLabels(G2frame):
@@ -381,9 +405,11 @@ def histLabels(G2frame):
     return commonltrs,histlbls
 
 def indexArrayRef(dataSource,hist,arrayIndices):
-    '''Find the array and key for a refinement flag. (From a 'ref' entry.)
+    '''Find the array and key for a refinement flag. (From a 'ref' or 
+    'val' entry.)
 
-    :returns: arr, indx where arr[indx] is the refinement flag value (bool)
+    :returns: arr, indx where arr[indx] is the refinement 
+       flag value (bool for 'ref') or the value (float for 'val')
     '''
     indx = arrayIndices[-1]
     arr = dataSource[hist]
@@ -392,10 +418,10 @@ def indexArrayRef(dataSource,hist,arrayIndices):
     return arr,indx
 
 def indexArrayVal(dataSource,hist,arrayIndices):
-    '''Find the array and key for a GSAS-II parameter in the data tree 
-    from a 'val' entry.
+    '''Find the value for a GSAS-II parameter in the data tree 
+    from a 'val' or the refinement flag from the entry
 
-    :returns: arr, indx where arr[indx] is the parameter value (usually float)
+    :returns: the parameter value (usually float or bool)
     '''
     if arrayIndices is None: return None
     arr = dataSource[hist]
@@ -403,8 +429,8 @@ def indexArrayVal(dataSource,hist,arrayIndices):
         arr = arr[i]
     return arr
 
-ClearAllLbl = '☐' # previously 'C'
-SetAllLbl = '☑'   # previously 'S'
+ClearAllLbl = '☐'
+SetAllLbl = '☑'
 def onRefineAll(event):
     '''Respond to the Refine All button. On the first press, all 
     refine check buttons are set as "on" and the button is relabeled 
@@ -430,7 +456,7 @@ def onRefineAll(event):
 
 def onSetAll(event):
     '''Respond to the copy right button. Copies the first value to 
-    all edit widgets
+    all other edit widgets in that row.
     '''
     but = event.GetEventObject()
     firstVal = indexArrayVal(but.valDict['dataSource'],
@@ -450,12 +476,12 @@ def onResetAll(event):
         arr,indx = indexArrayRef(dataSource,hist,item)
         if indx == 1:
             arr[1] = arr[0]
-    refresh = but.valDict.get('refresh')
-    if refresh:
-        refresh()
-        
-def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=False,
-                     lblSizer=None,lblPanel=None,CopyCtrl=True,refresh=None):
+    G2frame = but.GetTopLevelParent()
+    if G2frame.GroupInfo.get('Redraw'):
+        wx.CallAfter(*G2frame.GroupInfo.get('Redraw'))
+
+def displayDataArray(rowLabels,DataArray,Sizer,Panel,deltaMode=False,
+                     CopyCtrl=True):
     '''Displays the data table in `DataArray` in Scrolledpanel `Panel`
     with wx.FlexGridSizer `Sizer`.
     '''
@@ -468,9 +494,6 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
         spin.txt.SetLabel(str(spin.arr[spin.indx]))
         spin.setTermsFnx()
     firstentry = None
-    #lblRow = True
-    if lblSizer is None: lblSizer = Sizer
-    if lblPanel is None: lblPanel = Panel
     checkButList = {}
     valSetFxnList = {}
     lblDict = {}
@@ -478,53 +501,51 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
     for row in rowLabels:
         checkButList[row] = []
         valSetFxnList[row] = []
-        # show the row labels, when not in a separate sizer
-        if lblRow:
-            # is a copy across and/or a refine all button needed?
-            refList = []
-            valList = []
-            for hist in DataArray:
-                if row not in DataArray[hist]: continue
-                if 'val' in DataArray[hist][row]:
-                    valList.append(DataArray[hist][row]['val'])
-                if 'ref' in DataArray[hist][row]:
-                    refList.append(DataArray[hist][row]['ref'])
-            arr = None
-            histList = []
-            for hist in DataArray:
-                if row not in DataArray[hist]: continue
-                histList.append(hist)
-                if 'rowlbl' in DataArray[hist][row]:
-                    arr,key = DataArray[hist][row]['rowlbl']
-                    break
-            if arr is None: # text row labels
-                w = wx.StaticText(lblPanel,label=row)
-            else: # used for "renameable" sample vars (str)
-                w = G2G.ValidatedTxtCtrl(lblPanel,arr,key,size=(125,-1))
-            lblSizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
-            lblDict[row] = w
+        # show the row labels
+        refList = []
+        valList = []
+        for hist in DataArray:
+            if row not in DataArray[hist]: continue
+            if 'val' in DataArray[hist][row]:
+                valList.append(DataArray[hist][row]['val'])
+            if 'ref' in DataArray[hist][row]:
+                refList.append(DataArray[hist][row]['ref'])
+        arr = None
+        histList = []
+        for hist in DataArray:
+            if row not in DataArray[hist]: continue
+            histList.append(hist)
+            if 'rowlbl' in DataArray[hist][row]:
+                arr,key = DataArray[hist][row]['rowlbl']
+                break
+        if arr is None: # text row labels
+            w = wx.StaticText(Panel,label=row)
+        else: # used for "renameable" sample vars (str)
+            w = G2G.ValidatedTxtCtrl(Panel,arr,key,size=(125,-1))
+        Sizer.Add(w,0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        lblDict[row] = w
 
-            if len(refList) > 2: # >two refinement flags in this row. Include ste/clear all button
-                lbl = SetAllLbl
-                if all([indexArrayVal(dataSource,hist,i) for i in refList]): lbl = ClearAllLbl
-                refAll = wx.Button(lblPanel,label=lbl,style=wx.BU_EXACTFIT)
-                font = refAll.GetFont()
-                font.PointSize += 5
-                refAll.SetFont(font)
-                refAll.refDict = {'arrays': refList, 'hists': histList,
-                                  'dataSource':dataSource}
-                refAll.checkButList = checkButList[row]
-                lblSizer.Add(refAll,0,wx.ALIGN_CENTER_VERTICAL)               
-                refAll.Bind(wx.EVT_BUTTON,onRefineAll)
-            else:
-                lblSizer.Add((-1,-1))
         if deltaMode:
-            resetBut = wx.Button(lblPanel,label='↩',style=wx.BU_EXACTFIT)
+            resetBut = wx.Button(Panel,label='↩',style=wx.BU_EXACTFIT)
             resetBut.valDict = {'arrays': valList, 'hists': histList,
-                                  'dataSource':dataSource,
-                                  'refresh': refresh}
-            lblSizer.Add(resetBut,0,wx.ALIGN_CENTER_VERTICAL)               
+                                  'dataSource':dataSource}
+            Sizer.Add(resetBut,0,wx.ALIGN_CENTER_VERTICAL)               
             resetBut.Bind(wx.EVT_BUTTON,onResetAll)
+
+        if len(refList) > 2: # >two refinement flags in this row. Include ste/clear all button
+            lbl = SetAllLbl
+            if all([indexArrayVal(dataSource,hist,i) for i in refList]): lbl = ClearAllLbl
+            refAll = wx.Button(Panel,label=lbl,style=wx.BU_EXACTFIT)
+            font = refAll.GetFont()
+            font.PointSize += 5
+            refAll.SetFont(font)
+            refAll.refDict = {'arrays': refList, 'hists': histList,
+                              'dataSource':dataSource}
+            refAll.checkButList = checkButList[row]
+            Sizer.Add(refAll,0,wx.ALIGN_CENTER_VERTICAL)               
+            refAll.Bind(wx.EVT_BUTTON,onRefineAll)
+        else:
+            Sizer.Add((-1,-1))
 
         i = -1
         for hist in DataArray:
@@ -657,7 +678,7 @@ def displayDataArray(rowLabels,DataArray,Sizer,Panel,lblRow=False,deltaMode=Fals
                 print('Should not happen',DataArray[hist][row],hist,row)
     return firstentry,lblDict
 
-def HistFrame(G2frame,Histograms,refresh=None):
+def HistFrame(G2frame,Histograms,Phases):
     '''Display all the parameters of the selected type. 
     This puts everything in a single FlexGridSizer.
     '''
@@ -665,6 +686,7 @@ def HistFrame(G2frame,Histograms,refresh=None):
     # generate a dict with values for each histogram
     CopyCtrl = True
     global prmArray
+    G2frame.GroupInfo['phaseSel'].Show(False)
     if G2frame.GroupInfo['displayMode'].startswith('Sample'):
         prmArray = getSampleVals(G2frame,Histograms)
     elif G2frame.GroupInfo['displayMode'].startswith('Instrument'):
@@ -675,6 +697,10 @@ def HistFrame(G2frame,Histograms,refresh=None):
     elif G2frame.GroupInfo['displayMode'].startswith('Background'):
         prmArray = getBkgVals(G2frame,Histograms)
         CopyCtrl = True
+    elif G2frame.GroupInfo['displayMode'].startswith('Hist/Phase') and Phases:
+        phase = G2frame.GroupInfo.get('selectedPhase',list(Phases.keys())[0])
+        prmArray = getHAPvals(G2frame,phase,Histograms,Phases)
+        G2frame.GroupInfo['phaseSel'].Show(True)
     else:
         prmArray = None
         print('Unexpected', G2frame.GroupInfo['displayMode'])
@@ -708,18 +734,18 @@ def HistFrame(G2frame,Histograms,refresh=None):
         n += 1
     #=======  Generate GUI ===============================================
     # layout the window
-    panel = midPanel = G2frame.dataWindow
+    midPanel = G2frame.dataWindow
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    G2G.HorizontalLine(mainSizer,panel)
-    panel.SetSizer(mainSizer)
+    G2G.HorizontalLine(mainSizer,midPanel)
+    midPanel.SetSizer(mainSizer)
     deltaMode = "\u0394" in G2frame.GroupInfo['displayMode']
     if CopyCtrl and len(prmArray) > 2: n += 1 # add column for copy (when more than one histogram)
     valSizer = wx.FlexGridSizer(0,len(prmArray)+n-1,3,10)
     mainSizer.Add(valSizer,1,wx.EXPAND)
     valSizer.Add(wx.StaticText(midPanel,label=' '))
-    valSizer.Add(wx.StaticText(midPanel,label=' Ref '))
     if '\u0394' in G2frame.GroupInfo['displayMode']:
-        valSizer.Add(wx.StaticText(midPanel,label=' reset '))
+        valSizer.Add(wx.StaticText(midPanel,label='Reset'))
+    valSizer.Add(wx.StaticText(midPanel,label=' Ref '))
     for i,hist in enumerate(histLabels(G2frame)[1]):
             if i == 1 and CopyCtrl:
                 if deltaMode:
@@ -730,9 +756,8 @@ def HistFrame(G2frame,Histograms,refresh=None):
                         label=f"\u25A1 = {hist}"),
                              0,wx.ALIGN_CENTER)
     firstentry,lblDict = displayDataArray(rowLabels,prmArray,valSizer,midPanel,
-                                      lblRow=True,
                                       deltaMode=deltaMode,CopyCtrl=CopyCtrl,
-                                      refresh=refresh)
+                                      )
     if firstentry is not None:    # prevent scroll to show last entry
         wx.Window.SetFocus(firstentry)
         firstentry.SetInsertionPoint(0) # prevent selection of text in widget
@@ -1008,149 +1033,6 @@ def getBkgVals(G2frame,Histograms):
                 'prmname': f'{prmPrefix}BF mult'}
     return indexDict
 
-def HAPframe(G2frame,Histograms,Phases):
-    '''This creates two side-by-side scrolled panels, each containing 
-    a FlexGridSizer.
-    The panel to the left contains the labels for the sizer to the right.
-    This way the labels are not scrolled horizontally and are always seen.
-    The two vertical scroll bars are linked together so that the labels 
-    are synced to the table of values.
-    '''
-    def selectPhase(event):
-        'Display the selected phase'
-        def OnScroll(event):
-            'Synchronize vertical scrolling between the two scrolled windows'
-            obj = event.GetEventObject()
-            pos = obj.GetViewStart()[1]
-            if obj == lblScroll:
-                HAPScroll.Scroll(-1, pos)
-            else:
-                lblScroll.Scroll(-1, pos)
-            event.Skip()
-        #---------------------------------------------------------------------
-        # selectPhase starts here. Find which phase is selected.
-        if event:
-            page = event.GetSelection()
-            #print('page selected',page,phaseList[page])
-        else:  # initial call when window is created
-            page = 0
-            #print('no page selected',phaseList[page])
-        # generate a dict with HAP values for each phase (may not be the same)
-        global prmArray
-        prmArray = getHAPvals(G2frame,phaseList[page],Histograms,Phases)
-        # construct a list of row labels, attempting to keep the
-        # order they appear in the original array
-        rowLabels = []
-        lpos = 0
-        for hist in prmArray:
-            if hist == '_dataSource': continue
-            prevkey = None
-            for key in prmArray[hist]:
-                if key not in rowLabels:
-                    if prevkey is None:
-                        rowLabels.insert(lpos,key)
-                        lpos += 1
-                    else:
-                        rowLabels.insert(rowLabels.index(prevkey)+1,key)
-                prevkey = key
-        #=======  Generate GUI ===============================================
-        for panel in HAPtabs:
-            if panel.GetSizer():
-                panel.GetSizer().Destroy()          # clear out old widgets
-        panel = HAPtabs[page]
-        bigSizer = wx.BoxSizer(wx.HORIZONTAL)
-        panel.SetSizer(bigSizer)
-        # panel for labels; show scroll bars to hold the space
-        lblScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
-                        style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
-        hpad = 3  # space between rows
-        lblSizer = wx.FlexGridSizer(0,2,hpad,2)
-        lblScroll.SetSizer(lblSizer)
-        bigSizer.Add(lblScroll,0,wx.EXPAND)
-
-        # Create scrolled panel to display HAP data
-        HAPScroll = wx.lib.scrolledpanel.ScrolledPanel(panel,
-                        style=wx.VSCROLL|wx.HSCROLL|wx.ALWAYS_SHOW_SB)
-        HAPSizer = wx.FlexGridSizer(0,len(prmArray),hpad,10)
-        HAPScroll.SetSizer(HAPSizer)
-        bigSizer.Add(HAPScroll,1,wx.EXPAND)
-        
-        # Bind scroll events to synchronize scrolling
-        lblScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
-        HAPScroll.Bind(wx.EVT_SCROLLWIN, OnScroll)
-        # label columns with unique part of histogram names
-        for i,hist in enumerate(histLabels(G2frame)[1]):
-            if i == 1:
-                HAPSizer.Add(wx.StaticText(HAPScroll,label='Copy'),
-                             0,wx.ALIGN_CENTER)
-            HAPSizer.Add(wx.StaticText(HAPScroll,label=f"\u25A1 = {hist}"),
-                             0,wx.ALIGN_CENTER)
-        w0 = wx.StaticText(lblScroll,label=' ')
-        lblSizer.Add(w0)
-        lblSizer.Add(wx.StaticText(lblScroll,label=' Ref '))
-        firstentry,lblDict = displayDataArray(rowLabels,prmArray,HAPSizer,HAPScroll,
-                    lblRow=True,lblSizer=lblSizer,lblPanel=lblScroll)
-        # get row sizes in data table
-        HAPSizer.Layout()
-        rowHeights = HAPSizer.GetRowHeights()
-        # set row sizes in Labels
-        # (must be done after HAPSizer row heights are defined)
-        s = wx.Size(-1,rowHeights[0])
-        w0.SetMinSize(s)
-        for i,row in enumerate(rowLabels):
-            s = wx.Size(-1,rowHeights[i+1])
-            lblDict[row].SetMinSize(s)
-        # Fit the scrolled windows to their content
-        lblSizer.Layout()
-        xLbl,_ = lblSizer.GetMinSize()
-        xTab,yTab = HAPSizer.GetMinSize()
-        lblScroll.SetSize((xLbl,yTab))
-        lblScroll.SetMinSize((xLbl+15,yTab)) # add room for scroll bar
-        lblScroll.SetVirtualSize(lblSizer.GetMinSize())
-        HAPScroll.SetVirtualSize(HAPSizer.GetMinSize())
-        lblScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
-        HAPScroll.SetupScrolling(scroll_x=True, scroll_y=True, rate_x=20, rate_y=20)
-        if firstentry is not None:    # prevent scroll to show last entry
-            wx.Window.SetFocus(firstentry)
-            firstentry.SetInsertionPoint(0) # prevent selection of text in widget
-
-    #G2frame.dataWindow.ClearData()
-
-    # layout the HAP window. This has histogram and phase info, so a
-    # notebook is needed for phase name selection. (That could
-    # be omitted for single-phase refinements, but better to remind the
-    # user of the phase
-    # topSizer = G2frame.dataWindow.topBox
-    # topParent = G2frame.dataWindow.topPanel
-    midPanel = G2frame.dataWindow
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    #botSizer = G2frame.dataWindow.bottomBox
-    #botParent = G2frame.dataWindow.bottomPanel
-
-    G2G.HorizontalLine(mainSizer,midPanel)
-    midPanel.SetSizer(mainSizer)
-    if not Phases:
-        mainSizer.Add(wx.StaticText(midPanel,
-                           label='There are no phases in use'))
-        G2frame.dataWindow.SetDataSize()
-        return
-    # notebook for phases
-    HAPBook = G2G.GSNoteBook(parent=midPanel)
-    mainSizer.Add(HAPBook,1,wx.ALL|wx.EXPAND,1)
-    HAPtabs = []
-    phaseList = []
-    for phaseName in Phases:
-        phaseList.append(phaseName)
-        HAPtabs.append(wx.Panel(HAPBook))
-        HAPBook.AddPage(HAPtabs[-1],phaseName)
-    HAPBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, selectPhase)
-
-    page = 0
-    HAPBook.SetSelection(page)
-    selectPhase(None)
-    #G2frame.dataWindow.SetDataSize()
-    colorCaption(G2frame)
-
 def getHAPvals(G2frame,phase,Histograms,Phases):
     '''Generate the Parameter Data Table (a dict of dicts) with 
     all HAP values for the selected phase and all histograms in the 
@@ -1315,11 +1197,13 @@ def computeShiftInfo(G2frame):
                 pass
     else:
         print('Warning: in Covariance, varyList, sig and Lastshft do not have same lengths!')
-    vmin = vmax = None
+    vmin = None
+    vmax = 1.0 # shifts less than 1 are small
     for v in shiftOsig.values():
         v = abs(v)
         if vmin is None:
             vmin = v
+        if vmax is None:
             vmax = v
         vmin = min(vmin,v)
         vmax = max(vmax,v)

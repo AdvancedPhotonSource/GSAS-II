@@ -2741,15 +2741,16 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
     extCor = 1.0
     dervDict = {}
     if 'microED' in calcControls[phfx+'EType']:
+        Fobs = np.sqrt(np.abs(ref[8+im]))
         FPone = np.sqrt(ref[9+im])
         PA = np.exp(-parmDict[phfx+'Ma']*FPone)
         PB = np.exp(-parmDict[phfx+'Mb']*FPone**2)
         PC = np.exp(-parmDict[phfx+'Mc']*FPone**3)
         extCor = (PA + PB + PC)/3.
         dE2 = 6./extCor**2       
-        dervDict[phfx+'Ma'] = dE2*PA*FPone**2
-        dervDict[phfx+'Mb'] = dE2*PB*FPone**3
-        dervDict[phfx+'Mc'] = dE2*PC*FPone**4
+        dervDict[phfx+'Ma'] = Fobs*dE2*PA*FPone
+        dervDict[phfx+'Mb'] = Fobs*dE2*PB*FPone**2
+        dervDict[phfx+'Mc'] = Fobs*dE2*PC*FPone**3
         return 1./extCor,dervDict
         
     if calcControls[phfx+'EType'] != 'None':

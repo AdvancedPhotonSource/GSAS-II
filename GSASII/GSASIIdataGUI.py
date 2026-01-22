@@ -7812,7 +7812,7 @@ def UpdateControls(G2frame,data):
     if 'Reverse Seq' not in data:
         data['Reverse Seq'] = False
     if 'UsrReject' not in data:
-        data['UsrReject'] = {'minF/sig':0.,'MinExt':0.01,'MaxDF/F':20.,'MaxD':500.,'MinD':0.05}
+        data['UsrReject'] = {'minF/sig':0.,'MinExt':0.01,'MaxDF/F':20.,'MaxD':500.,'MinD':0.10}
     if 'HatomFix' not in data:
         data['HatomFix'] = False
     if 'Marquardt' not in data:
@@ -8203,6 +8203,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
             Comments = []
         refList = np.copy(data[1]['RefList'])
         Comments.append(' Merging %d reflections from %s'%(len(refList),Name))
+        if 'Type' not in data[0]:
+            G2frame.ErrorDialog('Unknown data type','Define data type in Instrument Parameters first')
+            return
         dlg = MergeDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:

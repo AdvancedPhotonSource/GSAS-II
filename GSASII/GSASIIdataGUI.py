@@ -8234,7 +8234,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
         lenhkl = len(refList[0])
         if lenhkl == 14+Super:  #remove extra columns from extended microED data
             lenhkl -= 2
+        sumExt = 0.
+        Next = 0
         for ih,hkl in enumerate(refList):
+            if hkl[3+Super] == 0:
+                sumExt += hkl[5+Super]
+                Next += 1
             if str(hkl[:3+Super]) not in HKLdict:
                 HKLdict[str(hkl[:3+Super])] = [hkl[:3+Super],[hkl[3+Super:lenhkl],]]
             else:
@@ -8242,6 +8247,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
             dlg.Update(ih)
         dlg.Destroy()
         mergeRef = []
+        aveExt = sumExt/Next
+        print('Ave extinct Fo^2: %f.2'%(aveExt))
         dlg = wx.ProgressDialog('Processing merge','',len(HKLdict)+1,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         sumDf = 0.

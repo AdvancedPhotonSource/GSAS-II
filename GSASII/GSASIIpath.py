@@ -339,7 +339,7 @@ def getG2VersionInfo():
             elif age > 60 and len(rc) > 0:
                 msg += f"\n\t**** This version is really old ({age:.1f} days). Please update.\n\t**** At least {len(rc)} updates have been posted ****"
             elif (age > 5 and len(rc) > 0) or len(rc) > 5:
-                msg += f"\n\t**** Please consider updating. This version is {age:.1f} days old\n\t**** and {len(rc)} or more updates behind."
+                msg += f"\n\t**** Please consider updating. This version is {age:.1f} days old\n\t**** and at least {len(rc)} updates behind."
 #            elif len(rc) > 0:
 #                msg += f"\n\tThis GSAS-II version is ~{len(rc)} updates behind current."
         # could consider getting version & tag from gv if not None (see below)
@@ -876,7 +876,7 @@ def InstallGitBinary(tarURL, instDir, nameByVersion=False, verbose=True):
     :param bool verbose: if True (default), status messages are printed.
     :returns: None
     '''
-    # packages not commonly used so import them here not on startup
+    # packages not commonly used so import them here, not on startup
     import tempfile
     import tarfile
     try:
@@ -1264,9 +1264,11 @@ def InvokeDebugOpts():
             IPyBreak = IPyBreak_base
             sys.excepthook = exceptHook
             os.environ['PYTHONBREAKPOINT'] = 'GSASIIpath.IPyBreak_base'
-            print ('Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()')
+            print ('Debug mode: IPython shell called on Exceptions, breakpoint() and IPyBreak();\n\tfor pdb: pdbBreak()')
         except:
-            print ('Debug on failed. IPython not installed?')
+            print ('Debug mode without IPython; breakpoint() invokes pdb.')
+            from . import GSASIIfiles as G2fil
+            G2fil.NeededPackage({'IPython for debugging/code development':['ipython']})
     else: # not in spyder or debug enabled, hide breakpoints
         os.environ['PYTHONBREAKPOINT'] = '0'
 

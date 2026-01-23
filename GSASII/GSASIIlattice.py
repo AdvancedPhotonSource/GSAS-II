@@ -2536,8 +2536,9 @@ def GenRBCoeff(sytsym,RBsym,L):
     :param str sytsym: atom position site symmetry symbol
     :param str RBsym: molecular point symmetry symbol
     :param int L: spherical harmonic order no.
-    :returns list newNames: spherical harmonic term of order L as either C(L,M) or C(L,M)c for cubic terms
-    :returns list newSgns: matching coefficient signs as +/- 1.0
+    :returns: 
+       list newNames: spherical harmonic term of order L as either C(L,M) or C(L,M)c for cubic terms, 
+       list newSgns: matching coefficient signs as +/- 1.0
     '''
     coefNames = []
     coefSgns = []
@@ -2564,10 +2565,14 @@ def GenRBCoeff(sytsym,RBsym,L):
 def GenShCoeff(sytsym,L):
     '''Generate spherical harmonic coefficient names for atom site symmetry
 
+    Note there are functions GenShCoeff and GenSHCoeff
+
     :param str sytsym: site symmetry or perhaps molecular symmetry
-    :param int L:spherical harmonic order no.
-    :returns list newNames: spherical harmonic term of order L as either C(L,M) or C(L,M)c for cubic terms
-    :returns list newSgns: matching coefficient signs as +/- 1.0
+    :param int L: spherical harmonic order no.
+    :returns: newNames, newSgns
+       list newNames: spherical harmonic term of order L as 
+       either C(L,M) or C(L,M)c for cubic terms
+       list newSgns: matching coefficient signs as +/- 1.0
     '''
     coefNames = []
     coefSgns = []
@@ -2591,7 +2596,7 @@ def OdfChk(SGLaue,L,M):
     :param str SGLaue: Laue symbol
     :param int L: principal harmonic term; only evens are used
     :param int M: second harmonic term; can be -L <= M <= L
-    :returns True if allowed
+    :returns: True if allowed
     '''
     if not L%2 and abs(M) <= L:
         if SGLaue == '0':                      #cylindrical symmetry
@@ -2631,11 +2636,14 @@ def OdfChk(SGLaue,L,M):
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     '''Generate spherical harmonics coefficient names for texture
 
+    Note there are functions GenShCoeff and GenSHCoeff
+
     :param str SGLaue: Laue symbol
     :param str SamSym: sample symmetry symbol
     :param int L: spherical harmonic order no.
-    :param bool IfLMN: if TRUE return sp.harm. name as C(L,M,N); else return C(L,N)
-    :returns coefficient name as C(L,M,N) or C(L,N)
+    :param bool IfLMN: if TRUE returns sp.harm. name as C(L,M,N), 
+       otherwise returns C(L,N)
+    :returns: coefficient name as C(L,M,N) or C(L,N)
     '''
     coeffNames = []
     for iord in [2*i+2 for i in range(L//2)]:

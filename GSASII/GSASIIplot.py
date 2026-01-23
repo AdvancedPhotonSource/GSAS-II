@@ -8862,12 +8862,12 @@ def PlotLayers(G2frame,Layers,laySeq,defaults,firstCall=False):
 #### Plot Cluster Analysis ####################################################
 
 def PlotClusterXYZ(G2frame,YM,XYZ,CLuDict,Title='',PlotName='cluster'):
-    ''' To plot cluster analysis results
+    '''To plot cluster analysis results
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     :param array YM: data matrix; plotted as contour
     :param array XYZ: array of 3D PCA coordinates; plotted as 3D scatter plot
-    ;param dict CLuDict: Cluster info; may have dendrogram & Kmeans results
+    :param dict CLuDict: Cluster info; may have dendrogram & Kmeans results
     :param str Title: plot title
     :param str PlotName: plot tab name
     '''

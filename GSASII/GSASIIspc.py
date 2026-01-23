@@ -3455,15 +3455,8 @@ def GetSytSymChoice(sytsym):
     Get local sytsyms compatible with crystallographic sytsym - may be higher
     in sub-super point groups
 
-    Parameters
-    ----------
-    sytsym : str
-        DESCRIPTION.
-
-    Returns
-    -------
-   list of allowed point groups
-
+    :param str sytsym: site symmetry symbol (such as '-1', '222', '2/m(z)')
+    :returns: list of allowed point groups
     '''
     PtGrps = ['1','-1','2(z)','m(z)','2/m(z)',      #0-4
               '222','mm2','mmm','4','-4',           #5-9

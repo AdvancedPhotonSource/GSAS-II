@@ -123,12 +123,7 @@ python -m GSASII
 ### Linting and Code Quality
 ```bash
 # Using nox (recommended)
-python -m nox -s lint      # Pre-commit hooks and formatting
 python -m nox -s pylint    # Static code analysis
-
-# Manual linting
-python -m pip install pre-commit
-pre-commit run --all-files
 ```
 
 ### Documentation

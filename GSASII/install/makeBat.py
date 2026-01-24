@@ -76,25 +76,26 @@ if __name__ == '__main__':
     fp = open(G2bat,'w')
     fp.write("@REM created by run of makeBat.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
-    activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
+    #activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
+    activate = os.path.join(os.path.split(pythonexe)[0],'condabin','conda.bat')
     print("Looking for",activate)
     # for a non-base conda install, it might be better to use the activate in
     # the base, but for now let's use the one we find relative to our python
     if os.path.exists(activate):
         activate = os.path.realpath(activate)
         if ' ' in activate:
-            activate = 'call "'+ activate + '"\n'
+            activate = f'call "{activate}" activate\n'
         else:
-            activate = 'call '+ activate + '\n'
-        print(f'adding activate to .bat file ({activate})')
+            activate = f'call {activate} activate\n'
+        print(f'adding activate command to .bat file\n({activate})')
     else:
-        print('conda activate not found')
-        activate = ''
-    pexe = pythonexe
-    if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
+        print('Note: conda activate not found')
+        activate = '@REM no activate command found'
+    #pexe = pythonexe
+    #if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
     G2s = G2script
     if ' ' in G2s: G2s = '"'+G2script+'"'
-    fp.write(Script.format(activate,pexe,G2s))
+    fp.write(Script.format(activate,'python.exe',G2s))
     fp.close()
     print(f'\nCreated GSAS-II batch file {G2bat}')
 

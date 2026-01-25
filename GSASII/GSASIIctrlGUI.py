@@ -2225,6 +2225,62 @@ class G2MultiChoiceWindow(wx.BoxSizer):
             ChoiceList = self.ChoiceList
         self.clb.AppendItems(ChoiceList)
         self._ShowSelections()
+        
+def SelectSearchVars(G2frame,labelLst,keyList):
+    '''Get a sample parameter and a comment label from the user
+    so we can search for that in the comments
+    '''
+    def OnChoice(event):
+        'Respond when a parameter is selected in the Choice box'
+        key = event.GetEventObject().key
+        result[key] = event.GetString()
+        if result.get('Selection') and result.get('Key'):
+            dlg.EndModal(wx.ID_OK)
+
+    result = {}
+    dlg = wx.Dialog(G2frame,wx.ID_ANY,'Select a parameter to set',
+        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,5))
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Select a parameter'))
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND,0)
+    mainSizer.Add((0,10))
+
+    subSizer = wx.FlexGridSizer(0,2,5,0)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Parameter: '),0,wx.BOTTOM,10)
+    ch = wx.Choice(dlg, wx.ID_ANY, choices = sorted(labelLst))
+    ch.key = 'Selection'
+    ch.SetSelection(-1)
+    ch.Bind(wx.EVT_CHOICE, OnChoice)
+    subSizer.Add(ch)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Key in comments: '),0,wx.TOP,10)
+    ch = wx.Choice(dlg, wx.ID_ANY, choices = keyList)
+    ch.key = 'Key'
+    ch.SetSelection(-1)
+    ch.Bind(wx.EVT_CHOICE, OnChoice)
+    subSizer.Add(ch)
+    mainSizer.Add(subSizer)
+
+    mainSizer.Add((-1,20))
+    btnsizer = wx.StdDialogButtonSizer()
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    mainSizer.Add((-1,5),1,wx.EXPAND,1)
+    mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER,0)
+    mainSizer.Add((-1,10))
+
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    dlg.CenterOnParent()
+    if dlg.ShowModal() == wx.ID_OK:
+        dlg.Destroy()
+        return result.get('Selection'),result.get('Key')
+    dlg.Destroy()
+    return None,None
 
 def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
     '''Select a variable from a list, then edit it and select histograms

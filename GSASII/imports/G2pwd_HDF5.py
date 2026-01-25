@@ -343,6 +343,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 # conditions into ParamTrackingVars. These arrays will have 
                 # the same length as the number of datasets (self.numparams)
                 if 'validate' not in fmt: # skip if we are validating the file rather than reading it
+                    parametricValues = []
                     fpbuffer['ParamTrackingVars'] = {}
                     paramItems = []
                     for loc in nexusDict.values():
@@ -361,9 +362,11 @@ class HDF5_Reader(G2obj.ImportPowderData):
                                 # for the first histogram only. If they are changing, note that 
                                 # here and later they will be put into every histogram.
                                 if all(obj[0] == obj):
-                                    self.comments.append(f'{key.split("/")[-1]}={obj[0]}')
+                                    #self.comments.append(f'{key.split("/")[-1]}={obj[0]}')
+                                    parametricValues.append(f'{key.split("/")[-1]}={obj[0]}')
                                 else:
                                     fpbuffer['ParamTrackingVars'][key] = np.array(obj[()])
+                    self.comments = parametricValues + self.comments # put in front
             except IOError:
                 print (f'Cannot open or read file {filename}')
                 self.errors = f'{fmt} Can not open or read file {filename}'
@@ -378,11 +381,12 @@ class HDF5_Reader(G2obj.ImportPowderData):
         return True
 
     def FillInParametics(self,fpbuffer,count):
-        '''put changing parametric variables into the comments
+        '''put changing parametric variables into the top of the comments
         '''
+        parametics = []
         for key,arr in fpbuffer['ParamTrackingVars'].items():
             val = arr[count]
-            self.comments.append(f'{key.split("/")[-1]}={val}')
+            parametics.append(f'{key.split("/")[-1]}={val}')
             if 'temperature' in key:
                 self.Sample['Temperature'] = val # in K already
             elif 'time' in key:
@@ -393,6 +397,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 self.Sample['Phi'] = val
             elif 'omega' in key:
                 self.Sample['Omega'] = val
+        self.comments = parametics + self.comments
     
     # HDF5 support routines.
     def RecurseH5Element(self,obj,prefix=[],length=None):
@@ -473,7 +478,7 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 #     lbl = lbl.split()[0] + '...'
                 if lbl != '(group)': strings.append(f"{'/'.join(k):{m}s} {lbl}")
                 if nxname: print(f"{'/'.join(k):{m}s} {lbl} {nxname}")
-        with open(filename+'_contents.txt', 'w') as fp:
+        with open(filename+'_NeXusMap.txt', 'w') as fp:
             for i in strings: fp.write(f'{i}\n')
 
     def ShowH5Element(self,obj,keylist):
@@ -494,7 +499,12 @@ class HDF5_Reader(G2obj.ImportPowderData):
             datfmt = obj[k].dtype
             if datfmt == 'O' or str(datfmt).startswith('|S'):
                 # byte string
-                return f'value={obj[k][()].decode()}'
+                if hasattr(obj[k][()],'decode'):
+                    return f'value={obj[k][()].decode()}'
+                elif hasattr(obj[k][()],'tobytes'):
+                    return f'value={obj[k][()].tobytes().decode()}'
+                else:
+                    return f'value={obj[k][()]} not decoded'
             elif datfmt == 'bool': # Bool
                 return f'value={bool(obj[k][()])}'
             elif datfmt in ('<f8', 'uint8', 'int64', '<f4'): # scalar value or array of values
@@ -504,7 +514,15 @@ class HDF5_Reader(G2obj.ImportPowderData):
                 except:
                     return f'value={obj[k][()]}'
             else:
-                return f'dataset of type {repr(datfmt)}'
+                l = ''
+                try:
+                    l = f' size {obj[k].shape}'
+                except:
+                    try:
+                        l = f' value={obj[k][()]}'
+                    except:
+                        pass
+                return f'dataset of type {repr(datfmt)}{l}'
         elif ".Group'" in typ:
             return "(group)"
         else:

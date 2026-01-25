@@ -105,7 +105,7 @@ if __name__ == '__main__':
     if not os.path.exists:
         print(f'the installation script was not found: {gitstrap!r}')
     else:
-        G2reset = os.path.normpath(os.path.join(path2repo,'..','Reset2FreshGSASII.bat'))
+        G2reset = os.path.normpath(os.path.join(path2repo,'..','2Reset2FreshGSASII.bat'))
         fp = open(G2reset,'w')
         fp.write("@REM created by run of makeBat.py on {:%d %b %Y %H:%M}\n".format(
             datetime.datetime.now()))

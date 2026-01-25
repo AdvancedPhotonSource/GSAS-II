@@ -2,8 +2,8 @@
 config.py
 
 # local code for debugging
-debug_setup.py.example
-debug_setup.py
+debug_setup.py*
+debug_startup.py*
 
 # created by install/saved-versions.py
 GSASII/saved_version.py

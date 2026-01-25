@@ -770,6 +770,15 @@ def GSASIImain(application):
     #application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
     application.main.UpdateTask = GSASIIpath.GetRepoUpdatesInBackground()
+    if GSASIIpath.GetConfigValue('debug'):
+        cmdfile = os.path.join(GSASIIpath.path2GSAS2,'debug_startup.py')
+        if os.path.exists(cmdfile):
+            print(f'executing debug commands from {cmdfile}')
+            txt = open(cmdfile,'r').read()
+            def exectxt():
+#                    print(txt)
+                exec(txt)
+            wx.CallLater(100,exectxt)
 
 #### Create main frame (window) for GUI; main menu items here #######################################
 class GSASII(wx.Frame):
@@ -982,7 +991,7 @@ class GSASII(wx.Frame):
         return False
 
     def OnImportGeneric(self,reader,readerlist,label,multiple=False,
-        usedRanIdList=[],Preview=True,load2Tree=False):
+        usedRanIdList=[],Preview=True,load2Tree=False,filename=None):
         '''Used for all imports, including Phases, datasets, images...
 
         Called from :meth:`GSASII.OnImportPhase`, :meth:`GSASII.OnImportImage`,
@@ -1032,6 +1041,8 @@ class GSASII(wx.Frame):
           value to change to a list of True values rather than
           reader objects.
 
+        :param str filename: a filename, used only for debugging
+
         :returns: a list of reader objects (rd_list) that were able
           to read the specified file(s). This list may be empty.
         '''
@@ -1079,8 +1090,11 @@ class GSASII(wx.Frame):
             typ = ' (type to be guessed)'
         else:
             typ = ' (type '+readerlist[0].formatName+')'
-        filelist = G2G.GetImportFile(self,message="Choose "+label+" input file"+typ,
-            defaultFile="",wildcard=choices,style=mode)
+        if filename:
+            filelist = [filename,]
+        else:
+            filelist = G2G.GetImportFile(self,message="Choose "+label+" input file"+typ,
+                defaultFile="",wildcard=choices,style=mode)
         rd_list = []
         filelist1 = []
         for filename in filelist:
@@ -6955,7 +6969,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
         # PWDR / Sample Parameters
         G2G.Define_wxId('wxID_SAMPLECOPY', 'wxID_SAMPLECOPYSOME', 'wxID_SAMPLEFLAGCOPY','wxID_SAMPLESAVE',
-             'wxID_SAMPLELOAD', 'wxID_SETSCALE', 'wxID_SAMPLE1VAL', 'wxID_ALLSAMPLELOAD',)
+             'wxID_SAMPLELOAD', 'wxID_SETSCALE', 'wxID_SAMPLE1VAL', 'wxID_ALLSAMPLELOAD','wxID_SEARCHVAL',)
         def _makemenu():     # routine to create menu when first used
             self.SampleMenu = wx.MenuBar()
             self.PrefillDataMenu(self.SampleMenu)
@@ -6970,6 +6984,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.SampleEdit.Append(G2G.wxID_SAMPLE1VAL,'Set one value','Set one sample parameter value across multiple histograms')
             self.SampleEdit.Append(G2G.wxID_ALLSAMPLELOAD,'Load all','Load sample parameters over multiple histograms')
             self.SampleEdit.Append(G2G.wxID_RESCALEALL,'Rescale all','Rescale all data with selected range')
+            self.SampleEdit.Append(G2G.wxID_SEARCHVAL,'Set from comments','Search the comments to set a parameter value')
             self.PostfillDataMenu()
             self.SetScale.Enable(False)
             SetDataMenuBar(G2frame,self.SampleMenu)

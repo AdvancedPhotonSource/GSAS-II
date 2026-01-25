@@ -3849,27 +3849,113 @@ def UpdateSampleGrid(G2frame,data):
         # TODO: check if values need to be copied to editing widgets
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
+    def OnSearchComments(event):
+        '''Set a selected Sample parameter from a selected entry in the comments
+        for a selected set of histograms
+        '''
+        # get possible keys from current histogram's comments
+        Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                        G2frame, G2frame.PatternId, 'Comments'))
+        keyList = []
+        for line in Comments:
+            if ':' in line:
+                key = line.split(':')[0]
+            elif '=' in line:
+                key = line.split('=')[0]
+            else:
+                continue
+            keyList.append(key.strip())
+        sampleVar,commentKey = G2G.SelectSearchVars(G2frame,labelLst,keyList)
+        if sampleVar is None or commentKey is None: return
+        # find the array element tied to the sample var
+        if sampleVar not in labelLst:
+            print(f'OnSearchComments: how did we get {sampleVar} not in {labelLst}?')
+            return
+        i = labelLst.index(sampleVar)
+        sampleArrKeys = elemKeysLst[i]
+        # need to select histograms to search/set        
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        histList.insert(0,hst)
+        if len(histList) == 1: # only current histogram present -- don't ask
+            selection = [0]
+        else:
+            dlg = G2G.G2MultiChoiceDialog(G2frame,f'Set "{sampleVar}" value in histograms...',
+                                      'Set value from comments', histList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    selection = dlg.GetSelections()
+            finally:
+                dlg.Destroy()
+        # cycle through selected histograms, get comments & values
+        count = 0
+        for i in selection:
+            hist = histList[i]
+            hId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, hist)
+            if not hId:
+                print(f'{hist} not found! strange')
+                continue
+            Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hId,'Comments'))
+            Sample =   G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hId, 'Sample Parameters'))
+            # search comments for value matching commentKey
+            for item in Comments:
+                if '=' in item:
+                    itemSp = item.split('=')
+                elif ':' in item:
+                    itemSp = item.split(':')
+                else:
+                    continue
+                if commentKey == itemSp[0]:
+                    try:
+                        value = float(itemSp[1])
+                        break
+                    except:
+                        print(f'"{item.strip()}" has an invalid value in Comments for {hist}')
+            else:
+                print(f'"{commentKey}" not in Comments for {hist}')
+                continue
+            # set the value in the selected entry in Sample Parameters
+            try:
+                d = Sample
+                for k in sampleArrKeys[:-1]:
+                    d = d[k]
+                d[sampleArrKeys[-1]]
+            except KeyError:
+                print(f'Strange: "{commentKey}" not in Sample Parameters for {hist}')
+                continue
+            count += 1
+            d[sampleArrKeys[-1]] = value
+        print(f'Done. Set "{sampleVar}" in {count} histograms')
+        wx.CallAfter(UpdateSampleGrid,G2frame,data)
+
     def SearchAllComments(value,tc,*args,**kwargs):
         '''Called when the label for a FreePrm is changed: the comments for all PWDR
-        histograms are searched for a "label=value" pair that matches the label (case
+        histograms are searched for a "label=value" or "label:value" pair that matches the label (case
         is ignored) and the values are then set to this value, if it can be converted
         to a float.
         '''
         Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+        count = 0
         while Id:
             name = G2frame.GPXtree.GetItemText(Id)
             if 'PWDR' in name:
                 Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'))
                 Sample =   G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Sample Parameters'))
                 for i,item in enumerate(Comments):
-                    itemSp = item.split('=')
-                    if value.lower() == itemSp[0].lower():
+                    if '=' in item:
+                        itemSp = item.split('=')
+                    elif ':' in item:
+                        itemSp = item.split(':')
+                    else:
+                        continue
+                    if value.lower() in itemSp[0].lower():
                         try:
                             Sample[tc.key] = float(itemSp[1])
                         except:
                             print('"{}" has an invalid value in Comments from {}'
                                   .format(item.strip(),name))
             Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        print(f'{count} values were found in the histogram comments')
         wx.CallLater(100,UpdateSampleGrid,G2frame,data)
 
     # start of UpdateSampleGrid
@@ -3886,6 +3972,7 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2G.wxID_SAMPLESAVE)
     G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2G.wxID_SAMPLELOAD)
     G2frame.Bind(wx.EVT_MENU, OnCopy1Val, id=G2G.wxID_SAMPLE1VAL)
+    G2frame.Bind(wx.EVT_MENU, OnSearchComments, id=G2G.wxID_SEARCHVAL)
     G2frame.Bind(wx.EVT_MENU, OnAllSampleLoad, id=G2G.wxID_ALLSAMPLELOAD)
     G2frame.Bind(wx.EVT_MENU, OnRescaleAll, id=G2G.wxID_RESCALEALL)
     if histName[:4] in ['SASD','REFD','PWDR']:

@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
 '''A reader for HDF-5 files. This should be as generic as possible, but
 at present this is pretty much customized for XSD-MPE (APS) uses.
+
+Note that for further development of this routine, as more types of HDF5 
+image files occur "in the wild," it is often helpful to 
+map out the contents of a HDF5 file. If debug mode is on and the full file
+name/path contains either 'tmp' or 'scratch' (case is ignored) then the 
+two files are created with filename + _HDF5Map.txt and + _NeXusMap.txt
+that use HDF5 and NeXus routines to outline the file contents.
 '''
+import copy
+import numpy as np
 try:
     import h5py
 except ImportError:
@@ -11,9 +20,10 @@ from .. import GSASIIfiles as G2fil
 from .. import GSASIIpath
 
 class HDF5_Reader(G2obj.ImportImage):
-    '''Routine to read a HDF-5 image, typically from APS Sector 1 or 6.
-    Initial version from B. Frosik/SDM.
-    Updated to also handle images from APS 1-ID-C.
+    '''Routine to read one or more HDF-5 images from a HDF5 file, 
+    typically from APS Sectors 1, 6 or 20.
+
+    Initial version from Barbara Frosik/SDM.
     '''
     def __init__(self):
         if h5py is None:
@@ -32,6 +42,19 @@ class HDF5_Reader(G2obj.ImportImage):
         try:
             fp = h5py.File(filename, 'r')
             fp.close()
+            if not GSASIIpath.GetConfigValue('debug'): return True
+
+            # diagram out the file if in debug and if in a scratch area
+            if 'scratch' in filename.lower() or 'tmp' in filename.lower():
+                # first try NeXus
+                from ..imports import G2pwd_HDF5
+                NeXreader = G2pwd_HDF5.HDF5_Reader()
+                print('Performing NeXus debug scan')
+                NeXreader.HDF5list(filename)
+                # now scan as plain HDF5
+                fp = h5py.File(filename, 'r')
+                with open(filename+'_HDF5Map.txt', 'w') as log:
+                    self.visit(fp,log=log)
             return True
         except IOError:
             return False
@@ -67,7 +90,7 @@ class HDF5_Reader(G2obj.ImportImage):
             try:
                 if GSASIIpath.GetConfigValue('debug'): print('Scanning for image map')
                 self.buffer['imagemap'] = []
-                self.Comments = self.visit(fp)
+                self.UniversalComments = self.visit(fp)
                 if len(self.buffer['imagemap']) == 0:
                     self.errors = 'No valid images found in file'
                     fp.close()
@@ -147,23 +170,64 @@ class HDF5_Reader(G2obj.ImportImage):
         fp.close()
         return True
 
-    def visit(self, fp):
+    def visit(self, fp, log=None):
         '''Recursively visit every node in an HDF5 file & look at dimensions
         of contents. If the shape is length 2, 3, or 4 assume an image
-        and index in self.buffer['imagemap']
+        and index in self.buffer['imagemap']. Optionally save an outline
+        of the file contents on log, if defined. 
+
+        :param fp: an HDF5 file object from h5py.File()
+        :param log: an optional text file object [from open()]. If supplied, an outline
+          of the file contents is placed here.
         '''
-        head = []
+        header = []
+        if hasattr(self,'buffer'): self.buffer['ParamTrackingVars'] = {}
         def func(name, dset):
-            if not hasattr(dset,'shape'): return # not array, can't be image
+            '''process each entry in the file, classifying or sticking 
+            values into the header (comments)
+            '''
+            if not hasattr(dset,'shape'):
+                if log is not None: 
+                    log.write(f'{name} (node)\n')
+                return # not array, can't be image
+            if isinstance(dset, h5py.Dataset) and log is not None:
+                dims = dset.shape
+                if len(dims) == 0:
+                    log.write(f'{name} = {dset[()]}\n')
+                elif len(dims) == 1:
+                    log.write(f'{name} ({dims[0]} elements)\n\t{dset[()][:5]}...\n')
+                else:
+                    log.write(f'{name} dimensions {dims}\n')
+            if not hasattr(self,'buffer'): return
             if isinstance(dset, h5py.Dataset):
                 dims = dset.shape
                 try:
-                    if len(dims) == 0:
+                    if len(dims) <= 1:
+                        # entries that will go into header or are parametric
                         val = dset[()]
-                        if type(val) is bytes: val = val.decode()
-                        head.append(f'{dset.name}: {val}')
-                    elif len(dims) < 2:
-                        head.append(f'{dset.name}: {dset[()][0]}')
+                        if hasattr(val,'decode'):
+                            val = val.decode()
+                        elif dims == (1,) and hasattr(val,'tobytes') and str(val.dtype).startswith('|S'):
+                            try:
+                                val = val.tobytes().decode().rstrip('\x00')
+                            except:
+                                pass
+                        #elif dims == (1,): # single value arrays
+                        #    val = val[0]
+                        elif all(np.nan_to_num(val[0]) == np.nan_to_num(val)): # arrays where all values are the same
+                            if 'float' in str(dset[()].dtype):
+                                val = f'{val[0]:.8g}'
+                            elif 'int' in str(dset[()].dtype):
+                                val = f'{val[0]}'
+                            elif '|S' in str(dset[()].dtype):
+                                val = val[0].tobytes().decode().rstrip('\x00')
+                            else:  # not string, float or int, hope for best
+                                val = val[0]
+                        else:
+                            # this is likely a parametric array. Store it for later
+                            self.buffer['ParamTrackingVars'][dset.name] =  np.array(dset[()])
+                            return
+                        header.append(f'{dset.name}: {val}')
                     elif len(dims) == 4:
                         size = dims[2:]
                         self.buffer['imagemap'] += [(dset.name,i,size) for i in range(dims[1])]
@@ -178,7 +242,7 @@ class HDF5_Reader(G2obj.ImportImage):
                 except Exception as msg:
                     print(f'Skipping entry {dset.name} Error getting shape\n{msg}')
         fp.visititems(func)
-        return head
+        return header
 
     def readDataset(self,fp,imagenum=1,name=None,num=None):
         '''Read a specified image number from a file
@@ -191,16 +255,26 @@ class HDF5_Reader(G2obj.ImportImage):
         dset = fp[name]
         if num == None:
             image = dset[()]
+            blocklen = 0
         elif len(dset.shape) == 4:
             image = dset[0,num,...]
+            blocklen = dset.shape[1]
         elif len(dset.shape) == 3:
             image = dset[num,...]
+            blocklen = dset.shape[0]
         else:
-            msg = 'Unexpected image dimensions '+name
+            msg = f'Unexpected image dimensions {name}'
             print(msg)
             raise Exception(msg)
         if quick:
             return {},None,image.T
+        # add parametric values to the brginning of the comments
+        self.Comments = []
+        for k in self.buffer.get('ParamTrackingVars',[]):
+            arr = self.buffer['ParamTrackingVars'][k]
+            if len(arr) != blocklen: continue
+            self.Comments.append(f'{k.split("/")[-1]}: {arr[num]}')
+        self.Comments += copy.deepcopy(self.UniversalComments)
         sizexy = list(image.shape)
         Npix = sizexy[0]*sizexy[1]
         # default pixel size (for APS sector 6?)

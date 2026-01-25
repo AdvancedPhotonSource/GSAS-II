@@ -255,6 +255,145 @@ class MergeDialog(wx.Dialog):
         if parent is not None: parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
+class HKLSortDialog(wx.Dialog):
+    ''' HKL transformation & sort dialog - no merge
+
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param data: HKLF data
+
+    '''
+
+    def __init__(self,parent,data):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup HKLF sort',
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.data = data
+        self.Super = data[1]['Super']
+        if self.Super:
+            self.Trans = np.eye(4)
+        else:
+            self.Trans = np.eye(3)
+        self.Type = data[0]['Type']
+        self.Cent = 'noncentrosymmetric'
+        self.Laue = '1'
+        self.Class = 'triclinic'
+        self.Common = 'abc'
+        self.Draw()
+
+    def Draw(self):
+
+        def OnCent(event):
+            Obj = event.GetEventObject()
+            self.Cent = Obj.GetValue()
+            self.Laue = ''
+            wx.CallAfter(self.Draw)
+
+        def OnLaue(event):
+            Obj = event.GetEventObject()
+            self.Laue = Obj.GetValue()
+            wx.CallAfter(self.Draw)
+
+        def OnClass(event):
+            Obj = event.GetEventObject()
+            self.Class = Obj.GetValue()
+            self.Laue = ''
+            wx.CallAfter(self.Draw)
+
+        def OnCommon(event):
+            Obj = event.GetEventObject()
+            self.Common = Obj.GetValue()
+            self.Trans = commonTrans[self.Common]
+            wx.CallAfter(self.Draw)
+            
+        def OnSmart(event):
+            self.Smart = not self.Smart
+
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        MatSizer = wx.BoxSizer(wx.HORIZONTAL)
+        transSizer = wx.BoxSizer(wx.VERTICAL)
+        transSizer.Add(wx.StaticText(self.panel,label=" HKL Transformation matrix: M*H = H'"))
+        if self.Super:
+            Trmat = wx.FlexGridSizer(4,4,0,0)
+        else:
+            commonSizer = wx.BoxSizer(wx.HORIZONTAL)
+            commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
+            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames[:-2], #not the last two!
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            common.Bind(wx.EVT_COMBOBOX,OnCommon)
+            commonSizer.Add(common,0,WACV)
+            transSizer.Add(commonSizer)
+            Trmat = wx.FlexGridSizer(3,3,0,0)
+        for iy,line in enumerate(self.Trans):
+            for ix,val in enumerate(line):
+                item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),size=(65,25))
+                Trmat.Add(item)
+        transSizer.Add(Trmat)
+        MatSizer.Add((10,0),0)
+        MatSizer.Add(transSizer)
+        mainSizer.Add(MatSizer)
+        laueClass = ['triclinic','monoclinic','orthorhombic','trigonal(H)','trigonal(R)','tetragonal','hexagonal','cubic']
+        centroLaue = {'triclinic':['-1',],'monoclinic':['2/m','1 1 2/m','2/m 1 1',],
+            'orthorhombic':['m m m',],'trigonal(H)':['-3','-3 m 1','-3 1 m',],'trigonal(R)':['-3','-3 m'],\
+            'tetragonal':['4/m','4/m m m',],'hexagonal':['6/m','6/m m m',],'cubic':['m 3','m 3 m']}
+        noncentroLaue = {'triclinic':['1',],'monoclinic':['2','2 1 1','1 1 2','m','m 1 1','1 1 m',],
+            'orthorhombic':['2 2 2','m m 2','m 2 m','2 m m',],
+            'trigonal(H)':['3','3 1 2','3 2 1','3 m 1','3 1 m',],'trigonal(R)':['3','3 m'],
+            'tetragonal':['4','-4','4 2 2','4 m m','-4 2 m','-4 m 2',], \
+            'hexagonal':['6','-6','6 2 2','6 m m','-6 m 2','-6 2 m',],'cubic':['2 3','4 3 2','-4 3 m']}
+        centChoice = ['noncentrosymmetric','centrosymmetric']
+        mainSizer.Add(wx.StaticText(self.panel,label=' Select Laue class for new lattice:'),0)
+        Class = wx.ComboBox(self.panel,value=self.Class,choices=laueClass,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Class.Bind(wx.EVT_COMBOBOX,OnClass)
+        mainSizer.Add(Class,0)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Target Laue symmetry:'),0)
+        Cent = wx.ComboBox(self.panel,value=self.Cent,choices=centChoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Cent.Bind(wx.EVT_COMBOBOX,OnCent)
+        sortSizer = wx.BoxSizer(wx.HORIZONTAL)
+        sortSizer.Add(Cent,0,WACV)
+        sortSizer.Add((10,0),0)
+        Choice = centroLaue[self.Class]
+        if 'non' in self.Cent:
+            Choice = noncentroLaue[self.Class]
+        Laue = wx.ComboBox(self.panel,value=self.Laue,choices=Choice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Laue.Bind(wx.EVT_COMBOBOX,OnLaue)
+        sortSizer.Add(Laue,0,WACV)
+        mainSizer.Add(sortSizer)
+
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        if self.Laue:
+            btnSizer.Add(OkBtn)
+            btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetSelection(self):
+        return self.Trans,self.Cent,self.Laue
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        if parent is not None: parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        if parent is not None: parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
 def GUIpatches():
     'Misc fixes that only needs to be done when running a GUI'
     try:  # patch for LANG environment var problem on occasional OSX machines
@@ -6716,13 +6855,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PWDRMenu = _makemenu
 
         # HKLF - many wxIDs defined in PWDR & SASD above
-        G2G.Define_wxId('wxID_3DALLHKLPLOT','wxID_MERGEHKL','wxID_FIXFSQSQDATA')
+        G2G.Define_wxId('wxID_3DALLHKLPLOT','wxID_SORTHKL','wxID_MERGEHKL','wxID_FIXFSQSQDATA')
         def _makemenu():     # routine to create menu when first used
             self.HKLFMenu = wx.MenuBar()
             self.PrefillDataMenu(self.HKLFMenu)
             self.ErrorAnal = wx.Menu(title='')
             self.HKLFMenu.Append(menu=self.ErrorAnal,title='Commands')
             self.ErrorAnal.Append(G2G.wxID_PWDANALYSIS,'Error Analysis','Error analysis on single crystal data')
+            self.ErrorAnal.Append(G2G.wxID_SORTHKL,'Sort HKLs','Transform & sort HKLF data to new histogram')
             self.ErrorAnal.Append(G2G.wxID_MERGEHKL,'Merge HKLs','Transform & merge HKLF data to new histogram')
             self.ErrorAnal.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs from single crystal data in 1D')
             self.ErrorAnal.Append(G2G.wxID_3DALLHKLPLOT,'Plot all 3D HKLs','Plot HKLs from all single crystal data in 3D')
@@ -8146,6 +8286,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
 
     def OnPlot1DHKL(event):
         '''Plots a 1D stick diagram of reflection intensities'''
+        data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         refList = data[1]['RefList']
         G2plt.Plot1DSngl(G2frame,newPlot=True,hklRef=refList,Super=Super,Title=phaseName)
 
@@ -8196,6 +8337,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
 
     def OnMergeHKL(event):
         '''Merge HKLF data sets to unique set according to Laue symmetry'''
+        data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         Inst = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))
@@ -8321,6 +8463,95 @@ def UpdatePWHKPlot(G2frame,kind,item):
         newData[0]['ranId'] = ran.randint(0,sys.maxsize)
         newData[1]['RefList'] = mergeRef
         newData[0]['Nobs'] = mergeRef.shape[0]
+        newData[0]['wR'] = 0.0
+        keys = list(newData[0].keys())
+        for item in keys:
+            if ':' in item:
+                del newData[0][item]
+        Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=newName)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),Inst)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
+        G2frame.GPXtree.SetItemPyData(Id,newData)
+        
+    def OnSortHKL(event):
+        '''Sort HKLF data sets to unique set according to Laue symmetry - no merge'''
+        data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+        Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        Inst = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,
+            G2frame.PatternId,'Instrument Parameters'))
+        CId = GetGPXtreeItemId(G2frame,G2frame.PatternId,'Comments')
+        if CId:
+            Comments = G2frame.GPXtree.GetItemPyData(CId)
+        else:
+            Comments = []
+        refList = np.copy(data[1]['RefList'])
+        Comments.append(' Sorting %d reflections from %s'%(len(refList),Name))
+        if 'Type' not in data[0]:
+            G2frame.ErrorDialog('Unknown data type','Define data type in Instrument Parameters first')
+            return
+        dlg = HKLSortDialog(G2frame,data)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                Trans,Cent,Laue = dlg.GetSelection()
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        Super = data[1]['Super']
+        isup = 0
+        if Super:
+            isup = 1
+        refList,badRefs = G2lat.transposeHKLF(Trans,isup,refList)
+        if len(badRefs):    #do I want to list badRefs?
+            G2frame.ErrorDialog('Failed transformation','Matrix yields fractional hkl indices')
+            return
+        Comments.append(" Transformation M*H = H' applied; M=")
+        Comments.append(str(Trans))
+        refList = G2lat.LaueUnique(Laue,refList)
+        dlg = wx.ProgressDialog('Build HKL dictonary','',len(refList)+1,
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        HKLdict = {}
+        lenhkl = len(refList[0])
+        sumExt = 0.
+        Next = 0
+        for ih,hkl in enumerate(refList):
+            if hkl[3+Super] == 0:
+                sumExt += hkl[5+Super]
+                Next += 1
+            if str(hkl[:3+Super]) not in HKLdict:
+                HKLdict[str(hkl[:3+Super])] = [hkl[:3+Super],[hkl[3+Super:lenhkl],]]
+            else:
+                HKLdict[str(hkl[:3+Super])][1].append(hkl[3+Super:lenhkl])
+            dlg.Update(ih)
+        dlg.Destroy()
+        sortRef = []
+        aveExt = sumExt/Next
+        print('Ave extinct Fo^2: %f.2'%(aveExt))
+        dlg = wx.ProgressDialog('Processing sort','',len(HKLdict)+1,
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        HKLs = list(HKLdict)
+        HKLs.sort()
+        for ih,hkl in enumerate(HKLs):
+            HKL = HKLdict[hkl]
+            for Hdata in HKL[1]:
+                sortRef.append(np.hstack((HKL[0],Hdata)))
+        dlg.Destroy()
+        sortRef = np.array(sortRef)
+        HKLFlist = []
+        newName = Name+u' '+Laue+'Sort'
+        if G2frame.GPXtree.GetCount():
+            item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+            while item:
+                name = G2frame.GPXtree.GetItemText(item)
+                if name.startswith('HKLF ') and name not in HKLFlist:
+                    HKLFlist.append(name)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        newName = G2obj.MakeUniqueLabel(newName,HKLFlist)
+        newData = copy.deepcopy(data)
+        newData[0]['ranId'] = ran.randint(0,sys.maxsize)
+        newData[1]['RefList'] = sortRef
+        newData[0]['Nobs'] = sortRef.shape[0]
         newData[0]['wR'] = 0.0
         keys = list(newData[0].keys())
         for item in keys:
@@ -8459,6 +8690,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     elif kind in ['HKLF',]:
         SetDataMenuBar(G2frame,G2frame.dataWindow.HKLFMenu)
         G2frame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=G2G.wxID_PWDANALYSIS)
+        G2frame.Bind(wx.EVT_MENU, OnSortHKL, id=G2G.wxID_SORTHKL)
         G2frame.Bind(wx.EVT_MENU, OnMergeHKL, id=G2G.wxID_MERGEHKL)
         G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
 #        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)

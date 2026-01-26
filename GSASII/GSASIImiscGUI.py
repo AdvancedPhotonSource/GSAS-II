@@ -8,8 +8,6 @@ which is why most modules reference it as G2IO.
 
 '''
 
-from __future__ import division, print_function
-
 # # Allow this to be imported without wx present.
 # try:
 #     import wx
@@ -554,6 +552,8 @@ def ProjFileOpen(G2frame,showProvenance=True):
         finally:
             dlg.Destroy()
     wx.BeginBusyCursor()
+    groupDict = {}
+    groupInserted = False   # only need to do this once
     try:
         if GSASIIpath.GetConfigValue('show_gpxSize'):
             posPrev = 0
@@ -575,6 +575,14 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 #if unexpectedObject:
                 #    print(datum[0])
                 #    GSASIIpath.IPyBreak()
+            # insert groups before any individual PDWR items
+            if datum[0].startswith('PWDR') and groupDict and not groupInserted:
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Groups/Powder')
+                G2frame.GPXtree.SetItemPyData(Id,{})
+                for nam in groupDict:
+                    sub = G2frame.GPXtree.AppendItem(parent=Id,text=nam)
+                    G2frame.GPXtree.SetItemPyData(sub,{})
+                groupInserted = True
             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=datum[0])
             if datum[0] == 'Phases' and GSASIIpath.GetConfigValue('SeparateHistPhaseTreeItem',False):
                 G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Hist/Phase')
@@ -582,6 +590,8 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 for pdata in data[1:]:
                     if pdata[0] in Phases:
                         pdata[1].update(Phases[pdata[0]])
+            elif datum[0] == 'Controls':
+                groupDict = datum[1].get('Groups',{}).get('groupDict',{})
             elif updateFromSeq and datum[0] == 'Covariance':
                 data[0][1] = CovData
             elif updateFromSeq and datum[0] == 'Rigid bodies':
@@ -720,7 +730,7 @@ def ProjFileSave(G2frame):
             while item:
                 data = []
                 name = G2frame.GPXtree.GetItemText(item)
-                if name.startswith('Hist/Phase'):  # skip over this
+                if name.startswith('Hist/Phase') or name.startswith('Groups'):  # skip over this
                     item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
                     continue
                 data.append([name,G2frame.GPXtree.GetItemPyData(item)])

@@ -4046,7 +4046,7 @@ def FourierMap(data,reflDict):
 #    Fhkl[0,0,0] = generalData['F000X']
     time0 = time.time()
     for iref,ref in enumerate(reflDict['RefList']):
-        if ref[4] > dmin:
+        if ref[4] > dmin and ref[3] > 0:
             Fosq,Fcsq,ph = ref[8:11]
             Uniq = np.inner(ref[:3],SGMT)
             Phi = np.inner(ref[:3],SGT)

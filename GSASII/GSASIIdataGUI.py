@@ -8554,7 +8554,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         dlg.Destroy()
         sortRef = np.array(sortRef)
         HKLFlist = []
-        newName = Name+u' '+Laue+'Sort'
+        newName = Name+u' '+Laue+'_Sort'
         if G2frame.GPXtree.GetCount():
             item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
             while item:

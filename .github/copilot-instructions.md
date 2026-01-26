@@ -28,7 +28,7 @@ python -m pip install wxpython matplotlib pyopengl
 python -m pip install pillow h5py imageio requests gitpython pybaselines
 
 # For testing and development
-python -m pip install pytest nox
+python -m pip install pytest
 ```
 
 ### Run Tests
@@ -45,9 +45,6 @@ python -m pytest tests/ -v
 
 # Run specific test modules that work offline
 python -m pytest tests/test_lattice.py tests/test_nistlat.py tests/test_elm.py -v
-
-# Using nox for testing workflow
-python -m nox -s tests
 ```
 
 ### Validation Scenarios
@@ -119,26 +116,6 @@ python -m GSASII
 ```
 
 ## Development Workflow
-
-### Linting and Code Quality
-```bash
-# Using nox (recommended)
-python -m nox -s lint      # Pre-commit hooks and formatting
-python -m nox -s pylint    # Static code analysis
-
-# Manual linting
-python -m pip install pre-commit
-pre-commit run --all-files
-```
-
-### Documentation
-```bash
-# Build documentation  
-python -m nox -s docs
-
-# Build and serve docs locally
-python -m nox -s docs -- --serve
-```
 
 ### Common Development Tasks
 Always validate changes by running:

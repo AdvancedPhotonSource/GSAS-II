@@ -1118,6 +1118,10 @@ def calcBond(A,Ax,Bx,MTCU):
     return dist
 
 def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
+    ''' Add hydrogen atoms according to "standard" geometry & updates positions upon request if
+    atoms move. Thermal parmameters are set at 1.1-1.5 * atom U
+    distances adapted from ITC C 9.5.1.1
+    '''
 
     def getTransMat(RXYZ,OXYZ,TXYZ,Amat):
         Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T
@@ -1146,7 +1150,10 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2,axis=0))
             Vec = np.sum(Vec/Len,axis=0)
             Len = np.sqrt(np.sum(Vec**2))
-            Hpos = OXYZ-0.98*np.inner(Bmat,Vec).T/Len
+            if 'C' in Oatom[ct]:
+                Hpos = OXYZ-1.10*np.inner(Bmat,Vec).T/Len
+            else: #N+
+                Hpos = OXYZ-1.03*np.inner(Bmat,Vec).T/Len
             HU = 1.1*Uiso
             return [Hpos,],[HU,]
         elif AddHydId[-1] == 2:
@@ -1157,26 +1164,29 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Mat2 /= np.sqrt(np.sum(Mat2**2))
             Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
             iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
-            Hpos = np.array([[-0.97*cosd(54.75),0.97*sind(54.75),0.],
-                [-0.97*cosd(54.75),-0.97*sind(54.75),0.]])
+            dist = 1.09
+            if 'N' in Oatom[ct]:
+                dist = 1.01
+            Hpos = np.array([[-dist*cosd(54.75),dist*sind(54.75),0.],
+                [-dist*cosd(54.75),-dist*sind(54.75),0.]])
             HU = 1.2*Uiso*np.ones(2)
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             return Hpos,HU
-        else:
+        else:   #CH3 or NH3+
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
             iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
-            a = 0.96*cosd(70.5)
-            b = 0.96*sind(70.5)
+            a = 1.06*cosd(70.5)
+            b = 1.06*sind(70.5)
             Hpos = np.array([[a,0.,-b],[a,-b*cosd(30.),0.5*b],[a,b*cosd(30.),0.5*b]])
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             HU = 1.5*Uiso*np.ones(3)
             return Hpos,HU
     elif nBonds == 3:
-        if AddHydId[-1] == 1:
+        if AddHydId[-1] == 1:   #aromatic C-H
             Vec = np.sum(TXYZ-OXYZ,axis=0)
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
-            Vec = -0.93*Vec/Len
+            Vec = -1.08*Vec/Len
             Hpos = OXYZ+Vec
             HU = 1.1*Uiso
             return [Hpos,],[HU,]
@@ -1184,8 +1194,8 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
             iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
-            a = 0.93*cosd(60.)
-            b = 0.93*sind(60.)
+            a = 1.08*cosd(60.)
+            b = 1.08*sind(60.)
             Hpos = [[a,b,0],[a,-b,0]]
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             HU = 1.2*Uiso*np.ones(2)
@@ -1194,7 +1204,7 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
         if 'C' in Oatom[ct]:
             Vec = TXYZ[0]-OXYZ
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
-            Vec = -0.93*Vec/Len
+            Vec = -1.06*Vec/Len
             Hpos = OXYZ+Vec
             HU = 1.1*Uiso
             return [Hpos,],[HU,]
@@ -1203,8 +1213,8 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
             iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
-            a = 0.82*cosd(70.5)
-            b = 0.82*sind(70.5)
+            a = 0.97*cosd(70.5)
+            b = 0.97*sind(70.5)
             azm = np.arange(0.,360.,5.)
             Hpos = np.array([[a,b*cosd(x),b*sind(x)] for x in azm])
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ

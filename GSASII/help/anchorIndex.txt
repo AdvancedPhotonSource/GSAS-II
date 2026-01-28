@@ -4,7 +4,7 @@ commontreeitems.html: Notebook, Controls, RefinementControls, RefineType, Single
 datatree.html: DataTreeOverview
 image.html: IMG, IMG_parent, IMG_Comments, IMG_Image_Controls, IMG_Masks, makemask, IMG_StressStrain, IMG_Stress/Strain
 index.html: HelpIntro, Index
-mainmenu.html: main_menu, File_menu, openproject, Data_menu, Calculate_menu, Import_menu, FPA_menuitem, Export_menu, Help_menu, Help_addpkgs
+mainmenu.html: main_menu, File_menu, openproject, Data_menu, Calculate_menu, ParmLogging, Import_menu, FPA_menuitem, Export_menu, Help_menu, Help_addpkgs
 others.html: Mac, MacOS, config, Preferences, RTFM, Origin_1, _Origin_1, Origin1, FPA, FPAinput, CorrectionCode
 pairdistribution.html: PDF, PDF_Controls, PDF_I_Q, PDF_S_Q, PDF_F_Q, PDF_G_R
 peaks.html: PKS, PKS_Comments, PKS_Limits, PKS_Instrument_Parameters, PKS_Index_Peak_List, PKS_Unit_Cells_List
@@ -34,7 +34,7 @@ powderlimits.html: PWDR_Limits
 powderparent.html: PWDR_parent, PWDR
 powderpeaks.html: PWDR_Peak_List, GenUnvariedWidths
 powderrefs.html: PWDR_Reflection_Lists
-powdersample.html: PWDR_Sample_Parameters
+powdersample.html: PWDR_Sample_Parameters, SetFromComments
 preface.html: Tutorial, Tutorials
 reflectometry.html: REFD, REFD_Limits, REFD_Instrument_Parameters, REFD_Substances, REFD_Sample_Parameters, REFD_Models
 sequential.html: Sequential

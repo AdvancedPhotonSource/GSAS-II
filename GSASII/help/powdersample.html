@@ -1604,7 +1604,8 @@
 <h1 id="pwdr-sample-parameters-subdata-tree-item-powder-diffraction">PWDR <strong>Sample Parameters</strong> subdata tree item (Powder Diffraction)</h1>
 <p>This window shows the various sample-dependent parameters for the selected powder pattern. Some are related to the measurement conditions, such as diffractometer setting angles, or the data collection temperature. Others, such as the histogram scale factor, adjust the fit to match the collected data. 
 The presence of a refine button indicates that a parameter can be refined (all others are fixed.) All values shown in this window can be edited. </p>
-<p>Note that the last three parameters (named internally as <code>FreePrm</code><em>X</em>, <em>X</em>=1,2,3), which are labeled by default as "Sample humidity", "Sample Voltage" and "Applied Load" are fields where the labels that can be changed. If changed in one histogram, the same label is used for all histograms. Thus, a minimum of three parametric variables are available in addition to temperature, pressure and time. Also, note when a label <code>FreePrm</code> is changed, the Comments tree item for each PWDR histogram is searched for a matching "Label=value" pair (differences in letter case between the two label strings is ignored). When found, the value is converted to a float and saved as the appropriate Sample Parameter. </p>
+<p>Note that the last three parameters (named internally as <code>FreePrm</code><em>X</em>, <em>X</em>=1,2,3), which are labeled by default as "Sample humidity", "Sample Voltage" and "Applied Load" are fields where the labels that can be changed. If changed in one histogram, the same label is used for all histograms. Thus, a total of six parametric variables are available,
+including the more common variable of temperature, pressure and time. Also, note when a label <code>FreePrm</code> is changed to "ParmName", the Comments tree item for each PWDR histogram is searched for a matching "*ParmName*=value" or "*ParmName*:value" pair (i.e. the string "ParmName" will be looked for within the label+value pairs in the comments, ignoring differences in letter case between the two label strings). Thus if the Sample Parameters label is specified as "focus", then a Comments string of "/Instrument/BeamFocus_at_sample=10" will be matched. When found, the value is converted to a float and saved as the value for the newly-labeled Sample Parameter. Also, note the similar action in the <a href="#SetFromComments">"Set from comments" command</a>, below.</p>
 <p>Be sure the correct instrument type is selected (Debye-Scherrer or Bragg-Brentano). Also, ensure the goniometer radius is correct (in mm) so that sample displacements are properly scaled (in μm).</p>
 <H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
 
@@ -1633,15 +1634,24 @@ Note that while in the past it was common to vary the <span class="arithmatex">\
 <li><strong>Copy selected...</strong> - This copies only the sample parameter that are selected to other selected powder patterns but is otherwise similar to "Copy".</li>
 <li><strong>Copy flags</strong> - This copies the sample parameter refinement flags shown to other selected powder patterns. If used, a dialog box (Copy refinement flags) will appear showing the list of available powder patterns, you can copy the sample parameter refinement flags to any or all of them; select 'All' to copy them to all patterns. Then select 'OK' to do the copy; 'Cancel' to cancel the operation.</li>
 <li><strong>Set one value</strong> - This is used to set a single selected sample parameter for a selected set of PWDR histograms. The same value can be used for all histograms or a dialog can be used to provide a table where you can set the values differently for each of selected histograms.</li>
-<li><strong>Load all</strong> - Reads a file containing a table of sample parameters and copies them to matching PWDR entries. The file will look something like the example here:</li>
+<li>
+<p><strong>Load all</strong> - Reads a file containing a table of sample parameters and copies them to matching PWDR entries. The file will look something like the example below.</p>
+<p>Note that the first line(s) in the file can be a header, but each header line must start marked with a hash (#). A header is not required. "Columns" in the table are separated by one or more delimiters (which may be a comma, tab or space). Note that columns do not need to be aligned, as long as each entry is spaced by at least one delimiter. The first column in the table is used to look up PWDR entries where the initial space-delimited string after the PWDR tag ("myfile" in "PWRD myfile AZM=180...") must match the table. Subsequent columns can then be mapped to sample parameters or can be ignored, using a dialog window.</p>
+</li>
 </ul>
 <pre><code>    #filename       temperature pressure ignore-me  humidity
     LaB6_dc250.tif      100          1      test       .2
     LaB6_dc300.tif      150          1      test       .25 
 </code></pre>
-<p>Note that the first line(s) in the file can be a header, but each header line must start marked with a hash (#). A header is not required. "Columns" in the table are separated by one or more delimiters (which may be a comma, tab or space). Note that columns do not need to be aligned, as long as each entry is spaced by at least one delimiter. The first column in the table is used to look up PWDR entries where the initial space-delimited string after the PWDR tag ("myfile" in "PWRD myfile AZM=180...") must match the table. Subsequent columns can then be mapped to sample parameters or can be ignored, using a dialog window.</p>
 <ul>
-<li><strong>Rescale all</strong> - Allows a series of selected PWDR histograms to be put on a common scale by integrating them over a specific two-theta region and then scaling them so that the integration range will match the first pattern.</li>
+<li>
+<p><strong>Rescale all</strong> - Allows a series of selected PWDR histograms to be put on a common scale by integrating them over a specific two-theta region and then scaling them so that the integration range will match the first pattern.</p>
+</li>
+<li>
+<p><strong>Set from comments</strong> -    <a name="SetFromComments"></a>
+ The histogram comments section, depending on the importer used to read in the data (or image the data is derived from) often contains values that are recorded on the diffraction instrument. These are commonly recorded as "Label=value" or "Label:value". 
+  This command can be used to scan the comments and transfer them to the sample parameters. This is done by selecting a sample parameter as well as a Label found in the comments. One then specifies the histograms where the search will be performed. This is particularly of use for parametric variables and for sample setting angles. </p>
+</li>
 </ul>
 
 

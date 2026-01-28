@@ -47,13 +47,15 @@ jobs:
             echo "docs directory does not exist"
             files_changed="false"
           else
-            # Get the newest .md file commit time from the tutorials repo
-            docs_newest_time=$(git -C _docs log -1 --format="%ct" -- MDhelp/docs/*.md 2>/dev/null || echo "0")
-            docs_newest_file=$(git -C _docs log -1 --format="" --name-only -- MDhelp/docs/*.md 2>/dev/null | head -1 || echo "none")
+            # Get the newest .md file commit time and filename from the tutorials repo (single git log call)
+            docs_info=$(git -C _docs log -1 --format="%ct %H" --name-only -- MDhelp/docs/*.md 2>/dev/null || echo "0")
+            docs_newest_time=$(echo "$docs_info" | head -1 | cut -d' ' -f1)
+            docs_newest_file=$(echo "$docs_info" | tail -1)
             
-            # Get the newest .html file commit time from the main repo
-            help_newest_time=$(git log -1 --format="%ct" -- GSASII/help/*.html 2>/dev/null || echo "0")
-            help_newest_file=$(git log -1 --format="" --name-only -- GSASII/help/*.html 2>/dev/null | head -1 || echo "none")
+            # Get the newest .html file commit time and filename from the main repo (single git log call)
+            help_info=$(git log -1 --format="%ct %H" --name-only -- GSASII/help/*.html 2>/dev/null || echo "0")
+            help_newest_time=$(echo "$help_info" | head -1 | cut -d' ' -f1)
+            help_newest_file=$(echo "$help_info" | tail -1)
             
             if [ "$docs_newest_time" = "0" ]; then
               echo "No markdown files found in docs directory"

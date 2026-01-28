@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Checkout tutorials repo
         uses: actions/checkout@v4
@@ -31,13 +31,13 @@ jobs:
           repository: AdvancedPhotonSource/GSAS-II-tutorials
           path: _docs
           ref: main
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Compare files
         id: compare
         run: |
           # Check if any .md files in _docs/MDhelp/docs are newer than .html files in GSASII/help
-          # Compare using filesystem modification times rather than git history
+          # Compare using git commit timestamps rather than filesystem modification times
           files_changed="false"
           
           if [ ! -d "GSASII/help" ]; then
@@ -47,35 +47,33 @@ jobs:
             echo "docs directory does not exist"
             files_changed="false"
           else
-            # Get the newest .md file in the docs directory
-            docs_newest=$(find _docs/MDhelp/docs -name "*.md" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1)
+            # Get the newest .md file commit time and filename from the tutorials repo (single git log call)
+            docs_info=$(git -C _docs log -1 --format="%ct %H" --name-only -- MDhelp/docs/*.md 2>/dev/null || echo "0")
+            docs_newest_time=$(echo "$docs_info" | head -1 | cut -d' ' -f1)
+            docs_newest_file=$(echo "$docs_info" | tail -1)
             
-            # Get the newest .html file in the help directory
-            help_newest=$(find GSASII/help -name "*.html" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1)
+            # Get the newest .html file commit time and filename from the main repo (single git log call)
+            help_info=$(git log -1 --format="%ct %H" --name-only -- GSASII/help/*.html 2>/dev/null || echo "0")
+            help_newest_time=$(echo "$help_info" | head -1 | cut -d' ' -f1)
+            help_newest_file=$(echo "$help_info" | tail -1)
             
-            if [ -z "$docs_newest" ]; then
+            if [ "$docs_newest_time" = "0" ]; then
               echo "No markdown files found in docs directory"
               files_changed="false"
-            elif [ -z "$help_newest" ]; then
+            elif [ "$help_newest_time" = "0" ]; then
               echo "No HTML files in help directory, will build"
               files_changed="true"
             else
-              # Extract timestamps (epoch seconds with decimal)
-              docs_time=$(echo "$docs_newest" | cut -d' ' -f1)
-              help_time=$(echo "$help_newest" | cut -d' ' -f1)
-              docs_file=$(echo "$docs_newest" | cut -d' ' -f2-)
-              help_file=$(echo "$help_newest" | cut -d' ' -f2-)
-              
-              # Compare timestamps (using awk for floating point comparison)
-              if awk "BEGIN {exit !($docs_time > $help_time)}"; then
+              # Compare timestamps (integer comparison)
+              if [ "$docs_newest_time" -gt "$help_newest_time" ]; then
                 echo "Markdown docs are newer"
-                echo "  Newest .md file: $docs_file ($(date -d @${docs_time%.*} '+%Y-%m-%d %H:%M:%S'))"
-                echo "  Newest .html file: $help_file ($(date -d @${help_time%.*} '+%Y-%m-%d %H:%M:%S'))"
+                echo "  Newest .md file commit: $docs_newest_file ($(date -d @$docs_newest_time '+%Y-%m-%d %H:%M:%S'))"
+                echo "  Newest .html file commit: $help_newest_file ($(date -d @$help_newest_time '+%Y-%m-%d %H:%M:%S'))"
                 files_changed="true"
               else
                 echo "Help directory is current"
-                echo "  Newest .md file: $docs_file ($(date -d @${docs_time%.*} '+%Y-%m-%d %H:%M:%S'))"
-                echo "  Newest .html file: $help_file ($(date -d @${help_time%.*} '+%Y-%m-%d %H:%M:%S'))"
+                echo "  Newest .md file commit: $docs_newest_file ($(date -d @$docs_newest_time '+%Y-%m-%d %H:%M:%S'))"
+                echo "  Newest .html file commit: $help_newest_file ($(date -d @$help_newest_time '+%Y-%m-%d %H:%M:%S'))"
                 files_changed="false"
               fi
             fi

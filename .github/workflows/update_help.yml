@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Checkout tutorials repo
         uses: actions/checkout@v4
@@ -29,12 +31,13 @@ jobs:
           repository: AdvancedPhotonSource/GSAS-II-tutorials
           path: _docs
           ref: main
+          fetch-depth: 1
 
       - name: Compare files
         id: compare
         run: |
-          # Check if any .md files in _docs/MDhelp/docs are newer than GSASII/help
-          # Only compare markdown source files, not directory metadata
+          # Check if any .md files in _docs/MDhelp/docs are newer than .html files in GSASII/help
+          # Compare using filesystem modification times rather than git history
           files_changed="false"
           
           if [ ! -d "GSASII/help" ]; then
@@ -44,28 +47,35 @@ jobs:
             echo "docs directory does not exist"
             files_changed="false"
           else
-            # Get the most recent commit date for .md files in docs directory
-            docs_latest=$(cd _docs && git ls-tree --name-only -r HEAD -- MDhelp/docs | grep '\.md$' | while read filename; do echo "$(git log -1 --format="%ai" -- "$filename") $filename"; done | sort -r | head -1 | cut -d' ' -f1-3)
+            # Get the newest .md file in the docs directory
+            docs_newest=$(find _docs/MDhelp/docs -name "*.md" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1)
             
-            # Get the most recent commit date for the help directory
-            help_latest=$(git ls-tree --name-only -r HEAD -- GSASII/help | while read filename; do echo "$(git log -1 --format="%ai" -- "$filename") $filename"; done | sort -r | head -1 | cut -d' ' -f1-3)
+            # Get the newest .html file in the help directory
+            help_newest=$(find GSASII/help -name "*.html" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1)
             
-            if [ -z "$docs_latest" ]; then
-              echo "Could not get commit date for markdown files in docs directory"
+            if [ -z "$docs_newest" ]; then
+              echo "No markdown files found in docs directory"
               files_changed="false"
-            elif [ -z "$help_latest" ]; then
-              echo "help directory has no commit history, will build"
+            elif [ -z "$help_newest" ]; then
+              echo "No HTML files in help directory, will build"
               files_changed="true"
             else
-              # Convert dates to epoch seconds for reliable numeric comparison
-              docs_epoch=$(date -d "$docs_latest" +%s 2>/dev/null || echo 0)
-              help_epoch=$(date -d "$help_latest" +%s 2>/dev/null || echo 0)
+              # Extract timestamps (epoch seconds with decimal)
+              docs_time=$(echo "$docs_newest" | cut -d' ' -f1)
+              help_time=$(echo "$help_newest" | cut -d' ' -f1)
+              docs_file=$(echo "$docs_newest" | cut -d' ' -f2-)
+              help_file=$(echo "$help_newest" | cut -d' ' -f2-)
               
-              if [ "$docs_epoch" -gt "$help_epoch" ]; then
-                echo "Markdown docs are newer (docs: $docs_latest, help: $help_latest)"
+              # Compare timestamps (using awk for floating point comparison)
+              if awk "BEGIN {exit !($docs_time > $help_time)}"; then
+                echo "Markdown docs are newer"
+                echo "  Newest .md file: $docs_file ($(date -d @${docs_time%.*} '+%Y-%m-%d %H:%M:%S'))"
+                echo "  Newest .html file: $help_file ($(date -d @${help_time%.*} '+%Y-%m-%d %H:%M:%S'))"
                 files_changed="true"
               else
-                echo "help directory is current (docs: $docs_latest, help: $help_latest)"
+                echo "Help directory is current"
+                echo "  Newest .md file: $docs_file ($(date -d @${docs_time%.*} '+%Y-%m-%d %H:%M:%S'))"
+                echo "  Newest .html file: $help_file ($(date -d @${help_time%.*} '+%Y-%m-%d %H:%M:%S'))"
                 files_changed="false"
               fi
             fi
@@ -82,6 +92,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Checkout
         # get the help pages from GSAS-II docs repo
@@ -90,6 +102,7 @@ jobs:
             repository: AdvancedPhotonSource/GSAS-II-tutorials
             path: _docs
             ref: main
+            fetch-depth: 1
 
       - name: Python setup
         uses: actions/setup-python@v3

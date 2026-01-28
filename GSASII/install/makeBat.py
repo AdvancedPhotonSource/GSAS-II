@@ -77,31 +77,39 @@ if __name__ == '__main__':
     fp.write("@REM created by run of makeBat.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
     #activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
-    activate = os.path.join(os.path.split(pythonexe)[0],'condabin','conda.bat')
+    installloc = os.path.split(pythonexe)[0]
+    activate = os.path.join(installloc,'condabin','conda.bat')
     print("Looking for",activate)
     # for a non-base conda install, it might be better to use the activate in
     # the base, but for now let's use the one we find relative to our python
     if os.path.exists(activate):
         activate = os.path.realpath(activate)
-        if ' ' in activate:
-            activate = f'call "{activate}" activate\n'
-        else:
-            activate = f'call {activate} activate\n'
-        print(f'adding activate command to .bat file\n({activate})')
+        if ' ' in activate: activate = f'"{activate}"'
+        if ' ' in installloc: installloc = f'"{installloc}"'
+        actcmd = f'''@echo {activate} activate
+@call {activate} activate
+@REM In case the previous did not work because a different conda is active, the 
+@REM next command should fix that. If it did work, it will not change anything
+@echo call conda activate {installloc}
+@call conda activate {installloc}
+'''
+        print(f'adding activate command to .bat file\n({actcmd})')
     else:
         print('Note: conda activate not found')
-        activate = '@REM no activate command found'
+        actcmd = '@REM no activate command found\n'
     #pexe = pythonexe
     #if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
     G2s = G2script
     if ' ' in G2s: G2s = '"'+G2script+'"'
-    fp.write(Script.format(activate,'python.exe',G2s))
+    fp.write(Script.format(actcmd,'python.exe',G2s))
     fp.close()
     print(f'\nCreated GSAS-II batch file {G2bat}')
 
     # create a reset script
     gitstrap = os.path.abspath(
         os.path.normpath(os.path.join(path2repo,'..','gitstrap.py')))
+    G2s = gitstrap
+    if ' ' in G2s: G2s = '"'+gitstrap+'"'
     if not os.path.exists:
         print(f'the installation script was not found: {gitstrap!r}')
     else:
@@ -109,16 +117,20 @@ if __name__ == '__main__':
         fp = open(G2reset,'w')
         fp.write("@REM created by run of makeBat.py on {:%d %b %Y %H:%M}\n".format(
             datetime.datetime.now()))
-        fp.write("REM This script will reset GSAS-II to the latest version, even if the program can't be started\n")
+        fp.write("@echo This script will reset GSAS-II to the latest version, even if the program can't be started\n")
+        if os.path.exists(activate): fp.write(f"{actcmd}")
+
         pexe = pythonexe
         if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
-        G2s = gitstrap
-        if ' ' in G2s: G2s = '"'+gitstrap+'"'
-        if activate: fp.write(f"{activate}")
         fp.write('choice /c yn /n /m "Reset any local changes and install latest GSAS-II version? (y/n)"\n')
         fp.write(f"goto %ERRORLEVEL%\n")
         fp.write(f":1\n")
+        fp.write("@echo Updating to the current version of the gitstrap script\n")
+        fp.write(f"curl -L -o {G2s} https://github.com/AdvancedPhotonSource/GSAS-II-buildtools/raw/main/install/gitstrap.py\n")
+        fp.write("@echo Now running gitstrap to update downloaded files (--reset)...\n")
         fp.write(f"{pexe} {G2s} --reset\n")
+        fp.write("@echo Now running gitstrap to create .bat files (--nodownload)...\n")
+        fp.write(f"{pexe} {G2s} --nodownload\n")
         fp.write(f":2\n")
         fp.write(f"pause\n")
         fp.close()

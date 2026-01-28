@@ -170,3 +170,156 @@ python -m pip install wxpython matplotlib pyopengl pillow h5py
 - **README.md**: Project overview and links
 
 Always check binary compilation status and add executables to PATH before running tests or using advanced functionality.
+
+## Code Style and Quality
+
+### Linting and Formatting
+The project uses **ruff** for linting and code quality checks:
+```bash
+# The project is configured with ruff in pyproject.toml
+# Key conventions:
+# - Python 3.10+ syntax
+# - NumPy-style docstrings preferred
+# - Imports organized with isort conventions
+# - Many flake8-style checks enabled (see pyproject.toml [tool.ruff.lint])
+```
+
+### Common Style Guidelines
+- **Avoid excessive changes**: Don't reformat code unnecessarily
+- **Follow existing patterns**: Match the style of surrounding code
+- **Legacy code**: Much of the codebase predates modern Python conventions; gradual improvements are acceptable
+- **Type hints**: Not universally used; add them to new code when beneficial
+- **Documentation**: Update inline comments when making complex changes
+
+### Configuration Files
+- `pyproject.toml`: Contains ruff, pytest, and mypy configuration
+- `meson.build`: Build system configuration for Fortran extensions
+
+## Architecture Overview
+
+### Code Organization
+GSAS-II has a dual-interface architecture:
+
+1. **GUI Interface** (`GSASIIGUI.py`, `*GUI.py` files):
+   - wxPython-based graphical interface
+   - Files ending in `GUI.py` contain GUI-specific code
+   - Requires display/X11; won't work in headless environments
+
+2. **Scriptable Interface** (`GSASIIscriptable.py`):
+   - Python API for programmatic use
+   - Preferred for automated workflows and testing
+   - Works in headless environments
+   - Entry point: `G2Project` class
+
+3. **Core Modules** (no `GUI` suffix):
+   - `GSASIIdata.py`: Data structures and file I/O
+   - `GSASIImath.py`: Crystallography calculations
+   - `GSASIIlattice.py`, `GSASIIspc.py`: Space group operations
+   - Can be used independently of GUI
+
+### Fortran Extensions
+Performance-critical code is in Fortran (in `sources/`):
+- Compiled to Python extensions via f2py
+- Binary modules: pyspg, pydiffax, pypowder, pytexture, pack_f, histogram2d
+- Standalone executables: LATTIC, convcell
+- Require rebuilding after changes to Fortran source
+
+## CI/CD and Testing
+
+### Continuous Integration
+Workflows in `.github/workflows/`:
+- `smoke_test.yml`: Builds and tests on Ubuntu, macOS, Windows with Python 3.10-3.13
+- `bilbao-test.yml`: Tests Bilbao symmetry server integration
+- Uses pixi for environment management
+- Tests run on push and pull requests
+
+### Testing Strategy
+- **Fast tests**: `test_lattice.py`, `test_elm.py` (work offline, ~3-4 seconds)
+- **Network tests**: `test_kvec.py`, `test_bilbao.py` (require internet)
+- **Integration tests**: `test_scriptref.py` (test scriptable interface)
+- Run tests early and often during development
+
+### Test Execution
+```bash
+# After building, always set PATH
+export PATH="$PATH:$(pwd)/build/cp312/sources"
+
+# Run fast offline tests
+python -m pytest tests/test_lattice.py tests/test_elm.py -v
+
+# Run all tests (some may fail without network)
+python -m pytest tests/ -v
+```
+
+## Contributing Best Practices
+
+### Before Making Changes
+1. Understand the dual architecture (GUI vs scriptable)
+2. Check if changes affect Fortran code (requires rebuild)
+3. Identify which tests validate your changes
+4. Check if binaries/executables are in PATH
+
+### Making Changes
+1. Keep changes minimal and focused
+2. Test with scriptable interface when possible (faster iteration)
+3. Rebuild only when necessary (Fortran changes, dependency updates)
+4. Run relevant tests, not entire suite
+5. Update documentation if changing public APIs
+
+### Debugging
+- For binary issues: Check build output, verify PATH
+- For import errors: Ensure editable install completed successfully
+- For GUI issues: Try scriptable interface first to isolate problem
+- For test failures: Check if executables are in PATH
+
+## Common Patterns and Conventions
+
+### Working with Space Groups
+```python
+import GSASII.GSASIIspc as G2spc
+# Space groups are central to crystallography
+# Use GSASIIspc for symmetry operations
+```
+
+### Working with Lattice Parameters
+```python
+import GSASII.GSASIIlattice as G2lat
+# Lattice calculations and transformations
+```
+
+### Scriptable Interface Pattern
+```python
+import GSASII.GSASIIscriptable as G2sc
+# Always start with G2Project
+gpx = G2sc.G2Project(newgpx='/path/to/project.gpx')
+# Add histograms, phases, do refinements
+```
+
+### File I/O
+```python
+import GSASII.GSASIIdata as G2data
+# Standardized data structures and file operations
+```
+
+## Gotchas and Important Notes
+
+### Build System
+- **Never cancel builds prematurely**: Meson builds can take 12-30 seconds, but may need up to 30 minutes on slow systems
+- **Build artifacts location**: `./build/cp3XX/sources/` where XX is Python version
+- **Missing executables**: Most common issue; solution is `export PATH`
+
+### Dependencies
+- **NumPy**: Required; build system needs it at build time
+- **wxPython**: Optional; only for GUI
+- **Fortran compiler**: Required; gfortran recommended
+- **pixi**: Used in CI/CD; optional for local development
+
+### Platform-Specific Issues
+- **Windows**: May need Visual Studio Build Tools for compilation
+- **macOS**: XCode command line tools required
+- **Linux**: Usually works out-of-box with build-essential
+
+### Testing Environment
+- Some tests require network connectivity (Bilbao server, k-vector tests)
+- GUI tests require display; use scriptable interface in headless environments
+- Executables must be in PATH for certain tests (LATTIC, convcell)

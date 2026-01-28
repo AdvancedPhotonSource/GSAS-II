@@ -2746,7 +2746,7 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
         PA = np.exp(-parmDict[phfx+'Ma']*FPone)
         PB = np.exp(-parmDict[phfx+'Mb']*FPone**2)
         PC = np.exp(-parmDict[phfx+'Mc']*FPone**3)
-        extCor = (PA + PB + PC)/3.
+        extCor = min((PA + PB + PC)/3.,100.)
         dE2 = 6./extCor**2       
         dervDict[phfx+'Ma'] = Fobs*dE2*PA*FPone
         dervDict[phfx+'Mb'] = Fobs*dE2*PB*FPone**2
@@ -5048,7 +5048,7 @@ def errRefine(values,HistoPhases,parmDict,histDict1,varylist,calcControls,pawley
                                 SSnobs[ind] += 1
                                 maxH = max(maxH,ind)
                         else:
-                            ref[11+im] = 1.0
+#                            ref[11+im] = 1.0
                             if ref[3+im]:
                                 ref[3+im] = -abs(ref[3+im])      #mark as rejected
                                 nrej += 1

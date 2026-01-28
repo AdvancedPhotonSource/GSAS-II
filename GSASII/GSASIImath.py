@@ -4294,6 +4294,7 @@ def ChargeFlip(data,reflDict,pgbar):
             print('%s normalizing form factor: fa: %s, fb: %s'%(FFtable['Symbol'],
                 str(FFtable['fa']),str(FFtable['fb'])))
     dmin = flipData['GridStep']*2.
+    dmax = flipData.get('d-max',100.)
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -4311,7 +4312,7 @@ def ChargeFlip(data,reflDict,pgbar):
         dsp = ref[4+im]
         if im and ref[3]:   #skip super lattice reflections - result is 3D projection
             continue
-        if dsp > dmin:
+        if dsp > dmin and dsp < dmax:
             ff = 0.1*Vol    #est. no. atoms for ~10A**3/atom
             if FFtable:
                 SQ = 0.25/dsp**2

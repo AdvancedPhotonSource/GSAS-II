@@ -8404,7 +8404,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
             dlg.Update(ih)
         dlg.Destroy()
         mergeRef = []
-        aveExt = sumExt/Next
+        aveExt = 0.0
+        if Next:
+            aveExt = sumExt/Next
         print('Ave extinct Fo^2: %f.2'%(aveExt))
         dlg = wx.ProgressDialog('Processing merge','',len(HKLdict)+1,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
@@ -8541,7 +8543,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
             dlg.Update(ih)
         dlg.Destroy()
         sortRef = []
-        aveExt = sumExt/Next
+        aveExt = 0.0
+        if Next:
+            aveExt = sumExt/Next
         print('Ave extinct Fo^2: %f.2'%(aveExt))
         dlg = wx.ProgressDialog('Processing sort','',len(HKLdict)+1,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)

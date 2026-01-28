@@ -2455,8 +2455,9 @@ def UpdatePhaseData(G2frame,Item,data):
 
         def FlipSizer():
             #patches
-            if 'k-Max' not in Flip: Flip['k-Max'] = 20.
-            if 'MScorr' not in Flip: Flip['MScorr'] = 0.0
+            Flip['k-Max'] = Flip.get('k-Max',20.)
+            Flip['MScorr'] = Flip.get('Mscorr',0.0)
+            Flip['d-max'] = Flip.get('d-max',100.)
             if 'Resolution' in Flip:
                 Flip['GridStep'] = Flip['Resolution']
 
@@ -2515,6 +2516,8 @@ def UpdatePhaseData(G2frame,Item,data):
             normElem = wx.Button(General,label=Flip['Norm element'],style=wx.TE_READONLY)
             normElem.Bind(wx.EVT_BUTTON,OnNormElem)
             lineSizer.Add(normElem,0,WACV)
+            lineSizer.Add(wx.StaticText(General,label=' d-max (3.-100.): '),0,WACV)
+            lineSizer.Add(G2G.ValidatedTxtCtrl(General,Flip,'d-max',nDig=(10,2),xmin=3.,xmax=100.),0,WACV)
             flipSizer.Add(lineSizer,0)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Map grid step: '),0,WACV)

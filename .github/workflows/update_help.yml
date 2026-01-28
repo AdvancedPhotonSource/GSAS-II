@@ -26,11 +26,9 @@ jobs:
       - name: Checkout tutorials repo
         uses: actions/checkout@v4
         with:
-          repository: AdvancedPhotonSource/GSAS-II-tutorials.git
+          repository: AdvancedPhotonSource/GSAS-II-tutorials
           path: _docs
           ref: main
-          sparse-checkout: MDhelp/docs
-          sparse-checkout-cone-mode: true
 
       - name: Compare files
         id: compare
@@ -89,7 +87,7 @@ jobs:
         # get the help pages from GSAS-II docs repo
         uses: actions/checkout@v4
         with:
-            repository: AdvancedPhotonSource/GSAS-II-tutorials.git
+            repository: AdvancedPhotonSource/GSAS-II-tutorials
             path: _docs
             ref: main
 

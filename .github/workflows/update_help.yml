@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Checkout tutorials repo
         uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
           repository: AdvancedPhotonSource/GSAS-II-tutorials
           path: _docs
           ref: main
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Compare files
         id: compare
@@ -48,14 +48,12 @@ jobs:
             files_changed="false"
           else
             # Get the newest .md file commit time from the tutorials repo
-            cd _docs
-            docs_newest_time=$(git log -1 --format="%ct" -- MDhelp/docs/*.md 2>/dev/null || echo "0")
-            docs_newest_file=$(git log -1 --format="%H" --name-only -- MDhelp/docs/*.md 2>/dev/null | tail -1 || echo "none")
-            cd ..
+            docs_newest_time=$(git -C _docs log -1 --format="%ct" -- MDhelp/docs/*.md 2>/dev/null || echo "0")
+            docs_newest_file=$(git -C _docs log -1 --format="" --name-only -- MDhelp/docs/*.md 2>/dev/null | head -1 || echo "none")
             
             # Get the newest .html file commit time from the main repo
             help_newest_time=$(git log -1 --format="%ct" -- GSASII/help/*.html 2>/dev/null || echo "0")
-            help_newest_file=$(git log -1 --format="%H" --name-only -- GSASII/help/*.html 2>/dev/null | tail -1 || echo "none")
+            help_newest_file=$(git log -1 --format="" --name-only -- GSASII/help/*.html 2>/dev/null | head -1 || echo "none")
             
             if [ "$docs_newest_time" = "0" ]; then
               echo "No markdown files found in docs directory"

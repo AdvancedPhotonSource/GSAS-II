@@ -173,17 +173,6 @@ Always check binary compilation status and add executables to PATH before runnin
 
 ## Code Style and Quality
 
-### Linting and Formatting
-The project uses **ruff** for linting and code quality checks:
-```bash
-# The project is configured with ruff in pyproject.toml
-# Key conventions:
-# - Python 3.10+ syntax
-# - NumPy-style docstrings preferred
-# - Imports organized with isort conventions
-# - Many flake8-style checks enabled (see pyproject.toml [tool.ruff.lint])
-```
-
 ### Common Style Guidelines
 - **Avoid excessive changes**: Don't reformat code unnecessarily
 - **Follow existing patterns**: Match the style of surrounding code

@@ -453,7 +453,6 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
         M = np.inner(G2mth.Q2Mat(Q),Bmat)
         return G2lat.H2ThPh2(hkl,M)[1:]
 
-    dFFdS = {}
     FFR = np.zeros_like(FF)
     FFI = np.zeros_like(FF)
     dFFdSR = {}
@@ -479,7 +478,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             ThMj,PhMj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']-dp,SHdat['Ok']],QB)
             ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],QB)
             QR = np.repeat(twopi*np.sqrt(4.*SQ),HKL.shape[1])     #refl Q for Bessel fxn
-            FF[:,iAt] = 0.
+            FFR[:,iAt] = 0.
             ishl = 0
             dSHdO = np.zeros(HKL.shape[0]*HKL.shape[1])
             dSHdOi = np.zeros(HKL.shape[0]*HKL.shape[1])
@@ -511,14 +510,14 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)
                 if 'Q' in Atm:
                     dBSdR= 0.0
-                    FF[:,iAt] = 0.0
+                    FFR[:,iAt] = 0.0
                 else:
                     R = Shell['Radius']
                     R0 = sp.spherical_jn(0,QR*R)/(4.*np.pi)
                     R0P = sp.spherical_jn(0,QR*(R+0.01))/(4.*np.pi)
                     R0M = sp.spherical_jn(0,QR*(R-0.01))/(4.*np.pi)
                     dBSdR = Nat*SFF*(R0P-R0M)/0.02
-                    FF[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
+                    FFR[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
                 for item in Shell:
                     if 'C(' in item:
                         l,m = eval(item.strip('C').strip('c'))
@@ -543,16 +542,16 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)
                         dSHdOj += Nat*SFF*BS*Shell[item]*(SHPj-SHMj)/(2.*dp)
                         dSHdOk += Nat*SFF*BS*Shell[item]*(SHPk-SHMk)/(2.*dp)
-                        FF[:,iAt] += Nat*SFF*BS*SH*Shell[item]
+                        FFR[:,iAt] += Nat*SFF*BS*SH*Shell[item]
                         name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
-                        dFFdS[name] = Nat*SFF*BS*SH
+                        dFFdSR[name] = Nat*SFF*BS*SH
                 if 'Q' not in Atm:
-                    dFFdS[Rname] = dBSdR
+                    dFFdSR[Rname] = dBSdR
                 ishl += 1
-            dFFdS[Oname] = dSHdO
-            dFFdS[Oiname] = dSHdOi
-            dFFdS[Ojname] = dSHdOj
-            dFFdS[Okname] = dSHdOk
+            dFFdSR[Oname] = dSHdO
+            dFFdSR[Oiname] = dSHdOi
+            dFFdSR[Ojname] = dSHdOj
+            dFFdSR[Okname] = dSHdOk
         elif iAt in SHCdict and 'X' in hType:   #X-ray deformation removed Bessel option
             orbs = SHCdict[iAt]['1']
             UVmat = np.inner(SHCdict[-iAt]['UVmat'],Bmat) #OK
@@ -573,8 +572,6 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             ffk = Ne*G2el.ScatFac(fvOrb,SQk)
             FFval += ffk
             dffdk = G2el.ScatFacDer(fvOrb,SQk)
-            dFFdS["ANe1:%d"%iAt] = ffk/Ne       #ok
-            dFFdS["Akappa1:%d"%iAt] = -2.0*Ne*SQk*dffdk/kappa       #ok
             dFFdSR["ANe1:%d"%iAt] = ffk/Ne       #ok
             dFFdSR["Akappa1:%d"%iAt] = -2.0*Ne*SQk*dffdk/kappa       #ok
             dFFdSI["ANe1:%d"%iAt] = np.zeros_like(SQk)       #ok or zero?
@@ -584,7 +581,6 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 SQkp = SQR/kappap**2
                 ffkp = G2el.ScatFac(fvOrb,SQkp)
                 dffdkp = G2el.ScatFacDer(fvOrb,SQkp)    
-                dFFdS["Akappa'1:%d"%iAt] = 0.0
                 dFFdSR["Akappa'1:%d"%iAt] = 0.0
                 dFFdSI["Akappa'1:%d"%iAt] = 0.0
                 for term in orbs:
@@ -608,8 +604,6 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         dFFdSI["Akappa'1:%d"%iAt] += -2.0*SQkp*SHI*orbs[term]*dffdkp/kappap   #ok                        
                         #end test
                         FFSH += SH*orbs[term]*ffkp
-                        dFFdS[name] = SH*ffkp       #ok
-                        dFFdS["Akappa'1:%d"%iAt] += -2.0*SQkp*SH*orbs[term]*dffdkp/kappap   #ok
             FF[:,iAt] = FFcore+FFval+FFSH
             FFR[:,iAt] = FFcore+FFval+FFSHR
             FFI[:,iAt] = np.round(FFSHI,10)
@@ -617,7 +611,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             FFR[:,iAt] = FF[:,iAt]
             atFlg.append(0.)
     if ifDeriv:
-        return dFFdS,atFlg,FFR,FFI,dFFdSR,dFFdSI
+        return atFlg,FFR,FFI,dFFdSR,dFFdSI
     else:
         return FFR,FFI
 
@@ -1355,7 +1349,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in np.reshape(Uniq,(-1,3))])      #Nref*Nops,3,3
         Hij = np.reshape(np.array([G2lat.UijtoU6(uij) for uij in Hij]),(-1,nOps,6))     #Nref,Nops,6
         if pfx in SHCdict:
-            dffdsh,atFlg,FFR,FFI,dFFdSR,dFFdSI = MakeSpHarmFF(Uniq,Amat,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FFR,SQ,True)
+            atFlg,FFR,FFI,dFFdSR,dFFdSI = MakeSpHarmFF(Uniq,Amat,Bmat,SHCdict[pfx],Tdata,hType,FFtables,ORBtables,BLtables,FFR,SQ,True)
             if len(dffdSHR):
                 for item in dFFdSR:
                     dffdSHR[item] = np.hstack((dffdSHR[item],dFFdSR[item]))

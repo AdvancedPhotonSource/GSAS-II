@@ -1531,6 +1531,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#windows-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows notes:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#configuration-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1709,6 +1720,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#windows-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows notes:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#configuration-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1863,9 +1885,20 @@
 <p><a name="Mac"></a>
 <a name="MacOS"></a></p>
 <h2 id="macintosh-notes">Macintosh notes:</h2>
-<p>GSAS-II can be run on Windows, Linux and Macintosh/OS X computers, but the GUI follows the native style of Mac OS X. On Windows and some versions of Linux, the menu bars appears on top of the main window. On the Mac, the menu appears at the location that has been configured for menus (usually at the top of the screen). 
-At present, two versions of GSAS-II are provided. One is for older, Intel CPUs and the other for "Apple Silicon" (ARM or M1, M2,...) CPUs. Eventually only ye ARM CPUs will be supported. At present, the Intel version will run on ARM machines under Rosetta, but eventually that too will go away. </p>
-<p>GSAS-II defines actions for both the left and right and middle buttons assuming that a three-button mouse is available. If a two or three-button mouse is used with a Mac, the "extra"  mouse buttons will work as intended. If using a Mac touchpad or single-button mouse, clicking the touchpad or mouse button will generate a "left button" click. Hold down the control-key to generate a "right button" click or for a right-button drag, hold down control while pressing on the mouse button or touchpad. I do not know how to generate a middle-button click or drag with a single-button mouse, but with a MacBook touchpad, pressing with two fingers generates the equivalent of a right-mouse drag and moving two fingers without pressure is the equivalent of a middle-button drag action. </p>
+<p>GSAS-II can be run on Windows, Linux and Macintosh/OS X computers, but the GUI follows the native style of the window manager where it is run, so GSAS-II will look more like a Mac application on that platform and more like a Windows application there. On Windows and some versions of Linux, the menu bars appears on top of the main window. On the Mac, the menu appears at the location that has been configured for menus (usually at the top of the screen). 
+At present, two versions of GSAS-II are provided. One is for older, Intel CPUs and the other for "Apple Silicon" (ARM or M1, M2,...) CPUs. Eventually only ARM CPUs will be supported. At present, the Intel version will run on ARM machines under Rosetta, but eventually Rosetta will also go away. </p>
+<p>GSAS-II defines actions for both the left and right and middle buttons assuming that a three-button mouse is available. If a two or three-button mouse is used with a Mac, the "extra"  mouse buttons will work as intended. If using a Mac touchpad or single-button mouse, clicking the touchpad or pressing the mouse button will generate a "left button" click. Hold down the control-key to generate a "right button" click or for a right-button drag, hold down control while pressing on the mouse button or touchpad. I do not know how to generate a middle-button click or drag with a single-button mouse, but with a MacBook touchpad, pressing with two fingers generates the equivalent of a right-mouse drag and moving two fingers without pressure is the equivalent of a middle-button drag action. </p>
+<p><a name="Windows"></a></p>
+<h2 id="windows-notes">Windows notes:</h2>
+<p>When GSAS-II is installed through most of the conventional installation methods, the <code>GSASII\install\MakeBat.py</code> file is run and this creates two "Windows .bat" files that can be used to make running GSAS-II easier as well as making some minor Windows registry changes. This script can be run manually by people who are installing GSAS-II directly from GitHub. </p>
+<p>The <code>MakeBat.py</code> script creates a file named <code>RunGSASII.bat</code> file, which is placed in the directory where GSAS-II is installed and a shortcut to this file is placed on the Windows desktop. The shortcut can be moved, renamed etc. Clicking on this file or shortcut will start GSAS-II. </p>
+<p>Another file, <code>2Reset2FreshGSASII.bat</code> is created in the same directory. 
+Ideally, this will not be needed, but might be of use if GSAS-II cannot be started due 
+to changes made in the files locally or because we have put out a bad version. 
+By double-clicking on the <code>2Reset2FreshGSASII.bat</code>  file, the <code>gitstrap.py</code>
+script that is used to install GSAS-II will be updated to the latest version and then 
+run that in a mode that will reset any changes that have been made to the GSAS-II 
+files on your computer. It will also rerun the <code>MakeBat.py</code> script.</p>
 <p><a name="config"></a>
 <a name="Preferences"></a></p>
 <h2 id="configuration-variables">Configuration Variables:</h2>

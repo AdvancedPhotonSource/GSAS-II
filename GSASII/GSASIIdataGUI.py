@@ -5767,7 +5767,12 @@ No: least-squares fitting starts with previously fit structure factors.'''
             finally:
                 dlg.Destroy()
         else:
-            self.ErrorDialog('Refinement error',Rvals['msg'])
+            self.ErrorDialog('Refinement error',Rvals['msg']+'''
+\nNote that when GSAS-II fails in a refinement, this is often
+because parameters are varied in incompatible ways. You are 
+suggested to use Calculate/"View LS params" to review what
+is being refined.
+''')
 
     def OnLeBail(self,event):
         '''Do a 1 cycle LeBail refinement with no other variables; usually done upon initialization of a LeBail refinement
@@ -6321,6 +6326,7 @@ Do you want to transfer the cell refinement flag to the Dij terms?
 
     def ErrorDialog(self,title,message,parent=None, wtype=wx.OK):
         'Display an error message'
+        # TODO: really would be better to have something customized for this
         result = None
         if parent is None:
             dlg = wx.MessageDialog(self, message, title,  wtype)

@@ -273,7 +273,8 @@ class HDF5_Reader(G2obj.ImportImage):
         for k in self.buffer.get('ParamTrackingVars',[]):
             arr = self.buffer['ParamTrackingVars'][k]
             if len(arr) != blocklen: continue
-            self.Comments.append(f'{k.split("/")[-1]}: {arr[num]}')
+            #self.Comments.append(f'{k.split("/")[-1]}: {arr[num]}')
+            self.Comments.append(f'{k}: {arr[num]}')
         self.Comments += copy.deepcopy(self.UniversalComments)
         sizexy = list(image.shape)
         Npix = sizexy[0]*sizexy[1]
@@ -314,4 +315,8 @@ class HDF5_Reader(G2obj.ImportImage):
                 data['center'][0] = float(val)
             elif 'beam_center_y' in name:
                 data['center'][1] = float(val)
+        for item in self.Comments: # override previous with these
+            if "instrument/HEM/Energy" in item:
+                name,val = item.split(':',1)
+                data['wavelength'] = 12.398425/float(val)
         return data,Npix,image.T

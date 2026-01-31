@@ -3865,6 +3865,10 @@ def UpdateSampleGrid(G2frame,data):
             else:
                 continue
             keyList.append(key.strip())
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     from importlib import reload
+        #     reload(G2G)
+        #     print(f'reloading {G2G}')
         sampleVar,commentKey = G2G.SelectSearchVars(G2frame,labelLst,keyList)
         if sampleVar is None or commentKey is None: return
         # find the array element tied to the sample var
@@ -3885,6 +3889,8 @@ def UpdateSampleGrid(G2frame,data):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     selection = dlg.GetSelections()
+                else:
+                    return
             finally:
                 dlg.Destroy()
         # cycle through selected histograms, get comments & values
@@ -3929,10 +3935,11 @@ def UpdateSampleGrid(G2frame,data):
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
     def SearchAllComments(value,tc,*args,**kwargs):
-        '''Called when the label for a FreePrm is changed: the comments for all PWDR
-        histograms are searched for a "label=value" or "label:value" pair that matches the label (case
-        is ignored) and the values are then set to this value, if it can be converted
-        to a float.
+        '''Called when the label for a FreePrm is changed: the comments 
+        for all PWDR histograms are searched for a "label=value" or 
+        "label:value" pair that matches the label (case is ignored) and 
+        the values are then set to this value, if it can be converted
+        to a float. Stop after the first item that matches.
         '''
         Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
         count = 0
@@ -3951,9 +3958,10 @@ def UpdateSampleGrid(G2frame,data):
                     if value.lower() in itemSp[0].lower():
                         try:
                             Sample[tc.key] = float(itemSp[1])
+                            count += 1
+                            break
                         except:
-                            print('"{}" has an invalid value in Comments from {}'
-                                  .format(item.strip(),name))
+                            print('"{item.strip()}" has an invalid value in Comments from {name}')
             Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         print(f'{count} values were found in the histogram comments')
         wx.CallLater(100,UpdateSampleGrid,G2frame,data)

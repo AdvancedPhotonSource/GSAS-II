@@ -801,12 +801,25 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         Sample['Phi'] = data['GonioAngles'][2]
         Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center
         polariz = data['PolaVal'][0]
-        for item in Comments:
-            for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2','FreePrm3','Omega',
-                'Chi','Phi'):
-                if key.lower() in item.lower():
+        # Scan the comments, but take ones containing "GSAS" as a priority
+        priorityG2 = [j for j,item in enumerate(Comments) if 'gsas' in item.lower()]
+        priorityList = priorityG2 + [i for i in range(len(Comments)) if i not in priorityG2]
+        for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2',
+                        'FreePrm3','Omega','Chi','Phi'):
+            for j in priorityList:
+                item = Comments[j]
+                if '=' in item:
+                    itemSp = item.split('=')
+                elif ':' in item:
+                    itemSp = item.split(':')
+                else:
+                    continue
+                if key.lower() in itemSp[0].lower():
                     try:
-                        Sample[key] = float(item.split('=')[1])
+                        Sample[key] = float(itemSp[1])
+                        if GSASIIpath.GetConfigValue('debug'):
+                            print(f'Setting {key} from {item}')
+                        break
                     except:
                         pass
             if 'label_prm' in item.lower():

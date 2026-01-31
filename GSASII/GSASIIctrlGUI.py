@@ -380,6 +380,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.CIFinput = CIFinput
         self.notBlank = notBlank
         self.ASCIIonly = ASCIIonly
+        self.changed = False
 
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
@@ -472,7 +473,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             print('ValidatedTxtCtrl.SetValue() used in callback. Better as ChangeValue()?')
             G2obj.HowDidIgetHere(True)
         if self.result is not None:
-            self.result[self.key] = val
+            if self.result[self.key] != val:
+                self.changed = True
+                self.result[self.key] = val
         self._setValue(val)
         # Direct calls to SetValue should trigger an event
         wx.TextCtrl.SetValue(self,wx.TextCtrl.GetValue(self))
@@ -488,7 +491,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         This routine does not trigger a wx.EVT_TEXT event. This is what
         should be used inside event callbacks, not :meth:`SetValue`.
         '''
-        if self.result is not None:
+        if self.result is not None and self.result[self.key] != val:
+            self.changed = True
             self.result[self.key] = val
         self._setValue(val)
 
@@ -648,7 +652,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         except RuntimeError:  # ignore if control has been deleted
             return
         # always store the result
-        self.result[self.key] = val
+        if self.result[self.key] != val:
+            self.changed = True
+            self.result[self.key] = val
 
     def _onLeaveWindow(self,event):
         '''If the mouse leaves the text box, save the result, if valid,
@@ -662,10 +668,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             except:
                 pass
         # ignore mouse crusing
-        if self.result[self.key] == self.GetValue(): # .IsModified() seems unreliable
-           return
+        if self.result[self.key] == self.GetValue() and not self.changed: # .IsModified() seems unreliable
+            return
         if self.type is not str:
-            if not self.IsModified(): return  #ignore mouse crusing
+            if not self.IsModified() and not self.changed:
+                return  #ignore mouse crusing
         wx.CallAfter(self._TestValidity)    # entry changed, test/show validity
         if self.evaluated and not self.invalid: # deal with computed expressions
             if self.timer:
@@ -680,6 +687,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.event = event
             self.OnLeave(invalid=self.invalid,value=self.result[self.key],
                 tc=self,**self.OnLeaveArgs)
+        self.changed = False
         if event: event.Skip()
 
     def _onLoseFocus(self,event):
@@ -2236,7 +2244,21 @@ def SelectSearchVars(G2frame,labelLst,keyList):
         result[key] = event.GetString()
         if result.get('Selection') and result.get('Key'):
             dlg.EndModal(wx.ID_OK)
-
+    def OnFilter(event):
+        'Set contents of comments entries based on filter'
+        event.Skip()
+        wx.CallAfter(DoFiltering) # launch after key press is processed
+    def DoFiltering():
+        'perform the filtering'
+        s = filterBox.GetValue()
+        if s:
+            l = [i for i in keyList if s in i]
+            lenInfo.SetLabel(f'  ({len(l)} filtered comments entries)')
+        else:
+            l = keyList
+            lenInfo.SetLabel(f'  ({len(l)} comments entries)')
+        CommentsCh.SetItems(l)
+        CommentsCh.SetSelection(-1) # unselect
     result = {}
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'Select a parameter to set',
         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -2244,24 +2266,38 @@ def SelectSearchVars(G2frame,labelLst,keyList):
     mainSizer.Add((5,5))
     subSizer = wx.BoxSizer(wx.HORIZONTAL)
     subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Select a parameter'))
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                        'Select a parameter to set from comments'))
     subSizer.Add((-1,-1),1,wx.EXPAND)
     mainSizer.Add(subSizer,0,wx.EXPAND,0)
     mainSizer.Add((0,10))
 
     subSizer = wx.FlexGridSizer(0,2,5,0)
-    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Parameter: '),0,wx.BOTTOM,10)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Parameter: '),
+                     0,wx.BOTTOM|wx.ALIGN_RIGHT|WACV,10)
     ch = wx.Choice(dlg, wx.ID_ANY, choices = sorted(labelLst))
     ch.key = 'Selection'
     ch.SetSelection(-1)
     ch.Bind(wx.EVT_CHOICE, OnChoice)
-    subSizer.Add(ch)
-    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Key in comments: '),0,wx.TOP,10)
-    ch = wx.Choice(dlg, wx.ID_ANY, choices = keyList)
-    ch.key = 'Key'
-    ch.SetSelection(-1)
-    ch.Bind(wx.EVT_CHOICE, OnChoice)
-    subSizer.Add(ch)
+    subSizer.Add(ch,0,WACV)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  Comments entries: '),
+                     0,wx.TOP|WACV,10)
+    CommentsCh = wx.Choice(dlg, wx.ID_ANY, choices = keyList)
+    CommentsCh.key = 'Key'
+    CommentsCh.SetSelection(-1)
+    CommentsCh.Bind(wx.EVT_CHOICE, OnChoice)
+    subSizer.Add(CommentsCh,0,WACV)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Filter: '),
+                     0,wx.ALL|wx.ALIGN_RIGHT|WACV)
+    filterBox = wx.TextCtrl(dlg, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
+    #filterBox.Bind(wx.EVT_CHAR,OnFilter)
+    filterBox.Bind(wx.EVT_KEY_UP,OnFilter)
+    filterBox.Bind(wx.EVT_TEXT_ENTER,OnFilter)
+    miniSizer = wx.BoxSizer(wx.HORIZONTAL)
+    miniSizer.Add(filterBox,0,wx.ALL|WACV)
+    lenInfo = wx.StaticText(dlg,wx.ID_ANY,'  ()')
+    miniSizer.Add(lenInfo,0,wx.ALL|WACV)
+    subSizer.Add(miniSizer,0,wx.ALL|wx.ALIGN_LEFT|WACV)
     mainSizer.Add(subSizer)
 
     mainSizer.Add((-1,20))
@@ -2272,6 +2308,7 @@ def SelectSearchVars(G2frame,labelLst,keyList):
     mainSizer.Add((-1,5),1,wx.EXPAND,1)
     mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER,0)
     mainSizer.Add((-1,10))
+    DoFiltering()
 
     dlg.SetSizer(mainSizer)
     mainSizer.Fit(dlg)

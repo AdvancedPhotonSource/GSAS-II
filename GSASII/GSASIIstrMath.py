@@ -521,7 +521,13 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 for item in Shell:
                     if 'C(' in item:
                         l,m = eval(item.strip('C').strip('c'))
-                        SH = G2lat.KslCalc(item,Th,Ph)
+                        SH = 4.0*np.pi*G2lat.KslCalc(item,Th,Ph)
+                        if l%2: #odd L
+                            SHI = SH
+                            SHR = np.zeros_like(SHI)
+                        else:   #even L
+                            SHR = SH
+                            SHI = np.zeros_like(SHR)
                         SHP = G2lat.KslCalc(item,ThP,PhP)
                         SHPi = G2lat.KslCalc(item,ThPi,PhPi)
                         SHPj = G2lat.KslCalc(item,ThPj,PhPj)
@@ -531,7 +537,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         SHMj = G2lat.KslCalc(item,ThMj,PhMj)
                         SHMk = G2lat.KslCalc(item,ThMk,PhMk)
                         BS = 1.0
-                        if 'Q' in Atm:
+                        if 'Q' in Atm:  #why is this possible?
                             BS = sp.spherical_jn(l,1.0)/(4.*np.pi)    #Slater term here?
                         else:
                             BS = sp.spherical_jn(l,QR*R)/(4.*np.pi)    #Bessel function
@@ -562,7 +568,6 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             ffOrb = orbTable['Sl core']
             FFcore = G2el.ScatFac(ffOrb,SQR)    #core; same for Sl & Be
             FFval = np.zeros_like(FFcore)
-            FFSH = np.zeros_like(FFcore)
             FFSHR = np.zeros_like(FFcore)
             FFSHI = np.zeros_like(FFcore)
             Ne = orbs['Ne1']
@@ -587,8 +592,6 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                     if 'D(' in term:    #skip 'Ne' & 'kappa's
                         name = 'A%s:%d'%(term,iAt)
                         item = term.replace('D','C')[:-1]
-                        SH = 2.0*twopi*G2lat.KslCalc(item,Th,Ph)**2
-                        #test
                         L = int(item[2])    #0>L>6 by definition in G2
                         if L%2: #odd L
                             SHI = 2.0*twopi*G2lat.KslCalc(item,Th,Ph)*S[L]
@@ -602,9 +605,6 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         dFFdSR["Akappa'1:%d"%iAt] += -2.0*SQkp*SHR*orbs[term]*dffdkp/kappap   #ok
                         dFFdSI[name] = SHI*ffkp       #ok
                         dFFdSI["Akappa'1:%d"%iAt] += -2.0*SQkp*SHI*orbs[term]*dffdkp/kappap   #ok                        
-                        #end test
-                        FFSH += SH*orbs[term]*ffkp
-            FF[:,iAt] = FFcore+FFval+FFSH
             FFR[:,iAt] = FFcore+FFval+FFSHR
             FFI[:,iAt] = np.round(FFSHI,10)
         else:

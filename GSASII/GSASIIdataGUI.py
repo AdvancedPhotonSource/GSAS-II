@@ -223,7 +223,7 @@ class MergeDialog(wx.Dialog):
         if self.Type == 'SEC':
             Smart = wx.CheckBox(self.panel,label=' Do smart merge for microED?')
             Smart.Bind(wx.EVT_CHECKBOX,OnSmart)
-        mainSizer.Add(Smart,0)    
+            mainSizer.Add(Smart,0)    
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -8369,9 +8369,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             Comments = []
         refList = np.copy(data[1]['RefList'])
         Comments.append(' Merging %d reflections from %s'%(len(refList),Name))
-        if 'Type' not in data[0]:
-            G2frame.ErrorDialog('Unknown data type','Define data type in Instrument Parameters first')
-            return
+        data[0]['Type'] = Inst[0]['Type'][1][:]
         dlg = MergeDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -8403,6 +8401,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
             if hkl[3+Super] == 0:
                 sumExt += hkl[5+Super]
                 Next += 1
+            if not hkl[5+Super]:    #skip Fo == 0
+                continue
             if str(hkl[:3+Super]) not in HKLdict:
                 HKLdict[str(hkl[:3+Super])] = [hkl[:3+Super],[hkl[3+Super:lenhkl],]]
             else:
@@ -8510,9 +8510,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             Comments = []
         refList = np.copy(data[1]['RefList'])
         Comments.append(' Sorting %d reflections from %s'%(len(refList),Name))
-        if 'Type' not in data[0]:
-            G2frame.ErrorDialog('Unknown data type','Define data type in Instrument Parameters first')
-            return
+        data[0]['Type'] = Inst[0]['Type'][1][:]
         dlg = HKLSortDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:

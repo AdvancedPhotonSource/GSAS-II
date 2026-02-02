@@ -1409,15 +1409,19 @@ def WriteConfig(configDict):
             print(f'Error trying to create directory {localdir}\n{msg}')
             return True
     cfgfile = os.path.join(localdir,'config.ini')
-    cfgP = configparser.ConfigParser()
-    if os.path.exists(cfgfile): 
-        cfgP.read(cfgfile)  # read previous file so other sections are retained
-    cfgP['GUI settings'] = configDict
+    try:
+        cfgP = configparser.ConfigParser()
+        if os.path.exists(cfgfile): 
+            cfgP.read(cfgfile)  # read previous file so other sections are retained
+        cfgP['GUI settings'] = configDict
 
-    # Write the configuration file
-    with open(cfgfile, 'w') as configfile:
-        cfgP.write(configfile)
-    print(f"Configuration settings saved as {cfgfile}")
+        # Write the configuration file
+        with open(cfgfile, 'w') as configfile:
+            cfgP.write(configfile)
+            print(f"Configuration settings saved as {cfgfile}")
+    except Exception as msg:
+        print(f"Warning: Configuration settings not saved")
+        if GSASIIpath.GetConfigValue('debug'): print('error=',msg)
 
 def LoadConfig(printInfo=True):
     '''Read configuration settings from ~/.GSASII/config.ini, if present.
@@ -1925,7 +1929,7 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
         count += 1
         r = None
         repeat = False
-        if GetConfigValue('debug'): print('request to',URL)
+        #if GetConfigValue('debug'): print('request to',URL)
         try:
             if timeout is not None:
                 r = reqopt(URL,params=postdict,cookies=usecookie,
@@ -1955,6 +1959,12 @@ def postURL(URL,postdict,getcookie=None,usecookie=None,
                     print('Retry with http://')
                     repeat = True
                     URL = URL.replace('https:','http:')
+            if GetConfigValue('debug'):
+                print(70*'=')
+                print('request to',URL,'\naccess type=',mode,
+                          '\ndict=',postdict,
+                          '\ncookie=',usecookie)
+                print(70*'=')
         except requests.exceptions.Timeout as msg:
             print(f'timeout accessing {URL}')
             if GetConfigValue('debug'): print('full error=',msg)
@@ -2255,14 +2265,18 @@ to update/regress repository from git repository:
         # add tag info to config file
         import configparser
         cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
-        cfg = configparser.ConfigParser()
-        cfg.read(cfgfile)
-        if 'version info' not in cfg:
-            cfg.add_section('version info')
-        cfg['version info'].update(
-            {'lastVersionTag':lastver,'lastVersionNumber':lastnum})
-        with open(cfgfile, 'w') as configfile:
-            cfg.write(configfile)
+        try:
+            cfg = configparser.ConfigParser()
+            cfg.read(cfgfile)
+            if 'version info' not in cfg:
+                cfg.add_section('version info')
+            cfg['version info'].update(
+                {'lastVersionTag':lastver,'lastVersionNumber':lastnum})
+            with open(cfgfile, 'w') as configfile:
+                cfg.write(configfile)
+        except Exception as msg:
+            print(f"Warning: Configuration settings not saved")
+            if GSASIIpath.GetConfigValue('debug'): print('error=',msg)
         sys.exit()
 
     if updateType == 'fetch':

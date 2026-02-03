@@ -1421,7 +1421,7 @@ def WriteConfig(configDict):
             print(f"Configuration settings saved as {cfgfile}")
     except Exception as msg:
         print(f"Warning: Configuration settings not saved")
-        if GSASIIpath.GetConfigValue('debug'): print('error=',msg)
+        if GetConfigValue('debug'): print('error=',msg)
 
 def LoadConfig(printInfo=True):
     '''Read configuration settings from ~/.GSASII/config.ini, if present.
@@ -2276,7 +2276,7 @@ to update/regress repository from git repository:
                 cfg.write(configfile)
         except Exception as msg:
             print(f"Warning: Configuration settings not saved")
-            if GSASIIpath.GetConfigValue('debug'): print('error=',msg)
+            if GetConfigValue('debug'): print('error=',msg)
         sys.exit()
 
     if updateType == 'fetch':

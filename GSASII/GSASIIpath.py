@@ -405,7 +405,7 @@ def getGitHubVersion():
     try:
         cfg = configparser.ConfigParser()
         # Read the configuration file
-        cfg.read(cfgfile)
+        cfg.read(cfgfile, encoding='utf-8')
     except Exception as err:
         if GetConfigValue('debug'): print(f"Error reading {cfgfile}\n",err)
         return None,None
@@ -1412,11 +1412,11 @@ def WriteConfig(configDict):
     try:
         cfgP = configparser.ConfigParser()
         if os.path.exists(cfgfile): 
-            cfgP.read(cfgfile)  # read previous file so other sections are retained
+            cfgP.read(cfgfile, encoding='utf-8')  # read previous file so other sections are retained
         cfgP['GUI settings'] = configDict
 
         # Write the configuration file
-        with open(cfgfile, 'w') as configfile:
+        with open(cfgfile, 'w', encoding='utf-8') as configfile:
             cfgP.write(configfile)
             print(f"Configuration settings saved as {cfgfile}")
     except Exception as msg:
@@ -1479,7 +1479,7 @@ def LoadConfig(printInfo=True):
     try:
         cfg = configparser.ConfigParser()
         # Read the configuration file
-        cfg.read(cfgfile)
+        cfg.read(cfgfile, encoding='utf-8')
     except Exception as err:
         print("Error reading {cfgfile}\n",err)
         return
@@ -2267,12 +2267,12 @@ to update/regress repository from git repository:
         cfgfile = os.path.expanduser(os.path.normpath('~/.GSASII/config.ini'))
         try:
             cfg = configparser.ConfigParser()
-            cfg.read(cfgfile)
+            cfg.read(cfgfile, encoding='utf-8')
             if 'version info' not in cfg:
                 cfg.add_section('version info')
             cfg['version info'].update(
                 {'lastVersionTag':lastver,'lastVersionNumber':lastnum})
-            with open(cfgfile, 'w') as configfile:
+            with open(cfgfile, 'w', encoding='utf-8') as configfile:
                 cfg.write(configfile)
         except Exception as msg:
             print(f"Warning: Configuration settings not saved")

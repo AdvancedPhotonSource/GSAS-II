@@ -691,7 +691,7 @@ def ProjFileSave(G2frame):
     'Save a GSAS-II project file'
     if not G2frame.GPXtree.IsEmpty():
         try:
-            file = open(G2frame.GSASprojectfile,'wb')
+            gpxfile = open(G2frame.GSASprojectfile,'wb')
         except PermissionError:
             G2G.G2MessageBox(G2frame,'Read only file','Project cannot be saved; change permission & try again')
             return
@@ -730,8 +730,8 @@ def ProjFileSave(G2frame):
                     data.append([name,G2frame.GPXtree.GetItemPyData(item2)])
                     item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
-                pickle.dump(data,file,2)
-            file.close()
+                pickle.dump(data,gpxfile,2)
+            gpxfile.close()
             pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
             if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveGPXdirectory(pth)
             G2frame.LastGPXdir = pth

@@ -15,6 +15,7 @@ class PickElement(wx.Dialog):
         ifMag if True present magnetic scatters only
         ifOrbs if True present orbital form actors only
         multiple if True multiple elements can be selected
+        ifVaQ if True show Va & Q  buttons
     '''
     Elem=None
     def _init_ctrls(self,prnt,ifMag=False,ifOrbs=False):
@@ -48,8 +49,9 @@ class PickElement(wx.Dialog):
                 pos=wxPoint(16.5*self.butWid+25,7.75*24+24),label="Done")
             b.Bind(wx.EVT_BUTTON, self.OnClose)
 
-    def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False,ifOrbs=False,multiple=False):
+    def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False,ifOrbs=False,multiple=False,ifVaQ=True):
         self.oneOnly = oneOnly
+        self.ifVaQ = ifVaQ
         self.ifNone = ifNone
         self.multiple = multiple
         self._init_ctrls(parent,ifMag=ifMag,ifOrbs=ifOrbs)
@@ -60,6 +62,9 @@ class PickElement(wx.Dialog):
         self.color = color
         if not self.ifNone and name[0] == 'None':
             return
+        if not self.ifVaQ:
+            if name[0] == 'Va' or name[0] == 'Q':
+                return
         if self.oneOnly:
             El = wscs.ColourSelect(label=name[0], parent=self,colour=color,
                 pos=pos, size=wx.Size(self.butWid,23), style=wx.RAISED_BORDER)

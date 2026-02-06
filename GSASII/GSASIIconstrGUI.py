@@ -3299,7 +3299,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                 AtInfo = data['Vector']['AtInfo']
                 r,c = event.GetRow(),event.GetCol()
                 if vecGrid.GetColLabelValue(c) == 'Type':
-                    PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
+                    PE = G2elemGUI.PickElement(G2frame,oneOnly=True,ifVaQ=False)
                     if PE.ShowModal() == wx.ID_OK:
                         if PE.Elem != 'None':
                             El = PE.Elem.strip().lower().capitalize()
@@ -3453,7 +3453,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         def OnAtSel(event):
             Obj = event.GetEventObject()
             ObjId = event.GetId()
-            PE = G2elemGUI.PickElement(G2frame,oneOnly=False)
+            PE = G2elemGUI.PickElement(G2frame,oneOnly=False,ifVaQ=False)
             if PE.ShowModal() == wx.ID_OK:
                 if PE.Elem != 'None':
                     El = PE.Elem.strip().lower().capitalize()
@@ -3466,7 +3466,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         def OnElSel(event):
             Obj = event.GetEventObject()
             ObjId = event.GetId()
-            PE = G2elemGUI.PickElement(G2frame,oneOnly=False,ifOrbs=True)
+            PE = G2elemGUI.PickElement(G2frame,oneOnly=False,ifOrbs=False,ifVaQ=False)
             if PE.ShowModal() == wx.ID_OK:
                 if PE.Elem != 'None':
                     El = PE.Elem.strip().lower().capitalize()
@@ -3498,7 +3498,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
         else:
             SpinRBSizer = wx.BoxSizer(wx.VERTICAL)
         Indx = {}
-        SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid body shells/nonspherical atoms (Atom=Q & select Orbitals):'))
+        SpinRBSizer.Add(wx.StaticText(SpinRBDisplay,label=' Spinning rigid body shells:'))
         nQ = 0
         for spinID in data['Spin']:
             if 'Q' in data['Spin'][spinID]['atType']:
@@ -3632,7 +3632,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                 AtInfo = data['Residue']['AtInfo']
                 r,c = event.GetRow(),event.GetCol()
                 if resGrid.GetColLabelValue(c) == 'Type':
-                    PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
+                    PE = G2elemGUI.PickElement(G2frame,oneOnly=True,ifVaQ=False)
                     if PE.ShowModal() == wx.ID_OK:
                         if PE.Elem != 'None':
                             El = PE.Elem.strip().lower().capitalize()

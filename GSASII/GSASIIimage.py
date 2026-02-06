@@ -82,7 +82,39 @@ def GetTthP(x,y,parmDict):
     dxyz0 += np.array([0.,0.,dist])         #shift away from sample
     ctth0 = costth(dxyz0,r001)              #cos of angle between detector normal & sample-pixel vector
     return npacosd(ctth0)[0]
-        
+
+def GetTthPmulti(x,y,detX,detY,tilt,dist,phi):
+    '''Compute angle between detector normal & sample scattering ray vector
+
+    :param float/array x: detector x-position in mm
+    :param float/array y: detector y-position in mm
+    :param float/array detX: X Position of beam center
+    :param float/array detY: Y Position of beam center
+    :param float/array tilt: detector tilt (typically a single value)
+    :param float/array dist: detector distance
+    :param float/array phi: detector phi setting (typically a single value)
+
+    :returns: float/array angle: = 2-theta if tilt is zero
+    '''
+    def costth(xyz,d0):
+        ''' compute cos of angle between vectors; xyz not normalized, d0 normalized'''
+        u = xyz/nl.norm(xyz,axis=-1)[:,:,nxs]
+        return np.dot(u,d0)
+    
+    dx = detX
+    dy = detY
+    dist = dist/npcosd(tilt)    #sample-beam intersection point on detector plane
+    T = makeMat(tilt,0)         #detector tilt matrix
+    R = makeMat(phi,2)     #rotation of tilt axis matrix
+    MN = np.inner(R,np.inner(R,T))      #should be detector transformation matrix; why not np.inner(R,T)
+    d001 = np.array([0.,0.,1.])         #vector along z (beam direction); normal to untilted detector plane
+    r001 = np.inner(d001,MN)            #should rotate vector same as detector
+    dxyz0 = np.inner(np.dstack([dx,dy,np.zeros_like(dx)]),MN)    #transform detector pixel x,y by tilt/rotate
+    dxyz0[:,:,2] += dist                #shift away from sample
+    ctth0 = costth(dxyz0,r001)          #cos of angle between detector normal & sample-pixel vector
+    return npacosd(ctth0)[0]
+
+
 def SamAbs(data,tax,tay,muT):
     'Compute sample absorption correction for images'
     if 'Cylind' in data['SampleShape']:
@@ -319,7 +351,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         print (sigstr)
         print()
 
-    def ellipseCalcD(B,xyd,varyList,parmDict):
+    def ellipseCalcMultiD(B,xyd,varyList,parmDict):
         x,y,dist,dsp = xyd
         varyDict = dict(zip(varyList,B))
         parms = {}
@@ -338,7 +370,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
 
         phi = parms['phi']-90.               #get rotation of major axis from tilt axis
         tth = 2.0*npasind(parms['wavelength']/(2.*dsp))
-        dtth = GetTthP(x,y,parmDict)
+        dtth = GetTthPmulti(x,y,detX,detY,parms['tilt'],dist,parms['phi'])
         phi0 = npatan2d(y-detY,x-detX)
         dxy = peneCorr(dtth,parms['dep'],dist-deltaDist)
         stth = npsind(tth)
@@ -364,7 +396,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         return (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
 
     p0 = [parmDict[key] for key in varyList]
-    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
+    result = leastsq(ellipseCalcMultiD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])

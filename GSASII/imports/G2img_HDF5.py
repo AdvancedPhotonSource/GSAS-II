@@ -278,24 +278,31 @@ class HDF5_Reader(G2obj.ImportImage):
         self.Comments += copy.deepcopy(self.UniversalComments)
         sizexy = list(image.shape)
         Npix = sizexy[0]*sizexy[1]
-        # default pixel size (for APS sector 6?)
-        pixelsize = [74.8,74.8]
         j = 0   # use 1st size/bin entry for all images
         # get 1ID pixel size info. Currently an array, but this may change
+        if 'PixelSizeX' in fp['/instrument/Detector'] and 'PixelSizeY' in fp['/instrument/Detector']:
+            try:
+                pixelsize = [float(fp['/instrument/Detector/PixelSizeX'][0]),
+                             float(fp['/instrument/Detector/PixelSizeY'][0])]
+            except:
+                pass
         try:
-            misc = {}
-            for key in 'DetSizeX','DetSizeY':
-                misc[key] = [i for i in fp['misc'][key]]
-            for key in 'DetPixelSizeX','DetPixelSizeY':
-                misc[key] = [float(i) for i in fp['misc'][key]]
-            if 'DetSizeX' in misc and 'DetSizeY' in misc:
-                pixelsize = [misc[f'DetSize{i}'][j]*misc[f'DetPixelSize{i}'][j] for i in ('X','Y')]
-                print(f'Using DetSize* & DetPixelSize* for Pixel size: {pixelsize}.')
-            else:
-                pixelsize = [misc[f'DetPixelSize{i}'][j] for i in ('X','Y')]
-                print(f'Using DetPixelSize* for Pixel size: {pixelsize}.')
+            if not pixelsize:
+                misc = {}
+                for key in 'DetSizeX','DetSizeY':
+                    misc[key] = [i for i in fp['misc'][key]]
+                for key in 'DetPixelSizeX','DetPixelSizeY':
+                    misc[key] = [float(i) for i in fp['misc'][key]]
+                if 'DetSizeX' in misc and 'DetSizeY' in misc:
+                    pixelsize = [misc[f'DetSize{i}'][j]*misc[f'DetPixelSize{i}'][j] for i in ('X','Y')]
+                    print(f'Using DetSize[XY] & DetPixelSize[XY] for Pixel size: {pixelsize}.')
+                else:
+                    pixelsize = [misc[f'DetPixelSize{i}'][j] for i in ('X','Y')]
+                    print(f'Using DetPixelSize* for Pixel size: {pixelsize}.')
         except:
             print(f'No DetSize* or DetPixelSize* Pixel size defaulting to {pixelsize}.')
+        # default pixel size (for APS sector 6?)
+        if not pixelsize: pixelsize = [74.8,74.8]
         data = {'pixelSize':pixelsize,'wavelength':0.15,'distance':1000.,
                 'center':[sizexy[0]*0.1,sizexy[1]*0.1],'size':sizexy,'det2theta':0.0}
         for item in self.Comments:

@@ -5928,7 +5928,7 @@ is being refined.
         ''' Saves partials as a csv file
         '''
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-        phPartialFile = Controls['PhasePartials']
+        phPartialFile = Controls.get('PhasePartials','')
         try:
             fp = open(phPartialFile,'rb')
         except:

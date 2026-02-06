@@ -2234,9 +2234,14 @@ class G2MultiChoiceWindow(wx.BoxSizer):
         self.clb.AppendItems(ChoiceList)
         self._ShowSelections()
         
-def SelectSearchVars(G2frame,labelLst,keyList):
+def SelectSearchVars(G2frame,labelLst,keyDict):
     '''Get a sample parameter and a comment label from the user
-    so we can search for that in the comments
+    so we can search for that in the comments.
+
+    :returns: Selection, Key, where Selection is the parameter name to 
+      be set (from labelLst) and Key will be a value tag from keyDict or 
+      an equation object (from :func:`GSASIIexprGUI.ExpressionDialog`).
+      Both will be None if command is cancelled.
     '''
     def OnChoice(event):
         'Respond when a parameter is selected in the Choice box'
@@ -2250,69 +2255,112 @@ def SelectSearchVars(G2frame,labelLst,keyList):
         wx.CallAfter(DoFiltering) # launch after key press is processed
     def DoFiltering():
         'perform the filtering'
-        s = filterBox.GetValue()
+        s = dlg.filterBox.GetValue()
         if s:
-            l = [i for i in keyList if s in i]
-            lenInfo.SetLabel(f'  ({len(l)} filtered comments entries)')
+            l = [i for i in keyDict.keys() if s in i]
+            dlg.lenInfo.SetLabel(f'  ({len(l)} filtered comments entries)')
         else:
-            l = keyList
-            lenInfo.SetLabel(f'  ({len(l)} comments entries)')
-        CommentsCh.SetItems(l)
-        CommentsCh.SetSelection(-1) # unselect
+            l = list(keyDict.keys())
+            dlg.lenInfo.SetLabel(f'  ({len(l)} comments entries)')
+        dlg.CommentsCh.SetItems(l)
+        dlg.CommentsCh.SetSelection(-1) # unselect
+    def getEquation(event):
+        'Allow the user to enter or edit an equation'
+        from . import GSASIIexprGUI as G2exG
+        result['Key'] = None
+        expDlg = G2exG.ExpressionDialog(dlg,keyDict,result.get('expression'),
+                        "Enter Equation to set Sample Parameter",
+                        "Sample Parameter Equation", False,
+                        VarLabel=result.get('Selection','TBD'),
+                        wildCard=False)
+        obj = expDlg.Show(True)
+        expDlg.Destroy()
+        if obj:
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            result['Key'] = calcobj
+            result['expression'] = obj
+            if result.get('Selection'):
+                dlg.EndModal(wx.ID_OK)
+        wx.CallAfter(Paint)
+    def Paint():
+        '''Draw (or redraw after an equation is entered/edited) the 
+        window contents
+        '''
+        mainsizer = dlg.GetSizer()
+        mainsizer.Clear(True)
+        mainSizer.Add((5,5))
+        subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        subSizer.Add((-1,-1),1,wx.EXPAND)
+        subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                            'Select a parameter to set from comments'))
+        subSizer.Add((-1,-1),1,wx.EXPAND)
+        mainSizer.Add(subSizer,0,wx.EXPAND,0)
+        mainSizer.Add((0,10))
+
+        subSizer = wx.FlexGridSizer(0,2,5,0)
+        subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Parameter: '),
+                         0,wx.BOTTOM|wx.ALIGN_RIGHT|WACV,10)
+        ch = wx.Choice(dlg, wx.ID_ANY, choices = sorted(labelLst))
+        ch.key = 'Selection'
+        ch.SetSelection(-1)
+        ch.Bind(wx.EVT_CHOICE, OnChoice)
+        subSizer.Add(ch,0,WACV)
+        subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  Comments entries: '),
+                         0,wx.TOP|WACV,10)
+        dlg.CommentsCh = wx.Choice(dlg, wx.ID_ANY, choices = list(keyDict.keys()))
+        dlg.CommentsCh.key = 'Key'
+        dlg.CommentsCh.SetSelection(-1)
+        dlg.CommentsCh.Bind(wx.EVT_CHOICE, OnChoice)
+        subSizer.Add(dlg.CommentsCh,0,WACV)
+        subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Filter: '),
+                         0,wx.ALL|wx.ALIGN_RIGHT|WACV)
+        dlg.filterBox = wx.TextCtrl(dlg, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
+        dlg.filterBox.Bind(wx.EVT_KEY_UP,OnFilter)
+        dlg.filterBox.Bind(wx.EVT_TEXT_ENTER,OnFilter)
+        miniSizer = wx.BoxSizer(wx.HORIZONTAL)
+        miniSizer.Add(dlg.filterBox,0,wx.ALL|WACV)
+        dlg.lenInfo = wx.StaticText(dlg,wx.ID_ANY,'  ()')
+        miniSizer.Add(dlg.lenInfo,0,wx.ALL|WACV)
+        subSizer.Add(miniSizer,0,wx.ALL|wx.ALIGN_LEFT|WACV)
+
+        subSizer.Add((-1,10))
+        subSizer.Add((-1,10))
+        if result.get('expression'):
+            eq = f"{result.get('Selection','TBD')} = {result['expression'].expression}"
+            subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Equation: '),
+                         0,wx.ALL|wx.ALIGN_RIGHT|WACV)
+            subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,eq),
+                         0,wx.ALL|wx.ALIGN_LEFT|WACV)
+            subSizer.Add((-1,10))
+            btn = wx.Button(dlg, wx.ID_ANY,'Edit equation')
+        else:
+            subSizer.Add((-1,10))
+            btn = wx.Button(dlg, wx.ID_ANY,'Enter equation')
+        subSizer.Add(btn,0,wx.ALL|wx.ALIGN_CENTER|WACV)
+        btn.Bind(wx.EVT_BUTTON,getEquation)
+
+        mainSizer.Add(subSizer)
+
+        mainSizer.Add((-1,20))
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(dlg, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        mainSizer.Add((-1,5),1,wx.EXPAND,1)
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER,0)
+        mainSizer.Add((-1,10))
+        DoFiltering()
+        dlg.CommentsCh.Enable(not bool(result.get('expression')))
+        dlg.filterBox.Enable(not bool(result.get('expression')))
+        mainSizer.Layout()
+        mainSizer.Fit(dlg)
+        dlg.CenterOnParent()
     result = {}
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'Select a parameter to set',
         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add((5,5))
-    subSizer = wx.BoxSizer(wx.HORIZONTAL)
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                        'Select a parameter to set from comments'))
-    subSizer.Add((-1,-1),1,wx.EXPAND)
-    mainSizer.Add(subSizer,0,wx.EXPAND,0)
-    mainSizer.Add((0,10))
-
-    subSizer = wx.FlexGridSizer(0,2,5,0)
-    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Parameter: '),
-                     0,wx.BOTTOM|wx.ALIGN_RIGHT|WACV,10)
-    ch = wx.Choice(dlg, wx.ID_ANY, choices = sorted(labelLst))
-    ch.key = 'Selection'
-    ch.SetSelection(-1)
-    ch.Bind(wx.EVT_CHOICE, OnChoice)
-    subSizer.Add(ch,0,WACV)
-    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  Comments entries: '),
-                     0,wx.TOP|WACV,10)
-    CommentsCh = wx.Choice(dlg, wx.ID_ANY, choices = keyList)
-    CommentsCh.key = 'Key'
-    CommentsCh.SetSelection(-1)
-    CommentsCh.Bind(wx.EVT_CHOICE, OnChoice)
-    subSizer.Add(CommentsCh,0,WACV)
-    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Filter: '),
-                     0,wx.ALL|wx.ALIGN_RIGHT|WACV)
-    filterBox = wx.TextCtrl(dlg, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
-    #filterBox.Bind(wx.EVT_CHAR,OnFilter)
-    filterBox.Bind(wx.EVT_KEY_UP,OnFilter)
-    filterBox.Bind(wx.EVT_TEXT_ENTER,OnFilter)
-    miniSizer = wx.BoxSizer(wx.HORIZONTAL)
-    miniSizer.Add(filterBox,0,wx.ALL|WACV)
-    lenInfo = wx.StaticText(dlg,wx.ID_ANY,'  ()')
-    miniSizer.Add(lenInfo,0,wx.ALL|WACV)
-    subSizer.Add(miniSizer,0,wx.ALL|wx.ALIGN_LEFT|WACV)
-    mainSizer.Add(subSizer)
-
-    mainSizer.Add((-1,20))
-    btnsizer = wx.StdDialogButtonSizer()
-    btn = wx.Button(dlg, wx.ID_CANCEL)
-    btnsizer.AddButton(btn)
-    btnsizer.Realize()
-    mainSizer.Add((-1,5),1,wx.EXPAND,1)
-    mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER,0)
-    mainSizer.Add((-1,10))
-    DoFiltering()
-
     dlg.SetSizer(mainSizer)
-    mainSizer.Fit(dlg)
-    dlg.CenterOnParent()
+    Paint()
     if dlg.ShowModal() == wx.ID_OK:
         dlg.Destroy()
         return result.get('Selection'),result.get('Key')

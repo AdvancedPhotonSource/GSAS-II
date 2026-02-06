@@ -439,6 +439,18 @@ class ExpressionDialog(wx.Dialog):
             self.varName[v] = var
         self.OnValidate(None)
 
+    def OnChoiceButton(self,event):
+        '''Respond to a selection of a variable type for a label in
+        an expression
+        '''
+        sel = event.GetEventObject().sel
+        v = event.GetEventObject().label
+        var = self.SelectG2var(sel,v,self.parmLists[sel])
+        if var is not None:
+            self.varSelect[v] = sel
+            self.varName[v] = var
+        self.OnValidate(None)
+
     def SelectG2var(self,sel,var,parmList):
         '''Offer a selection of a GSAS-II variable.
 
@@ -573,18 +585,25 @@ class ExpressionDialog(wx.Dialog):
             # label
             GridSiz.Add(wx.StaticText(self.varbox,wx.ID_ANY,v),0,wx.ALIGN_CENTER,0)
             # assignment type
-            ch = wx.Choice(
-                self.varbox, wx.ID_ANY,
-                choices = [choices[i] for i in self.AllowedChoices]
-                )
-            GridSiz.Add(ch,0,wx.ALIGN_LEFT,0)
-            if v in self.varSelect and self.varSelect.get(v) in self.AllowedChoices:
-                i = self.AllowedChoices.index(self.varSelect[v])
-                ch.SetSelection(i)
+            if len(self.AllowedChoices) > 1:
+                ch = wx.Choice(
+                    self.varbox, wx.ID_ANY,
+                    choices = [choices[i] for i in self.AllowedChoices]
+                    )
+                GridSiz.Add(ch,0,wx.ALIGN_LEFT,0)
+                if v in self.varSelect and self.varSelect.get(v) in self.AllowedChoices:
+                    i = self.AllowedChoices.index(self.varSelect[v])
+                    ch.SetSelection(i)
+                else:
+                    ch.SetSelection(wx.NOT_FOUND)
+                ch.label = v
+                ch.Bind(wx.EVT_CHOICE,self.OnChoice)
             else:
-                ch.SetSelection(wx.NOT_FOUND)
-            ch.label = v
-            ch.Bind(wx.EVT_CHOICE,self.OnChoice)
+                ch = wx.Button(self.varbox,label='Select')
+                ch.sel = self.AllowedChoices[0]
+                ch.label = v
+                ch.Bind(wx.EVT_BUTTON,self.OnChoiceButton)
+                GridSiz.Add(ch,0,wx.ALIGN_LEFT,0)
 
             # var name/var assignment
             if self.varSelect.get(v) is None:
@@ -614,7 +633,8 @@ class ExpressionDialog(wx.Dialog):
                 else:
                     s = '?'
                 wid = wx.StaticText(self.varbox,wx.ID_ANY,s)
-                GridSiz.Add(wid,0,wx.ALIGN_LEFT,0)
+                #GridSiz.Add(wid,0,wx.ALIGN_LEFT,0)
+                GridSiz.Add(wid,0,wx.RIGHT|wx.LEFT,10)
 
             # show a refine flag for Free Vars only
             if self.varSelect.get(v) == 0 and self.fit:

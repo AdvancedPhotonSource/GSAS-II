@@ -3853,28 +3853,36 @@ def UpdateSampleGrid(G2frame,data):
         '''Set a selected Sample parameter from a selected entry in the comments
         for a selected set of histograms
         '''
+        def commentDict(G2frame,Id):
+            Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
+                G2frame, Id, 'Comments'))
+            keyDict = {}
+            for line in Comments:
+                if ':' in line:
+                    key,val = line.split(':')[0:2]
+                elif '=' in line:
+                    key,val = line.split('=')[0:2]
+                else:
+                    continue
+                try:
+                    #keyList.append(key.strip())
+                    keyDict[key.strip()] = float(val)
+                except:
+                    pass
+            return keyDict
         # get possible keys from current histogram's comments
-        Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
-                        G2frame, G2frame.PatternId, 'Comments'))
-        keyList = []
-        for line in Comments:
-            if ':' in line:
-                key = line.split(':')[0]
-            elif '=' in line:
-                key = line.split('=')[0]
-            else:
-                continue
-            keyList.append(key.strip())
+        keyDict = commentDict(G2frame, G2frame.PatternId)
         # if GSASIIpath.GetConfigValue('debug'):
         #     from importlib import reload
         #     reload(G2G)
         #     print(f'reloading {G2G}')
-        sampleVar,commentKey = G2G.SelectSearchVars(G2frame,labelLst,keyList)
+        sampleVar,commentKey = G2G.SelectSearchVars(G2frame,labelLst,keyDict)
         if sampleVar is None or commentKey is None: return
         # find the array element tied to the sample var
         if sampleVar not in labelLst:
             print(f'OnSearchComments: how did we get {sampleVar} not in {labelLst}?')
             return
+            
         i = labelLst.index(sampleVar)
         sampleArrKeys = elemKeysLst[i]
         # need to select histograms to search/set        
@@ -3901,25 +3909,16 @@ def UpdateSampleGrid(G2frame,data):
             if not hId:
                 print(f'{hist} not found! strange')
                 continue
-            Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hId,'Comments'))
-            Sample =   G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hId, 'Sample Parameters'))
-            # search comments for value matching commentKey
-            for item in Comments:
-                if '=' in item:
-                    itemSp = item.split('=')
-                elif ':' in item:
-                    itemSp = item.split(':')
-                else:
-                    continue
-                if commentKey == itemSp[0]:
-                    try:
-                        value = float(itemSp[1])
-                        break
-                    except:
-                        print(f'"{item.strip()}" has an invalid value in Comments for {hist}')
+            keyDict = commentDict(G2frame, hId)
+            if hasattr(commentKey,'EvalExpression'):
+                commentKey.SetupCalc(keyDict)
+                value = commentKey.EvalExpression()
+            elif commentKey in keyDict:
+                value = keyDict[commentKey]
             else:
                 print(f'"{commentKey}" not in Comments for {hist}')
                 continue
+            Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,hId, 'Sample Parameters'))
             # set the value in the selected entry in Sample Parameters
             try:
                 d = Sample
@@ -3927,11 +3926,11 @@ def UpdateSampleGrid(G2frame,data):
                     d = d[k]
                 d[sampleArrKeys[-1]]
             except KeyError:
-                print(f'Strange: "{commentKey}" not in Sample Parameters for {hist}')
+                print(f'Strange: "keys {sampleArrKeys}" not in Sample Parameters for {hist}')
                 continue
             count += 1
             d[sampleArrKeys[-1]] = value
-        print(f'Done. Set "{sampleVar}" in {count} histograms')
+        print(f'Set from comments done. Set "{sampleVar}" in {count} of {len(selection)} histograms')
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
     def SearchAllComments(value,tc,*args,**kwargs):

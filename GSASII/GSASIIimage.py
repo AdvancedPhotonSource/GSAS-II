@@ -198,7 +198,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     '''
 
     def CalibPrint(ValSig,chisq,Npts):
-        print ('Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
+        print ('Image Parameters: red. chi**2: %12.3g, Np: %d'%(chisq,Npts))
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'

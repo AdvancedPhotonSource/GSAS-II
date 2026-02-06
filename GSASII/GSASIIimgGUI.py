@@ -148,52 +148,6 @@ def UpdateImageData(G2frame,data):
             UpdateImageData(G2frame,data)
         dlg.Destroy()
         
-    # def OnMakeGainMap(event):         #obsolete?
-    #     #import scipy.ndimage.filters as sdif
-    #     sumImg = GetImageZ(G2frame,data)
-    #     masks = copy.deepcopy(G2frame.GPXtree.GetItemPyData(
-    #         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')))
-    #     Data = copy.deepcopy(data)
-    #     #force defaults for GainMap calc
-    #     Data['IOtth'] = [0.1,60.0]
-    #     Data['outAzimuths'] = 1
-    #     Data['LRazimuth'] = [0.,360.]
-    #     Data['outChannels'] = 5000
-    #     Data['binType'] = '2-theta'
-    #     Data['color'] = 'gray'
-    #     G2frame.Integrate = G2img.ImageIntegrate(sumImg,Data,masks,blkSize)            
-    #     Iy,azms,Ix = G2frame.Integrate[:3]
-    #     GainMap = G2img.MakeGainMap(sumImg,Ix,Iy,Data,blkSize)*1000.
-    #     Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
-    #     pth = os.path.split(os.path.abspath(imagefile))[0]
-    #     outname = 'GainMap'
-    #     dlg = wx.FileDialog(G2frame, 'Choose gain map filename', pth,outname, 
-    #         'G2img files (*.G2img)|*.G2img',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-    #     if dlg.ShowModal() == wx.ID_OK:
-    #         newimagefile = dlg.GetPath()
-    #         newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
-    #         Data['formatName'] = 'GSAS-II image'
-    #         Data['range'] = [(500,2000),[800,1200]]
-    #         GainMap = np.where(GainMap > 2000,2000,GainMap)
-    #         GainMap = np.where(GainMap < 500,500,GainMap)
-    #         masks['Thresholds'] = [(500.,2000.),[800.,1200.]]
-    #         G2IO.PutG2Image(newimagefile,[],data,Npix,GainMap)
-    #         GMname = 'IMG '+os.path.split(newimagefile)[1]
-    #         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,GMname)
-    #         if not Id:            
-    #             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=GMname)
-    #             G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
-    #             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),[])
-    #             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),Data)
-    #             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),masks)
-    #         else:
-    #             G2frame.GPXtree.SetItemPyData(Id,[Npix,newimagefile])
-    #             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'),[])
-    #             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'),Data)
-    #             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Masks'),masks)
-    #         G2frame.GPXtree.Expand(Id)
-    #         G2frame.GPXtree.SelectItem(Id)      #to show the gain map & put it in the list 
-
     G2frame.PhaseRing2Th = [] # list of known phase rings to superimpose
     # listing 2theta, color, width, line-style for each ring
     G2frame.dataWindow.ClearData()
@@ -245,10 +199,6 @@ def UpdateImageData(G2frame,data):
     tthSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'det2theta',xmin=-180.,xmax=180.,nDig=(10,2)),0,WACV)
     tthSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample changer position %.2f mm '%data['samplechangerpos']),0,WACV)
     mainSizer.Add(tthSizer,0)
-    # if not data['Gain map']:
-    #     makeGain = wx.Button(G2frame.dataWindow,label='Make gain map from this image? NB: use only an amorphous pattern for this')
-    #     makeGain.Bind(wx.EVT_BUTTON,OnMakeGainMap)
-    #     mainSizer.Add(makeGain)
     G2frame.dataWindow.SetDataSize()
 
 ################################################################################

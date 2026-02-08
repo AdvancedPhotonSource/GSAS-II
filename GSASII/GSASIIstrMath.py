@@ -499,22 +499,21 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 Shell = SHdat[shl]
                 Atm = Shell['AtType']
                 Nat = Shell['Natoms']
-                Irb = Shell['ShR']
                 if 'X' in hType:
-                    SFF = G2el.ScatFac(FFtables[Atm],SQR)
+                    SFF = 4.*np.pi*G2el.ScatFac(FFtables[Atm],SQR)
                 elif 'N' in hType:
-                    SFF = G2el.getBLvalues(BLtables)[Atm]
+                    SFF = 4.*np.pi*G2el.getBLvalues(BLtables)[Atm]
                 Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)
                 R = Shell['Radius']
-                R0 = sp.spherical_jn(0,QR*R)/(4.*np.pi)
-                R0P = sp.spherical_jn(0,QR*(R+0.01))/(4.*np.pi)
-                R0M = sp.spherical_jn(0,QR*(R-0.01))/(4.*np.pi)
+                R0 = sp.spherical_jn(0,QR*R)    #/(4.*np.pi)
+                R0P = sp.spherical_jn(0,QR*(R+0.01))    #/(4.*np.pi)
+                R0M = sp.spherical_jn(0,QR*(R-0.01))    #/(4.*np.pi)
                 dBSdR = Nat*SFF*(R0P-R0M)/0.02
                 FFR[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
                 for item in Shell:
                     if 'C(' in item:
                         l,m = eval(item.strip('C').strip('c'))
-                        SH = 4.0*np.pi*G2lat.KslCalc(item,Th,Ph)
+                        SH = G2lat.KslCalc(item,Th,Ph)
                         if l%2: #odd L
                             SHI = SH
                             SHR = np.zeros_like(SHI)
@@ -529,9 +528,9 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         SHMi = G2lat.KslCalc(item,ThMi,PhMi)
                         SHMj = G2lat.KslCalc(item,ThMj,PhMj)
                         SHMk = G2lat.KslCalc(item,ThMk,PhMk)
-                        BS = sp.spherical_jn(l,QR*R)/(4.*np.pi)    #Bessel function
-                        BSP = sp.spherical_jn(l,QR*(R+0.01))/(4.*np.pi)
-                        BSM = sp.spherical_jn(l,QR*(R-0.01))/(4.*np.pi)
+                        BS = sp.spherical_jn(l,QR*R)    #/(4.*np.pi)    #Bessel function
+                        BSP = sp.spherical_jn(l,QR*(R+0.01))    #/(4.*np.pi)
+                        BSM = sp.spherical_jn(l,QR*(R-0.01))    #/(4.*np.pi)
                         dBSdR += Nat*SFF*SH*Shell[item]*(BSP-BSM)/0.02
                         dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
                         dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)

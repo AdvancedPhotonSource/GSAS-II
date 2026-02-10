@@ -4919,6 +4919,16 @@ class G2Phase(G2ObjectWrapper):
             whose HAP parameters will be set with this phase. Histogram and phase
             must already be associated.
         :returns: None
+
+        Example for Size and Mustrain with LG_mix::
+
+            phase.set_HAP_refinements({
+                'Size': {'type':'isotropic', 'refine': True,
+                         'LGmix': {'value': 0.5, 'refine': False}},
+                'Mustrain': {'type':'uniaxial',
+                             'LGmix': {'value': 0.8, 'refine': True}}
+            })
+
         """
         if not self.data.get('Histograms',[]):
             G2fil.G2Print("Error likely: Phase {} has no linked histograms".format(self.name))
@@ -5013,6 +5023,17 @@ class G2Phase(G2ObjectWrapper):
                             raise ValueError("Expected hkl, found", direction)
                         direction = [int(n) for n in direction]
                         mustrain[3] = direction
+
+                    # Handle LG_mix parameter (Lorentzian-Gaussian mixing coefficient)
+                    if 'LGmix' in val and isinstance(val['LGmix'], dict):
+                        lgmix_dict = val['LGmix']
+                        if 'value' in lgmix_dict:
+                            lgmix_value = float(lgmix_dict['value'])
+                            if not 0.0 <= lgmix_value <= 1.0:
+                                raise ValueError("LGmix value must be between 0.0 and 1.0, got: " + str(lgmix_value))
+                            mustrain[1][2] = lgmix_value
+                        if 'refine' in lgmix_dict:
+                            mustrain[2][2] = bool(lgmix_dict['refine'])
             elif key == 'Size':
                 newSize = None
                 if 'value' in val:
@@ -5049,6 +5070,17 @@ class G2Phase(G2ObjectWrapper):
                             raise ValueError("Expected hkl, found", direction)
                         direction = [int(n) for n in direction]
                         size[3] = direction
+
+                    # Handle LG_mix parameter (Lorentzian-Gaussian mixing coefficient)
+                    if 'LGmix' in val and isinstance(val['LGmix'], dict):
+                        lgmix_dict = val['LGmix']
+                        if 'value' in lgmix_dict:
+                            lgmix_value = float(lgmix_dict['value'])
+                            if not 0.0 <= lgmix_value <= 1.0:
+                                raise ValueError("LGmix value must be between 0.0 and 1.0, got: " + str(lgmix_value))
+                            size[1][2] = lgmix_value
+                        if 'refine' in lgmix_dict:
+                            size[2][2] = bool(lgmix_dict['refine'])
             elif key == 'Pref.Ori.':
                 for h in histograms:
                     self.data['Histograms'][h]['Pref.Ori.'][2] = bool(val)
@@ -5106,7 +5138,7 @@ class G2Phase(G2ObjectWrapper):
                 elif key == 'Mustrain':
                     for h in histograms:
                         mustrain = self.data['Histograms'][h]['Mustrain']
-                        mustrain[2] = [False for p in mustrain[2]]
+                        mustrain[2] = [False for p in mustrain[2]]  # Clear all refine flags including LG_mix at [2][2]
                         mustrain[5] = [False for p in mustrain[4]]
                 elif key == 'Pref.Ori.':
                     for h in histograms:
@@ -5117,7 +5149,7 @@ class G2Phase(G2ObjectWrapper):
                 elif key == 'Size':
                     for h in histograms:
                         size = self.data['Histograms'][h]['Size']
-                        size[2] = [False for p in size[2]]
+                        size[2] = [False for p in size[2]]  # Clear all refine flags including LG_mix at [2][2]
                         size[5] = [False for p in size[5]]
                 elif key == 'Use':
                     for h in histograms:

@@ -499,17 +499,25 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 Shell = SHdat[shl]
                 Atm = Shell['AtType']
                 Nat = Shell['Natoms']
+                Irb = Shell['ShR']
                 if 'X' in hType:
-                    SFF = 4.*np.pi*G2el.ScatFac(FFtables[Atm],SQR)
+                    if 'Q' in Atm:
+                        SFF = 0.0
+                    else:
+                        SFF = G2el.ScatFac(FFtables[Atm],SQR)
                 elif 'N' in hType:
-                    SFF = 4.*np.pi*G2el.getBLvalues(BLtables)[Atm]
+                    SFF = G2el.getBLvalues(BLtables)[Atm]
                 Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)
-                R = Shell['Radius']
-                R0 = sp.spherical_jn(0,QR*R)    #/(4.*np.pi)
-                R0P = sp.spherical_jn(0,QR*(R+0.01))    #/(4.*np.pi)
-                R0M = sp.spherical_jn(0,QR*(R-0.01))    #/(4.*np.pi)
-                dBSdR = Nat*SFF*(R0P-R0M)/0.02
-                FFR[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
+                if 'Q' in Atm:
+                    dBSdR= 0.0
+                    FFR[:,iAt] = 0.0
+                else:
+                    R = Shell['Radius']
+                    R0 = sp.spherical_jn(0,QR*R)	#/(4.*np.pi)
+                    R0P = sp.spherical_jn(0,QR*(R+0.01)) #/(4.*np.pi)
+                    R0M = sp.spherical_jn(0,QR*(R-0.01))	#/(4.*np.pi)
+                    dBSdR = Nat*SFF*(R0P-R0M)/0.02
+                    FFR[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
                 for item in Shell:
                     if 'C(' in item:
                         l,m = eval(item.strip('C').strip('c'))
@@ -528,10 +536,14 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         SHMi = G2lat.KslCalc(item,ThMi,PhMi)
                         SHMj = G2lat.KslCalc(item,ThMj,PhMj)
                         SHMk = G2lat.KslCalc(item,ThMk,PhMk)
-                        BS = sp.spherical_jn(l,QR*R)    #/(4.*np.pi)    #Bessel function
-                        BSP = sp.spherical_jn(l,QR*(R+0.01))    #/(4.*np.pi)
-                        BSM = sp.spherical_jn(l,QR*(R-0.01))    #/(4.*np.pi)
-                        dBSdR += Nat*SFF*SH*Shell[item]*(BSP-BSM)/0.02
+                        BS = 1.0
+                        if 'Q' in Atm:  #why is this possible?
+                            BS = sp.spherical_jn(l,1.0)	#/(4.*np.pi)    #Slater term here?
+                        else:
+                            BS = sp.spherical_jn(l,QR*R)	#/(4.*np.pi)    #Bessel function
+                            BSP = sp.spherical_jn(l,QR*(R+0.01))	#/(4.*np.pi)
+                            BSM = sp.spherical_jn(l,QR*(R-0.01))	#/(4.*np.pi)
+                            dBSdR += Nat*SFF*SH*Shell[item]*(BSP-BSM)/0.02
                         dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
                         dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)
                         dSHdOj += Nat*SFF*BS*Shell[item]*(SHPj-SHMj)/(2.*dp)
@@ -539,7 +551,8 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         FFR[:,iAt] += Nat*SFF*BS*SH*Shell[item]
                         name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
                         dFFdSR[name] = Nat*SFF*BS*SH
-                dFFdSR[Rname] = dBSdR
+                if 'Q' not in Atm:
+                    dFFdSR[Rname] = dBSdR
                 ishl += 1
             dFFdSR[Oname] = dSHdO
             dFFdSR[Oiname] = dSHdOi

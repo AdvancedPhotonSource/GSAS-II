@@ -1837,8 +1837,14 @@ class ExportBaseclass(object):
             elif len(self.Phases) == 1:
                 self.phasenam = list(self.Phases.keys())
             elif self.multiple:
-                choices = sorted(self.Phases.keys())
-                phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
+                if GSASIIpath.GetConfigValue('SortExports'):
+                    choices = sorted(self.Phases.keys())
+                else:
+                    choices = list(self.Phases.keys())
+                phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=True,
+                                        title='Select one or more phases',
+                                        header='Select Phases')
+
                 if phasenum is None: return True
                 self.phasenam = [choices[i] for i in phasenum]
                 if not self.phasenam: return True
@@ -1878,8 +1884,14 @@ class ExportBaseclass(object):
             elif len(self.powderDict) == 1:
                 self.histnam = list(self.powderDict.values())
             elif self.multiple:
-                choices = sorted(self.powderDict.values())
-                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
+                #choices = sorted(self.powderDict.values())
+                if GSASIIpath.GetConfigValue('SortExports'):
+                    choices = sorted(self.powderDict.values())
+                else:
+                    choices = list(self.powderDict.values())
+                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True,
+                                        title='Select one or more PWDR histograms',
+                                        header='Select Histograms')
                 if not hnum: return True
                 self.histnam = [choices[i] for i in hnum]
                 numselected = len(self.histnam)

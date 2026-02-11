@@ -1884,6 +1884,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         Sizer.Add(btnsizer,0,wx.ALIGN_RIGHT,50)
         Sizer.Add((-1,20))
         # OK done, let's get outa here
+        Sizer.Layout()
         self.SetSizer(Sizer)
         Sizer.Fit(self)
         self.CenterOnParent()
@@ -2104,6 +2105,7 @@ class G2MultiChoiceWindow(wx.BoxSizer):
             tSizer.Add(self.rangeCapt,1,wx.EXPAND,1)
             Sizer.Add(tSizer,0,wx.LEFT,12)
         self.SetSelections(self.SelectList)
+        Sizer.Layout()
 
     def OnStride(self,event):
         self.Stride = int(self.stride.GetValue())
@@ -9266,6 +9268,7 @@ class gpxFileSelector(wx.Dialog):
         topSizer.Add(subSiz,0,wx.EXPAND)
         topSizer.Add((-1,5))
         self.SetSizer(topSizer)
+        topSizer.Layout()
         topSizer.Fit(self)
         self.dirBtn.SetValue(self.startDir)
 

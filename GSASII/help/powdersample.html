@@ -1604,7 +1604,7 @@
 <h1 id="pwdr-sample-parameters-subdata-tree-item-powder-diffraction">PWDR <strong>Sample Parameters</strong> subdata tree item (Powder Diffraction)</h1>
 <p>This window shows the various sample-dependent parameters for the selected powder pattern. Some are related to the measurement conditions, such as diffractometer setting angles, or the data collection temperature. Others, such as the histogram scale factor, adjust the fit to match the collected data. 
 The presence of a refine button indicates that a parameter can be refined (all others are fixed.) All values shown in this window can be edited. </p>
-<p>Note that the last three parameters (named internally as <code>FreePrm</code><em>X</em>, <em>X</em>=1,2,3), which are labeled by default as "Sample humidity", "Sample Voltage" and "Applied Load" are fields where the labels that can be changed. If changed in one histogram, the same label is used for all histograms. Thus, a total of six parametric variables are available,
+<p><a name="SetByName"></a> Note that the last three parameters (named internally as <code>FreePrm</code><em>X</em>, <em>X</em>=1,2,3), which are labeled by default as "Sample humidity", "Sample Voltage" and "Applied Load" are fields where the labels that can be changed. If changed in one histogram, the same label is used for all histograms. Thus, a total of six parametric variables are available,
 including the more common variable of temperature, pressure and time. Also, note when a label <code>FreePrm</code> is changed to "ParmName", the Comments tree item for each PWDR histogram is searched for a matching "*ParmName*=value" or "*ParmName*:value" pair (i.e. the string "ParmName" will be looked for within the label+value pairs in the comments, ignoring differences in letter case between the two label strings). Thus if the Sample Parameters label is specified as "focus", then a Comments string of "/Instrument/BeamFocus_at_sample=10" will be matched. When found, the value is converted to a float and saved as the value for the newly-labeled Sample Parameter. Also, note the similar action in the <a href="#SetFromComments">"Set from comments" command</a>, below.</p>
 <p>Be sure the correct instrument type is selected (Debye-Scherrer or Bragg-Brentano). Also, ensure the goniometer radius is correct (in mm) so that sample displacements are properly scaled (in μm).</p>
 <H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
@@ -1649,8 +1649,10 @@ Note that while in the past it was common to vary the <span class="arithmatex">\
 </li>
 <li>
 <p><strong>Set from comments</strong> -    <a name="SetFromComments"></a>
- The histogram comments section, depending on the importer used to read in the data (or image the data is derived from) often contains values that are recorded on the diffraction instrument. These are commonly recorded as "Label=value" or "Label:value". 
-  This command can be used to scan the comments and transfer them to the sample parameters. This is done by selecting a sample parameter as well as a Label found in the comments. One then specifies the histograms where the search will be performed. This is particularly of use for parametric variables and for sample setting angles. </p>
+ The histogram comments section, depending on the importer used to read in the powder data (or image that data is derived from) often contains values that are recorded by the diffraction instrument. These are recorded in the comments as "Label=value" or "Label:value". 
+  This command can be used to scan the comments and transfer them to the sample parameters. This is done by selecting a sample parameter, as well as a "Label" found in the comments. One then specifies the histograms where the value will be located and the parameter will be set. Alternately, one can specify an equation to be used to set the chosen sample parameter as a function of one or more "Label" values. 
+  This command can be used to set any of the Sample Parameter values, but this is particularly useful for parametric variables and for sample setting angles. 
+Note that a similar action is possible by <a href="#SetByName">changing the name</a> of one of the "free parameters," as described above.</p>
 </li>
 </ul>
 

@@ -1998,7 +1998,7 @@ A set of controls is provided for control of single-crystal refinements. These o
 <p><strong>Add residue restraints</strong> - if the phase is a 'macromolecule' then develop the restraints from a selected 'macro' file based on those used in GSAS for this purpose. A file dialog box is shown directed to /GSASIImacros; be sure to select the correct file.</p>
 </li>
 <li>
-<p><strong>Add MOGUL restraints</strong> - add restraints from a file produced by the CCDC's MOGUL program or a file prepared 
+<p><strong>Add MOGUL restraints</strong> - add restraints from a file produced by the CCDC's Mercury program (using the CSD-Core/Mogul Geometry Check) or a file prepared 
 in that style. <a href="#RestraintImports">See below</a> for more information on importing restraints. 
 Note that when used from the Bond tab, only "bond" entries are read and when used from the 
 Angle tab, only "angle" entries are read.</p>
@@ -2023,11 +2023,11 @@ Angle tab, only "angle" entries are read.</p>
 </ul>
 <p><a name="RestraintImports"></a></p>
 <h3 id="importing-restraints">Importing Restraints</h3>
-<p>For the  <strong>Add MOGUL restraints</strong> menu command, restraints are read from a supplied file. 
-The file produced by the MOGUL program has many columns, but only the first 8 are used here and a few of those do not matter. 
-If producing the file manually or with your own software, follow the following instructions. 
-The first line in the file must be a header, which must start with "Type" (note capitalization). 
-The rest of the line is ignored, but it is convenient to follow the example below. </p>
+<p>For the  <strong>Add MOGUL restraints</strong> menu command, restraints are read from a .csv file that is usually generated in the CCDC program Mercury using the CSD-Core/Mogul Geometry Check. This file has many columns, but only the first 8 are used here and a few of those do not matter. It would also be possible to produce such a file 
+manually or cast output from another program, but make sure the .csv file 
+follows the following instructions:</p>
+<p>The first line in the file must be a header, which must start with "Type" (note capitalization). 
+The rest of that initial line is ignored, but it is convenient to follow the example below. </p>
 <p>Subsequent lines should contain:</p>
 <ol>
 <li>The first column (Type) should be "bond" or "angle"</li>

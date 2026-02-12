@@ -34,7 +34,7 @@ powderlimits.html: PWDR_Limits
 powderparent.html: PWDR_parent, PWDR
 powderpeaks.html: PWDR_Peak_List, GenUnvariedWidths
 powderrefs.html: PWDR_Reflection_Lists
-powdersample.html: PWDR_Sample_Parameters, SetFromComments
+powdersample.html: PWDR_Sample_Parameters, SetByName, SetFromComments
 preface.html: Tutorial, Tutorials
 reflectometry.html: REFD, REFD_Limits, REFD_Instrument_Parameters, REFD_Substances, REFD_Sample_Parameters, REFD_Models
 sequential.html: Sequential

@@ -81,7 +81,7 @@ def SetPrintLevel(level):
             return
 def SetDebugMode(mode):
     '''Set the debug configuration mode on (mode=True) or off (mode=False).
-    This will provide some additional output that may help with 
+    This will provide some additional output that may help with
     tracking down problems in the code.
     '''
     GSASIIpath.AddConfigValue({'debug':bool(mode)})
@@ -409,9 +409,9 @@ class G2ScriptException(Exception):
     pass
 
 def downloadFile(URL,download_loc=None):
-    '''Download the URL 
+    '''Download the URL
     '''
-        
+
     import requests
     fname = os.path.split(URL)[1]
     if download_loc is None:
@@ -459,7 +459,7 @@ def import_generic(filename, readerlist, fmthint=None, bank=None,
         print(f'\nReading of file {filename!r} failed.')
         if fmthint is not None and hintcount == 0:
             print(f'\nNo readers matched hint {fmthint!r}\n')
-        if Readers['importErrpkgs']: 
+        if Readers['importErrpkgs']:
             print('Not all importers are available due to uninstalled Python packages.')
             print('The following importer(s) are not available:\n'+
                   f'\t{", ".join(Readers["importErrpkgs"])}')
@@ -602,7 +602,7 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
         if Iparm1 is None:
             msg  = "The data file does not have any instrument params associated with it and none were provided."
             raise Exception(msg)
-    
+
     # ...or from a file...
     elif isinstance(instprm, str):
         Iparm1, Iparm2 = load_iprms(instprm, reader, bank=bank)
@@ -610,8 +610,8 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
 
     # ...or from an input...
     elif (
-        isinstance(instprm, (list, tuple)) 
-        and len(instprm) == 2 
+        isinstance(instprm, (list, tuple))
+        and len(instprm) == 2
         and all(isinstance(i, dict) for i in instprm)
         ):
             Iparm1, Iparm2 = instprm
@@ -1068,10 +1068,10 @@ class G2Project(G2ObjectWrapper):
           are read in.
         :param bool URL: if True, the contents of datafile is a URL and
           if not a dict, the contents of iparams is also a URL.
-          both files will be downloaded to a temporary location 
-          and read. The downloaded files will not be saved. 
-          If URL is specified and the Python requests package is 
-          not installed, a `ModuleNotFoundError` Exception will occur. 
+          both files will be downloaded to a temporary location
+          and read. The downloaded files will not be saved.
+          If URL is specified and the Python requests package is
+          not installed, a `ModuleNotFoundError` Exception will occur.
           will occur.
         :returns: A :class:`G2PwdrData` object representing
             the histogram, or if multiple is True, a list of :class:`G2PwdrData`
@@ -1096,7 +1096,7 @@ class G2Project(G2ObjectWrapper):
                     raise Exception(f"add_powder_histogram Error: Invalid iparams supplied ({iparams!r})")
         else:
             instprm = None # will error out unless the reader supplies them
-    
+
         for r in pwdrreaders:
             histname, new_names, pwdrdata = load_pwd_from_reader(r, instprm,
                                           [h.name for h in self.histograms()],bank=instbank)
@@ -1352,16 +1352,16 @@ class G2Project(G2ObjectWrapper):
           this is only used when phasefile is None.
         :param list cell: a list with six unit cell constants
             (a, b, c, alpha, beta and gamma in Angstrom/degrees).
-        :param bool URL: if True, the contents of phasefile is a URL 
-          and the file will be downloaded to a temporary location 
-          and read. The downloaded file will not be saved. 
-          If URL is specified and the Python requests package is 
-          not installed, a `ModuleNotFoundError` Exception will occur. 
-          will occur. 
-        :param bool useNet: if True, when an incompatible 
-          space group setting is detected (at present this is only 
-          tested with CIFs, where symmetry operators are supplied), which is 
-          most likely to occur with origin-1 settings, where allowed, 
+        :param bool URL: if True, the contents of phasefile is a URL
+          and the file will be downloaded to a temporary location
+          and read. The downloaded file will not be saved.
+          If URL is specified and the Python requests package is
+          not installed, a `ModuleNotFoundError` Exception will occur.
+          will occur.
+        :param bool useNet: if True, when an incompatible
+          space group setting is detected (at present this is only
+          tested with CIFs, where symmetry operators are supplied), which is
+          most likely to occur with origin-1 settings, where allowed,
           the importer will call Bilbao "CIF to Standard Setting" web service.
           (Default is False).
         :returns: A :class:`G2Phase` object representing the
@@ -1406,7 +1406,7 @@ class G2Project(G2ObjectWrapper):
             self.update_ids()
             return self.phase(phasename)
 
-        if not URL: 
+        if not URL:
             phasefile = os.path.abspath(os.path.expanduser(phasefile))
             if not os.path.exists(phasefile):
                 raise G2ImportException(f'File {phasefile} does not exist')
@@ -2629,27 +2629,27 @@ class G2Project(G2ObjectWrapper):
           to be included in the project.
         :param bool cacheImage: When True, the image is cached to save
           in rereading it later. Default is False (no caching).
-        :param bool URL: if True, the contents of imagefile is a URL 
-          and the file will be downloaded and saved. The file will be 
+        :param bool URL: if True, the contents of imagefile is a URL
+          and the file will be downloaded and saved. The file will be
           written in the specified directory (see `download_loc`)
-          or a temporary location, if not specified. Note that 
-          if a temporary location, if the proiject (.gpx) file is 
+          or a temporary location, if not specified. Note that
+          if a temporary location, if the proiject (.gpx) file is
           saved, the image may not be accessible if the .gpx file
           is later reopened. Default is False.
-          If URL is specified and the Python requests package is 
-          not installed, a `ModuleNotFoundError` Exception will occur. 
-          will occur. 
-        :param str download_loc: a location or file name where the 
-          image will be saved. Note that for almost all image types, 
+          If URL is specified and the Python requests package is
+          not installed, a `ModuleNotFoundError` Exception will occur.
+          will occur.
+        :param str download_loc: a location or file name where the
+          image will be saved. Note that for almost all image types,
           the image cannot be read if the file extension does not
           match what is expected for the format. (This can be determined
-          by looking at the importer code; if `strictExtension=True`, 
+          by looking at the importer code; if `strictExtension=True`,
           the extension must be in the `extensionlist` list.)
-          If only a directory is specified, the file name will be taken 
+          If only a directory is specified, the file name will be taken
           from the URL, which will likely cause problems if it does
-          not match the needed extension. 
+          not match the needed extension.
           If URL is specified and the default download_loc
-          value is used (None), the image will be saved in a temporary 
+          value is used (None), the image will be saved in a temporary
           location that will persist until the OS removes it.
         :returns: a list of :class:`G2Image` object(s) for the added image(s)
         """
@@ -2877,8 +2877,8 @@ class G2Project(G2ObjectWrapper):
 
     def set_Frozen(self, variable=None, histogram=None, mode='remove'):
         '''Removes one or more Frozen variables (or adds one),
-        where parameters are frozen after refining outside the 
-        range where their values are allowed due to parameter 
+        where parameters are frozen after refining outside the
+        range where their values are allowed due to parameter
         limits, when these limits are set.
         (See :ref:`Parameter Limits<ParameterLimits>` description
         and :meth:`G2Project.set_Controls` for setting limits.)
@@ -2955,8 +2955,8 @@ class G2Project(G2ObjectWrapper):
     def get_Frozen(self, histogram=None):
         '''Gets a list of Frozen variables, where parameters are
         frozen after refining outside the range where their values
-        are allowed due to parameter limits, when these limits are 
-        set. 
+        are allowed due to parameter limits, when these limits are
+        set.
         (See :ref:`Parameter Limits<ParameterLimits>` description.)
         Note that use of this
         will cause the project to be saved if not already done so.
@@ -3050,7 +3050,7 @@ class G2Project(G2ObjectWrapper):
     def set_Controls(self, control, value, variable=None):
         '''Set project controls.
 
-        Controls determine how refinements are performed, including 
+        Controls determine how refinements are performed, including
         setting lower (parmMin) or upper limits (parmMax) values
         for parameters where you choose to set refinement limits.
         Note that use of this with to set to parmMin or parmMax
@@ -3542,18 +3542,18 @@ class G2PwdrData(G2ObjectWrapper):
     def add_back_peak(self,pos,int,sig,gam,refflags=[]):
         '''Adds a background peak to the Background parameters
 
-        Background in diffraction patterns is usually fit 
+        Background in diffraction patterns is usually fit
         with a slowly varying smooth function, such as a Chebyschev
         polynomial, but when the background contains broad peaks
         (for example from a Kapton sample container) those peaks
         are usually better fit by adding extra peaks to the
-        smooth background function rather that providing enough 
+        smooth background function rather that providing enough
         parameters to the smooth function in order fit the
-        peak(s). Note that background peaks are typically treated 
-        as Gaussian only (``gam``=0) with very large ``sig`` 
-        values (>1000). Normally one should refine ``int`` and 
-        then ``sig`` and only after the background peak is well 
-        fit can one refine the ``pos`` value. 
+        peak(s). Note that background peaks are typically treated
+        as Gaussian only (``gam``=0) with very large ``sig``
+        values (>1000). Normally one should refine ``int`` and
+        then ``sig`` and only after the background peak is well
+        fit can one refine the ``pos`` value.
 
         :param float pos: position of peak, a 2theta or TOF value
         :param float int: integrated intensity of background peak, usually large
@@ -3797,20 +3797,20 @@ class G2PwdrData(G2ObjectWrapper):
 
     def getdata(self,datatype):
         '''Provides access to the histogram data of the selected data type.
- 
-        It should be noted that for TOF data, GSAS-II expects input 
-        where the TOF value is the minimum for the bin, but does computations 
-        using the TOF value for the center of each bin. The values reported 
+
+        It should be noted that for TOF data, GSAS-II expects input
+        where the TOF value is the minimum for the bin, but does computations
+        using the TOF value for the center of each bin. The values reported
         using the 'X' option here are the values used in computation, while
         the 'X-orig' option reverses the shift applied when TOF values
-        are read in. 
+        are read in.
 
         :param str datatype: must be one of the following values
           (case is ignored):
 
            * 'X': the 2theta or TOF values for the pattern
            * 'X-orig': for TOF, time values for the pattern shifted
-              as used as input for GSAS-II. For everything else, the values are 
+              as used as input for GSAS-II. For everything else, the values are
               the same as with the 'X' option (see above.)
            * 'Q': the 2theta or TOF values for the pattern transformed to Q
            * 'd': the 2theta or TOF values for the pattern transformed to d-space
@@ -3820,9 +3820,9 @@ class G2PwdrData(G2ObjectWrapper):
            * 'Background': the computed background values
            * 'Residual': the difference between Yobs and Ycalc (obs-calc)
 
-        :returns: a numpy MaskedArray with data values of the requested type. 
-           Note that the returned values are a copy of the GSAS-II histogram 
-           array, not a reference to the actual data as stored in the 
+        :returns: a numpy MaskedArray with data values of the requested type.
+           Note that the returned values are a copy of the GSAS-II histogram
+           array, not a reference to the actual data as stored in the
            .gpx file.
         '''
         enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual', 'q', 'd','x-orig']
@@ -3849,8 +3849,8 @@ class G2PwdrData(G2ObjectWrapper):
         '''Returns the calculated intensity values; better to
         use :meth:`getdata`.
 
-        Note that the returned array is a reference to the actual data 
-        as stored in the .gpx file; use care not to modify this. 
+        Note that the returned array is a reference to the actual data
+        as stored in the .gpx file; use care not to modify this.
         '''
         return self.data['data'][1][3]
 
@@ -3863,8 +3863,8 @@ class G2PwdrData(G2ObjectWrapper):
         (form factor information), 'Super' (True if this is superspace
         group).
 
-        Note that the returned array is a reference to the actual data 
-        as stored in the .gpx file; use care not to modify this. 
+        Note that the returned array is a reference to the actual data
+        as stored in the .gpx file; use care not to modify this.
         '''
         return self.data['Reflection Lists']
 
@@ -4525,11 +4525,11 @@ class G2PwdrData(G2ObjectWrapper):
 
     def ComputeMassFracs(self):
         '''Computes the mass fractions (or equivalently the weight fractions)
-        for the phases linked to the current histogram with uncertainties 
+        for the phases linked to the current histogram with uncertainties
         from the results of the last refinement, if the phase fractions
         were refined.
 
-        :returns: a dict where the keys are phase names and the values 
+        :returns: a dict where the keys are phase names and the values
           associated with is a tuple where the first value is the phase's
           mass fraction and the second value is the s.u. on that value.
         '''
@@ -4919,6 +4919,16 @@ class G2Phase(G2ObjectWrapper):
             whose HAP parameters will be set with this phase. Histogram and phase
             must already be associated.
         :returns: None
+
+        Example for Size and Mustrain with LG_mix::
+
+            phase.set_HAP_refinements({
+                'Size': {'type':'isotropic', 'refine': True,
+                         'LGmix': {'value': 0.5, 'refine': False}},
+                'Mustrain': {'type':'uniaxial',
+                             'LGmix': {'value': 0.8, 'refine': True}}
+            })
+
         """
         if not self.data.get('Histograms',[]):
             G2fil.G2Print("Error likely: Phase {} has no linked histograms".format(self.name))
@@ -4986,8 +4996,8 @@ class G2Phase(G2ObjectWrapper):
                                 if isinstance(types, (str,bytes)):
                                     types = [types]
                                 elif isinstance(types, bool):
+                                    mustrain[2][0] = types
                                     mustrain[2][1] = types
-                                    mustrain[2][2] = types
                                     types = []
                                 else:
                                     raise ValueError("Not sure what to do with: "
@@ -5013,6 +5023,17 @@ class G2Phase(G2ObjectWrapper):
                             raise ValueError("Expected hkl, found", direction)
                         direction = [int(n) for n in direction]
                         mustrain[3] = direction
+
+                    # Handle LG_mix parameter (Lorentzian-Gaussian mixing coefficient)
+                    if 'LGmix' in val and isinstance(val['LGmix'], dict):
+                        lgmix_dict = val['LGmix']
+                        if 'value' in lgmix_dict:
+                            lgmix_value = float(lgmix_dict['value'])
+                            if not 0.0 <= lgmix_value <= 1.0:
+                                raise ValueError("LGmix value must be between 0.0 and 1.0, got: " + str(lgmix_value))
+                            mustrain[1][2] = lgmix_value
+                        if 'refine' in lgmix_dict:
+                            mustrain[2][2] = bool(lgmix_dict['refine'])
             elif key == 'Size':
                 newSize = None
                 if 'value' in val:
@@ -5037,8 +5058,8 @@ class G2Phase(G2ObjectWrapper):
                             size[2][0] = bool(refine)
                             if newSize: size[1][0] = newSize
                         elif newType == 'uniaxial' and refine is not None:
+                            size[2][0] = bool(refine)
                             size[2][1] = bool(refine)
-                            size[2][2] = bool(refine)
                             if newSize: size[1][1] = size[1][2] =newSize
                         elif newType == 'ellipsoidal' and refine is not None:
                             size[5] = [bool(refine) for p in size[5]]
@@ -5049,6 +5070,17 @@ class G2Phase(G2ObjectWrapper):
                             raise ValueError("Expected hkl, found", direction)
                         direction = [int(n) for n in direction]
                         size[3] = direction
+
+                    # Handle LG_mix parameter (Lorentzian-Gaussian mixing coefficient)
+                    if 'LGmix' in val and isinstance(val['LGmix'], dict):
+                        lgmix_dict = val['LGmix']
+                        if 'value' in lgmix_dict:
+                            lgmix_value = float(lgmix_dict['value'])
+                            if not 0.0 <= lgmix_value <= 1.0:
+                                raise ValueError("LGmix value must be between 0.0 and 1.0, got: " + str(lgmix_value))
+                            size[1][2] = lgmix_value
+                        if 'refine' in lgmix_dict:
+                            size[2][2] = bool(lgmix_dict['refine'])
             elif key == 'Pref.Ori.':
                 for h in histograms:
                     self.data['Histograms'][h]['Pref.Ori.'][2] = bool(val)
@@ -5106,7 +5138,7 @@ class G2Phase(G2ObjectWrapper):
                 elif key == 'Mustrain':
                     for h in histograms:
                         mustrain = self.data['Histograms'][h]['Mustrain']
-                        mustrain[2] = [False for p in mustrain[2]]
+                        mustrain[2] = [False for p in mustrain[2]]  # Clear all refine flags including LG_mix at [2][2]
                         mustrain[5] = [False for p in mustrain[4]]
                 elif key == 'Pref.Ori.':
                     for h in histograms:
@@ -5117,7 +5149,7 @@ class G2Phase(G2ObjectWrapper):
                 elif key == 'Size':
                     for h in histograms:
                         size = self.data['Histograms'][h]['Size']
-                        size[2] = [False for p in size[2]]
+                        size[2] = [False for p in size[2]]  # Clear all refine flags including LG_mix at [2][2]
                         size[5] = [False for p in size[5]]
                 elif key == 'Use':
                     for h in histograms:
@@ -5287,13 +5319,13 @@ class G2Phase(G2ObjectWrapper):
 
         :param str param: is a parameter name, which can be 'Scale' or
           'PhaseFraction' (either can be used for phase
-          fraction), 'Use', 'Extinction', 'LeBail', 'PO' 
+          fraction), 'Use', 'Extinction', 'LeBail', 'PO'
           (for Preferred Orientation).
           If not specified or invalid
           an exception is generated showing the list of valid parameters.
-          At present, only these HAP parameters cannot be accessed with 
-          this function: 'Size', 'Mustrain', 'HStrain', 'Babinet'. 
-          This might be addressed in the future. 
+          At present, only these HAP parameters cannot be accessed with
+          this function: 'Size', 'Mustrain', 'HStrain', 'Babinet'.
+          This might be addressed in the future.
           Some of these values can be set via
           :meth:`G2Phase.set_HAP_refinements`.
         :param newValue: the value to use when setting the HAP parameter for the
@@ -5303,8 +5335,8 @@ class G2Phase(G2ObjectWrapper):
           returned.
           When param='PO' then this value is interpreted as the following:
 
-            if the value is 0 or an even integer, then the preferred 
-            orientation model is set to "Spherical harmonics". If the value is 
+            if the value is 0 or an even integer, then the preferred
+            orientation model is set to "Spherical harmonics". If the value is
             1, then "March-Dollase" is used. Any other value generates an error.
 
         :param list targethistlist: a list of histograms where each item in the
@@ -5738,19 +5770,19 @@ class G2Phase(G2ObjectWrapper):
                 count += 1
                 bondRestData['Bonds'].append(newBond)
         return count
-    
+
     def Origin1to2Shift(self):
-        '''Applies an Origin 1 to Origin 2 shift to the selected phase, 
-        if defined. Note that GSAS-II only uses Origin 2 settings when 
-        both are offered in the International Tables. 
-        (These are space groups where the centre of symmetry is not 
-        at the highest symmetry site in the cell.) 
-        If the structure is not in the Origin 1 setting, 
+        '''Applies an Origin 1 to Origin 2 shift to the selected phase,
+        if defined. Note that GSAS-II only uses Origin 2 settings when
+        both are offered in the International Tables.
+        (These are space groups where the centre of symmetry is not
+        at the highest symmetry site in the cell.)
+        If the structure is not in the Origin 1 setting,
         this routine will create garbage.
 
-        A copy of the phase is made where the new phase name has the string 
-        "_shifted" added to it. The routine returns a reference to the 
-        new :class:`G2Phase` object for the new phase. 
+        A copy of the phase is made where the new phase name has the string
+        "_shifted" added to it. The routine returns a reference to the
+        new :class:`G2Phase` object for the new phase.
 
         If the phase is not one of the space groups that has Origin 1 & Origin 2
         settings, None is returned.
@@ -5790,20 +5822,20 @@ class G2Phase(G2ObjectWrapper):
         return gpx.phase(phasename)
 
     def InitDisAgl(self,useAll=True):
-        '''Create the default controls used for distance and angle 
+        '''Create the default controls used for distance and angle
         searching. Perform distance and angle searching by passing
-        the results from this to  :func:`GSASIIstrMain.RetDistAngle` 
+        the results from this to  :func:`GSASIIstrMain.RetDistAngle`
         or :func:`GSASIIstrMain.PrintDistAngle`
-        At present, this does not populate the values needed for 
-        uncertainty computations. 
+        At present, this does not populate the values needed for
+        uncertainty computations.
 
-        :param bool useAll: when True (default) all atoms are included 
-          in the origin atom list. When False, only atoms with full 
+        :param bool useAll: when True (default) all atoms are included
+          in the origin atom list. When False, only atoms with full
           occupancy are included. All atoms are included in the target
           atom list.
 
-        :returns: DisAglCtls, DisAglData. See the 
-          :ref:`Distance/Angle controls documentation <DisAgl_table>` for 
+        :returns: DisAglCtls, DisAglData. See the
+          :ref:`Distance/Angle controls documentation <DisAgl_table>` for
           a description of these.
         '''
         phObj = self.data
@@ -5819,7 +5851,7 @@ class G2Phase(G2ObjectWrapper):
         radii = dict(zip(generalData['AtomTypes'],generalData['BondRadii']))
         for atom in phObj['Atoms']:
             typ = atom[ct]
-            dis = radii.get(typ,1.5) # 
+            dis = radii.get(typ,1.5) #
             if atom[ct] in DisAglCtls['AtomTypes']: continue
             DisAglCtls['BondRadii'].append(dis)
             DisAglCtls['AngleRadii'].append(dis)
@@ -5829,16 +5861,16 @@ class G2Phase(G2ObjectWrapper):
         for i,atom in enumerate(phObj['Atoms']):
             rec = [i]+atom[ct-1:ct+1]+atom[cx:cx+3]
             DisAglData['TargAtoms'].append(rec)
-            if atom[cx+3] == 1. or useAll: 
+            if atom[cx+3] == 1. or useAll:
                 DisAglData['OrigAtoms'].append(rec)
         return DisAglCtls, DisAglData
 
     def ShortDistances(self,useAll=False):
         '''Looks for unrealistic distances in a structure, which are
-        atom-atom distances < 1.1 A for non-H(D) atoms. 
-        To reduce the likelihood of distances between disordered 
-        fragments being noted, set useAll=False (the default) so that 
-        disordered atoms are ignored. 
+        atom-atom distances < 1.1 A for non-H(D) atoms.
+        To reduce the likelihood of distances between disordered
+        fragments being noted, set useAll=False (the default) so that
+        disordered atoms are ignored.
         '''
         cx,ct,cs,cia = self.data['General']['AtomPtrs']
         #get interatomic distances
@@ -7078,7 +7110,7 @@ class G2Image(G2ObjectWrapper):
         from magnitude of the difference for those pixels from that median. The
         medians are used for this rather than a standard deviation as the
         computation used here is less sensitive to outliers. The image must
-        be properly calibrated so that radial averaging is possible. 
+        be properly calibrated so that radial averaging is possible.
         (See :func:`GSASIIimage.AutoPixelMask` and
         :func:`scipy.stats.median_abs_deviation` for more details.)
 
@@ -7187,7 +7219,7 @@ class G2Image(G2ObjectWrapper):
         self.getMasks()['SpotMask']['spotMask'] = None
         if 'MaskLoaded' in self.getMasks()['SpotMask']:
             del self.getMasks()['SpotMask']['MaskLoaded']
-            
+
     def loadPixelMask(self,mask,tag="loaded in G2sc.loadPixelMask"):
         '''Loads a pixel map from an array supplied by the user
 

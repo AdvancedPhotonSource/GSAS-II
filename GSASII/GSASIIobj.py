@@ -611,9 +611,9 @@ def CompileVarDesc():
     for key,value in {
         # derived or other sequential vars
         '([abc])$' : 'Lattice parameter, \\1, from Ai and Djk', # N.B. '$' prevents match if any characters follow
-        u'\u03B1' : u'Lattice parameter, \u03B1, computed from both Ai and Djk',
-        u'\u03B2' : u'Lattice parameter, \u03B2, computed from both Ai and Djk',
-        u'\u03B3' : u'Lattice parameter, \u03B3, computed from both Ai and Djk',
+        '\u03B1' : 'Lattice parameter, \u03B1, computed from both Ai and Djk',
+        '\u03B2' : 'Lattice parameter, \u03B2, computed from both Ai and Djk',
+        '\u03B3' : 'Lattice parameter, \u03B3, computed from both Ai and Djk',
         # ambiguous, alas:
         'Scale' : 'Phase fraction (as p:h:Scale) or Histogram scale factor (as :h:Scale)',
         # Phase vars (p::<var>)
@@ -647,8 +647,8 @@ def CompileVarDesc():
         'D([123][123])' : 'Anisotropic strain coef. \\1',
         'Extinction' : 'Extinction coef.',
         'MD' : 'March-Dollase coef.',
-        'Mustrain;.*' : 'Microstrain coefficient (delta Q/Q x 10**6)',
-        'Size;.*' : 'Crystallite size value (in microns)',
+        'Mustrain;(.*)' : 'Microstrain coefficient (delta Q/Q x 10**6, \\1: i=iso/eq, a=axial, general:0-5, mx=LGmix)',
+        'Size;(.*)' : 'Crystallite size value (in microns, \\1: i=iso/eq, a=axial, general:0-5, mx=LGmix)',
         'eA$' : 'Cubic mustrain value',
         'Ep$' : 'Primary extinction',
         'Es$' : 'Secondary type II extinction',
@@ -669,14 +669,14 @@ def CompileVarDesc():
         'SH/L' : ('FCJ peak asymmetry correction',1e-4),
         '([UVW])$' : ('Gaussian instrument broadening \\1',1e-5),
         '([XYZ])$' : ('Cauchy instrument broadening \\1',1e-5),
-        'Zero' : 'Debye-Scherrer zero correction',
+        'Zero' : 'Debye-Scherrer/TOF zero correction',
         'Shift' : 'Bragg-Brentano sample displ.',
         'SurfRoughA' : 'Bragg-Brentano surface roughness A',
         'SurfRoughB' : 'Bragg-Brentano surface roughness B',
-        'Transparency' : 'Bragg-Brentano sample tranparency',
-        'DebyeA' : 'Debye model amplitude',
-        'DebyeR' : 'Debye model radius',
-        'DebyeU' : 'Debye model Uiso',
+        'Transparency' : 'Bragg-Brentano sample transparency',
+        'DebyeA;(.*)' : 'Debye model peak #\\1 amplitude',
+        'DebyeR;(.*)' : 'Debye model peak #\\1 radius',
+        'DebyeU;(.*)' : 'Debye model peak #\\1 Uiso',
         'RBV.*' : 'Vector rigid body parameter',
         'RBVO([aijk])' : 'Vector rigid body orientation parameter \\1',
         'RBVP([xyz])' : 'Vector rigid body \\1 position parameter',
@@ -2271,14 +2271,14 @@ if __name__ == "__main__":
 
     obj.expression = "A*np.exp(B)"
     obj.assgnVars =  {'B': '0::Afrac:1'}
-    obj.freeVars =  {'A': [u'A', 0.5, True]}
+    obj.freeVars =  {'A': ['A', 0.5, True]}
     #obj.CheckVars()
     calcobj = ExpressionCalcObj(obj)
 
     obj1 = ExpressionObj()
     obj1.expression = "A*np.exp(B)"
     obj1.assgnVars =  {'B': '0::Afrac:*'}
-    obj1.freeVars =  {'A': [u'Free Prm A', 0.5, True]}
+    obj1.freeVars =  {'A': ['Free Prm A', 0.5, True]}
     #obj.CheckVars()
     calcobj1 = ExpressionCalcObj(obj1)
 

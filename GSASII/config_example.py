@@ -353,3 +353,11 @@ refinement run in the GSAS-II Notebook tree entry. This setting will
 be ignored if individual variables are set to be logged in the 
 Calculate/View LS Parameters window. 
 '''
+
+SortExports = False
+'''When True, data tree entries (Histograms, Phases,...) are sorted 
+alphanumerically prior to to export, when multiple entries are selected. 
+This will matter for exporters that place multiple entries in a single file.
+The default is to use the data tree entries in the order they appear in the
+data tree. 
+'''

@@ -1259,10 +1259,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#command-menu-commands" class="md-nav__link">
+  <a href="#menu-commands-command-menu" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "Command" Menu Commands
+        Menu Commands: "Command" menu
       
     </span>
   </a>
@@ -1582,10 +1582,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#command-menu-commands" class="md-nav__link">
+  <a href="#menu-commands-command-menu" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "Command" Menu Commands
+        Menu Commands: "Command" menu
       
     </span>
   </a>
@@ -1623,17 +1623,48 @@
 <!--- Don't change the HTML version of this file; edit the .md version -->
 <p><a name="PWDR_Peak_List"></a></p>
 <h1 id="pwdr-peak-list-subdata-tree-item-powder-diffraction">PWDR <strong>Peak List</strong> subdata tree item (Powder Diffraction)</h1>
-<p>The Peak List data tree entry is used to fit diffraction peaks at refined or user-supplied positions (not generated from a unit cell). Peak positions and intensities may be selected for individual refinement. There are four modes available here for treatment of peak widths: 
-1) Gaussian (<span class="arithmatex">\(\sigma^2\)</span>) and Lorentzian (<span class="arithmatex">\(\Gamma\)</span>) peak widths may be varied individually, 
-2) the width values may be generated from the the appropriate profile terms in the Instrument Parameters tree item (U, V &amp; W for <span class="arithmatex">\(\sigma^2\)</span>; X &amp; Y for <span class="arithmatex">\(\Gamma\)</span>), where those terms may optionally be refined. 
-3) It is possible to mix refinement of XY terms and fit a few individual  (<span class="arithmatex">\(\Gamma\)</span>) peak widths, but this is not possible with the UVW terms. When any individual (<span class="arithmatex">\(\sigma^2\)</span>) peak widths are fit, it is not possible to refine the U, V or W terms. Note that when individual widths are refined, the fitted values override the values that would be generated from the UVW/XY terms, except as noted in the next mode.
-4)It is possible to turn off the setting of individual (<span class="arithmatex">\(\sigma^2\)</span> or <span class="arithmatex">\(\Gamma\)</span> peak width values) peak width  If  are refined, then those value(s) in the table are used as the refinement starting point. If values are not refined, then normally the unvaried widths are determined from the appropriate Instrument Parameters profile terms and are placed in the table prior to fitting. When the "Gen unvaried widths" menu item is turned off, the unvaried peak with values are not computed from the Instrument Parameters; this must be turned on  (the default mode) to vary Instrument Parameters.</p>
-<p>Note that the Gaussian full-width at half-maximum is given by </p>
-<div class="arithmatex">\[FWHM = \sqrt{8 * \ln 2 * \sigma^ 2}\]</div>
-<p>while <span class="arithmatex">\(\Gamma\)</span> is the Lorentzian FWHM. The <span class="arithmatex">\(\sigma^2\)</span> values (peak variances) are in units of centidegrees<span class="arithmatex">\(^2\)</span> (centidegrees are degrees<em>100) for CW data or microseconds<span class="arithmatex">\(^2\)</span> for TOF data; <span class="arithmatex">\(\Gamma\)</span> has units of centidegrees or microseconds. Except in very unusual circumstances, instrumental broadening is Gaussian and will be a slowly-changing function of Q and sample broadening is strictly Lorentzian and while this may be only a function of Q, it can vary from peak to peak if the sample is a mixture of phases, or anisotropic peak broadening is present. Thus, it makes sense to fit Gaussian widths only using the U, V &amp; W terms and indeed the software will not allow those terms to be varied if 
-</em>any<em> 
-individual peak <span class="arithmatex">\(\sigma^2\)</span> terms are varied as this usage would not make sense physically. 
-This is different for X &amp; Y and individual peak <span class="arithmatex">\(\Gamma\)</span> values. The refinement of X &amp; Y, while fitting of </em>some* individual peak <span class="arithmatex">\(\Gamma\)</span> values is allowed and this can make sense physically, but note that one should have a sufficient number of peaks that are not being fit individually and these peaks should be distributed over a wide range in Q when X &amp; Y are fit simultaneously.</p>
+<p>The Peak List data tree entry is used to fit diffraction peaks at refined or 
+user-supplied positions (not generated from a unit cell). Peak positions and 
+intensities may be selected for individual refinement. There are four modes 
+available here for treatment of peak widths: </p>
+<ol>
+<li>Gaussian (<span class="arithmatex">\(\sigma^2\)</span>) and Lorentzian (<span class="arithmatex">\(\Gamma\)</span>) peak widths may be varied individually. </li>
+<li>The width values may be generated from the the appropriate profile terms in the 
+Instrument Parameters tree item (U, V &amp; W for <span class="arithmatex">\(\sigma^2\)</span>; X &amp; Y for <span class="arithmatex">\(\Gamma\)</span>), 
+where those terms may optionally be refined. </li>
+<li>It is possible to mix refinement of XY terms and fit a few individual  (<span class="arithmatex">\(\Gamma\)</span>) 
+peak widths, but this is not possible with the UVW terms. When any individual (<span class="arithmatex">\(\sigma^2\)</span>) 
+peak widths are fit, it is not possible to refine the U, V or W terms. Note that when 
+individual widths are refined, the fitted values override the values that would be 
+generated from the UVW/XY terms, except as noted in the next mode.</li>
+<li>It is possible to turn off the setting of individual (<span class="arithmatex">\(\sigma^2\)</span> or <span class="arithmatex">\(\Gamma\)</span> 
+peak width values) peak width  If  are refined, then those value(s) in the table are 
+used as the refinement starting point. If values are not refined, then normally the 
+unvaried widths are determined from the appropriate Instrument Parameters profile 
+terms and are placed in the table prior to fitting. When the "Gen unvaried widths" 
+menu item is turned off, the unvaried peak with values are not computed from the 
+Instrument Parameters; this must be turned on  (the default mode) to vary 
+Instrument Parameters.</li>
+</ol>
+<p>Note that the Gaussian full-width at half-maximum is given by: </p>
+<div class="arithmatex">\[FWHM_G = \sqrt{8 * \ln 2 * \sigma^ 2}\]</div>
+<p>while the Lorentzian full-width at half-maximum is just <span class="arithmatex">\(\Gamma\)</span>:</p>
+<div class="arithmatex">\[FWHM_L = \Gamma\]</div>
+<p>The <span class="arithmatex">\(\sigma^2\)</span> values (peak variances) are in units of centidegrees<span class="arithmatex">\(^2\)</span> 
+(centidegrees are degrees*100) for CW data or microseconds<span class="arithmatex">\(^2\)</span> for TOF data; 
+<span class="arithmatex">\(\Gamma\)</span> has units of centidegrees or microseconds. Except in very unusual 
+circumstances, instrumental broadening is Gaussian and will be a slowly-changing 
+function of Q. However, sample broadening is strictly Lorentzian and while sample broadening may 
+only vary with Q, it can also vary from peak to peak if the sample is a mixture 
+of phases, or anisotropic peak broadening is present. Thus, it makes sense to fit 
+Gaussian widths only using the U, V &amp; W terms and indeed the software will not 
+allow those terms to be varied if <em>any</em> 
+individual peak <span class="arithmatex">\(\sigma^2\)</span> terms are varied, as this usage would not make sense physically. 
+This is different for X &amp; Y and individual peak <span class="arithmatex">\(\Gamma\)</span> values. The refinement 
+of X &amp; Y, while fitting of <em>some</em> individual peak <span class="arithmatex">\(\Gamma\)</span> values is allowed and 
+this can make sense physically, but note that one should have a sufficient number 
+of peaks that are not being fit individually and these peaks should be distributed 
+over a wide range in Q when X &amp; Y are fit simultaneously.</p>
 <p>For peak fitting, the background is generated using the parameters in the Background data tree entry. Also, the range of data used in the fit is set from the Limits tree item. In both cases these are the same values that are used in Rietveld fits. Note that optionally the parameters on the Background and in the Instrument Parameters tree items may be refined during peak fitting, but in the case of U, V &amp; W, these values cannot be refined if any individual <span class="arithmatex">\(\sigma^2\)</span> values are fit. </p>
 <H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
 
@@ -1647,7 +1678,7 @@ This is different for X &amp; Y and individual peak <span class="arithmatex">\(\
 <li>You can highlight a peak in the plot by double-clicking on the row label (to the left) for a peak.</li>
 <li>Pressing "d" in the plot window causes the next peak in the table (or the first if none are selected) to be selected and causes that peak to be highlighted in the plot; pressing "u" causes the previous peak in the list to be highlighted. </li>
 </ul>
-<h3 id="command-menu-commands">"<strong>Command</strong>" Menu Commands</h3>
+<h3 id="menu-commands-command-menu">Menu Commands: "<strong>Command</strong>" menu</h3>
 <p>The menu for Peak Fitting contains the following commands:</p>
 <ul>
 <li>

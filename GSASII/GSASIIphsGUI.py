@@ -1450,6 +1450,7 @@ def FindBondsDrawCell(data,cell):
                                 norm /= np.sqrt(np.sum(norm**2))
                                 Faces.append([face,norm])
                     atomData[i][-1] = Faces
+    return
 
 def VoidMap(data,aMax=1,bMax=1,cMax=1,gridspacing=.25,probeRadius=.5,
                 aMin=0,bMin=0,cMin=0):

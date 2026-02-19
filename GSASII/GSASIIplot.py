@@ -3457,8 +3457,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
             B = data[6]/1000.
         s = np.sqrt(data[isig])*np.pi/18000.   #var -> sig(radians)
         g = data[igam]*np.pi/18000.    #centideg -> radians
-        G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn
-        Y = sq8ln2*s/nptand(X/2.)
+        G = G2pwd.getgamFW(g,s)/2.  #delt-theta from TCH fxn
+        Y = sq8ln2*s/nptand(X/2.)/2.0
         Z = g/nptand(X/2.)
         W = G/nptand(X/2.)
         if Parms['Type'][0][2] in ['A','B']:
@@ -3477,8 +3477,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Bf = fit[6]/1000.
         sf = np.sqrt(fit[isig])*np.pi/18000.
         gf = fit[igam]*np.pi/18000.
-        Gf = G2pwd.getgamFW(gf,sf)      #/2.
-        Yf = sq8ln2*sf/nptand(X/2.)
+        Gf = G2pwd.getgamFW(gf,sf)/2.
+        Yf = sq8ln2*sf/nptand(X/2.)/2.0
         Zf = gf/nptand(X/2.)
         Wf = Gf/nptand(X/2.)
         if Parms['Type'][0][2] in ['A','B']:
@@ -3514,8 +3514,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
             except ValueError:
                 s = 0.01
             g = peak[igam]*math.pi/18000.
-            G = G2pwd.getgamFW(g,s)         #/2.
-            yp = sq8ln2*s
+            G = G2pwd.getgamFW(g,s)/2.
+            yp = sq8ln2*s/2.0
             Yp.append(yp/tpd)
             sYp.append(0.5*sq8ln2*(math.pi/18000.)**2*peakEsds.get('sig%d'%ip,0.0)/(s*tpd))
             Zp.append(g/tpd)

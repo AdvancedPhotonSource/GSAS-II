@@ -1346,8 +1346,7 @@ def FindCoordination(ind,data,neighborArray,coordsArray,cmx=0,targets=None):
             symMisc.append(item[1:4])
         symCoords = np.array(coords)
         dists = np.sqrt(np.sum(np.inner(Amat,
-                np.array([symCoords+i-xyzA for i in cellArray])
-                                           )**2,axis=0))
+                np.array([symCoords+i-xyzA for i in cellArray]))**2,axis=0))
         for icell,isym in np.argwhere(np.logical_and(dists < sumR, dists != 0.0)):
             xyz = symCoords[isym] + cellArray[icell]
             item = [None]+list(symMisc[isym])
@@ -1397,8 +1396,8 @@ def FindBondsDrawCell(data,cell):
     Radii = []
     Names = []
     for atom in atomData:
-        if 'Q' in atom[ct]:     #skip spinning RB atoms
-            continue
+        # if 'Q' in atom[ct]:     #skip spinning RB atoms
+        #     continue
         Atoms.append(np.array(atom[cx:cx+3]))
         Styles.append(atom[cs])
         Names.append(ord(atom[ct-1].ljust(4)[3]))

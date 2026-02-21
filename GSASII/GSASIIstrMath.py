@@ -504,7 +504,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                     if 'Q' in Atm:
                         SFF = 0.0
                     else:
-                        SFF = 4.0*np.pi*G2el.ScatFac(FFtables[Atm],SQR)
+                        SFF = G2el.ScatFac(FFtables[Atm],SQR)*2.0*np.pi
                 elif 'N' in hType:
                     SFF = G2el.getBLvalues(BLtables)[Atm]
                 Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)
@@ -513,9 +513,9 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                     FFR[:,iAt] = 0.0
                 else:
                     R = Shell['Radius']
-                    R0 = sp.spherical_jn(0,QR*R)	#/(4.*np.pi)
-                    R0P = sp.spherical_jn(0,QR*(R+0.01)) #/(4.*np.pi)
-                    R0M = sp.spherical_jn(0,QR*(R-0.01))	#/(4.*np.pi)
+                    R0 = sp.spherical_jn(0,QR*R)
+                    R0P = sp.spherical_jn(0,QR*(R+0.01))
+                    R0M = sp.spherical_jn(0,QR*(R-0.01))
                     dBSdR = Nat*SFF*(R0P-R0M)/0.02
                     FFR[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
                 for item in Shell:
@@ -540,9 +540,9 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         if 'Q' in Atm:  #why is this possible?
                             BS = sp.spherical_jn(l,1.0)	#/(4.*np.pi)    #Slater term here?
                         else:
-                            BS = sp.spherical_jn(l,QR*R)	#/(4.*np.pi)    #Bessel function
-                            BSP = sp.spherical_jn(l,QR*(R+0.01))	#/(4.*np.pi)
-                            BSM = sp.spherical_jn(l,QR*(R-0.01))	#/(4.*np.pi)
+                            BS = sp.spherical_jn(l,QR*R)	#Bessel function
+                            BSP = sp.spherical_jn(l,QR*(R+0.01))	
+                            BSM = sp.spherical_jn(l,QR*(R-0.01))	
                             dBSdR += Nat*SFF*SH*Shell[item]*(BSP-BSM)/0.02
                         dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
                         dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)

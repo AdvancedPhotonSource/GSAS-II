@@ -1396,8 +1396,6 @@ def FindBondsDrawCell(data,cell):
     Radii = []
     Names = []
     for atom in atomData:
-        # if 'Q' in atom[ct]:     #skip spinning RB atoms
-        #     continue
         Atoms.append(np.array(atom[cx:cx+3]))
         Styles.append(atom[cs])
         Names.append(ord(atom[ct-1].ljust(4)[3]))
@@ -9609,6 +9607,35 @@ at one of the following locations:
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(G2frame,data)
                 G2plt.PlotStructure(G2frame,data)
+                
+            def ApplyAV(A,V):
+                Q = G2mth.AVdeg2Q(A,V)
+                if not any(Q):
+                    raise ValueError
+                RBObj['Orient'][0] = Q
+                if rbType != 'Spin':
+                    newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
+                    maxFrac = 0.0
+                    for Id in RBObj['Ids']:
+                        maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
+                    for i,Id in enumerate(RBObj['Ids']):
+                        data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                        data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
+                    data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
+                
+            def OnAng(event):
+                move = Ang.GetValue()*2.0
+                Ang.SetValue(0)
+                A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
+                A += move
+                Indx['Ang'].ChangeValue(A)
+                try:
+                    ApplyAV(A,V)
+                    data['Drawing']['Atoms'] = []
+                    UpdateDrawAtoms(G2frame,data)
+                    G2plt.PlotStructure(G2frame,data)
+                except ValueError:
+                    pass
 
             def OnOrien(*args, **kwargs):
                 '''Called when the orientation info is changed (vector
@@ -9616,23 +9643,11 @@ at one of the following locations:
                 an optional keyword arg is provided with the mode to draw atoms
                 (lines, ball & sticks,...)
                 '''
+                orient = [float(Indx['Orien'][i].GetValue()) for i in range(4)]
+                A = orient[0]
+                V = np.inner(Amat,orient[1:]) # normalized in AVdeg2Q
                 try:
-                    orient = [float(Indx['Orien'][i].GetValue()) for i in range(4)]
-                    A = orient[0]
-                    V = np.inner(Amat,orient[1:]) # normalized in AVdeg2Q
-                    Q = G2mth.AVdeg2Q(A,V)
-                    if not any(Q):
-                        raise ValueError
-                    RBObj['Orient'][0] = Q
-                    if rbType != 'Spin':
-                        newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
-                        maxFrac = 0.0
-                        for Id in RBObj['Ids']:
-                            maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
-                        for i,Id in enumerate(RBObj['Ids']):
-                            data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
-                            data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
-                        data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
+                    ApplyAV(A,V)
                     data['Drawing']['Atoms'] = []
                     if 'mode' in kwargs:
                         UpdateDrawAtoms(G2frame,data,kwargs['mode'])
@@ -9684,12 +9699,22 @@ at one of the following locations:
             dp,xmin,xmax = 2,-180.,360.
             OrientVecSiz = []
             for ix,x in enumerate(Orien):
+                if not ix: #add spinner to angle
+                    Ang = wx.SpinButton(RigidBodies,style=wx.SP_VERTICAL,size=(20,24))
+                    Ang.SetValue(0)
+                    Ang.SetRange(-1,1)
+                    Ang.Bind(wx.EVT_SPIN, OnAng)
+                    OrientVecSiz.append(Ang)
+                    topSizer.Add(Ang,0,WACV)
                 orien = G2G.ValidatedTxtCtrl(RigidBodies,Orien,ix,nDig=(8,dp),
                     typeHint=float,OnLeave=OnOrien,xmin=xmin,xmax=xmax,size=(70,-1))
+                if not ix:
+                    Indx['Ang'] = orien
                 OrientVecSiz.append(orien)
                 dp, xmin,xmax = 4,-1.,1.
                 Indx['Orien'][ix] = orien
                 topSizer.Add(orien,0,WACV)
+                    
             G2frame.testRBObjSizers.update({'OrientVecSiz':OrientVecSiz})
             Qchoice = [' ','A','AV','V']
             Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=Qchoice,

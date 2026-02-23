@@ -9982,6 +9982,21 @@ at one of the following locations:
                 UpdateDrawAtoms(G2frame,data,atomStyle)
                 G2frame.drawAtoms.ClearSelection()
                 G2plt.PlotStructure(G2frame,data)
+                
+            def OnTang(event):
+                Obj = event.GetEventObject()
+                Tid,torsTxt = Indx[Obj.GetId()]
+                move = Obj.GetValue()*5.0
+                Obj.SetValue(0)
+                RBObj['Torsions'][Tid][0] += move
+                torsTxt.ChangeValue(RBObj['Torsions'][Tid][0])
+                newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]
+                for i,Id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms(G2frame,data,atomStyle)
+                G2frame.drawAtoms.ClearSelection()
+                G2plt.PlotStructure(G2frame,data)                
 
             def OnFrac(invalid,value,tc):
                 for i,Id in enumerate(RBObj['Ids']):
@@ -10032,10 +10047,16 @@ at one of the following locations:
             resrbSizer.Add(LocationSizer(RBObj,'Residue'))
             if len(RBObj['Torsions']):
                 resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0)
-            torSizer = wx.FlexGridSizer(0,6,5,5)
+            torSizer = wx.FlexGridSizer(0,8,5,5)
             for itors,tors in enumerate(RBObj['Torsions']):
                 torSizer.Add(wx.StaticText(RigidBodies,-1,'Torsion '+'%d'%(itors)),0,WACV)
                 torsTxt = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Torsions'][itors],0,nDig=(10,3),OnLeave=OnTorsion)
+                Tang = wx.SpinButton(RigidBodies,style=wx.SP_VERTICAL,size=(20,24))
+                Tang.SetValue(0)
+                Tang.SetRange(-1,1)
+                Tang.Bind(wx.EVT_SPIN, OnTang)
+                Indx[Tang.GetId()] = [itors,torsTxt]
+                torSizer.Add(Tang,0,WACV)
                 torSizer.Add(torsTxt)
                 torCheck = wx.CheckBox(RigidBodies,-1,'Refine?')
                 torCheck.Bind(wx.EVT_CHECKBOX,OnTorsionRef)

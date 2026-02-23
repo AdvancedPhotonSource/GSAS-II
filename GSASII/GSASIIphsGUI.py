@@ -9659,7 +9659,7 @@ at one of the following locations:
 
             SGData = data['General']['SGData']
             rbSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer = wx.FlexGridSizer(0,6,5,5)
+            topSizer = wx.FlexGridSizer(0,7,5,5)
             if rbType != 'Spin':
                 if type(RBObj['Orig'][0]) is tuple:      # patch because somehow adding RB origin is becoming a tuple
                     if GSASIIpath.GetConfigValue('debug'): print('patching origin!')

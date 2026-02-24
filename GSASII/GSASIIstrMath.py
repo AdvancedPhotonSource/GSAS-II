@@ -500,13 +500,13 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 Atm = Shell['AtType']
                 Nat = Shell['Natoms']
                 Irb = Shell['ShR']
-                if 'X' in hType:
-                    if 'Q' in Atm:
-                        SFF = 0.0
-                    else:
-                        SFF = G2el.ScatFac(FFtables[Atm],SQR)       #*4.0*np.pi
-                elif 'N' in hType:
-                    SFF = G2el.getBLvalues(BLtables)[Atm]
+                if 'Q' in Atm:
+                    SFF = 0.0
+                else:
+                    if 'X' in hType:
+                        SFF = G2el.ScatFac(FFtables[Atm],SQR)
+                    elif 'N' in hType:
+                        SFF = np.ones_like(SQR)*G2el.getBLvalues(BLtables)[Atm]
                 Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)
                 if 'Q' in Atm:
                     dBSdR= 0.0
@@ -537,8 +537,8 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         SHMj = G2lat.KslCalc(item,ThMj,PhMj)
                         SHMk = G2lat.KslCalc(item,ThMk,PhMk)
                         BS = 1.0
-                        if 'Q' in Atm:  #why is this possible?
-                            BS = sp.spherical_jn(l,1.0)	#/(4.*np.pi)    #Slater term here?
+                        if 'Q' in Atm:
+                            BS = sp.spherical_jn(l,1.0)
                         else:
                             BS = sp.spherical_jn(l,QR*R)	#Bessel function
                             BSP = sp.spherical_jn(l,QR*(R+0.01))	

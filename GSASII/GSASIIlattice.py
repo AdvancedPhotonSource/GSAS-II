@@ -3054,7 +3054,7 @@ def CubicSHarm(L,M,Th,Ph):
     if L == 0:
         return SphHarmAng(0,0,1,Th,Ph)
     elif L == 3:
-        return SphHarmAng(3,2,-1,Th,Ph)
+        return SphHarmAng(3,2,-1,Th+45.,Ph)
     elif L == 4:
         klm = 0.5*np.sqrt(7.0/3.0)*SphHarmAng(4,0,1,Th,Ph)
         klm += 0.5*np.sqrt(5.0/3.0)*SphHarmAng(4,4,1,Th,Ph)

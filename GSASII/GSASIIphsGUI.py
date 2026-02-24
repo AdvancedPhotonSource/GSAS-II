@@ -9679,6 +9679,7 @@ at one of the following locations:
                 Ocheck.SetValue(RBObj['Orig'][1])
                 # TODO: does spin RB need orientation vector? Does need angle & fix vector = [0,0,1]?
                 topSizer.Add(Ocheck,0,WACV)
+                topSizer.Add((-1,-1))
                 Name = 'Origin'
                 G2frame.testRBObjSizers['OnOrien'] = OnOrien
                 G2frame.testRBObjSizers['FillUnitCell'] = FillUnitCell

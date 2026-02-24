@@ -504,7 +504,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                     if 'Q' in Atm:
                         SFF = 0.0
                     else:
-                        SFF = G2el.ScatFac(FFtables[Atm],SQR)*2.0*np.pi
+                        SFF = G2el.ScatFac(FFtables[Atm],SQR)       #*4.0*np.pi
                 elif 'N' in hType:
                     SFF = G2el.getBLvalues(BLtables)[Atm]
                 Rname = 'Sh;%s;Radius:%d:%s'%(shl,iAt,Irb)

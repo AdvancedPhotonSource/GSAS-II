@@ -9794,6 +9794,25 @@ at one of the following locations:
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
 
+            def OnSymSel(event):
+                Obj = event.GetEventObject()
+                iSh = Indx[Obj.GetId()]
+                RBObj['RBsym'][iSh] = Obj.GetValue()
+                RBObj['SHC'][iSh] = SetSHCoef(iSh,RBObj['nSH'][iSh])
+                G2plt.PlotStructure(G2frame,data)
+                wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)                    
+                    
+            def SetSHCoef(iSh,Order):
+                Sytsym = RBObj['SytSym']
+                cofNames,cofSgns = G2lat.GenRBCoeff(Sytsym,RBObj['RBsym'][iSh],Order)
+                cofTerms = [[0.0,val,False] for val in cofSgns]
+                newSHcoef = dict(zip(cofNames,cofTerms))
+                SHcoef = RBObj['SHC'][iSh]
+                for cofName in SHcoef:      #transfer old values to new set
+                    if cofName in newSHcoef:
+                        newSHcoef[cofName] = SHcoef[cofName]
+                return newSHcoef
+
             def SHsizer():
                 def OnSHOrder(event):
                     Obj = event.GetEventObject()
@@ -9802,17 +9821,6 @@ at one of the following locations:
                     RBObj['SHC'][iSh] = SetSHCoef(iSh,RBObj['nSH'][iSh])
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)
-
-                def SetSHCoef(iSh,Order):
-                    Sytsym = RBObj['SytSym']
-                    cofNames,cofSgns = G2lat.GenRBCoeff(Sytsym,RBObj['RBsym'][iSh],Order)
-                    cofTerms = [[0.0,val,False] for val in cofSgns]
-                    newSHcoef = dict(zip(cofNames,cofTerms))
-                    SHcoef = RBObj['SHC'][iSh]
-                    for cofName in SHcoef:      #transfer old values to new set
-                        if cofName in newSHcoef:
-                            newSHcoef[cofName] = SHcoef[cofName]
-                    return newSHcoef
 
                 def OnSchRef(event):
                     Obj = event.GetEventObject()
@@ -9849,8 +9857,13 @@ at one of the following locations:
                     RBObj['atColor'][iSh] = G2elem.GetAtomInfo(RBObj['atType'][iSh])['Color']  #correct atom color for shell
                     if iSh:
                         subLine = wx.BoxSizer(wx.HORIZONTAL)
-                        subLine.Add(wx.StaticText(RigidBodies,label='Shell %d: Name: %s   Atom type: %s RB sym: %s '  \
-                            %(iSh,RBObj['RBname'][iSh],RBObj['atType'][iSh],RBObj['RBsym'][iSh])),0,WACV)
+                        subLine.Add(wx.StaticText(RigidBodies,label='Shell %d: Name: %s   Atom type: %s RB sym: '  \
+                            %(iSh,RBObj['RBname'][iSh],RBObj['atType'][iSh])),0,WACV)
+                        simsel = wx.ComboBox(RigidBodies,choices=symchoice,value=RBObj['RBsym'][iSh],
+                            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                        Indx[simsel.GetId()] = iSh
+                        simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
+                        subLine.Add(simsel,0,WACV)
                         delShell = wx.Button(RigidBodies,label='Delete shell',style=wx.BU_EXACTFIT)
                         Indx[delShell.GetId()] = iSh
                         delShell.Bind(wx.EVT_BUTTON,OnDelShell)
@@ -9916,6 +9929,8 @@ at one of the following locations:
                 RBObj['fadeSh'] = not RBObj['fadeSh']
                 G2plt.PlotStructure(G2frame,data)
 
+            symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','3m','32','-3','3','4/mmm','-42m',
+                'mmm','2/m','2','m','-1','1']
             RBObj['hide'] = RBObj.get('hide',[False for i in range(len(RBObj['atType']))])
             rbId = RBObj['RBId'][0]
             atId = RBObj['Ids'][0]
@@ -9926,6 +9941,11 @@ at one of the following locations:
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,label='Shell 0: Name: %s Atom name: %s Atom type: %s RB sym: %s '%
                 (RBObj['RBname'][0],atName,RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
+            simsel = wx.ComboBox(RigidBodies,choices=symchoice,value=RBObj['RBsym'][0],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[simsel.GetId()] = 0
+            simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
+            topLine.Add(simsel,0,WACV)
             rbId = RBObj['RBId']
             if len(RBObj['nSH']) == 1:
                 delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)

@@ -3087,7 +3087,7 @@ create a Vector or Residue rigid body.
     def AddSpinRB(event):
         
         rbid = ran.randint(0,sys.maxsize)
-        atType = 'C'
+        atType = 'None'
         rbType = 'Q'
         Natoms = 1
         name = 'UNKRB'

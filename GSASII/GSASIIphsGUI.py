@@ -9507,7 +9507,7 @@ at one of the following locations:
         #     print(hist, G2lat.A2cell(newA)[:3], G2lat.calc_V(newA))
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
 
-#### Rigid bodies ################################################################################
+#### Rigid bodies 
     def FillRigidBodyGrid(refresh=True,vecId=None,resId=None,spnId=None):
         '''Fill the Rigid Body Phase information tab page.
         Note that the page is a ScrolledWindow, not a Grid
@@ -9799,6 +9799,7 @@ at one of the following locations:
                 iSh = Indx[Obj.GetId()]
                 RBObj['RBsym'][iSh] = Obj.GetValue()
                 RBObj['SHC'][iSh] = SetSHCoef(iSh,RBObj['nSH'][iSh])
+                rbId = RBObj['RBId']
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True,spnId=rbId)                    
                     
@@ -10287,7 +10288,7 @@ at one of the following locations:
             G2plt.PlotStructure(G2frame,data)
             if oldFocus: wx.CallAfter(oldFocus.SetFocus)
 
-        # FillRigidBodyGrid executable code starts here
+        #### FillRigidBodyGrid main
         if refresh:
             if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
         if 'testRBObj' in data: del data['testRBObj']

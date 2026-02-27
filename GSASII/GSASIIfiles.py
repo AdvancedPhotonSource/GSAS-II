@@ -1467,7 +1467,11 @@ def FormatValue(val,maxdigits=None):
         digits.append('f')
     if not val:
         digits[2] = 'f'
-    fmt="{:"+str(digits[0])+"."+str(digits[1])+digits[2]+"}"
+    if digits[2] == 'g':
+        fmt="{:#"+str(digits[0])+"."+str(digits[1])+digits[2]+"}"
+        # the # above forces inclusion of a decimal place: 10.000 rather than 10 for 9.999999999
+    else:
+        fmt="{:"+str(digits[0])+"."+str(digits[1])+digits[2]+"}"
     string = fmt.format(float(val)).strip() # will standard .f formatting work?
     if len(string) <= digits[0]:
         if ':' in string: # deal with weird bug where a colon pops up in a number when formatting (EPD 7.3.2!)

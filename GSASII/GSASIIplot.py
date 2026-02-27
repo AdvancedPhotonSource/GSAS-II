@@ -213,14 +213,14 @@ class _tabPlotWin(wx.Panel):
 
 class G2PlotMpl(_tabPlotWin):
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
-    def __init__(self,parent,id=-1,dpi=None,publish=None,**kwargs):
+    def __init__(self,parent,id=-1,dpi=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
         mpl.rcParams['legend.fontsize'] = 10
         mpl.rcParams['axes.grid'] = False
         #TODO: set dpi here via config var: this changes the size of the labeling font 72-100 is normal
         self.figure = mplfig.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
-        self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
+        self.toolbar = GSASIItoolbar(self.canvas)
         self.toolbar.Realize()
         self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,
             'logPlot':False,'exclude':False,'partials':True,'chanPlot':False}
@@ -324,6 +324,7 @@ class G2PlotNoteBook(wx.Panel):
         self.allowZoomReset = True # this indicates plot should be updated not initialized
                                    # (BHT: should this be in tabbed panel rather than here?)
         self.lastRaisedPlotTab = None
+        self.savedPlotLims = None
 
     def OnNotebookKey(self,event):
         '''Called when a keystroke event gets picked up by the notebook window
@@ -394,7 +395,7 @@ class G2PlotNoteBook(wx.Panel):
     #     if plotNum is not None:
     #         wx.CallAfter(self.SetSelectionNoRefresh,plotNum)
 
-    def FindPlotTab(self,label,Type,newImage=True,publish=None):
+    def FindPlotTab(self,label,Type,newImage=True,saveLimits=False):
         '''Open a plot tab for initial plotting, or raise the tab if it already exists
         Set a flag (Page.plotInvalid) that it has been redrawn
         Record the name of the this plot in self.lastRaisedPlotTab
@@ -408,9 +409,8 @@ class G2PlotNoteBook(wx.Panel):
 
         :param bool newImage: forces creation of a new graph for matplotlib
           plots only (defaults as True)
-        :param function publish: reference to routine used to create a
-          publication version of the current mpl plot (default is None,
-          which prevents use of this).
+        :param bool saveLimits: When True, limits for all MPL axes (plots)
+          are saved in self.savedPlotLims.
         :returns: new,plotNum,Page,Plot,limits where
 
           * new: will be True if the tab was just created
@@ -419,8 +419,9 @@ class G2PlotNoteBook(wx.Panel):
             the plot appears
           * Plot: the mpl.Axes object for the graphic (mpl) or the figure for
             openGL.
-          * limits: for mpl plots, when a plot already exists, this will be a tuple
-            with plot scaling. None otherwise.
+          * limits: for mpl plots, when a plot already exists, this 
+            will be a tuple with plot scaling. None otherwise. Only appropriate
+            for plots with one set of axes. 
         '''
         limits = None
         Plot = None
@@ -428,6 +429,7 @@ class G2PlotNoteBook(wx.Panel):
             new = False
             plotNum,Page = self.GetTabIndex(label)
             if Type == 'mpl' or Type == '3d':
+                if saveLimits: self.savePlotLims(Page)
                 Axes = Page.figure.get_axes()
                 Plot = Page.figure.gca()          #get previous plot
                 limits = [Plot.get_xlim(),Plot.get_ylim()] # save previous limits
@@ -443,7 +445,7 @@ class G2PlotNoteBook(wx.Panel):
         except (ValueError,AttributeError):
             new = True
             if Type == 'mpl':
-                Plot = self.addMpl(label,publish=publish).gca()
+                Plot = self.addMpl(label).gca()
             elif Type == 'ogl':
                 Plot = self.addOgl(label)
             elif Type == '3d':
@@ -468,8 +470,63 @@ class G2PlotNoteBook(wx.Panel):
             Page.helpKey = self.G2frame.dataWindow.helpKey
         except AttributeError:
             Page.helpKey = 'HelpIntro'
+        try:
+            Page.toolbar.enableArrows() # Disable Arrow keys if present
+        except AttributeError:
+            pass
         return new,plotNum,Page,Plot,limits
 
+    def savePlotLims(self,Page=None,debug=False,label=None):
+        '''Make a copy of all the current axes in the notebook object
+        '''
+        if label and Page:
+            print('Warning: label and Page defined in savePlotLims')
+        elif label:
+            try:
+                plotNum,Page = self.GetTabIndex(label)
+            except ValueError:
+                print(f'Warning: plot {label} not found in savePlotLims')
+                return
+        elif not Page:
+            print('Error: neither label nor Page defined in savePlotLims')
+            return
+        self.savedPlotLims = [
+            [i.get_xlim() for i in Page.figure.get_axes()],
+            [i.get_ylim() for i in Page.figure.get_axes()]]
+        if debug:
+            print(f'saved {len(self.savedPlotLims[1])} axes limits')
+            #print( self.savedPlotLims)
+    def restoreSavedPlotLims(self,Page):
+        '''Restore the plot limits, when previously saved, and when 
+        ``G2frame.restorePlotLimits`` is set to True, which 
+        is done when ``GSASIIpwdplot.refPlotUpdate`` is called with
+        ``restore=True``, which indicates that "live plotting" is 
+        finished. This is also set for certain plot key-press
+        combinations.
+        The restore operation can only be done once, as the limits
+        are deleted after use in this method.
+        '''
+        if self.savedPlotLims is None:
+            #print('---- nothing to restore')
+            return
+        if not getattr(self.G2frame,'restorePlotLimits',False):
+            #print('---- restorePlotLimits not set')
+            return
+        savedPlotLims = self.savedPlotLims
+        axesList = Page.figure.get_axes()
+        if len(axesList) != len(savedPlotLims[0]):
+            #print('saved lengths differ',len(axesList),len(savedPlotLims[0]))
+            return
+        for i,ax in enumerate(axesList):
+            ax.set_xlim(savedPlotLims[0][i])
+            ax.set_ylim(savedPlotLims[1][i])
+            #print(i,
+            #            savedPlotLims[0][i][0],savedPlotLims[0][i][1],
+            #            savedPlotLims[1][i][0],savedPlotLims[1][i][1])
+        self.savedPlotLims = None
+        self.G2frame.restorePlotLimits = False
+        Page.canvas.draw()
+    
     def _addPage(self,name,page):
         '''Add the newly created page to the notebook and associated lists.
 
@@ -492,9 +549,9 @@ class G2PlotNoteBook(wx.Panel):
         #page.replotKWargs = {}
         #self.skipPageChange = False
 
-    def addMpl(self,name="",publish=None):
+    def addMpl(self,name=""):
         'Add a tabbed page with a matplotlib plot'
-        page = G2PlotMpl(self.nb,publish=publish)
+        page = G2PlotMpl(self.nb)
         self._addPage(name,page)
         return page.figure
 
@@ -605,7 +662,7 @@ class G2PlotNoteBook(wx.Panel):
 
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
-    def __init__(self,plotCanvas,publish=None,Arrows=True):
+    def __init__(self,plotCanvas,Arrows=True):
         '''Adds additional icons to toolbar'''
         self.arrows = {}
         # try to remove a button from the bar
@@ -630,16 +687,25 @@ class GSASIItoolbar(Toolbar):
                     prfx = 'Shift plot '
                 fil = ''.join([i[0].lower() for i in direc.split()]+['arrow.ico'])
                 self.arrows[direc] = self.AddToolBarTool(sprfx+direc,prfx+direc,fil,self.OnArrow)
-        if publish:
-            self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',publish)
+        self.publishId = self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',self.Publish)
+        self.publishRoutine = None
+        self.EnableTool(self.publishId,False)
         self.Realize()
+    def setPublish(self,publish=None):
+        'Set the routine to be used to publsh the plot'
+        self.publishRoutine = publish
+        self.EnableTool(self.publishId,bool(publish))
+    def Publish(self,*args,**kwargs):
+        'Called to publish the current plot'
+        if not self.publishRoutine: return
+        self.publishRoutine(*args,**kwargs)
 
     def set_message(self,s):
         ''' this removes spurious text messages from the tool bar
         '''
         pass
 
-# TODO: perhaps someday we could pull out the bitmaps and rescale there here    
+# TODO: perhaps someday we could pull out the bitmaps and rescale them here    
 #    def AddTool(self,*args,**kwargs):
 #        print('AddTool',args,kwargs)
 #        return Toolbar.AddTool(self,*args,**kwargs)
@@ -663,6 +729,27 @@ class GSASIItoolbar(Toolbar):
             wx.CallAfter(*self.updateActions)
         Toolbar._update_view(self)
 
+    def home(self, *args):
+        '''Override home button to clear saved GROUP plot limits and trigger replot.
+        This ensures that pressing home resets to full data range while retaining x-units.
+        For GROUP plots, we need to replot rather than use matplotlib's home because
+        matplotlib's home would restore the original shared limits, not per-histogram limits.
+        (based on MG/Cl Sonnet code)
+        '''
+        G2frame = wx.GetApp().GetMainTopWindow()
+        # Check if we're in GROUP plot mode - if so, clear saved GROUP
+        # plot x-limits and trigger a replot
+        if self.arrows.get('_groupMode'):
+            # PlotPatterns will use full data range
+            if hasattr(G2frame, 'groupXlim'):
+                del G2frame.groupXlim
+            # Trigger a full replot for GROUP plots
+            if self.updateActions:
+                wx.CallAfter(*self.updateActions)
+            return
+        # For non-GROUP plots, call the parent's home method
+        Toolbar.home(self, *args)
+
     def AnyActive(self):
         for Itool in range(self.GetToolsCount()):
             if self.GetToolState(self.GetToolByPos(Itool).GetId()):
@@ -678,6 +765,22 @@ class GSASIItoolbar(Toolbar):
 
     def OnArrow(self,event):
         'reposition limits to scan or zoom by button press'
+        if self.arrows.get('_groupMode'):
+            Page = self.arrows['_groupMode']
+            if event.Id == self.arrows['right']:
+                Page.groupOff += 1
+            elif event.Id == self.arrows['left']:
+                Page.groupOff -= 1
+            elif event.Id == self.arrows['Expand X']:
+                Page.groupMax += 1
+            elif event.Id == self.arrows['Shrink X']:
+                if Page.groupMax == 2: return
+                Page.groupMax -= 1
+            else:
+                return
+            if self.updateActions:
+                wx.CallLater(100,*self.updateActions)
+            return
         axlist = self.plotCanvas.figure.get_axes()
         if len(axlist) == 1:
              ax = axlist[0]
@@ -735,6 +838,21 @@ class GSASIItoolbar(Toolbar):
 #        self.parent.toolbar.push_current()
         if self.updateActions:
             wx.CallAfter(*self.updateActions)
+    def enableArrows(self,mode='',updateActions=None):
+        '''Disable/Enable arrow keys.
+        Disables when updateActions is None.
+        mode='group' turns on 'x' buttons only
+        '''
+        if not self.arrows: return
+        self.updateActions = updateActions
+        if mode == 'group':
+            # assumes that all arrows previously disabled
+            for lbl in ('left', 'right', 'Expand X', 'Shrink X'):
+                self.EnableTool(self.arrows[lbl],True)
+        else:
+            for lbl in ('left','right','up','down', 'Expand X',
+                                'Shrink X','Expand Y','Shrink Y'):
+                self.EnableTool(self.arrows[lbl],bool(updateActions))
 
     def OnHelp(self,event):
         'Respond to press of help button on plot toolbar'

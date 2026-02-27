@@ -160,7 +160,7 @@ def NeededPackage(pkgDict):
 
       Examples::
 
-          {'MIDAS Zarr importer':['zarr=2.18.*']}
+          {'MIDAS Zarr importer':['zarr=3.18.*']}
           {'HDF5 image importer':['h5py','hdf5']}
     '''
     condaRequestList.update(pkgDict)

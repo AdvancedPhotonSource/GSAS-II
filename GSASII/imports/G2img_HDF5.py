@@ -284,8 +284,9 @@ class HDF5_Reader(G2obj.ImportImage):
             try:
                 pixelsize = [float(fp['/instrument/Detector/PixelSizeX'][0]),
                              float(fp['/instrument/Detector/PixelSizeY'][0])]
+                print(f'Using PixelSize[XY] for Pixel size: {pixelsize}.')
             except:
-                pass
+                pixelsize = None
         try:
             if not pixelsize:
                 misc = {}
@@ -300,9 +301,12 @@ class HDF5_Reader(G2obj.ImportImage):
                     pixelsize = [misc[f'DetPixelSize{i}'][j] for i in ('X','Y')]
                     print(f'Using DetPixelSize* for Pixel size: {pixelsize}.')
         except:
-            print(f'No DetSize* or DetPixelSize* Pixel size defaulting to {pixelsize}.')
+            pixelsize = None
+            print(f'No PixelSize[XY], DetSize[XY] or DetPixelSize[XY].')
         # default pixel size (for APS sector 6?)
-        if not pixelsize: pixelsize = [74.8,74.8]
+        if not pixelsize:
+            pixelsize = [74.8,74.8]
+            print(f'Pixel size defaulting to {pixelsize}')
         data = {'pixelSize':pixelsize,'wavelength':0.15,'distance':1000.,
                 'center':[sizexy[0]*0.1,sizexy[1]*0.1],'size':sizexy,'det2theta':0.0}
         for item in self.Comments:

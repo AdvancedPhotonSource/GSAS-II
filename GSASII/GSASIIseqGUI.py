@@ -1271,9 +1271,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         phaseKeys = [i for i in parmDict if ':' in i and i.split(':')[1] == '']
         phaseKeys = [i for i in phaseKeys if type(parmDict[i]) not in (int,str,bool)]
         if len(selRows) == 1:
-            lbl = "\nin {histNames[selRows[0]]}      "
+            lbl = f"\nin {histNames[selRows[0]]}      "
         else:
-            lbl = "\nin {len(selRows)} histograms"
+            lbl = f"\nin {len(selRows)} histograms"
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Choose phase parmDict item(s) to set'+lbl,
                                       'Choose items to edit', phaseKeys)
         if dlg.ShowModal() == wx.ID_OK:

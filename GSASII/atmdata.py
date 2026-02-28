@@ -20,8 +20,9 @@ Sources:
            Ch 4. Sect. 4.3.2.
 
            Neutron scattering lengths & abs. cross sections from
-           H. Rauch & W. Waschowski, Neutron Data Booklet, 2003.  X-ray
-           <j0> & <j2> coeff. from Intl. Tables for Cryst, Vol. C
+           H. Rauch & W. Waschowski, Neutron Data Booklet, 2003.  
+           More revent values cited in table AtmBlens below.
+           X-ray <j0> & <j2> coeff. from Intl. Tables for Cryst, Vol. C
            5-d <j0> & <j2> from Kobayashi K, Nagao T, Ito M.
            Acta Crystallogr A67, 473-480 (2011)
 
@@ -1200,8 +1201,8 @@ AtmBlens = {
     'B_':    {'Mass':  10.81,'SL':[    .53, -.0213],'SA':       767.},
     'B_10':  {'Mass': 10.013,'SL':[  -0.02, -.1066],'SA':      3835.},
     'B_11':  {'Mass': 11.009,'SL':[   .665,      0],'SA':      .0055},
-    'C_':    {'Mass': 12.011,'SL':[  .66472,     0],'SA':      .0035},
-    'C_12':  {'Mass': 12.000,'SL':[  .6654,      0],'SA':     .00353}, #Snow (2020) 10.1103/PhysRevD.101.062004
+    'C_':    {'Mass': 12.011,'SL':[  .66484,     0],'SA':      .0035}, #Fischer, et al. (2008) J. Phys: Cond. Mat. 20, 045221
+    'C_12':  {'Mass': 12.000,'SL':[  .6652,      0],'SA':     .00353}, #Fischer, et al. (2008) J. Phys: Cond. Mat. 20, 045221
     'C_13':  {'Mass': 13.003,'SL':[   .619,      0],'SA':     .00137},
     'N_':    {'Mass': 14.007,'SL':[   .936,      0],'SA':       1.90},
     'N_14':  {'Mass': 14.003,'SL':[   .937,      0],'SA':       1.91},

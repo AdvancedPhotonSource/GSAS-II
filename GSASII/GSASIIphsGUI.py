@@ -1545,7 +1545,8 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
     testRBObj['rbObj']['OrientVec'][0] = A
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
     for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
-        G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
+        if G2frame.testRBObjSizers['OrientVecSiz'][i].GetClassName() != 'wxSpinButton':
+            G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
 #        G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
     try:
 #        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
@@ -10271,12 +10272,15 @@ at one of the following locations:
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             if rbType == 'Residue':
+                G2frame.GetStatusBar().SetStatusText('Alt RB to drag RB, ALT LB to rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
+                G2frame.GetStatusBar().SetStatusText(' ',1)
                 data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
                 G2frame.bottomSizer =  SpnrbSizer(rbObj,rbIndx)
             else: #Vector
+                G2frame.GetStatusBar().SetStatusText('Alt RB to drag RB, ALT LB to rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)
@@ -10308,7 +10312,6 @@ at one of the following locations:
         atomStyle = 'balls & sticks'
         if 'macro' in general['Type']:
             atomStyle = 'sticks'
-        G2frame.GetStatusBar().SetStatusText('',1)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = G2frame.dataWindow.topBox
         topSizer.Clear(True)

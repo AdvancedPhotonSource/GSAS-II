@@ -1596,14 +1596,14 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
     def MakeRBSphHarm(rbKey,phaseVary,phaseDict):
         iAt = str(atomIndx[RB['Ids'][0]][1])  #for spin RBs
         for ish,Shcof in enumerate(RB['SHC']):
-            if not len(Shcof):
-                continue
             rbid = str(rbids.index(RB['RBId'][ish]))
             if 'Q' not in RB['atType']:
                 name = '%sRBSSh;%d;Radius:%s:%s'%(pfx,ish,iAt,rbid)
                 phaseDict[name] = RB['Radius'][ish][0]
                 if RB['Radius'][ish][1]:
                     phaseVary += [name,]
+            if not len(Shcof):
+                continue
             pfxRB = '%sRBSSh;%d;'%(pfx,ish)
             for i,shcof in enumerate(Shcof):
                 SHcof = Shcof[shcof]

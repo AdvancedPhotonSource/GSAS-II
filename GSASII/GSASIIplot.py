@@ -6629,9 +6629,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Q = drawingData['Quaternion']
         V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
         Tx,Ty,Tz = rbObj['Orig'][0]
-        Tx -= V[0]*0.01
-        Ty -= V[1]*0.01
-        Tz -= V[2]*0.01
+        Tx -= V[0]*0.002
+        Ty -= V[1]*0.002
+        Tz -= V[2]*0.002
         rbObj['Orig'][0][:] =  Tx,Ty,Tz
         SetRBText()
 
@@ -6730,7 +6730,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Qy = G2mth.AVdeg2Q(A[1],V)
         Q = G2mth.prodQQ(Q,Qx)
         Q = G2mth.prodQQ(Q,Qy)
-        rbObj['Orient'][0][:] = Q
+        rbObj['Orient'][0] = Q
         SetRBText()
 
     def RenderBox():

@@ -10272,7 +10272,7 @@ at one of the following locations:
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             if rbType == 'Residue':
-                G2frame.GetStatusBar().SetStatusText('Alt RB to drag RB, ALT LB to rotate RB',1)
+                G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
@@ -10280,7 +10280,7 @@ at one of the following locations:
                 data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
                 G2frame.bottomSizer =  SpnrbSizer(rbObj,rbIndx)
             else: #Vector
-                G2frame.GetStatusBar().SetStatusText('Alt RB to drag RB, ALT LB to rotate RB',1)
+                G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)

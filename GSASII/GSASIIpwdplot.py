@@ -83,6 +83,7 @@ plotOpt['phaseLabels']  = {}
 plotOpt['lineWid'] = '1'
 plotOpt['saveCSV'] = False
 plotOpt['CSVfile'] = None
+plotOpt['sharedX'] = False
 for xy in 'x','y':
     for minmax in 'min','max':
         key = f'{xy}{minmax}'
@@ -97,6 +98,14 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     to be plotted (pattern name, item picked in tree + eventually the reflection list)
     to be passed as names rather than references to wx tree items, defined as class entries
     '''
+    if plotType == 'GROUP' and PickName:
+        gId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Groups/Powder')
+        G2frame.PickId = G2gd.GetGPXtreeItemId(G2frame, gId, PickName)
+        G2frame.G2plotNB.savePlotLims(label='Powder Patterns')
+        G2frame.restorePlotLimits = True
+        if GSASIIpath.GetConfigValue('debug'): print('updating GROUP plot')
+        PlotPatterns(G2frame,plotType=plotType)
+        return
     if PatternName:
         pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PatternName)
         if pId:
@@ -120,19 +129,6 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     G2frame.Extinct = [] # array of extinct reflections
     PlotPatterns(G2frame,plotType=plotType)
 
-def plotVline(Page,Plot,Lines,Parms,pos,color,pickrad,style='dotted'):
-    '''shortcut to plot vertical lines for limits & Laue satellites.
-    Was used for extrapeaks'''
-    if Page.plotStyle['qPlot']:
-        Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pickrad,linestyle=style))
-    elif Page.plotStyle['dPlot']:
-        Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,pos),color=color,
-            picker=pickrad,linestyle=style))
-    else:
-        Lines.append(Plot.axvline(pos,color=color,
-            picker=pickrad,linestyle=style))
-        
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      extraKeys=[],refineMode=False,indexFrom='',fromTree=False):
     '''Powder pattern plotting package - displays single or multiple powder 
@@ -198,17 +194,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         try:        #one way to check if key stroke will work on plot
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         except TypeError:
-            G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
+            G2frame.G2plotNB.status.SetStatusText(f'Select {plottype} pattern first',1)
             return
+        if 'GROUP' in plottype: # save plot limits in case we want to restore them 
+            G2frame.G2plotNB.savePlotLims(Page)
         newPlot = False
-        if event.key == 'w':
+        if event.key == 'w' and not 'GROUP' in plottype:
             G2frame.Weight = not G2frame.Weight
             if not G2frame.Weight and not G2frame.Contour and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
             elif 'PWDR' in plottype: # Turning on Weight plot clears previous limits
                 G2frame.FixedLimits['dylims'] = ['','']                
-            newPlot = True
-        elif event.key in ['shift+1','!']: # save current plot settings as defaults
+            #newPlot = True # this resets the x & y limits, not wanted!
+        elif event.key in ['shift+1','!'] and not 'GROUP' in plottype: # save current plot settings as defaults
             # shift+1 assumes US keyboard
             print('saving plotting defaults for',G2frame.GPXtree.GetItemText(G2frame.PatternId))
             data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
@@ -222,17 +220,26 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.ErrorBars = not G2frame.ErrorBars
         elif event.key == 'T' and 'PWDR' in plottype:
             Page.plotStyle['title'] = not Page.plotStyle.get('title',True)
-        elif event.key == 'f' and 'PWDR' in plottype: # short,full length or no tick-marks
+        elif event.key == 'f' and ('PWDR' in plottype or 'GROUP' in plottype): # short,full length or no tick-marks
             if G2frame.Contour: return
             Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
-        elif event.key == 'x'and 'PWDR' in plottype:
+            if 'GROUP' in plottype: G2frame.restorePlotLimits = True
+        elif event.key == 'x' and groupName is not None: # share X axis scale for Pattern Groups
+            plotOpt['sharedX'] = not plotOpt['sharedX']
+            # Clear saved x-limits when toggling sharedX mode (MG/Cl Sonnet)
+            if hasattr(G2frame, 'groupXlim'):
+                del G2frame.groupXlim
+            newPlot = True
+        elif event.key == 'x' and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
         elif event.key == '.':
             Page.plotStyle['WgtDiagnostic'] = not Page.plotStyle.get('WgtDiagnostic',False)
             newPlot = True
-        elif event.key == 'b' and plottype not in ['SASD','REFD'] and not Page.plotStyle['logPlot'] and not Page.plotStyle['sqrtPlot']:
+        elif event.key == 'b' and plottype not in ['SASD','REFD']:
             G2frame.SubBack = not G2frame.SubBack
-        elif event.key == 'n':
+            Page.plotStyle['sqrtPlot'] = False
+            Page.plotStyle['logPlot'] = False
+        elif event.key == 'n' and not 'GROUP' in plottype:
             if G2frame.Contour:
                 pass
             else:
@@ -240,9 +247,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if Page.plotStyle['logPlot']:
                     Page.plotStyle['sqrtPlot'] = False
                 else:
+                    Page.plotStyle['Offset'] = Page.plotStyle.get('Offset',[0,0])
                     Page.plotStyle['Offset'][0] = 0
                 newPlot = True
-        elif event.key == 's' and 'PWDR' in plottype:
+        elif event.key == 's' and ('PWDR' in plottype or 'GROUP'  in plottype):
             Page.plotStyle['sqrtPlot'] = not Page.plotStyle['sqrtPlot']
             if Page.plotStyle['sqrtPlot']:
                 Page.plotStyle['logPlot'] = False
@@ -310,6 +318,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif Page.plotStyle['Offset'][0] > -100.:
                 Page.plotStyle['Offset'][0] -= 10.
         elif event.key == 'g':
+            if 'GROUP' in plottype: G2frame.restorePlotLimits = True
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         elif event.key == 'l' and not G2frame.SinglePlot:
             Page.plotStyle['Offset'][1] -= 1.
@@ -335,8 +344,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.Cmin = 0.0
                 Page.plotStyle['Offset'] = [0,0]
         elif event.key == 'C' and 'PWDR' in plottype and G2frame.Contour:
-            #G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plotType)
-            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,True,plotType) # force newPlot=True, prevents blank plot on Mac
+            #G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,newPlot,plottype)
+            G2G.makeContourSliders(G2frame,Ymax,PlotPatterns,True,plottype) # force newPlot=True, prevents blank plot on Mac
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
@@ -350,8 +359,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['partials'] = not Page.plotStyle['partials']
         elif (event.key == 'e' and 'PWDR' in plottype and G2frame.SinglePlot and ifLimits
                   and not G2frame.Contour):
+            # set limits in response to the'e' key. First press sets one side
+            # in Page.startExclReg. Second 'e' press defines other side and 
+            # causes region to be saved (after d/Q conversion if needed)
             Page.excludeMode = not Page.excludeMode
-            if Page.excludeMode:
+            if Page.excludeMode:  # first key press
                 try: # fails from key menu
                     Page.startExclReg = event.xdata
                 except AttributeError:
@@ -367,17 +379,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 y1, y2= Page.figure.axes[0].get_ylim()
                 Page.vLine = Plot.axvline(Page.startExclReg,color='b',dashes=(2,3))
                 Page.canvas.draw()
-            else:
+            else:  # second key press
                 Page.savedplot = None
-                wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
-                    plotType=plottype,extraKeys=extraKeys)
-                if abs(Page.startExclReg - event.xdata) < 0.1: return
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 limdat = G2frame.GPXtree.GetItemPyData(LimitId)
                 mn = min(Page.startExclReg, event.xdata)
                 mx = max(Page.startExclReg, event.xdata)
+                if Page.plotStyle['qPlot']:
+                    mn = G2lat.Dsp2pos(Parms,2.0*np.pi/mn)
+                    mx = G2lat.Dsp2pos(Parms,2.0*np.pi/mx)
+                elif Page.plotStyle['dPlot']:
+                    mn = G2lat.Dsp2pos(Parms,mn)
+                    mx = G2lat.Dsp2pos(Parms,mx)
+                if mx < mn: mx,mn = mn,mx
+                #if abs(mx - mn) < 0.1: return # very small regions are ignored
                 limdat.append([mn,mx])
                 G2pdG.UpdateLimitsGrid(G2frame,limdat,plottype)
+                wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
+                    plotType=plottype,extraKeys=extraKeys)
             return
         elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
                  Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
@@ -401,10 +420,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Pattern[0]['Magnification'] += [[xpos,2.]]
             wx.CallAfter(G2gd.UpdatePWHKPlot,G2frame,plottype,G2frame.PatternId)
             return
-        elif event.key == 'q' and not ifLimits: 
+        elif event.key == 'q':
             newPlot = True
-            if 'PWDR' in plottype:
+            if 'PWDR' in plottype or plottype.startswith('GROUP'):
                 Page.plotStyle['qPlot'] = not Page.plotStyle['qPlot']
+                # switching from d to Q
+                if (Page.plotStyle['qPlot'] and
+                        Page.plotStyle['dPlot'] and
+                        getattr(G2frame, 'groupXlim', None) is not None):
+                    G2frame.groupXlim = (
+                        2.0 * np.pi / G2frame.groupXlim[1],  # Q_max -> d_min
+                        2.0 * np.pi / G2frame.groupXlim[0])  # Q_min -> d_max
                 Page.plotStyle['dPlot'] = False
                 Page.plotStyle['chanPlot'] = False
             elif plottype in ['SASD','REFD']:
@@ -417,9 +443,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif event.key == 'e' and G2frame.Contour:
             newPlot = True
             G2frame.TforYaxis = not G2frame.TforYaxis
-        elif event.key == 't' and 'PWDR' in plottype and not ifLimits:
-            newPlot = True      
+        elif event.key == 't' and ('PWDR' in plottype or plottype.startswith('GROUP')):
+            newPlot = True
             Page.plotStyle['dPlot'] = not Page.plotStyle['dPlot']
+            # switching from Q to d
+            if (Page.plotStyle['qPlot'] and
+                        Page.plotStyle['dPlot'] and
+                        getattr(G2frame, 'groupXlim', None) is not None):
+                G2frame.groupXlim = (
+                        2.0 * np.pi / G2frame.groupXlim[1],  # Q_min <- d_max
+                        2.0 * np.pi / G2frame.groupXlim[0])  # Q_max <- d_min
             Page.plotStyle['qPlot'] = False
             Page.plotStyle['chanPlot'] = False
         elif event.key == 'm':
@@ -429,7 +462,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.Contour = False
             newPlot = True
         elif event.key == 'F' and not G2frame.SinglePlot:
-            choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
+            choices = G2gd.GetGPXtreeDataNames(G2frame,plottype)
             dlg = G2G.G2MultiChoiceDialog(G2frame,
                 'Select dataset(s) to plot\n(select all or none to reset)', 
                 'Multidata plot selection',choices)
@@ -472,6 +505,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             plotOpt['CSVfile'] = G2G.askSaveFile(G2frame,'','.csv',
                                         'Comma separated variable file')
             if plotOpt['CSVfile']: plotOpt['saveCSV'] = True
+        elif event.key == 'k':    # toggle use of crosshair cursor
+            if getattr(G2frame,'CrossHairs',False):
+                G2frame.CrossHairs = False
+            else:
+                G2frame.CrossHairs = True
         else:
             #print('no binding for key',event.key)
             return
@@ -486,7 +524,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         global PlotList
         G2plt.SetCursor(Page)
         # excluded region animation
-        if Page.excludeMode and Page.savedplot:
+        if Page.excludeMode and Page.savedplot:  # defining an excluded region
             if event.xdata is None or G2frame.GPXtree.GetItemText(
                     G2frame.GPXtree.GetSelection()) != 'Limits': # reset if out of bounds or not on limits
                 Page.savedplot = None
@@ -494,7 +532,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
                     plotType=plottype,extraKeys=extraKeys)
                 return
-            else:
+            else:   # mouse is out of plot region, give up on this region
                 Page.canvas.restore_region(Page.savedplot)
                 Page.vLine.set_xdata([event.xdata,event.xdata])
                 if G2frame.Weight:
@@ -502,7 +540,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     axis = Page.figure.gca()
                 axis.draw_artist(Page.vLine)
-                Page.canvas.blit(axis.bbox)
+                Page.canvas.blit(Page.figure.bbox)
                 return
         elif Page.excludeMode or Page.savedplot: # reset if out of mode somehow
             Page.savedplot = None            
@@ -642,7 +680,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.SetToolTipString(s)
 
         except TypeError:
-            G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
+            G2frame.G2plotNB.status.SetStatusText(f'Select {plottype} pattern first',1)
                 
     def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots
         np.seterr(invalid='ignore')
@@ -702,9 +740,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         to create a peak or an excluded region
         '''
         def OnDragMarker(event):
-            '''Respond to dragging of a plot Marker
+            '''Respond to dragging of a plot Marker (fixed background point)
             '''
-            if event.xdata is None or event.ydata is None: return   # ignore if cursor out of window
+            if event.xdata is None or event.ydata is None: # mouse is out of plot area, reset drag
+                G2frame.itemPicked = None
+                if G2frame.cid is not None:  # delete drag connection
+                    Page.canvas.mpl_disconnect(G2frame.cid)
+                    G2frame.cid = None
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+                return
             if G2frame.itemPicked is None: return # not sure why this happens, if it does
             Page.canvas.restore_region(savedplot)
             G2frame.itemPicked.set_data([event.xdata], [event.ydata])
@@ -713,28 +757,40 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 axis = Page.figure.gca()
             axis.draw_artist(G2frame.itemPicked)
-            Page.canvas.blit(axis.bbox)
+            Page.canvas.blit(Page.figure.bbox)
             
         def OnDragLine(event):
             '''Respond to dragging of a plot line
             '''
-            if event.xdata is None: return   # ignore if cursor out of window
+            if event.xdata is None: # mouse is out of plot area, reset drag
+                G2frame.itemPicked = None
+                if G2frame.cid is not None:  # delete drag connection
+                    Page.canvas.mpl_disconnect(G2frame.cid)
+                    G2frame.cid = None
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+                return
             if G2frame.itemPicked is None: return # not sure why this happens 
             Page.canvas.restore_region(savedplot)
             coords = G2frame.itemPicked.get_data()
             coords[0][0] = coords[0][1] = event.xdata
-            coords = G2frame.itemPicked.set_data(coords)
+            G2frame.itemPicked.set_data(coords)
             if G2frame.Weight:
                 axis = Page.figure.axes[1]
             else:
                 axis = Page.figure.gca()
             axis.draw_artist(G2frame.itemPicked)
-            Page.canvas.blit(axis.bbox)
+            Page.canvas.blit(Page.figure.bbox)
             
         def OnDragLabel(event):
             '''Respond to dragging of a HKL label
             '''
-            if event.xdata is None: return   # ignore if cursor out of window
+            if event.ydata is None: # mouse is out of plot area, reset drag
+                G2frame.itemPicked = None
+                if G2frame.cid is not None:  # delete drag connection
+                    Page.canvas.mpl_disconnect(G2frame.cid)
+                    G2frame.cid = None
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+                return
             if G2frame.itemPicked is None: return # not sure why this happens
             try:
                 coords = list(G2frame.itemPicked.get_position())
@@ -753,14 +809,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     axis = Page.figure.gca()
                 axis.draw_artist(G2frame.itemPicked)
-                Page.canvas.blit(axis.bbox)
+                Page.canvas.blit(Page.figure.bbox)
             except:
                 pass
 
         def OnDragTickmarks(event):
             '''Respond to dragging of the reflection tick marks
             '''
-            if event.ydata is None: return   # ignore if cursor out of window
+            if event.ydata is None: # mouse is out of plot area, reset drag
+                G2frame.itemPicked = None
+                if G2frame.cid is not None:  # delete drag connection
+                    Page.canvas.mpl_disconnect(G2frame.cid)
+                    G2frame.cid = None
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+                return
             if Page.tickDict is None: return # not sure why this happens, if it does
             Page.canvas.restore_region(savedplot)
             if Page.pickTicknum:
@@ -779,12 +841,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 coords[1][:] = pos
                 Page.tickDict[phase].set_data(coords)
                 axis.draw_artist(Page.tickDict[phase])
-            Page.canvas.blit(axis.bbox)
+            Page.canvas.blit(Page.figure.bbox)
 
         def OnDragDiffCurve(event):
             '''Respond to dragging of the difference curve. 
             '''
-            if event.ydata is None: return   # ignore if cursor out of window
+            if event.ydata is None:  # mouse is out of plot area, reset drag
+                G2frame.itemPicked = None
+                if G2frame.cid is not None:  # delete drag connection
+                    Page.canvas.mpl_disconnect(G2frame.cid)
+                    G2frame.cid = None
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+                return
+                return   # ignore if cursor out of window
             if G2frame.itemPicked is None: return # not sure why this happens 
             Page.canvas.restore_region(savedplot)
             coords = G2frame.itemPicked.get_data()
@@ -792,8 +861,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.diffOffset = -event.ydata
             G2frame.itemPicked.set_data(coords)
             Page.figure.gca().draw_artist(G2frame.itemPicked) #  Diff curve only found in 1-window plot
-            Page.canvas.blit(Page.figure.gca().bbox)
-            
+            Page.canvas.blit(Page.figure.bbox)
+
         def DeleteHKLlabel(HKLmarkers,key):
             '''Delete an HKL label'''
             del HKLmarkers[key[0]][key[1]]
@@ -820,6 +889,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if G2frame.itemPicked is not None:  # only allow one selection 
                 return
             pick = event.artist
+            hist = pick.get_gid()
+            if hist:    # is this a group histogram label?
+                if 'PWDR' in hist:
+                    showHistogram(G2frame,hist,Page,Plot)
+                    return
             xpos,ypos = pick.get_position()
             if event.mouseevent.button == 3: # right click, delete HKL label
                 # but only 1st of the picked items, if multiple
@@ -938,20 +1012,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 limData = G2frame.GPXtree.GetItemPyData(LimitId)
-                # Q & d not currently allowed on limits plot
-                # if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
-                #     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-                # elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
-                #     xy[0] = G2lat.Dsp2pos(Parms,xy[0])
+                # reverse setting limits for Q plot & TOF
+                if Page.plotStyle['qPlot'] and 'T' in Parms['Type'][0]:
+                    if G2frame.ifSetLimitsMode == 2:
+                        G2frame.ifSetLimitsMode = 1
+                    elif G2frame.ifSetLimitsMode == 1:
+                        G2frame.ifSetLimitsMode = 2
+                # set limit selected limit or excluded region after menu command
                 if G2frame.ifSetLimitsMode == 3:   # add an excluded region
                     excl = [0,0]
                     excl[0] = max(limData[1][0],min(xy[0],limData[1][1]))
                     excl[1] = excl[0]+0.1
                     limData.append(excl)
-                elif G2frame.ifSetLimitsMode == 2: # set upper
-                    limData[1][1] = max(xy[0],limData[1][0])
+                elif G2frame.ifSetLimitsMode == 2:
+                    limData[1][1] = min(limData[0][1],max(xy[0],limData[0][0])) # upper
                 elif G2frame.ifSetLimitsMode == 1:
-                    limData[1][0] = min(xy[0],limData[1][1]) # set lower
+                    limData[1][0] = max(limData[0][0],min(xy[0],limData[0][1])) # lower
+                if limData[1][0] > limData[1][1]: 
+                    limData[1][0],limData[1][1] = limData[1][1],limData[1][0]
                 G2frame.ifSetLimitsMode = 0
                 G2frame.CancelSetLimitsMode.Enable(False)
                 G2frame.GPXtree.SetItemPyData(LimitId,limData)
@@ -1087,6 +1165,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.pickTicknum = Page.phaseList.index(pick)
                 resetlist = []
                 for pId,phase in enumerate(Page.phaseList): # set the tickmarks to a lighter color
+                    if phase not in Page.tickDict: return
                     col = Page.tickDict[phase].get_color()
                     rgb = mpcls.ColorConverter().to_rgb(col)
                     rgb_light = [(2 + i)/3. for i in rgb]
@@ -1433,12 +1512,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     def refPlotUpdate(Histograms,cycle=None,restore=False):
         '''called to update an existing plot during a Rietveld fit; it only 
         updates the curves, not the reflection marks or the legend. 
-        It should be called with restore=True to reset plotting 
-        parameters after the refinement is done.
+        After the refinement is complete it is called with restore=True to
+        reset plotting parameters.
+
+        Note that the ``Page.plotStyle`` values are stashed in 
+        ``G2frame.savedPlotStyle`` to be restored after FindPlotTab is 
+        called and ``G2frame.restorePlotLimits`` is set so that 
+        saved plot limits will be applied when 
+        ``G2frame.G2plotNB.restoreSavedPlotLims`` is called.
         '''
         if restore:
             (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
-                G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot']) = savedSettings
+                G2frame.plusPlot,G2frame.SubBack,G2frame.savedPlotStyle) = savedSettings
+            G2frame.restorePlotLimits = True
             return
 
         if plottingItem not in Histograms:
@@ -1600,7 +1686,90 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['partials'] = True
             Replot()
         configPartialDisplay(G2frame,Page.phaseColors,Replot)
-            
+    def adjustDim(i,nx):
+        '''MPL creates a 1-D array when nx=1, 2-D otherwise.
+        This adjusts the array addressing.
+        '''
+        if nx == 1:
+            return (0,1)
+        else:
+            return ((0,i),(1,i))
+
+    # Callback used to update y-limits when user zooms interactively (from MG/Cl Sonnet)
+    def onGroupXlimChanged(ax):
+        '''Callback to update y-limits for all panels in group plot when x-range changes.
+        We calculate the global y-range across all panels for the visible x-range,
+        then explicitly set y-limits on ALL panels.
+        
+        This code behaves a bit funny w/r to zoom or pan of one plot in a group
+        in that the plot that is modified can have its y-axis range changed, 
+        but if the another plot is changed, then the previous plot is given the
+        same y-range as all the others, so only one y-range can be changed. 
+        Perhaps this is because the zoom/pan is applied after the changes 
+        here are applied.
+
+        To do better, we probably need a mode that unlocks the coupling of 
+        the y-axes ranges.
+        '''
+        if getattr(G2frame,'stop_onGroupXlimChanged',False):
+            return    # disable this routine when needed
+        xlim = ax.get_xlim()
+        # Save x-limits for persistence across refinements
+        if (plotOpt['sharedX'] and 
+                        (Page.plotStyle['qPlot'] or Page.plotStyle['dPlot'])):
+            G2frame.groupXlim = xlim
+
+        # Calculate global y-range across ALL panels for visible x-range
+        global_ymin = float('inf')
+        global_ymax = float('-inf')
+        global_dzmin = float('inf')
+        global_dzmax = float('-inf')
+        max_tick_space = 0
+
+        for i in range(Page.groupN):
+            xarr = np.array(gX[i])
+            xye = gdat[i]
+            mask = (xarr >= xlim[0]) & (xarr <= xlim[1])
+            if np.any(mask):
+                # Calculate scaled y-values for visible data
+                scaleY = lambda Y, idx=i: (Y - gYmin[idx]) / (gYmax[idx] - gYmin[idx]) * 100
+                visible_obs = scaleY(xye[1][mask])
+                visible_calc = scaleY(xye[3][mask])
+                visible_bkg = scaleY(xye[4][mask])
+                ymin_visible = min(visible_obs.min(), visible_calc.min(), visible_bkg.min())
+                ymax_visible = max(visible_obs.max(), visible_calc.max(), visible_bkg.max())
+                global_ymin = min(global_ymin, ymin_visible)
+                global_ymax = max(global_ymax, ymax_visible)
+                # Track tick space needed
+                if not Page.plotStyle.get('flTicks', False):
+                    max_tick_space = max(max_tick_space, len(RefTbl[i]) * 5)
+                else:
+                    max_tick_space = max(max_tick_space, 1)
+                # Calculate diff y-limits
+                DZ_visible = (xye[1][mask] - xye[3][mask]) * np.sqrt(xye[2][mask])
+                global_dzmin = min(global_dzmin, DZ_visible.min())
+                global_dzmax = max(global_dzmax, DZ_visible.max())
+
+        # Apply global y-limits to ALL panels explicitly
+        if global_ymax > global_ymin:
+            yrange = global_ymax - global_ymin
+            ypad = max(yrange * 0.05, 1.0)
+            ylim_upper = (global_ymin - ypad - max_tick_space, global_ymax + ypad)
+            for i in range(Page.groupN):
+                up, down = adjustDim(i, Page.groupN)
+                Plots[up].set_ylim(ylim_upper)
+                Plots[up].autoscale(enable=False, axis='y')
+        if global_dzmax > global_dzmin:
+            dzrange = global_dzmax - global_dzmin
+            dzpad = max(dzrange * 0.05, 0.5)
+            ylim_lower = (global_dzmin - dzpad, global_dzmax + dzpad)
+            for i in range(Page.groupN):
+                up, down = adjustDim(i, Page.groupN)
+                Plots[down].set_ylim(ylim_lower)
+                Plots[down].autoscale(enable=False, axis='y')
+        # Force canvas redraw to apply new limits
+        Page.canvas.draw_idle()
+
     #### beginning PlotPatterns execution #####################################
     global exclLines,Page
     global DifLine
@@ -1619,6 +1788,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     for i in 'Obs_color','Calc_color','Diff_color','Bkg_color':
         pwdrCol[i] = '#' + GSASIIpath.GetConfigValue(i,getDefault=True)
 
+    groupName = None
+    groupDict = {}
+    if plottype == 'GROUP':
+        groupName = G2frame.GroupInfo['groupName'] # set in GSASIIgroupGUI.UpdateGroup
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        groupDict = Controls.get('Groups',{}).get('groupDict',{})
+        if groupName not in groupDict:
+            print(f'Unexpected: {groupName} not in groupDict')
+            return
+        # set data to first histogram in group 
+        G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, groupDict[groupName][0])
+        data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+
     if not G2frame.PatternId:
         return
     if 'PKS' in plottype: # This is probably not used anymore; PlotPowderLines seems to be called directly
@@ -1630,7 +1812,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         publish = PublishPlot
     else:
         publish = None
-    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
+    if G2frame.Contour: publish = None
+
+    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab(
+        'Powder Patterns','mpl',saveLimits=refineMode)
+    if hasattr(G2frame, 'savedPlotStyle'):
+        Page.plotStyle.update(G2frame.savedPlotStyle)
+        del G2frame.savedPlotStyle  # do this only once & after Page is defined
+    if not getattr(G2frame,'CrossHairs',False):
+        if getattr(G2frame,'cursor',False): del G2frame.cursor
+    else:
+        G2frame.cursor = mpl.widgets.Cursor(Plot, useblit=True, color='red', linewidth=0.5)
+    Page.toolbar.setPublish(publish)
+    Page.toolbar.arrows['_groupMode'] = None
+    # if we are changing histogram types (including group to individual, reset plot)
+    if not new and hasattr(Page,'prevPlotType'):
+        if Page.prevPlotType != plottype: new = True
+    Page.prevPlotType = plottype
+
     if G2frame.ifSetLimitsMode and G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Limits':
         # note mode
         if G2frame.ifSetLimitsMode == 1:
@@ -1644,7 +1843,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Page.excludeMode = False  # True when defining an excluded region
     Page.savedplot = None
 #patch
-    if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
+    if 'Offset' not in Page.plotStyle and plottype in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
         Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':float(0.02*Ymax),
             'refOffset':float(-0.1*Ymax),'refDelt':float(0.1*Ymax),})
@@ -1656,7 +1855,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.lastPlotType
     except:
         G2frame.lastPlotType = None
-    if plotType == 'PWDR':
+    
+    if plottype == 'PWDR' or plottype == 'GROUP':
         try:
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 G2frame.PatternId, 'Instrument Parameters'))
@@ -1696,7 +1896,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         plottingItem = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         # save settings to be restored after refinement with repPlotUpdate({},restore=True)
         savedSettings = (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
-                            G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot'])
+                            G2frame.plusPlot,G2frame.SubBack,
+                            copy.deepcopy(Page.plotStyle))
         G2frame.SinglePlot = True
         G2frame.Contour = False
         G2frame.Weight = True
@@ -1714,7 +1915,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, plottingItem)
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
                 G2frame.GPXtree.SelectItem(G2frame.PatternId)
-                PlotPatterns(G2frame,True,plotType,None,extraKeys)
+                PlotPatterns(G2frame,True,plottype,None,extraKeys)
     #=====================================================================================
     elif 'PlotDefaults' in data[0] and fromTree:  # set style from defaults saved with '!'
         #print('setting plot style defaults')
@@ -1732,17 +1933,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         newPlot = True
         G2frame.Cmin = 0.0
         G2frame.Cmax = 1.0
-        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-        Page.canvas.mpl_connect('pick_event', OnPickPwd)
-        Page.canvas.mpl_connect('button_release_event', OnRelease)
-        Page.canvas.mpl_connect('button_press_event',OnPress)
-        Page.bindings = []
-    # redo OnPlotKeyPress binding each time the Plot is updated
-    # since needs values that may have been changed after 1st call
-    for b in Page.bindings:
+    # redo plot binding each time the Plot is updated since values
+    # may have been changed after 1st call
+    try:
+        G2frame.PlotBindings
+    except:
+        G2frame.PlotBindings = []
+    for b in G2frame.PlotBindings:
         Page.canvas.mpl_disconnect(b)
-    Page.bindings = []
-    Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
+    G2frame.PlotBindings = []
+    for e,r in [('motion_notify_event', OnMotion),
+                ('pick_event', OnPickPwd),
+                ('button_release_event', OnRelease),
+                ('button_press_event',OnPress),
+                ('key_press_event', OnPlotKeyPress)]:
+        G2frame.PlotBindings.append(Page.canvas.mpl_connect(e,r))
     if not G2frame.PickId:
         print('No plot, G2frame.PickId,G2frame.PatternId=',G2frame.PickId,G2frame.PatternId)
         return
@@ -1781,7 +1986,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
             Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
     else:
-        Page.phaseList = Phases = []
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        Page.phaseList = Phases
     # assemble a list of validated colors for tickmarks
     valid_colors = []
     invalid_colors = []
@@ -1808,8 +2014,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             kwargs={'PatternName':G2frame.GPXtree.GetItemText(G2frame.PatternId)}
             if G2frame.PickId:
                 kwargs['PickName'] = G2frame.GPXtree.GetItemText(G2frame.PickId)
-            wx.CallAfter(G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
-                (G2frame,newPlot,plotType),kwargs))
+            wx.CallAfter(G2frame.G2plotNB.RegisterRedrawRoutine(
+                G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
+                (G2frame,newPlot,plottype),kwargs))
     except:         #skip a C++ error
         pass
     # now start plotting
@@ -1822,16 +2029,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     ifLimits = False
     if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
         ifLimits = True
-        Page.plotStyle['qPlot'] = False
-        Page.plotStyle['dPlot'] = False
     # keys in use for graphics control:
-    #    a,b,c,d,e,f,g,i,l,m,n,o,p,q,r,s,t,u,w,x, (unused: j, k, y, z)
+    #    a,b,c,d,e,f,g,i,k,l,m,n,o,p,q,r,s,t,u,w,x, (unused: j, y, z)
     #    also: +,/, C,D,S,U
     if G2frame.Contour:
         Page.Choice = (' key press','b: toggle subtract background',
             'd: lower contour max','u: raise contour max',
             'D: lower contour min','U: raise contour min',
             'o: reset contour limits','g: toggle grid',
+            'k: toggle cross-hair cursor',
             'i: interpolation method','S: color scheme','c: contour off',
             'e: toggle temperature for y-axis','s: toggle sqrt plot',
             'w: toggle w(Yo-Yc) contour plot','h: toggle channel # plot',
@@ -1839,11 +2045,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             'C: contour plot control window',
             )
     else:
+#       Page.toolbar.updateActions = (PlotPatterns,G2frame) # command used to refresh after arrow key is pressed
         if 'PWDR' in plottype:
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
                 'c: contour on','x: toggle excluded regions','T: toggle plot title',
                 'f: toggle full-length ticks','g: toggle grid',
+                'k: toggle cross-hair cursor',
                 'X: toggle cumulative chi^2',
                 'm: toggle multidata plot','n: toggle log(I)',]
             if plotOpt['obsInCaption']:
@@ -1857,6 +2065,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.Choice += [f'L: {addrem} {what} in legend',]
             if ifLimits:
                 Page.Choice += ['e: create excluded region',
+                        'q: toggle Q plot','t: toggle d-spacing plot',
                         's: toggle sqrt plot','w: toggle (Io-Ic)/sig plot',
                         '+: toggle obs line plot']
             else:
@@ -1885,6 +2094,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif plottype in ['SASD','REFD']:
             Page.Choice = [' key press',
                 'b: toggle subtract background file','g: toggle grid',
+                'k: toggle cross-hair cursor',
                 'm: toggle multidata plot','n: toggle semilog/loglog',
                 'q: toggle S(q) plot','w: toggle (Io-Ic)/sig plot','+: toggle obs line plot',]
             if not G2frame.SinglePlot:
@@ -1895,7 +2105,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     for KeyItem in extraKeys:
         Page.Choice = Page.Choice + [KeyItem[0] + ': '+KeyItem[2],]
     magLineList = [] # null value indicates no magnification
-    Page.toolbar.updateActions = None # no update actions
+    #Page.toolbar.updateActions = None # no update actions, used with the arrow keys
     G2frame.cid = None
     Page.keyPress = OnPlotKeyPress
     # assemble a list of validated colors (not currently needed)
@@ -1943,7 +2153,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:     #G2frame.selection   
         Title = os.path.split(G2frame.GSASprojectfile)[1]
         if G2frame.selections is None:
-            choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
+            choices = G2gd.GetGPXtreeDataNames(G2frame,plottype)
         else:
             choices = G2frame.selections
         PlotList = []
@@ -1999,8 +2209,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
     if Ymax is None: return # nothing to plot
-    offsetX = Page.plotStyle['Offset'][1]
-    offsetY = Page.plotStyle['Offset'][0]
+    offsetY,offsetX = Page.plotStyle.get('Offset',(0,0))[:2]
     if Page.plotStyle['logPlot']:
         Title = 'log('+Title+')'
     elif Page.plotStyle['sqrtPlot']:
@@ -2010,9 +2219,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Title = 'Scaling diagnostic for '+Title
     if G2frame.SubBack:
         Title += ' - background'
-    if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour and not ifLimits:
+    if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         xLabel = r'$Q, \AA^{-1}$'
-    elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
+    elif Page.plotStyle['dPlot'] and ('PWDR' in plottype or plottype == 'GROUP'):
         xLabel = r'$d, \AA$'
     elif Page.plotStyle['chanPlot'] and G2frame.Contour:
         xLabel = 'Channel no.'
@@ -2023,8 +2232,266 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             xLabel = 'E, keV'
         else:
             xLabel = r'$\mathsf{2\theta}$'
+    if groupName is not None:
+        # plot a group of histograms
+        Page.toolbar.arrows['_groupMode'] = Page # set up  use of arrow keys
+        Page.toolbar.enableArrows('group',(PlotPatterns,G2frame,False,plotType,data))
 
-    if G2frame.Weight and not G2frame.Contour:
+        Page.Choice = [' key press',
+                'b: toggle subtract background',
+                'f: toggle full-length ticks',
+                'g: toggle grid',
+                'k: toggle cross-hair cursor',
+                's: toggle sqrt plot',  # TODO: implement this
+                'q: toggle Q plot',
+                't: toggle d-spacing plot',
+                'x: share x-axes (Q/d only)',
+                '+: toggle obs line plot']
+        Plot.set_visible(False) # removes "big" plot
+        gXmin = {}
+        gXmax = {}
+        gYmin = {}
+        gYmax = {}
+        gX = {}
+        gdat = {}
+        totalrange = 0
+        DZmax = 0
+        DZmin = 0
+        RefTbl = {}
+        histlbl = {}
+        # find portion of hist name that is the same and different
+        l = max([len(i) for i in groupDict[groupName]])
+        h0 = groupDict[groupName][0].ljust(l)
+        msk = [True] * l
+        for h in groupDict[groupName][1:]:
+            msk = [m & (h0i == hi) for h0i,hi,m in zip(h0,h.ljust(l),msk)]
+        if not hasattr(Page,'groupMax'): Page.groupMax = min(10,len(groupDict[groupName]))
+        if not hasattr(Page,'groupOff'): Page.groupOff = 0
+        groupPlotList = groupDict[groupName][Page.groupOff:]
+        groupPlotList += groupDict[groupName] # pad with more from beginning
+        groupPlotList = groupPlotList[:Page.groupMax]
+        Page.groupN = len(groupPlotList)
+        # place centered-dot in loc of non-common letters
+        #commonltrs = ''.join([h0i if m else '\u00B7' for (h0i,m) in zip(h0,msk)])
+        # place rectangular box in the loc of non-common letter(s)
+        commonltrs = ''.join([h0i if m else '\u25A1' for (h0i,m) in zip(h0,msk)])
+        pP = '+'
+        lW = 1.5
+        if not G2frame.plusPlot:
+            pP = ''
+            lW = 1.5
+        elif G2frame.plusPlot == 1:
+            pP = '+'
+            lW = 0
+        elif G2frame.plusPlot == 2: # same as 0 for multiplot, TODO: rethink
+            pP = ''
+            lW = 1.5
+        for i,h in enumerate(groupPlotList):
+            histlbl[i] = ''.join([hi for (hi,m) in zip(h,msk) if not m]) # unique letters
+            gPatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, h)
+            gParms,_ = G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,gPatternId,
+                                          'Instrument Parameters'))
+            LimitId = G2gd.GetGPXtreeItemId(G2frame,gPatternId, 'Limits')
+            limdat = G2frame.GPXtree.GetItemPyData(LimitId)
+            gd = G2frame.GPXtree.GetItemPyData(gPatternId)
+            RefTbl[i] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,gPatternId,'Reflection Lists'))
+            # drop data outside limits
+            mask = (limdat[1][0] <= gd[1][0]) & (gd[1][0] <= limdat[1][1])
+            gdat[i] = {}
+            for j in range(6):
+                gdat[i][j] = gd[1][j][mask]
+            # obs-calc/sigma
+            gdat[f'DZ{i}'] = (gdat[i][1]-gdat[i][3])*np.sqrt(gdat[i][2])
+            DZmin = min(DZmin,gdat[f'DZ{i}'].min())
+            DZmax = max(DZmax,gdat[f'DZ{i}'].max())
+            if Page.plotStyle['sqrtPlot']:
+                for j in (1,3,4):
+                    y = gdat[i][j]
+                    gdat[i][j] = np.where(y>=0.,np.sqrt(y),-np.sqrt(-y))
+            elif G2frame.SubBack:
+                gdat[i][3] = gdat[i][3] - gdat[i][4]
+                gdat[i][1] = gdat[i][1] - gdat[i][4]
+            if Page.plotStyle['qPlot']:
+                gX[i] = 2.*np.pi/G2lat.Pos2dsp(gParms,gdat[i][0])
+            elif Page.plotStyle['dPlot']:
+                gX[i] = G2lat.Pos2dsp(gParms,gdat[i][0])
+            else:
+                gX[i] = gdat[i][0]
+            gXmin[i] = min(gX[i])
+            gXmax[i] = max(gX[i])
+            # Calculate Y range from full data initially (may be updated later for zoom)
+            gYmax[i] = max(max(gdat[i][1]),max(gdat[i][3]))
+            gYmin[i] = min(min(gdat[i][1]),min(gdat[i][3]))
+            totalrange += gXmax[i]-gXmin[i]
+        if plotOpt['sharedX'] and (
+                Page.plotStyle['qPlot'] or Page.plotStyle['dPlot']):
+            Page.figure.text(0.94,0.03,'X shared',fontsize=10,
+                                 color='g')
+            GS_kw = {'height_ratios':[4, 1]}
+            #Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex=True,
+            #                             gridspec_kw=GS_kw)
+            # Don't use sharey='row' when sharedX - we'll manage y-limits manually
+            # This avoids conflicts between sharey and our dynamic y-limit updates
+            Plots = Page.figure.subplots(2,Page.groupN,sharex=True,
+                                         gridspec_kw=GS_kw)
+        else:
+            # apportion axes lengths making some plots bigger so that initially units are equal
+            xfrac = [(gXmax[i]-gXmin[i])/totalrange for i in range(Page.groupN)]
+            GS_kw = {'height_ratios':[4, 1], 'width_ratios':xfrac,}
+            Plots = Page.figure.subplots(2,Page.groupN,sharey='row',sharex='col',
+                                         gridspec_kw=GS_kw)
+        Page.figure.subplots_adjust(left=5/100.,bottom=16/150.,
+            right=.99,top=1.-3/200.,hspace=0,wspace=0)
+                
+        # Connect callback for all panels when sharedX is enabled
+        up,down = adjustDim(0,Page.groupN)
+        if (plotOpt['sharedX'] and 
+                        (Page.plotStyle['qPlot'] or Page.plotStyle['dPlot'])):
+            Plots[up].callbacks.connect('xlim_changed', onGroupXlimChanged)
+                
+        # pretty up the tick labels
+        Plots[up].tick_params(axis='y', direction='inout', left=True, right=True)
+        Plots[down].tick_params(axis='y', direction='inout', left=True, right=True)
+        if Page.groupN > 1:
+            for ax in Plots[:,1:].ravel():
+                ax.tick_params(axis='y', direction='in', left=True, right=True)
+        # remove 1st upper y-label so that it does not overlap with lower box
+        Plots[up].get_yticklabels()[0].set_visible(False)
+        Plots[down].set_ylabel(r'$\mathsf{\Delta I/\sigma_I}$',fontsize=12)
+        if Page.plotStyle['sqrtPlot']:
+            Plots[up].set_ylabel(r'$\rm\sqrt{Normalized\ intensity}$',fontsize=12)
+        elif G2frame.SubBack:
+            Plots[up].set_ylabel('Normalized Intensity-bkg',fontsize=12)
+        else:
+            Plots[up].set_ylabel('Normalized Intensity',fontsize=12)
+        Page.figure.text(0.001,0.03,commonltrs,fontsize=13,color='g')
+        Page.figure.supxlabel(xLabel)
+        for i,h in enumerate(groupPlotList):
+            up,down = adjustDim(i,Page.groupN)
+            Plot = Plots[up]
+            Plot1 = Plots[down]
+            pos = 0.02
+            ha = 'left'
+            if Page.plotStyle['qPlot']:
+                pos = 0.95
+                ha = 'right'
+            Plot.text(pos,0.98,histlbl[i],
+                              transform=Plot.transAxes,gid=h,
+                              verticalalignment='top',
+                              horizontalalignment=ha,
+                              fontsize=14,color='g',fontweight='bold',picker=4)
+            xye = gdat[i]
+            DifLine = Plot1.plot(gX[i],gdat[f'DZ{i}'],pwdrCol['Diff_color']) #,picker=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
+            if G2frame.SubBack:
+                scaleY = lambda Y: Y/(gYmax[i]-gYmin[i])*100
+            else:
+                scaleY = lambda Y: (Y-gYmin[i])/(gYmax[i]-gYmin[i])*100
+            Plot.plot(gX[i],scaleY(xye[1]),marker=pP,color=pwdrCol['Obs_color'],linewidth=lW,# picker=3.,
+                            clip_on=Clip_on,label=incCptn('obs'))
+            Plot.plot(gX[i],scaleY(xye[3]),pwdrCol['Calc_color'],picker=0.,label=incCptn('calc'),linewidth=1.5)
+            if not G2frame.SubBack:
+                Plot.plot(gX[i],scaleY(xye[4]),pwdrCol['Bkg_color'],picker=0.,label=incCptn('bkg'),linewidth=1.5)     #background
+            drawTicks(G2frame,RefTbl[i],Page,Plot,group=True)
+        
+        # Set axis limits AFTER plotting data to prevent autoscaling from overriding them (MG/Cl Sonnet)
+        # When sharedX is enabled, calculate common x-range encompassing all histograms
+        if (plotOpt['sharedX'] and 
+                        (Page.plotStyle['qPlot'] or Page.plotStyle['dPlot'])):
+            if  getattr(G2frame, 'groupXlim', None) is not None:
+                commonXlim =  getattr(G2frame, 'groupXlim', None)
+            else:
+                # Calculate union of all histogram x-ranges
+                commonXmin = min(gXmin.values())
+                commonXmax = max(gXmax.values())
+                commonXlim = (commonXmin, commonXmax)
+        
+        # First pass: set x-limits and calculate global y-range for visible data
+        # Since sharey='row', all upper panels share y-limits, all lower panels share y-limits
+        global_ymin = float('inf')
+        global_ymax = float('-inf')
+        global_dzmin = float('inf')
+        global_dzmax = float('-inf')
+        max_tick_space = 0
+        
+        for i in range(Page.groupN):
+            up, down = adjustDim(i, Page.groupN)
+            if (plotOpt['sharedX'] and 
+                        (Page.plotStyle['qPlot'] or Page.plotStyle['dPlot'])):
+                xlim = commonXlim
+                Plots[up].set_xlim(xlim)
+                Plots[down].set_xlim(xlim)
+            else:
+                xlim = (gXmin[i], gXmax[i])
+                Plots[up].set_xlim(xlim)
+                Plots[down].set_xlim(xlim)
+            
+            # Calculate y-range for this panel's visible data
+            xarr = np.array(gX[i])
+            xye = gdat[i]
+            DZ = gdat[f'DZ{i}']
+            mask = (xarr >= xlim[0]) & (xarr <= xlim[1])
+            if np.any(mask):
+                scaleY = lambda Y, idx=i: (Y - gYmin[idx]) / (gYmax[idx] - gYmin[idx]) * 100
+                visible_obs = scaleY(xye[1][mask])
+                visible_calc = scaleY(xye[3][mask])
+                visible_bkg = scaleY(xye[4][mask])
+                ymin_visible = min(visible_obs.min(), visible_calc.min(), visible_bkg.min())
+                ymax_visible = max(visible_obs.max(), visible_calc.max(), visible_bkg.max())
+                global_ymin = min(global_ymin, ymin_visible)
+                global_ymax = max(global_ymax, ymax_visible)
+                # Track tick space needed
+                if not Page.plotStyle.get('flTicks', False):
+                    max_tick_space = max(max_tick_space, len(RefTbl[i]) * 5)
+                else:
+                    max_tick_space = max(max_tick_space, 1)
+                # Calculate diff y-limits
+                DZ_visible = DZ[mask]
+                global_dzmin = min(global_dzmin, DZ_visible.min())
+                global_dzmax = max(global_dzmax, DZ_visible.max())
+        
+        # Apply global y-limits to ALL panels explicitly (sharey may not propagate properly)
+        if global_ymax > global_ymin:
+            yrange = global_ymax - global_ymin
+            ypad = max(yrange * 0.05, 1.0)
+            ylim_upper = (global_ymin - ypad - max_tick_space, global_ymax + ypad)
+        else:
+            # Fallback to full range
+            if not Page.plotStyle.get('flTicks', False):
+                ylim_upper = (-max_tick_space, 102)
+            else:
+                ylim_upper = (-1, 102)
+        if global_dzmax > global_dzmin:
+            dzrange = global_dzmax - global_dzmin
+            dzpad = max(dzrange * 0.05, 0.5)
+            ylim_lower = (global_dzmin - dzpad, global_dzmax + dzpad)
+        else: # I do not undesrstand this
+            ylim_lower = (DZmin, DZmax)
+        
+        # Set y-limits on ALL panels
+        for i in range(Page.groupN):
+            up, down = adjustDim(i, Page.groupN)
+            Plots[up].set_ylim(ylim_upper)
+            Plots[down].set_ylim(ylim_lower)
+                
+        try: # try used as in PWDR menu not Groups
+            # Not sure if this does anything
+            G2frame.dataWindow.moveTickLoc.Enable(False)
+            G2frame.dataWindow.moveTickSpc.Enable(False)
+        #     G2frame.dataWindow.moveDiffCurve.Enable(True)
+        except:
+            pass
+        # Save the current x-limits for GROUP plots so they can be restored after refinement (MG/Cl Sonnet)
+        # When sharedX is enabled in Q/d-space, all panels share the same x-range
+        if (plotOpt['sharedX'] and 
+                        (Page.plotStyle['qPlot'] or Page.plotStyle['dPlot'])):
+            up,down = adjustDim(0,Page.groupN)
+            G2frame.groupXlim = Plots[up].get_xlim()
+        wx.CallAfter(G2frame.G2plotNB.restoreSavedPlotLims,Page)  # restore limits to previous, if saved & requested
+        Page.canvas.draw()
+        return # end of group plot
+    #=========================================================================
+    elif G2frame.Weight and not G2frame.Contour:
         Plot.set_visible(False)         #hide old plot frame, will get replaced below
         GS_kw = {'height_ratios':[4, 1],}
         # try:
@@ -2033,10 +2500,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         #     Plot,Plot1 = MPLsubplots(Page.figure, 2, 1, sharex=True, gridspec_kw=GS_kw)
         Plot1.set_ylabel(r'$\mathsf{\Delta(I)/\sigma(I)}$',fontsize=16)
         Plot1.set_xlabel(xLabel,fontsize=16)
-        Page.figure.subplots_adjust(left=16/100.,bottom=16/150.,
-            right=.98,top=1.-16/200.,hspace=0)
     else:
         Plot.set_xlabel(xLabel,fontsize=16)
+    Page.figure.subplots_adjust(left=8/100.,bottom=16/150.,
+            right=.98,top=1.-8/100.,hspace=0,wspace=0)
+    if not G2frame.Contour:
+        Page.toolbar.enableArrows('',(PlotPatterns,G2frame))
     if G2frame.Weight and G2frame.Contour:
         Title = r'$\mathsf{\Delta(I)/\sigma(I)}$ for '+Title
     if 'T' in ParmList[0]['Type'][0] or (Page.plotStyle['Normalize'] and not G2frame.SinglePlot):
@@ -2086,9 +2555,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if G2frame.Contour:  # detect unequally spaced points in a contour plot
         for N,Pattern in enumerate(PlotList):
             xye = np.array(ma.getdata(Pattern[1])) # strips mask = X,Yo,W,Yc,Yb,Yd
-            if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
+            if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
                 X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye[0])
-            elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
+            elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
                 X = G2lat.Pos2dsp(Parms,xye[0])
             else:
                 X = copy.deepcopy(xye[0])
@@ -2205,7 +2674,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 lbl = Plot.annotate("x{}".format(ml0), xy=(tcorner, tpos), xycoords="axes fraction",
                     verticalalignment='bottom',horizontalalignment=halign,label='_maglbl')
                 Plot.magLbls.append(lbl)
-                Page.toolbar.updateActions = (PlotPatterns,G2frame)
             multArray = ma.getdata(multArray)
         if 'PWDR' in plottype:
             YI = copy.copy(xye[1])      #yo
@@ -2236,9 +2704,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 
         if ifpicked and not G2frame.Contour: # draw limit & excluded region lines
             lims = limits[1:]
-            if Page.plotStyle['qPlot'] and 'PWDR' in plottype and not ifLimits:
+            if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
                 lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
-            elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not ifLimits:
+            elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
                 lims = G2lat.Pos2dsp(Parms,lims)
             # limit lines
             Lines.append(Plot.axvline(lims[0][0],color='g',dashes=(5,5),picker=3.))    
@@ -2443,12 +2911,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         else:
                             Plot.plot(X,YB,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
                                 picker=3.,clip_on=Clip_on,label=incCptn('obs'))
-                            Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=False,label=incCptn('calc'),linewidth=1.5)
+                            Plot.plot(X,ZB,pwdrCol['Bkg_color'],picker=0.,label=incCptn('calc'),linewidth=1.5)
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
-                        BackLine = Plot.plot(X,W/ymax,pwdrCol['Bkg_color'],picker=False,label=incCptn('bkg'),linewidth=1.5)                 #Ib
+                        BackLine = Plot.plot(X,W/ymax,pwdrCol['Bkg_color'],picker=0.,label=incCptn('bkg'),linewidth=1.5)                 #Ib
                         if not G2frame.Weight and np.any(Z):
                             DifLine = Plot.plot(X,D/ymax,pwdrCol['Diff_color'],linewidth=1.5,
-                                picker=True,pickradius=1.,label=incCptn('diff'))                 #Io-Ic
+                                picker=1.,label=incCptn('diff'))                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                     
                     Plot.tick_params(labelsize=14)
@@ -2558,7 +3026,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         # waterfall mode=3: name in legend?
                         name = Pattern[2]
                         if Pattern[0].get('histTitle'): name = Pattern[0]['histTitle']
-                        Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=False,label=incCptn(name))
+                        Plot.plot(X,Y/ymax,color=mcolors.cmap(icolor),picker=0.,label=incCptn(name))
                     elif plottype in ['SASD','REFD']:
                         try:
                             Plot.loglog(X,Y,mcolors.cmap(icolor),nonpositive='mask',linewidth=1.5)
@@ -2608,7 +3076,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if Page.plotStyle['sqrtPlot']:
                 ypos = np.sqrt(abs(ypos))*np.sign(ypos)
             artist = Plot.text(xpos,ypos,lbl,fontsize=font,c=color,ha='center',
-                      va='top',bbox=props,picker=True,rotation=angle,label='_'+ph)
+                      va='top',bbox=props,picker=1.,rotation=angle,label='_'+ph)
             artist.key = (ph,key)
     #============================================================
     if timeDebug:
@@ -2680,42 +3148,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                   or (inXtraPeakMode and
                     G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List')
                 ):
-            l = GSASIIpath.GetConfigValue('Tick_length',8.0)
-            w = GSASIIpath.GetConfigValue('Tick_width',1.)
-            for pId,phase in enumerate(Page.phaseList):
-                if 'list' in str(type(Phases[phase])):
-                    continue
-                if phase in Page.phaseColors:
-                    plcolor = Page.phaseColors[phase]
-                else: # how could this happen? 
-                    plcolor = 'k'
-                    #continue
-                peaks = Phases[phase].get('RefList',[])
-                if not len(peaks):
-                    continue
-                if Phases[phase].get('Super',False):
-                    peak = np.array([[peak[5],peak[6]] for peak in peaks])
-                else:
-                    peak = np.array([[peak[4],peak[5]] for peak in peaks])
-                pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
-                if Page.plotStyle['qPlot']:
-                    xtick = 2*np.pi/peak.T[0]
-                elif Page.plotStyle['dPlot']:
-                    xtick = peak.T[0]
-                else:
-                    xtick = peak.T[1]
-                if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
-                    Page.tickDict[phase],_ = Plot.plot(
-                        xtick,pos,'|',mew=w,ms=l,picker=3.,label=phase,color=plcolor)
-                    # N.B. above creates two Line2D objects, 2nd is ignored.
-                    # Not sure what each does.
-                elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
-                    if len(xtick) > 0:
-                        # create an ~hidden tickmark to create a legend entry
-                        Page.tickDict[phase] = Plot.plot(xtick[0],0,'|',mew=0.5,ms=l,
-                            label=phase,color=plcolor)[0]
-                    for xt in xtick: # a separate line for each reflection position
-                            Plot.axvline(xt,color=plcolor,picker=3.,label='_FLT_'+phase,lw=0.5)
+            drawTicks(G2frame,Phases,Page,Plot,Page.phaseList)
             handles,legends = Plot.get_legend_handles_labels() 
             if handles:
                 labels = dict(zip(legends,handles))     # remove duplicate phase entries
@@ -2897,7 +3330,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.dataWindow.moveTickSpc.Enable(True)
         if DifLine[0]:
             G2frame.dataWindow.moveDiffCurve.Enable(True)
-    if refineMode: return refPlotUpdate
+    if refineMode:
+        return refPlotUpdate
+    else:
+        wx.CallLater(100,G2frame.G2plotNB.restoreSavedPlotLims,Page)  # restore limits to previous, if saved
 
 def PublishRietveldPlot(G2frame,Pattern,Plot,Page,reuse=None):
     '''Creates a window to show a customizable "Rietveld" plot. Exports that 
@@ -4414,3 +4850,223 @@ def configPartialDisplay(G2frame,phaseColors,RefreshPlot):
     mainSizer.Fit(dlg)
     dlg.ShowModal()
     StyleChange()
+
+def plotVline(Page,Plot,Lines,Parms,pos,color,pickrad,style='dotted'):
+    '''shortcut to plot vertical lines for limits & Laue satellites.
+    Was used for extrapeaks'''
+    if not pickrad: pickrad = 0.0
+    if Page.plotStyle['qPlot']:
+        Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,pos),color=color,
+            picker=pickrad,linestyle=style))
+    elif Page.plotStyle['dPlot']:
+        Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,pos),color=color,
+            picker=pickrad,linestyle=style))
+    else:
+        Lines.append(Plot.axvline(pos,color=color,
+            picker=pickrad,linestyle=style))
+
+def drawTicks(G2frame,RefList,Page,MPLaxes,phaseList=None,group=False):
+    'Draw the tickmarks for phases in the current histogram'
+    if phaseList is None: phaseList = list(RefList.keys())
+    l = GSASIIpath.GetConfigValue('Tick_length',8.0)
+    w = GSASIIpath.GetConfigValue('Tick_width',1.)
+    for pId,phase in enumerate(phaseList):
+        if 'list' in str(type(RefList[phase])):
+            continue
+        if phase in Page.phaseColors:
+            plcolor = Page.phaseColors[phase]
+        else: # how could this happen? 
+            plcolor = 'k'
+            #continue
+        peaks = RefList[phase].get('RefList',[])
+        if not len(peaks):
+            continue
+        if RefList[phase].get('Super',False):
+            peak = np.array([[peak[5],peak[6]] for peak in peaks])
+        else:
+            peak = np.array([[peak[4],peak[5]] for peak in peaks])
+        if group:
+            pos = (2.5-len(phaseList)*5 + pId*5)**np.ones_like(peak) # tick positions hard-coded
+        else:
+            pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
+        if Page.plotStyle['qPlot']:
+            xtick = 2*np.pi/peak.T[0]
+        elif Page.plotStyle['dPlot']:
+            xtick = peak.T[0]
+        else:
+            xtick = peak.T[1]
+        if Page.plotStyle.get('flTicks',0) == 0:     # short tick-marks
+            Page.tickDict[phase],_ = MPLaxes.plot(
+                xtick,pos,'|',mew=w,ms=l,picker=3.,
+                label=phase,color=plcolor)
+            # N.B. above creates two Line2D objects, 2nd is ignored.
+            # Not sure what each does.
+        elif Page.plotStyle.get('flTicks',0) == 1:     # full length tick-marks
+            # axvline changes plot limits, triggering onGroupXlimChanged
+            # so turn that off for now. 
+            G2frame.stop_onGroupXlimChanged = True
+            if len(xtick) > 0:
+                # create an ~hidden tickmark to create a legend entry
+                Page.tickDict[phase] = MPLaxes.plot(xtick[0],0,'|',mew=0.5,ms=l,
+                                        label=phase,color=plcolor)[0]
+            for xt in xtick: # a separate line for each reflection position
+                    MPLaxes.axvline(xt,color=plcolor,
+                                picker=3.,
+                                label='_FLT_'+phase,lw=0.5)
+            del G2frame.stop_onGroupXlimChanged
+
+def showHistogram(G2frame,hist,Page,Plot):
+    'Make a plot of a single histogram in a modal window'
+    # get histogram data
+    try:
+        pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, hist)
+        if not pId: 
+            print(f'Histogram {hist} not found. How did this happen?')
+            return
+        Pattern = G2frame.GPXtree.GetItemPyData(pId)
+        #Pattern.append(hist)
+    except:
+        print(f'Error accessing Histogram {hist}. How did this happen?')
+        return
+    #backDict = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId, 'Background'))[1]
+    try:
+        Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId, 'Instrument Parameters'))
+    except TypeError:
+        Parms = None
+    limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Limits'))
+    RefTbl = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
+
+    dlg = wx.Dialog(G2frame,size=(650,550),
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(
+        wx.StaticText(dlg,wx.ID_ANY,'Quick view: '+hist,
+                          style=wx.ALIGN_CENTER),
+        0,wx.ALIGN_CENTER)
+    mainSizer.Add((-1,10))
+    figure = mplfig.Figure(figsize=(6,8))
+    canvas = G2plt.Canvas(dlg,-1,figure)
+    toolbar = G2plt.Toolbar(canvas)
+    toolbar.Realize()
+    #self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,
+    #    'logPlot':False,'exclude':False,'partials':True,'chanPlot':False}
+
+    mainSizer.Add(canvas,1,wx.EXPAND)
+    mainSizer.Add(toolbar,0,)
+
+    pwdrCol = {}
+    for i in 'Obs_color','Calc_color','Diff_color','Bkg_color':
+        pwdrCol[i] = '#' + GSASIIpath.GetConfigValue(i,getDefault=True)
+    #gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[4, 1])
+    #ax0 = figure.add_subplot(gs[0])
+    #ax1 = figure.add_subplot(gs[1])
+    ax0,ax1 = figure.subplots(2,1,sharex=True,gridspec_kw={'height_ratios':[4, 1],})
+
+    #figure.subplots_adjust(left=int(plotOpt['labelSize'])/100.,bottom=int(plotOpt['labelSize'])/150.,
+    #                       right=.98,top=1.-int(plotOpt['labelSize'])/200.,hspace=0.0)
+    figure.subplots_adjust(left=11/100.,bottom=16/150.,
+            right=.99,top=1.-3/200.,hspace=0,wspace=0)
+    ax0.tick_params('x',direction='in',labelbottom=False)
+    ax0.tick_params(labelsize=plotOpt['labelSize'])
+    ax1.tick_params(labelsize=plotOpt['labelSize'])
+    ax1.set_xlabel(Plot.get_xlabel(),fontsize=plotOpt['labelSize'])
+    ax0.set_ylabel(Plot.get_ylabel(),fontsize=plotOpt['labelSize'])
+    ax1.set_ylabel(r'$\Delta/\sigma$',fontsize=plotOpt['labelSize'])
+
+    if Page.plotStyle['sqrtPlot']:
+        ax0.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
+    else:
+        ax0.set_ylabel(r'$Intensity$',fontsize=16)
+    if Page.plotStyle['qPlot']:
+        xLabel = r'$Q, \AA^{-1}$'
+    elif Page.plotStyle['dPlot']:
+        xLabel = r'$d, \AA$'
+    elif 'T' in Parms['Type'][0]:
+        xLabel = r'$TOF, \mathsf{\mu}$s'
+    elif 'E' in Parms['Type'][0]:
+        xLabel = 'E, keV'
+    else:
+        xLabel = r'$\mathsf{2\theta}$'
+    ax1.set_xlabel(xLabel,fontsize=16)
+    lims = limits[1:]
+    # limit lines
+    ax0.axvline(lims[0][0],color='g',dashes=(5,5),picker=3.)
+    ax0.axvline(lims[0][1],color='r',dashes=(5,5),picker=3.)
+    # excluded region lines
+    for i,item in enumerate(lims[1:]):
+        Plot.axvline(item[0],color='m',dashes=(5,5),picker=3.)
+        Plot.axvline(item[1],color='m',dashes=(5,5),picker=3.)
+    pP = '+'
+    lW = 1.5
+    if not G2frame.plusPlot:
+        pP = ''
+        lW = 1.5
+    elif G2frame.plusPlot == 1:
+        pP = '+'
+        lW = 0
+    elif G2frame.plusPlot == 2: # same as 0 for multiplot, TODO: rethink
+        pP = ''
+        lW = 1.5
+
+    #ExMask = np.full(len(xye[0]),False)
+    # recompute mask from excluded regions, in case they have changed
+    xye = np.array(ma.getdata(Pattern[1])) # strips mask = X,Yo,W,Yc,Yb,Yd
+    xye0 = xye[0]  # no mask in case there are no limits
+    for excl in limits[2:]:
+        xye0 = ma.masked_inside(xye[0],excl[0],excl[1],copy=False)                   #excluded region mask
+    xye0 = ma.masked_outside(xye0,limits[1][0],limits[1][1],copy=False) #now mask for limits
+    if Page.plotStyle['qPlot']:
+        X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
+        lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
+        if 'T' in Parms['Type'][0]: xlim = (lims[0][1],lims[0][0])
+    elif Page.plotStyle['dPlot']:
+        X = G2lat.Pos2dsp(Parms,xye0)
+        lims = G2lat.Pos2dsp(Parms,lims)
+        xlim = (lims[0][0],lims[0][1])
+    else:
+        X = copy.deepcopy(xye0)
+        xlim = (lims[0][0],lims[0][1])
+    #breakpoint()
+    Y = copy.copy(xye[1])      #yo
+    Z = copy.copy(xye[3])      #Yc
+    DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
+
+    if G2frame.SubBack:
+        Y -= xye[4]            #background subtract
+        Z -= xye[4]            #background "
+        W = np.zeros_like(Y)   #yb
+    elif Page.plotStyle['sqrtPlot']:
+        olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
+        Y = np.where(Y>=0.,np.sqrt(Y),-np.sqrt(-Y))
+        Z = np.where(Z>=0.,np.sqrt(Z),-np.sqrt(-Z))
+        W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))      #yb
+        np.seterr(invalid=olderr['invalid'])
+    else:
+        W = xye[4]             #yb
+    ax0.plot(X.data,Y,color=pwdrCol['Obs_color'],marker=pP,linewidth=lW,
+              clip_on=Clip_on,label='obs-bkg')  #Io-Ib
+    if np.any(Z):       #only if there is a calc pattern
+        ax0.plot(X,Z,pwdrCol['Calc_color'],
+                                    label='calc-bkg',linewidth=1.5)               #Ic-Ib
+    ax0.plot(X,W,pwdrCol['Bkg_color'],picker=0.,label='calc',linewidth=1.5)
+    ax0.axhline(0.,color='k',label='_zero')
+    ax1.plot(X,DZ,pwdrCol['Diff_color'],label='diff')
+    drawTicks(G2frame,RefTbl,Page,ax0,group=True)
+    # zoom in to data limits with slight margin, but allow home button to zoom to full data range
+    toolbar.push_current()
+    r = xlim[1]-xlim[0]
+    ax0.set_xlim(xlim[0]-r/50,xlim[1]+r/50)
+    toolbar.push_current()
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_CLOSE)
+    OKbtn.Bind(wx.EVT_BUTTON,lambda event:dlg.EndModal(wx.ID_OK))
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,0,wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER,1)
+    mainSizer.Layout()
+    dlg.SetSizer(mainSizer)
+    #mainSizer.Fit(dlg)
+    dlg.CenterOnParent()
+    dlg.ShowModal()
+    dlg.Destroy()

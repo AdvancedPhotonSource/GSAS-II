@@ -9931,6 +9931,10 @@ at one of the following locations:
                 RBObj['fadeSh'] = not RBObj['fadeSh']
                 G2plt.PlotStructure(G2frame,data)
 
+            def OnSliceShell(event):
+                RBObj['sliceSh'] = not RBObj['sliceSh']
+                G2plt.PlotStructure(G2frame,data)
+
             symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','3m','32','-3','3','4/mmm','-42m',
                 'mmm','2/m','2','m','-1','1']
             RBObj['hide'] = RBObj.get('hide',[False for i in range(len(RBObj['atType']))])
@@ -9984,6 +9988,11 @@ at one of the following locations:
             fadeShell.SetValue(RBObj['fadeSh'])
             fadeShell.Bind(wx.EVT_CHECKBOX,OnFadeShell)
             plotLine.Add(fadeShell,0,WACV)
+            RBObj['sliceSh'] = RBObj.get('sliceSh',False)
+            sliceShell = wx.CheckBox(RigidBodies,label='Slice shells?')
+            sliceShell.SetValue(RBObj['sliceSh'])
+            sliceShell.Bind(wx.EVT_CHECKBOX,OnSliceShell)
+            plotLine.Add(sliceShell,0,WACV)
             sprbSizer.Add(plotLine)
             G2G.HorizontalLine(sprbSizer,RigidBodies)
             sprbSizer.Add(topLine)

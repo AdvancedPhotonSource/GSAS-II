@@ -7403,6 +7403,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         radius = SpnData.get('Radius',[[1.0,False],])   #patch for missing Radius
                         atColor = SpnData['atColor']
                         ifFade = SpnData.get('fadeSh',True)
+                        ifSlice = SpnData.get('sliceSh',False)
                         useAtColor = SpnData.get('useAtColor',True)
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
                         Npsi,Ngam = 90,45 
@@ -7426,7 +7427,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                     P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
                                     if np.min(P) < np.max(P):
                                         P = (P-np.min(P))/(np.max(P)-np.min(P))
+                                    if ifSlice:
+                                        dZ = abs(Tz-z)
+                                        W = min(1.0,max(dZ/radius[ish][0],.1))*Zclip
+                                        print(dZ,W,Zclip)
+                                        GLU.gluPerspective(20.,aspect,cPos-W,cPos+W)
                                     RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                    GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:

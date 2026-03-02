@@ -729,7 +729,7 @@ def FPcalc(Orbs, KEv):
     return (FP, FPP, Mu)
 
 mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
-                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+                'rho':[],'rhoMax':0.,'mapSize':4.0,'cutOff':50.,'Flip':False}
 
 def SetupGeneral(data, dirname):
     '''Initialize the General sections of the Phase tree contents. Should

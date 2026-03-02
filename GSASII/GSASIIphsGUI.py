@@ -73,7 +73,6 @@ try:
     WACV = wx.ALIGN_CENTER_VERTICAL
 except:
     pass
-mapDefault = G2elem.mapDefault
 TabSelectionIdDict = {}
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -1772,7 +1771,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                 generalData['SuperVec'] = [[0.,0.,0.],False,4]
                                 generalData['SSGData'] = {}
                             if '4DmapData' not in generalData:
-                                generalData['4DmapData'] = mapDefault.copy()
+                                generalData['4DmapData'] = G2elem.mapDefault.copy()
                                 generalData['4DmapData'].update({'MapType':'Fobs'})
                             if 'MC/SA' in pages:
                                 pass
@@ -1803,7 +1802,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                 generalData['SuperVec'] = [[0.,0.,0.],False,4]
                                 generalData['SSGData'] = {}
                             if '4DmapData' not in generalData:
-                                generalData['4DmapData'] = mapDefault.copy()
+                                generalData['4DmapData'] = G2elem.mapDefault.copy()
                                 generalData['4DmapData'].update({'MapType':'Fobs'})
                             if 'Wave Data' not in pages:
                                 G2frame.waveData = wx.ScrolledWindow(G2frame.phaseDisplay)
@@ -2999,7 +2998,7 @@ def UpdatePhaseData(G2frame,Item,data):
             if 'P' in UseList[hist]['Type']:
                 UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
                 UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-        newPhase['General']['Map'] = mapDefault.copy()
+        newPhase['General']['Map'] = G2elem.mapDefault.copy()
         sub = G2frame.GPXtree.AppendItem(parent=
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
@@ -3995,7 +3994,7 @@ to use these entries'''
                 UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
             if len(UseList[hist]['HStrain'][0]) != NDij:
                 UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-            newPhase['General']['Map'] = mapDefault.copy()
+            newPhase['General']['Map'] = G2elem.mapDefault.copy()
         # phase name rename
         newName = generalData['Name'] = phaseName
         phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
@@ -4225,7 +4224,7 @@ to use these entries'''
             UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
             UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
             UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-        newPhase['General']['Map'] = mapDefault.copy()
+        newPhase['General']['Map'] = G2elem.mapDefault.copy()
         sub = G2frame.GPXtree.AppendItem(parent=
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
@@ -4334,7 +4333,7 @@ to use these entries'''
                     UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
                 if len(UseList[hist]['HStrain'][0]) != NDij:
                     UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-            newPhase['General']['Map'] = mapDefault.copy()
+            newPhase['General']['Map'] = G2elem.mapDefault.copy()
             # phase name rename
             newName = generalData['Name'] = f"{phsnam}_{magchoice['No.']}_{spg}"
             phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
@@ -8914,7 +8913,7 @@ at one of the following locations:
             line3Sizer.Add(G2G.ValidatedTxtCtrl(drawOptions,drawingData,'sliceSize',nDig=(10,2),xmin=2.0,xmax=20.0,OnLeave=OnSliceSize),0,WACV)
             mapSizer.Add(line3Sizer)
             line4Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            contourMaxTxt = wx.StaticText(drawOptions,label=' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
+            contourMaxTxt = wx.StaticText(drawOptions,label=' Rho max: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
             line4Sizer.Add(contourMaxTxt,0,WACV)
             contourMax = G2G.G2Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),
                 value=int(100*drawingData['contourMax']),minValue=1,maxValue=100)
@@ -8922,7 +8921,7 @@ at one of the following locations:
             line4Sizer.Add(contourMax,1,wx.EXPAND|wx.RIGHT)
             mapSizer.Add(line4Sizer)
             valSize = (50,20)
-            showMap = wx.CheckBox(drawOptions,label=' Show density map?')
+            showMap = wx.CheckBox(drawOptions,label=' Show 3D density map?')
             showMap.Bind(wx.EVT_CHECKBOX, OnShowMap)
             showMap.SetValue(drawingData['showMap'])
             mapSizer.Add(showMap,0)
@@ -8931,7 +8930,7 @@ at one of the following locations:
                 'Fraction of rho max ({:.2f}): '.format(generalData['Map']['rhoMax']),0.01,1.0,100.,
                 sizer=sliders,size=valSize,onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data))
             G2G.G2SliderWidget(drawOptions,drawingData,'mapSize',
-                'Visible map radius: ',0.1,10.,10.,sizer=sliders,size=valSize,
+                'Radius of displayed map: ',0.1,10.,5.,sizer=sliders,size=valSize,
                 onChange=G2plt.PlotStructure,onChangeArgs=(G2frame,data))
             mapSizer.Add(sliders)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -9026,7 +9025,8 @@ at one of the following locations:
         topSizer = G2frame.dataWindow.topBox
         topSizer.Clear(True)
         parent = G2frame.dataWindow.topPanel
-        lbl= f"Drawing controls for {data['General']['Name']!r}"[:60]
+        lbl= f"Drawing controls for phase {data['General']['Name']!r}"
+        if len(lbl) > 60: lbl = lbl[:60] + '...'
         topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
         topSizer.Add((-1,-1),1,wx.EXPAND)
         topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
@@ -12655,7 +12655,7 @@ tab, use Operations->"Pawley create")''')
     def OnPeaksDelete(event):
         if 'Map Peaks' in data:
             mapPeaks = np.array(data['Map Peaks'])
-            Ind = getAtomSelections(mapPeaks)
+            Ind = getAtomSelections(G2frame.MapPeaks)
             Ind.sort()
             Ind.reverse()
             for ind in Ind:
@@ -12713,7 +12713,7 @@ tab, use Operations->"Pawley create")''')
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
             mapPeaks = np.array(data['Map Peaks'])
-            Ind = getAtomSelections(mapPeaks)
+            Ind = getAtomSelections(G2frame.MapPeaks)
             if Ind:
                 wx.BeginBusyCursor()
                 try:
@@ -12849,7 +12849,7 @@ tab, use Operations->"Pawley create")''')
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
-        data['Drawing']['mapSize'] = 10.
+        data['Drawing']['mapSize'] = 4.
         data['Drawing']['showMap'] = True
         ftext = dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
         print (ftext)
@@ -12859,7 +12859,7 @@ tab, use Operations->"Pawley create")''')
 
     def OnFourClear(event):
         generalData = data['General']
-        generalData['Map'] = mapDefault.copy()
+        generalData['Map'] = G2elem.mapDefault.copy()
         data['Drawing']['showMap'] = False
         G2plt.PlotStructure(G2frame,data)
 
@@ -12954,7 +12954,7 @@ tab, use Operations->"Pawley create")''')
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
-        data['Drawing']['mapSize'] = 10.
+        data['Drawing']['mapSize'] = 4.
         print (' 4D Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         if mapData['Rcf'] < 99.:
             OnSearchMaps(event)             #does a plot structure at end
@@ -12999,7 +12999,7 @@ tab, use Operations->"Pawley create")''')
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
-        data['Drawing']['mapSize'] = 10.
+        data['Drawing']['mapSize'] = 4.
         data['Drawing']['showMap'] = True
         print (' Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         if mapData['Rcf'] < 99.:

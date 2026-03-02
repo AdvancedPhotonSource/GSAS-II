@@ -7284,9 +7284,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             indx = np.array(ma.nonzero(rho)).T
             rhoXYZ = indx*steps+VP-incre
             Nc = max(len(rhoXYZ),1)
-            rcube = 2000.*Vol/(ForthirdPI*Nc)
+            rcube = 20000.*Vol/(ForthirdPI*Nc) # raised from 2000 to allow larger maps -- not sure where 2000 came from
             rmax = math.exp(math.log(rcube)/3.)**2
-            radius = min(drawingData.get('mapSize',10.)**2,rmax)
+            radius = min(drawingData.get('mapSize',4.)**2,rmax)
             view = drawingData['viewPoint'][0]
             Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
         Ind = GetSelectedAtoms()

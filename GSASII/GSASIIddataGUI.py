@@ -28,8 +28,9 @@ try:
     BLACK = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT)
 except:
     pass
-mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
-                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+#mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
+#                'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+# not used?
 
 def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     '''Display the Diffraction Data associated with a phase

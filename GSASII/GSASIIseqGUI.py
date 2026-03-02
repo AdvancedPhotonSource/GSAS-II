@@ -1168,7 +1168,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         parmDict = data[histNames[sel]]['parmDict']
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         for phase in Phases:
-            print('Updating {phase} from Seq. Ref. row {histNames[sel]}')
+            print(f'Updating {phase} from Seq. Ref. row {histNames[sel]}')
             Phase = Phases[phase]
             General = Phase['General']
             SGData = General['SGData']

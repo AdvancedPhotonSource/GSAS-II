@@ -7433,7 +7433,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                     if ifSlice:
                                         GL.glMatrixMode(GL.GL_PROJECTION)
                                         GL.glPushMatrix()
-                                        SetProjection(4.*cPos/200.)
+                                        SetProjection(4.*np.sqrt(cPos)/20.)
                                         GL.glMatrixMode(GL.GL_MODELVIEW)
                                         RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                         GL.glMatrixMode(GL.GL_PROJECTION)

@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="images/gsas2.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
     
     
       
@@ -1695,36 +1695,92 @@
 <p>The data window for the main <code>IMG</code> data tree entry shows some controls, most of which are rarely modified (e.g., pixel dimensions) and are usually obtained via the image importer from either the image header or a metadata file associated with the image. It is the user's/instrument scientist's responsibility to ensure the accuracy of these values. When they are wrong, the image cannot be used. </p>
 <H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
 
-<p>Apart from changing one of the listed values (caution: you do need to know what their true value is), you can determine the x-ray bean polarization and create a gain map for your detector. Both require an image with scattering from a purely isotropic amorphous sample (a glass slide mounted perpendicular to the incident beam is recommended) with the detector close to the sample so that the scattering angle at the edge of the detector is at least 35° <span class="arithmatex">\(2\theta\)</span>; better is &gt; 40° <span class="arithmatex">\(2\theta\)</span>. A frame mask is recommended to remove detector edge effects. The image should be as free as possible (except for beam stop) from shadows and obstructions and normal to the incident beam. The detector orientation should have been previously calibrated with a known reference material (e.g., LaB<sub>6</sub> or Si).</p>
+<ul>
+<li>
+<p>A number of calibration values are shown for the placement and dimensions of the detector. They can be changed here.  (<em>Caution:</em> you do need to know what their true value is; you do not want to invalidate data by incorrectly changing these values.)</p>
+</li>
+<li>
+<p><strong>Polarization:</strong> you can determine the x-ray beam polarization for your detector. This requires an image with scattering from a purely isotropic amorphous sample (a glass slide mounted perpendicular to the incident beam is recommended) with the detector close to the sample so that the scattering angle at the edge of the detector is at least 35° <span class="arithmatex">\(2\theta\)</span>; better is &gt; 40° <span class="arithmatex">\(2\theta\)</span>. A frame mask is recommended to remove detector edge effects. The image should be as free as possible (except for beam stop) from shadows and obstructions and normal to the incident beam. The detector orientation should have been previously calibrated with a known reference material (e.g., LaB<sub>6</sub> or Si). Use the <strong>Calibrate?</strong> button to start the Polarization process, as below.</p>
 <ul>
 <li><strong>Calibrate?</strong> (Polarization) - This begins the calibration procedure (<a href="https://doi.org/10.1107/S1600576720014132">Von Dreele &amp; Xi, 2021</a>) for the x-ray beam polarization, which integrates a 4° <span class="arithmatex">\(2\theta\)</span> wide ring sampling area with and without an arc mask positioned about 90° azimuth (top of image) with selected polarization values. The integrations match with the correct polarization value. You will be asked for a <span class="arithmatex">\(2\theta\)</span> position for the sampling mask; choose a value at least 2° <span class="arithmatex">\(2\theta\)</span> less than the maximum <span class="arithmatex">\(2\theta\)</span> seen for all edges inside the frame mask. The process takes about 5 min to complete, so be patient.</li>
-<li><strong>Make gain map</strong> - This uses the same image (from a glass slide) used for polarization analysis to determine a gain map for the detector. The process uses the result of an integration of the glass pattern to normalize the entire detector pixel array. The result (~1.0 for all pixels) is the scaled by 1000, converted to integers and stored as a GSAS-II image file (NB: this is a python pickle file and thus not usable by other programs) and entered in the GSAS-II data tree. You can view it to see what the map looks like (select its IMG entry). The gain map file can be imported into other projects using the same detector. If selected in Image Controls, the image is immediately corrected for the gain map.</li>
+</ul>
+</li>
 </ul>
 <p><a name="IMG_Comments"></a></p>
 <h2 id="comments">Comments</h2>
-<p>This window shows whatever comment lines found in a “metadata” file when the image data file was read by GSAS-II. If you are lucky, there will be useful information here (e.g., sample name, date collected, wavelength used, etc.). If not, this window will be blank. The text is read-only.</p>
+<p>This window shows whatever comment lines found in a “metadata” file when the image data file was read by GSAS-II. If you are lucky, there will be useful information here (e.g., sample name, date collected, wavelength used, etc.). With some types of files, this window will be blank. The text is read-only. It will be transferred over to diffraction patterns when the image is integrated and can be used to set parametric values (in <a href="powdersample.html">Sample Parameters</a>) associated with the diffraction pattern. </p>
+<H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
+<p>Nothing.</p>
 <p><a name="IMG_Image_Controls"></a></p>
 <h2 id="image-controls">Image Controls</h2>
-<p>This window displays calibration values needed to convert pixel locations to two-theta and azimuth. Also shown are controls that determine how integration is performed.</p>
-<p>Three sets of menu commands are associated with the Image Controls tree item. The first, Calibration, provides commands to perform calibration from an image (where the calibration values are fitted from a diffraction pattern image taken with a calibrant). The Integration menu provides the ability to radially integrate an image to provide one or more powder diffraction patterns (requires that calibration parameters must be set first.)</p>
-<p>Finally, the Parms menu has commands allow the values on the window to be saved to a file, read from a file or copied to other images. The "Xfer Angles" menu command scales the current integration range for other images located at different detector distances.</p>
+<p>The image controls data window displays a number of settings and options that include calibration values needed to convert pixel locations to two-theta and azimuth, values used to integrate the image, settings that adjustment the image, settings used when performing image calibration and sample setting angles.</p>
+<H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
+<ul>
+<li>Perform image calibration with data from a standard</li>
+<li>Create a gain map (requires multiple images)</li>
+<li>Integrate images</li>
+</ul>
+<H3 style="color:blue;font-size:1.1em">Window organization</H3>
+
+<p>The window used for Image Controls contains a large number of settings and controls, as shown below. 
+The sections of the window are outlined below with colored boxes and labeled that are described further, also below. </p>
+<p><img alt="Image Controls Window" src="images/ImageControls.png" /></p>
+<ul>
+<li>A. The <strong>Image controls</strong> section at the top has controls that determine how the image is displayed. 
+These settings do not affect computations from the image. </li>
+<li>B. The <strong>Calibration coefficients</strong> have the results from an image calibration and are used to determine the <span class="arithmatex">\(2\theta\)</span> 
+value for each pixel in the image. </li>
+<li>C. The <strong>Integration coefficients</strong> determine how image integration is performed. Show integration limits will show lines on the image, but does not change the integration results. </li>
+<li>D. Image corrections: It is possible to subtract images from the current image to account for pixels that provide non-zero results even when not illuminated (Dark image); or a constant value that is subtracted from all pixels (Flat Bkg), as well as subtract an image with scattering from the instrument or sample container (Background image). It is also possible to adjust for pixel-by-pixel detector response with a gain map. </li>
+<li>E. The <strong>Calibration controls</strong> determine the process used to search for diffraction rings when the detector calibration is used. The "Show ring picks" check button determines if the located ring positions are displayed, but does not affect the computation. </li>
+<li>F. The <strong>Sample goniometer angles</strong> reflect positioning of a sample. They are not used for calibration, but will be transferred to powder patterns generated from the image during image integration. The Global edit button provides a single window where setting angles for all images can be changed. </li>
+</ul>
+<H3 style="color:blue;font-size:1.1em">Menu commands</H3>
+
+<p>Three sets of menu commands are associated with the Image Controls tree item. The first, <strong>Calibration</strong>, provides commands to perform calibration from an image (where the calibration values are fitted from a diffraction pattern image taken with a calibrant). 
+<img alt="Calibration Menu" src="images/CalMenu.png" /></p>
+<p>The Integration menu provides the ability to radially integrate an image to provide one or more powder diffraction patterns (requires that calibration parameters must be set first.)</p>
+<p><img alt="Integration Menu" src="images/IntMenu.png" /></p>
+<p>Finally, the Parms menu has commands allow the values on the window to be saved to a file, read from a file or copied to other images. The "Xfer controls" menu command differs from the "Copy Controls" command in that integration range for the current image is scaled when applied for other images based on the detector distances.</p>
+<p><img alt="Parameters Menu" src="images/ParmsMenu.png" /></p>
+<H3 style="color:blue;font-size:1.1em">Calibration parameters compared to other software</H3>
 <p>Note that calibration parameters used in GSAS-II are closely related to those used by the pyFAI and Fit2D programs, but add 90 to the GSAS-II tilt plane rotation (labeled as "Rotation" in GSAS-II) to obtain the pyFAI value. The X and Y values determine the beam center location. In GSAS-II the values are in mm measured from the top left corner of the detector, while in pyFAI the values are measured in the same way, but in units of pixels:</p>
-<div class="arithmatex">\[X_{GSAS-II}/size_X = X_{pyFAI}$$ and
-$$ Y_{GSAS-II}/size_Y = Y_{pyFAI}\]</div>
+<div class="arithmatex">\[X_{GSAS-II}/size_X = X_{pyFAI}\]</div>
+<p>and</p>
+<div class="arithmatex">\[Y_{GSAS-II}/size_Y = Y_{pyFAI}\]</div>
 <p>For Fit2D, the center is also in mm, but measured from the bottom left, so</p>
-<div class="arithmatex">\[X_{GSAS-II}/size_X = X_{Fit2D}$$ and
-$$ Y_{max} - Y_{GSAS-II}/size_Y = Y_{Fit2D}\]</div>
+<div class="arithmatex">\[X_{GSAS-II}/size_X = X_{Fit2D}\]</div>
+<p>and</p>
+<div class="arithmatex">\[Y_{max} - Y_{GSAS-II}/size_Y = Y_{Fit2D}\]</div>
 <p>where <span class="arithmatex">\(Y_{max}\)</span> is the detector size in pixels and <span class="arithmatex">\(size_X\)</span> and <span class="arithmatex">\(size_Y\)</span> are the pixel size in mm along the appropriate direction. </p>
 <p><a name="IMG_Masks"></a></p>
 <h2 id="masks">Masks</h2>
-<p>Image masks are used designate areas of an image with irregular in that should not be included in the integration, typically used due to detector irregularities, shadows of the beam stop, single-crystal peaks from a mounting, etc. Masks can be created with a menu command or with keyboard/mouse shortcuts. There are six types of masks:</p>
+<p>The information on the <strong>Masks</strong> window are used to determine what parts of an image will not be 
+included in the integration, typically used due to detector irregularities, shadows of the beam stop, 
+single-crystal peaks from a mounting, cosmic rays, etc. </p>
+<p>Note that the top section of the window repeats some of the display controls from the <strong>Image Controls</strong> window. 
+These are duplicated so that the image can be viewed under different conditions without needing to switch between 
+the different data items. </p>
+<p>Sections of the image may removed from integration by one or all of the following options. </p>
+<ul>
+<li>
+<p>The <strong>Upper/Lower Thresholds</strong> designate the allowed values for pixels to be considered valid. Typically detectors will set pixels that are in margins between segments etc. and are not in use to have negative intensity values, so a threshold of 0 causes these pixels to be ignored. Likewise, malfunctioning pixels or those picking up anomalous signals, such as cosmic rays, may have exceptionally high intensity values that should also be ignored. </p>
+</li>
+<li>
+<p><strong>Pixel masking</strong> excludes individual pixels that have intensities that are significantly higher or lower than the median intensity across single <span class="arithmatex">\(2\theta\)</span> value. The controls for the pixel mask search determine the threshold for exclusion, which is expressed as a multiple of the median-based standard deviation for the <span class="arithmatex">\(2\theta\)</span> ring; the minimum and maximum <span class="arithmatex">\(2\theta\)</span> value to be used in the search; and if the search should replace any previous pixel map search(es) or should be added to the previous pixel mask search. This latter control, when "Clear..." is turned off,  allows the sensitivity for exclusion to be varied for different <span class="arithmatex">\(2\theta\)</span> ranges. Finally, a button allows a previous pixel mask to be cleared.</p>
+</li>
+<li>
+<p>Specific geometrical regions of the detector can be designated to be ignored using menu commands or with 
+keyboard/mouse shortcuts. </p>
+</li>
+</ul>
+<p>There are five types of geometrical masks:</p>
 <ul>
 <li><strong>Spot masks</strong>: exclude a circle with a selected center and diameter in image coordinates (mm).</li>
 <li><strong>Ring masks</strong>: excludes a specific Bragg reflection (a ring placed relative to the image center). The location and thickness of the ring are specified in degrees 2-theta.</li>
 <li><strong>Arc masks</strong>: exclude a section of a Bragg reflection, similar to a ring mask, except that in addition to the location and thickness of the ring, the mask has a starting and ending azimuthal angle.</li>
 <li><strong>Polygon masks</strong>: exclude an arbitrary region created by line segments joining a series of points specified in image coordinates (mm). Pixels inside the polygon mask are not used for integration.</li>
 <li><strong>Frame mask</strong>: excludes an arbitrary region created by line segments joining a series of points specified in image coordinates (mm). Typically, a point is placed near each corner of the image. Only pixels inside the frame mask are used for integration. Only one frame mask can be defined.</li>
-<li><strong>Pixel mask</strong>: excludes individual pixels that are found in a pixel mask search, which looks for pixels that have intensities that are significantly higher or lower than the median intensity for all pixels in a ring having the same two-theta value. Controls for the pixel mask search are found here and include the threshold for exclusion, which is expressed as a multiple of the standard deviation for the two-theta ring; the minimum and maximum two-theta value to be used in the search; and if the search should replace any previous pixel map search(es) or should be added to the previous pixel mask search. Finally, a button allows a previous pixel mask to be cleared.</li>
 </ul>
 <H3 style="color:blue;font-size:1.1em">What can I do here?</H3>
 

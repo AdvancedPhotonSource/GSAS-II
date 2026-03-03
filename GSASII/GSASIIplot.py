@@ -7245,6 +7245,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 RenderBonds(ax,ay,az,bondData[i],bondR,Color[i])
 
     def Draw(caller='',Fade=[],NPkey=False):
+        
+        def SetProjection(Zclip):
+            GL.glLoadIdentity()
+            if sys.platform == "darwin":
+                f = int(Page.GetContentScaleFactor())
+                GL.glViewport(0,0,f*VS[0],f*VS[1])
+            else:
+                GL.glViewport(0,0,VS[0],VS[1])
+            GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
+            GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
+            SetLights()
+
         #reinitialize geometry stuff - needed after tab change
         global cell, Vol, Amat, Bmat, A4mat, B4mat, BondRadii
         if 'key down' not in caller:
@@ -7316,16 +7328,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPushName(0)
 
         GL.glMatrixMode(GL.GL_PROJECTION)
-        GL.glLoadIdentity()
-        if sys.platform == "darwin":
-            f = int(Page.GetContentScaleFactor())
-            GL.glViewport(0,0,f*VS[0],f*VS[1])
-        else:
-            GL.glViewport(0,0,VS[0],VS[1])
-        GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
-        GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
-        SetLights()
-
+        SetProjection(Zclip)
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
@@ -7428,12 +7431,16 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                     if np.min(P) < np.max(P):
                                         P = (P-np.min(P))/(np.max(P)-np.min(P))
                                     if ifSlice:
-                                        dZ = abs(Tz-z)
-                                        W = min(1.0,max(dZ/radius[ish][0],.1))*Zclip
-                                        print(dZ,W,Zclip)
-                                        GLU.gluPerspective(20.,aspect,cPos-W,cPos+W)
-                                    RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
-                                    GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
+                                        GL.glMatrixMode(GL.GL_PROJECTION)
+                                        GL.glPushMatrix()
+                                        SetProjection(4.*cPos/200.)
+                                        GL.glMatrixMode(GL.GL_MODELVIEW)
+                                        RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
+                                        GL.glMatrixMode(GL.GL_PROJECTION)
+                                        GL.glPopMatrix()
+                                        GL.glMatrixMode(GL.GL_MODELVIEW)
+                                    else:
+                                        RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                 else:
                                     RenderSphere(x,y,z,radius[ish][0],atColor[ish],True,shape=[60,30])
                 else:

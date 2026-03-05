@@ -7420,6 +7420,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl
                         Rp,PSIp,GAMp = G2mth.RotPolbyQ(np.ones_like(PSI),PSI,GAM,Q)
                         SpnData['hide'] = SpnData.get('hide',[False for i in range(len(SpnData['atType']))])
+                        SpnData['Pmax'] = [0. for i in range(len(SpnData['atType']))]
+                        SpnData['Pmin'] = [0. for i in range(len(SpnData['atType']))]
                         for ish,nSH in enumerate(SpnData['nSH']):
                             if not SpnData['hide'][ish]:
                                 if nSH > 0:
@@ -7428,12 +7430,14 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                     if useAtColor:
                                         atcolor = atColor[ish]
                                     P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
+                                    SpnData['Pmax'][ish] = np.max(P)
+                                    SpnData['Pmin'][ish] = np.min(P)
                                     if np.min(P) < np.max(P):
                                         P = (P-np.min(P))/(np.max(P)-np.min(P))
                                     if ifSlice:
                                         GL.glMatrixMode(GL.GL_PROJECTION)
                                         GL.glPushMatrix()
-                                        SetProjection(4.*np.sqrt(cPos)/20.)
+                                        SetProjection(np.sqrt(cPos)/5.)
                                         GL.glMatrixMode(GL.GL_MODELVIEW)
                                         RenderTextureSphere(x,y,z,radius[ish][0],atcolor,shape=[Npsi,Ngam],Texture=P.T,ifFade=ifFade)
                                         GL.glMatrixMode(GL.GL_PROJECTION)

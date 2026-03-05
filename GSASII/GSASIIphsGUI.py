@@ -10285,7 +10285,10 @@ at one of the following locations:
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
-                G2frame.GetStatusBar().SetStatusText(' ',1)
+                text = ''
+                for ish,pMax in enumerate(rbObj['Pmax']):
+                    text += 'Shell %d: Pmax %.3f Pmin %.3f '%(ish,pMax,rbObj['Pmin'][ish])
+                G2frame.GetStatusBar().SetStatusText(text,1)
                 data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
                 G2frame.bottomSizer =  SpnrbSizer(rbObj,rbIndx)
             else: #Vector

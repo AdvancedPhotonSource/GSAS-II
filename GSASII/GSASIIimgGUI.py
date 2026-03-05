@@ -929,43 +929,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 
 # Sizers
     Indx = {}
-    def ComboSizer():
-
-        def OnDataType(event):
-            data['type'] = typeSel.GetValue()[:4]
-            if 'SASD' in data['type']:
-                data['SampleAbs'][0] = np.exp(-data['SampleAbs'][0]) #switch from muT to trans!
-                if data['binType'] == '2-theta': data['binType'] = 'log(q)'  #switch default bin type
-            elif 'PWDR' in data['type']:
-                data['SampleAbs'][0] = -np.log(data['SampleAbs'][0])  #switch from trans to muT!
-                if data['binType'] == 'log(q)': data['binType'] = '2-theta'  #switch default bin type
-            wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
-
-        def OnNewColorBar(event):
-            data['color'] = colSel.GetValue()
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
-
-        def OnAzmthOff(invalid,value,tc):
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
-
-        comboSizer = wx.BoxSizer(wx.HORIZONTAL)
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Type of image data: '),0,WACV)
-        typeSel = wx.ComboBox(parent=G2frame.dataWindow,value=typeDict[data['type']],choices=typeList,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        typeSel.SetValue(data['type'])
-        typeSel.Bind(wx.EVT_COMBOBOX, OnDataType)
-        comboSizer.Add(typeSel,0,WACV)
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Color bar '),0,WACV)
-        colSel = wx.ComboBox(parent=G2frame.dataWindow,value=data['color'],choices=colorList,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
-        comboSizer.Add(colSel,0,WACV)
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Azimuth offset '),0,WACV)
-        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'azmthOff',nDig=(10,2),
-            typeHint=float,OnLeave=OnAzmthOff)
-        comboSizer.Add(azmthOff,0,WACV)
-        return comboSizer
-
     def MaxSizer():
         '''Defines a sizer with sliders and TextCtrl widgets for controlling the colormap
         for the image, as well as callback routines.
@@ -1087,6 +1050,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             G2frame.scanazm.ChangeValue(data['linescan'][1])
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             azmSpin.SetValue(0) # causes an event, at least on Linux
+        def OnNewColorBar(event):
+            data['color'] = colSel.GetValue()
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
 
         mplv = mpl.__version__.split('.')
         mplOld = mplv[0] == '1' and int(mplv[1]) < 4 # use draw_idle for newer matplotlib versions
@@ -1123,6 +1089,12 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         G2frame.slideSizer.Add(minSel,flag=wx.EXPAND|wx.ALL)
         maxSizer.Add(G2frame.slideSizer,flag=wx.EXPAND|wx.ALL)
         autoSizer = wx.BoxSizer(wx.HORIZONTAL)
+        autoSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Color bar '),0,WACV)
+        colSel = wx.ComboBox(parent=G2frame.dataWindow,value=data['color'],choices=colorList,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
+        autoSizer.Add(colSel,0,WACV)
+        autoSizer.Add((10,-1))
         autoSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Auto scaler '),0,WACV)
         scaleChoices = ("100%","99%","95%","90%","80%","?")
         scaleSel = wx.Choice(G2frame.dataWindow,choices=scaleChoices,size=(-1,-1))
@@ -1133,6 +1105,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             scaleSel.SetSelection(len(scaleChoices)-1)
         scaleSel.Bind(wx.EVT_CHOICE,OnAutoSet)
         autoSizer.Add(scaleSel,0,WACV)
+        autoSizer.Add((10,-1))
         if data['linescan'][0]:
             linescan = wx.CheckBox(G2frame.dataWindow,label=' Show line scan at azm = ')
         else:
@@ -1164,7 +1137,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 
         calibSizer = wx.FlexGridSizer(0,2,5,5)
         calibSizer.SetFlexibleDirection(wx.HORIZONTAL)
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Calibration coefficients'),0,WACV)
+        calibSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Calib. Coefficients'),0,WACV)
         calibSizer.Add((5,0),0)
         Names = ['det-X','det-Y','wave','dist','tilt','phi']
         if 'PWDR' in data['type']:
@@ -1287,15 +1260,33 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 
         def OnOchoice(event):
             data['orientation'] = ochoice.GetValue()
+            
+        def OnDataType(event):
+            data['type'] = typeSel.GetValue()[:4]
+            if 'SASD' in data['type']:
+                data['SampleAbs'][0] = np.exp(-data['SampleAbs'][0]) #switch from muT to trans!
+                if data['binType'] == '2-theta': data['binType'] = 'log(q)'  #switch default bin type
+            elif 'PWDR' in data['type']:
+                data['SampleAbs'][0] = -np.log(data['SampleAbs'][0])  #switch from trans to muT!
+                if data['binType'] == 'log(q)': data['binType'] = '2-theta'  #switch default bin type
+            wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
 
         dataSizer = wx.FlexGridSizer(0,2,5,3)
-        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Integration coefficients'),0,WACV)
+        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Integration Settings'),0,WACV)
         dataSizer.Add((5,0),0)
+        
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Produced by integration: '),0,WACV)
+        typeSel = wx.ComboBox(parent=G2frame.dataWindow,value=typeDict[data['type']],choices=typeList,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        typeSel.SetValue(data['type'])
+        typeSel.Bind(wx.EVT_COMBOBOX, OnDataType)
+        dataSizer.Add(typeSel,0,WACV)
+        
         if 'PWDR' in data['type']:
             binChoice = ['2-theta','Q']
         elif 'SASD' in data['type']:
             binChoice = ['2-theta','Q','log(q)']
-        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bin style: Constant step bins in'),0,WACV)
+        dataSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Binning: Constant step bins in'),0,WACV)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         binSel = wx.ComboBox(G2frame.dataWindow,value=data['binType'],choices=binChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -1316,7 +1307,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             IOtth = [4.*math.pi*sind(IOtth[0]/2.)/wave,4.*math.pi*sind(IOtth[1]/2.)/wave]
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.InnerTth = G2G.ValidatedTxtCtrl(G2frame.dataWindow,IOtth,0,nDig=(8,3,'f'),xmin=0.001,typeHint=float,OnLeave=OnIOtth)
-        littleSizer.Add(G2frame.InnerTth,0,WACV)
+        littleSizer.Add(G2frame.InnerTth,0,WACV|wx.RIGHT,5)
         G2frame.OuterTth = G2G.ValidatedTxtCtrl(G2frame.dataWindow,IOtth,1,nDig=(8,3,'f'),xmin=0.001,typeHint=float,OnLeave=OnIOtth)
         littleSizer.Add(G2frame.OuterTth,0,WACV)
         dataSizer.Add(littleSizer,0,)
@@ -1324,7 +1315,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         LRazim = data['LRazimuth']
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.Lazim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,LRazim,0,nDig=(6,1,'f'),typeHint=float,OnLeave=OnLRazim)
-        littleSizer.Add(G2frame.Lazim,0,WACV)
+        littleSizer.Add(G2frame.Lazim,0,WACV|wx.RIGHT,5)
         G2frame.Razim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,LRazim,1,nDig=(6,1,'f'),typeHint=float,OnLeave=OnLRazim)
         if data['fullIntegrate']:
             G2frame.Razim.ChangeValue(LRazim[0]+360.)
@@ -1334,7 +1325,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' No. 2-theta/azimuth bins'),0,WACV)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         outChan = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outChannels',typeHint=int,xmin=10,OnLeave=OnNumOutBins)
-        littleSizer.Add(outChan,0,WACV)
+        littleSizer.Add(outChan,0,WACV|wx.RIGHT,5)
         outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',xmin=1,typeHint=int,OnLeave=OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)
         dataSizer.Add(littleSizer)
@@ -1446,7 +1437,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             ResetThresholds()
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
 
-        backSizer = wx.FlexGridSizer(0,6,5,5)
+        backSizer = wx.FlexGridSizer(0,4,5,5)
         oldFlat = data.get('Flat Bkg',0.)
 
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Dark image'),0,WACV)
@@ -1459,12 +1450,14 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         backSizer.Add(darkImage)
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' multiplier'),0,WACV)
         darkMult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['dark image'],1,nDig=(10,3),
-            typeHint=float,OnLeave=OnMult)
+            typeHint=float,OnLeave=OnMult,size=(80,-1))
         backSizer.Add(darkMult,0,WACV)
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Flat Bkg: '),0,WACV)
         flatbkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),
             typeHint=float,OnLeave=OnFlatBkg)
         backSizer.Add(flatbkg,0,WACV)
+        backSizer.Add((5,5),0)
+        backSizer.Add((5,5),0)
 
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Background image'),0,WACV)
         backImage = wx.ComboBox(parent=G2frame.dataWindow,value=data['background image'][0],choices=Choices,
@@ -1473,15 +1466,17 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         backSizer.Add(backImage)
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' multiplier'),0,WACV)
         backMult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['background image'],1,nDig=(10,3),
-            typeHint=float,OnLeave=OnMult)
+            typeHint=float,OnLeave=OnMult,size=(80,-1))
         backSizer.Add(backMult,0,WACV)
-        backSizer.Add((5,5),0)
-        backSizer.Add((5,5),0)
+#        backSizer.Add((5,5),0)
+#        backSizer.Add((5,5),0)
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Gain map'),0,WACV)
         gainMap = wx.ComboBox(G2frame.dataWindow,value=data['Gain map'],choices=Choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         gainMap.Bind(wx.EVT_COMBOBOX,OnGainMap)
         backSizer.Add(gainMap)
+        backSizer.Add((5,5),0)
+        backSizer.Add((5,5),0)
         return backSizer
 
     def CalibSizer():
@@ -1537,7 +1532,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Min calib d-spacing '),0,WACV)
-        G2frame.calibDmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'calibdmin',nDig=(10,2),typeHint=float,xmin=0.25)
+        G2frame.calibDmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'calibdmin',nDig=(10,2),typeHint=float,xmin=0.25,size=(80,-1))
         comboSizer.Add(G2frame.calibDmin,0,WACV)
         calibSizer.Add(comboSizer,0)
 
@@ -1595,7 +1590,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 finally:
                     dlg.Destroy()
                     G2frame.GPXtree.SelectItem(G2frame.PickId)
+        def OnAzmthOff(invalid,value,tc):
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
 
+        outerSizer = wx.BoxSizer(wx.VERTICAL)
         gonioSizer = wx.BoxSizer(wx.HORIZONTAL)
         names = ['Omega','Chi','Phi']
         gonioSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'Sample goniometer angles: '),0,WACV)
@@ -1606,7 +1604,14 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         globEdit = wx.Button(G2frame.dataWindow,-1,'Global edit')
         globEdit.Bind(wx.EVT_BUTTON,OnGlobalEdit)
         gonioSizer.Add(globEdit,0,WACV)
-        return gonioSizer
+        outerSizer.Add(gonioSizer)
+        comboSizer = wx.BoxSizer(wx.HORIZONTAL)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Detector azimuth offset '),0,WACV)
+        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'azmthOff',nDig=(10,2),
+            typeHint=float,OnLeave=OnAzmthOff)
+        comboSizer.Add(azmthOff,0,WACV)
+        outerSizer.Add(comboSizer)
+        return outerSizer
 
     def RefreshPlot():
         '''Refresh the Image plot after a change in superimposed phase info
@@ -1770,7 +1775,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)
     parent = G2frame.dataWindow.topPanel
-    lbl= "Image Controls:"
+    lbl= "Image viewing, calibration and integration controls"
     topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))
@@ -1778,23 +1783,26 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     mainSizer =  wx.BoxSizer(wx.VERTICAL)
     G2frame.dataWindow.SetSizer(mainSizer)
     mainSizer.Add((5,10),0)
-    mainSizer.Add(ComboSizer(),0,wx.ALIGN_LEFT)
     mainSizer.Add((5,5),0)
     Range = data['range'] # allows code to be same in Masks
     MaxSizer = MaxSizer()               #keep this so it can be changed in BackSizer
     mainSizer.Add(MaxSizer,0,wx.ALIGN_LEFT|wx.EXPAND|wx.ALL)
 
     mainSizer.Add((5,5),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     DataSizer = wx.FlexGridSizer(0,2,5,0)
-    DataSizer.Add(CalibCoeffSizer(),0)
+    DataSizer.Add(CalibCoeffSizer(),0,wx.RIGHT,10)
     DataSizer.Add(IntegrateSizer(),0)
     mainSizer.Add(DataSizer,0)
     mainSizer.Add((5,5),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add(BackSizer(),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Calibration controls:'),0)
     mainSizer.Add((5,5),0)
     mainSizer.Add(CalibSizer(),0)
     mainSizer.Add((5,5),0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add(GonioSizer(),0)
     G2frame.dataWindow.SetDataSize()
 

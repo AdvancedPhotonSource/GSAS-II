@@ -10654,6 +10654,143 @@ def StringSearchTemplate(parent,title,prompt,start,help=None):
         dlg.Destroy()
     return val
 
+def HistogramNameTemplate(exporter,stripChars):
+    '''Dialog to obtain a string value for grouping histograms
+
+    :param obj exporter: reference to exporter object
+    :param str stripChars: Characters that are not allowed in file names
+    '''
+    def on_char_typed(event):
+        keycode = event.GetKeyCode()
+        #has a range been selected?
+        sel = valItem.GetSelection()
+        if sel[0] == sel[1]:
+            insertion_point = valItem.GetInsertionPoint()
+            sel = (insertion_point,insertion_point+1)
+        if keycode == 32 or keycode == 46: # ' ' or '.' - replace with '|'
+            for i in range(*sel):
+                if i >= len(valItem.GetValue()): continue
+                if valItem.GetValue()[i] != box:
+                    valItem.Replace(i, i + 1, '|')
+            # Move the insertion point forward one character
+            valItem.SetInsertionPoint(i + 1)
+            event.Skip(False)
+#        elif keycode == wx.WXK_SPACE: 
+#            insertion_point = valItem.GetInsertionPoint()
+#            valItem.SetInsertionPoint(insertion_point + 1)
+        elif keycode == 33: # ! put original value back
+            for i in range(*sel):
+                if i >= len(valItem.GetValue()): continue
+                if valItem.GetValue()[i] != box:
+                    valItem.Replace(i, i + 1, common[i])
+            # Move the insertion point forward one character
+            valItem.SetInsertionPoint(i + 1)
+            event.Skip(False)
+        elif keycode >= wx.WXK_SPACE: # anything else printable, substitute
+            for i in range(*sel):
+                if i >= len(valItem.GetValue()): continue
+                if valItem.GetValue()[i] != box:
+                    valItem.Replace(i, i + 1, chr(keycode))
+            valItem.SetInsertionPoint(i + 1)
+            event.Skip(False)
+        else: # arrows etc are processed naturally
+            event.Skip(True)
+        setExampleName()
+    def ConvertHistname2File(histname):
+        out = ''
+        for h,m,t in zip(histname,mask,valItem.GetValue()):
+            if not m:
+                out += h
+            elif t != '|':
+                out += t
+        return out.translate(stripDict)
+    def setExampleName():
+        dlg.firstname.SetLabel(
+            ConvertHistname2File(first[5:])+extension
+            )
+    parent = exporter.G2frame
+    hists = exporter.histnam
+    extension = exporter.extension
+    stripDict = str.maketrans({c: "_" for c in stripChars}) # used to strip characters
+    n = min(len(s) for s in hists)  # find shortest name
+    mask = [1==len(  # find characters that are the same in every histogram
+            {s[i+5] for s in [s.translate(stripDict) for s in hists]}
+            ) for i in range(n-5)]
+
+    # process first histogram name showing a box for letters that change
+    box = '\u25A1'
+    first = hists[0]
+    commonWbox = [first[i+5] if l else box for i,l in enumerate(mask)]
+    common = ''.join(commonWbox)
+    dlg = wx.Dialog(parent,wx.ID_ANY,'Histogram name template',
+                        pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    dlg.CenterOnParent()
+    start = common
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+    sizer1.Add(wx.StaticText(dlg,wx.ID_ANY,'Define a template to be used to generate file names'))
+    sizer1.Add((10,-1),1,wx.EXPAND)
+    help = '''This dialog is used to determine the file names that will 
+be used when exporting a series of PWDR files.
+The file names will include all the characters that
+differ between the histogram names but here you can select
+which of the characters that are the same for all the
+histogram names will be included. Optionally you can change
+some or all the text that is in common between the histograms'''
+    sizer1.Add(HelpButton(dlg,help),0,wx.ALL)
+    mainSizer.Add(sizer1,0,wx.EXPAND)
+
+    mainSizer.Add((-1,10))
+    prompt = ('The following characters are the same in all histograms, '
+               'except where \u25A1 is present. '
+               'File names will be generated from this as a template. '
+               'Press "." or space to delete characters from the template'
+               '(which are shown as "|"). '
+               'Use "!" to revert changes. '
+               'Type any other text to place characters into the template. '
+            f'(Note that characters "{stripChars}" will be converted to "_".)'
+                  )
+    txt = wx.StaticText(dlg,wx.ID_ANY,prompt)
+    txt.Wrap(500)
+    mainSizer.Add(txt,0,wx.ALIGN_LEFT)
+    mainSizer.Add((-1,10))
+
+    valItem = wx.TextCtrl(dlg,wx.ID_ANY,value=start,style=wx.TE_PROCESS_ENTER)
+    valItem.Bind(wx.EVT_CHAR, on_char_typed)
+    valItem.Bind(wx.EVT_TEXT_ENTER, lambda event: event.Skip(False))
+    valItem.Bind(wx.EVT_CHAR_HOOK, lambda event: event.Skip(
+        not event.GetKeyCode() in [wx.WXK_BACK,wx.WXK_DELETE]))
+    wx.CallAfter(valItem.SetSelection,0,0) # clear the initial selection
+    mainSizer.Add(valItem)
+
+    mainSizer.Add((-1,10))
+    mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Name of first file will be:'))
+    mainSizer.Add((-1,5))
+    dlg.firstname = wx.StaticText(dlg,wx.ID_ANY,'?')
+    mainSizer.Add(dlg.firstname,0,wx.ALIGN_LEFT|wx.LEFT,10)
+    mainSizer.Add((-1,-1),1,wx.EXPAND)
+    setExampleName()
+    
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_OK)
+    OKbtn.SetDefault()
+    btnsizer.AddButton(OKbtn)
+    #btn = wx.Button(dlg, wx.ID_CANCEL)
+    #btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+    dlg.SetSizer(mainSizer)
+    mainSizer.Fit(dlg)
+    ans = dlg.ShowModal()
+    if ans != wx.ID_OK:
+        dlg.Destroy()
+        return None
+    else:
+        val = valItem.GetValue()
+        dlg.Destroy()
+        exporter.fileNames = [ConvertHistname2File(i[5:]) for i in hists]
+
 if __name__ == '__main__':
     app = wx.App()
     GSASIIpath.InvokeDebugOpts()

@@ -1766,6 +1766,7 @@ class ExportBaseclass(object):
         # The following types are defined: 'project', "phase", "powder", "single"
         self.multiple = False # set as True if the class can export multiple phases or histograms
         # self.multiple is ignored for "project" exports
+        self.fileNames = None
 
     def InitExport(self,event):
         '''Determines the type of menu that called the Exporter and
@@ -1775,12 +1776,22 @@ class ExportBaseclass(object):
         self.dirname = '' # name of file to be written (multiple export)
         if event:
             self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
+        self.fileNames = None
 
+    def MakePWDRtemplate(self):
+        stripChars = './[]\\*?!|#$%&*= ' # characters that will be changed to _
+        from . import GSASIIctrlGUI as G2G
+        G2G.HistogramNameTemplate(self,stripChars)
+    
     def MakePWDRfilename(self,hist):
         '''Make a filename root (no extension) from a PWDR histogram name
 
         :param str hist: the histogram name in data tree (starts with "PWDR ")
         '''
+        # if a template has been created, use the result from that
+        if self.fileNames is not None and hist in self.histnam:
+            return self.fileNames[self.histnam.index(hist)]
+
         file0 = ''
         file1 = hist[5:]
         # replace repeated blanks
@@ -2005,10 +2016,12 @@ class ExportBaseclass(object):
             ):
             self.dirname = self.askSaveDirectory()
             if not self.dirname: return True
+            if self.currentExportType == 'powder': self.MakePWDRtemplate()
         elif AskFile == 'default-dir' or AskFile == 'default':
             self.dirname,self.filename = os.path.split(
                 os.path.splitext(self.G2frame.GSASprojectfile)[0] + self.extension
                 )
+            if self.currentExportType == 'powder': self.MakePWDRtemplate()
         else:
             raise Exception('This should not happen!')
 

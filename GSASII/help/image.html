@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="images/gsas2.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
     
     
       
@@ -1016,6 +1016,62 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Image Controls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#window-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Window organization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#menu-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Menu commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calibration-parameters-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calibration parameters definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Calibration parameters definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comparison-to-other-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison to other software
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1643,6 +1699,62 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Image Controls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#window-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Window organization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#menu-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Menu commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calibration-parameters-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calibration parameters definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Calibration parameters definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comparison-to-other-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison to other software
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1720,8 +1832,7 @@
 <li>Create a gain map (requires multiple images)</li>
 <li>Integrate images</li>
 </ul>
-<H3 style="color:blue;font-size:1.1em">Window organization</H3>
-
+<h3 id="window-organization">Window organization</h3>
 <p>The window used for Image Controls contains a large number of settings and controls, as shown below. 
 The sections of the window are outlined below with colored boxes and labeled that are described further, also below. </p>
 <p><img alt="Image Controls Window" src="images/ImageControls.png" /></p>
@@ -1735,16 +1846,17 @@ value for each pixel in the image. </li>
 <li>E. The <strong>Calibration controls</strong> determine the process used to search for diffraction rings when the detector calibration is used. The "Show ring picks" check button determines if the located ring positions are displayed, but does not affect the computation. </li>
 <li>F. The <strong>Sample goniometer angles</strong> reflect positioning of a sample. They are not used for calibration, but will be transferred to powder patterns generated from the image during image integration. The Global edit button provides a single window where setting angles for all images can be changed. </li>
 </ul>
-<H3 style="color:blue;font-size:1.1em">Menu commands</H3>
-
+<h3 id="menu-commands">Menu commands</h3>
 <p>Three sets of menu commands are associated with the Image Controls tree item. The first, <strong>Calibration</strong>, provides commands to perform calibration from an image (where the calibration values are fitted from a diffraction pattern image taken with a calibrant). 
 <img alt="Calibration Menu" src="images/CalMenu.png" /></p>
 <p>The Integration menu provides the ability to radially integrate an image to provide one or more powder diffraction patterns (requires that calibration parameters must be set first.)</p>
 <p><img alt="Integration Menu" src="images/IntMenu.png" /></p>
 <p>Finally, the Parms menu has commands allow the values on the window to be saved to a file, read from a file or copied to other images. The "Xfer controls" menu command differs from the "Copy Controls" command in that integration range for the current image is scaled when applied for other images based on the detector distances.</p>
 <p><img alt="Parameters Menu" src="images/ParmsMenu.png" /></p>
-<H3 style="color:blue;font-size:1.1em">Calibration parameters compared to other software</H3>
-<p>Note that calibration parameters used in GSAS-II are closely related to those used by the pyFAI and Fit2D programs, but add 90 to the GSAS-II tilt plane rotation (labeled as "Rotation" in GSAS-II) to obtain the pyFAI value. The X and Y values determine the beam center location. In GSAS-II the values are in mm measured from the top left corner of the detector, while in pyFAI the values are measured in the same way, but in units of pixels:</p>
+<h3 id="calibration-parameters-definitions">Calibration parameters definitions</h3>
+<p>The detector coordinate system has <strong>x</strong> horizontal and <strong>y</strong> vertical with (0,0) located at the lower left, looking from the sample position. The <strong>z</strong> axis is defined as <strong>z</strong> = <strong>x</strong> <span class="arithmatex">\(\times\)</span> <strong>y</strong>, which points from the detector towards the sample. When a detector is rotated from this position, the detector azimuthal offset describes the angle applied to rotate the detector clockwise (as viewed from the sample position) from the orientation with <strong>x</strong> horizontal and <strong>y</strong> vertical. The beam center position in GSAS-II is in mm, measured from the bottom left corner of the detector. </p>
+<h4 id="comparison-to-other-software">Comparison to other software</h4>
+<p>Note that calibration parameters used in GSAS-II are closely related to those used by the pyFAI and Fit2D programs, but add 90 to the GSAS-II tilt plane rotation (labeled as "Rotation" in GSAS-II) to obtain the pyFAI value. The beam center location in pyFAI is defined the the same way as in GSAS-II, except that in pyFAI the units are pixels rather than in mm. </p>
 <div class="arithmatex">\[X_{GSAS-II}/size_X = X_{pyFAI}\]</div>
 <p>and</p>
 <div class="arithmatex">\[Y_{GSAS-II}/size_Y = Y_{pyFAI}\]</div>

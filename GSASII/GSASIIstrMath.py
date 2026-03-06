@@ -514,9 +514,8 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                 else:
                     R = Shell['Radius']
                     R0 = sp.spherical_jn(0,QR*R)
-                    R0P = sp.spherical_jn(0,QR*(R+0.01))
-                    R0M = sp.spherical_jn(0,QR*(R-0.01))
-                    dBSdR = Nat*SFF*(R0P-R0M)/0.02
+                    dR0 = sp.spherical_jn(0,QR*R,True)
+                    dBSdR = Nat*SFF*dR0*QR
                     FFR[:,iAt] += Nat*SFF*R0    #Bessel function; L=0 term
                 for item in Shell:
                     if 'C(' in item:

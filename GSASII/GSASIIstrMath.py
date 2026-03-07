@@ -540,9 +540,10 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                             BS = sp.spherical_jn(l,1.0)
                         else:
                             BS = sp.spherical_jn(l,QR*R)	#Bessel function
-                            BSP = sp.spherical_jn(l,QR*(R+0.01))	
-                            BSM = sp.spherical_jn(l,QR*(R-0.01))	
-                            dBSdR += Nat*SFF*SH*Shell[item]*(BSP-BSM)/0.02
+                            dBS = sp.spherical_jn(l,QR*R,True)*QR
+                            # BSP = sp.spherical_jn(l,QR*(R+0.01))	
+                            # BSM = sp.spherical_jn(l,QR*(R-0.01))	
+                            dBSdR += Nat*SFF*SH*Shell[item]*dBS
                         dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
                         dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)
                         dSHdOj += Nat*SFF*BS*Shell[item]*(SHPj-SHMj)/(2.*dp)

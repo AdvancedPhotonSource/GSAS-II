@@ -1536,7 +1536,7 @@ def SetDrawingDefaults(drawingData):
     for key in defaultDrawing:
         if key not in drawingData: drawingData[key] = defaultDrawing[key]
 
-def updateAddRBorientText(G2frame,testRBObj,Bmat):
+def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
     '''Update all origin/orientation text on the Add RB panel or
     on main RB Models page in response to Alt+mouse movement
     '''
@@ -1544,15 +1544,15 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat):
     testRBObj['rbObj']['OrientVec'][0] = A
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
     for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
-        if G2frame.testRBObjSizers['OrientVecSiz'][i].GetClassName() != 'wxSpinButton':
+        if not ifSlide: #skip spin button
+            G2frame.testRBObjSizers['OrientVecSiz'][i+1].ChangeValue(val)
+        else:
             G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
 #        G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
-    try:
+    if ifSlide: #from the addRB GUI
 #        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
         G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
-    except:
-        pass
     for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
         sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
 #        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])

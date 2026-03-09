@@ -6470,7 +6470,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
-                G2phG.updateAddRBorientText(G2frame,testRBObj,Bmat)
+                G2phG.updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=False)
         if pageCallback:
             try:
                 pageCallback()
@@ -6659,6 +6659,27 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['viewDir'] = VD
         SetViewDirText(VD)
 
+    def SetRBRotation(newxy):
+#first get rotation vector in screen coords. & angle increment
+        oldxy = drawingData['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        if dxy[0] == dxy[1] == 0: return
+        drawingData['oldxy'] = list(newxy)
+        V = np.array([dxy[1],dxy[0],0.])
+        A = 0.1*np.sqrt(dxy[0]**2+dxy[1]**2)
+        if not A: return # nothing changed, nothing to do
+# next transform vector back to xtal coordinates via inverse quaternion
+# & make new quaternion
+        Q = rbObj['Orient'][0]              #rotate RB to Cart
+        QC = drawingData['Quaternion']      #rotate Cart to drawing
+        V = G2mth.prodQVQ(G2mth.invQ(QC),V)
+        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
+        DQ = G2mth.AVdeg2Q(A,V)
+        Q = G2mth.prodQQ(Q,DQ)
+        rbObj['Orient'][0][:] = Q
+        SetRBText()
+        
     def SetRotationZ(newxy):
 #first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
@@ -6685,26 +6706,6 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Q = G2mth.prodQQ(Q,Qy)
         drawingData['Quaternion'] = Q
 
-    def SetRBRotation(newxy):
-#first get rotation vector in screen coords. & angle increment
-        oldxy = drawingData['oldxy']
-        if not len(oldxy): oldxy = list(newxy)
-        dxy = newxy-oldxy
-        if dxy[0] == dxy[1] == 0: return
-        drawingData['oldxy'] = list(newxy)
-        V = np.array([dxy[1],dxy[0],0.])
-        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
-# next transform vector back to xtal coordinates via inverse quaternion
-# & make new quaternion
-        Q = rbObj['Orient'][0]              #rotate RB to Cart
-        QC = drawingData['Quaternion']      #rotate Cart to drawing
-        V = G2mth.prodQVQ(G2mth.invQ(QC),V)
-        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
-        DQ = G2mth.AVdeg2Q(A,V)
-        Q = G2mth.prodQQ(Q,DQ)
-        rbObj['Orient'][0][:] = Q
-        SetRBText()
-
     def SetRBRotationZ(newxy):
 #first get rotation vector (= view vector) in screen coords. & angle increment
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)
@@ -6716,8 +6717,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
         A = [0,0]
-        A[0] = dxy[1]*.25
-        A[1] = dxy[0]*.25
+        A[0] = dxy[1]*.1
+        A[1] = dxy[0]*.1
         if newxy[0] < cent[0]:
             A[0] *= -1
         if newxy[1] > cent[1]:

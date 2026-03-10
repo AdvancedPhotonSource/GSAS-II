@@ -1548,14 +1548,11 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
             G2frame.testRBObjSizers['OrientVecSiz'][i+1].ChangeValue(val)
         else:
             G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
-#        G2frame.testRBObjSizers['OrientVecSiz'][i].SetValue(val)
     if ifSlide: #from the addRB GUI
-#        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
-        G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
+        G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
     for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
         sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
-#        sizer.SetValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
     if G2frame.testRBObjSizers.get('OnOrien') is None: return
     G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))

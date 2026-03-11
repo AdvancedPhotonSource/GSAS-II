@@ -1384,6 +1384,8 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         vecs = RBRes['rbVect']
         mags = RBRes['VectMag']
         Cart = np.zeros_like(vecs[0])
+        if RBRes.get('Invert',False):
+            Cart *= -1.
         for vec,mag in zip(vecs,mags):
             Cart += vec*mag
     elif RBType == 'Residue':
@@ -1392,6 +1394,8 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
             QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
             Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
+        if RBRes.get('Invert',False):
+            Cart *= -1.
     elif RBType == 'Spin':
         Cart = np.zeros(3)
         XYZ = [np.array(RBObj['Orig'][0]),]

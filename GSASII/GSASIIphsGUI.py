@@ -10479,6 +10479,7 @@ at one of the following locations:
 
         rbType = data['testRBObj']['rbType']
         rbObj = data['testRBObj']['rbObj']
+        rbObj['Invert'] = rbObj.get('Invert',False)
         rbId = rbObj['RBId']
         matchTable = []
         if rbType == 'Spin':
@@ -10915,6 +10916,9 @@ at one of the following locations:
                     item.ChangeValue(data['testRBObj']['rbObj']['Orig'][0][i])
                 UpdateSytSym()
                 UpdateTablePlot()
+                
+            def OnInvert(event):
+                UpdateTablePlot()
 
             showAtom = [None]
             def showCryAtom(*args,**kwargs):
@@ -11077,6 +11081,8 @@ of the crystal structure.
                 symRadioSet = wx.RadioBox(RigidBodies,choices=choices)
                 symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
                 OriSizer4.Add(symRadioSet)
+                Invert = G2G.G2CheckBox(RigidBodies,'Invert',rbObj,'Invert',OnInvert)
+                OriSizer4.Add(Invert,0,WACV)
                 mainSizer.Add(OriSizer4)
                 mainSizer.Add((5,5),0)
                 RefSizer = wx.FlexGridSizer(0,7,5,5)

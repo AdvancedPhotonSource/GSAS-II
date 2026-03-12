@@ -10918,6 +10918,7 @@ at one of the following locations:
                 UpdateTablePlot()
                 
             def OnInvert(event):
+                UpdateTable()
                 UpdateTablePlot()
 
             showAtom = [None]
@@ -10942,6 +10943,7 @@ at one of the following locations:
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add((5,5),0)
             rbObj = data['testRBObj']['rbObj']
+            rbObj['Invert']  = rbObj.get('Invert',False)
             data['RBModels']['SpnIds'] = data['RBModels'].get('SpnIds',{})
             rbType = data['testRBObj']['rbType']
             rbName = rbObj['RBname']

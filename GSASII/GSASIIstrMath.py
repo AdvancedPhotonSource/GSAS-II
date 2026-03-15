@@ -1182,7 +1182,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
         H = refl.T[:3]                          #array(blkSize,3)
         H = np.inner(H.T,TwinLaw)
-        H = np.squeeze(H,axis=1)   #maybe array(blkSize,nTwins,3) or (blkSize,3)
+        if TwinLaw.shape[0] == 1:            
+            H = np.squeeze(H,axis=1)   #maybe array(blkSize,nTwins,3) or (blkSize,3)
         TwMask = np.any(H,axis=-1)
         if TwinLaw.shape[0] > 1 and TwDict: #need np.inner(TwinLaw[?],TwDict[iref][i])*TwinInv[i]
             for ir in range(blkSize):

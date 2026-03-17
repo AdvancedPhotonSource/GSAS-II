@@ -2016,12 +2016,16 @@ class ExportBaseclass(object):
             ):
             self.dirname = self.askSaveDirectory()
             if not self.dirname: return True
-            if self.currentExportType == 'powder': self.MakePWDRtemplate()
+            if self.currentExportType == 'powder':
+                self.MakePWDRtemplate()
+                if self.fileNames is None: return True
         elif AskFile == 'default-dir' or AskFile == 'default':
             self.dirname,self.filename = os.path.split(
                 os.path.splitext(self.G2frame.GSASprojectfile)[0] + self.extension
                 )
-            if self.currentExportType == 'powder': self.MakePWDRtemplate()
+            if self.currentExportType == 'powder':
+                self.MakePWDRtemplate()
+                if self.fileNames is None: return True
         else:
             raise Exception('This should not happen!')
 

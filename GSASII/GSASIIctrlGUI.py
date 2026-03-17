@@ -10680,13 +10680,13 @@ def HistogramNameTemplate(exporter,stripChars):
 #            valItem.SetInsertionPoint(insertion_point + 1)
         elif keycode == 33: # ! put original value back
             for i in range(*sel):
-                if i >= len(valItem.GetValue()): continue
+                if i > len(valItem.GetValue()): continue
                 if valItem.GetValue()[i] != box:
                     valItem.Replace(i, i + 1, common[i])
             # Move the insertion point forward one character
             valItem.SetInsertionPoint(i + 1)
             event.Skip(False)
-        elif keycode >= wx.WXK_SPACE: # anything else printable, substitute
+        elif keycode >= wx.WXK_SPACE and keycode <= 255: # anything else printable, substitute
             for i in range(*sel):
                 if i >= len(valItem.GetValue()): continue
                 if valItem.GetValue()[i] != box:
@@ -10748,8 +10748,8 @@ some or all the text that is in common between the histograms'''
                'Press "." or space to delete characters from the template'
                '(which are shown as "|"). '
                'Use "!" to revert changes. '
-               'Type any other text to place characters into the template. '
-            f'(Note that characters "{stripChars}" will be converted to "_".)'
+               'Type any other text to place characters into the template.\n\n'
+            f'Note that characters "{stripChars}" will be converted to "_".'
                   )
     txt = wx.StaticText(dlg,wx.ID_ANY,prompt)
     txt.Wrap(500)
@@ -10762,7 +10762,7 @@ some or all the text that is in common between the histograms'''
     valItem.Bind(wx.EVT_CHAR_HOOK, lambda event: event.Skip(
         not event.GetKeyCode() in [wx.WXK_BACK,wx.WXK_DELETE]))
     wx.CallAfter(valItem.SetSelection,0,0) # clear the initial selection
-    mainSizer.Add(valItem)
+    mainSizer.Add(valItem,1,wx.EXPAND,1)
 
     mainSizer.Add((-1,10))
     mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Name of first file will be:'))
@@ -10776,8 +10776,8 @@ some or all the text that is in common between the histograms'''
     OKbtn = wx.Button(dlg, wx.ID_OK)
     OKbtn.SetDefault()
     btnsizer.AddButton(OKbtn)
-    #btn = wx.Button(dlg, wx.ID_CANCEL)
-    #btnsizer.AddButton(btn)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btnsizer.AddButton(btn)
     btnsizer.Realize()
     mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
     dlg.SetSizer(mainSizer)
@@ -10785,7 +10785,7 @@ some or all the text that is in common between the histograms'''
     ans = dlg.ShowModal()
     if ans != wx.ID_OK:
         dlg.Destroy()
-        return None
+        exporter.fileNames = None
     else:
         val = valItem.GetValue()
         dlg.Destroy()

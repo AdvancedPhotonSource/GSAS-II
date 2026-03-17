@@ -459,7 +459,10 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
     dFFdSI = {}
     atFlg = []
     hkl = np.reshape(HKL,(-1,3))
-    SQR = np.repeat(SQ,HKL.shape[1])
+    reshape = HKL.shape[-2]
+    if len(HKL.shape) == 4:
+        reshape *= HKL.shape[1]
+    SQR = np.repeat(SQ,reshape)
     S = [1,1,-1,-1,1,1,-1,-1]
     for iAt,Atype in enumerate(Tdata):
         if 'Q' in Atype:        #spinning RB
@@ -477,13 +480,13 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             ThMi,PhMi = MakePolar([SHdat['Oa'],SHdat['Oi']-dp,SHdat['Oj'],SHdat['Ok']],QB)
             ThMj,PhMj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']-dp,SHdat['Ok']],QB)
             ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],QB)
-            QR = np.repeat(twopi*np.sqrt(4.*SQ),HKL.shape[1])     #refl Q for Bessel fxn
+            QR = np.repeat(twopi*np.sqrt(4.*SQ),reshape)     #refl Q for Bessel fxn
             FFR[:,iAt] = 0.
             ishl = 0
-            dSHdO = np.zeros(HKL.shape[0]*HKL.shape[1])
-            dSHdOi = np.zeros(HKL.shape[0]*HKL.shape[1])
-            dSHdOj = np.zeros(HKL.shape[0]*HKL.shape[1])
-            dSHdOk = np.zeros(HKL.shape[0]*HKL.shape[1])
+            dSHdO = np.zeros(HKL.shape[0]*reshape)
+            dSHdOi = np.zeros(HKL.shape[0]*reshape)
+            dSHdOj = np.zeros(HKL.shape[0]*reshape)
+            dSHdOk = np.zeros(HKL.shape[0]*reshape)
             if '0' not in SHdat:    #no spin RB for atom Q??
                 break
             Shell = SHdat['0']

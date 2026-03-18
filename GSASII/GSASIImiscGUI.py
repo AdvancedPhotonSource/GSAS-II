@@ -134,8 +134,13 @@ def GetCheckImageFile(G2frame,treeId):
         while pth and pth != prevpth:
             prevpth = pth
             if os.path.exists(os.path.join(G2frame.dirname,fil)):
-                print ('found image file '+os.path.join(G2frame.dirname,fil))
                 imagefile = os.path.join(G2frame.dirname,fil)
+                print (f'found image file {imagefile}')
+                G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
+                return Npix,imagefile,imagetag
+            if os.path.exists(os.path.join(G2frame.LastGPXdir,fil)):
+                imagefile = os.path.join(G2frame.LastGPXdir,fil)
+                print (f'found image file {imagefile}')
                 G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
                 return Npix,imagefile,imagetag
             pth,enddir = os.path.split(pth)

@@ -1238,7 +1238,7 @@ def polymask(data,Poly,Spots=[]):
     ax0.set_xbound(0,Nx)
     ax0.set_ybound(0,Ny)
     img, (width,height) = canvas.print_to_buffer()
-    Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
+    Zimg = np.frombuffer(img, np.uint8).reshape((width, height, 4))
     return Zimg[:,:,0]
 
 def MakeMaskMap(data,masks,iLim,jLim):

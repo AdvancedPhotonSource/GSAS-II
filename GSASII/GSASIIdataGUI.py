@@ -480,6 +480,7 @@ should generate warnings or error messages.
    4.2+ for compatibility with newer Python versions.
  * 4.2.0 has a problem on MacOS where buttons w/default size are not displayed properly.
    (see https://github.com/wxWidgets/Phoenix/issues/2319). Worked around (mostly?) in our code.
+ * 4.2.5 has a problem on MacOS where FileDialog is failing in SaveAs.
 
 * Matplotlib:
 
@@ -508,7 +509,7 @@ versionDict['badVersionWarn'] = {'numpy':['1.16.0'],
                                  'matplotlib': ['3.1','3.2'],
                                  'wx':['4.1']}
 'versions of modules that are known to have bugs'
-versionDict['tooNewWarn'] = {}
+versionDict['tooNewWarn'] = {'wx':'4.2.5'}
 'module versions newer than what we have tested & where problems are suspected'
 versionDict['tooNewUntested'] = {'Python':'3.14','wx': '4.3'}
 'module versions newer than what we have tested but no problems are suspected'

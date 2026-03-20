@@ -1226,21 +1226,22 @@ def polymask(data,Poly,Spots=[]):
     ax0.axis("off")
     figure.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
     for poly in Poly:
-        px = np.array(poly).T[0]/scalex
-        py = np.array(poly).T[1]/scaley
+        px = np.array(poly).T[1]/scalex
+        py = np.array(poly).T[0]/scaley
         ax0.fill(px,py,inmask)
     for spot in Spots:
-        px = np.array(spot).T[0]/scalex
-        py = np.array(spot).T[1]/scaley
+        px = np.array(spot).T[1]/scalex
+        py = np.array(spot).T[0]/scaley
         rad = 0.5*np.array(spot).T[2]/scaley
         psp = Circle((px,py),radius=rad,fc=inmask,ec='none')        
         ax0.add_artist(psp)
     ax0.set_xbound(0,Nx)
     ax0.set_ybound(0,Ny)
     img, (width,height) = canvas.print_to_buffer()
-    Zimg = np.frombuffer(img, np.uint8).reshape((width, height, 4))
-    return Zimg[:,:,0]
-
+    Zimg = np.frombuffer(img, np.uint8).reshape((height,width,4))    
+    Z = np.swapaxes(Zimg[:,:,0],0,1)
+    A = np.flip(Z,axis=1)
+    return A
 def MakeMaskMap(data,masks,iLim,jLim):
     '''Makes a mask array from masking parameters that are not determined by 
     image calibration parameters or the image intensities. Thus this uses 

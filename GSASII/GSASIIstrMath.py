@@ -544,8 +544,6 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         else:
                             BS = sp.spherical_jn(l,QR*R)	#Bessel function
                             dBS = sp.spherical_jn(l,QR*R,True)*QR
-                            # BSP = sp.spherical_jn(l,QR*(R+0.01))	
-                            # BSM = sp.spherical_jn(l,QR*(R-0.01))	
                             dBSdR += Nat*SFF*SH*Shell[item]*dBS
                         dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
                         dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)
@@ -1201,9 +1199,10 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Uniq = np.inner(H,SGMT)
         Phi = np.inner(H,SGT)
         nOps = len(SGMT)
-        if SGData['SGInv']:
+        if SGData['SGInv']:             #extend by inversion op
             Uniq = np.hstack((Uniq,-Uniq))
             Phi = np.hstack((Phi,-Phi))
+            TwMask = np.hstack((TwMask,TwMask))
             nOps *= 2
         if 'T' in hType:
             if 'P' in calcControls[hfx+'histType']:

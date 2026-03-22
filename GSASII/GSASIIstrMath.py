@@ -1287,6 +1287,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     ORBtables = calcControls['ORBtables']
     BLtables = calcControls['BLtables']
     hType = calcControls[hfx+'histType']
+    TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
     if 'S' in hType:
         TwinLaw = calcControls[phfx+'TwinLaw']
     Amat,Bmat = G2lat.Gmat2AB(G)

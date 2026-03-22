@@ -1200,9 +1200,12 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Phi = np.inner(H,SGT)
         nOps = len(SGMT)
         if SGData['SGInv']:             #extend by inversion op
-            Uniq = np.hstack((Uniq,-Uniq))
-            Phi = np.hstack((Phi,-Phi))
-            TwMask = np.hstack((TwMask,TwMask))
+            if TwinLaw.shape[0] > 1:
+                Uniq = np.dstack((Uniq,-Uniq))
+                Phi = np.dstack((Phi,-Phi))
+            else:
+                Uniq = np.hstack((Uniq,-Uniq))
+                Phi = np.hstack((Phi,-Phi))
             nOps *= 2
         if 'T' in hType:
             if 'P' in calcControls[hfx+'histType']:
@@ -1232,19 +1235,23 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fpp = np.reshape(Flack*(FFI+FPP),sinp.shape)*Tcorr
         fa = np.array([fp*cosp,-fpp*sinp])
         fb = np.array([fp*sinp,fpp*cosp])
-        fas = np.sum(np.sum(fa,axis=-1),axis=-1)  #real 2 x blkSize x nTwin; sum over atoms & uniq hkl
-        fbs = np.sum(np.sum(fb,axis=-1),axis=-1)  #imag
         if 'P' in hType:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
+            fas = np.sum(np.sum(fa,axis=-1),axis=-1)  #real 2 x blkSize x nTwin; sum over atoms & uniq hkl
+            fbs = np.sum(np.sum(fb,axis=-1),axis=-1)  #imag
 #            refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
             refl.T[9] = np.sum(fas[:,:],axis=0)**2+np.sum(fbs[:,:],axis=0)**2 
             refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         else:                                       #HKLF: F^2 = (A[0]+A[1])^2 + (B[0]+B[1])^2
             if len(TwinLaw) > 1:
+                fas = np.sum(np.sum(fa,axis=-1),axis=-1)  #real 2 x blkSize x nTwin; sum over atoms & uniq hkl
+                fbs = np.sum(np.sum(fb,axis=-1),axis=-1)  #imag
                 refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
                 refl.T[7] = np.sum(TwinFr*TwMask*np.sum(fas,axis=0)**2,axis=-1)+   \
                     np.sum(TwinFr*TwMask*np.sum(fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
                 refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f" & use primary twin
             else:   # checked correct!!
+                fas = np.sum(np.sum(fa,axis=-1),axis=-1)  #real 2 x blkSize x nTwin; sum over atoms & uniq hkl
+                fbs = np.sum(np.sum(fb,axis=-1),axis=-1)  #imag
                 refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
                 refl.T[7] = np.copy(refl.T[9])
                 if pfx in SHCdict:
@@ -1280,6 +1287,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     ORBtables = calcControls['ORBtables']
     BLtables = calcControls['BLtables']
     hType = calcControls[hfx+'histType']
+    if 'S' in hType:
+        TwinLaw = calcControls[phfx+'TwinLaw']
     Amat,Bmat = G2lat.Gmat2AB(G)
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
@@ -1292,7 +1301,6 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     pMul = 2.0
     if SGData['SGInv']:
         nOps *= 2
-        # pMul *= 2.0
     if calcControls[hfx+'histType'][1:3] in ['NA','NB','NC']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     elif 'X' in calcControls[hfx+'histType']:
@@ -1336,8 +1344,12 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Uniq = np.inner(H,SGMT)             # array(nSGOp,3,3)
         Phi = np.inner(H,SGT)
         if SGData['SGInv']:
-            Uniq = np.hstack((Uniq,-Uniq))
-            Phi = np.hstack((Phi,Phi))
+            if TwinLaw.shape[0] > 1:
+                Uniq = np.dstack((Uniq,-Uniq))
+                Phi = np.dstack((Phi,-Phi))
+            else:
+                Uniq = np.hstack((Uniq,-Uniq))
+                Phi = np.hstack((Phi,-Phi))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FFR = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,nOps,axis=0)
         FFI = np.zeros_like(FFR)

@@ -289,6 +289,9 @@ latex_logo = 'G2_html_logo.png'
 #build PDF with Unicode characters
 latex_engine = 'xelatex'
 
+# Configuration for LaTeX output
+latex_use_xindy = False  # Disable xindy for indexing
+
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples

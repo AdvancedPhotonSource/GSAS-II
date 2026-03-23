@@ -1607,6 +1607,7 @@ class ImportImage(ImportBaseclass):
         self.repeat = False
         self.repeatcount = 1
         self.sumfile = ''
+        self.imageOnly = False   # on Reread, set True to skip metadata processing
 
     def LoadImage(self,ParentFrame,imagefile,imagetag=None):
         '''Optionally, call this after reading in an image to load it into the tree.

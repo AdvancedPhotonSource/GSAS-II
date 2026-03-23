@@ -1093,6 +1093,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
             if rd.errors:
                 errorReport += ': '+rd.errors
                 continue
+        rd.imageOnly = imageOnly
         if imageOnly:
             ParentFrame = None # prevent GUI access on reread
         else:

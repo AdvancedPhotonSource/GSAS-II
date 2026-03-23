@@ -26,14 +26,14 @@ class TIF_ReaderClass(G2obj.ImportImage):
             longFormatName = 'Various .tif and pseudo-TIF formats using GSAS-II reader'
             )
         self.scriptable = True
-        try:
-            import Image as Im
-        except ImportError:
-            try:
-                from PIL import Image as Im
-            except ImportError:
-                msg = 'TIF_Reader may not be able to read some less common image formats because the pillow module is not installed.'
-                G2fil.ImportErrorMsg(msg,{'TIF Image importer':['pillow']})
+#        try:
+#            import Image as Im
+#        except ImportError:
+#            try:
+#                from PIL import Image as Im
+#            except ImportError:
+#                msg = 'TIF_Reader may not be able to read some less common image formats because the pillow module is not installed.'
+#                G2fil.ImportErrorMsg(msg,{'TIF Image importer':['pillow']})
 
     def ContentsValidator(self, filename):
         '''Does the header match the required TIF header?
@@ -45,13 +45,18 @@ class TIF_ReaderClass(G2obj.ImportImage):
         recognize the detector type and set various parameters
         '''
         self.Npix = 0
-        self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)
-        if self.Npix == 0:
-            return False
+        if self.imageOnly:
+            _,_,self.Npix,self.Image = GetTifData(filename,self.imageOnly)
+            if self.Npix == 0:
+                return False
+        else:
+            self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename,self.imageOnly)
+            if self.Npix == 0:
+                return False
         self.LoadImage(ParentFrame,filename)
         return True
 
-def GetTifData(filename):
+def GetTifData(filename,imageOnly=False):
     '''Read an image in a pseudo-tif format,
     as produced by a wide variety of software, almost always
     incorrectly in some way.
@@ -69,35 +74,39 @@ def GetTifData(filename):
     samplechangerpos = None
     xpixelsize = None
     ypixelsize = None
-    try:
-        Meta = open(filename+'.metadata','r')
-        head = Meta.readlines()
-        for line in head:
-            line = line.strip()
-            try:
-                if '=' not in line: continue
-                keyword = line.split('=')[0].strip()
-                if 'dataType' == keyword:
-                    dataType = int(line.split('=')[1])
-                elif 'wavelength' == keyword.lower():
-                    wavelength = float(line.split('=')[1])
-                elif 'distance' == keyword.lower():
-                    distance = float(line.split('=')[1])
-                elif 'polarization' == keyword.lower():
-                    polarization = float(line.split('=')[1])
-                elif 'samplechangercoordinate' == keyword.lower():
-                    samplechangerpos = float(line.split('=')[1])
-                elif 'detectorxpixelsize' == keyword.lower():
-                    xpixelsize = float(line.split('=')[1])
-                elif 'detectorypixelsize' == keyword.lower():
-                    ypixelsize = float(line.split('=')[1])
-            except:
-                G2fil.G2Print('error reading metadata: '+line)
-        Meta.close()
-    except IOError:
-        if DEBUG:
-            G2fil.G2Print ('no metadata file found - will try to read file anyway')
-        head = ['no metadata file found',]
+    head = []
+    if not imageOnly:
+        try:
+            Meta = open(filename+'.metadata','r')
+            head = Meta.readlines()
+            if GSASIIpath.GetConfigValue('debug'):
+                G2fil.G2Print (f'{len(head)} lines read from metadata file {filename+".metadata"}')
+            for line in head:
+                line = line.strip()
+                try:
+                    if '=' not in line: continue
+                    keyword = line.split('=')[0].strip()
+                    if 'dataType' == keyword:
+                        dataType = int(line.split('=')[1])
+                    elif 'wavelength' == keyword.lower():
+                        wavelength = float(line.split('=')[1])
+                    elif 'distance' == keyword.lower():
+                        distance = float(line.split('=')[1])
+                    elif 'polarization' == keyword.lower():
+                        polarization = float(line.split('=')[1])
+                    elif 'samplechangercoordinate' == keyword.lower():
+                        samplechangerpos = float(line.split('=')[1])
+                    elif 'detectorxpixelsize' == keyword.lower():
+                        xpixelsize = float(line.split('=')[1])
+                    elif 'detectorypixelsize' == keyword.lower():
+                        ypixelsize = float(line.split('=')[1])
+                except:
+                    G2fil.G2Print('error reading metadata: '+line)
+            Meta.close()
+        except IOError:
+            if DEBUG:
+                G2fil.G2Print ('no metadata file found - will try to read file anyway')
+            head = ['no metadata file found',]
 
     tag = File.read(2)
     if 'bytes' in str(type(tag)):
@@ -151,7 +160,7 @@ def GetTifData(filename):
             image = np.flipud(image)
         if marFrame.viewDirection:  #view through sample to detector instead of TOWARD_SOURCE
             image = np.fliplr(image)
-        tifType = marFrame.filetitle
+        #tifType = marFrame.filetitle
         pixy = [marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0]
         head = marFrame.outputHead()
 # extract resonable wavelength from header
@@ -174,10 +183,12 @@ def GetTifData(filename):
                 from PIL import Image as Im
             except ImportError:
                 G2fil.G2Print ("PIL/pillow Image module not present. This TIF cannot be read without this")
+                msg = 'TIF_Reader is unable to read multislice CheMin images without the pillow module, which is not installed.'
+                G2fil.ImportErrorMsg(msg,{'TIF Image importer':['pillow']})
                 #raise Exception("PIL/pillow Image module not found")
-                lines = ['not a detector tiff file',]
+                lines = ['needs pillow package to be read',]
                 return lines,0,0,0
-        tifType = 'CheMin'
+        #tifType = 'CheMin'
         pixy = [40.,40.]
         image = np.flipud(np.array(Im.open(filename)))*10.
         distance = 18.0
@@ -188,7 +199,7 @@ def GetTifData(filename):
         File.seek(ifd[2][0])
         S = File.read(ifd[1])
         if b'PILATUS' in S:
-            tifType = 'Pilatus'
+            #tifType = 'Pilatus'
             dataType = 0
             pixy = [172.,172.]
             File.seek(4096)
@@ -197,18 +208,18 @@ def GetTifData(filename):
         else:
             if IFD[258][2][0] == 16:
                 if sizexy == [3888,3072] or sizexy == [3072,3888]:
-                    tifType = 'Dexela'
+                    #tifType = 'Dexela'
                     pixy = [74.8,74.8]
                     G2fil.G2Print ('Read Dexela detector tiff file: '+filename)
                 else:
-                    tifType = 'GE'
+                    #tifType = 'GE'
                     pixy = [200.,200.]
                     G2fil.G2Print ('Read GE-detector tiff file: '+filename)
                 File.seek(8)
                 image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
             elif IFD[258][2][0] == 32:
                 # includes CHESS & Pilatus files from Area Detector
-                tifType = 'CHESS'
+                #tifType = 'CHESS'
                 pixy = [200.,200.]
                 File.seek(8)
                 G2fil.G2Print ('Read as 32-bit unsigned (CHESS) tiff file: '+filename)
@@ -217,14 +228,14 @@ def GetTifData(filename):
         File.seek(IFD[270][2][0])
         S = File.read(IFD[273][2][0]-IFD[270][2][0])
         if b'Pilatus3' in S or sizexy == [1475,1679]:
-            tifType = 'Pilatus3'
+            #tifType = 'Pilatus3'
             dataType = 0
             pixy = [172.,172.]
             File.seek(IFD[273][2][0])
             G2fil.G2Print ('Read Pilatus3 tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(4*Npix),dtype=byteOrd+'f4'),dtype=np.int32)
         elif b'ImageJ' in S:
-            tifType = 'ImageJ'
+            #tifType = 'ImageJ'
             dataType = 0
             pixy = [200.,200.]*IFD[277][2][0]
             File.seek(IFD[273][2][0])
@@ -246,18 +257,18 @@ def GetTifData(filename):
                 image = np.array(np.frombuffer(image,dtype=byteOrd+'f4'),dtype=np.int32)
             else:
                 pixy = [200.,200.]
-                tifType = 'Gain map'
+                #tifType = 'Gain map'
                 image = File.read(4*Npix)
                 image = np.array(np.frombuffer(image,dtype=byteOrd+'f4')*1000,dtype=np.int32)
 
     elif 262 in IFD and IFD[262][2][0] > 4:
-        tifType = 'DND'
+        #tifType = 'DND'
         pixy = [158.,158.]
         File.seek(512)
         G2fil.G2Print ('Read DND SAX/WAX-detector tiff file: '+filename)
         image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
     elif sizexy == [1536,1536]:
-        tifType = 'APS Gold'
+        #tifType = 'APS Gold'
         pixy = [150.,150.]
         File.seek(64)
         G2fil.G2Print ('Read Gold tiff file:'+filename)
@@ -265,7 +276,7 @@ def GetTifData(filename):
     elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 32:
-                tifType = 'PE'
+                #tifType = 'PE'
                 pixy = [200.,200.]
                 File.seek(8)
                 G2fil.G2Print ('Read APS PE-detector tiff file: '+filename)
@@ -274,7 +285,7 @@ def GetTifData(filename):
                 else:
                     image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
             elif IFD[258][2][0] == 16:
-                tifType = 'MedOptics D1'
+                #tifType = 'MedOptics D1'
                 pixy = [46.9,46.9]
                 File.seek(8)
                 G2fil.G2Print ('Read MedOptics D1 tiff file: '+filename)
@@ -283,15 +294,15 @@ def GetTifData(filename):
         elif IFD[273][2][0] == 4096:
             if sizexy[0] == 3072:
                 pixy =  [73.,73.]
-                tifType = 'MAR225'
+                #tifType = 'MAR225'
             else:
                 pixy = [158.,158.]
-                tifType = 'MAR325'
+                #tifType = 'MAR325'
             File.seek(4096)
             G2fil.G2Print ('Read MAR CCD tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
         elif IFD[273][2][0] == 512:
-            tifType = '11-ID-C'
+            #tifType = '11-ID-C'
             pixy = [200.,200.]
             File.seek(512)
             G2fil.G2Print ('Read 11-ID-C tiff file: '+filename)
@@ -300,19 +311,19 @@ def GetTifData(filename):
     elif sizexy == [4096,4096]:
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 16:
-                tifType = 'scanCCD'
+                #tifType = 'scanCCD'
                 pixy = [9.,9.]
                 File.seek(8)
                 G2fil.G2Print ('Read APS scanCCD tiff file: '+filename)
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 32:
-                tifType = 'PE4k'
+                #tifType = 'PE4k'
                 pixy = [100.,100.]
                 File.seek(8)
                 G2fil.G2Print ('Read PE 4Kx4K tiff file: '+filename)
                 image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.float32)/2.**4,dtype=np.int32)
         elif IFD[273][2][0] == 4096:
-            tifType = 'Rayonix'
+            #tifType = 'Rayonix'
             pixy = [73.242,73.242]
             File.seek(4096)
             G2fil.G2Print ('Read Rayonix MX300HE tiff file: '+filename)

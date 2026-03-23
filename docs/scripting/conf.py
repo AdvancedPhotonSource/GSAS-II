@@ -249,9 +249,6 @@ latex_elements = {
 
 #this allows \AA to be used in equations 
 'preamble': '\\global\\renewcommand{\\AA}{\\text{\\r{A}}}',
-
-# Suppress auto-generated printindex at end; index is printed via scrpt-indices.rst
-'printindex': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

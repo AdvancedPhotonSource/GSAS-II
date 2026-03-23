@@ -16,8 +16,4 @@
 
     .. raw:: latex
 
-        \renewcommand{\printindex}{%
-          \begin{theindex}
-          \printindex
-          \end{theindex}
-        }
+        \printindex

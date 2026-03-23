@@ -471,30 +471,32 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             symAxis = np.array(SHdat['symAxis'])
             QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
             Th,Ph = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
-            ThP,PhP = MakePolar([SHdat['Oa']+.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
-            dp = 0.00001
-            ThPi,PhPi = MakePolar([SHdat['Oa'],SHdat['Oi']+dp,SHdat['Oj'],SHdat['Ok']],QB)
-            ThPj,PhPj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']+dp,SHdat['Ok']],QB)
-            ThPk,PhPk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']+dp],QB)
-            ThM,PhM = MakePolar([SHdat['Oa']-.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
-            ThMi,PhMi = MakePolar([SHdat['Oa'],SHdat['Oi']-dp,SHdat['Oj'],SHdat['Ok']],QB)
-            ThMj,PhMj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']-dp,SHdat['Ok']],QB)
-            ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],QB)
+            if ifDeriv:
+                ThP,PhP = MakePolar([SHdat['Oa']+.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
+                dp = 0.00001
+                ThPi,PhPi = MakePolar([SHdat['Oa'],SHdat['Oi']+dp,SHdat['Oj'],SHdat['Ok']],QB)
+                ThPj,PhPj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']+dp,SHdat['Ok']],QB)
+                ThPk,PhPk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']+dp],QB)
+                ThM,PhM = MakePolar([SHdat['Oa']-.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
+                ThMi,PhMi = MakePolar([SHdat['Oa'],SHdat['Oi']-dp,SHdat['Oj'],SHdat['Ok']],QB)
+                ThMj,PhMj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']-dp,SHdat['Ok']],QB)
+                ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],QB)
             QR = np.repeat(twopi*np.sqrt(4.*SQ),reshape)     #refl Q for Bessel fxn
             FFR[:,iAt] = 0.
             ishl = 0
-            dSHdO = np.zeros(HKL.shape[0]*reshape)
-            dSHdOi = np.zeros(HKL.shape[0]*reshape)
-            dSHdOj = np.zeros(HKL.shape[0]*reshape)
-            dSHdOk = np.zeros(HKL.shape[0]*reshape)
             if '0' not in SHdat:    #no spin RB for atom Q??
                 break
             Shell = SHdat['0']
             Irb = Shell['ShR']
-            Oname = 'Oa:%d:%s'%(iAt,Irb)
-            Oiname = 'Oi:%d:%s'%(iAt,Irb)
-            Ojname = 'Oj:%d:%s'%(iAt,Irb)
-            Okname = 'Ok:%d:%s'%(iAt,Irb)
+            if ifDeriv:
+                dSHdO = np.zeros(HKL.shape[0]*reshape)
+                dSHdOi = np.zeros(HKL.shape[0]*reshape)
+                dSHdOj = np.zeros(HKL.shape[0]*reshape)
+                dSHdOk = np.zeros(HKL.shape[0]*reshape)
+                Oname = 'Oa:%d:%s'%(iAt,Irb)
+                Oiname = 'Oi:%d:%s'%(iAt,Irb)
+                Ojname = 'Oj:%d:%s'%(iAt,Irb)
+                Okname = 'Ok:%d:%s'%(iAt,Irb)
             while True:
                 shl = '%d'%ishl
                 if shl not in SHdat:
@@ -530,35 +532,39 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
                         else:   #even L
                             SHR = SH
                             SHI = np.zeros_like(SHR)
-                        SHP = G2lat.KslCalc(item,ThP,PhP)
-                        SHPi = G2lat.KslCalc(item,ThPi,PhPi)
-                        SHPj = G2lat.KslCalc(item,ThPj,PhPj)
-                        SHPk = G2lat.KslCalc(item,ThPk,PhPk)
-                        SHM = G2lat.KslCalc(item,ThM,PhM)
-                        SHMi = G2lat.KslCalc(item,ThMi,PhMi)
-                        SHMj = G2lat.KslCalc(item,ThMj,PhMj)
-                        SHMk = G2lat.KslCalc(item,ThMk,PhMk)
+                        if ifDeriv:
+                            SHP = G2lat.KslCalc(item,ThP,PhP)
+                            SHM = G2lat.KslCalc(item,ThM,PhM)
+                            SHPi = G2lat.KslCalc(item,ThPi,PhPi)
+                            SHPj = G2lat.KslCalc(item,ThPj,PhPj)
+                            SHPk = G2lat.KslCalc(item,ThPk,PhPk)
+                            SHMi = G2lat.KslCalc(item,ThMi,PhMi)
+                            SHMj = G2lat.KslCalc(item,ThMj,PhMj)
+                            SHMk = G2lat.KslCalc(item,ThMk,PhMk)
                         BS = 1.0
                         if 'Q' in Atm:
                             BS = sp.spherical_jn(l,1.0)
                         else:
                             BS = sp.spherical_jn(l,QR*R)	#Bessel function
-                            dBS = sp.spherical_jn(l,QR*R,True)*QR
-                            dBSdR += Nat*SFF*SH*Shell[item]*dBS
-                        dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
-                        dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)
-                        dSHdOj += Nat*SFF*BS*Shell[item]*(SHPj-SHMj)/(2.*dp)
-                        dSHdOk += Nat*SFF*BS*Shell[item]*(SHPk-SHMk)/(2.*dp)
+                            if ifDeriv:
+                                dBS = sp.spherical_jn(l,QR*R,True)*QR
+                                dBSdR += Nat*SFF*SH*Shell[item]*dBS
+                        if ifDeriv:
+                            dSHdO += Nat*SFF*BS*Shell[item]*(SHP-SHM)/0.0002
+                            dSHdOi += Nat*SFF*BS*Shell[item]*(SHPi-SHMi)/(2.*dp)
+                            dSHdOj += Nat*SFF*BS*Shell[item]*(SHPj-SHMj)/(2.*dp)
+                            dSHdOk += Nat*SFF*BS*Shell[item]*(SHPk-SHMk)/(2.*dp)
+                            name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
+                            dFFdSR[name] = Nat*SFF*BS*SH
                         FFR[:,iAt] += Nat*SFF*BS*SH*Shell[item]
-                        name = 'Sh;%s;%s:%d:%s'%(shl,item,iAt,Irb)
-                        dFFdSR[name] = Nat*SFF*BS*SH
-                if 'Q' not in Atm:
+                if 'Q' not in Atm and ifDeriv:
                     dFFdSR[Rname] = dBSdR
                 ishl += 1
-            dFFdSR[Oname] = dSHdO
-            dFFdSR[Oiname] = dSHdOi
-            dFFdSR[Ojname] = dSHdOj
-            dFFdSR[Okname] = dSHdOk
+            if ifDeriv:
+                dFFdSR[Oname] = dSHdO
+                dFFdSR[Oiname] = dSHdOi
+                dFFdSR[Ojname] = dSHdOj
+                dFFdSR[Okname] = dSHdOk
         elif iAt in SHCdict and 'X' in hType:   #X-ray deformation removed Bessel option
             orbs = SHCdict[iAt]['1']
             UVmat = np.inner(SHCdict[-iAt]['UVmat'],Bmat) #OK

@@ -2478,6 +2478,7 @@ unselected atoms appear much darker than selected atoms.
                 for xyz in XYZ:
                     Zmat += np.outer(xyz.T,xyz)
                 Evec,Emat = nl.eig(Zmat)
+                Emat = Emat.T
                 Order = np.argsort(np.nan_to_num(Evec))     #short-long order
                 if bntOpts['plane'] == 'xy':        #short along z
                     trans = np.array([Emat[Order[2]],Emat[Order[1]],Emat[Order[0]]])

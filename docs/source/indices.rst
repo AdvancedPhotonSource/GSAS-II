@@ -11,9 +11,6 @@
 
 .. only:: latex
 
-    Index
-    =====
-
     .. raw:: latex
 
         \printindex

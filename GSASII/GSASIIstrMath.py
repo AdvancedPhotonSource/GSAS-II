@@ -1293,9 +1293,6 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     ORBtables = calcControls['ORBtables']
     BLtables = calcControls['BLtables']
     hType = calcControls[hfx+'histType']
-    TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
-    if 'S' in hType:
-        TwinLaw = calcControls[phfx+'TwinLaw']
     Amat,Bmat = G2lat.Gmat2AB(G)
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
@@ -1306,6 +1303,9 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     nOps = len(SGMT)
     pMul = 2.0
+    if SGData['SGInv']:
+        nOps *= 2
+        # pMul *= 2.0
     if calcControls[hfx+'histType'][1:3] in ['NA','NB','NC']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     elif 'X' in calcControls[hfx+'histType']:
@@ -1349,10 +1349,10 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Uniq = np.inner(H,SGMT)             # array(nSGOp,3,3)
         Phi = np.inner(H,SGT)
         if SGData['SGInv']:
-            Uniq = np.dstack((Uniq,-Uniq))
-            Phi = np.dstack((Phi,-Phi))
+            Uniq = np.hstack((Uniq,-Uniq))
+            Phi = np.hstack((Phi,-Phi))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
-        FFR = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,nOps*len(TwinLaw),axis=0)
+        FFR = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,nOps,axis=0)
         FFI = np.zeros_like(FFR)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
         sinp = np.sin(phase)        #refBlk x nOps x nAtoms

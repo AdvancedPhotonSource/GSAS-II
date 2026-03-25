@@ -443,6 +443,7 @@ method                                                Use
 :meth:`~GSASIIscriptable.G2Image.setControls`         Updates the Image Controls dict for the current image with specified key/value pairs.
 :meth:`~GSASIIscriptable.G2Image.getMasks`            Returns the Masks dict for the current image. 
 :meth:`~GSASIIscriptable.G2Image.setMasks`            Updates the Masks dict for the current image with specified key/value pairs.
+:meth:`~GSASIIscriptable.G2Image.getImage`            Returns the image array for the current image.
 :meth:`~GSASIIscriptable.G2Image.IntThetaAzMap`       Computes the set of 2theta-azimuth mapping matrices to integrate the current image. 
 :meth:`~GSASIIscriptable.G2Image.IntMaskMap`          Computes the masking map for the current image for integration. 
 :meth:`~GSASIIscriptable.G2Image.MaskThetaMap`        Computes the 2theta mapping matrix to determine a pixel mask. 
@@ -1604,6 +1605,39 @@ six-fold speedup has been seen with 16 cores.
 
         if nodes > 0: pool.close()
         print(f'Total elapsed time={time.time()-scriptstart:.3f} sec')
+
+
+.. _PixelMask_Example:
+
+Access the Image Pixel-Mask
+------------------------------
+
+In this example, a pixel mask has already been computed and has been
+saved with the image in a .gpx file. This example then reads the .gpx file,
+locates an image and then pulls the spot mask (an array of True and
+False values for every pixel) from the data structure. As an extra
+check (and demo) the image is reread and the dimensions of the image
+are confirmed to match those of the image. Note that the
+:meth:`~GSASIIscriptable.G2Image.GeneratePixelMask` routine could also
+have been used to compute the mask.
+
+This also provides an example showing how a result that is not made
+directly available from the GSASIIscriptable API can still be accessed
+from the GSAS-II data structures, but this requires some care to
+determine where values are stored. 
+
+.. code-block::  python
+
+    import os
+    import G2script as G2sc
+    datadir = os.path.expanduser("~/Scratch/MPE_H5")
+    PathWrap = lambda fil: os.path.join(datadir,fil)
+    gpx = G2sc.G2Project(PathWrap('pixelMask.gpx'))
+    img0 = gpx.image(0) # access 1st image
+    spotMask = img0.data['Masks']['SpotMask'].get('spotMask')
+    if spotMask is not None:
+        assert spotMask.shape == img0.getImage().shape   # diagnostic to confirm sizes match
+
 
 .. _HistExport:
 

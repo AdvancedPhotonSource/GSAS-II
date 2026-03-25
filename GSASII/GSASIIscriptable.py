@@ -6772,6 +6772,15 @@ class G2Image(G2ObjectWrapper):
         Imax = np.max(ImageZ)
         self.data['Masks']['Thresholds'] = [(0,Imax),[Imin,Imax]]
 
+    def getImage(self):
+        '''Returns the image, even if not already cached
+        '''
+        LoadG2fil()
+        if self.image is not None:
+            return self.image
+        else:
+            return _getCorrImage(Readers['Image'],self.proj,self)
+    
     def getMasks(self):
         '''load masks from an IMG tree entry
         '''

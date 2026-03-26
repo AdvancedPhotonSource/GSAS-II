@@ -98,6 +98,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
         # scan blocks for reflections
         self.errors = 'Error during scan of blocks for datasets'
         blklist = []
+        EmbeddedShelx = []
         for blk in cf.keys(): # scan for reflections, F or F2 values and cell lengths.
             # Ignore blocks that do not have structure factors and a cell
             blkkeys = [k.lower() for k in cf[blk].keys()]
@@ -109,6 +110,10 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 if hklitems[i][0] in blkkeys and hklitems[i][1] in blkkeys and hklitems[i][2] in blkkeys:
                     dnIndex = i
                     break
+            if '_shelx_hkl_file' in blkkeys:
+                blklist.append(blk)
+                EmbeddedShelx.append(blk)
+                break
             else:
                 break # no reflections
             for dn in Fdatanames:
@@ -178,6 +183,27 @@ class CIFhklReader(G2obj.ImportStructFactor):
             self.repeatcount = 1
         blknm = blklist[selblk]
         blk = cf[blklist[selblk]]
+        if blknm in EmbeddedShelx:
+            hkllines = blk.GetItemValue('_shelx_hkl_file').split('\n')
+            try:
+                for line,S in enumerate(hkllines):
+                    self.errors = '  Error reading line '+str(line+1)
+                    if not len(S.strip()): continue
+                    items = S.split()
+                    h,k,l,Fo,sigFo = items[:5]
+                    h,k,l = [int(h),int(k),int(l)]
+                    if not any([h,k,l]):
+                        break
+                    Fo = float(Fo)
+                    sigFo = float(sigFo)
+                    self.RefDict['RefList'].append([h,k,l,1,0,Fo**2,2.*Fo*sigFo,0,Fo**2,0,0,1])
+                self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+                self.RefDict['Type'] = 'SXC'
+                self.RefDict['Super'] = 0
+                self.UpdateParameters(Type='SXC',Wave=None) # histogram type
+                return True
+            except:
+                return False                
         self.objname = os.path.basename(filename)+':'+str(blknm)
         self.errors = 'Error during reading of reflections'
         # read in reflections

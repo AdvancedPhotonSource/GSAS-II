@@ -45,6 +45,7 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atand = lambda x: 180.*np.arctan(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
+vnorm = lambda v: v/nl.norm(v)
 try:  # fails on doc build
     twopi = 2.0*np.pi
     twopisq = 2.0*np.pi**2
@@ -1355,7 +1356,7 @@ def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
         Q = oriQ
     else:
         a,v = Q2AV(oriQ)
-        symaxis = np.array(symAxis)
+        symaxis = vnorm(np.array(symAxis))
         vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
         xformAng = np.arccos(vdotsym)
         xformVec = np.cross(symaxis,v)
@@ -1405,7 +1406,7 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         Q = RBObj['Orient'][0]
     else:
         a,v = Q2AV(RBObj['Orient'][0])
-        symaxis = np.array(RBObj.get('symAxis'))
+        symaxis = vnorm(np.array(RBObj.get('symAxis')))
         vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
         xformAng = np.arccos(vdotsym)
         xformVec = np.cross(symaxis,v)

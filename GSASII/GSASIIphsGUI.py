@@ -9580,7 +9580,7 @@ at one of the following locations:
                 thermSizer.Add(Tcheck,0,WACV)
             return thermSizer
 
-        def LocationSizer(RBObj,rbType):
+        def LocationSizer(RBObj,rbType,rbId):
 
             def OnOrigRef(event):
                 RBObj['Orig'][1] = Ocheck.GetValue()
@@ -9655,6 +9655,21 @@ at one of the following locations:
                 except ValueError:
                     pass
 
+            def OnSymRadioSet(event):
+                '''Set the polar axis for the sp. harm. as
+                RBdata['Spin'][RBId]['symAxis']. This may never be
+                set, so use RBdata['Spin'][RBId].get('symAxis') to
+                access this so the default value is [0,0,1].
+                '''
+                Obj = event.GetEventObject()
+                axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1])[Obj.GetSelection()]
+                RBObj['symAxis'] = axis
+                A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
+                ApplyAV(A,V)
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms(G2frame,data)
+                G2plt.PlotStructure(G2frame,data)
+
             SGData = data['General']['SGData']
             rbSizer = wx.BoxSizer(wx.VERTICAL)
             topSizer = wx.FlexGridSizer(0,7,5,5)
@@ -9725,6 +9740,17 @@ at one of the following locations:
             sytsymtxt = wx.StaticText(RigidBodies,label='%s site symmetry: %s, multiplicity: %d '%(Name,Sytsym,Mult))
             rbSizer.Add(topSizer)
             rbSizer.Add(sytsymtxt)
+            choices = [' x ',' y ',' z ','x+y','x+y+z']
+            RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
+            try:
+                symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
+            except KeyError:
+                symax = ' z '
+            symRadioSet = wx.RadioBox(RigidBodies,choices=choices,label='RB polar axis is aligned along:')
+            symRadioSet.SetStringSelection(symax)
+            symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+            Indx[symRadioSet.GetId()] = rbId
+            rbSizer.Add(symRadioSet)
             return rbSizer
 
         def SpnrbSizer(RBObj,spnIndx):
@@ -9746,17 +9772,6 @@ at one of the following locations:
                 data['Drawing']['Atoms'] = []
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
-
-            def OnSymRadioSet(event):
-                '''Set the polar axis for the sp. harm. as
-                RBdata['Spin'][RBId]['symAxis']. This may never be
-                set, so use RBdata['Spin'][RBId].get('symAxis') to
-                access this so the default value is [0,0,1].
-                '''
-                Obj = event.GetEventObject()
-                axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1])[Obj.GetSelection()]
-                RBObj['symAxis'] = axis
-                G2plt.PlotStructure(G2frame,data)
 
             def OnAddShell(event):
                 rbNames = []
@@ -9965,15 +9980,7 @@ at one of the following locations:
             Indx[hidesh.GetId()] = 0
             topLine.Add(hidesh,0,WACV)
             sprbSizer.Add(wx.StaticText(RigidBodies,label='Spinning RB orientation parameters for %s:'%RBObj['RBname'][0]))
-            sprbSizer.Add(LocationSizer(RBObj,'Spin'))
-            choices = [' x ',' y ',' z ','x+y','x+y+z']
-            RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
-            symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
-            symRadioSet = wx.RadioBox(RigidBodies,choices=choices,label='Sp harm polar axis is aligned along:')
-            symRadioSet.SetStringSelection(symax)
-            symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
-            Indx[symRadioSet.GetId()] = rbId
-            sprbSizer.Add(symRadioSet)
+            sprbSizer.Add(LocationSizer(RBObj,'Spin',rbId))
             plotLine = wx.BoxSizer(wx.HORIZONTAL)
             RBObj['useAtColor'] = RBObj.get('useAtColor',True)
             atColor = wx.CheckBox(RigidBodies,label='Use atom color?')
@@ -10073,7 +10080,7 @@ at one of the following locations:
             topLine.Add(wx.StaticText(RigidBodies,-1,
                     '  (variables '+varname+')'),0,WACV)
             resrbSizer.Add(topLine)
-            resrbSizer.Add(LocationSizer(RBObj,'Residue'))
+            resrbSizer.Add(LocationSizer(RBObj,'Residue',rbId))
             if len(RBObj['Torsions']):
                 resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0)
             torSizer = wx.FlexGridSizer(0,8,5,5)
@@ -10162,7 +10169,7 @@ at one of the following locations:
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
             vecrbSizer.Add(topLine)
-            vecrbSizer.Add(LocationSizer(RBObj,'Vector'))
+            vecrbSizer.Add(LocationSizer(RBObj,'Vector',rbId))
             members = 'Rigid body members: '
             for Id in RBObj['Ids']:
                 members += data['Atoms'][AtLookUp[Id]][ct-1].strip()+', '

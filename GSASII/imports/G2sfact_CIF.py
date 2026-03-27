@@ -98,7 +98,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
         # scan blocks for reflections
         self.errors = 'Error during scan of blocks for datasets'
         blklist = []
-        EmbeddedShelx = []
+        EmbeddedShelx = []      #as made by Olex2
         for blk in cf.keys(): # scan for reflections, F or F2 values and cell lengths.
             # Ignore blocks that do not have structure factors and a cell
             blkkeys = [k.lower() for k in cf[blk].keys()]
@@ -110,7 +110,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 if hklitems[i][0] in blkkeys and hklitems[i][1] in blkkeys and hklitems[i][2] in blkkeys:
                     dnIndex = i
                     break
-            if '_shelx_hkl_file' in blkkeys:
+            if '_shelx_hkl_file' in blkkeys:    #found Olex2 reflection block from Shelx; should be h,k,l,Fo^2,sig(Fo^2)
                 blklist.append(blk)
                 EmbeddedShelx.append(blk)
                 break
@@ -190,17 +190,20 @@ class CIFhklReader(G2obj.ImportStructFactor):
                     self.errors = '  Error reading line '+str(line+1)
                     if not len(S.strip()): continue
                     items = S.split()
-                    h,k,l,Fo,sigFo = items[:5]
+                    h,k,l,Fo,sigFo = items[:5]      #will only be h,k,l,fo^2,sig(Fo^2)
                     h,k,l = [int(h),int(k),int(l)]
-                    if not any([h,k,l]):
+                    if not any([h,k,l]):    #end of file found
                         break
                     Fo = float(Fo)
                     sigFo = float(sigFo)
-                    self.RefDict['RefList'].append([h,k,l,1,0,Fo**2,2.*Fo*sigFo,0,Fo**2,0,0,1])
+                    self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,1])
                 self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
                 self.RefDict['Type'] = 'SXC'
                 self.RefDict['Super'] = 0
-                self.UpdateParameters(Type='SXC',Wave=None) # histogram type
+                wave = 0.70926
+                if blk.get('_diffrn_radiation_wavelength'):
+                    wave = float(blk['_diffrn_radiation_wavelength'])
+                self.UpdateParameters(Type='SXC',Wave=wave) # histogram type
                 return True
             except:
                 return False                
@@ -348,11 +351,10 @@ class CIFhklReader(G2obj.ImportStructFactor):
                 Type = 'SNC'
         self.RefDict['Type'] = Type
         self.RefDict['Super'] = im
+        wave = 0.70926
         if blk.get('_diffrn_radiation_wavelength'):
             wave = float(blk['_diffrn_radiation_wavelength'])
         elif blk.get('_diffrn_radiation.wavelength'):
             wave = float(blk['_diffrn_radiation.wavelength'])
-        else:
-            wave = 0.70926
         self.UpdateParameters(Type=Type,Wave=wave) # histogram type
         return True

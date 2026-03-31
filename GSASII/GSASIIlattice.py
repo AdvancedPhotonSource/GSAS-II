@@ -2999,7 +2999,7 @@ def SHarmcal(SytSym,SHFln,psi,gam):
             SHVal += (SHFln[term][0]*Ksl)
     return SHVal
 
-def KslCalc(trm,psi,gam):
+def KslCalc(trm,psi,gam,ifDerv=False):
     '''Compute one angular part term in spherical harmonics
 
     :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
@@ -3008,11 +3008,22 @@ def KslCalc(trm,psi,gam):
 
     :returns array Ksl: spherical harmonics angular part for psi,gam pairs
     '''
+    delt = 0.0001
     l,m = eval(trm.strip('C').strip('c'))
     if 'c' in trm:
-        return CubicSHarm(l,m,psi,gam)
+        if ifDerv:
+            dYdp = (CubicSHarm(l,m,psi+delt,gam)-CubicSHarm(l,m,psi-delt,gam))/(2.0*delt)
+            dYdg = (CubicSHarm(l,m,psi,gam+delt)-CubicSHarm(l,m,psi,gam-delt))/(2.0*delt)
+            return CubicSHarm(l,m,psi,gam),dYdp,dYdg
+        else:
+            return CubicSHarm(l,m,psi,gam)
     else:
-        return SphHarmAng(l,m,1.0,psi,gam)
+        if ifDerv:
+            dYdp = (SphHarmAng(l,m,1.0,psi+delt,gam)-SphHarmAng(l,m,1.0,psi-delt,gam))/(2.0*delt)
+            dYdg = (SphHarmAng(l,m,1.0,psi,gam+delt)-SphHarmAng(l,m,1.0,psi,gam-delt))/(2.0*delt)
+            return SphHarmAng(l,m,1.0,psi,gam),dYdp,dYdg
+        else:
+            return SphHarmAng(l,m,1.0,psi,gam)
 
 def SphHarmAng(L,M,P,Th,Ph):
     ''' Compute spherical harmonics values using scipy.special.sph_harm

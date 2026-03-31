@@ -7412,7 +7412,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
                         Npsi,Ngam = 90,45 
                         QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
-                        QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
+                        QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
                         QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel
                         Q = G2mth.prodQQ(QB,QA)
                         Q = G2mth.prodQQ(Q,QP)

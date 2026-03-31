@@ -449,7 +449,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
 
     def MakePolar(Orient,QB):
         QA = G2mth.invQ(Orient)       #rotates about chosen axis
-        Q = G2mth.prodQQ(QA,QB)     #might be switched? QB,QA is order for plotting
+        Q = G2mth.prodQQ(QB,QA)     #might be switched? QB,QA is order for plotting
         M = np.inner(G2mth.Q2Mat(Q),Bmat)
         return G2lat.H2ThPh2(hkl,M)[1:]
 

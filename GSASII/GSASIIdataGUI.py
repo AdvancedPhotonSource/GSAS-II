@@ -8804,6 +8804,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         for value in data[0]:
             if 'Nref' in value:
                 pfx = value.split('Nref')[0]
+                if str(data[0].get('hId',0)) != pfx.split(':')[1]:
+                    continue
                 name = data[0].get(pfx.split(':')[0]+'::Name','?')
                 if 'SS' in value:
                     mainSizer.Add((5,5),)
@@ -9187,7 +9189,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 UpdatePWHKPlot(G2frame,'REFD',item)
         elif G2frame.GPXtree.GetItemText(item).startswith('HKLF '):
             G2frame.Sngl = True
-            UpdatePWHKPlot(G2frame,'HKLF',item)
+            if G2frame.EnablePlot:
+                UpdatePWHKPlot(G2frame,'HKLF',item)
         elif G2frame.GPXtree.GetItemText(item).startswith('PDF '):
             G2frame.PatternId = item
             data = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,item,'PDF Controls'))

@@ -449,7 +449,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
 
     def MakePolar(Orient,QB):
         QA = G2mth.invQ(Orient)       #rotates about chosen axis
-        Q = G2mth.prodQQ(QB,QA)     #might be switched? QB,QA is order for plotting
+        Q = G2mth.prodQQ(QB,QA)         #matches plot operation
         M = np.inner(G2mth.Q2Mat(Q),Bmat)
         return G2lat.H2ThPh2(hkl,M)[1:]
 
@@ -469,7 +469,7 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             atFlg.append(1.0)
             SHdat = SHCdict[iAt]
             symAxis = np.array(SHdat['symAxis'])
-            QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
+            QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
             Th,Ph = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
             if ifDeriv:
                 ThP,PhP = MakePolar([SHdat['Oa']+.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)

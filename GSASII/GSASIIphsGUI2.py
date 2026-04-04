@@ -1595,7 +1595,7 @@ def UpdateLayerData(G2frame,data,Scroll=0):
 def UpdateTexture(G2frame,data):
 
     def SetSHCoef():
-        cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],SamSym[textureData['Model']],textureData['Order'])
+        cofNames = G2lat.GenSHCoeffT(SGData['SGLaue'],SamSym[textureData['Model']],textureData['Order'])
         newSHCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
         SHCoeff = textureData['SH Coeff'][1]
         for cofName in SHCoeff:

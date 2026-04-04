@@ -2995,7 +2995,7 @@ def GetHistogramPhaseData(Phases,Histograms,Controls={},Print=True,pFile=None,re
                     else:                           #'SH' spherical harmonics
                         controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
                         controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
-                        controlDict[pfx+'SHnames'] = G2lat.GenSHCoeff(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
+                        controlDict[pfx+'SHnames'] = G2lat.GenSHCoeffT(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
                         controlDict[pfx+'SHhkl'] = []
                         try: #patch for old Pref.Ori. items
                             controlDict[pfx+'SHtoler'] = 0.1

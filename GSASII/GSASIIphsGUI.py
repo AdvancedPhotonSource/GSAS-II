@@ -1554,8 +1554,8 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
     for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
         sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
-    if G2frame.testRBObjSizers.get('OnOrien') is None: return
-    G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))
+    # if G2frame.testRBObjSizers.get('OnOrien') is None: return
+    # G2frame.testRBObjSizers['OnOrien'](mode=testRBObj['rbObj'].get('drawMode',DrawStyleChoice[4]))
 
 def GetReflData(G2frame,phaseName,reflNames):
     ReflData = {'RefList':[],'Type':''}
@@ -8812,7 +8812,7 @@ at one of the following locations:
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(drawOptions,label=' Background color:'),0,WACV)
             backColor = G2G.setColorButton(drawOptions,drawingData, 'backColor',
-                                       G2plt.PlotStructure,[G2frame,data])
+                G2plt.PlotStructure,[G2frame,data])
             lineSizer.Add(backColor,0,WACV)
             lineSizer.Add(wx.StaticText(drawOptions,-1,' View Dir.:'),0,WACV)
             VD = drawingData['viewDir']
@@ -10786,7 +10786,7 @@ at one of the following locations:
                         msg += i
                         msg += ', '
                     wx.MessageBox(msg[:-2],caption='Duplicated Fixed Atoms',style=wx.ICON_EXCLAMATION)
-                    return
+                    return {}
                 return selDict
 
             def getDeltaXYZ(selDict,data,rbObj):

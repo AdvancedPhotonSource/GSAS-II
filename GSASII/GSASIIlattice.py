@@ -2565,7 +2565,7 @@ def GenRBCoeff(sytsym,RBsym,L):
 def GenShCoeff(sytsym,L):
     '''Generate spherical harmonic coefficient names for atom site symmetry
 
-    Note there are functions GenShCoeff and GenSHCoeff
+    Note there are functions GenShCoeff and GenSHCoeffT
 
     :param str sytsym: site symmetry or perhaps molecular symmetry
     :param int L: spherical harmonic order no.
@@ -2633,10 +2633,10 @@ def OdfChk(SGLaue,L,M):
                     if M <= L//12+1: return True
     return False
 
-def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
+def GenSHCoeffT(SGLaue,SamSym,L,IfLMN=True):
     '''Generate spherical harmonics coefficient names for texture
 
-    Note there are functions GenShCoeff and GenSHCoeff
+    Note there are functions GenShCoeffT and GenSHCoeff
 
     :param str SGLaue: Laue symbol
     :param str SamSym: sample symmetry symbol

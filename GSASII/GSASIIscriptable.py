@@ -5416,7 +5416,7 @@ class G2Phase(G2ObjectWrapper):
                     self.data['Histograms'][h]['Pref.Ori.'][0] = 'MD'
                 elif intval is not None and 2*int(intval//2) == intval:
                     SGData = self.data['General']['SGData']
-                    cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',intval,False)     #cylindrical & no M
+                    cofNames = G2lat.GenSHCoeffT(SGData['SGLaue'],'0',intval,False)     #cylindrical & no M
 
                     self.data['Histograms'][h]['Pref.Ori.'][0] = 'SH'
                     self.data['Histograms'][h]['Pref.Ori.'][4] = intval

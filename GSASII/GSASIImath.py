@@ -1621,8 +1621,17 @@ def phaseContents(phase):
 def fmtPhaseContents(compdict):
     '''Format results from :func:`phaseContents`
     '''
-    n = ', '.join([f'{i}({compdict[i]})' for i in sorted(compdict)])
-    return f"contents: {n}"
+    s = ''
+    for i in sorted(compdict):
+        n = compdict[i]
+        i = i.split('+')[0].split('-')[0]
+        if n == 1:
+            s += f'{i} '
+        elif n == int(n):
+            s += f'{i}{int(n)} '
+        else:
+            s += f'{i}({n}). '
+    return f"contents: {s}"
 
 def getWave(Parms):
     '''returns wavelength from Instrument parameters dictionary

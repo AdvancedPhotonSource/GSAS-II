@@ -1282,7 +1282,7 @@ def saveNewPhase(G2frame,phData,newData,phlbl,msgs,orgFilName):
     nacomp,nccomp = G2mth.phaseContents(phData)
     msgs[phlbl] = f"With space group {sgsym} and cell={fmtCell(generalData['Cell'][1:7])}"
     msgs[phlbl] += f", vol={generalData['Cell'][7]:.2f} A^3"
-    msgs[phlbl] += f", project file created as {G2frame.GSASprojectfile}"
+    msgs[phlbl] += f". Project file created as {os.path.split(G2frame.GSASprojectfile)[1]}"
 
     msgs[phlbl] += f". After transform, unit cell {G2mth.fmtPhaseContents(nccomp)}"
     msgs[phlbl] += f", density={G2mth.getDensity(generalData)[0]:.2f} g/cm^3"

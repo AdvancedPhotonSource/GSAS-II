@@ -4433,8 +4433,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
     def OnHklShow(event=None,Print=True,Plot=True,indexFrom=''):
         '''Compute the location of powder diffraction peaks from the
-        cell in controls[6:12] and the space group in ssopt['SGData'] if
-        defined, or controls[13], if not.
+        cell in controls[6:12]. If the structure is modulated (ssopt['Use'] 
+        is True), then the space group in ssopt['SGData'] if defined. 
+        Otherwise, the space group is taken from controls[13].
+        Magnetic space group information is placed separately into SGData,
+        so space group information is added to this dict to not replace that.
 
         Reflections are placed in G2frame.HKL
 
@@ -4461,9 +4464,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         A = G2lat.cell2A(cell)
         spc = controls[13]
         if ssopt.get('Use',False):  #modulated
-            SGData = ssopt.get('SGData',G2spc.SpcGroup(spc)[1])
+            SGData.update(ssopt.get('SGData',G2spc.SpcGroup(spc)[1]))
         else:                       #not modulated
-            SGData = G2spc.SpcGroup(spc)[1]
+            SGData.update(G2spc.SpcGroup(spc)[1])
         Symb = SGData['SpGrp']
         M20 = X20 = 0.
         if ssopt.get('Use',False) and ssopt.get('ssSymb',''):
@@ -4563,12 +4566,12 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
     def LoadUnitCell(event):
         '''Called in response to a Load Phase menu command'''
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
-        data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
-        if len(data) < 5:
-            data.append({})
-        controls,bravais,cells,dminx,ssopt = data[:5]
+        #data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        #if len(data) < 5:
+        #    data.append({})
+        #controls,bravais,cells,dminx,ssopt = data[:5]
         magcells = []           #clear away old mag cells list (if any)
-        controls = controls[:14]+[['0','0','0',' ',' ',' '],[],]
+        controls[15:] = [['0','0','0',' ',' ',' '],[],]
         data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases')
@@ -5080,44 +5083,50 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
-        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
-            ' Use whole star',' Filter by','preserve axes','max unique'],
-            values=kvec+[False,'',True,100],
-            limits=[[Kx[1:],Ky[1:],Kz[1:]],[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
+        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',
+            prompts=[' k-vector 1', \
+                ' Use whole star',' Filter by','preserve axes','max unique'],
+            values=kvec[0:1]+[False,'',True,100],
+            limits=[[Kx[1:],Ky[1:],Kz[1:]],[True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],[1,100]],
-            formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
+            formats=[['choice','choice','choice'],'bool','choice',
                     'bool','%d',])
         dlg.CenterOnParent()
-        if dlg.ShowModal() == wx.ID_OK:
-            magcells = []
-            newVals = dlg.GetValues()
-            kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
-            nkvec = kvec.index(' ')
-            star = newVals[3]
-            filterby = newVals[4]
-            keepaxes = newVals[5]
-            maxequiv = newVals[6]
-            if 'maximal' in filterby:
-                maximal = True
-                Landau = False
-            elif 'Landau' in filterby:
-                maximal = False
-                Landau = True
-            else:
-                maximal = False
-                Landau = False
-            if nkvec not in [0,3,6,9]:
-                wx.MessageBox('Error: check your propagation vector(s)',
-                    caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
-                return
-            if nkvec in [6,9] and Landau:
-                wx.MessageBox('Error, multi k-vectors & Landau not compatible',
-                    caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
-                return
-            wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
-                              G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
-                              caption='Bilbao SUBGROUPS',
-                              style=wx.ICON_INFORMATION)
+        if dlg.ShowModal() != wx.ID_OK: return
+        magcells = []
+        newVals = dlg.GetValues()
+        kvec = newVals[0]+7*[' ']
+        star = newVals[1]
+        filterby = newVals[2]
+        keepaxes = newVals[3]
+        maxequiv = newVals[4]
+        nkvec = kvec.index(' ')
+        if 'maximal' in filterby:
+            maximal = True
+            Landau = False
+        elif 'Landau' in filterby:
+            maximal = False
+            Landau = True
+        else:
+            maximal = False
+            Landau = False
+        if nkvec not in [0,3,6,9]:
+            wx.MessageBox('Error: check your propagation vector(s)',
+                caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+            return
+        if nkvec in [6,9] and Landau:
+            wx.MessageBox('Error, multi k-vectors & Landau not compatible',
+                caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+            return
+        wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
+                          G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
+                          caption='Bilbao SUBGROUPS',
+                          style=wx.ICON_INFORMATION)
+        dlg = wx.ProgressDialog('SUBGROUPS results',
+                            'Searching for subgroups',11,
+                            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        kSUB.RegisterProgressDialog(dlg)
+        try:
             wx.BeginBusyCursor()
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
@@ -5139,10 +5148,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 controls[16] = baseList
             except IndexError:
                 controls.append(baseList)
-            dlg = wx.ProgressDialog('SUBGROUPS results',f'Processing {SubGroups[0][0]}',len(SubGroups),
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
             for ir,result in enumerate(SubGroups):
-                dlg.Update(ir,newmsg='Processing '+result[0])
+                dlg.Update(ir%10,newmsg=f'Processing {result[0]}')
                 Trans = np.array(eval(result[1][0]))
                 Uvec = np.array(eval(result[1][1]))
                 phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
@@ -5159,12 +5166,14 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 phase['maxequiv'] = maxequiv
                 phase['nAtoms'] = len(TestAtoms(phase,controls[15],SGData,Uvec,Trans,maxequiv,maximal))
                 magcells.append(phase)
+        finally:
             dlg.Destroy()
-            magcells[0]['Use'] = True
-            SGData = magcells[0]['SGData']
-            A = G2lat.cell2A(magcells[0]['Cell'][:6])
-            G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,SGData,A,Inst))
-            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
+            kSUB.RegisterProgressDialog()
+        magcells[0]['Use'] = True
+        SGData = magcells[0]['SGData']
+        A = G2lat.cell2A(magcells[0]['Cell'][:6])
+        G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,SGData,A,Inst))
+        G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
@@ -5211,46 +5220,48 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                      ['testfxn','testfxn','testfxn'],
                      'bool','choice','bool','choice','bool','%d',],
             header=msg)
-        if dlg.ShowModal() == wx.ID_OK:
-            magcells = []
-            newVals = dlg.GetValues()
-            kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
-            nkvec = kvec.index(' ')
-            star = newVals[3]
-            filterby = newVals[4]
-            keepaxes = newVals[5]
-            atype = newVals[6]
-            allmom = newVals[7]
-            maxequiv = newVals[8]
-            if 'maximal' in filterby:
-                maximal = True
-                Landau = False
-            elif 'Landau' in filterby:
-                maximal = False
-                Landau = True
-            else:
-                maximal = False
-                Landau = False
-            if nkvec not in [0,3,6,9]:
-                wx.MessageBox('Error: check your propagation vector(s)',
-                    caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
-                return
-            if nkvec in [6,9] and Landau:
-                wx.MessageBox('Error, multi k-vectors & Landau not compatible',
-                    caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
-                return
-            magAtms = [atom for atom in controls[15] if atom[1] == atype]
-            wx.BeginBusyCursor()
-            wx.MessageBox(
-                ' For use of k-SUBGROUPSMAG in GSAS-II, please cite:\n\n'+
-                G2G.GetCite('Bilbao: k-SUBGROUPSMAG')+
-                '\nand\n'+
-                G2G.GetCite('Bilbao+GSAS-II magnetism'),
-                caption='Bilbao/GSAS-II Magnetism',
-                style=wx.ICON_INFORMATION)
-
+        if dlg.ShowModal() != wx.ID_OK: return
+        magcells = []
+        newVals = dlg.GetValues()
+        kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
+        nkvec = kvec.index(' ')
+        star = newVals[3]
+        filterby = newVals[4]
+        keepaxes = newVals[5]
+        atype = newVals[6]
+        allmom = newVals[7]
+        maxequiv = newVals[8]
+        if 'maximal' in filterby:
+            maximal = True
+            Landau = False
+        elif 'Landau' in filterby:
+            maximal = False
+            Landau = True
+        else:
+            maximal = False
+            Landau = False
+        if nkvec not in [0,3,6,9]:
+            wx.MessageBox('Error: check your propagation vector(s)',
+                caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
+            return
+        if nkvec in [6,9] and Landau:
+            wx.MessageBox('Error, multi k-vectors & Landau not compatible',
+                caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
+            return
+        magAtms = [atom for atom in controls[15] if atom[1] == atype]
+        wx.MessageBox(
+            ' For use of k-SUBGROUPSMAG in GSAS-II, please cite:\n\n'+
+            G2G.GetCite('Bilbao: k-SUBGROUPSMAG')+
+            '\nand\n'+
+            G2G.GetCite('Bilbao+GSAS-II magnetism'),
+            caption='Bilbao/GSAS-II Magnetism',
+            style=wx.ICON_INFORMATION)
+        try:
+            dlg = wx.ProgressDialog('k-SUBGROUPSMAG results',
+                                'Searching for magnetic subgroups',11,
+                                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+            kSUB.RegisterProgressDialog(dlg)
             MAXMAGN,baseList = kSUB.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau)
-            wx.EndBusyCursor()
             if MAXMAGN is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
                 return
@@ -5267,12 +5278,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 controls[16] = baseList
             except IndexError:
                 controls.append(baseList)
-            dlg = wx.ProgressDialog('k-SUBGROUPSMAG results','Processing '+MAXMAGN[0][0],len(MAXMAGN),
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
-
             for ir,result in enumerate(MAXMAGN):
                 # result is SPGP,BNS,MV,itemList,altList,superList
-                dlg.Update(ir,newmsg='Processing '+result[0])
+                dlg.Update(ir%10,newmsg=f'Processing {result[0]}')
                 Trans = np.array(eval(result[2][0]))
                 Uvec = np.array(eval(result[2][1]))
                 phase = G2lat.makeBilbaoPhase(result[:2],Uvec,Trans,True)
@@ -5292,12 +5300,14 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 phase['maxequiv'] = maxequiv
                 phase['nAtoms'] = len(TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv,maximal))
                 magcells.append(phase)
+        finally:
             dlg.Destroy()
-            magcells[0]['Use'] = True
-            SGData = magcells[0]['SGData']
-            A = G2lat.cell2A(magcells[0]['Cell'][:6])
-            G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,SGData,A,Inst))
-            G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
+            kSUB.RegisterProgressDialog()
+        magcells[0]['Use'] = True
+        SGData = magcells[0]['SGData']
+        A = G2lat.cell2A(magcells[0]['Cell'][:6])
+        G2frame.HKL = np.array(G2pwd.getHKLpeak(1.0,SGData,A,Inst))
+        G2pwpl.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)

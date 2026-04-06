@@ -361,3 +361,13 @@ This will matter for exporters that place multiple entries in a single file.
 The default is to use the data tree entries in the order they appear in the
 data tree. 
 '''
+
+BCS_API_KEY = ""
+'''This contains a key that is used to access the Bilbao Crystallographic 
+web Server. It will be generated individually for each user who wants to 
+access the server based on specific information (likely including an 
+e-mail address) that BCS chooses. 
+
+The mechanism for obtaining that key and getting it into the GSAS-II 
+configuration will be established later.
+'''

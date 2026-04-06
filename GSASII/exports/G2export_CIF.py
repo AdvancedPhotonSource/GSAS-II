@@ -4938,6 +4938,9 @@ class ExportPhaseCIF(ExportCIF):
         if self.ExportSelect('ask'):
             return
         else:
+            # this adds the phase name to the file. This is needed when 
+            # exporting multiple phases, but not when doing a quick 
+            # export of a single phase. TODO: How to tell the difference?
             baseFileName, ext=os.path.splitext(self.filename)
             for nameOfPhase in self.phasenam:
                 # strip non-ascii characters & replace white space in filename

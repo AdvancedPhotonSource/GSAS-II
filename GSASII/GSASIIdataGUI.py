@@ -7372,7 +7372,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             G2G.Define_wxId('wxID_ISOSRCH')
             self.GeneralCalc.Append(G2G.wxID_ISOSRCH,'ISOCIF Supergroup search','Search for settings of this phase in higher symmetry')
             self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
-
+            G2G.Define_wxId('wxID_TESTBCS')
+            self.GeneralCalc.Append(G2G.wxID_TESTBCS,'Test Bilbao access',
+                'Check if Bilbao key works')
             submenu = wx.Menu()
             self.GeneralCalc.AppendSubMenu(submenu,'Replace phase','Replace phase from file')
             # setup a cascade menu for the formats that have been defined

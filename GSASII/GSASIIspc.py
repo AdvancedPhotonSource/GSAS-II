@@ -4020,11 +4020,11 @@ def CompareSym(symList,sgName=None,SGData=None):
 
         for i,mat in enumerate(matList):
             if np.allclose(mat[0],syMat[0]) and np.allclose(offsetNorm(mat[1]),offsetNorm(syMat[1])):
+                del matList[i] # matched to this, remove it
                 break
         else:
             print(f'Symmetry element from input, {sym}, not matched in GSAS-II setting')
             return False
-        del matList[i] # matched to this, remove it
     return True
 
 def SpaceGroupNumber(spcgroup):

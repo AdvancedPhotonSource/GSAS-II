@@ -569,6 +569,10 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None,newLeBail=False,all
                 G2stIO.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
                 # check for variables outside their allowed range, reset and freeze them
                 frozen = dropOOBvars(varyList,parmDict,sigDict,Controls,parmFrozenList)
+                for p in frozen:
+                    i = varyList.index(p)
+                    result[0][i] = parmDict[p]
+                    sig[i] = -0.1
                 G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
                 G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
                 G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)

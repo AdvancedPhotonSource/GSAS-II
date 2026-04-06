@@ -2095,7 +2095,6 @@ If you continue from this point, it is quite likely that all intensity computati
                 finally:
                     del Iparm1['CorrectionCode']
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
-            if GSASIIpath.GetConfigValue('debug'): print('crash debug: read complete, adding to tree')
             self.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),rd.comments)
             Tmin = min(rd.powderdata[0])
@@ -2141,11 +2140,9 @@ If you continue from this point, it is quite likely that all intensity computati
         else:
             # there are no break statements in this while loop so these are always run:
             self.EnablePlot = True
-            if GSASIIpath.GetConfigValue('debug'): print('crash debug: before Expand')
             if Id:
                 self.GPXtree.Expand(Id)
                 self.GPXtree.SelectItem(Id)  # perhaps this is better as a CallAfter (See #282)
-            if GSASIIpath.GetConfigValue('debug'): print('crash debug: after Select Item')
 
         G2fil.CleanupFromZip('instprm',self.cleanupList)
         if not newHistList: return # somehow, no new histograms
@@ -3101,7 +3098,9 @@ If you continue from this point, it is quite likely that all intensity computati
         self.dataWindow = G2DataWindow(self.mainPanel)
         dataSizer = wx.BoxSizer(wx.VERTICAL)
         self.dataWindow.SetSizer(dataSizer)
-        sash = min(max(100,GSASIIpath.GetConfigValue('Split_Loc',250)),500)
+        sash = max(min(100,GSASIIpath.GetConfigValue('Split_Loc',250)),500)
+        # if GSASIIpath.GetConfigValue('debug'):
+        #     print('SplitterWindow sash=',sash,GSASIIpath.GetConfigValue('Split_Loc'))
         self.mainPanel.SplitVertically(self.treePanel, self.dataWindow.outer, sash)
         self.Status.SetStatusWidths([sash,-1])   # make these match?
 

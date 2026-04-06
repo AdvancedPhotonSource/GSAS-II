@@ -173,12 +173,17 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                 if f <= 0.0:
                     y.append(0.0)
                     w.append(0.0)
-                elif len(vals) == 3:
+                elif len(vals) == 3 and float(vals[2]) < 0.0: # skip entries with negative esd
+                    continue
+                elif len(vals) == 3 and float(vals[2]) != 0.0: # use esd only if >0
                     y.append(float(vals[1]))
                     w.append(1.0/float(vals[2])**2)
-                else:
+                elif float(vals[1]) > 0:
                     y.append(float(vals[1]))
                     w.append(1.0/float(vals[1]))
+                else:
+                    y.append(float(vals[1]))
+                    w.append(1.0)
             except ValueError:
                 self.errors = f'Error parsing number in line {i+1}\n{S.strip()}'
                 if GSASIIpath.GetConfigValue('debug'):

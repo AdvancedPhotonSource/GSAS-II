@@ -7585,7 +7585,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         RenderMapPeak(x,y,z,Or,-2*mag/peakMax)
                 if showBonds:
                     RenderLines(x,y,z,mapBonds[ind],Wt)
-        if len(testRBObj) and pageName == 'RB Models' and 'OnOrien' not in G2frame.testRBObjSizers:
+#        if len(testRBObj) and pageName == 'RB Models' and 'OnOrien' not in G2frame.testRBObjSizers:
+        if len(testRBObj) and pageName == 'RB Models':
             # plot a test rigid body as ball & [green] sticks when adding the RB into cell
             XYZ = G2mth.UpdateRBXYZ(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])[0]
             if testRBObj['rbType'] != 'Spin':

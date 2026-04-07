@@ -4,7 +4,11 @@ Shelx, Jana, REMOS, TOPAS (SNS), HB-3A (HIFR)
 '''
 import sys
 import numpy as np
+import pickle
 from .. import GSASIIobj as G2obj
+
+def pickleLoad(fp):
+    return pickle.load(fp,encoding='latin-1')
 
 def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'
@@ -715,3 +719,105 @@ class hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
             return True
         except:
             return False
+        
+class GSAS2_INT_ReaderClass(G2obj.ImportStructFactor):
+    'Routines to import reflections from a GSAS-II gpx file'
+    def __init__(self):
+        formatName = 'GSASII gpx'
+        longFormatName = 'GSASII HKLF from *.gpx file'
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.gpx','.GPX'),
+            strictExtension=False,
+            formatName=formatName,
+            longFormatName=longFormatName)
+        
+    def ContentsValidator(self, filename):
+        "Test if the 1st section can be read as a pickle block, if not it can't be .GPX!"
+        fp = open(filename,'rb')
+        try: 
+            data = pickleLoad(fp)
+        except:
+            self.errors = 'This is not a valid .GPX file. Not recognized by pickle'
+            fp.close()
+            return False
+        fp.seek(0)
+        nhist = 0
+        while True:
+            try:
+                data = pickleLoad(fp)
+            except EOFError:
+                break
+            if data[0][0][:4] == 'HKLF':
+                nhist += 1
+                self.dnames.append(data[0][0])
+        if nhist:
+            if not len(self.selections):    #no hklf entries
+                self.selections = range(nhist)
+                fp.close()
+                return True
+        self.errors = 'No single crystal entries found'
+        fp.close()
+        return False
+
+    def Reader(self,filename, ParentFrame=None, **kwarg):
+        '''Read an HKLF dataset from a .GPX file.
+        If multiple datasets are requested, use self.repeat and buffer caching.
+        '''
+        histnames = []
+        poslist = []
+        rdbuffer = kwarg.get('buffer')
+        # reload previously saved values
+        if self.repeat and rdbuffer is not None:
+            self.selections = rdbuffer.get('selections')
+            poslist = rdbuffer.get('poslist')
+            histnames = rdbuffer.get('histnames')
+        else:
+            try:
+                fp = open(filename,'rb')
+                while True:
+                    pos = fp.tell()
+                    try:
+                        data = pickleLoad(fp)
+                    except EOFError:
+                        break
+                    if data[0][0][:4] == 'HKLF':
+                        histnames.append(data[0][0])
+                        poslist.append(pos)
+            except:
+                self.errors = 'Reading of histogram names failed'
+                return False
+            finally:
+                fp.close()
+        if not histnames:
+            return False            # no blocks with hklf data
+        elif len(histnames) == 1: # one block, no choices
+            selblk = 0
+        elif self.repeat and self.selections is not None:
+            # we were called to repeat the read
+            #print 'debug: repeat #',self.repeatcount,'selection',selections[self.repeatcount]
+            selblk = self.selections[self.repeatcount]
+            self.repeatcount += 1
+            if self.repeatcount >= len(self.selections): self.repeat = False
+        else:                       # choose from options                
+            selblk = self.selections[0] # select first in list
+            if len(self.selections) > 1: # prepare to loop through again
+                self.repeat = True
+                self.repeatcount = 1
+                if rdbuffer is not None:
+                    rdbuffer['poslist'] = poslist
+                    rdbuffer['histnames'] = histnames
+                    rdbuffer['selections'] = self.selections
+
+        fp = open(filename,'rb')
+        fp.seek(poslist[selblk])
+        data = pickleLoad(fp)
+        self.RefDict = data[0][1][1]
+#        pull some sections from the HKLF children
+        for i in range(1,len(data)):
+            if data[i][0] == 'Comments':
+                self.comments = data[i][1]
+                continue
+        self.idstring = data[0][0][5:]
+        self.repeat_instparm = False # prevent reuse of iparm when several hists are read
+        fp.close()
+        return True

@@ -1616,7 +1616,6 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         if key.startswith('_'): continue
         j = 0
         for cons in value:
-            #print cons             # DEBUG
             for i in range(len(cons[:-3])):
                 if type(cons[i][1]) is str:
                     cons[i][1] = G2obj.G2VarObj(cons[i][1])

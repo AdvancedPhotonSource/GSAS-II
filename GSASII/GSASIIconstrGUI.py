@@ -660,8 +660,11 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
         varbs = [str(FrstVarb),] # list of selected variables
         for sel in Selections:
             var = varList[sel]
-            # phase(s) included
+            if ';' in var:  #for e.g. Vector RB translations!
+                varbs.append(var)
+                continue    #skip rest of steps; no atoms, phases or histograms
             l = var.split(':')
+            # phase(s) included
             if l[0] == "all":
                 phlist = [str(Phases[phase]['pId']) for phase in Phases]
             else:
@@ -678,7 +681,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
             if len(l) == 3:
                 for ph in phlist:
                     for hst in hstlist:
-                        var = ph + ":" + hst + ":" + l[2]
+                        var = ':'.join((ph,hst,l[2]))
+#                        var = ph + ":" + hst + ":" + l[2]
                         if var in varbs: continue
                         varbs.append(var)
             else: # constraints with atoms or rigid bodies
@@ -691,7 +695,8 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                         key = G2obj.LookupPhaseName(ph)[0]
                         for hst in hstlist: # should be blank
                             for iatm,at in enumerate(Phases[key]['Atoms']):
-                                var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
+                                var = ':'.join((ph,hst,l[2],str(iatm)))
+#                                var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
                                 if var in varbs: continue
                                 varbs.append(var)
                 elif '=' in l[3]:
@@ -702,14 +707,16 @@ def UpdateConstraints(G2frame, data, selectTab=None, Clear=False):
                             atyp = l[3].split('=')[1]
                             for iatm,at in enumerate(Phases[key]['Atoms']):
                                 if at[ct] != atyp: continue
-                                var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
+                                var = ':'.join((ph,hst,l[2],str(iatm)))
+#                                var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
                                 if var in varbs: continue
                                 varbs.append(var)
                 else:
                     for ph in phlist:
                         key = G2obj.LookupPhaseName(ph)[0]
                         for hst in hstlist: # should be blank
-                            var = ph + ":" + hst + ":" + l[2] + ":" + l[3]
+                            var = ':'.join((ph,hst,l[2],l[3]))
+#                            var = ph + ":" + hst + ":" + l[2] + ":" + l[3]
                             if var in varbs: continue
                             varbs.append(var)
         if len(varbs) >= 1 or 'constraint' in constType:

@@ -983,8 +983,8 @@ class G2VarObj(object):
             self.phase,self.histogram,self.name,self.atom = args[0]
         elif len(args) == 1 and ':' in args[0]:
             #parse a string
-            suff = ''
-            if ';' in args[0]:
+            suff = None
+            if ';' in args[0]:  #for e.g. Vector RB translations
                 lst,suff = args[0].split(';')
                 lst = lst.split(':')
             else:
@@ -1012,7 +1012,7 @@ class G2VarObj(object):
                 else:
                     raise Exception("Incorrect number of colons in var name "+str(args[0]))
             self.name = lst[2]
-            if len(suff):
+            if suff:  #for e.g. Vector RB translations
                 self.name += (';'+suff)
         elif len(args) == 4:
             if args[0] == '*':

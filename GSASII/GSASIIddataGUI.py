@@ -1146,7 +1146,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     topSizer = G2frame.dataWindow.topBox
     topSizer.Clear(True)
     parent = G2frame.dataWindow.topPanel
-    lbl= f"Histogram data for Phase {data['General']['Name']!r}"[:60]
+    lbl= f"Histogram-specific parameters for Phase {data['General']['Name']!r}"[:60]
     topSizer.Add(wx.StaticText(parent,label=lbl),0,WACV)
     topSizer.Add((-1,-1),1,wx.EXPAND)
     topSizer.Add(G2G.HelpButton(parent,helpIndex=G2frame.dataWindow.helpKey))

@@ -46,6 +46,7 @@ from . import GSASIIctrlGUI as G2G
 from . import GSASIIobj as G2obj
 from . import GSASIIpwdplot as G2pwpl
 from . import GSASIIfiles as G2fil
+from . import GSASIIElem as G2elem
 try:
     if GSASIIpath.binaryPath:    # TODO: I think this may use a fair amount of memory; delay import?
         import pytexture as ptx
@@ -4147,6 +4148,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     MapType = mapData['MapType']
     rhoSize = np.array(Map['rho'].shape)
     atxyz = np.array(atom[cx:cx+3])
+    G2elem.AddWave2atm(atom)
     Spos = atom[-1]['SS1']['Spos']
     tau = np.linspace(0.,2.,101)
     wave = np.zeros((3,101))

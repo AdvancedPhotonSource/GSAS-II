@@ -2158,6 +2158,7 @@ def ApplyModulation(data,tau):
     drawAtoms = drawingData['Atoms']
     Fade = np.ones(len(drawAtoms))
     for atom in atoms:
+        G2el.AddWave2atm(atom)
         atxyz = np.array(atom[cx:cx+3])
         atuij = np.array(atom[cia+2:cia+8])
         Sfrac = atom[-1]['SS1']['Sfrac']

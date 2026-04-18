@@ -29,6 +29,7 @@ from . import GSASIImapvars as G2mv
 from . import GSASIIobj as G2obj
 from . import GSASIIexprGUI as G2exG
 from . import GSASIIctrlGUI as G2G
+from . import GSASIIElem as G2elem
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 #####  Display of Sequential Results ##########################################
@@ -1222,6 +1223,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         at[ind] = parmDict[names[ind]]
                 ind = General['AtomTypes'].index(at[ct])
                 if General.get('Modulated',False):
+                    G2elem.AddWave2atm(at)
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:

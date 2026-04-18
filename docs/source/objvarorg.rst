@@ -626,8 +626,8 @@ cs+1                (int) site multiplicity
 cia                 (str) ADP flag: Isotropic ('I') or Anisotropic ('A')
 cia+1               (float) Uiso 
 cia+2...cia+7       (6 floats) U11, U22, U33, U12, U13, U23 
-atom[cia+8]         (int) unique atom identifier 
-
+cia+8, -1           (int) unique atom identifier 
+-1                  (dict) wave info (modulated structures only)
 ==============      ====================================================
 
 .. _Drawing_atoms_table:

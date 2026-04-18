@@ -1419,6 +1419,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
         pFile.write(135*'-'+'\n')
         for i,at in enumerate(Atoms):
+            G2el.AddWave2atm(at)
             AtomSS = at[-1]['SS1']
             for Stype in ['Sfrac','Spos','Sadp','Smag']:
                 Waves = AtomSS[Stype]
@@ -1802,6 +1803,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,
                                 eqv[1] /= coef
                                 G2mv.StoreEquivalence(name,(eqv,))
                 if General.get('Modulated',False):
+                    G2el.AddWave2atm(at)
                     AtomSS = at[-1]['SS1']
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
@@ -2319,6 +2321,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
         pFile.write(135*'-'+'\n')
         for i,at in enumerate(Atoms):
+            G2el.AddWave2atm(at)
             AtomSS = at[-1]['SS1']
             for Stype in ['Sfrac','Spos','Sadp','Smag']:
                 Waves = AtomSS[Stype]
@@ -2600,6 +2603,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 ind = General['AtomTypes'].index(at[ct])
                 General['Mass'] += General['AtomMass'][ind]*at[cx+3]*at[cx+5]
                 if General.get('Modulated',False):
+                    G2el.AddWave2atm(at)
                     AtomSS = at[-1]['SS1']
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]

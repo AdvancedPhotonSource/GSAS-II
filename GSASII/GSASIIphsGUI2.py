@@ -2085,6 +2085,7 @@ def UpdateWavesData(G2frame,data,Scroll=0):
             def OnWaveType(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
+                G2elem.AddWave2atm(atm)
                 if len(atm[-1]['SS1'][item]) <= 1:
                     atm[-1]['SS1'][item] = [0,]
                     atm[-1]['SS1'][item][0] = waveType.GetValue()
@@ -2095,9 +2096,13 @@ def UpdateWavesData(G2frame,data,Scroll=0):
                         G2G.G2MessageBox(G2frame,'Warning: can only change wave type if no waves','Not changed')
 
             def OnAddWave(event):
+                if not SSGData: # empty means 
+                    G2G.G2MessageBox(None,'Select a modulation group first','Superspace Group Error')
+                    return
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 nt = numVals[Stype]
+                G2elem.AddWave2atm(atm)
                 if not len(atm[-1]['SS1'][item]):
                     if waveTyp in ['ZigZag','Block','Crenel']:
                         nt = numVals[waveTyp]
@@ -2109,6 +2114,7 @@ def UpdateWavesData(G2frame,data,Scroll=0):
             def OnRefWave(event):
                 Obj = event.GetEventObject()
                 item,iwave = Indx[Obj.GetId()]
+                G2elem.AddWave2atm(atm)
                 atm[-1]['SS1'][item][iwave+1][1] = not atm[-1]['SS1'][item][iwave+1][1]
 
             def OnDelWave(event):
@@ -2218,6 +2224,7 @@ def UpdateWavesData(G2frame,data,Scroll=0):
 
         iatm = atNames.index(G2frame.atmSel)
         atm = atomData[iatm]
+        G2elem.AddWave2atm(atm)
         xyz = atm[cx:cx+3]
         atomSizer = wx.BoxSizer(wx.VERTICAL)
         G2G.HorizontalLine(atomSizer,waveData)
@@ -2229,8 +2236,8 @@ def UpdateWavesData(G2frame,data,Scroll=0):
                 break
             try:
                 atomSizer.Add(WaveSizer(iatm,atm[-1]['SS1'][Stype],Stype,typeNames[Stype],Labels[Stype]))
-            except TypeError:
-                atomSizer.Add(wx.StaticText(waveData,label='     Error: this is a 3D atom in a modulated structure'))
+            except TypeError:  # not expected anymore
+                atomSizer.Add(wx.StaticText(waveData,label='     Error: could not process SS info for this atom'))
                 break
         return atomSizer
     

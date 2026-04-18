@@ -1810,9 +1810,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         for atom in Atoms:
                             atom += [{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
                         wx.CallAfter(UpdateGeneral)
-                    else:
-                        G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')
-                        modulated.SetValue(generalData['Modulated'])
+                    # removed this because modulation info is now added to atoms
+                    # else:
+                    #     G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')
+                    #     modulated.SetValue(generalData['Modulated'])
 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(General,-1,' Phase name: '),0,WACV)
@@ -2185,6 +2186,9 @@ def UpdatePhaseData(G2frame,Item,data):
 
             def OnShowSOps(event):
                 SSGData = generalData['SSGData']
+                if not SSGData: # SS sym defined? 
+                    G2G.G2MessageBox(General,'Select a modulation group first','Superspace Group Error')
+                    return
                 text,table = G2spc.SSGPrint(generalData['SGData'],SSGData,not SGData['SGFixed'])
                 msg = 'Superspace Group Information'
                 G2G.SGMessageBox(General,msg,text,table,SGData.get('SpnFlp',[])).ShowModal()
@@ -4896,7 +4900,8 @@ to use these entries'''
             atomData.append([0,Name,'',Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['nuclear','faulted',]:
             if generalData['Modulated']:
-                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
+#                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,  # why empty lists? something later removed?
                     {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
             else:
                 atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
@@ -7169,6 +7174,7 @@ at one of the following locations:
         names = ['Sfrac','Spos','Sadp','Smag']
         flags = dict(zip(names,[[],[],[],[]]))
         for atom in atomData:
+            G2elem.AddWave2atm(atom)
             atNames.append(atom[ct-1])
             waves = atom[-1]['SS1']
             for name in names:

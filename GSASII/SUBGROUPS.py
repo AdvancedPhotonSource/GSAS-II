@@ -76,7 +76,6 @@ def BCS_init(threadCallback=None):
         # except Exception as err:
         #     print(err)
         except:
-            print(err)
             pass
         msg = '''The Bilbao key (BCS_API_KEY) has not been defined. You must 
 register an account and generate an "API Key" with the 

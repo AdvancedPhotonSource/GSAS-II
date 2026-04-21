@@ -32,24 +32,27 @@ from GSASII import SUBGROUPS
 from GSASII import GSASIIpath
 from GSASII import GSASIIspc as G2spc
 
-def test_pseudosym():
-    postdict = {'formulae': '', 'cifile': '', 'filename': '', 'what': 'minsup',
-                    'maxik': '1', 'onlythisik': '1', 'mysuper2': '211',
-                    'x1': '1', 'x2': '0', 'x3': '0',
-                    'y1': '0', 'y2': '1', 'y3': '0',
-                    'z1': '0', 'z2': '0', 'z3': '1', 'x4': '0',
-                    'y4': '0', 'z4': '0',
-                    'angtol': '5', 'submit': 'Show', 'maxdelta': '2.0',
-                    'stru': '# Space Group ITA number\n227\n# Lattice parameters\n5.43123 5.43123 5.43123 90.0 90.0 90.0\n# number of atoms & atoms\n1\nSi   1 - 0.12500 0.12500 0.12500\n'}
-    savedcookies = {}
-    URL = SUBGROUPS.bilbaoSite+ SUBGROUPS.pseudosym
-    print('test PSEUDOSYM')
-    page0 = GSASIIpath.postURL(URL,postdict,
-                             getcookie=savedcookies,timeout=SUBGROUPS.timeout)
-    if page0 is None: assert False,"Web access failed"
-    res = SUBGROUPS.scanBilbaoSymSearch1(page0,postdict)+[savedcookies]
-    assert res[2]['1'][0] == 'Pn-3m'
-    assert abs(float(res[2]['1'][5].split()[0]) -  5.43123/2) < 2e-5
+def test_Bilboa_access():
+    assert not SUBGROUPS.BCS_init(),'No BCS API Key available'
+        
+# def test_pseudosym():
+#     postdict = {'formulae': '', 'cifile': '', 'filename': '', 'what': 'minsup',
+#                     'maxik': '1', 'onlythisik': '1', 'mysuper2': '211',
+#                     'x1': '1', 'x2': '0', 'x3': '0',
+#                     'y1': '0', 'y2': '1', 'y3': '0',
+#                     'z1': '0', 'z2': '0', 'z3': '1', 'x4': '0',
+#                     'y4': '0', 'z4': '0',
+#                     'angtol': '5', 'submit': 'Show', 'maxdelta': '2.0',
+#                     'stru': '# Space Group ITA number\n227\n# Lattice parameters\n5.43123 5.43123 5.43123 90.0 90.0 90.0\n# number of atoms & atoms\n1\nSi   1 - 0.12500 0.12500 0.12500\n'}
+#     savedcookies = {}
+#     URL = SUBGROUPS.bilbaoSite+ SUBGROUPS.pseudosym
+#     print('test PSEUDOSYM')
+#     page0 = GSASIIpath.postURL(URL,postdict,
+#                              getcookie=savedcookies,timeout=SUBGROUPS.timeout)
+#     if page0 is None: assert False,"Web access failed"
+#     res = SUBGROUPS.scanBilbaoSymSearch1(page0,postdict)+[savedcookies]
+#     assert res[2]['1'][0] == 'Pn-3m'
+#     assert abs(float(res[2]['1'][5].split()[0]) -  5.43123/2) < 2e-5
 
 def test_BilbaoSymSearch1():
     print('\n\ntest Bilbao PSEUDO')
@@ -116,7 +119,6 @@ def test_SUBGROUPS():
     assert results[0][0] == "P21/c"
     assert results[-1][0] == "P1"
 
-
 def test_GetStdSGset():
     print('\n\ntest Bilbao IDENTIFY GROUP')
     sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(G2spc.SpcGroup('R 3 C r')[1])
@@ -133,6 +135,7 @@ def test_createStdSetting():
     rd.SymOps['xyz'] = None
     cifFile = os.path.join(home,'testinp','diamond.cif')
     SUBGROUPS.createStdSetting(cifFile,rd)
+    assert 'Atoms' in rd.Phase,'Web access failed'
     assert len(rd.Phase['Atoms']) == 1
     assert rd.Phase['General']['Cell'][1] == 3.5668
     assert len(rd.Phase['General']['SGData']['SGOps']) == 24
@@ -148,6 +151,7 @@ def test_createStdSetting():
 if __name__ == '__main__':
     #GSASIIpath.InvokeDebugOpts()
     # run self-tests
+    test_Bilboa_access()
     test_createStdSetting() # nph-cif2std
     test_GetStdSGset()      # checkgr_gsas.pl
     # test_pseudosym()        # nph-pseudosym, no longer available

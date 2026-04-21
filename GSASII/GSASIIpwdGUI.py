@@ -5118,14 +5118,16 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             wx.MessageBox('Error, multi k-vectors & Landau not compatible',
                 caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
             return
+        dlg = wx.ProgressDialog('SUBGROUPS results',
+                            'Searching for subgroups',11,
+                            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        if kSUB.RegisterProgressDialog(dlg):
+            dlg.Destroy()
+            return
         wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
                           G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
                           caption='Bilbao SUBGROUPS',
                           style=wx.ICON_INFORMATION)
-        dlg = wx.ProgressDialog('SUBGROUPS results',
-                            'Searching for subgroups',11,
-                            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-        kSUB.RegisterProgressDialog(dlg)
         try:
             wx.BeginBusyCursor()
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
@@ -5249,18 +5251,20 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
             return
         magAtms = [atom for atom in controls[15] if atom[1] == atype]
-        wx.MessageBox(
-            ' For use of k-SUBGROUPSMAG in GSAS-II, please cite:\n\n'+
-            G2G.GetCite('Bilbao: k-SUBGROUPSMAG')+
-            '\nand\n'+
-            G2G.GetCite('Bilbao+GSAS-II magnetism'),
-            caption='Bilbao/GSAS-II Magnetism',
-            style=wx.ICON_INFORMATION)
         try:
             dlg = wx.ProgressDialog('k-SUBGROUPSMAG results',
                                 'Searching for magnetic subgroups',11,
                                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-            kSUB.RegisterProgressDialog(dlg)
+            if kSUB.RegisterProgressDialog(dlg):
+                dlg.Destroy()
+                return
+            wx.MessageBox(
+                ' For use of k-SUBGROUPSMAG in GSAS-II, please cite:\n\n'+
+                G2G.GetCite('Bilbao: k-SUBGROUPSMAG')+
+                '\nand\n'+
+                G2G.GetCite('Bilbao+GSAS-II magnetism'),
+                caption='Bilbao/GSAS-II Magnetism',
+                style=wx.ICON_INFORMATION)
             MAXMAGN,baseList = kSUB.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau)
             if MAXMAGN is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)

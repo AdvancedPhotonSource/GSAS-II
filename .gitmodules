@@ -1,0 +1,3 @@
+[submodule "GSASII/Bilbao"]
+	path = GSASII/Bilbao
+	url = https://github.com/briantoby/BCS_API_PythonInterface.git

@@ -632,13 +632,13 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.invalid = not val
         else:
             self.invalid = False
+        self._SaveStringValue()         # always store the result
         self._IndicateValidity()
         if self.invalid:
             if self.OKcontrol:
                 self.OKcontrol(False)
         elif self.OKcontrol and previousInvalid:
             self.OKcontrol(True)
-        self._SaveStringValue()         # always store the result
 
     def _GetStringValue(self,event):
         '''Get string input and store.
@@ -9507,7 +9507,7 @@ SaveCite('Dysnomia',
 'Dysnomia, a computer program for maximum-entropy method (MEM) analysis and its performance in the MEM-based pattern fitting, K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193. doi: https://doi.org/10.1017/S088571561300002X')
 
 def NISTlatUse(msgonly=False):
-        msg = f'Performing cell symmetry search using NIST*LATTICE.\n\nPlease cite: {GetCite("NIST*LATTICE")}'
+        msg = f'Performing cell symmetry search using NIST*LATTICE.\n\nPlease cite:\n{GetCite("NIST*LATTICE",wrap=70,indent=5)}'
         print(msg)
         if msgonly: return msg
         wx.MessageBox(msg,caption='Using NIST*LATTICE',style=wx.ICON_INFORMATION)

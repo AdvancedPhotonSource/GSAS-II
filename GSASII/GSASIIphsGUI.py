@@ -3241,6 +3241,126 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.GPXtree.SelectItem(phId)
         wx.CallLater(100,_GetPhase)
 
+    # def OnNISTLatSym(event):
+    #     '''Run NIST*LATTICE cell search
+
+    #     This is a quick copy of the capability in GSASIIpwdGUI, but uses
+    #     the cell from the current phase. It would be better if this
+    #     would actually transform the unit cell and coordinates using any
+    #     new cell found here. Someday. (TODO)
+    #     '''
+    #     #pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+    #     #controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
+    #     nistInput=[0.2,1.,2,3]
+    #     msg = G2G.NISTlatUse(True)
+    #     dlg = wx.Dialog(G2frame,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    #     sizer = wx.BoxSizer(wx.VERTICAL)
+    #     sizer.Add(wx.StaticText(dlg,label='NIST*LATTICE Cell Symmetry Search Settings'),
+    #                   0,wx.ALIGN_CENTER_HORIZONTAL,0)
+    #     sizer.Add((-1,15))
+    #     sizer.Add(wx.StaticText(dlg,label=msg))
+    #     sizer.Add((-1,15))
+    #     sizer.Add(wx.StaticText(dlg,label=(
+    #         ('Starting cell: '+3*'{:.3f}, '+3*'{:.2f}, ').format(
+    #             *data['General']['Cell'][1:7]))))
+    #     sizer.Add((-1,15))
+    #     tableSizer = wx.FlexGridSizer(0,2,0,0)
+    #     tableSizer.Add(wx.StaticText(dlg,label='Cell length tolerance (A) '),
+    #         0,WACV|wx.ALIGN_LEFT)
+    #     w = G2G.ValidatedTxtCtrl(dlg,nistInput,0,nDig=(6,2))
+    #     tableSizer.Add(w)
+    #     tableSizer.Add(wx.StaticText(dlg,label='Cell angle tolerance (deg) '),
+    #         0,WACV|wx.ALIGN_LEFT)
+    #     w = G2G.ValidatedTxtCtrl(dlg,nistInput,1,nDig=(6,1))
+    #     tableSizer.Add(w)
+    #     #
+    #     # next option makes it too easy to create a really
+    #     # long-running (infinite?) computation. Removed for now.
+    #     #
+    #     #tableSizer.Add(wx.StaticText(dlg,label='Cell volume range (ratio) '),
+    #     #    0,WACV|wx.ALIGN_LEFT)
+    #     #w = G2G.ValidatedTxtCtrl(dlg,nistInput,2)
+    #     #tableSizer.Add(w)
+    #     tableSizer.Add(wx.StaticText(dlg,label='Search mode: Generate '),
+    #         0,WACV|wx.ALIGN_LEFT)
+    #     tableSizer.Add(G2G.EnumSelector(dlg,nistInput,3,
+    #         ['supercells', 'subcells', 'sub- and supercells'],[1,2,3]))
+    #     sizer.Add(tableSizer,1,wx.EXPAND)
+    #     btnsizer = wx.StdDialogButtonSizer()
+    #     btn = wx.Button(dlg, wx.ID_OK)
+    #     btn.SetDefault()
+    #     btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_OK))
+    #     btnsizer.AddButton(btn)
+    #     btn = wx.Button(dlg, wx.ID_CANCEL)
+    #     btn.Bind(wx.EVT_BUTTON, lambda x: dlg.EndModal(wx.ID_CANCEL))
+    #     btnsizer.AddButton(btn)
+    #     btnsizer.Realize()
+    #     sizer.Add(btnsizer, 0, wx.EXPAND|wx.ALL, 5)
+    #     dlg.SetSizer(sizer)
+    #     sizer.Fit(dlg)
+    #     dlg.CenterOnParent()
+    #     if dlg.ShowModal() == wx.ID_OK:
+    #         dlg.Destroy()
+    #     else:
+    #         dlg.Destroy()
+    #         return
+    #     tol = 3*[nistInput[0]]+3*[nistInput[1]]
+    #     cell = data['General']['Cell'][1:7]
+    #     center = data['General']['SGData']['SGLatt']
+    #     delta = nistInput[2]
+    #     mode = nistInput[3]
+    #     wx.BeginBusyCursor()
+    #     import nistlat
+    #     out = nistlat.CellSymSearch(cell, center, tolerance=tol, mode=mode,deltaV=delta)
+    #     wx.EndBusyCursor()
+
+        # if not out: return
+        # cells.clear()
+        # for o in out:
+        #     cells.append([])
+        #     c = o[2][0]
+        #     # assign a Laue class
+        #     laue = 16 # P1
+        #     if c[0] == c[1] == c[2] and c[3] == c[4] == c[5] == 90:
+        #         if o[2][1] == 'F':
+        #             laue = 0 # Fm3m
+        #         elif o[2][1] == 'I':
+        #             laue = 1 # Im3m
+        #         else:
+        #             laue = 2 # Pm3m
+        #     elif o[2][1] == 'R':
+        #         laue = 3 # R3
+        #     elif c[0] == c[1] and c[5] == 120:
+        #         laue = 4 # P6/mmm
+        #     elif c[0] == c[1] and c[3] == c[4] == c[5] == 90 and o[2][1] == 'I':
+        #         laue = 5 # I4/mmm
+        #     elif c[0] == c[1] and c[3] == c[4] == c[5] == 90 and o[2][1] == 'P':
+        #         laue = 6 # P4/mmm
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'F':
+        #         laue =  7 # 'Fmmm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'I':
+        #         laue =  8 # 'Immm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'A':
+        #         laue =  9 # 'Ammm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'B':
+        #         laue =  10 # 'Bmmm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'C':
+        #         laue =  11 # 'Cmmm'
+        #     elif c[3] == c[4] == c[5] == 90 and o[2][1] == 'P':
+        #         laue =  12 # 'Pmmm'
+        #     elif c[3] == c[5] == 90 and o[2][1] == 'C':
+        #         laue =  13 # 'C2/m'
+        #     elif c[3] == c[5] == 90 and o[2][1] == 'P':
+        #         laue =  14 # 'P2/m'
+        #     elif o[2][1] == 'C':
+        #         laue =  15 # 'C1'
+        #     cells[-1] += [o[4],0,laue]
+        #     cells[-1] += c
+        #     cells[-1] += [G2lat.calc_V(G2lat.cell2A(c)),False,False]
+        # G2frame.GPXtree.SetItemPyData(pUCid,data)
+        # G2frame.OnFileSave(event)
+        # wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
     def OnSuperSearch(event):
         '''Search for a supergroup matching the current phase using the
         Bilbao Pseudosymmetry search (PSEUDO) program
@@ -3533,7 +3653,9 @@ program; Please cite:
             f'Searching for supergroup(s) consistent with phase {ophsnam}',11,
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
                 parent=G2frame)
-        SUBGROUPS.RegisterProgressDialog(pgbar)
+        if SUBGROUPS.RegisterProgressDialog(pgbar):
+            pgbar.Destroy()
+            return
         pgNum = 0
         pgbar.CenterOnParent()
         try:
@@ -3602,8 +3724,31 @@ program; Please cite:
 
             # search from a standard space group setting
             pagelist = {}
-            formDict,csdict,rowdict,stru = SUBGROUPS.BilbaoSymSearch1(sgnum,newPhase,pagelist=pagelist)
+            keepCell = False
+            if sgnum <= 16: # warn on unimplemented search capability
+                msg = '''
+Code to search for higher symmetry 
+cells with the Bilboa web site is 
+not fully implemented. You are 
+suggested to do this with NIST*LATTICE
+using the Unit Cells List "Cell 
+Symmetry Search" command, or by 
+using "No" here, but either way
+you will need to manually transform
+the structure into any higher 
+symmetry cells. 
 
+Skip search for higher symmetry cell?'''
+                dlg = wx.MessageDialog(G2frame,msg,'Skip cell search for mono/triclinic?',
+                                           wx.YES_NO | wx.ICON_QUESTION)
+                try:
+                    result = dlg.ShowModal()
+                    if result == wx.ID_YES:
+                        keepCell = True
+                finally:
+                    dlg.Destroy()
+            formDict,csdict,rowdict,stru = SUBGROUPS.BilbaoSymSearch1(sgnum,newPhase,pagelist=pagelist,
+                                                                        keepCell=keepCell)
             # process initial PSEUDO results
             if csdict is None and len(rowdict) == 0:   # this was monoclinic or triclinic,
                 # but no new cell. Repeat search looking for supergroups of the current cell
@@ -3810,13 +3955,15 @@ program; Please cite:
             wx.MessageBox('Error, multi k-vectors & Landau not compatible',
                 caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
             return
+        dlg = wx.ProgressDialog('SUBGROUPS results','Getting SubGroups',11,
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        if SUBGROUPS.RegisterProgressDialog(dlg):
+            dlg.Destroy()
+            return
         wx.MessageBox(' For use of SUBGROUPS, please cite:\n\n'+
                           G2G.GetCite('Bilbao: k-SUBGROUPSMAG'),
                           caption='Bilbao SUBGROUPS',
                           style=wx.ICON_INFORMATION)
-        dlg = wx.ProgressDialog('SUBGROUPS results','Getting SubGroups',11,
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-        SUBGROUPS.RegisterProgressDialog(dlg)
         try:
             SGData = generalData['SGData']
             from . import SUBGROUPS as kSUB
@@ -13160,6 +13307,7 @@ tab, use Operations->"Pawley create")''')
         G2frame.Bind(wx.EVT_MENU, OnSuperSearch, id=G2G.wxID_SUPERSRCH)
         G2frame.Bind(wx.EVT_MENU, OnISOSearch, id=G2G.wxID_ISOSRCH)
         G2frame.Bind(wx.EVT_MENU, OnSubSearch, id=G2G.wxID_SUBSRCH)
+        # G2frame.Bind(wx.EVT_MENU, OnNISTLatSym, id=G2G.wxID_NISTLATCELL)
         G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, TestBilbao, id=G2G.wxID_TESTBCS)
         G2frame.Bind(wx.EVT_MENU, OnCompareCells, id=G2G.wxID_COMPARECELLS)
@@ -13879,14 +14027,11 @@ search (PSEUDO) program; Please cite:
     return ans
 
 def TestBilbao(event):
-    print('not yet available')
-    return
     G2frame = wx.GetApp().GetMainTopWindow()
     SUBGROUPS.do_once = None   # force reinitialization
     if SUBGROUPS.BCS_init():
-        G2G.G2MessageBox(G2frame,
-                        'Bilbao access failed. No BCS_API_KEY was set in the Preferences',
-                         'Bilbao access failed')
+        msg = 'Bilbao key (BCS_API_KEY) has not been defined.'
+        G2G.G2MessageBox(G2frame,msg,'Bilbao access failed')
         return
     try:
         sgnum,sgsym,xmat,xoff = SUBGROUPS.GetStdSGset(G2spc.SpcGroup('R 3 C r')[1])

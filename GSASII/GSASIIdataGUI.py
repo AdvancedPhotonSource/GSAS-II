@@ -7370,6 +7370,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.GeneralCalc.Append(G2G.wxID_SUPERSRCH,'Bilbao Supergroup search','Search for settings of this phase in higher symmetry')
             G2G.Define_wxId('wxID_ISOSRCH')
             self.GeneralCalc.Append(G2G.wxID_ISOSRCH,'ISOCIF Supergroup search','Search for settings of this phase in higher symmetry')
+            # G2G.Define_wxId('wxID_NISTLATCELL')
+            # self.GeneralCalc.Append(G2G.wxID_NISTLATCELL,'Cell Symmetry Search',
+            #     'Run NIST*LATTICE to find higher symmetry cells')
             self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
             G2G.Define_wxId('wxID_TESTBCS')
             self.GeneralCalc.Append(G2G.wxID_TESTBCS,'Test Bilbao access',

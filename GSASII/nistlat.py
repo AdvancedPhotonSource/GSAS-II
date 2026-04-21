@@ -21,9 +21,9 @@ import os.path
 import subprocess
 import re
 import numpy as np
-from . import GSASIIpath
+from GSASII import GSASIIpath
 GSASIIpath.SetBinaryPath()
-from . import GSASIIlattice as G2lat
+from GSASII import GSASIIlattice as G2lat
 
 if GSASIIpath.binaryPath:
     nistlattice = os.path.join(GSASIIpath.binaryPath,"LATTIC")

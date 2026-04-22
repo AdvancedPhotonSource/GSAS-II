@@ -280,13 +280,13 @@ class HDF5_Reader(G2obj.ImportImage):
         Npix = sizexy[0]*sizexy[1]
         j = 0   # use 1st size/bin entry for all images
         # get 1ID pixel size info. Currently an array, but this may change
-        if 'PixelSizeX' in fp['/instrument/Detector'] and 'PixelSizeY' in fp['/instrument/Detector']:
-            try:
+        try:
+            if 'PixelSizeX' in fp['/instrument/Detector'] and 'PixelSizeY' in fp['/instrument/Detector']:
                 pixelsize = [float(fp['/instrument/Detector/PixelSizeX'][0]),
                              float(fp['/instrument/Detector/PixelSizeY'][0])]
                 print(f'Using PixelSize[XY] for Pixel size: {pixelsize}.')
-            except:
-                pixelsize = None
+        except:
+            pixelsize = None
         try:
             if not pixelsize:
                 misc = {}

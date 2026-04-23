@@ -1238,65 +1238,6 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
 #        if atom[cia] == 'A':
 #            UIJ = atom[cia+2:cia+8]
 
-def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
-    '''default doc string
-
-    :param type name: description
-
-    :returns: type name: description
-
-    '''
-    TLStype,TLS = rbObj['ThermalMotion'][:2]
-    Tmat = np.zeros((3,3))
-    Lmat = np.zeros((3,3))
-    Smat = np.zeros((3,3))
-    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
-        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
-    if 'T' in TLStype:
-        Tmat = G2lat.U6toUij(TLS[:6])
-    if 'L' in TLStype:
-        Lmat = G2lat.U6toUij(TLS[6:12])
-    if 'S' in TLStype:
-        Smat = np.array([[TLS[18],TLS[12],TLS[13]],[TLS[14],TLS[19],TLS[15]],[TLS[16],TLS[17],0] ])
-    XYZ = np.inner(Amat,xyz)
-    Axyz = np.array([[ 0,XYZ[2],-XYZ[1]], [-XYZ[2],0,XYZ[0]], [XYZ[1],-XYZ[0],0]] )
-    Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
-    beta = np.inner(np.inner(g,Umat),g)
-    return G2lat.UijtoU6(beta)*gvec
-
-def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be?
-    '''default doc string
-
-    :param type name: description
-
-    :returns: type name: description
-
-    '''
-    cx,ct,cs,cia = atPtrs
-    TLStype,TLS = rbObj['ThermalMotion'][:2]
-    Tmat = np.zeros((3,3))
-    Lmat = np.zeros((3,3))
-    Smat = np.zeros((3,3))
-    G,g = G2lat.A2Gmat(Amat)
-    gvec = 1./np.sqrt(np.array([g[0][0],g[1][1],g[2][2],g[0][1],g[0][2],g[1][2]]))
-    if 'T' in TLStype:
-        Tmat = G2lat.U6toUij(TLS[:6])
-    if 'L' in TLStype:
-        Lmat = G2lat.U6toUij(TLS[6:12])
-    if 'S' in TLStype:
-        Smat = np.array([ [TLS[18],TLS[12],TLS[13]], [TLS[14],TLS[19],TLS[15]], [TLS[16],TLS[17],0] ])
-    for atom in atomData:
-        XYZ = np.inner(Amat,atom[cx:cx+3])
-        Axyz = np.array([ 0,XYZ[2],-XYZ[1], -XYZ[2],0,XYZ[0], XYZ[1],-XYZ[0],0],ndmin=2 )
-        if 'U' in TLStype:
-            atom[cia+1] = TLS[0]
-            atom[cia] = 'I'
-        else:
-            atom[cia] = 'A'
-            Umat = Tmat+np.inner(Axyz,Smat)+np.inner(Smat.T,Axyz.T)+np.inner(np.inner(Axyz,Lmat),Axyz.T)
-            beta = np.inner(np.inner(g,Umat),g)
-            atom[cia+2:cia+8] = G2spc.U2Uij(beta/gvec)
-
 def GetXYZDist(xyz,XYZ,Amat):
     '''gets distance from position xyz to all XYZ, xyz & XYZ are np.array
         and are in crystal coordinates; Amat is crystal to Cart matrix
@@ -1320,106 +1261,6 @@ def getAtomXYZ(atoms,cx):
     for atom in atoms:
         XYZ.append(atom[cx:cx+3])
     return np.array(XYZ)
-
-def getRBTransMat(X,Y):
-    '''Get transformation for Cartesian axes given 2 vectors
-    X will  be parallel to new X-axis; X cross Y will be new Z-axis &
-    (X cross Y) cross Y will be new Y-axis
-    Useful for rigid body axes definintion
-
-    :param array X: normalized vector
-    :param array Y: normalized vector
-
-    :returns: array M: transformation matrix
-
-    use as XYZ' = np.inner(M,XYZ) where XYZ are Cartesian
-
-    '''
-    Mat2 = np.cross(X,Y)      #UxV-->Z
-    Mat2 /= np.sqrt(np.sum(Mat2**2))
-    Mat3 = np.cross(Mat2,X)        #(UxV)xU-->Y
-    Mat3 /= np.sqrt(np.sum(Mat3**2))
-    return np.array([X,Mat3,Mat2])
-
-def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
-    '''rotate & transform cartesian coordinates to crystallographic ones
-    no translation applied. To be used for numerical derivatives
-
-    :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
-    :param array Cart: 2D array of coordinates
-    :param array Q: quaternion as an np.array
-    :param tuple symAxis: if not None (default), specifies the symmetry
-      axis of the rigid body, which will be aligned to the quaternion vector.
-    :returns: 2D array of fractional coordinates, without translation to origin
-    '''
-    if symAxis is None:
-        Q = oriQ
-    else:
-        a,v = Q2AV(oriQ)
-        symaxis = vnorm(np.array(symAxis))
-        vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
-        xformAng = np.arccos(vdotsym)
-        xformVec = np.cross(symaxis,v)
-        Q = prodQQ(oriQ,AV2Q(xformAng,xformVec))
-    XYZ = np.zeros_like(Cart)
-    for i,xyz in enumerate(Cart):
-        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))
-    return XYZ
-
-def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
-    '''returns crystal coordinates for atoms described by RBObj.
-    Note that RBObj['symAxis'], if present, determines the symmetry
-    axis of the rigid body, which will be aligned to the
-    quaternion direction.
-
-    :param np.array Bmat: see :func:`GSASIIlattice.cell2AB`
-    :param dict rbObj: rigid body selection/orientation information
-    :param dict RBData: rigid body tree data structure
-    :param str RBType: rigid body type, 'Vector' or 'Residue'
-
-    :returns: coordinates for rigid body as XYZ,Cart where XYZ is
-       the location in crystal coordinates and Cart is in cartesian
-    '''
-    if RBType == 'Vector':
-        RBRes = RBData[RBType][RBObj['RBId']]
-        vecs = RBRes['rbVect']
-        mags = RBRes['VectMag']
-        Cart = np.zeros_like(vecs[0])
-        if RBObj.get('Invert',False):
-            Cart *= -1.
-        for vec,mag in zip(vecs,mags):
-            Cart += vec*mag
-    elif RBType == 'Residue':
-        RBRes = RBData[RBType][RBObj['RBId']]
-        Cart = np.array(RBRes['rbXYZ'])
-        for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
-            QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
-            Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
-        if RBObj.get('Invert',False):
-            Cart *= -1.
-    elif RBType == 'Spin':
-        Cart = np.zeros(3)
-        XYZ = [np.array(RBObj['Orig'][0]),]
-        return XYZ,Cart
-    # if symmetry axis is defined, place symmetry axis along quaternion
-    if RBObj.get('symAxis') is None:
-        Q = RBObj['Orient'][0]
-    else:
-        a,v = Q2AV(RBObj['Orient'][0])
-        symaxis = vnorm(np.array(RBObj.get('symAxis')))
-        vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
-        xformAng = np.arccos(vdotsym)
-        xformVec = np.cross(symaxis,v)
-        Q = prodQQ(RBObj['Orient'][0],AV2Q(xformAng,xformVec))
-    XYZ = np.zeros_like(Cart)
-    for i,xyz in enumerate(Cart):
-        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))+RBObj['Orig'][0]
-    return XYZ,Cart
-
-def GetSpnRBData(SpnRB,atId):
-    for SpnData in SpnRB:
-        if atId in SpnData['Ids']:
-            return SpnData
 
 def UpdateMCSAxyz(Bmat,MCSA):
     '''default doc string
@@ -1489,19 +1330,129 @@ def SetMolCent(model,RBData):
     model['MolCent'][0] = cent/len(centList)
 
 ###############################################################################
-#### Various utilities
+#### Various RB utilities
 ###############################################################################
 
+def getRBTransMat(X,Y):
+    '''Get transformation for Cartesian axes given 2 vectors
+    X will  be parallel to new X-axis; X cross Y will be new Z-axis &
+    (X cross Y) cross Y will be new Y-axis
+    Useful for rigid body axes definintion
+
+    :param array X: normalized vector
+    :param array Y: normalized vector
+
+    :returns: array M: transformation matrix
+
+    use as XYZ' = np.inner(M,XYZ) where XYZ are Cartesian
+
+    '''
+    Mat2 = np.cross(X,Y)      #UxV-->Z
+    Mat2 /= np.sqrt(np.sum(Mat2**2))
+    Mat3 = np.cross(Mat2,X)        #(UxV)xU-->Y
+    Mat3 /= np.sqrt(np.sum(Mat3**2))
+    return np.array([X,Mat3,Mat2])
+
+def QsymAxis(Q,symAxis):
+    '''forms product of orientation Q vector & symAxis
+    
+    :param list Q: quaternion
+    :param list aymAxis: symmetry axis for rigid body: could be None
+    
+    :returns: list Q: new quaternion
+    '''
+    if symAxis is None:
+        return Q
+    a,v = Q2AV(Q)
+    symaxis = np.array(symAxis)
+    vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
+    if vdotsym in [-1.0,1.0]:   #Q, symAxis parallel/antiparallel
+        return Q
+    else:
+        xformAng = np.arccos(vdotsym)
+        xformVec = vnorm(np.cross(symaxis,v))
+        return prodQQ(Q,AV2Q(xformAng,xformVec))
+
+def RotateRBXYZ(Bmat,Cart,oriQ,symAxis=None):
+    '''rotate & transform cartesian coordinates to crystallographic ones
+    no translation applied. To be used for numerical derivatives
+
+    :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
+    :param array Cart: 2D array of coordinates
+    :param array Q: quaternion as an np.array
+    :param tuple symAxis: if not None (default), specifies the symmetry
+      axis of the rigid body, which will be aligned to the quaternion vector.
+    :returns: 2D array of fractional coordinates, without translation to origin
+    '''
+    Q = QsymAxis(oriQ,symAxis)
+    XYZ = np.zeros_like(Cart)
+    for i,xyz in enumerate(Cart):
+        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))
+    return XYZ
+
+def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
+    '''returns crystal coordinates for atoms described by RBObj.
+    Note that RBObj['symAxis'], if present, determines the symmetry
+    axis of the rigid body, which will be aligned to the
+    quaternion direction.
+
+    :param np.array Bmat: see :func:`GSASIIlattice.cell2AB`
+    :param dict rbObj: rigid body selection/orientation information
+    :param dict RBData: rigid body tree data structure
+    :param str RBType: rigid body type, 'Vector' or 'Residue'
+
+    :returns: coordinates for rigid body as XYZ,Cart where XYZ is the location 
+        in crystal coordinates and Cart is in cartesian wrt rigid body coordinates
+    '''
+    if RBType == 'Vector':
+        RBRes = RBData[RBType][RBObj['RBId']]
+        vecs = RBRes['rbVect']
+        mags = RBRes['VectMag']
+        Cart = np.zeros_like(vecs[0])
+        for vec,mag in zip(vecs,mags):
+            Cart += vec*mag
+        if RBObj.get('Invert',False):
+            Cart *= -1.
+    elif RBType == 'Residue':
+        RBRes = RBData[RBType][RBObj['RBId']]
+        Cart = np.array(RBRes['rbXYZ'])
+        for tor,seq in zip(RBObj['Torsions'],RBRes['rbSeq']):
+            QuatA = AVdeg2Q(tor[0],Cart[seq[0]]-Cart[seq[1]])
+            Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
+        if RBObj.get('Invert',False):
+            Cart *= -1.
+    elif RBType == 'Spin':
+        Cart = np.zeros(3)
+        XYZ = [np.array(RBObj['Orig'][0]),]
+        return XYZ,Cart
+    # if symmetry axis is defined, place symmetry axis along quaternion
+    Q = QsymAxis(RBObj['Orient'][0],RBRes['symAxis'])
+    XYZ = np.zeros_like(Cart)
+    for i,xyz in enumerate(Cart):
+        XYZ[i] = np.inner(Bmat,prodQVQ(Q,xyz))+RBObj['Orig'][0]
+    return XYZ,Cart
+
+def GetSpnRBData(SpnRB,atId):
+    for SpnData in SpnRB:
+        if atId in SpnData['Ids']:
+            return SpnData
+
 def UpdateRBUIJ(Bmat,Cart,RBObj):
-    '''default doc string
+    '''Transform TLS to Uij for RB objects
 
-    :param type name: description
+    :param array Bmat: Orthogonalization matrix, see :func:`GSASIIlattice.cell2AB`
+    :param array Cart: 2D array of coordinates wrt RB coordinates
+    :param dict RBObj: rigid body selection/orientation information
 
-    :returns: type name: description
+    :returns: list Uout : new atom thermal parameters
 
     '''
-    ''' returns atom I/A, Uiso or UIJ for atoms at XYZ as described by RBObj
-    '''
+    # if symmetry axis is defined, place symmetry axis along quaternion
+    Q = QsymAxis(RBObj['Orient'][0],RBObj['symAxis'])
+    QMat = Q2Mat(Q)
+    g = nl.inv(np.inner(Bmat,Bmat))
+    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
+        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))        
     TLStype,TLS = RBObj['ThermalMotion'][:2]
     T = np.zeros(6)
     L = np.zeros(6)
@@ -1511,14 +1462,9 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
     if 'L' in TLStype:
         L = np.array(TLS[6:12])*(np.pi/180.)**2
     if 'S' in TLStype:
-        S = np.array(TLS[12:])*(np.pi/180.)
-    g = nl.inv(np.inner(Bmat,Bmat))
-    gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
-        g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
+        S = np.array(TLS[12:])*(np.pi/180.)     #What do we do for S?
     Uout = []
-    Q = RBObj['Orient'][0]
     for X in Cart:
-        X = prodQVQ(Q,X)
         if 'U' in TLStype:
             Uout.append(['I',TLS[0],0,0,0,0,0,0])
         elif not 'N' in TLStype:
@@ -1533,7 +1479,8 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
             U[5] = T[5]+L[3]*X[0]*X[2]+L[4]*X[0]*X[1]-L[5]*X[0]**2-L[0]*X[2]*X[1]+  \
                 S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
             Umat = G2lat.U6toUij(U)
-            beta = np.inner(np.inner(Bmat.T,Umat),Bmat)
+            Umat = np.inner(np.inner(QMat,Umat),QMat)
+            beta = np.inner(np.inner(Bmat,Umat),Bmat)
             Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
         else:
             Uout.append(['N',])

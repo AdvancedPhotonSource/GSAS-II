@@ -6719,8 +6719,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         drawingData['oldxy'] = list(newxy)
         V = drawingData['viewDir']
         A = [0,0]
-        A[0] = dxy[1]*.1
-        A[1] = dxy[0]*.1
+        A[0] = dxy[1]*.25
+        A[1] = dxy[0]*.25
         if newxy[0] < cent[0]:
             A[0] *= -1
         if newxy[1] > cent[1]:
@@ -6791,7 +6791,8 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glPushMatrix()
         GL.glTranslate(*orig)
         GL.glBegin(GL.GL_LINES)
-        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,symAxis)
+        # lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,symAxis)
+        lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,None)
         colors = [Rd,Gr,Bl]
         # lines along axial directions
         for line,color in zip(lines,colors):

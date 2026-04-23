@@ -2874,6 +2874,7 @@ create a Vector or Residue rigid body.
                 filename = os.path.splitext(filename)[0]+'.vecbody'  # set extension
                 fp = open(filename,'w')
                 fp.write('Name: '+data['Vector'][rbid]['RBname']+'\n')
+                fp.write('symAxis: '+str(data['Vector'][rbid]['symAxis'])+'\n')
                 fp.write('Trans: ')
                 for i in data['Vector'][rbid]['VectMag']:
                     fp.write(str(i)+" ") 
@@ -2909,7 +2910,13 @@ create a Vector or Residue rigid body.
                         +l+'\ninvalid file',parent=G2frame)
                     return
                 name = l.split(':')[1].strip()
-                trans = fp.readline().strip().split(':')[1].split()
+                l = fp.readline().strip()
+                if 'symAxis' in l:
+                    symAxis = eval(l.strip().split(':')[1])
+                    l = fp.readline().strip()
+                else:
+                    symAxis = [0,0,1]
+                trans = l.strip().split(':')[1].split()
                 vecMag = [float(i) for i in trans]
                 ntrans = len(trans)
                 vecs = [[] for i in range(ntrans)]
@@ -2937,10 +2944,9 @@ create a Vector or Residue rigid body.
                         if 'RBname' in data['Vector'][key]]
         name = G2obj.MakeUniqueLabel(name,namelist)
         data['Vector'][rbid] = {'RBname':name,'VectMag':vecMag,
-                'rbXYZ':np.zeros((natoms,3)),
-                'rbRef':[0,1,2,False],'VectRef':ntrans*[False],
-                'rbTypes':types,
-                'rbVect':vecs,'useCount':0}
+                'rbRef':[0,1,2,False],'rbXYZ':np.zeros((natoms,3)),
+                'symAxis':symAxis,'VectRef':ntrans*[False],
+                'rbTypes':types,'rbVect':vecs,'useCount':0}
         data['RBIds']['Vector'].append(rbid)
         UpdateVectorRB()
         
@@ -3226,57 +3232,39 @@ create a Vector or Residue rigid body.
             
         def rbRefAtmSizer(rbid,rbData):
             
-            def OnRefSel(event):
+            def OnSymRadioSet(event):
+                '''Set the polar axis for the sp. harm. as
+                RBdata['Spin'][RBId]['symAxis']. 
+                '''
                 Obj = event.GetEventObject()
-                iref = Indx[Obj.GetId()]
-                sel = Obj.GetValue()
-                rbData['rbRef'][iref] = atNames.index(sel)
-                FillRefChoice(rbid,rbData)
+                axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1])[Obj.GetSelection()]
+                rbData['symAxis'] = axis
             
             refAtmSizer = wx.BoxSizer(wx.HORIZONTAL)
-            atNames = [name+str(i) for i,name in enumerate(rbData['rbTypes'])]
-            rbRef = rbData.get('rbRef',[0,1,2,False])
-            rbData['rbRef'] = rbRef
+            choices = [' x ',' y ',' z ','x+y','x+y+z']
+            rbData['symAxis'] = rbData.get('symAxis',[0,0,1])   #set default as 'z', if needed
+            symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(rbData['symAxis'])]
             if rbData['useCount']:
                 refAtmSizer.Add(wx.StaticText(VectorRBDisplay,-1,
-                    'Orientation reference atoms A-B-C: %s, %s, %s'%(atNames[rbRef[0]], \
-                     atNames[rbRef[1]],atNames[rbRef[2]])),0)
+                    'RB polar axis is aligned along: %s'%symax),WACV,0)
             else:
-                refAtmSizer.Add(wx.StaticText(VectorRBDisplay,-1,
-                    'Orientation reference atoms A-B-C: '),0,WACV)
-                for i in range(3):
-                    choices = [atNames[j] for j in refChoice[rbid][i]]
-                    refSel = wx.ComboBox(VectorRBDisplay,-1,value='',
-                        choices=choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                    refSel.SetValue(atNames[rbRef[i]])
-                    refSel.Bind(wx.EVT_COMBOBOX, OnRefSel)
-                    Indx[refSel.GetId()] = i
-                    refAtmSizer.Add(refSel,0,WACV)
-                refHelpInfo = '''
-* The "Orientation Reference" control defines the Cartesian
-axes for rigid bodies with the three atoms, A, B and C. 
-The vector from B to A defines the x-axis and the y axis is placed 
-in the plane defined by B to A and C to A. A,B,C must not be collinear.
-'''
-                hlp = G2G.HelpButton(VectorRBDisplay,refHelpInfo,wrap=400)
-                refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
+                symRadioSet = wx.RadioBox(VectorRBDisplay,choices=choices,label='RB polar axis is aligned along:')
+                symRadioSet.SetStringSelection(symax)
+                symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+                refAtmSizer.Add(symRadioSet)
+#                 refHelpInfo = '''
+# * The "Orientation Reference" control defines the Cartesian
+# axes for rigid bodies with the three atoms, A, B and C. 
+# The vector from B to A defines the x-axis and the y axis is placed 
+# in the plane defined by B to A and C to A. A,B,C must not be collinear.
+# '''
+#                 hlp = G2G.HelpButton(VectorRBDisplay,refHelpInfo,wrap=400)
+#                 refAtmSizer.Add(hlp,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,2)
             return refAtmSizer
                         
         def rbVectMag(rbid,imag,rbData):
             
-            def OnRBVectorMag(event):
-                event.Skip()
-                Obj = event.GetEventObject()
-                rbid,imag = Indx[Obj.GetId()]
-                try:
-                    val = float(Obj.GetValue())
-                    if val <= 0.:
-                        raise ValueError
-                    rbData['VectMag'][imag] = val
-                except ValueError:
-                    pass
-                Obj.SetValue('%8.4f'%(val))
-                wx.CallAfter(UpdateVectorRB,VectorRB.GetScrollPos(wx.VERTICAL))
+            def OnRBVectorMag(invalid,value,tc):
                 G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,data['Vector'][rbid],plotDefaults)
                 
             def OnRBVectorRef(event):
@@ -3286,12 +3274,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                         
             magSizer = wx.BoxSizer(wx.HORIZONTAL)
             magSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Translation magnitude: '),0,WACV)
-            magValue = wx.TextCtrl(VectorRBDisplay,-1,'%8.4f'%(rbData['VectMag'][imag]),
-                                       style=wx.TE_PROCESS_ENTER)
-            Indx[magValue.GetId()] = [rbid,imag]
-            magValue.Bind(wx.EVT_TEXT_ENTER,OnRBVectorMag)
-            magValue.Bind(wx.EVT_KILL_FOCUS,OnRBVectorMag)
-            magSizer.Add(magValue,0,WACV)
+            magSizer.Add(G2G.ValidatedTxtCtrl(VectorRBDisplay,rbData['VectMag'],imag,OnLeave=OnRBVectorMag),0,WACV)
             magSizer.Add((5,0),)
             magref = wx.CheckBox(VectorRBDisplay,label=' Refine?') 
             magref.SetValue(rbData['VectRef'][imag])
@@ -3629,7 +3612,7 @@ in the plane defined by B to A and C to A. A,B,C must not be collinear.
                     Indx[stripH.GetId()] = rbid
                     nameSizer.Add(stripH,0,WACV)
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'  body type #'+
-                                        str(data['RBIds']['Residue'].index(rbid))),0,WACV)
+                str(data['RBIds']['Residue'].index(rbid))),0,WACV)
             nameSizer.Add((-1,-1),1,wx.EXPAND,1)
             return nameSizer
             

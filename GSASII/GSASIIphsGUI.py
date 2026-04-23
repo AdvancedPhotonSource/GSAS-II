@@ -1543,11 +1543,20 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
     A,V = G2mth.Q2AVdeg(testRBObj['rbObj']['Orient'][0])
     testRBObj['rbObj']['OrientVec'][0] = A
     testRBObj['rbObj']['OrientVec'][1:] = np.inner(Bmat,V)
-    for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
-        if not ifSlide: #skip spin button
-            G2frame.testRBObjSizers['OrientVecSiz'][i+1].ChangeValue(val)
+    for i in range(4):
+        val = testRBObj['rbObj']['OrientVec'][i]
+        if not i:    #in that BoxSizer from G2SpinWidget
+            BSI = G2frame.testRBObjSizers['OrientVecSiz'][i].GetChildren()[-2].GetWindow()
         else:
-            G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
+            BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]
+        BSI.ChangeValue(val)
+    
+    
+    # for i,val in enumerate(testRBObj['rbObj']['OrientVec']):
+    #     if not ifSlide: #skip spin button
+    #         G2frame.testRBObjSizers['OrientVecSiz'][i+1].ChangeValue(val)
+    #     else:
+    #         G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
     if ifSlide: #from the addRB GUI
         G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
@@ -10163,20 +10172,13 @@ at one of the following locations:
             delRB.Bind(wx.EVT_BUTTON,OnDelResRB)
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
-            symAxis = RBObj.get('symAxis')
-            if np.any(symAxis):
-                if np.all(symAxis):
-                    lbl = 'x+y+z'
-                elif np.all(symAxis[:2]):
-                    lbl = 'x+y'
-                elif symAxis[0]:
-                    lbl = 'x'
-                elif symAxis[1]:
-                    lbl = 'y'
-                else:
-                    lbl = 'z'
-                topLine.Add(wx.StaticText(RigidBodies,-1,
-                    '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
+            choices = [' x ',' y ',' z ','x+y','x+y+z']
+            try:
+                lbl = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
+            except KeyError:
+                lbl = ' z '
+            topLine.Add(wx.StaticText(RigidBodies,-1,
+                '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
             try:
                 varname = str(data['pId'])+'::RBRxxx:'+resVarLookup[resIndx]
             except:  # happens when phase has no histograms
@@ -10325,41 +10327,41 @@ at one of the following locations:
                 spnSelect.Deselect(spnSelect.GetSelection())
             except:
                 pass
-            # define the parameters needed to drag the RB with the mouse
-            data['testRBObj'] = {}
-            rbType = 'Residue'
-            data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
-            rbId = data['RBModels'][rbType][prevResId]['RBId']
-            RBdata = G2frame.GPXtree.GetItemPyData(
-                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-            data['testRBObj']['rbData'] = RBdata
-            data['testRBObj']['rbType'] = rbType
-            data['testRBObj']['rbAtTypes'] = RBdata[rbType][rbId]['rbTypes']
-            data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
-            data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
-            data['testRBObj']['Sizers'] = {}
-            data['testRBObj']['rbRef'] = RBData[rbType][rbId]['rbRef']
+            # # define the parameters needed to drag the RB with the mouse
+            # data['testRBObj'] = {}
+            # rbType = 'Residue'
+            # data['testRBObj']['rbObj'] = copy.deepcopy(data['RBModels'][rbType][prevResId])
+            # rbId = data['RBModels'][rbType][prevResId]['RBId']
+            # RBdata = G2frame.GPXtree.GetItemPyData(
+            #     G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+            # data['testRBObj']['rbData'] = RBdata
+            # data['testRBObj']['rbType'] = rbType
+            # data['testRBObj']['rbAtTypes'] = RBdata[rbType][rbId]['rbTypes']
+            # data['testRBObj']['AtInfo'] = RBData[rbType]['AtInfo']
+            # data['testRBObj']['NameLookup'] = RBData[rbType][rbId].get('atNames',[])    #only for residues
+            # data['testRBObj']['Sizers'] = {}
+            # data['testRBObj']['rbRef'] = RBData[rbType][rbId]['rbRef']
 
-            refType = []
-            for ref in data['testRBObj']['rbRef'][:3]:
-                reftype = data['testRBObj']['rbAtTypes'][ref]
-                refType.append(reftype)
-                #refName.append(reftype+' '+str(rbRef[0]))
-            atNames = [{},{},{}]
-            AtNames = {}
-            cx,ct,cs,cia = data['General']['AtomPtrs']
-            for iatm,atom in enumerate(data['Atoms']):
-                AtNames[atom[ct-1]] = iatm
-                for i,reftype in enumerate(refType):
-                    if atom[ct] == reftype:
-                        atNames[i][atom[ct-1]] = iatm
-            data['testRBObj']['atNames'] = atNames
-            data['testRBObj']['AtNames'] = AtNames
-            data['testRBObj']['torAtms'] = []
-            # unclear why these torsion entries are being added to rbObj.
-            for item in RBData[rbType][rbId].get('rbSeq',[]):
-                data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
-                data['testRBObj']['torAtms'].append([-1,-1,-1])
+            # refType = []
+            # for ref in data['testRBObj']['rbRef'][:3]:
+            #     reftype = data['testRBObj']['rbAtTypes'][ref]
+            #     refType.append(reftype)
+            #     #refName.append(reftype+' '+str(rbRef[0]))
+            # atNames = [{},{},{}]
+            # AtNames = {}
+            # cx,ct,cs,cia = data['General']['AtomPtrs']
+            # for iatm,atom in enumerate(data['Atoms']):
+            #     AtNames[atom[ct-1]] = iatm
+            #     for i,reftype in enumerate(refType):
+            #         if atom[ct] == reftype:
+            #             atNames[i][atom[ct-1]] = iatm
+            # data['testRBObj']['atNames'] = atNames
+            # data['testRBObj']['AtNames'] = AtNames
+            # data['testRBObj']['torAtms'] = []
+            # # unclear why these torsion entries are being added to rbObj.
+            # for item in RBData[rbType][rbId].get('rbSeq',[]):
+            #     data['testRBObj']['rbObj']['Torsions'].append([item[2],False])  # Needed?
+            #     data['testRBObj']['torAtms'].append([-1,-1,-1])
             wx.CallLater(100,RepaintRBInfo,'Residue',prevResId)
 
         def OnSpnSelect(event):
@@ -10757,6 +10759,7 @@ at one of the following locations:
                         item = rbObj[name]
                         rbObj[name] = [rbObj[name],]
                     rbObj['Radius'] = [[1.0,False],]
+                rbObj['symAxis'] = data['testRBObj']['symAxis']
                 data['RBModels'][rbType].append(copy.deepcopy(rbObj))
                 RBData[rbType][rbId]['useCount'] += 1
                 del data['testRBObj']
@@ -10827,9 +10830,12 @@ at one of the following locations:
                 rbObj['OrientVec'][0] = float(Obj.GetValue())/10.
                 for i in range(4):
                     val = rbObj['OrientVec'][i]
-                    G2frame.testRBObjSizers['OrientVecSiz'][i].ChangeValue(val)
-                Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
-                                np.inner(Amat,rbObj['OrientVec'][1:]))
+                    if not i:    #in that BoxSizer from G2SpinWidget
+                        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i].GetChildren()[-2].GetWindow()
+                    else:
+                        BSI = G2frame.testRBObjSizers['OrientVecSiz'][i]
+                    BSI.ChangeValue(val)
+                Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
                 A,V = G2mth.Q2AVdeg(Q)
                 rbObj['OrientVec'][1:] = np.inner(Bmat,V)
@@ -10843,11 +10849,9 @@ at one of the following locations:
                 Q = G2mth.AVdeg2Q(rbObj['OrientVec'][0],
                     np.inner(Amat,rbObj['OrientVec'][1:]))
                 rbObj['Orient'][0] = Q
-                try:
-                    G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
-                        int(10*rbObj['OrientVec'][0]))
-                except:
-                    pass
+                azSlide.SetValue(int(10*rbObj['OrientVec'][0]))
+                # G2frame.testRBObjSizers['OrientVecSiz'][4].ChangeValue(
+                #     int(10*rbObj['OrientVec'][0]))
                 G2plt.PlotStructure(G2frame,data,False,UpdateTable)
                 UpdateTable()
 
@@ -10861,7 +10865,9 @@ at one of the following locations:
 
                 Sytsym,Mult = G2spc.SytSym(rbObj['Orig'][0],data['General']['SGData'])[:2]
                 sytsymtxt.SetLabel('Origin site symmetry: %s, multiplicity: %d '%(Sytsym,Mult))
-                UpdateTablePlot(args,kwargs)
+                G2plt.PlotStructure(G2frame,data,False,UpdateTable)
+                UpdateTable()
+#                UpdateTablePlot(args,kwargs)
 
             def getSelectedAtoms():
                 'Find the FB atoms that have been assigned to specific atoms in structure'
@@ -11166,10 +11172,13 @@ of the crystal structure.
                 if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [0.,0.,0.,0.]
                 rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
                 rbObj['OrientVec'][1:] = np.inner(Bmat,V)
-                OriSizer2.Add(wx.StaticText(RigidBodies,label='Orientation azimuth: '),0,WACV)
+                # OriSizer2.Add(wx.StaticText(RigidBodies,label='Orientation azimuth: '),0,WACV)
                 OrientVecSiz = []
-                OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
-                    xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
+                # OrientVecSiz.append(G2G.ValidatedTxtCtrl(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),
+                #     xmin=0.,xmax=360.,typeHint=float,OnLeave=UpdateOrientation))
+                Orientvec = G2G.G2SpinWidget(RigidBodies,rbObj['OrientVec'],0,nDig=(10,2),typeHint=float,
+                    label='Orientation azimuth: ',xmin=0.,xmax=360.,onChange=UpdateOrientation)
+                OrientVecSiz.append(Orientvec)
                 OriSizer2.Add(OrientVecSiz[-1],0,WACV)
                 azSlide = G2G.G2Slider(RigidBodies,style=wx.SL_HORIZONTAL,size=(200,25),
                     minValue=0,maxValue=3600,value=int(10*rbObj['OrientVec'][0]))
@@ -11190,8 +11199,10 @@ of the crystal structure.
                 mainSizer.Add((5,5),0)
                 OriSizer4 = wx.BoxSizer(wx.HORIZONTAL)
                 OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
+                symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],RBdirlbl))[str(data['testRBObj']['symAxis'])]
                 choices = ['None']+RBdirlbl
                 symRadioSet = wx.RadioBox(RigidBodies,choices=choices)
+                symRadioSet.SetStringSelection(symax)
                 symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
                 OriSizer4.Add(symRadioSet)
                 Invert = G2G.G2CheckBox(RigidBodies,'Invert',rbObj,'Invert',OnInvert)
@@ -11415,6 +11426,7 @@ of the crystal structure.
                 print('Invalid RB selection',selection,'How did this happen?')
                 return
         rbType,rbId = rbNames[selection]
+        data['testRBObj']['symAxis'] = RBData[rbType][rbId].get('symAxis',[0,0,1])
         if rbType == 'Spin':
             data['testRBObj']['rbAtTypes'] = [RBData[rbType][rbId]['rbType'],]
             data['testRBObj']['AtInfo'] = {RBData[rbType][rbId]['rbType']:[1.0,(128, 128, 255)],}

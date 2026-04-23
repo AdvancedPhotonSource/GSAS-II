@@ -493,9 +493,6 @@ def prodMGMT(G,Mat):
 
     '''
     return np.inner(np.inner(Mat,G),Mat)        #right
-#    return np.inner(Mat,np.inner(Mat,G))       #right
-#    return np.inner(np.inner(G,Mat).T,Mat)      #right
-#    return np.inner(Mat,np.inner(G,Mat).T)     #right
 
 def TransformCell(cell,Trans):
     '''Transform lattice parameters by matrix

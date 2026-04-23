@@ -997,6 +997,9 @@ class G2Slider(wx.Slider):
 
     def SetScaledRange(self,xmin,xmax):
         self.SetRange(ci(xmin*self.iscale),ci(xmax*self.iscale))
+        
+    def SetLineSize(self,value):
+        wx.Slider.SetLineSize(self,ci(self.iscale*value))
 
     def SetScaledValue(self,value):
         wx.Slider.SetValue(self, ci(self.iscale*value))
@@ -1065,6 +1068,7 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
     vScale = G2Slider(parent,style=wx.SL_HORIZONTAL,size=(200,25))
     vScale.SetScaling(iscale)
     vScale.SetScaledRange(xmin,xmax)
+    vScale.SetLineSize(1)
     vScale.SetScaledValue(loc[key])
     vScale.Bind(wx.EVT_SLIDER, onScale)
     if nDig is None:
@@ -1080,8 +1084,8 @@ def G2SliderWidget(parent,loc,key,label,xmin,xmax,iscale,
         hSizer.Add(vScale,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
         return vEntry,vScale
 
-def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,
-        onChange=None,onChangeArgs=[],hsize=35):
+def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,nDig=None,
+        onChange=None,typeHint=int,onChangeArgs=[],size=(50,25)):
     '''A customized combination of a wx.SpinButton and a validated
     wx.TextCtrl (see :class:`ValidatedTxtCtrl`) that allows either
     a the spin button or text entry to set a value within a range.
@@ -1102,6 +1106,8 @@ def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,
     :param int xmin: the minimum allowed valid value. If None it is ignored.
 
     :param int xmax: the maximum allowed valid value. If None it is ignored.
+    
+    :param list nDig: as defined for ValidatedTxtCtrl
 
     :param callable onChange: function to call when value is changed.
        Default is None where nothing will be called.
@@ -1109,7 +1115,7 @@ def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,
     :param list onChangeArgs: arguments to be passed to onChange function
        when called.
 
-    :param int hsize: length of TextCtrl in pixels. Defaults to 35.
+    :param int size: size of TextCtrl in pixels. Defaults to (50,25).
 
     :returns: returns a wx.BoxSizer containing the widgets
     '''
@@ -1124,7 +1130,7 @@ def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,
         wx.TextCtrl.SetValue(vEntry,str(loc[key])) # will not trigger onValSet
         Obj.SetValue(0)
         if onChange: onChange(*onChangeArgs)
-    def _onValSet(*args,**kwargs):
+    def onValSet(*args,**kwargs):
         if onChange: onChange(*onChangeArgs)
     if xmin is not None:
         loc[key] = max(xmin,loc[key])
@@ -1132,14 +1138,13 @@ def G2SpinWidget(parent,loc,key,label,xmin=None,xmax=None,
         loc[key] = min(xmax,loc[key])
     hSizer = wx.BoxSizer(wx.HORIZONTAL)
     if label:
-        hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,
-                       wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+        hSizer.Add(wx.StaticText(parent,wx.ID_ANY,label),0,WACV)
     spin = wx.SpinButton(parent,style=wx.SP_VERTICAL,size=wx.Size(20,20))
     spin.SetRange(-1,1)
     spin.Bind(wx.EVT_SPIN, _onSpin)
     loc[key] = int(loc[key]+0.5)
-    vEntry = ValidatedTxtCtrl(parent,loc,key,OnLeave=_onValSet,
-                xmin=xmin,xmax=xmax,typeHint=int,size=(hsize,-1))
+    vEntry = ValidatedTxtCtrl(parent,loc,key,OnLeave=onValSet,nDig=nDig,
+                xmin=xmin,xmax=xmax,typeHint=typeHint,size=size)
     hSizer.Add(vEntry,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
     hSizer.Add(spin,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
     return hSizer

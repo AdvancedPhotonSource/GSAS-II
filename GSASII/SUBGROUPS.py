@@ -142,7 +142,7 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
       text containts a possible web page text
     '''
     if BCS_init(): return None,'Unable to initialize Bilbao access'
-    print(f'\nFor use of k-SUBGROUPSMAG, please cite:\n\n{G2G.GetCite('Bilbao: k-SUBGROUPSMAG',wrap=70,indent=5)}')
+    print(f'\nFor use of k-SUBGROUPSMAG, please cite:\n\n{G2G.GetCite("Bilbao: k-SUBGROUPSMAG",wrap=70,indent=5)}')
 
     starmag = 'no'
     if star:
@@ -223,7 +223,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
       text containts a possible web page text
     '''
     if BCS_init(): return
-    print(f'\nFor use of k-SUBGROUPSMAG, please cite:\n\n{G2G.GetCite('Bilbao: k-SUBGROUPSMAG',wrap=70,indent=5)}')
+    print(f'\nFor use of k-SUBGROUPSMAG, please cite:\n\n{G2G.GetCite("Bilbao: k-SUBGROUPSMAG",wrap=70,indent=5)}')
 
     def getBNS(item):
         spgrp = getSpGrp(item)

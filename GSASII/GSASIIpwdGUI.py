@@ -5502,6 +5502,27 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         phase_nam = G2frame.kvecSearch['phase']
         phaseTreeId = G2gd.GetGPXtreeItemId(G2frame, phaseID, phase_nam) # save reference
         Phase = G2frame.GPXtree.GetItemPyData(phaseTreeId)
+
+        if mag:
+            atom_names = [atom[1] for atom in Phase['Atoms']]
+            atom_names = list(set(atom_names))
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                'Select magnetic atom(s)',
+                'Select magnetic atom(s) from the list below:',
+                atom_names, filterBox=False)
+            try:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return
+                selected_indices = dlg.GetSelections()
+            finally:
+                dlg.Destroy()
+            if not selected_indices:
+                wx.MessageBox('No atoms selected. Aborting.',
+                    caption='No Selection', style=wx.ICON_EXCLAMATION)
+                return
+            selected_atoms = [atom_names[i] for i in selected_indices]
+            G2frame.kvecSearch['magAtoms'] = selected_atoms
+
         fileList = []
         # write a CIF as a scratch file
         obj = G2export_CIF.ExportPhaseCIF(G2frame)
@@ -5572,23 +5593,21 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         isocif_out_cif = requests.post(isocifformsite, data=isocif_formDict).text
 
         if mag:
-            atom_names = [atom[0] for atom in Phase['Atoms']]
-            dlg = G2G.G2MultiChoiceDialog(G2frame,
-                'Select magnetic atom(s)',
-                'Select magnetic atom(s) from the list below:',
-                atom_names, filterBox=False)
-            try:
-                if dlg.ShowModal() != wx.ID_OK:
-                    return
-                selected_indices = dlg.GetSelections()
-            finally:
-                dlg.Destroy()
-            if not selected_indices:
-                wx.MessageBox('No atoms selected. Aborting.',
-                    caption='No Selection', style=wx.ICON_EXCLAMATION)
-                return
-            selected_atoms = [atom_names[i] for i in selected_indices]
-            G2frame.kvecSearch['magAtoms'] = selected_atoms
+            # Parse out2 to map element symbol -> includemagnetic field name
+            # Pattern: "Er<INPUT TYPE="checkbox" NAME="includemagnetic001" VALUE="true">"
+            mag_elem_map = dict(re.findall(
+                r'(\w+)<INPUT\s+TYPE="checkbox"\s+NAME="(includemagnetic\d+)"',
+                out2, re.IGNORECASE
+            ))
+            G2frame.kvecSearch['magElemMap'] = mag_elem_map
+            # Enable magnetic distortions only for the user-selected elements
+            for elem, field in mag_elem_map.items():
+                if elem in selected_atoms:
+                    data[field] = 'true'
+            # Remove displacive and strain keys when doing magnetic search
+            for key in list(data.keys()):
+                if key.startswith('includedisplacive') or key == 'includestrain':
+                    del data[key]
 
         kvec_dict = grab_all_kvecs(out2)
         #lat_sym = Phase['General']['SGData']

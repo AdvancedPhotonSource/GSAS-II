@@ -5317,7 +5317,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         G2frame.OnFileSave(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
-    def OnISODISTORT_kvec(event):
+    def OnISODISTORT_kvec(event, mag=False):
         '''Search for k-vector using the ISODISTORT web service.
         Developed by Yuanpeng Zhang with help from Branton Campbell.
         '''
@@ -5570,6 +5570,25 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         isocif_formDict['input'] = 'savecif'
 
         isocif_out_cif = requests.post(isocifformsite, data=isocif_formDict).text
+
+        if mag:
+            atom_names = [atom[0] for atom in Phase['Atoms']]
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                'Select magnetic atom(s)',
+                'Select magnetic atom(s) from the list below:',
+                atom_names, filterBox=False)
+            try:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return
+                selected_indices = dlg.GetSelections()
+            finally:
+                dlg.Destroy()
+            if not selected_indices:
+                wx.MessageBox('No atoms selected. Aborting.',
+                    caption='No Selection', style=wx.ICON_EXCLAMATION)
+                return
+            selected_atoms = [atom_names[i] for i in selected_indices]
+            G2frame.kvecSearch['magAtoms'] = selected_atoms
 
         kvec_dict = grab_all_kvecs(out2)
         #lat_sym = Phase['General']['SGData']
@@ -7290,6 +7309,10 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
             ISObut.Bind(wx.EVT_BUTTON, OnISODISTORT_kvec)
             hSizer.Add(ISObut)
+
+            ISOmagbut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT-MAG')
+            ISOmagbut.Bind(wx.EVT_BUTTON, lambda evt: OnISODISTORT_kvec(evt, mag=True))
+            hSizer.Add(ISOmagbut)
 
             mainSizer.Add(hSizer)
         else:

@@ -5683,7 +5683,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 data["orderparam"] = radio_val + '" CHECKED'
                 out5 = requests.post(isoformsite, data=data).text
 
-                out_cif = ISO.GetISOcif(out5, 2)
+                out_cif = ISO.GetISOcif(out5, 2, mag=mag)
                 cif_fn_part1 = radio_val.split()[0]
                 cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
                 cif_fn_part2 = cif_fn_part2_tmp.split()[-1]

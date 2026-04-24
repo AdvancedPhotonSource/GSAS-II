@@ -177,7 +177,7 @@ def GetISODISTORT(Phase):
 
     return radio,data2
 
-def GetISOcif(out4,method):
+def GetISOcif(out4, method, mag=False):
 
     try:
         pos = out4.index('<FORM ACTION')
@@ -239,6 +239,8 @@ def GetISOcif(out4,method):
     #     print(item,data3[item])
     if 'appbtn' in data3:
         data3.pop('appbtn')
+    if mag:
+        data3['modeamplitude_mag'] = '4.0'
     k = requests.post(isoformsite,data=data3)
     out5 = k.text   #this is output cif!
     #print(out5)

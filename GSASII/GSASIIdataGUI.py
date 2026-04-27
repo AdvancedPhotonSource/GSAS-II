@@ -7684,8 +7684,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 'Locate rigid body in structure mapping to existing atoms')
             self.RigidBodiesEdit.Append(G2G.wxID_AUTOFINDRESRB,'Auto find residues',
                 'Auto find of residue RBs in macromolecule')
-            self.RigidBodiesEdit.Append(G2G.wxID_COPYRBPARMS,'Copy rigid body parms',
-                'Copy rigid body location & TLS parameters')
+            self.RigidBodiesEdit.Append(G2G.wxID_COPYRBPARMS,'Duplicate rigid body parms',
+                'Duplicate rigid body location & TLS parameters')
             self.RigidBodiesEdit.Append(G2G.wxID_GLOBALTHERM,'Global thermal motion',
                 'Global setting of residue thermal motion models')
             self.RigidBodiesEdit.Append(G2G.wxID_GLOBALRESREFINE,'Global residue refine',

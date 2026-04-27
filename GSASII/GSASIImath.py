@@ -1364,7 +1364,8 @@ def QsymAxis(Q,symAxis):
     if symAxis is None:
         return Q
     a,v = Q2AV(Q)
-    symaxis = np.array(symAxis)
+    v = vnorm(v)
+    symaxis = vnorm(np.array(symAxis))
     vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
     if vdotsym in [-1.0,1.0]:   #Q, symAxis parallel/antiparallel
         return Q
@@ -1426,6 +1427,7 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         XYZ = [np.array(RBObj['Orig'][0]),]
         return XYZ,Cart
     # if symmetry axis is defined, place symmetry axis along quaternion
+    RBRes['symAxis'] = RBRes.get('symAxis',[0,0,1])
     Q = QsymAxis(RBObj['Orient'][0],RBRes['symAxis'])
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
@@ -1480,7 +1482,7 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
                 S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
             Umat = G2lat.U6toUij(U)
             Umat = np.inner(np.inner(QMat,Umat),QMat)
-            beta = np.inner(np.inner(Bmat,Umat),Bmat)
+            beta = np.inner(np.inner(Bmat.T,Umat),Bmat.T)
             Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
         else:
             Uout.append(['N',])

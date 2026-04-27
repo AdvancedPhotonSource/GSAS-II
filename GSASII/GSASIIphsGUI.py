@@ -9665,6 +9665,8 @@ at one of the following locations:
                         data['Atoms'][AtLookUp[Id]][cia+1] = Uout[i][1]
                     else:
                         data['Atoms'][AtLookUp[Id]][cia+2:cia+8] = Uout[i][2:8]
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms(G2frame,data)
                 G2plt.PlotStructure(G2frame,data)
 
             def OnTLSRef(event):
@@ -9724,13 +9726,18 @@ at one of the following locations:
                 if not any(Q):
                     raise ValueError
                 RBObj['Orient'][0] = Q
-                if rbType != 'Spin':
-                    newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
+                if rbType != 'Spin':                    
+                    newXYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)
+                    Uout = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
                     maxFrac = 0.0
-                    for Id in RBObj['Ids']:
+                    for i,Id in enumerate(RBObj['Ids']):
                         maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
                     for i,Id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                        if Uout[i][0] == 'I':
+                            data['Atoms'][AtLookUp[Id]][cia+1] = Uout[i][1]
+                        else:
+                            data['Atoms'][AtLookUp[Id]][cia+2:cia+8] = Uout[i][2:8]
                         data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
                     data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                 
@@ -10553,10 +10560,10 @@ at one of the following locations:
 
     def OnRBCopyParms(event):
         RBObjs = []
-        for rbType in ['Vector','Residue']:
+        for rbType in ['Vector',]:
             RBObjs += data['RBModels'].get(rbType,[])
         if not len(RBObjs):
-            print ('**** ERROR - no rigid bodies defined ****')
+            print ('**** ERROR - only allowed for defined Vector rigid bodies ****')
             return
         if len(RBObjs) == 1:
             print ('**** INFO - only one rigid body defined; nothing to copy to ****')
@@ -10565,7 +10572,7 @@ at one of the following locations:
         sourceRB = {}
         for RBObj in RBObjs:
             Source.append(RBObj['RBname'])
-        dlg = wx.SingleChoiceDialog(G2frame,'Select source','Copy rigid body parameters',Source)
+        dlg = wx.SingleChoiceDialog(G2frame,'Select source','Duplicate rigid body parameters',Source)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             for item in ['Orig','Orient','ThermalMotion','AtomFract']:
@@ -10573,11 +10580,11 @@ at one of the following locations:
         dlg.Destroy()
         if not sourceRB:
             return
-        dlg = wx.MultiChoiceDialog(G2frame,'Select targets','Copy rigid body parameters',Source)
+        dlg = wx.MultiChoiceDialog(G2frame,'Select targets','Duplicate rigid body parameters',Source)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
             for x in sel:
-                RBObjs[x].update(copy.copy(sourceRB))
+                RBObjs[x].update(copy.copy(sourceRB))   #NB: this duplicates the objects; not make independent copies!
         G2plt.PlotStructure(G2frame,data)
         wx.CallAfter(FillRigidBodyGrid,True)
 
@@ -11581,6 +11588,7 @@ of the crystal structure.
         RBData = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         for RBType in ['Vector','Residue','Spin']:
+            RBData[RBType] = RBData.get(RBType,[])
             for rbId in RBData[RBType]:
                 RBData[RBType][rbId]['useCount'] = 0
         FillRigidBodyGrid(True)

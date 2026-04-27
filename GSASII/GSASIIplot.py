@@ -95,6 +95,7 @@ npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
+vnorm = lambda v: v/nl.norm(v)
 try:  # fails on doc build
     sq8ln2 = np.sqrt(8.0*np.log(2.0))
 except TypeError:
@@ -8202,7 +8203,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         Q = G2mth.prodQQ(Q,Qy)
         defaults['Quaternion'] = Q
 
-    def RenderUnitVectors(x,y,z):
+    def RenderUnitVectors(x,y,z,symAxis):
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         GL.glLineWidth(1)
         GL.glPushMatrix()
@@ -8212,6 +8213,11 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             GL.glColor3ubv(color)
             GL.glVertex3fv(-line[1])
             GL.glVertex3fv(line[1])
+        if symAxis:
+            Vfrac = vnorm(np.array(symAxis))
+            GL.glColor3ubv([255,255,255])
+            GL.glVertex3fv(np.zeros(3))
+            GL.glVertex3fv(1.5*Vfrac)
         GL.glEnd()
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
@@ -8283,7 +8289,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         GL.glMultMatrixf(matRot.T)
-        RenderUnitVectors(0.,0.,0.)
+        RenderUnitVectors(0.,0.,0.,symAxis)
         radius = 0.2
         s = 1
         selected = rbData.get('Selection')
@@ -8363,6 +8369,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
     uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
     uColors = [Rd,Gr,Bl]
+    symAxis = rbData.get('symAxis',[0,0,1])
     if rbType == 'Vector':
         atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['rbTypes'])]
         XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])

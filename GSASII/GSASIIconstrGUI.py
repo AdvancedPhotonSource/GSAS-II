@@ -3239,6 +3239,7 @@ create a Vector or Residue rigid body.
                 Obj = event.GetEventObject()
                 axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1])[Obj.GetSelection()]
                 rbData['symAxis'] = axis
+                G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,data['Vector'][rbid],plotDefaults)
             
             refAtmSizer = wx.BoxSizer(wx.HORIZONTAL)
             choices = [' x ',' y ',' z ','x+y','x+y+z']

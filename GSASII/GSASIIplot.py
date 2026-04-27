@@ -6778,7 +6778,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
 
-    def RenderRBtriplet(orig,Q,Bmat,symAxis=None):
+    def RenderRBtriplet(orig,Q0,Q,Bmat):
         '''draw an axes triplet located at the origin of a rigid body
         and with the x, y & z axes drawn as red, green and blue.
         '''
@@ -6790,8 +6790,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glEnable(GL.GL_LINE_SMOOTH)
         GL.glPushMatrix()
         GL.glTranslate(*orig)
+        GL.glLineStipple(1,255)
+        GL.glEnable(GL.GL_LINE_STIPPLE)
         GL.glBegin(GL.GL_LINES)
-        # lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,symAxis)
         lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,None)
         colors = [Rd,Gr,Bl]
         # lines along axial directions
@@ -6799,12 +6800,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             GL.glColor3ubv(color)
             GL.glVertex3fv(np.zeros(3))
             GL.glVertex3fv(line)
-        A,V = G2mth.Q2AVdeg(Q)
+        A,V = G2mth.Q2AVdeg(Q0)
         Vfrac = np.inner(Bmat,V)
         GL.glColor3ubv([255,255,255])
         GL.glVertex3fv(np.zeros(3))
         GL.glVertex3fv(1.5*Vfrac)
         GL.glEnd()
+        GL.glDisable(GL.GL_LINE_STIPPLE)
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_LINE_SMOOTH)
@@ -7613,8 +7615,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if testRBObj['rbType'] != 'Spin':
                     RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
-            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],testRBObj['rbObj']['Orient'][0],
-                Bmat,testRBObj['rbObj'].get('symAxis'))
+            Q0 = testRBObj['rbObj']['Orient'][0]
+            Q = G2mth.QsymAxis(Q0,testRBObj['symAxis'])
+            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],Q0,Q,Bmat)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = mcsaTypes[ind]

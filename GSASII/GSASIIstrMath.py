@@ -240,7 +240,9 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
         symAxis = RBObj.get('symAxis')
         VModel = RBData['Vector'][RBObj['RBId']]
-        Q = RBObj['Orient'][0]
+        Q0 = RBObj['Orient'][0]
+        Q = G2mth.QsymAxis(Q0,symAxis)
+        Qmat = G2mth.Q2Mat(Q)
         jrb = VRBIds.index(RBObj['RBId'])
         rbsx = str(irb)+':'+str(jrb)
         dXdv = []
@@ -261,18 +263,20 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             for i,name in enumerate(['RBVPx:','RBVPy:','RBVPz:']):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
             for iv in range(4):
-                Q[iv] -= dx
-                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
-                Q[iv] += 2.*dx
-                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
-                Q[iv] -= dx
+                Q0[iv] -= dx
+                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q0),symAxis)
+                Q0[iv] += 2.*dx
+                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q0),symAxis)
+                Q0[iv] -= dx
                 dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
                 for ix in [0,1,2]:
                     dFdvDict[pfx+'RBV'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             X = G2mth.prodQVQ(Q,Cart[ia])
             dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T/gvec
             dFdu = G2lat.U6toUij(dFdu.T)
+            #### transform dFdu by Q(Q,symAxis) here - not quite right TLS derivs?
             dFdu = np.tensordot(Amat,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
+            dFdu = np.tensordot(Qmat,np.tensordot(Qmat,dFdu,([1,0])),([0,1]))
             dFdu = G2lat.UijtoU6(dFdu)
             atNum = AtLookup[atId]
             if 'T' in RBObj['ThermalMotion'][0]:
@@ -302,7 +306,9 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
 
     for irb,RBObj in enumerate(RBModels.get('Residue',[])):
         symAxis = RBObj.get('symAxis')
-        Q = RBObj['Orient'][0]
+        Q0 = RBObj['Orient'][0]
+        Q = G2mth.QsymAxis(Q0,symAxis)
+        Qmat = G2mth.Q2Mat(Q)
         jrb = RRBIds.index(RBObj['RBId'])
         torData = RBData['Residue'][RBObj['RBId']]['rbSeq']
         rbsx = str(irb)+':'+str(jrb)
@@ -328,17 +334,18 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
             for i,name in enumerate(['RBRPx:','RBRPy:','RBRPz:']):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
             for iv in range(4):
-                Q[iv] -= dx
+                Q0[iv] -= dx
                 XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
-                Q[iv] += 2.*dx
+                Q0[iv] += 2.*dx
                 XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
-                Q[iv] -= dx
+                Q0[iv] -= dx
                 dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
                 for ix in [0,1,2]:
                     dFdvDict[pfx+'RBR'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             X = G2mth.prodQVQ(Q,Cart[ia])
             dFdu = np.array([dFdvDict[pfx+Uid+str(AtLookup[atId])] for Uid in atuIds]).T/gvec
             dFdu = G2lat.U6toUij(dFdu.T)
+            dFdu = np.tensordot(Qmat,np.tensordot(Qmat,dFdu,([1,0])),([0,1]))
             dFdu = np.tensordot(Amat.T,np.tensordot(Amat,dFdu,([1,0])),([0,1]))
             dFdu = G2lat.UijtoU6(dFdu)
             atNum = AtLookup[atId]

@@ -5692,7 +5692,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 print("Processing mode:", radio_val)
                 data["input"] = "distort"
                 data["origintype"] = "method2"
-                data["orderparam"] = radio_val
+                data["orderparam"] = radio_val + '" CHECKED'
                 out5 = requests.post(isoformsite, data=data).text
 
                 out_cif = ISO.GetISOcif(out5, 2, mag=mag)

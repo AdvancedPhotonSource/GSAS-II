@@ -671,7 +671,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += isodistort_warnings
                 else:
                     self.errors = "Error while processing ISODISTORT constraints"
-                    self.ISODISTORT_proc(blk,atomlbllist,ranIdlookup,filename)
+                    irrep = unused.get('irrep')
+                    self.ISODISTORT_proc(blk, atomlbllist, ranIdlookup, filename, irrep=irrep)
                     self.errors = ""
             returnstat = True
         if self.SymOps.get('xyz',[]): # did the phase supply symmetry operations?
@@ -730,18 +731,23 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                     
         return returnstat
 
-    def ISODISTORT_test(self,blk):
+    def ISODISTORT_test(self, blk):
         '''Test if there is any ISODISTORT information in CIF
 
         At present only _iso_displacivemode... and _iso_occupancymode... are
         tested.
         '''
-        for i in ('_iso_displacivemode_label',
-                  '_iso_occupancymode_label'):
-            if blk.get(i): return True
+        for i in (
+            '_iso_displacivemode_label',
+            '_iso_occupancymode_label',
+            '_iso_magneticmode_label'
+        ):
+            if blk.get(i):
+                return True
+
         return False
 
-    def ISODISTORT_proc(self,blk,atomlbllist,ranIdlookup,filename):
+    def ISODISTORT_proc(self, blk, atomlbllist, ranIdlookup, filename, irrep=None):
         '''Process ISODISTORT items to create constraints etc.
         Constraints are generated from information extracted from
         loops beginning with _iso_ and are placed into
@@ -1320,6 +1326,56 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                       ".Phase['ISODISTORT']['G2OccModeList']")
             for mode,G2mode in zip(modelist,modeVarList):
                 print("  ?::"+str(G2mode),' ==>', mode)
+
+        # Magnetic mode reading
+        if blk.get('_iso_magneticmode_label'):
+            mmode_num = int(blk.get('_iso_magneticmode_number'))
+            mmode_matrix = np.zeros((mmode_num, mmode_num))
+            for row, col, val in zip(
+                blk.get('_iso_magneticmodematrix_row'),
+                blk.get('_iso_magneticmodematrix_col'),
+                blk.get('_iso_magneticmodematrix_value'),
+                strict=True,
+            ):
+                mmode_matrix[int(row)-1, int(col)-1] = float(val)
+
+            mag_at_info = {}
+            for lb, fx, fy, fz, syf in zip(
+                blk.get('_atom_site_label'),
+                blk.get('_atom_site_fract_x'),
+                blk.get('_atom_site_fract_y'),
+                blk.get('_atom_site_fract_z'),
+                blk.get('_atom_site_fract_symmform'),
+                strict=True,
+            ):
+                mag_at_info[lb] = {
+                    "Coords": (fx, fy, fz),
+                    "SymmForm": syf
+                }
+
+            mag_modes = {}
+            for mml, mmn, dml in zip(
+                blk.get('_iso_magneticmode_label'),
+                blk.get('_iso_magneticmodenorm_value'),
+                blk.get('_iso_deltamoment_label'),
+                strict=True,
+            ):
+                mag_modes[mml] = {
+                    "NormFactor": mmn,
+                    "DeltaMomentLabel": dml
+                }
+
+            if 'ISODISTORT-MAG' not in self.Phase:
+                self.Phase['ISODISTORT-MAG'] = {}
+
+            if irrep not in self.Phase['ISODISTORT-MAG']:
+                self.Phase['ISODISTORT-MAG'][irrep] = {
+                    "ModeMatrix": mmode_matrix,
+                    "MagAtomInfo": mag_at_info,
+                }
+
+            for mkey, mval in mag_modes.items():
+                self.Phase['ISODISTORT-MAG'][irrep][mkey] = mval
 
 def ISODISTORT_shortLbl(lbl,shortmodelist):
     '''Shorten model labels and remove special characters

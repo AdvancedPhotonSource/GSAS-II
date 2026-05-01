@@ -5658,6 +5658,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             del Restraints[phsnam]
         #orgData = copy.deepcopy(data)
 
+        if mag:
+            cif_handler = CIFpr()
+
         for ir_opt, _ in ir_options:
             print("Processing irrep:", ir_opt)
             data["input"] = "irrep"
@@ -5693,6 +5696,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 data["input"] = "distort"
                 data["origintype"] = "method2"
                 data["orderparam"] = radio_val + '" CHECKED'
+                if mag and "'" in radio_val:
+                    data["magirrep1"] = 'true'
                 out5 = requests.post(isoformsite, data=data).text
 
                 out_cif = ISO.GetISOcif(out5, 2, mag=mag)
@@ -5705,6 +5710,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 cif_fn = os.path.join(proj_pth, cif_fn)
                 with open(cif_fn, 'wb') as fl:
                     fl.write(out_cif.encode("utf-8"))
+
+                if mag:
+                    _ = cif_handler.Reader(cif_fn, irrep=ir_opt)
 
                 try:
                     rdlist = G2sc.import_generic(

@@ -5451,6 +5451,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             return
         import tempfile
         import re
+        import urllib.parse
         from GSASII.exports import G2export_CIF
         from . import ISODISTORT as ISO
         isoformsite = 'https://iso.byu.edu/isodistortform.php'
@@ -5668,10 +5669,21 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             data["irrep1"] = irrep1
             data["irrpointer1"] = irrpointer1
 
-            r_pattern = r'<input\s+type=["\']?radio["\']?\s+name=["\']?'
-            r_pattern += r'orderparam["\']?\s+value=["\']?([^"\']+)["\']?'
+            # Use attribute-aware patterns to correctly capture values that may
+            # contain single quotes (e.g. magnetic space groups like P4_1'2_12').
+            # The original [^"\'"]+ pattern stopped at ' in the value; instead
+            # we match the closing delimiter explicitly so ' is allowed inside
+            # double-quoted attributes and " inside single-quoted ones.
+            r_pattern = (
+                r'<input\s+type=["\']?radio["\']?\s+name=["\']?'
+                r'orderparam["\']?\s+value=(?:"([^"]*)"' + r"|'([^']*)')"
+            )
             radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
-            radio_vals = radio_val_pattern.findall(out4)
+            # findall returns (dq_match, sq_match) tuples; take whichever is non-empty
+            radio_vals = [
+                dq if dq else sq
+                for dq, sq in radio_val_pattern.findall(out4)
+            ]
             cleaned_radio_vals = [value.strip() for value in radio_vals]
             iso_fn = _get_opt_val('isofilename', out4).strip()
             data["isofilename"] = iso_fn
@@ -5680,7 +5692,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 print("Processing mode:", radio_val)
                 data["input"] = "distort"
                 data["origintype"] = "method2"
-                data["orderparam"] = radio_val + '" CHECKED'
+                data["orderparam"] = radio_val
                 out5 = requests.post(isoformsite, data=data).text
 
                 out_cif = ISO.GetISOcif(out5, 2, mag=mag)

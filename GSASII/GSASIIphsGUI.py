@@ -1560,7 +1560,7 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
     if ifSlide: #from the addRB GUI
         G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
-    for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
+    for i,sizer in enumerate(G2frame.testRBObjSizers.get('Xsizers',[])):
         sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
     # if G2frame.testRBObjSizers.get('OnOrien') is None: return
@@ -5048,7 +5048,7 @@ to use these entries'''
         atomData = data['Atoms']
         generalData = data['General']
         atId = ran.randint(0,sys.maxsize)
-        if 'Q' in El:   #dummy fill spin rb pointer
+        if 'Q' in El:   #dummy fill spin rb pointerat
             generalData['SpnIds'][atId] = -1
         SGData = generalData['SGData']
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
@@ -5056,9 +5056,8 @@ to use these entries'''
             atomData.append([0,Name,'',Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['nuclear','faulted',]:
             if generalData['Modulated']:
-#                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
-                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,  # why empty lists? something later removed?
-                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])            
             else:
                 atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'magnetic':
@@ -9665,6 +9664,8 @@ at one of the following locations:
                         data['Atoms'][AtLookUp[Id]][cia+1] = Uout[i][1]
                     else:
                         data['Atoms'][AtLookUp[Id]][cia+2:cia+8] = Uout[i][2:8]
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms(G2frame,data)
                 G2plt.PlotStructure(G2frame,data)
 
             def OnTLSRef(event):
@@ -9724,13 +9725,18 @@ at one of the following locations:
                 if not any(Q):
                     raise ValueError
                 RBObj['Orient'][0] = Q
-                if rbType != 'Spin':
-                    newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
+                if rbType != 'Spin':                    
+                    newXYZ,Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)
+                    Uout = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
                     maxFrac = 0.0
-                    for Id in RBObj['Ids']:
+                    for i,Id in enumerate(RBObj['Ids']):
                         maxFrac = max(maxFrac,data['Atoms'][AtLookUp[Id]][cx+3])
                     for i,Id in enumerate(RBObj['Ids']):
                         data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
+                        if Uout[i][0] == 'I':
+                            data['Atoms'][AtLookUp[Id]][cia+1] = Uout[i][1]
+                        else:
+                            data['Atoms'][AtLookUp[Id]][cia+2:cia+8] = Uout[i][2:8]
                         data['Atoms'][AtLookUp[Id]][cx+3] = maxFrac
                     data['Atoms'] = G2lat.RBsymCheck(data['Atoms'],ct,cx,cs,AtLookUp,Amat,RBObj['Ids'],SGData)
                 
@@ -10552,11 +10558,12 @@ at one of the following locations:
         SetPhaseWindow(RigidBodies,mainSizer)
 
     def OnRBCopyParms(event):
+        #### copy implies setting equal but not same, is what is intended here is make all parms the same?
         RBObjs = []
-        for rbType in ['Vector','Residue']:
+        for rbType in ['Vector',]:
             RBObjs += data['RBModels'].get(rbType,[])
         if not len(RBObjs):
-            print ('**** ERROR - no rigid bodies defined ****')
+            print ('**** ERROR - only allowed for defined Vector rigid bodies ****')
             return
         if len(RBObjs) == 1:
             print ('**** INFO - only one rigid body defined; nothing to copy to ****')
@@ -10565,7 +10572,7 @@ at one of the following locations:
         sourceRB = {}
         for RBObj in RBObjs:
             Source.append(RBObj['RBname'])
-        dlg = wx.SingleChoiceDialog(G2frame,'Select source','Copy rigid body parameters',Source)
+        dlg = wx.SingleChoiceDialog(G2frame,'Select source','Duplicate rigid body parameters',Source)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             for item in ['Orig','Orient','ThermalMotion','AtomFract']:
@@ -10573,11 +10580,11 @@ at one of the following locations:
         dlg.Destroy()
         if not sourceRB:
             return
-        dlg = wx.MultiChoiceDialog(G2frame,'Select targets','Copy rigid body parameters',Source)
+        dlg = wx.MultiChoiceDialog(G2frame,'Select targets','Duplicate rigid body parameters',Source)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
             for x in sel:
-                RBObjs[x].update(copy.copy(sourceRB))
+                RBObjs[x].update(copy.copy(sourceRB))   #NB: this duplicates the objects; not make independent copies!
         G2plt.PlotStructure(G2frame,data)
         wx.CallAfter(FillRigidBodyGrid,True)
 
@@ -10726,6 +10733,7 @@ at one of the following locations:
                     G2lat.RBsymCheck(atomData,ct,cx,cs,AtLookUp,Amat,Ids,SGData)
                 if updateNeeded:
                     SetupGeneral()
+                    data['Drawing']['Atoms'] = []
                     UpdateDrawAtoms(G2frame,data)
                     G2plt.PlotStructure(G2frame,data)
 
@@ -11581,6 +11589,7 @@ of the crystal structure.
         RBData = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         for RBType in ['Vector','Residue','Spin']:
+            RBData[RBType] = RBData.get(RBType,[])
             for rbId in RBData[RBType]:
                 RBData[RBType][rbId]['useCount'] = 0
         FillRigidBodyGrid(True)

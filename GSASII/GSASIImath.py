@@ -1282,7 +1282,9 @@ def UpdateMCSAxyz(Bmat,MCSA):
             RBRes = MCSA['rbData'][model['Type']][model['RBId']]
             Pos = np.array(model['Pos'][0])
             Ori = np.array(model['Ori'][0])
+            symAxis = RBRes.get('symAxis',[0,0,1])
             Qori = AVdeg2Q(Ori[0],Ori[1:])
+            Q = QsymAxis(Qori,symAxis)
             if model['Type'] == 'Vector':
                 vecs = RBRes['rbVect']
                 mags = RBRes['VectMag']
@@ -1297,7 +1299,7 @@ def UpdateMCSAxyz(Bmat,MCSA):
             if model['MolCent'][1]:
                 Cart -= model['MolCent'][0]
             for i,x in enumerate(Cart):
-                xyz.append(np.inner(Bmat,prodQVQ(Qori,x))+Pos)
+                xyz.append(np.inner(Bmat,prodQVQ(Q,x))+Pos)
                 atType = RBRes['rbTypes'][i]
                 atTypes.append(atType)
                 iatm += 1
@@ -1364,7 +1366,8 @@ def QsymAxis(Q,symAxis):
     if symAxis is None:
         return Q
     a,v = Q2AV(Q)
-    symaxis = np.array(symAxis)
+    v = vnorm(v)
+    symaxis = vnorm(np.array(symAxis))
     vdotsym = min(1.0,max(-1.0,np.vdot(v,symaxis)))
     if vdotsym in [-1.0,1.0]:   #Q, symAxis parallel/antiparallel
         return Q
@@ -1426,6 +1429,7 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         XYZ = [np.array(RBObj['Orig'][0]),]
         return XYZ,Cart
     # if symmetry axis is defined, place symmetry axis along quaternion
+    RBRes['symAxis'] = RBRes.get('symAxis',[0,0,1])
     Q = QsymAxis(RBObj['Orient'][0],RBRes['symAxis'])
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
@@ -1480,7 +1484,7 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
                 S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
             Umat = G2lat.U6toUij(U)
             Umat = np.inner(np.inner(QMat,Umat),QMat)
-            beta = np.inner(np.inner(Bmat,Umat),Bmat)
+            beta = np.inner(np.inner(Bmat.T,Umat),Bmat.T)
             Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
         else:
             Uout.append(['N',])
@@ -5726,6 +5730,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             if parmDict[pfx+'Type'] in ['Vector','Residue']:
                 if parmDict[pfx+'Type'] == 'Vector':
                     RBRes = RBdata['Vector'][parmDict[pfx+'RBId']]
+                    symAxis = RBRes['symAxis']
                     vecs = RBRes['rbVect']
                     mags = RBRes['VectMag']
                     Cart = np.zeros_like(vecs[0])
@@ -5733,6 +5738,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                         Cart += vec*mag
                 elif parmDict[pfx+'Type'] == 'Residue':
                     RBRes = RBdata['Residue'][parmDict[pfx+'RBId']]
+                    symAxis = RBRes.get('symAxis',[0,0,1])
                     Cart = np.array(RBRes['rbXYZ'])
                     for itor,seq in enumerate(RBRes['rbSeq']):
                         QuatA = AVdeg2Q(parmDict[pfx+'Tor'+str(itor)],Cart[seq[0]]-Cart[seq[1]])
@@ -5740,8 +5746,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                 if parmDict[pfx+'MolCent'][1]:
                     Cart -= parmDict[pfx+'MolCent'][0]
                 Qori = AVdeg2Q(parmDict[pfx+'Qa'],[parmDict[pfx+'Qi'],parmDict[pfx+'Qj'],parmDict[pfx+'Qk']])
+                Q = QsymAxis(Qori,symAxis)
                 Pos = np.array([parmDict[pfx+'Px'],parmDict[pfx+'Py'],parmDict[pfx+'Pz']])
-                Xdata.T[iatm:iatm+len(Cart)] = np.inner(Bmat,prodQVQ(Qori,Cart)).T+Pos
+                Xdata.T[iatm:iatm+len(Cart)] = np.inner(Bmat,prodQVQ(Q,Cart)).T+Pos
                 iatm += len(Cart)
             elif parmDict[pfx+'Type'] == 'Atom':
                 atNo = parmDict[pfx+'atNo']
@@ -5847,7 +5854,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     parmDict['nfixAt'] = len(fixAtoms)
     MCSA = generalData['MCSA controls']
     reflName = MCSA['Data source']
-    Htype = data['Histograms'][reflName]['Type']
+    Htype = data['Histograms'][reflName].get('Type','PXC')
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
     upper = []
     lower = []

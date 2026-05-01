@@ -95,6 +95,7 @@ npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
+vnorm = lambda v: v/nl.norm(v)
 try:  # fails on doc build
     sq8ln2 = np.sqrt(8.0*np.log(2.0))
 except TypeError:
@@ -6778,7 +6779,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.2,.2,.2,1])
 
-    def RenderRBtriplet(orig,Q,Bmat,symAxis=None):
+    def RenderRBtriplet(orig,Q0,Q,Bmat):
         '''draw an axes triplet located at the origin of a rigid body
         and with the x, y & z axes drawn as red, green and blue.
         '''
@@ -6790,8 +6791,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glEnable(GL.GL_LINE_SMOOTH)
         GL.glPushMatrix()
         GL.glTranslate(*orig)
+        GL.glLineStipple(1,255)
+        GL.glEnable(GL.GL_LINE_STIPPLE)
         GL.glBegin(GL.GL_LINES)
-        # lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,symAxis)
         lines = G2mth.RotateRBXYZ(Bmat,np.eye(3),Q,None)
         colors = [Rd,Gr,Bl]
         # lines along axial directions
@@ -6799,12 +6801,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             GL.glColor3ubv(color)
             GL.glVertex3fv(np.zeros(3))
             GL.glVertex3fv(line)
-        A,V = G2mth.Q2AVdeg(Q)
+        A,V = G2mth.Q2AVdeg(Q0)
         Vfrac = np.inner(Bmat,V)
         GL.glColor3ubv([255,255,255])
         GL.glVertex3fv(np.zeros(3))
         GL.glVertex3fv(1.5*Vfrac)
         GL.glEnd()
+        GL.glDisable(GL.GL_LINE_STIPPLE)
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
         GL.glDisable(GL.GL_LINE_SMOOTH)
@@ -7366,7 +7369,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             atColor = atmFade[iat]*np.array(CL)/255.
             if SymFade and atom[cs-1] != '1':
                 atColor *= .5
-            if drawingData['showRigidBodies'] and atom[ci] in rbAtmDict:
+            if drawingData['showRigidBodies'] and ci in rbAtmDict:
                 bndColor = Or/255.
             else:
                 bndColor = atColor
@@ -7400,7 +7403,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         radius = ballScale*BondRadii[atNum]
                 if 'Q' in atom[ct]:
-                    SpnData = G2mth.GetSpnRBData(SpnRB,atom[ci])
+                    SpnData = G2mth.GetSpnRBData(SpnRB,ci)
                     try:
                         SpnData['nSH'][0]
                     except TypeError:
@@ -7454,13 +7457,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 else:
                     #### put deformation texture on sphere here
                     if atom[ci] in deformationData:
-                        defCtrls = deformationData[-atom[ci]]
+                        defCtrls = deformationData[-ci]
                         if defCtrls.get('showDef',False) and defCtrls['Radial'] == 'Slater':
                             useAtColor = defCtrls.get('atColor',True) 
                             atcolor = None
                             if useAtColor:
                                 atcolor = atColor*255
-                            defParms = deformationData[atom[ci]]
+                            defParms = deformationData[ci]
                             SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}
@@ -7613,8 +7616,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if testRBObj['rbType'] != 'Spin':
                     RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
-            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],testRBObj['rbObj']['Orient'][0],
-                Bmat,testRBObj['rbObj'].get('symAxis'))
+            Q0 = testRBObj['rbObj']['Orient'][0]
+            Q = G2mth.QsymAxis(Q0,testRBObj['symAxis'])
+            RenderRBtriplet(testRBObj['rbObj']['Orig'][0],Q0,Q,Bmat)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):
                 aType = mcsaTypes[ind]
@@ -8199,7 +8203,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         Q = G2mth.prodQQ(Q,Qy)
         defaults['Quaternion'] = Q
 
-    def RenderUnitVectors(x,y,z):
+    def RenderUnitVectors(x,y,z,symAxis):
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         GL.glLineWidth(1)
         GL.glPushMatrix()
@@ -8209,6 +8213,11 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             GL.glColor3ubv(color)
             GL.glVertex3fv(-line[1])
             GL.glVertex3fv(line[1])
+        if symAxis:
+            Vfrac = vnorm(np.array(symAxis))
+            GL.glColor3ubv([255,255,255])
+            GL.glVertex3fv(np.zeros(3))
+            GL.glVertex3fv(1.5*Vfrac)
         GL.glEnd()
         GL.glPopMatrix()
         GL.glColor4ubv([0,0,0,0])
@@ -8280,7 +8289,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         GL.glMultMatrixf(matRot.T)
-        RenderUnitVectors(0.,0.,0.)
+        RenderUnitVectors(0.,0.,0.,symAxis)
         radius = 0.2
         s = 1
         selected = rbData.get('Selection')
@@ -8360,6 +8369,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
     uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
     uColors = [Rd,Gr,Bl]
+    symAxis = rbData.get('symAxis',[0,0,1])
     if rbType == 'Vector':
         atNames = [str(i)+':'+Ty for i,Ty in enumerate(rbData['rbTypes'])]
         XYZ = np.array([[0.,0.,0.] for Ty in rbData['rbTypes']])

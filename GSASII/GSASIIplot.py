@@ -7369,7 +7369,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             atColor = atmFade[iat]*np.array(CL)/255.
             if SymFade and atom[cs-1] != '1':
                 atColor *= .5
-            if drawingData['showRigidBodies'] and atom[ci] in rbAtmDict:
+            if drawingData['showRigidBodies'] and ci in rbAtmDict:
                 bndColor = Or/255.
             else:
                 bndColor = atColor
@@ -7403,7 +7403,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                     else:
                         radius = ballScale*BondRadii[atNum]
                 if 'Q' in atom[ct]:
-                    SpnData = G2mth.GetSpnRBData(SpnRB,atom[ci])
+                    SpnData = G2mth.GetSpnRBData(SpnRB,ci)
                     try:
                         SpnData['nSH'][0]
                     except TypeError:
@@ -7457,13 +7457,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 else:
                     #### put deformation texture on sphere here
                     if atom[ci] in deformationData:
-                        defCtrls = deformationData[-atom[ci]]
+                        defCtrls = deformationData[-ci]
                         if defCtrls.get('showDef',False) and defCtrls['Radial'] == 'Slater':
                             useAtColor = defCtrls.get('atColor',True) 
                             atcolor = None
                             if useAtColor:
                                 atcolor = atColor*255
-                            defParms = deformationData[atom[ci]]
+                            defParms = deformationData[ci]
                             SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}

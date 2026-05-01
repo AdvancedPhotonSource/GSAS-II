@@ -1560,7 +1560,7 @@ def updateAddRBorientText(G2frame,testRBObj,Bmat,ifSlide=True):
     if ifSlide: #from the addRB GUI
         G2frame.testRBObjSizers['OrientVecSiz'][4].SetValue(
             int(10*testRBObj['rbObj']['OrientVec'][0]))
-    for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
+    for i,sizer in enumerate(G2frame.testRBObjSizers.get('Xsizers',[])):
         sizer.ChangeValue(testRBObj['rbObj']['Orig'][0][i])
     # redraw asymmetric unit when called on an existing body
     # if G2frame.testRBObjSizers.get('OnOrien') is None: return
@@ -5048,7 +5048,7 @@ to use these entries'''
         atomData = data['Atoms']
         generalData = data['General']
         atId = ran.randint(0,sys.maxsize)
-        if 'Q' in El:   #dummy fill spin rb pointer
+        if 'Q' in El:   #dummy fill spin rb pointerat
             generalData['SpnIds'][atId] = -1
         SGData = generalData['SGData']
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
@@ -5056,9 +5056,8 @@ to use these entries'''
             atomData.append([0,Name,'',Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['nuclear','faulted',]:
             if generalData['Modulated']:
-#                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
-                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,  # why empty lists? something later removed?
-                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])            
             else:
                 atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'magnetic':
@@ -10559,6 +10558,7 @@ at one of the following locations:
         SetPhaseWindow(RigidBodies,mainSizer)
 
     def OnRBCopyParms(event):
+        #### copy implies setting equal but not same, is what is intended here is make all parms the same?
         RBObjs = []
         for rbType in ['Vector',]:
             RBObjs += data['RBModels'].get(rbType,[])
@@ -10733,6 +10733,7 @@ at one of the following locations:
                     G2lat.RBsymCheck(atomData,ct,cx,cs,AtLookUp,Amat,Ids,SGData)
                 if updateNeeded:
                     SetupGeneral()
+                    data['Drawing']['Atoms'] = []
                     UpdateDrawAtoms(G2frame,data)
                     G2plt.PlotStructure(G2frame,data)
 

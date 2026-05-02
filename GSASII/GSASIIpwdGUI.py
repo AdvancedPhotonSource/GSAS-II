@@ -5524,6 +5524,18 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             selected_atoms = [atom_names[i] for i in selected_indices]
             G2frame.kvecSearch['magAtoms'] = selected_atoms
 
+        # Show progress popup after any user dialogs are closed.
+        # Range will be updated once the total operation count is known.
+        progDlg = wx.ProgressDialog(
+            'Processing IRREPs',
+            'Initial processing...',
+            maximum=1,
+            parent=G2frame,
+            style=wx.PD_APP_MODAL,
+        )
+        progDlg.Update(0, 'Initial processing...  (0%)')
+        wx.GetApp().Yield()
+
         fileList = []
         # write a CIF as a scratch file
         obj = G2export_CIF.ExportPhaseCIF(G2frame)
@@ -5662,8 +5674,17 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             cif_handler = CIFpr()
             all_modes = {}
 
+        # --- Pre-collection pass: fetch each irrep page to get cleaned_radio_vals.
+        # These are lightweight 'irrep' requests used to determine the total number
+        # of distort operations so we can show accurate progress later.
+        all_irrep_data = []
+        r_pattern = (
+            r'<input\s+type=["\']?radio["\']?\s+name=["\']?'
+            r'orderparam["\']?\s+value=(?:"([^"]*)"' + r"|'([^']*)')"
+        )
+        radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
         for ir_opt, _ in ir_options:
-            print("Processing irrep:", ir_opt)
+            print("Fetching IRREP options:", ir_opt)
             all_modes[ir_opt] = {}
             data["input"] = "irrep"
             data['irrep1'] = ir_opt
@@ -5671,78 +5692,102 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
             irrep1 = _get_opt_val('irrep1', out4)
             irrpointer1 = _get_opt_val('irrpointer1', out4)
-            data["irrep1"] = irrep1
-            data["irrpointer1"] = irrpointer1
-
             # Use attribute-aware patterns to correctly capture values that may
             # contain single quotes (e.g. magnetic space groups like P4_1'2_12').
             # The original [^"\'"]+ pattern stopped at ' in the value; instead
             # we match the closing delimiter explicitly so ' is allowed inside
             # double-quoted attributes and " inside single-quoted ones.
-            r_pattern = (
-                r'<input\s+type=["\']?radio["\']?\s+name=["\']?'
-                r'orderparam["\']?\s+value=(?:"([^"]*)"' + r"|'([^']*)')"
-            )
-            radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
-            # findall returns (dq_match, sq_match) tuples; take whichever is non-empty
             radio_vals = [
                 dq if dq else sq
                 for dq, sq in radio_val_pattern.findall(out4)
             ]
             cleaned_radio_vals = [value.strip() for value in radio_vals]
             iso_fn = _get_opt_val('isofilename', out4).strip()
-            data["isofilename"] = iso_fn
+            all_irrep_data.append({
+                'ir_opt': ir_opt,
+                'cleaned_radio_vals': cleaned_radio_vals,
+                'iso_fn': iso_fn,
+                'irrep1': irrep1,
+                'irrpointer1': irrpointer1,
+            })
 
-            for radio_val in cleaned_radio_vals:
-                print("Processing mode:", radio_val)
-                data["input"] = "distort"
-                data["origintype"] = "method2"
-                data["orderparam"] = radio_val + '" CHECKED'
-                if mag and "'" in radio_val:
-                    data["magirrep1"] = 'true'
-                out5 = requests.post(isoformsite, data=data).text
+        total_ops = sum(len(d['cleaned_radio_vals']) for d in all_irrep_data)
+        done_ops = 0
 
-                out_cif = ISO.GetISOcif(out5, 2, mag=mag)
-                cif_fn_part1 = radio_val.split()[0]
-                cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
-                cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
-                cif_fn_part1 = cif_fn_part1.replace('/', '_')
-                cif_fn_part2 = cif_fn_part2.replace('/', '_')
-                cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
-                cif_fn = os.path.join(proj_pth, cif_fn)
-                with open(cif_fn, 'wb') as fl:
-                    fl.write(out_cif.encode("utf-8"))
+        # Update the existing progress dialog now that total is known.
+        progDlg.SetRange(max(total_ops, 1))
+        try:
+            for d in all_irrep_data:
+                ir_opt = d['ir_opt']
+                cleaned_radio_vals = d['cleaned_radio_vals']
+                data["irrep1"] = d['irrep1']
+                data["irrpointer1"] = d['irrpointer1']
+                data["isofilename"] = d['iso_fn']
+                print("Processing irrep:", ir_opt)
 
-                if mag:
-                    _ = cif_handler.Reader(cif_fn, irrep=ir_opt, opd=radio_val)
-                    all_modes[ir_opt][radio_val] = cif_handler.Phase["ISODISTORT-MAG"][ir_opt][radio_val]
-                else:
-                    try:
-                        rdlist = G2sc.import_generic(
-                            cif_fn, [CIFpr()], fmthint='CIF'
-                        )
-                    except Exception:
-                        continue
+                for radio_val in cleaned_radio_vals:
+                    print("Processing mode:", radio_val)
+                    pct = int(100 * done_ops / total_ops) if total_ops > 0 else 0
+                    msg = f'IRREP: {ir_opt}  |  Mode: {radio_val}  ({pct}%)'
+                    progDlg.Update(done_ops, msg)
+                    wx.GetApp().Yield()
 
-                    rd = rdlist[0]
+                    data["input"] = "distort"
+                    data["origintype"] = "method2"
+                    data["orderparam"] = radio_val + '" CHECKED'
+                    if mag and "'" in radio_val:
+                        data["magirrep1"] = 'true'
+                    out5 = requests.post(isoformsite, data=data).text
 
-                    key_list = [
-                        'General', 'Atoms', 'Drawing',
-                        'Histograms', 'Pawley ref', 'RBModels'
-                    ]
-                    for key in key_list:
-                        Phase[key] = rd.Phase[key]
+                    out_cif = ISO.GetISOcif(out5, 2, mag=mag)
+                    cif_fn_part1 = radio_val.split()[0]
+                    cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
+                    cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
+                    cif_fn_part1 = cif_fn_part1.replace('/', '_')
+                    cif_fn_part2 = cif_fn_part2.replace('/', '_')
+                    cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
+                    cif_fn = os.path.join(proj_pth, cif_fn)
+                    with open(cif_fn, 'wb') as fl:
+                        fl.write(out_cif.encode("utf-8"))
 
-                    newname = rd.Phase['General']['Name']
-                    Phase['General']['Name'] = phsnam
+                    if mag:
+                        _ = cif_handler.Reader(cif_fn, irrep=ir_opt, opd=radio_val)
+                        all_modes[ir_opt][radio_val] = cif_handler.Phase["ISODISTORT-MAG"][ir_opt][radio_val]
+                    else:
+                        try:
+                            rdlist = G2sc.import_generic(
+                                cif_fn, [CIFpr()], fmthint='CIF'
+                            )
+                        except Exception:
+                            done_ops += 1
+                            continue
 
-                    # rename the phase in the data tree
-                    G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)
+                        rd = rdlist[0]
 
-                    G2frame.GSASprojectfile = os.path.splitext(
-                        orgFilName
-                    )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
-                    G2IO.ProjFileSave(G2frame)
+                        key_list = [
+                            'General', 'Atoms', 'Drawing',
+                            'Histograms', 'Pawley ref', 'RBModels'
+                        ]
+                        for key in key_list:
+                            Phase[key] = rd.Phase[key]
+
+                        newname = rd.Phase['General']['Name']
+                        Phase['General']['Name'] = phsnam
+
+                        # rename the phase in the data tree
+                        G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)
+
+                        G2frame.GSASprojectfile = os.path.splitext(
+                            orgFilName
+                        )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
+                        G2IO.ProjFileSave(G2frame)
+
+                    done_ops += 1
+
+            progDlg.Update(total_ops, 'Done.')
+            wx.GetApp().Yield()
+        finally:
+            progDlg.Destroy()
 
         # restore the original saved project
         G2frame.OnFileOpen(None, filename=orgFilName, askSave=False)

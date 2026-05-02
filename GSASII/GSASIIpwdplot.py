@@ -132,7 +132,7 @@ def plotVline(Page,Plot,Lines,Parms,pos,color,pickrad,style='dotted'):
     else:
         Lines.append(Plot.axvline(pos,color=color,
             picker=pickrad,linestyle=style))
-        
+
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      extraKeys=[],refineMode=False,indexFrom='',fromTree=False):
     '''Powder pattern plotting package - displays single or multiple powder 
@@ -225,8 +225,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif event.key == 'f' and 'PWDR' in plottype: # short,full length or no tick-marks
             if G2frame.Contour: return
             Page.plotStyle['flTicks'] = (Page.plotStyle.get('flTicks',0)+1)%3
-        elif event.key == 'x'and 'PWDR' in plottype:
+        elif event.key == 'x' and 'PWDR' in plottype:
             Page.plotStyle['exclude'] = not Page.plotStyle['exclude']
+        elif event.key == 'k' and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Background':
+            # change the fixed-background mode
+            backPts = G2frame.dataWindow.wxID_BackPts
+            for i,mode in enumerate(('Add','Move','Delete')): # what menu is selected?
+                if G2frame.dataWindow.BackMenu.FindItemById(backPts[mode]).IsChecked():
+                    break
+            else:
+                i = 0
+            next = (i+1)%3 # set next button
+            for i,mode in enumerate(('Add','Move','Delete')): # what menu is selected?
+                G2frame.dataWindow.BackMenu.FindItemById(backPts[mode]).Check(i==next)
+            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
         elif event.key == '.':
             Page.plotStyle['WgtDiagnostic'] = not Page.plotStyle.get('WgtDiagnostic',False)
             newPlot = True
@@ -362,13 +374,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     axis = Page.figure.gca()
                 axis.axvline(Page.startExclReg,color='b',dashes=(2,3))
-                Page.canvas.draw() 
-                Page.savedplot = Page.canvas.copy_from_bbox(axis.bbox)
-                y1, y2= Page.figure.axes[0].get_ylim()
                 Page.vLine = Plot.axvline(Page.startExclReg,color='b',dashes=(2,3))
-                Page.canvas.draw()
+                SavePlot4animate()
             else:
-                Page.savedplot = None
+                UnsavePlot4animate()
                 wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
                     plotType=plottype,extraKeys=extraKeys)
                 if abs(Page.startExclReg - event.xdata) < 0.1: return
@@ -486,30 +495,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         global PlotList
         G2plt.SetCursor(Page)
         # excluded region animation
-        if Page.excludeMode and Page.savedplot:
+        if Page.excludeMode:
             if event.xdata is None or G2frame.GPXtree.GetItemText(
                     G2frame.GPXtree.GetSelection()) != 'Limits': # reset if out of bounds or not on limits
-                Page.savedplot = None
+                UnsavePlot4animate()
                 Page.excludeMode = False
                 wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
                     plotType=plottype,extraKeys=extraKeys)
                 return
             else:
-                Page.canvas.restore_region(Page.savedplot)
+                RestorePlot4animate()
                 Page.vLine.set_xdata([event.xdata,event.xdata])
                 if G2frame.Weight:
                     axis = Page.figure.axes[1]
                 else:
                     axis = Page.figure.gca()
                 axis.draw_artist(Page.vLine)
-                Page.canvas.blit(axis.bbox)
+                BlitPlot()
                 return
-        elif Page.excludeMode or Page.savedplot: # reset if out of mode somehow
-            Page.savedplot = None            
-            Page.excludeMode = False
-            wx.CallAfter(PlotPatterns,G2frame,newPlot=False,
-                plotType=plottype,extraKeys=extraKeys)
-            return
         if event.button and G2frame.Contour and G2frame.TforYaxis:
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(Temps),ytics,-1)
@@ -644,9 +647,22 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         except TypeError:
             G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
                 
-    def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots
-        np.seterr(invalid='ignore')
-                                                   
+    def OnPress(event): 
+        np.seterr(invalid='ignore') #ugh - this removes a matplotlib error for mouse clicks in log plots
+        if G2frame.ifSetLimitsMode == 3:   # start adding an excluded region
+            savedPlot['excludedPosition'] = event.xdata
+            Page.excludeMode = True
+            if G2frame.Weight:
+                axis = Page.figure.axes[1]
+            else:
+                axis = Page.figure.gca()
+            LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
+            limData = G2frame.GPXtree.GetItemPyData(LimitId)
+            x1 = max(limData[0][0],min(event.xdata,limData[0][1]))
+            axis.axvline(x1,color='b',dashes=(2,3))
+            SavePlot4animate()
+            Page.vLine = Plot.axvline(event.xdata,color='b',dashes=(2,3))
+
     def onMoveDiffCurve(event):
         '''Respond to a menu command to move the difference curve. 
         '''
@@ -706,21 +722,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             '''
             if event.xdata is None or event.ydata is None: return   # ignore if cursor out of window
             if G2frame.itemPicked is None: return # not sure why this happens, if it does
-            Page.canvas.restore_region(savedplot)
+            RestorePlot4animate()
             G2frame.itemPicked.set_data([event.xdata], [event.ydata])
             if G2frame.Weight:
                 axis = Page.figure.axes[1]
             else:
                 axis = Page.figure.gca()
             axis.draw_artist(G2frame.itemPicked)
-            Page.canvas.blit(axis.bbox)
+            BlitPlot()
             
         def OnDragLine(event):
             '''Respond to dragging of a plot line
             '''
             if event.xdata is None: return   # ignore if cursor out of window
             if G2frame.itemPicked is None: return # not sure why this happens 
-            Page.canvas.restore_region(savedplot)
+            RestorePlot4animate()
             coords = G2frame.itemPicked.get_data()
             coords[0][0] = coords[0][1] = event.xdata
             coords = G2frame.itemPicked.set_data(coords)
@@ -729,7 +745,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else:
                 axis = Page.figure.gca()
             axis.draw_artist(G2frame.itemPicked)
-            Page.canvas.blit(axis.bbox)
+            BlitPlot()
             
         def OnDragLabel(event):
             '''Respond to dragging of a HKL label
@@ -746,14 +762,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     data[0]['HKLmarkers'][k1][k2][0] = np.sign(coords[1])*coords[1]**2
                 else:
                     data[0]['HKLmarkers'][k1][k2][0] = coords[1]
-                Page.canvas.restore_region(savedplot)
+                RestorePlot4animate()
                 G2frame.itemPicked.set_position(coords)
                 if G2frame.Weight:
                     axis = Page.figure.axes[1]
                 else:
                     axis = Page.figure.gca()
                 axis.draw_artist(G2frame.itemPicked)
-                Page.canvas.blit(axis.bbox)
+                BlitPlot()
             except:
                 pass
 
@@ -762,7 +778,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             '''
             if event.ydata is None: return   # ignore if cursor out of window
             if Page.tickDict is None: return # not sure why this happens, if it does
-            Page.canvas.restore_region(savedplot)
+            RestorePlot4animate()
             if Page.pickTicknum:
                 refDelt = -(event.ydata-Page.plotStyle['refOffset'])/Page.pickTicknum
                 refOffset = Page.plotStyle['refOffset']
@@ -779,20 +795,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 coords[1][:] = pos
                 Page.tickDict[phase].set_data(coords)
                 axis.draw_artist(Page.tickDict[phase])
-            Page.canvas.blit(axis.bbox)
+            BlitPlot()
 
         def OnDragDiffCurve(event):
             '''Respond to dragging of the difference curve. 
             '''
             if event.ydata is None: return   # ignore if cursor out of window
             if G2frame.itemPicked is None: return # not sure why this happens 
-            Page.canvas.restore_region(savedplot)
+            RestorePlot4animate()
             coords = G2frame.itemPicked.get_data()
             coords[1][:] += Page.diffOffset + event.ydata
             Page.diffOffset = -event.ydata
             G2frame.itemPicked.set_data(coords)
             Page.figure.gca().draw_artist(G2frame.itemPicked) #  Diff curve only found in 1-window plot
-            Page.canvas.blit(Page.figure.gca().bbox)
+            BlitPlot()
             
         def DeleteHKLlabel(HKLmarkers,key):
             '''Delete an HKL label'''
@@ -834,12 +850,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.itemPicked = pick
             pick.set_alpha(.3) # grey out text
             Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-            Page.canvas.draw() # refresh & save bitmap
-            if G2frame.Weight:
-                axis = Page.figure.axes[1]
-            else:
-                axis = Page.figure.gca()
-            savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+            SavePlot4animate()
             G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLabel)
             pick.set_alpha(1.0)
             return
@@ -892,12 +903,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     resetlist.append((Page.tickDict[phase],rgb))
                     Page.tickDict[phase].set_color(rgb_light)
                     Page.tickDict[phase].set_zorder(99) # put on top
-                Page.canvas.draw() # refresh with dimmed tickmarks 
-                if G2frame.Weight:
-                    axis = Page.figure.axes[1]
-                else:
-                    axis = Page.figure.gca()
-                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                SavePlot4animate()
                 for f,v in resetlist:  # reset colors back
                     f.set_zorder(0)
                     f.set_color(v) # reset colors back to original values
@@ -911,9 +917,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     axis = Page.figure.axes[1]
                 else:
                     axis = Page.figure.gca()
+                SavePlot4animate()
                 Page.canvas.draw() # save bitmap
-                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
-                Page.diffOffset = Page.plotStyle['delOffset']
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragDiffCurve)
             else:
                 #picked a peak list line, prepare to animate move of line
@@ -924,8 +929,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     axis = Page.figure.axes[1]
                 else:
                     axis = Page.figure.gca()
-                Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                SavePlot4animate()
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
         elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
@@ -943,12 +947,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 #     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
                 # elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
                 #     xy[0] = G2lat.Dsp2pos(Parms,xy[0])
-                if G2frame.ifSetLimitsMode == 3:   # add an excluded region
-                    excl = [0,0]
-                    excl[0] = max(limData[1][0],min(xy[0],limData[1][1]))
-                    excl[1] = excl[0]+0.1
-                    limData.append(excl)
-                elif G2frame.ifSetLimitsMode == 2: # set upper
+                
+                # point in pattern selected as new upper or lower limit
+                if G2frame.ifSetLimitsMode == 2: # set upper
                     limData[1][1] = max(xy[0],limData[1][0])
                 elif G2frame.ifSetLimitsMode == 1:
                     limData[1][0] = min(xy[0],limData[1][1]) # set lower
@@ -958,21 +959,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2pdG.UpdateLimitsGrid(G2frame,limData,plottype)
                 G2frame.GPXtree.SelectItem(LimitId)
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
-                return
             else:                                         # picked a limit line
                 # prepare to animate move of line
                 G2frame.itemPicked = pick
+                if G2frame.itemPicked in G2frame.MagLines: # don't drag magnification markers here
+                    return
                 pick.set_linestyle(':') # set line as dotted
                 Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                if G2frame.Weight:
-                    axis = Page.figure.axes[1]
-                else:
-                    axis = Page.figure.gca()
-                Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                SavePlot4animate()
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
-                
+            return
         elif G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Unit Cells List':
             # By dragging lines: move limits
             if ind.all() == [0]:                         # picked a limit line
@@ -980,12 +977,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
                 Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                if G2frame.Weight:
-                    axis = Page.figure.axes[1]
-                else:
-                    axis = Page.figure.gca()
-                Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                SavePlot4animate()
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
 
@@ -1007,19 +999,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 ):
             G2frame.itemPicked = pick
             Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-            if G2frame.Weight:
-                axis = Page.figure.axes[1]
-            else:
-                axis = Page.figure.gca()
             if DifLine[0] is G2frame.itemPicked:  # pick of difference curve
-                Page.canvas.draw() # save bitmap
-                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                SavePlot4animate()
                 Page.diffOffset = Page.plotStyle['delOffset']
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragDiffCurve)
             elif G2frame.itemPicked in G2frame.MagLines: # drag of magnification marker
                 pick.set_dashes((1,4)) # set line as dotted sparse
-                Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                SavePlot4animate()
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_dashes((1,1)) # back to dotted
             else:                         # pick of plot tick mark (is anything else possible?)
@@ -1093,12 +1079,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     resetlist.append((Page.tickDict[phase],rgb))
                     Page.tickDict[phase].set_color(rgb_light)
                     Page.tickDict[phase].set_zorder(99) # put on top
-                Page.canvas.draw() # refresh with dimmed tickmarks 
-                if G2frame.Weight:
-                    axis = Page.figure.axes[1]
-                else:
-                    axis = Page.figure.gca()
-                savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                SavePlot4animate()
                 for f,v in resetlist:  # reset colors back
                     f.set_zorder(0)
                     f.set_color(v) # reset colors back to original values
@@ -1110,10 +1091,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             for mode in backPts: # what menu is selected?
                 if G2frame.dataWindow.BackMenu.FindItemById(backPts[mode]).IsChecked():
                     break
-            # mode will be 'Add' or 'Move' or 'Del'
+            # mode will be 'Add' or 'Move' or 'Delete'
             if pick.get_marker() == 'D':
                 # find the closest point
                 backDict = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background'))[1]
+                mag2th = [0]+[x for x,m in magLineList][1:]
+                magmult = [m for x,m in magLineList]
+                if magmult:
+                    xy[1] /= magmult[np.searchsorted(mag2th, xy[0], side = 'right')-1]
                 d2 = [(x-xy[0])**2+(y-xy[1])**2 for x,y in backDict['FixedPoints']]
                 G2frame.fixPtMarker = d2.index(min(d2))
                 if mode == 'Move':
@@ -1121,19 +1106,23 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     G2frame.itemPicked = pick
                     pick.set_marker('|') # change the point appearance
                     Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                    if G2frame.Weight:
-                        axis = Page.figure.axes[1]
-                    else:
-                        axis = Page.figure.gca()
-                    Page.canvas.draw() # refresh with changed point & save bitmap
-                    savedplot = Page.canvas.copy_from_bbox(axis.bbox)
+                    SavePlot4animate()
                     G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragMarker)
                     pick.set_marker('D') # put it back
-                elif mode == 'Del':
+                elif mode == 'Delete':
                     del backDict['FixedPoints'][G2frame.fixPtMarker]
                     wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                 return
-                
+            elif ind.all() == [0]:                         # picked a line
+                if pick not in G2frame.Lines[0:2]: # select limits only
+                    return
+                # prepare to animate move of line
+                G2frame.itemPicked = pick
+                pick.set_linestyle(':') # set line as dotted
+                Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+                SavePlot4animate()
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
+                pick.set_linestyle('--') # back to dashed
     def OnRelease(event):
         '''This is called when the mouse button is released when a plot object is dragged
         due to an item pick, or when invoked via a menu item (such as in onMoveDiffCurve),
@@ -1142,9 +1131,28 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         '''
         plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        if G2frame.ifSetLimitsMode == 3:   # add an excluded region
+            G2frame.ifSetLimitsMode = 0
+            Page.excludeMode = False
+            G2frame.CancelSetLimitsMode.Enable(False)
+            if savedPlot.get('excludedPosition') is None:
+                print('Excluded reg. set err: somehow we did not set a starting position')
+                return
+            x1 = savedPlot.get('excludedPosition')
+            x2 = event.xdata
+            LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
+            limData = G2frame.GPXtree.GetItemPyData(LimitId)
+            x1 = max(limData[0][0],min(x1,limData[0][1]))
+            x2 = max(limData[0][0],min(x2,limData[0][1]))
+            excl = [min(x1,x2),max(x1,x2)]
+            limData.append(excl)
+            wx.CallAfter(G2pdG.UpdateLimitsGrid,G2frame,limData,plottype)
+            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+            return
         if G2frame.cid is not None:         # if there is a drag connection, delete it
             Page.canvas.mpl_disconnect(G2frame.cid)
             G2frame.cid = None
+            UnsavePlot4animate()
         if event.xdata is None or event.ydata is None: # ignore drag if cursor is outside of plot
 #            if GSASIIpath.GetConfigValue('debug'): print('Ignoring drag, invalid pos:',event.xdata,event.ydata)
 #            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
@@ -1154,14 +1162,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return
         
         if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Background' and event.xdata:
+            # On Background page, deal with fixed background points or move of limits
             if Page.toolbar.AnyActive():    # prevent ops. if a toolbar zoom button pressed
                 # after any mouse release event (could be a zoom), redraw magnification lines
                 if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                 return 
-            # Background page, deal with fixed background points
             if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
-                return
+                return  # none of these should be True
             backDict = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background'))[1]
+            mag2th = [0]+[x for x,m in magLineList][1:]
+            magmult = [m for x,m in magLineList]
             if 'FixedPoints' not in backDict: backDict['FixedPoints'] = []
             try:
                 Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
@@ -1178,6 +1188,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 return
             if Page.plotStyle['sqrtPlot']:
                 xy[1] = xy[1]**2
+            elif magmult:
+                mult = magmult[np.searchsorted(mag2th, xy[0], side = 'right')-1]
+                xy[1] /= mult
+            # what is mode for Fixed bkg points?
             backPts = G2frame.dataWindow.wxID_BackPts
             for mode in backPts: # what menu is selected?
                 if G2frame.dataWindow.BackMenu.FindItemById(backPts[mode]).IsChecked():
@@ -1191,12 +1205,31 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 axis.plot(event.xdata,event.ydata,'rD',clip_on=Clip_on,picker=3.)
                 Page.canvas.draw()
                 return
-            elif G2frame.itemPicked is not None: # end of drag in move
+
+            if G2frame.itemPicked is None: return
+            if G2frame.itemPicked.get_marker() == 'D': # action on fixed background point
+                # deal with dragging of fixed background points
                 backDict['FixedPoints'][G2frame.fixPtMarker] = xy
                 G2frame.itemPicked = None
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                 return
-        
+            elif G2frame.itemPicked in G2frame.Lines[0:2]: # limit are 1st two lines in list
+                # here deal with dragging of limits
+                lineNo = G2frame.Lines.index(G2frame.itemPicked) # 0 (lower limit) or 1 (upper limit)
+                LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
+                limits = G2frame.GPXtree.GetItemPyData(LimitId)
+                #Id = lineNo//2+1  # 1 for limits (>1 for excluded regions)
+                id2 = lineNo%2 #  0 (lower limit) or 1 (upper limit)
+                limits[1][id2] = xy[0]
+                #print(f'set limit {id2} to {xy[0]}')
+                limits[1][0] = min(max(limits[0][0],limits[1][0]),limits[1][1])
+                limits[1][1] = max(min(limits[0][1],limits[1][1]),limits[1][0])
+                G2frame.itemPicked = None
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
+                return
+            else:  # unexpected oblect was picked
+                G2frame.itemPicked = None
+                return
         if G2frame.itemPicked is None:
             # after any mouse release event (could be a zoom) where nothing is selected,
             # redraw magnification lines
@@ -1600,13 +1633,47 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['partials'] = True
             Replot()
         configPartialDisplay(G2frame,Page.phaseColors,Replot)
-            
+
+    def SavePlot4animate():
+        '''Save the region inside the axes box for animation, except on Mac (at least with wx 4.2.3),
+        where blitting seems broken unless the entire window is used
+        '''
+        Page.canvas.draw() # refresh the plot to current state
+        if G2frame.Weight:
+            axis = Page.figure.axes[1]
+        else:
+            axis = Page.figure.gca()
+        if sys.platform == "darwin":
+            savedPlot['box'] = Page.figure.bbox
+        else:
+            savedPlot['box'] = axis.bbox
+        # save bitmap
+        savedPlot['map'] = Page.canvas.copy_from_bbox(savedPlot['box'])
+    def RestorePlot4animate():
+        '''reset the plot to the saved version (quick)
+        '''
+        if savedPlot.get('map') is None:
+            pass
+        else:
+            Page.canvas.restore_region(savedPlot['map'])
+    def BlitPlot():
+        '''quickly update the plot (blit) to animate movement os an artist
+        '''
+        Page.canvas.blit(savedPlot['box'])
+    def UnsavePlot4animate():
+        '''Done with animation, release the memory used to save
+        a bitmap of the plot
+        '''
+        savedPlot['box'] = savedPlot['map'] = None
     #### beginning PlotPatterns execution #####################################
     global exclLines,Page
     global DifLine
     global Ymax
     global Pattern,mcolors,Plot,Page,imgAx,Temps
     global savedX
+    global savedPlot
+    savedPlot = {}
+    UnsavePlot4animate()
     plottype = plotType
     inXtraPeakMode = False   # Ignore if peak list menubar is not yet created
     try:
@@ -1638,11 +1705,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif G2frame.ifSetLimitsMode == 2:
             msg = 'Click on a point to define the location of the upper limit'
         elif G2frame.ifSetLimitsMode == 3:
-            msg = 'Click on a point in the pattern to be excluded,\nthen drag or edit limits to adjust range'
+            msg = 'Click on location to start excluded region,\nthen drag and release at end of region'
         Page.figure.text(.02,.93, msg, fontsize=14, fontweight='bold')
+    elif G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Background':
+        backPts = G2frame.dataWindow.wxID_BackPts
+        for mode in backPts: # what menu is selected?
+            if G2frame.dataWindow.BackMenu.FindItemById(backPts[mode]).IsChecked():
+                break
+        else:
+            mode = '?'
+        Page.figure.text(.02,.93, f'Fixed bkg mode: {mode}', fontsize=12, fontweight='bold')
 
     Page.excludeMode = False  # True when defining an excluded region
-    Page.savedplot = None
 #patch
     if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
@@ -1824,7 +1898,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         ifLimits = True
         Page.plotStyle['qPlot'] = False
         Page.plotStyle['dPlot'] = False
-    # keys in use for graphics control:
+    # Setup list of keypress keys in use for the current plot type
     #    a,b,c,d,e,f,g,i,l,m,n,o,p,q,r,s,t,u,w,x, (unused: j, k, y, z)
     #    also: +,/, C,D,S,U
     if G2frame.Contour:
@@ -1867,6 +1941,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Peak List','Index Peak List']:
                 Page.Choice += ['d: highlight next peak in list']
                 Page.Choice += ['u: highlight previous peak in list']
+            if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Background':
+                Page.Choice += ['k: toggle fixed-background mode (add/move/delete)']
             if Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']:
                 del Page.Choice[1]
                 del Page.Choice[1]
@@ -2245,8 +2321,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Lines.append(Plot.axvline(lims[0][1],color='r',dashes=(5,5),picker=3.))
             # excluded region lines
             for i,item in enumerate(lims[1:]):
-                Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=3.))    
-                Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=3.))
+                Lines.append(Plot.axvline(item[0],color='m',dashes=(6,3),picker=3.))    
+                Lines.append(Plot.axvline(item[1],color='m',dashes=(6,3),picker=3.))
                 exclLines += [2*i+2,2*i+3]
         if G2frame.Contour:
             if Page.plotStyle['chanPlot']:

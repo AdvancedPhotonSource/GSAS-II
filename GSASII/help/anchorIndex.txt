@@ -25,7 +25,7 @@ phasepawley.html: Phase-Pawley_reflections
 phasetexture.html: Phase-Texture
 phasewave.html: Phase-Wave_Data
 powder.html: PWDR_overview, PWDR_plot_actions, PWDR_dragticks, PWDR_keylist, PWDR_publication, PublicationPlots
-powderbkg.html: PWDR_Background
+powderbkg.html: PWDR_Background, fixedbackgroundmode, autobackground, fixedbackground
 powdercells.html: PWDR_Unit_Cells_List, CellDisplay, Laue_List
 powdercomments.html: PWDR_Comments
 powderindexppeaks.html: PWDR_Index_Peak_List

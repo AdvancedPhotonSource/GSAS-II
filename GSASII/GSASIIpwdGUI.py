@@ -5660,9 +5660,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         if mag:
             cif_handler = CIFpr()
+            all_modes = {}
 
         for ir_opt, _ in ir_options:
             print("Processing irrep:", ir_opt)
+            all_modes[ir_opt] = {}
             data["input"] = "irrep"
             data['irrep1'] = ir_opt
             out4 = requests.post(isoformsite, data=data).text
@@ -5712,34 +5714,35 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     fl.write(out_cif.encode("utf-8"))
 
                 if mag:
-                    _ = cif_handler.Reader(cif_fn, irrep=ir_opt)
+                    _ = cif_handler.Reader(cif_fn, irrep=ir_opt, opd=radio_val)
+                    all_modes[ir_opt][radio_val] = cif_handler.Phase["ISODISTORT-MAG"][ir_opt][radio_val]
+                else:
+                    try:
+                        rdlist = G2sc.import_generic(
+                            cif_fn, [CIFpr()], fmthint='CIF'
+                        )
+                    except Exception:
+                        continue
 
-                try:
-                    rdlist = G2sc.import_generic(
-                        cif_fn, [CIFpr()], fmthint='CIF'
-                    )
-                except Exception:
-                    continue
+                    rd = rdlist[0]
 
-                rd = rdlist[0]
+                    key_list = [
+                        'General', 'Atoms', 'Drawing',
+                        'Histograms', 'Pawley ref', 'RBModels'
+                    ]
+                    for key in key_list:
+                        Phase[key] = rd.Phase[key]
 
-                key_list = [
-                    'General', 'Atoms', 'Drawing',
-                    'Histograms', 'Pawley ref', 'RBModels'
-                ]
-                for key in key_list:
-                    Phase[key] = rd.Phase[key]
+                    newname = rd.Phase['General']['Name']
+                    Phase['General']['Name'] = phsnam
 
-                newname = rd.Phase['General']['Name']
-                Phase['General']['Name'] = phsnam
+                    # rename the phase in the data tree
+                    G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)
 
-                # rename the phase in the data tree
-                G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)
-
-                G2frame.GSASprojectfile = os.path.splitext(
-                    orgFilName
-                )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
-                G2IO.ProjFileSave(G2frame)
+                    G2frame.GSASprojectfile = os.path.splitext(
+                        orgFilName
+                    )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
+                    G2IO.ProjFileSave(G2frame)
 
         # restore the original saved project
         G2frame.OnFileOpen(None, filename=orgFilName, askSave=False)
@@ -5767,6 +5770,70 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             os.unlink(tmp.name)
         except PermissionError:
             pass
+
+        if mag:
+            ir_labels = [label for _, label in ir_options]
+            dlg = G2G.G2MultiChoiceDialog(G2frame,
+                'Select irreducible representation(s)',
+                'Select irrep(s) from the list below:',
+                ir_labels, filterBox=False)
+            try:
+                if dlg.ShowModal() != wx.ID_OK:
+                    return
+                selected_indices = dlg.GetSelections()
+            finally:
+                dlg.Destroy()
+            if not selected_indices:
+                wx.MessageBox('No irreps selected. Aborting.',
+                    caption='No Selection', style=wx.ICON_EXCLAMATION)
+                return
+
+            # Store (1-based popup index, ir_val, ir_label) so the index shown
+            # in the Mag-IRREPs tab matches the popup list numbering.
+            selected_irreps = [(i + 1, ir_options[i][0], ir_options[i][1])
+                               for i in selected_indices]
+
+            # Get the reloaded phase from the tree
+            phaseID = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
+            phaseTreeId = G2gd.GetGPXtreeItemId(G2frame, phaseID, phsnam)
+            Phase = G2frame.GPXtree.GetItemPyData(phaseTreeId)
+
+            # Build ISODISTORT-MAG data, augmenting each mode with amplitude/refine
+            mag_data = {'selected': selected_irreps}
+            for _orig_idx, ir_val, _ir_label in selected_irreps:
+                if ir_val not in all_modes:
+                    continue
+                mag_data[ir_val] = {}
+                first_opd = True
+                for opd_key, opd_val in all_modes[ir_val].items():
+                    if opd_key in ('ModeMatrix', 'MagAtomInfo'):
+                        mag_data[ir_val][opd_key] = opd_val
+                        continue
+                    if not isinstance(opd_val, dict):
+                        continue
+                    mag_data[ir_val][opd_key] = {'enabled': first_opd}
+                    first_opd = False
+                    for mode_key, mode_val in opd_val.items():
+                        mag_data[ir_val][opd_key][mode_key] = dict(mode_val)
+                        mag_data[ir_val][opd_key][mode_key]['amplitude'] = 0.0
+                        mag_data[ir_val][opd_key][mode_key]['refine'] = True
+
+            Phase['ISODISTORT-MAG'] = mag_data
+            G2IO.ProjFileSave(G2frame)
+
+            # Add the Mag-IRREPs tab to the already-displayed phase notebook,
+            # inserting it immediately after the ISODISTORT tab.
+            from . import GSASIIphsGUI2 as G2phsG2
+            if not hasattr(G2frame, 'MagIRREPs') or G2frame.MagIRREPs is None:
+                G2frame.MagIRREPs = wx.ScrolledWindow(G2frame.phaseDisplay)
+                pageCount = G2frame.phaseDisplay.GetPageCount()
+                insertPos = pageCount  # default: append at end
+                for pageIdx in range(pageCount):
+                    if G2frame.phaseDisplay.GetPageText(pageIdx) == 'ISODISTORT':
+                        insertPos = pageIdx + 1
+                        break
+                G2frame.phaseDisplay.InsertPage(insertPos, G2frame.MagIRREPs, 'Mag-IRREPs')
+            G2phsG2.UpdateMagIRREPs(G2frame, Phase)
 
         return
 

@@ -672,7 +672,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 else:
                     self.errors = "Error while processing ISODISTORT constraints"
                     irrep = unused.get('irrep')
-                    self.ISODISTORT_proc(blk, atomlbllist, ranIdlookup, filename, irrep=irrep)
+                    opd = unused.get('opd')
+                    self.ISODISTORT_proc(blk, atomlbllist, ranIdlookup, filename, irrep=irrep, opd=opd)
                     self.errors = ""
             returnstat = True
         if self.SymOps.get('xyz',[]): # did the phase supply symmetry operations?
@@ -747,7 +748,7 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
 
         return False
 
-    def ISODISTORT_proc(self, blk, atomlbllist, ranIdlookup, filename, irrep=None):
+    def ISODISTORT_proc(self, blk, atomlbllist, ranIdlookup, filename, irrep=None, opd=None):
         '''Process ISODISTORT items to create constraints etc.
         Constraints are generated from information extracted from
         loops beginning with _iso_ and are placed into
@@ -1372,10 +1373,11 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 self.Phase['ISODISTORT-MAG'][irrep] = {
                     "ModeMatrix": mmode_matrix,
                     "MagAtomInfo": mag_at_info,
+                    opd: {}
                 }
 
             for mkey, mval in mag_modes.items():
-                self.Phase['ISODISTORT-MAG'][irrep][mkey] = mval
+                self.Phase['ISODISTORT-MAG'][irrep][opd][mkey] = mval
 
 def ISODISTORT_shortLbl(lbl,shortmodelist):
     '''Shorten model labels and remove special characters

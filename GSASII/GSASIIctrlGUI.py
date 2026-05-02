@@ -1792,7 +1792,7 @@ class G2MultiChoiceDialog(wx.Dialog):
                    'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
                    }
         options.update(kw)
-        self.ChoiceList = ['%4d) %s'%(i,item) for i,item in enumerate(ChoiceList)] # numbered list of choices (list of str values)
+        self.ChoiceList = ['%4d) %s'%(i+1,item) for i,item in enumerate(ChoiceList)] # numbered list of choices (list of str values)
         self.Selections = len(self.ChoiceList) * [False,] # selection status for each choice (list of bools)
         for i in selected:
             self.Selections[i] = True
@@ -2050,7 +2050,7 @@ class G2MultiChoiceWindow(wx.BoxSizer):
                  monoFont=False, filterBox=True,
                      OnChange=None, OnChangeArgs=[], helpText=None):
         self.SelectList = SelectList
-        self.ChoiceList = ['%4d) %s'%(i,item) for i,item in enumerate(ChoiceList)] # numbered list of choices (list of str values)
+        self.ChoiceList = ['%4d) %s'%(i+1,item) for i,item in enumerate(ChoiceList)] # numbered list of choices (list of str values)
         self.frm = parent
         self.Selections = len(self.ChoiceList) * [False,] # selection status for each choice (list of bools)
         self.filterlist = range(len(self.ChoiceList)) # list of the choice numbers that have been filtered (list of int indices)

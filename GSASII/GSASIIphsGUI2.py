@@ -978,6 +978,230 @@ def UpdateISODISTORT(G2frame,data,Scroll=0):
         mainSizer.Add(displayRadio())
     G2phsG.SetPhaseWindow(G2frame.ISODIST,mainSizer,Scroll=Scroll)
 
+#### UpdateMagIRREPs ###############################################################################
+
+def UpdateMagIRREPs(G2frame, data, Scroll=0):
+    '''Present the magnetic IRREPs and their order parameter directions (OPDs) with
+    mode amplitude/refine tables, Cycling Mode control, and Primary OPD control.
+    '''
+
+    if not hasattr(G2frame, 'MagIRREPs') or G2frame.MagIRREPs is None:
+        return
+
+    magISOdata = data.get('ISODISTORT-MAG', {})
+    selected = magISOdata.get('selected', [])
+
+    # Initialise persistent state flags
+    if 'cycling' not in magISOdata:
+        magISOdata['cycling'] = False
+    if 'primary_only' not in magISOdata:
+        magISOdata['primary_only'] = True
+    if 'irrep_enabled' not in magISOdata:
+        magISOdata['irrep_enabled'] = {
+            ir_val: (i == 0) for i, (_, ir_val, _) in enumerate(selected)}
+
+    cycling = magISOdata['cycling']
+    primary_only = magISOdata['primary_only']
+    irrep_enabled = magISOdata['irrep_enabled']
+
+    IrrepIndx = {}
+    OPDIndx = {}
+    GridIndx = {}
+
+    def _rebuild():
+        UpdateMagIRREPs(G2frame, data,
+                        Scroll=G2frame.MagIRREPs.GetScrollPos(wx.VERTICAL))
+
+    # --- event handlers ---
+
+    def OnCyclingCheck(event):
+        was_cycling = magISOdata['cycling']
+        magISOdata['cycling'] = event.GetEventObject().GetValue()
+        if magISOdata['cycling']:
+            # Cycling turned ON: enable all OPDs
+            for ir_val, _ in selected:
+                irr_data = magISOdata.get(ir_val, {})
+                for opd_key, opd_data in irr_data.items():
+                    if opd_key in ('ModeMatrix', 'MagAtomInfo'):
+                        continue
+                    if not isinstance(opd_data, dict):
+                        continue
+                    opd_data['enabled'] = True
+        elif was_cycling:
+            # Cycling turned OFF: select only first OPD for each IRREP
+            for ir_val, _ in selected:
+                irr_data = magISOdata.get(ir_val, {})
+                first = True
+                for opd_key, opd_data in irr_data.items():
+                    if opd_key in ('ModeMatrix', 'MagAtomInfo'):
+                        continue
+                    if not isinstance(opd_data, dict):
+                        continue
+                    opd_data['enabled'] = first
+                    first = False
+        wx.CallAfter(_rebuild)
+
+    def OnPrimaryOnlyCheck(event):
+        magISOdata['primary_only'] = event.GetEventObject().GetValue()
+        wx.CallAfter(_rebuild)
+
+    def OnIRREPCheck(event):
+        Obj = event.GetEventObject()
+        ir_val = IrrepIndx[Obj.GetId()]
+        new_val = Obj.GetValue()
+        if not magISOdata['cycling'] and new_val:
+            # Radio-like when not cycling: uncheck all others first
+            for v in magISOdata['irrep_enabled']:
+                magISOdata['irrep_enabled'][v] = False
+        magISOdata['irrep_enabled'][ir_val] = new_val
+        wx.CallAfter(_rebuild)
+
+    def OnOPDCheck(event):
+        Obj = event.GetEventObject()
+        irrep, opd = OPDIndx[Obj.GetId()]
+        new_val = Obj.GetValue()
+        irr_data = magISOdata.get(irrep, {})
+        if not magISOdata['cycling'] and magISOdata['primary_only'] and new_val:
+            # Radio-like within this IRREP: uncheck all others
+            for opd_key, opd_data in irr_data.items():
+                if opd_key in ('ModeMatrix', 'MagAtomInfo'):
+                    continue
+                if not isinstance(opd_data, dict):
+                    continue
+                opd_data['enabled'] = False
+        irr_data[opd]['enabled'] = new_val
+        wx.CallAfter(_rebuild)
+
+    def OnGridCellChanged(event):
+        grid = event.GetEventObject()
+        row = event.GetRow()
+        col = event.GetCol()
+        irrep, opd, mode_keys = GridIndx[grid.GetId()]
+        mode_key = mode_keys[row]
+        if col == 1:  # Amplitude
+            try:
+                magISOdata[irrep][opd][mode_key]['amplitude'] = float(
+                    grid.GetTable().GetValue(row, col))
+            except (ValueError, TypeError):
+                pass
+        elif col == 2:  # Refine
+            magISOdata[irrep][opd][mode_key]['refine'] = bool(
+                grid.GetTable().GetValue(row, col))
+
+    # --- build UI ---
+
+    if G2frame.MagIRREPs.GetSizer():
+        G2frame.MagIRREPs.GetSizer().Clear(True)
+
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+
+    # Citation at top, matching ISODISTORT tab style
+    txt = wx.StaticText(G2frame.MagIRREPs, label=
+                        ' For use of ISODISTORT, please cite: ' +
+                        G2G.GetCite('ISOTROPY, ISODISTORT, ISOCIF...'))
+    txt.Wrap(500)
+    mainSizer.Add(txt)
+    mainSizer.Add((-1, 5))
+    G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)
+    mainSizer.Add((-1, 5))
+
+    # Control row: [Cycling Mode]  [Primary Order Parameter Only]
+    ctrlSizer = wx.BoxSizer(wx.HORIZONTAL)
+    cyclingChk = wx.CheckBox(G2frame.MagIRREPs, label='Cycling Mode')
+    cyclingChk.SetValue(cycling)
+    cyclingChk.Bind(wx.EVT_CHECKBOX, OnCyclingCheck)
+    ctrlSizer.Add(cyclingChk, 0, wx.ALL | WACV, 4)
+    ctrlSizer.Add((20, -1))
+    primaryChk = wx.CheckBox(G2frame.MagIRREPs, label='Primary Order Parameter Only')
+    primaryChk.SetValue(primary_only)
+    primaryChk.Bind(wx.EVT_CHECKBOX, OnPrimaryOnlyCheck)
+    ctrlSizer.Add(primaryChk, 0, wx.ALL | WACV, 4)
+    mainSizer.Add(ctrlSizer, 0, wx.EXPAND)
+    mainSizer.Add((-1, 5))
+    G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)
+    mainSizer.Add((-1, 5))
+
+    # One group per selected irrep
+    for enum_idx, (orig_idx, ir_val, ir_label) in enumerate(selected):
+        irrepSizer = wx.BoxSizer(wx.VERTICAL)
+
+        # IRREP header row: checkbox + bold label
+        irrepHeaderSizer = wx.BoxSizer(wx.HORIZONTAL)
+        irrepChk = wx.CheckBox(G2frame.MagIRREPs, label='')
+        irrepChk.SetValue(irrep_enabled.get(ir_val, enum_idx == 0))
+        IrrepIndx[irrepChk.GetId()] = ir_val
+        irrepChk.Bind(wx.EVT_CHECKBOX, OnIRREPCheck)
+        irrepHeaderSizer.Add(irrepChk, 0, WACV | wx.LEFT, 4)
+        headerTxt = wx.StaticText(G2frame.MagIRREPs,
+                                  label=f'IRREP-{orig_idx}: {ir_val}')
+        font = headerTxt.GetFont()
+        font.SetWeight(wx.FONTWEIGHT_BOLD)
+        headerTxt.SetFont(font)
+        irrepHeaderSizer.Add(headerTxt, 0, WACV | wx.LEFT, 4)
+        irrepSizer.Add(irrepHeaderSizer, 0, wx.EXPAND)
+
+        irr_data = magISOdata.get(ir_val, {})
+        opd_num = 0
+        for opd_key, opd_data in irr_data.items():
+            if opd_key in ('ModeMatrix', 'MagAtomInfo'):
+                continue
+            if not isinstance(opd_data, dict):
+                continue
+            opd_num += 1
+
+            # OPD enable/disable checkbox; greyed out when cycling is active
+            opdCheck = wx.CheckBox(G2frame.MagIRREPs,
+                                   label=f'  OPD-{opd_num}: {opd_key}')
+            opdCheck.SetValue(opd_data.get('enabled', True))
+            opdCheck.Enable(not cycling)
+            OPDIndx[opdCheck.GetId()] = (ir_val, opd_key)
+            opdCheck.Bind(wx.EVT_CHECKBOX, OnOPDCheck)
+
+            # Mode table: Mode | Amplitude | Refine
+            mode_keys = [k for k in opd_data
+                         if k != 'enabled' and isinstance(opd_data[k], dict)]
+            colLabels = ['Mode', 'Amplitude', 'Refine']
+            colTypes = [wg.GRID_VALUE_STRING,
+                        wg.GRID_VALUE_FLOAT + ':10,5',
+                        wg.GRID_VALUE_BOOL]
+            table_data = []
+            for mk in mode_keys:
+                md = opd_data[mk]
+                table_data.append([mk, md.get('amplitude', 0.0), md.get('refine', True)])
+
+            modeTable = G2G.Table(table_data,
+                                  rowLabels=[str(i) for i in range(len(mode_keys))],
+                                  colLabels=colLabels, types=colTypes)
+            modeGrid = G2G.GSGrid(G2frame.MagIRREPs)
+            if hasattr(G2frame.phaseDisplay, 'gridList'):
+                G2frame.phaseDisplay.gridList.append(modeGrid)
+            modeGrid.SetTable(modeTable, True, useFracEdit=False)
+            modeGrid.AutoSizeColumns(True)
+            modeGrid.SetColLabelAlignment(wx.ALIGN_LEFT, wx.ALIGN_CENTRE)
+            attr = wg.GridCellAttr()
+            attr.SetReadOnly(True)
+            attr.SetBackgroundColour(VERY_LIGHT_GREY)
+            modeGrid.SetColAttr(0, attr)
+            GridIndx[modeGrid.GetId()] = (ir_val, opd_key, mode_keys)
+            modeGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnGridCellChanged)
+
+            # Indent OPD checkbox + table together
+            opdSizer = wx.BoxSizer(wx.VERTICAL)
+            opdSizer.Add(opdCheck, 0, wx.ALL, 2)
+            opdSizer.Add(modeGrid, 0, wx.ALL | wx.EXPAND, 4)
+            irrepSizer.Add(opdSizer, 0, wx.EXPAND | wx.LEFT, 24)
+
+        mainSizer.Add(irrepSizer, 0, wx.EXPAND | wx.ALL, 4)
+
+        # Separator between irrep groups
+        if enum_idx < len(selected) - 1:
+            G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)
+
+    mainSizer.Add((-1, 5))
+    G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)
+
+    G2phsG.SetPhaseWindow(G2frame.MagIRREPs, mainSizer, Scroll=Scroll)
+
 #### UpdateLayerData GUI for DIFFax Layer Data ################################################################################
 def UpdateLayerData(G2frame,data,Scroll=0):
     '''Present the contents of the Phase/Layers tab for stacking fault simulation

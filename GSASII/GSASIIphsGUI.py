@@ -13278,6 +13278,8 @@ tab, use Operations->"Pawley create")''')
         elif text == 'ISODISTORT':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ISODData)
             G2phsG2.UpdateISODISTORT(G2frame,data)
+        elif text == 'Mag-IRREPs':
+            G2phsG2.UpdateMagIRREPs(G2frame,data)
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataDrawOptions)
             G2plt.PlotStructure(G2frame,data,firstCall=True)
@@ -13656,6 +13658,12 @@ tab, use Operations->"Pawley create")''')
         G2frame.ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.ISODIST,'ISODISTORT')
         Pages.append('ISODISTORT')
+    if 'ISODISTORT-MAG' in data:
+        G2frame.MagIRREPs = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.MagIRREPs, 'Mag-IRREPs')
+        Pages.append('Mag-IRREPs')
+    else:
+        G2frame.MagIRREPs = None
         
     if nhist > 0:            
         G2frame.Texture = wx.ScrolledWindow(G2frame.phaseDisplay)

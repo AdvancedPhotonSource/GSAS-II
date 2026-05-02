@@ -1698,7 +1698,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     else:
         publish = None
     new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
-    if G2frame.ifSetLimitsMode and G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Limits':
+    try:
+        Selection = G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection())
+    except:
+        Selection = None
+    if G2frame.ifSetLimitsMode and Selection == 'Limits':
         # note mode
         if G2frame.ifSetLimitsMode == 1:
             msg = 'Click on a point to define the location of the lower limit'
@@ -1707,7 +1711,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif G2frame.ifSetLimitsMode == 3:
             msg = 'Click on location to start excluded region,\nthen drag and release at end of region'
         Page.figure.text(.02,.93, msg, fontsize=14, fontweight='bold')
-    elif G2frame.GPXtree.GetItemText(G2frame.GPXtree.GetSelection()) == 'Background':
+    elif Selection == 'Background':
         backPts = G2frame.dataWindow.wxID_BackPts
         for mode in backPts: # what menu is selected?
             if G2frame.dataWindow.BackMenu.FindItemById(backPts[mode]).IsChecked():
@@ -1813,8 +1817,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.bindings = []
     # redo OnPlotKeyPress binding each time the Plot is updated
     # since needs values that may have been changed after 1st call
-    for b in Page.bindings:
-        Page.canvas.mpl_disconnect(b)
+    try:
+        for b in Page.bindings:
+            Page.canvas.mpl_disconnect(b)
+    except AttributeError:
+        pass
     Page.bindings = []
     Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
     if not G2frame.PickId:

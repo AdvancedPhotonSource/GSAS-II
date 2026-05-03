@@ -5525,15 +5525,27 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             G2frame.kvecSearch['magAtoms'] = selected_atoms
 
         # Show progress popup after any user dialogs are closed.
-        # Range will be updated once the total operation count is known.
-        progDlg = wx.ProgressDialog(
-            'Processing IRREPs',
-            'Initial processing...',
-            maximum=1,
-            parent=G2frame,
-            style=wx.PD_APP_MODAL,
-        )
-        progDlg.Update(0, 'Initial processing...  (0%)')
+        class _ProgDlg(wx.Dialog):
+            """Minimal fixed-size progress popup with wrapped text (no gauge bar)."""
+            _DLG_W = 420
+            _DLG_H = 120
+            def __init__(self, parent, title, message):
+                wx.Dialog.__init__(self, parent, title=title,
+                                   style=wx.CAPTION | wx.FRAME_FLOAT_ON_PARENT)
+                sizer = wx.BoxSizer(wx.VERTICAL)
+                self._label = wx.StaticText(self, label=message)
+                self._label.Wrap(self._DLG_W - 40)
+                sizer.Add(self._label, 1, wx.ALL | wx.EXPAND, 20)
+                self.SetSizer(sizer)
+                self.SetClientSize((self._DLG_W, self._DLG_H))
+                self.Centre()
+                self.Show()
+                wx.GetApp().Yield()
+            def Pulse(self, msg=''):
+                self._label.SetLabel(msg)
+                self._label.Wrap(self._DLG_W - 40)
+                wx.GetApp().Yield()
+        progDlg = _ProgDlg(G2frame, 'Processing IRREPs', 'Initial processing...')
         wx.GetApp().Yield()
 
         fileList = []
@@ -5676,62 +5688,43 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             cif_handler = CIFpr()
             all_modes = {}
 
-        # --- Pre-collection pass: fetch each irrep page to get cleaned_radio_vals.
-        # These are lightweight 'irrep' requests used to determine the total number
-        # of distort operations so we can show accurate progress later.
-        all_irrep_data = []
         r_pattern = (
             r'<input\s+type=["\']?radio["\']?\s+name=["\']?'
             r'orderparam["\']?\s+value=(?:"([^"]*)"' + r"|'([^']*)')"
         )
         radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
-        for ir_opt, _ in ir_options:
-            print("Fetching IRREP options:", ir_opt)
-            all_modes[ir_opt] = {}
-            data["input"] = "irrep"
-            data['irrep1'] = ir_opt
-            out4 = requests.post(isoformsite, data=data).text
 
-            irrep1 = _get_opt_val('irrep1', out4)
-            irrpointer1 = _get_opt_val('irrpointer1', out4)
-            # Use attribute-aware patterns to correctly capture values that may
-            # contain single quotes (e.g. magnetic space groups like P4_1'2_12').
-            # The original [^"\'"]+ pattern stopped at ' in the value; instead
-            # we match the closing delimiter explicitly so ' is allowed inside
-            # double-quoted attributes and " inside single-quoted ones.
-            radio_vals = [
-                dq if dq else sq
-                for dq, sq in radio_val_pattern.findall(out4)
-            ]
-            cleaned_radio_vals = [value.strip() for value in radio_vals]
-            iso_fn = _get_opt_val('isofilename', out4).strip()
-            all_irrep_data.append({
-                'ir_opt': ir_opt,
-                'cleaned_radio_vals': cleaned_radio_vals,
-                'iso_fn': iso_fn,
-                'irrep1': irrep1,
-                'irrpointer1': irrpointer1,
-            })
-
-        total_ops = sum(len(d['cleaned_radio_vals']) for d in all_irrep_data)
-        done_ops = 0
-
-        # Update the existing progress dialog now that total is known.
-        progDlg.SetRange(max(total_ops, 1))
         try:
-            for d in all_irrep_data:
-                ir_opt = d['ir_opt']
-                cleaned_radio_vals = d['cleaned_radio_vals']
-                data["irrep1"] = d['irrep1']
-                data["irrpointer1"] = d['irrpointer1']
-                data["isofilename"] = d['iso_fn']
+            for ir_opt, _ in ir_options:
                 print("Processing irrep:", ir_opt)
+                all_modes[ir_opt] = {}
+                data["input"] = "irrep"
+                data['irrep1'] = ir_opt
+                progDlg.Pulse(f'Fetching IRREP: {ir_opt}')
+                wx.GetApp().Yield()
+                out4 = requests.post(isoformsite, data=data).text
+
+                irrep1 = _get_opt_val('irrep1', out4)
+                irrpointer1 = _get_opt_val('irrpointer1', out4)
+                data["irrep1"] = irrep1
+                data["irrpointer1"] = irrpointer1
+
+                # Use attribute-aware patterns to correctly capture values that may
+                # contain single quotes (e.g. magnetic space groups like P4_1'2_12').
+                # The original [^"\'"]+ pattern stopped at ' in the value; instead
+                # we match the closing delimiter explicitly so ' is allowed inside
+                # double-quoted attributes and " inside single-quoted ones.
+                radio_vals = [
+                    dq if dq else sq
+                    for dq, sq in radio_val_pattern.findall(out4)
+                ]
+                cleaned_radio_vals = [value.strip() for value in radio_vals]
+                iso_fn = _get_opt_val('isofilename', out4).strip()
+                data["isofilename"] = iso_fn
 
                 for radio_val in cleaned_radio_vals:
                     print("Processing mode:", radio_val)
-                    pct = int(100 * done_ops / total_ops) if total_ops > 0 else 0
-                    msg = f'IRREP: {ir_opt}  |  Mode: {radio_val}  ({pct}%)'
-                    progDlg.Update(done_ops, msg)
+                    progDlg.Pulse(f'IRREP: {ir_opt}  |  Mode: {radio_val}')
                     wx.GetApp().Yield()
 
                     data["input"] = "distort"
@@ -5761,7 +5754,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                                 cif_fn, [CIFpr()], fmthint='CIF'
                             )
                         except Exception:
-                            done_ops += 1
                             continue
 
                         rd = rdlist[0]
@@ -5783,11 +5775,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                             orgFilName
                         )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
                         G2IO.ProjFileSave(G2frame)
-
-                    done_ops += 1
-
-            progDlg.Update(total_ops, 'Done.')
-            wx.GetApp().Yield()
         finally:
             progDlg.Destroy()
 

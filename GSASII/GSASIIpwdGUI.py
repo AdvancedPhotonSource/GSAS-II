@@ -5777,6 +5777,34 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                         if mag:
                             _ = cif_handler.Reader(cif_fn, irrep=ir_opt, opd=radio_val)
                             all_modes[ir_opt][radio_val] = cif_handler.Phase["ISODISTORT-MAG"][ir_opt][radio_val]
+                            # Extract structural data for in-memory phase creation
+                            # (used by the "Insert Mag Phase" button in the MAG-IRREP tab)
+                            # Use MPhase (not Phase): it holds the magnetic structure with
+                            # Mx/My/Mz atom columns, Type='magnetic', AtomPtrs=[3,1,10,12].
+                            _ph = cif_handler.MPhase
+                            _sg = _ph['General']['SGData']
+                            all_modes[ir_opt][radio_val]['PhaseData'] = {
+                                'Name': str(_ph['General']['Name']),
+                                'Type': str(_ph['General']['Type']),
+                                'AtomPtrs': list(_ph['General']['AtomPtrs']),
+                                'Cell': list(_ph['General']['Cell']),
+                                'Atoms': [list(a) for a in _ph['Atoms']],
+                                'SGData': {
+                                    'SpGrp': str(_sg.get('SpGrp', 'P 1')),
+                                    'MagSpGrp': str(_sg.get('MagSpGrp', '') or ''),
+                                    'SGFixed': bool(_sg.get('SGFixed', False)),
+                                    'SGOps': [
+                                        [M.tolist() if hasattr(M, 'tolist') else list(M),
+                                         T.tolist() if hasattr(T, 'tolist') else list(T)]
+                                        for M, T in _sg.get('SGOps', [])],
+                                    'SGCen': [
+                                        C.tolist() if hasattr(C, 'tolist') else list(C)
+                                        for C in _sg.get('SGCen', [])],
+                                    'SpnFlp': [float(x) for x in _sg.get('SpnFlp', [])],
+                                    'MagPtGp': str(_sg.get('MagPtGp', '') or ''),
+                                    'SGGray': bool(_sg.get('SGGray', False)),
+                                },
+                            }
                         else:
                             try:
                                 rdlist = G2sc.import_generic(
@@ -5910,6 +5938,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                             # GSASIIphsGUI2 can find it at mag_data[ir_val].
                             mag_data[ir_val][mode_key] = mode_val
                             continue
+                        if mode_key == 'PhaseData':
+                            # Keep per-OPD structural data at the OPD level
+                            # for use by "Insert Mag Phase"
+                            mag_data[ir_val][opd_key]['PhaseData'] = mode_val
+                            continue
                         mag_data[ir_val][opd_key][mode_key] = dict(mode_val)
                         mag_data[ir_val][opd_key][mode_key]['amplitude'] = 0.0
                         mag_data[ir_val][opd_key][mode_key]['refine'] = True
@@ -5928,8 +5961,17 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     G2frame.MagIRREPs = None
             if not hasattr(G2frame, 'MagIRREPs') or G2frame.MagIRREPs is None:
                 # phaseDisplay is only created after the phase tree item is selected.
-                # Navigate there now so it exists before we try to add the tab.
-                if not hasattr(G2frame, 'phaseDisplay') or G2frame.phaseDisplay is None:
+                # Also guard against a stale (C++ deleted) phaseDisplay — this can
+                # happen after the inserted magnetic phase is loaded then we switch
+                # back to the nuclear phase tree item (which rebuilds phaseDisplay).
+                _phaseDisplayOk = False
+                if hasattr(G2frame, 'phaseDisplay') and G2frame.phaseDisplay is not None:
+                    try:
+                        G2frame.phaseDisplay.GetPageCount()
+                        _phaseDisplayOk = True
+                    except RuntimeError:
+                        G2frame.phaseDisplay = None
+                if not _phaseDisplayOk:
                     _phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
                     G2frame.GPXtree.Expand(_phId)
                     _phTreeId = G2gd.GetGPXtreeItemId(G2frame, _phId, phsnam)

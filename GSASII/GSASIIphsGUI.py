@@ -13624,7 +13624,8 @@ tab, use Operations->"Pawley create")''')
         G2frame.phaseDisplay.AddPage(G2frame.deformation,'Deformation')
         Pages.append('Deformation')
         
-    if dataGeneral['Type'] not in ['faulted',] and not dataGeneral['Modulated']:
+    if dataGeneral['Type'] not in ['faulted',] and not dataGeneral['Modulated'] \
+            and not dataGeneral.get('_MagIRREP_inserted', False):
         RigidBodies = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(RigidBodies,'RB Models')
         # note the bind is here so that it is only done once, but
@@ -13645,16 +13646,18 @@ tab, use Operations->"Pawley create")''')
             G2frame.phaseDisplay.AddPage(G2frame.MEMData,'Dysnomia')
             Pages.append('Dysnomia')
         
-    if dataGeneral['Type'] not in ['faulted',] and not dataGeneral['Modulated']:
+    if dataGeneral['Type'] not in ['faulted',] and not dataGeneral['Modulated'] \
+            and not dataGeneral.get('_MagIRREP_inserted', False):
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')
-        
-    G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
-    G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
-    Pages.append('RMC')
 
-    if dataGeneral['Type'] == 'nuclear':
+    if not dataGeneral.get('_MagIRREP_inserted', False):
+        G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
+        Pages.append('RMC')
+
+    if dataGeneral['Type'] == 'nuclear' and not dataGeneral.get('_MagIRREP_inserted', False):
         G2frame.ISODIST = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.ISODIST,'ISODISTORT')
         Pages.append('ISODISTORT')

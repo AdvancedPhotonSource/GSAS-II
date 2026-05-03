@@ -24,6 +24,8 @@ from . import GSASIImath as G2mth
 from . import GSASIIpwd as G2pwd
 from . import GSASIIctrlGUI as G2G
 from . import GSASIIphsGUI as G2phsG
+from . import GSASIIobj as G2obj
+from . import GSASIImiscGUI as G2IO
 
 try:
     wx.NewIdRef
@@ -994,8 +996,7 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
     # Initialise persistent state flags
     if 'cycling' not in magISOdata:
         magISOdata['cycling'] = False
-    if 'primary_only' not in magISOdata:
-        magISOdata['primary_only'] = True
+    magISOdata['primary_only'] = True  # always single-OPD; not user-configurable
     if 'enable_magnetic' not in magISOdata:
         magISOdata['enable_magnetic'] = True
     if 'irrep_enabled' not in magISOdata:
@@ -1003,7 +1004,6 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
             ir_val: (i == 0) for i, (_, ir_val, _) in enumerate(selected)}
 
     cycling = magISOdata['cycling']
-    primary_only = magISOdata['primary_only']
     enable_magnetic = magISOdata['enable_magnetic']
     irrep_enabled = magISOdata['irrep_enabled']
 
@@ -1060,10 +1060,6 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
                     first = False
         wx.CallAfter(_rebuild)
 
-    def OnPrimaryOnlyCheck(event):
-        magISOdata['primary_only'] = event.GetEventObject().GetValue()
-        wx.CallAfter(_rebuild)
-
     def OnIRREPCheck(event):
         Obj = event.GetEventObject()
         ir_val = IrrepIndx[Obj.GetId()]
@@ -1111,12 +1107,146 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
         magISOdata['irrep_enabled'] = new_enabled
         wx.CallAfter(_rebuild)
 
+    def OnInsertMagPhase(event):
+        '''Create a new magnetic phase from the selected IRREP+OPD structural data.
+        Previously inserted phases from this button are removed before inserting
+        the new one. Does NOT load from CIF; uses PhaseData stored in magISOdata.
+        '''
+        # Find the first enabled IRREP and its first enabled OPD
+        ir_val = None
+        opd_key = None
+        for _ir_val, _ir_label in magISOdata.get('all_irreps', []):
+            if not magISOdata.get('irrep_enabled', {}).get(_ir_val, False):
+                continue
+            irr_data = magISOdata.get(_ir_val, {})
+            for _opd_key, _opd_data in irr_data.items():
+                if _opd_key in ('ModeMatrix', 'MagAtomInfo', 'PhaseData'):
+                    continue
+                if not isinstance(_opd_data, dict):
+                    continue
+                if _opd_data.get('enabled', False):
+                    ir_val = _ir_val
+                    opd_key = _opd_key
+                    break
+            if ir_val is not None:
+                break
+
+        if ir_val is None or opd_key is None:
+            wx.MessageBox(
+                'No enabled IRREP/OPD found. Enable an IRREP and OPD first.',
+                caption='No IRREP Selected', style=wx.ICON_EXCLAMATION)
+            return
+
+        phase_data_info = magISOdata.get(ir_val, {}).get(opd_key, {}).get('PhaseData')
+        if phase_data_info is None:
+            wx.MessageBox(
+                'No structural data available for this IRREP/OPD.\n'
+                'Please re-run ISODISTORT to regenerate the data.\n',
+                'Also consider deleting the previously saved JSON file.',
+                caption='No Phase Data', style=wx.ICON_EXCLAMATION)
+            return
+
+        # Remove previously inserted magnetic phases tagged by this function
+        phasesId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
+        child, cookie = G2frame.GPXtree.GetFirstChild(phasesId)
+        phases_to_remove = []
+        while child.IsOk():
+            ph = G2frame.GPXtree.GetItemPyData(child)
+            if ph and ph.get('General', {}).get('_MagIRREP_inserted', False):
+                phases_to_remove.append(child)
+            child, cookie = G2frame.GPXtree.GetNextChild(phasesId, cookie)
+        for ph_id in reversed(phases_to_remove):
+            ph_name = G2frame.GPXtree.GetItemText(ph_id)
+            G2frame.GPXtree.Delete(ph_id)
+            # Remove from Restraints if present
+            restraintsId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
+            if restraintsId:
+                restraints_data = G2frame.GPXtree.GetItemPyData(restraintsId)
+                if isinstance(restraints_data, dict):
+                    restraints_data.pop(ph_name, None)
+                r_child, r_cookie = G2frame.GPXtree.GetFirstChild(restraintsId)
+                while r_child.IsOk():
+                    if G2frame.GPXtree.GetItemText(r_child) == ph_name:
+                        G2frame.GPXtree.Delete(r_child)
+                        break
+                    r_child, r_cookie = G2frame.GPXtree.GetNextChild(restraintsId, r_cookie)
+
+        # Reconstruct SGData from stored serialised form
+        sg_info = phase_data_info['SGData']
+        spgrp = sg_info.get('SpGrp', 'P 1')
+        E, sgdata = G2spc.SpcGroup(spgrp)
+        if E:
+            sgdata = copy.deepcopy(G2obj.P1SGData)
+        sgdata['SGFixed'] = bool(sg_info.get('SGFixed', False))
+        sgdata['SGOps'] = [
+            [np.array(M, dtype=float), np.array(T, dtype=float)]
+            for M, T in sg_info.get('SGOps', [])]
+        sgdata['SGCen'] = [
+            np.array(C, dtype=float) for C in sg_info.get('SGCen', [])]
+        sgdata['SpnFlp'] = [float(x) for x in sg_info.get('SpnFlp', [])]
+        if sg_info.get('MagSpGrp'):
+            sgdata['MagSpGrp'] = sg_info['MagSpGrp']
+        if sg_info.get('MagPtGp'):
+            sgdata['MagPtGp'] = sg_info['MagPtGp']
+        sgdata['SGGray'] = bool(sg_info.get('SGGray', False))
+        G2spc.GenMagOps(sgdata)
+
+        # Build the new phase dict
+        cell = phase_data_info['Cell']  # [bool, a, b, c, alpha, beta, gamma, V]
+        ph_name = phase_data_info.get('Name', f'{ir_val}_{opd_key}_mag')
+        new_phase = G2obj.SetNewPhase(Name=ph_name, SGData=sgdata, cell=cell[1:8])
+        new_phase['General']['Type'] = 'magnetic'  # always magnetic for inserted phases
+        new_phase['General']['AtomPtrs'] = [3, 1, 10, 12]  # magnetic format: Mx/My/Mz at 7-9
+        new_phase['General']['Cell'] = list(cell)
+        new_phase['General']['_MagIRREP_inserted'] = True
+        new_phase['General']['_MagIRREP_source'] = [ir_val, opd_key]
+        # Ensure atoms are in magnetic format (21 elements with Mx,My,Mz at positions 7-9).
+        # Cached PhaseData may have been saved from cif_handler.Phase (nuclear, 18 elements)
+        # rather than cif_handler.MPhase (magnetic, 21 elements). Upgrade in-place if needed.
+        raw_atoms = phase_data_info.get('Atoms', [])
+        mag_atoms = []
+        for a in raw_atoms:
+            a = list(a)
+            if len(a) == 18:  # nuclear format — insert Mx=My=Mz=0 after frac (index 6)
+                a = a[:7] + [0., 0., 0.] + a[7:]
+            mag_atoms.append(a)
+        new_phase['Atoms'] = mag_atoms
+
+        # Insert into the tree
+        new_ph_id = G2frame.GPXtree.AppendItem(parent=phasesId, text=ph_name)
+        G2frame.GPXtree.SetItemPyData(new_ph_id, new_phase)
+
+        # Add entry in Restraints
+        restraintsId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
+        if restraintsId:
+            restraints_data = G2frame.GPXtree.GetItemPyData(restraintsId)
+            if isinstance(restraints_data, dict):
+                restraints_data[ph_name] = {}
+            G2frame.GPXtree.AppendItem(parent=restraintsId, text=ph_name)
+
+        G2IO.ProjFileSave(G2frame)
+
+        # Expand the Phases node and select the new phase so the data window
+        # switches to it immediately without requiring a second click.
+        # Reset PickIdText so SelectDataTreeItem doesn't skip the update when
+        # the re-inserted phase has the same name as the previously deleted one.
+        # Also reset TreeItemDelete: when the old phase was deleted but was NOT
+        # the currently selected item, OnGPXtreeItemDelete sets TreeItemDelete=True
+        # but no SEL_CHANGED event fires to consume it, so the SelectItem call
+        # below would be silently ignored by OnDataTreeSelChanged.
+        def _SelectNewPhase():
+            G2frame.PickIdText = None
+            G2frame.TreeItemDelete = False
+            G2frame.GPXtree.Expand(phasesId)
+            G2frame.GPXtree.SelectItem(new_ph_id)
+        wx.CallAfter(_SelectNewPhase)
+
     def OnOPDCheck(event):
         Obj = event.GetEventObject()
         irrep, opd = OPDIndx[Obj.GetId()]
         new_val = Obj.GetValue()
         irr_data = magISOdata.get(irrep, {})
-        if not magISOdata['cycling'] and magISOdata['primary_only'] and new_val:
+        if not magISOdata['cycling'] and new_val:
             # Radio-like within this IRREP: uncheck all others
             for opd_key, opd_data in irr_data.items():
                 if opd_key in ('ModeMatrix', 'MagAtomInfo'):
@@ -1201,14 +1331,13 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
     cyclingChk.Bind(wx.EVT_CHECKBOX, OnCyclingCheck)
     ctrlSizer.Add(cyclingChk, 0, wx.ALL | WACV, 4)
     ctrlSizer.Add((20, -1))
-    primaryChk = wx.CheckBox(G2frame.MagIRREPs, label='Primary Order Parameter Only')
-    primaryChk.SetValue(primary_only)
-    primaryChk.Bind(wx.EVT_CHECKBOX, OnPrimaryOnlyCheck)
-    ctrlSizer.Add(primaryChk, 0, wx.ALL | WACV, 4)
-    ctrlSizer.Add((20, -1))
     selectIrrepBtn = wx.Button(G2frame.MagIRREPs, label='Select IRREP')
     selectIrrepBtn.Bind(wx.EVT_BUTTON, OnSelectIRREP)
     ctrlSizer.Add(selectIrrepBtn, 0, wx.ALL | WACV, 4)
+    ctrlSizer.Add((20, -1))
+    insertMagBtn = wx.Button(G2frame.MagIRREPs, label='Insert Mag Phase')
+    insertMagBtn.Bind(wx.EVT_BUTTON, OnInsertMagPhase)
+    ctrlSizer.Add(insertMagBtn, 0, wx.ALL | WACV, 4)
     mainSizer.Add(ctrlSizer, 0, wx.EXPAND)
     mainSizer.Add((-1, 5))
     G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)

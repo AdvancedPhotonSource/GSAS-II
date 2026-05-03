@@ -687,6 +687,7 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=Fals
       and from that the direct cell for the transformed phase.
     '''
     from . import GSASIIobj as G2obj
+    T = Trans  # cellXformRelations expressions use 'T' as the transform matrix
     Anew = []
     constrList = []
     uniqueAnew = cellUnique(nSGLaue)

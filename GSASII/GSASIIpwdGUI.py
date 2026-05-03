@@ -5544,7 +5544,7 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 with open(_cache_json, 'r') as _cf:
                     _cached = json.load(_cf)
                 all_modes = _cached['all_modes']
-                ir_options = [tuple(x) for x in + ['ir_options']]
+                ir_options = [tuple(x) for x in _cached['ir_options']]
                 phsnam = phase_nam
                 _loaded_from_cache = True
                 print(f'Loaded IRREP data from cache: {_cache_json}')
@@ -5813,7 +5813,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                         json.dump(
                             {
                                 'all_modes': all_modes,
-                                'ir_options': list(ir_options)
+                                'ir_options': list(ir_options),
+                                'mag_atoms': selected_atoms,
+                                'kvec': list(kpoint)
                             },
                             _cf,
                             indent=4
@@ -5879,7 +5881,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             # Build ISODISTORT-MAG data, augmenting each mode with amplitude/refine.
             # Store data for ALL processed IRREPs (not just the initially selected ones)
             # so that "Select IRREP" can later switch to any IRREP without missing OPDs.
-            mag_data = {'selected': selected_irreps, 'all_irreps': list(ir_options)}
+            mag_data = {'selected': selected_irreps, 'all_irreps': list(ir_options),
+                        'mag_atoms': selected_atoms, 'kvec': list(kpoint)}
             for ir_val, _ir_label in ir_options:
                 if ir_val not in all_modes:
                     continue
@@ -5953,6 +5956,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 _cached = json.load(_cf)
             all_modes = _cached['all_modes']
             ir_options = [tuple(x) for x in _cached['ir_options']]
+            _loaded_mag_atoms = _cached.get('mag_atoms', [])
+            _loaded_kvec = _cached.get('kvec', [])
         except Exception as _e:
             G2G.G2MessageBox(G2frame, f'Failed to load JSON file:\n{_e}', 'Load Error')
             return
@@ -5982,7 +5987,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         selected_irreps = [(i + 1, ir_options[i][0], ir_options[i][1])
                            for i in selected_indices]
-        mag_data = {'selected': selected_irreps, 'all_irreps': list(ir_options)}
+        mag_data = {'selected': selected_irreps, 'all_irreps': list(ir_options),
+                    'mag_atoms': _loaded_mag_atoms, 'kvec': _loaded_kvec}
         for ir_val, _ir_label in ir_options:
             ir_modes = all_modes.get(ir_val, {})
             mag_data[ir_val] = {}
@@ -6008,6 +6014,15 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 G2frame.MagIRREPs = None
         if not hasattr(G2frame, 'MagIRREPs') or G2frame.MagIRREPs is None:
             if not hasattr(G2frame, 'phaseDisplay') or G2frame.phaseDisplay is None:
+                _navigate = True
+            else:
+                try:
+                    G2frame.phaseDisplay.GetPageCount()  # raises RuntimeError if deleted
+                    _navigate = False
+                except RuntimeError:
+                    G2frame.phaseDisplay = None
+                    _navigate = True
+            if _navigate:
                 _phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
                 G2frame.GPXtree.Expand(_phId)
                 _phTreeId = G2gd.GetGPXtreeItemId(G2frame, _phId, phsnam)

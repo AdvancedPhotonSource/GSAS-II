@@ -1296,6 +1296,19 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
     G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)
 
     G2phsG.SetPhaseWindow(G2frame.MagIRREPs, mainSizer, Scroll=Scroll)
+
+    # Forward mouse-wheel events from any child widget to the ScrolledWindow
+    # so that scrolling works wherever the mouse is on the page.
+    def _bindMouseWheel(win, scrollWin):
+        def _onWheel(evt):
+            delta = evt.GetWheelDelta() or 120
+            lines = -(evt.GetWheelRotation() // delta) * evt.GetLinesPerAction()
+            scrollWin.ScrollLines(lines)
+        for child in win.GetChildren():
+            child.Bind(wx.EVT_MOUSEWHEEL, _onWheel)
+            _bindMouseWheel(child, scrollWin)
+    _bindMouseWheel(G2frame.MagIRREPs, G2frame.MagIRREPs)
+
     _update_top_label()
 
 #### UpdateLayerData GUI for DIFFax Layer Data ################################################################################

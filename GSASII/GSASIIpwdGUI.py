@@ -4770,6 +4770,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 if G2frame.kvecSearch['mode']:
                     phase_sel = G2frame.kvecSearch['phase']
                     _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+                    if phase_sel not in Phases:
+                        return
                     Phase = Phases[phase_sel]
 
                     lat_type = Phase["General"]["SGData"]["SGLatt"]
@@ -6490,7 +6492,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         else:
             littleSizer.Add(wx.StaticText(G2frame.dataWindow, label='Select phase'), 0, WACV)
             ch = G2G.EnumSelector(G2frame.dataWindow, G2frame.kvecSearch, 'phase',
-                [''] + list(Phases.keys()))
+                [''] + list(Phases.keys()),
+                OnChange=lambda evt: wx.CallAfter(UpdateUnitCellsGrid, G2frame, data))
             littleSizer.Add(ch, 10, WACV | wx.RIGHT, 0)
 
         littleSizer1x.Add(wx.StaticText(G2frame.dataWindow, label='kx step'),0,WACV)
@@ -7675,18 +7678,28 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         if mode == 2:
+            _, _kvecPhases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+            _phase_ok = not (len(_kvecPhases) > 1 and
+                             not G2frame.kvecSearch.get('phase', ''))
+            if not _phase_ok:
+                # No phase selected yet — disable grid row clicks
+                gridDisplay.Unbind(wg.EVT_GRID_CELL_LEFT_CLICK)
+
             btnSizer = wx.BoxSizer(wx.VERTICAL)
 
             ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
             ISObut.Bind(wx.EVT_BUTTON, OnISODISTORT_kvec)
+            ISObut.Enable(_phase_ok)
             btnSizer.Add(ISObut, 0, wx.EXPAND | wx.BOTTOM, 2)
 
             ISOmagbut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT-MAG')
             ISOmagbut.Bind(wx.EVT_BUTTON, lambda evt: OnISODISTORT_kvec(evt, mag=True))
+            ISOmagbut.Enable(_phase_ok)
             btnSizer.Add(ISOmagbut, 0, wx.EXPAND | wx.BOTTOM, 2)
 
             loadMagbut = wx.Button(G2frame.dataWindow,label='Load MAG-IRREP')
             loadMagbut.Bind(wx.EVT_BUTTON, OnLoadMagIRREP)
+            loadMagbut.Enable(_phase_ok)
             btnSizer.Add(loadMagbut, 0, wx.EXPAND)
 
             hSizer = wx.BoxSizer(wx.HORIZONTAL)

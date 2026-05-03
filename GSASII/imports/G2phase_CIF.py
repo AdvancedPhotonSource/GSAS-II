@@ -1341,16 +1341,12 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                 mmode_matrix[int(row)-1, int(col)-1] = float(val)
 
             mag_at_info = {}
-            for lb, fx, fy, fz, syf in zip(
-                blk.get('_atom_site_label'),
-                blk.get('_atom_site_fract_x'),
-                blk.get('_atom_site_fract_y'),
-                blk.get('_atom_site_fract_z'),
-                blk.get('_atom_site_fract_symmform'),
+            for lb, syf in zip(
+                blk.get('_atom_site_moment.label'),
+                blk.get('_atom_site_moment.symmform'),
                 strict=True,
             ):
                 mag_at_info[lb] = {
-                    "Coords": (fx, fy, fz),
                     "SymmForm": syf
                 }
 
@@ -1366,15 +1362,14 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
                     "DeltaMomentLabel": dml
                 }
 
+            mag_modes["ModeMatrix"] = mmode_matrix
+            mag_modes["MagAtomInfo"] = mag_at_info
+
             if 'ISODISTORT-MAG' not in self.Phase:
                 self.Phase['ISODISTORT-MAG'] = {}
 
             if irrep not in self.Phase['ISODISTORT-MAG']:
-                self.Phase['ISODISTORT-MAG'][irrep] = {
-                    "ModeMatrix": mmode_matrix,
-                    "MagAtomInfo": mag_at_info,
-                    opd: {}
-                }
+                self.Phase['ISODISTORT-MAG'][irrep] = {opd: {}}
 
             for mkey, mval in mag_modes.items():
                 self.Phase['ISODISTORT-MAG'][irrep][opd][mkey] = mval

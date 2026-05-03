@@ -5536,8 +5536,9 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         # Filename: <project>_<kx>_<ky>_<kz>_<phase>.json
         _kvec_str = '_'.join(f'{v:.6g}' for v in kpoint)
         _safe_phase = re.sub(r'[^\w\-]', '_', phase_nam)
-        _cache_json = (os.path.splitext(G2frame.GSASprojectfile)[0]
-                       + f'_{_kvec_str}_{_safe_phase}.json')
+        _cache_json = (
+            os.path.splitext(G2frame.GSASprojectfile)[0] + f'_{_kvec_str}_{_safe_phase}.json'
+        )
         _loaded_from_cache = False
         if mag and os.path.isfile(_cache_json):
             try:
@@ -5809,6 +5810,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             # Save all_modes + ir_options to JSON cache for future runs
             if mag:
                 try:
+                    class _NpEncoder(json.JSONEncoder):
+                        def default(self, obj):
+                            if isinstance(obj, np.ndarray):
+                                return obj.tolist()
+                            return super().default(obj)
                     with open(_cache_json, 'w') as _cf:
                         json.dump(
                             {
@@ -5818,7 +5824,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                                 'kvec': list(kpoint)
                             },
                             _cf,
-                            indent=4
+                            indent=4,
+                            cls=_NpEncoder
                         )
                     print(f'Saved IRREP data to cache: {_cache_json}')
                 except Exception as _e:
@@ -5839,7 +5846,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             info_msg = f'''Done with subgroup output for the selected k-vector.
             Please check output files in the following directory,
             {os.getcwd()}
-        '''
+            '''
+
             wx.MessageBox(
                 info_msg,
                 style=wx.ICON_INFORMATION,
@@ -5897,6 +5905,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     mag_data[ir_val][opd_key] = {'enabled': first_opd}
                     first_opd = False
                     for mode_key, mode_val in opd_val.items():
+                        if mode_key in ('ModeMatrix', 'MagAtomInfo'):
+                            # Hoist structural data to the irrep level so that
+                            # GSASIIphsGUI2 can find it at mag_data[ir_val].
+                            mag_data[ir_val][mode_key] = mode_val
+                            continue
                         mag_data[ir_val][opd_key][mode_key] = dict(mode_val)
                         mag_data[ir_val][opd_key][mode_key]['amplitude'] = 0.0
                         mag_data[ir_val][opd_key][mode_key]['refine'] = True

@@ -1801,6 +1801,10 @@ def UpdateBackground(G2frame,data):
         # show the updated background values
         wx.CallLater(100,UpdateBackground,G2frame,data)
 
+    def OnBkgCh(event):
+        'Change in Background mode, display it'
+        wx.CallAfter(G2pwpl.PlotPatterns,G2frame,plotType='PWDR')
+
     def OnBkgClear(event):
         'Clear fixed points from background'
         if 'FixedPoints' not in data[1]:
@@ -2234,6 +2238,8 @@ def UpdateBackground(G2frame,data):
     G2frame.Bind(wx.EVT_MENU,OnBackLoad,id=G2G.wxID_BACKLOAD)
     G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2G.wxID_BACKPEAKSMOVE)
     G2frame.Bind(wx.EVT_MENU,OnMakeRDF,id=G2G.wxID_MAKEBACKRDF)
+    for k in 'Add', 'Move', 'Delete':
+        G2frame.Bind(wx.EVT_MENU,OnBkgCh,id=G2frame.dataWindow.wxID_BackPts[k])
     G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataWindow.wxID_BackPts['Fit'])
     G2frame.Bind(wx.EVT_MENU,OnBkgClear,id=G2frame.dataWindow.wxID_BackPts['Clear'])
     BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')

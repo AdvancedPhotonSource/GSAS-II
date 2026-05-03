@@ -5550,11 +5550,13 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
         ISOparentcif = ISO.UploadCIF(parentcif)
         up2 = {'filename': ISOparentcif, 'input': 'uploadparentcif'}
         out2 = requests.post(isoformsite, up2).text
+
         try:
             pos = out2.index('<p><FORM')
         except ValueError:
             ISO.HandleError(out2)
             return [], []
+
         data = {}
         while True:
             try:

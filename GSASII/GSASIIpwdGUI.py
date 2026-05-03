@@ -5506,7 +5506,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
 
         if mag:
             atom_names = [atom[1] for atom in Phase['Atoms']]
-            atom_names = list(set(atom_names))
+            # Use dict.fromkeys to deduplicate while preserving the original order
+            atom_names = list(dict.fromkeys(atom_names))
             dlg = G2G.G2MultiChoiceDialog(G2frame,
                 'Select magnetic atom(s)',
                 'Select magnetic atom(s) from the list below:',
@@ -5832,9 +5833,11 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             phaseTreeId = G2gd.GetGPXtreeItemId(G2frame, phaseID, phsnam)
             Phase = G2frame.GPXtree.GetItemPyData(phaseTreeId)
 
-            # Build ISODISTORT-MAG data, augmenting each mode with amplitude/refine
-            mag_data = {'selected': selected_irreps}
-            for _orig_idx, ir_val, _ir_label in selected_irreps:
+            # Build ISODISTORT-MAG data, augmenting each mode with amplitude/refine.
+            # Store data for ALL processed IRREPs (not just the initially selected ones)
+            # so that "Select IRREP" can later switch to any IRREP without missing OPDs.
+            mag_data = {'selected': selected_irreps, 'all_irreps': list(ir_options)}
+            for ir_val, _ir_label in ir_options:
                 if ir_val not in all_modes:
                     continue
                 mag_data[ir_val] = {}

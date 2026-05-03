@@ -996,12 +996,15 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
         magISOdata['cycling'] = False
     if 'primary_only' not in magISOdata:
         magISOdata['primary_only'] = True
+    if 'enable_magnetic' not in magISOdata:
+        magISOdata['enable_magnetic'] = True
     if 'irrep_enabled' not in magISOdata:
         magISOdata['irrep_enabled'] = {
             ir_val: (i == 0) for i, (_, ir_val, _) in enumerate(selected)}
 
     cycling = magISOdata['cycling']
     primary_only = magISOdata['primary_only']
+    enable_magnetic = magISOdata['enable_magnetic']
     irrep_enabled = magISOdata['irrep_enabled']
 
     IrrepIndx = {}
@@ -1012,7 +1015,23 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
         UpdateMagIRREPs(G2frame, data,
                         Scroll=G2frame.MagIRREPs.GetScrollPos(wx.VERTICAL))
 
+    def _update_top_label():
+        phase_name = data['General']['Name']
+        base_type = data['General']['Type']
+        type_str = base_type + '+magnetic' if magISOdata.get('enable_magnetic', True) else base_type
+        new_lbl = f"Overall params for {phase_name!r} (type={type_str})"[:60]
+        for item in G2frame.dataWindow.topBox.GetChildren():
+            win = item.GetWindow()
+            if win and isinstance(win, wx.StaticText):
+                win.SetLabel(new_lbl)
+                G2frame.dataWindow.topBox.Layout()
+                break
+
     # --- event handlers ---
+
+    def OnEnableMagneticCheck(event):
+        magISOdata['enable_magnetic'] = event.GetEventObject().GetValue()
+        _update_top_label()
 
     def OnCyclingCheck(event):
         was_cycling = magISOdata['cycling']
@@ -1056,6 +1075,42 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
         magISOdata['irrep_enabled'][ir_val] = new_val
         wx.CallAfter(_rebuild)
 
+    def OnSelectIRREP(event):
+        all_irreps = magISOdata.get('all_irreps', [])
+        if not all_irreps:
+            wx.MessageBox(
+                'No IRREP list available. Re-run the ISODISTORT search to populate.',
+                caption='No IRREPs', style=wx.ICON_INFORMATION)
+            return
+        ir_labels = [label for _, label in all_irreps]
+        current_ir_vals = {ir_val for _, ir_val, _ in magISOdata.get('selected', [])}
+        preselect = [i for i, (ir_val, _) in enumerate(all_irreps)
+                     if ir_val in current_ir_vals]
+        dlg = G2G.G2MultiChoiceDialog(
+            G2frame.MagIRREPs,
+            'Select irreducible representation(s)',
+            'Select irrep(s) from the list below:',
+            ir_labels, filterBox=False, selected=preselect)
+        try:
+            if dlg.ShowModal() != wx.ID_OK:
+                return
+            new_indices = dlg.GetSelections()
+        finally:
+            dlg.Destroy()
+        if not new_indices:
+            wx.MessageBox('No irreps selected. Aborting.',
+                caption='No Selection', style=wx.ICON_EXCLAMATION)
+            return
+        new_selected = [(i + 1, all_irreps[i][0], all_irreps[i][1])
+                        for i in new_indices]
+        magISOdata['selected'] = new_selected
+        # Preserve existing enabled state; default new IRREPs to True
+        new_enabled = {}
+        for _, ir_val, _ in new_selected:
+            new_enabled[ir_val] = magISOdata['irrep_enabled'].get(ir_val, True)
+        magISOdata['irrep_enabled'] = new_enabled
+        wx.CallAfter(_rebuild)
+
     def OnOPDCheck(event):
         Obj = event.GetEventObject()
         irrep, opd = OPDIndx[Obj.GetId()]
@@ -1071,6 +1126,35 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
                 opd_data['enabled'] = False
         irr_data[opd]['enabled'] = new_val
         wx.CallAfter(_rebuild)
+
+    def OnGridLabelDClick(event):
+        """Double-click on a column label: toggle all Refine values if col 2."""
+        if event.GetCol() != 2:  # only Refine column
+            event.Skip()
+            return
+        grid = event.GetEventObject()
+        irrep, opd, mode_keys = GridIndx[grid.GetId()]
+        opd_data = magISOdata.get(irrep, {}).get(opd, {})
+        # Determine new state: select-all unless all are already True
+        new_val = not all(opd_data.get(mk, {}).get('refine', True) for mk in mode_keys)
+        for mk in mode_keys:
+            if isinstance(opd_data.get(mk), dict):
+                opd_data[mk]['refine'] = new_val
+        wx.CallAfter(_rebuild)
+
+    def OnGridCellLeftClick(event):
+        """Single-click on Refine column (col 2) immediately toggles the value."""
+        if event.GetCol() != 2:
+            event.Skip()
+            return
+        grid = event.GetEventObject()
+        row = event.GetRow()
+        irrep, opd, mode_keys = GridIndx[grid.GetId()]
+        mode_key = mode_keys[row]
+        cur = magISOdata[irrep][opd][mode_key].get('refine', True)
+        magISOdata[irrep][opd][mode_key]['refine'] = not cur
+        grid.GetTable().SetValue(row, 2, not cur)
+        grid.ForceRefresh()
 
     def OnGridCellChanged(event):
         grid = event.GetEventObject()
@@ -1105,8 +1189,13 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
     G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)
     mainSizer.Add((-1, 5))
 
-    # Control row: [Cycling Mode]  [Primary Order Parameter Only]
+    # Control row: [Enable Magnetic]  [Cycling Mode]  [Primary Order Parameter Only]
     ctrlSizer = wx.BoxSizer(wx.HORIZONTAL)
+    enableMagChk = wx.CheckBox(G2frame.MagIRREPs, label='Enable Magnetic')
+    enableMagChk.SetValue(enable_magnetic)
+    enableMagChk.Bind(wx.EVT_CHECKBOX, OnEnableMagneticCheck)
+    ctrlSizer.Add(enableMagChk, 0, wx.ALL | WACV, 4)
+    ctrlSizer.Add((20, -1))
     cyclingChk = wx.CheckBox(G2frame.MagIRREPs, label='Cycling Mode')
     cyclingChk.SetValue(cycling)
     cyclingChk.Bind(wx.EVT_CHECKBOX, OnCyclingCheck)
@@ -1116,6 +1205,10 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
     primaryChk.SetValue(primary_only)
     primaryChk.Bind(wx.EVT_CHECKBOX, OnPrimaryOnlyCheck)
     ctrlSizer.Add(primaryChk, 0, wx.ALL | WACV, 4)
+    ctrlSizer.Add((20, -1))
+    selectIrrepBtn = wx.Button(G2frame.MagIRREPs, label='Select IRREP')
+    selectIrrepBtn.Bind(wx.EVT_BUTTON, OnSelectIRREP)
+    ctrlSizer.Add(selectIrrepBtn, 0, wx.ALL | WACV, 4)
     mainSizer.Add(ctrlSizer, 0, wx.EXPAND)
     mainSizer.Add((-1, 5))
     G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)
@@ -1184,6 +1277,8 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
             modeGrid.SetColAttr(0, attr)
             GridIndx[modeGrid.GetId()] = (ir_val, opd_key, mode_keys)
             modeGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnGridCellChanged)
+            modeGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, OnGridLabelDClick)
+            modeGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnGridCellLeftClick)
 
             # Indent OPD checkbox + table together
             opdSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1201,6 +1296,7 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
     G2G.HorizontalLine(mainSizer, G2frame.MagIRREPs)
 
     G2phsG.SetPhaseWindow(G2frame.MagIRREPs, mainSizer, Scroll=Scroll)
+    _update_top_label()
 
 #### UpdateLayerData GUI for DIFFax Layer Data ################################################################################
 def UpdateLayerData(G2frame,data,Scroll=0):

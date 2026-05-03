@@ -982,6 +982,83 @@ def UpdateISODISTORT(G2frame,data,Scroll=0):
 
 #### UpdateMagIRREPs ###############################################################################
 
+def calc_mag_moments_from_modes(opd_data):
+    '''Calculate magnetic moment components for all magnetic atoms from mode amplitudes.
+
+    ``ModeMatrix`` and ``MagAtomInfo`` are stored at the OPD level alongside the
+    per-mode amplitude/refine entries.  This function takes the complete OPD dict
+    (``magISOdata[ir_val][opd_key]``) and performs::
+
+        delta_mag_mom = ModeMatrix @ (NormFactor * amplitude)   [element-wise product]
+
+    then maps the result back to per-atom Mx/My/Mz components using
+    ``DeltaMomentLabel`` and ``MagAtomInfo[atom]["SymmForm"]``.
+
+    :param dict opd_data: ``magISOdata[ir_val][opd_key]`` — the OPD-level dict that
+        holds ``ModeMatrix``, ``MagAtomInfo``, mode entries (each a dict with at least
+        ``NormFactor``, ``DeltaMomentLabel``, and ``amplitude``), and bookkeeping keys
+        such as ``enabled`` and ``PhaseData``.
+    :returns: dict ``{atom_label: [Mx, My, Mz]}`` with the computed moment components
+        for every magnetic atom in ``MagAtomInfo``.  Returns an empty dict when the
+        required data are absent.
+    :rtype: dict
+    '''
+    # Both ModeMatrix and MagAtomInfo live at the OPD level
+    mode_matrix_raw = opd_data.get('ModeMatrix')
+    mag_atom_info   = opd_data.get('MagAtomInfo', {})
+    if mode_matrix_raw is None or not mag_atom_info:
+        return {}
+
+    # Collect mode keys; skip all bookkeeping / structural keys
+    _SKIP = ('enabled', 'PhaseData', 'ModeMatrix', 'MagAtomInfo')
+    mode_keys = [
+        k for k in opd_data
+        if k not in _SKIP and isinstance(opd_data[k], dict)
+    ]
+    if not mode_keys:
+        return {}
+
+    norm_factors = np.array([float(opd_data[k]['NormFactor']) for k in mode_keys])
+    amplitudes   = np.array([float(opd_data[k].get('amplitude', 0.0)) for k in mode_keys])
+    # Element-wise product of normalisation factors and user-supplied amplitudes
+    scaled = norm_factors * amplitudes
+
+    # ModeMatrix may be a numpy array (fresh run) or list-of-lists (loaded from JSON cache)
+    mode_matrix = np.array(mode_matrix_raw)
+    delta_mag_mom = mode_matrix @ scaled          # shape (N,)
+
+    delta_labels = [opd_data[k]['DeltaMomentLabel'] for k in mode_keys]
+
+    # Initialise result: atom_label -> [Mx, My, Mz]
+    moments = {lbl: [0., 0., 0.] for lbl in mag_atom_info}
+
+    # Map DeltaMomentLabel suffix to the SymmForm component name
+    _SUFFIX_TO_COMP = {'_dmx': 'Mx', '_dmy': 'My', '_dmz': 'Mz'}
+    # SymmForm position index (0,1,2) maps directly to the physical (Mx, My, Mz)
+    # components stored at atom positions 7, 8, 9.
+
+    for dlabel, dval in zip(delta_labels, delta_mag_mom):
+        comp = None
+        atom_label = None
+        for suffix, cname in _SUFFIX_TO_COMP.items():
+            if dlabel.endswith(suffix):
+                atom_label = dlabel[: -len(suffix)]
+                comp = cname
+                break
+        if atom_label is None or atom_label not in moments:
+            continue
+
+        symm_form = mag_atom_info[atom_label].get('SymmForm', 'Mx,My,Mz')
+        symm_parts = [s.strip() for s in symm_form.split(',')]
+        # Assign dval to every position in SymmForm that matches comp.
+        # Position i (0=Mx, 1=My, 2=Mz) in SymmForm maps to atom[7+i].
+        for pos, sym_part in enumerate(symm_parts[:3]):
+            if sym_part == comp:
+                moments[atom_label][pos] = float(dval)
+
+    return moments
+
+
 def UpdateMagIRREPs(G2frame, data, Scroll=0):
     '''Present the magnetic IRREPs and their order parameter directions (OPDs) with
     mode amplitude/refine tables, Cycling Mode control, and Primary OPD control.
@@ -1212,6 +1289,19 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
             mag_atoms.append(a)
         new_phase['Atoms'] = mag_atoms
 
+        # Calculate magnetic moments from mode amplitudes and apply to atoms.
+        # ModeMatrix, MagAtomInfo, and per-mode data all live at the OPD level.
+        opd_data = magISOdata.get(ir_val, {}).get(opd_key, {})
+        computed_moments = calc_mag_moments_from_modes(opd_data)
+        if computed_moments:
+            for atom in new_phase['Atoms']:
+                atom_name = atom[0]  # atom label is always at index 0
+                if atom_name in computed_moments:
+                    mx, my, mz = computed_moments[atom_name]
+                    atom[7] = mx  # Mx
+                    atom[8] = my  # My
+                    atom[9] = mz  # Mz
+
         # Insert into the tree
         new_ph_id = G2frame.GPXtree.AppendItem(parent=phasesId, text=ph_name)
         G2frame.GPXtree.SetItemPyData(new_ph_id, new_phase)
@@ -1381,7 +1471,8 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
 
             # Mode table: Mode | Amplitude | Refine
             mode_keys = [k for k in opd_data
-                         if k != 'enabled' and isinstance(opd_data[k], dict)]
+                         if k not in ('enabled', 'PhaseData', 'ModeMatrix', 'MagAtomInfo')
+                         and isinstance(opd_data[k], dict)]
             colLabels = ['Mode', 'Amplitude', 'Refine']
             colTypes = [wg.GRID_VALUE_STRING,
                         wg.GRID_VALUE_FLOAT + ':10,5',

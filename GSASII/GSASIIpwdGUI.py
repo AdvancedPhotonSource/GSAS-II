@@ -5779,9 +5779,14 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                             all_modes[ir_opt][radio_val] = cif_handler.Phase["ISODISTORT-MAG"][ir_opt][radio_val]
                             # Extract structural data for in-memory phase creation
                             # (used by the "Insert Mag Phase" button in the MAG-IRREP tab)
-                            # Use MPhase (not Phase): it holds the magnetic structure with
-                            # Mx/My/Mz atom columns, Type='magnetic', AtomPtrs=[3,1,10,12].
+                            # Prefer MPhase (magnetic, 21-element atoms with Mx/My/Mz);
+                            # fall back to Phase when MPhase is None (some CIFs have no
+                            # _atom_site_moment data for a given OPD).
                             _ph = cif_handler.MPhase
+                            if _ph is None:
+                                _ph = cif_handler.Phase
+                            if _ph is None:
+                                continue  # no phase data at all; skip this OPD
                             _sg = _ph['General']['SGData']
                             all_modes[ir_opt][radio_val]['PhaseData'] = {
                                 'Name': str(_ph['General']['Name']),
@@ -5925,22 +5930,17 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 mag_data[ir_val] = {}
                 first_opd = True
                 for opd_key, opd_val in all_modes[ir_val].items():
-                    if opd_key in ('ModeMatrix', 'MagAtomInfo'):
-                        mag_data[ir_val][opd_key] = opd_val
-                        continue
                     if not isinstance(opd_val, dict):
                         continue
                     mag_data[ir_val][opd_key] = {'enabled': first_opd}
                     first_opd = False
                     for mode_key, mode_val in opd_val.items():
                         if mode_key in ('ModeMatrix', 'MagAtomInfo'):
-                            # Hoist structural data to the irrep level so that
-                            # GSASIIphsGUI2 can find it at mag_data[ir_val].
-                            mag_data[ir_val][mode_key] = mode_val
+                            # Keep ModeMatrix/MagAtomInfo at the OPD level;
+                            # each OPD has its own matrix.
+                            mag_data[ir_val][opd_key][mode_key] = mode_val
                             continue
                         if mode_key == 'PhaseData':
-                            # Keep per-OPD structural data at the OPD level
-                            # for use by "Insert Mag Phase"
                             mag_data[ir_val][opd_key]['PhaseData'] = mode_val
                             continue
                         mag_data[ir_val][opd_key][mode_key] = dict(mode_val)
@@ -6049,11 +6049,20 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             mag_data[ir_val] = {}
             first_opd = True
             for opd_key, opd_val in ir_modes.items():
-                mag_data[ir_val][opd_key] = {}
-                if first_opd:
-                    mag_data[ir_val][opd_key]['_selected'] = True
-                    first_opd = False
+                if not isinstance(opd_val, dict):
+                    continue
+                mag_data[ir_val][opd_key] = {'enabled': first_opd}
+                first_opd = False
                 for mode_key, mode_val in opd_val.items():
+                    if mode_key in ('ModeMatrix', 'MagAtomInfo'):
+                        # Keep ModeMatrix/MagAtomInfo at the OPD level as-is
+                        # (they are lists/dicts from JSON; numpy.array() handles them
+                        # on demand in calc_mag_moments_from_modes).
+                        mag_data[ir_val][opd_key][mode_key] = mode_val
+                        continue
+                    if mode_key in ('enabled', 'PhaseData'):
+                        mag_data[ir_val][opd_key][mode_key] = mode_val
+                        continue
                     mag_data[ir_val][opd_key][mode_key] = dict(mode_val)
                     mag_data[ir_val][opd_key][mode_key]['amplitude'] = 0.0
                     mag_data[ir_val][opd_key][mode_key]['refine'] = True

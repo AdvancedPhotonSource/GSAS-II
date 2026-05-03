@@ -21,6 +21,7 @@ import random as ran
 import pickle
 import scipy.interpolate as si
 from fractions import Fraction
+import json
 from . import GSASIIpath
 from . import GSASIImath as G2mth
 from . import GSASIIpwd as G2pwd
@@ -5531,286 +5532,322 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             selected_atoms = [atom_names[i] for i in selected_indices]
             G2frame.kvecSearch['magAtoms'] = selected_atoms
 
-        # Show progress popup after any user dialogs are closed.
-        class _ProgDlg(wx.Dialog):
-            """Minimal fixed-size progress popup with wrapped text (no gauge bar)."""
-            _DLG_W = 420
-            _DLG_H = 120
-            def __init__(self, parent, title, message):
-                wx.Dialog.__init__(self, parent, title=title,
-                                   style=wx.CAPTION | wx.FRAME_FLOAT_ON_PARENT)
-                sizer = wx.BoxSizer(wx.VERTICAL)
-                self._label = wx.StaticText(self, label=message)
-                self._label.Wrap(self._DLG_W - 40)
-                sizer.Add(self._label, 1, wx.ALL | wx.EXPAND, 20)
-                self.SetSizer(sizer)
-                self.SetClientSize((self._DLG_W, self._DLG_H))
-                self.Centre()
-                self.Show()
-                wx.GetApp().Yield()
-            def Pulse(self, msg=''):
-                self._label.SetLabel(msg)
-                self._label.Wrap(self._DLG_W - 40)
-                wx.GetApp().Yield()
-        progDlg = _ProgDlg(G2frame, 'Processing IRREPs', 'Initial processing...')
-        wx.GetApp().Yield()
-
-        fileList = []
-        # write a CIF as a scratch file
-        obj = G2export_CIF.ExportPhaseCIF(G2frame)
-        obj.InitExport(None)
-        obj.currentExportType='phase'
-        obj.loadTree()
-        tmp = tempfile.NamedTemporaryFile(suffix='.cif', delete=False)
-        obj.dirname,obj.filename = os.path.split(tmp.name)
-        obj.phasenam = Phase['General']['Name']
-        obj.Writer('', Phase['General']['Name'])
-        parentcif = tmp.name
-        ISOparentcif = ISO.UploadCIF(parentcif)
-        up2 = {'filename': ISOparentcif, 'input': 'uploadparentcif'}
-        out2 = requests.post(isoformsite, up2).text
-
-        try:
-            pos = out2.index('<p><FORM')
-        except ValueError:
-            ISO.HandleError(out2)
-            return [], []
-
-        data = {}
-        while True:
+        # --- IRREP data cache (mag mode only) ------------------------------------
+        # Filename: <project>_<kx>_<ky>_<kz>_<phase>.json
+        _kvec_str = '_'.join(f'{v:.6g}' for v in kpoint)
+        _safe_phase = re.sub(r'[^\w\-]', '_', phase_nam)
+        _cache_json = (os.path.splitext(G2frame.GSASprojectfile)[0]
+                       + f'_{_kvec_str}_{_safe_phase}.json')
+        _loaded_from_cache = False
+        if mag and os.path.isfile(_cache_json):
             try:
-                posB = out2[pos:].index('INPUT TYPE') + pos
-                posF = out2[posB:].index('>') + posB
-                items = out2[posB:posF].split('=',3)
-                name = items[2].split()[0].replace('"', '')
-                if 'isosystem' in name:
-                    break
-                vals = items[3].replace('"', '')
-                data[name] = vals
-                pos = posF
-            except ValueError:
-                break
+                with open(_cache_json, 'r') as _cf:
+                    _cached = json.load(_cf)
+                all_modes = _cached['all_modes']
+                ir_options = [tuple(x) for x in + ['ir_options']]
+                phsnam = phase_nam
+                _loaded_from_cache = True
+                print(f'Loaded IRREP data from cache: {_cache_json}')
+            except Exception as _e:
+                print(f'Warning: failed to read IRREP cache {_cache_json}: {_e}')
 
-        phase_sel = G2frame.kvecSearch['phase']
-        _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-        Phase = Phases[phase_sel]
-
-        data['input'] = 'kvector'
-        data['irrepcount'] = '1'
-
-        # We need to upload the CIF file to ISOCIF and export from there, since
-        # some of the routines for k vector form solving only works with the
-        # CIF coming out from ISOCIF.
-        init_cif = ISO.UploadCIF(parentcif, upload_site=isocifuploadsite)
-        isocif_up = {'submit': 'OK', 'input': 'uploadcif', 'filename': init_cif}
-        isocif_out_1 = requests.post(isocifformsite, data=isocif_up).text
-
-        isocif_form = re.split(
-            '</form',
-            next(
-                i for i in re.split('<form', isocif_out_1, flags=re.IGNORECASE)
-                if 'Detect higher' in i
-            ),
-            flags=re.IGNORECASE
-        )[0]
-
-        isocif_formDict = {}
-        for f in isocif_form.split('<'):
-            try:
-                name = re.split('name=',f,flags=re.IGNORECASE)[1].split('"')[1]
-                value = re.split('value=',f,flags=re.IGNORECASE)[1].split('"')[1]
-                isocif_formDict[name] = value
-            except IndexError:
-                pass
-        isocif_formDict['input'] = 'savecif'
-
-        isocif_out_cif = requests.post(isocifformsite, data=isocif_formDict).text
-
-        if mag:
-            # Parse out2 to map element symbol -> includemagnetic field name
-            # Pattern: "Er<INPUT TYPE="checkbox" NAME="includemagnetic001" VALUE="true">"
-            mag_elem_map = dict(re.findall(
-                r'(\w+)<INPUT\s+TYPE="checkbox"\s+NAME="(includemagnetic\d+)"',
-                out2, re.IGNORECASE
-            ))
-            G2frame.kvecSearch['magElemMap'] = mag_elem_map
-            # Enable magnetic distortions only for the user-selected elements
-            for elem, field in mag_elem_map.items():
-                if elem in selected_atoms:
-                    data[field] = 'true'
-            # Remove displacive and strain keys when doing magnetic search
-            for key in list(data.keys()):
-                if key.startswith('includedisplacive') or key == 'includestrain':
-                    del data[key]
-
-        kvec_dict = grab_all_kvecs(out2)
-        #lat_sym = Phase['General']['SGData']
-        data_update = setup_kvec_input(kpoint, kvec_dict, isocif_out_cif)
-        for key, value in data_update.items():
-            data[key] = value
-
-        data['nmodstar1'] = '0'
-        out3 = requests.post(isoformsite, data=data).text
-
-        try:
-            pos = out3.index('irrep1')
-        except ValueError:
-            ISO.HandleError(out3)
-            return [],[]
-
-        kvec1 = _get_opt_val('kvec1', out3)
-        kvecnumber1 = _get_opt_val('kvecnumber1', out3)
-        kparam1 = _get_opt_val('kparam1', out3)
-        nmodstar1 = _get_opt_val('nmodstar1', out3)
-        data["kvec1"] = kvec1
-        data["kvecnumber1"] = kvecnumber1
-        data["kparam1"] = kparam1
-        data["nmodstar1"] = nmodstar1
-
-        pos = out3.index("irrep1")
-        pos1 = out3[pos:].index("</SELECT>")
-        str_tmp = out3[pos:][:pos1]
-        ir_options = re.findall(
-            r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp
-        )
-
-        proj_pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
-
-        G2frame.OnFileSave(None)
-        orgFilName = G2frame.GSASprojectfile
-        phsnam = phase_sel
-        # get restraints & clear geometrical restraints
-        resId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
-        Restraints = G2frame.GPXtree.GetItemPyData(resId)
-        resId = G2gd.GetGPXtreeItemId(G2frame, resId, phsnam)
-        #savedRestraints = None
-        if phsnam in Restraints:
-            Restraints[phsnam]['Bond']['Bonds'] = []
-            Restraints[phsnam]['Angle']['Angles'] = []
-            #savedRestraints = Restraints[phsnam]
-            del Restraints[phsnam]
-        #orgData = copy.deepcopy(data)
-
-        if mag:
-            cif_handler = CIFpr()
-            all_modes = {}
-
-        r_pattern = (
-            r'<input\s+type=["\']?radio["\']?\s+name=["\']?'
-            r'orderparam["\']?\s+value=(?:"([^"]*)"' + r"|'([^']*)')"
-        )
-        radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
-
-        try:
-            for ir_opt, _ in ir_options:
-                print("Processing irrep:", ir_opt)
-                all_modes[ir_opt] = {}
-                data["input"] = "irrep"
-                data['irrep1'] = ir_opt
-                progDlg.Pulse(f'Fetching IRREP: {ir_opt}')
-                wx.GetApp().Yield()
-                out4 = requests.post(isoformsite, data=data).text
-
-                irrep1 = _get_opt_val('irrep1', out4)
-                irrpointer1 = _get_opt_val('irrpointer1', out4)
-                data["irrep1"] = irrep1
-                data["irrpointer1"] = irrpointer1
-
-                # Use attribute-aware patterns to correctly capture values that may
-                # contain single quotes (e.g. magnetic space groups like P4_1'2_12').
-                # The original [^"\'"]+ pattern stopped at ' in the value; instead
-                # we match the closing delimiter explicitly so ' is allowed inside
-                # double-quoted attributes and " inside single-quoted ones.
-                radio_vals = [
-                    dq if dq else sq
-                    for dq, sq in radio_val_pattern.findall(out4)
-                ]
-                cleaned_radio_vals = [value.strip() for value in radio_vals]
-                iso_fn = _get_opt_val('isofilename', out4).strip()
-                data["isofilename"] = iso_fn
-
-                for radio_val in cleaned_radio_vals:
-                    print("Processing mode:", radio_val)
-                    progDlg.Pulse(f'IRREP: {ir_opt}  |  Mode: {radio_val}')
+        if not _loaded_from_cache:
+            # Show progress popup after any user dialogs are closed.
+            class _ProgDlg(wx.Dialog):
+                """Minimal fixed-size progress popup with wrapped text (no gauge bar)."""
+                _DLG_W = 420
+                _DLG_H = 120
+                def __init__(self, parent, title, message):
+                    wx.Dialog.__init__(self, parent, title=title,
+                                       style=wx.CAPTION | wx.FRAME_FLOAT_ON_PARENT)
+                    sizer = wx.BoxSizer(wx.VERTICAL)
+                    self._label = wx.StaticText(self, label=message)
+                    self._label.Wrap(self._DLG_W - 40)
+                    sizer.Add(self._label, 1, wx.ALL | wx.EXPAND, 20)
+                    self.SetSizer(sizer)
+                    self.SetClientSize((self._DLG_W, self._DLG_H))
+                    self.Centre()
+                    self.Show()
                     wx.GetApp().Yield()
+                def Pulse(self, msg=''):
+                    self._label.SetLabel(msg)
+                    self._label.Wrap(self._DLG_W - 40)
+                    wx.GetApp().Yield()
+            progDlg = _ProgDlg(G2frame, 'Processing IRREPs', 'Initial processing...')
+            wx.GetApp().Yield()
 
-                    data["input"] = "distort"
-                    data["origintype"] = "method2"
-                    data["orderparam"] = radio_val + '" CHECKED'
-                    if mag and "'" in radio_val:
-                        data["magirrep1"] = 'true'
-                    out5 = requests.post(isoformsite, data=data).text
+            fileList = []
+            # write a CIF as a scratch file
+            obj = G2export_CIF.ExportPhaseCIF(G2frame)
+            obj.InitExport(None)
+            obj.currentExportType='phase'
+            obj.loadTree()
+            tmp = tempfile.NamedTemporaryFile(suffix='.cif', delete=False)
+            obj.dirname,obj.filename = os.path.split(tmp.name)
+            obj.phasenam = Phase['General']['Name']
+            obj.Writer('', Phase['General']['Name'])
+            parentcif = tmp.name
+            ISOparentcif = ISO.UploadCIF(parentcif)
+            up2 = {'filename': ISOparentcif, 'input': 'uploadparentcif'}
+            out2 = requests.post(isoformsite, up2).text
 
-                    out_cif = ISO.GetISOcif(out5, 2, mag=mag)
-                    cif_fn_part1 = radio_val.split()[0]
-                    cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
-                    cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
-                    cif_fn_part1 = cif_fn_part1.replace('/', '_')
-                    cif_fn_part2 = cif_fn_part2.replace('/', '_')
-                    cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
-                    cif_fn = os.path.join(proj_pth, cif_fn)
-                    with open(cif_fn, 'wb') as fl:
-                        fl.write(out_cif.encode("utf-8"))
+            try:
+                pos = out2.index('<p><FORM')
+            except ValueError:
+                ISO.HandleError(out2)
+                return [], []
 
-                    if mag:
-                        _ = cif_handler.Reader(cif_fn, irrep=ir_opt, opd=radio_val)
-                        all_modes[ir_opt][radio_val] = cif_handler.Phase["ISODISTORT-MAG"][ir_opt][radio_val]
-                    else:
-                        try:
-                            rdlist = G2sc.import_generic(
-                                cif_fn, [CIFpr()], fmthint='CIF'
-                            )
-                        except Exception:
-                            continue
+            data = {}
+            while True:
+                try:
+                    posB = out2[pos:].index('INPUT TYPE') + pos
+                    posF = out2[posB:].index('>') + posB
+                    items = out2[posB:posF].split('=',3)
+                    name = items[2].split()[0].replace('"', '')
+                    if 'isosystem' in name:
+                        break
+                    vals = items[3].replace('"', '')
+                    data[name] = vals
+                    pos = posF
+                except ValueError:
+                    break
 
-                        rd = rdlist[0]
+            phase_sel = G2frame.kvecSearch['phase']
+            _, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+            Phase = Phases[phase_sel]
 
-                        key_list = [
-                            'General', 'Atoms', 'Drawing',
-                            'Histograms', 'Pawley ref', 'RBModels'
-                        ]
-                        for key in key_list:
-                            Phase[key] = rd.Phase[key]
+            data['input'] = 'kvector'
+            data['irrepcount'] = '1'
 
-                        newname = rd.Phase['General']['Name']
-                        Phase['General']['Name'] = phsnam
+            # We need to upload the CIF file to ISOCIF and export from there, since
+            # some of the routines for k vector form solving only works with the
+            # CIF coming out from ISOCIF.
+            init_cif = ISO.UploadCIF(parentcif, upload_site=isocifuploadsite)
+            isocif_up = {'submit': 'OK', 'input': 'uploadcif', 'filename': init_cif}
+            isocif_out_1 = requests.post(isocifformsite, data=isocif_up).text
 
-                        # rename the phase in the data tree
-                        G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)
+            isocif_form = re.split(
+                '</form',
+                next(
+                    i for i in re.split('<form', isocif_out_1, flags=re.IGNORECASE)
+                    if 'Detect higher' in i
+                ),
+                flags=re.IGNORECASE
+            )[0]
 
-                        G2frame.GSASprojectfile = os.path.splitext(
-                            orgFilName
-                        )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
-                        G2IO.ProjFileSave(G2frame)
-        finally:
-            progDlg.Destroy()
+            isocif_formDict = {}
+            for f in isocif_form.split('<'):
+                try:
+                    name = re.split('name=',f,flags=re.IGNORECASE)[1].split('"')[1]
+                    value = re.split('value=',f,flags=re.IGNORECASE)[1].split('"')[1]
+                    isocif_formDict[name] = value
+                except IndexError:
+                    pass
+            isocif_formDict['input'] = 'savecif'
 
-        # restore the original saved project
-        G2frame.OnFileOpen(None, filename=orgFilName, askSave=False)
+            isocif_out_cif = requests.post(isocifformsite, data=isocif_formDict).text
 
-        # reopen tree to the original phase
-        def _ShowPhase():
-            phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
-            G2frame.GPXtree.Expand(phId)
-            phId = G2gd.GetGPXtreeItemId(G2frame, phId, phsnam)
-            G2frame.GPXtree.SelectItem(phId)
+            if mag:
+                # Parse out2 to map element symbol -> includemagnetic field name
+                # Pattern: "Er<INPUT TYPE="checkbox" NAME="includemagnetic001" VALUE="true">"
+                mag_elem_map = dict(re.findall(
+                    r'(\w+)<INPUT\s+TYPE="checkbox"\s+NAME="(includemagnetic\d+)"',
+                    out2, re.IGNORECASE
+                ))
+                G2frame.kvecSearch['magElemMap'] = mag_elem_map
+                # Enable magnetic distortions only for the user-selected elements
+                for elem, field in mag_elem_map.items():
+                    if elem in selected_atoms:
+                        data[field] = 'true'
+                # Remove displacive and strain keys when doing magnetic search
+                for key in list(data.keys()):
+                    if key.startswith('includedisplacive') or key == 'includestrain':
+                        del data[key]
 
-        wx.CallLater(100, _ShowPhase)
+            kvec_dict = grab_all_kvecs(out2)
+            #lat_sym = Phase['General']['SGData']
+            data_update = setup_kvec_input(kpoint, kvec_dict, isocif_out_cif)
+            for key, value in data_update.items():
+                data[key] = value
 
-        info_msg = f'''Done with subgroup output for the selected k-vector.
+            data['nmodstar1'] = '0'
+            out3 = requests.post(isoformsite, data=data).text
+
+            try:
+                pos = out3.index('irrep1')
+            except ValueError:
+                ISO.HandleError(out3)
+                return [],[]
+
+            kvec1 = _get_opt_val('kvec1', out3)
+            kvecnumber1 = _get_opt_val('kvecnumber1', out3)
+            kparam1 = _get_opt_val('kparam1', out3)
+            nmodstar1 = _get_opt_val('nmodstar1', out3)
+            data["kvec1"] = kvec1
+            data["kvecnumber1"] = kvecnumber1
+            data["kparam1"] = kparam1
+            data["nmodstar1"] = nmodstar1
+
+            pos = out3.index("irrep1")
+            pos1 = out3[pos:].index("</SELECT>")
+            str_tmp = out3[pos:][:pos1]
+            ir_options = re.findall(
+                r'<OPTION VALUE="([^"]+)">([^<]+)</OPTION>',str_tmp
+            )
+
+            proj_pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
+
+            G2frame.OnFileSave(None)
+            orgFilName = G2frame.GSASprojectfile
+            phsnam = phase_sel
+            # get restraints & clear geometrical restraints
+            resId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
+            Restraints = G2frame.GPXtree.GetItemPyData(resId)
+            resId = G2gd.GetGPXtreeItemId(G2frame, resId, phsnam)
+            #savedRestraints = None
+            if phsnam in Restraints:
+                Restraints[phsnam]['Bond']['Bonds'] = []
+                Restraints[phsnam]['Angle']['Angles'] = []
+                #savedRestraints = Restraints[phsnam]
+                del Restraints[phsnam]
+            #orgData = copy.deepcopy(data)
+
+            if mag:
+                cif_handler = CIFpr()
+                all_modes = {}
+
+            r_pattern = (
+                r'<input\s+type=["\']?radio["\']?\s+name=["\']?'
+                r'orderparam["\']?\s+value=(?:"([^"]*)"' + r"|'([^']*)')"
+            )
+            radio_val_pattern = re.compile(r_pattern, re.IGNORECASE)
+
+            try:
+                for ir_opt, _ in ir_options:
+                    print("Processing irrep:", ir_opt)
+                    all_modes[ir_opt] = {}
+                    data["input"] = "irrep"
+                    data['irrep1'] = ir_opt
+                    progDlg.Pulse(f'Fetching IRREP: {ir_opt}')
+                    wx.GetApp().Yield()
+                    out4 = requests.post(isoformsite, data=data).text
+
+                    irrep1 = _get_opt_val('irrep1', out4)
+                    irrpointer1 = _get_opt_val('irrpointer1', out4)
+                    data["irrep1"] = irrep1
+                    data["irrpointer1"] = irrpointer1
+
+                    # Use attribute-aware patterns to correctly capture values that may
+                    # contain single quotes (e.g. magnetic space groups like P4_1'2_12').
+                    # The original [^"\'"]+ pattern stopped at ' in the value; instead
+                    # we match the closing delimiter explicitly so ' is allowed inside
+                    # double-quoted attributes and " inside single-quoted ones.
+                    radio_vals = [
+                        dq if dq else sq
+                        for dq, sq in radio_val_pattern.findall(out4)
+                    ]
+                    cleaned_radio_vals = [value.strip() for value in radio_vals]
+                    iso_fn = _get_opt_val('isofilename', out4).strip()
+                    data["isofilename"] = iso_fn
+
+                    for radio_val in cleaned_radio_vals:
+                        print("Processing mode:", radio_val)
+                        progDlg.Pulse(f'IRREP: {ir_opt}  |  Mode: {radio_val}')
+                        wx.GetApp().Yield()
+
+                        data["input"] = "distort"
+                        data["origintype"] = "method2"
+                        data["orderparam"] = radio_val + '" CHECKED'
+                        if mag and "'" in radio_val:
+                            data["magirrep1"] = 'true'
+                        out5 = requests.post(isoformsite, data=data).text
+
+                        out_cif = ISO.GetISOcif(out5, 2, mag=mag)
+                        cif_fn_part1 = radio_val.split()[0]
+                        cif_fn_part2_tmp = radio_val.split(")")[1].split(",")[0]
+                        cif_fn_part2 = cif_fn_part2_tmp.split()[-1]
+                        cif_fn_part1 = cif_fn_part1.replace('/', '_')
+                        cif_fn_part2 = cif_fn_part2.replace('/', '_')
+                        cif_fn = f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.cif"
+                        cif_fn = os.path.join(proj_pth, cif_fn)
+                        with open(cif_fn, 'wb') as fl:
+                            fl.write(out_cif.encode("utf-8"))
+
+                        if mag:
+                            _ = cif_handler.Reader(cif_fn, irrep=ir_opt, opd=radio_val)
+                            all_modes[ir_opt][radio_val] = cif_handler.Phase["ISODISTORT-MAG"][ir_opt][radio_val]
+                        else:
+                            try:
+                                rdlist = G2sc.import_generic(
+                                    cif_fn, [CIFpr()], fmthint='CIF'
+                                )
+                            except Exception:
+                                continue
+
+                            rd = rdlist[0]
+
+                            key_list = [
+                                'General', 'Atoms', 'Drawing',
+                                'Histograms', 'Pawley ref', 'RBModels'
+                            ]
+                            for key in key_list:
+                                Phase[key] = rd.Phase[key]
+
+                            newname = rd.Phase['General']['Name']
+                            Phase['General']['Name'] = phsnam
+
+                            # rename the phase in the data tree
+                            G2phsG.renamePhaseName(G2frame,Phase,phaseTreeId,Phase['General'],newname)
+
+                            G2frame.GSASprojectfile = os.path.splitext(
+                                orgFilName
+                            )[0] + '_' f"{phase_nam}_{cif_fn_part1}_{cif_fn_part2}.gpx"
+                            G2IO.ProjFileSave(G2frame)
+            finally:
+                progDlg.Destroy()
+
+            # Save all_modes + ir_options to JSON cache for future runs
+            if mag:
+                try:
+                    with open(_cache_json, 'w') as _cf:
+                        json.dump(
+                            {
+                                'all_modes': all_modes,
+                                'ir_options': list(ir_options)
+                            },
+                            _cf,
+                            indent=4
+                        )
+                    print(f'Saved IRREP data to cache: {_cache_json}')
+                except Exception as _e:
+                    print(f'Warning: failed to write IRREP cache {_cache_json}: {_e}')
+
+            # restore the original saved project
+            G2frame.OnFileOpen(None, filename=orgFilName, askSave=False)
+
+            # reopen tree to the original phase
+            def _ShowPhase():
+                phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
+                G2frame.GPXtree.Expand(phId)
+                phId = G2gd.GetGPXtreeItemId(G2frame, phId, phsnam)
+                G2frame.GPXtree.SelectItem(phId)
+
+            wx.CallLater(100, _ShowPhase)
+
+            info_msg = f'''Done with subgroup output for the selected k-vector.
             Please check output files in the following directory,
             {os.getcwd()}
         '''
-        wx.MessageBox(
-            info_msg,
-            style=wx.ICON_INFORMATION,
-            caption='Isotropic Subgroup Generation'
-        )
+            wx.MessageBox(
+                info_msg,
+                style=wx.ICON_INFORMATION,
+                caption='Isotropic Subgroup Generation'
+            )
 
-        try:
-            os.unlink(tmp.name)
-        except PermissionError:
-            pass
+            try:
+                os.unlink(tmp.name)
+            except PermissionError:
+                pass
 
         if mag:
             ir_labels = [label for _, label in ir_options]
@@ -5867,18 +5904,129 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
             # Add the Mag-IRREPs tab to the already-displayed phase notebook,
             # inserting it immediately after the ISODISTORT tab.
             from . import GSASIIphsGUI2 as G2phsG2
+            # Check whether the existing panel is still alive (stale after OnFileOpen)
+            if hasattr(G2frame, 'MagIRREPs') and G2frame.MagIRREPs is not None:
+                try:
+                    G2frame.MagIRREPs.GetSizer()  # raises RuntimeError if C++ object deleted
+                except RuntimeError:
+                    G2frame.MagIRREPs = None
             if not hasattr(G2frame, 'MagIRREPs') or G2frame.MagIRREPs is None:
-                G2frame.MagIRREPs = wx.ScrolledWindow(G2frame.phaseDisplay)
+                # phaseDisplay is only created after the phase tree item is selected.
+                # Navigate there now so it exists before we try to add the tab.
+                if not hasattr(G2frame, 'phaseDisplay') or G2frame.phaseDisplay is None:
+                    _phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
+                    G2frame.GPXtree.Expand(_phId)
+                    _phTreeId = G2gd.GetGPXtreeItemId(G2frame, _phId, phsnam)
+                    G2frame.GPXtree.SelectItem(_phTreeId)
+                    wx.GetApp().Yield()
+                # Check if 'Mag-IRREPs' tab already exists in the notebook
                 pageCount = G2frame.phaseDisplay.GetPageCount()
-                insertPos = pageCount  # default: append at end
+                for pageIdx in range(pageCount):
+                    if G2frame.phaseDisplay.GetPageText(pageIdx) == 'Mag-IRREPs':
+                        G2frame.MagIRREPs = G2frame.phaseDisplay.GetPage(pageIdx)
+                        break
+                if G2frame.MagIRREPs is None:
+                    G2frame.MagIRREPs = wx.ScrolledWindow(G2frame.phaseDisplay)
+                    insertPos = pageCount  # default: append at end
+                    for pageIdx in range(pageCount):
+                        if G2frame.phaseDisplay.GetPageText(pageIdx) == 'ISODISTORT':
+                            insertPos = pageIdx + 1
+                            break
+                    G2frame.phaseDisplay.InsertPage(insertPos, G2frame.MagIRREPs, 'Mag-IRREPs')
+            G2phsG2.UpdateMagIRREPs(G2frame, Phase)
+
+        return
+
+    def OnLoadMagIRREP(event):
+        '''Load Mag-IRREP data from a JSON file and display in the Mag-IRREPs tab.'''
+        dlg = wx.FileDialog(G2frame, 'Select Mag-IRREP JSON file',
+                            wildcard='JSON files (*.json)|*.json|All files (*.*)|*.*',
+                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        try:
+            if dlg.ShowModal() != wx.ID_OK:
+                return
+            json_path = dlg.GetPath()
+        finally:
+            dlg.Destroy()
+        try:
+            with open(json_path, 'r') as _cf:
+                _cached = json.load(_cf)
+            all_modes = _cached['all_modes']
+            ir_options = [tuple(x) for x in _cached['ir_options']]
+        except Exception as _e:
+            G2G.G2MessageBox(G2frame, f'Failed to load JSON file:\n{_e}', 'Load Error')
+            return
+        phase_sel = G2frame.kvecSearch.get('phase', '')
+        if not phase_sel:
+            G2G.G2MessageBox(G2frame, 'Please select a phase first.', 'No Phase Selected')
+            return
+        phsnam = phase_sel
+        phaseID = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
+        phaseTreeId = G2gd.GetGPXtreeItemId(G2frame, phaseID, phsnam)
+        Phase = G2frame.GPXtree.GetItemPyData(phaseTreeId)
+
+        ir_labels = [label for _, label in ir_options]
+        dlg2 = G2G.G2MultiChoiceDialog(G2frame,
+            'Select irreducible representation(s)',
+            'Select irrep(s) from the list below:',
+            ir_labels, filterBox=False)
+        try:
+            if dlg2.ShowModal() == wx.ID_OK:
+                selected_indices = dlg2.GetSelections()
+            else:
+                selected_indices = []
+        finally:
+            dlg2.Destroy()
+        if not selected_indices:
+            return
+
+        selected_irreps = [(i + 1, ir_options[i][0], ir_options[i][1])
+                           for i in selected_indices]
+        mag_data = {'selected': selected_irreps, 'all_irreps': list(ir_options)}
+        for ir_val, _ir_label in ir_options:
+            ir_modes = all_modes.get(ir_val, {})
+            mag_data[ir_val] = {}
+            first_opd = True
+            for opd_key, opd_val in ir_modes.items():
+                mag_data[ir_val][opd_key] = {}
+                if first_opd:
+                    mag_data[ir_val][opd_key]['_selected'] = True
+                    first_opd = False
+                for mode_key, mode_val in opd_val.items():
+                    mag_data[ir_val][opd_key][mode_key] = dict(mode_val)
+                    mag_data[ir_val][opd_key][mode_key]['amplitude'] = 0.0
+                    mag_data[ir_val][opd_key][mode_key]['refine'] = True
+
+        Phase['ISODISTORT-MAG'] = mag_data
+        G2IO.ProjFileSave(G2frame)
+
+        from . import GSASIIphsGUI2 as G2phsG2
+        if hasattr(G2frame, 'MagIRREPs') and G2frame.MagIRREPs is not None:
+            try:
+                G2frame.MagIRREPs.GetSizer()
+            except RuntimeError:
+                G2frame.MagIRREPs = None
+        if not hasattr(G2frame, 'MagIRREPs') or G2frame.MagIRREPs is None:
+            if not hasattr(G2frame, 'phaseDisplay') or G2frame.phaseDisplay is None:
+                _phId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
+                G2frame.GPXtree.Expand(_phId)
+                _phTreeId = G2gd.GetGPXtreeItemId(G2frame, _phId, phsnam)
+                G2frame.GPXtree.SelectItem(_phTreeId)
+                wx.GetApp().Yield()
+            pageCount = G2frame.phaseDisplay.GetPageCount()
+            for pageIdx in range(pageCount):
+                if G2frame.phaseDisplay.GetPageText(pageIdx) == 'Mag-IRREPs':
+                    G2frame.MagIRREPs = G2frame.phaseDisplay.GetPage(pageIdx)
+                    break
+            if G2frame.MagIRREPs is None:
+                G2frame.MagIRREPs = wx.ScrolledWindow(G2frame.phaseDisplay)
+                insertPos = pageCount
                 for pageIdx in range(pageCount):
                     if G2frame.phaseDisplay.GetPageText(pageIdx) == 'ISODISTORT':
                         insertPos = pageIdx + 1
                         break
                 G2frame.phaseDisplay.InsertPage(insertPos, G2frame.MagIRREPs, 'Mag-IRREPs')
-            G2phsG2.UpdateMagIRREPs(G2frame, Phase)
-
-        return
+        G2phsG2.UpdateMagIRREPs(G2frame, Phase)
 
     def updateCellsWindow(event):
         'called when k-vec mode is selected'
@@ -6136,10 +6284,6 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 kstep = None
 
             # grab the user defined tolerance for determining the optimal k vector.
-            # refer to the following link for more detailed explanation about this,
-            #
-            # https://yr.iris-home.net/kvectordoc
-            #
             try:
                 tol_val = float(G2frame.kvecSearch['tolerance'])
             except ValueError:
@@ -7452,16 +7596,23 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         if mode == 2:
-            hSizer = wx.BoxSizer(wx.HORIZONTAL)
-            hSizer.Add(gridDisplay)
+            btnSizer = wx.BoxSizer(wx.VERTICAL)
 
             ISObut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT')
             ISObut.Bind(wx.EVT_BUTTON, OnISODISTORT_kvec)
-            hSizer.Add(ISObut)
+            btnSizer.Add(ISObut, 0, wx.EXPAND | wx.BOTTOM, 2)
 
             ISOmagbut = wx.Button(G2frame.dataWindow,label='Call ISODISTORT-MAG')
             ISOmagbut.Bind(wx.EVT_BUTTON, lambda evt: OnISODISTORT_kvec(evt, mag=True))
-            hSizer.Add(ISOmagbut)
+            btnSizer.Add(ISOmagbut, 0, wx.EXPAND | wx.BOTTOM, 2)
+
+            loadMagbut = wx.Button(G2frame.dataWindow,label='Load MAG-IRREP')
+            loadMagbut.Bind(wx.EVT_BUTTON, OnLoadMagIRREP)
+            btnSizer.Add(loadMagbut, 0, wx.EXPAND)
+
+            hSizer = wx.BoxSizer(wx.HORIZONTAL)
+            hSizer.Add(gridDisplay)
+            hSizer.Add(btnSizer, 0, wx.LEFT | wx.ALIGN_TOP, 4)
 
             mainSizer.Add(hSizer)
         else:

@@ -26,6 +26,7 @@ from . import GSASIIctrlGUI as G2G
 from . import GSASIIphsGUI as G2phsG
 from . import GSASIIobj as G2obj
 from . import GSASIImiscGUI as G2IO
+from . import GSASIIconstrGUI as G2cnstG
 
 try:
     wx.NewIdRef
@@ -1223,7 +1224,10 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
                 caption='No Phase Data', style=wx.ICON_EXCLAMATION)
             return
 
-        # Remove previously inserted magnetic phases tagged by this function
+        # Remove previously inserted magnetic phases tagged by this function.
+        # Also remove any constraints that referenced those phases — they show up
+        # as '?' in the constraint editor once the phase is gone. We collect the
+        # phase ranIds BEFORE deletion so we can purge constraints by ranId.
         phasesId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Phases')
         child, cookie = G2frame.GPXtree.GetFirstChild(phasesId)
         phases_to_remove = []
@@ -1232,6 +1236,38 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
             if ph and ph.get('General', {}).get('_MagIRREP_inserted', False):
                 phases_to_remove.append(child)
             child, cookie = G2frame.GPXtree.GetNextChild(phasesId, cookie)
+
+        # Collect ranIds of phases about to be deleted so we can match constraints.
+        removed_ranIds = set()
+        for ph_id in phases_to_remove:
+            ph = G2frame.GPXtree.GetItemPyData(ph_id)
+            if ph and 'ranId' in ph:
+                removed_ranIds.add(ph['ranId'])
+
+        # Purge Phase and HAP constraints that reference any of the removed phases.
+        # Each constraint entry is a list of [multiplier, G2VarObj] pairs plus
+        # trailing sentinel values. A G2VarObj's .phase attribute holds the ranId.
+        if removed_ranIds:
+            constrId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Constraints')
+            if constrId:
+                constraints = G2frame.GPXtree.GetItemPyData(constrId)
+                for ctype in ('Phase', 'HAP'):
+                    if ctype not in constraints:
+                        continue
+                    kept = []
+                    for con in constraints[ctype]:
+                        # Each term in the constraint that is [mult, G2VarObj] has
+                        # the phase ranId stored in varobj.phase.
+                        touches_removed = any(
+                            isinstance(term, list) and len(term) == 2
+                            and hasattr(term[1], 'phase')
+                            and term[1].phase in removed_ranIds
+                            for term in con
+                        )
+                        if not touches_removed:
+                            kept.append(con)
+                    constraints[ctype] = kept
+
         for ph_id in reversed(phases_to_remove):
             ph_name = G2frame.GPXtree.GetItemText(ph_id)
             G2frame.GPXtree.Delete(ph_id)
@@ -1266,6 +1302,15 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
         if sg_info.get('MagPtGp'):
             sgdata['MagPtGp'] = sg_info['MagPtGp']
         sgdata['SGGray'] = bool(sg_info.get('SGGray', False))
+        # SpcGroup may fail for magnetic space group names (e.g., with primes) and
+        # fall back to P1, leaving SGLaue = '-1' (triclinic). Restore the correct
+        # Laue class and unique axis from the stored data so that GenCellConstraints
+        # uses the right cellUnique() result. Without this, A3/A4/A5 are treated as
+        # independent parameters (triclinic) and spurious '= 0' constraints appear.
+        if sg_info.get('SGLaue'):
+            sgdata['SGLaue'] = sg_info['SGLaue']
+        if sg_info.get('SGUniq'):
+            sgdata['SGUniq'] = sg_info['SGUniq']
         G2spc.GenMagOps(sgdata)
 
         # Build the new phase dict
@@ -1277,6 +1322,9 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
         new_phase['General']['Cell'] = list(cell)
         new_phase['General']['_MagIRREP_inserted'] = True
         new_phase['General']['_MagIRREP_source'] = [ir_val, opd_key]
+        # ModeMatrix, MagAtomInfo, Trans, Uvec and per-mode data all live at the OPD level.
+        opd_data = magISOdata.get(ir_val, {}).get(opd_key, {})
+
         # Ensure atoms are in magnetic format (21 elements with Mx,My,Mz at positions 7-9).
         # Cached PhaseData may have been saved from cif_handler.Phase (nuclear, 18 elements)
         # rather than cif_handler.MPhase (magnetic, 21 elements). Upgrade in-place if needed.
@@ -1287,11 +1335,17 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
             if len(a) == 18:  # nuclear format — insert Mx=My=Mz=0 after frac (index 6)
                 a = a[:7] + [0., 0., 0.] + a[7:]
             mag_atoms.append(a)
+        # Keep only atoms that ISODISTORT explicitly lists as magnetic (have moment
+        # degrees of freedom). MagAtomInfo is keyed by atom label and is built
+        # directly from _atom_site_moment.label, so it is the authoritative source.
+        # NOTE: GetMFtable cannot be used here because atmdata.MagFF contains a
+        # fake 'O' entry, so oxygen would pass a form-factor check incorrectly.
+        _mag_atom_labels = set(opd_data.get('MagAtomInfo', {}).keys())
+        if _mag_atom_labels:
+            mag_atoms = [a for a in mag_atoms if a[0] in _mag_atom_labels]
         new_phase['Atoms'] = mag_atoms
 
         # Calculate magnetic moments from mode amplitudes and apply to atoms.
-        # ModeMatrix, MagAtomInfo, and per-mode data all live at the OPD level.
-        opd_data = magISOdata.get(ir_val, {}).get(opd_key, {})
         computed_moments = calc_mag_moments_from_modes(opd_data)
         if computed_moments:
             for atom in new_phase['Atoms']:
@@ -1313,6 +1367,59 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
             if isinstance(restraints_data, dict):
                 restraints_data[ph_name] = {}
             G2frame.GPXtree.AppendItem(parent=restraintsId, text=ph_name)
+
+        # Set up atomic coordinate constraints linking parent ↔ magnetic phase.
+        # Trans and Uvec (raw CIF origin O) are stored by the CIF reader from
+        # _iso_parent-to-child.transform_Pp_abc.
+        _Trans_raw = opd_data.get('Trans')
+        if _Trans_raw is None:
+            print('OnInsertMagPhase: _iso_parent-to-child.transform_Pp_abc not found '
+                  'in stored data — coordinate constraints skipped. '
+                  'Re-run ISODISTORT-MAG to enable them.')
+        else:
+            _Trans = np.array(_Trans_raw, dtype=float)
+            # opd_data['Uvec'] is the raw CIF origin O.
+            # TransformPhase applies (x + Uvec), so pass Uvec = -O.
+            _Uvec = -np.array(opd_data.get('Uvec', [0., 0., 0.]), dtype=float)
+            _Vvec = np.zeros(3)
+            # Build a temporary P1 scratch phase with the magnetic cell.
+            # Using P1 ensures GetUnique inside TransformPhase keeps ALL transformed
+            # parent atoms (no magnetic-SGData reduction that would mis-expand the
+            # cell to apparent P1 symmetry). We only need these atoms to recover
+            # the atCodes; new_phase itself is NOT touched.
+            _scratch = G2obj.SetNewPhase(
+                Name='_scratch',
+                cell=new_phase['General']['Cell'][1:8])
+            _scratch, _atCodes_all = G2lat.TransformPhase(
+                data, _scratch, _Trans, _Uvec, _Vvec, True)
+            # Position-match each ISODISTORT atom in new_phase to the corresponding
+            # scratch atom so we can assign it the correct parent atCode.
+            _cx = new_phase['General']['AtomPtrs'][0]  # = 3
+            _scratch_xyz = [
+                np.array(a[_cx:_cx+3], dtype=float) % 1.
+                for a in _scratch['Atoms']
+            ]
+            _atCodes = []
+            _match_ok = True
+            for _iso_atom in new_phase['Atoms']:
+                _iso_xyz = np.array(_iso_atom[_cx:_cx+3], dtype=float) % 1.
+                _found = None
+                for _sxyz, _code in zip(_scratch_xyz, _atCodes_all):
+                    if np.allclose(_iso_xyz, _sxyz, atol=0.002):
+                        _found = _code
+                        break
+                if _found is None:
+                    print(f'OnInsertMagPhase: cannot map atom {_iso_atom[0]} '
+                          f'at {_iso_xyz} to any transformed parent atom; '
+                          f'coordinate constraints skipped')
+                    _match_ok = False
+                    break
+                _atCodes.append(_found)
+            if _match_ok and _atCodes:
+                # Store MagXform for CIF export (same convention as Bilbao path).
+                new_phase['MagXform'] = (_Trans, _Uvec, _Vvec)
+                G2cnstG.TransConstraints(
+                    G2frame, data, new_phase, _Trans, _Vvec, _atCodes)
 
         G2IO.ProjFileSave(G2frame)
 

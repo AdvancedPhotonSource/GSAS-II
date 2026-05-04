@@ -5937,9 +5937,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                     mag_data[ir_val][opd_key] = {'enabled': first_opd}
                     first_opd = False
                     for mode_key, mode_val in opd_val.items():
-                        if mode_key in ('ModeMatrix', 'MagAtomInfo'):
-                            # Keep ModeMatrix/MagAtomInfo at the OPD level;
-                            # each OPD has its own matrix.
+                        if mode_key in ('ModeMatrix', 'MagAtomInfo', 'Trans', 'Uvec'):
+                            # Keep these arrays/dicts at the OPD level as-is.
                             mag_data[ir_val][opd_key][mode_key] = mode_val
                             continue
                         if mode_key == 'PhaseData':
@@ -6056,10 +6055,8 @@ def UpdateUnitCellsGrid(G2frame, data, callSeaResSelected=False,New=False,showUs
                 mag_data[ir_val][opd_key] = {'enabled': first_opd}
                 first_opd = False
                 for mode_key, mode_val in opd_val.items():
-                    if mode_key in ('ModeMatrix', 'MagAtomInfo'):
-                        # Keep ModeMatrix/MagAtomInfo at the OPD level as-is
-                        # (they are lists/dicts from JSON; numpy.array() handles them
-                        # on demand in calc_mag_moments_from_modes).
+                    if mode_key in ('ModeMatrix', 'MagAtomInfo', 'Trans', 'Uvec'):
+                        # Keep these arrays/dicts at the OPD level as-is.
                         mag_data[ir_val][opd_key][mode_key] = mode_val
                         continue
                     if mode_key in ('enabled', 'PhaseData'):

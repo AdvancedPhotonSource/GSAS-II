@@ -1365,6 +1365,14 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
             mag_modes["ModeMatrix"] = mmode_matrix
             mag_modes["MagAtomInfo"] = mag_at_info
 
+            # Read parent-to-child basis transformation and origin shift
+            pp_abc = blk.get('_iso_parent-to-child.transform_Pp_abc', 'a,b,c;0,0,0')
+            if isinstance(pp_abc, list):
+                pp_abc = pp_abc[0]
+            mag_Trans, mag_Uvec = _parse_Pp_abc(pp_abc)
+            mag_modes['Trans'] = mag_Trans
+            mag_modes['Uvec'] = mag_Uvec
+
             if 'ISODISTORT-MAG' not in self.Phase:
                 self.Phase['ISODISTORT-MAG'] = {}
 
@@ -1373,6 +1381,64 @@ If you say "no" here, a simple origin shift later will be applied as an alternat
 
             for mkey, mval in mag_modes.items():
                 self.Phase['ISODISTORT-MAG'][irrep][opd][mkey] = mval
+
+def _parse_Pp_abc(pp_abc_str):
+    '''Parse an ISODISTORT ``_iso_parent-to-child.transform_Pp_abc`` string
+    into a 3×3 transformation matrix *Trans* and a 3-element origin shift *origin*.
+
+    The input format is ``'basis_a,basis_b,basis_c;origin_x,origin_y,origin_z'``,
+    where each basis expression is a linear combination of ``a``, ``b``, ``c``
+    (the parent cell vectors) and the origin gives the position of the new cell
+    origin in parent fractional coordinates.
+
+    ``Trans[i,j]`` is the coefficient of parent vector *j* in new (child) vector *i*.
+
+    :param str pp_abc_str: Pp_abc string, e.g. ``'a,b,2c;0,0,0'`` or
+        ``'a+b,-a+b,c;1/2,0,0'``
+    :returns: ``(Trans, origin)`` — (3×3 float ndarray, 3-element float ndarray)
+    '''
+    import re as _re
+    parts = pp_abc_str.strip().split(';')
+    basis_str = parts[0].strip()
+    origin_str = parts[1].strip() if len(parts) > 1 else '0,0,0'
+
+    Trans = np.zeros((3, 3))
+    sym_map = {'a': 0, 'b': 1, 'c': 2}
+    for i, expr in enumerate(basis_str.split(',')):
+        expr = expr.strip().replace(' ', '')
+        for m in _re.finditer(r'([+-]?)(\d*(?:\.\d+)?(?:/\d+)?)[abc]', expr):
+            full = m.group(0)
+            sign_str = m.group(1)
+            coef_str = m.group(2)
+            sym = full[-1]
+            sign = -1.0 if sign_str == '-' else 1.0
+            if not coef_str:
+                coef = 1.0
+            elif '/' in coef_str:
+                num_str, den_str = coef_str.split('/')
+                coef = float(num_str) / float(den_str) if den_str else 1.0
+            else:
+                coef = float(coef_str)
+            Trans[i, sym_map[sym]] += sign * coef
+
+    origin = np.zeros(3)
+    for i, val in enumerate(origin_str.split(',')):
+        val = val.strip()
+        if not val or val == '0':
+            continue
+        if '/' in val:
+            try:
+                n_str, d_str = val.split('/')
+                origin[i] = float(n_str.strip()) / float(d_str.strip())
+            except (ValueError, ZeroDivisionError):
+                pass
+        else:
+            try:
+                origin[i] = float(val)
+            except ValueError:
+                pass
+    return Trans, origin
+
 
 def ISODISTORT_shortLbl(lbl,shortmodelist):
     '''Shorten model labels and remove special characters

@@ -1360,6 +1360,28 @@ def UpdateMagIRREPs(G2frame, data, Scroll=0):
         new_ph_id = G2frame.GPXtree.AppendItem(parent=phasesId, text=ph_name)
         G2frame.GPXtree.SetItemPyData(new_ph_id, new_phase)
 
+        # Link the new magnetic phase to all histograms connected to the parent phase.
+        SGData = new_phase['General']['SGData']
+        NShkl = len(G2spc.MustrainNames(SGData))
+        NDij = len(G2spc.HStrainNames(SGData))
+        for histoName in data.get('Histograms', {}):
+            histId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, histoName)
+            if not histId:
+                continue
+            iparmId = G2gd.GetGPXtreeItemId(G2frame, histId, 'Instrument Parameters')
+            if iparmId:
+                Iparm1 = G2frame.GPXtree.GetItemPyData(iparmId)[0]
+                dType = Iparm1.get('Type', ['PWDR'])[0]
+            else:
+                dType = 'PWDR'
+            new_phase['Histograms'][histoName] = G2mth.SetDefaultDData(
+                dType, histoName, NShkl=NShkl, NDij=NDij)
+            new_phase['Histograms'][histoName]['Use'] = True
+            refListId = G2gd.GetGPXtreeItemId(G2frame, histId, 'Reflection Lists')
+            if refListId:
+                refList = G2frame.GPXtree.GetItemPyData(refListId)
+                refList[ph_name] = {}
+
         # Add entry in Restraints
         restraintsId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Restraints')
         if restraintsId:

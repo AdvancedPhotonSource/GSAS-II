@@ -265,7 +265,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         coefficients for the specified order. 
         Retains values from the previous dict, if values were already present
         '''
-        cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
+        cofNames = G2lat.GenSHCoeffT(SGData['SGLaue'],'0',Order,False)     #cylindrical & no M
         newPOCoef = dict(zip(cofNames,len(cofNames)*[0.]))
         POCoeff = UseList[G2frame.hist]['Pref.Ori.'][5]
         for cofName in POCoeff:

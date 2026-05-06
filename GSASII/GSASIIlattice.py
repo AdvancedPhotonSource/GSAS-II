@@ -2633,7 +2633,7 @@ def OdfChk(SGLaue,L,M):
 def GenSHCoeffT(SGLaue,SamSym,L,IfLMN=True):
     '''Generate spherical harmonics coefficient names for texture
 
-    Note there are functions GenShCoeffT and GenSHCoeff
+    Note there are functions GenShCoeff and GenSHCoeffT
 
     :param str SGLaue: Laue symbol
     :param str SamSym: sample symmetry symbol

@@ -4940,13 +4940,10 @@ to use these entries'''
         vecRBData = data['RBModels'].get('Vector',[])
         global rbAtmDict
         rbAtmDict = {}
+        # exclList will be 'fxu' for non spin RBs
         for rbObj in resRBData+vecRBData:
-            exclList = ['FX' for i in range(len(rbObj['Ids']))]
+            exclList = ['FXU' for i in range(len(rbObj['Ids']))]
             rbAtmDict.update(dict(zip(rbObj['Ids'],exclList)))
-            if rbObj['ThermalMotion'][0] != 'None':
-                for id in rbObj['Ids']:
-                    rbAtmDict[id] += 'U'
-        # exclList will be 'fx' or 'fxu' if TLS used in RB
         Items = [G2G.wxID_ATOMSEDITINSERT,G2G.wxID_ATOMSEDITDELETE,
             G2G.wxID_ATOMSMODIFY,G2G.wxID_ATOMSTRANSFORM,G2G.wxID_MAKEMOLECULE,
             G2G.wxID_ATOMVIEWINSERT,G2G.wxID_ATOMMOVE,G2G.wxID_ADDHATOM]
@@ -9637,12 +9634,9 @@ at one of the following locations:
                 RBObj['ThermalMotion'][0] = 'TL'
             elif val == 'TLS':
                 RBObj['ThermalMotion'][0] = 'TLS'
-            elif val == 'None':
-                RBObj['ThermalMotion'][0] = 'None'
-            if val != 'None':
-                cia = data['General']['AtomPtrs'][3]
-                for i,Id in enumerate(RBObj['Ids']):
-                    data['Atoms'][AtLookUp[Id]][cia] = Ttype
+            cia = data['General']['AtomPtrs'][3]
+            for i,Id in enumerate(RBObj['Ids']):
+                data['Atoms'][AtLookUp[Id]][cia] = Ttype
             resId,vecId = None,None         #,spnId,None
             if resSelect is not None:
                 resId = resSelect.GetSelection()
@@ -9675,6 +9669,11 @@ at one of the following locations:
 
             thermSizer = wx.FlexGridSizer(0,9,5,5)
             model = RBObj['ThermalMotion']
+            #patch - remove 'None' as option
+            if model[0] == 'None':
+                model[0] = 'Uiso'
+                model[1][0] = 0.01
+            #end patch
             if model[0] == 'Uiso':
                 names = ['Uiso',]
             elif 'T' in model[0]:
@@ -9809,7 +9808,6 @@ at one of the following locations:
                 Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
                 Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
                 Ocheck.SetValue(RBObj['Orig'][1])
-                # TODO: does spin RB need orientation vector? Does need angle & fix vector = [0,0,1]?
                 topSizer.Add(Ocheck,0,WACV)
                 topSizer.Add((-1,-1))
                 Name = 'Origin'
@@ -10227,7 +10225,7 @@ at one of the following locations:
             fracRef.Bind(wx.EVT_CHECKBOX,OnRefFrac)
             fracSizer.Add(fracRef,0,WACV)
             resrbSizer.Add(fracSizer)
-            tchoice = ['None','Uiso','T','TL','TLS']
+            tchoice = ['Uiso','T','TL','TLS']
             thermSizer = wx.BoxSizer(wx.HORIZONTAL)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,WACV)
             thermSel = wx.ComboBox(RigidBodies,-1,value=RBObj['ThermalMotion'][0],choices=tchoice,
@@ -10237,13 +10235,11 @@ at one of the following locations:
             thermSizer.Add(thermSel,0,WACV)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,WACV)
             resrbSizer.Add(thermSizer)
-            if RBObj['ThermalMotion'][0] != 'None':
-                resrbSizer.Add(ThermDataSizer(RBObj,'Residue'))
+            resrbSizer.Add(ThermDataSizer(RBObj,'Residue'))
             dragSizer = wx.BoxSizer(wx.HORIZONTAL)
             dragSizer.Add(wx.StaticText(RigidBodies,wx.ID_ANY,'Draw mode after dragging the rigid body: '),0,WACV)
             RBObj['drawMode'] = RBObj.get('drawMode',DrawStyleChoice[4])
-            modeOpt = G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],
-                                             strLoc=RBObj, strKey='drawMode')
+            modeOpt = G2G.G2ChoiceButton(RigidBodies, DrawStyleChoice[1:],strLoc=RBObj,strKey='drawMode')
             dragSizer.Add(modeOpt)
             modeOpt.Enable(False) # not implemented yet
             G2frame.testRBObjSizers['fillMode'] = G2frame.testRBObjSizers.get('fillMode',False)
@@ -10254,6 +10250,11 @@ at one of the following locations:
 
         def VecrbSizer(RBObj,resIndx):
             '''Displays details for selected vector rigid body'''
+            def OnShowAx(event):
+                RBObj['showAxes'] = not RBObj['showAxes']
+                G2frame.selectRB['showAxes'] = RBObj['showAxes']
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnFrac(invalid,value,tc):
                 for Id in RBObj['Ids']:
                     if data['Atoms'][AtLookUp[Id]][cx+3]:
@@ -10275,6 +10276,10 @@ at one of the following locations:
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,-1,
                 'Name: '+RBObj['RBname']+'   '),0,WACV)
+            showAx = wx.CheckBox(RigidBodies,label='Show RB axes on plot?')
+            showAx.SetValue(RBObj['showAxes'])
+            showAx.Bind(wx.EVT_CHECKBOX,OnShowAx)
+            topLine.Add(showAx,0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             delRB.Bind(wx.EVT_BUTTON,OnDelVecRB)
@@ -10295,7 +10300,7 @@ at one of the following locations:
             fracRef.Bind(wx.EVT_CHECKBOX,OnRefFrac)
             fracSizer.Add(fracRef,0,WACV)
             vecrbSizer.Add(fracSizer)
-            tchoice = ['None','Uiso','T','TL','TLS']
+            tchoice = ['Uiso','T','TL','TLS']
             thermSizer = wx.BoxSizer(wx.HORIZONTAL)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,WACV)
             thermSel = wx.ComboBox(RigidBodies,-1,value=RBObj['ThermalMotion'][0],choices=tchoice,
@@ -10305,8 +10310,7 @@ at one of the following locations:
             thermSizer.Add(thermSel,0,WACV)
             thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,WACV)
             vecrbSizer.Add(thermSizer)
-            if RBObj['ThermalMotion'][0] != 'None':
-                vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
+            vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
             return vecrbSizer
 
         def OnVecSelect(event):
@@ -10394,6 +10398,7 @@ at one of the following locations:
                 return
             Indx.clear()
             rbObj = data['RBModels'][rbType][rbIndx]
+            rbObj['showAxes'] = rbObj.get('showAxes',False)
             Quad = rbObj['Orient'][0]
             data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             if rbType == 'Residue':
@@ -10409,6 +10414,7 @@ at one of the following locations:
                 G2frame.bottomSizer =  SpnrbSizer(rbObj,rbIndx)
             else: #Vector
                 G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
+                G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','OrientVec','symAxis','showAxes']}
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
                 G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)
@@ -10454,6 +10460,7 @@ at one of the following locations:
         vecSelect = None
         spnSelect = None
         rbSizer = wx.BoxSizer(wx.HORIZONTAL)
+        
         if 'Residue' in data['RBModels'] and len(data['RBModels']['Residue']):
             nobody = False
             resSizer = wx.BoxSizer(wx.VERTICAL)
@@ -10540,6 +10547,11 @@ at one of the following locations:
             spnSelect.Bind(wx.EVT_LISTBOX,OnSpnSelect)
             spnSizer.Add(spnSelect,0)
             rbSizer.Add(spnSizer)
+        try:
+            rbObj['showAxes'] = rbObj.get('showAxes',False)
+            G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','OrientVec','symAxis','showAxes']}
+        except:
+            G2frame.selectRB = {}
         mainSizer.Add(rbSizer,0,wx.EXPAND)
         G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
         G2frame.bottomSizer.Add(wx.StaticText(RigidBodies,label=' '))
@@ -10751,7 +10763,8 @@ at one of the following locations:
                     rbObj.update(data['testRBObj']['rbData']['Spin'][rbId])
                     del rbObj['rbPos']
                 else:
-                    rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'] = ['Uiso',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'][1][0] = 0.01    #Uiso default
                 i = 0
                 while True:     #find unique name
                     rbName = '%s:%d'%(rbObj['RBname'],i)
@@ -10768,6 +10781,7 @@ at one of the following locations:
                         rbObj[name] = [rbObj[name],]
                     rbObj['Radius'] = [[1.0,False],]
                 rbObj['symAxis'] = data['testRBObj']['symAxis']
+                rbObj['showAxes'] = False
                 data['RBModels'][rbType].append(copy.deepcopy(rbObj))
                 RBData[rbType][rbId]['useCount'] += 1
                 del data['testRBObj']
@@ -11028,7 +11042,7 @@ at one of the following locations:
                 set, so use data['testRBObj']['rbObj'].get('symAxis') to
                 access this so the default value is None.
                 '''
-                axis = (None,[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]
+                axis = ([1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]
                     )[event.GetEventObject().GetSelection()]
                 if axis:
                     axis = np.array(axis)/nl.norm(axis)
@@ -11177,7 +11191,7 @@ of the crystal structure.
                 mainSizer.Add(OriSizer1)
                 mainSizer.Add((5,5),0)
                 OriSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-                if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [0.,0.,0.,0.]
+                if 'OrientVec' not in rbObj: rbObj['OrientVec'] = [180.,0.,0.,1.]
                 rbObj['OrientVec'][0],V = G2mth.Q2AVdeg(rbObj['Orient'][0])
                 rbObj['OrientVec'][1:] = np.inner(Bmat,V)
                 # OriSizer2.Add(wx.StaticText(RigidBodies,label='Orientation azimuth: '),0,WACV)
@@ -11208,8 +11222,7 @@ of the crystal structure.
                 OriSizer4 = wx.BoxSizer(wx.HORIZONTAL)
                 OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
                 symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],RBdirlbl))[str(data['testRBObj']['symAxis'])]
-                choices = ['None']+RBdirlbl
-                symRadioSet = wx.RadioBox(RigidBodies,choices=choices)
+                symRadioSet = wx.RadioBox(RigidBodies,choices=RBdirlbl)
                 symRadioSet.SetStringSelection(symax)
                 symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
                 OriSizer4.Add(symRadioSet)
@@ -11265,7 +11278,7 @@ of the crystal structure.
                     ' All rigid body atoms will be added to structure.'),0)
                 misc['UpdateTable'] = None
                 mainSizer.Layout()
-#                G2plt.PlotStructure(G2frame,data,True)
+                G2plt.PlotStructure(G2frame,data,True)
                 RigidBodies.atomsGrid = None
                 return
 
@@ -11551,9 +11564,12 @@ of the crystal structure.
                     VBR = G2mth.prodQVQ(QuatA,VBR)
                     QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
                     QuatC = G2mth.prodQQ(QuatB,QuatA)
-                    rbObj['Orient'] = [QuatC,' ']
+                    rbObj['symAxis'] = [0,0,1]      #force to z-axis
+                    Q = G2mth.QsymAxis(QuatC,rbObj['symAxis'])
+                    rbObj['Orient'] = [Q,' ']
                     rbObj['AtomFract'] = [1.0,False]
-                    rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'] = ['Uiso',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    rbObj['ThermalMotion'][1][0] = 0.01    #Uiso default
                     SXYZ = []
                     TXYZ = []
                     rbObj['Torsions'] = []
@@ -11608,9 +11624,8 @@ of the crystal structure.
                 Ttype = 'I'
             for rbObj in RBObjs:
                 rbObj['ThermalMotion'][0] = parm
-                if parm != 'None':
-                    for i,Id in enumerate(rbObj['Ids']):
-                        data['Atoms'][AtLookUp[Id]][cia] = Ttype
+                for i,Id in enumerate(rbObj['Ids']):
+                    data['Atoms'][AtLookUp[Id]][cia] = Ttype
         dlg.Destroy()
         wx.CallAfter(FillRigidBodyGrid,True)
 

@@ -6703,10 +6703,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
 # next transform vector back to xtal coordinates & make new quaternion
         Q = drawingData['Quaternion']
         V = np.inner(Amat,V)
-        Qx = G2mth.AVdeg2Q(A[0],V)
-        Qy = G2mth.AVdeg2Q(A[1],V)
-        Q = G2mth.prodQQ(Q,Qx)
-        Q = G2mth.prodQQ(Q,Qy)
+        if A[0]:
+            Qx = G2mth.AVdeg2Q(A[0],V)
+            Q = G2mth.prodQQ(Q,Qx)
+        if A[1]:
+            Qy = G2mth.AVdeg2Q(A[1],V)
+            Q = G2mth.prodQQ(Q,Qy)
         drawingData['Quaternion'] = Q
 
     def SetRBRotationZ(newxy):
@@ -6730,10 +6732,12 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         Q = rbObj['Orient'][0]              #rotate RB to cart
         V = np.inner(Amat,V)
         V = -G2mth.prodQVQ(G2mth.invQ(Q),V)
-        Qx = G2mth.AVdeg2Q(A[0],V)
-        Qy = G2mth.AVdeg2Q(A[1],V)
-        Q = G2mth.prodQQ(Q,Qx)
-        Q = G2mth.prodQQ(Q,Qy)
+        if A[0]:
+            Qx = G2mth.AVdeg2Q(A[0],V)
+            Q = G2mth.prodQQ(Q,Qx)
+        if A[1]:
+            Qy = G2mth.AVdeg2Q(A[1],V)
+            Q = G2mth.prodQQ(Q,Qy)
         rbObj['Orient'][0] = Q
         SetRBText()
 
@@ -7347,6 +7351,10 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if drawingData['showABC']:
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)
+        if pageName == 'RB Models' and G2frame.selectRB.get('showAxes',False):
+            Q0 = G2frame.selectRB['Orient'][0]     #OrientVec?
+            Q = G2mth.QsymAxis(Q0,G2frame.selectRB['symAxis'])
+            RenderRBtriplet(G2frame.selectRB['Orig'][0],Q0,Q,Bmat)
         Backbones = {}
         BackboneColor = []
 #        glEnable(GL_BLEND)
@@ -7369,7 +7377,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             atColor = atmFade[iat]*np.array(CL)/255.
             if SymFade and atom[cs-1] != '1':
                 atColor *= .5
-            if drawingData['showRigidBodies'] and ci in rbAtmDict:
+            if drawingData['showRigidBodies'] and atom[ci] in rbAtmDict:
                 bndColor = Or/255.
             else:
                 bndColor = atColor

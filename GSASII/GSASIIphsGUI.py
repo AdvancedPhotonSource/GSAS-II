@@ -9873,6 +9873,11 @@ at one of the following locations:
         def SpnrbSizer(RBObj,spnIndx):
             '''Displays details for selected spinning rigid body'''
 
+            def OnShowAx(event):
+                RBObj['showAxes'] = not RBObj['showAxes']
+                G2frame.selectRB['showAxes'] = RBObj['showAxes']
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnDelSpnRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
@@ -10081,6 +10086,10 @@ at one of the following locations:
             Indx[simsel.GetId()] = 0
             simsel.Bind(wx.EVT_COMBOBOX,OnSymSel)
             topLine.Add(simsel,0,WACV)
+            showAx = wx.CheckBox(RigidBodies,label='Show RB axes on plot?')
+            showAx.SetValue(RBObj['showAxes'])
+            showAx.Bind(wx.EVT_CHECKBOX,OnShowAx)
+            topLine.Add(showAx,0,WACV)
             rbId = RBObj['RBId']
             if len(RBObj['nSH']) == 1:
                 delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
@@ -10122,6 +10131,11 @@ at one of the following locations:
 
         def ResrbSizer(RBObj,resIndx):
             '''Displays details for selected residue rigid body'''
+            
+            def OnShowAx(event):
+                RBObj['showAxes'] = not RBObj['showAxes']
+                G2frame.selectRB['showAxes'] = RBObj['showAxes']
+                G2plt.PlotStructure(G2frame,data)
             def OnTorsionRef(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
@@ -10171,6 +10185,10 @@ at one of the following locations:
             G2G.HorizontalLine(resrbSizer,RigidBodies)
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,-1,'Name: '+RBObj['RBname']+RBObj['numChain']+'   '),0,WACV)
+            showAx = wx.CheckBox(RigidBodies,label='Show RB axes on plot?')
+            showAx.SetValue(RBObj['showAxes'])
+            showAx.Bind(wx.EVT_CHECKBOX,OnShowAx)
+            topLine.Add(showAx,0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             delRB.Bind(wx.EVT_BUTTON,OnDelResRB)
@@ -10250,6 +10268,7 @@ at one of the following locations:
 
         def VecrbSizer(RBObj,resIndx):
             '''Displays details for selected vector rigid body'''
+            
             def OnShowAx(event):
                 RBObj['showAxes'] = not RBObj['showAxes']
                 G2frame.selectRB['showAxes'] = RBObj['showAxes']
@@ -10404,18 +10423,21 @@ at one of the following locations:
             if rbType == 'Residue':
                 G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+                G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','symAxis','showAxes']}
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
                 text = ''
                 for ish,pMax in enumerate(rbObj['Pmax']):
                     text += 'Shell %d: Pmax %.3f Pmin %.3f '%(ish,pMax,rbObj['Pmin'][ish])
                 G2frame.GetStatusBar().SetStatusText(text,1)
+                G2frame.selectRB = {item:rbObj[item] for item in ['Orient','symAxis','showAxes']}
+                G2frame.selectRB['Orig'] = [data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3],False]
                 data['Drawing']['viewPoint'][0] = data['Atoms'][AtLookUp[rbObj['Ids'][0]]][cx:cx+3]
                 G2frame.bottomSizer =  SpnrbSizer(rbObj,rbIndx)
             else: #Vector
                 G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
-                G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','OrientVec','symAxis','showAxes']}
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+                G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','symAxis','showAxes']}
                 G2frame.bottomSizer =  VecrbSizer(rbObj,rbIndx)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()

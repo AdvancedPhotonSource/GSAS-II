@@ -7352,7 +7352,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)
         if pageName == 'RB Models' and G2frame.selectRB.get('showAxes',False):
-            Q0 = G2frame.selectRB['Orient'][0]     #OrientVec?
+            Q0 = G2frame.selectRB['Orient'][0]
             Q = G2mth.QsymAxis(Q0,G2frame.selectRB['symAxis'])
             RenderRBtriplet(G2frame.selectRB['Orig'][0],Q0,Q,Bmat)
         Backbones = {}

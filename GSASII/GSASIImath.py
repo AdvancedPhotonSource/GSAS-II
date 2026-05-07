@@ -1484,7 +1484,7 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
                 S[0]*X[1]-S[1]*X[2]+S[7]*X[0]
             Umat = G2lat.U6toUij(U)
             Umat = np.inner(np.inner(QMat,Umat),QMat)
-            beta = np.inner(np.inner(Bmat.T,Umat),Bmat.T)
+            beta = np.inner(np.inner(Bmat,Umat),Bmat)
             Uout.append(['A',0.0,]+list(G2lat.UijtoU6(beta)*gvec))
         else:
             Uout.append(['N',])

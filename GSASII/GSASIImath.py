@@ -793,6 +793,7 @@ def MakeDrawAtom(data,atom,oldatom=None):
         ct,cs = [4,11]         #type & color
     atNum = generalData['AtomTypes'].index(atom[ct])
     atomInfo[cs] = list(generalData['Color'][atNum])
+    if atomInfo[1] == 'Q': atomInfo[cs-2] = 'balls & sticks'
     return atomInfo
 
 def GetAtomsById(atomData,atomLookUp,IdList):

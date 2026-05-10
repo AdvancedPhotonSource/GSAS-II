@@ -9637,14 +9637,14 @@ at one of the following locations:
             cia = data['General']['AtomPtrs'][3]
             for i,Id in enumerate(RBObj['Ids']):
                 data['Atoms'][AtLookUp[Id]][cia] = Ttype
-            resId,vecId = None,None         #,spnId,None
+            resId,vecId,spnId = None,None,None
             if resSelect is not None:
                 resId = resSelect.GetSelection()
             if vecSelect is not None:
                 vecId = vecSelect.GetSelection()
-            # if spnSelect:
-            #     spnId = spnSelect.GetSelection()
-            wx.CallAfter(FillRigidBodyGrid,True,vecId=vecId,resId=resId)    ##,spnId=spnId
+            if spnSelect:
+                spnId = spnSelect.GetSelection()
+            wx.CallAfter(FillRigidBodyGrid,True,vecId=vecId,resId=resId,spnId=spnId)
             G2plt.PlotStructure(G2frame,data)
 
         def ThermDataSizer(RBObj,rbType):
@@ -10427,7 +10427,7 @@ at one of the following locations:
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
                 text = ''
-                for ish,pMax in enumerate(rbObj['Pmax']):
+                for ish,pMax in enumerate(rbObj.get('Pmax',[])):
                     text += 'Shell %d: Pmax %.3f Pmin %.3f '%(ish,pMax,rbObj['Pmin'][ish])
                 G2frame.GetStatusBar().SetStatusText(text,1)
                 G2frame.selectRB = {item:rbObj[item] for item in ['Orient','symAxis','showAxes']}
@@ -10618,7 +10618,8 @@ at one of the following locations:
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()
             for x in sel:
-                RBObjs[x].update(copy.copy(sourceRB))   #NB: this duplicates the objects; not make independent copies!
+                RBObjs[x].update(sourceRB)   #NB: this duplicates the objects; not make independent copies!
+#                RBObjs[x].update(copy.copy(sourceRB))   #NB: this duplicates the objects; not make independent copies!
         G2plt.PlotStructure(G2frame,data)
         wx.CallAfter(FillRigidBodyGrid,True)
 

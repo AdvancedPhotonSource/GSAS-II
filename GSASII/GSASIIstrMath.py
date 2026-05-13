@@ -454,9 +454,8 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
     :returns: dict dFFdS of derivatives if ifDeriv = True
     '''
 
-    def MakePolar(Orient,QB):
-        QA = G2mth.invQ(Orient)       #rotates about chosen axis
-        Q = G2mth.prodQQ(QB,QA)         #matches plot operation
+    def MakePolar(Orient,symAxis):
+        Q = G2mth.QsymAxis(Orient,symAxis)
         M = np.inner(G2mth.Q2Mat(Q),Bmat)
         return G2lat.H2ThPh2(hkl,M)[1:]
 
@@ -476,18 +475,17 @@ def MakeSpHarmFF(HKL,Amat,Bmat,SHCdict,Tdata,hType,FFtables,ORBtables,BLtables,F
             atFlg.append(1.0)
             SHdat = SHCdict[iAt]
             symAxis = np.array(SHdat['symAxis'])
-            QB = G2mth.make2Quat(symAxis,np.array([0,0,1.]))[0]     #position obj polar axis
-            Th,Ph = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
+            Th,Ph = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],symAxis)
             if ifDeriv:
-                ThP,PhP = MakePolar([SHdat['Oa']+.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
+                ThP,PhP = MakePolar([SHdat['Oa']+.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],symAxis)
                 dp = 0.00001
-                ThPi,PhPi = MakePolar([SHdat['Oa'],SHdat['Oi']+dp,SHdat['Oj'],SHdat['Ok']],QB)
-                ThPj,PhPj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']+dp,SHdat['Ok']],QB)
-                ThPk,PhPk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']+dp],QB)
-                ThM,PhM = MakePolar([SHdat['Oa']-.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],QB)
-                ThMi,PhMi = MakePolar([SHdat['Oa'],SHdat['Oi']-dp,SHdat['Oj'],SHdat['Ok']],QB)
-                ThMj,PhMj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']-dp,SHdat['Ok']],QB)
-                ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],QB)
+                ThPi,PhPi = MakePolar([SHdat['Oa'],SHdat['Oi']+dp,SHdat['Oj'],SHdat['Ok']],symAxis)
+                ThPj,PhPj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']+dp,SHdat['Ok']],symAxis)
+                ThPk,PhPk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']+dp],symAxis)
+                ThM,PhM = MakePolar([SHdat['Oa']-.0001,SHdat['Oi'],SHdat['Oj'],SHdat['Ok']],symAxis)
+                ThMi,PhMi = MakePolar([SHdat['Oa'],SHdat['Oi']-dp,SHdat['Oj'],SHdat['Ok']],symAxis)
+                ThMj,PhMj = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj']-dp,SHdat['Ok']],symAxis)
+                ThMk,PhMk = MakePolar([SHdat['Oa'],SHdat['Oi'],SHdat['Oj'],SHdat['Ok']-dp],symAxis)
             QR = np.repeat(twopi*np.sqrt(4.*SQ),reshape)     #refl Q for Bessel fxn
             FFR[:,iAt] = 0.
             ishl = 0

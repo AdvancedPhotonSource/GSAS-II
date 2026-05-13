@@ -1425,7 +1425,7 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
             Cart[seq[3]] = prodQVQ(QuatA,(Cart[seq[3]]-Cart[seq[1]]))+Cart[seq[1]]
         if RBObj.get('Invert',False):
             Cart *= -1.
-    elif RBType == 'Spin':
+    elif RBType == 'Spin':      #applies only to spin RB center
         Cart = np.zeros(3)
         XYZ = [np.array(RBObj['Orig'][0]),]
         return XYZ,Cart
@@ -6003,7 +6003,10 @@ import scipy.cluster.hierarchy as SCH
 ################################################################################
 
 def Cart2Polar(X,Y,Z):
-    ''' convert Cartesian to polar coordinates in deg
+    ''' convert Cartesian X,Y,Z to polar coordinates in deg
+    R - radius, 0<=Az<=360: azimuth angle from X-axis, 
+    0<=Pl<=180: polar angle from Z-axis
+    All are same length arrays
     '''
 
     R = np.sqrt(X**2+Y**2+Z**2)
@@ -6012,7 +6015,10 @@ def Cart2Polar(X,Y,Z):
     return R,Az,Pl
 
 def Polar2Cart(R,Az,Pl):
-    '''Convert polar angles in deg to Cartesian coordinates
+    '''Convert polar vector in deg to Cartesian coordinates
+    R - radius, 0<=Az<=360: azimuth angle from X-axis, 
+    0<=Pl<=180: polar angle from Z-axis
+    All are same length arrays
     '''
 
     X = R*sind(Pl)*cosd(Az)

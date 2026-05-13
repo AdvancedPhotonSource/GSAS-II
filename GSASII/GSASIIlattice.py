@@ -2979,8 +2979,8 @@ def SHarmcal(SytSym,SHFln,psi,gam):
 
     :param str SytSym: site symmetry - only looking for cubics
     :param dict SHFln: spherical harmonics coefficients; key has L & M
-    :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
-    :param float/array gam: Polar coordinate 0<= Ph <= 180
+    :param float/array psi: Azimuthal coordinate 0 <= psi <= 360
+    :param float/array gam: Polar coordinate 0<= gam <= 180
 
     :returns array SHVal: spherical harmonics array for psi,gam values
     '''
@@ -3000,8 +3000,8 @@ def KslCalc(trm,psi,gam,ifDerv=False):
     '''Compute one angular part term in spherical harmonics
 
     :param str trm:sp. harm term name in the form of 'C(l,m)' or 'C(l,m)c' for cubic
-    :param float/array psi: Azimuthal coordinate 0 <= Th <= 360
-    :param float/array gam: Polar coordinate 0<= Ph <= 180
+    :param float/array psi: Azimuthal coordinate 0 <= psi <= 360
+    :param float/array gam: Polar coordinate 0<= gam <= 180
 
     :returns array Ksl: spherical harmonics angular part for psi,gam pairs
     '''
@@ -3073,14 +3073,14 @@ def CubicSHarm(L,M,Th,Ph):
         else:
             klm = 0.25*np.sqrt(11.0)*SphHarmAng(6,2,1,Th,Ph)
             klm -= 0.25*np.sqrt(5.0)*SphHarmAng(6,6,1,Th,Ph)
-    elif L == 7:
+    elif L == 7:    #Th+45.?
         klm = 0.5*np.sqrt(13./6.)*SphHarmAng(7,2,-1,Th,Ph)
         klm += 0.5*np.sqrt(11./6.)*SphHarmAng(7,6,-1,Th,Ph)
     elif L == 8:
         klm = 0.125*np.sqrt(33.)*SphHarmAng(8,0,1,Th,Ph)
         klm += 0.25*np.sqrt(7./3.)*SphHarmAng(8,4,1,Th,Ph)
         klm += 0.125*np.sqrt(65./3.)*SphHarmAng(8,8,1,Th,Ph)
-    elif L == 9:
+    elif L == 9:    #Th+45.?
         if M == 1:
             klm = 0.25*np.sqrt(3.)*SphHarmAng(9,2,-1,Th,Ph)
             klm -= 0.25*np.sqrt(13.)*SphHarmAng(9,6,-1,Th,Ph)

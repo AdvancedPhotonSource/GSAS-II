@@ -7425,12 +7425,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                         useAtColor = SpnData.get('useAtColor',True)
                         symAxis = np.array(SpnData.get('symAxis',[0,0,1]))
                         Npsi,Ngam = 90,45 
-                        # QA = G2mth.invQ(SpnData['Orient'][0])       #rotate about chosen axis
-                        # QB = G2mth.make2Quat(np.array([0,0,1.]),symAxis)[0]     #position obj polar axis
                         Q = G2mth.invQ(G2mth.QsymAxis(SpnData['Orient'][0],symAxis))
-                        # QP = G2mth.AVdeg2Q(360./Npsi,np.array([0,0,1.])) #this shifts by 1 azimuth pixel
-                        # Q = G2mth.prodQQ(QB,QA)         #matches LS operation
-                        # Q = G2mth.prodQQ(Q,QP)
                         PSI,GAM = np.mgrid[0:Npsi,0:Ngam]   #[azm,pol]
                         PSI = PSI.flatten()*360./Npsi  #azimuth 0-360 ncl
                         GAM = GAM.flatten()*180./Ngam  #polar 0-180 incl

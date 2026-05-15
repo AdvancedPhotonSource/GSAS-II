@@ -80,7 +80,10 @@ tutorialIndex = (
     ['SimpleMagnetic', 'SimpleMagnetic.htm',"Simple Magnetic Structure Analysis",
      '''Analysis of a simple antiferromagnet and a simple ferromagnet from CW neutron powder data'''],
      
-    ['Magnetic-I', 'Magnetic Structures-I.htm',"Magnetic Structure Analysis-I",
+    ['RegisterBilbao', 'RegisterBilbao.html',"Register for access to the Bilbao Crystallographic Server",
+     '''Describes how to register for the Bilbao Crystallographic Server and then save the registration info in GSAS-II'''],
+
+     ['Magnetic-I', 'Magnetic Structures-I.htm',"Magnetic Structure Analysis-I",
      '''Analysis of a simple antiferromagnet using Bilbao k-SUBGROUPSMAG from CW neutron powder data'''],
      
     ['Magnetic-II', 'Magnetic-II.htm',"Magnetic Structure Analysis-II",

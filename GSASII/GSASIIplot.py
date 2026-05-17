@@ -7441,6 +7441,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                                     if useAtColor:
                                         atcolor = atColor[ish]
                                     P = G2lat.SHarmcal(SytSym,SHC,PSIp,GAMp).reshape((Npsi,Ngam))
+                                    P = np.roll(P,22,0)     #properly position texture map on sphere
                                     SpnData['Pmax'][ish] = np.max(P)
                                     SpnData['Pmin'][ish] = np.min(P)
                                     if np.min(P) < np.max(P):

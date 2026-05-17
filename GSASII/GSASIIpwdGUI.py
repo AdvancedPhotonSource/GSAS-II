@@ -875,6 +875,11 @@ def UpdatePeakGrid(G2frame, data):
                         break
                     S = File.readline()
                 File.close()
+        except Exception as msg:
+            G2G.G2MessageBox(G2frame,
+                    'Error reading file. See console for more info',
+                    'Read error')
+            print('File read error:\n',msg)
         finally:
             dlg.Destroy()
         data = {'peaks':peaks,'sigDict':{}}
@@ -896,7 +901,8 @@ def UpdatePeakGrid(G2frame, data):
                 for item in data:
                     if item == 'peaks':
                         for pk in data[item]:
-                            File.write(str(pk)+'\n')
+                            pk = ', '.join([str(i) for i in pk]) # remove numpy data types from values
+                            File.write(f'[{pk}]\n')
                 File.close()
                 print ('PWDR peaks list saved to: '+filename)
         finally:

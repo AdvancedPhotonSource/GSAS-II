@@ -1283,10 +1283,10 @@ def UpdateMCSAxyz(Bmat,MCSA):
             RBRes = MCSA['rbData'][model['Type']][model['RBId']]
             Pos = np.array(model['Pos'][0])
             Ori = np.array(model['Ori'][0])
-            symAxis = RBRes.get('symAxis',[0,0,1])
             Qori = AVdeg2Q(Ori[0],Ori[1:])
-            Q = QsymAxis(Qori,symAxis)
             if model['Type'] == 'Vector':
+                symAxis = RBRes.get('symAxis',[0,0,1])
+                Qori = QsymAxis(Qori,symAxis)
                 vecs = RBRes['rbVect']
                 mags = RBRes['VectMag']
                 Cart = np.zeros_like(vecs[0])
@@ -1300,7 +1300,7 @@ def UpdateMCSAxyz(Bmat,MCSA):
             if model['MolCent'][1]:
                 Cart -= model['MolCent'][0]
             for i,x in enumerate(Cart):
-                xyz.append(np.inner(Bmat,prodQVQ(Q,x))+Pos)
+                xyz.append(np.inner(Bmat,prodQVQ(Qori,x))+Pos)
                 atType = RBRes['rbTypes'][i]
                 atTypes.append(atType)
                 iatm += 1
@@ -1430,7 +1430,7 @@ def UpdateRBXYZ(Bmat,RBObj,RBData,RBType):
         XYZ = [np.array(RBObj['Orig'][0]),]
         return XYZ,Cart
     # if symmetry axis is defined, place symmetry axis along quaternion
-    RBRes['symAxis'] = RBRes.get('symAxis',[0,0,1])
+    RBRes['symAxis'] = RBRes.get('symAxis',None)
     Q = QsymAxis(RBObj['Orient'][0],RBRes['symAxis'])
     XYZ = np.zeros_like(Cart)
     for i,xyz in enumerate(Cart):
@@ -1453,7 +1453,7 @@ def UpdateRBUIJ(Bmat,Cart,RBObj):
 
     '''
     # if symmetry axis is defined, place symmetry axis along quaternion
-    Q = QsymAxis(RBObj['Orient'][0],RBObj['symAxis'])
+    Q = QsymAxis(RBObj['Orient'][0],RBObj.get('symAxis',None))
     QMat = Q2Mat(Q)
     g = nl.inv(np.inner(Bmat,Bmat))
     gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
@@ -5739,7 +5739,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                         Cart += vec*mag
                 elif parmDict[pfx+'Type'] == 'Residue':
                     RBRes = RBdata['Residue'][parmDict[pfx+'RBId']]
-                    symAxis = RBRes.get('symAxis',[0,0,1])
+                    symAxis = None
                     Cart = np.array(RBRes['rbXYZ'])
                     for itor,seq in enumerate(RBRes['rbSeq']):
                         QuatA = AVdeg2Q(parmDict[pfx+'Tor'+str(itor)],Cart[seq[0]]-Cart[seq[1]])

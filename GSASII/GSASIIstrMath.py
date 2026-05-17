@@ -305,9 +305,8 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+'RBVU:'+rbsx] += dFdvDict[pfx+'AUiso:'+str(AtLookup[atId])]
 
     for irb,RBObj in enumerate(RBModels.get('Residue',[])):
-        symAxis = RBObj.get('symAxis')
         Q0 = RBObj['Orient'][0]
-        Q = G2mth.QsymAxis(Q0,symAxis)
+        Q = Q0
         Qmat = G2mth.Q2Mat(Q)
         jrb = RRBIds.index(RBObj['RBId'])
         torData = RBData['Residue'][RBObj['RBId']]['rbSeq']
@@ -335,11 +334,11 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
                 dFdvDict[pfx+name+rbsx] += dFdvDict[pfx+atxIds[i]+str(atNum)]
             for iv in range(4):
                 Q0[iv] -= dx
-                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
+                XYZ1 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
                 Q0[iv] += 2.*dx
-                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q),symAxis)
+                XYZ2 = G2mth.RotateRBXYZ(Bmat,Cart,G2mth.normQ(Q))
                 Q0[iv] -= dx
-                dXdO = (XYZ2[ia]-XYZ1[ia])/(2.*dx)
+                dXdO = (XYZ2[ia]-XYZ1[ia])/(4.*dx)
                 for ix in [0,1,2]:
                     dFdvDict[pfx+'RBR'+OIds[iv]+rbsx] += dXdO[ix]*dFdvDict[pfx+atxIds[ix]+str(atNum)]
             X = G2mth.prodQVQ(Q,Cart[ia])

@@ -9857,17 +9857,18 @@ at one of the following locations:
             sytsymtxt = wx.StaticText(RigidBodies,label='%s site symmetry: %s, multiplicity: %d '%(Name,Sytsym,Mult))
             rbSizer.Add(topSizer)
             rbSizer.Add(sytsymtxt)
-            choices = [' x ',' y ',' z ','x+y','x+y+z']
-            RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
-            try:
-                symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
-            except KeyError:
-                symax = ' z '
-            symRadioSet = wx.RadioBox(RigidBodies,choices=choices,label='RB polar axis is aligned along:')
-            symRadioSet.SetStringSelection(symax)
-            symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
-            Indx[symRadioSet.GetId()] = rbId
-            rbSizer.Add(symRadioSet)
+            if rbType != 'Residue':
+                choices = [' x ',' y ',' z ','x+y','x+y+z']
+                RBObj['symAxis'] = RBObj.get('symAxis',[0,0,1])   #set default as 'z'
+                try:
+                    symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
+                except KeyError:
+                    symax = ' z '
+                symRadioSet = wx.RadioBox(RigidBodies,choices=choices,label='RB polar axis is aligned along:')
+                symRadioSet.SetStringSelection(symax)
+                symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+                Indx[symRadioSet.GetId()] = rbId
+                rbSizer.Add(symRadioSet)
             return rbSizer
 
         def SpnrbSizer(RBObj,spnIndx):
@@ -10194,11 +10195,7 @@ at one of the following locations:
             delRB.Bind(wx.EVT_BUTTON,OnDelResRB)
             Indx[delRB.GetId()] = rbId
             topLine.Add(delRB,0,WACV)
-            choices = [' x ',' y ',' z ','x+y','x+y+z']
-            try:
-                lbl = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(RBObj['symAxis'])]
-            except KeyError:
-                lbl = ' z '
+            lbl = ' z '
             topLine.Add(wx.StaticText(RigidBodies,-1,
                 '   Rigid body {} axis is aligned along oriention vector'.format(lbl)),0,WACV)
             try:
@@ -10423,7 +10420,7 @@ at one of the following locations:
             if rbType == 'Residue':
                 G2frame.GetStatusBar().SetStatusText('Alt RB: drag RB, ALT MB: Z rotate RB, ALT LB: Q rotate RB',1)
                 data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
-                G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','symAxis','showAxes']}
+                G2frame.selectRB = {item:rbObj[item] for item in ['Orig','Orient','showAxes']}
                 G2frame.bottomSizer =  ResrbSizer(rbObj,rbIndx)
             elif rbType == 'Spin':
                 text = ''
@@ -11587,9 +11584,7 @@ of the crystal structure.
                     VBR = G2mth.prodQVQ(QuatA,VBR)
                     QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
                     QuatC = G2mth.prodQQ(QuatB,QuatA)
-                    rbObj['symAxis'] = [0,0,1]      #force to z-axis
-                    Q = G2mth.QsymAxis(QuatC,rbObj['symAxis'])
-                    rbObj['Orient'] = [Q,' ']
+                    rbObj['Orient'] = [QuatC,' ']
                     rbObj['AtomFract'] = [1.0,False]
                     rbObj['ThermalMotion'] = ['Uiso',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
                     rbObj['ThermalMotion'][1][0] = 0.01    #Uiso default

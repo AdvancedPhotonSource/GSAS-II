@@ -7353,7 +7353,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             RenderUnitVectors(x,y,z)
         if pageName == 'RB Models' and G2frame.selectRB.get('showAxes',False):
             Q0 = G2frame.selectRB['Orient'][0]
-            Q = G2mth.QsymAxis(Q0,G2frame.selectRB['symAxis'])
+            Q = G2mth.QsymAxis(Q0,G2frame.selectRB.get('symAxis',None))
             RenderRBtriplet(G2frame.selectRB['Orig'][0],Q0,Q,Bmat)
         Backbones = {}
         BackboneColor = []
@@ -7599,6 +7599,7 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         if len(testRBObj) and pageName == 'RB Models':
             # plot a test rigid body as ball & [green] sticks when adding the RB into cell
             XYZ = G2mth.UpdateRBXYZ(Bmat,testRBObj['rbObj'],testRBObj['rbData'],testRBObj['rbType'])[0]
+            symAxis = None
             if testRBObj['rbType'] != 'Spin':
                 rbBonds = FindPeaksBonds(XYZ)
             for ind,[x,y,z] in enumerate(XYZ):
@@ -7620,8 +7621,9 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 if testRBObj['rbType'] != 'Spin':
                     RenderBonds(x,y,z,rbBonds[ind],0.03,Gr)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
+                symAxis = testRBObj['symAxis']
             Q0 = testRBObj['rbObj']['Orient'][0]
-            Q = G2mth.QsymAxis(Q0,testRBObj['symAxis'])
+            Q = G2mth.QsymAxis(Q0,symAxis)
             RenderRBtriplet(testRBObj['rbObj']['Orig'][0],Q0,Q,Bmat)
         if len(mcsaModels) > 1 and pageName == 'MC/SA':             #skip the default MD entry
             for ind,[x,y,z] in enumerate(mcsaXYZ):

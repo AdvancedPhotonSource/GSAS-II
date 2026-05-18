@@ -3074,19 +3074,19 @@ def CubicSHarm(L,M,Th,Ph):
             klm = 0.25*np.sqrt(11.0)*SphHarmAng(6,2,1,Th,Ph)
             klm -= 0.25*np.sqrt(5.0)*SphHarmAng(6,6,1,Th,Ph)
     elif L == 7:    #Th+45.?
-        klm = 0.5*np.sqrt(13./6.)*SphHarmAng(7,2,-1,Th,Ph)
-        klm += 0.5*np.sqrt(11./6.)*SphHarmAng(7,6,-1,Th,Ph)
+        klm = 0.5*np.sqrt(13./6.)*SphHarmAng(7,2,-1,Th+45.,Ph)
+        klm += 0.5*np.sqrt(11./6.)*SphHarmAng(7,6,1,Th+45.,Ph)
     elif L == 8:
         klm = 0.125*np.sqrt(33.)*SphHarmAng(8,0,1,Th,Ph)
         klm += 0.25*np.sqrt(7./3.)*SphHarmAng(8,4,1,Th,Ph)
         klm += 0.125*np.sqrt(65./3.)*SphHarmAng(8,8,1,Th,Ph)
     elif L == 9:    #Th+45.?
         if M == 1:
-            klm = 0.25*np.sqrt(3.)*SphHarmAng(9,2,-1,Th,Ph)
-            klm -= 0.25*np.sqrt(13.)*SphHarmAng(9,6,-1,Th,Ph)
+            klm = 0.25*np.sqrt(3.)*SphHarmAng(9,2,-1,Th+45.,Ph)
+            klm -= 0.25*np.sqrt(13.)*SphHarmAng(9,6,1,Th+45.,Ph)
         else:
-            klm = 0.5*np.sqrt(17./6.)*SphHarmAng(9,4,-1,Th,Ph)
-            klm -= 0.5*np.sqrt(7./6.)*SphHarmAng(9,8,-1,Th,Ph)
+            klm = 0.5*np.sqrt(17./6.)*SphHarmAng(9,4,-1,Th+45.,Ph)
+            klm -= 0.5*np.sqrt(7./6.)*SphHarmAng(9,8,1,Th+45.,Ph)
     elif L == 10:
         if M == 1:
             klm = 0.125*np.sqrt(65./6.)*SphHarmAng(10,0,1,Th,Ph)

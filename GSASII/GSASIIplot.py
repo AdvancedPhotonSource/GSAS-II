@@ -7462,13 +7462,13 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
                 else:   #not a Q atom
                     #### put deformation texture on sphere here
                     if atom[ci] in deformationData:
-                        defCtrls = deformationData[-ci]
+                        defCtrls = deformationData[-atom[ci]]
                         if defCtrls.get('showDef',False) and defCtrls['Radial'] == 'Slater':
                             useAtColor = defCtrls.get('atColor',True) 
                             atcolor = None
                             if useAtColor:
                                 atcolor = atColor*255
-                            defParms = deformationData[ci]
+                            defParms = deformationData[atom[ci]]
                             SytSym = G2spc.SytSym(atom[cx:cx+3],SGData)[0]
                             SHC = defParms[0][1]
                             SHC = {item.replace('D','C'):SHC[item] for item in SHC if item not in ['Ne','kappa']}

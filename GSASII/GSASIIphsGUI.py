@@ -12313,7 +12313,8 @@ of the crystal structure.
                         for row in range(G2frame.PawleyRefl.GetNumberRows()): PawleyPeaks[row][c]=True
                     else:
                         for row in range(G2frame.PawleyRefl.GetNumberRows()): PawleyPeaks[row][c]=False
-                wx.CallAfter(FillPawleyReflectionsGrid)
+                #wx.CallAfter(FillPawleyReflectionsGrid)
+                G2frame.PawleyRefl.ForceRefresh()
 
         def KeyEditPawleyGrid(event):
             colList = G2frame.PawleyRefl.GetSelectedCols()

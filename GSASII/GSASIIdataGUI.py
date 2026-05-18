@@ -4337,8 +4337,9 @@ If you continue from this point, it is quite likely that all intensity computati
                 start = GetGPXtreeItemId(self,self.root,nameParent)
             Id = GetGPXtreeItemId(self,start,name)
             #breakpoint()
-            self.GPXtree.SelectItem(Id)
-            SelectDataTreeItem(self,Id)
+            if Id:
+                self.GPXtree.SelectItem(Id)
+                SelectDataTreeItem(self,Id)
         Id = self.GPXtree.GetSelection()
         parent = self.GPXtree.GetItemParent(Id)
         name = self.GPXtree.GetItemText(Id)

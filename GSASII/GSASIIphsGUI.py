@@ -1529,6 +1529,7 @@ def SetDrawingDefaults(drawingData):
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,
             'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]],
+            'Line':[[0,0,1.],False,False,1.0,[255,255,0]],
             'peakMoveView':True,'PeakDistRadius':0.0,'showVoids':False,'showMap':False,
             'atomsExpandRadius':5.,'atomsDistRadius':2.5,'Voids':[],
             'VPPeakDistRad':0.,'VPatomsExpandRad':0.,'VPatomsDistRad':0.,
@@ -7356,7 +7357,8 @@ at one of the following locations:
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,'contourMax':1.0,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,'SymFade':False,
-            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
+            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]],
+            'Line':[[0,0,1],False,False,1.0,[255,255,0]]}
         V0 = np.array([0,0,1])
         V = np.inner(Amat,V0)
         V /= np.sqrt(np.sum(V**2))
@@ -7389,8 +7391,8 @@ at one of the following locations:
             drawingData['sliceSize'] = 5.0
         if 'contourColor' not in drawingData:
             drawingData['contourColor'] = 'RdYlGn'
-        if 'Plane' not in drawingData:
-            drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
+        drawingData['Plane'] = drawingData.get('Plane',[[0,0,1.],False,False,0.0,[255,255,0]])
+        drawingData['Line'] = drawingData.get('Line',[[0,0,1.],False,False,1.0,[255,255,0]])
         if 'magMult' not in drawingData:
             drawingData['magMult'] = 1.0
         if 'SymFade' not in drawingData:
@@ -9046,6 +9048,61 @@ at one of the following locations:
             mapSizer.Add(DistanceSettingSizer(drawingData,
                 'PeakDistRadius','atomsExpandRadius','atomsDistRadius'),0,wx.LEFT,20)
             return mapSizer
+        
+        def LineSizer():
+            
+            def OnLine(event):
+                event.Skip()
+                vals = line.GetValue().split()
+                try:
+                    xyz = [float(vals[i]) for i in range(3)]
+                    if not any(xyz):       #can't be all zeros!
+                        raise ValueError
+                except (ValueError,IndexError):
+                    xyz = drawingData['Line'][0]
+                drawingData['Line'][0] = xyz
+                line.SetValue('%5.3f %5.3f %5.3f'%(xyz[0],xyz[1],xyz[2]))
+                G2plt.PlotStructure(G2frame,data)
+
+            def OnShowLine(event):
+                drawingData['Line'][1] = showLine.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+            
+            def OnShowBoth(event):
+                drawingData['Line'][2] = showBoth.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+
+            def OnLength(invalid,value,tc):
+                G2plt.PlotStructure(G2frame,data)
+
+            lineSizer = wx.BoxSizer(wx.VERTICAL)
+            lineSizer1 = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer1.Add(wx.StaticText(drawOptions,label=' Line from view point: '),0,WACV)
+            X = drawingData['Line'][0]
+            line = wx.TextCtrl(drawOptions,value='%5.3f %5.3f %5.3f'%(X[0],X[1],X[2]),
+                style=wx.TE_PROCESS_ENTER,size=(140,20))
+            line.Bind(wx.EVT_TEXT_ENTER,OnLine)
+            line.Bind(wx.EVT_KILL_FOCUS,OnLine)
+            lineSizer1.Add(line,0,WACV)
+            showLine = wx.CheckBox(drawOptions,label=' Show line?')
+            showLine.SetValue(drawingData['Line'][1])
+            showLine.Bind(wx.EVT_CHECKBOX, OnShowLine)
+            lineSizer1.Add(showLine,0,WACV)
+            showBoth = wx.CheckBox(drawOptions,label=' Extend negative?')
+            showBoth.SetValue(drawingData['Line'][2])
+            showBoth.Bind(wx.EVT_CHECKBOX, OnShowBoth)
+            lineSizer1.Add(showBoth,0,WACV)
+            lineSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer2.Add(wx.StaticText(drawOptions,label=' Length multiplier: '),0,WACV)
+            length = G2G.ValidatedTxtCtrl(drawOptions,drawingData['Line'],3,nDig=(10,2),OnLeave=OnLength)
+            lineSizer2.Add(length,0,WACV)
+            lineSizer2.Add(wx.StaticText(drawOptions,-1,' Line color: '),0,WACV)
+            lineColor = G2G.setColorButton(drawOptions,drawingData['Line'], 4,
+                G2plt.PlotStructure,[G2frame,data])
+            lineSizer2.Add(lineColor,0,WACV)
+            lineSizer.Add(lineSizer1)
+            lineSizer.Add(lineSizer2)
+            return lineSizer
 
         def PlaneSizer():
 
@@ -9155,6 +9212,7 @@ at one of the following locations:
             mainSizer.Add(MapSizer())
         G2G.HorizontalLine(mainSizer,drawOptions)
         mainSizer.Add(PlaneSizer(),0,)
+        mainSizer.Add(LineSizer(),0,)
 
         SetPhaseWindow(drawOptions,mainSizer)
 

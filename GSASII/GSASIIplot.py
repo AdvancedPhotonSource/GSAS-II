@@ -7076,6 +7076,23 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
         GL.glDisable(GL.GL_COLOR_MATERIAL)
         GL.glShadeModel(GL.GL_SMOOTH)
 
+    def RenderLine(X0,X,color):
+        X0= np.array(X0)
+        X = np.array(X)
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(1)
+        GL.glColor3fv(color)
+        GL.glPushMatrix()
+        GL.glBegin(GL.GL_LINES)
+        GL.glVertex3fv(X0)
+        GL.glVertex3fv(X0+X)
+        GL.glEnd()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glPopMatrix()
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glShadeModel(GL.GL_SMOOTH)
+
     def RenderPolyhedra(x,y,z,Faces,color):
         GL.glShadeModel(GL.GL_FLAT)
         GL.glPushMatrix()
@@ -7646,11 +7663,18 @@ def PlotStructure(G2frame,data,firstCall=False,pageCallback=None):
             #     RenderSphere(x,y,z,.05,(0.,0.,1.),True)
         if drawingData['unitCellBox']:
             RenderBox()
-            if drawingData['Plane'][1]:
-                H,phase,stack,phase,color = drawingData['Plane']
-                Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
-                for plane in Planes:
-                    RenderPlane(plane,color)
+        if drawingData['Plane'][1]:
+            H,phase,stack,phase,color = drawingData['Plane']
+            Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
+            for plane in Planes:
+                RenderPlane(plane,color)
+        if drawingData['Line'][1]:
+            X,phase,both,length,color = drawingData['Line']
+            X0 = np.array(drawingData['viewPoint'][0])
+            X = np.array(X)*length
+            RenderLine(X0,X,color)
+            if both:
+                RenderLine(X0,-X,color)
         if drawingData.get('showSlice',''):      #must be done last to properly show things behind as faded
             global contourSet
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there

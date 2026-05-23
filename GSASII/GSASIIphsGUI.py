@@ -11298,12 +11298,15 @@ of the crystal structure.
                 mainSizer.Add(OriSizer3)
                 mainSizer.Add((5,5),0)
                 OriSizer4 = wx.BoxSizer(wx.HORIZONTAL)
-                OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
-                symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],RBdirlbl))[str(data['testRBObj']['symAxis'])]
-                symRadioSet = wx.RadioBox(RigidBodies,choices=RBdirlbl)
-                symRadioSet.SetStringSelection(symax)
-                symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
-                OriSizer4.Add(symRadioSet)
+                if data['testRBObj']['rbType'] == 'Vector':
+                    OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis: '),0, WACV)
+                    symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],RBdirlbl))[str(data['testRBObj']['symAxis'])]
+                    symRadioSet = wx.RadioBox(RigidBodies,choices=RBdirlbl)
+                    symRadioSet.SetStringSelection(symax)
+                    symRadioSet.Bind(wx.EVT_RADIOBOX, OnSymRadioSet)
+                    OriSizer4.Add(symRadioSet)
+                else:
+                    OriSizer4.Add(wx.StaticText(RigidBodies,label='Rigid body symmetry axis is z'),0, WACV)
                 Invert = G2G.G2CheckBox(RigidBodies,'Invert',rbObj,'Invert',OnInvert)
                 OriSizer4.Add(Invert,0,WACV)
                 mainSizer.Add(OriSizer4)

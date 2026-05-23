@@ -3244,6 +3244,7 @@ create a Vector or Residue rigid body.
             refAtmSizer = wx.BoxSizer(wx.HORIZONTAL)
             choices = [' x ',' y ',' z ','x+y','x+y+z']
             rbData['symAxis'] = rbData.get('symAxis',[0,0,1])   #set default as 'z', if needed
+            if rbData['symAxis'] == None: rbData['symAxis'] = 'z'
             symax = dict(zip([str(x) for x in [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,1,1]]],choices))[str(rbData['symAxis'])]
             if rbData['useCount']:
                 refAtmSizer.Add(wx.StaticText(VectorRBDisplay,-1,

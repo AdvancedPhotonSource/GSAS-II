@@ -2193,6 +2193,7 @@ def ApplyModulation(data,tau):
 
 def patchIsoDisp(ISO):
     '''patch: look for older ISODISTORT imports (<Nov 2021)'''
+    if 'IsoVarList' not in ISO: return
     print('''
 ======================================================================
 Warning: The ISODISTORT modes were read before the importer

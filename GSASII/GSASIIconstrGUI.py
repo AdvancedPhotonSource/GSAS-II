@@ -4102,8 +4102,52 @@ def ShowIsoDistortCalc(G2frame,phase=None):
     subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'GSAS-II\nname'))
     subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
     for i in range(4): subSizer2.Add((-1,5))
+    # ISODISTORT magnetic modes
+    if 'MagVarList' in ISO:
+        deltaList = []
+        parmDict,varyList = G2frame.MakeLSParmDict()
+        for gv,Ilbl,pval in zip(ISO['G2VarList'],ISO['MagVarList'],ISO['BaseMag']):
+            var = gv.varname()
+            albl = Ilbl[:Ilbl.rfind('_')]
+            #pval = ISO['BaseMag'][albl]
+            if var in parmDict:
+                cval = parmDict[var][0]
+            else:
+                #dlg.EndModal(wx.ID_CANCEL)
+                #G2frame.ErrorDialog('Atom not found',"No value found for parameter "+str(var))
+                #return
+                print(f"No value found for parameter {var} assuming 0")
+                cval = 0
+            deltaList.append(cval-pval)
+        modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
+        for lbl,delocc,var,val,norm,G2mode in zip(
+                ISO['MagVarList'],deltaList,
+                ISO['MagModeList'],modeVals,ISO['NormList'],ISO['G2MagModeList']):
+            if str(G2mode) in constrDict:
+                ch = G2G.HelpButton(panel2,fmtHelp(constrDict[str(G2mode)],var))
+                subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
+            else:
+                subSizer2.Add((-1,-1))
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+            try:
+                value = G2fil.FormatSigFigs(delocc)
+            except TypeError:
+                value = str(delocc)
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+            subSizer1.Add((10,-1))
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
+            try:
+                value = G2fil.FormatSigFigs(val/norm)
+                if 'varyList' in covdata:
+                    if str(G2mode) in covdata['varyList']:
+                        sig = covdata['sig'][covdata['varyList'].index(str(G2mode))]
+                        value = G2mth.ValEsd(val/norm,sig/norm)
+            except TypeError:
+                value = '?'
+            subSizer2.Add((10,-1))
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
     # ISODISTORT displacive modes
-    if 'G2VarList' in ISO:
+    elif 'G2VarList' in ISO:
         dispVals,dispSUs,modeVals,modeSUs = G2mth.CalcIsoDisp(Phases[phase],covdata=covdata)
         for (lbl,xyz,xyzsig,G2var,
              var,mval,msig,G2mode) in zip(
@@ -4131,7 +4175,7 @@ def ShowIsoDistortCalc(G2frame,phase=None):
                 value = str(mval)
             subSizer2.Add(wx.StaticText(panel2,label=value),0,wx.ALIGN_RIGHT)
     # ISODISTORT occupancy modes
-    if 'G2OccVarList' in ISO:
+    elif 'G2OccVarList' in ISO:
         deltaList = []
         parmDict,varyList = G2frame.MakeLSParmDict()
         for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):

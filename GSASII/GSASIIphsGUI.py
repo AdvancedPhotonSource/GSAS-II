@@ -10127,6 +10127,9 @@ at one of the following locations:
             def OnSliceShell(event):
                 RBObj['sliceSh'] = not RBObj['sliceSh']
                 G2plt.PlotStructure(G2frame,data)
+                
+            def OnNegDen(event):
+                RBObj['noNeg'][0] = not RBObj['noNeg'][0]
 
             symchoice = ['53m','m3m','-43m','6/mmm','-6m2','-3m','3m','32','-3','3','4/mmm','-42m',
                 'mmm','2/m','2','m','-1','1']
@@ -10138,6 +10141,8 @@ at one of the following locations:
             sprbSizer = wx.BoxSizer(wx.VERTICAL)
             G2G.HorizontalLine(sprbSizer,RigidBodies)
             topLine = wx.BoxSizer(wx.HORIZONTAL)
+            secLine = wx.BoxSizer(wx.HORIZONTAL)
+            plotLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,label='Shell 0: Name: %s Atom name: %s Atom type: %s RB sym: %s '%
                 (RBObj['RBname'][0],atName,RBObj['atType'][0],RBObj['RBsym'][0])),0,WACV)
             simsel = wx.ComboBox(RigidBodies,choices=symchoice,value=RBObj['RBsym'][0],
@@ -10148,17 +10153,16 @@ at one of the following locations:
             showAx = wx.CheckBox(RigidBodies,label='Show RB axes on plot?')
             showAx.SetValue(RBObj['showAxes'])
             showAx.Bind(wx.EVT_CHECKBOX,OnShowAx)
-            topLine.Add(showAx,0,WACV)
             rbId = RBObj['RBId']
             if len(RBObj['nSH']) == 1:
                 delRB = wx.Button(RigidBodies,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
                 delRB.Bind(wx.EVT_BUTTON,OnDelSpnRB)
                 Indx[delRB.GetId()] = rbId
                 topLine.Add(delRB,0,WACV)
-            addShell = wx.Button(RigidBodies,wx.ID_ANY,'Add new shell',style=wx.BU_EXACTFIT)
+            RBObj['noNeg'] = RBObj.get('noNeg',[False,0.01])
+            addShell = wx.Button(RigidBodies,wx.ID_ANY,'Add shell',style=wx.BU_EXACTFIT)
             addShell.Bind(wx.EVT_BUTTON,OnAddShell)
             Indx[addShell.GetId()] = rbId
-            topLine.Add(addShell,0,WACV)
             hidesh = wx.CheckBox(RigidBodies,label='Hide shell?')
             hidesh.SetValue(RBObj['hide'][0])
             hidesh.Bind(wx.EVT_CHECKBOX,OnHideSh)
@@ -10166,26 +10170,35 @@ at one of the following locations:
             topLine.Add(hidesh,0,WACV)
             sprbSizer.Add(wx.StaticText(RigidBodies,label='Spinning RB orientation parameters for %s:'%RBObj['RBname'][0]))
             sprbSizer.Add(LocationSizer(RBObj,'Spin',rbId))
-            plotLine = wx.BoxSizer(wx.HORIZONTAL)
             RBObj['useAtColor'] = RBObj.get('useAtColor',True)
             atColor = wx.CheckBox(RigidBodies,label='Use atom color?')
             atColor.SetValue(RBObj['useAtColor'])
             atColor.Bind(wx.EVT_CHECKBOX,OnAtColor)
-            plotLine.Add(atColor,0,WACV)
             RBObj['fadeSh'] = RBObj.get('fadeSh',True)
             fadeShell = wx.CheckBox(RigidBodies,label='Fade shells?')
             fadeShell.SetValue(RBObj['fadeSh'])
             fadeShell.Bind(wx.EVT_CHECKBOX,OnFadeShell)
-            plotLine.Add(fadeShell,0,WACV)
             RBObj['sliceSh'] = RBObj.get('sliceSh',False)
             sliceShell = wx.CheckBox(RigidBodies,label='Slice shells?')
             sliceShell.SetValue(RBObj['sliceSh'])
             sliceShell.Bind(wx.EVT_CHECKBOX,OnSliceShell)
+            plotLine.Add(atColor,0,WACV)
+            plotLine.Add(showAx,0,WACV)
+            plotLine.Add(fadeShell,0,WACV)
             plotLine.Add(sliceShell,0,WACV)
+            plotLine.Add(addShell,0,WACV)
+            negDen = wx.CheckBox(RigidBodies,label='Use negative density penalty for all shells? Penalty: ')
+            negDen.SetValue(RBObj['noNeg'][0])
+            negDen.Bind(wx.EVT_CHECKBOX,OnNegDen)            
+            secLine.Add(negDen,0,WACV)
+            secLine.Add(G2G.ValidatedTxtCtrl(RigidBodies,RBObj['noNeg'],1,nDig=(10,4),
+                xmin=0.,xmax=1.,typeHint=float),0,WACV)
             sprbSizer.Add(plotLine)
             G2G.HorizontalLine(sprbSizer,RigidBodies)
             sprbSizer.Add(topLine)
+            sprbSizer.Add(secLine)
             sprbSizer.Add(SHsizer())
+            
             return sprbSizer
 
         def ResrbSizer(RBObj,resIndx):

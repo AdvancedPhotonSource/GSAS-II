@@ -925,6 +925,9 @@ def UpdateRestraints(G2frame,data,phaseName):
             wtBox.Add(wx.StaticText(wind,-1,'  Search range: '),0,WACV)
             sRange = G2G.ValidatedTxtCtrl(wind,restData,'Range',nDig=(10,2),typeHint=float)
             wtBox.Add(sRange,0,WACV)
+        if 'Bonds' in restData:
+            wtBox.Add(wx.StaticText(wind,-1,' x target dist.'),0,WACV)
+        if 'Angles' in restData:
             wtBox.Add(wx.StaticText(wind,-1,' x sum(atom radii)'),0,WACV)
         return wtBox
         

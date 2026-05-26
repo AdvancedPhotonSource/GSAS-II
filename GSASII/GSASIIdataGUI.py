@@ -9243,6 +9243,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 phaseName = G2frame.GPXtree.GetItemText(item)
                 if phaseName not in data:
                     data[phaseName] = {}
+                G2frame.dataWindow.helpKey = 'Restraints'
                 G2restG.UpdateRestraints(G2frame,data,phaseName)
             else:
                 G2frame.GPXtree.Expand(item)
@@ -9287,6 +9288,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2phG.UpdatePhaseData(G2frame,item,data)
     elif G2frame.GPXtree.GetItemText(parentID) == 'Restraints':
         data = G2frame.GPXtree.GetItemPyData(parentID)
+        G2frame.dataWindow.helpKey = 'Restraints'
         phaseName = G2frame.GPXtree.GetItemText(item)
         if phaseName not in data:
             data[phaseName] = {}

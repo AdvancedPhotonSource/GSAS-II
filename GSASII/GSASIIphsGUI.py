@@ -490,7 +490,7 @@ class TransformDialog(wx.Dialog):
         if self.ifMag:
             MagSizer = wx.BoxSizer(wx.HORIZONTAL)
             if not self.oldSGdata.get('MAXMAGN',[]):
-                Mtrans = wx.CheckBox(self.panel,label=' Use matrix transform?')
+                Mtrans = wx.CheckBox(self.panel,label=' Use matrix transpose?')
                 Mtrans.SetValue(self.Mtrans)
                 Mtrans.Bind(wx.EVT_CHECKBOX,OnMtrans)
                 MagSizer.Add(Mtrans,0,WACV)
@@ -554,7 +554,7 @@ class TransformDialog(wx.Dialog):
             constr.SetValue(self.ifConstr)
             constr.Bind(wx.EVT_CHECKBOX,OnConstr)
             mainSizer.Add(constr,0)
-        TestBtn = wx.Button(self.panel,-1,"Test")
+        TestBtn = wx.Button(self.panel,-1,"Test xform")
         TestBtn.Bind(wx.EVT_BUTTON, OnTest)
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)

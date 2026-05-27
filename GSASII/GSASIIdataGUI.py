@@ -7003,6 +7003,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         G2G.Define_wxId('wxID_DELPEAKS')
         G2G.Define_wxId('wxID_SETUNVARIEDWIDTHS')
         G2G.Define_wxId('wxID_XTRAPEAKMODE')
+        G2G.Define_wxId('wxID_PEAKSCOPYFLAG')
         def _makemenu():     # routine to create menu when first used
             self.PeakMenu = wx.MenuBar()
             self.PrefillDataMenu(self.PeakMenu)
@@ -7016,6 +7017,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             self.PFOneCycle = self.PeakEdit.Append(G2G.wxID_LSQONECYCLE,'Peakfit one cycle','One cycle of Peak fitting' )
             self.PeakEdit.Append(G2G.wxID_RESETSIGGAM,'Reset sig and gam','Reset sigma and gamma to global fit' )
             self.PeakCopy = self.PeakEdit.Append(G2G.wxID_PEAKSCOPY,'Peak copy','Copy peaks to other histograms')
+            self.PeakCopyFlag = self.PeakEdit.Append(G2G.wxID_PEAKSCOPYFLAG,'Peak flags copy','Copy peak refinement flags to other histograms')
             self.PeakEdit.Append(G2G.wxID_PEAKLOAD,'Load peaks...','Load peak list from file')
             self.PeakEdit.Append(G2G.wxID_PEAKSAVE,'Save peaks...','Save peak list to file')
             self.SeqPeakFit = self.PeakEdit.Append(G2G.wxID_SEQPEAKFIT,'Seq PeakFit',

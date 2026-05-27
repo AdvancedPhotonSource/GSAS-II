@@ -1488,12 +1488,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colLabels += ['GOF']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
+    deltaChiCol = None
     if histNames[0][:4] not in ['SASD','IMG ','REFD'] and Controls.get('ShowCell'):
-        G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
-        G2frame.colSigs += [None]
-        colLabels += ['\u0394\u03C7\u00B2 (%)']
-        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
-    deltaChiCol = len(colLabels)-1
+        colvals = [100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]
+        if not all([i == -100 for i in colvals]): # include this only when available
+            G2frame.colList += [colvals]
+            G2frame.colSigs += [None]
+            colLabels += ['\u0394\u03C7\u00B2 (%)']
+            Types += [wg.GRID_VALUE_FLOAT+':10,5',]
+            deltaChiCol = len(colLabels)-1
     # frozen variables?
     if 'parmFrozen' in Controls:
         f = [len(Controls['parmFrozen'].get(h,[])) for h in histNames]

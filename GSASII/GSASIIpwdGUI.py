@@ -854,6 +854,33 @@ def UpdatePeakGrid(G2frame, data):
             G2frame.GPXtree.SetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,Id,'Peak List'),copy.deepcopy(data))
 
+    def OnCopyPeakFlags(event):
+        'Copy peak refinement flags to other histograms'
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
+            return
+        copyList = []
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy peak refinement flags from\n'+str(hst[5:])+' to...',
+            'Copy peak ref flags', histList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections():
+                    copyList.append(histList[i])
+        finally:
+            dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            pksId = G2gd.GetGPXtreeItemId(G2frame,Id,'Peak List')
+            pksTbl = G2frame.GPXtree.GetItemPyData(pksId)
+            for i,pk in enumerate(data['peaks']):
+                for col in range(1,len(pk),2):
+                    try:
+                        pksTbl['peaks'][i][col] = pk[col]
+                    except:
+                        pass
+
     def OnLoadPeaks(event):
         'Load peak list from file'
         pth = G2G.GetExportPath(G2frame)
@@ -1329,6 +1356,7 @@ def UpdatePeakGrid(G2frame, data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)
     G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2G.wxID_AUTOSEARCH)
     G2frame.Bind(wx.EVT_MENU, OnCopyPeaks, id=G2G.wxID_PEAKSCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnCopyPeakFlags, id=G2G.wxID_PEAKSCOPYFLAG)
     G2frame.Bind(wx.EVT_MENU, OnSavePeaks, id=G2G.wxID_PEAKSAVE)
     G2frame.Bind(wx.EVT_MENU, OnLoadPeaks, id=G2G.wxID_PEAKLOAD)
     G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_UNDO)

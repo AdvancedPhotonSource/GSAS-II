@@ -662,7 +662,6 @@ cellXformRelations = {0: ['1.0*A0*T[0,0]**2',
                             '1.0*A3*(T[1,0]*T[2,1] + T[2,0]*T[1,1])',
                             '1.0*A4*(T[1,0]*T[2,2] + T[2,0]*T[1,2])',
                             '1.0*A5*(T[1,1]*T[2,2] + T[2,1]*T[1,2])']}
-
 '''cellXformRelations provide the constraints on newA[i] values for a new
 cell generated from oldA[i] values.
 '''
@@ -670,15 +669,77 @@ cell generated from oldA[i] values.
 #   from GSASIIlattice import fmtCellConstraints,GenerateCellConstraints
 #   cellXformRelations = fmtCellConstraints(GenerateCellConstraints())
 
-def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=False):
+def GenAtomConstraints(oldPhase,newPhase,atCodes,Trans):
+    '''Generate the constraints on generated atoms between oldPhase and newPhase
+    where atCodes links new atoms to the original atoms
+    
+    :param oldPhase: the phase object for the original phase
+    :param newPhase: the phase object for the newly created phase
+    :param list atCodes: a list strings where each element has the original 
+        atom id and the operator for each new atom (I think: at#:opr#+x,y,z)
+    :param np.array Trans: the transformation matrix
+    :returns: (constraints, message) where 
+        * constraints is a list of constraints that should be added to the 
+          Phase section of the constraints dict.
+        * message is a message to display or None
+    '''
+    from . import GSASIIobj as G2obj
+    constraints = []
+    message = None
+    opRanId = oldPhase['ranId']
+    oAtoms = oldPhase['Atoms']
+    npRanId = newPhase['ranId']
+    cx,ct,cs,cia = newPhase['General']['AtomPtrs']
+    nAtoms = newPhase['Atoms']
+    nSGData = newPhase['General']['SGData']
+    xnames = ['dAx','dAy','dAz']
+    # constraints on matching atom params between phases
+    for ia,code in enumerate(atCodes): # iterate of matching pairs of atoms
+        if not ia and nAtoms[ia][cia] == 'A':
+            message = 'Anisotropic ADP constraints not yet developed'
+        siteSym = G2spc.SytSym(nAtoms[ia][cx:cx+3],nSGData)[0]
+        CSX = G2spc.GetCSxinel(siteSym)
+        item = code.split('+')[0]
+        iAtOrg,opr = item.split(':')
+        iAtOrg = int(iAtOrg)
+        Nop = abs(int(opr))%100-1
+        if '-' in opr:
+            Nop *= -1
+        Opr = oldPhase['General']['SGData']['SGOps'][abs(Nop)][0]
+        if Nop < 0:         #inversion
+            Opr *= -1
+        XOpr = np.inner(Opr,Trans)
+        invOpr = nl.inv(XOpr)
+        for i,ix in enumerate(list(CSX[0])):
+            if not ix:
+                continue
+            name = xnames[i]
+            IndpCon = [1.0,G2obj.G2VarObj([npRanId,None,name,nAtoms[ia][-1]])]
+            DepCons = []
+            for iop,opval in enumerate(invOpr[i]):
+                oldVar = G2obj.G2VarObj([opRanId,None,xnames[iop],oAtoms[iAtOrg][-1]])
+                if abs(opval) > 1e-6:
+                    DepCons.append([float(opval),oldVar])
+            if len(DepCons) == 1:  # use equivalence if possible
+                constraints.append([DepCons[0],IndpCon,None,None,'e'])
+            elif len(DepCons) > 1:
+                IndpCon[0] = -1.
+                constraints.append([IndpCon]+DepCons+[0.0,None,'c'])
+        for name in ['Afrac','AUiso']:
+            IndpCon = [1.0,G2obj.G2VarObj([npRanId,None,name,nAtoms[ia][-1]])]
+            DepCons = [1.0,G2obj.G2VarObj([opRanId,None,xnames[iop],oAtoms[iAtOrg][-1]])]
+            constraints.append([DepCons,IndpCon,None,None,'e'])
+    return constraints,message
+
+def GenCellConstraints(Trans,oRanId,nRanId,origA,oSGLaue,nSGLaue,debug=False):
     '''Generate the constraints between two unit cells constants for a phase transformed
     by matrix Trans.
 
     :param np.array Trans: a 3x3 direct cell transformation matrix where,
        Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
        (for a' = 2/3a + 4/3b + 1/3c; b' = -a; c' = -1/3, -2/3, 1/3)
-    :param int origPhase: phase id (pId) for original phase
-    :param int newPhase: phase id for the transformed phase to be constrained from
+    :param int oRanId: Random id for the original phase
+    :param int nRanId: Random id for the transformed phase to be constrained from
       original phase
     :param list origA: reciprocal cell ("A*") tensor (used for debug only)
     :param dict oSGLaue: space group info for original phase
@@ -691,12 +752,15 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=Fals
     constrList = []
     uniqueAnew = cellUnique(nSGLaue)
     zeroAorig = cellZeros(oSGLaue)
+    T = np.linalg.inv(Trans)   # array used in cellXformRelations
+    T # prevents warning that array is not used
     for i in range(6):
-        constr = [[-1.0,G2obj.G2VarObj('{}::A{}'.format(newPhase,i))]]
+        nvar = G2obj.G2VarObj([nRanId, None, f'A{i}', None])
+        constr = [[-1.0,nvar]]
         mult = []
         for j,item in enumerate(cellXformRelations[i]):
             const, aTerm, tTerm = item.split('*',2)
-            const = float(const) * eval(tTerm)
+            const = float(const) * float(eval(tTerm)) # T is used here
             mult.append(const)
             # skip over A terms that are required to be zero
             if zeroAorig[int(aTerm[1])]: continue   # only add non-zero terms
@@ -705,13 +769,16 @@ def GenCellConstraints(Trans,origPhase,newPhase,origA,oSGLaue,nSGLaue,debug=Fals
             # but since it will not change there is no reason to include that
             # term in any case
             if abs(const) < 1e-8: continue
-            constr.append([const,G2obj.G2VarObj('{}::{}'.format(origPhase,aTerm))])
+            ovar = G2obj.G2VarObj([oRanId, None, aTerm, None])
+            constr.append([const,ovar])
         if i in uniqueAnew:
             constrList.append(constr + [0.0,None,'c'])
         if debug: Anew.append(np.dot(origA,mult))
     if debug:
-        print('xformed A*  ',Anew)
-        print('xformed cell',A2cell(Anew))
+        fmt6 = lambda x: ', '.join([f'{i:.6f}' for i in x])
+        fmt4 = lambda x: ', '.join([f'{i:.6f}' for i in x])
+        print('xfm A* ',fmt6(Anew))
+        print('xfm cell',fmt4(A2cell(Anew)))
     return constrList
 
 def cellUnique(SGData):

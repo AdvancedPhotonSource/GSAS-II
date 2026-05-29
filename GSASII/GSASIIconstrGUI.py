@@ -1840,7 +1840,7 @@ def CheckScalePhaseFractions(G2frame,hist,histograms,phases,Constraints):
             # got a constraint, this is OK
             return False
     return True
-        
+
 #### Make nuclear/magnetic phase transition constraints - called by OnTransform in G2phsGUI ##########
 def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     '''Add constraints for new magnetic phase created via transformation of old
@@ -1871,7 +1871,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             else:
                 parm = None
         elif SGLaue in ['3R', '3mR']:
-            if ia in [0,1,2]:
+            if iA in [0,1,2]:
                 parm = '%d::%s'%(pId,'A0')
             else:
                 parm = '%d::%s'%(pId,'A3')
@@ -1894,111 +1894,46 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         else:
             parm = '%d::A%s'%(pId,iA)
         return parm
-    
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    UseList = newPhase['Histograms']
-    detTrans = np.abs(nl.det(Trans))
-    opId = oldPhase['pId']
-    npId = newPhase['pId']
-    cx,ct,cs,cia = newPhase['General']['AtomPtrs']
-    nAtoms = newPhase['Atoms']
-    nSGData = newPhase['General']['SGData']
-    #oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
-    #nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
+
+    #Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints')
     if not item:
         print('Error: no constraints in Data Tree')
         return
     constraints = G2frame.GPXtree.GetItemPyData(item)
-    xnames = ['dAx','dAy','dAz']
-    # constraints on matching atom params between phases
-    for ia,code in enumerate(atCodes):
-        atom = nAtoms[ia]
-        if not ia and atom[cia] == 'A':
-            wx.MessageDialog(G2frame,
-                'Anisotropic thermal motion constraints are not developed at the present time',
-                'Anisotropic thermal constraint?',style=wx.ICON_INFORMATION).ShowModal()
-        siteSym = G2spc.SytSym(atom[cx:cx+3],nSGData)[0]
-        CSX = G2spc.GetCSxinel(siteSym)
-#        CSU = G2spc.GetCSuinel(siteSym)
-        item = code.split('+')[0]
-        iat,opr = item.split(':')
-        Nop = abs(int(opr))%100-1
-        if '-' in opr:
-            Nop *= -1
-        Opr = oldPhase['General']['SGData']['SGOps'][abs(Nop)][0]
-        if Nop < 0:         #inversion
-            Opr *= -1
-        XOpr = np.inner(Opr,Trans)
-        invOpr = nl.inv(XOpr)
-        for i,ix in enumerate(list(CSX[0])):
-            if not ix:
-                continue
-            name = xnames[i]
-            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
-            DepCons = []
-            for iop,opval in enumerate(invOpr[i]):
-                if abs(opval) > 1e-6:
-                    DepCons.append([opval,G2obj.G2VarObj('%d::%s:%s'%(opId,xnames[iop],iat))])
-            if len(DepCons) == 1:
-                constraints['Phase'].append([DepCons[0],IndpCon,None,None,'e'])
-            elif len(DepCons) > 1:
-                IndpCon[0] = -1.
-                constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
-        for name in ['Afrac','AUiso']:
-            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
-            DepCons = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
-            constraints['Phase'].append([DepCons,IndpCon,None,None,'e'])
-            
-        # unfinished Anisotropic constraint generation
-#        Uids = [[0,0,'AU11'],[1,1,'AU22'],[2,2,'AU33'],[0,1,'AU12'],[0,2,'AU13'],[1,2,'AU23']]
-#        DepConsDict = dict(zip(Us,[[],[],[],[],[],[]]))
-#        for iu,Uid in enumerate(Uids):
-#            UMT = np.zeros((3,3))
-#            UMT[Uid[0],Uid[1]] = 1
-#            nUMT = G2lat.prodMGMT(UMT,invTrans)
-#            nUT = G2lat.UijtoU6(nUMT)
-#            for iu,nU in enumerate(nUT):
-#                if abs(nU) > 1.e-8:
-#                    parm = '%d::%s;%s'%(opId,Us[iu],iat)
-#                    DepConsDict[Uid[2]].append([abs(nU%1.),G2obj.G2VarObj(parm)])
-#        nUcof = atom[iu:iu+6]
-#        conStrings = []
-#        for iU,Usi in enumerate(Us):
-#            parm = '%d::%s;%d'%(npId,Usi,ia)
-#            parmDict[parm] = nUcof[iU]
-#            varyList.append(parm)
-#            IndpCon = [1.0,G2obj.G2VarObj(parm)]
-#            conStr = str([IndpCon,DepConsDict[Usi]])
-#            if conStr in conStrings:
-#                continue
-#            conStrings.append(conStr)
-#            if len(DepConsDict[Usi]) == 1:
-#                if DepConsDict[Usi][0]:
-#                    constraints['Phase'].append([IndpCon,DepConsDict[Usi][0],None,None,'e'])
-#            elif len(DepConsDict[Usi]) > 1:        
-#                for Dep in DepConsDict[Usi]:
-#                    Dep[0] *= -1
-#                constraints['Phase'].append([IndpCon]+DepConsDict[Usi]+[0.0,None,'c'])
-            
-        #how do I do Uij's for most Trans?
 
-    # constraints on lattice parameters between phases
-    Aold = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
-    if True: # debug
-        constraints['Phase'] += G2lat.GenCellConstraints(Trans,opId,npId,Aold,
-                                oldPhase['General']['SGData'],nSGData,True)
-        print('old A*',G2lat.cell2A(oldPhase['General']['Cell'][1:7]))
-        print('new A*',G2lat.cell2A(newPhase['General']['Cell'][1:7]))
-        print('old cell',oldPhase['General']['Cell'][1:7])
-        print('new cell',newPhase['General']['Cell'][1:7])
-    else:
-        constraints['Phase'] += G2lat.GenCellConstraints(Trans,opId,npId,Aold,
-                                oldPhase['General']['SGData'],nSGData,True)
-    # constraints on HAP Scale, etc.
+    # create contraints on linked atoms
+    newConstr,message = G2lat.GenAtomConstraints(oldPhase,newPhase,atCodes,Trans)
+    constraints['Phase'] += newConstr
+    if message:
+        wx.MessageDialog(G2frame,message,
+        'Constraint Gen. Problem',style=wx.ICON_INFORMATION).ShowModal()
+
+    # create constraints on lattice parameters between phases
+    opId = oldPhase['pId']
+    npId = newPhase['pId']
+    oRanId = oldPhase['ranId']
+    nRanId = newPhase['ranId']
+    debug = True
+    if debug: # debug
+        fmt6 = lambda x: ', '.join([f'{i:.6f}' for i in x])
+        fmt4 = lambda x: ', '.join([f'{i:.6f}' for i in x])
+        print('old A*',fmt6(G2lat.cell2A(oldPhase['General']['Cell'][1:7])))
+        print('new A*',fmt6(G2lat.cell2A(newPhase['General']['Cell'][1:7])))
+        print('old cell',fmt4(oldPhase['General']['Cell'][1:7]))
+        print('new cell',fmt4(newPhase['General']['Cell'][1:7]))
+    constraints['Phase'] += G2lat.GenCellConstraints(Trans,oRanId,nRanId,
+                                G2lat.cell2A(oldPhase['General']['Cell'][1:7]),
+                                oldPhase['General']['SGData'],
+                                newPhase['General']['SGData'],debug)
+
+    # create constraints on HAP Scale, Isotropic size and mustrain
+    # (anisotropic constraints would be more complex)
+    detTrans = np.abs(nl.det(Trans))  # volume ratio
+    UseList = newPhase['Histograms']
     for hId,hist in enumerate(UseList):    #HAP - seems OK
-        ohapkey = '%d:%d:'%(opId,hId)
-        nhapkey = '%d:%d:'%(npId,hId)
+        ohapkey = f'{opId}:{hId}:'
+        nhapkey = f'{npId}:{hId}:'
         IndpCon = [1.0,G2obj.G2VarObj(ohapkey+'Scale')]
         DepCons = [detTrans,G2obj.G2VarObj(nhapkey+'Scale')]
         constraints['HAP'].append([DepCons,IndpCon,None,None,'e'])
@@ -2006,7 +1941,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             IndpCon = [1.0,G2obj.G2VarObj(ohapkey+name)]
             DepCons = [1.0,G2obj.G2VarObj(nhapkey+name)]
             constraints['HAP'].append([IndpCon,DepCons,None,None,'e'])
-        
+
 #### Rigid bodies #############################################################
 resRBsel = None
 def UpdateRigidBodies(G2frame,data):

@@ -4815,6 +4815,7 @@ class SGMessageBox(wx.Dialog):
         self.Fit()
         size = self.GetSize()
         self.SetSize([size[0]+20,size[1]])
+        self.CenterOnParent()
 
     def Show(self):
         '''Use this method after creating the dialog to post it

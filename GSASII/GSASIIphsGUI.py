@@ -423,6 +423,7 @@ class TransformDialog(wx.Dialog):
 
         def OnMag(event):
             self.ifMag = True
+            self.ifConstr = True
             self.BNSlatt = self.SGData['SGLatt']
             G2spc.SetMagnetic(self.SGData)
             wx.CallAfter(self.Draw)

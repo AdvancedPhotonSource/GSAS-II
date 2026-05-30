@@ -670,8 +670,9 @@ cell generated from oldA[i] values.
 #   cellXformRelations = fmtCellConstraints(GenerateCellConstraints())
 
 def GenAtomConstraints(oldPhase,newPhase,atCodes,Trans):
-    '''Generate the constraints on generated atoms between oldPhase and newPhase
-    where atCodes links new atoms to the original atoms
+    '''Generate the constraints on generated atoms between oldPhase 
+    and newPhase where atCodes links new atoms to the original atoms. 
+    uUsed for a magnetic phase transformed generated from oldPhase.
     
     :param oldPhase: the phase object for the original phase
     :param newPhase: the phase object for the newly created phase
@@ -731,9 +732,104 @@ def GenAtomConstraints(oldPhase,newPhase,atCodes,Trans):
             constraints.append([DepCons,IndpCon,None,None,'e'])
     return constraints,message
 
+def MatchGenAtomConstraints(oldPhase,newPhase,Trans,U,V):
+    '''Generate the constraints on generated atoms in newPhase similar to 
+    :func:`GenAtomConstraints` but without pointers to relate the atoms. 
+    The atom positions are regenerated from the original phase and then 
+    are matched to the magnetic positions in newPhase. The positions 
+    generated here are what are then used for the new atom positions. 
+    
+    :param oldPhase: the phase object for the original phase
+    :param newPhase: the phase object for the newly created phase
+    :param np.array Trans: the transformation matrix
+    :param np.array U: the offset vector, subtracted before transformation matrix
+    :param np.array V: the offset vector, added after transformation matrix
+    :returns: (constraints, message) where 
+        * constraints is a list of constraints that should be added to the 
+          Phase section of the constraints dict.
+        * message is a message to display or None
+    '''
+    from . import GSASIIobj as G2obj
+    constraints = []
+    message = ''
+    opRanId = oldPhase['ranId']
+    oAtoms = oldPhase['Atoms']
+    npRanId = newPhase['ranId']
+    cx,ct,cs,cia = newPhase['General']['AtomPtrs']
+    nAtoms = newPhase['Atoms']
+    nSGData = newPhase['General']['SGData']
+    xnames = ['dAx','dAy','dAz']
+    atCodes = None
+    # constraints on matching atom params between phases
+    fmt4 = lambda x: ', '.join([f'{i:.6f}' for i in x])
+    # regenerate and potentially relocate transformed atoms
+    tmpPhase = copy.deepcopy(newPhase)
+    tmpPhase,tmpCodes = TransformPhase(oldPhase,tmpPhase,Trans,
+                                          np.array(U),np.array(V),True)
+    Amat = cell2AB(newPhase['General']['Cell'][1:7])[0]
+    atCodes = len(nAtoms)*[None]
+    for iN,natom in enumerate(nAtoms):
+        nxyz = np.array(natom[cx:cx+3])
+        #print('searching to match new atom',fmt4(nxyz))
+        for iT,tatom in enumerate(tmpPhase['Atoms']):
+            if natom[ct] != tatom[ct]: continue
+            txyz = np.array(tatom[cx:cx+3])
+            #print('generated atom pos',fmt4(txyz))
+            for oXYZ,osym,cell,spn in G2spc.GenAtom(txyz,
+                                tmpPhase['General']['SGData'],False,[],True):
+                dist = np.sqrt(np.sum(np.inner(Amat,(oXYZ-nxyz))**2))
+                #print(oXYZ, oXYZ-nxyz, np.allclose(oXYZ,nxyz),dist)
+                if dist < 0.1: # allow a bit of distance (0.1A) between generated and CIF positions
+                    # found a matching atom, replace coordinates & save code
+                    atCodes[iN] = tmpCodes[iT]
+                    natom[cx:cx+3] = tatom[cx:cx+3]
+                    #print('   matched at',fmt4(tatom[cx:cx+3]))
+                    break
+            if atCodes[iN]: break
+        else:
+            message += f'No matching atom found for {natom[ct]} at {fmt4(natom[cx:cx+3])}\n'
+
+    for ia,code in enumerate(atCodes): # iterate of matching pairs of atoms
+        if not ia and nAtoms[ia][cia] == 'A' and 'ADP' not in message:
+            message += 'Anisotropic ADP constraints not yet developed\n'
+        if code is None: continue
+        siteSym = G2spc.SytSym(nAtoms[ia][cx:cx+3],nSGData)[0]
+        CSX = G2spc.GetCSxinel(siteSym)
+        item = code.split('+')[0]
+        iAtOrg,opr = item.split(':')
+        iAtOrg = int(iAtOrg)
+        Nop = abs(int(opr))%100-1
+        if '-' in opr:
+            Nop *= -1
+        Opr = oldPhase['General']['SGData']['SGOps'][abs(Nop)][0]
+        if Nop < 0:         #inversion
+            Opr *= -1
+        XOpr = np.inner(Opr,Trans)
+        invOpr = nl.inv(XOpr)
+        for i,ix in enumerate(list(CSX[0])):
+            if not ix:
+                continue
+            name = xnames[i]
+            IndpCon = [1.0,G2obj.G2VarObj([npRanId,None,name,nAtoms[ia][-1]])]
+            DepCons = []
+            for iop,opval in enumerate(invOpr[i]):
+                oldVar = G2obj.G2VarObj([opRanId,None,xnames[iop],oAtoms[iAtOrg][-1]])
+                if abs(opval) > 1e-6:
+                    DepCons.append([float(opval),oldVar])
+            if len(DepCons) == 1:  # use equivalence if possible
+                constraints.append([DepCons[0],IndpCon,None,None,'e'])
+            elif len(DepCons) > 1:
+                IndpCon[0] = -1.
+                constraints.append([IndpCon]+DepCons+[0.0,None,'c'])
+        for name in ['Afrac','AUiso']:
+            IndpCon = [1.0,G2obj.G2VarObj([npRanId,None,name,nAtoms[ia][-1]])]
+            DepCons = [1.0,G2obj.G2VarObj([opRanId,None,xnames[iop],oAtoms[iAtOrg][-1]])]
+            constraints.append([DepCons,IndpCon,None,None,'e'])
+    return constraints,message
+
 def GenCellConstraints(Trans,oRanId,nRanId,origA,oSGLaue,nSGLaue,debug=False):
-    '''Generate the constraints between two unit cells constants for a phase transformed
-    by matrix Trans.
+    '''Generate the constraints between two unit cells constants for 
+    a magnetic phase transformed by matrix Trans.
 
     :param np.array Trans: a 3x3 direct cell transformation matrix where,
        Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
@@ -746,6 +842,7 @@ def GenCellConstraints(Trans,oRanId,nRanId,origA,oSGLaue,nSGLaue,debug=False):
     :param dict nSGLaue: space group info for transformed phase
     :param bool debug: If true, the constraint input is used to compute and print A*
       and from that the direct cell for the transformed phase.
+    :returns: a list of generated constraints
     '''
     from . import GSASIIobj as G2obj
     Anew = []
@@ -779,6 +876,33 @@ def GenCellConstraints(Trans,oRanId,nRanId,origA,oSGLaue,nSGLaue,debug=False):
         fmt4 = lambda x: ', '.join([f'{i:.6f}' for i in x])
         print('xfm A* ',fmt6(Anew))
         print('xfm cell',fmt4(A2cell(Anew)))
+    return constrList
+
+def GenHAPConstraints(Trans,oRanId,nRanId,hRanId):
+    '''Generate the HAP constraints between two phase constants 
+    for a phase transformed by matrix Trans.
+
+    :param np.array Trans: a 3x3 direct cell transformation matrix where,
+       Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
+       (for a' = 2/3a + 4/3b + 1/3c; b' = -a; c' = -1/3, -2/3, 1/3)
+    :param int oRanId: Random id for the original phase
+    :param int nRanId: Random id for the transformed phase to be constrained from
+      original phase
+    :param str hRanId: histogram Random Id
+    :returns: a list of generated constraints
+    '''
+    from . import GSASIIobj as G2obj
+    constrList = []
+    detTrans = np.abs(nl.det(Trans))  # volume ratio
+    # Phase fractions (note volume term)
+    IndpCon = [1.0,G2obj.G2VarObj([oRanId,hRanId,'Scale',None])]
+    DepCons = [detTrans,G2obj.G2VarObj([nRanId,hRanId,'Scale',None])]
+    constrList.append([IndpCon,DepCons,None,None,'e'])
+    # Isotropic size and mustrain (anisotropic constraints are messy)
+    for name in ['Size;i','Mustrain;i']:
+        IndpCon = [1.0,G2obj.G2VarObj([oRanId,hRanId,name,None])]
+        DepCons = [1.0,G2obj.G2VarObj([nRanId,hRanId,name,None])]
+        constrList.append([IndpCon,DepCons,None,None,'e'])
     return constrList
 
 def cellUnique(SGData):
@@ -844,7 +968,17 @@ def TransformU6(U6,Trans):
     return UijtoU6(Uij)
 
 def ExpandCell(Atoms,atCodes,cx,Trans):
-    Unit = [int(max(abs(np.array(unit)))-1) for unit in Trans.T]
+    '''Expand a list of atoms to an new unit cell.
+    
+    :param list Atoms: atoms array as found in a Phase object
+    :param list atCodes:list of codes that describe symmetry applied to 
+        generate atom from original position
+    :param int cx: pointer to location of x coord in Atoms
+    :param np.array Trans: 3x3 transformation matrix
+    :returns: newAtoms,Codes where newAtoms is the expanded list of 
+        atoms and Codes is an expanded and updated version of atCodes
+    '''
+    Unit = [int(max(abs(np.array(unit)))-1) for unit in np.array(Trans).T]
     nUnit = (Unit[0]+1)*(Unit[1]+1)*(Unit[2]+1)
     Ugrid = np.mgrid[0:Unit[0]+1,0:Unit[1]+1,0:Unit[2]+1]
     Ugrid = np.reshape(Ugrid,(3,nUnit)).T
@@ -869,7 +1003,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag,Force=True):
     :param oldPhase: dict G2 phase info for old phase
     :param newPhase: dict G2 phase info for new phase; with new cell & space group
             atoms are from oldPhase & will be transformed
-    :param Trans: lattice transformation matrix M
+    :param np.array Trans: lattice transformation matrix M
     :param Uvec: array parent coordinates transformation vector U
     :param Vvec: array child coordinate transformation vector V
     :param ifMag: bool True if convert to magnetic phase;

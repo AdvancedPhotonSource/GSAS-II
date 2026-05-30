@@ -1910,37 +1910,21 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         'Constraint Gen. Problem',style=wx.ICON_INFORMATION).ShowModal()
 
     # create constraints on lattice parameters between phases
-    opId = oldPhase['pId']
-    npId = newPhase['pId']
     oRanId = oldPhase['ranId']
     nRanId = newPhase['ranId']
-    debug = True
-    if debug: # debug
-        fmt6 = lambda x: ', '.join([f'{i:.6f}' for i in x])
-        fmt4 = lambda x: ', '.join([f'{i:.6f}' for i in x])
-        print('old A*',fmt6(G2lat.cell2A(oldPhase['General']['Cell'][1:7])))
-        print('new A*',fmt6(G2lat.cell2A(newPhase['General']['Cell'][1:7])))
-        print('old cell',fmt4(oldPhase['General']['Cell'][1:7]))
-        print('new cell',fmt4(newPhase['General']['Cell'][1:7]))
     constraints['Phase'] += G2lat.GenCellConstraints(Trans,oRanId,nRanId,
                                 G2lat.cell2A(oldPhase['General']['Cell'][1:7]),
                                 oldPhase['General']['SGData'],
-                                newPhase['General']['SGData'],debug)
+                                newPhase['General']['SGData'],debug=False)
 
     # create constraints on HAP Scale, Isotropic size and mustrain
     # (anisotropic constraints would be more complex)
-    detTrans = np.abs(nl.det(Trans))  # volume ratio
     UseList = newPhase['Histograms']
-    for hId,hist in enumerate(UseList):    #HAP - seems OK
-        ohapkey = f'{opId}:{hId}:'
-        nhapkey = f'{npId}:{hId}:'
-        IndpCon = [1.0,G2obj.G2VarObj(ohapkey+'Scale')]
-        DepCons = [detTrans,G2obj.G2VarObj(nhapkey+'Scale')]
-        constraints['HAP'].append([DepCons,IndpCon,None,None,'e'])
-        for name in ['Size;i','Mustrain;i']:
-            IndpCon = [1.0,G2obj.G2VarObj(ohapkey+name)]
-            DepCons = [1.0,G2obj.G2VarObj(nhapkey+name)]
-            constraints['HAP'].append([IndpCon,DepCons,None,None,'e'])
+    Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    for hId,hist in enumerate(UseList):
+        hRanId = Histograms[hist]['ranId']
+        constrList = G2lat.GenHAPConstraints(Trans,oRanId,nRanId,hRanId)
+        constraints['HAP'] += constrList
 
 #### Rigid bodies #############################################################
 resRBsel = None

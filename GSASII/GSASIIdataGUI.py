@@ -17,6 +17,7 @@ import inspect
 import re
 import numpy as np
 import numpy.ma as ma
+import numpy.linalg as nl
 import matplotlib as mpl
 try:
     import OpenGL as ogl
@@ -1364,6 +1365,52 @@ If you continue from this point, it is quite likely that all intensity computati
                         Constraints['_Explain'].update(i)
                     else:
                         Constraints['Phase'].append(i)
+            # make ISODISTORT magnetic phase constraints here
+            Phases = self.GetPhaseData()
+            prevPhases = list(Phases.keys())
+            parentPhase = None
+            Vratio = None
+            if ('ISODISTORT' in rd.Phase and
+                    'XformInfo' in rd.Phase['ISODISTORT'] and 
+                    PhaseName in prevPhases and len(prevPhases) > 1):
+                Trans = rd.Phase['ISODISTORT']['XformInfo'].get('Trans',np.eye(3))
+                Vec = rd.Phase['ISODISTORT']['XformInfo'].get('offset',[0,0,0])
+                prevPhases.pop(prevPhases.index(PhaseName))
+                if len(prevPhases) == 1:
+                    parentPhase = prevPhases[0]
+                else:
+                    dlg = G2G.G2SingleChoiceDialog(self,
+                                f'Select parent phase to {PhaseName}',
+                                'Select phase',prevPhases)
+                    dlg.CenterOnParent()
+                    if dlg.ShowModal() == wx.ID_OK:
+                        sel = dlg.GetSelection()
+                        parentPhase = prevPhases[sel]
+                        dlg.Destroy()
+                    else:
+                        dlg.Destroy()
+                if parentPhase:
+                    oldPhase = Phases[parentPhase]
+                    newPhase = Phases[PhaseName]
+                    oRanId = oldPhase['ranId']
+                    nRanId = newPhase['ranId']
+                    Vratio = np.abs(nl.det(Trans))  # volume ratio
+                    #Vratio = newPhase['General']['Cell'][7]/oldPhase['General']['Cell'][7]
+                    debug = True
+                    # create constraints relating two unit cells
+                    Constraints['Phase'] += G2lat.GenCellConstraints(Trans,oRanId,nRanId,
+                            G2lat.cell2A(oldPhase['General']['Cell'][1:7]),
+                            oldPhase['General']['SGData'],
+                            newPhase['General']['SGData'],debug)
+                    # create constraints relating the atoms in newPhase to their positions in the chemical cell
+                    constr,message = G2lat.MatchGenAtomConstraints(
+                        oldPhase,newPhase,Trans,[0,0,0],Vec)
+                    if message:
+                        wx.MessageDialog(self,message,
+                            'Constraint Gen. Problem',style=wx.ICON_INFORMATION).ShowModal()
+
+                    Constraints['Phase'] += constr
+
         if not newPhaseList: return # somehow, no new phases
         # get a list of existing histograms
         PWDRlist = []
@@ -1434,7 +1481,12 @@ If you continue from this point, it is quite likely that all intensity computati
                     data['Histograms'][histoName] = G2mth.SetDefaultDData(Inst['Type'][0],histoName,NShkl=NShkl,NDij=NDij)
                 else:
                     raise Exception('Unexpected histogram '+histoName)
+
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree() # reindex
+        if Vratio: # make HAP constraints for ISODISTORT mag phase
+            for hist in data['Histograms']:
+                hRanId = Histograms[hist]['ranId']
+                Constraints['HAP'] += G2lat.GenHAPConstraints(Vratio,oRanId,nRanId,hRanId)
         wx.EndBusyCursor()
         self.EnableRefineCommand()
 

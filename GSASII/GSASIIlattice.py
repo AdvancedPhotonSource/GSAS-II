@@ -878,25 +878,24 @@ def GenCellConstraints(Trans,oRanId,nRanId,origA,oSGLaue,nSGLaue,debug=False):
         print('xfm cell',fmt4(A2cell(Anew)))
     return constrList
 
-def GenHAPConstraints(Trans,oRanId,nRanId,hRanId):
-    '''Generate the HAP constraints between two phase constants 
-    for a phase transformed by matrix Trans.
+def GenHAPConstraints(Vratio,oRanId,nRanId,hRanId):
+    '''Generate the HAP constraints between two phases: the original 
+    chemical (nuclear) phase and the new, magnetic phase. 
 
-    :param np.array Trans: a 3x3 direct cell transformation matrix where,
-       Trans = np.array([ [2/3, 4/3, 1/3], [-1, 0, 0], [-1/3, -2/3, 1/3] ])
-       (for a' = 2/3a + 4/3b + 1/3c; b' = -a; c' = -1/3, -2/3, 1/3)
+    :param float Vratio: the ratio of the volume of the magnetic phase
+      divided by the original phase. This should be 1 or >1 [often 2 
+      or sqrt(2) etc.]
     :param int oRanId: Random id for the original phase
-    :param int nRanId: Random id for the transformed phase to be constrained from
-      original phase
+    :param int nRanId: Random id for the transformed (magnetic) phase to 
+      be constrained to match the original phase
     :param str hRanId: histogram Random Id
     :returns: a list of generated constraints
     '''
     from . import GSASIIobj as G2obj
     constrList = []
-    detTrans = np.abs(nl.det(Trans))  # volume ratio
     # Phase fractions (note volume term)
     IndpCon = [1.0,G2obj.G2VarObj([oRanId,hRanId,'Scale',None])]
-    DepCons = [detTrans,G2obj.G2VarObj([nRanId,hRanId,'Scale',None])]
+    DepCons = [Vratio,G2obj.G2VarObj([nRanId,hRanId,'Scale',None])]
     constrList.append([IndpCon,DepCons,None,None,'e'])
     # Isotropic size and mustrain (anisotropic constraints are messy)
     for name in ['Size;i','Mustrain;i']:

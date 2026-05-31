@@ -254,10 +254,24 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             if '_vary' in cdict:
                 warninfo['msg'] += prefix + 'new var expression: ' + _FormatConstraint(cdict,cdict.get('_name','New Var'))
             else:
-                warninfo['msg'] += prefix + 'constraint equation: ' + _FormatConstraint(cdict,val)
+                warninfo['msg'] += prefix + 'constraint equation:\n\t' + _FormatConstraint(cdict,val)
         if warninfo['msg']: warninfo['msg'] += '\n'
         warninfo['msg'] += '  ' + msg
-    
+    def showChanged(group):
+        errmsg = ''
+        changed = False
+        for rel in group:
+            orel = OrigSeq[rel]
+            if constrDict[rel] != OrigConstrDict[orel]: changed = True
+        if changed:
+            errmsg += '\n\nNote that these constraints were changed (due\n'
+            errmsg += 'to unrefined parameters?) Original constraints:\n'
+            for rel in group:
+                orel = OrigSeq[rel]
+                errmsg += '\n\t' + _FormatConstraint(OrigConstrDict[orel],OrigFixedList[orel])
+            errmsg += '\n\nSee the Warnings for details on unrefined parameters.\n'
+        return errmsg
+
     global dependentParmList,arrayList,invarrayList,indParmList,consNum
     # lists of parameters used for error reporting
     global undefinedVars # parameters that are used in equivalences but are not defined
@@ -284,6 +298,9 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
     # Hold, Unvaried & Undefined parameters
     skipList = []
     invalidParms = []
+    OrigConstrDict = copy.deepcopy(constrDict)
+    OrigFixedList = copy.deepcopy(fixedList)
+    OrigSeq = list(range(len(constrDict)))
     for cnum,(cdict,fixVal) in enumerate(zip(constrDict,fixedList)):
         #constrVarList += [i for i in cdict if i not in constrVarList and not i.startswith('_')]
         valid = 0          # count of good parameters
@@ -334,11 +351,11 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             notDefList = []
         
         if noVaryList and cdict.get('_vary',True): # true for constr eq & varied New Var
-            msg = "parameter(s) not varied: "
+            noVarMsg = "parameter(s) not varied: "
             for i,v in enumerate(noVaryList):
-                if i != 0: msg += ', '
-                msg += v
-            warn(msg,cdict,fixVal,prefix='\nUnused ')
+                if i != 0: noVarMsg += ', '
+                noVarMsg += v
+            warn(noVarMsg,cdict,fixVal,prefix='\nUnused parameters in ')
         for l,m in ((zeroList,"have zero multipliers"), # show warning
                       (holdList,'set as "Hold"'),
                       #(noVaryList,"not varied"),
@@ -352,7 +369,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                 warn(msg,cdict,fixVal)
         if valid == 0: # no valid entries
             if seqHistNum is None:
-                warn('Ignoring constraint, contains no usable parameters',cdict,prefix='\nUnused ')
+                warn('Ignoring this constraint; contains no refined parameters',cdict,prefix='\nUnused ')
             skipList.append(cnum)
         elif problem: # mix of valid & refined and undefined items, cannot use this
             if cdict.get('_vary',True): # true for constr eq & varied New Var
@@ -360,12 +377,11 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                 skipList.append(cnum)
             invalidParms += VarKeys(cdict)
         elif len(dropList) > 0: # mix of valid and problematic items, drop problem vars, but keep rest
-            if GSASIIpath.GetConfigValue('debug'): 
-                msg = ''
-                for v in dropList:
-                    if msg: msg += ' ,'
-                    msg += v
-                warn('removing: '+msg,cdict)
+            msg = ''
+            for v in dropList:
+                if msg: msg += ' ,'
+                msg += v
+            warn('removing unvaried: '+msg,cdict)
             value = fixedList[cnum]
             for var in dropList:   # do cleanup
                 # NB expressions in constraint multipliers have already been evaluated
@@ -375,12 +391,12 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                     value = float(value) - cdict[var]*parmDict[var]
                 del cdict[var]
             if float(value) != float(fixedList[cnum]): fixedList[cnum] = float(np.round(value,12))
-            if GSASIIpath.GetConfigValue('debug'):
-                warn('revised as: '+_FormatConstraint(constrDict[cnum],fixedList[cnum]))
+            warn('constraint revised as: '+_FormatConstraint(constrDict[cnum],fixedList[cnum]))
     for i in list(range(len(constrDict)-1,-1,-1)): # remove the dropped constraints
         if i in skipList:
             del constrDict[i]
             del fixedList[i]
+            del OrigSeq[i] # keep pointer to original lists
             
     for i in invalidParms: StoreHold(i,"Used in invalid constraint")
     if warning: warning += '\n'
@@ -388,6 +404,23 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             
     groups,parmlist = GroupConstraints(constrDict)
 
+    # Look for duplicate constraints and eliminate one
+    for group,depPrmList in zip(groups,parmlist):
+        droplist = []
+        for i in group:
+            for j in group:
+                if i == j: continue
+                if i in droplist: continue
+                if j in droplist: continue
+                if constrDict[i] == constrDict[j] and fixedList[i] == fixedList[j]:
+                    droplist.append(j)
+        if droplist and warning: warning += '\n'
+        for j in sorted(droplist,reverse=True):
+            warning += '\nIgnoring duplicated constraint\n\t' 
+            warning += _FormatConstraint(constrDict[j],fixedList[j])
+            warning += '\n'
+            del group[group.index(j)]
+                    
     # now process each group and create the relations that are needed to form
     # a non-singular square matrix
     # Now check that all parameters are varied (probably do not need to do this
@@ -402,6 +435,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             errmsg += ") than parameters (" + str(len(depPrmList)) + ")\nin these constraints:"
             for rel in group:
                 errmsg += '\n\t'+ _FormatConstraint(constrDict[rel],fixedList[rel])
+            errmsg += showChanged(group)
             groupErrors += depPrmList
             continue # go on to next group
 
@@ -416,6 +450,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
                 errmsg += "\nError expanding matrix with these constraints:"
                 for rel in group:
                     errmsg += '\n\t' + _FormatConstraint(constrDict[rel],fixedList[rel])
+            errmsg += showChanged(group)
             groupErrors += depPrmList
             continue
 
@@ -426,6 +461,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             errmsg += "\nUnexpected singularity with constraints group (in Gram-Schmidt)"
             for rel in group:
                 errmsg += '\n\t' + _FormatConstraint(constrDict[rel],fixedList[rel])
+            errmsg += showChanged(group)
             groupErrors += depPrmList
             continue
         
@@ -440,6 +476,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,
             errmsg += 'This is unexpected. Please report this (toby@anl.gov)'
             for rel in group:
                 errmsg += '\n\t' + _FormatConstraint(constrDict[rel],fixedList[rel])
+            errmsg += showChanged(group)
             groupErrors += depPrmList
             continue
 
@@ -559,12 +596,12 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
     '''
     
     warninfo = {'msg':'', 'shown':-1}
-    def warnEqv(msg,cnum=None):
+    def warnEqv(msg,cnum=None,prefix='Problem with equivalence'):
         if cnum is not None and cnum != warninfo['shown']:
             warninfo['shown'] = cnum
-            if warninfo['msg']: warninfo['msg'] += '\n'
-            warninfo['msg'] += '\nProblem with equivalence: ' + _showEquiv(
-                dependentParmList[cnum],indParmList[cnum],invarrayList[cnum])
+            if warninfo['msg']: warninfo['msg'] += '\n\n'
+            warninfo['msg'] += f'{prefix}: '
+            warninfo['msg'] += _showEquiv(dependentParmList[cnum],indParmList[cnum],invarrayList[cnum])
         if warninfo['msg']: warninfo['msg'] += '\n'
         warninfo['msg'] += '  ' + msg
 
@@ -634,23 +671,27 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
                 if v in constrVarList+convVarList:
                     changed = True
                     msg = True
-                    warnEqv("Independent parameter "+str(v)+' used in constraint',cnum)
+                    warnEqv("Independent parameter "+str(v)+' used in constraint',cnum,
+                            prefix='Converting equivalence to constraint')
                     if cnum not in convertList: convertList.append(cnum)
             for v in varlist:
                 if v in multdepVarList:
                     changed = True
                     msg = True
-                    warnEqv("Dependent parameter "+str(v)+' repeated',cnum)
+                    warnEqv("Dependent parameter "+str(v)+' repeated',cnum,
+                            prefix='Converting equivalence to constraint')
                     if cnum not in convertList: convertList.append(cnum)
                 elif v in indepVarList:
                     changed = True
                     msg = True
-                    warnEqv("Dependent parameter "+str(v)+' used elsewhere as independent',cnum)
+                    warnEqv("Dependent parameter "+str(v)+' used elsewhere as independent',cnum,
+                            prefix='Converting equivalence to constraint')
                     if cnum not in convertList: convertList.append(cnum)
                 elif v in constrVarList+convVarList:
                     changed = True
                     msg = True
-                    warnEqv("Dependent parameter "+str(v)+' used in constraint',cnum)
+                    warnEqv("Dependent parameter "+str(v)+' used in constraint',cnum,
+                            prefix='Converting equivalence to constraint')
                     if cnum not in convertList: convertList.append(cnum)
             if msg:
                 warnEqv('Converting to "Constr"',cnum)
@@ -685,7 +726,8 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
             else:
                 msg = '  All parameters set as "Hold" '
             msg += "\n   Will ignore equivalence"
-            warnEqv(msg,cnum)
+            warnEqv(msg,cnum,prefix='Unused equivalence')
+
             removeList.append(cnum)
             continue
         
@@ -711,9 +753,10 @@ def CheckEquivalences(constrDict,varyList,fixedList,parmDict=None,seqHistNum=Non
                 removeList.append(cnum)
                 continue
             else:
-                msg = 'No parameters varied '
-            msg += "\n  Will ignore equivalence"
-            warnEqv(msg,cnum)
+                msg = 'Contains no varied parameters'
+            msg += "\n  Will ignore this equivalence"
+            warnEqv(msg,cnum,prefix='Unused equivalence')
+
             removeList.append(cnum)
             continue
             

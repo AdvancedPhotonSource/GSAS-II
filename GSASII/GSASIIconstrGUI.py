@@ -1916,6 +1916,8 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                                 G2lat.cell2A(oldPhase['General']['Cell'][1:7]),
                                 oldPhase['General']['SGData'],
                                 newPhase['General']['SGData'],debug=False)
+    detTrans = np.abs(nl.det(Trans))  # volume ratio
+    #Vratio = newPhase['General']['Cell'][7]/oldPhase['General']['Cell'][7]
 
     # create constraints on HAP Scale, Isotropic size and mustrain
     # (anisotropic constraints would be more complex)
@@ -1923,7 +1925,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     Histograms, Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     for hId,hist in enumerate(UseList):
         hRanId = Histograms[hist]['ranId']
-        constrList = G2lat.GenHAPConstraints(Trans,oRanId,nRanId,hRanId)
+        constrList = G2lat.GenHAPConstraints(detTrans,oRanId,nRanId,hRanId)
         constraints['HAP'] += constrList
 
 #### Rigid bodies #############################################################
